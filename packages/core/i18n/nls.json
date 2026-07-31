@@ -75,6 +75,15 @@
         "apiKey": {
           "description": "Enter an API Key of your official Anthropic Account. **Please note:** By using this preference the Anthropic API key will be stored in clear text            on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely."
         },
+        "compaction": {
+          "default": "Follow the global chat server-side compaction setting.",
+          "description": "Override provider-native server-side compaction for Anthropic models. \"default\" follows the global chat setting ({0}). When effectively enabled, the Anthropic Beta Messages API is used so the provider can summarize older turns once the conversation grows past its threshold.",
+          "disabled": "Never request server-side compaction for Anthropic models.",
+          "enabled": "Always request server-side compaction for Anthropic models."
+        },
+        "compactionTokenThreshold": {
+          "description": "Override the global input-token threshold for server-side compaction for Anthropic models. When unset, the global setting or provider default applies. If set, the value must be at least 50,000 tokens."
+        },
         "customEndpoints": {
           "apiKey": {
             "title": "Either the key to access the API served at the given url or `true` to use the global Anthropic API key"
@@ -142,7 +151,12 @@
         "couldNotFindMatchingLM": "Couldn't find a matching language model. Please check your setup!",
         "couldNotFindReadyLMforAgent": "Couldn't find a ready language model for agent {0}. Please check your setup!",
         "customAgents": {
-          "migrationResult": "Custom-agent migration: {0} migrated, {1} failed, {2} legacy customAgents.yml backed up to .bak, {3} prompt overrides folded into agent.md.",
+          "migratePrompt": {
+            "message": "Your custom agents still use the older `customAgents.yml` format. We recommend migrating them to the new per-agent format (`agents/<id>/agent.md`), which {0} uses going forward. Each agent gets its own file next to your `customAgents.yml`, and the original is kept as a `customAgents.yml.bak` backup."
+          },
+          "migrationResult": {
+            "empty": "Custom-agent migration: nothing to migrate."
+          },
           "rerunMigration": "Re-run custom-agent migration"
         },
         "defaultAgent": {
@@ -230,8 +244,10 @@
       },
       "chat-ui": {
         "addContextVariable": "Add context variable",
+        "agentDefaultModel": "agent default",
         "agentDelegationDescription": "Other AI agents that can be delegated to",
         "aiDisabled": "AI features are disabled",
+        "allowedResourceUrls": "External resources (images, stylesheets, media, etc.) referenced in AI chat responses are blocked by default and replaced with a placeholder until explicitly allowed. Resources whose URL starts with one of the configured prefixes are rendered directly without being blocked. Include the full origin with a trailing slash (e.g. \"https://example.com/\") to avoid unintended matches. Only add sources you fully trust.",
         "applyAll": "Apply All",
         "applyAllTitle": "Apply all pending changes",
         "askQuestion": "Ask a question",
@@ -265,8 +281,12 @@
         "command-part-renderer": {
           "commandNotExecutable": "The command has the id \"{0}\" but it is not executable from the Chat window."
         },
+        "compaction-part-renderer": {
+          "compactionMarker": "Conversation compacted"
+        },
         "copyCodeBlock": "Copy Code Block",
         "couldNotSendRequestToSession": "Was not able to send request \"{0}\" to session {1}",
+        "delegatedSession": "Delegated",
         "delegation-response-renderer": {
           "interactionNeeded": "User interaction needed",
           "prompt": {
@@ -279,13 +299,11 @@
           "starting": "Starting delegation...",
           "status": {
             "canceled": "canceled",
-            "error": "error",
             "generating": "generating...",
             "starting": "starting..."
           }
         },
         "deleteChangeSet": "Delete Change Set",
-        "deleteChat": "Delete Chat",
         "editRequest": "Edit",
         "edited": "edited",
         "editedTooltipHint": "This prompt variant has been edited. You can reset it in the AI Configuration view.",
@@ -312,6 +330,8 @@
           "title": "Mermaid Diagram",
           "wheelZoomHint": "{0} + Scroll"
         },
+        "modelBadgeTooltip": "Language model used for this response: {0}",
+        "modelUnavailable": "unavailable",
         "noChatAgentsAvailable": "No chat agents available.",
         "noMatchingCapabilities": "No matching capabilities",
         "openDiff": "Open Diff",
@@ -344,6 +364,9 @@
         "serverTools": "Server Tools",
         "serverToolsDescription": "Server tools are executed server-side by the LLM on the vendor's infrastructure.",
         "serverToolsWarning": "These tools are auto-approved when selected. They may be executed by the model at any time.",
+        "sessionModel": "Model for this chat",
+        "sessionModelDefault": "Model for this chat ({0})",
+        "sessionModelUnavailable": "Model for this chat is unavailable ({0}); requests use the agent default",
         "sessionNotFoundForRetry": "Session not found for retry",
         "skillsDescription": "Reusable skill instructions that can be added to the conversation",
         "switchAgentMode": "Switch Agent Mode",
@@ -356,6 +379,8 @@
         "tokenUsageOverflow": "Token usage well past the warning threshold. Consider compacting or starting a new session.",
         "tokenUsageTooltipCacheCreate": "Cache creation: {0}",
         "tokenUsageTooltipCacheRead": "Cache read: {0}",
+        "tokenUsageTooltipCompactions": "Compacted {0}x",
+        "tokenUsageTooltipCumulative": "Cumulative: {0}",
         "tokenUsageTooltipTotal": "Total: {0} / {1} ({2}%)",
         "tokenUsageWarning": "Token usage warning threshold reached.",
         "tokenUsageWarningEnabled": "Controls whether a notification is shown when a chat session's token usage crosses the configured threshold. Requires the language model provider to report token usage.",
@@ -486,7 +511,6 @@
         "openFileTooltip": "Click to open file in editor",
         "optionsCount": "{0} options",
         "partial": "Partial",
-        "pattern": "Pattern",
         "plan": "Plan mode",
         "project": "project",
         "projectRoot": "project root",
@@ -860,6 +884,12 @@
           },
           "title": "Custom Request Settings"
         },
+        "serverSideCompaction": {
+          "description": "Enable provider-native server-side compaction by default for chat requests. When on, models that support it may automatically summarize older turns once the conversation grows past their own threshold, letting long sessions continue past the context limit. Each provider offers its own override, and individual chat sessions can override this in their session settings. Models without support ignore it."
+        },
+        "serverSideCompactionTokenThreshold": {
+          "description": "Default input-token threshold at which provider-native server-side compaction should run. Providers and individual chat sessions can override this value. When unset, the provider chooses its default threshold. If set, the value must be at least 50,000 tokens."
+        },
         "skillDirectories": {
           "description": "Additional directories containing skill definitions (SKILL.md files). Skills provide reusable instructions that can be referenced by AI agents. The .prompts/skills and .agents/skills directories in your workspace, the .agents/skills directory in your home directory, and the skills directory in your product's configuration folder are always included."
         },
@@ -932,7 +962,6 @@
         "open-history-tooltip": "Open AI Agent History",
         "request-card": {
           "promptVariant": "Prompt Variant",
-          "response": "Response",
           "timestamp": "Timestamp"
         },
         "sortChronologically": {
@@ -1008,6 +1037,11 @@
           "msg": "You are about to use **Agent Mode**. In this mode, the agent can **read, create, and modify files** in your workspace autonomously, without asking for confirmation on each change.\n\nWe recommend using **version control** (e.g. Git) so you can easily review and revert any changes.\n\nIf you prefer more control, you can continue with **Edit Mode** instead, where changes are presented as suggestions for you to apply.\n\nHow would you like to proceed?",
           "waiting": "Waiting for confirmation..."
         },
+        "allowAllMode": {
+          "stripTooltip": "AI tool calls run without confirmation in this session. Only enable in environments you trust.",
+          "stripTooltipFooter": "Set via --session-preference. Restart without the flag to restore your saved settings.",
+          "title": "Theia AI Allow-All Mode"
+        },
         "app-tester": {
           "errorCheckingDevToolsServerStatus": "Error checking DevTools MCP server status: {0}",
           "errorCheckingPlaywrightServerStatus": "Error checking Playwright MCP server status: {0}",
@@ -1045,6 +1079,7 @@
         "chatRestrictedMessage": {
           "title": "AI Features are Restricted"
         },
+        "childInteractionNeeded": "A delegated session needs your attention",
         "codeReviewerAgent": {
           "description": "A code review assistant that analyzes code changes and returns structured verdicts.         Checks completion criteria, build/lint/test evidence, and code quality."
         },
@@ -1061,6 +1096,7 @@
             "startNewChat": "Keep chats short and focused. [Start a new chat]({0}) for a new task or [start a new chat with a summary of this one]({1})."
           }
         },
+        "collapseSession": "Collapse {0}",
         "commandAgent": {
           "commandCallback": {
             "confirmAction": "Got it",
@@ -1089,10 +1125,10 @@
             "edit": "Default Mode"
           }
         },
-        "deleteChat": "Delete Chat",
         "enableAI": {
           "mdDescription": "This setting allows you to access the AI capabilities of Theia IDE.            \n            Please be aware that AI features may generate            continuous requests to the language models (LLMs) you provide access to. This might incur costs that you            need to monitor closely. By enabling this option, you acknowledge these risks.            \n            **Please note! The settings below in this section will only take effect\n            once the main feature setting is enabled. After enabling the feature, you need to configure at least one            LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**."
         },
+        "expandSession": "Expand {0}",
         "exploreAgent": {
           "description": "A codebase exploration assistant that extracts and distills information from the codebase.         Reports facts about what exists, provides code excerpts, and describes observed patterns."
         },
@@ -1168,10 +1204,16 @@
           "description": "An AI-powered PR review agent that orchestrates a full code review workflow: fetches PR info, explores the codebase, performs structured analysis, interactively walks the user through findings with diff viewers, and optionally creates a pending review on GitHub."
         },
         "prompt-template-description": "Select prompt variants and customize prompt templates for AI agents in the [AI Configuration View]({0}).",
+        "requiresApproval": "Requires your approval",
         "restoredSession": "Restored session",
         "restrictedModeDetails": "AI chat, inline suggestions, code actions, and prompt templates are disabled",
         "restrictedModeLabel": "AI Features (disabled in Restricted Mode)",
         "sectionRestored": "Restored",
+        "sessionOverride": {
+          "defaultToolConfirmation": "Default tool confirmation: {0}",
+          "toolConfirmation": "Per-tool confirmation overrides: {0}",
+          "toolConfirmationGeneric": "Per-tool confirmation overrides set"
+        },
         "shellAllowlist": {
           "placeholder": "e.g., \"git log\" (exact) or \"git log *\" (with args)"
         },
@@ -1192,6 +1234,10 @@
         },
         "toolConfirmationInfo": {
           "header": "Tool confirmation"
+        },
+        "toolConfirmationOverrides": {
+          "stripTooltip": "One or more AI tools are auto-approved for this session via command-line flags.",
+          "title": "AI Tool Confirmation Overrides"
         },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
@@ -1244,7 +1290,6 @@
           "errorMessage": "Error message",
           "lastActivity": "Last activity",
           "lastMessage": "Last message",
-          "messages": "Messages",
           "multipleExchanges": "{0} exchanges",
           "oneExchange": "1 exchange",
           "unread": "Unread"
@@ -1333,8 +1378,7 @@
             "title": "Environment variables"
           },
           "headers": {
-            "mdDescription": "Optional additional headers included with each request to the server. Header values are stored in preferences as plain text; avoid workspace settings if they contain sensitive values.",
-            "title": "Headers"
+            "mdDescription": "Optional additional headers included with each request to the server. Header values are stored in preferences as plain text; avoid workspace settings if they contain sensitive values."
           },
           "mdDescription": "Configure MCP servers either local with command, arguments and optionally environment variables, or remote with server URL, authentication token, OAuth configuration and optionally an authentication header name. Additionally it is possible to configure autostart (true by default). Each server is identified by a unique key, such as \"brave-search\" or \"filesystem\". To start a server, use the \"MCP: Start MCP Server\" command, which enables you to select the desired server. To stop a server, use the \"MCP: Stop MCP Server\" command. Please note that autostart will only take effect after a restart, you need to start a server manually for the first time. Servers installed from an AI registry carry an additional `registryMetadata` block that is managed automatically and is not meant to be edited manually.\nExample configuration:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  },\n  \"oauth-protected-server\": {\n    \"serverUrl\": \"YOUR_OAUTH_PROTECTED_MCP_SERVER_URL\",\n    \"oauth\": {\n      \"clientId\": \"OPTIONAL_CLIENT_ID\",\n      \"scopes\": [\"OPTIONAL_SCOPE\"]\n    }\n  }\n  }\n```",
           "oauth": {
@@ -1403,9 +1447,6 @@
         "stop": {
           "label": "MCP: Stop MCP Server"
         },
-        "tool": {
-          "noTools": "No tools available."
-        },
         "useWorkspaceAsRoot": {
           "mdDescription": "Roots define the boundaries of where servers can operate within the filesystem. If enabled, the workspace folders will be used as roots, otherwise the MCP servers will have access to the entire filesystem. Changing this setting will restart all running MCP servers to apply the new roots configuration.",
           "title": "Use Workspace as Root"
@@ -1422,7 +1463,6 @@
         "command": {
           "addServer": "Add local MCP config..."
         },
-        "connectingServer": "Connecting...",
         "copiedAllList": "Copied all tools to clipboard (list of all tools)",
         "copiedAllSingle": "Copied all tools to clipboard (single prompt fragment with                                     all tools)",
         "copiedForPromptTemplate": "Copied all tools to clipboard for prompt template                                     (single prompt fragment with all tools)",
@@ -1466,12 +1506,10 @@
           "saveChanges": "Save Changes",
           "serverName": "Server Name",
           "serverNamePlaceholder": "e.g., my-mcp-server",
-          "serverType": "Server Type",
           "serverUrlPlaceholder": "e.g., https://mcp.example.com",
           "serverUrlRequired": "Server URL is required for remote servers"
         },
         "fromRegistryLink": "From registry",
-        "headers": "Headers",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "Authorization Server",
         "oauthClientId": "OAuth Client ID",
@@ -1497,6 +1535,15 @@
       "openai": {
         "apiKey": {
           "mdDescription": "Enter an API Key of your official OpenAI Account. **Please note:** By using this preference the Open AI API key will be stored in clear text on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely."
+        },
+        "compaction": {
+          "default": "Follow the global chat server-side compaction setting.",
+          "description": "Override provider-native server-side compaction for official OpenAI models. This applies to the OpenAI Response API only; the Chat Completions API ignores it. \"default\" follows the global chat setting ({0}). When effectively enabled, the Response API is asked to summarize older turns once the conversation grows past the provider's threshold.",
+          "disabled": "Never request server-side compaction for official OpenAI models.",
+          "enabled": "Always request server-side compaction for official OpenAI models."
+        },
+        "compactionTokenThreshold": {
+          "description": "Override the global input-token threshold for server-side compaction for official OpenAI models. When unset, the global setting or provider default applies. If set, the value must be at least 50,000 tokens."
         },
         "customEndpoints": {
           "apiKey": {
@@ -1538,7 +1585,7 @@
           "description": "Official OpenAI models to use"
         },
         "useResponseApi": {
-          "mdDescription": "Use the newer OpenAI Response API instead of the Chat Completion API for official OpenAI models.This setting only applies to official OpenAI models - custom providers must configure this individually.Note that for the response API, tool call definitions must satisfy Open AI's [strict schema definition](https://platform.openai.com/docs/guides/function-calling#strict-mode).Best effort is made to convert non-conformant schemas, but errors are still possible."
+          "mdDescription": "Use the newer OpenAI Response API instead of the Chat Completion API for official OpenAI models. This setting only applies to official OpenAI models - custom providers must configure this individually."
         }
       },
       "promptTemplates": {
@@ -1588,6 +1635,10 @@
       },
       "session-settings-dialog": {
         "advancedSettings": "Advanced Settings (JSON)",
+        "compactionHeader": "Server-Side Compaction",
+        "compactionLabel": "Compaction:",
+        "compactionNote": "Overrides the global and per-provider compaction setting for this session. Applies only to providers that support server-side compaction.",
+        "compactionTokenThreshold": "Token threshold:",
         "confirmationTimeout": "Confirmation Timeout",
         "confirmationTimeoutNote": "Automatically deny tool confirmations after the specified time. Overrides the global preference for this session.",
         "enableConfirmationTimeout": "Enable confirmation timeout",
@@ -1722,6 +1773,13 @@
       "fileChangeSetTitle": "Changes proposed"
     },
     "ai-chat-ui": {
+      "blockedResource": {
+        "allow": "Allow this blocked content",
+        "aria": "Blocked external resources: {0}",
+        "inlineContent": "(inline external content)",
+        "label": "External resource blocked:",
+        "resourcesToAllow": "{0} resources will be enabled"
+      },
       "browseAllChats": "Browse all chats...",
       "confirm": "Confirm",
       "deleteChat": "Delete Chat",
@@ -1730,6 +1788,7 @@
       "noOutput": "No output",
       "open-current-session-summary": "Open Current Session Summary",
       "open-settings-tooltip": "Open AI Settings",
+      "openSession": "Open Chat Session",
       "renameChat": "Rename Chat",
       "scroll-lock": "Lock Scroll",
       "scroll-unlock": "Unlock Scroll",
@@ -1774,11 +1833,17 @@
         "argumentHint": "<ticket-number>",
         "description": "Analyze a GitHub ticket and implement the solution"
       },
+      "newChat": "New Chat",
+      "noSessions": "No chat sessions yet.",
       "open-ai-configuration-tooltip": "Open AI Configuration",
+      "perspective": {
+        "aiFirst": "AI First"
+      },
       "rememberCommand": {
         "argumentHint": "[topic-hint]",
         "description": "Extract topics from conversation and update project info"
       },
+      "sessionsView": "AI Sessions",
       "ticketCommand": {
         "argumentHint": "<ticket-number>",
         "description": "Analyze a GitHub ticket and create an implementation plan"
@@ -1900,6 +1965,41 @@
       "timeout": "Timeout",
       "workingDirectory": "Working directory"
     },
+    "ai-tool-sketchpad": {
+      "addItemProperty": "Add Item Property",
+      "addParameter": "Add Parameter",
+      "addProperty": "Add Property",
+      "addTool": "Add Tool",
+      "askAtRuntimeHint": "When the LLM calls this tool, a quick input will open asking you to provide the return value.",
+      "askReturnPlaceholder": "Enter the return value for this tool call...",
+      "askReturnPrompt": "Tool \"{0}\" was called with: {1}",
+      "confirmDelete": "Are you sure you want to delete the tool \"{0}\"?",
+      "descriptionPlaceholder": "Describe what the tool does...",
+      "itemType": "Item Type:",
+      "label": "AI Tool Sketchpad",
+      "nParameters": "{0} parameters",
+      "nameDuplicate": "A tool with this name already exists.",
+      "nameEmpty": "Tool name must not be empty.",
+      "nameInvalid": "Tool name may only contain letters, digits, underscores and hyphens (1-128 characters).",
+      "noItemProperties": "No item properties defined.",
+      "noParameters": "No parameters defined.",
+      "noTools": "No tools yet.",
+      "oneParameter": "1 parameter",
+      "parameters": "Parameters",
+      "required": "Required",
+      "returnMode": "Return Mode",
+      "returnModeAskAtRuntime": "Ask At Runtime",
+      "returnModeAskShort": "Ask at runtime",
+      "returnModeStatic": "Static Return Value",
+      "returnModeStaticShort": "Static",
+      "selectTool": "Select a tool to edit, or add a new one to start sketching.",
+      "staticReturn": "Static Return Value",
+      "staticReturnHint": "This static value is returned every time the tool is called, regardless of the input arguments.",
+      "staticReturnPlaceholder": "The value returned when this tool is invoked (e.g. JSON string)",
+      "toolName": "Tool Name",
+      "toolNamePlaceholder": "e.g. getWeather",
+      "untitledTool": "Untitled tool"
+    },
     "callhierarchy": {
       "noCallers": "No callers have been detected.",
       "open": "Open Call Hierarchy"
@@ -1985,6 +2085,7 @@
         "visual": "Display a visual preview of the tab."
       },
       "highlightModifiedTabs": "Controls whether a top border is drawn on modified (dirty) editor tabs or not.",
+      "jumpListName": "Recent Workspaces",
       "keybinding": {
         "duplicateModifierError": "Can't parse keybinding {0} Duplicate modifiers",
         "metaError": "Can't parse keybinding {0} meta is for OSX only",
@@ -2005,6 +2106,11 @@
         "clipboardWarnFirefox": "Clipboard API is not available. It can be enabled by '{0}' preference on '{1}' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard."
       },
       "pasteWarn": "Please use the browser's paste command or shortcut.",
+      "perspective": {
+        "resetPerspective": "Reset Perspective (Experimental)",
+        "selectPerspective": "Select a perspective",
+        "switchPerspective": "Switch Perspective (Experimental)"
+      },
       "quitMessage": "Any unsaved changes will not be saved.",
       "resetWorkbenchLayout": "Reset Workbench Layout",
       "searchbox": {
@@ -2223,6 +2329,11 @@
     },
     "markers": {
       "clearAll": "Clear All",
+      "copyAsText": "Copy as Text",
+      "export": "Export",
+      "exportProblems": "Export Problems",
+      "exportSuccess": "Problems exported successfully.",
+      "jsonFiles": "JSON Files",
       "noProblems": "No problems have been detected in the workspace so far.",
       "tabbarDecorationsEnabled": "Show problem decorators (diagnostic markers) in the tab bars."
     },
@@ -2317,6 +2428,7 @@
       "autoReveal": "Auto Reveal",
       "clipboardWarn": "Access to the clipboard is denied. Check your browser's permission.",
       "clipboardWarnFirefox": "Clipboard API is not available. It can be enabled by '{0}' preference on '{1}' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard.",
+      "nothingToPaste": "The clipboard does not contain workspace files that can be pasted here.",
       "openWithSystemEditor": "Open With System Editor",
       "refresh": "Refresh in Explorer",
       "reveal": "Reveal in Explorer",
@@ -2380,6 +2492,18 @@
       "hostedPlugin": "Hosted Plugin",
       "input": {
         "browse": "Browse"
+      },
+      "sessionOverride": {
+        "suffix": "Overridden by session",
+        "suffixTooltip": "This preference has a session value set via --session-preference. Editing it here clears the session override for the rest of this session."
+      },
+      "sessionPreferences": {
+        "statusBar": "Session Preferences ({0})",
+        "tooltipBody": "They were passed in via --session-preference and only live in memory. Click a setting name to jump to it in the Settings view.",
+        "tooltipChangeNote": "Editing any of these clears its session override for this run. To use the saved values from the next launch on, restart without the --session-preference arguments.",
+        "tooltipHeader": "These settings are overridden for this session",
+        "valueOff": "off",
+        "valueOn": "on"
       },
       "toolbar": "Toolbar"
     },
@@ -2506,6 +2630,9 @@
       "taskRestricted": "Task execution is disabled in Restricted Mode",
       "taskTerminatedBySignal": "Task '{0}' was terminated by signal {1}.",
       "terminalWillBeReusedByTasks": "Terminal will be reused by tasks."
+    },
+    "telemetry": {
+      "filters": "Restrict the topic patterns delivered to each telemetry sink. Missing entries allow all sink interests; empty arrays disable a sink."
     },
     "terminal": {
       "defaultProfile": "The default profile used on {0}",
