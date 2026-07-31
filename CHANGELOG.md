@@ -4,24 +4,83 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## 1.74.0 - tbd
+## 1.74.0 - 7/31/2026
 
-- [plugin-ext] custom editors now honor the `preview` open flag, reusing a single preview tab per editor group like text editors do, gated on the `editor.enablePreview` preference [#17800](https://github.com/eclipse-theia/theia/pull/17800)
-- [terminal] fixed the file link provider logging a `UriError` when a printed URL (e.g. `https://example.com/path`) was matched as a local file candidate; such `//host/path` candidates are now skipped and left to the URL link provider [#17767](https://github.com/eclipse-theia/theia/pull/17767)
-- [terminal] added linkification of `file://` URLs printed in the terminal, opening the referenced local file in the editor, including an optional `:line:column` suffix [#17783](https://github.com/eclipse-theia/theia/pull/17783)
-- [ai-anthropic, ai-chat, ai-chat-ui, ai-core, ai-openai] added provider-native server-side compaction for chat sessions, modeled as a model capability (`LanguageModelMetaData.serverSideCompactionSupport`) plus layered activation: a global preference (`ai-features.chat.serverSideCompaction`, default on), a per-provider override, and a per-session override (in the session settings dialog) that wins over both. Honored by the Anthropic Messages API (beta) and the OpenAI Responses API; the compaction marker is persisted in the session, replayed on subsequent requests, surfaced as an inline chat marker, and reflected in the token-usage tooltip (cumulative usage and a "compacted Nx" count). Providers/models without the capability ignore it [#17636](https://github.com/eclipse-theia/theia/issues/17636)
-- [ai-chat-ui] replaced scroll-direction heuristics in `ChatViewTreeWidget` with Virtuoso's `atBottomStateChange` for reliable auto-scroll during streaming [#17728](https://github.com/eclipse-theia/theia/pull/17728)
-- [ai-vercel-ai] deprecated `@theia/ai-vercel-ai` package [#TBD](https://github.com/eclipse-theia/theia/pull/TBD)
-- [electron] upgraded Electron from 39.8.7 to 42.3.0 (Node 24, Chromium 148) [#17586](https://github.com/eclipse-theia/theia/pull/17586)
-- [core, plugin-ext] fixed browser-only application startup hanging forever when startup code awaits unavailable backend services: frontend-only RPC proxies now reject requests instead of queuing them indefinitely, layout contributions are guarded during startup, and the plugin startup deferreds resolve when plugin loading fails [#17794](https://github.com/eclipse-theia/theia/pull/17794)
+- [ai] support for server-side compaction [#17746](https://github.com/eclipse-theia/theia/pull/17746)
+- [ai-anthropic] added configurable server-side compaction thresholds [#17795](https://github.com/eclipse-theia/theia/pull/17795)
+- [ai-anthropic] enabled server-side compaction for dateless major model ids [#17814](https://github.com/eclipse-theia/theia/pull/17814)
+- [ai-anthropic] surfaced deferred-tool search as a server tool call [#17753](https://github.com/eclipse-theia/theia/pull/17753)
+- [ai-chat] enhanced command parsing to support multiple slash commands and command disambiguation [#17661](https://github.com/eclipse-theia/theia/pull/17661)
+- [ai-chat] resolved hidden pinned agents in delegated sessions [#17850](https://github.com/eclipse-theia/theia/pull/17850) - Contributed on behalf of K2view
+- [ai-chat-ui] added per-session model selector and in-thread badge [#17786](https://github.com/eclipse-theia/theia/pull/17786)
+- [ai-chat-ui] blocked external resources in ai chat markdown [#17500](https://github.com/eclipse-theia/theia/pull/17500)
+- [ai-chat-ui] introduced a consolidated session state [#17764](https://github.com/eclipse-theia/theia/pull/17764)
+- [ai-chat-ui] relied on virtuoso's onAtBottomStateChange for scroll locking [#17728](https://github.com/eclipse-theia/theia/pull/17728)
+- [ai-chat, ai-chat-ui, ai-ide] rendered delegated sessions as children in session list [#17777](https://github.com/eclipse-theia/theia/pull/17777)
+- [ai-core] added AiConfigurationService for AI preferences [#17768](https://github.com/eclipse-theia/theia/pull/17768)
+- [ai-core] made custom-agent migration opt-in [#17744](https://github.com/eclipse-theia/theia/pull/17744)
+- [ai-ide] fixed an issue preventing searchInWorkspace tool from hanging [#17774](https://github.com/eclipse-theia/theia/pull/17774)
+- [ai-openai] added native web search support [#17782](https://github.com/eclipse-theia/theia/pull/17782)
+- [ai-openai] removed strict schema conversion for the OpenAI Response API [#17754](https://github.com/eclipse-theia/theia/pull/17754)
+- [ai-openai] updated model defaults [#17817](https://github.com/eclipse-theia/theia/pull/17817)
+- [ai-openai] updated openai-sdk to latest version to not throw on new heartbeat event [#17802](https://github.com/eclipse-theia/theia/pull/17802)
+- [ai-registry] fixed correct search query for mcp "from registry" link [#17740](https://github.com/eclipse-theia/theia/pull/17740)
+- [ai-registry] routed registry fetch through the backend [#17736](https://github.com/eclipse-theia/theia/pull/17736)
+- [ai-tool-sketchpad] introduced AI Tool Sketchpad for runtime tool prototyping in custom agents [#17225](https://github.com/eclipse-theia/theia/pull/17225)
+- [ai-vercel-ai] deprecated the `@theia/ai-vercel-ai` package [#17781](https://github.com/eclipse-theia/theia/pull/17781) - Contributed on behalf of STMicroelectronics
+- [core] fixed always show the bottom-panel toggle [#17749](https://github.com/eclipse-theia/theia/pull/17749)
+- [core] fixed an issue with logger promise always resolving [#17730](https://github.com/eclipse-theia/theia/pull/17730) - contributed on behalf of STMicroelectronics
+- [core] fixed browser-only to fail fast instead of hanging when backend services are unavailable [#17794](https://github.com/eclipse-theia/theia/pull/17794)
+- [core] fixed color list.activeSelectionBackground in light theme [#17778](https://github.com/eclipse-theia/theia/pull/17778)
+- [core] fixed issue with dead keys in key mappings for glyphs [#17683](https://github.com/eclipse-theia/theia/pull/17683)
+- [core] fixed preference values merging to ignore reserved keys [#17845](https://github.com/eclipse-theia/theia/pull/17845)
+- [core] fixed window control style on electron custom title bars [#17835](https://github.com/eclipse-theia/theia/pull/17835)
+- [core] implemented perspectives + AI First perspective [#17832](https://github.com/eclipse-theia/theia/pull/17832)
+- [core] improved SelectComponent keyboard navigation [#17785](https://github.com/eclipse-theia/theia/pull/17785) - Contributed on behalf of Texas Instruments
+- [core] improved composition check for keybindings [#17723](https://github.com/eclipse-theia/theia/pull/17723)
+- [core] npm upgrade, bumped dependencies to reduce vulnerabilities and added lockfile maintenance guide [#17741](https://github.com/eclipse-theia/theia/pull/17741) - Contributed on behalf of STMicroelectronics
+- [core] required connection token on file endpoints [#17806](https://github.com/eclipse-theia/theia/pull/17806)
+- [core] Theia v1.73.0 was released [#17716](https://github.com/eclipse-theia/theia/pull/17716)
+- [core] vscode API bumped and nls updated to 1.130.0 [#17819](https://github.com/eclipse-theia/theia/pull/17819) - contributed on behalf of STMicroelectronics
+- [core, ai-ide, ai-chat-ui, preferences, plugin-ext, monaco] added session-preference CLI overrides and AI Allow-All Mode banner [#17731](https://github.com/eclipse-theia/theia/pull/17731)
+- [doc] recommended interface + symbol over class tokens for services [#17792](https://github.com/eclipse-theia/theia/pull/17792)
+- [doc] updated developing.md [#17752](https://github.com/eclipse-theia/theia/pull/17752) - Contributed on behalf of STMicroelectronics
+- [doc] updated migration.md [#17827](https://github.com/eclipse-theia/theia/pull/17827)
+- [docs] updated SECURITY.md to Eclipse security-handbook template [#17803](https://github.com/eclipse-theia/theia/pull/17803)
+- [electron] updated to electron 42 [#17586](https://github.com/eclipse-theia/theia/pull/17586)
+- [filesystem] fixed file dialog location input navigation [#17665](https://github.com/eclipse-theia/theia/pull/17665) - contributed on behalf of STMicroelectronics
+- [markers] added copy as text, export, and keybinds [#17717](https://github.com/eclipse-theia/theia/pull/17717)
+- [mini-browser, plugin-ext, filesystem, application-manager] fixed some node 24 deprecation warnings [#17757](https://github.com/eclipse-theia/theia/pull/17757)
+- [navigator] fixed keeping the in-app file clipboard in sync and awaiting pastes [#17837](https://github.com/eclipse-theia/theia/pull/17837)
+- [navigator] fixed matching files.exclude relative to workspace [#17839](https://github.com/eclipse-theia/theia/pull/17839)
+- [navigator] fixed support for pasting files from the menu in browser apps [#17829](https://github.com/eclipse-theia/theia/pull/17829)
+- [plugin-ext] added tabinfo for customeditorwidget and viewcolumn from the tab bar's index [#17807](https://github.com/eclipse-theia/theia/pull/17807)
+- [plugin-ext] deferred plugin view initialization until layout restore completed [#17772](https://github.com/eclipse-theia/theia/pull/17772)
+- [plugin-ext] fixed sync telemetry logger enable states [#17693](https://github.com/eclipse-theia/theia/pull/17693)
+- [plugin-ext] scoped /hostedPlugin resource requests to the plugin directory [#17799](https://github.com/eclipse-theia/theia/pull/17799)
+- [plugin-ext] supported preview tabs for custom editors [#17800](https://github.com/eclipse-theia/theia/pull/17800)
+- [plugin-ext] tracked active custom editor in the selection service [#17748](https://github.com/eclipse-theia/theia/pull/17748)
+- [preview] scoped markdown preview header styles to .markdown-preview [#17824](https://github.com/eclipse-theia/theia/pull/17824)
+- [remote] expanded support for ssh config file with multiple hosts in the same line [#17838](https://github.com/eclipse-theia/theia/pull/17838) - AI was used, mostly in the tests creation
+- [scripts] build: allowed dependency install scripts for npm 12 [#17811](https://github.com/eclipse-theia/theia/pull/17811)
+- [scripts] moved dash-licenses workaround into a local script [#17718](https://github.com/eclipse-theia/theia/pull/17718)
+- [telemetry] added a native telemetry framework [#17809](https://github.com/eclipse-theia/theia/pull/17809) - contributed on behalf of STMicroelectronics
+- [terminal] allowed terminal paste without browser permission query [#17830](https://github.com/eclipse-theia/theia/pull/17830)
+- [terminal] linkified file:// URLs printed in the terminal [#17783](https://github.com/eclipse-theia/theia/pull/17783) - contributed on behalf of JuliaHub, Inc.
+- [terminal] stopped the file link provider from throwing on printed URLs [#17767](https://github.com/eclipse-theia/theia/pull/17767) - contributed on behalf of JuliaHub, Inc.
+- [toolbar] fixed update application toolbar enablement on widget and context changes [#17833](https://github.com/eclipse-theia/theia/pull/17833)
+- [vsx-registry] fixed deployment of Open VSX extensions under the versioned id [#17734](https://github.com/eclipse-theia/theia/pull/17734)
+- [workspace] created jump list with recent workspaces on Windows; the jump list is provided by a new `frontendElectron` entry point in `@theia/workspace` (`lib/electron-browser/electron-workspace-module`). Electron adopters that assemble their extension list manually must include it, and must set `theia.frontend.config.electron.appUserModelId` (matching the application `appId`) in their application `package.json` for the jump list to appear in the Windows Start menu [#17123](https://github.com/eclipse-theia/theia/pull/17123)
+- [workspace] fixed button order in untitled workspace exit dialog [#17787](https://github.com/eclipse-theia/theia/pull/17787)
 
 <a name="breaking_changes_1.74.0">[Breaking Changes:](#breaking_changes_1.74.0)</a>
 
+- [ai-chat-ui] `ChatViewTreeWidget` scroll-lock is now driven by Virtuoso's `atBottomStateChange` callback instead of scroll-direction heuristics; the following `protected` members have been removed: `handleScrollEvent()`, `getCurrentScrollTop()`, `isAtAbsoluteBottom()`, `updateScrollToBottomButtonState()`, `lastScrollTop`, `_scrollButtonDebounceTimer`, `SCROLL_BUTTON_GRACE_PERIOD`, and the `updateScrollToRow()` override. Subclasses that override any of these should use the new `handleAtBottomStateChange(isAtBottom: boolean)` method instead [#17728](https://github.com/eclipse-theia/theia/pull/17728)
+- [ai-vercel-ai] deprecated the `@theia/ai-vercel-ai` experimental extension and stopped publishing it on npm. Please use the dedicated `@theia/ai-openai` and `@theia/ai-anthropic` providers instead, which cover the same models with first-class support. [#17781](https://github.com/eclipse-theia/theia/pull/17781)
+- [bundle-plugin] upgraded `webpack` to `^5.108.3`, which no longer bundles the Terser minifier. Adopters that build their application with webpack must add `terser-webpack-plugin` as a `devDependency` in their application's `package.json`. Note that the webpack bundler is being phased out in favor of esbuild and will be removed in an upcoming release; see the migration guide for switching to esbuild [#17741](https://github.com/eclipse-theia/theia/pull/17741)
+- [core] removed `TreeWidget.onScroll`, `TreeWidget.onScrollEmitter`, `TreeWidget.getVirtualizedScrollState()`, `TreeWidget.isScrolledToBottom()`, the `TreeScrollEvent` interface, and the `TreeScrollState` interface. Use `TreeWidget.onAtBottomStateChange` to react to bottom-state changes instead [#17728](https://github.com/eclipse-theia/theia/pull/17728)
 - [editor] `EditorWidget` now tracks tab-bar moves through the shared `TabBarTracker`; the `protected` members `currentTabbar`, `toDisposeOnTabbarChange`, and `checkForTabbarChange()` have been removed. Subclasses that relied on them should use the `protected tabBarTracker` field (and its `reset()` / `check()`) instead [#17800](https://github.com/eclipse-theia/theia/pull/17800)
 - [editor-preview] `EditorPreviewWidget` no longer declares the `protected _isPreview` field or the `protected onDidChangePreviewStateEmitter`; the preview state is now held by a composed `PreviewTabSupport`. Use the unchanged public `isPreview` / `onDidChangePreviewState` accessors instead [#17800](https://github.com/eclipse-theia/theia/pull/17800)
-- [ai-chat-ui] `ChatViewTreeWidget` scroll-lock is now driven by Virtuoso's `atBottomStateChange` callback instead of scroll-direction heuristics; the following `protected` members have been removed: `handleScrollEvent()`, `getCurrentScrollTop()`, `isAtAbsoluteBottom()`, `updateScrollToBottomButtonState()`, `lastScrollTop`, `_scrollButtonDebounceTimer`, `SCROLL_BUTTON_GRACE_PERIOD`, and the `updateScrollToRow()` override. Subclasses that override any of these should use the new `handleAtBottomStateChange(isAtBottom: boolean)` method instead [#17728](https://github.com/eclipse-theia/theia/pull/17728)
-- [ai-vercel-ai] deprecated the `@theia/ai-vercel-ai` experimental extension and stopped publishing it on npm. Please use the dedicated `@theia/ai-openai` and `@theia/ai-anthropic` providers instead, which cover the same models with first-class support. [#TBD](https://github.com/eclipse-theia/theia/pull/TBD)
-- [core] removed `TreeWidget.onScroll`, `TreeWidget.onScrollEmitter`, `TreeWidget.getVirtualizedScrollState()`, `TreeWidget.isScrolledToBottom()`, the `TreeScrollEvent` interface, and the `TreeScrollState` interface. Use `TreeWidget.onAtBottomStateChange` to react to bottom-state changes instead [#17728](https://github.com/eclipse-theia/theia/pull/17728)
 - [electron] upgraded Electron from 39.8.7 to 42.3.0. Downstream Electron applications must update their `electron` devDependency to `42.3.0`. Electron 42 bundles Node 24 (up from Node 22), which may affect native modules or Node APIs used by downstream applications. See the Electron breaking changes for [40.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-400), [41.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-410), and [42.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-420). [#17586](https://github.com/eclipse-theia/theia/pull/17586)
 - [metrics] removed `MeasurementNotificationService` (symbol and interface), `measurementNotificationServicePath`, the frontend proxy binding, the backend `RpcConnectionHandler` for `/services/measurement-notification`, `MetricsFrontendApplicationContribution.id` and `notificationService`, and `MeasurementMetricsBackendContribution.backendStopwatch`. Frontend stopwatch measurements are now reported through `TelemetryService` as `theia/measurement/result`; consumers should contribute a `TelemetrySink` from `@theia/telemetry` instead [#17809](https://github.com/eclipse-theia/theia/pull/17809)
 
@@ -105,6 +164,7 @@
 - [ai-core] renamed `AgentCompletionNotificationService` to `AgentNotificationService`, `CompletionNotificationOptions` to `AgentNotificationOptions`, and the `showCompletionNotification(agentId, options)` method to `showNotification(agentId, kind, options)`; `OSNotificationService.showAgentCompletionNotification(...)` was renamed to `showAgentNotification(agentName, kind, ...)`. These now cover both task-completion and input-needed notifications via a notification kind
 - [ai-ide] renamed `ChatSessionCardActionContribution` to `ChatSessionItemActionContribution` (and `DefaultChatSessionCardActionContribution` to `DefaultChatSessionItemActionContribution`, `ChatSessionCardAction` to `ChatSessionItemAction`); the symbol and file were renamed to reflect the new list-row UI
 - [ai-mcp] `MCPServerManager.removeServer` and `MCPServerManager.addOrUpdateServer` are now asynchronous (return `Promise<void>` instead of `void`); callers must await them to ensure lifecycle cleanup (e.g. OAuth cancellation, credential removal) and consistent manager state [#17638](https://github.com/eclipse-theia/theia/pull/17638)
+- [core] to support React 19, `react`, `react-dom`, `@types/react`, and `@types/react-dom` were moved to `peerDependencies` (widened to `^18.3.1 || ^19.0.0`). Adopters must now declare `react` and `react-dom` (and the corresponding `@types/*` as `devDependencies`) directly in their application's `package.json`; this was previously provided transitively [#17567](https://github.com/eclipse-theia/theia/pull/17567)
 - [core] `BackendRequestFacade` now enforces a URL allowlist on `request()`. Frontend code using the `RequestService` to make HTTP requests via the backend will be rejected unless the target URL matches a pattern contributed via `BackendRequestAllowedContribution`. Out of the box, no URLs are allowed. Theia extensions that need backend-proxied HTTP requests must register a `BackendRequestAllowedContribution` in their backend module to declare their allowed URL patterns. Direct browser XHR requests (for URLs with CORS support) are not affected.
 - [core] `BackendRequestFacade.configure()` is now a no-op by default. The new `configureProxyFromPreferences` option in the backend application config (`theia.backend.config` in `package.json`) must be set to `true` for proxy preferences to propagate to the backend. The Theia example apps (browser and Electron) opt in. Custom Theia applications that rely on `http.proxy` preferences affecting backend requests must add `"configureProxyFromPreferences": true` to their backend config. CLI flags (`--proxy-url`, `--proxy-authorization`, `--strict-ssl`) and environment variables (`HTTP_PROXY`, `HTTPS_PROXY`) continue to work regardless.
 - [core] WebSocket connections now enforce same-origin validation by default when `THEIA_HOSTS` is not set, and require a `SameSite=Strict` connection token cookie. The internal `fix-origin` header mechanism has been removed. Custom deployments that relied on `fix-origin` to pass origin validation must update accordingly. [#17701](https://github.com/eclipse-theia/theia/pull/17701)
