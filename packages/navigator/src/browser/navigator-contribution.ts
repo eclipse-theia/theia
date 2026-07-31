@@ -38,6 +38,7 @@ import {
     isOSX,
     MenuModelRegistry,
     MenuPath,
+    MessageService,
     Mutable,
     PreferenceScope,
     PreferenceService,
@@ -130,6 +131,9 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     @inject(NavigatorFileClipboard)
     protected readonly fileClipboard: NavigatorFileClipboard;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
@@ -380,7 +384,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     protected canPasteIntoNavigator(): boolean {
         const widget = this.tryGetWidget();
-        return !!widget && this.shell.currentWidget === widget && widget.model.selectedFileStatNodes.length > 0;
+        return !!widget && this.shell.currentWidget === widget && widget.canPasteFiles();
     }
 
     /**
@@ -394,7 +398,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         if (widget) {
             const text = this.fileClipboard.get() ?? await this.clipboardService.readText();
             if (text) {
-                widget.pasteFiles(text);
+                await widget.pasteFiles(text).catch(error => this.messageService.error(error.message));
             }
         }
     }

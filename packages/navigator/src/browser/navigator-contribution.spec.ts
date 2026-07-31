@@ -42,18 +42,16 @@ describe('FileNavigatorContribution', () => {
     let fileClipboardText: string | undefined;
     let systemClipboardReads: number;
     let pastedTexts: string[];
+    let pasteError: Error | undefined;
+    let errorMessages: string[];
     let selectedNodes: FileStatNode[];
 
     function createNavigatorWidgetStub(): FileNavigatorWidget {
         return {
-            model: {
-                get selectedFileStatNodes(): FileStatNode[] {
-                    return selectedNodes;
-                }
-            },
-            pasteFiles: (raw: string): boolean => {
+            canPasteFiles: (raw?: string): boolean => raw !== '' && selectedNodes.length > 0,
+            pasteFiles: (raw: string): Promise<boolean> => {
                 pastedTexts.push(raw);
-                return true;
+                return pasteError ? Promise.reject(pasteError) : Promise.resolve(true);
             }
         } as unknown as FileNavigatorWidget;
     }
@@ -63,6 +61,8 @@ describe('FileNavigatorContribution', () => {
         fileClipboardText = undefined;
         systemClipboardReads = 0;
         pastedTexts = [];
+        pasteError = undefined;
+        errorMessages = [];
         selectedNodes = [];
         navigatorWidget = createNavigatorWidgetStub();
         currentWidget = navigatorWidget;
@@ -90,6 +90,11 @@ describe('FileNavigatorContribution', () => {
             },
             fileClipboard: {
                 get: (): string | undefined => fileClipboardText
+            },
+            messageService: {
+                error: (message: string): void => {
+                    errorMessages.push(message);
+                }
             }
         });
     });
@@ -143,6 +148,13 @@ describe('FileNavigatorContribution', () => {
             await contribution['pasteIntoNavigator']();
             expect(pastedTexts).to.deep.equal(['file:///workspace/copied-outside.txt']);
             expect(systemClipboardReads).to.equal(1);
+        });
+
+        it('should report a failed paste instead of rejecting unhandled', async () => {
+            clipboardText = 'file:///workspace/a.txt';
+            pasteError = new Error('Parent of file has to be a FileStatNode');
+            await contribution['pasteIntoNavigator']();
+            expect(errorMessages).to.deep.equal(['Parent of file has to be a FileStatNode']);
         });
     });
 });
