@@ -49,6 +49,16 @@ ruleTester.run('named-logger-check', rule, {
                 }
             `,
             filename: 'src/electron-main/main-app.ts'
+        },
+        {
+            code: `
+                @injectable()
+                class ShadowedConsoleClass {
+                    doSomething() {
+                        this.newCommandHandler(console => console.selectAll());
+                    }
+                }
+            `
         }
     ],
     invalid: [

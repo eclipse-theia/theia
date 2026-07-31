@@ -39,11 +39,60 @@ module.exports = {
     create(context) {
         const filename = context.getFilename().replace(/\\/g, '/');
 
+        // The Electron main process has no ILogger/DI setup available during early
+        // bootstrap, so this rule cannot apply there.
         if (filename.includes('/electron-main/')) {
             return {};
         }
 
+        // These files sit below or alongside the logger/DI infrastructure itself and
+        // predate it being available, so they are exempt for the same reason:
+        // - console-logger-server.ts: this *is* the console logger implementation.
+        // - logger-cli-contribution.ts: parses the log config the logger depends on.
+        // - ws-connection-source.ts: the socket the frontend logger's RPC rides on.
+        // - plugin-host-rpc.ts: the plugin host already routes console.* calls itself
+        //   and has no ILogger available here either.
+        const exemptFiles = [
+            'packages/core/src/node/console-logger-server.ts',
+            'packages/core/src/node/logger-cli-contribution.ts',
+            'packages/core/src/browser/messaging/ws-connection-source.ts',
+            'packages/plugin-ext/src/hosted/node/plugin-host-rpc.ts'
+        ];
+        if (exemptFiles.some(exempt => filename.endsWith(exempt))) {
+            return {};
+        }
+
         const injectableClassStack = [];
+
+        /**
+         * Walks up from the given scope looking for the reference tied to `identifierNode`,
+         * and returns the variable it resolves to (or undefined if unresolved).
+         * @param {Node} identifierNode
+         */
+        function resolveVariable(identifierNode) {
+            let scope = context.getScope();
+            while (scope) {
+                const ref = scope.references.find(r => r.identifier === identifierNode);
+                if (ref) {
+                    return ref.resolved;
+                }
+                scope = scope.upper;
+            }
+            return undefined;
+        }
+
+        /**
+         * True only when `identifierNode` refers to the real global `console`, i.e. it is
+         * not shadowed by a local variable, parameter, or import of the same name.
+         * @param {Node} identifierNode
+         */
+        function isGlobalConsole(identifierNode) {
+            const variable = resolveVariable(identifierNode);
+            // No resolved variable, or a resolved variable with no local `defs` (how ESLint
+            // represents environment globals), both mean this is the real global console.
+            // Any variable with a def (parameter, `const console = ...`, etc.) is a shadow.
+            return !variable || variable.defs.length === 0;
+        }
 
         return {
             /**
@@ -66,16 +115,16 @@ module.exports = {
 
             CallExpression(node) {
                 const isInsideInjectable = injectableClassStack.some(Boolean);
-                if (isInsideInjectable) {
-                    if (
-                        node.callee &&
-                        node.callee.type === 'MemberExpression' &&
-                        node.callee.object &&
-                        node.callee.object.type === 'Identifier' &&
-                        node.callee.object.name === 'console'
-                    ) {
-                        context.report({ node, messageId: 'noConsole' });
-                    }
+                if (
+                    isInsideInjectable &&
+                    node.callee &&
+                    node.callee.type === 'MemberExpression' &&
+                    node.callee.object &&
+                    node.callee.object.type === 'Identifier' &&
+                    node.callee.object.name === 'console' &&
+                    isGlobalConsole(node.callee.object)
+                ) {
+                    context.report({ node, messageId: 'noConsole' });
                 }
             },
 
