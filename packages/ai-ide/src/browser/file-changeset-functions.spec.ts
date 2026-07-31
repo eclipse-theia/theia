@@ -35,7 +35,7 @@ import {
     DefaultFileChangeSetTitleProvider,
     ReplaceContentInFileFunctionHelperV2
 } from './file-changeset-functions';
-import { ChatToolContext, MutableChatRequestModel, MutableChatResponseModel, MutableChatModel } from '@theia/ai-chat';
+import { ChatToolContext, FileReadTracker, MutableChatRequestModel, MutableChatResponseModel, MutableChatModel } from '@theia/ai-chat';
 import { ChangeSet, ChangeSetElement } from '@theia/ai-chat/lib/common/change-set';
 import { Container } from '@theia/core/shared/inversify';
 import { AccessibleRootContribution, WorkspaceFunctionScope } from './workspace-functions';
@@ -267,6 +267,51 @@ describe('File Changeset Functions Cancellation Tests', () => {
         const suggestFileReplacements = container.get(SuggestFileReplacements);
         expect(SuggestFileReplacements.ID).to.equal('suggestFileReplacements');
         expect(suggestFileReplacements.getTool().id).to.equal('suggestFileReplacements');
+    });
+
+    describe('stale file guard', () => {
+        /** Stands in for the tracker: the file counts as changed until the agent reads it again. */
+        function bindTracker(): FileReadTracker & { stale: boolean } {
+            const tracker: FileReadTracker & { stale: boolean } = {
+                stale: true,
+                recordRead: async () => { tracker.stale = false; },
+                isStale: async () => tracker.stale,
+                getChangedFiles: async () => []
+            };
+            container.bind(FileReadTracker).toConstantValue(tracker);
+            return tracker;
+        }
+
+        it('WriteFileContent refuses to overwrite a file that changed since it was read', async () => {
+            bindTracker();
+            const handler = container.get(WriteFileContent).getTool().handler;
+
+            const result = await handler(JSON.stringify({ path: 'test.txt', content: 'new content' }), mockCtx);
+
+            const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
+            expect(jsonResponse.error).to.match(/changed since you last read it/);
+        });
+
+        it('SuggestFileContent refuses to propose overwriting a file that changed since it was read', async () => {
+            bindTracker();
+            const handler = container.get(SuggestFileContent).getTool().handler;
+
+            const result = await handler(JSON.stringify({ path: 'test.txt', content: 'new content' }), mockCtx);
+
+            const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
+            expect(jsonResponse.error).to.match(/changed since you last read it/);
+        });
+
+        it('WriteFileContent writes once the agent has read the file again', async () => {
+            const tracker = bindTracker();
+            const handler = container.get(WriteFileContent).getTool().handler;
+            await handler(JSON.stringify({ path: 'test.txt', content: 'new content' }), mockCtx);
+
+            await tracker.recordRead(mockCtx.request.session.id, new URI('file:///workspace/test.txt'));
+
+            const result = await handler(JSON.stringify({ path: 'test.txt', content: 'new content' }), mockCtx);
+            expect(result).to.equal('Successfully wrote content to file test.txt.');
+        });
     });
 });
 
