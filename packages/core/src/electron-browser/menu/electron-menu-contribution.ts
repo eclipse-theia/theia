@@ -154,6 +154,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         this.hideTopPanel(app);
         window.electronTheiaCore.getTitleBarStyleAtStartup().then(style => {
             this.titleBarStyle = style;
+            this.factory.titleBarStyle = style;
             this.setMenu(app);
             this.preferenceService.ready.then(() => {
                 const current = this.preferenceService.inspect('window.titleBarStyle');
@@ -172,7 +173,14 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         });
 
         this.preferenceService.ready.then(() => {
-            window.electronTheiaCore.setMenuBarVisible(['classic', 'visible'].includes(this.preferenceService.get('window.menuBarVisibility', 'classic')));
+            const pref = this.preferenceService.get<string>('window.menuBarVisibility', 'classic');
+            if (pref === 'toggle' && this.titleBarStyle !== 'custom') {
+                window.electronTheiaCore.setMenuBarVisible(false);
+                window.electronTheiaCore.setAutoHideMenuBar(true);
+            } else {
+                window.electronTheiaCore.setMenuBarVisible(['classic', 'visible'].includes(pref));
+                window.electronTheiaCore.setAutoHideMenuBar(false);
+            }
         });
 
         this.preferenceService.onPreferenceChanged(change => {
@@ -424,7 +432,13 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     protected handleFullScreen(menuBarVisibility: string): void {
         const shouldShowTop = !window.electronTheiaCore.isFullScreen() || menuBarVisibility === 'visible';
         if (this.titleBarStyle === 'native') {
-            window.electronTheiaCore.setMenuBarVisible(shouldShowTop);
+            if (menuBarVisibility === 'toggle') {
+                window.electronTheiaCore.setMenuBarVisible(false);
+                window.electronTheiaCore.setAutoHideMenuBar(true);
+            } else {
+                window.electronTheiaCore.setMenuBarVisible(shouldShowTop);
+                window.electronTheiaCore.setAutoHideMenuBar(false);
+            }
         } else if (shouldShowTop) {
             this.shell.topPanel.show();
         } else {

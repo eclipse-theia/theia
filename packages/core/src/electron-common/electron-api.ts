@@ -49,6 +49,7 @@ export interface TheiaCoreAPI {
     attachSecurityToken: (endpoint: string) => Promise<void>;
 
     setMenuBarVisible(visible: boolean, windowName?: string): void;
+    setAutoHideMenuBar(enabled: boolean, windowName?: string): void;
     setMenu(menu: MenuDto[] | undefined): void;
 
     popup(menu: MenuDto[], x: number, y: number, onClosed: () => void, windowName?: string): Promise<number>;
@@ -115,6 +116,7 @@ declare global {
 export const CHANNEL_WC_METADATA = 'WebContentMetadata';
 export const CHANNEL_SET_MENU = 'SetMenu';
 export const CHANNEL_SET_MENU_BAR_VISIBLE = 'SetMenuBarVisible';
+export const CHANNEL_SET_AUTO_HIDE_MENU_BAR = 'SetAutoHideMenuBar';
 export const CHANNEL_INVOKE_MENU = 'InvokeMenu';
 export const CHANNEL_OPEN_POPUP = 'OpenPopup';
 export const CHANNEL_ON_CLOSE_POPUP = 'OnClosePopup';
