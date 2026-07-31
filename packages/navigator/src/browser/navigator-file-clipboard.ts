@@ -40,9 +40,9 @@ export class NavigatorFileClipboard {
         // own (bubbling) copy listener, which runs after this capturing listener
         document.addEventListener('copy', this.clear, true);
         document.addEventListener('cut', this.clear, true);
-        // writes through the ClipboardService (e.g. Copy Path) dispatch no DOM event;
-        // adopt their content so the store stays in sync with the system clipboard
-        this.clipboardService.onDidWriteText?.(value => this.set(value));
+        // writes through the ClipboardService (e.g. Copy Path) dispatch no DOM event either,
+        // so invalidate the store here to let consumers fall back to the system clipboard
+        this.clipboardService.onDidWriteText?.(this.clear);
     }
 
     set(content: string): void {

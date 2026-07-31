@@ -380,7 +380,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     protected canPasteIntoNavigator(): boolean {
         const widget = this.tryGetWidget();
-        return !!widget && this.shell.currentWidget === widget && widget.model.selectedFileStatNodes.length > 0;
+        return !!widget && this.shell.currentWidget === widget && widget.canPasteFiles();
     }
 
     /**

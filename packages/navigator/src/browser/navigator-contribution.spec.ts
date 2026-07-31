@@ -46,11 +46,7 @@ describe('FileNavigatorContribution', () => {
 
     function createNavigatorWidgetStub(): FileNavigatorWidget {
         return {
-            model: {
-                get selectedFileStatNodes(): FileStatNode[] {
-                    return selectedNodes;
-                }
-            },
+            canPasteFiles: (raw?: string): boolean => raw !== '' && selectedNodes.length > 0,
             pasteFiles: (raw: string): boolean => {
                 pastedTexts.push(raw);
                 return true;

@@ -95,11 +95,11 @@ describe('NavigatorFileClipboard', () => {
         expect(clipboard.get()).to.be.undefined;
     });
 
-    it('should sync the content when text is written through the clipboard service', () => {
+    it('should clear the content when text is written through the clipboard service', () => {
         // e.g. Copy Path writes via ClipboardService.writeText, which dispatches no DOM copy event
         clipboard.set('file:///workspace/a.txt');
         onDidWriteTextEmitter.fire('/workspace/b.txt');
-        expect(clipboard.get()).to.equal('/workspace/b.txt');
+        expect(clipboard.get()).to.be.undefined;
     });
 
     it('should work with a clipboard service lacking the optional write event', () => {

@@ -138,11 +138,21 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
         if (event.clipboardData) {
             const raw = event.clipboardData.getData('text/plain');
             // the consume decision must be made synchronously, before pasteFiles completes
-            if (raw && this.model.selectedFileStatNodes.length > 0) {
+            if (this.canPasteFiles(raw)) {
                 event.preventDefault();
-                this.pasteFiles(raw);
+                this.pasteFiles(raw).catch(error => this.messageService.error(error.message));
             }
         }
+    }
+
+    /**
+     * Whether {@link pasteFiles} would handle a paste, i.e. a paste target is selected and,
+     * if already known, the clipboard text is not empty.
+     *
+     * @param raw the clipboard text, if it has been obtained already
+     */
+    canPasteFiles(raw?: string): boolean {
+        return raw !== '' && this.model.selectedFileStatNodes.length > 0;
     }
 
     /**
@@ -153,13 +163,10 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
      *   the promise resolves once all file copies have completed
      */
     async pasteFiles(raw: string): Promise<boolean> {
-        if (!raw) {
+        if (!this.canPasteFiles(raw)) {
             return false;
         }
         const target = this.model.selectedFileStatNodes[0];
-        if (!target) {
-            return false;
-        }
         const sources = this.parsePastedUris(raw);
         if (sources.length === 0) {
             this.messageService.info(nls.localize(

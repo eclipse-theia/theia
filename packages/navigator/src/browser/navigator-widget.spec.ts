@@ -39,6 +39,7 @@ describe('FileNavigatorWidget', () => {
     let selectedNodes: FileStatNode[];
     let storedClipboardContents: string[];
     let infoMessages: string[];
+    let errorMessages: string[];
     let widget: FileNavigatorWidget;
 
     const targetNode = { id: 'target', uri: workspaceRoot } as FileStatNode;
@@ -48,6 +49,7 @@ describe('FileNavigatorWidget', () => {
         selectedNodes = [];
         storedClipboardContents = [];
         infoMessages = [];
+        errorMessages = [];
         const model = {
             get selectedFileStatNodes(): FileStatNode[] {
                 return selectedNodes;
@@ -71,6 +73,9 @@ describe('FileNavigatorWidget', () => {
         const messageService = {
             info: (message: string): void => {
                 infoMessages.push(message);
+            },
+            error: (message: string): void => {
+                errorMessages.push(message);
             }
         } as unknown as MessageService;
         Object.assign(navigator, { workspaceService, fileClipboard, messageService });
@@ -207,6 +212,29 @@ describe('FileNavigatorWidget', () => {
             const pastable = pasteEvent('file:///workspace/a.txt');
             widget['handlePaste'](pastable);
             expect(pastable.prevented).to.equal(1);
+        });
+
+        it('should report a failed paste instead of rejecting unhandled', async () => {
+            selectedNodes = [targetNode];
+            widget.model.copy = () => Promise.reject(new Error('Parent of file has to be a FileStatNode'));
+            widget['handlePaste'](pasteEvent('file:///workspace/a.txt'));
+            await new Promise(resolve => setTimeout(resolve, 0));
+            expect(errorMessages).to.deep.equal(['Parent of file has to be a FileStatNode']);
+        });
+    });
+
+    describe('canPasteFiles', () => {
+
+        it('should require a paste target', () => {
+            expect(widget.canPasteFiles()).to.be.false;
+            selectedNodes = [targetNode];
+            expect(widget.canPasteFiles()).to.be.true;
+        });
+
+        it('should reject empty clipboard text if it is already known', () => {
+            selectedNodes = [targetNode];
+            expect(widget.canPasteFiles('')).to.be.false;
+            expect(widget.canPasteFiles('file:///workspace/a.txt')).to.be.true;
         });
     });
 
