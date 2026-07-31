@@ -51,7 +51,7 @@ import {
     SidePanelHandler, SidePanelHandlerFactory,
     SidebarMenuWidget, SidebarTopMenuWidgetFactory,
     SplitPositionHandler, DockPanelRendererFactory, ApplicationShellLayoutMigration, ApplicationShellLayoutMigrationError, SidebarBottomMenuWidgetFactory,
-    ShellLayoutTransformer
+    ShellLayoutTransformer, WidgetAreaResolver
 } from './shell';
 import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider';
@@ -146,6 +146,7 @@ import { WidgetStatusBarContribution, WidgetStatusBarService } from './widget-st
 import { SymbolIconColorContribution } from './symbol-icon-color-contribution';
 import { CorePreferences, bindCorePreferences } from '../common/core-preferences';
 import { bindBadgeDecoration } from './badges';
+import { PerspectiveContribution, PerspectiveService, PerspectiveServiceImpl, PerspectiveServiceInternal, WidgetAreaResolverImpl } from './perspective-service';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -482,6 +483,15 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bindRootContributionProvider(bind, UndoRedoHandler);
     bind(DomInputUndoRedoHandler).toSelf().inSingletonScope();
     bind(UndoRedoHandler).toService(DomInputUndoRedoHandler);
+
+    bind(WidgetAreaResolverImpl).toSelf().inSingletonScope();
+    bind(WidgetAreaResolver).toService(WidgetAreaResolverImpl);
+    bind(PerspectiveServiceImpl).toSelf().inSingletonScope();
+    bind(PerspectiveService).toService(PerspectiveServiceImpl);
+    bind(PerspectiveServiceInternal).toService(PerspectiveServiceImpl);
+    bind(FrontendApplicationContribution).toService(PerspectiveServiceImpl);
+    bind(CommandContribution).toService(PerspectiveServiceImpl);
+    bindRootContributionProvider(bind, PerspectiveContribution);
 
     bind(WidgetStatusBarService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WidgetStatusBarService);
