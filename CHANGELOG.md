@@ -4,6 +4,10 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.75.0 - tbd
+
+- [ai-chat, ai-ide] added notifications for agents when files they read change externally, and made the whole-file write tools refuse to overwrite a file that changed since the agent read it [#17863](https://github.com/eclipse-theia/theia/pull/17863)
+
 ## 1.74.0 - 7/31/2026
 
 - [ai] support for server-side compaction [#17746](https://github.com/eclipse-theia/theia/pull/17746)

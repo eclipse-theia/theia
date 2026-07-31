@@ -62,6 +62,7 @@ import {
 import { ContributionProvider, ILogger, isArray, nls } from '@theia/core';
 import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
+import { FileReadTracker } from './file-read-tracker';
 import {
     ChatModel,
     ChatRequestModel,
@@ -200,6 +201,8 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
     @inject(TokenUsageService) @optional() protected tokenUsageService: TokenUsageService | undefined;
 
+    @inject(FileReadTracker) @optional() protected fileReadTracker: FileReadTracker | undefined;
+
     readonly abstract id: string;
     readonly abstract name: string;
     readonly abstract languageModelRequirements: LanguageModelRequirement[];
@@ -255,6 +258,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
             }
 
             const messages = await this.getMessages(request.session);
+            await this.appendExternalFileChangeNotice(request, messages);
 
             if (systemMessageDescription) {
                 const systemMsg: LanguageModelMessage = {
@@ -292,6 +296,27 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
         } catch (e) {
             this.handleError(request, e);
+        }
+    }
+
+    /**
+     * Tells the agent which files it read were meanwhile changed by somebody else. A trailing user message
+     * rather than the cached system message; providers requiring alternating roles merge same-role runs.
+     */
+    protected async appendExternalFileChangeNotice(request: MutableChatRequestModel, messages: LanguageModelMessage[]): Promise<void> {
+        try {
+            const changedFiles = await this.fileReadTracker?.getChangedFiles(request.session.id);
+            if (changedFiles?.length) {
+                messages.push({
+                    actor: 'user',
+                    type: 'text',
+                    text: `The following files changed since you last read them: ${changedFiles.join(', ')}. ` +
+                        'Read them again before relying on their content or overwriting them.'
+                });
+            }
+        } catch (error) {
+            // Advisory, so failing to determine it must not fail the request.
+            this.logger.warn('Could not determine externally changed files.', error);
         }
     }
 
