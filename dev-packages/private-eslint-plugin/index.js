@@ -21,5 +21,6 @@ exports.rules = {
     "localization-check": require('./rules/localization-check'),
     "no-src-import": require('./rules/no-src-import'),
     "runtime-import-check": require('./rules/runtime-import-check'),
-    "shared-dependencies": require('./rules/shared-dependencies')
+    "shared-dependencies": require('./rules/shared-dependencies'),
+    "named-logger-check": require('./rules/named-logger-check')
 };
