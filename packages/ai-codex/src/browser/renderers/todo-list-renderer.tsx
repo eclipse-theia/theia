@@ -18,8 +18,8 @@ import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-res
 import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { ChatResponseContent } from '@theia/ai-chat/lib/common';
 import { codicon } from '@theia/core/lib/browser';
-import { nls } from '@theia/core';
-import { injectable } from '@theia/core/shared/inversify';
+import { nls, ILogger } from '@theia/core';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import type { TodoListItem } from '@openai/codex-sdk';
@@ -28,6 +28,9 @@ import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
 
 @injectable()
 export class TodoListRenderer implements ChatResponsePartRenderer<CodexToolCallChatResponseContent> {
+
+    @inject(ILogger) @named('ai-codex:TodoListRenderer')
+    protected readonly logger: ILogger;
 
     canHandle(response: ChatResponseContent): number {
         return response.kind === 'toolCall' &&
@@ -45,7 +48,7 @@ export class TodoListRenderer implements ChatResponsePartRenderer<CodexToolCallC
                     ? JSON.parse(content.result)
                     : content.result as TodoListItem;
             } catch (error) {
-                console.error('[TodoListRenderer] Failed to parse todo_list result:', error);
+                this.logger.error('[TodoListRenderer] Failed to parse todo_list result:', error);
             }
         }
 
@@ -60,7 +63,7 @@ export class TodoListRenderer implements ChatResponsePartRenderer<CodexToolCallC
                     };
                 }
             } catch (error) {
-                console.error('[TodoListRenderer] Failed to parse todo_list arguments:', error);
+                this.logger.error('[TodoListRenderer] Failed to parse todo_list arguments:', error);
             }
         }
 

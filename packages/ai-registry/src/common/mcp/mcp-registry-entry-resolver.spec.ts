@@ -18,9 +18,16 @@ import { expect } from 'chai';
 import { AIRegistryConfiguration } from '../ai-registry-configuration';
 import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from './mcp-registry-entry-resolver';
 import { RegistryMCPServer } from './mcp-registry-types';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import * as sinon from 'sinon';
+
+let logger: MockLogger;
 
 function createResolver(toolName: string = 'theia-ide'): MCPRegistryEntryResolver {
     const resolver = new MCPRegistryEntryResolverImpl();
+    logger = new MockLogger();
+    (resolver as unknown as { logger: ILogger }).logger = logger;
     const configuration: AIRegistryConfiguration = Object.assign(new AIRegistryConfiguration(), {
         getToolName(): string {
             return toolName;
@@ -233,16 +240,14 @@ describe('MCPRegistryEntryResolver.resolve', () => {
             }]
         };
 
-        const warnings: string[] = [];
-        const originalWarn = console.warn;
-        console.warn = (...args: unknown[]) => { warnings.push(args.map(String).join(' ')); };
+        const warnSpy = sinon.spy(logger, 'warn');
         try {
             const resolved = resolver.resolve(raw);
             expect(resolved?.localName).to.equal('primary');
             expect(resolved?.config).to.deep.equal({ command: 'first-cmd' });
-            expect(warnings.some(w => w.includes('multiple servers'))).to.equal(true);
+            expect(warnSpy.calledWithMatch(sinon.match('multiple servers'))).to.be.true;
         } finally {
-            console.warn = originalWarn;
+            warnSpy.restore();
         }
     });
 });

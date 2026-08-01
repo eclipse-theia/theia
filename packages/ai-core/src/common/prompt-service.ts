@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Event, Emitter, URI, ILogger, DisposableCollection } from '@theia/core';
-import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, postConstruct, named } from '@theia/core/shared/inversify';
 import { AIVariableArg, AIVariableContext, AIVariableService, createAIResolveVariableCache, ResolvedAIVariable } from './variable-service';
 import { ToolInvocationRegistry } from './tool-invocation-registry';
 import { toolRequestToPromptText } from './language-model-util';
@@ -594,7 +594,7 @@ export interface PromptService {
 
 @injectable()
 export class PromptServiceImpl implements PromptService {
-    @inject(ILogger)
+    @inject(ILogger) @named('ai-core:PromptServiceImpl')
     protected readonly logger: ILogger;
 
     @inject(AISettingsService) @optional()

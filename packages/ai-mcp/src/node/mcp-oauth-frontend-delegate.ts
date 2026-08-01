@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, optional } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
 import { MCPOAuthFrontendDelegate, MCPOAuthFrontendDelegateClient } from '../common/mcp-oauth';
 import { MCPOAuthCallbackEndpoint } from './mcp-oauth-callback-endpoint';
+import { ILogger } from '@theia/core/lib/common';
 
 @injectable()
 export class MCPOAuthFrontendDelegateImpl implements MCPOAuthFrontendDelegate {
@@ -28,6 +29,9 @@ export class MCPOAuthFrontendDelegateImpl implements MCPOAuthFrontendDelegate {
      */
     @inject(MCPOAuthCallbackEndpoint) @optional()
     protected readonly callbackEndpoint?: MCPOAuthCallbackEndpoint;
+
+    @inject(ILogger) @named('ai-mcp:MCPOAuthFrontendDelegateImpl')
+    protected readonly logger: ILogger;
 
     // Bound in a connection container, so at most one frontend client.
     protected client?: MCPOAuthFrontendDelegateClient;
@@ -41,7 +45,7 @@ export class MCPOAuthFrontendDelegateImpl implements MCPOAuthFrontendDelegate {
 
     disconnectClient(client: MCPOAuthFrontendDelegateClient): void {
         if (this.client !== undefined && this.client !== client) {
-            console.warn('MCP OAuth frontend delegate received disconnectClient for a non-current client; ignoring (one-client-per-container invariant violation).');
+            this.logger.warn('MCP OAuth frontend delegate received disconnectClient for a non-current client; ignoring (one-client-per-container invariant violation).');
             return;
         }
         if (this.client === client) {

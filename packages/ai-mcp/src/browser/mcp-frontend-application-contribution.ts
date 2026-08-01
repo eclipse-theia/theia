@@ -73,10 +73,10 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
         // Preflight the backend→frontend RPC channel for OAuth callbacks so a wiring failure surfaces
         // at startup rather than at the first OAuth flow. Failures are logged but not propagated.
         this.oauthFrontendDelegate.getCallbackUrl().catch(error =>
-            console.warn('MCP OAuth duplex-channel preflight failed; OAuth callbacks may not work until reconnect.', error));
+            this.logger.warn('MCP OAuth duplex-channel preflight failed; OAuth callbacks may not work until reconnect.', error));
 
         this.mcpNotificationService.onDidUpdateMCPServers(() => {
-            this.dismissSettledSignInPrompts().catch(error => console.error('Failed to dismiss settled MCP OAuth sign-in prompts', error));
+            this.dismissSettledSignInPrompts().catch(error => this.logger.error('Failed to dismiss settled MCP OAuth sign-in prompts', error));
         });
 
         this.preferenceService.ready.then(async () => {
@@ -141,7 +141,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
             // restart servers
             for (const name of startedServerNames) {
                 await this.frontendMCPService.startServer(name).catch(error => {
-                    console.error(`Failed to restart MCP server ${name} after changing workspace root setting`, error);
+                    this.logger.error(`Failed to restart MCP server ${name} after changing workspace root setting`, error);
                 });
             }
         }
@@ -172,7 +172,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
         results.forEach((result, index) => {
             const name = activeServers[index];
             if (result.status === 'rejected') {
-                console.error(`Failed to stop MCP server "${name}" on workspace-trust loss`, result.reason);
+                this.logger.error(`Failed to stop MCP server "${name}" on workspace-trust loss`, result.reason);
                 // Skip blocked-set bookkeeping for servers we could not actually stop.
                 return;
             }
@@ -265,7 +265,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
                 return this.frontendMCPService.startServerInteractive(serverName);
             });
         }).catch(error => {
-            console.error(`Failed to drive OAuth sign-in prompt for MCP server "${serverName}"`, error);
+            this.logger.error(`Failed to drive OAuth sign-in prompt for MCP server "${serverName}"`, error);
         });
     }
 
@@ -286,7 +286,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
             .then(() => this.handleServerChanges(newServers))
             .catch(error => {
                 // Catch here (instead of propagating) so a single failed change does not poison the queue.
-                console.error('Failed to handle MCP server preference changes', error);
+                this.logger.error('Failed to handle MCP server preference changes', error);
                 this.messageService.warn(nls.localize('theia/ai/mcp/warn/serverPreferenceChangeFailed',
                     'Failed to apply MCP server preference changes: {0}', error instanceof Error ? error.message : String(error)));
             });

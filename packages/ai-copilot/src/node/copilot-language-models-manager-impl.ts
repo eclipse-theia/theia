@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
-import { Disposable, DisposableCollection } from '@theia/core';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { Disposable, DisposableCollection, ILogger } from '@theia/core';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID, getCopilotApiBaseUrl } from '../common';
 import { CopilotOAuthConfig } from '../common/copilot-oauth-config';
 import { CopilotLanguageModel } from './copilot-language-model';
@@ -37,6 +37,9 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
 
     @inject(CopilotOAuthConfig)
     protected readonly oauthConfig: CopilotOAuthConfig;
+
+    @inject(ILogger) @named('ai-copilot:CopilotLanguageModelsManagerImpl')
+    protected readonly logger: ILogger;
 
     protected enterpriseUrl: string | undefined;
     protected readonly toDispose = new DisposableCollection();
@@ -72,7 +75,7 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
 
             if (model) {
                 if (!(model instanceof CopilotLanguageModel)) {
-                    console.warn(`Copilot: model ${modelDescription.id} is not a Copilot model`);
+                    this.logger.warn(`Copilot: model ${modelDescription.id} is not a Copilot model`);
                     continue;
                 }
                 await this.languageModelRegistry.patchLanguageModel<CopilotLanguageModel>(modelDescription.id, {
@@ -135,7 +138,7 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
             });
 
             if (!response.ok) {
-                console.warn(`Copilot: failed to fetch available models: ${response.status} ${response.statusText}`);
+                this.logger.warn(`Copilot: failed to fetch available models: ${response.status} ${response.statusText}`);
                 return [];
             }
 
@@ -144,10 +147,10 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
             };
             const models = data.data ?? [];
             const modelIds = this.deduplicateModels(models);
-            console.log(`Copilot: discovered ${modelIds.length} available models: ${modelIds.join(', ')}`);
+            this.logger.info(`Copilot: discovered ${modelIds.length} available models: ${modelIds.join(', ')}`);
             return modelIds;
         } catch (error) {
-            console.warn('Copilot: failed to fetch available models:', error);
+            this.logger.warn('Copilot: failed to fetch available models:', error);
             return [];
         }
     }

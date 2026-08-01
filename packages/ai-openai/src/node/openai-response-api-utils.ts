@@ -26,9 +26,9 @@ import {
     ToolRequest,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken, nls, unreachable } from '@theia/core';
+import { CancellationToken, nls, unreachable, ILogger } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 import type {
@@ -80,6 +80,9 @@ interface ToolCall {
  */
 @injectable()
 export class OpenAiResponseApiUtils {
+
+    @inject(ILogger) @named('ai-openai:OpenAiResponseApiUtils')
+    protected readonly logger: ILogger;
 
     /**
      * Handles Response API requests with proper tool calling cycles.
@@ -181,7 +184,7 @@ export class OpenAiResponseApiUtils {
         if (converted.length === 0) {
             return undefined;
         }
-        console.debug(`Converted ${(tools ?? []).length} tools for Response API:`, converted.map(t => t.type === 'function' ? t.name : t.type));
+        this.logger.debug(`Converted ${(tools ?? []).length} tools for Response API:`, converted.map(t => t.type === 'function' ? t.name : t.type));
         return converted;
     }
 
@@ -189,6 +192,9 @@ export class OpenAiResponseApiUtils {
         stream: AsyncIterable<ResponseStreamEvent>,
         cancellationToken?: CancellationToken
     ): AsyncIterable<LanguageModelStreamResponsePart> {
+
+        const logger = this.logger;
+
         return {
             async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
                 let lastUsage: { input_tokens: number; output_tokens: number } | undefined;
@@ -228,7 +234,7 @@ export class OpenAiResponseApiUtils {
                                 };
                             }
                         } else if (event.type === 'error') {
-                            console.error('Response API error:', event.message);
+                            logger.error('Response API error:', event.message);
                             throw new Error(`Response API error: ${event.message}`);
                         }
                     }

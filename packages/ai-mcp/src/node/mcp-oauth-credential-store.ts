@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
 import { MCPOAuthConfig } from '../common/mcp-oauth';
+import { ILogger } from '@theia/core/lib/common';
 import {
     deriveCredentialScope,
     MCP_OAUTH_KEYSTORE_SERVICE,
@@ -36,6 +37,9 @@ export class MCPOAuthCredentialStore {
     @inject(KeyStoreService)
     protected readonly keyStore: KeyStoreService;
 
+    @inject(ILogger) @named('ai-mcp:MCPOAuthCredentialStore')
+    protected readonly logger: ILogger;
+
     async hasTokens(serverName: string, serverUrl: string, config: MCPOAuthConfig): Promise<boolean> {
         const account = mcpOAuthAccount(serverName, deriveCredentialScope(serverUrl, config), 'tokens');
         const value = await this.keyStore.getPassword(MCP_OAUTH_KEYSTORE_SERVICE, account);
@@ -45,7 +49,7 @@ export class MCPOAuthCredentialStore {
         const tokens = parseStoredTokens(value);
         if (!tokens) {
             // Discard corrupt entries: a stale blob would otherwise block autostart until manual re-sign-in.
-            console.warn(`Discarding corrupt MCP OAuth tokens for server "${serverName}" while checking autostart eligibility.`);
+            this.logger.warn(`Discarding corrupt MCP OAuth tokens for server "${serverName}" while checking autostart eligibility.`);
             await this.keyStore.deletePassword(MCP_OAUTH_KEYSTORE_SERVICE, account);
             return false;
         }

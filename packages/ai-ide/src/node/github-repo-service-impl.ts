@@ -14,12 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { simpleGit, SimpleGit } from 'simple-git';
 import { GitHubRepoService, GitHubRepoInfo } from '../common/github-repo-protocol';
+import { ILogger } from '@theia/core/lib/common';
 
 @injectable()
 export class GitHubRepoServiceImpl implements GitHubRepoService {
+
+    @inject(ILogger) @named('ai-ide:GitHubRepoServiceImpl')
+    protected readonly logger: ILogger;
 
     async getGitHubRepoInfo(workspacePath: string): Promise<GitHubRepoInfo | undefined> {
         try {
@@ -56,7 +60,7 @@ export class GitHubRepoServiceImpl implements GitHubRepoService {
             return repoInfo;
 
         } catch (error) {
-            console.warn('Failed to get GitHub repository info:', error);
+            this.logger.warn('Failed to get GitHub repository info:', error);
             return undefined;
         }
     }

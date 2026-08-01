@@ -292,6 +292,9 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
         onSignInPromptCancel?: (message: ProgressMessage) => void;
     }): TestMcpFrontendApplicationContribution {
         const contribution = new TestMcpFrontendApplicationContribution();
+
+        (contribution as unknown as { logger: MockLogger }).logger = new MockLogger();
+
         const runningServers = [...(options.runningServers ?? [])];
         // Default active set = running set. Tests that exercise in-flight (Starting/Connecting/
         // AuthenticationRequired) behavior pass `activeServers` explicitly.
@@ -431,6 +434,9 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
             console.error = () => { /* suppress expected diagnostic */ };
             try {
                 const contribution = new TestMcpFrontendApplicationContribution();
+
+                (contribution as unknown as { logger: MockLogger }).logger = new MockLogger();
+
                 const warnings: string[] = [];
                 (contribution as unknown as { messageService: Partial<MessageService> }).messageService = {
                     warn: async (message: string) => { warnings.push(message); return undefined; }

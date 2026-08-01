@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, Emitter, Event, nls, PreferenceChange, PreferenceService } from '@theia/core';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
+import { Disposable, DisposableCollection, Emitter, Event, nls, PreferenceChange, PreferenceService, ILogger } from '@theia/core';
 import { HoverService } from '@theia/core/lib/browser';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { ExtensionsSourceContribution, SearchContext, SearchResult } from '@theia/vsx-registry/lib/browser/extensions-source-contribution';
@@ -56,6 +56,9 @@ export class MCPExtensionsContribution implements ExtensionsSourceContribution, 
 
     @inject(RegistrySearchFilter)
     protected readonly searchFilter: RegistrySearchFilter;
+
+    @inject(ILogger) @named('ai-registry:MCPExtensionsContribution')
+    protected readonly logger: ILogger;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
@@ -168,7 +171,7 @@ export class MCPExtensionsContribution implements ExtensionsSourceContribution, 
             // Without entries, locally-installed servers classify as user-added and the
             // MCP section shows nothing; users can still manage servers from the AI
             // configuration widget directly.
-            console.warn('AI registry fetch failed; MCP entries unavailable.', error);
+            this.logger.warn('AI registry fetch failed; MCP entries unavailable.', error);
             return [];
         }
     }
@@ -178,7 +181,7 @@ export class MCPExtensionsContribution implements ExtensionsSourceContribution, 
         // preference, so a `command: 42` (or any non-string) entry is rejected here too
         // instead of being cast straight to `MCPServerDescription`.
         if (!MCPServersPreference.isValue(stored)) {
-            console.warn(`Ignoring malformed MCP server "${name}": value does not match the MCP servers preference schema.`);
+            this.logger.warn(`Ignoring malformed MCP server "${name}": value does not match the MCP servers preference schema.`);
             return undefined;
         }
         return { name, ...(stored as StoredServer) } as MCPServerDescription;

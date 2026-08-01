@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import * as deepEqual from 'fast-deep-equal';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Resource, URI, generateUuid } from '@theia/core';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
+import { Resource, URI, generateUuid, ILogger } from '@theia/core';
 import { AIVariableContext, AIVariableResolutionRequest } from './variable-service';
 import stableJsonStringify = require('fast-json-stable-stringify');
 import { ConfigurableInMemoryResources, ConfigurableMutableReferenceResource } from './configurable-in-memory-resources';
@@ -27,6 +27,9 @@ export const NO_CONTEXT_AUTHORITY = 'context-free';
 @injectable()
 export class AIVariableResourceResolver {
     @inject(ConfigurableInMemoryResources) protected readonly inMemoryResources: ConfigurableInMemoryResources;
+
+    @inject(ILogger) @named('ai-core:AIVariableResourceResolver')
+    protected readonly logger: ILogger;
 
     @postConstruct()
     protected init(): void {
@@ -68,7 +71,7 @@ export class AIVariableResourceResolver {
             }
         } catch (err) {
             // Mostly that deep equal could overflow the stack, but it should run into === or inequality before that.
-            console.warn('Problem evaluating context in AIVariableResourceResolver', err);
+            this.logger.warn('Problem evaluating context in AIVariableResourceResolver', err);
         }
         return generateUuid();
     }

@@ -15,10 +15,11 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core/lib/common/nls';
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MCPOAuthCallback } from '../common/mcp-oauth';
 import { randomUUID } from 'crypto';
+import { ILogger } from '@theia/core/lib/common';
 
 /**
  * Maximum time the backend will wait for an OAuth authorization callback after creating a `state`.
@@ -66,6 +67,9 @@ interface CallbackEntry {
 
 @injectable()
 export class MCPOAuthCallbackService {
+
+    @inject(ILogger) @named('ai-mcp:MCPOAuthCallbackService')
+    protected readonly logger: ILogger;
 
     protected readonly callbacks = new Map<string, CallbackEntry>();
     protected readonly timers = new Map<string, NodeJS.Timeout>();
@@ -152,7 +156,7 @@ export class MCPOAuthCallbackService {
             if (!victimState) {
                 break;
             }
-            console.warn(
+            this.logger.warn(
                 'Evicting oldest MCP OAuth active callback state because the process-global limit of '
                 + `${MCP_OAUTH_ACTIVE_CALLBACK_LIMIT} concurrent authorizations was reached.`
             );
