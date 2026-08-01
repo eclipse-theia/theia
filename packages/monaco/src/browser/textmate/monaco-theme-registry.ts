@@ -26,6 +26,7 @@ import { StandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/
 import { Color } from '@theia/monaco-editor-core/esm/vs/base/common/color';
 import { MixStandaloneTheme, TextmateRegistryFactory, ThemeMix } from './monaco-theme-types';
 import { ILogger } from '@theia/core';
+import { ThemeType } from '@theia/core/lib/common/theme';
 
 @injectable()
 export class MonacoThemeRegistry {
@@ -177,4 +178,16 @@ export namespace MonacoThemeRegistry {
     export const LIGHT_DEFAULT_THEME = 'light-theia';
     export const HC_DEFAULT_THEME = 'hc-theia';
     export const HC_LIGHT_THEME = 'hc-theia-light';
+
+    /**
+     * The default editor theme to use for a color theme that does not provide one of its own.
+     */
+    export function getDefaultTheme(type: ThemeType): string {
+        switch (type) {
+            case 'light': return LIGHT_DEFAULT_THEME;
+            case 'hc': return HC_DEFAULT_THEME;
+            case 'hcLight': return HC_LIGHT_THEME;
+            default: return DARK_DEFAULT_THEME;
+        }
+    }
 }

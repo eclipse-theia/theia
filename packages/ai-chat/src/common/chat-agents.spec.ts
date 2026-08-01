@@ -33,6 +33,9 @@ import {
     ThinkingChatResponseContentImpl,
 } from './chat-model';
 import { ParsedChatRequest, ParsedChatRequestTextPart } from './parsed-chat-request';
+import { FileReadTracker } from './file-read-tracker';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 class TestChatAgent extends AbstractChatAgent {
     readonly id = 'test-agent';
@@ -58,6 +61,18 @@ class TestChatAgent extends AbstractChatAgent {
 
     public setLanguageModelRegistry(registry: LanguageModelRegistry): void {
         this.languageModelRegistry = registry;
+    }
+
+    public exposeAppendExternalFileChangeNotice(request: MutableChatRequestModel, messages: LanguageModelMessage[]): Promise<void> {
+        return this.appendExternalFileChangeNotice(request, messages);
+    }
+
+    public setFileReadTracker(tracker: FileReadTracker): void {
+        this.fileReadTracker = tracker;
+    }
+
+    public setLogger(logger: ILogger): void {
+        this.logger = logger;
     }
 }
 
@@ -290,5 +305,64 @@ describe('AbstractChatAgent.getLanguageModelForRequest', () => {
             error = e as Error;
         }
         expect(error).to.be.an('error');
+    });
+});
+
+describe('AbstractChatAgent.appendExternalFileChangeNotice', () => {
+
+    function createAgent(getChangedFiles: () => Promise<string[]>): TestChatAgent {
+        const agent = new TestChatAgent();
+        agent.setLogger(new MockLogger());
+        agent.setFileReadTracker({
+            recordRead: async () => { },
+            isStale: async () => false,
+            getChangedFiles
+        });
+        return agent;
+    }
+
+    function createRequest(): MutableChatRequestModel {
+        return new MutableChatModel(ChatAgentLocation.Panel).addRequest(createParsedRequest('Hello'));
+    }
+
+    function textsOf(messages: LanguageModelMessage[]): string[] {
+        return messages.flatMap(message => message.type === 'text' ? [message.text] : []);
+    }
+
+    it('appends a trailing user message listing the changed files', async () => {
+        const agent = createAgent(async () => ['/workspace/a.ts', '/workspace/b.ts']);
+        const messages: LanguageModelMessage[] = [];
+
+        await agent.exposeAppendExternalFileChangeNotice(createRequest(), messages);
+
+        expect(messages).to.have.lengthOf(1);
+        expect(messages[0].actor).to.equal('user');
+        expect(textsOf(messages)[0]).to.contain('/workspace/a.ts').and.to.contain('/workspace/b.ts');
+    });
+
+    it('appends nothing when no file changed', async () => {
+        const agent = createAgent(async () => []);
+        const messages: LanguageModelMessage[] = [];
+
+        await agent.exposeAppendExternalFileChangeNotice(createRequest(), messages);
+
+        expect(messages).to.be.empty;
+    });
+
+    it('appends nothing when no tracker is bound', async () => {
+        const messages: LanguageModelMessage[] = [];
+
+        await new TestChatAgent().exposeAppendExternalFileChangeNotice(createRequest(), messages);
+
+        expect(messages).to.be.empty;
+    });
+
+    it('does not fail the request when the changed files cannot be determined', async () => {
+        const agent = createAgent(async () => { throw new Error('tracker unavailable'); });
+        const messages: LanguageModelMessage[] = [];
+
+        await agent.exposeAppendExternalFileChangeNotice(createRequest(), messages);
+
+        expect(messages).to.be.empty;
     });
 });
