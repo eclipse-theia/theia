@@ -21,9 +21,11 @@ import {
 } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { ConfirmDialog, FrontendApplicationContribution, KeybindingRegistry, Widget } from '@theia/core/lib/browser';
+import { ACTIVE_PERSPECTIVE_CONTEXT_KEY } from '@theia/core/lib/browser/perspective-service';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import {
     AI_CHAT_HOME,
+    AI_CHAT_OPEN_SESSION,
     AI_CHAT_SHOW_CHATS_COMMAND,
     ChatCommands
 } from './chat-view-commands';
@@ -295,6 +297,17 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             isVisible: () => this.activationService.isActive,
             isEnabled: () => this.activationService.canRun
         });
+        registry.registerCommand(AI_CHAT_OPEN_SESSION, {
+            execute: async (sessionId: string) => {
+                const session = await this.chatService.getOrRestoreSession(sessionId);
+                if (!session) {
+                    throw new Error(`Chat session '${sessionId}' not found`);
+                }
+                await this.openView({ activate: true });
+                this.chatService.setActiveSession(sessionId, { focus: false });
+            },
+            isVisible: () => false,
+        });
         registry.registerCommand(AI_CHAT_SHOW_CHATS_COMMAND, {
             execute: async () => {
                 await this.openView();
@@ -393,8 +406,10 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             onDidChange: this.onActiveSessionEmptyChangedEmitter.event,
             // Hide on the overview itself (the active session is empty); only show when there
             // is an actual chat to return from.
-            isVisible: widget => this.activationService.isActive && this.withWidget(widget) && !this.activeSessionEmpty,
-            when: ENABLE_AI_CONTEXT_KEY
+            isVisible: widget => this.activationService.isActive
+                && this.withWidget(widget)
+                && !this.activeSessionEmpty,
+            when: `${ENABLE_AI_CONTEXT_KEY} && ${ACTIVE_PERSPECTIVE_CONTEXT_KEY} != 'ai-first'`
         });
         registry.registerItem({
             id: AI_CHAT_SHOW_CHATS_COMMAND.id,

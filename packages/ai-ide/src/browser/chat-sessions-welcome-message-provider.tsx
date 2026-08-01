@@ -17,136 +17,21 @@
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
 import {
-    ChatAgentService, ChatService, ChatSession, ChatSessionMetadata, ChatSessionStatus
+    ChatAgentService, ChatService, ChatSessionMetadata
 } from '@theia/ai-chat';
-import { BYPASS_MODEL_REQUIREMENT_PREF, PERSISTED_SESSION_LIMIT_PREF, SESSION_STORAGE_PREF, WELCOME_SCREEN_SESSIONS_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
+import { BYPASS_MODEL_REQUIREMENT_PREF, WELCOME_SCREEN_SESSIONS_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
-import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
 import { ChatSessionItemAction, ChatSessionItemActionContribution } from './chat-session-item-action-contribution';
+import { ChatSessionListService } from './chat-session-list-service';
+import { SectionedSessions, SessionRow, SessionsList } from './chat-session-list-components';
 import { ChatSessionItem } from './chat-session-item';
 import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
-import { CommandRegistry, ContributionProvider, DisposableCollection, Emitter, Event, PreferenceService, ILogger } from '@theia/core';
-import { ApplicationShell, buttonKeyboardProps, HoverService, isActivationKey } from '@theia/core/lib/browser';
+import { CommandRegistry, ContributionProvider, Emitter, Event, PreferenceService } from '@theia/core';
+import { ApplicationShell, HoverService } from '@theia/core/lib/browser';
+import { AISessionsWidget } from './ai-sessions-widget';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
-import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-
-/** When both Active and Restored sections are non-empty, keep at least this many Restored slots. */
-const RESTORED_MIN_RESERVATION = 5;
-
-export interface SectionedSessions {
-    active: ChatSessionMetadata[];
-    restored: ChatSessionMetadata[];
-}
-
-/** A session row with its optional child sessions. */
-export interface SessionRow {
-    session: ChatSessionMetadata;
-    isRestored: boolean;
-    childSessions: SessionRow[];
-}
-
-/**
- * The id of a session's immediate parent for tree building. Falls back to the root session id for
- * sessions persisted before immediate-parent tracking existed, so their hierarchy still renders
- * (flat under the root, as before).
- */
-function parentIdOf(session: ChatSessionMetadata): string | undefined {
-    return session.parentSessionId ?? session.rootSessionId;
-}
-
-export interface VisibleSessionSlots {
-    activeCount: number;
-    restoredCount: number;
-}
-
-/**
- * Allocates the capped number of visible items between the Active and Restored sections of the
- * overview. When both sections are non-empty, up to {@link RESTORED_MIN_RESERVATION} slots are
- * reserved for Restored so active sessions cannot crowd it out entirely. A cap of 0 hides the
- * inline list (every session stays reachable via the "Browse all chats..." link).
- */
-export function computeVisibleSessionSlots(activeTotal: number, restoredTotal: number, maxSessions: number): VisibleSessionSlots {
-    const cap = Math.max(0, maxSessions);
-    if (cap === 0) {
-        return { activeCount: 0, restoredCount: 0 };
-    }
-    if (restoredTotal === 0) {
-        return { activeCount: Math.min(activeTotal, cap), restoredCount: 0 };
-    }
-    if (activeTotal === 0) {
-        return { activeCount: 0, restoredCount: Math.min(restoredTotal, cap) };
-    }
-    const reserved = Math.min(restoredTotal, Math.min(RESTORED_MIN_RESERVATION, Math.max(1, cap - 1)));
-    const activeCount = Math.min(activeTotal, cap - reserved);
-    const restoredCount = Math.min(restoredTotal, cap - activeCount);
-    return { activeCount, restoredCount };
-}
-
-interface SessionsListProps {
-    rows: SessionRow[];
-    /** Total cap on items shown on the home view; overflow surfaces via the Browse all link. */
-    maxSessions: number;
-    renderRow: (row: SessionRow) => React.ReactNode;
-    onBrowseAll: () => void;
-}
-
-function SessionsList({ rows, maxSessions, renderRow, onBrowseAll }: SessionsListProps): React.ReactElement {
-    // Children are rendered inline by their parent row, so only top-level rows appear in the
-    // sections. A child whose parent session is not in the list falls back to top-level (orphan).
-    const topLevelRows = rows.filter(row => {
-        const parentId = parentIdOf(row.session);
-        if (!parentId) {
-            return true;
-        }
-        return !rows.some(r => r.session.sessionId === parentId);
-    });
-
-    const activeRows = topLevelRows.filter(row => !row.isRestored);
-    const restoredRows = topLevelRows.filter(row => row.isRestored);
-
-    const { activeCount, restoredCount } = computeVisibleSessionSlots(activeRows.length, restoredRows.length, maxSessions);
-    const activeVisible = activeRows.slice(0, activeCount);
-    const restoredVisible = restoredRows.slice(0, restoredCount);
-    const hiddenCount = topLevelRows.length - activeVisible.length - restoredVisible.length;
-
-    return (
-        <div className="theia-WelcomeMessage-SessionsList">
-            {activeVisible.length > 0 && (
-                <div className="theia-WelcomeMessage-SessionsGroup">
-                    <div className="theia-WelcomeMessage-SessionsHeader">
-                        {nls.localizeByDefault('Active')}
-                    </div>
-                    {activeVisible.map(row => renderRow(row))}
-                </div>
-            )}
-            {restoredVisible.length > 0 && (
-                <div className="theia-WelcomeMessage-SessionsGroup">
-                    <div className="theia-WelcomeMessage-SessionsHeader">
-                        {nls.localize('theia/ai/ide/sectionRestored', 'Restored')}
-                    </div>
-                    {restoredVisible.map(row => renderRow(row))}
-                </div>
-            )}
-            {hiddenCount > 0 && (
-                <div className="theia-WelcomeMessage-SessionsFooter">
-                    <a className="theia-WelcomeMessage-FooterLink"
-                        {...buttonKeyboardProps(nls.localize('theia/ai/ide/browseAllChats', 'Browse all chats...'))}
-                        onClick={onBrowseAll}
-                        onKeyDown={e => {
-                            if (isActivationKey(e)) {
-                                e.preventDefault();
-                                onBrowseAll();
-                            }
-                        }}>
-                        {nls.localize('theia/ai/ide/browseAllChats', 'Browse all chats...')}
-                    </a>
-                </div>
-            )}
-        </div>
-    );
-}
 
 @injectable()
 export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessageProvider {
@@ -177,17 +62,15 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     @inject(FrontendLanguageModelRegistry)
     protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
 
-    @inject(ILogger) @named('ai-ide:ChatSessionsWelcomeMessageProvider')
-    protected readonly logger: ILogger;
-
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
+    @inject(ChatSessionListService)
+    protected readonly sessionListService: ChatSessionListService;
+
     protected _inputEnabled = false;
 
-    private readonly unreadSessions = new Map<string, { unread: boolean; requiresAction: boolean; seenRequests: number; seenCompleted: number; listener: DisposableCollection }>();
-    private readonly onUnreadChangedEmitter = new Emitter<string>();
-    readonly onUnreadChanged: Event<string> = this.onUnreadChangedEmitter.event;
+    protected _sessionsWidgetAttached = false;
 
     protected _markdownRenderer: MarkdownRenderer | undefined;
     protected get markdownRenderer(): MarkdownRenderer {
@@ -197,51 +80,47 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         return this._markdownRenderer;
     }
 
-    /** Persisted sessions index sorted newest first. May include duplicates of active sessions. */
-    protected _persistedSessions: ChatSessionMetadata[] = [];
-
-    /** Expanded root session IDs (default collapsed). */
-    protected expandedRoots = new Set<string>();
-
     protected readonly onStateChangedEmitter = new Emitter<void>();
     readonly onStateChanged: Event<void> = this.onStateChangedEmitter.event;
 
     @postConstruct()
     protected init(): void {
-        for (const session of this.chatService.getSessions()) {
-            this.watchSession(session);
-        }
-
-        this.chatService.onSessionEvent(event => {
-            if (event.type === 'created') {
-                const s = this.chatService.getSession(event.sessionId);
-                if (s) {
-                    this.watchSession(s);
-                }
-            } else if (event.type === 'activeChange' && event.sessionId) {
-                this.markSessionRead(event.sessionId);
-            } else if (event.type === 'deleted') {
-                this.unwatchSession(event.sessionId);
-            }
-            // `loadSessions` fires `onStateChangedEmitter` once the (re)load settles, so we don't
-            // fire it again here: a single session event should trigger a single re-render.
-            this.loadSessions();
+        this.sessionListService.onStateChanged(() => {
+            this.onStateChangedEmitter.fire();
         });
 
-        this.loadSessions();
         this.updateInputEnabled();
         this.languageModelRegistry.onChange(() => {
             this.updateInputEnabled();
         });
         this.preferenceService.onPreferenceChanged(e => {
-            if (e.preferenceName === PERSISTED_SESSION_LIMIT_PREF || e.preferenceName === SESSION_STORAGE_PREF) {
-                this.loadSessions();
-            } else if (e.preferenceName === BYPASS_MODEL_REQUIREMENT_PREF) {
+            if (e.preferenceName === BYPASS_MODEL_REQUIREMENT_PREF) {
                 this.updateInputEnabled();
             } else if (e.preferenceName === WELCOME_SCREEN_SESSIONS_PREF) {
                 this.onStateChangedEmitter.fire();
             }
         });
+
+        this._sessionsWidgetAttached = this.isSessionsWidgetAttached();
+        this.shell.onDidAddWidget(widget => {
+            if (widget.id === AISessionsWidget.ID) {
+                this._sessionsWidgetAttached = true;
+                this.onStateChangedEmitter.fire();
+            }
+        });
+        this.shell.onDidRemoveWidget(widget => {
+            if (widget.id === AISessionsWidget.ID) {
+                this._sessionsWidgetAttached = false;
+                this.onStateChangedEmitter.fire();
+            }
+        });
+    }
+
+    protected isSessionsWidgetAttached(): boolean {
+        const areas: ApplicationShell.Area[] = ['left', 'right', 'main', 'bottom'];
+        return areas.some(area =>
+            this.shell.getWidgets(area).some(w => w.id === AISessionsWidget.ID && !w.isDisposed)
+        );
     }
 
     protected async updateInputEnabled(): Promise<void> {
@@ -255,180 +134,24 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         }
     }
 
-    protected async loadSessions(): Promise<void> {
-        if (!this.isPersistenceEnabled()) {
-            this._persistedSessions = [];
-            this.onStateChangedEmitter.fire();
-            return;
-        }
-
-        const hasSessions = await this.chatService.hasPersistedSessions();
-        if (!hasSessions) {
-            this._persistedSessions = [];
-            this.onStateChangedEmitter.fire();
-            return;
-        }
-
-        try {
-            const index = await this.chatService.getPersistedSessions();
-            this._persistedSessions = Object.values(index)
-                .toSorted((a, b) => b.saveDate - a.saveDate);
-        } catch (error) {
-            this.logger.error('Failed to load persisted sessions:', error);
-            this._persistedSessions = [];
-        } finally {
-            // Fire once after the load settles; the data was stale until now anyway.
-            this.onStateChangedEmitter.fire();
-        }
-    }
-
-    protected isPersistenceEnabled(): boolean {
-        const limit = this.preferenceService.get<number>(PERSISTED_SESSION_LIMIT_PREF, 25);
-        return limit !== 0;
-    }
-
-    isUnread(sessionId: string): boolean {
-        return this.unreadSessions.get(sessionId)?.unread === true;
-    }
-
-    protected watchSession(session: ChatSession): void {
-        if (this.unreadSessions.has(session.id)) {
-            return;
-        }
-        const reqs = session.model.getRequests();
-        const state = {
-            unread: false,
-            requiresAction: ChatSessionStatus.requiresUserAction(session.model.status),
-            seenRequests: reqs.length,
-            seenCompleted: this.countCompleted(reqs),
-            listener: new DisposableCollection()
-        };
-        this.unreadSessions.set(session.id, state);
-
-        session.model.onDidChange(() => {
-            const requiresAction = ChatSessionStatus.requiresUserAction(session.model.status);
-            // Only react to a change in whether this session needs user action (approval/input) - i.e. a
-            // transition into or out of that state - not to every model change while the state is stable.
-            if (requiresAction !== state.requiresAction) {
-                state.requiresAction = requiresAction;
-                // When a delegated child starts needing action, auto-expand its ancestors so the whole
-                // subtree is revealed naturally. Don't auto-collapse afterwards: leave that to the user.
-                if (requiresAction) {
-                    this.expandAncestors(session);
-                }
-                this.onStateChangedEmitter.fire();
-            }
-            const current = session.model.getRequests();
-            if (current.length > state.seenRequests || this.countCompleted(current) > state.seenCompleted) {
-                // Only silently update the seen counts (instead of flashing the unread badge)
-                // when the user is actually looking at this session: it must be the active
-                // session AND the chat view must currently be the focused widget. Otherwise,
-                // the user may have switched away (e.g. to the editor) while the chat agent
-                // is still running, and we want the badge to appear so they notice the new
-                // response when they return.
-                const activeSession = this.chatService.getActiveSession();
-                const chatViewFocused = ChatViewWidget.findActive(this.shell) !== undefined;
-                if (chatViewFocused && activeSession && activeSession.id === session.id) {
-                    state.seenRequests = current.length;
-                    state.seenCompleted = this.countCompleted(current);
-                } else if (!state.unread) {
-                    state.unread = true;
-                    this.onUnreadChangedEmitter.fire(session.id);
-                }
-            }
-        }, undefined, state.listener);
-    }
-
-    protected markSessionRead(sessionId: string): void {
-        const state = this.unreadSessions.get(sessionId);
-        if (!state) {
-            return;
-        }
-        const session = this.chatService.getSession(sessionId);
-        const reqs = session?.model.getRequests() ?? [];
-        state.seenRequests = reqs.length;
-        state.seenCompleted = this.countCompleted(reqs);
-        if (state.unread) {
-            state.unread = false;
-            this.onUnreadChangedEmitter.fire(sessionId);
-        }
-    }
-
-    protected unwatchSession(sessionId: string): void {
-        const state = this.unreadSessions.get(sessionId);
-        if (state) {
-            state.listener.dispose();
-            this.unreadSessions.delete(sessionId);
-        }
-    }
-
-    private countCompleted(reqs: ReturnType<ChatSession['model']['getRequests']>): number {
-        return reqs.filter(r => r.response.isComplete).length;
-    }
-
-    /**
-     * Splits sessions into active vs. restored. Active sessions are sourced from
-     * `chatService.getSessions()` (in-memory). Restored sessions are the persisted index entries
-     * that aren't already loaded as an active session.
-     */
-    protected getSections(): SectionedSessions {
-        const activeRaw = this.chatService.getSessions().filter(s => !!s.title);
-        const activeIds = new Set(activeRaw.map(s => s.id));
-        const active: ChatSessionMetadata[] = activeRaw
-            .toSorted((a, b) => (b.lastInteraction?.getTime() ?? 0) - (a.lastInteraction?.getTime() ?? 0))
-            .map(session => ({
-                sessionId: session.id,
-                title: session.title!,
-                saveDate: session.lastInteraction?.getTime() ?? Date.now(),
-                location: session.model.location,
-                pinnedAgentId: session.pinnedAgent?.id,
-                hasError: session.model.status === 'failed',
-                rootSessionId: session.rootSessionId,
-                parentSessionId: session.parentSessionId
-            }));
-        const restored = this._persistedSessions.filter(metadata => !activeIds.has(metadata.sessionId));
-        return { active, restored };
-    }
-
     renderWelcomeMessage(): React.ReactNode {
+        if (this._sessionsWidgetAttached) {
+            return undefined;
+        }
         if (!this._inputEnabled) {
             return undefined;
         }
-        const sections = this.getSections();
+        const sections = this.sessionListService.getSections();
         const sessionCount = sections.active.length + sections.restored.length;
-        if (!this.isPersistenceEnabled() || sessionCount === 0) {
-            // Empty state: let other providers (IDE welcome) show their onboarding content.
+        if (!this.sessionListService.isPersistenceEnabled() || sessionCount === 0) {
             return undefined;
         }
         return this.renderSessionsSection(sections);
     }
 
-    /**
-     * Builds one {@link SessionRow} per session (carrying its own restored flag), then nests each child
-     * row under its immediate parent's row to reconstruct the full (multi-level) delegation hierarchy.
-     * Two passes on purpose: the first creates a row for every session so the second can link each child
-     * to its parent. Sessions are ordered by recency, not parent-first, so a child may precede its parent
-     * here; linking in a single pass would miss parents not yet created.
-     */
-    protected buildRows(sections: SectionedSessions): SessionRow[] {
-        const allSessions = [...sections.active, ...sections.restored];
-        const activeIds = new Set(sections.active.map(s => s.sessionId));
-        const rowsById = new Map<string, SessionRow>();
-        for (const session of allSessions) {
-            rowsById.set(session.sessionId, { session, isRestored: !activeIds.has(session.sessionId), childSessions: [] });
-        }
-        for (const session of allSessions) {
-            const parentId = parentIdOf(session);
-            if (parentId) {
-                rowsById.get(parentId)?.childSessions.push(rowsById.get(session.sessionId)!);
-            }
-        }
-        return [...rowsById.values()];
-    }
-
     protected renderSessionsSection(sections: SectionedSessions): React.ReactNode {
         const maxSessions = this.preferenceService.get<number>(WELCOME_SCREEN_SESSIONS_PREF, 20);
-        const rows = this.buildRows(sections);
+        const rows = this.sessionListService.buildRows(sections);
 
         return (
             <div className="theia-WelcomeMessage" key="sessions-section">
@@ -444,56 +167,6 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         );
     }
 
-    protected toggleExpand = (sessionId: string): void => {
-        this.expandedRoots = new Set(this.expandedRoots);
-        if (this.expandedRoots.has(sessionId)) {
-            this.expandedRoots.delete(sessionId);
-        } else {
-            this.expandedRoots.add(sessionId);
-        }
-        this.onStateChangedEmitter.fire();
-    };
-
-    /** Whether a loaded session currently needs user action (approval or input). */
-    protected sessionRequiresAction(sessionId: string): boolean {
-        const session = this.chatService.getSession(sessionId);
-        return session !== undefined && ChatSessionStatus.requiresUserAction(session.model.status);
-    }
-
-    /** Whether any descendant (at any depth) of the given row currently needs user action. */
-    protected descendantRequiresAction(row: SessionRow): boolean {
-        return row.childSessions.some(child =>
-            this.sessionRequiresAction(child.session.sessionId) || this.descendantRequiresAction(child));
-    }
-
-    /**
-     * Expands every ancestor of the given session (walking the immediate-parent chain) so a deeply
-     * delegated session becomes visible. The caller is responsible for triggering a re-render.
-     */
-    protected expandAncestors(session: ChatSession): void {
-        // Resolve the next ancestor for a given session id. Prefer the loaded session, but fall back to
-        // the persisted index: an ancestor may not be loaded in memory (e.g. a child opened directly via
-        // "Browse all chats"). Without the fallback the walk stops at the first persisted-only ancestor,
-        // leaving the child hidden under a still-collapsed root.
-        const persistedById = new Map(this._persistedSessions.map(metadata => [metadata.sessionId, metadata]));
-        const parentIdFor = (id: string): string | undefined => {
-            const loaded = this.chatService.getSession(id);
-            if (loaded) {
-                return loaded.parentSessionId ?? loaded.rootSessionId;
-            }
-            const metadata = persistedById.get(id);
-            return metadata && parentIdOf(metadata);
-        };
-        const visited = new Set<string>();
-        let parentId = session.parentSessionId ?? session.rootSessionId;
-        while (parentId && !visited.has(parentId)) {
-            visited.add(parentId);
-            this.expandedRoots.add(parentId);
-            parentId = parentIdFor(parentId);
-        }
-    }
-
-    /** Collects the enabled session-item actions for a session, sorted by priority. */
     protected getSessionActions(session: ChatSessionMetadata): ChatSessionItemAction[] {
         return this.chatSessionItemActionContributions
             .getContributions()
@@ -504,11 +177,10 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
 
     protected renderSessionRow = (row: SessionRow): React.ReactNode => this.renderSessionRowAtDepth(row, 0);
 
-    /** Renders a session row and, when expanded, its child rows recursively so nested delegations show. */
     protected renderSessionRowAtDepth(row: SessionRow, depth: number): React.ReactNode {
         const hasChildSessions = row.childSessions.length > 0;
-        const isExpanded = hasChildSessions && this.expandedRoots.has(row.session.sessionId);
-        const descendantNeedsAttention = this.descendantRequiresAction(row);
+        const isExpanded = hasChildSessions && this.sessionListService.isExpanded(row.session.sessionId);
+        const descendantNeedsAttention = this.sessionListService.descendantRequiresAction(row);
 
         return (
             <React.Fragment key={row.session.sessionId}>
@@ -519,7 +191,7 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
                     chatAgentService={this.chatAgentService}
                     hoverService={this.hoverService}
                     markdownRenderer={this.markdownRenderer}
-                    unreadState={this}
+                    unreadState={this.sessionListService}
                     onClick={() => this.handleSessionItemClick(row.session.sessionId)}
                     actions={this.getSessionActions(row.session)}
                     onAction={this.handleSessionItemAction}
@@ -529,12 +201,12 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
                     depth={depth}
                     isExpanded={isExpanded}
                     descendantNeedsAttention={descendantNeedsAttention}
-                    onToggleExpand={hasChildSessions ? () => this.toggleExpand(row.session.sessionId) : undefined}
+                    onToggleExpand={hasChildSessions ? () => this.sessionListService.toggleExpand(row.session.sessionId) : undefined}
                 />
                 {isExpanded && row.childSessions.map(child => this.renderSessionRowAtDepth(child, depth + 1))}
             </React.Fragment>
         );
-    };
+    }
 
     protected handleSessionItemAction = (action: ChatSessionItemAction, session: ChatSessionMetadata): void => {
         this.commandRegistry.executeCommand(action.commandId, session);

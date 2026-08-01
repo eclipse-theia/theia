@@ -18,9 +18,11 @@ import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceContribution, PreferenceProxy, PreferenceSchema, PreferenceService } from '@theia/core/lib/common';
 import { nls } from '@theia/core/lib/common/nls';
 
+export const ENABLE_PREVIEW_PREFERENCE = 'editor.enablePreview';
+
 export const EditorPreviewConfigSchema: PreferenceSchema = {
     properties: {
-        'editor.enablePreview': {
+        [ENABLE_PREVIEW_PREFERENCE]: {
             type: 'boolean',
             // eslint-disable-next-line max-len
             description: nls.localizeByDefault("Controls whether preview mode is used when editors open. There is a maximum of one preview mode editor per editor group. This editor displays its filename in italics on its tab or title label and in the Open Editors view. Its contents will be replaced by the next editor opened in preview mode. Making a change in a preview mode editor will persist it, as will a double-click on its label, or the 'Keep Open' option in its label context menu. Opening a file from Explorer with a double-click persists its editor immediately."),
