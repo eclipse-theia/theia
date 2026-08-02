@@ -89,7 +89,7 @@ export class ElectronWindowService extends DefaultWindowService {
             }
             return willShutDown;
         });
-        window.addEventListener('unload', () => {
+        window.addEventListener('pagehide', () => {
             this.onUnloadEmitter.fire();
         });
     }

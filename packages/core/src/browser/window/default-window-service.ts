@@ -104,11 +104,11 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
      */
     protected registerUnloadListeners(): void {
         window.addEventListener('beforeunload', event => this.handleBeforeUnloadEvent(event));
-        // In a browser, `unload` is correctly fired when the page unloads, unlike Electron.
-        // If `beforeunload` is cancelled, the user will be prompted to leave or stay.
-        // If the user stays, the page won't be unloaded, so `unload` is not fired.
-        // If the user leaves, the page will be unloaded, so `unload` is fired.
-        window.addEventListener('unload', () => this.onUnloadEmitter.fire());
+        // `pagehide` is used instead of the deprecated `unload` event, which Chrome may block
+        // via permissions policy (https://developer.chrome.com/docs/web-platform/deprecating-unload),
+        // silently skipping the handler and thus e.g. losing the layout.
+        // If `beforeunload` is cancelled and the user stays, `pagehide` is not fired.
+        window.addEventListener('pagehide', () => this.onUnloadEmitter.fire());
     }
 
     async isSafeToShutDown(stopReason: StopReason): Promise<boolean> {
