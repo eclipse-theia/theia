@@ -313,10 +313,8 @@ export class PluginDeployerImpl implements PluginDeployer {
 
         const deployPluginsMeasurement = this.measure('deployPluginsBatch');
         const deployments = await Promise.all([
-            // start the backend plugins
-            this.pluginDeployerHandler.deployBackendPlugins(acceptedBackendPlugins),
-            // headless plugins are deployed like backend plugins
-            this.pluginDeployerHandler.deployBackendPlugins(acceptedHeadlessPlugins),
+            // start the backend and headless plugins
+            this.pluginDeployerHandler.deployBackendPlugins([...acceptedBackendPlugins, ...acceptedHeadlessPlugins]),
             this.pluginDeployerHandler.deployFrontendPlugins(acceptedFrontendPlugins)
         ]);
         deployPluginsMeasurement.log(`Deploy batch of ${acceptedPlugins.length} accepted plugins`);
