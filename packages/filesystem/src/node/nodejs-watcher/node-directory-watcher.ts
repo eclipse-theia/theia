@@ -65,9 +65,9 @@ export const DEFAULT_WATCHER_TIMINGS: NodeDirectoryWatcherTimings = {
     deferredDisposalTimeout: 10_000
 };
 
-/** A change resolved against the file system, named relative to the watched directory. */
+/** A change resolved against the file system: a direct child of the watched directory, or the watched path itself. */
 interface ResolvedChange {
-    fileName: string;
+    fileName?: string;
     type: FileChangeType;
 }
 
@@ -178,22 +178,41 @@ export class NodeDirectoryWatcher {
      */
     protected async start(missing = false): Promise<void> {
         const previousChildren = this.restarting ? this.children : undefined;
-        let wasMissing = missing;
-        while (!this.disposed) {
-            if (!await this.exists(this.target)) {
-                wasMissing = true;
-                await timeout(this.timings.existencePollDelay);
-                continue;
-            }
-            await this.resolveTarget();
-            if (this.disposed || this.openHandle()) {
-                break;
-            }
-            await timeout(this.timings.existencePollDelay);
-        }
+        const wasMissing = await this.openWhenAvailable() || missing;
         if (this.disposed) {
             return;
         }
+        await this.takeSnapshot();
+        this.restarting = false;
+        this.debug('STARTED', this.watchedDirectory);
+        if (wasMissing) {
+            this.report([{ type: FileChangeType.ADDED }], await this.existingRequests());
+        }
+        if (previousChildren) {
+            // Whatever happened while the directory was gone can only be recovered by comparing its contents.
+            this.report(this.diff(previousChildren, this.children));
+        }
+    }
+
+    /** Polls until the target exists and a handle is open on it. Resolves to whether the target was ever missing. */
+    protected async openWhenAvailable(): Promise<boolean> {
+        let wasMissing = false;
+        while (!this.disposed) {
+            if (!await this.exists(this.target)) {
+                wasMissing = true;
+            } else {
+                await this.resolveTarget();
+                if (this.disposed || this.openHandle()) {
+                    break;
+                }
+            }
+            await timeout(this.timings.existencePollDelay);
+        }
+        return wasMissing;
+    }
+
+    /** Records what changes are resolved against: the children of the watched directory, and its identity. */
+    protected async takeSnapshot(): Promise<void> {
         const children = await this.readChildren();
         // Anything reported while the directory was being read counts as new rather than as modified.
         for (const event of this.pendingEvents) {
@@ -203,21 +222,13 @@ export class NodeDirectoryWatcher {
         }
         this.children = children;
         this.identity = await this.readIdentity();
-        this.restarting = false;
-        this.debug('STARTED', this.watchedDirectory);
-        const perClient = new Map<number, FileChangeCollection>();
-        if (wasMissing) {
-            for (const request of this.requests.values()) {
-                if (await this.exists(request.path)) {
-                    this.collect(perClient, request.clientId, request.path, FileChangeType.ADDED);
-                }
-            }
-        }
-        if (previousChildren) {
-            // Whatever happened while the directory was gone can only be recovered by comparing its contents.
-            this.collectChanges(perClient, this.diff(previousChildren, this.children));
-        }
-        this.send(perClient);
+    }
+
+    /** The requests whose own path exists, so that a recovered directory does not announce files that are still gone. */
+    protected async existingRequests(): Promise<NodeWatchRequest[]> {
+        const requests = Array.from(this.requests.values());
+        const existing = await Promise.all(requests.map(request => this.exists(request.path)));
+        return requests.filter((request, index) => existing[index]);
     }
 
     /**
@@ -310,7 +321,7 @@ export class NodeDirectoryWatcher {
             this.restart();
             return;
         }
-        this.emit(changes);
+        this.report(changes);
     }
 
     protected async resolveRename(fileName: string, changes: ResolvedChange[]): Promise<void> {
@@ -346,11 +357,8 @@ export class NodeDirectoryWatcher {
     }
 
     protected cancelDelete(fileName: string): void {
-        const timer = this.pendingDeletes.get(fileName);
-        if (timer) {
-            clearTimeout(timer);
-            this.pendingDeletes.delete(fileName);
-        }
+        clearTimeout(this.pendingDeletes.get(fileName));
+        this.pendingDeletes.delete(fileName);
     }
 
     protected clearPendingDeletes(): void {
@@ -364,11 +372,11 @@ export class NodeDirectoryWatcher {
         const known = this.children.has(fileName);
         if (await this.exists(path.resolve(this.watchedDirectory, fileName))) {
             this.children.add(fileName);
-            this.emit([{ fileName, type: known ? FileChangeType.UPDATED : FileChangeType.ADDED }]);
+            this.report([{ fileName, type: known ? FileChangeType.UPDATED : FileChangeType.ADDED }]);
             return;
         }
         this.children.delete(fileName);
-        this.emit(known
+        this.report(known
             ? [{ fileName, type: FileChangeType.DELETED }]
             // The file appeared and vanished within the delay, so report both rather than a deletion out of thin air.
             : [{ fileName, type: FileChangeType.ADDED }, { fileName, type: FileChangeType.DELETED }]);
@@ -407,71 +415,52 @@ export class NodeDirectoryWatcher {
             // A handle can also fail while the directory is untouched, and then nothing has changed to report.
             const gone = await this.isWatchedDirectoryGone();
             if (gone) {
-                this.emitDisappearance();
+                // Losing the directory takes every requested path inside it along.
+                this.report([{ type: FileChangeType.DELETED }]);
             }
             await this.start(gone);
         }, restartError => this.options.error(`Watcher failed to restart at "${this.target}":`, restartError));
     }
 
-    protected emit(changes: ResolvedChange[]): void {
+    /**
+     * Notifies each client once per path it watches that changed, so that a client holding overlapping requests
+     * does not hear about the same change twice.
+     */
+    protected report(changes: ResolvedChange[], requests: Iterable<NodeWatchRequest> = this.requests.values()): void {
         if (this.disposed || changes.length === 0) {
             return;
         }
         const perClient = new Map<number, FileChangeCollection>();
-        this.collectChanges(perClient, changes);
-        this.send(perClient);
-    }
-
-    /**
-     * Routes resolved changes to the requests that asked for them and groups them per client, so that a client
-     * holding overlapping requests is notified once.
-     */
-    protected collectChanges(perClient: Map<number, FileChangeCollection>, changes: ResolvedChange[]): void {
-        for (const request of this.requests.values()) {
+        for (const request of requests) {
             for (const { fileName, type } of changes) {
-                const changedPath = this.resolveRequestPath(request, fileName);
-                if (changedPath && !request.ignored.some(pattern => pattern.match(changedPath))) {
-                    this.collect(perClient, request.clientId, changedPath, type);
+                const changed = this.resolveRequestPath(request, fileName);
+                if (changed && !request.ignored.some(pattern => pattern.match(changed))) {
+                    let collection = perClient.get(request.clientId);
+                    if (!collection) {
+                        perClient.set(request.clientId, collection = new FileChangeCollection());
+                    }
+                    collection.push({ uri: FileUri.create(changed).toString(), type });
                 }
             }
         }
-    }
-
-    /** Reports the loss of the watched directory, which takes every requested path with it. */
-    protected emitDisappearance(): void {
-        const perClient = new Map<number, FileChangeCollection>();
-        for (const request of this.requests.values()) {
-            this.collect(perClient, request.clientId, request.path, FileChangeType.DELETED);
+        for (const [clientId, collection] of perClient) {
+            this.client.onDidFilesChanged({ clients: [clientId], changes: collection.values() });
         }
-        this.send(perClient);
     }
 
-    protected resolveRequestPath(request: NodeWatchRequest, fileName: string): string | undefined {
+    /** The path a request reports a change under, or `undefined` when the change is none of its business. */
+    protected resolveRequestPath(request: NodeWatchRequest, fileName?: string): string | undefined {
+        if (fileName === undefined) {
+            return request.path;
+        }
         if (request.fileName === undefined) {
             return path.resolve(request.path, fileName);
         }
         return this.sameFileName(request.fileName, fileName) ? request.path : undefined;
     }
 
-    protected collect(perClient: Map<number, FileChangeCollection>, clientId: number, changedPath: string, type: FileChangeType): void {
-        let collection = perClient.get(clientId);
-        if (!collection) {
-            perClient.set(clientId, collection = new FileChangeCollection());
-        }
-        collection.push({ uri: FileUri.create(changedPath).toString(), type });
-    }
-
-    protected send(perClient: Map<number, FileChangeCollection>): void {
-        for (const [clientId, collection] of perClient) {
-            const changes = collection.values();
-            if (changes.length > 0) {
-                this.client.onDidFilesChanged({ clients: [clientId], changes });
-            }
-        }
-    }
-
-    protected diff(previous: Set<string>, current: Set<string>): ResolvedChange[] {
-        const changes: ResolvedChange[] = [];
+    protected diff(previous: Set<string>, current: Set<string>): Required<ResolvedChange>[] {
+        const changes: Required<ResolvedChange>[] = [];
         for (const fileName of current) {
             if (!previous.has(fileName)) {
                 changes.push({ fileName, type: FileChangeType.ADDED });

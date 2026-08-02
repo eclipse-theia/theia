@@ -21,67 +21,55 @@ import * as fs from '@theia/core/shared/fs-extra';
 import { EventEmitter } from 'events';
 import { FSWatcher } from 'fs';
 import { Minimatch } from 'minimatch';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { isWindows } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
-import { DidFilesChangedParams, FileChange, FileChangeType, FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol';
+import { DidFilesChangedParams, FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol';
 import { DirectoryIdentity, NodeDirectoryWatcher, NodeDirectoryWatcherTimings, NodeWatchRequest, WatchEventListener } from './node-directory-watcher';
 
 const track = temp.track();
 
-const TEST_TIMINGS: NodeDirectoryWatcherTimings = {
+const TIMINGS: NodeDirectoryWatcherTimings = {
     changeDelay: 5,
     deleteDelay: 20,
     existencePollDelay: 20,
     deferredDisposalTimeout: 30
 };
 
-const NO_LOGGING = {
-    verbose: false,
-    info: () => { },
-    error: () => { }
-};
+/** How long to keep listening after the expected changes arrived, to catch any that should not have. */
+const SETTLE_DELAY = TIMINGS.deleteDelay * 3;
 
-class TestClient implements FileSystemWatcherServiceClient {
+/** Indexed by `FileChangeType`. */
+const CHANGE_NAMES = ['updated', 'added', 'deleted'];
 
-    readonly events: DidFilesChangedParams[] = [];
+const NO_LOGGING = { verbose: false, info: () => { }, error: () => { } };
 
-    onDidFilesChanged(event: DidFilesChangedParams): void {
-        this.events.push(event);
-    }
-
-    onError(): void { }
-
-    changesOf(clientId: number): FileChange[] {
-        return this.events.filter(event => event.clients?.includes(clientId)).flatMap(event => event.changes);
-    }
-
-    typesOf(clientId: number, uri: string): FileChangeType[] {
-        return this.changesOf(clientId).filter(change => change.uri === uri).map(change => change.type);
-    }
-
-    async waitFor(predicate: () => boolean, description: string): Promise<void> {
-        const deadline = Date.now() + 5000;
-        while (!predicate()) {
-            if (Date.now() > deadline) {
-                throw new Error(`timed out waiting for ${description}, saw: ${JSON.stringify(this.events)}`);
-            }
-            await new Promise(resolve => setTimeout(resolve, 5));
-        }
-    }
-}
-
-/** Replaces the `fs.watch` handle so that platform behavior that cannot be reproduced on CI can be driven directly. */
+/** Replaces the `fs.watch` handle, so that platform behavior no host can reproduce is driven directly. */
 class TestWatcher extends NodeDirectoryWatcher {
 
-    readonly openedDirectories: string[] = [];
-    existenceChecks = 0;
-    /** Set to pretend the watched directory was replaced, which no test can force on a real file system. */
+    /** Set to pretend the watched directory was replaced, which cannot be forced on a real file system. */
     fakeIdentity: DirectoryIdentity | undefined;
     /** Set to exercise the macOS and Windows file name handling on any host. */
     decomposes = false;
     caseSensitive = true;
+
     protected listener: WatchEventListener | undefined;
-    protected fakeHandle: EventEmitter | undefined;
+    protected handleEmitter: EventEmitter | undefined;
+    protected readonly missing = new Deferred<void>();
+
+    /** Resolves once the watcher has found its target missing, so that a test can then create it. */
+    readonly whenMissing = this.missing.promise;
+
+    /** Feeds the watcher an event as the platform would. */
+    fire(eventType: string, fileName: string | null): void {
+        assert.ok(this.listener, 'the watcher has not opened a handle');
+        this.listener(eventType, fileName);
+    }
+
+    /** Fails the open handle, as Windows does when the watched directory goes away. */
+    fail(error: Error): void {
+        this.handleEmitter?.emit('error', error);
+    }
 
     protected override get decomposesFileNames(): boolean {
         return this.decomposes;
@@ -95,440 +83,467 @@ class TestWatcher extends NodeDirectoryWatcher {
         return this.fakeIdentity ?? super.readIdentity();
     }
 
-    protected override exists(fsPath: string): Promise<boolean> {
-        return super.exists(fsPath).then(result => {
-            this.existenceChecks++;
-            return result;
-        });
+    protected override async exists(fsPath: string): Promise<boolean> {
+        const result = await super.exists(fsPath);
+        if (!result && fsPath === this.target) {
+            this.missing.resolve();
+        }
+        return result;
     }
 
     protected override createWatchHandle(directory: string, listener: WatchEventListener): FSWatcher {
-        this.openedDirectories.push(directory);
         this.listener = listener;
-        const handle = new EventEmitter();
-        this.fakeHandle = handle;
-        return Object.assign(handle, { close: () => { } }) as unknown as FSWatcher;
-    }
-
-    fire(eventType: string, fileName: string | null): void {
-        assert.ok(this.listener, 'watcher is not started');
-        this.listener(eventType, fileName);
-    }
-
-    fail(error: Error): void {
-        this.fakeHandle?.emit('error', error);
-    }
-
-    get watchedPath(): string {
-        return this.watchedDirectory;
-    }
-
-    get pendingDeleteCount(): number {
-        return this.pendingDeletes.size;
+        this.handleEmitter = new EventEmitter();
+        return Object.assign(this.handleEmitter, { close: () => { } }) as unknown as FSWatcher;
     }
 }
 
-function directoryRequest(clientId: number, requestPath: string, ignored: string[] = []): NodeWatchRequest {
-    return { clientId, path: requestPath, ignored: ignored.map(pattern => new Minimatch(pattern, { dot: true })) };
-}
+/**
+ * A temporary directory, a watcher on it and the changes its clients were told about. One per test, so that no
+ * test depends on what another one left behind.
+ */
+class Sandbox implements FileSystemWatcherServiceClient {
 
-function fileRequest(clientId: number, filePath: string, ignored: string[] = []): NodeWatchRequest {
-    return { ...directoryRequest(clientId, filePath, ignored), fileName: path.basename(filePath) };
+    readonly root = fs.realpathSync(temp.mkdirSync('node-directory-watcher'));
+
+    protected readonly reports: DidFilesChangedParams[] = [];
+    protected readonly watchers: NodeDirectoryWatcher[] = [];
+    protected notify: (() => void) | undefined;
+
+    onDidFilesChanged(report: DidFilesChangedParams): void {
+        this.reports.push(report);
+        this.notify?.();
+    }
+
+    onError(): void { }
+
+    path(...segments: string[]): string {
+        return path.resolve(this.root, ...segments);
+    }
+
+    write(...segments: string[]): string {
+        const target = this.path(...segments);
+        fs.writeFileSync(target, 'content');
+        return target;
+    }
+
+    mkdir(...segments: string[]): string {
+        const target = this.path(...segments);
+        fs.mkdirSync(target, { recursive: true });
+        return target;
+    }
+
+    remove(...segments: string[]): void {
+        fs.removeSync(this.path(...segments));
+    }
+
+    /** A request for every direct child of a directory. */
+    directory(clientId: number, directoryPath = this.root, ignored: string[] = []): NodeWatchRequest {
+        return { clientId, path: directoryPath, ignored: ignored.map(pattern => new Minimatch(pattern, { dot: true })) };
+    }
+
+    /** A request for a single file. */
+    file(clientId: number, filePath: string, ignored: string[] = []): NodeWatchRequest {
+        return { ...this.directory(clientId, filePath, ignored), fileName: path.basename(filePath) };
+    }
+
+    /** A watcher whose events the test feeds in, already started. */
+    async watching(target: string, ...requests: NodeWatchRequest[]): Promise<TestWatcher> {
+        const watcher = this.starting(target, ...requests);
+        await watcher.whenStarted;
+        return watcher;
+    }
+
+    /** A watcher whose events the test feeds in, not yet started. */
+    starting(target: string, ...requests: NodeWatchRequest[]): TestWatcher {
+        return this.track(new TestWatcher(target, NO_LOGGING, this, TIMINGS), requests);
+    }
+
+    /** A watcher driven by a real `fs.watch` handle, already started. */
+    async watchingForReal(target: string, ...requests: NodeWatchRequest[]): Promise<NodeDirectoryWatcher> {
+        const watcher = this.track(new NodeDirectoryWatcher(target, NO_LOGGING, this, TIMINGS), requests);
+        await watcher.whenStarted;
+        return watcher;
+    }
+
+    /** What a client was told, as `'<change> <path relative to the root>'`, the root itself being `'.'`. */
+    reported(clientId: number): string[] {
+        return this.reports
+            .filter(report => report.clients?.includes(clientId))
+            .flatMap(report => report.changes)
+            .map(change => {
+                const relative = path.relative(this.root, FileUri.fsPath(change.uri)).split(path.sep).join('/');
+                return `${CHANGE_NAMES[change.type]} ${relative || '.'}`;
+            });
+    }
+
+    /** Waits for the client to have been told exactly this, and for a moment longer to catch anything extra. */
+    async expect(clientId: number, ...expected: string[]): Promise<void> {
+        await this.settle(() => this.reported(clientId).length >= expected.length);
+        assert.deepStrictEqual(this.reported(clientId), expected);
+    }
+
+    /** Waits for the client to have been told at least this, tolerating whatever else the platform reports. */
+    async expectAmong(clientId: number, ...expected: string[]): Promise<void> {
+        await this.settle(() => expected.every(entry => this.reported(clientId).includes(entry)));
+        expected.forEach(entry => assert.ok(this.reported(clientId).includes(entry),
+            `expected "${entry}" among ${JSON.stringify(this.reported(clientId))}`));
+    }
+
+    dispose(): void {
+        this.watchers.splice(0).forEach(watcher => watcher.dispose());
+    }
+
+    protected track<T extends NodeDirectoryWatcher>(watcher: T, requests: NodeWatchRequest[]): T {
+        this.watchers.push(watcher);
+        requests.forEach((request, index) => watcher.addRequest(index, request));
+        return watcher;
+    }
+
+    protected async settle(reached: () => boolean): Promise<void> {
+        const deadline = Date.now() + 5000;
+        while (!reached() && Date.now() < deadline) {
+            await new Promise<void>(resolve => {
+                this.notify = resolve;
+                setTimeout(resolve, 5);
+            });
+            this.notify = undefined;
+        }
+        await new Promise(resolve => setTimeout(resolve, SETTLE_DELAY));
+    }
 }
 
 describe('node-directory-watcher', function (): void {
 
     this.timeout(20000);
 
-    let root: string;
-    let client: TestClient;
-    const watchers: NodeDirectoryWatcher[] = [];
+    const sandboxes: Sandbox[] = [];
 
-    beforeEach(() => {
-        root = fs.realpathSync(temp.mkdirSync('node-directory-watcher'));
-        client = new TestClient();
-    });
+    function sandbox(): Sandbox {
+        const box = new Sandbox();
+        sandboxes.push(box);
+        return box;
+    }
 
     afterEach(() => {
-        watchers.splice(0).forEach(watcher => watcher.dispose());
+        sandboxes.splice(0).forEach(box => box.dispose());
         track.cleanupSync();
     });
 
-    function createWatcher(target: string): TestWatcher {
-        const watcher = new TestWatcher(target, NO_LOGGING, client, TEST_TIMINGS);
-        watchers.push(watcher);
-        return watcher;
-    }
+    describe('resolving changes', () => {
 
-    async function started(target: string, ...requests: NodeWatchRequest[]): Promise<TestWatcher> {
-        const watcher = createWatcher(target);
-        requests.forEach((request, index) => watcher.addRequest(index, request));
-        await watcher.whenStarted;
-        return watcher;
-    }
+        it('reports a new direct child as added, and a known one as updated', async () => {
+            const box = sandbox();
+            const watcher = await box.watching(box.root, box.directory(1));
 
-    function uriOf(...segments: string[]): string {
-        return FileUri.create(path.resolve(root, ...segments)).toString();
-    }
-
-    describe('change classification', () => {
-
-        it('reports a new direct child as added and a known one as updated', async () => {
-            const watcher = await started(root, directoryRequest(1, root));
-
-            fs.writeFileSync(path.resolve(root, 'a.txt'), 'a');
+            box.write('a.txt');
             watcher.fire('rename', 'a.txt');
-            await client.waitFor(() => client.typesOf(1, uriOf('a.txt')).length > 0, 'the added file');
-            assert.deepStrictEqual(client.typesOf(1, uriOf('a.txt')), [FileChangeType.ADDED]);
+            await box.expect(1, 'added a.txt');
 
-            client.events.length = 0;
             watcher.fire('rename', 'a.txt');
-            await client.waitFor(() => client.typesOf(1, uriOf('a.txt')).length > 0, 'the updated file');
-            assert.deepStrictEqual(client.typesOf(1, uriOf('a.txt')), [FileChangeType.UPDATED]);
+            await box.expect(1, 'added a.txt', 'updated a.txt');
         });
 
-        it('reports a change event as updated', async () => {
-            fs.writeFileSync(path.resolve(root, 'a.txt'), 'a');
-            const watcher = await started(root, directoryRequest(1, root));
+        it('reports a modification as updated', async () => {
+            const box = sandbox();
+            box.write('a.txt');
+            const watcher = await box.watching(box.root, box.directory(1));
 
             watcher.fire('change', 'a.txt');
-            await client.waitFor(() => client.typesOf(1, uriOf('a.txt')).length > 0, 'the updated file');
-            assert.deepStrictEqual(client.typesOf(1, uriOf('a.txt')), [FileChangeType.UPDATED]);
+
+            await box.expect(1, 'updated a.txt');
         });
 
-        it('confirms a deletion only after the grace period', async () => {
-            fs.writeFileSync(path.resolve(root, 'a.txt'), 'a');
-            const watcher = await started(root, directoryRequest(1, root));
+        it('reports a deletion only once the grace period passed', async () => {
+            const box = sandbox();
+            box.write('a.txt');
+            const watcher = await box.watching(box.root, box.directory(1));
 
-            fs.removeSync(path.resolve(root, 'a.txt'));
+            box.remove('a.txt');
             watcher.fire('rename', 'a.txt');
-            assert.strictEqual(client.changesOf(1).length, 0, 'nothing is reported before the grace period');
+            assert.deepStrictEqual(box.reported(1), [], 'nothing is reported before the grace period');
 
-            await client.waitFor(() => client.typesOf(1, uriOf('a.txt')).length > 0, 'the deleted file');
-            assert.deepStrictEqual(client.typesOf(1, uriOf('a.txt')), [FileChangeType.DELETED]);
+            await box.expect(1, 'deleted a.txt');
         });
 
         it('reports an atomic save as an update rather than a deletion', async () => {
-            const file = path.resolve(root, 'a.txt');
-            fs.writeFileSync(file, 'a');
-            const watcher = await started(root, directoryRequest(1, root));
+            const box = sandbox();
+            box.write('a.txt');
+            const watcher = await box.watching(box.root, box.directory(1));
 
-            fs.removeSync(file);
+            box.remove('a.txt');
             watcher.fire('rename', 'a.txt');
-            fs.writeFileSync(file, 'b');
+            box.write('a.txt');
 
-            await client.waitFor(() => client.typesOf(1, uriOf('a.txt')).length > 0, 'the updated file');
-            assert.deepStrictEqual(client.typesOf(1, uriOf('a.txt')), [FileChangeType.UPDATED]);
+            await box.expect(1, 'updated a.txt');
         });
 
-        it('reports a file that appears and vanishes within the grace period as added and deleted', async () => {
-            const watcher = await started(root, directoryRequest(1, root));
+        it('reports a file that appears and vanishes within the grace period as both', async () => {
+            const box = sandbox();
+            const watcher = await box.watching(box.root, box.directory(1));
 
             watcher.fire('rename', 'ghost.txt');
-            await client.waitFor(() => client.typesOf(1, uriOf('ghost.txt')).length > 1, 'both changes');
-            assert.deepStrictEqual(client.typesOf(1, uriOf('ghost.txt')), [FileChangeType.ADDED, FileChangeType.DELETED]);
+
+            await box.expect(1, 'added ghost.txt', 'deleted ghost.txt');
         });
 
-        it('rescans the directory when the platform reports a change without a file name', async () => {
-            fs.writeFileSync(path.resolve(root, 'gone.txt'), 'a');
-            const watcher = await started(root, directoryRequest(1, root));
+        it('rescans when the platform reports a change without a file name', async () => {
+            const box = sandbox();
+            box.write('gone.txt');
+            const watcher = await box.watching(box.root, box.directory(1));
 
-            fs.writeFileSync(path.resolve(root, 'new.txt'), 'a');
-            fs.removeSync(path.resolve(root, 'gone.txt'));
+            box.write('new.txt');
+            box.remove('gone.txt');
             // eslint-disable-next-line no-null/no-null
             watcher.fire('change', null);
 
-            await client.waitFor(() => client.changesOf(1).length > 1, 'the rescanned changes');
-            assert.deepStrictEqual(client.typesOf(1, uriOf('new.txt')), [FileChangeType.ADDED]);
-            assert.deepStrictEqual(client.typesOf(1, uriOf('gone.txt')), [FileChangeType.DELETED]);
+            await box.expect(1, 'added new.txt', 'deleted gone.txt');
         });
 
-        it('settles a pending deletion that a rescan already resolved', async () => {
-            fs.writeFileSync(path.resolve(root, 'a.txt'), 'a');
-            const watcher = await started(root, directoryRequest(1, root));
+        it('reports a deletion once when a rescan settles it before the grace period', async () => {
+            const box = sandbox();
+            box.write('a.txt');
+            const watcher = await box.watching(box.root, box.directory(1));
 
-            fs.removeSync(path.resolve(root, 'a.txt'));
+            box.remove('a.txt');
             watcher.fire('rename', 'a.txt');
             // eslint-disable-next-line no-null/no-null
             watcher.fire('change', null);
 
-            await client.waitFor(() => client.typesOf(1, uriOf('a.txt')).length > 0, 'the deleted file');
-            await new Promise(resolve => setTimeout(resolve, TEST_TIMINGS.deleteDelay * 3));
-            assert.deepStrictEqual(client.typesOf(1, uriOf('a.txt')), [FileChangeType.DELETED], 'the deletion must be reported once');
+            await box.expect(1, 'deleted a.txt');
         });
 
-        it('matches a decomposed file name against the composed path a request asked for', async () => {
-            const composed = 'café.txt'.normalize('NFC');
-            const watcher = await started(root, fileRequest(1, path.resolve(root, composed)));
-            watcher.decomposes = true;
+        it('ignores an event naming a path below the watched directory', async () => {
+            const box = sandbox();
+            box.mkdir('nested');
+            box.write('nested', 'deep.txt');
+            box.write('sentinel.txt');
+            const watcher = await box.watching(box.root, box.directory(1));
 
-            fs.writeFileSync(path.resolve(root, composed), 'a');
-            watcher.fire('rename', 'café.txt');
-
-            await client.waitFor(() => client.changesOf(1).length > 0, 'the watched file');
-            assert.deepStrictEqual(client.changesOf(1).map(change => change.uri), [uriOf(composed)]);
-        });
-
-        it('matches a file name irrespective of case where the platform does', async () => {
-            const watcher = await started(root, fileRequest(1, path.resolve(root, 'Wanted.txt')));
-            watcher.caseSensitive = false;
-
-            fs.writeFileSync(path.resolve(root, 'wanted.txt'), 'a');
-            watcher.fire('rename', 'wanted.txt');
-
-            await client.waitFor(() => client.changesOf(1).length > 0, 'the watched file');
-            assert.deepStrictEqual(client.changesOf(1).map(change => change.uri), [uriOf('Wanted.txt')]);
-        });
-
-        it('ignores an event that names a path outside the watched directory level', async () => {
-            const watcher = await started(root, directoryRequest(1, root));
-
-            fs.mkdirSync(path.resolve(root, 'nested'));
-            fs.writeFileSync(path.resolve(root, 'nested', 'a.txt'), 'a');
-            fs.writeFileSync(path.resolve(root, 'sentinel.txt'), 'a');
-            watcher.fire('rename', path.join('nested', 'a.txt'));
+            watcher.fire('rename', path.join('nested', 'deep.txt'));
             watcher.fire('rename', 'sentinel.txt');
-            await client.waitFor(() => client.changesOf(1).length > 0, 'the sentinel');
-            assert.deepStrictEqual(client.changesOf(1).map(change => change.uri), [uriOf('sentinel.txt')]);
+
+            await box.expect(1, 'updated sentinel.txt');
         });
     });
 
-    describe('request routing', () => {
+    describe('routing', () => {
 
-        it('reports only its own file to a file request', async () => {
-            const watcher = await started(root, fileRequest(1, path.resolve(root, 'wanted.txt')));
+        it('tells a file request about its own file only', async () => {
+            const box = sandbox();
+            const watcher = await box.watching(box.root, box.file(1, box.path('wanted.txt')));
 
-            fs.writeFileSync(path.resolve(root, 'other.txt'), 'a');
-            fs.writeFileSync(path.resolve(root, 'wanted.txt'), 'a');
+            box.write('other.txt');
+            box.write('wanted.txt');
             watcher.fire('rename', 'other.txt');
             watcher.fire('rename', 'wanted.txt');
 
-            await client.waitFor(() => client.changesOf(1).length > 0, 'the watched file');
-            assert.deepStrictEqual(client.changesOf(1).map(change => change.uri), [uriOf('wanted.txt')]);
+            await box.expect(1, 'added wanted.txt');
         });
 
         it('applies the excludes of each request separately', async () => {
-            const watcher = await started(root,
-                directoryRequest(1, root, ['**/node_modules']),
-                directoryRequest(2, root));
+            const box = sandbox();
+            const watcher = await box.watching(box.root, box.directory(1, box.root, ['**/node_modules']), box.directory(2));
 
-            fs.mkdirSync(path.resolve(root, 'node_modules'));
+            box.mkdir('node_modules');
             watcher.fire('rename', 'node_modules');
 
-            await client.waitFor(() => client.changesOf(2).length > 0, 'the unfiltered request');
-            assert.strictEqual(client.changesOf(1).length, 0, 'the excluded request must see nothing');
-            assert.deepStrictEqual(client.changesOf(2).map(change => change.uri), [uriOf('node_modules')]);
+            await box.expect(2, 'added node_modules');
+            await box.expect(1);
         });
 
-        it('notifies a client holding overlapping requests once', async () => {
-            const file = path.resolve(root, 'a.txt');
-            fs.writeFileSync(file, 'a');
-            const watcher = await started(root, directoryRequest(1, root), fileRequest(1, file), directoryRequest(2, root));
+        it('tells a client holding overlapping requests once, and other clients independently', async () => {
+            const box = sandbox();
+            const file = box.write('a.txt');
+            const watcher = await box.watching(box.root, box.directory(1), box.file(1, file), box.directory(2));
 
             watcher.fire('change', 'a.txt');
-            await client.waitFor(() => client.changesOf(2).length > 0, 'the second client');
 
-            assert.deepStrictEqual(client.changesOf(1), [{ uri: uriOf('a.txt'), type: FileChangeType.UPDATED }], 'one change for the overlapping client');
-            assert.deepStrictEqual(client.changesOf(2), [{ uri: uriOf('a.txt'), type: FileChangeType.UPDATED }]);
+            await box.expect(1, 'updated a.txt');
+            await box.expect(2, 'updated a.txt');
         });
 
         it('reports changes under the path each request asked for', async () => {
-            const link = path.resolve(root, 'link');
-            const real = path.resolve(root, 'real');
-            fs.mkdirSync(real);
-            fs.symlinkSync(real, link, isWindows ? 'junction' : 'dir');
-            const watcher = await started(real, directoryRequest(1, real), directoryRequest(2, link));
+            const box = sandbox();
+            const real = box.mkdir('real');
+            fs.symlinkSync(real, box.path('link'), isWindows ? 'junction' : 'dir');
+            const watcher = await box.watching(real, box.directory(1, real), box.directory(2, box.path('link')));
 
-            fs.writeFileSync(path.resolve(real, 'a.txt'), 'a');
+            box.write('real', 'a.txt');
             watcher.fire('rename', 'a.txt');
 
-            await client.waitFor(() => client.changesOf(2).length > 0, 'the symlinked request');
-            assert.deepStrictEqual(client.changesOf(1).map(change => change.uri), [uriOf('real', 'a.txt')]);
-            assert.deepStrictEqual(client.changesOf(2).map(change => change.uri), [uriOf('link', 'a.txt')]);
+            await box.expect(1, 'added real/a.txt');
+            await box.expect(2, 'added link/a.txt');
+        });
+
+        it('matches a decomposed file name against the composed path a request asked for', async () => {
+            const box = sandbox();
+            const composed = 'café.txt'.normalize('NFC');
+            const watcher = await box.watching(box.root, box.file(1, box.path(composed)));
+            watcher.decomposes = true;
+
+            box.write(composed);
+            watcher.fire('rename', 'café.txt'.normalize('NFD'));
+
+            await box.expect(1, `added ${composed}`);
+        });
+
+        it('matches a file name irrespective of case where the platform does', async () => {
+            const box = sandbox();
+            const watcher = await box.watching(box.root, box.file(1, box.path('Wanted.txt')));
+            watcher.caseSensitive = false;
+
+            box.write('wanted.txt');
+            watcher.fire('rename', 'wanted.txt');
+
+            await box.expect(1, 'added Wanted.txt');
         });
     });
 
-    describe('watched directory lifecycle', () => {
+    describe('the watched directory', () => {
 
-        it('watches the parent directory of a file target', async () => {
-            const file = path.resolve(root, 'a.txt');
-            fs.writeFileSync(file, 'a');
-            const watcher = await started(file, fileRequest(1, file));
+        it('is reported and watched once it appears', async () => {
+            const box = sandbox();
+            const target = box.path('later');
+            const watcher = box.starting(target, box.directory(1, target));
 
-            assert.strictEqual(watcher.watchedPath, root);
-            assert.deepStrictEqual(watcher.openedDirectories, [root]);
-        });
-
-        it('starts once a target that does not exist yet appears, and reports it', async () => {
-            const target = path.resolve(root, 'later');
-            const watcher = createWatcher(target);
-            watcher.addRequest(0, directoryRequest(1, target));
-
-            await client.waitFor(() => watcher.existenceChecks > 0, 'the watcher to observe the missing target');
+            await watcher.whenMissing;
             fs.mkdirSync(target);
             await watcher.whenStarted;
+            watcher.fire('rename', path.basename(box.write('later', 'a.txt')));
 
-            await client.waitFor(() => client.changesOf(1).length > 0, 'the appeared target');
-            assert.deepStrictEqual(client.typesOf(1, FileUri.create(target).toString()), [FileChangeType.ADDED]);
-            assert.strictEqual(watcher.watchedPath, target);
+            await box.expect(1, 'added later', 'added later/a.txt');
         });
 
-        it('treats a target that turns out to be a file as a file request', async () => {
-            const target = path.resolve(root, 'later.txt');
-            const watcher = createWatcher(target);
-            watcher.addRequest(0, directoryRequest(1, target));
+        it('is the parent when the target turns out to be a file', async () => {
+            const box = sandbox();
+            const target = box.path('later.txt');
+            const watcher = box.starting(target, box.directory(1, target));
 
-            await client.waitFor(() => watcher.existenceChecks > 0, 'the watcher to observe the missing target');
-            fs.writeFileSync(target, 'a');
+            await watcher.whenMissing;
+            fs.writeFileSync(target, 'content');
             await watcher.whenStarted;
-
-            assert.strictEqual(watcher.watchedPath, root);
-            client.events.length = 0;
-            fs.writeFileSync(path.resolve(root, 'other.txt'), 'a');
-            watcher.fire('rename', 'other.txt');
+            box.write('sibling.txt');
+            watcher.fire('rename', 'sibling.txt');
             watcher.fire('change', 'later.txt');
-            await client.waitFor(() => client.changesOf(1).length > 0, 'the watched file');
-            assert.deepStrictEqual(client.changesOf(1).map(change => change.uri), [FileUri.create(target).toString()]);
+
+            await box.expect(1, 'added later.txt', 'updated later.txt');
         });
 
-        it('reports the deletion of the watched directory and recovers when it comes back', async () => {
-            const target = path.resolve(root, 'workspace');
-            fs.mkdirSync(target);
-            fs.writeFileSync(path.resolve(target, 'before.txt'), 'a');
-            const watcher = await started(target, directoryRequest(1, target));
-            const targetUri = FileUri.create(target).toString();
+        it('is reported as deleted, and its recovery reports what changed meanwhile', async () => {
+            const box = sandbox();
+            const target = box.mkdir('workspace');
+            box.write('workspace', 'before.txt');
+            const watcher = await box.watching(target, box.directory(1, target));
 
-            fs.removeSync(target);
+            box.remove('workspace');
             watcher.fire('rename', 'workspace');
-            await client.waitFor(() => client.typesOf(1, targetUri).includes(FileChangeType.DELETED), 'the deleted directory');
+            box.mkdir('workspace');
+            box.write('workspace', 'after.txt');
 
-            fs.mkdirSync(target);
-            fs.writeFileSync(path.resolve(target, 'after.txt'), 'a');
-            await client.waitFor(() => client.typesOf(1, targetUri).includes(FileChangeType.ADDED), 'the restored directory');
-            await client.waitFor(() => client.changesOf(1).some(change => change.uri === FileUri.create(path.resolve(target, 'after.txt')).toString()),
-                'the changes made while the directory was gone');
-
-            assert.strictEqual(watcher.openedDirectories.length, 2, 'a new handle must be opened for the new directory');
+            await box.expect(1, 'deleted workspace', 'added workspace', 'added workspace/after.txt', 'deleted workspace/before.txt');
         });
 
-        it('recovers when the watched directory is replaced rather than removed', async () => {
-            const target = path.resolve(root, 'workspace');
-            fs.mkdirSync(target);
-            const watcher = await started(target, directoryRequest(1, target));
-
-            fs.removeSync(target);
-            fs.mkdirSync(target);
-            watcher.fire('rename', 'workspace');
-
-            await client.waitFor(() => client.typesOf(1, FileUri.create(target).toString()).includes(FileChangeType.DELETED), 'the replaced directory');
-            await client.waitFor(() => watcher.openedDirectories.length === 2, 'the new handle');
-        });
-
-        it('recovers from a handle error without reporting a change', async () => {
-            const watcher = await started(root, directoryRequest(1, root));
-
-            watcher.fail(new Error('EPERM'));
-            await client.waitFor(() => watcher.openedDirectories.length === 2, 'the new handle');
-
-            assert.deepStrictEqual(client.changesOf(1), [], 'a handle that fails while the directory is untouched changes nothing');
-        });
-
-        it('reports a directory that was replaced while its inode number was reused', async () => {
-            const watcher = await started(root, directoryRequest(1, root));
-            const rootUri = FileUri.create(root).toString();
+        it('keeps working after being replaced while its inode number was reused', async () => {
+            const box = sandbox();
+            const watcher = await box.watching(box.root, box.directory(1));
 
             watcher.fakeIdentity = { dev: 1, ino: 2, birthtimeMs: 3 };
             watcher.fire('rename', 'a.txt');
+            await box.expect(1, 'deleted .', 'added .');
 
-            await client.waitFor(() => client.typesOf(1, rootUri).includes(FileChangeType.DELETED), 'the replaced directory');
-            await client.waitFor(() => client.typesOf(1, rootUri).includes(FileChangeType.ADDED), 'the restored directory');
-            assert.strictEqual(watcher.openedDirectories.length, 2);
+            box.write('a.txt');
+            watcher.fire('rename', 'a.txt');
+            await box.expect(1, 'deleted .', 'added .', 'added a.txt');
+        });
+
+        it('keeps working after a handle failure, without reporting a change', async () => {
+            const box = sandbox();
+            const watcher = await box.watching(box.root, box.directory(1));
+
+            watcher.fail(new Error('EPERM'));
+            await box.expect(1);
+
+            box.write('a.txt');
+            watcher.fire('rename', 'a.txt');
+            await box.expect(1, 'added a.txt');
         });
     });
 
     describe('disposal', () => {
 
-        it('disposes once the last request is released', async () => {
-            const watcher = await started(root, directoryRequest(1, root), directoryRequest(2, root));
+        it('happens once the last request is released', async () => {
+            const box = sandbox();
+            const watcher = await box.watching(box.root, box.directory(1), box.directory(2));
 
             watcher.removeRequest(0);
-            await new Promise(resolve => setTimeout(resolve, TEST_TIMINGS.deferredDisposalTimeout * 2));
-            assert.strictEqual(watcher.isDisposed, false, 'a watcher with requests left must stay alive');
+            await new Promise(resolve => setTimeout(resolve, TIMINGS.deferredDisposalTimeout * 2));
+            assert.strictEqual(watcher.isDisposed, false, 'a watcher with a request left must stay alive');
 
             watcher.removeRequest(1);
             await watcher.whenDisposed;
-            assert.strictEqual(watcher.isDisposed, true);
         });
 
-        it('revives when a request arrives before the deferred disposal', async () => {
-            const watcher = await started(root, directoryRequest(1, root));
+        it('is called off by a request arriving before the deferred timeout', async () => {
+            const box = sandbox();
+            const watcher = await box.watching(box.root, box.directory(1));
 
             watcher.removeRequest(0);
-            watcher.addRequest(1, directoryRequest(2, root));
-            await new Promise(resolve => setTimeout(resolve, TEST_TIMINGS.deferredDisposalTimeout * 2));
+            watcher.addRequest(1, box.directory(2));
+            await new Promise(resolve => setTimeout(resolve, TIMINGS.deferredDisposalTimeout * 2));
 
             assert.strictEqual(watcher.isDisposed, false);
         });
 
-        it('emits nothing and leaves no pending deletion behind when disposed mid-flight', async () => {
-            fs.writeFileSync(path.resolve(root, 'a.txt'), 'a');
-            const watcher = await started(root, directoryRequest(1, root));
+        it('silences a deletion that was still pending', async () => {
+            const box = sandbox();
+            box.write('a.txt');
+            const watcher = await box.watching(box.root, box.directory(1));
 
-            fs.removeSync(path.resolve(root, 'a.txt'));
+            box.remove('a.txt');
             watcher.fire('rename', 'a.txt');
-            await client.waitFor(() => watcher.pendingDeleteCount > 0, 'the pending deletion');
             watcher.dispose();
 
-            await new Promise(resolve => setTimeout(resolve, TEST_TIMINGS.deleteDelay * 3));
-            assert.strictEqual(watcher.pendingDeleteCount, 0);
-            assert.strictEqual(client.changesOf(1).length, 0);
+            await box.expect(1);
         });
     });
 
     describe('with a real fs.watch handle', () => {
 
-        async function realWatcher(target: string, ...requests: NodeWatchRequest[]): Promise<NodeDirectoryWatcher> {
-            const watcher = new NodeDirectoryWatcher(target, NO_LOGGING, client, TEST_TIMINGS);
-            requests.forEach((request, index) => watcher.addRequest(index, request));
-            watchers.push(watcher);
-            await watcher.whenStarted;
-            return watcher;
-        }
-
         it('reports direct children and nothing below them', async () => {
-            const nested = path.resolve(root, 'nested');
-            fs.mkdirSync(nested);
-            await realWatcher(root, directoryRequest(1, root));
+            const box = sandbox();
+            box.mkdir('nested');
+            await box.watchingForReal(box.root, box.directory(1));
 
-            fs.writeFileSync(path.resolve(nested, 'deep.txt'), 'a');
-            fs.writeFileSync(path.resolve(root, 'direct.txt'), 'a');
+            box.write('nested', 'deep.txt');
+            box.write('direct.txt');
 
-            await client.waitFor(() => client.typesOf(1, uriOf('direct.txt')).includes(FileChangeType.ADDED), 'the direct child');
-            assert.deepStrictEqual(client.typesOf(1, uriOf('nested', 'deep.txt')), [], 'a nested change must not be reported');
+            await box.expectAmong(1, 'added direct.txt');
+            assert.ok(!box.reported(1).includes('added nested/deep.txt'), 'a nested change must not be reported');
         });
 
         it('reports an update and a deletion of a direct child', async () => {
-            const file = path.resolve(root, 'a.txt');
-            fs.writeFileSync(file, 'a');
-            await realWatcher(root, directoryRequest(1, root));
+            const box = sandbox();
+            box.write('a.txt');
+            await box.watchingForReal(box.root, box.directory(1));
 
-            fs.writeFileSync(file, 'b');
-            await client.waitFor(() => client.typesOf(1, uriOf('a.txt')).includes(FileChangeType.UPDATED), 'the update');
+            box.write('a.txt');
+            await box.expectAmong(1, 'updated a.txt');
 
-            fs.removeSync(file);
-            await client.waitFor(() => client.typesOf(1, uriOf('a.txt')).includes(FileChangeType.DELETED), 'the deletion');
+            box.remove('a.txt');
+            await box.expectAmong(1, 'deleted a.txt');
         });
 
         it('reports a single file through its parent directory', async () => {
-            const file = path.resolve(root, 'a.txt');
-            fs.writeFileSync(file, 'a');
-            await realWatcher(file, fileRequest(1, file));
+            const box = sandbox();
+            const file = box.write('a.txt');
+            await box.watchingForReal(file, box.file(1, file));
 
-            fs.writeFileSync(path.resolve(root, 'other.txt'), 'a');
-            fs.writeFileSync(file, 'b');
+            box.write('other.txt');
+            box.write('a.txt');
 
-            await client.waitFor(() => client.typesOf(1, uriOf('a.txt')).length > 0, 'the watched file');
-            assert.deepStrictEqual(client.typesOf(1, uriOf('other.txt')), [], 'a sibling must not be reported');
+            await box.expectAmong(1, 'updated a.txt');
+            assert.ok(!box.reported(1).includes('added other.txt'), 'a sibling must not be reported');
         });
     });
 });

@@ -21,25 +21,55 @@ import * as fs from '@theia/core/shared/fs-extra';
 import { isWindows } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
 import { NodeDirectoryWatcher, NodeDirectoryWatcherTimings } from '../nodejs-watcher/node-directory-watcher';
-import { WatcherInstance, FileSystemWatcherServiceImpl, ParcelFileSystemWatcherService, ParcelWatcher, ParcelWatcherOptions } from './parcel-filesystem-service';
+import { FileSystemWatcherServiceImpl, ParcelFileSystemWatcherService, ParcelWatcher, ParcelWatcherOptions, WatcherInstance } from './parcel-filesystem-service';
 import { WatchOptions } from '../../common/filesystem-watcher-protocol';
 
 const track = temp.track();
 
-const TEST_TIMINGS: NodeDirectoryWatcherTimings = {
+const TIMINGS: NodeDirectoryWatcherTimings = {
     changeDelay: 5,
     deleteDelay: 20,
     existencePollDelay: 20,
     deferredDisposalTimeout: 30
 };
 
-class TestService extends FileSystemWatcherServiceImpl {
+const RECURSIVE: WatchOptions = { ignored: [], recursive: true };
+const NON_RECURSIVE: WatchOptions = { ignored: [], recursive: false };
 
-    get keys(): string[] {
-        return Array.from(this.watchers.keys());
+/** A temporary directory and a watcher service on it, one per test. */
+class Sandbox extends FileSystemWatcherServiceImpl {
+
+    readonly root = fs.realpathSync(temp.mkdirSync('filesystem-watcher-service'));
+
+    protected readonly requested: number[] = [];
+
+    constructor() {
+        super({ verbose: false, info: () => { }, error: () => { } });
     }
 
-    get liveWatchers(): WatcherInstance[] {
+    path(...segments: string[]): string {
+        return path.resolve(this.root, ...segments);
+    }
+
+    mkdir(...segments: string[]): string {
+        const target = this.path(...segments);
+        fs.mkdirSync(target, { recursive: true });
+        return target;
+    }
+
+    write(...segments: string[]): string {
+        const target = this.path(...segments);
+        fs.writeFileSync(target, 'content');
+        return target;
+    }
+
+    watch(fsPath: string, options: WatchOptions): Promise<number> {
+        return this.watchFileChanges(1, FileUri.create(fsPath).toString(), options)
+            .then(watcherId => (this.requested.push(watcherId), watcherId));
+    }
+
+    /** The watchers currently allocated, one per distinct key. */
+    get allocated(): WatcherInstance[] {
         return Array.from(this.watchers.values());
     }
 
@@ -47,13 +77,20 @@ class TestService extends FileSystemWatcherServiceImpl {
         return this.watcherHandles.get(watcherId)?.watcher;
     }
 
+    async release(): Promise<void> {
+        const outstanding = this.requested.splice(0).filter(watcherId => this.watcherOf(watcherId));
+        const allocated = this.allocated;
+        await Promise.all(outstanding.map(watcherId => this.unwatchFileChanges(watcherId)));
+        await Promise.all(allocated.map(watcher => watcher.whenDisposed));
+    }
+
     protected override createDirectoryWatcher(directory: string): NodeDirectoryWatcher {
-        return new NodeDirectoryWatcher(directory, this.options, this.maybeClient, TEST_TIMINGS);
+        return new NodeDirectoryWatcher(directory, this.options, this.maybeClient, TIMINGS);
     }
 
     protected override createWatcher(clientId: number, fsPath: string, options: WatchOptions): ParcelWatcher {
         const watcherOptions: ParcelWatcherOptions = { ignored: this.compileExcludes(options.ignored), ignorePatterns: options.ignored };
-        return new ParcelWatcher(clientId, fsPath, watcherOptions, this.options, this.maybeClient, TEST_TIMINGS.deferredDisposalTimeout);
+        return new ParcelWatcher(clientId, fsPath, watcherOptions, this.options, this.maybeClient, TIMINGS.deferredDisposalTimeout);
     }
 }
 
@@ -61,33 +98,18 @@ describe('filesystem-watcher-service', function (): void {
 
     this.timeout(20000);
 
-    let root: string;
-    let service: TestService;
-    let watcherIds: number[];
+    const sandboxes: Sandbox[] = [];
 
-    beforeEach(() => {
-        root = fs.realpathSync(temp.mkdirSync('filesystem-watcher-service'));
-        service = new TestService({ verbose: false, info: () => { }, error: () => { } });
-        watcherIds = [];
-    });
+    function sandbox(): Sandbox {
+        const box = new Sandbox();
+        sandboxes.push(box);
+        return box;
+    }
 
     afterEach(async () => {
-        const pending = watcherIds.filter(watcherId => service.watcherOf(watcherId) !== undefined);
-        const watchers = service.liveWatchers;
-        await Promise.all(pending.map(watcherId => service.unwatchFileChanges(watcherId)));
-        await Promise.all(watchers.map(watcher => watcher.whenDisposed));
+        await Promise.all(sandboxes.splice(0).map(box => box.release()));
         track.cleanupSync();
     });
-
-    function uriOf(...segments: string[]): string {
-        return FileUri.create(path.resolve(root, ...segments)).toString();
-    }
-
-    async function watch(uri: string, options?: WatchOptions): Promise<number> {
-        const watcherId = await service.watchFileChanges(1, uri, options);
-        watcherIds.push(watcherId);
-        return watcherId;
-    }
 
     describe('routing', () => {
 
@@ -95,114 +117,119 @@ describe('filesystem-watcher-service', function (): void {
             assert.strictEqual(ParcelFileSystemWatcherService, FileSystemWatcherServiceImpl);
         });
 
-        it('serves a recursive request with the parcel watcher', async () => {
-            const watcherId = await watch(uriOf(), { ignored: [], recursive: true });
-            assert.ok(service.watcherOf(watcherId) instanceof ParcelWatcher);
-        });
+        it('serves a recursive request, and one that does not say, with the parcel watcher', async () => {
+            const box = sandbox();
 
-        it('serves a request without an explicit mode with the parcel watcher', async () => {
-            const watcherId = await watch(uriOf(), { ignored: [] });
-            assert.ok(service.watcherOf(watcherId) instanceof ParcelWatcher);
+            const recursive = await box.watch(box.root, RECURSIVE);
+            const unspecified = await box.watch(box.mkdir('other'), { ignored: [] });
+
+            assert.ok(box.watcherOf(recursive) instanceof ParcelWatcher);
+            assert.ok(box.watcherOf(unspecified) instanceof ParcelWatcher);
         });
 
         it('serves a non-recursive request with a directory watcher', async () => {
-            const watcherId = await watch(uriOf(), { ignored: [], recursive: false });
-            assert.ok(service.watcherOf(watcherId) instanceof NodeDirectoryWatcher);
+            const box = sandbox();
+
+            const watcherId = await box.watch(box.root, NON_RECURSIVE);
+
+            assert.ok(box.watcherOf(watcherId) instanceof NodeDirectoryWatcher);
         });
 
         it('keeps a recursive and a non-recursive request on the same path apart', async () => {
-            const recursive = await watch(uriOf(), { ignored: [], recursive: true });
-            const nonRecursive = await watch(uriOf(), { ignored: [], recursive: false });
+            const box = sandbox();
 
-            assert.notStrictEqual(service.watcherOf(recursive), service.watcherOf(nonRecursive));
-            assert.strictEqual(service.keys.length, 2);
+            const recursive = await box.watch(box.root, RECURSIVE);
+            const nonRecursive = await box.watch(box.root, NON_RECURSIVE);
+
+            assert.notStrictEqual(box.watcherOf(recursive), box.watcherOf(nonRecursive));
+            assert.strictEqual(box.allocated.length, 2);
         });
     });
 
     describe('sharing', () => {
 
         it('shares one watcher between a directory and the files inside it', async () => {
-            fs.writeFileSync(path.resolve(root, 'a.txt'), 'a');
-            fs.writeFileSync(path.resolve(root, 'b.txt'), 'b');
+            const box = sandbox();
 
-            const directory = await watch(uriOf(), { ignored: [], recursive: false });
-            const first = await watch(uriOf('a.txt'), { ignored: [], recursive: false });
-            const second = await watch(uriOf('b.txt'), { ignored: [], recursive: false });
+            const directory = await box.watch(box.root, NON_RECURSIVE);
+            const first = await box.watch(box.write('a.txt'), NON_RECURSIVE);
+            const second = await box.watch(box.write('b.txt'), NON_RECURSIVE);
 
-            assert.strictEqual(service.keys.length, 1);
-            assert.strictEqual(service.watcherOf(directory), service.watcherOf(first));
-            assert.strictEqual(service.watcherOf(first), service.watcherOf(second));
+            assert.strictEqual(box.allocated.length, 1);
+            assert.strictEqual(box.watcherOf(directory), box.watcherOf(first));
+            assert.strictEqual(box.watcherOf(first), box.watcherOf(second));
         });
 
         it('shares one watcher between requests with different excludes', async () => {
-            await watch(uriOf(), { ignored: ['**/node_modules'], recursive: false });
-            await watch(uriOf(), { ignored: [], recursive: false });
+            const box = sandbox();
 
-            assert.strictEqual(service.keys.length, 1);
+            await box.watch(box.root, { ignored: ['**/node_modules'], recursive: false });
+            await box.watch(box.root, NON_RECURSIVE);
+
+            assert.strictEqual(box.allocated.length, 1);
         });
 
         it('shares one watcher between a directory and a symbolic link to it', async () => {
-            const real = path.resolve(root, 'real');
-            const link = path.resolve(root, 'link');
-            fs.mkdirSync(real);
-            fs.symlinkSync(real, link, isWindows ? 'junction' : 'dir');
+            const box = sandbox();
+            const real = box.mkdir('real');
+            fs.symlinkSync(real, box.path('link'), isWindows ? 'junction' : 'dir');
 
-            const direct = await watch(uriOf('real'), { ignored: [], recursive: false });
-            const linked = await watch(uriOf('link'), { ignored: [], recursive: false });
+            const direct = await box.watch(real, NON_RECURSIVE);
+            const linked = await box.watch(box.path('link'), NON_RECURSIVE);
 
-            assert.strictEqual(service.keys.length, 1);
-            assert.strictEqual(service.watcherOf(direct), service.watcherOf(linked));
+            assert.strictEqual(box.allocated.length, 1);
+            assert.strictEqual(box.watcherOf(direct), box.watcherOf(linked));
         });
 
         it('shares one watcher between concurrent requests for the same directory', async () => {
-            fs.writeFileSync(path.resolve(root, 'a.txt'), 'a');
-            fs.writeFileSync(path.resolve(root, 'b.txt'), 'b');
+            const box = sandbox();
+            const [first, second] = [box.write('a.txt'), box.write('b.txt')];
 
-            const [first, second] = await Promise.all([
-                watch(uriOf('a.txt'), { ignored: [], recursive: false }),
-                watch(uriOf('b.txt'), { ignored: [], recursive: false })
-            ]);
+            const [one, two] = await Promise.all([box.watch(first, NON_RECURSIVE), box.watch(second, NON_RECURSIVE)]);
 
-            assert.strictEqual(service.keys.length, 1);
-            assert.strictEqual(service.watcherOf(first), service.watcherOf(second));
+            assert.strictEqual(box.allocated.length, 1);
+            assert.strictEqual(box.watcherOf(one), box.watcherOf(two));
         });
 
         it('does not attach a request to a watcher that is already disposed', async () => {
-            const first = await watch(uriOf(), { ignored: [], recursive: false });
-            const disposed = service.watcherOf(first) as NodeDirectoryWatcher;
+            const box = sandbox();
+            const first = await box.watch(box.root, NON_RECURSIVE);
+            const disposed = box.watcherOf(first) as NodeDirectoryWatcher;
             disposed.dispose();
 
-            const second = await watch(uriOf(), { ignored: [], recursive: false });
+            const second = await box.watch(box.root, NON_RECURSIVE);
 
-            assert.notStrictEqual(service.watcherOf(second), disposed);
-            assert.strictEqual(service.keys.length, 1);
+            assert.notStrictEqual(box.watcherOf(second), disposed);
+            assert.strictEqual(box.allocated.length, 1);
         });
     });
 
     describe('releasing', () => {
 
         it('disposes a directory watcher once its last request is unwatched', async () => {
-            const first = await watch(uriOf(), { ignored: [], recursive: false });
-            const second = await watch(uriOf(), { ignored: [], recursive: false });
-            const watcher = service.watcherOf(first) as NodeDirectoryWatcher;
+            const box = sandbox();
+            const first = await box.watch(box.root, NON_RECURSIVE);
+            const second = await box.watch(box.root, NON_RECURSIVE);
+            const watcher = box.watcherOf(first) as NodeDirectoryWatcher;
 
-            await service.unwatchFileChanges(first);
-            await new Promise(resolve => setTimeout(resolve, TEST_TIMINGS.deferredDisposalTimeout * 2));
+            await box.unwatchFileChanges(first);
+            await new Promise(resolve => setTimeout(resolve, TIMINGS.deferredDisposalTimeout * 2));
             assert.strictEqual(watcher.isDisposed, false, 'the remaining request must keep the watcher alive');
 
-            await service.unwatchFileChanges(second);
+            await box.unwatchFileChanges(second);
             await watcher.whenDisposed;
-            assert.strictEqual(service.keys.length, 0);
+            assert.strictEqual(box.allocated.length, 0);
         });
 
         it('releases the client reference of a recursive watcher', async () => {
-            const watcherId = await watch(uriOf(), { ignored: [], recursive: true });
-            const watcher = service.watcherOf(watcherId) as ParcelWatcher;
+            const box = sandbox();
+            const watcherId = await box.watch(box.root, RECURSIVE);
+            const watcher = box.watcherOf(watcherId) as ParcelWatcher;
 
-            await service.unwatchFileChanges(watcherId);
+            await box.unwatchFileChanges(watcherId);
             await watcher.whenDisposed;
 
-            assert.strictEqual(service.keys.length, 0);
+            assert.strictEqual(box.allocated.length, 0);
         });
     });
 });
