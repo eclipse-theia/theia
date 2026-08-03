@@ -44,7 +44,6 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
-    @inject(PreferencesWidget) protected readonly scopeTracker: PreferencesWidget;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(QuickInputService) @optional() protected readonly quickInputService: QuickInputService;
 
@@ -92,8 +91,9 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         commands.registerCommand(PreferencesCommands.RESET_PREFERENCE, {
             isEnabled: Preference.EditorCommandArgs.is,
             isVisible: Preference.EditorCommandArgs.is,
-            execute: ({ id }: Preference.EditorCommandArgs) => {
-                this.preferenceService.set(id, undefined, Number(this.scopeTracker.currentScope.scope), this.scopeTracker.currentScope.uri);
+            execute: async ({ id }: Preference.EditorCommandArgs) => {
+                const { scope, uri } = (await this.widget).currentScope;
+                this.preferenceService.set(id, undefined, Number(scope), uri);
             }
         });
         commands.registerCommand(PreferencesCommands.OPEN_USER_PREFERENCES, {
@@ -113,9 +113,9 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         commands.registerCommand(PreferencesCommands.OPEN_FOLDER_PREFERENCES, {
             isEnabled: () => !!this.workspaceService.isMultiRootWorkspaceOpened && this.workspaceService.tryGetRoots().length > 0,
             isVisible: () => !!this.workspaceService.isMultiRootWorkspaceOpened && this.workspaceService.tryGetRoots().length > 0,
-            execute: () => this.openFolderPreferences(root => {
+            execute: () => this.openFolderPreferences(async root => {
                 this.openView({ activate: true });
-                this.scopeTracker.setScope(root.resource);
+                (await this.widget).setScope(root.resource);
             })
         });
         commands.registerCommand(PreferencesCommands.OPEN_USER_PREFERENCES_JSON, {
@@ -178,7 +178,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     }
 
     protected async openPreferencesJSON(opener: string | PreferencesWidget): Promise<void> {
-        const { scope, activeScopeIsFolder, uri } = this.scopeTracker.currentScope;
+        const { scope, activeScopeIsFolder, uri } = (await this.widget).currentScope;
         const scopeID = Number(scope);
         let preferenceId = '';
         if (typeof opener === 'string') {
