@@ -20,6 +20,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { HoverService } from '@theia/core/lib/browser/hover-service';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { ScmHistoryGraphModel, HistoryGraphEntry } from './scm-history-graph-model';
 import { ScmHistoryItemRef, ScmHistoryItemChange } from './scm-provider';
@@ -87,6 +88,7 @@ export class ScmHistoryGraphWidget extends ReactWidget {
 
     @inject(ScmHistoryGraphModel) protected readonly model: ScmHistoryGraphModel;
     @inject(HoverService) protected readonly hoverService: HoverService;
+    @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
     @inject(MarkdownRendererFactory) protected readonly markdownRendererFactory: MarkdownRendererFactory;
     @inject(ScmService) protected readonly scmService: ScmService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
@@ -244,12 +246,30 @@ export class ScmHistoryGraphWidget extends ReactWidget {
 
     protected handleRowMouseEnter = (e: React.MouseEvent<HTMLDivElement>, entry: HistoryGraphEntry): void => {
         this.hoverService.requestHover({
-            content: buildHtmlTooltip(entry, this.markdownRenderer, this.model.provider),
+            content: buildHtmlTooltip(entry, this.markdownRenderer, this.model.provider, {
+                openCommit: () => this.openCommitFromTooltip(entry),
+                copyCommitHash: () => this.clipboardService.writeText(entry.item.id),
+            }),
             target: e.currentTarget,
             position: 'right',
             interactive: true,
         });
     };
+
+    /** Selects the commit and expands its changes, closing the hover first. */
+    protected openCommitFromTooltip(entry: HistoryGraphEntry): void {
+        this.hoverService.cancelHover();
+        const idx = this.model.entries.indexOf(entry);
+        if (idx < 0) {
+            return;
+        }
+        if (this.expandedIds.has(entry.item.id)) {
+            this.selectedIndex = idx;
+            this.update();
+        } else {
+            this.handleRowClick(idx, entry);
+        }
+    }
 
     protected renderChangesRows(
         itemId: string,
