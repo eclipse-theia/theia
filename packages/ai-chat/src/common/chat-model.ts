@@ -3164,6 +3164,7 @@ class ChatResponseImpl implements ChatResponse {
     protected _content: ChatResponseContent[];
     protected _responseRepresentation: string;
     protected _responseRepresentationForDisplay: string;
+    protected readonly contentChangeListeners = new Map<ChatResponseContent, Disposable>();
 
     constructor() {
         this._content = [];
@@ -3174,6 +3175,8 @@ class ChatResponseImpl implements ChatResponse {
     }
 
     clearContent(): void {
+        this.contentChangeListeners.forEach(listener => listener.dispose());
+        this.contentChangeListeners.clear();
         this._content = [];
         this._updateResponseRepresentation();
         this._onDidChangeEmitter.fire();
@@ -3209,7 +3212,11 @@ class ChatResponseImpl implements ChatResponse {
                 // Forward content-level change events (e.g. partial-result updates from a
                 // renderer) so auto-save can persist them. Without this, mutations that
                 // don't go through addContent/merge are invisible to listeners.
-                nextContent.onDidChange(() => this._onDidChangeEmitter.fire());
+                // Track the subscription so re-adding the same content after clearContent()
+                // (as the stream parser does per token) doesn't stack up listeners (#17858).
+                if (!this.contentChangeListeners.has(nextContent)) {
+                    this.contentChangeListeners.set(nextContent, nextContent.onDidChange(() => this._onDidChangeEmitter.fire()));
+                }
             }
         } else if (ServerToolCallChatResponseContent.is(nextContent) && nextContent.id !== undefined) {
             // Server tool calls are matched by id (the start and result blocks arrive as separate stream parts).
