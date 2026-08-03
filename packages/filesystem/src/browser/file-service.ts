@@ -1433,7 +1433,7 @@ export class FileService {
 
     // #region File Watching
 
-    private onDidChangeWatcherExcludeDisposable = new Disposable();
+    private onDidChangeWatcherExcludeDisposable: Disposable;
     private onDidFilesChangeEmitter = new Emitter<FileChangesEvent>();
     /**
      * An event that is emitted when files are changed on the disk.
