@@ -35,7 +35,7 @@ import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { ScmContextKeyService } from './scm-context-key-service';
 import {
     laneColor, getChangeStatus, getFileName, getFilePath, getRepoRelativePath,
-    getRefBadgeClass, isTagRef, isRemoteRef, deduplicateRefs, DeduplicatedRef
+    getRefBadgeClass, getRefBadgePresentation, isTagRef, isRemoteRef, deduplicateRefs, DeduplicatedRef
 } from './scm-history-graph-helpers';
 import { buildHtmlTooltip } from './scm-history-graph-tooltip';
 
@@ -211,8 +211,7 @@ export class ScmHistoryGraphWidget extends ReactWidget {
         const isSelected = idx === this.selectedIndex;
         const isExpanded = this.expandedIds.has(item.id);
         const changes = this.expandedChanges.get(item.id);
-        // The first commit (idx === 0) on lane 0 is treated as HEAD/current
-        const isHead = idx === 0 && graphRow.lane === 0;
+        const isHead = entry.isCurrent;
 
         return (
             <React.Fragment key={item.id}>
@@ -248,7 +247,7 @@ export class ScmHistoryGraphWidget extends ReactWidget {
 
     protected handleRowMouseEnter = (e: React.MouseEvent<HTMLDivElement>, entry: HistoryGraphEntry): void => {
         this.hoverService.requestHover({
-            content: buildHtmlTooltip(entry, this.markdownRenderer),
+            content: buildHtmlTooltip(entry, this.markdownRenderer, this.model.provider),
             target: e.currentTarget,
             position: 'right',
             interactive: true,
@@ -465,7 +464,9 @@ export class ScmHistoryGraphWidget extends ReactWidget {
 
         // Commit lane lines — split at cy=11
         // Top segment: only drawn if there is an incoming line from above
-        // (i.e. this commit was referenced as a parent by an earlier row)
+        // (i.e. this commit was referenced as a parent by an earlier row).
+        // It keeps the color inherited from the chain above, which may differ
+        // from the commit's own (ref-based) color.
         if (row.hasTopLine) {
             elements.push(
                 <path
@@ -474,7 +475,7 @@ export class ScmHistoryGraphWidget extends ReactWidget {
                     strokeWidth='1px'
                     strokeLinecap='round'
                     d={`M ${commitX} 0 V ${cy}`}
-                    style={{ stroke: commitColor }}
+                    style={{ stroke: laneColor(row.topColor) }}
                 />
             );
         }
@@ -563,11 +564,10 @@ export class ScmHistoryGraphWidget extends ReactWidget {
             return undefined;
         }
 
+        const provider = this.model.provider;
         const laneColorValue = entry ? laneColor(entry.graphRow.color) : undefined;
         const deduplicated = deduplicateRefs(refs);
-        const style: React.CSSProperties = laneColorValue
-            ? { backgroundColor: laneColorValue, color: 'var(--theia-scmGraph-historyItemRefForeground, var(--theia-badge-foreground))' }
-            : {};
+        const badgeForeground = 'var(--theia-scmGraph-historyItemRefForeground, var(--theia-badge-foreground))';
 
         const badges: React.ReactElement[] = [];
         for (const info of deduplicated) {
@@ -579,24 +579,25 @@ export class ScmHistoryGraphWidget extends ReactWidget {
             const isRemote = isRemoteRef(ref);
             const onContextMenu = entry ? (e: React.MouseEvent) => this.handleRefBadgeContextMenu(e, entry, ref) : undefined;
 
-            if (isTag) {
-                badges.push(renderJsxRefBadge(ref, 'codicon-tag', false, style, ref.id, onContextMenu));
-            } else if (isRemote) {
-                badges.push(renderJsxRefBadge(ref, 'codicon-cloud', true, style, ref.id, onContextMenu));
-            } else {
-                badges.push(renderJsxRefBadge(ref, 'codicon-git-branch', true, style, ref.id, onContextMenu));
-                if (hasBoth && badges.length < 3) {
-                    badges.push(
-                        <span
-                            key={`${ref.id}-cloud`}
-                            className='scm-history-ref-badge scm-history-ref-badge-cloud'
-                            title={ref.description ?? ref.name}
-                            style={style}
-                        >
-                            <i className='codicon codicon-cloud scm-history-ref-icon' />
-                        </span>
-                    );
-                }
+            // Current/remote/base refs are colored by role, others by the row's lane color
+            const { iconClass, colorIndex } = getRefBadgePresentation(ref, provider);
+            const backgroundColor = colorIndex !== undefined ? laneColor(colorIndex) : laneColorValue;
+            const style: React.CSSProperties = backgroundColor
+                ? { backgroundColor, color: badgeForeground }
+                : {};
+
+            badges.push(renderJsxRefBadge(ref, iconClass, !isTag, style, ref.id, onContextMenu));
+            if (!isTag && !isRemote && hasBoth && badges.length < 3) {
+                badges.push(
+                    <span
+                        key={`${ref.id}-cloud`}
+                        className='scm-history-ref-badge scm-history-ref-badge-cloud'
+                        title={ref.description ?? ref.name}
+                        style={style}
+                    >
+                        <i className='codicon codicon-cloud scm-history-ref-icon' />
+                    </span>
+                );
             }
         }
         return badges;
