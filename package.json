@@ -125,5 +125,24 @@
     "ms-vscode.js-debug-companion",
     "vscode.extension-editing",
     "ms-python.vscode-pylance"
-  ]
+  ],
+  "allowScripts": {
+    "@google/genai": false,
+    "@parcel/watcher": true,
+    "@vscode/vsce-sign": false,
+    "@vscode/windows-ca-certs": true,
+    "core-js": false,
+    "cpu-features": true,
+    "drivelist": true,
+    "esbuild": true,
+    "fsevents": true,
+    "keytar": true,
+    "msgpackr-extract": true,
+    "native-keymap": true,
+    "node-pty": true,
+    "nx": false,
+    "protobufjs": false,
+    "puppeteer": true,
+    "ssh2": true
+  }
 }

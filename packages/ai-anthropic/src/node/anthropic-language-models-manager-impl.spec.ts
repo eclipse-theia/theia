@@ -187,6 +187,12 @@ describe('AnthropicLanguageModelsManagerImpl - metadata derivation', () => {
         it('returns false for claude-sonnet-4-5 (older minor version, sonnet variant)', () => {
             expect(capabilityFor('claude-sonnet-4-5')).to.equal(false);
         });
+        it('returns true for claude-opus-5 (dateless major release, no minor segment)', () => {
+            expect(capabilityFor('claude-opus-5')).to.equal(true);
+        });
+        it('returns true for claude-sonnet-5 (dateless major release, no minor segment)', () => {
+            expect(capabilityFor('claude-sonnet-5')).to.equal(true);
+        });
         it('returns true for claude-opus-5-0 (newer major version)', () => {
             expect(capabilityFor('claude-opus-5-0')).to.equal(true);
         });

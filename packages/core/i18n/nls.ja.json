@@ -75,6 +75,15 @@
         "apiKey": {
           "description": "公式AnthropicアカウントのAPIキーを入力してください。**ご注意:**この設定を使用すると、Anthropic APIキーがTheiaを実行しているマシン上に平文で保存されます。キーを安全に設定するには環境変数`ANTHROPIC_API_KEY`を使用してください。"
         },
+        "compaction": {
+          "default": "グローバルチャットのサーバー側圧縮設定に従ってください。",
+          "description": "Anthropicモデルに対して、プロバイダー固有のサーバーサイド圧縮機能をオーバーライドします。「default」はグローバルチャット設定({0})に従います。これが有効になると、Anthropic Beta Messages APIが使用され、会話が閾値を超えた時点でプロバイダーが過去のやり取りを要約できるようになります。",
+          "disabled": "Anthropicモデルに対しては、サーバーサイドのコンパクションを要求しないでください。",
+          "enabled": "Anthropicモデルについては、常にサーバーサイドのコンパクションを要求してください。"
+        },
+        "compactionTokenThreshold": {
+          "description": "Anthropicモデルにおけるサーバーサイドのコンパクション用のグローバルな入力トークン閾値を上書きします。設定されていない場合は、グローバル設定またはプロバイダーのデフォルト値が適用されます。設定する場合は、値は50,000トークン以上である必要があります。"
+        },
         "customEndpoints": {
           "apiKey": {
             "title": "指定されたURLで提供されるAPIにアクセスするためのキー、またはグローバルなAnthropic APIキーを使用する場合は`true`"
@@ -142,7 +151,12 @@
         "couldNotFindMatchingLM": "一致する言語モデルが見つかりませんでした。設定を確認してください！",
         "couldNotFindReadyLMforAgent": "エージェント{0}用の既製言語モデルが見つかりませんでした。設定を確認してください！",
         "customAgents": {
-          "migrationResult": "カスタムエージェントの移行:{0} が移行済み、{1} が失敗、{2} のレガシー版 customAgents.yml が .bak にバックアップ済み、{3} のプロンプトのオーバーライドが agent.md に統合済み。",
+          "migratePrompt": {
+            "message": "カスタムエージェントは、依然として旧形式の `customAgents.yml` を使用しています。 {0}が今後採用する、エージェントごとの新しい形式(`agents/<id>/agent.md`)へ移行することをお勧めします。各エージェントには`customAgents.yml`の隣に個別のファイルが作成され、元のファイルは`customAgents.yml.bak`としてバックアップとして保持されます。"
+          },
+          "migrationResult": {
+            "empty": "カスタムエージェントの移行:移行対象はありません。"
+          },
           "rerunMigration": "カスタムエージェントの移行を再実行する"
         },
         "defaultAgent": {
@@ -230,8 +244,10 @@
       },
       "chat-ui": {
         "addContextVariable": "コンテキスト変数を追加",
+        "agentDefaultModel": "エージェントのデフォルト設定",
         "agentDelegationDescription": "委任可能な他のAIエージェント",
         "aiDisabled": "AI機能は無効化されています",
+        "allowedResourceUrls": "AIチャットの応答で参照される外部リソース(画像、スタイルシート、メディアなど)は、デフォルトでブロックされ、明示的に許可されるまでプレースホルダーに置き換えられます。 設定されたプレフィックスのいずれかで始まるURLを持つリソースは、ブロックされることなく直接表示されます。意図しない一致を防ぐため、末尾にスラッシュをつけた完全なオリジン(例:「https://example.com/」)を含めてください。完全に信頼できるソースのみを追加してください。",
         "applyAll": "すべて適用",
         "applyAllTitle": "保留中の変更をすべて適用",
         "askQuestion": "質問する",
@@ -265,8 +281,12 @@
         "command-part-renderer": {
           "commandNotExecutable": "コマンドのIDは「{0}」ですが、チャットウィンドウからは実行できません。"
         },
+        "compaction-part-renderer": {
+          "compactionMarker": "会話の要約"
+        },
         "copyCodeBlock": "コードブロックをコピー",
         "couldNotSendRequestToSession": "セッション {1} へのリクエスト \"{0}\" を送信できませんでした",
+        "delegatedSession": "委任",
         "delegation-response-renderer": {
           "interactionNeeded": "ユーザーによる操作が必要",
           "prompt": {
@@ -279,13 +299,11 @@
           "starting": "委任を開始します...",
           "status": {
             "canceled": "キャンセル済み",
-            "error": "エラー",
             "generating": "生成中...",
             "starting": "開始中..."
           }
         },
         "deleteChangeSet": "変更セットを削除",
-        "deleteChat": "チャットを削除",
         "editRequest": "編集",
         "edited": "編集済み",
         "editedTooltipHint": "このプロンプトのバリエーションは編集済みです。AI設定ビューでリセットできます。",
@@ -312,6 +330,8 @@
           "title": "Mermaid 図",
           "wheelZoomHint": "{0} + スクロール"
         },
+        "modelBadgeTooltip": "この回答に使用された言語モデル:{0}",
+        "modelUnavailable": "利用不可",
         "noChatAgentsAvailable": "チャットエージェントは利用できません。",
         "noMatchingCapabilities": "一致する機能はありません",
         "openDiff": "Open Diff",
@@ -344,6 +364,9 @@
         "serverTools": "サーバーツール",
         "serverToolsDescription": "サーバーツールは、ベンダーのインフラストラクチャ上でLLMによってサーバー側で実行されます。",
         "serverToolsWarning": "これらのツールは、選択されると自動的に承認されます。モデルによっていつでも実行される可能性があります。",
+        "sessionModel": "このチャットのモデル",
+        "sessionModelDefault": "このチャット用のモデル({0})",
+        "sessionModelUnavailable": "このチャットのモデルは利用できません({0})。リクエストにはエージェントのデフォルト設定が使用されます。",
         "sessionNotFoundForRetry": "再試行用のセッションが見つかりません",
         "skillsDescription": "会話に追加可能な再利用可能なスキル指示",
         "switchAgentMode": "エージェントモードの切り替え",
@@ -356,6 +379,8 @@
         "tokenUsageOverflow": "トークンの使用量が警告閾値を大幅に超えています。圧縮するか、新しいセッションを開始することを検討してください。",
         "tokenUsageTooltipCacheCreate": "キャッシュの作成: {0}",
         "tokenUsageTooltipCacheRead": "キャッシュ読み取り: {0}",
+        "tokenUsageTooltipCompactions": "{0}の圧縮版 x",
+        "tokenUsageTooltipCumulative": "累積版:{0}",
         "tokenUsageTooltipTotal": "合計:{0} / {1} ({2} %)",
         "tokenUsageWarning": "トークン使用量の警告閾値に達しました。",
         "tokenUsageWarningEnabled": "チャットセッションのトークン使用量が設定された閾値を超えた際に通知を表示するかどうかを制御します。この機能を利用するには、言語モデルプロバイダーがトークン使用量を報告する必要があります。",
@@ -486,7 +511,6 @@
         "openFileTooltip": "クリックしてエディターでファイルを開く",
         "optionsCount": "{0} オプション",
         "partial": "部分",
-        "pattern": "パターン",
         "plan": "プランモード",
         "project": "プロジェクト",
         "projectRoot": "プロジェクトルート",
@@ -860,6 +884,12 @@
           },
           "title": "カスタムリクエスト設定"
         },
+        "serverSideCompaction": {
+          "description": "チャットリクエストに対して、プロバイダー固有のサーバーサイド圧縮をデフォルトで有効にします。有効にすると、対応しているモデルは、会話が独自の閾値を超えた時点で古いターンを自動的に要約し、長いセッションがコンテキスト制限を超えて継続できるようになります。各プロバイダーは独自のオーバーライド機能を提供しており、個々のチャットセッションではセッション設定でこれを上書きできます。対応していないモデルはこれを無視します。"
+        },
+        "serverSideCompactionTokenThreshold": {
+          "description": "プロバイダー固有のサーバーサイド圧縮を実行する、入力トークンのデフォルトしきい値。プロバイダーや個々のチャットセッションでこの値を上書きできます。設定されていない場合、プロバイダーが独自のデフォルトしきい値を選択します。設定する場合は、値は50,000トークン以上でなければなりません。"
+        },
         "skillDirectories": {
           "description": "スキル定義(SKILL.mdファイル)を含む追加のディレクトリ。 スキルは、AIエージェントが参照できる再利用可能な指示を提供します。ワークスペース内の .prompts/skills および .agents/skills ディレクトリ、ホームディレクトリ内の .agents/skills ディレクトリ、および製品の設定フォルダ内の skills ディレクトリは、常に含まれます。"
         },
@@ -932,7 +962,6 @@
         "open-history-tooltip": "AIの履歴を開く...",
         "request-card": {
           "promptVariant": "プロンプトのバリエーション",
-          "response": "回答",
           "timestamp": "タイムスタンプ"
         },
         "sortChronologically": {
@@ -1008,6 +1037,11 @@
           "msg": "このエージェントは**エージェントモード**を使用します。自律的な処理を可能にするため、追加の確認なしにワークスペースのファイルに直接書き込むことができます。\n\n変更内容をレビューしたり元に戻したりできるように、バージョン管理システム(例:Git)の使用を推奨します。\n\n下のチャット入力エリアにあるモードセレクターを使用して**編集モード**に切り替えるか、読み取り専用の計画作成には**Architect**エージェントをご利用ください。\n\nこの確認設定はワークスペースごとに保存され、再度表示されることはありません。リセットまたはグローバルに設定するには、設定画面で `ai-features.agentMode.confirmed` を探してください。",
           "waiting": "確認を待っています..."
         },
+        "allowAllMode": {
+          "stripTooltip": "このセッションでは、AI ツールによる呼び出しは確認なしに実行されます。信頼できる環境でのみ有効にしてください。",
+          "stripTooltipFooter": "--session-preference オプションで設定します。このフラグを指定せずに再起動すると、保存された設定が復元されます。",
+          "title": "Theia AI すべて許可モード"
+        },
         "app-tester": {
           "errorCheckingDevToolsServerStatus": "DevTools MCP サーバーの状態を確認中: {0}",
           "errorCheckingPlaywrightServerStatus": "Playwright MCPサーバーのステータス確認エラー: {0}",
@@ -1045,6 +1079,7 @@
         "chatRestrictedMessage": {
           "title": "AI機能は制限されています"
         },
+        "childInteractionNeeded": "委任セッションについて、ご確認が必要です",
         "codeReviewerAgent": {
           "description": "コードの変更を分析し、構造化された評価結果を返すコードレビューアシスタント。完了基準、ビルド／リンティング／テストの結果、およびコード品質をチェックします。"
         },
@@ -1061,6 +1096,7 @@
             "startNewChat": "チャットは簡潔に、焦点を絞って行いましょう。新しいタスクについては[新しいチャットを開始]({0})、または[このチャットの要約付きで新しいチャットを開始]({1})してください。"
           }
         },
+        "collapseSession": "{0} を折りたたむ",
         "commandAgent": {
           "commandCallback": {
             "confirmAction": "了解しました",
@@ -1089,10 +1125,10 @@
             "edit": "デフォルトモード"
           }
         },
-        "deleteChat": "チャットを削除",
         "enableAI": {
           "mdDescription": "この設定により、最新のAI機能にアクセスできます。            \n            これらの機能は、アクセスを許可した言語モデル(LLM)に対して継続的なリクエストを生成する可能性があることを認識することが重要です。これにより、注意深く監視する必要のあるコストが発生する可能性があります。 このオプションを有効化することで、これらのリスクを認識したものとみなされます。            \n            **ご注意！このセクションの以下の設定は、\n            メイン機能設定が有効になって初めて有効になります。機能を有効化した後、以下のLLMプロバイダーを少なくとも1つ設定する必要があります。詳細は[ドキュメント](https://theia-ide.org/docs/user_ai/)も参照してください**。"
         },
+        "expandSession": "{0} を展開",
         "exploreAgent": {
           "description": "コードベースから情報を抽出して要約する、コードベース探索アシスタント。         コードベースに何が存在するかに関する事実を報告し、コードの抜粋を提供し、観察されたパターンを説明します。"
         },
@@ -1168,10 +1204,16 @@
           "description": "コードレビューのワークフロー全体を調整する、AI搭載のPRレビューエージェント。PR情報の取得、コードベースの探索、構造化された分析の実施、diffビューアを用いた発見事項のインタラクティブな説明、およびオプションでGitHub上に保留中のレビューを作成します。"
         },
         "prompt-template-description": "[AI設定ビュー]({0})でAIエージェントのプロンプトバリエーションを選択し、プロンプトテンプレートをカスタマイズします。",
+        "requiresApproval": "承認が必要です",
         "restoredSession": "セッションの復元",
         "restrictedModeDetails": "AIチャット、インライン提案、コードアクション、およびプロンプトテンプレートは無効になっています",
         "restrictedModeLabel": "AI機能(制限モードでは無効化されています)",
         "sectionRestored": "復元済み",
+        "sessionOverride": {
+          "defaultToolConfirmation": "デフォルトのツール確認メッセージ:{0}",
+          "toolConfirmation": "ツールごとの確認メッセージのオーバーライド:{0}",
+          "toolConfirmationGeneric": "ツールごとの確認メッセージのオーバーライド設定"
+        },
         "shellAllowlist": {
           "placeholder": "例: \"git log\" (正確なコマンド) または \"git log *\" (引数付き)"
         },
@@ -1192,6 +1234,10 @@
         },
         "toolConfirmationInfo": {
           "header": "ツールの確認"
+        },
+        "toolConfirmationOverrides": {
+          "stripTooltip": "このセッションでは、コマンドラインフラグを介して1つ以上のAIツールが自動的に承認されています。",
+          "title": "AIツールによる確認設定の上書き"
         },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
@@ -1244,7 +1290,6 @@
           "errorMessage": "エラーメッセージ",
           "lastActivity": "最終アクティビティ",
           "lastMessage": "最後のメッセージ",
-          "messages": "メッセージ",
           "multipleExchanges": "{0} 交換",
           "oneExchange": "1 exchange",
           "unread": "未読"
@@ -1333,8 +1378,7 @@
             "title": "環境変数"
           },
           "headers": {
-            "mdDescription": "サーバーへの各リクエストに含められる、オプションの追加ヘッダー。ヘッダーの値はプレーンテキストとして設定に保存されます。機密情報が含まれる場合は、ワークスペース設定の使用を避けてください。",
-            "title": "ヘッダー"
+            "mdDescription": "サーバーへの各リクエストに含められる、オプションの追加ヘッダー。ヘッダーの値はプレーンテキストとして設定に保存されます。機密情報が含まれる場合は、ワークスペース設定の使用を避けてください。"
           },
           "mdDescription": "MCPサーバーの設定は、コマンド、引数、および必要に応じて環境変数を使用してローカルで設定するか、サーバーURL、認証トークン、OAuth設定、および必要に応じて認証ヘッダー名を使用してリモートで設定します。さらに、自動起動を設定することも可能です(デフォルトはtrue)。 各サーバーは、「brave-search」や「filesystem」などの一意のキーによって識別されます。サーバーを起動するには、「MCP: Start MCP Server」コマンドを使用し、目的のサーバーを選択します。サーバーを停止するには、「MCP: Stop MCP Server」コマンドを使用します。 自動起動は再起動後にのみ有効になるため、初回は手動でサーバーを起動する必要がある点に注意してください。AIレジストリからインストールされたサーバーには、自動的に管理される追加の `registryMetadata` ブロックが含まれており、手動で編集することは想定されていません。\n設定例:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  },\n  \"oauth-protected-server\": {\n    \"serverUrl\": \"YOUR_OAUTH_PROTECTED_MCP_SERVER_URL\",\n    \"oauth\": {\n      \"clientId\": \"OPTIONAL_CLIENT_ID\",\n      \"scopes\": [\"OPTIONAL_SCOPE\"]\n    }\n  }\n  }\n```",
           "oauth": {
@@ -1403,9 +1447,6 @@
         "stop": {
           "label": "MCP: MCPサーバーを停止"
         },
-        "tool": {
-          "noTools": "利用可能なツールはありません。"
-        },
         "useWorkspaceAsRoot": {
           "mdDescription": "ルートは、サーバーがファイルシステム内で動作できる範囲を定義します。有効にすると、ワークスペースフォルダがルートとして使用されます。無効の場合、MCPサーバーはファイルシステム全体にアクセスできます。この設定を変更すると、実行中のすべてのMCPサーバーが再起動され、新しいルート設定が適用されます。",
           "title": "ワークスペースをルートとして使用する"
@@ -1422,7 +1463,6 @@
         "command": {
           "addServer": "ローカル MCP 設定を追加..."
         },
-        "connectingServer": "接続中...",
         "copiedAllList": "すべてのツールをクリップボードにコピーしました(全ツールのリスト)",
         "copiedAllSingle": "すべてのツールをクリップボードにコピーしました(すべてのツールを含む単一のプロンプトフラグメント)",
         "copiedForPromptTemplate": "プロンプトテンプレート用に全ツールをクリップボードにコピー                                     (全ツールを含む単一のプロンプトフラグメント)",
@@ -1466,12 +1506,10 @@
           "saveChanges": "変更を保存",
           "serverName": "サーバー名",
           "serverNamePlaceholder": "例: my-mcp-server",
-          "serverType": "サーバータイプ",
           "serverUrlPlaceholder": "例: https://mcp.example.com",
           "serverUrlRequired": "リモートサーバーにはサーバーURLが必要です"
         },
         "fromRegistryLink": "レジストリより",
-        "headers": "ヘッダー",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "認証サーバー",
         "oauthClientId": "OAuth クライアント ID",
@@ -1497,6 +1535,15 @@
       "openai": {
         "apiKey": {
           "mdDescription": "公式OpenAIアカウントのAPIキーを入力してください。**ご注意:**この設定を使用すると、OpenAI APIキーがTheiaを実行しているマシン上に平文で保存されます。キーを安全に設定するには環境変数`OPENAI_API_KEY`を使用してください。"
+        },
+        "compaction": {
+          "default": "グローバルチャットのサーバー側圧縮設定に従ってください。",
+          "description": "公式の OpenAI モデルに対して、プロバイダー固有のサーバーサイド圧縮機能をオーバーライドします。これは OpenAI Response API にのみ適用され、Chat Completions API では無視されます。「default」はグローバルチャット設定({0})に従います。これが有効になっている場合、会話がプロバイダーのしきい値を超えると、Response API に対して古いターン(会話のやり取り)の要約が要求されます。",
+          "disabled": "OpenAIの公式モデルについては、サーバーサイドのコンパクションを要求しないでください。",
+          "enabled": "公式の OpenAI モデルについては、常にサーバーサイドのコンパクションを要求してください。"
+        },
+        "compactionTokenThreshold": {
+          "description": "公式の OpenAI モデルにおけるサーバーサイドのコンパクション用のグローバルな入力トークン閾値を上書きします。設定されていない場合は、グローバル設定またはプロバイダーのデフォルト値が適用されます。設定する場合は、値は 50,000 トークン以上である必要があります。"
         },
         "customEndpoints": {
           "apiKey": {
@@ -1538,7 +1585,7 @@
           "description": "使用する公式OpenAIモデル"
         },
         "useResponseApi": {
-          "mdDescription": "公式OpenAIモデルにはChat Completion APIではなく、新しいOpenAI Response APIを使用してください。この設定は公式OpenAIモデルにのみ適用されます。カスタムプロバイダーは個別に設定する必要があります。レスポンスAPIでは、ツール呼び出し定義がOpenAIの[厳格なスキーマ定義](https://platform.openai.com/docs/guides/function-calling#strict-mode)を満たす必要があることに注意してください。準拠していないスキーマの変換には最善を尽くしますが、エラーが発生する可能性があります。"
+          "mdDescription": "OpenAIの公式モデルについては、Chat Completion APIの代わりに、新しいOpenAI Response APIを使用してください。この設定はOpenAIの公式モデルにのみ適用されます。カスタムプロバイダーについては、個別に設定を行う必要があります。"
         }
       },
       "promptTemplates": {
@@ -1588,6 +1635,10 @@
       },
       "session-settings-dialog": {
         "advancedSettings": "詳細設定 (JSON)",
+        "compactionHeader": "サーバーサイドのコンパクション",
+        "compactionLabel": "コンパクション:",
+        "compactionNote": "このセッションのグローバルおよびプロバイダーごとのコンパクション設定を上書きします。サーバーサイドのコンパクションをサポートするプロバイダーにのみ適用されます。",
+        "compactionTokenThreshold": "トークンのしきい値:",
         "confirmationTimeout": "確認タイムアウト",
         "confirmationTimeoutNote": "指定した時間が経過すると、ツールの確認ダイアログを自動的に拒否します。このセッションでは、グローバル設定よりも優先されます。",
         "enableConfirmationTimeout": "確認のタイムアウトを有効にする",
@@ -1722,6 +1773,13 @@
       "fileChangeSetTitle": "変更案"
     },
     "ai-chat-ui": {
+      "blockedResource": {
+        "allow": "このブロックされたコンテンツを許可する",
+        "aria": "ブロックされた外部リソース:{0}",
+        "inlineContent": "(インラインの外部コンテンツ)",
+        "label": "外部リソースへのアクセスがブロックされました:",
+        "resourcesToAllow": "{0} リソースが有効になります"
+      },
       "browseAllChats": "すべてのチャットを閲覧...",
       "confirm": "確認",
       "deleteChat": "チャットを削除",
@@ -1730,6 +1788,7 @@
       "noOutput": "出力なし",
       "open-current-session-summary": "現在のセッションの概要を開く",
       "open-settings-tooltip": "AI設定を開く...",
+      "openSession": "チャットセッションを開く",
       "renameChat": "チャットの名前変更",
       "scroll-lock": "スクロールロック",
       "scroll-unlock": "スクロールのロック解除",
@@ -1774,11 +1833,17 @@
         "argumentHint": "<チケット番号>",
         "description": "GitHubチケットを分析し、解決策を実装する"
       },
+      "newChat": "新しいチャット",
+      "noSessions": "まだチャットセッションはありません。",
       "open-ai-configuration-tooltip": "OpenAIの設定",
+      "perspective": {
+        "aiFirst": "AIファースト"
+      },
       "rememberCommand": {
         "argumentHint": "[topic-hint]",
         "description": "会話からトピックを抽出し、プロジェクト情報を更新する"
       },
+      "sessionsView": "AIセッション",
       "ticketCommand": {
         "argumentHint": "<チケット番号>",
         "description": "GitHubチケットを分析し、実装計画を作成する"
@@ -1900,6 +1965,41 @@
       "timeout": "タイムアウト",
       "workingDirectory": "作業ディレクトリ"
     },
+    "ai-tool-sketchpad": {
+      "addItemProperty": "項目のプロパティを追加",
+      "addParameter": "パラメータを追加",
+      "addProperty": "プロパティの追加",
+      "addTool": "ツールの追加",
+      "askAtRuntimeHint": "LLMがこのツールを呼び出すと、戻り値を入力するよう求めるクイック入力画面が開きます。",
+      "askReturnPlaceholder": "このツール呼び出しの戻り値を入力してください...",
+      "askReturnPrompt": "ツール「{0}」は、以下のコマンドで呼び出されました:{1}",
+      "confirmDelete": "ツール「{0}」を削除してもよろしいですか?",
+      "descriptionPlaceholder": "このツールの機能について説明してください...",
+      "itemType": "項目タイプ:",
+      "label": "AIツール「Sketchpad」",
+      "nParameters": "{0} パラメータ",
+      "nameDuplicate": "この名前のツールはすでに存在します。",
+      "nameEmpty": "ツール名は空にしてはなりません。",
+      "nameInvalid": "ツール名には、英字、数字、アンダースコア、ハイフンのみを使用できます(1～128文字)。",
+      "noItemProperties": "定義された項目プロパティはありません。",
+      "noParameters": "定義されたパラメータはありません。",
+      "noTools": "まだツールはありません。",
+      "oneParameter": "パラメータ1つ",
+      "parameters": "パラメータ",
+      "required": "必須",
+      "returnMode": "復帰モード",
+      "returnModeAskAtRuntime": "実行時に問い合わせる",
+      "returnModeAskShort": "実行時に確認する",
+      "returnModeStatic": "静的戻り値",
+      "returnModeStaticShort": "静的",
+      "selectTool": "編集するツールを選択するか、新しいツールを追加してスケッチを始めましょう。",
+      "staticReturn": "静的戻り値",
+      "staticReturnHint": "この静的値は、入力引数に関係なく、ツールが呼び出されるたびに返されます。",
+      "staticReturnPlaceholder": "このツールを呼び出した際に返される値(例:JSON文字列)",
+      "toolName": "ツール名",
+      "toolNamePlaceholder": "例:getWeather",
+      "untitledTool": "未タイトルのツール"
+    },
     "callhierarchy": {
       "noCallers": "呼び出し元は検出されませんでした。",
       "open": "コール階層を開く"
@@ -1985,6 +2085,7 @@
         "visual": "タブの視覚的なプレビューを表示する。"
       },
       "highlightModifiedTabs": "編集済み(変更済み)のエディタタブに上部の境界線を表示するかどうかを制御します。",
+      "jumpListName": "最近のワークスペース",
       "keybinding": {
         "duplicateModifierError": "キーバインディングを解析できません {0} 重複する修飾子",
         "metaError": "{0}のキーバインディングを解析できません。metaはOSX専用です",
@@ -2005,6 +2106,11 @@
         "clipboardWarnFirefox": "クリップボードAPIは利用できません。これを有効にするには、「{1}」ページで「{0}」設定を有効にしてください。その後、Theiaを再読み込みしてください。ただし、これによりFireFoxがシステムクリップボードへの完全なアクセス権を取得することになります。"
       },
       "pasteWarn": "ブラウザの貼り付けコマンドまたはショートカットをご利用ください。",
+      "perspective": {
+        "resetPerspective": "パースペクティブのリセット(実験的機能)",
+        "selectPerspective": "パースペクティブを選択してください",
+        "switchPerspective": "パースペクティブの切り替え(実験的機能)"
+      },
       "quitMessage": "未保存の変更は保存されません。",
       "resetWorkbenchLayout": "ワークベンチレイアウトのリセット",
       "searchbox": {
@@ -2223,6 +2329,11 @@
     },
     "markers": {
       "clearAll": "すべてクリア",
+      "copyAsText": "テキストとしてコピー",
+      "export": "エクスポート",
+      "exportProblems": "エクスポートに関する問題",
+      "exportSuccess": "問題が正常にエクスポートされました。",
+      "jsonFiles": "JSONファイル",
       "noProblems": "現時点でワークスペースに問題は検出されていません。",
       "tabbarDecorationsEnabled": "タブバーに問題デコーター(診断マーカー)を表示する。"
     },
@@ -2317,6 +2428,7 @@
       "autoReveal": "自動表示",
       "clipboardWarn": "クリップボードへのアクセスが拒否されました。ブラウザの権限設定を確認してください。",
       "clipboardWarnFirefox": "クリップボードAPIは利用できません。これを有効にするには、「{1}」ページで「{0}」設定を有効にしてください。その後、Theiaを再読み込みしてください。ただし、これによりFireFoxがシステムクリップボードへの完全なアクセス権を取得することになります。",
+      "nothingToPaste": "クリップボードには、ここに貼り付けることのできるワークスペースファイルが含まれていません。",
       "openWithSystemEditor": "システムエディタで開く",
       "refresh": "エクスプローラーで更新",
       "reveal": "エクスプローラーで表示",
@@ -2380,6 +2492,18 @@
       "hostedPlugin": "ホスト型プラグイン",
       "input": {
         "browse": "閲覧"
+      },
+      "sessionOverride": {
+        "suffix": "セッションによって上書きされます",
+        "suffixTooltip": "この設定には、--session-preference を通じて設定されるセッション値があります。ここで編集すると、そのセッションの残りの期間、セッションによる上書き設定が解除されます。"
+      },
+      "sessionPreferences": {
+        "statusBar": "セッション設定 ({0})",
+        "tooltipBody": "これらは --session-preference オプションを介して渡され、メモリ上にのみ存在します。設定名をクリックすると、[設定] ビューの該当項目に移動します。",
+        "tooltipChangeNote": "これらのいずれかを編集すると、その実行におけるセッションのオーバーライド設定がクリアされます。次回以降の起動から保存された値を使用するには、--session-preference 引数を指定せずに再起動してください。",
+        "tooltipHeader": "これらの設定は、このセッションでは上書きされます",
+        "valueOff": "オフ",
+        "valueOn": "on"
       },
       "toolbar": "ツールバー"
     },
@@ -2506,6 +2630,9 @@
       "taskRestricted": "制限モードではタスクの実行が無効化されています",
       "taskTerminatedBySignal": "タスク「{0}」はシグナル{1}によって終了しました。",
       "terminalWillBeReusedByTasks": "ターミナルはタスク間で再利用されます。"
+    },
+    "telemetry": {
+      "filters": "各テレメトリシンクに配信されるトピックパターンを制限します。エントリがない場合はすべてのシンクの関心対象が許可され、配列が空の場合はシンクが無効化されます。"
     },
     "terminal": {
       "defaultProfile": "{0} で使用されるデフォルトのプロファイル",

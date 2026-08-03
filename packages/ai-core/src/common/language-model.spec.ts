@@ -16,6 +16,7 @@
 
 import { expect } from 'chai';
 import {
+    DefaultLanguageModelRegistryImpl,
     isCompactionResponsePart,
     isLanguageModelStreamResponsePart,
     isModelMatching,
@@ -23,6 +24,8 @@ import {
     LanguageModel,
     LanguageModelSelector,
     resolveCompactionDefault,
+    resolveCompactionTokenThreshold,
+    resolveCompactionTokenThresholdDefault,
     resolveServerSideCompaction
 } from './language-model';
 
@@ -173,6 +176,48 @@ describe('isToolCallContent', () => {
 
 });
 
+describe('DefaultLanguageModelRegistryImpl', () => {
+    function createRegistry(): DefaultLanguageModelRegistryImpl {
+        const registry = new DefaultLanguageModelRegistryImpl();
+        // No DI container in this unit test, so resolve the internal `initialized` gate manually.
+        (registry as unknown as { markInitialized: () => void }).markInitialized();
+        return registry;
+    }
+
+    function model(id: string): LanguageModel {
+        return { id, status: { status: 'ready' } } as LanguageModel;
+    }
+
+    it('getLanguageModels returns a fresh array so consumers can detect changes by reference', async () => {
+        const registry = createRegistry();
+        registry.addLanguageModels([model('a')]);
+
+        const first = await registry.getLanguageModels();
+        expect(first).to.have.length(1);
+
+        registry.addLanguageModels([model('b')]);
+        const second = await registry.getLanguageModels();
+
+        // A new snapshot must be a different array reference (React memoization relies on this).
+        expect(second).to.not.equal(first);
+        // The earlier snapshot must not be mutated in place by later registry changes.
+        expect(first.map(m => m.id)).to.deep.equal(['a']);
+        expect(second.map(m => m.id)).to.deep.equal(['a', 'b']);
+    });
+
+    it('reflects removals in a fresh snapshot without mutating an earlier one', async () => {
+        const registry = createRegistry();
+        registry.addLanguageModels([model('a'), model('b')]);
+        const before = await registry.getLanguageModels();
+
+        registry.removeLanguageModels(['a']);
+        const after = await registry.getLanguageModels();
+
+        expect(before.map(m => m.id)).to.deep.equal(['a', 'b']);
+        expect(after.map(m => m.id)).to.deep.equal(['b']);
+    });
+});
+
 describe('compaction contract', () => {
     it('recognizes a compaction response part', () => {
         const part = { compaction: { provider: 'anthropic', data: { foo: 1 } } };
@@ -193,6 +238,14 @@ describe('compaction contract', () => {
         expect(resolveCompactionDefault(false, 'default')).to.equal(false);
         expect(resolveCompactionDefault(false, 'enabled')).to.equal(true);
         expect(resolveCompactionDefault(true, 'disabled')).to.equal(false);
+    });
+    it('resolves compaction token thresholds with session, provider, global precedence', () => {
+        expect(resolveCompactionTokenThresholdDefault(undefined, undefined)).to.equal(undefined);
+        expect(resolveCompactionTokenThresholdDefault(100_000, undefined)).to.equal(100_000);
+        expect(resolveCompactionTokenThresholdDefault(100_000, 200_000)).to.equal(200_000);
+        expect(resolveCompactionTokenThreshold(undefined, undefined)).to.equal(undefined);
+        expect(resolveCompactionTokenThreshold(200_000, undefined)).to.equal(200_000);
+        expect(resolveCompactionTokenThreshold(200_000, { tokenThreshold: 300_000 })).to.equal(300_000);
     });
     it('resolves server-side compaction with capability gate and session-wins precedence', () => {
         // capability gate

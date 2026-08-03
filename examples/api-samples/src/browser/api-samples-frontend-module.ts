@@ -42,7 +42,9 @@ import { bindSamplePreferenceContribution } from './preferences/sample-preferenc
 import { MCPFrontendContribution } from '@theia/ai-mcp-server/lib/browser/mcp-frontend-contribution';
 import { SampleFrontendMCPContribution } from './mcp/sample-frontend-mcp-contribution';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { CommandContribution } from '@theia/core/lib/common';
 import { ResolveMcpFrontendContribution } from './mcp/resolve-frontend-mcp-contribution';
+import { TelemetrySampleCommandContribution } from './telemetry-sample/telemetry-sample-command-contribution';
 
 export default new ContainerModule((
     bind: interfaces.Bind,
@@ -72,6 +74,7 @@ export default new ContainerModule((
     rebindOVSXClientFactory(rebind);
     bindSampleCodeCompletionVariableContribution(bind);
     bindSamplePreferenceContribution(bind);
+    bind(CommandContribution).to(TelemetrySampleCommandContribution).inSingletonScope();
     bind(MCPFrontendContribution).to(SampleFrontendMCPContribution).inSingletonScope();
     bind(ResolveMcpFrontendContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ResolveMcpFrontendContribution);

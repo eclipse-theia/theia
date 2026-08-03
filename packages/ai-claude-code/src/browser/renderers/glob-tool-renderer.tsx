@@ -111,7 +111,7 @@ const GlobToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/pattern', 'Pattern')}</span>
+                <span className="claude-code-tool detail-label">{nls.localizeByDefault('Pattern')}</span>
                 <code className="claude-code-tool detail-value">{input.pattern}</code>
             </div>
             <div className="claude-code-tool detail-row">

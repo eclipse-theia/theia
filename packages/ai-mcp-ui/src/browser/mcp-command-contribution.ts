@@ -237,7 +237,7 @@ export class MCPCommandContribution implements CommandContribution {
         if (status === MCPServerStatus.Running || status === MCPServerStatus.Connected) {
             const toolNames = tools && tools.length > 0
                 ? tools.map(tool => tool.name).join(',')
-                : nls.localize('theia/ai/mcp/tool/noTools', 'No tools available.');
+                : nls.localizeByDefault('No tools available.');
             this.messageService.info(
                 nls.localize('theia/ai/mcp/info/serverStarted', 'MCP server "{0}" successfully started. Registered tools: {1}', serverName, toolNames)
             );

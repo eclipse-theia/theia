@@ -34,6 +34,8 @@ export interface AnthropicModelDescription {
     maxRetries: number;
     /** Resolved default enablement of server-side compaction (global preference folded with the per-provider override). Defaults to disabled when omitted. */
     serverSideCompactionEnabledByDefault?: boolean;
+    /** Resolved default input-token threshold for server-side compaction. `undefined` preserves the provider default. */
+    serverSideCompactionTokenThresholdByDefault?: number;
 }
 export interface AnthropicLanguageModelsManager {
     apiKey: string | undefined;

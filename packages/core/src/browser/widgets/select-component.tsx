@@ -243,13 +243,18 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             selected = this.nextNotSeparator('forwards');
         }
         const selectedItemLabel = options[selected]?.label ?? options[selected]?.value;
+        // Expose when the currently shown option is disabled so consumers can style the field to match
+        // it (e.g. the option previewed while navigating), instead of a fixed committed-value class.
+        const selectionDisabled = !!options[selected]?.disabled;
+        const fieldClassName = `theia-select-component${this.props.className ? ` ${this.props.className}` : ''}`
+            + `${selectionDisabled ? ' theia-select-component-selection-disabled' : ''}`;
         return <>
             <div
                 id={this.props.id}
                 key="select-component"
                 ref={this.fieldRef}
                 tabIndex={0}
-                className={`theia-select-component${this.props.className ? ` ${this.props.className}` : ''}`}
+                className={fieldClassName}
                 onClick={e => this.handleClickEvent(e)}
                 onBlur={
                     () => {
@@ -280,7 +285,8 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             }
             count++;
         }
-        while (options[selected]?.separator && count < length);
+        // Skip separators and disabled options so keyboard navigation never lands on a non-selectable entry.
+        while ((options[selected]?.separator || options[selected]?.disabled) && count < length);
         return selected;
     }
 
@@ -303,9 +309,12 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                 });
             } else {
                 this.toggleVisibility();
+                // Start on the first selectable option (startFrom -1 evaluates index 0 first), so a
+                // leading separator or disabled option is skipped instead of becoming the active row.
+                const selected = this.nextNotSeparator('forwards', -1);
                 this.setState({
-                    selected: 0,
-                    hover: 0,
+                    selected,
+                    hover: selected,
                 });
             }
         } else if (ev.key === 'Enter') {
@@ -313,7 +322,10 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                 this.toggleVisibility();
             } else {
                 const selected = this.state.selected;
-                this.selectOption(selected, this.props.options[selected]);
+                const option = this.props.options[selected];
+                if (!option?.disabled) {
+                    this.selectOption(selected, option);
+                }
             }
         } else if (ev.key === 'Escape' || ev.key === 'Tab') {
             this.hide(undefined, true);
@@ -414,18 +426,21 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             return <div key={index} className="theia-select-component-separator" />;
         }
         const selected = this.state.hover;
+        const disabled = !!option.disabled;
         return (
             <div
                 key={index}
                 data-option-index={index}
-                className={`theia-select-component-option${index === selected ? ' selected' : ''}`}
+                className={`theia-select-component-option${index === selected ? ' selected' : ''}${disabled ? ' disabled' : ''}`}
                 onMouseOver={() => {
                     this.setState({
                         hover: index
                     });
                 }}
                 onMouseDown={() => {
-                    this.selectOption(index, option);
+                    if (!disabled) {
+                        this.selectOption(index, option);
+                    }
                 }}
             >
                 <div key="value" className="theia-select-component-option-value">{option.label ?? option.value}</div>
