@@ -20,7 +20,7 @@ let disableJSDOM = enableJSDOM();
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 FrontendApplicationConfigProvider.set({});
 
-import { Disposable, Emitter, URI } from '@theia/core';
+import { Disposable, Emitter, Event, URI } from '@theia/core';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { FileChange, FileChangeType, FileSystemProvider, FileSystemProviderCapabilities, WatchOptions } from '../common/files';
@@ -901,8 +901,8 @@ describe('FileService applies files.watcherExclude to all watchers', () => {
         // Set up preferences with both get and onPreferenceChanged
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (fileService as any).preferences = {
-            get: (name: string) => (name === 'files.watcherExclude' ? initialExclude : undefined) as any,
-            get onPreferenceChanged() { return preferenceChanged.event; },
+            get: (name: string): unknown => (name === 'files.watcherExclude' ? initialExclude : undefined),
+            get onPreferenceChanged(): Event<{ preferenceName: string }> { return preferenceChanged.event; },
         };
 
         fileService.watch(new URI('file:///project'), { recursive: true, excludes: [] });
@@ -931,8 +931,8 @@ describe('FileService applies files.watcherExclude to all watchers', () => {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (fileService as any).preferences = {
-            get: (name: string) => (name === 'files.watcherExclude' ? initialExclude : undefined) as any,
-            get onPreferenceChanged() { return preferenceChanged.event; },
+            get: (name: string): unknown => (name === 'files.watcherExclude' ? initialExclude : undefined),
+            get onPreferenceChanged(): Event<{ preferenceName: string }> { return preferenceChanged.event; },
         };
 
         fileService.watch(new URI('file:///project'), { recursive: true, excludes: [] });
@@ -957,8 +957,8 @@ describe('FileService applies files.watcherExclude to all watchers', () => {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (fileService as any).preferences = {
-            get: (name: string) => (name === 'files.watcherExclude' ? initialExclude : undefined) as any,
-            get onPreferenceChanged() { return preferenceChanged.event; },
+            get: (name: string): unknown => (name === 'files.watcherExclude' ? initialExclude : undefined),
+            get onPreferenceChanged(): Event<{ preferenceName: string }> { return preferenceChanged.event; },
         };
 
         fileService.watch(new URI('file:///project'), { recursive: true, excludes: [] });
