@@ -145,8 +145,8 @@ export class AiAllowAllModeChatBanner implements ChatBannerProvider {
             <button
                 type='button'
                 className={`theia-ai-allow-all-mode-strip-dismiss ${codicon('close')}`}
-                title={nls.localize('theia/ai/ide/allowAllMode/dismiss', 'Hide for this session')}
-                aria-label={nls.localize('theia/ai/ide/allowAllMode/dismiss', 'Hide for this session')}
+                title={nls.localizeByDefault('Hide for this session')}
+                aria-label={nls.localizeByDefault('Hide for this session')}
                 onClick={this.handleDismiss}
             />
         </div>;

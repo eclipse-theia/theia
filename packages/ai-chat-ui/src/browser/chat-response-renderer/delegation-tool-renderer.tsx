@@ -297,7 +297,7 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
                 statusText = nls.localizeByDefault('completed');
             } else if (isError) {
                 statusIcon = 'codicon-error';
-                statusText = nls.localize('theia/ai/chat-ui/delegation-response-renderer/status/error', 'error');
+                statusText = nls.localizeByDefault('error');
             } else {
                 statusIcon = 'codicon-loading';
                 statusText = nls.localize('theia/ai/chat-ui/delegation-response-renderer/status/generating', 'generating...');

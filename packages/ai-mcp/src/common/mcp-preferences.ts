@@ -126,7 +126,7 @@ Example configuration:\n\
                     },
                     headers: {
                         type: 'object',
-                        title: nls.localize('theia/ai/mcp/servers/headers/title', 'Headers'),
+                        title: nls.localizeByDefault('Headers'),
                         markdownDescription: nls.localize('theia/ai/mcp/servers/headers/mdDescription',
                             'Optional additional headers included with each request to the server. Header values are stored in preferences as plain text; ' +
                             'avoid workspace settings if they contain sensitive values.'),

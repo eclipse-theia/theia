@@ -75,6 +75,15 @@
         "apiKey": {
           "description": "Resmi Anthropic Hesabınızın API Anahtarını girin. **Lütfen dikkat:** Bu tercihi kullanarak, Anthropic API anahtarı Theia'yı çalıştıran makinede açık metin olarak saklanacaktır. Anahtarı güvenli bir şekilde ayarlamak için `ANTHROPIC_API_KEY` ortam değişkenini kullanın."
         },
+        "compaction": {
+          "default": "Genel sohbet sunucu tarafı sıkıştırma ayarını takip edin.",
+          "description": "Anthropic modelleri için sağlayıcının kendi sunucu tarafı sıkıştırma işlevini geçersiz kılın. \"default\" seçeneği, genel sohbet ayarını ({0}) takip eder. Etkin bir şekilde etkinleştirildiğinde, Anthropic Beta Mesajları API'si kullanılır; böylece, sohbet eşiği aşıldığında sağlayıcı eski turları özetleyebilir.",
+          "disabled": "Anthropic modelleri için asla sunucu tarafında sıkıştırma talebinde bulunmayın.",
+          "enabled": "Anthropic modelleri için her zaman sunucu tarafında sıkıştırma talep edin."
+        },
+        "compactionTokenThreshold": {
+          "description": "Anthropic modelleri için sunucu tarafı sıkıştırmada genel giriş belirteci eşiğini geçersiz kılın. Ayarlanmadığında, genel ayar veya sağlayıcı varsayılanı geçerlidir. Ayarlanırsa, değer en az 50.000 belirteç olmalıdır."
+        },
         "customEndpoints": {
           "apiKey": {
             "title": "Verilen URL'de sunulan API'ye erişmek için anahtar veya global Anthropic API anahtarını kullanmak için `true`."
@@ -142,7 +151,12 @@
         "couldNotFindMatchingLM": "Eşleşen bir dil modeli bulunamadı. Lütfen ayarlarınızı kontrol edin!",
         "couldNotFindReadyLMforAgent": "{0} ajanı için hazır bir dil modeli bulunamadı. Lütfen ayarlarınızı kontrol edin!",
         "customAgents": {
-          "migrationResult": "Özel ajan geçişi: {0} geçişi tamamlandı, {1} başarısız oldu, {2} eski customAgents.yml dosyası .bak uzantısıyla yedeklendi, {3} komut istemi geçersiz kılmaları agent.md dosyasına aktarıldı.",
+          "migratePrompt": {
+            "message": "Özel ajanlarınız hâlâ eski `customAgents.yml` biçimini kullanmaktadır. {0}'in bundan sonra kullanacağı yeni ajan başına biçime (`agents/<id>/agent.md`) geçmenizi öneririz. Her ajan, `customAgents.yml` dosyanızın yanında kendine ait bir dosyaya sahip olur ve orijinal dosya `customAgents.yml.bak` adıyla yedek olarak saklanır."
+          },
+          "migrationResult": {
+            "empty": "Özel ajan geçişi: geçirilecek bir şey yok."
+          },
           "rerunMigration": "Özel ajan geçişini yeniden çalıştır"
         },
         "defaultAgent": {
@@ -230,8 +244,10 @@
       },
       "chat-ui": {
         "addContextVariable": "Bağlam değişkeni ekle",
+        "agentDefaultModel": "ajan varsayılan",
         "agentDelegationDescription": "Delege edilebilecek diğer AI ajanları",
         "aiDisabled": "AI özellikleri devre dışıdır",
+        "allowedResourceUrls": "AI sohbet yanıtlarında atıfta bulunulan harici kaynaklar (görseller, stil sayfaları, medya vb.) varsayılan olarak engellenir ve açıkça izin verilene kadar bir yer tutucu ile değiştirilir. URL'si yapılandırılmış öneklerden biriyle başlayan kaynaklar engellenmeden doğrudan görüntülenir. İstenmeyen eşleşmeleri önlemek için kaynağın sonuna bir eğik çizgi ekleyerek tam kaynağı belirtin (örn. \"https://example.com/\"). Yalnızca tamamen güvendiğiniz kaynakları ekleyin.",
         "applyAll": "Tümünü Uygula",
         "applyAllTitle": "Bekleyen tüm değişiklikleri uygula",
         "askQuestion": "Soru sor",
@@ -265,8 +281,12 @@
         "command-part-renderer": {
           "commandNotExecutable": "Komutun kimliği \"{0}\"dir, ancak Sohbet penceresinden çalıştırılamaz."
         },
+        "compaction-part-renderer": {
+          "compactionMarker": "Konuşma özetlendi"
+        },
         "copyCodeBlock": "Kod Bloğunu Kopyala",
         "couldNotSendRequestToSession": "\"{0}\" isteği {1} oturumuna gönderilemedi.",
+        "delegatedSession": "Delege edilmiş",
         "delegation-response-renderer": {
           "interactionNeeded": "Kullanıcı etkileşimi gereklidir",
           "prompt": {
@@ -279,13 +299,11 @@
           "starting": "Delegasyon başlatılıyor...",
           "status": {
             "canceled": "iptal edildi",
-            "error": "hata",
             "generating": "oluşturuluyor...",
             "starting": "başlıyor..."
           }
         },
         "deleteChangeSet": "Değişiklik Setini Sil",
-        "deleteChat": "Sohbeti Sil",
         "editRequest": "Düzenle",
         "edited": "düzenlendi",
         "editedTooltipHint": "Bu komut istemi varyantı düzenlenmiştir. AI Yapılandırma görünümünde sıfırlayabilirsiniz.",
@@ -312,6 +330,8 @@
           "title": "Mermaid Diyagramı",
           "wheelZoomHint": "{0} + Kaydır"
         },
+        "modelBadgeTooltip": "Bu yanıt için kullanılan dil modeli: {0}",
+        "modelUnavailable": "kullanılamıyor",
         "noChatAgentsAvailable": "Sohbet temsilcisi mevcut değil.",
         "noMatchingCapabilities": "Eşleşen özellik yok",
         "openDiff": "Açık Fark",
@@ -344,6 +364,9 @@
         "serverTools": "Sunucu Araçları",
         "serverToolsDescription": "Sunucu araçları, satıcının altyapısı üzerinde LLM tarafından sunucu tarafında çalıştırılır.",
         "serverToolsWarning": "Bu araçlar seçildiğinde otomatik olarak onaylanır. Model tarafından herhangi bir zamanda çalıştırılabilirler.",
+        "sessionModel": "Bu sohbet için model",
+        "sessionModelDefault": "Bu sohbet için model ({0})",
+        "sessionModelUnavailable": "Bu sohbet için model mevcut değildir ({0}); istekler, ajan varsayılanını kullanır",
         "sessionNotFoundForRetry": "Yeniden denemek için oturum bulunamadı",
         "skillsDescription": "Sohbete eklenebilen yeniden kullanılabilir beceri talimatları",
         "switchAgentMode": "Ajan Modunu Değiştir",
@@ -356,6 +379,8 @@
         "tokenUsageOverflow": "Token kullanımı uyarı eşiğini çok aştı. Sıkıştırmayı veya yeni bir oturum başlatmayı düşünün.",
         "tokenUsageTooltipCacheCreate": "Önbellek oluşturma: {0}",
         "tokenUsageTooltipCacheRead": "Önbellek okuma: {0}",
+        "tokenUsageTooltipCompactions": "Sıkıştırılmış {0} x",
+        "tokenUsageTooltipCumulative": "Toplu güncelleme: {0}",
         "tokenUsageTooltipTotal": "Toplam: {0} / {1} ({2} %)",
         "tokenUsageWarning": "Token kullanım uyarı eşiğine ulaşıldı.",
         "tokenUsageWarningEnabled": "Bir sohbet oturumunun token kullanımı yapılandırılan eşiği aştığında bir bildirim gösterilip gösterilmeyeceğini kontrol eder. Dil modeli sağlayıcısının token kullanımını bildirmesi gerekir.",
@@ -486,7 +511,6 @@
         "openFileTooltip": "Dosyayı düzenleyicide açmak için tıklayın",
         "optionsCount": "{0} seçenekler",
         "partial": "Kısmi",
-        "pattern": "Desen",
         "plan": "Plan modu",
         "project": "proje",
         "projectRoot": "proje kökü",
@@ -860,6 +884,12 @@
           },
           "title": "Özel İstek Ayarları"
         },
+        "serverSideCompaction": {
+          "description": "Sohbet istekleri için varsayılan olarak sağlayıcıya özgü sunucu tarafı sıkıştırmayı etkinleştirin. Bu özellik etkin olduğunda, bunu destekleyen modeller, sohbet kendi eşik değerini aştığında eski turları otomatik olarak özetleyebilir ve böylece uzun oturumların bağlam sınırını aşarak devam etmesine olanak tanır. Her sağlayıcı kendi geçersiz kılma seçeneğini sunar ve tek tek sohbet oturumları, oturum ayarlarından bu seçeneği geçersiz kılabilir. Bu özelliği desteklemeyen modeller ise bunu yok sayar."
+        },
+        "serverSideCompactionTokenThreshold": {
+          "description": "Sağlayıcıya özgü sunucu tarafı sıkıştırma işleminin çalışması gereken varsayılan girdi belirteci eşiği. Sağlayıcılar ve tek tek sohbet oturumları bu değeri geçersiz kılabilir. Ayarlanmadığında, sağlayıcı kendi varsayılan eşiğini seçer. Ayarlanmışsa, değer en az 50.000 belirteç olmalıdır."
+        },
         "skillDirectories": {
           "description": "Beceri tanımlarını (SKILL.md dosyaları) içeren ek dizinler. Beceri tanımları, AI ajanları tarafından referans alınabilecek yeniden kullanılabilir talimatlar sağlar. Çalışma alanınızdaki .prompts/skills ve .agents/skills dizinleri, ana dizininizdeki .agents/skills dizini ve ürününüzün yapılandırma klasöründeki skills dizini her zaman dahil edilir."
         },
@@ -932,7 +962,6 @@
         "open-history-tooltip": "AI geçmişini aç...",
         "request-card": {
           "promptVariant": "Komut İstemi Varyantı",
-          "response": "Yanıt",
           "timestamp": "Zaman damgası"
         },
         "sortChronologically": {
@@ -1008,6 +1037,11 @@
           "msg": "Bu ajan **ajans modu** kullanır. Otonom akışı etkinleştirmek için, ek bir onay almadan çalışma alanı dosyalarınıza doğrudan yazabilir.\n\nDeğişiklikleri gözden geçirebilmeniz ve geri alabilmeniz için sürüm kontrolü (ör. Git) kullanmanız önerilir.\n\nAşağıdaki sohbet giriş alanındaki mod seçiciyi kullanarak **Düzenleme Modu**'na geçebilir veya salt okunur planlama için **Architect** ajanını kullanabilirsiniz.\n\nBu onay, bu çalışma alanı için kaydedilir ve bir daha gösterilmez. Bunu sıfırlamak veya genel olarak yapılandırmak için Ayarlar'da `ai-features.agentMode.confirmed` öğesini arayın.",
           "waiting": "Onay bekleniyor..."
         },
+        "allowAllMode": {
+          "stripTooltip": "Bu oturumda AI araç çağrıları onay gerektirmeden çalışır. Yalnızca güvendiğiniz ortamlarda etkinleştirin.",
+          "stripTooltipFooter": "--session-preference seçeneği ile ayarlanır. Kaydedilen ayarları geri yüklemek için bu bayrağı kullanmadan yeniden başlatın.",
+          "title": "Theia AI Her Şeye İzin Ver Modu"
+        },
         "app-tester": {
           "errorCheckingDevToolsServerStatus": "Hata kontrolü DevTools MCP sunucu durumu: {0}",
           "errorCheckingPlaywrightServerStatus": "Hata kontrolü Playwright MCP sunucu durumu: {0}",
@@ -1045,6 +1079,7 @@
         "chatRestrictedMessage": {
           "title": "AI Özellikleri Kısıtlanmıştır"
         },
+        "childInteractionNeeded": "Bir delege oturumu dikkatinizi gerektiriyor",
         "codeReviewerAgent": {
           "description": "Kod değişikliklerini analiz eden ve yapılandırılmış kararlar veren bir kod inceleme asistanı. Tamamlanma kriterlerini, derleme/lint/test kanıtlarını ve kod kalitesini kontrol eder."
         },
@@ -1061,6 +1096,7 @@
             "startNewChat": "Sohbetleri kısa ve odaklanmış tutun. Yeni bir görev için [yeni bir sohbet başlatın]({0}) veya [bu sohbetin özetini içeren yeni bir sohbet başlatın]({1})."
           }
         },
+        "collapseSession": "{0}'i daralt",
         "commandAgent": {
           "commandCallback": {
             "confirmAction": "Anladım",
@@ -1089,10 +1125,10 @@
             "edit": "Varsayılan Mod"
           }
         },
-        "deleteChat": "Sohbeti Sil",
         "enableAI": {
           "mdDescription": "Bu ayar, en son AI özelliklerine erişmenizi sağlar.            \n            Bu özelliklerin, erişim sağladığınız dil modellerine (LLM'ler) sürekli istekler gönderebileceğini bilmeniz önemlidir. Bu, yakından izlemeniz gereken maliyetlere neden olabilir. Bu seçeneği etkinleştirerek, bu riskleri kabul etmiş olursunuz.            \n            **Lütfen dikkat! Bu bölümdeki aşağıdaki ayarlar,\n            ana özellik ayarı etkinleştirildikten sonra geçerli olacaktır. Özelliği etkinleştirdikten sonra, aşağıda en az bir LLM sağlayıcısı yapılandırmanız gerekir. Ayrıca [belgelere](https://theia-ide.org/docs/user_ai/) bakın**."
         },
+        "expandSession": "{0}'i genişlet",
         "exploreAgent": {
           "description": "Kod tabanından bilgileri ayıklayan ve özetleyen bir kod tabanı keşif asistanı.         Mevcut durumla ilgili bilgileri raporlar, kod alıntıları sunar ve gözlemlenen kalıpları açıklar."
         },
@@ -1168,10 +1204,16 @@
           "description": "Tam bir kod inceleme iş akışını koordine eden, yapay zeka destekli bir PR inceleme aracısı: PR bilgilerini alır, kod tabanını inceler, yapılandırılmış analizler gerçekleştirir, diff görüntüleyicilerle kullanıcıyı bulgular arasında etkileşimli bir şekilde yönlendirir ve isteğe bağlı olarak GitHub'da bekleyen bir inceleme oluşturur."
         },
         "prompt-template-description": "[AI Yapılandırma Görünümü]({0}) içinde AI ajanları için komut istem varyantlarını seçin ve komut istem şablonlarını özelleştirin.",
+        "requiresApproval": "Onayınız gereklidir",
         "restoredSession": "Geri yüklenen oturum",
         "restrictedModeDetails": "AI sohbeti, satır içi öneriler, kod eylemleri ve komut şablonları devre dışıdır",
         "restrictedModeLabel": "AI Özellikleri (Kısıtlı Modda devre dışı bırakılmıştır)",
         "sectionRestored": "Geri yüklendi",
+        "sessionOverride": {
+          "defaultToolConfirmation": "Varsayılan araç onayı: {0}",
+          "toolConfirmation": "Araç başına onay geçersiz kılmaları: {0}",
+          "toolConfirmationGeneric": "Araç başına onay geçersiz kılma ayarları"
+        },
         "shellAllowlist": {
           "placeholder": "Örneğin, \"git log\" (tam) veya \"git log *\" (argümanlarla)."
         },
@@ -1192,6 +1234,10 @@
         },
         "toolConfirmationInfo": {
           "header": "Araç onayı"
+        },
+        "toolConfirmationOverrides": {
+          "stripTooltip": "Bu oturum için bir veya daha fazla AI aracı, komut satırı bayrakları aracılığıyla otomatik olarak onaylanmıştır.",
+          "title": "AI Aracı Onay Geçersiz Kılmaları"
         },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
@@ -1244,7 +1290,6 @@
           "errorMessage": "Hata mesajı",
           "lastActivity": "Son etkinlik",
           "lastMessage": "Son mesaj",
-          "messages": "Mesajlar",
           "multipleExchanges": "{0} değişimler",
           "oneExchange": "1 değişim",
           "unread": "Okunmamış"
@@ -1333,8 +1378,7 @@
             "title": "Ortam değişkenleri"
           },
           "headers": {
-            "mdDescription": "Sunucuya gönderilen her istekte yer alan isteğe bağlı ek başlıklar. Başlık değerleri, tercihlerde düz metin olarak saklanır; hassas değerler içeriyorsa çalışma alanı ayarlarından kaçının.",
-            "title": "Başlıklar"
+            "mdDescription": "Sunucuya gönderilen her istekte yer alan isteğe bağlı ek başlıklar. Başlık değerleri, tercihlerde düz metin olarak saklanır; hassas değerler içeriyorsa çalışma alanı ayarlarından kaçının."
           },
           "mdDescription": "MCP sunucularını, komut, argümanlar ve isteğe bağlı olarak ortam değişkenleri ile yerel olarak ya da sunucu URL'si, kimlik doğrulama jetonu, OAuth yapılandırması ve isteğe bağlı olarak bir kimlik doğrulama başlığı adı ile uzaktan yapılandırabilirsiniz. Ayrıca, otomatik başlatma özelliğini yapılandırmak da mümkündür (varsayılan olarak true). Her sunucu, \"brave-search\" veya \"filesystem\" gibi benzersiz bir anahtarla tanımlanır. Bir sunucuyu başlatmak için, istediğiniz sunucuyu seçmenize olanak tanıyan \"MCP: Start MCP Server\" komutunu kullanın. Bir sunucuyu durdurmak için \"MCP: Stop MCP Server\" komutunu kullanın. Otomatik başlatma özelliğinin ancak yeniden başlatma sonrasında etkili olacağını lütfen unutmayın; sunucuyu ilk kez manuel olarak başlatmanız gerekir. Bir AI kayıt defterinden yüklenen sunucular, otomatik olarak yönetilen ve manuel olarak düzenlenmemesi gereken ek bir `registryMetadata` bloğu içerir.\nÖrnek yapılandırma:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  },\n  \"oauth-protected-server\": {\n    \"serverUrl\": \"YOUR_OAUTH_PROTECTED_MCP_SERVER_URL\",\n    \"oauth\": {\n      \"clientId\": \"OPTIONAL_CLIENT_ID\",\n      \"scopes\": [\"OPTIONAL_SCOPE\"]\n    }\n  }\n  }\n```",
           "oauth": {
@@ -1403,9 +1447,6 @@
         "stop": {
           "label": "MCP: MCP Sunucusunu Durdur"
         },
-        "tool": {
-          "noTools": "Kullanılabilir araç yok."
-        },
         "useWorkspaceAsRoot": {
           "mdDescription": "Kökler, sunucuların dosya sistemi içinde çalışabileceği sınırları tanımlar. Etkinleştirilirse, çalışma alanı klasörleri kök olarak kullanılır, aksi takdirde MCP sunucuları tüm dosya sistemine erişebilir. Bu ayarın değiştirilmesi, yeni kök yapılandırmasını uygulamak için çalışan tüm MCP sunucularını yeniden başlatır.",
           "title": "Çalışma Alanını Kök Olarak Kullan"
@@ -1422,7 +1463,6 @@
         "command": {
           "addServer": "Yerel MCP yapılandırması ekle..."
         },
-        "connectingServer": "Bağlanılıyor...",
         "copiedAllList": "Tüm araçları panoya kopyalandı (tüm araçların listesi)",
         "copiedAllSingle": "Tüm araçları panoya kopyaladı (tüm araçları içeren tek komut istemi parçası)",
         "copiedForPromptTemplate": "Tüm araçları komut istemi şablonu için panoya kopyaladı                                     (tüm araçları içeren tek komut istemi parçası)",
@@ -1466,12 +1506,10 @@
           "saveChanges": "Değişiklikleri Kaydet",
           "serverName": "Sunucu Adı",
           "serverNamePlaceholder": "Örneğin, my-mcp-server",
-          "serverType": "Sunucu Türü",
           "serverUrlPlaceholder": "Örneğin, https://mcp.example.com",
           "serverUrlRequired": "Uzak sunucular için sunucu URL'si gereklidir."
         },
         "fromRegistryLink": "Kayıt defterinden",
-        "headers": "Başlıklar",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "Yetkilendirme Sunucusu",
         "oauthClientId": "OAuth İstemci Kimliği",
@@ -1497,6 +1535,15 @@
       "openai": {
         "apiKey": {
           "mdDescription": "Resmi OpenAI Hesabınızın API Anahtarını girin. **Lütfen dikkat:** Bu tercihi kullanarak Open AI API anahtarı, Theia'yı çalıştıran makinede açık metin olarak saklanacaktır. Anahtarı güvenli bir şekilde ayarlamak için `OPENAI_API_KEY` ortam değişkenini kullanın."
+        },
+        "compaction": {
+          "default": "Genel sohbet sunucu tarafı sıkıştırma ayarını takip edin.",
+          "description": "Resmi OpenAI modelleri için sağlayıcıya özgü sunucu tarafı sıkıştırma işlemini geçersiz kılın. Bu, yalnızca OpenAI Response API'si için geçerlidir; Chat Completions API'si bunu dikkate almaz. \"default\" seçeneği, genel sohbet ayarını ({0}) takip eder. Etkin bir şekilde etkinleştirildiğinde, konuşma sağlayıcının eşiğini aştığında Response API'sinden eski turları özetlemesi istenir.",
+          "disabled": "Resmi OpenAI modelleri için asla sunucu tarafında sıkıştırma talebinde bulunmayın.",
+          "enabled": "Resmi OpenAI modelleri için her zaman sunucu tarafında sıkıştırma talep edin."
+        },
+        "compactionTokenThreshold": {
+          "description": "Resmi OpenAI modelleri için sunucu tarafı sıkıştırma işlemine ilişkin genel giriş belirteci eşiğini geçersiz kılın. Ayar yapılmadığında, genel ayar veya sağlayıcının varsayılan ayarı geçerlidir. Ayar yapıldığında, değer en az 50.000 belirteç olmalıdır."
         },
         "customEndpoints": {
           "apiKey": {
@@ -1538,7 +1585,7 @@
           "description": "Kullanılacak resmi OpenAI modelleri"
         },
         "useResponseApi": {
-          "mdDescription": "Resmi OpenAI modelleri için Chat Completion API yerine daha yeni OpenAI Response API'yi kullanın.Bu ayar yalnızca resmi OpenAI modelleri için geçerlidir - özel sağlayıcılar bunu ayrı ayrı yapılandırmalıdır. Yanıt API'si için araç çağırma tanımlarının Open AI'nın [katı şema tanımına](https://platform.openai.com/docs/guides/function-calling#strict-mode) uyması gerektiğini unutmayın. Uygun olmayan şemaları dönüştürmek için elimizden gelenin en iyisi yapılır, ancak yine de hatalar olabilir."
+          "mdDescription": "Resmi OpenAI modelleri için Chat Completion API yerine daha yeni olan OpenAI Response API'sini kullanın. Bu ayar yalnızca resmi OpenAI modelleri için geçerlidir; özel sağlayıcılar bunu ayrı ayrı yapılandırmalıdır."
         }
       },
       "promptTemplates": {
@@ -1588,6 +1635,10 @@
       },
       "session-settings-dialog": {
         "advancedSettings": "Gelişmiş Ayarlar (JSON)",
+        "compactionHeader": "Sunucu Tarafında Sıkıştırma",
+        "compactionLabel": "Sıkıştırma:",
+        "compactionNote": "Bu oturum için genel ve sağlayıcı başına sıkıştırma ayarını geçersiz kılar. Yalnızca sunucu tarafında sıkıştırmayı destekleyen sağlayıcılara uygulanır.",
+        "compactionTokenThreshold": "Token eşiği:",
         "confirmationTimeout": "Onay Zaman Aşımı",
         "confirmationTimeoutNote": "Belirtilen süreden sonra araç onaylarını otomatik olarak reddet. Bu oturum için genel tercihi geçersiz kılar.",
         "enableConfirmationTimeout": "Onay zaman aşımını etkinleştir",
@@ -1722,6 +1773,13 @@
       "fileChangeSetTitle": "Önerilen değişiklikler"
     },
     "ai-chat-ui": {
+      "blockedResource": {
+        "allow": "Engellenen bu içeriğe izin ver",
+        "aria": "Engellenen harici kaynaklar: {0}",
+        "inlineContent": "(satır içi harici içerik)",
+        "label": "Harici kaynak engellendi:",
+        "resourcesToAllow": "{0} kaynaklar etkinleştirilecektir"
+      },
       "browseAllChats": "Tüm sohbetlere göz at...",
       "confirm": "Onayla",
       "deleteChat": "Sohbeti Sil",
@@ -1730,6 +1788,7 @@
       "noOutput": "Çıktı yok",
       "open-current-session-summary": "Geçerli Oturum Özetini Aç",
       "open-settings-tooltip": "AI ayarlarını aç...",
+      "openSession": "Sohbet Oturumu Aç",
       "renameChat": "Sohbeti Yeniden Adlandır",
       "scroll-lock": "Kaydırmayı Kilitle",
       "scroll-unlock": "Kilit Açma Kaydırma",
@@ -1774,11 +1833,17 @@
         "argumentHint": "<bilet numarası>",
         "description": "GitHub biletini analiz edin ve çözümü uygulayın."
       },
+      "newChat": "Yeni Sohbet",
+      "noSessions": "Henüz sohbet oturumu yok.",
       "open-ai-configuration-tooltip": "Open AI Yapılandırması",
+      "perspective": {
+        "aiFirst": "AI First"
+      },
       "rememberCommand": {
         "argumentHint": "[konu ipucu]",
         "description": "Konuşmalardan konuları çıkarın ve proje bilgilerini güncelleyin"
       },
+      "sessionsView": "AI Oturumları",
       "ticketCommand": {
         "argumentHint": "<bilet numarası>",
         "description": "GitHub biletini analiz edin ve bir uygulama planı oluşturun"
@@ -1900,6 +1965,41 @@
       "timeout": "Zaman aşımı",
       "workingDirectory": "Çalışma dizini"
     },
+    "ai-tool-sketchpad": {
+      "addItemProperty": "Öğe Özelliği Ekle",
+      "addParameter": "Parametre Ekle",
+      "addProperty": "Özellik Ekle",
+      "addTool": "Araç Ekle",
+      "askAtRuntimeHint": "LLM bu aracı çağırdığında, dönüş değerini girmenizi isteyen hızlı bir giriş penceresi açılacaktır.",
+      "askReturnPlaceholder": "Bu araç çağrısı için dönüş değerini girin...",
+      "askReturnPrompt": "\"{0}\" aracı şu komutla çağrıldı: {1}",
+      "confirmDelete": "\"{0}\" aracını silmek istediğinizden emin misiniz?",
+      "descriptionPlaceholder": "Aracın ne işe yaradığını açıklayın...",
+      "itemType": "Öğe Türü:",
+      "label": "AI Tool Sketchpad",
+      "nParameters": "{0} parametreler",
+      "nameDuplicate": "Bu isimde bir araç zaten mevcuttur.",
+      "nameEmpty": "Araç adı boş bırakılmamalıdır.",
+      "nameInvalid": "Araç adı yalnızca harfler, rakamlar, alt çizgi ve tire işaretleri içerebilir (1-128 karakter).",
+      "noItemProperties": "Tanımlanmış öğe özelliği yoktur.",
+      "noParameters": "Tanımlanmış parametre yok.",
+      "noTools": "Henüz araç yok.",
+      "oneParameter": "1 parametre",
+      "parameters": "Parametreler",
+      "required": "Gerekli",
+      "returnMode": "Geri Dönüş Modu",
+      "returnModeAskAtRuntime": "Çalışma Zamanında Sor",
+      "returnModeAskShort": "Çalışma zamanında sor",
+      "returnModeStatic": "Statik Dönüş Değeri",
+      "returnModeStaticShort": "Statik",
+      "selectTool": "Düzenlemek için bir araç seçin veya çizime başlamak için yeni bir araç ekleyin.",
+      "staticReturn": "Statik Dönüş Değeri",
+      "staticReturnHint": "Bu statik değer, girdi argümanlarından bağımsız olarak araç her çağrıldığında döndürülür.",
+      "staticReturnPlaceholder": "Bu araç çağrıldığında döndürülen değer (örn. JSON dizesi)",
+      "toolName": "Araç Adı",
+      "toolNamePlaceholder": "Örneğin: getWeather",
+      "untitledTool": "İsimsiz araç"
+    },
     "callhierarchy": {
       "noCallers": "Hiçbir arayan tespit edilmedi.",
       "open": "Açık Çağrı Hiyerarşisi"
@@ -1985,6 +2085,7 @@
         "visual": "Sekmenin görsel önizlemesini görüntüleyin."
       },
       "highlightModifiedTabs": "Değiştirilmiş (kirli) düzenleyici sekmelerine üst kenarlık çizilip çizilmeyeceğini kontrol eder.",
+      "jumpListName": "Son Çalışma Alanları",
       "keybinding": {
         "duplicateModifierError": "{0}'da tuş ataması yapılamıyor Yinelenen değiştiriciler",
         "metaError": "{0} meta anahtar bağlamasını yalnızca OSX için ayrıştıramıyor",
@@ -2005,6 +2106,11 @@
         "clipboardWarnFirefox": "Pano API'si kullanılamaz. \"{1}\" (Gelişmiş) sayfasında \"{0}\" (Pano API'sini etkinleştir) tercihi ile etkinleştirilebilir. Ardından Theia'yı yeniden yükleyin. Bu, FireFox'un sistem panosuna tam erişim izni verecektir."
       },
       "pasteWarn": "Lütfen tarayıcının yapıştır komutunu veya kısayolunu kullanın.",
+      "perspective": {
+        "resetPerspective": "Perspektifi Sıfırla (Deneysel)",
+        "selectPerspective": "Bir perspektif seçin",
+        "switchPerspective": "Perspektif Değiştir (Deneysel)"
+      },
       "quitMessage": "Kaydedilmemiş değişiklikler kaydedilmeyecektir.",
       "resetWorkbenchLayout": "Çalışma Alanı Düzenini Sıfırla",
       "searchbox": {
@@ -2223,6 +2329,11 @@
     },
     "markers": {
       "clearAll": "Tümünü Temizle",
+      "copyAsText": "Metin Olarak Kopyala",
+      "export": "Dışa aktar",
+      "exportProblems": "Dışa Aktarma Sorunları",
+      "exportSuccess": "Sorunlar başarıyla dışa aktarıldı.",
+      "jsonFiles": "JSON Dosyaları",
       "noProblems": "Şu ana kadar çalışma alanında herhangi bir sorun tespit edilmemiştir.",
       "tabbarDecorationsEnabled": "Sekme çubuklarında sorun dekoratörlerini (tanı işaretçileri) göster."
     },
@@ -2317,6 +2428,7 @@
       "autoReveal": "Otomatik Göster",
       "clipboardWarn": "Pano erişimi reddedildi. Tarayıcınızın izinlerini kontrol edin.",
       "clipboardWarnFirefox": "Pano API'si kullanılamaz. \"{1}\" (Gelişmiş) sayfasında \"{0}\" (Pano API'sini etkinleştir) tercihi ile etkinleştirilebilir. Ardından Theia'yı yeniden yükleyin. Bu, FireFox'un sistem panosuna tam erişim izni verecektir.",
+      "nothingToPaste": "Pano, buraya yapıştırılabilecek çalışma alanı dosyalarını içermemektedir.",
       "openWithSystemEditor": "Sistem Düzenleyicisi ile Aç",
       "refresh": "Explorer'da yenile",
       "reveal": "Explorer'da göster",
@@ -2380,6 +2492,18 @@
       "hostedPlugin": "Barındırılan Eklenti",
       "input": {
         "browse": "Göz at"
+      },
+      "sessionOverride": {
+        "suffix": "Oturum tarafından geçersiz kılınır",
+        "suffixTooltip": "Bu tercihin, --session-preference komutuyla ayarlanan bir oturum değeri vardır. Burada düzenleme yapıldığında, bu oturumun geri kalanı için oturum geçersiz kılma ayarı silinir."
+      },
+      "sessionPreferences": {
+        "statusBar": "Oturum Tercihleri ({0})",
+        "tooltipBody": "Bu ayarlar --session-preference seçeneği ile aktarılmıştır ve yalnızca bellekte tutulur. Bir ayar adını tıklayarak Ayarlar görünümünde o ayara gidebilirsiniz.",
+        "tooltipChangeNote": "Bunlardan herhangi birini düzenlemek, bu çalıştırma için oturum geçersiz kılma ayarını siler. Bir sonraki başlatmadan itibaren kaydedilen değerleri kullanmak için, --session-preference argümanları olmadan yeniden başlatın.",
+        "tooltipHeader": "Bu ayarlar bu oturum için geçersiz kılınmıştır",
+        "valueOff": "kapalı",
+        "valueOn": "on"
       },
       "toolbar": "Araç çubuğu"
     },
@@ -2506,6 +2630,9 @@
       "taskRestricted": "Kısıtlı Modda görev yürütme devre dışıdır.",
       "taskTerminatedBySignal": "\"{0}\" görevi, {1} sinyaliyle sonlandırıldı.",
       "terminalWillBeReusedByTasks": "Terminal, görevler tarafından yeniden kullanılacaktır."
+    },
+    "telemetry": {
+      "filters": "Her bir telemetri alıcısına gönderilen konu kalıplarını sınırlayın. Girişlerin eksik bırakılması, alıcının tüm ilgi alanlarına izin verir; boş diziler ise bir alıcıyı devre dışı bırakır."
     },
     "terminal": {
       "defaultProfile": "{0}'da kullanılan varsayılan profil",

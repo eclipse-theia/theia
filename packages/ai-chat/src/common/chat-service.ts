@@ -390,6 +390,7 @@ export class ChatServiceImpl implements ChatService {
         }
         const requestText = request.request.displayText ?? request.request.text;
         session.title = requestText;
+        this.onSessionEventEmitter.fire({ type: 'renamed', sessionId: session.id });
         if (this.chatSessionNamingService) {
             const otherSessionNames = this._sessions.map(s => s.title).filter((title): title is string => title !== undefined);
             const namingService = this.chatSessionNamingService;
@@ -401,6 +402,7 @@ export class ChatServiceImpl implements ChatService {
                             session.title = name;
                             // Trigger persistence when title changes
                             this.saveSession(session.id);
+                            this.onSessionEventEmitter.fire({ type: 'renamed', sessionId: session.id });
                         }
                         didGenerateName = true;
                     }).catch(error => this.logger.error('Failed to generate chat session name', error));
@@ -450,8 +452,12 @@ export class ChatServiceImpl implements ChatService {
             return mentionedAgent;
         } else if (session.pinnedAgent) {
             // If we have a valid pinned agent, use it (pinned agent may become stale
-            // if it was disabled; so we always need to recheck)
-            const pinnedAgent = this.chatAgentService.getAgent(session.pinnedAgent.id);
+            // if it was disabled; so we always need to recheck). A pin is an explicit choice —
+            // e.g. AgentDelegationTool pins the delegated agent on the session it creates, and
+            // worker agents are often hidden (showInChat: false) — so hidden agents are honored
+            // here, while plain @-mentions above stay hidden-excluding. Without this, a request
+            // in a session pinned to a hidden agent silently falls back to the default agent.
+            const pinnedAgent = this.chatAgentService.getAgent(session.pinnedAgent.id, true);
             if (pinnedAgent) {
                 return pinnedAgent;
             }
@@ -550,9 +556,10 @@ export class ChatServiceImpl implements ChatService {
         const model = new MutableChatModel(serialized.model);
         await this.restoreSessionData(model, serialized.model);
 
-        // Determine pinned agent
+        // Determine pinned agent (hidden agents included — a restored pin, like a live one,
+        // is an explicit choice; see getPinnedAgent)
         const pinnedAgent = serialized.pinnedAgentId
-            ? this.chatAgentService.getAgent(serialized.pinnedAgentId)
+            ? this.chatAgentService.getAgent(serialized.pinnedAgentId, true)
             : undefined;
 
         // Register as session

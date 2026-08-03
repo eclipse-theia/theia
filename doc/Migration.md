@@ -7,14 +7,6 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 
 ## Guide
 
-### v1.74.0
-
-#### Physical printable-key bindings
-
-Printable keybinding tokens now identify logical characters on the active keyboard layout. Existing persisted keybinding strings remain valid and no format migration is required. Shift in an authored logical-character stroke is absorbed during layout resolution rather than retained as a command modifier. However, a binding that intentionally relied on the former accidental US physical-position fallback must use explicit scan-code syntax. For example, replace a position-dependent `ctrl+[` binding with `ctrl+[BracketLeft]`. Reserved logical characters can be authored with `[char:0x...]`, such as `ctrl+[char:0x2B]` for logical `+`.
-
-Logical characters unavailable on the active layout remain loaded and visible but inactive; Theia no longer silently maps them to a US keyboard position. If this changes an existing shortcut unexpectedly, set `"keyboard.dispatch": "keyCode"` to restore positional key-code dispatch. See `packages/keymaps/README.md` for the complete grammar and Windows AltGr recorder guidance.
-
 ### General
 
 _ESBuild_:
@@ -109,6 +101,28 @@ For example, in an `electron-builder` configuration, ensure the `lib/backend/she
 
 The `lib/**/*` glob already covers `lib/backend/shell-integrations/`. If you use a more restrictive `files` pattern, make sure `lib/backend/shell-integrations/**/*` is explicitly included, as `ShellIntegrationInjector` resolves these scripts relative to `__dirname` (i.e. `lib/backend/`).
 
+### v1.75.0
+
+#### Physical printable-key bindings
+
+##### User keymaps
+
+Printable keybinding tokens now identify logical characters on the active keyboard layout. Existing `keymaps.json` files and keybinding strings remain parseable, so no file-format migration is required. Shift in an authored logical-character stroke is absorbed during layout resolution rather than retained as a command modifier.
+
+Bindings that intentionally target a physical position must use explicit scan-code syntax. For example, replace a position-dependent `ctrl+[` binding with `ctrl+[BracketLeft]`. Reserved logical characters can be authored with `[char:0x...]`, such as `ctrl+[char:0x2B]` for logical `+`.
+
+Available printable bindings now follow their logical characters. For example, German `ctrl+[` resolves to physical `Ctrl+AltGr+8` instead of the US `BracketLeft` position. Logical characters unavailable on the active layout remain loaded and visible but inactive; Theia no longer silently maps them to a US keyboard position.
+
+Set `"keyboard.dispatch": "keyCode"` to restore positional key-code dispatch globally if the logical behavior changes existing shortcuts unexpectedly. See [`packages/keymaps/README.md`](../packages/keymaps/README.md) for the complete logical-character, scan-code, character-token, inactive-binding, and Windows AltGr recorder grammar.
+
+##### Adopter APIs
+
+- Replace consumers of `KeyboardLayout.key2KeyCode` with `candidatesByCharacter` or `candidatesByFoldedCharacter`. Each `KeyboardLayoutCandidate` provides the physical `key`, logical `character`, and required `layoutModifiers`. Subclasses of `KeyboardLayoutService` that overrode the removed protected `transformKeyCode()` or `getCharacterIndex()` methods must move their logic to `resolveKeyCode()` and candidate lookup.
+- Pass the normalized keyboard input as the second argument to `KeyboardLayoutService.validateKeyCode`.
+- Review `KeyCode` consumers: `equals()` requires the same physical key and `dispatchString()`, character-only values are not modifier-only, and `toString()` preserves authored spelling. Use `dispatchString()` when a runtime match identity is required.
+- Update `KeybindingRegistry.matchKeybinding()` consumers from `match.binding` to `match.runtime.binding`; the resolved sequence is available as `match.runtime.sequence`. Subclasses that override chord handling must replace the protected `keySequence` field with `keySequenceCandidates`. Protected keybinding-tree values are runtime records containing the original scoped binding and its resolved sequence, rather than `ScopedKeybinding[]`.
+- Pass an explicit `'logical'` or `'physical'` form to `AcceleratorSource.getAccelerator`. Browser UI uses logical labels, while Electron native menus require physical accelerators.
+
 ### v1.74.0
 
 #### Deprecation of @theia/ai-vercel-ai package
@@ -124,6 +138,15 @@ If your application depends on `@theia/ai-vercel-ai`, migrate as follows:
   - `provider: 'anthropic'` → `ai-features.anthropicCustom.customAnthropicModels`
 
 The dedicated provider preferences offer the same fields plus additional ones (e.g. Azure `apiVersion`/`deployment`, `useResponseApi`, `reasoningSupport` for OpenAI; `useCaching`, `maxRetries` for Anthropic).
+
+#### `AiConfigurationService` for reading/writing AI preferences
+
+A new framework API, `AiConfigurationService` (`@theia/ai-core`), wraps `PreferenceService` for `ai-features.*` preferences and is the intended extension point for reading/writing AI configuration.
+
+**Adopter-facing:**
+
+- Prefer `AiConfigurationService` over `PreferenceService` for `ai-features.*` keys in frontend code. Its `get`/`inspect` are workspace-trust-aware (workspace/folder values are suppressed while the workspace is untrusted); writes (`set`/`update`) are never gated by trust.
+- **Behavior change:** the AI terminal's shell-command allowlist/denylist (`ai-features.terminal.shellCommand{Allowlist,Denylist}`) are now read trust-aware via `AiConfigurationService`. Previously they were read with a raw `PreferenceService.get`, so an untrusted workspace could contribute allowlist entries. Now workspace/folder-scoped entries are suppressed until the workspace is trusted (an untrusted workspace can no longer widen the shell allowlist). User- and default-scoped entries are unaffected.
 
 ### v1.73.0
 
@@ -153,15 +176,6 @@ Custom agents are now scanned from both the `.agents/` and `.prompts/` folders o
 **Adopter-facing:**
 
 - `PromptFragmentCustomizationProperties` gained an optional `agentDirectoryPaths` field carrying the absolute parent directories scanned for custom agents. The `.agents`/`.prompts` parents are exported as `CUSTOM_AGENT_WORKSPACE_DIRECTORIES`.
-
-#### `AiConfigurationService` for reading/writing AI preferences
-
-A new framework API, `AiConfigurationService` (`@theia/ai-core`), wraps `PreferenceService` for `ai-features.*` preferences and is the intended extension point for reading/writing AI configuration.
-
-**Adopter-facing:**
-
-- Prefer `AiConfigurationService` over `PreferenceService` for `ai-features.*` keys in frontend code. Its `get`/`inspect` are workspace-trust-aware (workspace/folder values are suppressed while the workspace is untrusted); writes (`set`/`update`) are never gated by trust.
-- **Behavior change:** the AI terminal's shell-command allowlist/denylist (`ai-features.terminal.shellCommand{Allowlist,Denylist}`) are now read trust-aware via `AiConfigurationService`. Previously they were read with a raw `PreferenceService.get`, so an untrusted workspace could contribute allowlist entries. Now workspace/folder-scoped entries are suppressed until the workspace is trusted (an untrusted workspace can no longer widen the shell allowlist). User- and default-scoped entries are unaffected.
 
 ### v1.70.0
 

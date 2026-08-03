@@ -2224,6 +2224,34 @@
   outline-offset: -2px;
 }
 
+/* AI Sessions View */
+.ai-sessions-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.ai-sessions-view-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--theia-ui-padding) 0;
+}
+
+.ai-sessions-view-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--theia-descriptionForeground);
+  gap: var(--theia-ui-padding);
+}
+
+.ai-sessions-view-empty .codicon {
+  font-size: calc(var(--theia-ui-font-size1) * 2.5);
+  opacity: 0.5;
+}
+
 /* Persistent banner strip rendered above the AI chat content when an AI session
  * override (e.g. --session-preference) is active. */
 .chat-banner-host {
@@ -2289,4 +2317,3 @@
   outline: 1px solid var(--theia-focusBorder);
   outline-offset: -1px;
 }
-
