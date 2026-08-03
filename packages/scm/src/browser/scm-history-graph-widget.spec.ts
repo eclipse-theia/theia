@@ -48,15 +48,17 @@ describe('ScmHistoryGraphWidget context keys', () => {
     let widget: ScmHistoryGraphWidget;
     let scmContextKeys: ScmContextKeyService;
     let provider: Partial<ScmHistoryProvider> | undefined;
+    let currentRefInFilter: boolean;
 
     beforeEach(() => {
         restoreJSDOM = enableJSDOM();
         scmContextKeys = createScmContextKeyService();
+        currentRefInFilter = true;
         widget = new ScmHistoryGraphWidget();
         const raw = widget as unknown as Record<string, unknown>;
         raw.scmContextKeys = scmContextKeys;
         Object.defineProperty(raw, 'model', {
-            get: () => ({ provider })
+            get: () => ({ provider, isCurrentRefInFilter: () => currentRefInFilter })
         });
     });
 
@@ -86,6 +88,15 @@ describe('ScmHistoryGraphWidget context keys', () => {
     it('should clear scmCurrentHistoryItemRefInFilter when there is no provider', () => {
         scmContextKeys.scmCurrentHistoryItemRefInFilter.set(true);
         provider = undefined;
+        updateContextKeys();
+        expect(scmContextKeys.scmCurrentHistoryItemRefInFilter.get()).to.equal(false);
+    });
+
+    it('should clear scmCurrentHistoryItemRefInFilter when the filter excludes the current ref', () => {
+        provider = {
+            currentHistoryItemRef: { id: 'refs/heads/main', name: 'main' }
+        };
+        currentRefInFilter = false;
         updateContextKeys();
         expect(scmContextKeys.scmCurrentHistoryItemRefInFilter.get()).to.equal(false);
     });

@@ -47,6 +47,8 @@ import { bindMergeEditor } from './merge-editor/merge-editor-module';
 import { ScmRepositoriesWidget } from './scm-repositories-widget';
 import { ScmHistoryGraphWidget } from './scm-history-graph-widget';
 import { ScmHistoryGraphModel } from './scm-history-graph-model';
+import { ScmHistoryGraphContribution } from './scm-history-graph-contribution';
+import { CommandContribution, MenuContribution } from '@theia/core';
 
 export default new ContainerModule(bind => {
     bind(ScmContextKeyService).toSelf().inSingletonScope();
@@ -91,6 +93,9 @@ export default new ContainerModule(bind => {
     })).inSingletonScope();
 
     bind(ScmHistoryGraphModel).toSelf().inSingletonScope();
+    bind(ScmHistoryGraphContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(ScmHistoryGraphContribution);
+    bind(MenuContribution).toService(ScmHistoryGraphContribution);
     bind(ScmHistoryGraphWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: ScmHistoryGraphWidget.ID,
