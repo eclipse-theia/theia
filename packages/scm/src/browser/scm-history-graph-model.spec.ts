@@ -21,9 +21,9 @@ import { ScmHistoryItem, ScmHistoryItemRef, ScmHistoryItemChange, ScmHistoryOpti
 import { ScmRepository } from './scm-repository';
 
 class StubHistoryProvider implements ScmHistoryProvider {
-    readonly currentHistoryItemRef: ScmHistoryItemRef | undefined;
-    readonly currentHistoryItemRemoteRef: ScmHistoryItemRef | undefined;
-    readonly currentHistoryItemBaseRef: ScmHistoryItemRef | undefined;
+    currentHistoryItemRef: ScmHistoryItemRef | undefined;
+    currentHistoryItemRemoteRef: ScmHistoryItemRef | undefined;
+    currentHistoryItemBaseRef: ScmHistoryItemRef | undefined;
 
     readonly onDidChangeCurrentHistoryItemRefs = new Emitter<void>().event;
     readonly onDidChangeHistoryItemRefs = new Emitter<{
@@ -167,5 +167,65 @@ describe('ScmHistoryGraphModel - pagination', () => {
 
         await loadPage();
         expect(model.entries).to.have.length(PAGE_SIZE, 'should not grow when all items are duplicates');
+    });
+});
+
+describe('ScmHistoryGraphModel - ref colors and current item', () => {
+
+    const mainRef: ScmHistoryItemRef = { id: 'refs/heads/main', name: 'main', revision: 'c2' };
+    const originMainRef: ScmHistoryItemRef = { id: 'refs/remotes/origin/main', name: 'origin/main', revision: 'c1' };
+
+    /** Remote is one commit ahead: c1 (origin/main) → c2 (main = HEAD) → c3. */
+    function createBehindProvider(): StubHistoryProvider {
+        const provider = new StubHistoryProvider();
+        provider.currentHistoryItemRef = mainRef;
+        provider.currentHistoryItemRemoteRef = originMainRef;
+        provider.pages = [[
+            { id: 'c1', subject: 'remote only', parentIds: ['c2'], references: [originMainRef] },
+            { id: 'c2', subject: 'local head', parentIds: ['c3'], references: [mainRef] },
+            { id: 'c3', subject: 'base', parentIds: [] },
+        ]];
+        return provider;
+    }
+
+    it('colors the remote ref tip with the remote ref color', async () => {
+        const { model, loadPage } = createModel(createBehindProvider());
+        await loadPage();
+        expect(model.entries[0].graphRow.color).to.equal(1);
+    });
+
+    it('colors the current ref chain with the current ref color', async () => {
+        const { model, loadPage } = createModel(createBehindProvider());
+        await loadPage();
+        expect(model.entries[1].graphRow.color).to.equal(0);
+        expect(model.entries[2].graphRow.color).to.equal(0);
+    });
+
+    it('prefers the current ref color when a commit carries both local and remote refs', async () => {
+        const provider = new StubHistoryProvider();
+        const syncedMain: ScmHistoryItemRef = { ...mainRef, revision: 'c1' };
+        const syncedRemote: ScmHistoryItemRef = { ...originMainRef, revision: 'c1' };
+        provider.currentHistoryItemRef = syncedMain;
+        provider.currentHistoryItemRemoteRef = syncedRemote;
+        provider.pages = [[
+            { id: 'c1', subject: 'in sync', parentIds: [], references: [syncedRemote, syncedMain] },
+        ]];
+        const { model, loadPage } = createModel(provider);
+        await loadPage();
+        expect(model.entries[0].graphRow.color).to.equal(0);
+    });
+
+    it('marks only the entry at the current ref revision as current', async () => {
+        const { model, loadPage } = createModel(createBehindProvider());
+        await loadPage();
+        expect(model.entries.map(e => e.isCurrent)).to.deep.equal([false, true, false]);
+    });
+
+    it('marks no entry as current when the provider has no current ref', async () => {
+        const provider = new StubHistoryProvider();
+        provider.pages = [makeItems(1, 3)];
+        const { model, loadPage } = createModel(provider);
+        await loadPage();
+        expect(model.entries.every(e => !e.isCurrent)).to.be.true;
     });
 });

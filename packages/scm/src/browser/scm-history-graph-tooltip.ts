@@ -18,9 +18,9 @@ import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/mar
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { codicon } from '@theia/core/lib/browser/widgets/widget';
 import { nls } from '@theia/core/lib/common/nls';
-import { ScmHistoryItemRef } from './scm-provider';
+import { ScmHistoryItemRef, ScmHistoryProvider } from './scm-provider';
 import { HistoryGraphEntry } from './scm-history-graph-model';
-import { laneColor, getRefBadgeClass, deduplicateRefs, isTagRef, isRemoteRef } from './scm-history-graph-helpers';
+import { laneColor, getRefBadgeClass, getRefBadgePresentation, deduplicateRefs, isTagRef, isRemoteRef } from './scm-history-graph-helpers';
 
 export function formatRelativeTime(ms: number): string {
     const now = Date.now();
@@ -100,7 +100,7 @@ export function buildTooltipRefBadge(
     return badge;
 }
 
-export function buildHtmlTooltip(entry: HistoryGraphEntry, markdownRenderer: MarkdownRenderer): HTMLElement {
+export function buildHtmlTooltip(entry: HistoryGraphEntry, markdownRenderer: MarkdownRenderer, provider?: ScmHistoryProvider): HTMLElement {
     const { item } = entry;
     const badgeColor = laneColor(entry.graphRow.color);
     const container = document.createElement('div');
@@ -184,18 +184,13 @@ export function buildHtmlTooltip(entry: HistoryGraphEntry, markdownRenderer: Mar
         if (hasRefs) {
             const deduplicated = deduplicateRefs(item.references!);
             for (const { ref, hasBoth } of deduplicated) {
-                const isTag = isTagRef(ref);
-                const isRemote = isRemoteRef(ref);
+                // Current/remote/base refs are colored by role, others by the row's lane color
+                const { iconClass, colorIndex } = getRefBadgePresentation(ref, provider);
+                const bgColor = colorIndex !== undefined ? laneColor(colorIndex) : badgeColor;
 
-                if (isTag) {
-                    refsRow.appendChild(buildTooltipRefBadge(ref, 'codicon-tag', true, badgeColor));
-                } else if (isRemote) {
-                    refsRow.appendChild(buildTooltipRefBadge(ref, 'codicon-cloud', true, badgeColor));
-                } else {
-                    refsRow.appendChild(buildTooltipRefBadge(ref, 'codicon-git-branch', true, badgeColor));
-                    if (hasBoth) {
-                        refsRow.appendChild(buildTooltipRefBadge(ref, 'codicon-cloud', false, badgeColor, 'scm-history-ref-badge-cloud'));
-                    }
+                refsRow.appendChild(buildTooltipRefBadge(ref, iconClass, true, bgColor));
+                if (!isTagRef(ref) && !isRemoteRef(ref) && hasBoth) {
+                    refsRow.appendChild(buildTooltipRefBadge(ref, 'codicon-cloud', false, bgColor, 'scm-history-ref-badge-cloud'));
                 }
             }
         }
