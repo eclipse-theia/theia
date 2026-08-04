@@ -104,28 +104,32 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
      * Implement the mechanism to detect unloading of the page.
      */
     protected registerUnloadListeners(): void {
+        // If `beforeunload` is cancelled and the user stays, the page is not unloaded, so `pagehide` is not fired.
         window.addEventListener('beforeunload', event => this.handleBeforeUnloadEvent(event));
         this.registerPageHideListener();
-        // `pagehide` also fires when the page enters the back/forward cache, in which case the
-        // frontend has already shut down (state saved, connections closed). Reload to get a
-        // working application again if the page is restored from the cache. The shutdown already
-        // happened, so the reload must not be vetoed again by the contributions.
-        window.addEventListener('pageshow', event => {
-            if (event.persisted) {
-                this.setSafeToShutDown();
-                window.location.reload();
-            }
-        });
+        window.addEventListener('pageshow', event => this.handlePageShow(event));
     }
 
     /**
      * `pagehide` is used instead of the deprecated `unload` event, which Chrome may block
      * via permissions policy (https://developer.chrome.com/docs/web-platform/deprecating-unload),
      * silently skipping the handler and thus e.g. losing the layout.
-     * If `beforeunload` is cancelled and the user stays, `pagehide` is not fired.
      */
     protected registerPageHideListener(): void {
         window.addEventListener('pagehide', () => this.handlePageHide());
+    }
+
+    /**
+     * `pagehide` also fires when the page enters the back/forward cache, in which case the frontend
+     * has already shut down (state saved, connections closed). Reload to get a working application
+     * again if the page is restored from the cache. That shutdown already happened, so the reload
+     * must not be vetoed by the contributions.
+     */
+    protected handlePageShow(event: PageTransitionEvent): void {
+        if (event.persisted) {
+            this.setSafeToShutDown();
+            this.reload();
+        }
     }
 
     /**

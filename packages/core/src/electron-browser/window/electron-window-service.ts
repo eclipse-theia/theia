@@ -89,6 +89,8 @@ export class ElectronWindowService extends DefaultWindowService {
             }
             return willShutDown;
         });
+        // Intentionally not calling `super`: in Electron the close request handler above takes the role of
+        // `beforeunload`, and there is no back/forward cache, so only the `pagehide` listener is shared.
         this.registerPageHideListener();
     }
 
