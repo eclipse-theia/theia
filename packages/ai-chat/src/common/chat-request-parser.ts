@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatRequestParser.ts
 
-import { inject, injectable, optional } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import { ChatAgentLocation } from './chat-agents';
 import { ChatContext, ChatRequest } from './chat-model';
@@ -47,7 +47,10 @@ const agentReg = /^@([\w_\-\.]+)(?=(\s|$|\b))/i; // An @-agent
 const functionReg = /^~(\??[\w_\-\.]+)(?=(\s|$|\b))/i;
 const functionPromptFormatReg = /^\~\{\s*(.*?)\s*\}/i;
 const variableReg = /^#([\w_\-]+)(?::([\w_\-_\/\\.:]+))?(?=(\s|$|\b))/i; // A #-variable with an optional : arg (#file:workspace/path/name.ext)
-const commandReg = /^\/([\w_\-]+)/; // A /-command (/commandname) with optional arguments parsed separately
+// A /-command (/commandname) with optional arguments parsed separately. The command name must be
+// terminated by whitespace or the end of the input, so that path segments such as `/home/user` are
+// not mistaken for a command.
+const commandReg = /^\/([\w_\-]+)(?=\s|$)/;
 const nextCommandReg = /\s+\/([\w_\-]+)(?=\s|$)/g;
 
 export const ChatRequestParser = Symbol('ChatRequestParser');
@@ -64,8 +67,8 @@ function offsetRange(start: number, endExclusive: number): OffsetRange {
 @injectable()
 export class ChatRequestParserImpl implements ChatRequestParser {
 
-    @inject(PromptService) @optional()
-    protected readonly promptService?: PromptService;
+    @inject(PromptService)
+    protected readonly promptService: PromptService;
 
     constructor(
         @inject(ChatAgentService) private readonly agentService: ChatAgentService,
@@ -299,11 +302,20 @@ export class ChatRequestParserImpl implements ChatRequestParser {
         }
 
         const [commandText, commandName] = nextCommandMatch;
+        if (!this.isCommandCandidate(commandName)) {
+            // Not a command we know about, so leave the text alone. Otherwise anything the user
+            // types after a `/word` token, e.g. a Unix path, would be swallowed as command
+            // arguments and silently dropped when the non-existing command fails to resolve.
+            return;
+        }
         let commandEnd = commandText.length;
         let commandArgs: string | undefined;
 
-        const nextCommandOffset = this.findNextCommandOffset(message, commandEnd);
-        const argsEnd = nextCommandOffset ?? message.length;
+        // Arguments never span multiple lines: a command only consumes the remainder of its own line.
+        const lineBreakOffset = message.indexOf('\n', commandEnd);
+        const lineEnd = lineBreakOffset === -1 ? message.length : lineBreakOffset;
+        const nextCommandOffset = this.findNextCommandOffset(message, commandEnd, lineEnd);
+        const argsEnd = nextCommandOffset ?? lineEnd;
         const rawArgs = message.slice(commandEnd, argsEnd);
         const args = rawArgs.trim();
         if (args) {
@@ -321,16 +333,11 @@ export class ChatRequestParserImpl implements ChatRequestParser {
         return new ParsedChatRequestVariablePart(commandRange, 'prompt', variableArg);
     }
 
-    private findNextCommandOffset(message: string, startOffset: number): number | undefined {
+    private findNextCommandOffset(message: string, startOffset: number, endOffset: number): number | undefined {
         nextCommandReg.lastIndex = startOffset;
         let match = nextCommandReg.exec(message);
-        while (match) {
-            const commandName = match[1];
-            // Deliberate behavior difference: without a PromptService we cannot tell commands from
-            // path-like arguments, so any `/word` token is treated as a command boundary. With a
-            // PromptService we only break on known command names and keep unknown `/word` tokens
-            // (e.g. `/tmp`, `/path/to/file`) as part of the current command's arguments.
-            if (!this.promptService || this.isKnownCommand(commandName)) {
+        while (match && match.index < endOffset) {
+            if (this.isCommandCandidate(match[1])) {
                 return match.index + match[0].indexOf(chatSubcommandLeader);
             }
             match = nextCommandReg.exec(message);
@@ -338,10 +345,13 @@ export class ChatRequestParserImpl implements ChatRequestParser {
         return undefined;
     }
 
-    private isKnownCommand(commandName: string): boolean {
-        return this.promptService?.getCommands().some(command =>
-            (command.commandName ?? command.id) === commandName
-        ) ?? false;
+    /**
+     * Whether a `/name` token should be treated as a command. Only names that actually resolve to a
+     * command or prompt fragment are accepted, which keeps unknown `/word` tokens (e.g. `/tmp`,
+     * `/path/to/file`) as plain text.
+     */
+    protected isCommandCandidate(commandName: string): boolean {
+        return this.promptService.isKnownCommand(commandName);
     }
 
     private tryToParseFunction(message: string, offset: number): ParsedChatRequestFunctionPart | undefined {
