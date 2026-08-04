@@ -89,9 +89,7 @@ export class ElectronWindowService extends DefaultWindowService {
             }
             return willShutDown;
         });
-        window.addEventListener('pagehide', () => {
-            this.onUnloadEmitter.fire();
-        });
+        this.registerPageHideListener();
     }
 
     /**

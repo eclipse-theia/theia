@@ -30,6 +30,7 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
 
     protected frontendApplication: FrontendApplication;
     protected allowVetoes = true;
+    protected unloaded = false;
 
     protected onUnloadEmitter = new Emitter<void>();
     get onUnload(): Event<void> {
@@ -104,19 +105,38 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
      */
     protected registerUnloadListeners(): void {
         window.addEventListener('beforeunload', event => this.handleBeforeUnloadEvent(event));
-        // `pagehide` is used instead of the deprecated `unload` event, which Chrome may block
-        // via permissions policy (https://developer.chrome.com/docs/web-platform/deprecating-unload),
-        // silently skipping the handler and thus e.g. losing the layout.
-        // If `beforeunload` is cancelled and the user stays, `pagehide` is not fired.
-        window.addEventListener('pagehide', () => this.onUnloadEmitter.fire());
+        this.registerPageHideListener();
         // `pagehide` also fires when the page enters the back/forward cache, in which case the
         // frontend has already shut down (state saved, connections closed). Reload to get a
-        // working application again if the page is restored from the cache.
+        // working application again if the page is restored from the cache. The shutdown already
+        // happened, so the reload must not be vetoed again by the contributions.
         window.addEventListener('pageshow', event => {
             if (event.persisted) {
+                this.setSafeToShutDown();
                 window.location.reload();
             }
         });
+    }
+
+    /**
+     * `pagehide` is used instead of the deprecated `unload` event, which Chrome may block
+     * via permissions policy (https://developer.chrome.com/docs/web-platform/deprecating-unload),
+     * silently skipping the handler and thus e.g. losing the layout.
+     * If `beforeunload` is cancelled and the user stays, `pagehide` is not fired.
+     */
+    protected registerPageHideListener(): void {
+        window.addEventListener('pagehide', () => this.handlePageHide());
+    }
+
+    /**
+     * Fires {@link onUnload} at most once per document: `pagehide` fires again for the reload that
+     * recovers a page restored from the back/forward cache, but the application is already stopped.
+     */
+    protected handlePageHide(): void {
+        if (!this.unloaded) {
+            this.unloaded = true;
+            this.onUnloadEmitter.fire();
+        }
     }
 
     async isSafeToShutDown(stopReason: StopReason): Promise<boolean> {

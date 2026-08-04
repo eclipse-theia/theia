@@ -77,4 +77,12 @@ describe('DefaultWindowService', () => {
         assert(windowService['collectContributionUnloadVetoes']().length > 0, 'there should be vetoes');
         assert(frontendContributions.every(contribution => contribution.onWillStopCalled), 'contributions should have been called');
     });
+    it('onUnload should fire at most once, even if `pagehide` fires repeatedly', () => {
+        const windowService = setupWindowService('never', []);
+        let fired = 0;
+        windowService.onUnload(() => fired++);
+        windowService['handlePageHide']();
+        windowService['handlePageHide']();
+        assert(fired === 1, `onUnload should have fired once, but fired ${fired} time(s)`);
+    });
 });
