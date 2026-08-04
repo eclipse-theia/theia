@@ -93,7 +93,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
             isVisible: Preference.EditorCommandArgs.is,
             execute: async ({ id }: Preference.EditorCommandArgs) => {
                 const { scope, uri } = (await this.widget).currentScope;
-                this.preferenceService.set(id, undefined, Number(scope), uri);
+                return this.preferenceService.set(id, undefined, Number(scope), uri);
             }
         });
         commands.registerCommand(PreferencesCommands.OPEN_USER_PREFERENCES, {
@@ -114,8 +114,8 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
             isEnabled: () => !!this.workspaceService.isMultiRootWorkspaceOpened && this.workspaceService.tryGetRoots().length > 0,
             isVisible: () => !!this.workspaceService.isMultiRootWorkspaceOpened && this.workspaceService.tryGetRoots().length > 0,
             execute: () => this.openFolderPreferences(async root => {
-                this.openView({ activate: true });
-                (await this.widget).setScope(root.resource);
+                const widget = await this.openView({ activate: true });
+                widget.setScope(root.resource);
             })
         });
         commands.registerCommand(PreferencesCommands.OPEN_USER_PREFERENCES_JSON, {
@@ -178,7 +178,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     }
 
     protected async openPreferencesJSON(opener: string | PreferencesWidget): Promise<void> {
-        const { scope, activeScopeIsFolder, uri } = (await this.widget).currentScope;
+        const { scope, activeScopeIsFolder, uri } = this.tryGetWidget()?.currentScope ?? Preference.DEFAULT_SCOPE;
         const scopeID = Number(scope);
         let preferenceId = '';
         if (typeof opener === 'string') {
@@ -217,7 +217,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     protected async openFolderPreferences(callback: (root: FileStat) => unknown): Promise<void> {
         const roots = this.workspaceService.tryGetRoots();
         if (roots.length === 1) {
-            callback(roots[0]);
+            await callback(roots[0]);
         } else {
             const items: QuickPickItem[] = roots.map(root => ({
                 label: root.name,
