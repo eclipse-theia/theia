@@ -15,6 +15,7 @@ import { expect } from 'chai';
 import { Key, KeybindingRegistry, KeyCode } from '@theia/core/lib/browser';
 import * as os from '@theia/core/lib/common/os';
 import * as monaco from '@theia/monaco-editor-core';
+import * as MonacoPlatform from '@theia/monaco-editor-core/esm/vs/base/common/platform';
 import * as sinon from 'sinon';
 import { MonacoKeybindingContribution } from './monaco-keybinding';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
@@ -70,7 +71,6 @@ describe('Monaco keybinding adapter', () => {
     });
 
     it('uses formatted logical characters in resolved labels', () => {
-        sinon.stub(os, 'isOSX').value(false);
         const registry = Object.create(KeybindingRegistry.prototype) as KeybindingRegistry;
         const bracket = new MonacoResolvedKeybinding([
             new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[', layoutModifiers: 'altGraph' })
@@ -79,7 +79,8 @@ describe('Monaco keybinding adapter', () => {
             new KeyCode({ key: Key.KEY_P, ctrl: true, character: 'p' })
         ], registry);
 
-        expect(bracket.getLabel()).to.equal('Ctrl+[');
-        expect(letter.getLabel()).to.equal('Ctrl+P');
+        const controlLabel = MonacoPlatform.OS === MonacoPlatform.OperatingSystem.Macintosh ? '⌃' : 'Ctrl+';
+        expect(bracket.getLabel()).to.equal(`${controlLabel}[`);
+        expect(letter.getLabel()).to.equal(`${controlLabel}P`);
     });
 });

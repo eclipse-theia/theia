@@ -146,7 +146,7 @@ before(async () => {
 });
 
 beforeEach(async function (): Promise<void> {
-    if (this.currentTest?.file?.endsWith('/keybinding.spec.js')) {
+    if (this.currentTest?.file?.endsWith('keybinding.spec.js')) {
         disableJSDOM();
         disableJSDOM = enableJSDOM();
     }
@@ -158,7 +158,7 @@ beforeEach(async function (): Promise<void> {
 
 afterEach(function (): void {
     stub.restore();
-    if (this.currentTest?.file?.endsWith('/keybinding.spec.js')) {
+    if (this.currentTest?.file?.endsWith('keybinding.spec.js')) {
         disableJSDOM();
     }
 });
