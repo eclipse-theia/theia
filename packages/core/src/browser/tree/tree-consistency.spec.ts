@@ -21,6 +21,10 @@ import { TreeImpl, CompositeTreeNode, TreeNode } from './tree';
 import { TreeModel } from './tree-model';
 import { ExpandableTreeNode } from './tree-expansion';
 import { TreeLabelProvider } from './tree-label-provider';
+import { MockTreeModel } from './test/mock-tree-model';
+import { MockLogger } from '../../common/test/mock-logger';
+import { ILogger } from '../../common';
+import { Deferred, timeout } from '../../common/promise-util';
 
 @injectable()
 class ConsistencyTestTree extends TreeImpl {
@@ -69,6 +73,22 @@ function createConsistencyTestRoot(rootName: string): CompositeTreeNode {
     return root;
 }
 
+/**
+ * A `TreeImpl` whose `resolveChildren` can be stalled per node id, to simulate
+ * slow child resolution (e.g. a file system request) in tests.
+ */
+@injectable()
+class StallingTestTree extends TreeImpl {
+
+    readonly resolveRequests = new Map<string, Deferred<TreeNode[]>>();
+
+    protected override resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+        const pending = this.resolveRequests.get(parent.id);
+        return pending ? pending.promise : super.resolveChildren(parent);
+    }
+
+}
+
 describe('Tree Consistency', () => {
 
     it('setting different tree roots should finish', async () => {
@@ -100,6 +120,61 @@ describe('Tree Consistency', () => {
             resolveCounter = tree.resolveCounter;
         }
         assert.ok(false, 'Resolving does not stop, attempts: ' + tree.resolveCounter);
+    });
+
+    describe('stale refreshes', () => {
+
+        let tree: StallingTestTree;
+        let model: TreeModel;
+        let loggedErrors: unknown[][];
+
+        beforeEach(async () => {
+            const container = createTreeTestContainer();
+            container.bind(StallingTestTree).toSelf();
+            container.rebind(TreeImpl).toService(StallingTestTree);
+            tree = container.get(StallingTestTree);
+            model = container.get<TreeModel>(TreeModel);
+            loggedErrors = [];
+            const logger = container.get<MockLogger>(ILogger);
+            logger.error = async (...args: unknown[]) => { loggedErrors.push(args); };
+            model.root = MockTreeModel.HIERARCHICAL_MOCK_ROOT();
+            // let the refresh cascade triggered by setting the root settle
+            await timeout(0);
+        });
+
+        it('drops an in-flight refresh when the root is replaced meanwhile', async () => {
+            const stale = model.getNode('1.2') as CompositeTreeNode;
+            const gate = new Deferred<TreeNode[]>();
+            tree.resolveRequests.set('1.2', gate);
+            const pendingRefresh = tree.refresh(stale);
+            tree.resolveRequests.delete('1.2');
+
+            model.root = MockTreeModel.HIERARCHICAL_MOCK_ROOT();
+            gate.resolve(Array.from(stale.children));
+
+            assert.strictEqual(await pendingRefresh, undefined);
+            assert.deepStrictEqual(loggedErrors, []);
+            const fresh = model.getNode('1.2');
+            assert.ok(fresh);
+            assert.notStrictEqual(fresh, stale);
+        });
+
+        it('does not resurrect a removed subtree when a stale refresh completes', async () => {
+            const target = model.getNode('1.2') as CompositeTreeNode;
+            const gate = new Deferred<TreeNode[]>();
+            tree.resolveRequests.set('1.2', gate);
+            const pendingRefresh = tree.refresh(target);
+            tree.resolveRequests.delete('1.2');
+
+            CompositeTreeNode.removeChild(target.parent as CompositeTreeNode, target, tree);
+            assert.strictEqual(model.getNode('1.2'), undefined);
+            gate.resolve(Array.from(target.children));
+
+            assert.strictEqual(await pendingRefresh, undefined);
+            assert.strictEqual(model.getNode('1.2'), undefined);
+            assert.strictEqual(model.getNode('1.2.1'), undefined);
+        });
+
     });
 
 });
