@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection, Emitter, Event, nls, PreferenceChange, PreferenceService } from '@theia/core';
-import { HoverService } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, HoverService } from '@theia/core/lib/browser';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { ExtensionsSourceContribution, SearchContext, SearchResult } from '@theia/vsx-registry/lib/browser/extensions-source-contribution';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
@@ -50,6 +50,9 @@ export class MCPExtensionsContribution implements ExtensionsSourceContribution, 
 
     @inject(HoverService)
     protected readonly hoverService: HoverService;
+
+    @inject(ContextMenuRenderer)
+    protected readonly contextMenuRenderer: ContextMenuRenderer;
 
     @inject(MCPServerInstallDialogFactory)
     protected readonly installDialogFactory: MCPServerInstallDialogFactory;
@@ -106,7 +109,7 @@ export class MCPExtensionsContribution implements ExtensionsSourceContribution, 
             }
             const linkedId = local.registryMetadata?.serverId;
             const matchedEntry = (linkedId && byServerId.get(linkedId)) || byName.get(local.name);
-            result.push(new MCPInstalledEntry(local, matchedEntry, state, this.handlers, this.hoverService));
+            result.push(new MCPInstalledEntry(local, matchedEntry, state, this.handlers, this.hoverService, this.contextMenuRenderer));
         }
         return result;
     }
@@ -141,7 +144,7 @@ export class MCPExtensionsContribution implements ExtensionsSourceContribution, 
             const searchableText = `${entry.name} ${entry.serverId} ${entry.description}`;
             const state = this.installService.classifyRegistryEntry(entry, localDescriptions, registryEntries);
             result.push({
-                element: new MCPSearchResultEntry(entry, state, this.handlers, this.hoverService),
+                element: new MCPSearchResultEntry(entry, state, this.handlers, this.hoverService, this.contextMenuRenderer),
                 searchableText
             });
         }
