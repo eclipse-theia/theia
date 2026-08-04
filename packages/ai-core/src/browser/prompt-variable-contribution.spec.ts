@@ -225,13 +225,61 @@ describe('PromptVariableContribution', () => {
             expect(result?.variable).to.deep.equal(PROMPT_VARIABLE);
         });
 
-        it('returns empty string for non-existent prompts', async () => {
+        // Resolving to `undefined` instead of an empty string makes callers keep the original text
+        // (the literal `#prompt:...` / `{{prompt:...}}` placeholder) rather than silently dropping it.
+        it('returns undefined for a non-existent prompt with arguments', async () => {
             const result = await contribution.resolve(
                 { variable: PROMPT_VARIABLE, arg: 'non-existent|args' },
                 {}
             );
 
-            expect(result?.value).to.equal('');
+            expect(result).to.be.undefined;
+        });
+
+        it('returns undefined for a non-existent prompt without arguments', async () => {
+            const result = await contribution.resolve(
+                { variable: PROMPT_VARIABLE, arg: 'non-existent' },
+                {}
+            );
+
+            expect(result).to.be.undefined;
+        });
+
+        it('returns undefined for a path-like argument', async () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'hello-cmd',
+                template: 'Hello, world!',
+                isCommand: true,
+                commandName: 'hello'
+            });
+
+            const result = await contribution.resolve(
+                { variable: PROMPT_VARIABLE, arg: 'home|/user/notes.txt and fix the bug' },
+                {}
+            );
+
+            expect(result).to.be.undefined;
+        });
+
+        it('returns undefined when no argument is given', async () => {
+            expect(await contribution.resolve({ variable: PROMPT_VARIABLE, arg: undefined }, {})).to.be.undefined;
+            expect(await contribution.resolve({ variable: PROMPT_VARIABLE, arg: '   ' }, {})).to.be.undefined;
+        });
+
+        it('resolves a command referenced by its fragment id without arguments', async () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'hello-cmd',
+                template: 'Hello, world!',
+                isCommand: true,
+                commandName: 'hello'
+            });
+
+            const result = await contribution.resolve(
+                { variable: PROMPT_VARIABLE, arg: 'hello' },
+                {}
+            );
+
+            expect(result?.value).to.equal('Hello, world!');
         });
     });
 });
