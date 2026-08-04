@@ -219,6 +219,12 @@
   font-size: var(--theia-ui-font-size2);
 }
 
+.theia-settings-container .theia-settings-pinned-category-header {
+  position: sticky;
+  z-index: 5;
+  background-color: var(--theia-editor-background);
+}
+
 .theia-settings-container .settings-section>li {
   list-style-type: none;
   margin: var(--theia-ui-padding) 0px;
