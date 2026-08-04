@@ -109,6 +109,14 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
         // silently skipping the handler and thus e.g. losing the layout.
         // If `beforeunload` is cancelled and the user stays, `pagehide` is not fired.
         window.addEventListener('pagehide', () => this.onUnloadEmitter.fire());
+        // `pagehide` also fires when the page enters the back/forward cache, in which case the
+        // frontend has already shut down (state saved, connections closed). Reload to get a
+        // working application again if the page is restored from the cache.
+        window.addEventListener('pageshow', event => {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
     }
 
     async isSafeToShutDown(stopReason: StopReason): Promise<boolean> {
