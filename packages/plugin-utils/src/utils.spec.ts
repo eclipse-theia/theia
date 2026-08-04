@@ -17,7 +17,7 @@
 import { expect } from 'chai';
 import { rejects } from 'assert';
 import { promises as fs } from 'fs';
-import { deepClone, isENOENT, isObject, isStringArray } from '../utils';
+import { deepClone, isENOENT, isObject, isStringArray } from './utils';
 
 describe('utils', () => {
 

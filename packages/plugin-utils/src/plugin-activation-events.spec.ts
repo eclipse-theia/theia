@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { updateActivationEvents } from '../plugin-activation-events';
-import type { PluginManifest } from '../manifest-types';
+import { updateActivationEvents } from './plugin-activation-events';
+import type { PluginManifest } from './manifest-types';
 
 function manifest(partial: Pick<PluginManifest, 'contributes' | 'activationEvents'>): Pick<PluginManifest, 'contributes' | 'activationEvents'> {
     return {

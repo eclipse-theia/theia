@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import type { NormalizeContributionsContext } from '../contribution-types';
-import type { PluginManifest } from '../manifest-types';
-import { toPluginUrl } from '../plugin-model';
+import type { NormalizeContributionsContext } from './contribution-types';
+import type { PluginManifest } from './manifest-types';
+import { toPluginUrl } from './plugin-model';
 
 export function manifest(partial: Partial<PluginManifest> & Pick<PluginManifest, 'name'>): PluginManifest {
     return {

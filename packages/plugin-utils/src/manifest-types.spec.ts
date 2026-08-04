@@ -15,20 +15,22 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { PLUGIN_COPY_IGNORE } from '../constants';
+import { rawContributes } from './manifest-types';
 
-describe('constants', () => {
+describe('manifest-types', () => {
 
-    describe('PLUGIN_COPY_IGNORE', () => {
-        it('skips git metadata and node_modules anywhere in the path', () => {
-            expect(PLUGIN_COPY_IGNORE.test('/plugin/.git/config')).to.equal(true);
-            expect(PLUGIN_COPY_IGNORE.test('/plugin/node_modules/pkg/index.js')).to.equal(true);
-            expect(PLUGIN_COPY_IGNORE.test('/plugin\\node_modules\\pkg')).to.equal(true);
+    describe('rawContributes', () => {
+        it('returns contributes object when present', () => {
+            const contributes = { commands: [{ command: 'x', title: 'X' }] };
+            expect(rawContributes({ contributes })).to.equal(contributes);
         });
 
-        it('allows regular plugin files', () => {
-            expect(PLUGIN_COPY_IGNORE.test('/plugin/dist/extension.js')).to.equal(false);
-            expect(PLUGIN_COPY_IGNORE.test('/plugin/media/icon.png')).to.equal(false);
+        it('returns empty object when contributes is missing or invalid', () => {
+            expect(rawContributes({})).to.deep.equal({});
+            // eslint-disable-next-line no-null/no-null
+            expect(rawContributes({ contributes: null as unknown as undefined })).to.deep.equal({});
+            expect(rawContributes({ contributes: undefined as unknown as undefined })).to.deep.equal({});
+            expect(rawContributes({ contributes: 'invalid' as unknown as undefined })).to.deep.equal({});
         });
     });
 });

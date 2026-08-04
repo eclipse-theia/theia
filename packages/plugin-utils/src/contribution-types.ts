@@ -421,6 +421,8 @@ export interface NormalizeContributionsContext<TPlugin extends PluginManifest = 
     readColors?(plugin: TPlugin): ColorDefinition[] | undefined;
     readTerminals?(plugin: TPlugin): NormalizedTerminalProfile[] | undefined;
     readLocalizations?(plugin: TPlugin): NormalizedLocalization[] | undefined;
+    readLocalization?(entry: RawLocalization, pluginPath: string): NormalizedLocalization;
+    readTranslation?(entry: RawTranslation, pluginPath: string): NormalizedTranslation;
     readLanguages?(languages: readonly RawLanguage[], plugin: TPlugin): Promise<NormalizedLanguage[] | undefined>;
     transformIconUrl?(plugin: TPlugin, original?: IconUrl): { iconUrl?: IconUrl; themeIcon?: string } | undefined;
     toSchema?(definition: RawTaskDefinition): IJSONSchema;
@@ -558,7 +560,7 @@ export interface NormalizedIcon {
     id: string;
     extensionId: string;
     description: string | undefined;
-    defaults: { id: string } | { fontCharacter: string; location: string };
+    defaults: { id: string; color?: { id: string } } | { fontCharacter: string; location: string };
 }
 
 export interface NormalizedTerminalProfile {
@@ -567,13 +569,12 @@ export interface NormalizedTerminalProfile {
     icon?: string;
 }
 
-/** Normalized grammar contribution with inlined grammar file content. */
 export interface GrammarsContribution {
     language?: string;
     scope: string;
     format: 'json' | 'plist';
-    grammar: string | object;
-    grammarLocation: string;
+    grammar?: string | object;
+    grammarLocation?: string;
     injectTo?: string[];
     embeddedLanguages?: ScopeMap;
     tokenTypes?: ScopeMap;

@@ -22,14 +22,6 @@ import {
     type PackageTranslation,
 } from '../package-nls';
 
-export {
-    coerceLocalizations,
-    localizePackage,
-    localizeWithResolver,
-    type LocalizePackageCallback,
-    type PackageTranslation,
-} from '../package-nls';
-
 export async function loadPackageTranslations(pluginPath: string, locale?: string): Promise<PackageTranslation> {
     const defaultPath = path.join(pluginPath, 'package.nls.json');
     try {

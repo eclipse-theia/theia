@@ -39,7 +39,8 @@ import {
 import { getPluginRootFileUrl } from '@theia/plugin-utils/lib/node/plugin-model';
 import { normalizeContributions } from '@theia/plugin-utils/lib/node/normalize-contributions';
 import { readGrammarFromDisk } from '@theia/plugin-utils/lib/node/read-grammars';
-import { localizePackage, loadPackageTranslations } from '@theia/plugin-utils/lib/node/package-nls';
+import { localizePackage } from '@theia/plugin-utils/lib/package-nls';
+import { loadPackageTranslations } from '@theia/plugin-utils/lib/node/package-nls';
 import { deepClone } from '@theia/plugin-utils/lib/utils';
 import type {
     NormalizedPluginContribution,
@@ -66,92 +67,111 @@ export async function prepareBrowserOnlyPlugins(applicationPackage: ApplicationP
     );
 
     const deployedPlugins: DeployedPlugin[] = [];
+    let skippedBackendOnly = 0;
 
     if (await fs.pathExists(pluginsDir)) {
         const names = await fs.readdir(pluginsDir);
         for (const name of names) {
-            const entry = await processPlugin(path.join(pluginsDir, name), hostedPluginDir);
-            if (entry) {
-                deployedPlugins.push(entry);
+            const result = await processPlugin(path.join(pluginsDir, name), hostedPluginDir);
+            if (result?.plugin) {
+                deployedPlugins.push(result.plugin);
+            } else if (result?.skipReason === 'backend-only') {
+                skippedBackendOnly += 1;
             }
         }
     }
 
-    await fs.writeJson(path.join(hostedPluginDir, LIST_JSON), deployedPlugins, { spaces: 2 });
-    console.log(`browser-only: prepared ${deployedPlugins.length} plugins`);
+    await fs.writeJson(path.join(hostedPluginDir, LIST_JSON), deployedPlugins);
+    const skipSuffix = skippedBackendOnly > 0 ? ` (skipped ${skippedBackendOnly} backend-only)` : '';
+    console.log(`browser-only: prepared ${deployedPlugins.length} plugins${skipSuffix}`);
 }
 
-async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): Promise<DeployedPlugin | undefined> {
-    const packageRoot = resolvePluginRoot(pluginSourceDir);
-    if (!packageRoot) {
-        return undefined;
-    }
+interface ProcessPluginResult {
+    plugin?: DeployedPlugin;
+    /** Set when the plugin was intentionally omitted (not a hard error). */
+    skipReason?: 'backend-only' | 'no-browser-surface' | 'no-package';
+}
 
-    let buildTimePackageRoot: string;
-    let rawManifest: PluginManifest;
+async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): Promise<ProcessPluginResult | undefined> {
     try {
-        buildTimePackageRoot = await realpath(packageRoot);
-        rawManifest = await fs.readJson(path.join(buildTimePackageRoot, 'package.json')) as PluginManifest;
+        const packageRoot = resolvePluginRoot(pluginSourceDir);
+        if (!packageRoot) {
+            return { skipReason: 'no-package' };
+        }
+
+        const buildTimePackageRoot = await realpath(packageRoot);
+        const rawManifest = await fs.readJson(path.join(buildTimePackageRoot, 'package.json')) as PluginManifest;
         stripVscodeBuiltinNamePrefix(rawManifest);
+
+        const skipReason = getBrowserOnlySkipReason(rawManifest);
+        if (skipReason) {
+            if (skipReason === 'backend-only') {
+                console.warn(`browser-only: skip '${rawManifest.name}' (backend-only)`);
+            }
+            return { skipReason };
+        }
+
+        let normalized = deepClone(rawManifest);
+        normalized.packagePath = buildTimePackageRoot;
+        let contributes = await normalizeManifestForBrowserOnly(normalized);
+
+        delete normalized.contributes;
+
+        const translations = await loadPackageTranslations(buildTimePackageRoot);
+        if (translations.default && Object.keys(translations.default).length > 0) {
+            const resolve = (_: string, defaultVal: string): string => defaultVal;
+            normalized = localizePackage(normalized, translations, resolve);
+            contributes = localizePackage(contributes, translations, resolve);
+        }
+
+        const engineType = pickEngineType(normalized);
+        const model = buildModel(normalized, engineType, { uiKind: 'web' });
+        model.licenseUrl = getPluginRootFileUrl(normalized, ['license', 'license.txt', 'license.md']);
+        model.readmeUrl = getPluginRootFileUrl(normalized, ['readme.md', 'readme.txt', 'readme']);
+        applyTrustExtraction(normalized, model);
+        const lifecycle = buildLifecycle(normalized, engineType);
+
+        const pluginId = getPluginId(normalized);
+        const dst = path.join(hostedPluginDir, pluginId);
+
+        await fs.copy(buildTimePackageRoot, dst, {
+            overwrite: true,
+            dereference: true,
+            filter: (src: string) => shouldCopyPluginPath(src, buildTimePackageRoot)
+        });
+
+        resolveHostedEntryPoint(model.entryPoint, dst);
+        rewriteModelPathsForHostedStatic(model, buildTimePackageRoot, pluginId);
+
+        // Raw VS Code-style package.json for worker rawModel (contributes stay unnormalized).
+        const diskManifest = deepClone(rawManifest);
+        prepareHostedPackageJson(diskManifest, pluginId, model.entryPoint);
+        await fs.writeJson(path.join(dst, 'package.json'), diskManifest, { spaces: 2 });
+
+        return {
+            plugin: {
+                type: PluginType.System,
+                metadata: {
+                    host: PLUGIN_HOST_BACKEND,
+                    model,
+                    lifecycle,
+                    outOfSync: false
+                },
+                ...(Object.keys(contributes).length > 0 ? { contributes } : {})
+            }
+        };
     } catch (err) {
         console.warn(`browser-only: skip plugin at ${pluginSourceDir}`, err);
         return undefined;
     }
-
-    if (!shouldIncludePluginInBrowserOnlyBuild(rawManifest)) {
-        return undefined;
-    }
-
-    let normalized = deepClone(rawManifest);
-    normalized.packagePath = buildTimePackageRoot;
-    let contributes = await normalizeManifestForBrowserOnly(normalized);
-
-    delete normalized.contributes;
-
-    const translations = await loadPackageTranslations(buildTimePackageRoot);
-    if (translations.default && Object.keys(translations.default).length > 0) {
-        const resolve = (_: string, defaultVal: string): string => defaultVal;
-        normalized = localizePackage(normalized, translations, resolve);
-        contributes = localizePackage(contributes, translations, resolve);
-    }
-
-    const engineType = pickEngineType(normalized);
-    const model = buildModel(normalized, engineType, { uiKind: 'web' });
-    model.licenseUrl = getPluginRootFileUrl(normalized, ['license', 'license.txt', 'license.md']);
-    model.readmeUrl = getPluginRootFileUrl(normalized, ['readme.md', 'readme.txt', 'readme']);
-    applyTrustExtraction(normalized, model);
-    const lifecycle = buildLifecycle(normalized, engineType);
-
-    const pluginId = getPluginId(normalized);
-    const dst = path.join(hostedPluginDir, pluginId);
-
-    await fs.copy(buildTimePackageRoot, dst, {
-        overwrite: true,
-        dereference: true,
-        filter: (src: string) => !PLUGIN_COPY_IGNORE.test(src)
-    });
-
-    resolveHostedEntryPoint(model.entryPoint, dst);
-    rewriteModelPathsForHostedStatic(model, buildTimePackageRoot, pluginId);
-
-    // Raw VS Code-style package.json for worker rawModel (contributes stay unnormalized).
-    const diskManifest = deepClone(rawManifest);
-    prepareHostedPackageJson(diskManifest, pluginId, model.entryPoint);
-    await fs.writeJson(path.join(dst, 'package.json'), diskManifest, { spaces: 2 });
-
-    return {
-        type: PluginType.System,
-        metadata: {
-            host: PLUGIN_HOST_BACKEND,
-            model,
-            lifecycle,
-            outOfSync: false
-        },
-        ...(Object.keys(contributes).length > 0 ? { contributes } : {})
-    };
 }
 
-function resolvePluginRoot(dir: string): string | undefined {
+/** Copy filter: ignore node_modules/.git relative to the plugin root (not absolute path). */
+export function shouldCopyPluginPath(src: string, pluginRoot: string): boolean {
+    return !PLUGIN_COPY_IGNORE.test(`${path.sep}${path.relative(pluginRoot, src)}`);
+}
+
+export function resolvePluginRoot(dir: string): string | undefined {
     const direct = path.join(dir, 'package.json');
     if (fs.pathExistsSync(direct)) {
         return dir;
@@ -172,11 +192,35 @@ function hasContributes(pkg: PluginManifest): boolean {
     return !!(c && typeof c === 'object' && Object.keys(c).length > 0);
 }
 
-function shouldIncludePluginInBrowserOnlyBuild(manifest: PluginManifest): boolean {
+function hasFrontendEntry(manifest: PluginManifest): boolean {
+    return !!manifest.theiaPlugin?.frontend || !!manifest.browser;
+}
+
+function hasBackendEntry(manifest: PluginManifest): boolean {
+    return !!manifest.main || !!manifest.theiaPlugin?.backend || !!manifest.theiaPlugin?.headless;
+}
+
+/** `undefined` = include; backend-only even with contributes is excluded. */
+export function getBrowserOnlySkipReason(
+    manifest: PluginManifest
+): 'backend-only' | 'no-browser-surface' | undefined {
     if (!manifest.name) {
-        return false;
+        return 'no-browser-surface';
     }
-    return !!manifest.theiaPlugin?.frontend || !!manifest.browser || hasContributes(manifest);
+    if (hasFrontendEntry(manifest)) {
+        return undefined;
+    }
+    if (hasBackendEntry(manifest)) {
+        return 'backend-only';
+    }
+    if (hasContributes(manifest)) {
+        return undefined;
+    }
+    return 'no-browser-surface';
+}
+
+export function shouldIncludePluginInBrowserOnlyBuild(manifest: PluginManifest): boolean {
+    return getBrowserOnlySkipReason(manifest) === undefined;
 }
 
 /** Drop Node/Electron-only entry fields shared by list.json and on-disk package.json. */
@@ -286,7 +330,7 @@ function rewriteModelPathsForHostedStatic(model: PluginModel, buildTimePackageRo
     }
 }
 
-function resolvePluginEntryFileSync(absolutePath: string): string | undefined {
+export function resolvePluginEntryFileSync(absolutePath: string): string | undefined {
     const candidates = [absolutePath];
     const pathExtension = path.extname(absolutePath).toLowerCase();
     if (!pathExtension) {
@@ -303,7 +347,7 @@ function resolvePluginEntryFileSync(absolutePath: string): string | undefined {
     return undefined;
 }
 
-function toHostedPluginUri(fileUri: string, pluginRoot: string, pluginId: string): string {
+export function toHostedPluginUri(fileUri: string, pluginRoot: string, pluginId: string): string {
     if (!fileUri.startsWith('file://')) {
         return fileUri;
     }

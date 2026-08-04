@@ -4,6 +4,20 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.75.0 - tbd
+
+- [plugin-ext] moved scanner, manifest, and localization helpers to `@theia/plugin-utils` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
+- [plugin-utils] added `@theia/plugin-utils` for shared plugin manifest utilities; browser-only builds prepare plugins into `hostedPlugin/` with `list.json` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
+
+<a name="breaking_changes_1.75.0">[Breaking Changes:](#breaking_changes_1.75.0)</a>
+
+- [plugin-ext] aliased `DebuggerContribution` to `PluginPackageDebuggersContribution` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
+- [plugin-ext] changed `Keybinding.args` from `any` to `unknown` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
+- [plugin-ext] encoded `toPluginUrl` path segments separately for static hosting [#17758](https://github.com/eclipse-theia/theia/pull/17758)
+- [plugin-ext] moved `loadManifest` and `updateActivationEvents` to `@theia/plugin-utils` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
+- [plugin-ext] rejected grammar paths outside the plugin directory [#17758](https://github.com/eclipse-theia/theia/pull/17758)
+- [plugin-ext] removed `buildFrontendModuleName` from `plugin-protocol` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
+
 ## 1.74.0 - 7/31/2026
 
 - [ai] support for server-side compaction [#17746](https://github.com/eclipse-theia/theia/pull/17746)
@@ -57,11 +71,9 @@
 - [plugin-ext] added tabinfo for customeditorwidget and viewcolumn from the tab bar's index [#17807](https://github.com/eclipse-theia/theia/pull/17807)
 - [plugin-ext] deferred plugin view initialization until layout restore completed [#17772](https://github.com/eclipse-theia/theia/pull/17772)
 - [plugin-ext] fixed sync telemetry logger enable states [#17693](https://github.com/eclipse-theia/theia/pull/17693)
-- [plugin-ext] moved scanner, manifest, and localization helpers to `@theia/plugin-utils` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
 - [plugin-ext] scoped /hostedPlugin resource requests to the plugin directory [#17799](https://github.com/eclipse-theia/theia/pull/17799)
 - [plugin-ext] supported preview tabs for custom editors [#17800](https://github.com/eclipse-theia/theia/pull/17800)
 - [plugin-ext] tracked active custom editor in the selection service [#17748](https://github.com/eclipse-theia/theia/pull/17748)
-- [plugin-utils] added `@theia/plugin-utils` for shared plugin manifest utilities; browser-only builds prepare plugins into `hostedPlugin/` with `list.json` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
 - [preview] scoped markdown preview header styles to .markdown-preview [#17824](https://github.com/eclipse-theia/theia/pull/17824)
 - [remote] expanded support for ssh config file with multiple hosts in the same line [#17838](https://github.com/eclipse-theia/theia/pull/17838) - AI was used, mostly in the tests creation
 - [scripts] build: allowed dependency install scripts for npm 12 [#17811](https://github.com/eclipse-theia/theia/pull/17811)
@@ -85,8 +97,6 @@
 - [editor-preview] `EditorPreviewWidget` no longer declares the `protected _isPreview` field or the `protected onDidChangePreviewStateEmitter`; the preview state is now held by a composed `PreviewTabSupport`. Use the unchanged public `isPreview` / `onDidChangePreviewState` accessors instead [#17800](https://github.com/eclipse-theia/theia/pull/17800)
 - [electron] upgraded Electron from 39.8.7 to 42.3.0. Downstream Electron applications must update their `electron` devDependency to `42.3.0`. Electron 42 bundles Node 24 (up from Node 22), which may affect native modules or Node APIs used by downstream applications. See the Electron breaking changes for [40.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-400), [41.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-410), and [42.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-420). [#17586](https://github.com/eclipse-theia/theia/pull/17586)
 - [metrics] removed `MeasurementNotificationService` (symbol and interface), `measurementNotificationServicePath`, the frontend proxy binding, the backend `RpcConnectionHandler` for `/services/measurement-notification`, `MetricsFrontendApplicationContribution.id` and `notificationService`, and `MeasurementMetricsBackendContribution.backendStopwatch`. Frontend stopwatch measurements are now reported through `TelemetryService` as `theia/measurement/result`; consumers should contribute a `TelemetrySink` from `@theia/telemetry` instead [#17809](https://github.com/eclipse-theia/theia/pull/17809)
-- [plugin-ext] encoded `toPluginUrl` path segments separately for static hosting [#17758](https://github.com/eclipse-theia/theia/pull/17758)
-- [plugin-ext] rejected grammar paths outside the plugin directory [#17758](https://github.com/eclipse-theia/theia/pull/17758)
 
 ## 1.73.0 - 6/25/2026
 

@@ -61,11 +61,17 @@ export const frontendOnlyApplicationModule = new ContainerModule((bind, unbind, 
                     try {
                         const res = await fetch('./extensions.json');
                         if (!res.ok) {
+                            extensionsCache = undefined;
                             return [];
                         }
                         const raw = await res.json();
-                        return Array.isArray(raw) ? (raw as ExtensionInfo[]) : [];
+                        if (!Array.isArray(raw)) {
+                            extensionsCache = undefined;
+                            return [];
+                        }
+                        return raw as ExtensionInfo[];
                     } catch {
+                        extensionsCache = undefined;
                         return [];
                     }
                 })();

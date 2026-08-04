@@ -31,6 +31,7 @@ import {
     readIcons,
     readKeybinding,
     readLanguages,
+    readLocalization,
     readLocalizations,
     readMenus,
     readSnippets,
@@ -45,8 +46,8 @@ import {
     readViewsWelcome,
     toSchema,
     transformIconUrl
-} from '../node/normalize-contributions';
-import { createNormalizeCtx, manifest } from './test-helpers';
+} from './normalize-contributions';
+import { createNormalizeCtx, manifest } from '../test-helpers';
 import type { PluginManifest } from '../manifest-types';
 
 describe('normalize-contributions', () => {
@@ -317,10 +318,10 @@ describe('normalize-contributions', () => {
         });
 
         it('validates color contributions and reports invalid ids', () => {
-            const errors: string[] = [];
+            const warnings: string[] = [];
             const ctx = createNormalizeCtx({ name: 'colors' }, {
-                onError: (_kind, message) => {
-                    errors.push(String(message));
+                onWarn: message => {
+                    warnings.push(message);
                 }
             });
             const plugin = manifest({
@@ -341,14 +342,14 @@ describe('normalize-contributions', () => {
             const colors = readColors(ctx, plugin);
             expect(colors).to.have.lengthOf(1);
             expect(colors![0].defaults).to.deep.equal({ light: '#fff', dark: '#000', hc: '#111' });
-            expect(errors.some(message => message.includes('word[.word]*'))).to.equal(true);
+            expect(warnings.some(message => message.includes('word[.word]*'))).to.equal(true);
         });
 
         it('rejects color contributions with empty descriptions', () => {
-            const errors: string[] = [];
+            const warnings: string[] = [];
             const ctx = createNormalizeCtx({ name: 'colors' }, {
-                onError: (_kind, message) => {
-                    errors.push(String(message));
+                onWarn: message => {
+                    warnings.push(message);
                 }
             });
             const plugin = manifest({
@@ -364,7 +365,7 @@ describe('normalize-contributions', () => {
             ctx.plugin = plugin;
 
             expect(readColors(ctx, plugin)).to.deep.equal([]);
-            expect(errors.some(message => message.includes('description'))).to.equal(true);
+            expect(warnings.some(message => message.includes('description'))).to.equal(true);
         });
     });
 
@@ -421,12 +422,30 @@ describe('normalize-contributions', () => {
                     terminal: {
                         profiles: [
                             { id: 'bash', title: 'Bash' },
-                            { id: 'invalid' } as unknown as { id: string; title: string }
+                            { id: 'invalid' } as unknown as { id: string; title: string },
+                            { id: '', title: 'Empty' },
+                            { id: 'empty-title', title: '' },
                         ]
                     }
                 }
             });
             expect(readTerminals(plugin)).to.deep.equal([{ id: 'bash', title: 'Bash' }]);
+        });
+
+        it('drops empty theme/snippet paths (avoids resolving to the plugin root)', () => {
+            const ctx = createNormalizeCtx(undefined, undefined);
+            const plugin = manifest({
+                name: 'empty-paths',
+                contributes: {
+                    themes: [{ id: 'bad', path: '' }],
+                    snippets: [{ language: 'ts', path: '' }],
+                    iconThemes: [{ id: 'bad', path: '' }],
+                }
+            });
+            ctx.plugin = plugin;
+            expect(readThemes(ctx, plugin)).to.deep.equal([]);
+            expect(readSnippets(ctx, plugin)).to.deep.equal([]);
+            expect(readIconThemes(ctx, plugin)).to.deep.equal([]);
         });
 
         it('reads localization bundles', () => {
@@ -447,6 +466,33 @@ describe('normalize-contributions', () => {
                 localizedLanguageName: undefined,
                 minimalTranslations: undefined,
                 translations: [{ id: 'package', path: './package.nls.de.json' }]
+            }]);
+        });
+
+        it('honors readLocalization / readTranslation ctx hooks', () => {
+            const plugin = manifest({
+                name: 'l10n',
+                packagePath: '/tmp/plugin',
+                contributes: {
+                    localizations: [{
+                        languageId: 'de',
+                        translations: [{ id: 'package', path: './package.nls.de.json' }]
+                    }]
+                }
+            });
+            const ctx = createNormalizeCtx({ name: 'l10n', packagePath: '/tmp/plugin' });
+            ctx.readTranslation = (entry, pluginPath) => ({
+                id: entry.id,
+                path: `${pluginPath}/${entry.path}`
+            });
+            ctx.readLocalization = (entry, pluginPath) => readLocalization(entry, pluginPath, ctx);
+
+            expect(readLocalizations(plugin, ctx)).to.deep.equal([{
+                languageId: 'de',
+                languageName: undefined,
+                localizedLanguageName: undefined,
+                minimalTranslations: undefined,
+                translations: [{ id: 'package', path: '/tmp/plugin/./package.nls.de.json' }]
             }]);
         });
 

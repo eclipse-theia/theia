@@ -20,8 +20,11 @@ import { inject, injectable, unmanaged, named } from '@theia/core/shared/inversi
 import {
     CustomEditor,
     DebuggerContribution,
+    IconContribution,
+    IconThemeContribution,
     IconUrl,
     Keybinding,
+    LanguageContribution,
     Localization,
     Menu,
     PluginCommand,
@@ -46,8 +49,10 @@ import {
     PluginScanner,
     PluginTaskDefinitionContribution,
     PluginIdentifiers,
+    SnippetContribution,
     Submenu,
     TerminalProfile,
+    ThemeContribution,
     Translation,
     View,
     ViewContainer,
@@ -60,10 +65,12 @@ import { GrammarsReader } from './grammars-reader';
 import { isENOENT } from '@theia/plugin-utils/lib/utils';
 import { PluginUriFactory } from './plugin-uri-factory';
 import { ILogger } from '@theia/core';
+import { ColorDefinition } from '@theia/core/lib/common/color';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import { TaskDefinition } from '@theia/task/lib/common/task-protocol';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import {
     extractPluginViewsIds as extractPluginViewsIdsShared,
     getScope as getScopeShared,
@@ -77,12 +84,12 @@ import {
     readIconThemes as readIconThemesShared,
     readKeybinding as readKeybindingShared,
     readLanguage as readLanguageShared,
-    readLocalization as readLocalizationShared,
-    readLocalizations as readLocalizationsShared,
     readMenu as readMenuShared,
     readSnippets as readSnippetsShared,
     readSubmenu as readSubmenuShared,
     readTaskDefinition as readTaskDefinitionShared,
+    readLocalization as readLocalizationShared,
+    readLocalizations as readLocalizationsShared,
     readTerminals as readTerminalsShared,
     readThemes as readThemesShared,
     readTranslation as readTranslationShared,
@@ -104,6 +111,9 @@ import {
     toPluginUrl as toPluginUrlShared
 } from '@theia/plugin-utils/lib/plugin-model';
 import { getPluginRootFileUrl as getPluginRootFileUrlShared } from '@theia/plugin-utils/lib/node/plugin-model';
+
+/** Async-local contribution ctx — safe for concurrent scans on the singleton scanner. */
+const contributionCtxStorage = new AsyncLocalStorage<NormalizeContributionsContext<PluginPackage>>();
 
 @injectable()
 export abstract class AbstractPluginScanner implements PluginScanner {
@@ -211,8 +221,28 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
     }
 
     protected override async readContributions(rawPlugin: PluginPackage, contributions: PluginContribution): Promise<PluginContribution> {
+        const ctx = this.contributionCtx(rawPlugin);
+        return contributionCtxStorage.run(ctx, () => normalizeContributions(ctx, contributions));
+    }
+
+    protected contributionCtx(pck: PluginPackage): NormalizeContributionsContext<PluginPackage> {
+        const active = contributionCtxStorage.getStore();
+        if (active?.plugin === pck) {
+            return active;
+        }
+
         const ctx: NormalizeContributionsContext<PluginPackage> = {
-            ...this.contributionCtx(rawPlugin),
+            plugin: pck,
+            resolveUrl: relativePath => this.toPluginUrl(pck, relativePath),
+            resolveUri: (_plugin, relativePath) => this.pluginUriFactory.createUri(pck, relativePath).toString(),
+            onError: (type, err, detail) => this.logger.error(`Could not read '${pck.name}' contribution '${type}'.`, detail, err),
+            onWarn: msg => this.logger.warn(msg),
+            readJsonFile: filePath => this.readJson(filePath),
+            // Route through protected methods so Inversify/subclass overrides still apply.
+            transformIconUrl: (plugin, original) => this.transformIconUrl(plugin, original),
+            readLocalization: (entry, pluginPath) => this.readLocalization(entry, pluginPath),
+            readTranslation: (entry, pluginPath) => this.readTranslation(entry, pluginPath),
+            toSchema: definition => this.toSchema(definition),
             readConfiguration: this.readConfiguration.bind(this),
             readCustomEditors: this.readCustomEditors.bind(this),
             readViews: this.readViews.bind(this),
@@ -233,20 +263,6 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             readLocalizations: plugin => this.readLocalizations(plugin),
             readLanguages: (languages, plugin) => this.readLanguages(languages, plugin),
         };
-        return normalizeContributions(ctx, contributions);
-    }
-
-    protected contributionCtx(pck: PluginPackage): NormalizeContributionsContext<PluginPackage> {
-        const ctx: NormalizeContributionsContext<PluginPackage> = {
-            plugin: pck,
-            resolveUrl: relativePath => this.toPluginUrl(pck, relativePath),
-            resolveUri: (_plugin, relativePath) => this.pluginUriFactory.createUri(pck, relativePath).toString(),
-            onError: (type, err, detail) => this.logger.error(`Could not read '${pck.name}' contribution '${type}'.`, detail, err),
-            onWarn: msg => this.logger.warn(msg),
-            readJsonFile: filePath => this.readJson(filePath),
-            transformIconUrl: (plugin, original) => this.transformIconUrl(plugin, original),
-            toSchema: definition => this.toSchema(definition),
-        };
         ctx.readGrammars = (grammars, pluginPath) => this.grammarsReader.readGrammars(
             grammars,
             pluginPath,
@@ -260,11 +276,13 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
     }
 
     protected readLocalizations(pck: PluginPackage): Localization[] | undefined {
-        return readLocalizationsShared(pck);
+        return readLocalizationsShared(pck, this.contributionCtx(pck));
     }
 
     protected readLocalization(entry: PluginPackageLocalization, pluginPath: string): Localization {
-        return readLocalizationShared(entry, pluginPath);
+        return readLocalizationShared(entry, pluginPath, {
+            readTranslation: (translation, translationPath) => this.readTranslation(translation, translationPath),
+        });
     }
 
     protected readTranslation(packageTranslation: PluginPackageTranslation, pluginPath: string): Translation {
@@ -283,23 +301,23 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
         return toPluginUrlShared(pck, relativePath);
     }
 
-    protected readColors(pck: PluginPackage): ReturnType<typeof readColorsShared> {
-        return readColorsShared(this.contributionCtx(pck), pck);
+    protected readColors(pck: PluginPackage): ColorDefinition[] | undefined {
+        return readColorsShared(this.contributionCtx(pck), pck) as ColorDefinition[] | undefined;
     }
 
-    protected readThemes(pck: PluginPackage): ReturnType<typeof readThemesShared> {
+    protected readThemes(pck: PluginPackage): ThemeContribution[] | undefined {
         return readThemesShared(this.contributionCtx(pck), pck);
     }
 
-    protected readIconThemes(pck: PluginPackage): ReturnType<typeof readIconThemesShared> {
+    protected readIconThemes(pck: PluginPackage): IconThemeContribution[] | undefined {
         return readIconThemesShared(this.contributionCtx(pck), pck);
     }
 
-    protected readIcons(pck: PluginPackage): ReturnType<typeof readIconsShared> {
+    protected readIcons(pck: PluginPackage): IconContribution[] | undefined {
         return readIconsShared(this.contributionCtx(pck), pck);
     }
 
-    protected readSnippets(pck: PluginPackage): ReturnType<typeof readSnippetsShared> {
+    protected readSnippets(pck: PluginPackage): SnippetContribution[] | undefined {
         return readSnippetsShared(this.contributionCtx(pck), pck);
     }
 
@@ -357,7 +375,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
         return readMenuShared(rawMenu);
     }
 
-    protected async readLanguages(rawLanguages: readonly PluginPackageLanguageContribution[], plugin: PluginPackage): Promise<Awaited<ReturnType<typeof readLanguageShared>>[]> {
+    protected async readLanguages(rawLanguages: readonly PluginPackageLanguageContribution[], plugin: PluginPackage): Promise<LanguageContribution[]> {
         return Promise.all(rawLanguages.map(language => this.readLanguage(language, plugin)));
     }
 
@@ -369,7 +387,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
         return readSubmenuShared(this.contributionCtx(plugin), rawSubmenu, plugin);
     }
 
-    protected async readLanguage(rawLang: PluginPackageLanguageContribution, plugin: PluginPackage): Promise<Awaited<ReturnType<typeof readLanguageShared>>> {
+    protected async readLanguage(rawLang: PluginPackageLanguageContribution, plugin: PluginPackage): Promise<LanguageContribution> {
         return readLanguageShared(this.contributionCtx(plugin), rawLang, plugin);
     }
 

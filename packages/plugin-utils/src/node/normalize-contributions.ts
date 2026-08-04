@@ -50,6 +50,7 @@ import {
     type NormalizedLanguage,
     type NormalizedLanguageConfiguration,
     type NormalizedLocalization,
+    type NormalizedPluginContribution,
     type NormalizedSnippet,
     type NormalizedSubmenu,
     type NormalizedTerminalProfile,
@@ -131,7 +132,7 @@ function isCharacterPair(something: unknown): something is CharacterPair {
     return isStringArray(something) && something.length === 2;
 }
 
-function isRawLocalization(entry: unknown): entry is RawLocalization {
+export function isRawLocalization(entry: unknown): entry is RawLocalization {
     return isObject(entry) && typeof entry.languageId === 'string';
 }
 
@@ -164,7 +165,9 @@ export async function normalizeContributions<TContrib extends object>(
 ): Promise<TContrib> {
     const rawPlugin = ctx.plugin;
     const contributes = rawContributes(rawPlugin);
-    const output = contributions as Record<string, unknown>;
+    // Mutate through the normalized shape so field writes are type-checked;
+    // callers keep their own TContrib (e.g. plugin-ext PluginContribution with core types).
+    const output: NormalizedPluginContribution = contributions as NormalizedPluginContribution;
     const readConfigurationFn = ctx.readConfiguration ?? readConfiguration;
     const readSubmenusFn = ctx.readSubmenus ?? ((submenus, plugin) => readSubmenus(ctx, submenus, plugin));
     const readCustomEditorsFn = ctx.readCustomEditors ?? readCustomEditors;
@@ -182,7 +185,7 @@ export async function normalizeContributions<TContrib extends object>(
     const readIconThemesFn = ctx.readIconThemes ?? (plugin => readIconThemes(ctx, plugin));
     const readColorsFn = ctx.readColors ?? (plugin => readColors(ctx, plugin));
     const readTerminalsFn = ctx.readTerminals ?? readTerminals;
-    const readLocalizationsFn = ctx.readLocalizations ?? readLocalizations;
+    const readLocalizationsFn = ctx.readLocalizations ?? (plugin => readLocalizations(plugin, ctx));
     const readLanguagesFn = ctx.readLanguages ?? ((languages, plugin) => readLanguages(ctx, languages, plugin));
 
     try {
@@ -201,7 +204,7 @@ export async function normalizeContributions<TContrib extends object>(
                             property.owner = config.title;
                         }
                     });
-                    (output.configuration as PreferenceSchema[]).push(config);
+                    output.configuration.push(config);
                 }
             }
         }
@@ -238,18 +241,14 @@ export async function normalizeContributions<TContrib extends object>(
 
     try {
         if (contributes.viewsContainers) {
-            output.viewsContainers = {};
-
+            const viewsContainers: { [location: string]: NormalizedViewContainer[] } = {};
             for (const location of Object.keys(contributes.viewsContainers)) {
                 const containers = readViewsContainersFn(contributes.viewsContainers[location], rawPlugin);
                 const loc = VIEW_CONTAINER_LOCATION_ALIASES[location] ?? location;
-                const existing = (output.viewsContainers as Record<string, unknown[]>)[loc];
-                if (existing) {
-                    (output.viewsContainers as Record<string, unknown[]>)[loc] = existing.concat(containers);
-                } else {
-                    (output.viewsContainers as Record<string, unknown[]>)[loc] = containers;
-                }
+                const existing = viewsContainers[loc];
+                viewsContainers[loc] = existing ? existing.concat(containers) : containers;
             }
+            output.viewsContainers = viewsContainers;
         }
     } catch (err) {
         ctx.onError('viewsContainers', err, contributes.viewsContainers);
@@ -257,10 +256,11 @@ export async function normalizeContributions<TContrib extends object>(
 
     try {
         if (contributes.views) {
-            output.views = {};
+            const views: { [location: string]: RawView[] } = {};
             for (const location of Object.keys(contributes.views)) {
-                (output.views as Record<string, RawView[]>)[location] = readViewsFn(contributes.views[location]);
+                views[location] = readViewsFn(contributes.views[location]);
             }
+            output.views = views;
         }
     } catch (err) {
         ctx.onError('views', err, contributes.views);
@@ -289,10 +289,11 @@ export async function normalizeContributions<TContrib extends object>(
 
     try {
         if (contributes.menus) {
-            output.menus = {};
+            const menus: { [location: string]: RawMenu[] } = {};
             for (const location of Object.keys(contributes.menus)) {
-                (output.menus as Record<string, RawMenu[]>)[location] = readMenusFn(contributes.menus[location]);
+                menus[location] = readMenusFn(contributes.menus[location]);
             }
+            output.menus = menus;
         }
     } catch (err) {
         ctx.onError('menus', err, contributes.menus);
@@ -399,24 +400,30 @@ export function readTerminals(pck: PluginManifest): NormalizedTerminalProfile[] 
         return undefined;
     }
     return terminal.profiles.filter((profile): profile is NormalizedTerminalProfile =>
-        typeof profile.id === 'string' && typeof profile.title === 'string'
+        !!(profile.id && profile.title)
     );
 }
 
-export function readLocalizations(pck: PluginManifest): NormalizedLocalization[] | undefined {
+export function readLocalizations(
+    pck: PluginManifest,
+    ctx?: NormalizeContributionsContext
+): NormalizedLocalization[] | undefined {
     const localizations = rawContributes(pck).localizations;
     if (!Array.isArray(localizations)) {
         return undefined;
     }
+    const readLocalizationFn = ctx?.readLocalization ?? ((entry, pluginPath) => readLocalization(entry, pluginPath, ctx));
     return localizations
         .filter(isRawLocalization)
-        .map(entry => readLocalization(entry, pck.packagePath));
+        .map(entry => readLocalizationFn(entry, pck.packagePath));
 }
 
 export function readLocalization(
     { languageId, languageName, localizedLanguageName, translations, minimalTranslations }: RawLocalization,
-    pluginPath: string
+    pluginPath: string,
+    ctx?: Pick<NormalizeContributionsContext, 'readTranslation'>
 ): NormalizedLocalization {
+    const readTranslationFn = ctx?.readTranslation ?? readTranslation;
     const local: NormalizedLocalization = {
         languageId,
         languageName,
@@ -425,7 +432,7 @@ export function readLocalization(
         translations: []
     };
     if (Array.isArray(translations)) {
-        local.translations = translations.map(entry => readTranslation(entry, pluginPath));
+        local.translations = translations.map(entry => readTranslationFn(entry, pluginPath));
     }
     return local;
 }
@@ -486,20 +493,20 @@ export function readColors(ctx: NormalizeContributionsContext, pck: PluginManife
             continue;
         }
         if (typeof contribution.id !== 'string' || contribution.id.length === 0) {
-            ctx.onError('colors', "'configuration.colors.id' must be defined and can not be empty");
+            ctx.onWarn("'configuration.colors.id' must be defined and can not be empty");
             continue;
         }
         if (!contribution.id.match(colorIdPattern)) {
-            ctx.onError('colors', "'configuration.colors.id' must follow the word[.word]*");
+            ctx.onWarn("'configuration.colors.id' must follow the word[.word]*");
             continue;
         }
         if (typeof contribution.description !== 'string' || contribution.description.length === 0) {
-            ctx.onError('colors', "'configuration.colors.description' must be defined and can not be empty");
+            ctx.onWarn("'configuration.colors.description' must be defined and can not be empty");
             continue;
         }
         const defaults = contribution.defaults;
         if (!isColorDefaults(defaults)) {
-            ctx.onError('colors', "'configuration.colors.defaults' must be defined and must contain 'light', 'dark' and 'highContrast'");
+            ctx.onWarn("'configuration.colors.defaults' must be defined and must contain 'light', 'dark' and 'highContrast'");
             continue;
         }
         result.push({
@@ -525,7 +532,7 @@ export function readThemes(ctx: NormalizeContributionsContext, pck: PluginManife
         if (!isObject(contribution)) {
             continue;
         }
-        if (typeof contribution.path === 'string') {
+        if (typeof contribution.path === 'string' && contribution.path) {
             result.push({
                 id: typeof contribution.id === 'string' ? contribution.id : undefined,
                 uri: ctx.resolveUri(pck, contribution.path),
@@ -548,12 +555,12 @@ export function readIconThemes(ctx: NormalizeContributionsContext, pck: PluginMa
         if (!isObject(contribution)) {
             continue;
         }
-        if (typeof contribution.id !== 'string') {
-            ctx.onError('iconThemes', 'Expected string in `contributes.iconThemes.id`. Provided value:', contribution.id);
+        if (typeof contribution.id !== 'string' || !contribution.id) {
+            ctx.onWarn(`Expected string in \`contributes.iconThemes.id\`. Provided value: ${String(contribution.id)}`);
             continue;
         }
-        if (typeof contribution.path !== 'string') {
-            ctx.onError('iconThemes', 'Expected string in `contributes.iconThemes.path`. Provided value:', contribution.path);
+        if (typeof contribution.path !== 'string' || !contribution.path) {
+            ctx.onWarn(`Expected string in \`contributes.iconThemes.path\`. Provided value: ${String(contribution.path)}`);
             continue;
         }
         result.push({
@@ -578,15 +585,16 @@ export function readIcons(ctx: NormalizeContributionsContext, pck: PluginManifes
             continue;
         }
         if (!id.match(iconIdPattern)) {
-            ctx.onError('icons',
+            ctx.onWarn(
                 '\'configuration.icons\' keys represent the icon id and can only contain letter, digits and minuses. ' +
                 'They need to consist of at least two segments in the form `component-iconname`. ' +
-                `extension: ${pck.name} icon id: ${id}`);
+                `extension: ${pck.name} icon id: ${id}`
+            );
             return;
         }
         const iconContribution = icons[id];
         if (!isObject(iconContribution) || typeof iconContribution.description !== 'string' || iconContribution.description.length === 0) {
-            ctx.onError('icons', `configuration.icons.description must be defined and can not be empty, extension: ${pck.name} icon id: ${id}`);
+            ctx.onWarn(`configuration.icons.description must be defined and can not be empty, extension: ${pck.name} icon id: ${id}`);
             return;
         }
 
@@ -616,9 +624,10 @@ export function readIcons(ctx: NormalizeContributionsContext, pck: PluginManifes
                 }
             });
         } else {
-            ctx.onError('icons',
+            ctx.onWarn(
                 "'configuration.icons.default' must be either a reference to the id of an other theme icon (string) " +
-                'or a icon definition (object) with properties `fontPath` and `fontCharacter`.');
+                'or a icon definition (object) with properties `fontPath` and `fontCharacter`.'
+            );
         }
     }
     return result;
@@ -634,7 +643,7 @@ export function readSnippets(ctx: NormalizeContributionsContext, pck: PluginMani
         if (!isObject(contribution)) {
             continue;
         }
-        if (typeof contribution.path === 'string') {
+        if (typeof contribution.path === 'string' && contribution.path) {
             result.push({
                 language: typeof contribution.language === 'string' ? contribution.language : undefined,
                 source: pck.displayName || pck.name,
