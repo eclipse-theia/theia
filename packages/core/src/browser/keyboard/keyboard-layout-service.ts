@@ -202,7 +202,15 @@ export class KeyboardLayoutService {
             return this.shiftLayerInterpretations(keyCode, layoutModifiers);
         }
         if (input.altGraph) {
-            return [this.toLayoutModifiersKeyCode(keyCode, layoutModifiers, { ctrl: true, alt: true })];
+            // Explicit AltGraph identifies both Ctrl and Alt as legacy artifacts. Without it, only Alt can be safely consumed,
+            // preserving Ctrl as a possible authored command modifier for Ctrl+Alt-emulated AltGraph.
+            if (input.ctrlKey && input.altKey) {
+                return [
+                    new KeyCode({ ...keyCode, interpretation: 'commandModifiers' }),
+                    this.toLayoutModifiersKeyCode(keyCode, layoutModifiers, { ctrl: true, alt: true })
+                ];
+            }
+            return [this.toLayoutModifiersKeyCode(keyCode, layoutModifiers)];
         }
         if (input.ctrlKey && input.altKey) {
             return [

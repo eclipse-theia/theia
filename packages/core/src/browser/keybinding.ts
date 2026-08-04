@@ -710,7 +710,7 @@ export class KeybindingRegistry {
                     altKey: keyCode.alt,
                     metaKey: keyCode.meta,
                     altGraph: layoutModifiersIncludeAltGraph(keyCode.layoutModifiers)
-                }, target);
+                }, target, [keyCode]);
             }
         }
     }
@@ -728,12 +728,12 @@ export class KeybindingRegistry {
     /**
      * Runs normalized keyboard data directly through keybinding matching without dispatching a DOM event.
      */
-    dispatchNormalizedKeyDown(input: NormalizedKeyboardInput, target?: EventTarget): void {
+    dispatchNormalizedKeyDown(input: NormalizedKeyboardInput, target?: EventTarget, keyCodes?: KeyCode[]): void {
         const normalizedInput = normalizeKeyboardInput(input);
         const eventTarget = target ?? (typeof document === 'undefined' ? new EventTarget() : document.activeElement || window);
         const event = new KeyboardEvent('keydown', this.asKeyboardEventInit(normalizedInput));
         Object.defineProperty(event, 'target', { value: eventTarget });
-        this.runNormalizedKeyboardInput(normalizedInput, event);
+        this.runNormalizedKeyboardInput(normalizedInput, event, keyCodes);
     }
 
     isKeyboardShortcutsTroubleshooting(): boolean {
@@ -853,7 +853,7 @@ export class KeybindingRegistry {
         }
     }
 
-    protected runNormalizedKeyboardInput(input: NormalizedKeyboardInput, event: KeyboardEvent): void {
+    protected runNormalizedKeyboardInput(input: NormalizedKeyboardInput, event: KeyboardEvent, keyCodesOverride?: KeyCode[]): void {
         // Skip IME-related keydowns. `isComposing` and `keyCode === 229` cover the native EditContext path where
         // composition events do not reach the DOM. The keyCode check catches keys that finalize a composition,
         // such as arrow keys, when isComposing is already false.
@@ -866,7 +866,7 @@ export class KeybindingRegistry {
             return;
         }
 
-        const keyCodes = this.getKeyCodeInterpretations(input);
+        const keyCodes = keyCodesOverride ?? this.getKeyCodeInterpretations(input);
         const keyCode = keyCodes[0];
         /* Keycode is only a modifier, next keycode will be modifier + key.
            Ignore this one.  */

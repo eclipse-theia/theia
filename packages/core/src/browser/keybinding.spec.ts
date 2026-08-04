@@ -548,28 +548,44 @@ describe('keybindings', () => {
         expect(match.firstCall.args[0][0].dispatchString()).to.equal('ctrl+a');
     });
 
-    it('should dispatch commands through normalized layout modifier data', async () => {
+    it('should preserve authored modifiers when dispatching commands through normalized Windows layout modifier data', async () => {
+        const windows = sinon.stub(os, 'isWindows').value(true);
         testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
-        const binding = { command: TEST_COMMAND_SHADOW.id, keybinding: 'ctrl+[' };
-        keybindingRegistry.setKeymap(KeybindingScope.USER, [binding]);
-        const execute = sinon.spy();
-        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
         const dispatch = sinon.spy(keybindingRegistry, 'dispatchNormalizedKeyDown');
         const target = new EventTarget();
+        const cases = [
+            { keybinding: 'ctrl+[', ctrlKey: true, altKey: false },
+            { keybinding: 'alt+[', ctrlKey: false, altKey: true },
+            { keybinding: 'ctrl+alt+[', ctrlKey: true, altKey: true }
+        ];
 
-        keybindingRegistry.dispatchCommand(TEST_COMMAND_SHADOW.id, target);
-        await new Promise(resolve => setTimeout(resolve, 0));
+        try {
+            for (const testCase of cases) {
+                keybindingRegistry.setKeymap(KeybindingScope.USER, [{ command: TEST_COMMAND_SHADOW.id, keybinding: testCase.keybinding }]);
+                const execute = sinon.spy();
+                const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
+                dispatch.resetHistory();
+                try {
+                    keybindingRegistry.dispatchCommand(TEST_COMMAND_SHADOW.id, target);
+                    await new Promise(resolve => setTimeout(resolve, 0));
 
-        expect(dispatch.calledOnce).to.be.true;
-        expect(dispatch.firstCall.args[0]).to.include({
-            key: '[',
-            code: 'Digit8',
-            keyCode: 56,
-            ctrlKey: true,
-            altGraph: true
-        });
-        expect(execute.calledOnce).to.be.true;
-        handler.dispose();
+                    expect(dispatch.calledOnce).to.be.true;
+                    expect(dispatch.firstCall.args[0]).to.include({
+                        key: '[',
+                        code: 'Digit8',
+                        keyCode: 56,
+                        ctrlKey: testCase.ctrlKey,
+                        altKey: testCase.altKey,
+                        altGraph: true
+                    });
+                    expect(execute.calledOnce).to.be.true;
+                } finally {
+                    handler.dispose();
+                }
+            }
+        } finally {
+            windows.restore();
+        }
     });
 
     it('should interpret native and transported AltGraph input identically', () => {
@@ -684,6 +700,42 @@ describe('keybindings', () => {
         }
     });
 
+    it('should route legacy Windows AltGraph candidates through the registry', () => {
+        const windows = sinon.stub(os, 'isWindows').value(true);
+        try {
+            testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
+            const match = sinon.spy(keybindingRegistry, 'matchKeybinding');
+            const logicalBinding = {
+                command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
+                keybinding: '[',
+                resolved: [new KeyCode({ key: Key.DIGIT8, character: '[', layoutModifiers: 'altGraph' })]
+            };
+            keybindingRegistry.setKeymap(KeybindingScope.USER, [logicalBinding]);
+
+            keybindingRegistry.dispatchNormalizedKeyDown({
+                key: '[', code: 'Digit8', ctrlKey: true, altKey: true, altGraph: true
+            }, new EventTarget());
+
+            expect(match.callCount).to.equal(2);
+            expect(match.secondCall.returnValue?.kind).to.equal('full');
+            expect(match.secondCall.returnValue?.runtime.binding.keybinding).to.equal('[');
+
+            match.resetHistory();
+            keybindingRegistry.setKeymap(KeybindingScope.USER, [
+                logicalBinding,
+                { command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND, keybinding: 'ctrl+alt+8' }
+            ]);
+            keybindingRegistry.dispatchNormalizedKeyDown({
+                key: '[', code: 'Digit8', ctrlKey: true, altKey: true, altGraph: true
+            }, new EventTarget());
+
+            expect(match.callCount).to.equal(2);
+            expect(match.firstCall.returnValue?.runtime.binding.keybinding).to.equal('ctrl+alt+8');
+        } finally {
+            windows.restore();
+        }
+    });
+
     it('should prefer a command chord prefix over a layout modifier full match', () => {
         const interpretations = sinon.stub(keybindingRegistry, 'getKeyCodeInterpretations').returns([
             new KeyCode({ key: Key.KEY_A, ctrl: true, interpretation: 'commandModifiers' }),
@@ -776,6 +828,19 @@ describe('keybindings', () => {
 
         expect(keybindingRegistry.authoredKeyCodeForKeyboardInput({ key: '[', code: 'Digit8' })?.toString()).to.equal('ctrl+[');
         interpretations.restore();
+    });
+
+    it('should record legacy Windows AltGraph input as its logical character', () => {
+        const windows = sinon.stub(os, 'isWindows').value(true);
+        try {
+            testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
+
+            expect(keybindingRegistry.authoredKeyCodeForKeyboardInput({
+                key: '[', code: 'Digit8', ctrlKey: true, altKey: true, altGraph: true
+            })?.toString()).to.equal('[');
+        } finally {
+            windows.restore();
+        }
     });
 
     it('should retain command Shift when layout modifier Shift is not the logical binding', () => {

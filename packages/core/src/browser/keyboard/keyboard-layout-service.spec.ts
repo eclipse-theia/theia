@@ -345,18 +345,41 @@ describe('keyboard layout service', function (): void {
         chai.expect(shiftedEvent.dispatchString()).to.equal(shiftedBinding.dispatchString());
     });
 
+    it('preserves authored command modifiers alongside explicit Windows AltGraph', async () => {
+        const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const service = await setup(german, 'win');
+        const cases = [
+            { ctrlKey: false, altKey: false, metaKey: false, expected: '8@altgraph' },
+            { ctrlKey: true, altKey: false, metaKey: true, expected: 'meta+ctrl+8@altgraph' },
+            { ctrlKey: false, altKey: true, metaKey: true, expected: 'meta+alt+8@altgraph' }
+        ];
+
+        for (const { expected, ...modifiers } of cases) {
+            const input = { key: '[', code: 'Digit8', altGraph: true, ...modifiers };
+            const keyCode = new KeyCode({
+                key: Key.DIGIT8, character: '[', ctrl: input.ctrlKey, alt: input.altKey, meta: input.metaKey
+            });
+            const interpretations = service.getWindowsKeyCodeInterpretations(keyCode, input, 'altGraph');
+            chai.expect(interpretations).to.have.length(1);
+            chai.expect(interpretations[0].interpretation).to.equal('layoutModifiers');
+            chai.expect(interpretations[0].dispatchString()).to.equal(expected);
+        }
+    });
+
     it('keeps legacy Windows AltGraph reporting typing-safe and preserves Meta', async () => {
         const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
         const service = await setup(german, 'win');
-        const input = { key: '[', code: 'Digit8', ctrlKey: true, altKey: true, metaKey: true, altGraph: true };
-        const keyCode = new KeyCode({ key: Key.DIGIT8, ctrl: true, alt: true, meta: true, character: '[' });
 
-        const interpretations = service.getWindowsKeyCodeInterpretations(keyCode, input, 'altGraph');
+        for (const metaKey of [false, true]) {
+            const input = { key: '[', code: 'Digit8', ctrlKey: true, altKey: true, altGraph: true, metaKey };
+            const keyCode = new KeyCode({ key: Key.DIGIT8, character: '[', ctrl: true, alt: true, meta: metaKey });
+            const interpretations = service.getWindowsKeyCodeInterpretations(keyCode, input, 'altGraph');
+            const prefix = metaKey ? 'meta+' : '';
 
-        chai.expect(interpretations).to.have.length(1);
-        chai.expect(interpretations[0].ctrl).to.be.false;
-        chai.expect(interpretations[0].alt).to.be.false;
-        chai.expect(interpretations[0].meta).to.be.true;
+            chai.expect(interpretations.map(code => code.interpretation)).to.deep.equal(['commandModifiers', 'layoutModifiers']);
+            chai.expect(interpretations[0].dispatchString()).to.equal(`${prefix}alt+ctrl+8`);
+            chai.expect(interpretations[1].dispatchString()).to.equal(`${prefix}8@altgraph`);
+        }
     });
 
     it('uses confirmed withAltGr output as Shift+AltGraph fallback when the shifted layer is absent', async () => {

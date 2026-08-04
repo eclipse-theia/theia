@@ -111,7 +111,7 @@ Printable keybinding tokens now identify logical characters on the active keyboa
 
 Bindings that intentionally target a physical position must use explicit scan-code syntax. For example, replace a position-dependent `ctrl+[` binding with `ctrl+[BracketLeft]`. Reserved logical characters can be authored with `[char:0x...]`, such as `ctrl+[char:0x2B]` for logical `+`.
 
-Available printable bindings now follow their logical characters. For example, German `ctrl+[` resolves to physical `Ctrl+AltGr+8` instead of the US `BracketLeft` position. Logical characters unavailable on the active layout remain loaded and visible but inactive; Theia no longer silently maps them to a US keyboard position.
+Available printable bindings now follow their logical characters. For example, German `ctrl+[` resolves to physical `Ctrl+AltGr+8` instead of the US `BracketLeft` position. On Windows, browsers may not expose the additional Ctrl in `Ctrl+AltGr+8`, so this logical binding may not be triggerable by hand; use `ctrl+[BracketLeft]`, set `"keyboard.dispatch": "keyCode"`, or choose a binding that does not require AltGr. Logical characters unavailable on the active layout remain loaded and visible but inactive; Theia no longer silently maps them to a US keyboard position.
 
 Set `"keyboard.dispatch": "keyCode"` to restore positional key-code dispatch globally if the logical behavior changes existing shortcuts unexpectedly. See [`packages/keymaps/README.md`](../packages/keymaps/README.md) for the complete logical-character, scan-code, character-token, inactive-binding, and Windows AltGr recorder grammar.
 

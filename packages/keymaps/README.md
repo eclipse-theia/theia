@@ -36,7 +36,7 @@ Use a bracketed scan code such as `ctrl+[BracketLeft]` when a binding should fol
 
 Characters reserved by the keybinding grammar use a Unicode escape. For example, use `ctrl+[char:0x2B]` for logical `+`, `[char:0x20]` for Space as a logical character, and `[char:0x5D]` for `]`. Literal escapes such as `[char:§]` are supported when the character is not reserved. Each character token must contain exactly one Unicode code point; multi-code-point graphemes are not supported.
 
-A logical binding that the active layout cannot produce remains visible but inactive. It becomes active automatically after switching to a layout that can produce the character. Existing keybinding strings remain valid. To restore the former positional behavior for all shortcuts, set `"keyboard.dispatch": "keyCode"`.
+A logical binding that the active layout cannot produce remains visible but inactive. It becomes active automatically after switching to a layout that can produce the character. If a keyboard event is ambiguous (Windows reports AltGraph together with Ctrl+Alt), Theia prefers a binding that matches the authored command modifiers; if none exists, it falls back to the binding for the produced logical character. Existing keybinding strings remain valid. To restore the former positional behavior for all shortcuts, set `"keyboard.dispatch": "keyCode"`.
 
 To use `ctrl` on Linux/Windows and `cmd` on OSX, use `ctrlcmd`.
 
@@ -44,7 +44,7 @@ You can use `shift`, `ctrl`, `alt`, `meta`, `option` (`alt`), `command` (`meta`)
 
 You can also use the following strings for special keys: `backspace`, `tab`, `enter`, `return`, `capslock`, `esc`, `escape`, `space`, `pageup`, `pagedown`, `end`, `home`, `left`, `up`, `right`, `down`, `ins` and `del`.
 
-The keybinding recorder saves printable input as its logical character. On Windows, AltGr input is therefore recorded as the produced character rather than as Ctrl+Alt. Non-printable and dead-key captures use `[ScanCode]` syntax.
+The keybinding recorder saves printable input as its logical character. When Windows reports AltGraph together with Ctrl+Alt, the recorder still records the produced logical character, so recorded shortcuts stay typeable on the current layout. Non-printable and dead-key captures use `[ScanCode]` syntax.
 
 If unsure you can always look at the framework's [supported keys](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_core.common_keys.Key.html)
 
