@@ -16,12 +16,15 @@
 
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core';
-import { HoverService } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, HoverService } from '@theia/core/lib/browser';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { TypeBadge } from '@theia/vsx-registry/lib/browser/type-badge';
 import { ExtensionCard } from '@theia/vsx-registry/lib/browser/extension-card';
+import { RegistryArtifactKind } from '../../common/ai-registry-preferences';
 import { InstalledSkillInfo, ResolvedSkillEntry, SkillClassificationResult } from '../../common/skill/skill-registry-types';
+import { RegistryEntryContext } from '../registry-entry-context';
+import { RegistryEntryGear, RegistryEntryMenuEvent, showEntryMenu } from '../registry-entry-menu';
 
 /**
  * Per-entry action callbacks provided by the contribution. Entries close over these so
@@ -38,18 +41,28 @@ export interface SkillEntryHandlers {
 }
 
 /** An entry surfacing a locally installed skill in the Installed section. */
-export class SkillInstalledEntry implements TreeElement {
+export class SkillInstalledEntry implements TreeElement, RegistryEntryContext {
 
     readonly id: string;
+    readonly artifactKind: RegistryArtifactKind = 'skill';
 
     constructor(
         readonly local: InstalledSkillInfo,
         readonly matchedEntry: ResolvedSkillEntry | undefined,
         readonly state: SkillClassificationResult,
         readonly handlers: SkillEntryHandlers,
-        readonly hoverService: HoverService
+        readonly hoverService: HoverService,
+        readonly contextMenuRenderer: ContextMenuRenderer
     ) {
         this.id = `skill-installed-${local.name}`;
+    }
+
+    get copyableId(): string | undefined {
+        return this.matchedEntry?.skillId ?? this.local.skillId ?? this.local.name;
+    }
+
+    get autoUpdateId(): string | undefined {
+        return autoUpdateId(this.state, this.matchedEntry?.skillId);
     }
 
     render(): React.ReactNode {
@@ -59,6 +72,7 @@ export class SkillInstalledEntry implements TreeElement {
                 description={this.matchedEntry?.description}
                 identifier={this.matchedEntry?.skillId ?? this.local.skillId}
                 hoverService={this.hoverService}
+                onManage={event => showEntryMenu(event, this, this.contextMenuRenderer)}
                 actions={renderActions(this.state, this.matchedEntry, this.local.name, this.handlers)}
             />
         );
@@ -66,17 +80,27 @@ export class SkillInstalledEntry implements TreeElement {
 }
 
 /** An entry surfacing a registry-resolved skill in the Search Results section. */
-export class SkillSearchResultEntry implements TreeElement {
+export class SkillSearchResultEntry implements TreeElement, RegistryEntryContext {
 
     readonly id: string;
+    readonly artifactKind: RegistryArtifactKind = 'skill';
 
     constructor(
         readonly entry: ResolvedSkillEntry,
         readonly state: SkillClassificationResult,
         readonly handlers: SkillEntryHandlers,
-        readonly hoverService: HoverService
+        readonly hoverService: HoverService,
+        readonly contextMenuRenderer: ContextMenuRenderer
     ) {
         this.id = `skill-search-${entry.skillId}`;
+    }
+
+    get copyableId(): string | undefined {
+        return this.entry.skillId;
+    }
+
+    get autoUpdateId(): string | undefined {
+        return autoUpdateId(this.state, this.entry.skillId);
     }
 
     render(): React.ReactNode {
@@ -86,10 +110,19 @@ export class SkillSearchResultEntry implements TreeElement {
                 description={this.entry.description}
                 identifier={this.entry.skillId}
                 hoverService={this.hoverService}
+                onManage={event => showEntryMenu(event, this, this.contextMenuRenderer)}
                 actions={renderActions(this.state, this.entry, this.entry.name, this.handlers)}
             />
         );
     }
+}
+
+/**
+ * An auto-update policy is only meaningful for a skill that is installed and linked to a live
+ * registry entry - which excludes drifted skills, as the auto-updater does.
+ */
+function autoUpdateId(state: SkillClassificationResult, skillId: string | undefined): string | undefined {
+    return state.kind === 'installed-from-registry' ? skillId : undefined;
 }
 
 interface SkillCardProps {
@@ -98,6 +131,7 @@ interface SkillCardProps {
     /** Stable identifier shown in the publisher-row slot - the registry skillId. */
     identifier?: string;
     hoverService: HoverService;
+    onManage: (event: RegistryEntryMenuEvent) => void;
     actions?: React.ReactNode;
 }
 
@@ -117,6 +151,8 @@ function buildHoverContent(props: SkillCardProps): MarkdownStringImpl {
  * Skill entry card. Renders against the shared {@link ExtensionCard} shell so skill
  * entries sit visually alongside extensions and MCP servers in the unified Extensions
  * view, sharing the layout and hover tooltip.
+ *
+ * The trailing settings-gear opens the shared entry context menu.
  */
 const SkillCard: React.FC<SkillCardProps> = props => (
     <ExtensionCard
@@ -135,13 +171,11 @@ const SkillCard: React.FC<SkillCardProps> = props => (
         publisherTitle={props.identifier}
         trust="verified"
         hover={{ content: buildHoverContent(props), hoverService: props.hoverService }}
+        onContextMenu={props.onManage}
         actions={
             <div className="theia-skill-extension-actions">
                 {props.actions}
-                <div
-                    className="codicon codicon-settings-gear action theia-skill-extension-gear-placeholder"
-                    aria-hidden="true"
-                />
+                <RegistryEntryGear className="theia-skill-extension-gear" onManage={props.onManage} />
             </div>
         }
     />
