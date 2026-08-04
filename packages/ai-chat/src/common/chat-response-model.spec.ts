@@ -59,6 +59,22 @@ describe('MutableChatResponseModel', () => {
             // content array was rebuilt during streaming (see #17858).
             expect(fireCount).to.equal(1);
         });
+
+        it('should stop propagating changes of content that was cleared and not re-added', () => {
+            const response = new MutableChatResponseModel('req-1');
+            const toolCall = new ToolCallChatResponseContentImpl('tool-1', 'tool', '{}', false);
+            response.response.addContent(toolCall);
+            response.response.clearContent();
+
+            let fireCount = 0;
+            response.onDidChange(() => { fireCount++; });
+
+            toolCall.updateResult('result');
+
+            // Content that is no longer part of the response must not trigger response changes
+            // (and with that auto-save) anymore.
+            expect(fireCount).to.equal(0);
+        });
     });
 
     describe('setTokenUsage', () => {

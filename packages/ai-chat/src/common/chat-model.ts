@@ -3212,11 +3212,11 @@ class ChatResponseImpl implements ChatResponse {
                 // Forward content-level change events (e.g. partial-result updates from a
                 // renderer) so auto-save can persist them. Without this, mutations that
                 // don't go through addContent/merge are invisible to listeners.
-                // Track the subscription so re-adding the same content after clearContent()
-                // (as the stream parser does per token) doesn't stack up listeners (#17858).
-                if (!this.contentChangeListeners.has(nextContent)) {
-                    this.contentChangeListeners.set(nextContent, nextContent.onDidChange(() => this._onDidChangeEmitter.fire()));
-                }
+                // The subscription is tracked so that clearContent() can dispose it: the stream
+                // parser clears and re-adds the content per token, which would otherwise stack
+                // up one listener per token on the same content object (#17858).
+                this.contentChangeListeners.get(nextContent)?.dispose();
+                this.contentChangeListeners.set(nextContent, nextContent.onDidChange(() => this._onDidChangeEmitter.fire()));
             }
         } else if (ServerToolCallChatResponseContent.is(nextContent) && nextContent.id !== undefined) {
             // Server tool calls are matched by id (the start and result blocks arrive as separate stream parts).
