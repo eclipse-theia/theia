@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-// Base styles of third-party libraries must be imported before Theia's own styles
-// so that Theia rules of equal specificity override them (see GH-17872).
+// Import Lumino rules first because some conflict with Theia's styles.
+// This ensures Theia rules with equal specificity take precedence (see GH-17872).
 import '@lumino/widgets/style/index.css';
 import 'perfect-scrollbar/css/perfect-scrollbar.css';
 import '../../src/browser/style/index.css';
