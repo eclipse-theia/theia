@@ -76,11 +76,13 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
                 const promptIdOrCommandName = pipeIndex >= 0 ? arg.substring(0, pipeIndex) : arg;
                 const commandArgs = pipeIndex >= 0 ? arg.substring(pipeIndex + 1) : '';
 
-                // Determine the actual fragment ID
-                // If this is a command invocation (has args), try to find by command name first
-                let fragment = commandArgs
-                    ? this.promptService.getPromptFragmentByCommandName(promptIdOrCommandName)
-                    : undefined;
+                // Determine the actual fragment ID by looking up the command name first.
+                // This must not be conditional on arguments being present: a customized (file-based)
+                // command has a fragment id that differs from its command name, so `/deploy` without
+                // arguments would otherwise not resolve even though `/deploy prod` does. It also keeps
+                // this lookup aligned with `PromptService.isKnownCommand`, which the chat request
+                // parser uses to decide whether `/deploy` is a command at all.
+                let fragment = this.promptService.getPromptFragmentByCommandName(promptIdOrCommandName);
 
                 // Fall back to looking up by fragment ID if not found by command name
                 if (!fragment) {

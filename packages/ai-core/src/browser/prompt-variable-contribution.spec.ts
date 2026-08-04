@@ -225,6 +225,44 @@ describe('PromptVariableContribution', () => {
             expect(result?.variable).to.deep.equal(PROMPT_VARIABLE);
         });
 
+        describe('customized (file-based) commands, whose fragment id differs from the command name', () => {
+            const customized = {
+                id: 'my-file',
+                customizationId: 'customization-1',
+                priority: 1,
+                template: 'Deploy $ARGUMENTS now.',
+                isCommand: true,
+                commandName: 'deploy'
+            };
+
+            beforeEach(() => {
+                (promptService as unknown as Record<string, unknown>)['customizationService'] = {
+                    isPromptFragmentCustomized: (id: string) => id === customized.id,
+                    getActivePromptFragmentCustomization: (id: string) => (id === customized.id ? customized : undefined),
+                    getCustomizedPromptFragmentIds: () => [customized.id]
+                };
+            });
+
+            it('resolves the command with arguments', async () => {
+                const result = await contribution.resolve({ variable: PROMPT_VARIABLE, arg: 'deploy|prod' }, {});
+                expect(result?.value).to.equal('Deploy prod now.');
+            });
+
+            it('resolves the command without arguments', async () => {
+                const result = await contribution.resolve({ variable: PROMPT_VARIABLE, arg: 'deploy' }, {});
+                expect(result?.value).to.equal('Deploy $ARGUMENTS now.');
+            });
+
+            it('is accepted by isKnownCommand for both invocations', () => {
+                expect(promptService.isKnownCommand('deploy')).to.be.true;
+            });
+
+            it('still resolves the command by its fragment id', async () => {
+                const result = await contribution.resolve({ variable: PROMPT_VARIABLE, arg: 'my-file' }, {});
+                expect(result?.value).to.equal('Deploy $ARGUMENTS now.');
+            });
+        });
+
         // Resolving to `undefined` instead of an empty string makes callers keep the original text
         // (the literal `#prompt:...` / `{{prompt:...}}` placeholder) rather than silently dropping it.
         it('returns undefined for a non-existent prompt with arguments', async () => {
