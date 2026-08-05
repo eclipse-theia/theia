@@ -23,6 +23,7 @@ import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
 import { SummarizeSessionCommandContribution } from './summarize-session-command-contribution';
 import {
+    AccessibleRootContribution,
     FileContentFunction,
     FileDiagnosticProvider,
     FindFilesByPattern,
@@ -31,6 +32,7 @@ import {
     WorkspaceFunctionScope
 } from './workspace-functions';
 import { WorkspaceSearchProvider } from './workspace-search-provider';
+import { MemoryDirectoryVariableContribution } from './memory-directory-variable-contribution';
 import {
     FrontendApplicationContribution,
     WidgetFactory,
@@ -218,6 +220,11 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(GetSkillFileContent, bind);
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
     bindToolProvider(WorkspaceSearchProvider, bind);
+
+    bindRootContributionProvider(bind, AccessibleRootContribution);
+    bind(MemoryDirectoryVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(MemoryDirectoryVariableContribution);
+    bind(AccessibleRootContribution).toService(MemoryDirectoryVariableContribution);
 
     bindToolProvider(SuggestFileContent, bind);
     bindToolProvider(WriteFileContent, bind);
