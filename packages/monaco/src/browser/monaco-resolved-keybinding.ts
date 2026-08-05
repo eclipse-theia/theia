@@ -33,8 +33,9 @@ export class MonacoResolvedKeybinding extends ResolvedKeybinding {
     constructor(protected readonly keySequence: KeySequence, keybindingService: KeybindingRegistry) {
         super();
         this.chords = keySequence.map(keyCode => {
+            const components = keybindingService.componentsForKeyCode(keyCode);
             // eslint-disable-next-line no-null/no-null
-            const keyLabel = keyCode.key ? keybindingService.acceleratorForKey(keyCode.key) : null;
+            const keyLabel = keyCode.key ? components[components.length - 1] : null;
             const keyAriaLabel = keyLabel;
             return new ResolvedChord(
                 keyCode.ctrl,

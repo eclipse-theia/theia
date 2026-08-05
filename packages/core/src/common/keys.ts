@@ -75,7 +75,7 @@ export namespace KeySequence {
 
     export function parse(keybinding: string): KeySequence {
         const keyCodes = [];
-        const rawKeyCodes = keybinding.trim().split(/\s+/g);
+        const rawKeyCodes = splitKeySequence(keybinding.trim());
         for (const rawKeyCode of rawKeyCodes) {
             const keyCode = KeyCode.parse(rawKeyCode);
             if (keyCode !== undefined) {
@@ -97,6 +97,27 @@ export interface Keystroke {
     readonly modifiers?: KeyModifier[];
 }
 
+/**
+ * The keyboard-layout modifier layer used to produce a logical character, ordered by resolution cost.
+ */
+export type LayoutModifiers = 'none' | 'shift' | 'altGraph' | 'shiftAltGraph';
+
+export function layoutModifiersIncludeShift(layoutModifiers: LayoutModifiers): boolean {
+    return layoutModifiers === 'shift' || layoutModifiers === 'shiftAltGraph';
+}
+
+export function layoutModifiersIncludeAltGraph(layoutModifiers: LayoutModifiers): boolean {
+    return layoutModifiers === 'altGraph' || layoutModifiers === 'shiftAltGraph';
+}
+
+/**
+ * Identifies how a key code was derived for runtime matching.
+ * `authored` is the constructor default and represents an authored binding, even for manually constructed instances.
+ * `commandModifiers` preserves the event's modifiers as command modifiers, while `layoutModifiers` attributes them to
+ * the keyboard layout's character-producing layer.
+ */
+export type KeyCodeInterpretation = 'authored' | 'commandModifiers' | 'layoutModifiers';
+
 export interface KeyCodeSchema {
     key?: Partial<Key>;
     ctrl?: boolean;
@@ -104,6 +125,180 @@ export interface KeyCodeSchema {
     alt?: boolean;
     meta?: boolean;
     character?: string;
+    layoutModifiers?: LayoutModifiers;
+    interpretation?: KeyCodeInterpretation;
+    supportedByLayout?: boolean;
+    authoredToken?: string;
+    physical?: boolean;
+}
+
+/**
+ * Plain keyboard input data used by keybinding dispatch and diagnostics.
+ */
+export interface NormalizedKeyboardInput {
+    key?: string;
+    code?: string;
+    keyCode?: number;
+    charCode?: number;
+    ctrlKey?: boolean;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    metaKey?: boolean;
+    altGraph?: boolean;
+    repeat?: boolean;
+    isComposing?: boolean;
+    location?: number;
+    timeStamp?: number;
+    keyIdentifier?: string;
+    getModifierState?(keyArg: string): boolean;
+}
+
+/**
+ * Read AltGraph state, preferring explicitly transported state over native event state.
+ */
+export function readAltGraph(input: NormalizedKeyboardInput): boolean {
+    if (input.altGraph !== undefined) {
+        return input.altGraph;
+    }
+    return input.getModifierState?.('AltGraph') ?? false;
+}
+
+/**
+ * Copy native or transported keyboard input into a normalized, transport-independent representation.
+ * The parameter and result share this type because a native `KeyboardEvent` structurally satisfies the permissive input
+ * shape. The returned data always has AltGraph resolved even though the field is optional in the input type.
+ * `getModifierState` is retained for local diagnostics only and must not be relied on after transport.
+ */
+export function normalizeKeyboardInput(input: NormalizedKeyboardInput): NormalizedKeyboardInput {
+    return {
+        key: input.key,
+        code: input.code,
+        keyCode: input.keyCode,
+        charCode: input.charCode,
+        ctrlKey: input.ctrlKey,
+        shiftKey: input.shiftKey,
+        altKey: input.altKey,
+        metaKey: input.metaKey,
+        altGraph: readAltGraph(input),
+        repeat: input.repeat,
+        isComposing: input.isComposing,
+        location: input.location,
+        timeStamp: input.timeStamp,
+        keyIdentifier: input.keyIdentifier,
+        getModifierState: input.getModifierState?.bind(input)
+    };
+}
+
+function splitKeySequence(keybinding: string): string[] {
+    const result: string[] = [];
+    let current = '';
+    let bracketed = false;
+    for (let index = 0; index < keybinding.length; index++) {
+        const character = keybinding[index];
+        if (character === '[') {
+            const closingBracket = keybinding.indexOf(']', index + 1);
+            const nextWhitespace = keybinding.slice(index + 1).search(/\s/);
+            bracketed = closingBracket !== -1 && (nextWhitespace === -1 || closingBracket < index + 1 + nextWhitespace);
+        } else if (character === ']' && bracketed) {
+            bracketed = false;
+        }
+        if (/\s/.test(character) && !bracketed) {
+            if (current) {
+                result.push(current);
+                current = '';
+            }
+        } else {
+            current += character;
+        }
+    }
+    if (current) {
+        result.push(current);
+    }
+    return result;
+}
+
+function splitKeyCode(keybinding: string): string[] {
+    const result: string[] = [];
+    let current = '';
+    let bracketed = false;
+    for (let index = 0; index < keybinding.length; index++) {
+        const character = keybinding[index];
+        if (character === '[' && keybinding.indexOf(']', index + 1) !== -1) {
+            bracketed = true;
+        } else if (character === ']' && bracketed) {
+            bracketed = false;
+        }
+        if (!bracketed && current && (character === '+' || character === '-')) {
+            result.push(current);
+            current = '';
+        } else if (!bracketed && character === '+') {
+            continue;
+        } else {
+            current += character;
+        }
+    }
+    if (current) {
+        result.push(current);
+    }
+    return result;
+}
+
+function parseScanCode(token: string): Key | undefined {
+    const match = /^\[([^\]]+)\]$/.exec(token);
+    if (!match || match[1].toLocaleLowerCase().startsWith('char:')) {
+        return undefined;
+    }
+    const key = Key.getKey(match[1]) ?? Object.values(CODE_TO_KEY).find(candidate => candidate.code.toLocaleLowerCase() === match[1].toLocaleLowerCase());
+    if (!key) {
+        throw new Error(nls.localize('theia/core/keybinding/unknownScanCode', 'Unknown scan code {0}. Use a supported KeyboardEvent.code name.', match[1]));
+    }
+    return key;
+}
+
+/** Parse a logical-character token, rejecting bare grammar delimiters. */
+function parseCharacterToken(token: string): string | undefined {
+    const match = /^\[char:(.*)\]$/i.exec(token);
+    if (match) {
+        const payload = match[1];
+        let character: string;
+        if (/^0x[0-9a-f]+$/i.test(payload)) {
+            const value = Number.parseInt(payload.slice(2), 16);
+            if (value > 0x10ffff || value >= 0xd800 && value <= 0xdfff) {
+                throw new Error(nls.localize('theia/core/keybinding/invalidCharacter', 'Invalid Unicode character {0}.', payload));
+            }
+            character = String.fromCodePoint(value);
+        } else {
+            character = payload;
+        }
+        if (!isSingleCharacter(character) || !/^0x/i.test(payload) && RESERVED_BARE_CHARACTERS.has(character)) {
+            throw new Error(nls.localize('theia/core/keybinding/invalidCharacter', 'Invalid Unicode character {0}.', payload));
+        }
+        return character;
+    }
+    return isSingleCharacter(token) && !RESERVED_BARE_CHARACTERS.has(token) ? token : undefined;
+}
+
+function isSingleCharacter(value: string): boolean {
+    return Array.from(value).length === 1;
+}
+
+/** Characters reserved by the keybinding grammar and therefore unavailable as bare logical-character tokens. */
+const RESERVED_BARE_CHARACTERS = new Set([' ', '+', '-', '[', ']']);
+
+/**
+ * Serialize a logical character for the keybinding grammar.
+ * `+` and `-` are excluded from legacy bare spelling because they delimit key-code tokens. Uppercase ASCII letters are
+ * escaped so their case is not lost by case-insensitive legacy key lookup.
+ */
+export function characterToken(character: string): string {
+    if (!isSingleCharacter(character)) {
+        throw new Error(nls.localize('theia/core/keybinding/invalidCharacter', 'Invalid Unicode character {0}.', character));
+    }
+    const legacyCharacter = !!EASY_TO_KEY[character] && character !== '+' && character !== '-';
+    const requiresEscape = /^[A-Z]$/.test(character) || RESERVED_BARE_CHARACTERS.has(character) && !legacyCharacter;
+    return requiresEscape
+        ? `[char:0x${character.codePointAt(0)!.toString(16).toUpperCase()}]`
+        : character;
 }
 
 /**
@@ -117,6 +312,13 @@ export class KeyCode {
     public readonly alt: boolean;
     public readonly meta: boolean;
     public readonly character: string | undefined;
+    public readonly layoutModifiers: LayoutModifiers;
+    public readonly interpretation: KeyCodeInterpretation;
+    /** Whether the authored logical character is available on the active keyboard layout. */
+    public readonly supportedByLayout: boolean;
+    public readonly authoredToken: string | undefined;
+    /** Whether the authored token denotes a physical scan code rather than a logical character. */
+    public readonly physical: boolean;
 
     public constructor(schema: KeyCodeSchema) {
         const key = schema.key;
@@ -134,13 +336,18 @@ export class KeyCode {
         this.alt = !!schema.alt;
         this.meta = !!schema.meta;
         this.character = schema.character;
+        this.layoutModifiers = schema.layoutModifiers ?? 'none';
+        this.interpretation = schema.interpretation ?? 'authored';
+        this.supportedByLayout = schema.supportedByLayout !== false;
+        this.authoredToken = schema.authoredToken;
+        this.physical = !!schema.physical;
     }
 
     /**
      * Return true if this KeyCode only contains modifiers.
      */
     public isModifierOnly(): boolean {
-        return this.key === undefined;
+        return this.key === undefined && this.character === undefined;
     }
 
     /**
@@ -150,11 +357,11 @@ export class KeyCode {
         if (this.key && (!other.key || this.key.code !== other.key.code) || !this.key && other.key) {
             return false;
         }
-        return this.ctrl === other.ctrl && this.alt === other.alt && this.shift === other.shift && this.meta === other.meta;
+        return this.dispatchString() === other.dispatchString();
     }
 
-    /*
-     * Return a keybinding string compatible with the `Keybinding.keybinding` property.
+    /**
+     * Return a keybinding string that round-trips the authored spelling through {@link authoredToken}.
      */
     toString(): string {
         const result = [];
@@ -170,8 +377,67 @@ export class KeyCode {
         if (this.ctrl) {
             result.push(Key.CONTROL_LEFT.easyString);
         }
+        if (this.authoredToken) {
+            result.push(this.authoredToken);
+        } else if (this.key) {
+            result.push(this.key.easyString);
+        }
+        return result.join('+');
+    }
+
+    /**
+     * Return the runtime match identity used for keybinding dispatch.
+     * The interpretation is diagnostic metadata and does not affect this identity.
+     */
+    dispatchString(): string {
+        const result: string[] = [];
+        if (this.meta) {
+            result.push(SpecialCases.META);
+        }
+        if (this.shift) {
+            result.push(Key.SHIFT_LEFT.easyString);
+        }
+        if (this.alt) {
+            result.push(Key.ALT_LEFT.easyString);
+        }
+        if (this.ctrl) {
+            result.push(Key.CONTROL_LEFT.easyString);
+        }
         if (this.key) {
             result.push(this.key.easyString);
+        } else if (this.character) {
+            result.push(characterToken(this.character));
+        }
+        const suffix = this.layoutModifiers === 'shift' ? '@shift'
+            : this.layoutModifiers === 'altGraph' ? '@altgraph'
+                : this.layoutModifiers === 'shiftAltGraph' ? '@shift@altgraph' : '';
+        return result.join('+') + suffix;
+    }
+
+    /**
+     * Derive an authored keybinding stroke from a key event for recorder persistence.
+     * This cannot use {@link toString}: event-derived key codes have no {@link authoredToken}, so `toString` would persist
+     * the physical US key name instead of the committed logical character.
+     */
+    toAuthoredKeybindingString(): string {
+        const result: string[] = [];
+        if (this.meta) {
+            result.push(SpecialCases.META);
+        }
+        const shiftedLetter = !!this.character && /^[A-Z]$/.test(this.character);
+        if (this.shift && (!this.character || shiftedLetter)) {
+            result.push(Key.SHIFT_LEFT.easyString);
+        }
+        if (this.alt) {
+            result.push(Key.ALT_LEFT.easyString);
+        }
+        if (this.ctrl) {
+            result.push(Key.CONTROL_LEFT.easyString);
+        }
+        if (this.character) {
+            result.push(characterToken(shiftedLetter ? this.character.toLocaleLowerCase() : this.character));
+        } else if (this.key) {
+            result.push(`[${this.key.code}]`);
         }
         return result.join('+');
     }
@@ -179,7 +445,7 @@ export class KeyCode {
     /**
      * Create a KeyCode from one of several input types.
      */
-    public static createKeyCode(input: KeyboardEvent | Keystroke | KeyCodeSchema | string, eventDispatch: 'code' | 'keyCode' = 'code'): KeyCode {
+    public static createKeyCode(input: KeyboardEvent | NormalizedKeyboardInput | Keystroke | KeyCodeSchema | string, eventDispatch: 'code' | 'keyCode' = 'code'): KeyCode {
         if (typeof input === 'string') {
             const parts = input.split('+');
             if (!KeyCode.isModifierString(parts[0])) {
@@ -189,7 +455,7 @@ export class KeyCode {
                 });
             }
             return KeyCode.createKeyCode({ modifiers: parts as KeyModifier[] });
-        } else if (KeyCode.isKeyboardEvent(input)) {
+        } else if (KeyCode.isKeyboardEvent(input) || KeyCode.isNormalizedKeyboardInput(input)) {
             const key = KeyCode.toKey(input, eventDispatch);
             return new KeyCode({
                 key: Key.isModifier(key.code) ? undefined : key,
@@ -238,25 +504,14 @@ export class KeyCode {
         }
 
         const schema: KeyCodeSchema = {};
-        const keys = [];
-        let currentKey = '';
-        for (const character of keybinding.trim().toLowerCase()) {
-            if (currentKey && (character === '-' || character === '+')) {
-                keys.push(currentKey);
-                currentKey = '';
-            } else if (character !== '+') {
-                currentKey += character;
-            }
-        }
-        if (currentKey) {
-            keys.push(currentKey);
-        }
+        const keys = splitKeyCode(keybinding.trim());
         /* If duplicates i.e ctrl+ctrl+a or alt+alt+b or b+alt+b it is invalid */
-        if (keys.length !== new Set(keys).size) {
+        if (keys.length !== new Set(keys.map(key => key.toLocaleLowerCase())).size) {
             throw new Error(nls.localize('theia/core/keybinding/duplicateModifierError', "Can't parse keybinding {0} Duplicate modifiers", keybinding));
         }
 
-        for (let keyString of keys) {
+        for (const token of keys) {
+            let keyString = token.toLocaleLowerCase();
             if (SPECIAL_ALIASES[keyString] !== undefined) {
                 keyString = SPECIAL_ALIASES[keyString];
             }
@@ -289,7 +544,20 @@ export class KeyCode {
                     schema.key = key;
                 }
             } else {
-                throw new Error(nls.localize('theia/core/keybinding/unrecognizedKeyError', 'Unrecognized key {0} in {1}', keyString, keybinding));
+                const scanCode = parseScanCode(token);
+                if (scanCode) {
+                    schema.key = scanCode;
+                    schema.authoredToken = `[${scanCode.code}]`;
+                    schema.physical = true;
+                    continue;
+                }
+                const character = parseCharacterToken(token);
+                if (character) {
+                    schema.character = character;
+                    schema.authoredToken = characterToken(character);
+                    continue;
+                }
+                throw new Error(nls.localize('theia/core/keybinding/unrecognizedKeyError', 'Unrecognized key {0} in {1}', token, keybinding));
             }
         }
 
@@ -340,13 +608,20 @@ export namespace KeyCode {
     }
 
     /**
+     * Return true if the given object carries normalized keyboard input fields.
+     */
+    export function isNormalizedKeyboardInput(input: object): input is NormalizedKeyboardInput {
+        return 'code' in input || 'keyCode' in input || 'charCode' in input || 'keyIdentifier' in input;
+    }
+
+    /**
      * Determine the pressed key of a keyboard event. This key should correspond to the physical key according
      * to a standard US keyboard layout. International keyboard layouts are handled by `KeyboardLayoutService`.
      *
      * `keyIdentifier` is used to access this deprecated field:
      * https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyIdentifier
      */
-    export function toKey(event: KeyboardEvent, dispatch: 'code' | 'keyCode' = 'code'): Key {
+    export function toKey(event: NormalizedKeyboardInput, dispatch: 'code' | 'keyCode' = 'code'): Key {
         const code = event.code;
         if (code && dispatch === 'code') {
             if (isOSX) {
@@ -382,7 +657,7 @@ export namespace KeyCode {
             }
         }
 
-        const keyIdentifier = (event as KeyboardEvent & { keyIdentifier?: string }).keyIdentifier;
+        const keyIdentifier = event.keyIdentifier;
         if (keyIdentifier) {
             const key = Key.getKey(keyIdentifier);
             if (key) {
@@ -397,7 +672,7 @@ export namespace KeyCode {
      * If the key does not correspond to a printable character, `undefined` is returned.
      * The result may be altered by modifier keys.
      */
-    export function toCharacter(event: KeyboardEvent): string | undefined {
+    export function toCharacter(event: NormalizedKeyboardInput): string | undefined {
         const key = event.key;
         // Use the key property if it contains exactly one unicode character
         if (key && Array.from(key).length === 1) {

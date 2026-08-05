@@ -4,6 +4,16 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.75.0 - tbd
+
+<a name="breaking_changes_1.75.0">[Breaking Changes:](#breaking_changes_1.75.0)</a>
+
+- [core] replaced `KeyboardLayout.key2KeyCode` with `candidatesByCharacter` and `candidatesByFoldedCharacter`. Consumers must select `KeyboardLayoutCandidate` values containing the physical key, logical character, and layout modifiers. The protected `KeyboardLayoutService.transformKeyCode()` and `getCharacterIndex()` extension points were removed; subclasses must move custom resolution logic to `resolveKeyCode()` and candidate lookup [#17892](https://github.com/eclipse-theia/theia/pull/17892)
+- [core] changed `KeyboardLayoutService.validateKeyCode` to require the normalized keyboard input as its second argument. Callers must pass the input used to create the `KeyCode` [#17892](https://github.com/eclipse-theia/theia/pull/17892)
+- [core] changed `KeyCode` identity and serialization for logical keybindings: `equals()` now requires the same physical key and `dispatchString()`, character-only values are no longer modifier-only, and `toString()` preserves authored spelling rather than exposing runtime identity. Consumers comparing or serializing `KeyCode` values must choose the appropriate method [#17892](https://github.com/eclipse-theia/theia/pull/17892)
+- [core] changed `KeybindingRegistry.matchKeybinding()` results from `match.binding` to `match.runtime`, which contains the binding and resolved sequence. Protected chord handling now uses `keySequenceCandidates`, and keybinding-tree values are runtime records instead of `ScopedKeybinding[]`; subclasses consuming or overriding these members must adapt [#17892](https://github.com/eclipse-theia/theia/pull/17892)
+- [core, plugin-ext] changed `AcceleratorSource.getAccelerator` to require a `form: 'logical' | 'physical'` argument. Custom implementations must return logical labels for browser UI and physical accelerators for Electron native menus [#17892](https://github.com/eclipse-theia/theia/pull/17892)
+
 ## 1.74.0 - 7/31/2026
 
 - [ai] support for server-side compaction [#17746](https://github.com/eclipse-theia/theia/pull/17746)

@@ -368,7 +368,7 @@ export class DynamicMenuWidget extends MenuWidget {
                         iconClass: node.icon,
                     });
 
-                    const accelerator = (AcceleratorSource.is(node) ? node.getAccelerator(this.options.context) : []);
+                    const accelerator = (AcceleratorSource.is(node) ? node.getAccelerator(this.options.context, 'logical') : []);
                     if (accelerator.length > 0) {
                         phCommandRegistry.addKeyBinding({
                             command: id,

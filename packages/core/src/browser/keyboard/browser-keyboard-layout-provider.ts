@@ -20,11 +20,11 @@ import { Emitter, Event } from '../../common/event';
 import { ILogger } from '../../common/logger';
 import { Deferred } from '../../common/promise-util';
 import {
-    NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator, KeyValidationInput
+    NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator, KeyValidationInput, KeyboardLayoutSource
 } from '../../common/keyboard/keyboard-layout-provider';
 import { LocalStorageService } from '../storage-service';
 
-export type KeyboardLayoutSource = 'navigator.keyboard' | 'user-choice' | 'pressed-keys';
+export type { KeyboardLayoutSource } from '../../common/keyboard/keyboard-layout-provider';
 
 @injectable()
 export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator {
@@ -54,7 +54,7 @@ export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, Ke
         return this.currentLayout;
     }
 
-    get currentLayoutSource(): KeyboardLayoutSource {
+    get layoutSource(): KeyboardLayoutSource {
         return this.source;
     }
 
@@ -289,11 +289,11 @@ export class KeyboardTester {
 
     updateScores(input: KeyValidationInput): boolean {
         let property: 'value' | 'withShift' | 'withAltGr' | 'withShiftAltGr';
-        if (input.shiftKey && input.altKey) {
+        if (input.shiftKey && input.altGraph) {
             property = 'withShiftAltGr';
         } else if (input.shiftKey) {
             property = 'withShift';
-        } else if (input.altKey) {
+        } else if (input.altGraph) {
             property = 'withAltGr';
         } else {
             property = 'value';

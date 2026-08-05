@@ -101,6 +101,28 @@ For example, in an `electron-builder` configuration, ensure the `lib/backend/she
 
 The `lib/**/*` glob already covers `lib/backend/shell-integrations/`. If you use a more restrictive `files` pattern, make sure `lib/backend/shell-integrations/**/*` is explicitly included, as `ShellIntegrationInjector` resolves these scripts relative to `__dirname` (i.e. `lib/backend/`).
 
+### v1.75.0
+
+#### Physical printable-key bindings
+
+##### User keymaps
+
+Printable keybinding tokens now identify logical characters on the active keyboard layout. Existing `keymaps.json` files and keybinding strings remain parseable, so no file-format migration is required. Shift in an authored logical-character stroke is absorbed during layout resolution rather than retained as a command modifier.
+
+Bindings that intentionally target a physical position must use explicit scan-code syntax. For example, replace a position-dependent `ctrl+[` binding with `ctrl+[BracketLeft]`. Reserved logical characters can be authored with `[char:0x...]`, such as `ctrl+[char:0x2B]` for logical `+`.
+
+Available printable bindings now follow their logical characters. For example, German `ctrl+[` resolves to physical `Ctrl+AltGr+8` instead of the US `BracketLeft` position. On Windows, browsers may not expose the additional Ctrl in `Ctrl+AltGr+8`, so this logical binding may not be triggerable by hand; use `ctrl+[BracketLeft]`, set `"keyboard.dispatch": "keyCode"`, or choose a binding that does not require AltGr. Logical characters unavailable on the active layout remain loaded and visible but inactive; Theia no longer silently maps them to a US keyboard position.
+
+Set `"keyboard.dispatch": "keyCode"` to restore positional key-code dispatch globally if the logical behavior changes existing shortcuts unexpectedly. See [`packages/keymaps/README.md`](../packages/keymaps/README.md) for the complete logical-character, scan-code, character-token, inactive-binding, and Windows AltGr recorder grammar.
+
+##### Adopter APIs
+
+- Replace consumers of `KeyboardLayout.key2KeyCode` with `candidatesByCharacter` or `candidatesByFoldedCharacter`. Each `KeyboardLayoutCandidate` provides the physical `key`, logical `character`, and required `layoutModifiers`. Subclasses of `KeyboardLayoutService` that overrode the removed protected `transformKeyCode()` or `getCharacterIndex()` methods must move their logic to `resolveKeyCode()` and candidate lookup.
+- Pass the normalized keyboard input as the second argument to `KeyboardLayoutService.validateKeyCode`.
+- Review `KeyCode` consumers: `equals()` requires the same physical key and `dispatchString()`, character-only values are not modifier-only, and `toString()` preserves authored spelling. Use `dispatchString()` when a runtime match identity is required.
+- Update `KeybindingRegistry.matchKeybinding()` consumers from `match.binding` to `match.runtime.binding`; the resolved sequence is available as `match.runtime.sequence`. Subclasses that override chord handling must replace the protected `keySequence` field with `keySequenceCandidates`. Protected keybinding-tree values are runtime records containing the original scoped binding and its resolved sequence, rather than `ScopedKeybinding[]`.
+- Pass an explicit `'logical'` or `'physical'` form to `AcceleratorSource.getAccelerator`. Browser UI uses logical labels, while Electron native menus require physical accelerators.
+
 ### v1.74.0
 
 #### Deprecation of @theia/ai-vercel-ai package

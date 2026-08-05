@@ -21,6 +21,31 @@ import { ThemeMode } from '../common/theme';
 
 export type MenuRole = ('undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll' | 'about' | 'services' | 'hide' | 'hideOthers' | 'unhide' | 'quit');
 
+export function isElectronAcceleratorRepresentable(accelerator: string | undefined): accelerator is string {
+    if (!accelerator || /altgr/i.test(accelerator) || /\s/.test(accelerator) || accelerator.split('+').some(token => !token)) {
+        return false;
+    }
+    for (let i = 0; i < accelerator.length; i++) {
+        if (accelerator.charCodeAt(i) > 127) {
+            return false;
+        }
+    }
+    return true;
+}
+
+export interface ElectronMenuAccelerator {
+    accelerator?: string;
+}
+
+export function electronMenuAcceleratorMetadata(acceleratorSequence: string[]): Pick<MenuDto, 'accelerator'> {
+    return { accelerator: acceleratorSequence.join(' ') || undefined };
+}
+
+/** Return an Electron accelerator only when the rendered single chord is representable. */
+export function electronMenuAccelerator(dto: Pick<MenuDto, 'accelerator'>): ElectronMenuAccelerator {
+    return isElectronAcceleratorRepresentable(dto.accelerator) ? { accelerator: dto.accelerator } : {};
+}
+
 export interface MenuDto {
     id?: string,
     label?: string,

@@ -19,7 +19,10 @@ import { isOSX } from '../common/os';
 import { Emitter, Event } from '../common/event';
 import { CommandRegistry, Command } from '../common/command';
 import { Disposable, DisposableCollection } from '../common/disposable';
-import { KeyCode, KeySequence, Key } from './keyboard/keys';
+import {
+    KeyCode, KeySequence, Key, NormalizedKeyboardInput, normalizeKeyboardInput,
+    layoutModifiersIncludeAltGraph, layoutModifiersIncludeShift
+} from './keyboard/keys';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { ContributionProvider } from '../common/contribution-provider';
 import { ILogger } from '../common/logger';
@@ -46,6 +49,9 @@ export namespace KeybindingScope {
 export type Keybinding = common.Keybinding;
 export const Keybinding = common.Keybinding;
 
+/** Selects whether an accelerator describes the authored character or its physical realization. */
+export type AcceleratorForm = 'logical' | 'physical';
+
 export interface ResolvedKeybinding extends common.Keybinding {
     /**
      * The KeyboardLayoutService may transform the `keybinding` depending on the
@@ -54,6 +60,8 @@ export interface ResolvedKeybinding extends common.Keybinding {
      * has not been called yet to resolve the keybinding.
      */
     resolved?: KeyCode[];
+    inactive?: boolean;
+    inactiveReason?: string;
 }
 
 export interface ScopedKeybinding extends common.Keybinding {
@@ -99,7 +107,9 @@ export namespace KeybindingContexts {
 export class KeybindingRegistry {
 
     static readonly PASSTHROUGH_PSEUDO_COMMAND = 'passthrough';
-    protected keySequence: KeySequence = [];
+    protected keySequenceCandidates: KeySequence[] = [[]];
+    /** Whether keyboard shortcut troubleshooting logs are enabled. */
+    protected keyboardShortcutsTroubleshooting = false;
 
     protected readonly contexts: { [id: string]: KeybindingContext } = {};
     protected readonly keymaps: ScopedKeybinding[][] = [...Array(KeybindingScope.length)].map(() => []);
@@ -108,7 +118,9 @@ export class KeybindingRegistry {
      * Ternary search tree for efficient keybinding lookup.
      * Maps resolved key sequences to arrays of bindings sorted by scope (highest first).
      */
-    protected keybindingTree: TernarySearchTree<KeySequence, ScopedKeybinding[]> | undefined;
+    protected keybindingTree: TernarySearchTree<KeySequence, KeybindingRegistry.RuntimeKeybinding[]> | undefined;
+    protected readonly handledKeyboardEvents = new WeakSet<KeyboardEvent>();
+    protected readonly warnedAmbiguousSequences = new Set<string>();
 
     @inject(CorePreferences)
     protected readonly corePreferences: CorePreferences;
@@ -136,10 +148,11 @@ export class KeybindingRegistry {
 
     async onStart(): Promise<void> {
         await this.keyboardLayoutService.initialize();
-        this.keyboardLayoutService.onKeyboardLayoutChanged(newLayout => {
-            this.clearResolvedKeybindings();
-            this.invalidateKeybindingTree();
-            this.keybindingsChanged.fire(undefined);
+        this.keyboardLayoutService.onKeyboardLayoutChanged(() => this.invalidateResolvedKeybindings());
+        this.corePreferences.onPreferenceChanged(change => {
+            if (change.preferenceName === 'keyboard.dispatch') {
+                this.invalidateResolvedKeybindings();
+            }
         });
         this.registerContext(KeybindingContexts.NOOP_CONTEXT);
         this.registerContext(KeybindingContexts.DEFAULT_CONTEXT);
@@ -283,14 +296,39 @@ export class KeybindingRegistry {
     resolveKeybinding(binding: ResolvedKeybinding): KeyCode[] {
         if (!binding.resolved) {
             const sequence = KeySequence.parse(binding.keybinding);
-            binding.resolved = sequence.map(code => this.keyboardLayoutService.resolveKeyCode(code));
+            const resolved = this.corePreferences['keyboard.dispatch'] === 'keyCode'
+                ? sequence
+                : sequence.map(code => this.keyboardLayoutService.resolveKeyCode(code));
+            binding.inactive = resolved.some(code => !code.supportedByLayout);
+            binding.inactiveReason = binding.inactive
+                ? nls.localize('theia/core/keybinding/unavailableCharacter', 'The key is not available on the current keyboard layout.')
+                : undefined;
+            binding.resolved = resolved;
         }
         return binding.resolved;
     }
 
+    /** Return the localized explanation when a binding is inactive on the current layout. */
+    getKeybindingInactiveReason(binding: ResolvedKeybinding): string | undefined {
+        this.resolveKeybinding(binding);
+        return binding.inactiveReason;
+    }
+
+    /** Return whether a binding is inactive on the current keyboard layout. */
+    isKeybindingInactive(binding: ResolvedKeybinding): boolean {
+        this.resolveKeybinding(binding);
+        return !!binding.inactive;
+    }
+
+    /** Clear cached resolutions, invalidate the lookup tree, and notify listeners. */
+    protected invalidateResolvedKeybindings(): void {
+        this.clearResolvedKeybindings();
+        this.invalidateKeybindingTree();
+        this.keybindingsChanged.fire(undefined);
+    }
+
     /**
-     * Clear all `resolved` properties of registered keybindings so the KeyboardLayoutService is called
-     * again to resolve them. This is necessary when the user's keyboard layout has changed.
+     * Clear all `resolved` properties of registered keybindings so the keyboard layout service resolves them again.
      */
     protected clearResolvedKeybindings(): void {
         for (let i = KeybindingScope.DEFAULT; i < KeybindingScope.END; i++) {
@@ -298,6 +336,8 @@ export class KeybindingRegistry {
             for (let j = 0; j < bindings.length; j++) {
                 const binding = bindings[j] as ResolvedKeybinding;
                 binding.resolved = undefined;
+                binding.inactive = undefined;
+                binding.inactiveReason = undefined;
             }
         }
     }
@@ -307,13 +347,14 @@ export class KeybindingRegistry {
      */
     protected invalidateKeybindingTree(): void {
         this.keybindingTree = undefined;
+        this.warnedAmbiguousSequences.clear();
     }
 
     /**
      * Gets or builds the keybinding tree for efficient lookup.
      * The tree maps resolved key sequences to arrays of bindings sorted by scope (highest first).
      */
-    protected getKeybindingTree(): TernarySearchTree<KeySequence, ScopedKeybinding[]> {
+    protected getKeybindingTree(): TernarySearchTree<KeySequence, KeybindingRegistry.RuntimeKeybinding[]> {
         if (!this.keybindingTree) {
             this.keybindingTree = this.buildKeybindingTree();
         }
@@ -326,8 +367,8 @@ export class KeybindingRegistry {
      * Bindings are stored in the order they should be checked: highest scope first,
      * and within the same scope, in the order they appear in keymaps (later-registered first).
      */
-    protected buildKeybindingTree(): TernarySearchTree<KeySequence, ScopedKeybinding[]> {
-        const tree = TernarySearchTree.forKeySequences<ScopedKeybinding[]>();
+    protected buildKeybindingTree(): TernarySearchTree<KeySequence, KeybindingRegistry.RuntimeKeybinding[]> {
+        const tree = TernarySearchTree.forKeySequences<KeybindingRegistry.RuntimeKeybinding[]>();
 
         // Process scopes from highest to lowest priority (WORKSPACE > USER > DEFAULT)
         // Within each scope, maintain the keymaps order (later-registered bindings are at the front)
@@ -335,12 +376,15 @@ export class KeybindingRegistry {
             for (const binding of this.keymaps[scope]) {
                 try {
                     const resolved = this.resolveKeybinding(binding);
+                    if (this.isKeybindingInactive(binding)) {
+                        continue;
+                    }
+                    const runtime: KeybindingRegistry.RuntimeKeybinding = { binding, sequence: resolved };
                     const existing = tree.get(resolved);
                     if (existing) {
-                        // Append to maintain correct order: higher scopes first, then keymaps order within scope
-                        existing.push(binding);
+                        existing.push(runtime);
                     } else {
-                        tree.set(resolved, [binding]);
+                        tree.set(resolved, [runtime]);
                     }
                 } catch (error) {
                     // Skip bindings that can't be resolved
@@ -359,19 +403,60 @@ export class KeybindingRegistry {
      * @returns true if there is a colliding keybinding
      */
     containsKeybindingInScope(binding: common.Keybinding, scope = KeybindingScope.USER): boolean {
-        const bindingKeySequence = this.resolveKeybinding(binding);
-        const collisions = this.getKeySequenceCollisions(this.getUsableBindings(this.keymaps[scope]), bindingKeySequence)
-            .filter(b => b.context === binding.context && !b.when && !binding.when);
-        if (collisions.full.length > 0) {
-            return true;
+        const diagnostics = this.getKeybindingCollisionDiagnostics(binding, scope);
+        return [diagnostics.authored, diagnostics.layoutDerived].some(result =>
+            result.full.length > 0 || result.partial.length > 0 || result.shadow.length > 0);
+    }
+
+    /** Return authored, layout-resolved, and shadowing collision diagnostics for a binding. */
+    getKeybindingCollisionDiagnostics(binding: common.Keybinding, scope = KeybindingScope.USER): KeybindingRegistry.CollisionDiagnostics {
+        const diagnostics: KeybindingRegistry.CollisionDiagnostics = {
+            authored: new KeybindingRegistry.KeybindingsResult(),
+            layoutDerived: new KeybindingRegistry.KeybindingsResult(),
+            shadowedBy: []
+        };
+        const sequence = this.resolveKeybinding(binding);
+        if (this.isKeybindingInactive(binding)) {
+            return diagnostics;
         }
-        if (collisions.partial.length > 0) {
-            return true;
+        const candidates = this.getUsableBindings(this.keymaps[scope]).filter(candidate => candidate !== binding
+            && candidate.context === binding.context && !candidate.when && !binding.when);
+        for (const candidate of candidates) {
+            const resolved = this.resolveKeybinding(candidate);
+            const target = resolved.some(code => code.layoutModifiers !== 'none')
+                ? diagnostics.layoutDerived
+                : diagnostics.authored;
+            target.merge(this.getKeySequenceCollisions([candidate], sequence));
         }
-        if (collisions.shadow.length > 0) {
-            return true;
+        diagnostics.shadowedBy.push(...this.getShadowingKeybindings(binding, scope));
+        return diagnostics;
+    }
+
+    /** Return bindings whose command-modifier interpretation takes the keystroke instead of the supplied binding. */
+    getShadowingKeybindings(binding: common.Keybinding, scope?: KeybindingScope): ScopedKeybinding[] {
+        const sequence = this.resolveKeybinding(binding);
+        if (!sequence.some(code => code.layoutModifiers !== 'none')) {
+            return [];
         }
-        return false;
+        const commandSequence = sequence.map(code => code.layoutModifiers !== 'none' ? new KeyCode({
+            key: code.key,
+            ctrl: code.ctrl,
+            shift: code.shift || layoutModifiersIncludeShift(code.layoutModifiers),
+            alt: code.alt || layoutModifiersIncludeAltGraph(code.layoutModifiers),
+            meta: code.meta,
+            character: code.key?.easyString,
+            interpretation: 'commandModifiers'
+        }) : code);
+        const result: ScopedKeybinding[] = [];
+        const matchesContext = (candidate: ScopedKeybinding) => candidate !== binding
+            && candidate.context === binding.context && candidate.when === binding.when;
+        const firstScope = scope ?? KeybindingScope.END - 1;
+        const lastScope = scope ?? KeybindingScope.DEFAULT;
+        for (let currentScope = firstScope; currentScope >= lastScope; currentScope--) {
+            const collisions = this.getKeySequenceCollisions(this.getUsableBindings(this.keymaps[currentScope]), commandSequence);
+            result.push(...collisions.full.filter(matchesContext));
+        }
+        return result;
     }
 
     /**
@@ -379,10 +464,12 @@ export class KeybindingRegistry {
      * @returns an array of strings representing all elements of the {@link KeySequence} defined by the {@link common.Keybinding}
      * @param keybinding the keybinding
      * @param separator the separator to be used to stringify {@link KeyCode}s that are part of the {@link KeySequence}
+     * @param form whether to render logical characters or their physical realization
      */
-    acceleratorFor(keybinding: common.Keybinding, separator: string = ' ', asciiOnly = false): string[] {
+    acceleratorFor(keybinding: common.Keybinding, separator: string = ' ', asciiOnly = false,
+        form: AcceleratorForm = 'logical'): string[] {
         const bindingKeySequence = this.resolveKeybinding(keybinding);
-        return this.acceleratorForSequence(bindingKeySequence, separator, asciiOnly);
+        return this.acceleratorForSequence(bindingKeySequence, separator, asciiOnly, form);
     }
 
     /**
@@ -390,9 +477,11 @@ export class KeybindingRegistry {
      * @returns an array of strings representing all elements of the {@link KeySequence}
      * @param keySequence the keysequence
      * @param separator the separator to be used to stringify {@link KeyCode}s that are part of the {@link KeySequence}
+     * @param form whether to render logical characters or their physical realization
      */
-    acceleratorForSequence(keySequence: KeySequence, separator: string = ' ', asciiOnly = false): string[] {
-        return keySequence.map(keyCode => this.acceleratorForKeyCode(keyCode, separator, asciiOnly));
+    acceleratorForSequence(keySequence: KeySequence, separator: string = ' ', asciiOnly = false,
+        form: AcceleratorForm = 'logical'): string[] {
+        return keySequence.map(keyCode => this.acceleratorForKeyCode(keyCode, separator, asciiOnly, form));
     }
 
     /**
@@ -403,13 +492,33 @@ export class KeybindingRegistry {
      * Ignored when rendering macOS symbols (i.e. on macOS with `asciiOnly=false`), as the convention is
      * to juxtapose modifier symbols without a separator (e.g. `⌃⌘V`).
      * @param asciiOnly if `true`, no special characters will be substituted into the string returned. Ensures correct keyboard shortcuts in Electron menus.
+     * @param form whether to render the logical character or its physical realization
      */
-    acceleratorForKeyCode(keyCode: KeyCode, separator: string = ' ', asciiOnly = false): string {
+    acceleratorForKeyCode(keyCode: KeyCode, separator: string = ' ', asciiOnly = false,
+        form: AcceleratorForm = 'logical'): string {
         const useSymbols = isOSX && !asciiOnly;
-        return this.componentsForKeyCode(keyCode, asciiOnly).join(useSymbols ? '' : separator);
+        return this.componentsForKeyCode(keyCode, asciiOnly, form).join(useSymbols ? '' : separator);
     }
 
-    componentsForKeyCode(keyCode: KeyCode, asciiOnly = false): string[] {
+    componentsForKeyCode(keyCode: KeyCode, asciiOnly = false, form: AcceleratorForm = 'logical'): string[] {
+        if (form === 'physical') {
+            const physical = new KeyCode({
+                key: keyCode.key,
+                meta: keyCode.meta,
+                ctrl: keyCode.ctrl,
+                alt: keyCode.alt,
+                shift: keyCode.shift || layoutModifiersIncludeShift(keyCode.layoutModifiers)
+            });
+            const result = this.componentsForKeyCode(physical, asciiOnly);
+            if (layoutModifiersIncludeAltGraph(keyCode.layoutModifiers)) {
+                const layoutModifier = isOSX ? (asciiOnly ? 'Option' : '⌥') : 'AltGr';
+                const keyIndex = result.length - (physical.key ? 1 : 0);
+                if (!(isOSX && keyCode.alt)) {
+                    result.splice(keyIndex, 0, layoutModifier);
+                }
+            }
+            return result;
+        }
         const keyCodeResult = [];
         const useSymbols = isOSX && !asciiOnly;
         if (keyCode.meta && isOSX) {
@@ -421,13 +530,21 @@ export class KeybindingRegistry {
         if (keyCode.alt) {
             keyCodeResult.push(useSymbols ? '⌥' : 'Alt');
         }
-        if (keyCode.shift) {
+        const logicalCaseShift = layoutModifiersIncludeShift(keyCode.layoutModifiers)
+            && !!keyCode.character && /^[A-Z]$/.test(keyCode.character);
+        if (keyCode.shift || logicalCaseShift) {
             keyCodeResult.push(useSymbols ? '⇧' : 'Shift');
         }
-        if (keyCode.key) {
+        if (keyCode.character) {
+            keyCodeResult.push(this.acceleratorForCharacter(keyCode.character));
+        } else if (keyCode.key) {
             keyCodeResult.push(this.acceleratorForKey(keyCode.key, asciiOnly));
         }
         return keyCodeResult;
+    }
+
+    protected acceleratorForCharacter(character: string): string {
+        return /^[a-z]$/i.test(character) ? character.toUpperCase() : character;
     }
 
     /**
@@ -472,6 +589,9 @@ export class KeybindingRegistry {
         for (const binding of bindings) {
             try {
                 const bindingKeySequence = this.resolveKeybinding(binding);
+                if (this.isKeybindingInactive(binding)) {
+                    continue;
+                }
                 const compareResult = KeySequence.compare(candidate, bindingKeySequence);
                 switch (compareResult) {
                     case KeySequence.CompareResult.FULL: {
@@ -579,18 +699,57 @@ export class KeybindingRegistry {
 
     dispatchCommand(id: string, target?: EventTarget): void {
         const keybindings = this.getKeybindingsForCommand(id);
-        if (keybindings.length) {
+        if (keybindings.length && !this.isKeybindingInactive(keybindings[0])) {
             for (const keyCode of this.resolveKeybinding(keybindings[0])) {
-                this.dispatchKeyDown(keyCode, target);
+                this.dispatchNormalizedKeyDown({
+                    key: keyCode.character ?? keyCode.key?.code,
+                    code: keyCode.key?.code,
+                    keyCode: keyCode.key?.keyCode,
+                    ctrlKey: keyCode.ctrl,
+                    shiftKey: keyCode.shift || layoutModifiersIncludeShift(keyCode.layoutModifiers),
+                    altKey: keyCode.alt,
+                    metaKey: keyCode.meta,
+                    altGraph: layoutModifiersIncludeAltGraph(keyCode.layoutModifiers)
+                }, target, [keyCode]);
             }
         }
     }
 
-    dispatchKeyDown(input: KeyboardEventInit | KeyCode | string, target: EventTarget = document.activeElement || window): void {
+    /** Dispatch a DOM keydown, optionally marking it as already handled by direct normalized dispatch. */
+    dispatchKeyDown(input: KeyboardEventInit | KeyCode | string, target: EventTarget = document.activeElement || window, alreadyHandled = false): void {
         const eventInit = this.asKeyboardEventInit(input);
-        const emulatedKeyboardEvent = new KeyboardEvent('keydown', eventInit);
+        const emulatedKeyboardEvent = new KeyboardEvent('keydown', { ...eventInit, cancelable: true });
+        if (alreadyHandled) {
+            this.handledKeyboardEvents.add(emulatedKeyboardEvent);
+        }
         target.dispatchEvent(emulatedKeyboardEvent);
     }
+
+    /**
+     * Runs normalized keyboard data directly through keybinding matching without dispatching a DOM event.
+     */
+    dispatchNormalizedKeyDown(input: NormalizedKeyboardInput, target?: EventTarget, keyCodes?: KeyCode[]): void {
+        const normalizedInput = normalizeKeyboardInput(input);
+        const eventTarget = target ?? (typeof document === 'undefined' ? new EventTarget() : document.activeElement || window);
+        const event = new KeyboardEvent('keydown', this.asKeyboardEventInit(normalizedInput));
+        Object.defineProperty(event, 'target', { value: eventTarget });
+        this.runNormalizedKeyboardInput(normalizedInput, event, keyCodes);
+    }
+
+    isKeyboardShortcutsTroubleshooting(): boolean {
+        return this.keyboardShortcutsTroubleshooting;
+    }
+
+    /**
+     * Mirrors VS Code's `workbench.action.toggleKeybindingsLog` command.
+     * It logs how each key press was interpreted so keyboard-layout problems can be diagnosed on other machines.
+     */
+    toggleKeyboardShortcutsTroubleshooting(): boolean {
+        this.keyboardShortcutsTroubleshooting = !this.keyboardShortcutsTroubleshooting;
+        this.logger.info(`Keyboard shortcuts troubleshooting is now ${this.keyboardShortcutsTroubleshooting ? 'active' : 'inactive'}.`);
+        return this.keyboardShortcutsTroubleshooting;
+    }
+
     protected asKeyboardEventInit(input: KeyboardEventInit | KeyCode | string): KeyboardEventInit & Partial<{ keyCode: number }> {
         if (typeof input === 'string') {
             return this.asKeyboardEventInit(KeyCode.createKeyCode(input));
@@ -625,17 +784,7 @@ export class KeybindingRegistry {
         };
         win.document.addEventListener('compositionend', compositionEnd);
 
-        const keydown = (event: KeyboardEvent) => {
-            // Skip IME-related keydowns. `inComposition` covers the textarea input path;
-            // `isComposing` and `keyCode === 229` cover the native EditContext path where
-            // composition events don't reach the DOM. The keyCode check catches keys that
-            // finalize a composition (e.g. arrow keys) where isComposing is already false.
-            // eslint-disable-next-line deprecation/deprecation
-            if (inComposition || event.isComposing || event.keyCode === 229) {
-                return;
-            }
-            this.run(event);
-        };
+        const keydown = (event: KeyboardEvent) => this.run(event, inComposition);
         win.document.addEventListener('keydown', keydown, true);
 
         return Disposable.create(() => {
@@ -647,40 +796,183 @@ export class KeybindingRegistry {
     /**
      * Run the command matching to the given keyboard event.
      */
-    run(event: KeyboardEvent): void {
-        if (event.defaultPrevented) {
+    run(event: KeyboardEvent, inComposition = false): void {
+        const input = normalizeKeyboardInput(event);
+        // The textarea input path reports composition through separate DOM events.
+        if (inComposition) {
+            this.logKeyboardTroubleshooting(input, undefined, undefined, 'composition');
+            return;
+        }
+        this.runNormalizedKeyboardInput(input, event);
+    }
+
+    /** Return all runtime interpretations of normalized keyboard input. */
+    getKeyCodeInterpretations(input: NormalizedKeyboardInput): KeyCode[] {
+        return this.keyboardLayoutService.getKeyCodeInterpretations(normalizeKeyboardInput(input), this.corePreferences['keyboard.dispatch']);
+    }
+
+    /** Return the authored representation that should be persisted for normalized keyboard input. */
+    authoredKeyCodeForKeyboardInput(input: NormalizedKeyboardInput): KeyCode | undefined {
+        const interpretations = this.getKeyCodeInterpretations(input);
+        const keyCode = interpretations.find(candidate => candidate.interpretation === 'layoutModifiers') ?? interpretations[0];
+        if (!keyCode || keyCode.isModifierOnly() || keyCode.interpretation !== 'layoutModifiers' || !keyCode.character) {
+            return keyCode;
+        }
+        try {
+            const parsedCharacter = KeyCode.parse(keyCode.character);
+            const logical = new KeyCode({
+                key: parsedCharacter.key,
+                ctrl: keyCode.ctrl,
+                shift: keyCode.shift,
+                alt: keyCode.alt,
+                meta: keyCode.meta,
+                character: keyCode.character,
+                authoredToken: parsedCharacter.authoredToken
+            });
+            const persisted = KeyCode.parse(logical.toString());
+            if (this.keyboardLayoutService.resolveKeyCode(persisted).dispatchString() === keyCode.dispatchString()) {
+                return logical;
+            }
+            return new KeyCode({
+                key: logical.key,
+                ctrl: logical.ctrl,
+                shift: logical.shift || layoutModifiersIncludeShift(keyCode.layoutModifiers),
+                alt: logical.alt,
+                meta: logical.meta,
+                character: logical.character
+            });
+        } catch {
+            return new KeyCode({
+                key: keyCode.key,
+                ctrl: keyCode.ctrl,
+                shift: keyCode.shift || layoutModifiersIncludeShift(keyCode.layoutModifiers),
+                alt: keyCode.alt,
+                meta: keyCode.meta,
+                character: keyCode.key?.easyString
+            });
+        }
+    }
+
+    protected runNormalizedKeyboardInput(input: NormalizedKeyboardInput, event: KeyboardEvent, keyCodesOverride?: KeyCode[]): void {
+        // Skip IME-related keydowns. `isComposing` and `keyCode === 229` cover the native EditContext path where
+        // composition events do not reach the DOM. The keyCode check catches keys that finalize a composition,
+        // such as arrow keys, when isComposing is already false.
+        if (input.isComposing || input.keyCode === 229) {
+            this.logKeyboardTroubleshooting(input, undefined, undefined, 'composition');
+            return;
+        }
+        if (this.handledKeyboardEvents.has(event) || event.defaultPrevented) {
+            this.logKeyboardTroubleshooting(input, undefined, undefined, this.handledKeyboardEvents.has(event) ? 'alreadyHandled' : 'defaultPrevented');
             return;
         }
 
-        const eventDispatch = this.corePreferences['keyboard.dispatch'];
-        const keyCode = KeyCode.createKeyCode(event, eventDispatch);
+        const keyCodes = keyCodesOverride ?? this.getKeyCodeInterpretations(input);
+        const keyCode = keyCodes[0];
         /* Keycode is only a modifier, next keycode will be modifier + key.
            Ignore this one.  */
         if (keyCode.isModifierOnly()) {
+            this.logKeyboardTroubleshooting(input, keyCode, undefined, 'modifierOnly');
             return;
         }
 
-        this.keyboardLayoutService.validateKeyCode(keyCode);
-        this.keySequence.push(keyCode);
-        const match = this.matchKeybinding(this.keySequence, event);
+        this.keyboardLayoutService.validateKeyCode(keyCode, input);
+        const candidates = this.keySequenceCandidates.flatMap(sequence => keyCodes.flatMap(keyCodeCandidate => {
+            const candidateSequence = [...sequence, keyCodeCandidate];
+            const candidateMatch = this.matchKeybinding(candidateSequence, event);
+            return candidateMatch ? [{ sequence: candidateSequence, keyCode: keyCodeCandidate, match: candidateMatch }] : [];
+        }));
+        const prioritized = candidates.map(candidate => ({ candidate, priority: this.matchPriority(candidate) }))
+            .sort((left, right) => right.priority - left.priority);
+        const selectedEntry = prioritized[0];
+        const selected = selectedEntry?.candidate;
+        const equallyPreferred = prioritized.filter(entry => entry.priority === selectedEntry?.priority).map(entry => entry.candidate);
+        const ambiguous = selected?.match.kind === 'full'
+            && equallyPreferred.some(candidate => candidate.match.kind === 'full'
+                && candidate.match.runtime.binding !== selected.match.runtime.binding);
+        const match = ambiguous ? undefined : selected?.match;
+        if (ambiguous) {
+            const sequence = selected.sequence.map(code => code.dispatchString()).join(' ');
+            if (!this.warnedAmbiguousSequences.has(sequence)) {
+                this.warnedAmbiguousSequences.add(sequence);
+                this.logger.warn(`Ambiguous keybinding sequence ignored: ${sequence}`);
+            }
+        }
+        this.logKeyboardTroubleshooting(input, selected?.keyCode ?? keyCode, match, ambiguous ? 'ambiguous' : undefined);
 
-        if (match && match.kind === 'partial') {
-            /* Accumulate the keysequence */
+        if (match?.kind === 'partial') {
+            this.keySequenceCandidates = candidates.filter(candidate => candidate.match.kind === 'partial').map(candidate => candidate.sequence);
             event.preventDefault();
             event.stopPropagation();
 
             this.statusBar.setElement('keybinding-status', {
-                text: nls.localize('theia/core/keybindingStatus', '{0} was pressed, waiting for more keys', `(${this.acceleratorForSequence(this.keySequence, '+')})`),
+                text: nls.localize('theia/core/keybindingStatus', '{0} was pressed, waiting for more keys', `(${this.acceleratorForSequence(selected.sequence, '+')})`),
                 alignment: StatusBarAlignment.LEFT,
                 priority: 2
             });
         } else {
-            if (match && match.kind === 'full') {
-                this.executeKeyBinding(match.binding, event);
+            if (match?.kind === 'full') {
+                this.executeKeyBinding(match.runtime.binding, event);
             }
-            this.keySequence = [];
+            this.keySequenceCandidates = [[]];
             this.statusBar.removeElement('keybinding-status');
         }
+    }
+
+    /** Higher values win; explicit command modifiers take precedence over layout-modifier interpretations. */
+    protected matchPriority(candidate: KeybindingRegistry.MatchedCandidate): number {
+        const usesLayoutModifiers = candidate.keyCode.interpretation === 'layoutModifiers';
+        return (usesLayoutModifiers ? 0 : 2) + (candidate.match.kind === 'full' ? 1 : 0);
+    }
+
+    protected logKeyboardTroubleshooting(
+        input: NormalizedKeyboardInput,
+        keyCode?: KeyCode,
+        match?: KeybindingRegistry.Match,
+        skipped?: string
+    ): void {
+        if (!this.keyboardShortcutsTroubleshooting) {
+            return;
+        }
+        this.logger.info('Keyboard shortcut troubleshooting', {
+            input: {
+                key: input.key,
+                code: input.code,
+                keyCode: input.keyCode,
+                ctrlKey: input.ctrlKey,
+                shiftKey: input.shiftKey,
+                altKey: input.altKey,
+                metaKey: input.metaKey,
+                altGraph: input.altGraph,
+                controlModifier: input.getModifierState?.('Control'),
+                altModifier: input.getModifierState?.('Alt'),
+                repeat: input.repeat,
+                isComposing: input.isComposing,
+                location: input.location,
+                timeStamp: input.timeStamp
+            },
+            normalized: keyCode && {
+                key: keyCode.key?.code,
+                character: keyCode.character,
+                ctrl: keyCode.ctrl,
+                shift: keyCode.shift,
+                alt: keyCode.alt,
+                meta: keyCode.meta,
+                layoutModifiers: keyCode.layoutModifiers,
+                interpretation: keyCode.interpretation,
+                dispatch: keyCode.dispatchString()
+            },
+            layout: {
+                info: this.keyboardLayoutService.layoutInfo,
+                source: this.keyboardLayoutService.layoutSource
+            },
+            match: match && {
+                kind: match.kind,
+                command: match.runtime.binding.command,
+                keybinding: match.runtime.binding.keybinding,
+                interpretations: match.runtime.sequence.map(code => code.interpretation)
+            },
+            skipped
+        });
     }
 
     /**
@@ -693,7 +985,7 @@ export class KeybindingRegistry {
      * When multiple bindings match, bindings that use context keys local to the focused
      * element are given priority over bindings that only use global context keys.
      */
-    matchKeybinding(keySequence: KeySequence, event?: KeyboardEvent): KeybindingRegistry.Match {
+    matchKeybinding(keySequence: KeySequence, event?: KeyboardEvent): KeybindingRegistry.Match | undefined {
         let disabled: Set<string> | undefined;
         const isEnabled = (binding: ScopedKeybinding) => {
             const { command, context, when, keybinding } = binding;
@@ -713,36 +1005,32 @@ export class KeybindingRegistry {
         // Check for exact (FULL) matches first
         const fullMatches = tree.get(keySequence);
         if (fullMatches) {
-            // Collect all enabled bindings
-            const enabledBindings = fullMatches.filter(isEnabled);
+            const enabledForms = fullMatches.filter(runtimeForm => isEnabled(runtimeForm.binding));
 
-            if (enabledBindings.length > 0) {
-                // If we have multiple enabled bindings, prioritize those using local context keys
-                const selectedBinding = this.selectBindingByLocalContext(enabledBindings, event);
-                return { kind: 'full', binding: selectedBinding };
+            if (enabledForms.length > 0) {
+                const selectedBinding = this.selectBindingByLocalContext(enabledForms.map(candidate => candidate.binding), event);
+                const runtimeForm = enabledForms.find(candidate => candidate.binding === selectedBinding)!;
+                return { kind: 'full', runtime: runtimeForm };
             }
         }
 
         // Check for PARTIAL matches (bindings that start with keySequence but are longer)
         const partialIterator = tree.findSuperstr(keySequence);
         if (partialIterator) {
-            // Collect all partial match bindings and sort by scope
-            const partialBindings: ScopedKeybinding[] = [];
+            const partialForms: KeybindingRegistry.RuntimeKeybinding[] = [];
             let result = partialIterator.next();
             while (!result.done) {
-                partialBindings.push(...result.value);
+                partialForms.push(...result.value);
                 result = partialIterator.next();
             }
-            // Sort by scope descending (highest scope first)
-            partialBindings.sort((a, b) => b.scope - a.scope);
+            partialForms.sort((a, b) => b.binding.scope - a.binding.scope);
 
-            // Collect all enabled bindings
-            const enabledBindings = partialBindings.filter(isEnabled);
+            const enabledForms = partialForms.filter(runtimeForm => isEnabled(runtimeForm.binding));
 
-            if (enabledBindings.length > 0) {
-                // If we have multiple enabled bindings, prioritize those using local context keys
-                const selectedBinding = this.selectBindingByLocalContext(enabledBindings, event);
-                return { kind: 'partial', binding: selectedBinding };
+            if (enabledForms.length > 0) {
+                const selectedBinding = this.selectBindingByLocalContext(enabledForms.map(candidate => candidate.binding), event);
+                const runtimeForm = enabledForms.find(candidate => candidate.binding === selectedBinding)!;
+                return { kind: 'partial', runtime: runtimeForm };
             }
         }
 
@@ -867,10 +1155,27 @@ export class KeybindingRegistry {
 }
 
 export namespace KeybindingRegistry {
-    export type Match = {
+    /** A binding paired with the key sequence resolved for runtime matching. */
+    export interface RuntimeKeybinding {
+        binding: ScopedKeybinding;
+        sequence: KeySequence;
+    }
+    export interface Match {
         kind: 'full' | 'partial'
-        binding: ScopedKeybinding
-    } | undefined;
+        runtime: RuntimeKeybinding
+    }
+    /** A runtime interpretation and its match while selecting a keyboard input candidate. */
+    export interface MatchedCandidate {
+        sequence: KeySequence;
+        keyCode: KeyCode;
+        match: Match;
+    }
+    /** Collisions grouped by authored and layout-resolved identity, plus bindings that shadow the supplied binding. */
+    export interface CollisionDiagnostics {
+        authored: KeybindingsResult;
+        layoutDerived: KeybindingsResult;
+        shadowedBy: ScopedKeybinding[];
+    }
     export class KeybindingsResult {
         full: ScopedKeybinding[] = [];
         partial: ScopedKeybinding[] = [];

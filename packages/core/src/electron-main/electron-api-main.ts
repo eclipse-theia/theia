@@ -57,6 +57,7 @@ import {
     CHANNEL_ABOUT_TO_CLOSE,
     CHANNEL_OPEN_WITH_SYSTEM_APP,
     CHANNEL_OPEN_URL,
+    electronMenuAccelerator,
     CHANNEL_SET_THEME,
     CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW,
     CHANNEL_UPDATE_RECENT_WORKSPACES
@@ -320,18 +321,6 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
         });
     }
 
-    private isASCI(accelerator: string | undefined): boolean {
-        if (typeof accelerator !== 'string') {
-            return false;
-        }
-        for (let i = 0; i < accelerator.length; i++) {
-            if (accelerator.charCodeAt(i) > 127) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     fromMenuDto(sender: WebContents, menuId: number, menuDto: InternalMenuDto[]): MenuItemConstructorOptions[] {
         return menuDto.map(dto => {
             const result: MenuItemConstructorOptions = {
@@ -342,7 +331,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
                 enabled: dto.enabled,
                 visible: dto.visible,
                 role: dto.role,
-                accelerator: this.isASCI(dto.accelerator) ? dto.accelerator : undefined
+                ...electronMenuAccelerator(dto)
             };
             if (dto.submenu) {
                 result.submenu = this.fromMenuDto(sender, menuId, dto.submenu);

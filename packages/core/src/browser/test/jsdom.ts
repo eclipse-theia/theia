@@ -58,6 +58,17 @@ export function enableJSDOM(): () => void {
         }
     });
     (dom.window.document as any)['queryCommandSupported'] = function (): void { };
+    dom.window.matchMedia = () => ({
+        matches: false,
+        media: '',
+        // eslint-disable-next-line no-null/no-null
+        onchange: null,
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+        dispatchEvent: () => false
+    });
 
     const disableJSDOM = (global as any)['_disableJSDOM'] = () => {
         let property: string | undefined;
