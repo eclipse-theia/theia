@@ -374,7 +374,9 @@ export class VSXExtensionsModel {
                 if (idAndVersion) {
                     this._versionedInstalled.delete(versionedId);
                     this.setExtension(idAndVersion.id, idAndVersion.version);
-                    refreshing.push(this.refresh(idAndVersion.id, idAndVersion.version));
+                    if (!this.deployed.has(versionedId)) {
+                        refreshing.push(this.refresh(idAndVersion.id, idAndVersion.version));
+                    }
                 }
             }
             for (const id of this._versionedInstalled) {
