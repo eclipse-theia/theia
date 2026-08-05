@@ -357,6 +357,7 @@ export class TreeImpl implements Tree {
                 if (this.validateNode(parent) !== parent) {
                     // the tree changed while children were being resolved (e.g. a new root was
                     // set or the node was removed): drop the stale refresh
+                    this.logger.debug(`Refresh of node '${parent.id}' dropped, it no longer belongs to the tree.`);
                     return undefined;
                 }
                 result = await this.setChildren(parent, children);

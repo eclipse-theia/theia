@@ -23,7 +23,7 @@ import { ExpandableTreeNode } from './tree-expansion';
 import { TreeLabelProvider } from './tree-label-provider';
 import { MockTreeModel } from './test/mock-tree-model';
 import { MockLogger } from '../../common/test/mock-logger';
-import { Disposable, ILogger } from '../../common';
+import { ILogger } from '../../common';
 import { Deferred, timeout } from '../../common/promise-util';
 
 @injectable()
@@ -94,10 +94,9 @@ class StallingTestTree extends TreeImpl {
         return gate;
     }
 
-    /** Make `resolveChildren` for `id` return `children()` instead of the current child nodes. */
-    overrideResolve(id: string, children: () => TreeNode[]): Disposable {
+    /** Make the *next* `resolveChildren` for `id` return `children()` instead of the current child nodes. */
+    overrideNextResolve(id: string, children: () => TreeNode[]): void {
         this.overrides.set(id, children);
-        return Disposable.create(() => this.overrides.delete(id));
     }
 
     protected override resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
@@ -107,7 +106,11 @@ class StallingTestTree extends TreeImpl {
             return gate.promise;
         }
         const override = this.overrides.get(parent.id);
-        return override ? Promise.resolve(override()) : super.resolveChildren(parent);
+        if (override) {
+            this.overrides.delete(parent.id);
+            return Promise.resolve(override());
+        }
+        return super.resolveChildren(parent);
     }
 
 }
@@ -203,9 +206,8 @@ describe('Tree Consistency', () => {
             // `resolveChildren` builds new nodes do
             const parent = model.getNode('1') as CompositeTreeNode;
             const replacement: CompositeTreeNode = { id: '1.2', name: '1.2', parent, children: [] };
-            const override = tree.overrideResolve('1', () => parent.children.map(child => child.id === '1.2' ? replacement : child));
+            tree.overrideNextResolve('1', () => parent.children.map(child => child.id === '1.2' ? replacement : child));
             await tree.refresh(parent);
-            override.dispose();
             assert.strictEqual(model.getNode('1.2'), replacement);
 
             gate.resolve(Array.from(stale.children));
