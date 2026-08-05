@@ -37,6 +37,15 @@ import {
     WRITE_FILE_REPLACEMENTS_SIMPLE_ID
 } from '../common/file-changeset-function-ids';
 
+/**
+ * Description of the `path` parameter shared by all file changeset tools, so that they advertise the
+ * same accepted forms as the read-only workspace tools.
+ */
+const FILE_PATH_PARAMETER_DESCRIPTION = 'Path to the target file. May be workspace-relative ' +
+    '(e.g., "my-project/src/index.ts"), an absolute path, or a `file://` URI. ' +
+    'Absolute / URI forms must point to a location the tools may access, such as a directory listed in the ' +
+    '`ai-features.workspaceFunctions.allowedExternalPaths` preference.';
+
 function createPathShortLabel(args: string, hasMore: boolean): { label: string; hasMore: boolean } | undefined {
     const path = extractJsonStringField(args, 'path');
     if (path) {
@@ -82,8 +91,7 @@ export class SuggestFileContent implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: 'The path to the file within the workspace ' +
-                            '(e.g., "my-project/src/index.ts", "backend/config/settings.json").'
+                        description: FILE_PATH_PARAMETER_DESCRIPTION
                     },
                     content: {
                         type: 'string',
@@ -100,7 +108,12 @@ export class SuggestFileContent implements ToolProvider {
                 }
                 const { path, content } = JSON.parse(args);
                 const chatSessionId = ctx.request.session.id;
-                const uri = await this.workspaceFunctionScope.resolveRelativePath(path);
+                let uri: URI;
+                try {
+                    uri = await this.workspaceFunctionScope.resolveAccessiblePath(path);
+                } catch (error) {
+                    return JSON.stringify({ error: error.message });
+                }
                 let type: ChangeSetElementArgs['type'] = 'modify';
                 if (content === '') {
                     type = 'delete';
@@ -158,8 +171,7 @@ export class WriteFileContent implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: 'The path to the file within the workspace ' +
-                            '(e.g., "my-project/src/index.ts", "backend/config/settings.json").'
+                        description: FILE_PATH_PARAMETER_DESCRIPTION
                     },
                     content: {
                         type: 'string',
@@ -176,7 +188,12 @@ export class WriteFileContent implements ToolProvider {
                 }
                 const { path, content } = JSON.parse(args);
                 const chatSessionId = ctx.request.session.id;
-                const uri = await this.workspaceFunctionScope.resolveRelativePath(path);
+                let uri: URI;
+                try {
+                    uri = await this.workspaceFunctionScope.resolveAccessiblePath(path);
+                } catch (error) {
+                    return JSON.stringify({ error: error.message });
+                }
                 let type = 'modify';
                 if (content === '') {
                     type = 'delete';
@@ -256,9 +273,7 @@ export class ReplaceContentInFileFunctionHelper {
             properties: {
                 path: {
                     type: 'string',
-                    description: 'The path to the file within the workspace ' +
-                        '(e.g., "my-project/src/index.ts", "backend/src/main.ts"). ' +
-                        'Must read the file with getFileContent first.'
+                    description: FILE_PATH_PARAMETER_DESCRIPTION + ' Must read the file with getFileContent first.'
                 },
                 replacements: {
                     type: 'array',
@@ -365,7 +380,7 @@ export class ReplaceContentInFileFunctionHelper {
         }
 
         const { path, replacements, reset } = JSON.parse(toolCallString) as { path: string, replacements: Replacement[], reset?: boolean };
-        const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
+        const fileUri = await this.workspaceFunctionScope.resolveAccessiblePath(path);
 
         let startingContent: string;
         if (reset || !ctx.request.session.changeSet) {
@@ -423,7 +438,7 @@ export class ReplaceContentInFileFunctionHelper {
                 return JSON.stringify({ error: 'Operation cancelled by user' });
             }
 
-            const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
+            const fileUri = await this.workspaceFunctionScope.resolveAccessiblePath(path);
             if (ctx.request.session.changeSet.removeElements(fileUri)) {
                 return `Cleared pending change(s) for file ${path}.`;
             } else {
@@ -441,7 +456,7 @@ export class ReplaceContentInFileFunctionHelper {
                 return JSON.stringify({ error: 'Operation cancelled by user' });
             }
 
-            const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
+            const fileUri = await this.workspaceFunctionScope.resolveAccessiblePath(path);
 
             if (!ctx.request.session.changeSet) {
                 const originalContent = (await this.fileService.read(fileUri)).value.toString();
@@ -584,8 +599,7 @@ export class ClearFileChanges implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: 'The path to the file within the workspace ' +
-                            '(e.g., "my-project/src/index.ts", "backend/src/main.ts").'
+                        description: FILE_PATH_PARAMETER_DESCRIPTION
                     }
                 },
                 required: ['path']
@@ -622,8 +636,7 @@ export class GetProposedFileState implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: 'The path to the file within the workspace ' +
-                            '(e.g., "my-project/src/index.ts", "backend/src/main.ts").'
+                        description: FILE_PATH_PARAMETER_DESCRIPTION
                     }
                 },
                 required: ['path']
