@@ -40,4 +40,3 @@ license-check-summary.txt*
 .playwright-mcp/*
 /.theia/chatSessions
 .tmp.cfg
-.agents/memory
