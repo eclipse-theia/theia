@@ -31,14 +31,11 @@ export class SkillPromptCoordinator implements FrontendApplicationContribution {
     protected registeredSkillCommands = new Set<string>();
 
     async onStart(): Promise<void> {
-        // Wait for skills to be loaded before registering commands
-        await this.skillService.ready;
-
-        // Register initial skills
-        this.updateSkillCommands();
-
-        // Listen for skill changes
         this.skillService.onSkillsChanged(() => {
+            this.updateSkillCommands();
+        });
+
+        this.skillService.ready.then(() => {
             this.updateSkillCommands();
         });
     }
