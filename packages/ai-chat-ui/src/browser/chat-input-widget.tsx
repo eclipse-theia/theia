@@ -49,6 +49,7 @@ import { ContextVariablePicker } from './context-variable-picker';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 import { IModelDeltaDecoration } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
+import { SuggestController } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggestController';
 import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-history';
 import { ContextFileValidationService, FileValidationResult, FileValidationState } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { PendingImageRegistry } from '@theia/ai-chat/lib/browser/pending-image-registry';
@@ -1400,6 +1401,15 @@ export class AIChatInputWidget extends ReactWidget {
             }
             this.scheduleUpdateReceivingAgent();
         }));
+
+        // Force the suggest widget above the input, otherwise Monaco measures the available
+        // space against the document body and opens it downward behind the bottom panel when
+        // the chat is in the main area. Assert this on every trigger because the inline
+        // completions controller resets the flag whenever there is no ghost text.
+        const suggestController = SuggestController.get(editor);
+        if (suggestController) {
+            this.toDispose.push(suggestController.model.onDidTrigger(() => suggestController.forceRenderingAbove()));
+        }
 
         if (editor.hasWidgetFocus()) {
             this.chatInputFocusKey.set(true);
