@@ -29,12 +29,66 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
+import { createRoot } from '@theia/core/shared/react-dom/client';
+import { flushSync } from '@theia/core/shared/react-dom';
 import { SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
-import { AiConfigurationCategoryId } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
+import { AiConfigurationCategoryId, AiConfigurationRenderContext } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
+import { PREFERENCE_NAME_ENABLE_AI } from '../../../common/ai-ide-preferences';
 import { GeneralConfigurationCategory } from './general-configuration-category';
 
 disableJSDOM();
+
+/** A preference id no category claims, so it renders through the General catch-all. */
+const UNCLAIMED_PREF = 'ai-features.codeCompletion.enabled';
+
+/**
+ * A category whose stub service is complete enough to render the whole page, so the tests can assert on
+ * the produced DOM rather than only on the render inputs.
+ */
+function createRenderableCategory(enabled: boolean): GeneralConfigurationCategory {
+    const category = new GeneralConfigurationCategory();
+    const values: Record<string, unknown> = { [PREFERENCE_NAME_ENABLE_AI]: enabled };
+    const service: Partial<AiSettingsRowService> = {
+        inspect: (preferenceId: string) => ({
+            value: values[preferenceId],
+            scopeValue: values[preferenceId],
+            defaultValue: undefined,
+            modified: false
+        }),
+        describe: (preferenceId: string) => ({ label: `label:${preferenceId}`, description: `description:${preferenceId}` }),
+        tags: (): string[] => [],
+        renderMarkdown: (markdown: string) => {
+            const element = document.createElement('span');
+            element.textContent = markdown;
+            return element;
+        },
+        controlFor: () => ({ type: 'boolean' }),
+        enumOptions: (): SelectOption[] => [],
+        aiFeaturePreferenceIds: (): string[] => [UNCLAIMED_PREF]
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (category as any).settingsRowService = service;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (category as any).categoryRegistry = { getCategories: () => [] };
+    return category;
+}
+
+/** Renders the category's page into a detached container; the caller disposes it. */
+function renderPage(category: GeneralConfigurationCategory): { container: HTMLElement; dispose: () => void } {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const ctx: AiConfigurationRenderContext = { scope: 'user', navigate: () => { }, update: () => { } };
+    flushSync(() => root.render(category.renderPage(ctx)));
+    return {
+        container,
+        dispose: () => {
+            flushSync(() => root.unmount());
+            container.remove();
+        }
+    };
+}
 
 /** A stub settings-row service that echoes the preference id as its label and declares no enums. */
 function createCategory(): GeneralConfigurationCategory {
@@ -54,7 +108,16 @@ function createCategory(): GeneralConfigurationCategory {
 
 describe('GeneralConfigurationCategory', () => {
 
-    before(() => disableJSDOM = enableJSDOM());
+    before(() => {
+        disableJSDOM = enableJSDOM();
+        // The config is stored on `window`, which the line above replaces, so the module-level `set` no
+        // longer applies. The hero reads `applicationName` from it while rendering.
+        try {
+            FrontendApplicationConfigProvider.get();
+        } catch {
+            FrontendApplicationConfigProvider.set({});
+        }
+    });
     after(() => disableJSDOM());
 
     it('declares the general single-page metadata', () => {
@@ -95,6 +158,68 @@ describe('GeneralConfigurationCategory', () => {
         expect(enableAi!.target).to.deep.equal({
             categoryId: AiConfigurationCategoryId.GENERAL,
             highlight: { rowId: 'ai-features.AiEnable.enableAI' }
+        });
+    });
+
+    describe('rendered page', () => {
+
+        it('anchors every row its search index deep-links to', () => {
+            // The two halves of a deep link are produced independently: `getSearchItems` names a `rowId`
+            // and the page has to emit a matching `data-ai-config-row-id`. Nothing else ties them together,
+            // so a row indexed but not anchored (as the hero toggle was) silently never scrolls or flashes.
+            const category = createRenderableCategory(true);
+            const { container, dispose } = renderPage(category);
+            try {
+                const anchored = new Set(Array.from(container.querySelectorAll('[data-ai-config-row-id]'))
+                    .map(element => element.getAttribute('data-ai-config-row-id')));
+                const deepLinked = category.getSearchItems()
+                    .map(item => item.target.highlight?.rowId)
+                    .filter((rowId): rowId is string => rowId !== undefined);
+                expect(deepLinked, 'the search index deep-links to no rows at all').to.not.be.empty;
+                const unanchored = deepLinked.filter(rowId => !anchored.has(rowId));
+                expect(unanchored, `search items deep-link to rows the page never anchors: ${unanchored.join(', ')}`).to.be.empty;
+            } finally {
+                dispose();
+            }
+        });
+
+        it('does not print the raw preference id next to the hero title', () => {
+            const category = createRenderableCategory(true);
+            const { container, dispose } = renderPage(category);
+            try {
+                const title = container.querySelector('.ai-configuration-hero .ai-settings-row-title');
+                expect(title, 'the hero renders no title').to.exist;
+                expect(title!.textContent).to.not.contain('ai-features.');
+            } finally {
+                dispose();
+            }
+        });
+
+        it('renders the catch-all rows read-only while AI features are off', () => {
+            // The gate note promises the settings below take effect once AI is enabled, so they must not be
+            // editable meanwhile. The catch-all rows are generated, so they do not inherit the hand-authored
+            // rows' `disabled` state unless it is plumbed through `AiSettingsRow`.
+            const off = createRenderableCategory(false);
+            const rendered = renderPage(off);
+            try {
+                const control = rendered.container.querySelector<HTMLInputElement>(`[data-ai-config-row-id="${UNCLAIMED_PREF}"] input`);
+                expect(control, 'the catch-all row renders no control').to.exist;
+                expect(control!.disabled).to.equal(true);
+            } finally {
+                rendered.dispose();
+            }
+        });
+
+        it('renders the catch-all rows editable once AI features are on', () => {
+            const on = createRenderableCategory(true);
+            const rendered = renderPage(on);
+            try {
+                const control = rendered.container.querySelector<HTMLInputElement>(`[data-ai-config-row-id="${UNCLAIMED_PREF}"] input`);
+                expect(control, 'the catch-all row renders no control').to.exist;
+                expect(control!.disabled).to.equal(false);
+            } finally {
+                rendered.dispose();
+            }
         });
     });
 });

@@ -95,3 +95,71 @@ describe('AiConfigurationDetailWidget dispatch', () => {
         expect(header.props.className).to.contain('ai-configuration-category-header');
     });
 });
+
+/**
+ * Pins the scrolling arithmetic of {@link AiConfigurationDetailWidget#centerInBody} and, more importantly,
+ * that it writes only the scroll container.
+ *
+ * The predecessor was `element.scrollIntoView({ block: 'center' })`, which also scrolls every scrollable
+ * ancestor — and `overflow: hidden` does not prevent programmatic scrolling, so it shifted the containers
+ * above the widget, taking the menu bar out of view. JSDOM performs no layout, so the rects and
+ * `clientHeight` are stubbed; it also does not implement `scrollIntoView`, so reverting to it fails every
+ * assertion here (verified by patching the method back).
+ */
+describe('AiConfigurationDetailWidget centerInBody', () => {
+
+    before(() => disableJSDOM = enableJSDOM());
+    after(() => disableJSDOM());
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const widget = Object.create(AiConfigurationDetailWidget.prototype) as any;
+
+    /** An element whose `scrollTop` is a plain writable property, since JSDOM would otherwise clamp it to 0. */
+    function scrollable(rect: { top: number; height: number }, clientHeight?: number): HTMLElement {
+        const element = document.createElement('div');
+        Object.defineProperty(element, 'scrollTop', { value: 0, writable: true });
+        if (clientHeight !== undefined) {
+            Object.defineProperty(element, 'clientHeight', { value: clientHeight });
+        }
+        element.getBoundingClientRect = () => ({ top: rect.top, height: rect.height }) as DOMRect;
+        return element;
+    }
+
+    /** A body scrolled within an ancestor, so the test can assert the ancestor is left alone. */
+    function hierarchy(elementTop: number): { ancestor: HTMLElement; body: HTMLElement; element: HTMLElement } {
+        const ancestor = scrollable({ top: 0, height: 600 }, 600);
+        const body = scrollable({ top: 100, height: 400 }, 400);
+        const element = scrollable({ top: elementTop, height: 40 });
+        ancestor.appendChild(body);
+        body.appendChild(element);
+        return { ancestor, body, element };
+    }
+
+    it('scrolls the container so the row is vertically centred', () => {
+        const { body, element } = hierarchy(500);
+        // Row sits 400px below the body's top; centring it in a 400px viewport puts it at (400 - 40) / 2 = 180.
+        widget.centerInBody(body, element);
+        expect(body.scrollTop).to.equal(220);
+    });
+
+    it('leaves the scroll position alone when the row is already centred', () => {
+        const { body, element } = hierarchy(280);
+        widget.centerInBody(body, element);
+        expect(body.scrollTop).to.equal(0);
+    });
+
+    it('scrolls back up for a row above the centre', () => {
+        const { body, element } = hierarchy(120);
+        // 20px below the body's top, so it has to scroll up by 160 to reach the centre.
+        body.scrollTop = 300;
+        widget.centerInBody(body, element);
+        expect(body.scrollTop).to.equal(140);
+    });
+
+    it('never scrolls an ancestor of the container', () => {
+        const { ancestor, body, element } = hierarchy(500);
+        widget.centerInBody(body, element);
+        expect(body.scrollTop, 'the container itself should have scrolled').to.not.equal(0);
+        expect(ancestor.scrollTop, 'scrolling an ancestor shifts the whole shell').to.equal(0);
+    });
+});
