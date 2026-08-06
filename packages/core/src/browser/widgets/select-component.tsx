@@ -63,6 +63,8 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
     protected resizeObserver: ResizeObserver | undefined;
     /** Window the scroll/wheel/resize listeners are attached to; may differ from the main window in secondary windows. */
     protected listenersWindow: Window | undefined;
+    /** Perfect-scrollbar ancestors the `ps-scroll-y` listener was attached to. The field may have moved to another window since, so the elements are remembered. */
+    protected psScrollListenerTargets: HTMLElement[] = [];
 
     constructor(props: SelectComponentProps) {
         super(props);
@@ -195,6 +197,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             // neither triggers the `scroll`, `wheel` nor `blur` event
             if (parent.classList.contains('ps')) {
                 parent.addEventListener('ps-scroll-y', hide);
+                this.psScrollListenerTargets.push(parent);
             }
             parent = parent.parentElement;
         }
@@ -247,16 +250,15 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         this.resizeObserver = undefined;
         if (this.mountedListeners.size > 0) {
             const eventListener = this.mountedListeners.get('scroll')!;
-            let parent = this.fieldRef.current?.parentElement;
-            while (parent) {
-                parent.removeEventListener('ps-scroll-y', eventListener);
-                parent = parent.parentElement;
+            for (const target of this.psScrollListenerTargets) {
+                target.removeEventListener('ps-scroll-y', eventListener);
             }
             for (const [key, listener] of this.mountedListeners.entries()) {
                 (this.listenersWindow ?? window).removeEventListener(key, listener);
             }
             this.mountedListeners.clear();
         }
+        this.psScrollListenerTargets = [];
         this.listenersWindow = undefined;
     }
 
