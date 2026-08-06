@@ -459,6 +459,8 @@ When review feedback is recorded in the task context (REVISE verdict): evaluate 
 
 {{capability:apptester default off}}
 
+{{capability:memory default off}}
+
 ## Final Review
 
 Confirm: works as intended, tests pass, code quality OK, no security issues. Then yield.

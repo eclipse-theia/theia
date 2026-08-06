@@ -15,8 +15,9 @@
 // *****************************************************************************
 import { AiConfigurationService, ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
 import { CancellationToken, Disposable, OS, PreferenceService, URI, Path } from '@theia/core';
+import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat, FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
@@ -40,6 +41,22 @@ import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-mo
 import { ProblemManager } from '@theia/markers/lib/browser';
 import { DiagnosticSeverity, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 
+export const AccessibleRootContribution = Symbol('AccessibleRootContribution');
+
+/**
+ * Contributes directories outside the workspace roots that the AI workspace tools may access, in
+ * addition to the user-configured `ai-features.workspaceFunctions.allowedExternalPaths`. This is meant
+ * for locations Theia owns and resolves itself, such as the memory store of the current workspace,
+ * whose path is generated and can therefore not be named in a preference by the user.
+ */
+export interface AccessibleRootContribution {
+    /**
+     * The currently accessible roots. Queried on every check rather than once, so that a root which
+     * moves with the workspace is picked up without invalidation.
+     */
+    getRoots(): Promise<URI[]>;
+}
+
 @injectable()
 export class WorkspaceFunctionScope {
     protected readonly GITIGNORE_FILE_NAME = '.gitignore';
@@ -58,6 +75,9 @@ export class WorkspaceFunctionScope {
 
     @inject(EnvVariablesServer)
     protected readonly envVariablesServer: EnvVariablesServer;
+
+    @inject(ContributionProvider) @named(AccessibleRootContribution) @optional()
+    protected readonly accessibleRootContributions: ContributionProvider<AccessibleRootContribution> | undefined;
 
     private gitignoreMatchers = new Map<string, ReturnType<typeof ignore> | undefined>();
     private gitignoreWatchersInitialized = new Set<string>();
@@ -298,20 +318,27 @@ export class WorkspaceFunctionScope {
 
     // ── Access control ──────────────────────────────────────────────────
 
-    ensureWithinWorkspace(targetUri: URI, workspaceRootUri: URI): void {
-        const normalized = targetUri.normalizePath();
-        if (workspaceRootUri.scheme !== normalized.scheme
-            || !workspaceRootUri.isEqualOrParent(normalized, WorkspaceFunctionScope.pathCaseSensitive)) {
-            throw new Error('Access outside of the workspace is not allowed');
+    /**
+     * Resolves a tool argument and asserts that it may be accessed. This is the single entry point every
+     * tool uses, so that a path is subjected to the same parsing and the same boundary check no matter
+     * which tool received it.
+     *
+     * @throws if the path cannot be resolved or points outside the accessible roots.
+     */
+    async resolveAccessiblePath(pathOrUri: string): Promise<URI> {
+        const resolved = await this.resolveToUri(pathOrUri);
+        if (!resolved) {
+            throw new Error(`Invalid path: '${pathOrUri}'`);
         }
+        await this.ensureAccessible(resolved);
+        return resolved;
     }
 
     /**
-     * Asserts the target URI is reachable by AI tools that honor the external
-     * allow-list. Allowed when the URI is inside any workspace root, or when it
-     * is covered by an entry of the `ai-features.workspaceFunctions.allowedExternalPaths`
-     * preference. Workspace-scoped overrides of that preference are dropped when
-     * the workspace is not trusted.
+     * Asserts the target URI is reachable by the AI tools. Allowed when the URI is inside any workspace
+     * root, below a root contributed by an {@link AccessibleRootContribution}, or covered by an entry of
+     * the `ai-features.workspaceFunctions.allowedExternalPaths` preference. Workspace-scoped overrides of
+     * that preference are dropped when the workspace is not trusted.
      *
      * The target URI is normalized before the check so that literal `..`
      * segments and percent-encoded equivalents (e.g. `%2e%2e`) are resolved
@@ -322,21 +349,38 @@ export class WorkspaceFunctionScope {
      */
     async ensureAccessible(targetUri: URI): Promise<void> {
         const normalized = targetUri.normalizePath();
-        const caseSensitive = WorkspaceFunctionScope.pathCaseSensitive;
-        const roots = this.getAllRootUris();
-        for (const rootUri of roots) {
-            if (rootUri.scheme === normalized.scheme && rootUri.isEqualOrParent(normalized, caseSensitive)) {
-                return;
-            }
-        }
-        const allowed = await this.getAllowedExternalUris();
-        if (allowed.some(allowedUri => allowedUri.scheme === normalized.scheme && allowedUri.isEqualOrParent(normalized, caseSensitive))) {
+        if (this.isUnderAny(this.getAllRootUris(), normalized)
+            || this.isUnderAny(await this.getContributedRootUris(), normalized)
+            || this.isUnderAny(await this.getAllowedExternalUris(), normalized)) {
             return;
         }
         throw new Error(
             `Access to '${normalized.path.toString()}' is not allowed. ` +
             `Path is outside the workspace and not covered by the '${ALLOWED_EXTERNAL_PATHS_PREF}' preference.`
         );
+    }
+
+    protected isUnderAny(roots: URI[], normalizedTarget: URI): boolean {
+        const caseSensitive = WorkspaceFunctionScope.pathCaseSensitive;
+        return roots.some(root => root.scheme === normalizedTarget.scheme && root.isEqualOrParent(normalizedTarget, caseSensitive));
+    }
+
+    /**
+     * The roots contributed by {@link AccessibleRootContribution}s, normalized like the allow-list. A
+     * contribution that fails to resolve is skipped rather than allowed to fail every path check.
+     */
+    protected async getContributedRootUris(): Promise<URI[]> {
+        const roots: URI[] = [];
+        for (const contribution of this.accessibleRootContributions?.getContributions() ?? []) {
+            try {
+                for (const root of await contribution.getRoots()) {
+                    roots.push(WorkspaceFunctionScope.withoutTrailingSeparator(root.normalizePath()));
+                }
+            } catch (error) {
+                console.warn('Failed to resolve accessible roots from a contribution.', error);
+            }
+        }
+        return roots;
     }
 
     isInWorkspace(uri: URI): boolean {
@@ -643,11 +687,7 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
 
         try {
             if (root) {
-                const resolved = await this.workspaceScope.resolveToUri(root);
-                if (!resolved) {
-                    return { error: `Invalid root: '${root}'` };
-                }
-                await this.workspaceScope.ensureAccessible(resolved);
+                const resolved = await this.workspaceScope.resolveAccessiblePath(root);
                 return this.buildDirectoryStructure(resolved, cancellationToken);
             } else {
                 const rootMapping = this.workspaceScope.getRootMapping();
@@ -800,14 +840,9 @@ export class FileContentFunction implements ToolProvider {
             return JSON.stringify({ error: 'limit must be a positive integer.' });
         }
 
-        let targetUri: URI | undefined;
+        let targetUri: URI;
         try {
-            const resolved = await this.workspaceScope.resolveToUri(file);
-            if (!resolved) {
-                return JSON.stringify({ error: `Invalid file path: '${file}'` });
-            }
-            targetUri = resolved;
-            await this.workspaceScope.ensureAccessible(targetUri);
+            targetUri = await this.workspaceScope.resolveAccessiblePath(file);
         } catch (error) {
             return JSON.stringify({ error: error.message });
         }
@@ -1044,12 +1079,7 @@ export class GetWorkspaceFileList implements ToolProvider {
 
             let targetUri: URI;
             try {
-                const resolved = await this.workspaceScope.resolveToUri(path);
-                if (!resolved) {
-                    return JSON.stringify({ error: `Invalid path: '${path}'` });
-                }
-                targetUri = resolved;
-                await this.workspaceScope.ensureAccessible(targetUri);
+                targetUri = await this.workspaceScope.resolveAccessiblePath(path);
             } catch (error) {
                 return JSON.stringify({ error: error.message });
             }
@@ -1132,12 +1162,7 @@ export class FileDiagnosticProvider implements ToolProvider {
             handler: async (arg: string, ctx?: ToolInvocationContext) => {
                 try {
                     const { file } = JSON.parse(arg);
-                    const targetUri = await this.workspaceScope.resolveRelativePath(file);
-                    const containingRoot = this.workspaceScope.getContainingRoot(targetUri);
-                    if (!containingRoot) {
-                        return JSON.stringify({ error: 'Access outside of the workspace is not allowed' });
-                    }
-                    this.workspaceScope.ensureWithinWorkspace(targetUri, containingRoot);
+                    const targetUri = await this.workspaceScope.resolveAccessiblePath(file);
 
                     return this.getDiagnosticsForFile(targetUri, ctx?.cancellationToken);
                 } catch (error) {
@@ -1337,11 +1362,7 @@ export class FindFilesByPattern implements ToolProvider {
             // Resolve the set of roots to search and how each root's results should be rendered.
             const targets: { rootUri: URI; rootName?: string; external: boolean }[] = [];
             if (searchRoot) {
-                const resolved = await this.workspaceScope.resolveToUri(searchRoot);
-                if (!resolved) {
-                    return JSON.stringify({ error: `Invalid searchRoot: '${searchRoot}'` });
-                }
-                await this.workspaceScope.ensureAccessible(resolved);
+                const resolved = await this.workspaceScope.resolveAccessiblePath(searchRoot);
                 targets.push({ rootUri: resolved, external: !this.workspaceScope.isInWorkspace(resolved) });
             } else {
                 const rootMapping = this.workspaceScope.getRootMapping();
@@ -1410,7 +1431,7 @@ export class FindFilesByPattern implements ToolProvider {
      */
     protected toDisplayPath(match: URI, target: { rootUri: URI; rootName?: string; external: boolean }): string | undefined {
         if (target.external) {
-            return match.path.toString();
+            return match.path.fsPath();
         }
         const relativePath = target.rootUri.relative(match)?.toString();
         if (relativePath === undefined) {
