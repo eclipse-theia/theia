@@ -3,6 +3,14 @@
 ## History
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
+## Unreleased
+
+- [preferences] `PreferencesContribution` no longer eagerly constructs `PreferencesWidget` on startup. The `protected scopeTracker` field has been removed; subclasses that referenced it directly should use the inherited `widget` getter (or `tryGetWidget()` where forcing construction is undesirable) instead [#17877](https://github.com/eclipse-theia/theia/pull/17877)
+
+<a name="breaking_changes_unreleased">[Breaking Changes:](#breaking_changes_unreleased)</a>
+
+- [preferences] `PreferencesContribution.scopeTracker` (a `protected` field) has been removed. Subclasses relying on it directly should use the inherited `widget` getter (`Promise<PreferencesWidget>`, lazily constructs on first access) or `tryGetWidget()` (returns `undefined` if not yet constructed) instead [#17877](https://github.com/eclipse-theia/theia/pull/17877)
+
 
 ## 1.74.0 - 7/31/2026
 
