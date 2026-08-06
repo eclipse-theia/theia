@@ -225,12 +225,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         const osClass = this.getOsClass();
         document.body.classList.add(osClass);
         // The OS class selects the platform-specific font stacks in os.css. Secondary windows
-        // have their own document, so apply it there as well. Wait for the secondary window's
-        // final document: anything added to the initial about:blank document is discarded when
-        // secondary-window.html replaces it.
-        this.secondaryWindowService.onWindowOpened(win => {
-            win.addEventListener('DOMContentLoaded', () => win.document.body.classList.add(osClass), { once: true });
-        });
+        // have their own document, so apply it there as well.
+        this.secondaryWindowService.onWindowLoaded(win => win.document.body.classList.add(osClass));
     }
 
     protected getOsClass(): string {

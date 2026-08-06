@@ -28,8 +28,8 @@ import { DisposableCollection, MAX_SAFE_INTEGER, PreferenceSchemaService } from 
 import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/common/editor-generated-preference-schema';
 import { WorkspaceFileService } from '@theia/workspace/lib/common/workspace-file-service';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { StandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneThemeService';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
+import { MonacoStandaloneThemeService } from './monaco-standalone-theme-service';
 import { SecondaryWindowService } from '@theia/core/lib/browser/window/secondary-window-service';
 import { registerWindow } from '@theia/monaco-editor-core/esm/vs/base/browser/dom';
 
@@ -102,33 +102,40 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
         // when the first standalone editor is opened, so popups that rely on those variables (e.g. the chat
         // input's suggest widget) are unstyled until then. Register the main window up front so the variables
         // are available document-wide from launch; `_updateCSS` keeps the stylesheet in sync on theme changes.
-        (StandaloneServices.get(IStandaloneThemeService) as StandaloneThemeService).registerEditorContainer(document.body);
+        this.standaloneThemeService.registerEditorContainer(document.body);
 
-        this.secondaryWindowService.onWindowOpened(window => {
+        this.secondaryWindowService.onWindowLoaded(window => {
             const codeWindow: CodeWindow = window as CodeWindow;
             codeWindow.vscodeWindowId = this.nextWindowId++;
 
             const toDispose = new DisposableCollection();
-            // Wait for the secondary window's final document: anything added to the initial
-            // about:blank document is discarded when secondary-window.html replaces it.
-            codeWindow.addEventListener('DOMContentLoaded', () => {
-                toDispose.push(registerWindow(codeWindow));
-                // Inject Monaco's theme stylesheet (`monaco-colors`, defining the `--vscode-*`
-                // variables and token colors) into the new window's document. Without it, Monaco
-                // editors in secondary windows have no theme colors: invisible cursor and
-                // selection, unstyled suggest widget. Registering the document body covers all
-                // widgets moved to this window, e.g. the AI chat view with its input editor.
-                // See https://github.com/eclipse-theia/theia/issues/15164
-                const themeService = StandaloneServices.get(IStandaloneThemeService) as StandaloneThemeService;
-                toDispose.push(themeService.registerEditorContainer(codeWindow.document.body));
-            }, { once: true });
+            toDispose.push(registerWindow(codeWindow));
+            // Inject Monaco's theme stylesheet (`monaco-colors`, defining the `--vscode-*`
+            // variables and token colors) into the new window's document. Without it, Monaco
+            // editors in secondary windows have no theme colors: invisible cursor and
+            // selection, unstyled suggest widget. Registering the document body covers all
+            // widgets moved to this window, e.g. the AI chat view with its input editor.
+            // See https://github.com/eclipse-theia/theia/issues/15164
+            toDispose.push(this.standaloneThemeService.registerEditorContainer(codeWindow.document.body));
             this.windowsById.set(codeWindow.vscodeWindowId, toDispose);
         });
 
         this.secondaryWindowService.onWindowClosed(window => {
             const codeWindow: CodeWindow = window as CodeWindow;
             this.windowsById.get(codeWindow.vscodeWindowId)?.dispose();
+            this.windowsById.delete(codeWindow.vscodeWindowId);
         });
+    }
+
+    /**
+     * Theia's {@link MonacoStandaloneThemeService} override, which creates the `monaco-colors`
+     * stylesheet in the target node's own document. The upstream `StandaloneThemeService` would
+     * only ever create a single global stylesheet in the main document and silently no-op for
+     * nodes in other documents, so this contribution depends on the Theia override being bound
+     * (see `monaco-init.ts`).
+     */
+    protected get standaloneThemeService(): MonacoStandaloneThemeService {
+        return StandaloneServices.get(IStandaloneThemeService) as MonacoStandaloneThemeService;
     }
 
     registerThemeStyle(theme: ColorTheme, collector: CssStyleCollector): void {

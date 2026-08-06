@@ -51,39 +51,20 @@ describe('CommonFrontendContribution', () => {
 
     describe('setOsClass', () => {
 
-        let onWindowOpenedEmitter: Emitter<Window>;
+        let onWindowLoadedEmitter: Emitter<Window>;
         let contribution: CommonFrontendContribution;
 
         beforeEach(() => {
             document.body.classList.remove(...OS_CLASSNAMES);
-            onWindowOpenedEmitter = new Emitter<Window>();
-            /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-            const unused = undefined as any;
-            contribution = new CommonFrontendContribution(unused, unused, unused, unused, unused, unused, unused);
+            onWindowLoadedEmitter = new Emitter<Window>();
+            // Bypass the constructor: setOsClass only uses the secondary window service,
+            // and this keeps the test independent of the constructor's parameter list.
+            contribution = Object.create(CommonFrontendContribution.prototype);
             /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
             (contribution as any).secondaryWindowService = <Partial<SecondaryWindowService>>{
-                onWindowOpened: onWindowOpenedEmitter.event
+                onWindowLoaded: onWindowLoadedEmitter.event
             };
         });
-
-        /** Fake secondary window: a bare body plus DOMContentLoaded listener registration. */
-        function fakeSecondaryWindow(): { win: Window, body: HTMLElement, loadDocument: () => void } {
-            const body = document.createElement('body');
-            const loadListeners: EventListener[] = [];
-            const win = <Partial<Window>>{
-                document: <Partial<Document>>{ body },
-                addEventListener: (type: string, listener: EventListener) => {
-                    if (type === 'DOMContentLoaded') {
-                        loadListeners.push(listener);
-                    }
-                }
-            };
-            return {
-                win: win as Window,
-                body,
-                loadDocument: () => loadListeners.splice(0).forEach(listener => listener(new Event('DOMContentLoaded')))
-            };
-        }
 
         it('adds the OS class to the main window body', () => {
             contribution['setOsClass']();
@@ -94,14 +75,10 @@ describe('CommonFrontendContribution', () => {
             contribution['setOsClass']();
             const osClass = OS_CLASSNAMES.find(c => document.body.classList.contains(c))!;
 
-            const { win, body, loadDocument } = fakeSecondaryWindow();
-            onWindowOpenedEmitter.fire(win);
-            // The initial about:blank document is replaced by secondary-window.html,
-            // so the class must only be added to the final document.
-            expect(body.classList.contains(osClass), 'class must not be added before DOMContentLoaded').to.be.false;
-
-            loadDocument();
-            expect(body.classList.contains(osClass), 'class must be added after DOMContentLoaded').to.be.true;
+            const body = document.createElement('body');
+            const win = <Partial<Window>>{ document: <Partial<Document>>{ body } };
+            onWindowLoadedEmitter.fire(win as Window);
+            expect(body.classList.contains(osClass), 'class must be added to the loaded window').to.be.true;
         });
     });
 });
