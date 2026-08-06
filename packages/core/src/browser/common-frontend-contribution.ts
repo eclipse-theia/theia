@@ -61,6 +61,7 @@ import { nls } from '../common/nls';
 import { CurrentWidgetCommandAdapter } from './shell/current-widget-command-adapter';
 import { ConfirmDialog, confirmExit, ConfirmSaveDialog, Dialog } from './dialogs';
 import { WindowService } from './window/window-service';
+import { SecondaryWindowService } from './window/secondary-window-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { DecorationStyle } from './decoration-style';
 import { codicon, isPinned, Title, togglePinned, Widget } from './widgets';
@@ -147,6 +148,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(WindowService)
     protected readonly windowService: WindowService;
 
+    @inject(SecondaryWindowService)
+    protected readonly secondaryWindowService: SecondaryWindowService;
+
     @inject(UserWorkingDirectoryProvider)
     protected readonly workingDirProvider: UserWorkingDirectoryProvider;
 
@@ -218,12 +222,20 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     protected setOsClass(): void {
+        const osClass = this.getOsClass();
+        document.body.classList.add(osClass);
+        // The OS class selects the platform-specific font stacks in os.css. Secondary windows
+        // have their own document, so apply it there as well.
+        this.secondaryWindowService.onWindowLoaded(win => win.document.body.classList.add(osClass));
+    }
+
+    protected getOsClass(): string {
         if (isOSX) {
-            document.body.classList.add(CLASSNAME_OS_MAC);
+            return CLASSNAME_OS_MAC;
         } else if (isWindows) {
-            document.body.classList.add(CLASSNAME_OS_WINDOWS);
+            return CLASSNAME_OS_WINDOWS;
         } else {
-            document.body.classList.add(CLASSNAME_OS_LINUX);
+            return CLASSNAME_OS_LINUX;
         }
     }
 
