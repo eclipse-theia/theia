@@ -12,6 +12,14 @@
 
 ## Description
 
+> [!WARNING]
+> **Deprecated since 1.75.0** — this package is superseded by the SCM history graph in
+> [`@theia/scm`](../scm) (branch history) and the Timeline view in
+> [`@theia/timeline`](../timeline) (per-file history) and will be removed in a future
+> release. See [eclipse-theia/theia#17457](https://github.com/eclipse-theia/theia/issues/17457).
+> Note that its `SCM History` view requires an `ScmHistorySupport` implementation, which no
+> longer ships with Theia since the removal of `@theia/git`.
+
 The `@theia/scm-extra` extension contributes additional functionality compared to the base `@theia/scm` extension.
 This includes:
 
