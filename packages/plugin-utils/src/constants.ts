@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 Red Hat, Inc. and others.
+// Copyright (C) 2026 Maksim Kachurin and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,26 +14,22 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export { isENOENT } from '@theia/plugin-utils/lib/utils';
+export const PLUGINS_BASE_PATH = 'hostedPlugin';
 
-export function illegalArgument(message?: string): Error {
-    if (message) {
-        return new Error(`Illegal argument: ${message}`);
-    } else {
-        return new Error('Illegal argument');
-    }
-}
+export const UNPUBLISHED = '<unpublished>';
 
-export function readonly(name?: string): Error {
-    if (name) {
-        return new Error(`readonly property '${name} cannot be changed'`);
-    } else {
-        return new Error('readonly property cannot be changed');
-    }
-}
+export const DEFAULT_PLUGINS_DIR = 'plugins';
 
-export function disposed(what: string): Error {
-    const result = new Error(`${what} has been disposed`);
-    result.name = 'DISPOSED';
-    return result;
-}
+export const LIST_JSON = 'list.json';
+
+export const VSCODE_BUILTIN_NAME_PREFIX = '@theia/vscode-builtin-';
+
+export const VSCODE_FRONTEND_INIT = 'plugin-vscode-init-fe.js';
+
+export const THEIA_PLUGIN_START_METHOD = 'start';
+export const THEIA_PLUGIN_STOP_METHOD = 'stop';
+
+export const VSCODE_EXTENSION_ACTIVATE = 'activate';
+export const VSCODE_EXTENSION_DEACTIVATE = 'deactivate';
+
+export const PLUGIN_COPY_IGNORE = /[/\\](\.git|node_modules)([/\\]|$)/;

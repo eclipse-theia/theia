@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 Red Hat, Inc. and others.
+// Copyright (C) 2026 Maksim Kachurin and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,26 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export { isENOENT } from '@theia/plugin-utils/lib/utils';
+import * as fs from 'fs-extra';
+import { ApplicationPackage } from '@theia/application-package';
 
-export function illegalArgument(message?: string): Error {
-    if (message) {
-        return new Error(`Illegal argument: ${message}`);
-    } else {
-        return new Error('Illegal argument');
-    }
-}
-
-export function readonly(name?: string): Error {
-    if (name) {
-        return new Error(`readonly property '${name} cannot be changed'`);
-    } else {
-        return new Error('readonly property cannot be changed');
-    }
-}
-
-export function disposed(what: string): Error {
-    const result = new Error(`${what} has been disposed`);
-    result.name = 'DISPOSED';
-    return result;
+/**
+ * Write `lib/frontend/extensions.json` (Theia extension packages) for the About dialog,
+ * matching the backend Theia extension build output.
+ */
+export async function writeBrowserOnlyExtensionsList(applicationPackage: ApplicationPackage): Promise<void> {
+    const extensions = applicationPackage.extensionPackages.map(({ name, version }) => ({ name, version }));
+    await fs.writeJson(applicationPackage.lib('frontend', 'extensions.json'), extensions, { spaces: 2 });
 }
