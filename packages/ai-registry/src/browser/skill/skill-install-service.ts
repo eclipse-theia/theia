@@ -17,6 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { SkillInstallBackendService } from '../../common/skill/skill-install-protocol';
 import { InstalledSkillInfo, ResolvedSkillEntry, SkillClassificationResult } from '../../common/skill/skill-registry-types';
+import { RegistryAutoUpdatePolicy } from '../auto-update/registry-auto-update-policy';
 
 export const SkillInstallService = Symbol('SkillInstallService');
 export interface SkillInstallService {
@@ -30,8 +31,12 @@ export interface SkillInstallService {
     link(entry: ResolvedSkillEntry): Promise<void>;
     /** Removes the registry metadata file from a skill folder while keeping its other files. */
     unlink(name: string): Promise<void>;
-    /** Removes an installed (registry-managed) skill folder. */
-    uninstall(name: string): Promise<void>;
+    /**
+     * Removes an installed (registry-managed) skill folder. Pass the skill's registry identifier,
+     * where the caller knows it, so any auto-update override kept for it is dropped along with
+     * the skill - unlike an MCP server's, a skill's registry identity is only known to the backend.
+     */
+    uninstall(name: string, skillId?: string): Promise<void>;
     /** Lists every skill folder under `~/.agents/skills`. */
     listInstalledSkills(): Promise<InstalledSkillInfo[]>;
     /** Classifies a local skill folder against the registry (for the Installed view). */
@@ -45,6 +50,9 @@ export class SkillInstallServiceImpl implements SkillInstallService {
 
     @inject(SkillInstallBackendService)
     protected readonly backend: SkillInstallBackendService;
+
+    @inject(RegistryAutoUpdatePolicy)
+    protected readonly autoUpdatePolicy: RegistryAutoUpdatePolicy;
 
     install(entry: ResolvedSkillEntry): Promise<void> {
         return this.backend.install(entry);
@@ -66,8 +74,12 @@ export class SkillInstallServiceImpl implements SkillInstallService {
         return this.backend.unlink(name);
     }
 
-    uninstall(name: string): Promise<void> {
-        return this.backend.uninstall(name);
+    async uninstall(name: string, skillId?: string): Promise<void> {
+        await this.backend.uninstall(name);
+        if (skillId) {
+            // The skill is gone, so its override would linger with nothing left to apply it to.
+            await this.autoUpdatePolicy.clearMode('skill', skillId);
+        }
     }
 
     listInstalledSkills(): Promise<InstalledSkillInfo[]> {
@@ -81,14 +93,15 @@ export class SkillInstallServiceImpl implements SkillInstallService {
                 // The registry metadata file points at a skillId the registry no longer lists.
                 return { kind: 'installed-link-stale' };
             }
-            // Update takes precedence: a changed registry content hash always means an
-            // Update is available, even if the local files have also drifted. Only when the
-            // registry hash still matches do local edits surface as a Fix.
-            if (matched.contentHash !== info.contentHash) {
-                return { kind: 'installed-from-registry', updateAvailable: true };
-            }
+            // Drift takes precedence, mirroring the MCP classifier: a skill whose files no longer
+            // match what was installed must be fixed before it is considered updatable. Nothing is
+            // lost by fixing first - `fixSkill` and `update` are the same clean replace, so a
+            // single Fix already lands the current registry content.
             if (info.drifted) {
                 return { kind: 'fix-skill' };
+            }
+            if (matched.contentHash !== info.contentHash) {
+                return { kind: 'installed-from-registry', updateAvailable: true };
             }
             return { kind: 'installed-from-registry', updateAvailable: false };
         }
@@ -100,12 +113,12 @@ export class SkillInstallServiceImpl implements SkillInstallService {
     classifyRegistryEntry(entry: ResolvedSkillEntry, installed: InstalledSkillInfo[]): SkillClassificationResult {
         const linked = installed.find(info => info.skillId === entry.skillId);
         if (linked) {
-            // Update takes precedence over Fix, mirroring classifyInstalledSkill.
-            if (entry.contentHash !== linked.contentHash) {
-                return { kind: 'installed-from-registry', updateAvailable: true };
-            }
+            // Fix takes precedence over Update, mirroring classifyInstalledSkill.
             if (linked.drifted) {
                 return { kind: 'fix-skill' };
+            }
+            if (entry.contentHash !== linked.contentHash) {
+                return { kind: 'installed-from-registry', updateAvailable: true };
             }
             return { kind: 'installed-from-registry', updateAvailable: false };
         }
