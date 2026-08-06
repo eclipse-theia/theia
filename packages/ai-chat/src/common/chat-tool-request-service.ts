@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { ToolInvocationContext, ToolRequest } from '@theia/ai-core';
-import { injectable } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { MutableChatRequestModel, MutableChatResponseModel } from './chat-model';
 
 /**
@@ -75,6 +76,32 @@ export function assertChatContext(ctx: unknown): asserts ctx is ChatToolContext 
 export type ChatToolRequest = ToolRequest<ChatToolContext>;
 
 /**
+ * The subset of a chat agent that is relevant to tool filtering. Structurally satisfied by
+ * `ChatAgent` (kept as a separate structural interface so the service does not depend on the
+ * chat-agents module and tests can pass plain objects).
+ *
+ * Semantics: effective toolset = (parsed tools ∩ `allowedTools`) − `disallowedTools`.
+ * Omitted `allowedTools` = no cap; omitted `disallowedTools` = deny nothing; deny always wins.
+ * Entries are case-sensitive globs: `*` matches any character sequence, all other characters are
+ * literal. The lists filter the tools that were parsed from the prompt/request — they never add
+ * tools that nothing referenced.
+ */
+export interface AgentToolPolicy {
+    id?: string;
+    allowedTools?: string[];
+    disallowedTools?: string[];
+}
+
+/**
+ * Matches a tool id against a policy pattern. `*` matches any character sequence; every other
+ * character is literal. Anchored full match, case-sensitive.
+ */
+export function matchesToolPattern(pattern: string, toolId: string): boolean {
+    const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, char => char === '*' ? '.*' : `\\${char}`);
+    return new RegExp(`^${escaped}$`).test(toolId);
+}
+
+/**
  * Wraps tool requests in a chat context.
  *
  * This service extracts tool requests from a given chat request model and wraps their
@@ -83,30 +110,55 @@ export type ChatToolRequest = ToolRequest<ChatToolContext>;
 @injectable()
 export class ChatToolRequestService {
 
+    @inject(ILogger) @named('ChatToolRequestService')
+    protected readonly logger: ILogger;
+
+    /**
+     * Tool ids that a delegation request's text may still grant to the delegated agent. By default
+     * only the skill-loading tool, so a delegating agent can prime a sub-agent with a skill
+     * (the id is a literal because its constant lives in @theia/ai-ide, which this package must
+     * not depend on). Subclasses may override to widen or clear the allowlist.
+     */
+    protected readonly delegationRequestGrantAllowlist: string[] = ['getSkillFileContent'];
+
     /**
      * Extracts tool requests from a chat request and wraps them to provide chat context.
      * @param request The chat request containing tool requests
+     * @param agent optional tool policy of the invoking agent; tools not permitted by the policy are filtered out
      * @returns Tool requests with handlers that receive ChatToolContext
      */
-    getChatToolRequests(request: MutableChatRequestModel): ToolRequest[] {
+    getChatToolRequests(request: MutableChatRequestModel, agent?: AgentToolPolicy): ToolRequest[] {
         const toolRequests = request.message.toolRequests.size > 0 ? [...request.message.toolRequests.values()] : undefined;
         if (!toolRequests) {
             return [];
         }
-        return this.toChatToolRequests(toolRequests, request);
+        // Request-text grants in a delegated session are capped to an explicit allowlist: the
+        // request text was authored by the delegating LLM, so its wording must not determine the
+        // delegated agent's toolset (https://github.com/eclipse-theia/theia/issues/17836).
+        const granted = this.isDelegatedSession(request)
+            ? toolRequests.filter(tool => {
+                if (this.delegationRequestGrantAllowlist.includes(tool.id)) {
+                    return true;
+                }
+                this.logger?.info(`Dropped the '${tool.id}' tool grant from a delegated session's request: a delegation prompt does not grant tools.`);
+                return false;
+            })
+            : toolRequests;
+        return this.toChatToolRequests(granted, request, agent);
     }
 
     /**
      * Wraps multiple tool requests to provide chat context to their handlers.
      * @param toolRequests The original tool requests
      * @param request The chat request to use for context
+     * @param agent optional tool policy of the invoking agent; tools not permitted by the policy are filtered out
      * @returns Wrapped tool requests whose handlers receive ChatToolContext
      */
-    toChatToolRequests(toolRequests: ToolRequest[] | undefined, request: MutableChatRequestModel): ToolRequest[] {
+    toChatToolRequests(toolRequests: ToolRequest[] | undefined, request: MutableChatRequestModel, agent?: AgentToolPolicy): ToolRequest[] {
         if (!toolRequests) {
             return [];
         }
-        return toolRequests.map(toolRequest => this.toChatToolRequest(toolRequest, request));
+        return this.filterByAgentToolPolicy(toolRequests, agent).map(toolRequest => this.toChatToolRequest(toolRequest, request));
     }
 
     /**
@@ -123,6 +175,40 @@ export class ChatToolRequestService {
             handler: async (arg_string: string, ctx?: ToolInvocationContext) =>
                 toolRequest.handler(arg_string, this.createToolContext(request, ctx))
         };
+    }
+
+    /**
+     * Checks whether the given request belongs to a delegated session, i.e. one created by
+     * `AgentDelegationTool.delegateToAgent` (and restored on session deserialization).
+     * @param request The chat request to check
+     * @returns `true` if `request.session.rootSessionId` is set
+     */
+    protected isDelegatedSession(request: MutableChatRequestModel): boolean {
+        return request.session.rootSessionId !== undefined;
+    }
+
+    /**
+     * Applies the agent's tool policy: a tool survives only if it matches some `allowedTools`
+     * pattern (no list = no cap) and no `disallowedTools` pattern. Deny wins.
+     * @param toolRequests The candidate tool requests
+     * @param agent optional tool policy of the invoking agent; tools not permitted by the policy are filtered out
+     * @returns Tool requests permitted by the policy
+     */
+    protected filterByAgentToolPolicy(toolRequests: ToolRequest[], agent?: AgentToolPolicy): ToolRequest[] {
+        if (!agent || (!agent.allowedTools && !agent.disallowedTools?.length)) {
+            return toolRequests;
+        }
+        return toolRequests.filter(tool => {
+            if (agent.disallowedTools?.some(pattern => matchesToolPattern(pattern, tool.id))) {
+                this.logger?.info(`Dropped tool '${tool.id}' for agent '${agent.id ?? '<unknown>'}': matched disallowedTools.`);
+                return false;
+            }
+            if (agent.allowedTools && !agent.allowedTools.some(pattern => matchesToolPattern(pattern, tool.id))) {
+                this.logger?.info(`Dropped tool '${tool.id}' for agent '${agent.id ?? '<unknown>'}': not matched by allowedTools.`);
+                return false;
+            }
+            return true;
+        });
     }
 
     /**

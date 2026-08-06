@@ -667,5 +667,62 @@ describe('CustomAgentDescription', () => {
             expect(CustomAgentDescription.is({ id: 'test' })).to.be.false;
             expect(CustomAgentDescription.is({ id: 'test', name: 'Test' })).to.be.false;
         });
+
+        it('should return true for valid description with allowedTools/disallowedTools string arrays', () => {
+            const description = { ...validDescription, allowedTools: ['a', 'b*'], disallowedTools: ['c'] };
+            expect(CustomAgentDescription.is(description)).to.be.true;
+        });
+
+        it('should return false for description with non-array allowedTools', () => {
+            const description = { ...validDescription, allowedTools: 'notAnArray' };
+            expect(CustomAgentDescription.is(description)).to.be.false;
+        });
+
+        it('should return false for description with non-string-array allowedTools', () => {
+            const description = { ...validDescription, allowedTools: [1] };
+            expect(CustomAgentDescription.is(description)).to.be.false;
+        });
+
+        it('should return false for description with non-array disallowedTools', () => {
+            const description = { ...validDescription, disallowedTools: 'notAnArray' };
+            expect(CustomAgentDescription.is(description)).to.be.false;
+        });
+
+        it('should return false for description with non-string-array disallowedTools', () => {
+            const description = { ...validDescription, disallowedTools: [1] };
+            expect(CustomAgentDescription.is(description)).to.be.false;
+        });
+    });
+
+    describe('equals()', () => {
+        const base = {
+            id: 'test-agent',
+            name: 'Test Agent',
+            description: 'A test agent',
+            prompt: 'You are a test agent',
+            defaultLLM: 'gpt-4'
+        };
+
+        it('should return true when both sides omit allowedTools/disallowedTools', () => {
+            expect(CustomAgentDescription.equals(base, { ...base })).to.be.true;
+        });
+
+        it('should return true when both sides carry equal allowedTools/disallowedTools lists', () => {
+            const a = { ...base, allowedTools: ['a', 'b'], disallowedTools: ['c'] };
+            const b = { ...base, allowedTools: ['a', 'b'], disallowedTools: ['c'] };
+            expect(CustomAgentDescription.equals(a, b)).to.be.true;
+        });
+
+        it('should return false when only allowedTools differ', () => {
+            const a = { ...base, allowedTools: ['a', 'b'] };
+            const b = { ...base, allowedTools: ['a'] };
+            expect(CustomAgentDescription.equals(a, b)).to.be.false;
+        });
+
+        it('should return false when only disallowedTools differ', () => {
+            const a = { ...base, disallowedTools: ['a', 'b'] };
+            const b = { ...base, disallowedTools: ['b', 'a'] };
+            expect(CustomAgentDescription.equals(a, b)).to.be.false;
+        });
     });
 });
