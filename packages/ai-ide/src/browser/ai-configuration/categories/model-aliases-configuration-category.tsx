@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AgentService, AISettingsService } from '@theia/ai-core';
+import { AgentService, AISettingsService, LANGUAGE_MODEL_ALIASES_PREFERENCE } from '@theia/ai-core';
 import { FrontendLanguageModelRegistry, LanguageModel, LanguageModelRegistry, LanguageModelRequirement } from '@theia/ai-core/lib/common/language-model';
 import { LanguageModelAlias, LanguageModelAliasRegistry } from '@theia/ai-core/lib/common/language-model-alias';
 import { Emitter, Event, nls } from '@theia/core';
@@ -83,7 +83,7 @@ export class ModelAliasesConfigurationCategory extends CollectionCategoryRendere
     }
 
     getOwnedPreferenceIds(): string[] {
-        return ['ai-features.languageModelAliases'];
+        return [LANGUAGE_MODEL_ALIASES_PREFERENCE];
     }
 
     get search(): AiConfigurationSearchProvider {

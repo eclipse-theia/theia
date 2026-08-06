@@ -67,7 +67,6 @@ export abstract class CollectionCategoryRenderer implements AiConfigurationCateg
         const listTitle = this.overviewListTitle;
         return <div className='ai-configuration-page'>
             {this.renderCategorySettings(ctx)}
-            {this.renderFilter(ctx)}
             {listTitle !== undefined ? <AiConfigurationSection title={listTitle}>{body}</AiConfigurationSection> : body}
         </div>;
     }
@@ -90,11 +89,6 @@ export abstract class CollectionCategoryRenderer implements AiConfigurationCateg
 
     /** Category-level settings shown above the card grid; nothing by default. */
     protected renderCategorySettings(ctx: AiConfigurationRenderContext): React.ReactNode {
-        return undefined;
-    }
-
-    /** Filter slot; nothing by default (wired when in-overview filtering lands). */
-    protected renderFilter(ctx: AiConfigurationRenderContext): React.ReactNode {
         return undefined;
     }
 

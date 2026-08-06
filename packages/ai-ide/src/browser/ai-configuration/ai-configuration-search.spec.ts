@@ -51,7 +51,7 @@ describe('AiConfigurationSearch', () => {
         });
     });
 
-    describe('match', () => {
+    describe('matchesTerms', () => {
         const index = [
             item('Default Chat Agent', { typeLabel: 'Agent', categoryId: 'agents', keywords: 'orchestrator' }),
             item('Universal', { typeLabel: 'Agent', categoryId: 'agents' }),
@@ -59,34 +59,33 @@ describe('AiConfigurationSearch', () => {
             item('Enable AI Features', { typeLabel: 'Setting', categoryId: 'general' })
         ];
 
-        it('returns no results for a blank query', () => {
-            expect(AiConfigurationSearch.match(index, '   ')).to.have.length(0);
+        /** Mirrors how the tree filter combines the helpers: `terms` once, then `matchesTerms` per item. */
+        function matching(query: string): string[] {
+            const searchTerms = AiConfigurationSearch.terms(query);
+            return index
+                .filter(candidate => AiConfigurationSearch.matchesTerms(AiConfigurationSearch.matchKey(candidate), searchTerms))
+                .map(candidate => candidate.label);
+        }
+
+        it('matches every item for a blank query', () => {
+            expect(matching('   ')).to.have.length(index.length);
         });
 
         it('requires every term to be present (AND semantics)', () => {
-            const results = AiConfigurationSearch.match(index, 'chat agent');
-            expect(results.map(r => r.label)).to.deep.equal(['Default Chat Agent']);
+            expect(matching('chat agent')).to.deep.equal(['Default Chat Agent']);
         });
 
         it('matches against keywords and type label', () => {
-            expect(AiConfigurationSearch.match(index, 'orchestrator').map(r => r.label)).to.deep.equal(['Default Chat Agent']);
-            expect(AiConfigurationSearch.match(index, 'mcp').map(r => r.label)).to.deep.equal(['Filesystem']);
+            expect(matching('orchestrator')).to.deep.equal(['Default Chat Agent']);
+            expect(matching('mcp')).to.deep.equal(['Filesystem']);
         });
 
         it('is case-insensitive', () => {
-            expect(AiConfigurationSearch.match(index, 'UNIVERSAL').map(r => r.label)).to.deep.equal(['Universal']);
+            expect(matching('UNIVERSAL')).to.deep.equal(['Universal']);
         });
 
-        it('preserves index order', () => {
-            expect(AiConfigurationSearch.match(index, 'a').map(r => r.label)).to.deep.equal([
-                'Default Chat Agent', 'Universal', 'Enable AI Features'
-            ]);
-        });
-
-        it('caps the number of results', () => {
-            const many = Array.from({ length: 20 }, (_, i) => item(`Setting ${i}`));
-            expect(AiConfigurationSearch.match(many, 'setting', 14)).to.have.length(14);
-            expect(AiConfigurationSearch.match(many, 'setting')).to.have.length(AiConfigurationSearch.MAX_RESULTS);
+        it('matches on substrings', () => {
+            expect(matching('a')).to.deep.equal(['Default Chat Agent', 'Universal', 'Enable AI Features']);
         });
     });
 });

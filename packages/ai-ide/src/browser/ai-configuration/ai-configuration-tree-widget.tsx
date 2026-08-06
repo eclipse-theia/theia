@@ -198,7 +198,7 @@ export class AiConfigurationTreeWidget extends TreeWidget {
         const match = (category.search?.getSearchItems() ?? []).find(item =>
             item.target.highlight
             && item.target.itemId === itemId
-            && AiConfigurationSearch.matchesTerms(`${item.label} ${item.keywords ?? ''} ${item.typeLabel}`.toLowerCase(), this.filterTerms));
+            && AiConfigurationSearch.matchesTerms(AiConfigurationSearch.matchKey(item), this.filterTerms));
         return match?.target;
     }
 
@@ -363,7 +363,7 @@ export class AiConfigurationTreeWidget extends TreeWidget {
         const items = this.registry.getCategory(categoryId)?.search?.getSearchItems() ?? [];
         return items.some(item =>
             (itemId === undefined || item.target.itemId === itemId)
-            && AiConfigurationSearch.matchesTerms(`${item.label} ${item.keywords ?? ''} ${item.typeLabel}`.toLowerCase(), this.filterTerms));
+            && AiConfigurationSearch.matchesTerms(AiConfigurationSearch.matchKey(item), this.filterTerms));
     }
 
     protected labelMatches(label: string | undefined): boolean {

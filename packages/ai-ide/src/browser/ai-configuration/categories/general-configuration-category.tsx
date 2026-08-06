@@ -181,7 +181,7 @@ export class GeneralConfigurationCategory implements AiConfigurationCategory, Ai
             {!enabled && this.renderGateNote()}
             <div className={`ai-configuration-sections${enabled ? '' : ' ai-configuration-sections-off'}`}>
                 {this.renderChatSection(ctx, !enabled)}
-                {this.renderCatchAllSections(ctx)}
+                {this.renderCatchAllSections(ctx, !enabled)}
             </div>
         </div>;
     }
@@ -202,7 +202,7 @@ export class GeneralConfigurationCategory implements AiConfigurationCategory, Ai
         return this.settingsRowService.aiFeaturePreferenceIds().filter(id => !claimed.has(id));
     }
 
-    protected renderCatchAllSections(ctx: AiConfigurationRenderContext): React.ReactNode {
+    protected renderCatchAllSections(ctx: AiConfigurationRenderContext, disabled: boolean): React.ReactNode {
         const bySegment = new Map<string, string[]>();
         for (const id of this.unclaimedPreferenceIds()) {
             const segment = id.substring('ai-features.'.length).split('.')[0];
@@ -217,18 +217,19 @@ export class GeneralConfigurationCategory implements AiConfigurationCategory, Ai
             .sort((left, right) => this.segmentLabel(left[0]).localeCompare(this.segmentLabel(right[0])))
             .map(([segment, ids]) => (
                 <AiConfigurationSection title={this.segmentLabel(segment)} key={segment}>
-                    {ids.map(id => this.renderGenericRow(ctx, id))}
+                    {ids.map(id => this.renderGenericRow(ctx, id, disabled))}
                 </AiConfigurationSection>
             ));
     }
 
-    protected renderGenericRow(ctx: AiConfigurationRenderContext, preferenceId: string): React.ReactNode {
+    protected renderGenericRow(ctx: AiConfigurationRenderContext, preferenceId: string, disabled: boolean): React.ReactNode {
         return <AiSettingsRow
             key={preferenceId}
             service={this.settingsRowService}
             preferenceId={preferenceId}
             scope={ctx.scope}
             control={this.settingsRowService.controlFor(preferenceId)}
+            disabled={disabled}
             onDidChange={ctx.update}
         />;
     }
@@ -244,12 +245,14 @@ export class GeneralConfigurationCategory implements AiConfigurationCategory, Ai
     }
 
     protected renderHero(ctx: AiConfigurationRenderContext, enabled: boolean): React.ReactNode {
-        return <div className='ai-configuration-hero'>
+        // Carries the same deep-link anchor as a normal setting row, so this category's search item for
+        // `PREFERENCE_NAME_ENABLE_AI` can scroll to and flash the toggle even though it is not rendered
+        // through `AiConfigurationSettingRow`.
+        return <div className='ai-configuration-hero' data-ai-config-row-id={PREFERENCE_NAME_ENABLE_AI}>
             <div className='ai-settings-row-top'>
                 <div className='ai-settings-row-main'>
                     <div className='ai-settings-row-title'>
                         {this.titleFor(PREFERENCE_NAME_ENABLE_AI)}
-                        <span className='ai-settings-row-id'>{PREFERENCE_NAME_ENABLE_AI}</span>
                     </div>
                     <div className='ai-settings-row-description'>
                         {nls.localize('theia/ai/ide/generalConfiguration/enableAiDescription',
@@ -329,8 +332,6 @@ costs — monitor them closely. Requests may run continuously while agents are a
             this.renderSettingRow(ctx, PERSISTED_SESSION_LIMIT_PREF, {
                 below: <AiSessionLimitControl
                     value={this.numberValue(PERSISTED_SESSION_LIMIT_PREF, ctx, 25)}
-                    limitedLabel={nls.localizeByDefault('Limited')}
-                    limitedDefault={25}
                     limitedMin={1}
                     limitedMax={999}
                     specials={[
@@ -345,8 +346,6 @@ costs — monitor them closely. Requests may run continuously while agents are a
             this.renderSettingRow(ctx, WELCOME_SCREEN_SESSIONS_PREF, {
                 below: <AiSessionLimitControl
                     value={this.numberValue(WELCOME_SCREEN_SESSIONS_PREF, ctx, 20)}
-                    limitedLabel={nls.localizeByDefault('Limited')}
-                    limitedDefault={20}
                     limitedMin={1}
                     limitedMax={99}
                     specials={[
@@ -369,7 +368,7 @@ costs — monitor them closely. Requests may run continuously while agents are a
             // Any other chat.* preference no category claims (e.g. token-usage, server-side compaction).
             ...this.unclaimedPreferenceIds()
                 .filter(id => id.startsWith('ai-features.chat.'))
-                .map(id => this.renderGenericRow(ctx, id))
+                .map(id => this.renderGenericRow(ctx, id, disabled))
         ]);
     }
 

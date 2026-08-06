@@ -31,6 +31,9 @@ export class AiConfigurationDetailWidget extends ReactWidget {
 
     static readonly ID = 'ai-configuration-detail';
 
+    /** Frames a pending search highlight waits for its target row to be mounted before it is dropped. */
+    static readonly HIGHLIGHT_RETRY_FRAMES = 10;
+
     @inject(AiConfigurationCategoryRegistry)
     protected readonly registry: AiConfigurationCategoryRegistry;
 
@@ -40,13 +43,13 @@ export class AiConfigurationDetailWidget extends ReactWidget {
     @inject(AiConfigurationService)
     protected readonly aiConfigurationService: AiConfigurationService;
 
-    /** Render-only in this iteration; per-scope read/write is wired later (T3). */
+    /** Scope every row on the page reads from and writes to; per-scope editing is not wired up yet. */
     protected scope: AiConfigurationScope = 'user';
-    /** Per-view filter text; slot only in this iteration (T5). */
-    protected filter = '';
 
     protected resetScroll = false;
     protected pendingHighlight?: AiConfigurationSelection['highlight'];
+    /** Frames a pending highlight has already waited for its target row; see {@link applyScrollAndHighlight}. */
+    protected pendingHighlightFrames = 0;
 
     @postConstruct()
     protected init(): void {
@@ -68,13 +71,13 @@ export class AiConfigurationDetailWidget extends ReactWidget {
     protected onSelectionChanged(): void {
         this.resetScroll = true;
         this.pendingHighlight = this.selectionModel.getSelection()?.highlight;
+        this.pendingHighlightFrames = 0;
         this.update();
     }
 
     protected createRenderContext(): AiConfigurationRenderContext {
         return {
             scope: this.scope,
-            filter: this.filter,
             navigate: selection => this.selectionModel.select(selection),
             update: () => this.update()
         };
@@ -164,17 +167,43 @@ export class AiConfigurationDetailWidget extends ReactWidget {
             }
             this.resetScroll = false;
             const highlight = this.pendingHighlight;
-            if (highlight) {
+            if (!highlight) {
+                return;
+            }
+            const element = body.querySelector<HTMLElement>(`[data-ai-config-row-id="${highlight.rowId}"]`);
+            if (element) {
                 this.pendingHighlight = undefined;
-                const rowSelector = `[data-ai-config-row-id="${highlight.rowId}"]`;
-                const selector = highlight.subId ? `${rowSelector} [data-ai-config-sub-id="${highlight.subId}"]` : rowSelector;
-                const element = body.querySelector<HTMLElement>(selector);
-                if (element) {
-                    element.scrollIntoView({ block: 'center' });
-                    element.classList.add('ai-configuration-row-flash');
-                    window.setTimeout(() => element.classList.remove('ai-configuration-row-flash'), 1200);
-                }
+                this.centerInBody(body, element);
+                element.classList.add('ai-configuration-row-flash');
+                window.setTimeout(() => element.classList.remove('ai-configuration-row-flash'), 1200);
+            } else if (this.pendingHighlightFrames < AiConfigurationDetailWidget.HIGHLIGHT_RETRY_FRAMES) {
+                // Cross-category navigation renders the new page and the highlight target in the same pass,
+                // but categories that resolve their rows asynchronously (agents, providers) are still empty on
+                // this frame. Keep the highlight pending and look again rather than dropping it, which made
+                // scroll-and-flash fire only when the row happened to be mounted already.
+                this.pendingHighlightFrames++;
+                this.applyScrollAndHighlight();
+            } else {
+                this.pendingHighlight = undefined;
             }
         });
+    }
+
+    /**
+     * Vertically centers `element` within `body` by scrolling that container and nothing else.
+     *
+     * Deliberately not `Element.scrollIntoView`: that scrolls *every* scrollable ancestor to satisfy the
+     * requested alignment, and `overflow: hidden` does not prevent programmatic scrolling. When a row cannot
+     * be centered inside the body alone, it therefore nudges the `overflow: hidden` containers above this
+     * widget, which have no scrollbar for the user to scroll back — shifting the whole shell, pushing the menu
+     * bar out of view and leaving a gap below the status bar.
+     */
+    protected centerInBody(body: HTMLElement, element: HTMLElement): void {
+        const bodyRect = body.getBoundingClientRect();
+        const elementRect = element.getBoundingClientRect();
+        const current = elementRect.top - bodyRect.top;
+        const centered = (body.clientHeight - elementRect.height) / 2;
+        // Assigning `scrollTop` clamps to the scrollable range, so short pages simply do not scroll.
+        body.scrollTop += current - centered;
     }
 }

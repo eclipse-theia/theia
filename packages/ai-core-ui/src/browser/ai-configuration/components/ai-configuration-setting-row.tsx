@@ -39,8 +39,8 @@ export interface AiConfigurationSettingRowProps {
     /** Schema tags shown as badges next to the title (e.g. `experimental`, `preview`), mirroring the Settings UI. */
     readonly tags?: string[];
     /**
-     * Opens the Settings UI preference context menu (Reset / Copy Setting ID / Copy as JSON) anchored at
-     * the gear element. When omitted the gear is hidden. The owner wires this to
+     * Opens this view's setting context menu (Reset Setting / Copy Setting ID / Copy Setting as JSON)
+     * anchored at the gear element. When omitted the gear is hidden. The owner wires this to
      * {@link AiSettingsRowService.openSettingContextMenu}.
      */
     readonly onOpenMenu?: (gear: HTMLElement) => void;
@@ -116,9 +116,9 @@ function tagTooltip(tag: string): string {
 /**
  * Gear affordance in the row's left gutter, matching the Settings UI: a cog button (outside the content,
  * so it never shifts the title) that opens the preference context menu via
- * {@link AiConfigurationSettingRowProps.onOpenMenu}. That opener renders the Settings UI's own context
- * menu ({@link PreferenceMenus.PREFERENCE_EDITOR_CONTEXT_MENU}), so no popover is implemented here.
- * Hidden when no opener is given.
+ * {@link AiConfigurationSettingRowProps.onOpenMenu}. That opener renders a real Theia context menu
+ * (`AI_CONFIGURATION_SETTING_CONTEXT_MENU`), so no popover is implemented here. Hidden when no opener
+ * is given.
  */
 const AiSettingRowGear: React.FC<{
     onOpenMenu?: (gear: HTMLElement) => void;

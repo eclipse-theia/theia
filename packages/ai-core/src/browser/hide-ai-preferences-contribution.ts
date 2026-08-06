@@ -49,14 +49,40 @@ export const openAiConfigurationPlaceholderSchema: PreferenceSchema = {
 @injectable()
 export class HideAiPreferencesContribution implements PreferenceContribution {
 
+    /**
+     * Re-entrancy guard: {@link PreferenceSchemaService.updateSchemaProperty} fires `onDidChangeSchema`
+     * synchronously, so our own writes call {@link hideAiPreferences} back while it is still iterating
+     * the service's live property map.
+     */
+    protected hiding = false;
+
     async initSchema(service: PreferenceSchemaService): Promise<void> {
-        // Defer until the synchronous contribution-registration loop has added every schema, so we
-        // see all AI preferences (including those from provider packages) in a single pass.
-        await new Promise<void>(resolve => setTimeout(resolve, 0));
-        for (const [key, property] of service.getSchemaProperties()) {
-            if (key.startsWith(AI_PREFERENCE_PREFIX) && key !== OPEN_AI_CONFIGURATION_PREFERENCE_ID && !property.hidden) {
-                service.updateSchemaProperty(key, { ...property, hidden: true });
+        // Hide what is registered so far, then stay subscribed: schemas contributed after this point
+        // (a contribution whose own `initSchema` awaits, or any runtime `addSchema`) would otherwise
+        // remain visible in the Settings UI. Every addition fires `onDidChangeSchema`.
+        this.hideAiPreferences(service);
+        // Never disposed on purpose: this contribution lives as long as the application.
+        service.onDidChangeSchema(() => this.hideAiPreferences(service));
+    }
+
+    /**
+     * Turns on `hidden` for every `ai-features.*` property that is not already hidden. Idempotent, so it
+     * can run on every schema change. The `hidden` check and {@link hiding} each independently stop our own
+     * updates from looping; keep both, since dropping either leaves the pass one edit away from recursing.
+     */
+    protected hideAiPreferences(service: PreferenceSchemaService): void {
+        if (this.hiding) {
+            return;
+        }
+        this.hiding = true;
+        try {
+            for (const [key, property] of service.getSchemaProperties()) {
+                if (key.startsWith(AI_PREFERENCE_PREFIX) && key !== OPEN_AI_CONFIGURATION_PREFERENCE_ID && !property.hidden) {
+                    service.updateSchemaProperty(key, { ...property, hidden: true });
+                }
             }
+        } finally {
+            this.hiding = false;
         }
     }
 }

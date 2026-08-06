@@ -42,6 +42,9 @@ function createCategory(
     (category as any).defaultState = defaultState;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (category as any).toolNames = Object.keys(functions);
+    // Only `describe` is exercised here: the default-mode row title falls back to the schema label.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (category as any).settingsRowService = { describe: () => ({ label: 'Default Tool Confirmation Mode' }) };
     return category;
 }
 

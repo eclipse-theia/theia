@@ -21,9 +21,6 @@ import { AiSettingsControl, AiSettingsRowService } from './ai-settings-row-servi
 import { AiArrayInput, AiEditInSettingsButton, AiEnumSelect, AiNumberStepper, AiTextInput, AiToggleSwitch } from './ai-configuration-controls';
 import { AiConfigurationSettingRow } from './ai-configuration-setting-row';
 
-// Re-exported from its natural home on the service so existing importers keep working.
-export { AiSettingsControl } from './ai-settings-row-service';
-
 export interface AiSettingsRowProps {
     /** Service wrapping preference read/write and markdown rendering (injected by the owning widget). */
     readonly service: AiSettingsRowService;
@@ -37,6 +34,8 @@ export interface AiSettingsRowProps {
     readonly scope: AiConfigurationScope;
     /** The control to render for the value. */
     readonly control: AiSettingsControl;
+    /** Renders the control read-only, e.g. while the setting's feature gate is turned off. */
+    readonly disabled?: boolean;
     /** Resource URI for `folder`-scoped preferences. */
     readonly resourceUri?: string;
     /** Called after a value is written or reset, so the owner can re-render. */
@@ -62,7 +61,7 @@ const INLINE_CONTROL_TYPES = new Set<AiSettingsControl['type']>(['boolean']);
  * render full-width below.
  */
 export const AiSettingsRow: React.FC<AiSettingsRowProps> = ({
-    service, preferenceId, label, description, scope, control, resourceUri, onDidChange, rowId, actions
+    service, preferenceId, label, description, scope, control, disabled, resourceUri, onDidChange, rowId, actions
 }) => {
     const inspection = service.inspect(preferenceId, scope, resourceUri);
     // Fall back to the (already-localized) label and description from the preference schema.
@@ -86,6 +85,7 @@ export const AiSettingsRow: React.FC<AiSettingsRowProps> = ({
         control={control}
         value={inspection.value}
         label={effectiveLabel}
+        disabled={disabled}
         onCommit={commit}
         onEditInSettings={() => service.editInSettings(preferenceId)}
     />;

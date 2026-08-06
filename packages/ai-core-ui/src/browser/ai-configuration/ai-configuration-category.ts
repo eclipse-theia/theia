@@ -70,7 +70,7 @@ export namespace AiConfigurationCategoryId {
 /**
  * The scope a category's settings are read from and written to.
  *
- * Render-only in this iteration; per-scope read/write behaviour is wired later.
+ * The view currently always renders the `user` scope; selecting a scope is not implemented yet.
  */
 export type AiConfigurationScope = 'user' | 'workspace' | 'folder';
 
@@ -178,15 +178,16 @@ export interface AiConfigurationSelection {
     readonly categoryId: string;
     /** `undefined` => single-page body / collection overview. */
     readonly itemId?: string;
-    /** Optional row/setting to scroll-to and flash after navigating. */
-    readonly highlight?: { readonly rowId: string; readonly subId?: string };
+    /**
+     * Optional row/setting to scroll-to and flash after navigating. `rowId` is matched against the
+     * `data-ai-config-row-id` attribute the shared setting rows carry.
+     */
+    readonly highlight?: { readonly rowId: string };
 }
 
 export interface AiConfigurationRenderContext {
-    /** Render-only in this iteration; per-scope read/write is wired later. */
+    /** Scope the rows read from and write to. Always `user` for now; per-scope editing is not wired up yet. */
     readonly scope: AiConfigurationScope;
-    /** Per-view filter text; slot only in this iteration. */
-    readonly filter: string;
     /** Select another node (used by cards, links, "used by" chips). */
     navigate(selection: AiConfigurationSelection): void;
     /** Ask the detail host to re-render the current category body. */

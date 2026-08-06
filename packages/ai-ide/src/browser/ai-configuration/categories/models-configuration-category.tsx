@@ -29,12 +29,8 @@ import {
     AiConfigurationTreeItem
 } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
-import {
-    AiConfigurationEmptyState,
-    AiConfigurationItemDetailHeader,
-    AiConfigurationSection
-} from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-primitives';
-import { AiConfigurationItemRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-item-row';
+import { AiConfigurationSection } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-primitives';
+import { CollectionCategoryRenderer } from '@theia/ai-core-ui/lib/browser/ai-configuration/renderers/collection-category-renderer';
 import { AiSettingsRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row';
 
 /** Prefix shared by every AI preference. */
@@ -58,13 +54,13 @@ interface ModelsSection {
  * registered `ai-features.<provider>.*` preferences, so any installed provider package contributes
  * a node here without ai-ide having to depend on it.
  *
- * The page uses the shared {@link AiConfigurationSection} settings sections so every category renders
- * consistently. The overview shows the cross-provider model settings (`ai-features.modelSettings.*`,
- * `ai-features.reasoning.*`) and the providers as a card grid; selecting a provider node shows that
+ * The page layout comes from {@link CollectionCategoryRenderer}, like the other collection categories:
+ * the overview shows the cross-provider model settings (`ai-features.modelSettings.*`,
+ * `ai-features.reasoning.*`) above the provider cards, and selecting a provider node shows that
  * provider's settings.
  */
 @injectable()
-export class ModelsConfigurationCategory implements AiConfigurationCategory, AiConfigurationSearchProvider {
+export class ModelsConfigurationCategory extends CollectionCategoryRenderer implements AiConfigurationCategory, AiConfigurationSearchProvider {
 
     readonly id = AiConfigurationCategoryId.MODELS;
     readonly label = nls.localize('theia/ai/core/aiConfiguration/models/label', 'Providers & Models');
@@ -85,6 +81,10 @@ export class ModelsConfigurationCategory implements AiConfigurationCategory, AiC
         return this;
     }
 
+    protected get categoryId(): string {
+        return this.id;
+    }
+
     getOwnedPreferenceIds(): string[] {
         return this.getSections().flatMap(section => section.preferenceIds);
     }
@@ -102,51 +102,43 @@ export class ModelsConfigurationCategory implements AiConfigurationCategory, AiC
         this.toDispose.dispose();
     }
 
-    /** One tree child per discovered provider (the cross-provider model settings stay in the overview). */
+    /**
+     * One tree child per discovered provider (the cross-provider model settings stay in the overview).
+     * Each carries the category icon so the overview cards show it; the tree nodes fall back to it anyway.
+     */
     getTreeChildren(): AiConfigurationTreeItem[] {
         return this.getProviderSections().map(section => ({
             id: section.id,
-            label: section.title
+            label: section.title,
+            iconClass: this.iconClass
         } satisfies AiConfigurationTreeItem));
     }
 
-    /** Category overview (no node selected): the cross-provider model settings plus the provider cards. */
-    renderOverview(ctx: AiConfigurationRenderContext): React.ReactNode {
+    protected override get overviewListTitle(): string {
+        return nls.localize('theia/ai/ide/modelsConfiguration/providers', 'Providers');
+    }
+
+    protected override getEmptyMessage(): string {
+        return nls.localize('theia/ai/ide/modelsConfiguration/noProviders', 'No language-model providers are installed.');
+    }
+
+    /** Shown above the provider cards: the cross-provider model settings, when any are registered. */
+    protected override renderCategorySettings(ctx: AiConfigurationRenderContext): React.ReactNode {
         const modelSettings = this.getModelSettingsSection();
-        const providers = this.getProviderSections();
-        return <div className='ai-configuration-page'>
-            {modelSettings && <AiConfigurationSection title={modelSettings.title}>
-                {modelSettings.preferenceIds.map(preferenceId => this.renderPreferenceRow(ctx, preferenceId))}
-            </AiConfigurationSection>}
-            <AiConfigurationSection title={nls.localize('theia/ai/ide/modelsConfiguration/providers', 'Providers')}>
-                {providers.length === 0
-                    ? <AiConfigurationEmptyState
-                        message={nls.localize('theia/ai/ide/modelsConfiguration/noProviders', 'No language-model providers are installed.')}
-                    />
-                    : <div className='ai-configuration-item-list'>
-                        {providers.map(section => <AiConfigurationItemRow
-                            key={section.id}
-                            label={section.title}
-                            iconClass={this.iconClass}
-                            onSelect={() => ctx.navigate({ categoryId: this.id, itemId: section.id })}
-                        />)}
-                    </div>}
-            </AiConfigurationSection>
-        </div>;
+        return modelSettings && <AiConfigurationSection title={modelSettings.title}>
+            {modelSettings.preferenceIds.map(preferenceId => this.renderPreferenceRow(ctx, preferenceId))}
+        </AiConfigurationSection>;
     }
 
     /** Provider detail (node selected): that provider's settings. */
-    renderItemDetail(itemId: string, ctx: AiConfigurationRenderContext): React.ReactNode {
-        const section = this.getProviderSections().find(candidate => candidate.id === itemId);
+    protected renderItemSections(item: AiConfigurationTreeItem, ctx: AiConfigurationRenderContext): React.ReactNode {
+        const section = this.getProviderSections().find(candidate => candidate.id === item.id);
         if (!section) {
             return undefined;
         }
-        return <div className='ai-configuration-page'>
-            <AiConfigurationItemDetailHeader title={section.title} iconClass={this.iconClass} />
-            <AiConfigurationSection title={nls.localizeByDefault('Settings')}>
-                {section.preferenceIds.map(preferenceId => this.renderPreferenceRow(ctx, preferenceId))}
-            </AiConfigurationSection>
-        </div>;
+        return <AiConfigurationSection title={nls.localizeByDefault('Settings')}>
+            {section.preferenceIds.map(preferenceId => this.renderPreferenceRow(ctx, preferenceId))}
+        </AiConfigurationSection>;
     }
 
     protected renderPreferenceRow(ctx: AiConfigurationRenderContext, preferenceId: string): React.ReactNode {

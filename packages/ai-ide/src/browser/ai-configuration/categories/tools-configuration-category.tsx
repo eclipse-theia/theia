@@ -95,10 +95,10 @@ export class ToolsConfigurationCategory extends SinglePageCategoryRenderer imple
     getOwnedPreferenceIds(): string[] {
         // Managed via the confirmation-mode selector/table and the shell allow/deny editors on this page.
         return [
-            'ai-features.chat.defaultToolConfirmation',
-            'ai-features.chat.toolConfirmation',
-            'ai-features.terminal.shellCommandAllowlist',
-            'ai-features.terminal.shellCommandDenylist'
+            DEFAULT_TOOL_CONFIRMATION_PREFERENCE,
+            TOOL_CONFIRMATION_PREFERENCE,
+            SHELL_COMMAND_ALLOWLIST_PREFERENCE,
+            SHELL_COMMAND_DENYLIST_PREFERENCE
         ];
     }
 
@@ -174,10 +174,16 @@ export class ToolsConfigurationCategory extends SinglePageCategoryRenderer imple
         return this.defaultState;
     }
 
+    /** Title of the default-confirmation-mode row, shared by the header and the search index. */
+    protected defaultModeLabel(): string {
+        return this.settingsRowService.describe(DEFAULT_TOOL_CONFIRMATION_PREFERENCE).label
+            ?? nls.localize('theia/ai/ide/toolsConfiguration/default/label', 'Default Tool Confirmation Mode');
+    }
+
     protected override renderHeader(ctx: AiConfigurationRenderContext): React.ReactNode {
         const described = this.settingsRowService.describe(DEFAULT_TOOL_CONFIRMATION_PREFERENCE);
         const inspection = this.settingsRowService.inspect(DEFAULT_TOOL_CONFIRMATION_PREFERENCE, ctx.scope);
-        const modeLabel = described.label ?? nls.localize('theia/ai/ide/toolsConfiguration/default/label', 'Default Tool Confirmation Mode');
+        const modeLabel = this.defaultModeLabel();
         return <div className='ai-configuration-page'>
             {/* Rendered as a normal setting row (id/title/description + control below), plus a page-level
                 "Reset All" action in the row's action slot. */}
@@ -337,7 +343,7 @@ export class ToolsConfigurationCategory extends SinglePageCategoryRenderer imple
     getSearchItems(): AiConfigurationSearchItem[] {
         const toolTypeLabel = nls.localizeByDefault('Tool');
         const items: AiConfigurationSearchItem[] = [{
-            label: nls.localize('theia/ai/ide/toolsConfiguration/default/label', 'Default Tool Confirmation Mode:'),
+            label: this.defaultModeLabel(),
             typeLabel: nls.localizeByDefault('Setting'),
             categoryId: this.id,
             target: { categoryId: this.id },

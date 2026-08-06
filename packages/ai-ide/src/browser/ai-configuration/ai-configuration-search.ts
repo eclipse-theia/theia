@@ -18,16 +18,13 @@ import { AiConfigurationSearchItem } from '@theia/ai-core-ui/lib/browser/ai-conf
 
 /**
  * Pure matching helpers for the tree-level (deep) search. Kept free of any DOM
- * or DI dependency so both the search widget and the tree filter reuse it and it
- * can be unit-tested in isolation.
+ * or DI dependency so the tree filter can reuse it and it can be unit-tested in
+ * isolation.
  *
  * Match semantics: every whitespace-separated term of the query must appear in
  * the item's match key (`label + keywords + typeLabel`, lower-cased).
  */
 export namespace AiConfigurationSearch {
-
-    /** Maximum number of results shown in the deep-search dropdown. */
-    export const MAX_RESULTS = 14;
 
     /** The lower-cased text a search item is matched against. */
     export function matchKey(item: AiConfigurationSearchItem): string {
@@ -42,26 +39,5 @@ export namespace AiConfigurationSearch {
     /** Returns whether every term is present in `key`. */
     export function matchesTerms(key: string, searchTerms: string[]): boolean {
         return searchTerms.every(term => key.includes(term));
-    }
-
-    /**
-     * Returns the items matching `query`, in index order, capped at `limit`.
-     * An empty (or whitespace-only) query yields no results.
-     */
-    export function match(items: readonly AiConfigurationSearchItem[], query: string, limit: number = MAX_RESULTS): AiConfigurationSearchItem[] {
-        const searchTerms = terms(query);
-        if (searchTerms.length === 0) {
-            return [];
-        }
-        const results: AiConfigurationSearchItem[] = [];
-        for (const item of items) {
-            if (matchesTerms(matchKey(item), searchTerms)) {
-                results.push(item);
-                if (results.length >= limit) {
-                    break;
-                }
-            }
-        }
-        return results;
     }
 }

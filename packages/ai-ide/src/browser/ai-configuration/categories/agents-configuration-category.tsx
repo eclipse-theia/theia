@@ -29,6 +29,7 @@ import {
     PromptService,
     ToolInvocationRegistry,
 } from '@theia/ai-core/lib/common';
+import { AGENT_SETTINGS_PREF } from '@theia/ai-core/lib/common/agent-preferences';
 import { LanguageModelAlias, LanguageModelAliasRegistry } from '@theia/ai-core/lib/common/language-model-alias';
 import { DEFAULT_CHAT_AGENT_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { isChatAgent } from '@theia/ai-chat/lib/common';
@@ -138,7 +139,7 @@ export class AgentsConfigurationCategory extends CollectionCategoryRenderer impl
             PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST,
             PREFERENCE_NAME_AGENT_MODE_ENABLED,
             // Per-agent settings storage; edited through the agent detail pages, not as a raw row.
-            'ai-features.agentSettings'
+            AGENT_SETTINGS_PREF
         ];
     }
 
@@ -226,8 +227,6 @@ export class AgentsConfigurationCategory extends CollectionCategoryRenderer impl
                     service={this.settingsRowService}
                     preferenceId={DEFAULT_CHAT_AGENT_PREF}
                     label={nls.localize('theia/ai/ide/agentConfiguration/defaultChatAgent', 'Default Chat Agent')}
-                    description={nls.localize('theia/ai/chat/defaultAgent/description',
-                        'Optional: the Chat Agent invoked when no agent is explicitly mentioned with @<agent-name>. If unset, the built-in defaults apply.')}
                     scope={ctx.scope}
                     control={{ type: 'select', options: this.getChatAgentOptions() }}
                     onDidChange={ctx.update}
@@ -235,9 +234,6 @@ export class AgentsConfigurationCategory extends CollectionCategoryRenderer impl
                 <AiSettingsRow
                     service={this.settingsRowService}
                     preferenceId={PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE}
-                    label={nls.localize('theia/ai/core/defaultNotification/title', 'Default Notification Type')}
-                    description={nls.localize('theia/ai/core/defaultNotification/mdDescription',
-                        'The default notification method used when an AI agent needs your attention. Individual agents can override this setting.')}
                     scope={ctx.scope}
                     control={{ type: 'select', options: this.getNotificationTypeOptions() }}
                     onDidChange={ctx.update}

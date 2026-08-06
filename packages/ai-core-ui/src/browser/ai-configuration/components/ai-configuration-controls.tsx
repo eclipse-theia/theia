@@ -337,8 +337,6 @@ export interface SessionLimitSpecialOption {
  */
 export const AiSessionLimitControl: React.FC<{
     value: number;
-    limitedLabel: string;
-    limitedDefault: number;
     limitedMin: number;
     limitedMax?: number;
     specials: SessionLimitSpecialOption[];

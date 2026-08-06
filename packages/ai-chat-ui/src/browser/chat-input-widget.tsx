@@ -28,7 +28,7 @@ import {
 import { mergeReasoningSettings } from '@theia/ai-core/lib/browser/frontend-language-model-service';
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
-import { FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
+import { AI_SHOW_SETTINGS_COMMAND, FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
 import { AISettingsService, PromptService } from '@theia/ai-core/lib/common';
 import { CommandService, DisposableCollection, Emitter, InMemoryResources, MessageService, URI, nls, Disposable, ILogger } from '@theia/core';
 import { ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
@@ -1221,10 +1221,11 @@ export class AIChatInputWidget extends ReactWidget {
                 console.error(`Failed to execute '${AI_CHAT_HOME.id}' from token usage warning`, error);
             });
         } else if (selected === openSettingsAction) {
-            // The threshold preference lives in the AI Configuration view (AI preferences are hidden from
-            // the Settings UI). Referenced by command id because @theia/ai-chat-ui cannot depend on @theia/ai-ide.
-            this.commandService.executeCommand('aiConfiguration:open', CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE).catch(error => {
-                console.error('Failed to open the AI Configuration view from the token usage warning', error);
+            // Deep-links to the threshold preference wherever AI settings live: `@theia/ai-ide` routes this
+            // to the AI Configuration view, and the `@theia/ai-core` default opens the Settings UI on it.
+            // Going through the command keeps this working in apps without @theia/ai-ide.
+            this.commandService.executeCommand(AI_SHOW_SETTINGS_COMMAND.id, CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE).catch(error => {
+                console.error(`Failed to execute '${AI_SHOW_SETTINGS_COMMAND.id}' from token usage warning`, error);
             });
         }
     }

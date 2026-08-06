@@ -17,7 +17,7 @@ import { Command, CommandRegistry, MenuModelRegistry, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { AI_SHOW_SETTINGS_COMMAND, AIViewContribution } from '@theia/ai-core/lib/browser';
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
-import { codicon, CommonCommands, CommonMenus, FrontendApplication, KeybindingRegistry } from '@theia/core/lib/browser';
+import { codicon, CommonCommands, CommonMenus, KeybindingRegistry } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIConfigurationContainerWidget } from './ai-configuration-widget';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
@@ -77,14 +77,11 @@ export class AIConfigurationViewContribution extends AIViewContribution<AIConfig
         });
     }
 
-    async initializeLayout(_app: FrontendApplication): Promise<void> {
-        await this.openView();
-    }
-
     /**
      * Overrides {@link AIViewContribution.init}, which closes the view when AI features are disabled.
-     * The AI Configuration view must instead stay open: it hosts the toggle to re-enable AI and is
-     * otherwise unreachable once its View-menu entry is gated away. See eclipsesource/theia#316.
+     * The AI Configuration view must instead stay open, so that turning AI off does not close the very
+     * view holding the toggle that turns it back on. It stays reachable either way via the Manage (gear)
+     * menu and `alt+a`, both of which are ungated. See eclipsesource/theia#316.
      */
     protected override init(): void {
         // Intentionally left blank: do not register the deactivate-closes-view listener.
@@ -146,7 +143,9 @@ export class AIConfigurationViewContribution extends AIViewContribution<AIConfig
         // (which falls back to `preferences:open` for apps without this view). No `isEnabled` gate, so the
         // view stays reachable while AI is disabled — that is where AI features are re-enabled.
         commands.registerHandler(AI_SHOW_SETTINGS_COMMAND.id, {
-            execute: () => commands.executeCommand(OPEN_AI_CONFIG_VIEW.id)
+            // Forwarded so callers can deep-link to a preference row; OPEN_AI_CONFIG_VIEW ignores any
+            // argument that is not a string, so the widget the chat toolbar passes just opens the view.
+            execute: (target?: unknown) => commands.executeCommand(OPEN_AI_CONFIG_VIEW.id, target)
         });
     }
 
