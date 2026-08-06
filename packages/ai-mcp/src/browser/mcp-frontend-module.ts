@@ -19,7 +19,7 @@ import '../../src/browser/style/mcp-configuration-widget.css';
 
 import { CommandContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution, OpenHandler, RemoteConnectionProvider, ServiceConnectionProvider, WidgetFactory } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, OpenHandler, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import {
     MCPFrontendService,
     MCPServerManager,
@@ -39,7 +39,8 @@ import { MCPGenericCapabilitiesContribution } from './mcp-generic-capabilities-c
 import { MCPServerEditor, MCPServerEditorImpl, MCPServerEditDialogFactory, MCPServerEditDialogParameters } from './mcp-server-editor';
 import { MCPServerEditDialog, DEFAULT_MCP_SERVER_FORM_DATA } from './mcp-server-edit-dialog';
 import { MCPServerInstallDialog, MCPServerInstallDialogFactory, MCPServerInstallDialogOptions } from './mcp-server-install-dialog';
-import { AIMCPConfigurationWidget } from './mcp-configuration-widget';
+import { McpServersConfigurationCategory } from './mcp-servers-configuration-category';
+import { AiConfigurationCategory } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
 import { MCPConfigurationCommandContribution } from './mcp-configuration-command-contribution';
 import { MCPInstallUriConfiguration } from './mcp-install-uri-configuration';
 import { InstallMcpUriHandler } from './install-mcp-uri-handler';
@@ -67,11 +68,8 @@ export default new ContainerModule(bind => {
     bind(MCPServerEditorImpl).toSelf().inSingletonScope();
     bind(MCPServerEditor).toService(MCPServerEditorImpl);
 
-    bind(AIMCPConfigurationWidget).toSelf();
-    bind(WidgetFactory).toDynamicValue(ctx => ({
-        id: AIMCPConfigurationWidget.ID,
-        createWidget: () => ctx.container.get(AIMCPConfigurationWidget)
-    })).inSingletonScope();
+    bind(McpServersConfigurationCategory).toSelf().inSingletonScope();
+    bind(AiConfigurationCategory).toService(McpServersConfigurationCategory);
     bind(MCPConfigurationCommandContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(MCPConfigurationCommandContribution);
 

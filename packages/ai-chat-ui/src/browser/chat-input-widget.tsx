@@ -28,10 +28,10 @@ import {
 import { mergeReasoningSettings } from '@theia/ai-core/lib/browser/frontend-language-model-service';
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
-import { FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
+import { AI_SHOW_SETTINGS_COMMAND, FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
 import { AISettingsService, PromptService } from '@theia/ai-core/lib/common';
 import { CommandService, DisposableCollection, Emitter, InMemoryResources, MessageService, URI, nls, Disposable, ILogger } from '@theia/core';
-import { CommonCommands, ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -1221,8 +1221,11 @@ export class AIChatInputWidget extends ReactWidget {
                 console.error(`Failed to execute '${AI_CHAT_HOME.id}' from token usage warning`, error);
             });
         } else if (selected === openSettingsAction) {
-            this.commandService.executeCommand(CommonCommands.OPEN_PREFERENCES.id, CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE).catch(error => {
-                console.error(`Failed to execute '${CommonCommands.OPEN_PREFERENCES.id}' from token usage warning`, error);
+            // Deep-links to the threshold preference wherever AI settings live: `@theia/ai-ide` routes this
+            // to the AI Configuration view, and the `@theia/ai-core` default opens the Settings UI on it.
+            // Going through the command keeps this working in apps without @theia/ai-ide.
+            this.commandService.executeCommand(AI_SHOW_SETTINGS_COMMAND.id, CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE).catch(error => {
+                console.error(`Failed to execute '${AI_SHOW_SETTINGS_COMMAND.id}' from token usage warning`, error);
             });
         }
     }
