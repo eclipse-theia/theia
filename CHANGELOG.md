@@ -4,15 +4,6 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## 1.75.0 - tbd
-
-- [core, monaco] fixed Monaco theme CSS, `SelectComponent` dropdown placement, and the OS font class in secondary windows [#17874](https://github.com/eclipse-theia/theia/pull/17874)
-
-<a name="breaking_changes_1.75.0">[Breaking Changes:](#breaking_changes_1.75.0)</a>
-
-- [core] added `onWindowLoaded` to the `SecondaryWindowService` interface; adopters implementing the interface from scratch (rather than extending `DefaultSecondaryWindowService`) must provide it [#17874](https://github.com/eclipse-theia/theia/pull/17874)
-- [monaco] removed the `protected secondaryWindowHandler` field from `MonacoFrontendApplicationContribution`; the Monaco theme stylesheet is now injected into every secondary window via `SecondaryWindowService.onWindowLoaded` [#17874](https://github.com/eclipse-theia/theia/pull/17874)
-
 ## 1.74.0 - 7/31/2026
 
 - [ai] support for server-side compaction [#17746](https://github.com/eclipse-theia/theia/pull/17746)
@@ -52,6 +43,7 @@
 - [core] Theia v1.73.0 was released [#17716](https://github.com/eclipse-theia/theia/pull/17716)
 - [core] vscode API bumped and nls updated to 1.130.0 [#17819](https://github.com/eclipse-theia/theia/pull/17819) - contributed on behalf of STMicroelectronics
 - [core, ai-ide, ai-chat-ui, preferences, plugin-ext, monaco] added session-preference CLI overrides and AI Allow-All Mode banner [#17731](https://github.com/eclipse-theia/theia/pull/17731)
+- [core, monaco] fixed Monaco theme CSS, `SelectComponent` dropdown placement, and the OS font class in secondary windows [#17874](https://github.com/eclipse-theia/theia/pull/17874)
 - [doc] recommended interface + symbol over class tokens for services [#17792](https://github.com/eclipse-theia/theia/pull/17792)
 - [doc] updated developing.md [#17752](https://github.com/eclipse-theia/theia/pull/17752) - Contributed on behalf of STMicroelectronics
 - [doc] updated migration.md [#17827](https://github.com/eclipse-theia/theia/pull/17827)
@@ -87,11 +79,13 @@
 - [ai-chat-ui] `ChatViewTreeWidget` scroll-lock is now driven by Virtuoso's `atBottomStateChange` callback instead of scroll-direction heuristics; the following `protected` members have been removed: `handleScrollEvent()`, `getCurrentScrollTop()`, `isAtAbsoluteBottom()`, `updateScrollToBottomButtonState()`, `lastScrollTop`, `_scrollButtonDebounceTimer`, `SCROLL_BUTTON_GRACE_PERIOD`, and the `updateScrollToRow()` override. Subclasses that override any of these should use the new `handleAtBottomStateChange(isAtBottom: boolean)` method instead [#17728](https://github.com/eclipse-theia/theia/pull/17728)
 - [ai-vercel-ai] deprecated the `@theia/ai-vercel-ai` experimental extension and stopped publishing it on npm. Please use the dedicated `@theia/ai-openai` and `@theia/ai-anthropic` providers instead, which cover the same models with first-class support. [#17781](https://github.com/eclipse-theia/theia/pull/17781)
 - [bundle-plugin] upgraded `webpack` to `^5.108.3`, which no longer bundles the Terser minifier. Adopters that build their application with webpack must add `terser-webpack-plugin` as a `devDependency` in their application's `package.json`. Note that the webpack bundler is being phased out in favor of esbuild and will be removed in an upcoming release; see the migration guide for switching to esbuild [#17741](https://github.com/eclipse-theia/theia/pull/17741)
+- [core] added `onWindowLoaded` to the `SecondaryWindowService` interface; adopters implementing the interface from scratch (rather than extending `DefaultSecondaryWindowService`) must provide it [#17874](https://github.com/eclipse-theia/theia/pull/17874)
 - [core] removed `TreeWidget.onScroll`, `TreeWidget.onScrollEmitter`, `TreeWidget.getVirtualizedScrollState()`, `TreeWidget.isScrolledToBottom()`, the `TreeScrollEvent` interface, and the `TreeScrollState` interface. Use `TreeWidget.onAtBottomStateChange` to react to bottom-state changes instead [#17728](https://github.com/eclipse-theia/theia/pull/17728)
 - [editor] `EditorWidget` now tracks tab-bar moves through the shared `TabBarTracker`; the `protected` members `currentTabbar`, `toDisposeOnTabbarChange`, and `checkForTabbarChange()` have been removed. Subclasses that relied on them should use the `protected tabBarTracker` field (and its `reset()` / `check()`) instead [#17800](https://github.com/eclipse-theia/theia/pull/17800)
 - [editor-preview] `EditorPreviewWidget` no longer declares the `protected _isPreview` field or the `protected onDidChangePreviewStateEmitter`; the preview state is now held by a composed `PreviewTabSupport`. Use the unchanged public `isPreview` / `onDidChangePreviewState` accessors instead [#17800](https://github.com/eclipse-theia/theia/pull/17800)
 - [electron] upgraded Electron from 39.8.7 to 42.3.0. Downstream Electron applications must update their `electron` devDependency to `42.3.0`. Electron 42 bundles Node 24 (up from Node 22), which may affect native modules or Node APIs used by downstream applications. See the Electron breaking changes for [40.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-400), [41.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-410), and [42.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-420). [#17586](https://github.com/eclipse-theia/theia/pull/17586)
 - [metrics] removed `MeasurementNotificationService` (symbol and interface), `measurementNotificationServicePath`, the frontend proxy binding, the backend `RpcConnectionHandler` for `/services/measurement-notification`, `MetricsFrontendApplicationContribution.id` and `notificationService`, and `MeasurementMetricsBackendContribution.backendStopwatch`. Frontend stopwatch measurements are now reported through `TelemetryService` as `theia/measurement/result`; consumers should contribute a `TelemetrySink` from `@theia/telemetry` instead [#17809](https://github.com/eclipse-theia/theia/pull/17809)
+- [monaco] removed the `protected secondaryWindowHandler` field from `MonacoFrontendApplicationContribution`; the Monaco theme stylesheet is now injected into every secondary window via `SecondaryWindowService.onWindowLoaded` [#17874](https://github.com/eclipse-theia/theia/pull/17874)
 
 ## 1.73.0 - 6/25/2026
 
