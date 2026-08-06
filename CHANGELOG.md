@@ -4,6 +4,16 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.75.0 - tbd
+
+- [filesystem] honored the `recursive` watch option end to end. A non-recursive watch now watches a single directory level through `fs.watch` instead of being turned into a recursive crawl of the whole subtree, which also means watching a single file no longer crawls its parent directory. Non-recursive requests that resolve to the same directory share one OS watch and are reported to each client once [#17700](https://github.com/eclipse-theia/theia/issues/17700)
+- [plugin-ext] restored detection of a workspace folder being deleted by a plugin watcher rooted at its parent, which was dropped as a mitigation while the backend still crawled such watches recursively [#17700](https://github.com/eclipse-theia/theia/issues/17700)
+
+<a name="breaking_changes_1.75.0">[Breaking Changes:](#breaking_changes_1.75.0)</a>
+
+- [filesystem] renamed `ParcelFileSystemWatcherService` to `FileSystemWatcherServiceImpl`, since it now serves both recursive and non-recursive requests; the old name remains as a deprecated alias. Its `protected watchers` map is now typed `Map<string, ParcelWatcher | NodeDirectoryWatcher>`, and so is the `watcher` of each `protected watcherHandles` entry, which is why `PacelWatcherHandle` is deprecated in favor of `WatcherHandle`. Subclasses that read either map must account for both watcher types [#17700](https://github.com/eclipse-theia/theia/issues/17700)
+- [plugin-ext] removed the `workspaceService` constructor parameter of `MainFileSystemEventService` along with its `shouldSkipWatch` method, which existed only to drop plugin watches rooted at an ancestor of a workspace root [#17700](https://github.com/eclipse-theia/theia/issues/17700)
+
 ## 1.74.0 - 7/31/2026
 
 - [ai] support for server-side compaction [#17746](https://github.com/eclipse-theia/theia/pull/17746)
