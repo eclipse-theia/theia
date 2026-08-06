@@ -21,9 +21,9 @@ import { ScmHistoryItem, ScmHistoryItemRef, ScmHistoryItemChange, ScmHistoryOpti
 import { ScmRepository } from './scm-repository';
 
 class StubHistoryProvider implements ScmHistoryProvider {
-    readonly currentHistoryItemRef: ScmHistoryItemRef | undefined;
-    readonly currentHistoryItemRemoteRef: ScmHistoryItemRef | undefined;
-    readonly currentHistoryItemBaseRef: ScmHistoryItemRef | undefined;
+    currentHistoryItemRef: ScmHistoryItemRef | undefined;
+    currentHistoryItemRemoteRef: ScmHistoryItemRef | undefined;
+    currentHistoryItemBaseRef: ScmHistoryItemRef | undefined;
 
     readonly onDidChangeCurrentHistoryItemRefs = new Emitter<void>().event;
     readonly onDidChangeHistoryItemRefs = new Emitter<{
@@ -76,13 +76,17 @@ function makeItems(start: number, count: number): ScmHistoryItem[] {
  * Instantiates the model with a stub provider, bypassing inversify and the
  * SCM service so tests can drive pagination directly via loadPage().
  */
-function createModel(provider: ScmHistoryProvider): { model: ScmHistoryGraphModel; loadPage(): Promise<void> } {
+function createModel(
+    provider: ScmHistoryProvider,
+    preferences: Record<string, unknown> = {}
+): { model: ScmHistoryGraphModel; loadPage(): Promise<void> } {
     const model = new ScmHistoryGraphModel();
     const internals = model as unknown as {
         scmService: {
             onDidChangeSelectedRepository: Emitter<ScmRepository | undefined>['event'];
             selectedRepository: ScmRepository | undefined;
         };
+        scmPreferences: Record<string, unknown>;
         _provider: ScmHistoryProvider | undefined;
         init(): void;
         loadPage(): Promise<void>;
@@ -91,6 +95,7 @@ function createModel(provider: ScmHistoryProvider): { model: ScmHistoryGraphMode
         onDidChangeSelectedRepository: new Emitter<ScmRepository | undefined>().event,
         selectedRepository: undefined,
     };
+    internals.scmPreferences = preferences;
     internals.init();
     internals._provider = provider;
     return {
@@ -167,5 +172,158 @@ describe('ScmHistoryGraphModel - pagination', () => {
 
         await loadPage();
         expect(model.entries).to.have.length(PAGE_SIZE, 'should not grow when all items are duplicates');
+    });
+});
+
+describe('ScmHistoryGraphModel - page size preference', () => {
+
+    it('requests the configured page size and paginates by it', async () => {
+        const provider = new StubHistoryProvider();
+        provider.pages = [makeItems(1, 10)];
+        const { model, loadPage } = createModel(provider, { 'scm.graph.pageSize': 10 });
+
+        await loadPage();
+
+        expect(provider.receivedOptions[0].limit).to.equal(10);
+        expect(model.entries).to.have.length(10);
+        expect(model.hasMore).to.be.true;
+    });
+
+    it('falls back to the default page size without a preference value', async () => {
+        const provider = new StubHistoryProvider();
+        provider.pages = [makeItems(1, 10)];
+        const { loadPage } = createModel(provider);
+
+        await loadPage();
+
+        expect(provider.receivedOptions[0].limit).to.equal(PAGE_SIZE);
+    });
+});
+
+describe('ScmHistoryGraphModel - history item ref filter', () => {
+
+    const mainRef: ScmHistoryItemRef = { id: 'refs/heads/main', name: 'main', revision: 'c1' };
+
+    function createFilterProvider(): StubHistoryProvider {
+        const provider = new StubHistoryProvider();
+        provider.currentHistoryItemRef = mainRef;
+        provider.pages = [makeItems(1, 3), makeItems(1, 3), makeItems(1, 3)];
+        return provider;
+    }
+
+    async function nextTick(): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, 0));
+    }
+
+    it('is in auto mode by default: current ref revisions are requested and the current ref is in the filter', async () => {
+        const provider = createFilterProvider();
+        const { model, loadPage } = createModel(provider);
+        await loadPage();
+        expect(provider.receivedOptions[0].historyItemRefs).to.deep.equal(['c1']);
+        expect(model.historyItemRefFilter).to.be.undefined;
+        expect(model.isCurrentRefInFilter()).to.be.true;
+    });
+
+    it('passes the picked ref ids to the provider and reloads', async () => {
+        const provider = createFilterProvider();
+        const { model } = createModel(provider);
+        model.setHistoryItemRefFilter(['refs/heads/feature']);
+        await nextTick();
+        expect(provider.receivedOptions[0].historyItemRefs).to.deep.equal(['refs/heads/feature']);
+        expect(model.historyItemRefFilter).to.deep.equal(['refs/heads/feature']);
+    });
+
+    it('reports whether the current ref is part of the filter', async () => {
+        const provider = createFilterProvider();
+        const { model } = createModel(provider);
+        model.setHistoryItemRefFilter(['refs/heads/feature']);
+        await nextTick();
+        expect(model.isCurrentRefInFilter()).to.be.false;
+        model.setHistoryItemRefFilter(['refs/heads/feature', 'refs/heads/main']);
+        await nextTick();
+        expect(model.isCurrentRefInFilter()).to.be.true;
+    });
+
+    it('returns to auto mode when the filter is cleared', async () => {
+        const provider = createFilterProvider();
+        const { model } = createModel(provider);
+        model.setHistoryItemRefFilter(['refs/heads/feature']);
+        await nextTick();
+        model.setHistoryItemRefFilter(undefined);
+        await nextTick();
+        expect(model.historyItemRefFilter).to.be.undefined;
+        expect(provider.receivedOptions[1].historyItemRefs).to.deep.equal(['c1']);
+    });
+
+    it('does not apply ref role colors to refs excluded by the filter', async () => {
+        const provider = createFilterProvider();
+        provider.pages = [[
+            { id: 'c1', subject: 'head', parentIds: ['c2'], references: [mainRef] },
+            { id: 'c2', subject: 'base', parentIds: [] },
+        ]];
+        const { model } = createModel(provider);
+        model.setHistoryItemRefFilter(['refs/heads/feature']);
+        await nextTick();
+        expect(model.entries[0].graphRow.color).to.not.equal(0);
+    });
+});
+
+describe('ScmHistoryGraphModel - ref colors and current item', () => {
+
+    const mainRef: ScmHistoryItemRef = { id: 'refs/heads/main', name: 'main', revision: 'c2' };
+    const originMainRef: ScmHistoryItemRef = { id: 'refs/remotes/origin/main', name: 'origin/main', revision: 'c1' };
+
+    /** Remote is one commit ahead: c1 (origin/main) → c2 (main = HEAD) → c3. */
+    function createBehindProvider(): StubHistoryProvider {
+        const provider = new StubHistoryProvider();
+        provider.currentHistoryItemRef = mainRef;
+        provider.currentHistoryItemRemoteRef = originMainRef;
+        provider.pages = [[
+            { id: 'c1', subject: 'remote only', parentIds: ['c2'], references: [originMainRef] },
+            { id: 'c2', subject: 'local head', parentIds: ['c3'], references: [mainRef] },
+            { id: 'c3', subject: 'base', parentIds: [] },
+        ]];
+        return provider;
+    }
+
+    it('colors the remote ref tip with the remote ref color', async () => {
+        const { model, loadPage } = createModel(createBehindProvider());
+        await loadPage();
+        expect(model.entries[0].graphRow.color).to.equal(1);
+    });
+
+    it('colors the current ref chain with the current ref color', async () => {
+        const { model, loadPage } = createModel(createBehindProvider());
+        await loadPage();
+        expect(model.entries[1].graphRow.color).to.equal(0);
+        expect(model.entries[2].graphRow.color).to.equal(0);
+    });
+
+    it('prefers the current ref color when a commit carries both local and remote refs', async () => {
+        const provider = new StubHistoryProvider();
+        const syncedMain: ScmHistoryItemRef = { ...mainRef, revision: 'c1' };
+        const syncedRemote: ScmHistoryItemRef = { ...originMainRef, revision: 'c1' };
+        provider.currentHistoryItemRef = syncedMain;
+        provider.currentHistoryItemRemoteRef = syncedRemote;
+        provider.pages = [[
+            { id: 'c1', subject: 'in sync', parentIds: [], references: [syncedRemote, syncedMain] },
+        ]];
+        const { model, loadPage } = createModel(provider);
+        await loadPage();
+        expect(model.entries[0].graphRow.color).to.equal(0);
+    });
+
+    it('marks only the entry at the current ref revision as current', async () => {
+        const { model, loadPage } = createModel(createBehindProvider());
+        await loadPage();
+        expect(model.entries.map(e => e.isCurrent)).to.deep.equal([false, true, false]);
+    });
+
+    it('marks no entry as current when the provider has no current ref', async () => {
+        const provider = new StubHistoryProvider();
+        provider.pages = [makeItems(1, 3)];
+        const { model, loadPage } = createModel(provider);
+        await loadPage();
+        expect(model.entries.every(e => !e.isCurrent)).to.be.true;
     });
 });
