@@ -124,7 +124,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                     }
                 }, { capture: true });
 
-                newWindow.addEventListener('unload', () => {
+                newWindow.addEventListener('pagehide', () => {
                     focusRegistration.dispose();
                     const extIndex = this.secondaryWindows.indexOf(newWindow);
                     if (extIndex > -1) {
@@ -140,7 +140,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
     }
 
     protected windowCreated(newWindow: Window, widget: ExtractableWidget, shell: ApplicationShell): void {
-        newWindow.addEventListener('unload', () => {
+        newWindow.addEventListener('pagehide', () => {
             this.restoreWidgets(newWindow, widget, shell);
         });
     }
