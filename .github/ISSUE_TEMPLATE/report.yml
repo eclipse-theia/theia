@@ -1,0 +1,67 @@
+name: Issue Report
+description: Report a bug, request a feature, suggest an enhancement, or ask a question.
+title: "[<type>] <short summary>"
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file this issue. Please fill out the fields below —
+        the **Type** field determines which label gets applied automatically.
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      description: What kind of issue is this?
+      options:
+        - Bug
+        - Feature
+        - Enhancement
+        - Question
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of the issue.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to Reproduce (bugs only)
+      description: If this is a bug, list the steps to reproduce the behavior. Leave blank otherwise.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen? (For bugs) or what should the feature/enhancement do?
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Theia Version
+      description: Which version of Theia are you using, if applicable?
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Anything else that would help — logs, screenshots, environment details.
+    validations:
+      required: false
