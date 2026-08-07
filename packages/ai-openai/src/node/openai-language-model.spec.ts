@@ -15,9 +15,11 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LanguageModelRequest, ReasoningSupport } from '@theia/ai-core';
+import { LanguageModelMessage, LanguageModelRequest, LanguageModelResponse, ReasoningSupport, UserRequest } from '@theia/ai-core';
+import { OpenAI } from 'openai';
 import { OpenAiModel, OpenAiModelUtils } from './openai-language-model';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
+import { OPENAI_WEB_SEARCH } from './openai-server-tools';
 
 const GPT5_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
@@ -30,8 +32,20 @@ const O_SERIES_REASONING_SUPPORT: ReasoningSupport = {
 };
 
 class TestableOpenAiModel extends OpenAiModel {
+    chatCompletionsRequests = 0;
+
     public callGetSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
         return this.getSettings(request, forResponseApi);
+    }
+    public callApplyResponseApiCompaction(settings: Record<string, unknown>, request: LanguageModelRequest): Record<string, unknown> {
+        return this.applyResponseApiCompaction(settings, request);
+    }
+    public callHandleResponseApiRequest(request: UserRequest): Promise<LanguageModelResponse> {
+        return this.handleResponseApiRequest({} as OpenAI, request);
+    }
+    protected override async handleChatCompletionsRequest(): Promise<LanguageModelResponse> {
+        this.chatCompletionsRequests++;
+        return { text: 'fallback' };
     }
 }
 
@@ -42,6 +56,21 @@ function createModel(modelId: string, reasoningSupport?: ReasoningSupport): Test
         false, undefined, undefined,
         new OpenAiModelUtils(), new OpenAiResponseApiUtils(),
         'developer', 3, false, undefined, reasoningSupport
+    );
+}
+
+function createCompactionModel(
+    serverSideCompactionEnabledByDefault: boolean,
+    useResponseApi: boolean = true,
+    serverSideCompactionTokenThresholdByDefault?: number
+): TestableOpenAiModel {
+    return new TestableOpenAiModel(
+        'test-id', 'gpt-5', { status: 'ready' }, true,
+        () => 'test-key', () => undefined,
+        false, undefined, undefined,
+        new OpenAiModelUtils(), new OpenAiResponseApiUtils(),
+        'developer', 3, useResponseApi, undefined, undefined, undefined, undefined, useResponseApi, serverSideCompactionEnabledByDefault,
+        serverSideCompactionTokenThresholdByDefault
     );
 }
 
@@ -100,5 +129,123 @@ describe('OpenAiModel reasoning translation', () => {
             expect(result.reasoning).to.equal(undefined);
             expect(result.reasoning_effort).to.equal(undefined);
         });
+    });
+});
+
+describe('OpenAiModel Response API fallback', () => {
+    function createFailingModel(): TestableOpenAiModel {
+        const responseApiUtils = {
+            handleRequest: async () => { throw new Error('Response API unavailable'); }
+        } as unknown as OpenAiResponseApiUtils;
+        return new TestableOpenAiModel(
+            'test-id', 'gpt-5', { status: 'ready' }, true,
+            () => 'test-key', () => undefined,
+            false, undefined, undefined,
+            new OpenAiModelUtils(), responseApiUtils,
+            'developer', 3, true
+        );
+    }
+
+    it('does not fall back to Chat Completions when a server tool is selected', async () => {
+        const model = createFailingModel();
+        const request: UserRequest = {
+            sessionId: 'session-1',
+            requestId: 'request-1',
+            messages: [],
+            serverTools: [OPENAI_WEB_SEARCH]
+        };
+
+        let error: unknown;
+        try {
+            await model.callHandleResponseApiRequest(request);
+        } catch (caught) {
+            error = caught;
+        }
+
+        expect(error).to.be.instanceOf(Error).with.property('message', 'Response API unavailable');
+        expect(model.chatCompletionsRequests).to.equal(0);
+    });
+
+    it('retains Chat Completions fallback when no server tool is selected', async () => {
+        const model = createFailingModel();
+        const request: UserRequest = {
+            sessionId: 'session-1',
+            requestId: 'request-1',
+            messages: []
+        };
+
+        expect(await model.callHandleResponseApiRequest(request)).to.deep.equal({ text: 'fallback' });
+        expect(model.chatCompletionsRequests).to.equal(1);
+    });
+});
+
+describe('OpenAiModelUtils Chat Completions processMessages', () => {
+    it('drops a CompactionMessage without throwing when useResponseApi is off', () => {
+        const utils = new OpenAiModelUtils();
+        const messages: LanguageModelMessage[] = [
+            { actor: 'user', type: 'text', text: 'hello' },
+            { actor: 'ai', type: 'compaction', provider: 'openai-responses', data: { id: 'c1', encrypted_content: 'enc' } },
+            { actor: 'ai', type: 'text', text: 'world' }
+        ];
+
+        let result: ReturnType<OpenAiModelUtils['processMessages']> | undefined;
+        expect(() => { result = utils.processMessages(messages, 'developer'); }).to.not.throw();
+
+        // The compaction marker must not appear in the output
+        const hasCompaction = result?.some(m => 'content' in m && typeof m.content === 'string' && m.content.includes('enc'));
+        expect(hasCompaction).to.equal(false);
+
+        // The surrounding real messages must still be present
+        const texts = result?.map(m => typeof m.content === 'string' ? m.content : '').join(' ');
+        expect(texts).to.contain('hello');
+        expect(texts).to.contain('world');
+    });
+});
+
+describe('OpenAiModel server-side compaction (Response API)', () => {
+
+    it('adds context_management when model default is on and request has no compaction setting', () => {
+        const model = createCompactionModel(true);
+        const result = model.callApplyResponseApiCompaction({ stream: true }, { messages: [] });
+        expect(result.context_management).to.deep.equal([{ type: 'compaction' }]);
+        expect(result.stream).to.equal(true);
+    });
+
+    it('adds the model default token threshold', () => {
+        const model = createCompactionModel(true, true, 200_000);
+        const result = model.callApplyResponseApiCompaction({}, { messages: [] });
+        expect(result.context_management).to.deep.equal([{ type: 'compaction', compact_threshold: 200_000 }]);
+    });
+
+    it('uses the session token threshold over the model default', () => {
+        const model = createCompactionModel(true, true, 200_000);
+        const result = model.callApplyResponseApiCompaction({}, { messages: [], compaction: { tokenThreshold: 300_000 } });
+        expect(result.context_management).to.deep.equal([{ type: 'compaction', compact_threshold: 300_000 }]);
+    });
+
+    it('leaves settings unchanged when model default is off and request has no compaction setting', () => {
+        const model = createCompactionModel(false);
+        const result = model.callApplyResponseApiCompaction({ stream: true }, { messages: [] });
+        expect(result.context_management).to.equal(undefined);
+        expect(result).to.deep.equal({ stream: true });
+    });
+
+    it('session enabled=true activates compaction over a false model default', () => {
+        const model = createCompactionModel(false);
+        const result = model.callApplyResponseApiCompaction({}, { messages: [], compaction: { enabled: true } });
+        expect(result.context_management).to.deep.equal([{ type: 'compaction' }]);
+    });
+
+    it('session enabled=false deactivates compaction even when model default is true', () => {
+        const model = createCompactionModel(true);
+        const result = model.callApplyResponseApiCompaction({}, { messages: [], compaction: { enabled: false } });
+        expect(result.context_management).to.equal(undefined);
+    });
+
+    it('does not add context_management when capability is false (useResponseApi=false), even with session enabled=true', () => {
+        const model = createCompactionModel(true, false);
+        const result = model.callApplyResponseApiCompaction({ stream: true }, { messages: [], compaction: { enabled: true } });
+        expect(result.context_management).to.equal(undefined);
+        expect(result).to.deep.equal({ stream: true });
     });
 });

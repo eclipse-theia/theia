@@ -71,6 +71,7 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
                     ],
                     request,
                     async selectedOption => {
+                        request.response.stopWaitingForInput();
                         if (selectedOption.value === 'yes') {
                             const progress = request.response.addProgressMessage({
                                 content: isPlaywrightVariant

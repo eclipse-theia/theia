@@ -99,6 +99,22 @@
   background: var(--theia-list-activeSelectionBackground);
 }
 
+.theia-select-component-dropdown .theia-select-component-option.disabled,
+.theia-select-component-dropdown .theia-select-component-option.disabled .theia-select-component-option-detail {
+  color: var(--theia-disabledForeground);
+  cursor: default;
+}
+
+.theia-select-component-dropdown .theia-select-component-option.disabled .theia-select-component-option-value {
+  text-decoration: line-through;
+}
+
+/* Keep a hovered/selected disabled option readable against the active-selection background. */
+.theia-select-component-dropdown .theia-select-component-option.disabled.selected,
+.theia-select-component-dropdown .theia-select-component-option.disabled.selected .theia-select-component-option-detail {
+  color: var(--theia-list-activeSelectionForeground);
+}
+
 .theia-select-component-dropdown .theia-select-component-separator {
   width: 84px;
   height: 1px;

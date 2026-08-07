@@ -60,6 +60,9 @@ export class VSXExtensionsSource extends TreeSource {
         for (const contribution of this.contributions.getContributions()) {
             this.toDispose.push(contribution.onDidChange(() => this.scheduleFireDidChange()));
         }
+        // The query carries both the search text and the per-contribution-type filter (via
+        // `@`-prefixed tokens), so any query change must re-collect the entries.
+        this.toDispose.push(this.searchModel.onDidChangeQuery(() => this.scheduleFireDidChange()));
     }
 
     protected scheduleFireDidChange = debounce(() => this.fireDidChange(), 100, { leading: false, trailing: true });
@@ -71,13 +74,16 @@ export class VSXExtensionsSource extends TreeSource {
     async getElements(): Promise<IterableIterator<TreeElement>> {
         const ordered = [...this.contributions.getContributions()]
             .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+        // Apply the type-token filter to every section, not just search results, so the two
+        // filtering mechanisms compose (e.g. `@installed @mcp` only lists installed MCP servers).
+        const enabled = ordered.filter(c => this.searchModel.isTokenEnabled(c.searchToken));
 
         if (this.options.id === VSXExtensionsSourceOptions.SEARCH_RESULT) {
-            return this.collectSearchResults(ordered);
+            return this.collectSearchResults(enabled);
         }
 
         const entries: TreeElement[] = [];
-        for (const contribution of ordered) {
+        for (const contribution of enabled) {
             const iter = await this.resolveForSection(contribution);
             if (!iter) {
                 continue;
@@ -94,13 +100,16 @@ export class VSXExtensionsSource extends TreeSource {
      * regardless of which contribution produced them.
      */
     protected async collectSearchResults(contributions: ExtensionsSourceContribution[]): Promise<IterableIterator<TreeElement>> {
-        const query = this.searchModel.query;
+        // Contributions only see the free-text portion of the query - the `@`-prefixed mode and
+        // type tokens have already been consumed by `parseQuery` to pick the mode and the
+        // contribution filter, so they would otherwise leak into substring matching.
+        const { freeText } = this.searchModel.parseQuery();
         const ctx: SearchContext = {
             verifiedOnly: this.preferenceService.get<boolean>('extensions.onlyShowVerifiedExtensions', false)
         };
-        const results = await Promise.all(contributions.map(c => c.resolveSearchResults?.(query, ctx) ?? []));
+        const results = await Promise.all(contributions.map(c => c.resolveSearchResults?.(freeText, ctx) ?? []));
         const all = results.flatMap(r => [...r]);
-        const trimmed = query.trim();
+        const trimmed = freeText.trim();
         if (!trimmed || all.length <= 1) {
             return all.map(r => r.element).values();
         }

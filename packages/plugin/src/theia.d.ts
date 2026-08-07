@@ -19561,14 +19561,12 @@ export module '@theia/plugin' {
          * point. A registered tool is available in the {@link lm.tools} list for any extension to see. But in order for it to
          * be seen by a language model, it must be passed in the list of available tools in {@link LanguageModelChatRequestOptions.tools}.
          * @returns A {@link Disposable} that unregisters the tool when disposed.
-         * @stubbed
          */
         export function registerTool<T>(name: string, tool: LanguageModelTool<T>): Disposable;
 
         /**
          * A list of all available tools that were registered by all extensions using {@link lm.registerTool}. They can be called
          * with {@link lm.invokeTool} with input that match their declared `inputSchema`.
-         * @stubbed
          */
         export const tools: readonly LanguageModelToolInformation[];
 
@@ -19597,7 +19595,6 @@ export module '@theia/plugin' {
          * @param options The options to use when invoking the tool.
          * @param token A cancellation token. See {@link CancellationTokenSource} for how to create one.
          * @returns The result of the tool invocation.
-         * @stubbed
          */
         export function invokeTool(name: string, options: LanguageModelToolInvocationOptions<object>, token?: CancellationToken): Thenable<LanguageModelToolResult>;
 
@@ -19811,21 +19808,18 @@ export module '@theia/plugin' {
 
     /**
      * A result returned from a tool invocation. If using `@vscode/prompt-tsx`, this result may be rendered using a `ToolResult`.
-     * @stubbed
      */
     export class LanguageModelToolResult {
         /**
          * A list of tool result content parts. Includes `unknown` becauses this list may be extended with new content types in
          * the future.
          * @see {@link lm.invokeTool}.
-         * @stubbed
          */
         content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>;
 
         /**
          * Create a LanguageModelToolResult
          * @param content A list of tool result content parts
-         * @stubbed
          */
         constructor(content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>);
     }
@@ -19894,7 +19888,6 @@ export module '@theia/plugin' {
 
     /**
      * Options provided for tool invocation.
-     * @stubbed
      */
     export interface LanguageModelToolInvocationOptions<T> {
         /**
@@ -19915,7 +19908,6 @@ export module '@theia/plugin' {
         /**
          * The input with which to invoke the tool. The input must match the schema defined in
          * {@link LanguageModelToolInformation.inputSchema}
-         * @stubbed
          */
         input: T;
 
@@ -19950,31 +19942,26 @@ export module '@theia/plugin' {
 
     /**
      * Information about a registered tool available in {@link lm.tools}.
-     * @stubbed
      */
     export interface LanguageModelToolInformation {
         /**
          * A unique name for the tool.
-         * @stubbed
          */
         readonly name: string;
 
         /**
          * A description of this tool that may be passed to a language model.
-         * @stubbed
          */
         readonly description: string;
 
         /**
          * A JSON schema for the input this tool accepts.
-         * @stubbed
          */
         readonly inputSchema: object | undefined;
 
         /**
          * A set of tags, declared by the tool, that roughly describe the tool's capabilities. A tool user may use these to filter
          * the set of tools to just ones that are relevant for the task at hand.
-         * @stubbed
          */
         readonly tags: readonly string[];
     }
@@ -19993,14 +19980,12 @@ export module '@theia/plugin' {
 
     /**
      * A tool that can be invoked by a call to a {@link LanguageModelChat}.
-     * @stubbed
      */
     export interface LanguageModelTool<T> {
         /**
          * Invoke the tool with the given input and return a result.
          *
          * The provided {@link LanguageModelToolInvocationOptions.input} has been validated against the declared schema.
-         * @stubbed
          */
         invoke(options: LanguageModelToolInvocationOptions<T>, token: CancellationToken): ProviderResult<LanguageModelToolResult>;
 

@@ -5,6 +5,7 @@
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
 <h2>ECLIPSE THEIA - PREVIEW EXTENSION</h2>
+<h2>This extension is DEPRECATED!</h2>
 
 <hr />
 

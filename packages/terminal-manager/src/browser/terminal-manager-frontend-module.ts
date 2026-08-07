@@ -27,6 +27,8 @@ import { TerminalManagerFrontendViewContribution } from './terminal-manager-fron
 import { TerminalManagerFrontendContribution } from './terminal-manager-frontend-contribution';
 import { TerminalManagerPreferenceContribution, TerminalManagerPreferences, TerminalManagerPreferenceSchema } from './terminal-manager-preferences';
 import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget';
+import { TerminalManagerCreationHandler } from './terminal-manager-creation-handler';
+import { TerminalCreationHandler } from '@theia/terminal/lib/browser/terminal-creation-handler';
 import '../../src/browser/terminal-manager.css';
 import { PreferenceContribution, PreferenceProxyFactory } from '@theia/core';
 
@@ -37,6 +39,9 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     // Bind the contribution for overridden terminal commands
     bind(TerminalManagerFrontendContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(TerminalManagerFrontendContribution);
+
+    bind(TerminalManagerCreationHandler).toSelf().inSingletonScope();
+    bind(TerminalCreationHandler).toService(TerminalManagerCreationHandler);
 
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: TerminalManagerTreeWidget.ID,
@@ -61,4 +66,3 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     bind(TerminalManagerPreferenceContribution).toConstantValue({ schema: TerminalManagerPreferenceSchema });
     bind(PreferenceContribution).toService(TerminalManagerPreferenceContribution);
 });
-

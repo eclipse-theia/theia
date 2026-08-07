@@ -22,9 +22,6 @@
       "path": "../keymaps"
     },
     {
-      "path": "../preview"
-    },
-    {
       "path": "../workspace"
     }
   ]

@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 EclipseSource GmbH.
+// Copyright (C) 2025 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -30,13 +30,15 @@ import {
     NOTIFICATION_TYPE_OS_NOTIFICATION,
     NOTIFICATION_TYPE_MESSAGE,
     NOTIFICATION_TYPE_BLINK,
+    AgentNotificationKind,
+    AGENT_NOTIFICATION_KIND_INPUT_NEEDED,
 } from '../common/notification-types';
 import { PreferenceService, ILogger } from '@theia/core';
 
 /**
- * Options for showing a completion notification.
+ * Options for showing an agent notification.
  */
-export interface CompletionNotificationOptions {
+export interface AgentNotificationOptions {
     /**
      * Callback to check if the notification should be suppressed.
      * If returns true, the notification will not be shown.
@@ -55,7 +57,7 @@ export interface CompletionNotificationOptions {
 }
 
 @injectable()
-export class AgentCompletionNotificationService {
+export class AgentNotificationService {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
@@ -74,18 +76,20 @@ export class AgentCompletionNotificationService {
     @inject(WindowBlinkService)
     protected readonly windowBlinkService: WindowBlinkService;
 
-    @inject(ILogger) @named('ai-core:AgentCompletionNotificationService')
+    @inject(ILogger) @named('ai-core:AgentNotificationService')
     protected readonly logger: ILogger;
 
     /**
-     * Show a completion notification for the specified agent if enabled in preferences.
+     * Show a notification for the specified agent if enabled in preferences.
      *
      * @param agentId The unique identifier of the agent
+     * @param kind Whether the agent completed its task or needs user input
      * @param options Optional configuration for the notification
      */
-    async showCompletionNotification(
+    async showNotification(
         agentId: string,
-        options?: CompletionNotificationOptions,
+        kind: AgentNotificationKind,
+        options?: AgentNotificationOptions,
     ): Promise<void> {
         const notificationType =
             await this.getNotificationTypeForAgent(agentId);
@@ -103,13 +107,14 @@ export class AgentCompletionNotificationService {
             const agentName = this.resolveAgentName(agentId);
             await this.executeNotificationType(
                 agentName,
+                kind,
                 notificationType,
                 options?.onActivate,
                 options?.sessionTitle,
             );
         } catch (error) {
             this.logger.error(
-                'Failed to show agent completion notification:',
+                'Failed to show agent notification:',
                 error,
             );
         }
@@ -162,16 +167,17 @@ export class AgentCompletionNotificationService {
      */
     private async executeNotificationType(
         agentName: string,
+        kind: AgentNotificationKind,
         type: NotificationType,
         onActivate?: () => void,
         sessionTitle?: string,
     ): Promise<void> {
         switch (type) {
             case NOTIFICATION_TYPE_OS_NOTIFICATION:
-                await this.showOSNotification(agentName, onActivate, sessionTitle);
+                await this.showOSNotification(agentName, kind, onActivate, sessionTitle);
                 break;
             case NOTIFICATION_TYPE_MESSAGE:
-                await this.showMessageServiceNotification(agentName, onActivate, sessionTitle);
+                await this.showMessageServiceNotification(agentName, kind, onActivate, sessionTitle);
                 break;
             case NOTIFICATION_TYPE_BLINK:
                 await this.showBlinkNotification(agentName);
@@ -186,12 +192,14 @@ export class AgentCompletionNotificationService {
      */
     protected async showOSNotification(
         agentName: string,
+        kind: AgentNotificationKind,
         onActivate?: () => void,
         sessionTitle?: string,
     ): Promise<void> {
         const result =
-            await this.osNotificationService.showAgentCompletionNotification(
+            await this.osNotificationService.showAgentNotification(
                 agentName,
+                kind,
                 sessionTitle,
                 onActivate,
             );
@@ -205,21 +213,35 @@ export class AgentCompletionNotificationService {
      */
     protected async showMessageServiceNotification(
         agentName: string,
+        kind: AgentNotificationKind,
         onActivate?: () => void,
         sessionTitle?: string,
     ): Promise<void> {
-        const message = sessionTitle
-            ? nls.localize(
-                'theia/ai-core/agentCompletionMessageWithSession',
-                'Agent "{0}" has completed its task in "{1}".',
-                agentName,
-                sessionTitle,
-            )
-            : nls.localize(
-                'theia/ai-core/agentCompletionMessage',
-                'Agent "{0}" has completed its task.',
-                agentName,
-            );
+        const message = kind === AGENT_NOTIFICATION_KIND_INPUT_NEEDED
+            ? (sessionTitle
+                ? nls.localize(
+                    'theia/ai-core/agentInputNeededMessageWithSession',
+                    'Agent "{0}" needs your input in "{1}".',
+                    agentName,
+                    sessionTitle,
+                )
+                : nls.localize(
+                    'theia/ai-core/agentInputNeededMessage',
+                    'Agent "{0}" needs your input.',
+                    agentName,
+                ))
+            : (sessionTitle
+                ? nls.localize(
+                    'theia/ai-core/agentCompletionMessageWithSession',
+                    'Agent "{0}" has completed its task in "{1}".',
+                    agentName,
+                    sessionTitle,
+                )
+                : nls.localize(
+                    'theia/ai-core/agentCompletionMessage',
+                    'Agent "{0}" has completed its task.',
+                    agentName,
+                ));
         const showChatAction = nls.localize('theia/ai-core/showChat', 'Show Chat');
         const action = await this.messageService.info(message, showChatAction);
         if (action === showChatAction && onActivate) {

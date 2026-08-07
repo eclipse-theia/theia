@@ -24,6 +24,8 @@
 }
 
 .theia-vsx-extension-icon.theia-skill-extension-icon .codicon {
+    /* Match the MCP card icon so skills and MCP servers render at the same visual size. */
+    font-size: calc(var(--theia-vsx-extension-icon-size) * 0.65);
     color: var(--theia-descriptionForeground);
 }
 

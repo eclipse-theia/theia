@@ -2,6 +2,7 @@
   "ai-chat-ui.show-settings": "AI beállítások megjelenítése",
   "ai.executePlanWithCoder": "Jelenlegi terv végrehajtása a Coder segítségével",
   "aiConfiguration:open": "Nyissa meg az AI konfigurációs nézetet",
+  "aiConfiguration:openTools": "Open AI Tools konfiguráció",
   "aiHistory:clear": "AI előzmények: Előzmények törlése",
   "aiHistory:open": "Nyissa meg az AI történet nézetet",
   "aiHistory:sortChronologically": "AI története: Időrendi rendezés",
@@ -27,8 +28,8 @@
           "title": "Képesség-felülírások"
         },
         "completionNotification": {
-          "mdDescription": "Értesítési viselkedés, amikor ez az ügynök befejezi a feladatot. Ha nincs beállítva, akkor a globális alapértelmezett értesítési beállítás lesz használva.\n- `os-notification`: OS/rendszer értesítések megjelenítése\n- `message`: Értesítések megjelenítése az állapotsorban/üzenet területen\n- `blink`: Az UI villogása vagy kiemelése\n- `off`: Értesítések letiltása ehhez az ügynökhöz",
-          "title": "Befejezési értesítés"
+          "mdDescription": "Értesítési viselkedés, amikor ez az ügynök a figyelmedet igényli, azaz befejezett egy feladatot, vagy bevitelt kér tőled.                     Ha nincs beállítva, a globális alapértelmezett értesítési beállítás kerül alkalmazásra.\n                    - `os-notification`: Operációs rendszer/rendszer értesítések megjelenítése\n                    - `message`: Értesítések megjelenítése az állapotsorban/üzenetmezőben\n                    - `blink`: A felhasználói felület villogtatása vagy kiemelése\n                    - `off`: Az értesítések letiltása ehhez az ügynökhöz",
+          "title": "Értesítés"
         },
         "enable": {
           "mdDescription": "Meghatározza, hogy az ügynököt engedélyezni kell-e (true) vagy letiltani kell-e (false).",
@@ -60,6 +61,10 @@
           "mdDescription": "Meghatározza az adott ügynök jelenleg kiválasztott promptváltozatát.",
           "title": "Kiválasztott változatok"
         },
+        "serverToolSelections": {
+          "mdDescription": "A szolgáltatói szervereszközökhöz tartozó felhasználói kiválasztások, gyártónként csoportosítva. Minden érték tartalmazza az adott gyártó esetében engedélyezett szervereszközök azonosítóit.",
+          "title": "Szervereszközök kiválasztása"
+        },
         "showInChat": {
           "mdDescription": "Meghatározza, hogy az ügynök megjelenjen-e a csevegőfelületen (true) vagy rejtve maradjon (false).",
           "title": "Megjelenítés a csevegésben"
@@ -69,6 +74,15 @@
       "anthropic": {
         "apiKey": {
           "description": "Írja be hivatalos Anthropic-fiókjának API-kulcsát. **Megjegyzés:** Ezen beállítás használatával az Anthropic API-kulcs szöveges formában kerül tárolásra a Theia futtatására használt gépen. A kulcs biztonságos beállításához használja az `ANTHROPIC_API_KEY` környezeti változót."
+        },
+        "compaction": {
+          "default": "Kövesse a globális csevegő szerveroldali tömörítési beállítását.",
+          "description": "Az Anthropic-modellek esetében felülírja a szolgáltató saját szerveroldali tömörítését. A „default” beállítás a globális csevegési beállítást követi ({0}). Ha ez ténylegesen engedélyezve van, az Anthropic Beta Messages API-t használja, így a szolgáltató összefoglalhatja a régebbi csevegési köröket, amint a beszélgetés túllépi a küszöbértéket.",
+          "disabled": "Soha ne kérjen szerveroldali tömörítést az Anthropic modellek esetében.",
+          "enabled": "Az Anthropic modellek esetében mindig kérje a szerveroldali tömörítést."
+        },
+        "compactionTokenThreshold": {
+          "description": "Az Anthropic modellek szerveroldali tömörítéséhez használt globális bemeneti tokenküszöb felülírása. Ha nincs beállítva, akkor a globális beállítás vagy a szolgáltató alapértelmezett értéke érvényes. Ha be van állítva, az értéknek legalább 50 000 tokennek kell lennie."
         },
         "customEndpoints": {
           "apiKey": {
@@ -111,6 +125,7 @@
         "bypassModelRequirement": {
           "description": "A nyelvi modell követelmény ellenőrzésének megkerülése. Engedélyezze ezt, ha olyan külső ügynököket (pl. Claude Code) használ, amelyek nem igényelnek Theia nyelvi modelleket."
         },
+        "category": "AI",
         "changeSetDefaultTitle": "Javasolt változtatások",
         "changeSetFileDiffUriLabel": "AI-változások: {0}",
         "chatAgentsVariable": {
@@ -135,6 +150,15 @@
         "confirmRevertSuggestion": "A {0} fájl megváltozott, mióta ez a javaslat készült. Biztosan vissza szeretné állítani a változást?",
         "couldNotFindMatchingLM": "Nem találtunk megfelelő nyelvi modellt. Kérjük, ellenőrizze a beállításokat!",
         "couldNotFindReadyLMforAgent": "Nem találtunk kész nyelvi modellt az agent {0}hez. Kérjük, ellenőrizze a beállításokat!",
+        "customAgents": {
+          "migratePrompt": {
+            "message": "Az egyéni ügynökei továbbra is a régebbi `customAgents.yml` formátumot használják. Javasoljuk, hogy migrálja őket az új, ügynökönkénti formátumra (`agents/<id>/agent.md`), amelyet a {0} a jövőben fog használni. Minden ügynök saját fájlt kap a `customAgents.yml` fájl mellett, az eredeti pedig `customAgents.yml.bak` néven biztonsági másolatként megmarad."
+          },
+          "migrationResult": {
+            "empty": "Egyéni ügynök áttelepítése: nincs mit áttelepíteni."
+          },
+          "rerunMigration": "A custom-agent migráció újbóli futtatása"
+        },
         "defaultAgent": {
           "description": "Opcionális: <ügynöknév> a meghívandó csevegőügynök neve, ha a felhasználói lekérdezésben @<ügynöknév> formában nincs kifejezetten megadva ügynök. Ha nincs konfigurálva alapértelmezett ügynök, akkor a Theia alapértelmezett beállításai kerülnek alkalmazásra."
         },
@@ -215,13 +239,15 @@
           "label": "AI csevegés"
         },
         "welcomeScreenSessions": {
-          "description": "A kezdőképernyőn megjelenítendő legutóbbi csevegési munkamenetek sorainak száma. A látható munkamenetek száma a rendelkezésre álló szélességtől függ. A legutóbbi csevegések szakasz elrejtéséhez állítsa 0-ra."
+          "description": "A csevegési áttekintésen (kezdőlap) megjelenítendő csevegési munkamenetek maximális száma. Először az aktív munkamenetek jelennek meg; a többi a „Minden csevegés áttekintése...” linkre kattintva érhető el. Csökkentse ezt az értéket, ha a szerkesztő nagyobb nagyítása görgetősávot eredményez. Állítsa 0-ra a beágyazott lista teljes elrejtéséhez; a munkamenetek továbbra is elérhetők a „Minden csevegés áttekintése...” linkre kattintva."
         }
       },
       "chat-ui": {
         "addContextVariable": "Kontextusváltozó hozzáadása",
+        "agentDefaultModel": "ügynök alapértelmezett",
         "agentDelegationDescription": "Más AI-ügynökök, akikre feladatok ruházhatók",
         "aiDisabled": "Az AI funkciók le vannak tiltva.",
+        "allowedResourceUrls": "Az AI-csevegés válaszaiban hivatkozott külső források (képek, stíluslapok, média stb.) alapértelmezés szerint blokkolva vannak, és helyettesítő szimbólummal jelennek meg, amíg kifejezetten engedélyezésre nem kerülnek. Azok az erőforrások, amelyek URL-je a beállított előtagok valamelyikével kezdődik, blokkolás nélkül közvetlenül megjelennek. A nem szándékos egyezések elkerülése érdekében adja meg a teljes forráscímet záró perjeljel (pl. „https://example.com/”). Csak olyan forrásokat adjon hozzá, amelyekben teljes mértékben megbízik.",
         "applyAll": "Összes alkalmazása",
         "applyAllTitle": "Az összes függőben lévő módosítás alkalmazása",
         "askQuestion": "Kérdés feltevése",
@@ -255,8 +281,12 @@
         "command-part-renderer": {
           "commandNotExecutable": "A parancs azonosítója „{0}”, de a Csevegés ablakból nem futtatható."
         },
+        "compaction-part-renderer": {
+          "compactionMarker": "A beszélgetés összefoglalva"
+        },
         "copyCodeBlock": "Kódblokk másolása",
         "couldNotSendRequestToSession": "Nem sikerült elküldeni a „{0}” kérést a {1} munkamenethez.",
+        "delegatedSession": "Delegált",
         "delegation-response-renderer": {
           "interactionNeeded": "Felhasználói beavatkozás szükséges",
           "prompt": {
@@ -269,13 +299,11 @@
           "starting": "A delegálás megkezdése...",
           "status": {
             "canceled": "törölve",
-            "error": "hiba",
             "generating": "generálás...",
             "starting": "indítás..."
           }
         },
         "deleteChangeSet": "Változáskészlet törlése",
-        "deleteChat": "Csevegés törlése",
         "editRequest": "Szerkesztés",
         "edited": "szerkesztve",
         "editedTooltipHint": "Ez a promptváltozat szerkesztésre került. Az AI konfigurációs nézetben visszaállíthatja.",
@@ -292,6 +320,18 @@
         "functionsDescription": "{0}-bővítmények által biztosított beépített funkciók",
         "genericCapabilities": "Általános képességek",
         "mcpFunctionsDescription": "Csatlakoztatott szerverek MCP (Model Context Protocol) funkciói",
+        "mermaid-rendering": {
+          "copySource": "Forrás másolása",
+          "error": "A Mermaid-diagram nem jeleníthető meg. Váltson át a forrásnézetre a definíció megtekintéséhez.",
+          "rendering": "Ábra megjelenítése…",
+          "resetView": "Nézet visszaállítása",
+          "showDiagram": "Ábra megjelenítése",
+          "showSource": "Forrás megjelenítése",
+          "title": "Mermaid-diagram",
+          "wheelZoomHint": "{0} + Görgessen"
+        },
+        "modelBadgeTooltip": "A válaszhoz használt nyelvi modell: {0}",
+        "modelUnavailable": "nem elérhető",
         "noChatAgentsAvailable": "Nincs elérhető csevegő ügynök.",
         "noMatchingCapabilities": "Nincs megfelelő képesség",
         "openDiff": "Nyitott Diff",
@@ -300,14 +340,12 @@
         "performThisTask": "Végezze el ezt a feladatot.",
         "persistedSession": "Tartós munkamenet (kattintson a visszaállításhoz)",
         "promptFragmentsDescription": "A beszélgetésbe beillesztendő egyéni prompt-fragmentumok",
-        "reasoning": {
-          "minimal": "Minimális"
-        },
         "removeChat": "Csevegés eltávolítása",
         "requestNotFoundForRetry": "A kérés nem található, próbálkozzon újra",
         "responseFrom": "Válasz az {0} webhelyről",
         "saveCurrentSelectionsToSettings": "Beállítások mentése",
         "searchCapabilities": "Keresési lehetőségek",
+        "sectionRestored": "Visszaállítva",
         "selectAgentQuickPickPlaceholder": "Válasszon ügynököt az új munkamenethez",
         "selectAllInCategory": "Válassza ki az összeset ebben a kategóriában",
         "selectChat": "Csevegés kiválasztása",
@@ -318,6 +356,17 @@
         "selectTaskContextQuickPickPlaceholder": "Válasszon ki egy feladatkontextust a csatoláshoz",
         "selectVariableArguments": "Változó argumentumok kiválasztása",
         "send": "Küldés (Enter)",
+        "server-toolcall-part-renderer": {
+          "indicator": "szerver",
+          "serverTooltip": "A szolgáltató szerverein fut (nem helyileg). A szervereszközök kiválasztásukkor automatikusan jóváhagyásra kerülnek."
+        },
+        "serverToolWarning": "Ez az eszköz kiválasztásakor automatikusan jóváhagyásra kerül. A modell bármikor végrehajthatja.",
+        "serverTools": "Szervereszközök",
+        "serverToolsDescription": "A szerveres eszközöket a gyártó infrastruktúráján az LLM futtatja szerveroldalon.",
+        "serverToolsWarning": "Ezeket az eszközöket a kiválasztásukkor a rendszer automatikusan jóváhagyja. A modell bármikor végrehajthatja őket.",
+        "sessionModel": "A csevegéshez használt modell",
+        "sessionModelDefault": "A csevegéshez használt modell ({0})",
+        "sessionModelUnavailable": "Ehhez a csevegéshez nem áll rendelkezésre modell ({0}); a kérések az ügynök alapértelmezett beállításait használják.",
         "sessionNotFoundForRetry": "A munkamenet nem található, próbálkozzon újra",
         "skillsDescription": "Újrafelhasználható készségekhez kapcsolódó utasítások, amelyek hozzáadhatók a beszélgetéshez.",
         "switchAgentMode": "Ügynök mód váltása",
@@ -330,6 +379,8 @@
         "tokenUsageOverflow": "A tokenek használata jóval meghaladja a figyelmeztető küszöbértéket. Fontolja meg a tömörítést vagy egy új munkamenet indítását.",
         "tokenUsageTooltipCacheCreate": "Cache létrehozása: {0}",
         "tokenUsageTooltipCacheRead": "Cache read: {0}",
+        "tokenUsageTooltipCompactions": "{0} x",
+        "tokenUsageTooltipCumulative": "Összesítve: {0}",
         "tokenUsageTooltipTotal": "Összesen: {0} / {1} ({2} %)",
         "tokenUsageWarning": "Elérte a tokenhasználati figyelmeztető küszöbértéket.",
         "tokenUsageWarningEnabled": "Ezt a beállítást használja, ha értesítést szeretne kapni, amikor egy csevegési munkamenet tokenhasználata átlép egy beállított küszöbértéket. Ehhez szükséges, hogy a nyelvi modell szolgáltatója jelentse a tokenhasználatot.",
@@ -349,6 +400,7 @@
           "alwaysAllowConfirm": "Értem, engedélyezem az automatikus jóváhagyást",
           "alwaysAllowGenericWarning": "Ennek az eszköznek az automatikus jóváhagyás engedélyezése előtt megerősítést kell adni. Az engedélyezés után minden jövőbeli hívás megerősítés nélkül fog végrehajtódni. Csak akkor engedélyezze ezt, ha megbízik ebben az eszközben és tisztában van a lehetséges kockázatokkal.",
           "alwaysAllowTitle": "Engedélyezze az automatikus jóváhagyást a „{0}” számára?",
+          "approveLatest": "A legújabb eszköz jóváhagyása – megerősítés",
           "autoCancel": "Automatikus törlés az „{0}” alkalmazásban",
           "canceled": "Eszköz végrehajtása törölve",
           "denied": "Eszköz végrehajtása megtagadva",
@@ -357,6 +409,7 @@
           "deny-reason-placeholder": "Adja meg az elutasítás okát...",
           "deny-session": "Elutasítás ebben a csevegésben",
           "deny-with-reason": "Elutasítás indokkal...",
+          "denyLatest": "A legújabb eszköz megerősítésének elutasítása",
           "executionDenied": "Eszköz végrehajtása megtagadva",
           "header": "Eszköz végrehajtásának megerősítése"
         },
@@ -390,8 +443,6 @@
         },
         "currentDirectory": "aktuális könyvtár",
         "differentAgentRequestWarning": "Az előző csevegési kérést egy másik ügynök kezelte. Claude Code nem látja ezeket a többi üzeneteket.",
-        "directory": "Könyvtár",
-        "domain": "Domain",
         "edit": "{0} szerkesztése",
         "editAutomatically": "Automatikus szerkesztés",
         "editing": "Szerkesztés",
@@ -460,7 +511,6 @@
         "openFileTooltip": "Kattintson a fájl szerkesztőben történő megnyitásához",
         "optionsCount": "{0} opciók",
         "partial": "Részleges",
-        "pattern": "Sablon",
         "plan": "Térkép mód",
         "project": "projekt",
         "projectRoot": "projektgyökér",
@@ -615,10 +665,9 @@
       },
       "core": {
         "agentConfiguration": {
-          "actions": "Műveletek",
           "addCustomAgent": "Egyéni ügynök hozzáadása",
           "availableCapabilities": "Elérhető funkciók",
-          "completionNotificationDescriptionPrefix": "Válassza ki, hogyan szeretne értesítést kapni, amikor ez az ügynök befejezi a feladatát. Az „Alapértelmezett” beállítás a ",
+          "completionNotificationDescriptionPrefix": "Válassza ki, hogyan szeretne értesítést kapni, amikor ez az ügynök a figyelmét igényli, azaz befejezi a feladatát, vagy bevitelt kér Öntől. Az „Alapértelmezett” beállítás a ",
           "defaultNotificationDescription": "A globális AI értesítési beállítást használja.",
           "enableAgent": "Ügynök engedélyezése",
           "llmRequirements": "LLM követelmények",
@@ -687,7 +736,7 @@
           }
         },
         "defaultNotification": {
-          "mdDescription": "Az AI-ügynök feladatának befejezésekor használt alapértelmezett értesítési módszer. Az egyes ügynökök felülírhatják ezt a beállítást.\n- `os-notification`: OS/rendszer értesítések megjelenítése\n- `message`: Értesítések megjelenítése az állapotsorban/üzenetmezőben\n- `blink`: A felhasználói felület villogása vagy kiemelése\n- `off`: Az összes értesítés letiltása",
+          "mdDescription": "Az az alapértelmezett értesítési módszer, amelyet az AI-ügynök akkor használ, amikor a felhasználó figyelmét igényli, azaz amikor befejezett egy feladatot, vagy a felhasználó beavatkozását kéri. Az egyes ügynökök felülírhatják ezt a beállítást.",
           "title": "Alapértelmezett értesítési típus"
         },
         "discard": {
@@ -835,8 +884,14 @@
           },
           "title": "Egyéni kérésbeállítások"
         },
+        "serverSideCompaction": {
+          "description": "Alapértelmezésként engedélyezze a szolgáltató saját szerveroldali tömörítését a csevegési kérések esetében. Ha be van kapcsolva, az ezt támogató modellek automatikusan összefoglalhatják a régebbi beszélgetési köröket, amint a beszélgetés túllépi a saját küszöbértéküket, így a hosszú munkamenetek a kontextuskorláton túl is folytatódhatnak. Minden szolgáltató saját felülírási lehetőséget kínál, és az egyes csevegési munkamenetek a munkamenetbeállításokban felülírhatják ezt. A támogatást nem nyújtó modellek figyelmen kívül hagyják."
+        },
+        "serverSideCompactionTokenThreshold": {
+          "description": "Az alapértelmezett bemeneti token-küszöbérték, amelynél a szolgáltató saját szerveroldali tömörítésének el kell indulnia. A szolgáltatók és az egyes csevegési munkamenetek felülírhatják ezt az értéket. Ha nincs beállítva, a szolgáltató választja ki az alapértelmezett küszöbértéket. Ha be van állítva, az értéknek legalább 50 000 tokennek kell lennie."
+        },
         "skillDirectories": {
-          "description": "További könyvtárak, amelyek készségdefiníciókat tartalmaznak (SKILL.md fájlok). A készségek újrafelhasználható utasításokat nyújtanak, amelyekre az AI-ügynökök hivatkozhatnak. A munkaterületen található .prompts/skills könyvtár és a termék konfigurációs mappájában található skills könyvtár mindig szerepel."
+          "description": "További könyvtárak, amelyek a készségek definícióit (SKILL.md fájlokat) tartalmazzák. A készségek újrafelhasználható utasításokat nyújtanak, amelyekre az AI-ügynökök hivatkozhatnak. A munkaterület .prompts/skills és .agents/skills könyvtárai, a felhasználói könyvtár .agents/skills könyvtára, valamint a termék konfigurációs mappájában található skills könyvtár mindig benne van a csomagban."
         },
         "skillsVariable": {
           "description": "Visszaadja az AI-ügynökök által használható rendelkezésre álló készségek listáját."
@@ -907,7 +962,6 @@
         "open-history-tooltip": "Nyisd meg az AI történetét...",
         "request-card": {
           "promptVariant": "Prompt változat",
-          "response": "Válasz",
           "timestamp": "Időbélyeg"
         },
         "sortChronologically": {
@@ -947,10 +1001,8 @@
         "agent-description": "Az AI-ügynök beállításainak konfigurálása, beleértve az engedélyezést, az LLM kiválasztását, a prompt sablon testreszabását és az egyéni ügynök létrehozását az [AI konfigurációs nézetben]({0}).",
         "agentConfiguration": {
           "customAgentLocationQuickPick": {
-            "createNewFile": "Új fájl létrehozása",
-            "openExistingFile": "Meglévő fájl megnyitása",
-            "placeholder": "Válassza ki, hol szeretne létrehozni vagy megnyitni egy egyéni ügynökfájlt",
-            "title": "Válassza ki a helyet az egyéni ügynökök fájljához"
+            "placeholder": "Válassza ki, hová szeretné létrehozni az agents/<id>/agent.md fájlt",
+            "title": "Válassza ki az új egyéni ügynök helyét"
           },
           "genericCapabilitiesSettings": "Általános képességek",
           "genericCapabilityType": {
@@ -958,6 +1010,15 @@
             "functions": "Funkciók",
             "mcpFunctions": "MCP funkciók",
             "promptFragments": "Parancssori fragmentumok"
+          },
+          "newAgent": {
+            "createFailed": "Nem sikerült létrehozni az „{0}” nevű egyéni ügynököt: {1}",
+            "defaultDescription": "Egyéni ügynök. Ezt a leírást az agent.md fájlban szerkesztheti.",
+            "defaultPrompt": "Te egy segítőkész ügynök vagy. Szükségleteidnek megfelelően módosítsd ezt a promptot.",
+            "idInvalid": "Kizárólag betűket, számokat, kötőjelet, aláhúzást vagy pontot használjon.",
+            "idPrompt": "Ügynök-azonosító (az agents/ mappában mappanévként használatos)",
+            "idTitle": "Új egyéni ügynök",
+            "noLocation": "Nem lehet egyéni ügynököt létrehozni: nincs beállítva a prompt-templates mappa helye. Állítson be egy globális vagy munkaterületi prompt-templates mappát, majd próbálja meg újra."
           },
           "noDescription": "Nincs leírás",
           "resetAllCapabilities": "Az összes képesség visszaállítása az alapértelmezett értékekre",
@@ -975,6 +1036,11 @@
           "info": "Az Agent Mode (Ügynök mód) folytatásával a megerősítés mentésre kerül. Ezt később az `ai-features.agentMode.enabled` beállításon keresztül visszavonhatja.\n\nAz Edit Mode (Szerkesztési mód) folytatásával az alapértelmezett mód szerkesztési módra vált.\n\nA módokat bármikor megváltoztathatja a módválasztó segítségével vagy az AI konfigurációban.",
           "msg": "Ez az ügynök **ügynöki módot** használ. Az autonóm folyamat engedélyezéséhez képes további megerősítés nélkül közvetlenül írni a munkaterületi fájlokba.\n\nJavasolt a verziókezelés (pl. Git) használata, hogy áttekintse és visszavonhassa a változtatásokat.\n\nAz alábbi csevegőmezőben található módválasztóval átválthat **szerkesztési módra**, vagy használhatja az **Architect** ügynököt olvasási joggal rendelkező tervezéshez.\n\nEz a megerősítés el lesz mentve ehhez a munkaterülethez, és többé nem jelenik meg. Ha globálisan szeretné visszaállítani vagy konfigurálni, keresse meg a `ai-features.agentMode.confirmed` beállítást a Beállítások között.",
           "waiting": "Várakozás a megerősítésre..."
+        },
+        "allowAllMode": {
+          "stripTooltip": "Az AI-eszközök hívásai ebben a munkamenetben megerősítés nélkül futnak. Csak olyan környezetekben engedélyezze őket, amelyekben megbízik.",
+          "stripTooltipFooter": "A --session-preference parancsopcióval állítható be. A mentett beállítások visszaállításához indítsa újra a programot a parancsopció nélkül.",
+          "title": "Theia AI „Allow-All” mód"
         },
         "app-tester": {
           "errorCheckingDevToolsServerStatus": "Hibaellenőrzés DevTools MCP szerver állapota: {0}",
@@ -1013,6 +1079,7 @@
         "chatRestrictedMessage": {
           "title": "Az AI funkciók korlátozottak"
         },
+        "childInteractionNeeded": "Egy delegált munkamenet a figyelmedet igényli",
         "codeReviewerAgent": {
           "description": "Kódfelülvizsgálati asszisztens, amely elemzi a kódváltozásokat és strukturált értékeléseket ad vissza. Ellenőrzi a befejezési kritériumokat, a build/lint/teszt bizonyítékokat és a kódminőséget."
         },
@@ -1029,6 +1096,7 @@
             "startNewChat": "A csevegéseket tartsa rövidnek és lényegre törőnek. [Indítson új csevegést]({0}) egy új feladat esetén, vagy [indítson új csevegést ennek az összefoglalásával]({1})."
           }
         },
+        "collapseSession": "{0} összecsukása",
         "commandAgent": {
           "commandCallback": {
             "confirmAction": "Értem",
@@ -1057,10 +1125,10 @@
             "edit": "Alapértelmezett mód"
           }
         },
-        "deleteChat": "Csevegés törlése",
         "enableAI": {
           "mdDescription": "Ez a beállítás lehetővé teszi a legújabb AI-funkciók elérését.            \n            Fontos tudni, hogy ezek a funkciók folyamatos kéréseket generálhatnak az Ön által hozzáférhetővé tett nyelvi modellekhez (LLM-ek). Ez olyan költségeket eredményezhet, amelyeket szorosan figyelnie kell. Ennek az opciónak az engedélyezésével Ön tudomásul veszi ezeket a kockázatokat.            \n            **Kérjük, vegye figyelembe! Az alábbi beállítások csak akkor lépnek hatályba,\n            ha a fő funkció beállítása engedélyezve van. A funkció engedélyezése után legalább egy LLM-szolgáltatót kell konfigurálnia az alábbiak közül. Lásd még [a dokumentációt](https://theia-ide.org/docs/user_ai/)**."
         },
+        "expandSession": "{0} kibontása",
         "exploreAgent": {
           "description": "Kódbázis-felfedező asszisztens, amely kivonja és összefoglalja a kódbázisból származó információkat.         Jelentéseket készít a meglévő elemekről, kódrészleteket nyújt, és leírja a megfigyelt mintákat."
         },
@@ -1136,9 +1204,16 @@
           "description": "Egy AI-alapú PR-felülvizsgálati ügynök, amely a teljes kódfelülvizsgálati munkafolyamatot irányítja: lekérdezi a PR-adatokat, feltérképezi a kódbázist, strukturált elemzést végez, interaktív módon végigvezeti a felhasználót a megállapításokon diff-nézegetők segítségével, és opcionálisan létrehoz egy függőben lévő felülvizsgálatot a GitHubon."
         },
         "prompt-template-description": "Válassza ki a prompt változatokat és testreszabhatja a prompt sablonokat az AI ügynökök számára az [AI konfigurációs nézetben]({0}).",
-        "recentChats": "Legutóbbi csevegések",
+        "requiresApproval": "Jóváhagyásra szorul",
+        "restoredSession": "Visszaállított munkamenet",
         "restrictedModeDetails": "Az AI-csevegés, a beépített javaslatok, a kódműveletek és a prompt-sablonok le vannak tiltva",
         "restrictedModeLabel": "AI funkciók (korlátozott módban letiltva)",
+        "sectionRestored": "Visszaállítva",
+        "sessionOverride": {
+          "defaultToolConfirmation": "Alapértelmezett eszközmegerősítés: {0}",
+          "toolConfirmation": "Eszközönkénti megerősítési felülírások: {0}",
+          "toolConfirmationGeneric": "Eszközönkénti megerősítési felülírások beállítása"
+        },
         "shellAllowlist": {
           "placeholder": "Például: „git log” (pontosan) vagy „git log *” (argumentumokkal)."
         },
@@ -1157,6 +1232,13 @@
           },
           "slashCommandsSectionHeader": "Slash parancsok"
         },
+        "toolConfirmationInfo": {
+          "header": "Eszköz megerősítése"
+        },
+        "toolConfirmationOverrides": {
+          "stripTooltip": "Egy vagy több AI-eszköz parancssori kapcsolók segítségével automatikusan jóváhagyásra kerül ebben a munkamenetben.",
+          "title": "Az AI-eszköz által végzett megerősítések felülírása"
+        },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
             "confirm": "Értem, engedélyezem az automatikus jóváhagyást",
@@ -1168,6 +1250,19 @@
           },
           "default": {
             "label": "Alapértelmezett eszköz megerősítési mód:"
+          },
+          "recommendedDefaults": {
+            "apply": "Alapértelmezett eszközök engedélyezése",
+            "dialogConfirm": "Értem, engedélyezem",
+            "dialogTitle": "Engedélyezze az alapértelmezett eszközöket?",
+            "message": "Az eszközök használatához jelenleg jóváhagyás szükséges. Az összes beépített eszköz használatát egyszerre automatikusan engedélyezheti. Azok az eszközök, amelyek külön megerősítést igényelnek (pl. shell-parancsok végrehajtása), az MCP-eszközök, valamint a később hozzáadott eszközök továbbra is megkérdezik a felhasználót a futtatás előtt.",
+            "msg": {
+              "line1": "Ezzel az összes jelenleg regisztrált beépített eszköz beállítása „Mindig engedélyezve” lesz.",
+              "line2": "Azok az eszközök, amelyek külön megerősítést igényelnek (például a shell parancsok végrehajtása), továbbra is megkérdeznek a futtatás előtt.",
+              "line3": "Az MCP-eszközök harmadik féltől származnak, és nem tartoznak a csomaghoz. Ebben a nézetben egyenként engedélyezheti őket.",
+              "line4": "A később hozzáadott eszközök alapértelmezés szerint továbbra is a „Megerősítés” opciót jelölik, így azokat áttekintheti.",
+              "line5": "Ezt később ebben a nézetben módosíthatja."
+            }
           },
           "resetAll": "Minden visszaállítása",
           "resetAllConfirmDialog": {
@@ -1195,7 +1290,6 @@
           "errorMessage": "Hibaüzenet",
           "lastActivity": "Utolsó tevékenység",
           "lastMessage": "Utolsó üzenet",
-          "messages": "Üzenetek",
           "multipleExchanges": "{0} tőzsdék",
           "oneExchange": "1 csere",
           "unread": "Olvasatlan"
@@ -1203,7 +1297,8 @@
         "variableConfiguration": {
           "selectVariable": "Kérjük, válasszon egy változót.",
           "usedByAgents": "Ügynökök által használt"
-        }
+        },
+        "waitingForInput": "Várjuk a bevitelét"
       },
       "llamaFile": {
         "prefs": {
@@ -1231,14 +1326,35 @@
         }
       },
       "mcp": {
+        "blockedServersLabel": "MCP-kiszolgálók (automatikus indítás blokkolva)",
         "error": {
           "allServersRunning": "Az összes MCP-kiszolgáló már fut.",
+          "authenticationRequired": "Az MCP-kiszolgáló („{0}”) hitelesítést igényel. Indítsa újra a kiszolgálót a bejelentkezéshez.",
+          "getRedirectUrlFailed": "Hiba történt az MCP OAuth átirányítási URL-jének meghatározása közben.",
+          "noOAuthServersConfigured": "Nincs beállítva OAuth-kompatibilis MCP-kiszolgáló.",
           "noRunningServers": "Nincs futó MCP-kiszolgáló.",
           "noServersConfigured": "Nincs konfigurált MCP-kiszolgáló.",
-          "startFailed": "Hiba történt az MCP szerver indításakor."
+          "oauthRequiresTrustedWorkspace": "Az OAuth-kompatibilis MCP-kiszolgálók elindításához megbízható munkaterületre van szükség.",
+          "signInFailed": "Hiba történt az MCP-kiszolgálóra való bejelentkezés során.",
+          "signOutFailed": "Hiba történt az MCP-kiszolgálóról való kijelentkezés során.",
+          "startFailed": "Hiba történt az MCP szerver indításakor.",
+          "stopFailed": "Hiba történt az MCP-kiszolgáló leállítása közben."
+        },
+        "getRedirectUrl": {
+          "label": "MCP: MCP OAuth átirányítási URL lekérése"
         },
         "info": {
-          "serverStarted": "Az MCP szerver „{0}” sikeresen elindult. Regisztrált eszközök: {1}"
+          "oauthRedirectUrl": "MCP OAuth átirányítási URL: {0}",
+          "serverSignedIn": "Bejelentkezett az „{0}” MCP-kiszolgálóra.",
+          "serverSignedOut": "Kijelentkezett az „{0}” MCP-kiszolgálóról.",
+          "serverStarted": "Az MCP szerver „{0}” sikeresen elindult. Regisztrált eszközök: {1}",
+          "signInCancelled": "Az MCP-kiszolgáló „{0}” bejelentkezése megszakadt."
+        },
+        "oauth": {
+          "completeSignInInBrowser": "Végezze el az MCP OAuth-bejelentkezést a böngészőjében. Ha nem nyílt meg a bejelentkezési lap, előfordulhat, hogy a böngészője blokkolta a felugró ablakot.",
+          "notification": {
+            "signInPrompt": "Az MCP-kiszolgáló („{0}”) elindításához engedélyezés szükséges."
+          }
         },
         "servers": {
           "args": {
@@ -1253,17 +1369,60 @@
             "mdDescription": "Az MCP szerver elindításához használt parancs, pl. „uvx” vagy „npx”.",
             "title": "Az MCP szerver végrehajtására szolgáló parancs"
           },
+          "deferLoading": {
+            "mdDescription": "Ha engedélyezve van, a szerver által biztosított eszközök a generált `mcp_<server>_tools` parancssori töredékben „halasztottként” vannak megjelölve. A halasztott eszközöket nem töltik be előre a modell kontextusába. Ehelyett a modell igény szerint fedezi fel őket a szolgáltató beépített eszközkereső mechanizmusán (Anthropic, OpenAI) keresztül, amennyiben az támogatott. Ez jelentősen csökkenti a token-terhelést azoknál a szervereknél, amelyek sok eszközt tesznek elérhetővé.",
+            "title": "Betöltés elhalasztása"
+          },
           "env": {
             "mdDescription": "A szerverhez beállítható opcionális környezeti változók, például API-kulcs.",
             "title": "Környezeti változók"
           },
           "headers": {
-            "mdDescription": "Opcionális kiegészítő fejlécek, amelyek minden szerverhez intézett kéréshez csatolva vannak.",
-            "title": "Fejlécek"
+            "mdDescription": "A szerverhez intézett minden kéréshez csatolt opcionális kiegészítő fejlécek. A fejlécértékeket egyszerű szövegként tárolják a beállításokban; kerülje a munkaterületi beállítások használatát, ha azok érzékeny értékeket tartalmaznak."
           },
-          "mdDescription": "Az MCP-kiszolgálókat konfigurálhatja helyileg parancsokkal, argumentumokkal és opcionálisan környezeti változókkal, vagy távolról a kiszolgáló URL-jével, hitelesítési tokennel és opcionálisan hitelesítési fejlécnévvel. Ezenkívül lehetőség van az automatikus indítás konfigurálására (alapértelmezés szerint igaz). Minden szervert egy egyedi kulcs azonosít, például „brave-search” vagy „filesystem”. A szerver elindításához használja az „MCP: Start MCP Server” parancsot, amely lehetővé teszi a kívánt szerver kiválasztását. A szerver leállításához használja az „MCP: Stop MCP Server” parancsot. Felhívjuk figyelmét, hogy az automatikus indítás csak újraindítás után lép érvénybe, ezért az első alkalommal manuálisan kell elindítania a szervert.\nPélda konfigurációra:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  }\n}\n```",
+          "mdDescription": "Az MCP-kiszolgálókat konfigurálhatja helyileg parancsokkal, argumentumokkal és opcionálisan környezeti változókkal, vagy távolról a kiszolgáló URL-jével, hitelesítési tokennel, OAuth-konfigurációval és opcionálisan egy hitelesítési fejléc nevével. Ezen felül beállítható az automatikus indítás is (alapértelmezés szerint be van kapcsolva). Minden szervert egy egyedi kulcs azonosít, például „brave-search” vagy „filesystem”. A szerver elindításához használja az „MCP: Start MCP Server” parancsot, amely lehetővé teszi a kívánt szerver kiválasztását. A szerver leállításához használja az „MCP: Stop MCP Server” parancsot. Kérjük, vegye figyelembe, hogy az automatikus indítás csak újraindítás után lép hatályba; az első alkalommal a szervert manuálisan kell elindítania. Az AI-regisztrációból telepített szerverek egy további `registryMetadata` blokkot tartalmaznak, amelyet a rendszer automatikusan kezel, és amelyet nem szabad manuálisan szerkeszteni.\nKonfigurációs példa:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  },\n  \"oauth-protected-server\": {\n    \"serverUrl\": \"YOUR_OAUTH_PROTECTED_MCP_SERVER_URL\",\n    \"oauth\": {\n      \"clientId\": \"OPTIONAL_CLIENT_ID\",\n      \"scopes\": [\"OPTIONAL_SCOPE\"]\n    }\n  }\n  }\n```",
+          "oauth": {
+            "authorizationServer": {
+              "mdDescription": "Opcionális engedélyezési szerver URL-cím felülírása. Ha elhagyják, a Theia az MCP-kiszolgálóról szerzi be.",
+              "title": "Engedélyezési szerver"
+            },
+            "clientId": {
+              "mdDescription": "Opcionális statikus OAuth-ügyfélazonosító. Ha ezt elhagyják, a Theia dinamikus ügyfélregisztrációt kísérel meg.",
+              "title": "Ügyfél-azonosító"
+            },
+            "clientSecret": {
+              "mdDescription": "Opcionális OAuth-ügyféltitok olyan hitelesítési szerverek számára, amelyek kizárólag előre regisztrált bizalmas ügyfeleket fogadnak el (nincs dinamikus ügyfélregisztráció). Csak az ügyfélazonosítóval együtt használható. Ez sima szövegként kerül tárolásra a beállításokban; ha a titok érzékeny, kerülje a munkaterületi beállítások használatát.",
+              "title": "Ügyfél titkos kulcs"
+            },
+            "mdDescription": "Opcionális OAuth 2.1 konfiguráció az engedélyezést igénylő távoli MCP-kiszolgálókhoz. Ennek az objektumnak a jelenléte engedélyezi az OAuth-ot a kiszolgálón; az OAuth letiltásához távolítsa el. A Theia alapértelmezés szerint PKCE-vel rendelkező nyilvános klienseket használ; kliens titkot csak azoknál a kiszolgálóknál konfiguráljon, amelyek előzetesen regisztrált bizalmas klienst igényelnek. A változtatások az MCP-kiszolgáló újraindítása után lépnek életbe.",
+            "resource": {
+              "mdDescription": "Opcionális RFC 8707 erőforrás-jelző felülírás ehhez az MCP-kiszolgálóhoz.",
+              "title": "Forrás"
+            },
+            "scopes": {
+              "mdDescription": "Opcionális OAuth-hatókörök, amelyeket kérni kell, ha a szerver nem hirdeti meg a hatóköröket.",
+              "title": "Hatály"
+            },
+            "title": "OAuth"
+          },
+          "registryMetadata": {
+            "configHash": {
+              "mdDescription": "A szerver telepítéséhez használt rendszerleíró adatbázis-jóváhagyás tartalmi hash-értéke.",
+              "title": "Rendszerleíró adatbázis konfigurációs hash"
+            },
+            "mdDescription": "Egy AI-nyilvántartásból telepített szerver származási metaadatai. Írta: `@theia/ai-registry`; a felhasználó nem szerkesztheti.",
+            "serverId": {
+              "mdDescription": "Meghatározza azt az AI-nyilvántartási bejegyzést, amelyből ezt a szervert telepítették.",
+              "title": "Rendszerleíró adatbázis szerverazonosítója"
+            },
+            "title": "Rendszerleíró adatbázis metadatok",
+            "version": {
+              "mdDescription": "A telepítéskor rögzített, a rendszerleíró adatbázisban közzétett verzió.",
+              "title": "Rendszerleíró adatbázis verziója"
+            }
+          },
           "serverAuthToken": {
-            "mdDescription": "A szerver hitelesítési tokenje, ha szükséges. Ez a távoli szerverrel való hitelesítéshez használatos.",
+            "mdDescription": "Szükség esetén a szerver hitelesítési tokenje. Ez sima szövegként kerül tárolásra a beállításokban; ha a token érzékeny adat, kerülje a munkaterületi beállítások használatát.",
             "title": "Hitelesítési token"
           },
           "serverAuthTokenHeader": {
@@ -1276,6 +1435,12 @@
           },
           "title": "MCP szerver konfiguráció"
         },
+        "signin": {
+          "label": "MCP: Bejelentkezés az MCP-kiszolgálóra"
+        },
+        "signout": {
+          "label": "MCP: Kijelentkezés az MCP-kiszolgálóról"
+        },
         "start": {
           "label": "MCP: MCP szerver indítása"
         },
@@ -1285,12 +1450,19 @@
         "useWorkspaceAsRoot": {
           "mdDescription": "A gyökérkönyvtárak határozzák meg, hogy a szerverek hol működhetnek a fájlrendszeren belül. Ha engedélyezve van, a munkaterület mappái lesznek a gyökérkönyvtárak, ellenkező esetben az MCP-szerverek hozzáférhetnek az egész fájlrendszerhez. A beállítás megváltoztatása az összes futó MCP-szerver újraindítását eredményezi, hogy az új gyökérkönyvtár-konfiguráció érvénybe lépjen.",
           "title": "A munkaterület használata rootként"
+        },
+        "warn": {
+          "serverPreferenceChangeFailed": "Az MCP-kiszolgáló beállításainak módosításai nem sikerült alkalmazni: {0}",
+          "signInNotCompleted": "A bejelentkezés az „{0}” MCP-kiszolgálóra nem sikerült."
         }
       },
       "mcpConfiguration": {
         "autostart": "Automatikus indítás",
-        "connectServer": "Csatlakozás",
-        "connectingServer": "Csatlakozás...",
+        "browseAIRegistry": "Az AI-nyilvántartás böngészése",
+        "browseAIRegistryTooltip": "Nyissa meg a Bővítmények nézetet az AI-nyilvántartási bejegyzések böngészéséhez",
+        "command": {
+          "addServer": "Helyi MCP-konfiguráció hozzáadása..."
+        },
         "copiedAllList": "Az összes eszköz másolása a vágólapra (az összes eszköz listája)",
         "copiedAllSingle": "Az összes eszközt a vágólapra másolta (egyetlen parancssori fragmens az összes eszközzel)",
         "copiedForPromptTemplate": "Az összes eszközt a vágólapra másolta a prompt sablonhoz (egyetlen prompt fragmentum az összes eszközzel)",
@@ -1298,6 +1470,7 @@
         "copyAllSingle": "Minden másolása csevegéshez (egyetlen prompt fragmentum az összes eszközzel)",
         "copyForPrompt": "Másoló eszköz (csevegéshez vagy parancssori sablonhoz)",
         "copyForPromptTemplate": "Minden másolása a prompt sablonhoz (egyetlen prompt fragmentum az összes eszközzel)",
+        "deferLoading": "Az eszköz betöltésének elhalasztása",
         "deleteServer": "Szerver törlése",
         "deleteServerDialogMsg": "Biztosan törölni szeretné a „{0}” szervert?",
         "deleteServerDialogTitle": "MCP szerver törlése",
@@ -1312,29 +1485,65 @@
           "autostart": "Automatikus indítás",
           "commandPlaceholder": "Például: npx vagy uvx",
           "commandRequired": "A parancs helyi szerverekhez szükséges.",
+          "deferLoading": "Az eszközök betöltésének elhalasztása (az eszközök igény szerinti felkutatása a szolgáltatói eszközkereső segítségével)",
           "envPlaceholder": "KEY=érték (egy sorban)",
           "headersPlaceholder": "Fejléc-név=érték (egy sorban)",
           "localServer": "Helyi (parancs)",
           "nameExists": "Már létezik ilyen nevű szerver.",
           "nameRequired": "A szerver neve kötelezően meg kell adni.",
+          "oauthAuthorizationServerInvalid": "Az OAuth-hitelesítési szervernek érvényes http(s) URL-nek kell lennie",
+          "oauthAuthorizationServerPlaceholder": "Opcionális engedélyezési szerver URL-je",
+          "oauthClientIdPlaceholder": "Opcionális statikus kliens-azonosító",
+          "oauthClientSecretPlaceholder": "Kizárólag olyan szerverek esetében, amelyek bizalmas kliens használatát igénylik",
+          "oauthPublicClientDescription": "A Theia alapértelmezés szerint nyilvános OAuth-klienseket használ PKCE-vel. Csak akkor adjon meg kliens titkot, ha a szerver előre regisztrált, bizalmas klienst igényel.",
+          "oauthRedirectUrlDescription": "Az engedélyezési visszahívások erre az URL-re érkeznek. Ha statikus kliens-azonosítóval rendelkezik, regisztrálja azt átirányítási URI-ként az OAuth-szolgáltatónál.",
+          "oauthResourceInvalid": "Az OAuth-erőforrásnak érvényes http(s) URL-nek kell lennie",
+          "oauthResourcePlaceholder": "Opcionális erőforrás-URI",
+          "oauthScopesPlaceholder": "Szóközzel elválasztott hatókörök",
+          "oauthSharedCredentialsDescription": "A tárolt OAuth-munkamenetek megosztásra kerülnek az ugyanazt a szervernévet és URL-t (vagy erőforrást) használó munkaterületek között.",
+          "remoteOAuthServer": "Távoli (OAuth)",
           "remoteServer": "Távoli (URL)",
           "saveChanges": "Módosítások mentése",
           "serverName": "Szerver neve",
           "serverNamePlaceholder": "Például: my-mcp-server",
-          "serverType": "Szerver típus",
           "serverUrlPlaceholder": "Például: https://mcp.example.com",
           "serverUrlRequired": "A távoli szerverekhez szerver URL szükséges."
         },
-        "headers": "Fejlécek",
+        "fromRegistryLink": "A rendszerleíró adatbázisból",
+        "oauth": "OAuth",
+        "oauthAuthorizationServer": "Engedélyezési szerver",
+        "oauthClientId": "OAuth kliensazonosító",
+        "oauthClientSecret": "OAuth kliens titkos kulcs",
+        "oauthRedirectUrl": "Átirányítási URL",
+        "oauthResource": "OAuth-erőforrás",
+        "oauthScopes": "OAuth-hatókörök",
+        "openInRegistry": "Megnyitás az AI-nyilvántartásban: {0}",
         "saveServerError": "Az MCP szerver konfigurációjának mentése sikertelen: {0}",
         "serverAuthToken": "Hitelesítési token",
         "serverAuthTokenHeader": "Auth fejléc neve",
         "serverUrl": "Szerver URL",
+        "signInServerFailed": "Nem sikerült bejelentkezni az „{0}” MCP-kiszolgálóra.",
+        "signInServerNotCompleted": "A bejelentkezés az „{0}” MCP-kiszolgálóra nem sikerült.",
+        "signInServerSucceeded": "Bejelentkezett az „{0}” MCP-kiszolgálóra.",
+        "signOutServerDialogMsg": "Biztosan ki szeretne jelentkezni a „{0}” szerverről? Ezzel törli a szerverhez tartozó tárolt OAuth-tokeneket.",
+        "signOutServerDialogTitle": "Kijelentkezés az MCP-kiszolgálóról",
+        "signOutServerFailed": "Nem sikerült kijelentkezni az „{0}” MCP-kiszolgálóról.",
+        "startServerFailed": "Nem sikerült elindítani az „{0}” MCP-kiszolgálót.",
+        "stopServerFailed": "Nem sikerült leállítani az „{0}” MCP-kiszolgálót.",
         "tools": "Eszközök: "
       },
       "openai": {
         "apiKey": {
           "mdDescription": "Írja be hivatalos OpenAI-fiókjának API-kulcsát. **Megjegyzés:** Ezen beállítás használatával az Open AI API-kulcs szöveges formában kerül tárolásra a Theia-t futtató gépen. A kulcs biztonságos beállításához használja az `OPENAI_API_KEY` környezeti változót."
+        },
+        "compaction": {
+          "default": "Kövesse a globális csevegő szerveroldali tömörítési beállítását.",
+          "description": "A hivatalos OpenAI-modellek esetében felülírja a szolgáltató saját szerveroldali tömörítését. Ez kizárólag az OpenAI Response API-ra vonatkozik; a Chat Completions API figyelmen kívül hagyja. A „default” beállítás a globális csevegési beállítást követi ({0}). Ha ez ténylegesen engedélyezve van, a Response API-t arra kérik, hogy foglalja össze a régebbi csevegési köröket, amint a beszélgetés túllépi a szolgáltató által meghatározott küszöbértéket.",
+          "disabled": "Soha ne kérjen szerveroldali tömörítést a hivatalos OpenAI-modellek esetében.",
+          "enabled": "A hivatalos OpenAI-modellek esetében mindig kérje a szerveroldali tömörítést."
+        },
+        "compactionTokenThreshold": {
+          "description": "A hivatalos OpenAI-modellek szerveroldali tömörítéséhez használt globális bemeneti tokenküszöb felülírása. Ha nincs beállítva, akkor a globális beállítás vagy a szolgáltató alapértelmezett értéke érvényes. Ha be van állítva, az értéknek legalább 50 000 tokennek kell lennie."
         },
         "customEndpoints": {
           "apiKey": {
@@ -1376,7 +1585,7 @@
           "description": "Használni kívánt hivatalos OpenAI modellek"
         },
         "useResponseApi": {
-          "mdDescription": "A hivatalos OpenAI modellekhez a Chat Completion API helyett az újabb OpenAI Response API-t használja.Ez a beállítás csak a hivatalos OpenAI modellekre vonatkozik – az egyéni szolgáltatóknak ezt egyedileg kell konfigurálniuk. Vegye figyelembe, hogy a válasz API esetében az eszközhívás-definícióknak meg kell felelniük az Open AI [szigorú sémadefiníciójának](https://platform.openai.com/docs/guides/function-calling#strict-mode). A nem megfelelő sémák konvertálására minden tőlünk telhetőt megteszünk, de hibák előfordulhatnak."
+          "mdDescription": "A hivatalos OpenAI-modellek esetében a Chat Completion API helyett az újabb OpenAI Response API-t használja. Ez a beállítás csak a hivatalos OpenAI-modellekre vonatkozik – az egyéni szolgáltatóknak ezt egyedileg kell konfigurálniuk."
         }
       },
       "promptTemplates": {
@@ -1426,6 +1635,10 @@
       },
       "session-settings-dialog": {
         "advancedSettings": "Speciális beállítások (JSON)",
+        "compactionHeader": "Szerveroldali tömörítés",
+        "compactionLabel": "Tömörítés:",
+        "compactionNote": "Felülírja a munkamenet globális és szolgáltatónkénti tömörítési beállításait. Csak azokra a szolgáltatókra vonatkozik, amelyek támogatják a szerveroldali tömörítést.",
+        "compactionTokenThreshold": "Token küszöbérték:",
         "confirmationTimeout": "Megerősítési időtúllépés",
         "confirmationTimeoutNote": "A megadott idő elteltével automatikusan elutasítja az eszköz megerősítéseit. Felülírja a globális beállítást ebben a munkamenetben.",
         "enableConfirmationTimeout": "A megerősítés időtúllépésének engedélyezése",
@@ -1480,7 +1693,6 @@
         "outputTokens": "Kimeneti tokenek",
         "readCachedInputTokens": "A gyorsítótárból olvasott bemeneti tokenek",
         "readCachedInputTokensTooltip": "Az „Input Token” mellett nyomon követett. Általában sokkal olcsóbb, mint a nem gyorsítótárazott. Általában nem számít bele a sebességkorlátozásokba.",
-        "total": "Összesen",
         "totalTokensTooltip": "„Bemeneti tokenek” + „Kimeneti tokenek”"
       },
       "vercelai": {
@@ -1535,7 +1747,7 @@
           "title": "Fontolja meg a .gitignore használatát."
         },
         "createSkillAgent": {
-          "description": "Új készségek létrehozására szolgáló AI-asszisztens. A készségek újrafelhasználható utasításokat és domain-ismereteket biztosítanak az AI-ügynökök számára. Ez az ügynök segít jól strukturált készségeket létrehozni a .prompts/skills könyvtárban, megfelelő YAML frontmatter és markdown tartalommal."
+          "description": "Egy mesterséges intelligencia-asszisztens új készségek létrehozásához. A készségek újrafelhasználható utasításokat és szakterületi ismereteket nyújtanak a mesterséges intelligencia-ügynökök számára. Ez az ügynök segít jól felépített készségeket létrehozni a .agents/skills vagy a .prompts/skills könyvtárban, megfelelő YAML-előszóval és Markdown-tartalommal. Ez a funkció még korai fejlesztési szakaszban van, és változásokon mehet keresztül."
         },
         "excludedPattern": {
           "description": "Kizárandó fájlok/mappák mintáinak (glob vagy regex) listája.",
@@ -1561,19 +1773,26 @@
       "fileChangeSetTitle": "Javasolt változtatások"
     },
     "ai-chat-ui": {
+      "blockedResource": {
+        "allow": "Engedélyezze ezt a blokkolt tartalmat",
+        "aria": "Letiltott külső források: {0}",
+        "inlineContent": "(beágyazott külső tartalom)",
+        "label": "Külső forrás blokkolva:",
+        "resourcesToAllow": "{0} az erőforrások engedélyezve lesznek"
+      },
+      "browseAllChats": "Az összes csevegés áttekintése...",
       "confirm": "Megerősítés",
       "deleteChat": "Csevegés törlése",
+      "home": "Főoldal",
       "initiate-session-task-context": "Feladat kontextusa: Munkamenet indítása",
-      "navigate-back": "Vissza",
-      "navigate-forward": "Előre navigálás",
       "noOutput": "Nincs kimenet",
       "open-current-session-summary": "Aktuális munkamenet összefoglalása megnyitása",
       "open-settings-tooltip": "Nyissa meg az AI beállításokat...",
+      "openSession": "Csevegési munkamenet megnyitása",
       "renameChat": "Csevegés átnevezése",
       "scroll-lock": "Zár Görgetés",
       "scroll-unlock": "Feloldás Görgetés",
       "session-settings": "Munkamenet beállításainak megadása",
-      "showChats": "Csevegések megjelenítése...",
       "summarize-current-session": "A jelenlegi munkamenet összefoglalása"
     },
     "ai-claude-code": {
@@ -1584,6 +1803,9 @@
       "agentCompletionMessage": "Az „{0}” ügynök befejezte feladatát.",
       "agentCompletionMessageWithSession": "Az „{0}” ügynök befejezte feladatát a „{1}” alkalmazásban.",
       "agentCompletionTitle": "Ügynök „{0}” feladat befejezve",
+      "agentInputNeededMessage": "Az „{0}” ügynöknek szüksége van az Ön bevitelére.",
+      "agentInputNeededMessageWithSession": "Az „{0}” ügynöknek szüksége van az Ön beviteleire a „{1}” ablakban.",
+      "agentInputNeededTitle": "Az „{0}” ügynöknek szüksége van az Ön segítségére",
       "aiDisabledInRestrictedMode": "Az AI funkciók nem érhetők el megbízhatatlan munkaterületeken.",
       "preferences": {
         "linuxEnvHint": "Linux rendszeren győződjön meg arról, hogy a változó a `~/.profile` fájlban van definiálva (nem csak a `~/.bashrc` fájlban), ha az alkalmazást asztali parancsikonról indítja. A részleteket lásd a [dokumentációban](https://theia-ide.org/docs/user_ai/#setting-api-keys).",
@@ -1611,11 +1833,17 @@
         "argumentHint": "<jegy-szám>",
         "description": "GitHub jegy elemzése és a megoldás megvalósítása"
       },
+      "newChat": "Új csevegés",
+      "noSessions": "Még nincsenek csevegési munkamenetek.",
       "open-ai-configuration-tooltip": "Open AI konfiguráció",
+      "perspective": {
+        "aiFirst": "AI First"
+      },
       "rememberCommand": {
         "argumentHint": "[topic-hint]",
         "description": "Témák kivonása a beszélgetésből és a projektinformációk frissítése"
       },
+      "sessionsView": "AI-munkamenetek",
       "ticketCommand": {
         "argumentHint": "<jegy-szám>",
         "description": "GitHub jegy elemzése és végrehajtási terv készítése"
@@ -1623,7 +1851,6 @@
       "todoTool": {
         "noTasks": "Nincs feladat"
       },
-      "userInteractionCanceled": "Törölve",
       "userInteractionCommentPlaceholder": "Hozzászólás hozzáadása ehhez a lépéshez...",
       "userInteractionEmpty": "Üres",
       "userInteractionFinishStep": "Befejezés",
@@ -1633,11 +1860,78 @@
       "userInteractionPreparing": "Felhasználói interakció előkészítése...",
       "userInteractionPreparingSteps": "Előkészítés: {0} (a {1} lépései)",
       "userInteractionPreparingTitle": "Előkészítés: {0}",
-      "userInteractionStepLabel": "{0}. lépés a {1} oldalon",
       "userInteractionWorkingCopy": "Munkakópia"
     },
     "ai-mcp": {
-      "blockedServersLabel": "MCP-kiszolgálók (autostart blokkolva)"
+      "installDialog": {
+        "authTokenPlaceholder": "A szerverhez való csatlakozáshoz szükséges",
+        "authTokenRequired": "A szerver telepítéséhez hitelesítési token szükséges.",
+        "oauthClientIdPlaceholder": "A szerverhez való csatlakozáshoz szükséges",
+        "oauthClientSecretPlaceholder": "A szerverhez való csatlakozáshoz szükséges",
+        "oauthCredentialsRequired": "A szerver telepítéséhez OAuth-ügyfélazonosítóra és ügyféltitokra van szükség.",
+        "oauthDescription": "Ez a szerver OAuth-ot használ egy előre regisztrált, bizalmas klienssel. Adja meg az OAuth-szolgáltatójától kapott kliens-azonosítót és titkos kulcsot.",
+        "title": "Telepítse az MCP Server szoftvert",
+        "trust": {
+          "unknown": "Nincs beállítva AI-nyilvántartás – a megbízhatóság nem ellenőrizhető.",
+          "unverified": "Ez a szerver nem szerepel az AI-nyilvántartásban ({0}). A telepítés a saját felelősségére történik.",
+          "verified": "Jóváhagyta az AI-nyilvántartás ({0})."
+        }
+      },
+      "installUri": {
+        "alreadyInstalled": {
+          "msg": "Egy „{0}” nevű MCP-kiszolgáló már be van állítva. A folytatás esetén a rendszer a meglévő bejegyzést felülírja a rendszerleíró adatbázisban található beállításokkal.",
+          "title": "Az MCP-kiszolgáló már telepítve van"
+        },
+        "missingId": "A telepítési linkből hiányzik a szükséges „id” paraméter.",
+        "noRegistry": "Az MCP-kiszolgáló „{0}” nem telepíthető – ebben a termékben nincs konfigurálva AI-nyilvántartás.",
+        "success": "Telepítettem az „{0}” nevű MCP-kiszolgálót az AI-nyilvántartásból.",
+        "unknownId": "Az „{0}” nevű MCP-kiszolgáló nem szerepel az AI-nyilvántartásában."
+      }
+    },
+    "ai-registry": {
+      "action": {
+        "fix": "Konfiguráció javítása",
+        "link": "Link a rendszerleíró adatbázishoz",
+        "unlink": "Kapcsolat megszüntetése",
+        "updateTooltip": "Frissítés a {0} webhelyről a {1} webhelyre"
+      },
+      "skill": {
+        "action": {
+          "fix": "Fix Skill",
+          "link": "Link a rendszerleíró adatbázishoz",
+          "unlink": "Kapcsolat megszüntetése"
+        },
+        "fixed": "Visszaállítottuk a „{0}” készséget.",
+        "githubToken": {
+          "mdDescription": "Opcionális GitHub személyes hozzáférési token, amelyet a GitHubról történő készségek letöltésekor használnak. A token a GitHub kéréskorlátját óránként 60-ról 5000-re emeli. **Figyelem:** E beállítás használata esetén a token egyszerű szövegként kerül tárolásra a Theia-t futtató gépen. A biztonságos megadáshoz inkább a `GITHUB_TOKEN` környezeti változót használja."
+        },
+        "installUri": {
+          "confirm": {
+            "msg": "Telepítse a „{0}” kiegészítőt úgy, hogy letölti a fájljait a {1}? weboldalról.",
+            "title": "Készség telepítése"
+          },
+          "fetchFailed": "Nem sikerült betölteni az AI-nyilvántartást a „{0}” készség telepítéséhez.",
+          "missingId": "A telepítési linkből hiányzik a szükséges „id” paraméter.",
+          "success": "Telepítettem a „{0}” készséget az AI-nyilvántartásból.",
+          "unknownId": "A „{0}” készség nem szerepel az AI-nyilvántartásodban."
+        },
+        "installed": "Telepített készség: „{0}”.",
+        "linked": "Kapcsolódó készség: „{0}”.",
+        "uninstalled": "Az „{0}” készség eltávolítva.",
+        "unlinked": "Nem kapcsolt készség: „{0}”.",
+        "updated": "Frissítve a „{0}” készség.",
+        "warning": {
+          "fix": "A készség fájljai eltérnek a rendszerleíró adatbázisban szereplőktől. Kattintson a „Készség javítása” gombra a fájlok visszaállításához.",
+          "linkStale": "Ezt a kiegészítőt a rendszerleíró adatbázisból telepítették, de a rendszerleíró adatbázis már nem tartalmazza. Kattintson a „Kapcsolat megszüntetése” gombra a rendszerleíró adatbázisban szereplő hivatkozás eltávolításához és a fájlok megtartásához, vagy az „Eltávolítás” gombra a kiegészítő eltávolításához.",
+          "notInRegistry": "Nem szerepel a rendszerleíró adatbázisban"
+        },
+        "watcherStopped": "A rendszer már nem figyeli a skills mappa változásait. A telepített készségek többé nem frissülnek automatikusan. Az ablak újratöltésével folytathatja a műveletet."
+      },
+      "warning": {
+        "fixConfig": "A szerver konfigurációja eltér a rendszerleíró adatbázisban szereplőtől. Kattintson a „Konfiguráció javítása” gombra a helyreállításhoz.",
+        "linkStale": "Ezt a szervert a rendszerleíró adatbázisból telepítették, de a rendszerleíró adatbázis már nem tartalmazza. Ha biztosan meg akarja tartani, és még mindig működik, kattintson a „Kapcsolat megszüntetése” gombra a rendszerleíró adatbázisban szereplő hivatkozás eltávolításához. Ellenkező esetben kattintson az „Eltávolítás” gombra a szerver eltávolításához.",
+        "notInRegistry": "Nem szerepel a rendszerleíró adatbázisban"
+      }
     },
     "ai-terminal": {
       "allowAllConfirm": "Értem, engedélyezem az összeset",
@@ -1659,7 +1953,6 @@
       "configurePermissions": "A shell parancsok engedélyeinek konfigurálása",
       "confirmExecution": "Shell parancs megerősítése",
       "denialReason": "Ok",
-      "executionCanceled": "Törölve",
       "executionDenied": "Elutasítva",
       "executionDeniedWithReason": "Elutasítva indokkal",
       "partialOutput": "Részleges kimenet",
@@ -1671,6 +1964,41 @@
       },
       "timeout": "Időkorlát",
       "workingDirectory": "Munkakönyvtár"
+    },
+    "ai-tool-sketchpad": {
+      "addItemProperty": "Elem tulajdonság hozzáadása",
+      "addParameter": "Paraméter hozzáadása",
+      "addProperty": "Tulajdonság hozzáadása",
+      "addTool": "Eszköz hozzáadása",
+      "askAtRuntimeHint": "Amikor az LLM meghívja ezt az eszközt, megnyílik egy gyors beviteli ablak, amelyben meg kell adnia a visszatérési értéket.",
+      "askReturnPlaceholder": "Adja meg ennek az eszközhívásnak a visszatérési értékét...",
+      "askReturnPrompt": "A „{0}” eszközt a következő paranccsal hívták meg: {1}",
+      "confirmDelete": "Biztosan törölni szeretné a „{0}” eszközt?",
+      "descriptionPlaceholder": "Írja le, mit csinál az eszköz...",
+      "itemType": "Elemtípus:",
+      "label": "AI Tool Sketchpad",
+      "nParameters": "{0} paraméterek",
+      "nameDuplicate": "Már létezik egy ilyen nevű eszköz.",
+      "nameEmpty": "Az eszköz neve nem lehet üres.",
+      "nameInvalid": "Az eszköz neve kizárólag betűket, számokat, aláhúzásjeleket és kötőjeleket tartalmazhat (1–128 karakter).",
+      "noItemProperties": "Nincs definiált elemjellemző.",
+      "noParameters": "Nincs megadva paraméter.",
+      "noTools": "Még nincsenek eszközök.",
+      "oneParameter": "1 paraméter",
+      "parameters": "Paraméterek",
+      "required": "Szükséges",
+      "returnMode": "Visszatérési mód",
+      "returnModeAskAtRuntime": "Kérdezze meg futásidőben",
+      "returnModeAskShort": "Kérdezze meg futásidőben",
+      "returnModeStatic": "Statikus visszatérési érték",
+      "returnModeStaticShort": "Statikus",
+      "selectTool": "Válasszon ki egy eszközt szerkesztéshez, vagy adjon hozzá egy újat a vázlatkészítés megkezdéséhez.",
+      "staticReturn": "Statikus visszatérési érték",
+      "staticReturnHint": "Ez a statikus érték az eszköz minden egyes meghívásakor visszaadódik, függetlenül a bemeneti argumentumoktól.",
+      "staticReturnPlaceholder": "Az eszköz meghívásakor visszaadott érték (pl. JSON-karakterlánc)",
+      "toolName": "Eszköz neve",
+      "toolNamePlaceholder": "Például: getWeather",
+      "untitledTool": "Névtelen eszköz"
     },
     "callhierarchy": {
       "noCallers": "Hívókat nem észleltünk.",
@@ -1757,6 +2085,7 @@
         "visual": "A lap vizuális előnézetének megjelenítése."
       },
       "highlightModifiedTabs": "Szabályozza, hogy a módosított (piszkos) szerkesztőfülek felső szélén megjelenik-e a keret.",
+      "jumpListName": "Legutóbbi munkaterületek",
       "keybinding": {
         "duplicateModifierError": "Nem lehet értelmezni a billentyűkombinációt {0} Duplikált módosítók",
         "metaError": "A billentyűkombinációk elemzése nem lehetséges {0} meta csak OSX-hez használható",
@@ -1777,6 +2106,11 @@
         "clipboardWarnFirefox": "A Clipboard API nem elérhető. A „{1}” (Beállítások > Általános) oldalon a „{0}” (Klipboard API engedélyezése) beállítással engedélyezhető. Ezután töltse be újra a Theia-t. Ne feledje, hogy ez lehetővé teszi a FireFox számára a rendszer klipboardjához való teljes hozzáférést."
       },
       "pasteWarn": "Kérjük, használja a böngésző beillesztési parancsát vagy gyorsbillentyűjét.",
+      "perspective": {
+        "resetPerspective": "Perspektíva visszaállítása (kísérleti)",
+        "selectPerspective": "Válasszon egy perspektívát",
+        "switchPerspective": "Perspektíva váltás (kísérleti)"
+      },
       "quitMessage": "A nem mentett módosítások nem kerülnek mentésre.",
       "resetWorkbenchLayout": "A munkaasztal elrendezésének visszaállítása",
       "searchbox": {
@@ -1995,6 +2329,11 @@
     },
     "markers": {
       "clearAll": "Összes törlése",
+      "copyAsText": "Másolás szövegként",
+      "export": "Export",
+      "exportProblems": "Exportálási problémák",
+      "exportSuccess": "A problémák sikeresen exportálva.",
+      "jsonFiles": "JSON-fájlok",
       "noProblems": "Eddig nem észleltek problémákat a munkaterületen.",
       "tabbarDecorationsEnabled": "Problémajelölők (diagnosztikai jelölők) megjelenítése a lapok sávjában."
     },
@@ -2089,6 +2428,7 @@
       "autoReveal": "Automatikus megjelenítés",
       "clipboardWarn": "A vágólaphoz való hozzáférés megtagadva. Ellenőrizze a böngésző engedélyét.",
       "clipboardWarnFirefox": "A Clipboard API nem elérhető. A „{1}” (Beállítások > Általános) oldalon a „{0}” (Klipboard API engedélyezése) beállítással engedélyezhető. Ezután töltse be újra a Theia-t. Ne feledje, hogy ez lehetővé teszi a FireFox számára a rendszer klipboardjához való teljes hozzáférést.",
+      "nothingToPaste": "A vágólap nem tartalmaz olyan munkaterületi fájlokat, amelyeket ide be lehetne illeszteni.",
       "openWithSystemEditor": "Megnyitás a rendszer szerkesztőjével",
       "refresh": "Frissítés az Explorerben",
       "reveal": "Megjelenítés az Explorerben",
@@ -2153,13 +2493,24 @@
       "input": {
         "browse": "Tallózás"
       },
+      "sessionOverride": {
+        "suffix": "A munkamenet felülírja",
+        "suffixTooltip": "Ennek a beállításnak van egy --session-preference paranccsal beállítható munkamenet-értéke. Ha itt szerkeszted, az a munkamenet hátralévő részére törli a munkamenet-felülírás hatályát."
+      },
+      "sessionPreferences": {
+        "statusBar": "Munkamenet-beállítások ({0})",
+        "tooltipBody": "Ezeket a --session-preference paraméterrel adták meg, és csak a memóriában léteznek. Kattintson egy beállítás nevére, hogy a Beállítások nézetben oda ugorjon.",
+        "tooltipChangeNote": "Ezek bármelyikének szerkesztése törli a munkamenet felülírását az aktuális futtatás során. Ahhoz, hogy a mentett értékeket a következő indítástól kezdve használhassa, indítsa újra a programot a --session-preference argumentumok nélkül.",
+        "tooltipHeader": "Ezek a beállítások ebben a munkamenetben felülíródnak",
+        "valueOff": "ki",
+        "valueOn": "on"
+      },
       "toolbar": "Eszköztár"
     },
     "preview": {
       "openByDefault": "Alapértelmezés szerint az előnézetet nyissa meg a szerkesztő helyett."
     },
     "property-view": {
-      "directory": "Könyvtár",
       "lastModified": "Utolsó módosítás",
       "noProperties": "Nincs elérhető tulajdonság.",
       "properties": "Tulajdonságok",
@@ -2222,7 +2573,6 @@
       "dirtyDiff": {
         "close": "Bezárás Változtatás Peek View"
       },
-      "history": "Történelem",
       "justNow": "épp most",
       "mergeEditor": {
         "resetConfirmationTitle": "Tényleg vissza szeretné állítani az egyesítés eredményét ebben a szerkesztőben?"
@@ -2280,6 +2630,9 @@
       "taskRestricted": "A feladat végrehajtása korlátozott módban le van tiltva.",
       "taskTerminatedBySignal": "A „{0}” feladatot a {1} jelzés szakította meg.",
       "terminalWillBeReusedByTasks": "A terminált a feladatok újra felhasználják."
+    },
+    "telemetry": {
+      "filters": "Korlátozza az egyes telemetriai fogadóegységeknek továbbított téma-mintákat. A hiányzó bejegyzések minden fogadóegység érdeklődési körét engedélyezik; az üres tömbök letiltják a fogadóegységet."
     },
     "terminal": {
       "defaultProfile": "{0}-en használt alapértelmezett profil",
@@ -2371,16 +2724,22 @@
       "errorFetching": "Hiba a kiterjesztések letöltésekor.",
       "errorFetchingConfigurationHint": "Ez hálózati konfigurációs problémák miatt lehet.",
       "failedInstallingVSIX": "{0} telepítése VSIX-ből sikertelen.",
+      "filter": {
+        "showBuiltin": "Beépített elemek megjelenítése",
+        "showInstalled": "Telepített programok megjelenítése",
+        "showRecommended": "Ajánlottak megjelenítése"
+      },
       "invalidVSIX": "A kiválasztott fájl nem érvényes „*.vsix” plugin.",
       "license": "Licenc: {0}",
       "onlyShowVerifiedExtensionsDescription": "Ez lehetővé teszi, hogy az {0} csak ellenőrzött kiterjesztéseket jelenítsen meg.",
       "onlyShowVerifiedExtensionsTitle": "Csak ellenőrzött kiterjesztések megjelenítése",
       "recommendedExtensions": "A munkaterületen való használatra ajánlott kiterjesztések neveinek listája.",
       "restrictedModeInstallWarning": "A „{0}” kiterjesztés letiltható, ha nem támogatja a korlátozott módban való futtatást. Bízzon meg ebben a munkaterületben, hogy a kiterjesztés a várt módon működjön.",
-      "searchPlaceholder": "Kiterjesztések keresése az {0} webhelyen",
+      "searchPlaceholder": "Keresés a nyitott VSX-nyilvántartásban",
       "showInstalled": "Telepített kiterjesztések megjelenítése",
       "showRecommendedExtensions": "Ellenőrzi, hogy megjelennek-e az értesítések a bővítmények ajánlásairól.",
       "vsx-extensions-contribution": {
+        "no-other-versions": "Más verziók nem állnak rendelkezésre.",
         "update-version-uninstall-error": "Hiba a kiterjesztés eltávolítása közben: {0}.",
         "update-version-version-error": "Az {1} {0} verziójának telepítése sikertelen."
       }

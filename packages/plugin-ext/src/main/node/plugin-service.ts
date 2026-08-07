@@ -16,7 +16,6 @@
 
 import * as http from 'http';
 import * as path from 'path';
-import * as url from 'url';
 const vhost = require('vhost');
 import * as express from '@theia/core/shared/express';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
@@ -63,8 +62,13 @@ export class PluginApiContribution implements BackendApplicationContribution, Ws
 
     allowWsUpgrade(request: http.IncomingMessage): MaybePromise<boolean> {
         if (request.headers.origin && !this.serveSameOrigin) {
-            const origin = url.parse(request.headers.origin);
-            if (origin.host && this.webviewExternalEndpointRegExp.test(origin.host)) {
+            let host: string | undefined;
+            try {
+                host = new URL(request.headers.origin).host;
+            } catch {
+                host = undefined;
+            }
+            if (host && this.webviewExternalEndpointRegExp.test(host)) {
                 // If the origin comes from the WebViews, refuse:
                 return false;
             }

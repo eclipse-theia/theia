@@ -248,10 +248,10 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         const startingIcon = 'loading';
         const stopIcon = isRemote ? 'debug-disconnect' : 'debug-stop';
         const startLabel = isRemote
-            ? nls.localize('theia/ai/mcpConfiguration/connectServer', 'Connect')
+            ? nls.localizeByDefault('Connect')
             : nls.localizeByDefault('Start Server');
         const startingLabel = isRemote
-            ? nls.localize('theia/ai/mcpConfiguration/connectingServer', 'Connecting...')
+            ? nls.localizeByDefault('Connecting...')
             : nls.localizeByDefault('Starting...');
         const stopLabel = isRemote
             ? nls.localizeByDefault('Disconnect')
@@ -399,7 +399,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         }
         return (
             <div className="mcp-property-row">
-                <span className="mcp-property-label">{nls.localize('theia/ai/mcpConfiguration/headers', 'Headers')}:</span>
+                <span className="mcp-property-label">{nls.localizeByDefault('Headers')}:</span>
                 <div className="mcp-property-value">
                     {Object.entries(server.headers).map(([key, value]) => (
                         <div key={key} className="mcp-env-entry">
@@ -457,6 +457,20 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                     color: server.autostart ? 'var(--theia-successForeground)' : 'var(--theia-errorForeground)',
                 }}>
                     {server.autostart ? nls.localizeByDefault('Enabled') : nls.localizeByDefault('Disabled')}
+                </span>
+            </div>
+        );
+    }
+
+    protected renderDeferLoadingSection(server: MCPServerDescription): React.ReactNode {
+        if (!server.deferLoading) {
+            return;
+        }
+        return (
+            <div className="mcp-property-row">
+                <span className="mcp-property-label">{nls.localize('theia/ai/mcpConfiguration/deferLoading', 'Defer tool loading')}:</span>
+                <span className="mcp-autostart-badge" style={{ color: 'var(--theia-successForeground)' }}>
+                    {nls.localizeByDefault('Enabled')}
                 </span>
             </div>
         );
@@ -563,6 +577,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                     {this.renderServerHeadersSection(server)}
                     {this.renderOAuthSection(server)}
                     {this.renderAutostartSection(server)}
+                    {this.renderDeferLoadingSection(server)}
                 </div>
                 {this.renderToolsSection(server)}
             </div>

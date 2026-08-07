@@ -18,7 +18,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { Emitter, Event } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { PreferenceService } from '@theia/core/lib/common/preferences';
+import { PreferenceInspection, PreferenceService } from '@theia/core/lib/common/preferences';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 
 /**
@@ -27,6 +27,9 @@ import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-tr
  *
  * Writes should continue to go through `PreferenceService` directly; trust only
  * affects reads.
+ *
+ * @internal This is an implementation detail of {@link AiConfigurationService}. AI configuration
+ * consumers should go through `AiConfigurationService` rather than injecting this reader directly.
  */
 @injectable()
 export class TrustAwarePreferenceReader {
@@ -102,7 +105,24 @@ export class TrustAwarePreferenceReader {
             return this.preferences.get<T>(preferenceName, fallback, resourceUri);
         }
         const inspection = this.preferences.inspect<JSONValue>(preferenceName, resourceUri);
-        const value = inspection?.globalValue ?? inspection?.defaultValue;
-        return (value as T | undefined) ?? fallback;
+        if (!inspection) {
+            return fallback;
+        }
+        const suppressed = this.suppressUntrusted(inspection);
+        return ((suppressed.globalValue ?? suppressed.defaultValue) as T | undefined) ?? fallback;
+    }
+
+    /**
+     * Narrows a raw {@link PreferenceInspection} according to workspace trust: when the workspace is
+     * untrusted the folder and workspace scope values are dropped so that only the user and default
+     * scopes contribute (failing closed until the trust state resolves). A trusted inspection is
+     * returned unchanged. This is the single definition of the trust-suppression rule, shared by
+     * {@link get} and by inspection-based consumers, so value reads and inspections cannot drift.
+     */
+    suppressUntrusted<T extends JSONValue>(inspection: PreferenceInspection<T>): PreferenceInspection<T> {
+        if (this.trusted) {
+            return inspection;
+        }
+        return { ...inspection, workspaceValue: undefined, workspaceFolderValue: undefined };
     }
 }

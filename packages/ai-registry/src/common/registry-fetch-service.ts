@@ -16,7 +16,7 @@
 
 import { Emitter, Event } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { RequestContext, RequestService } from '@theia/core/shared/@theia/request';
+import { BackendRequestService, RequestContext, RequestService } from '@theia/core/shared/@theia/request';
 import { AIRegistryConfiguration } from './ai-registry-configuration';
 import { MCPRegistryEntryResolver } from './mcp/mcp-registry-entry-resolver';
 import { RegistryMCPServer, ResolvedRegistryEntry } from './mcp/mcp-registry-types';
@@ -41,7 +41,11 @@ export interface RegistryFetchService {
 @injectable()
 export class RegistryFetchServiceImpl implements RegistryFetchService {
 
-    @inject(RequestService)
+    // Use the backend request service rather than the generic (XHR-first) browser RequestService:
+    // the AI registry host does not send CORS headers, so a direct browser XHR is always blocked
+    // and logs an unsuppressable console error before falling back to the backend. Routing
+    // straight through the backend avoids that noise, matching how VSXRegistryService fetches.
+    @inject(BackendRequestService)
     protected readonly requestService: RequestService;
 
     @inject(AIRegistryConfiguration)
@@ -107,6 +111,9 @@ export class RegistryFetchServiceImpl implements RegistryFetchService {
         const base = this.configuration.getBaseUrl();
         const tool = this.configuration.getToolName();
         const separator = base.endsWith('/') ? '' : '/';
-        return `${base}${separator}${tool}.json`;
+        // The aggregate registry stays at `<base>/all.json`; tool-specific views moved under
+        // `<base>/tools/<toolName>.json` (see eclipsefdn-ai-registry/ai-registry-core#32).
+        const path = tool === 'all' ? 'all.json' : `tools/${tool}.json`;
+        return `${base}${separator}${path}`;
     }
 }

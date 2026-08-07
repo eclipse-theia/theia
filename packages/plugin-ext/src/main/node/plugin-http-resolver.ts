@@ -19,7 +19,6 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import * as url from 'url';
 import { PluginDeployerResolver, PluginDeployerResolverContext } from '../../common';
 import { getTempDirPathAsync } from './temp-dir-util';
 
@@ -56,8 +55,10 @@ export class HttpPluginDeployerResolver implements PluginDeployerResolver {
         // download the file
         // keep filename of the url
         const urlPath = pluginResolverContext.getOriginId();
-        const link = url.parse(urlPath);
-        if (!link.pathname) {
+        let link: URL;
+        try {
+            link = new URL(urlPath);
+        } catch {
             throw new Error('invalid link URI' + urlPath);
         }
 

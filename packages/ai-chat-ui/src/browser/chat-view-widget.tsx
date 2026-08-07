@@ -23,6 +23,7 @@ import { ApplicationShell, BaseWidget, codicon, ExtractableWidget, Message, Pane
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { AIChatInputWidget } from './chat-input-widget';
+import { ChatBannerWidget } from './chat-banner-widget';
 import { ChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view/chat-view-tree-widget';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
@@ -78,7 +79,9 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         @inject(ChatViewTreeWidget)
         readonly treeWidget: ChatViewTreeWidget,
         @inject(AIChatInputWidget)
-        readonly inputWidget: AIChatInputWidget
+        readonly inputWidget: AIChatInputWidget,
+        @inject(ChatBannerWidget)
+        readonly bannerWidget: ChatBannerWidget
     ) {
         super();
         this.id = ChatViewWidget.ID;
@@ -95,6 +98,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.toDispose.pushAll([
             this.treeWidget,
             this.inputWidget,
+            this.bannerWidget,
             this.onStateChanged(newState => {
                 const shouldScrollToEnd = !newState.locked && !newState.temporaryLocked;
                 this.treeWidget.shouldScrollToEnd = shouldScrollToEnd;
@@ -103,6 +107,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         ]);
         const layout = this.layout = new PanelLayout();
 
+        layout.addWidget(this.bannerWidget);
         this.treeWidget.node.classList.add('chat-tree-view-widget');
         layout.addWidget(this.treeWidget);
         this.inputWidget.node.classList.add('chat-input-widget');
@@ -235,13 +240,21 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         query?: string | ChatRequest,
         modeId?: string,
         capabilityOverrides?: Record<string, boolean>,
-        genericCapabilitySelections?: GenericCapabilitySelections
+        genericCapabilitySelections?: GenericCapabilitySelections,
+        serverToolSelections?: Record<string, string[]>
     ): Promise<void> {
         const chatRequest: ChatRequest = !query
             ? { text: '' }
             : typeof query === 'string'
-                ? { text: query, modeId, capabilityOverrides, genericCapabilitySelections }
-                : { ...query, capabilityOverrides, genericCapabilitySelections };
+                ? { text: query, modeId, capabilityOverrides, genericCapabilitySelections, serverToolSelections }
+                // For an already-built request (e.g. an edited+resent message), keep its own selections
+                // instead of overwriting them with the (undefined) explicit arguments.
+                : {
+                    ...query,
+                    capabilityOverrides: capabilityOverrides ?? query.capabilityOverrides,
+                    genericCapabilitySelections: genericCapabilitySelections ?? query.genericCapabilitySelections,
+                    serverToolSelections: serverToolSelections ?? query.serverToolSelections
+                };
         if (chatRequest.text.length === 0) { return; }
 
         // Include all variables (context + pending image attachments) in the request

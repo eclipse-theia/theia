@@ -30,9 +30,7 @@
     {
       "path": "../terminal"
     },
-    {
-      "path": "../terminal-manager"
-    },
+
     {
       "path": "../userstorage"
     },

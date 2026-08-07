@@ -344,7 +344,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
             if ('serverUrl' in description) {
                 // Create RemoteMCPServerDescription by picking only remote-specific properties
-                const { serverUrl, serverAuthToken, serverAuthTokenHeader, headers, oauth, autostart } = description;
+                const { serverUrl, serverAuthToken, serverAuthTokenHeader, headers, oauth, autostart, deferLoading } = description;
                 filteredDescription = {
                     name,
                     serverUrl,
@@ -354,10 +354,11 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
                     ...(oauth && { oauth }),
                     autostart: autostart ?? true,
                     ...(registryMetadata && { registryMetadata }),
+                    ...(deferLoading !== undefined && { deferLoading }),
                 };
             } else {
                 // Create LocalMCPServerDescription by picking only local-specific properties
-                const { command, args, env, autostart } = description;
+                const { command, args, env, autostart, deferLoading } = description;
                 filteredDescription = {
                     name,
                     command,
@@ -365,6 +366,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
                     ...(env && { env }),
                     autostart: autostart ?? true,
                     ...(registryMetadata && { registryMetadata }),
+                    ...(deferLoading !== undefined && { deferLoading }),
                 };
             }
 

@@ -25,6 +25,7 @@ import {
     BackendApplication,
     BackendApplicationCliContribution,
     BackendApplicationContribution,
+    EarlyExpressMiddleware,
     RootContainer
 } from './backend-application';
 import { CliContribution } from './cli';
@@ -87,6 +88,7 @@ describe('BackendApplication', () => {
         container.bind(ProcessUtils).toSelf().inSingletonScope();
         container.bind(BackendApplicationCliContribution).toSelf().inSingletonScope();
         container.bind(CliContribution).toService(BackendApplicationCliContribution);
+        container.bind(EarlyExpressMiddleware).toSelf().inSingletonScope();
         bindContributionProvider(container, BackendApplicationContribution);
 
         container.bind(TestBackendApplication).toSelf().inSingletonScope();

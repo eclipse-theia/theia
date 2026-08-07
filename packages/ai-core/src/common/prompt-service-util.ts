@@ -23,8 +23,38 @@ export function matchVariablesRegEx(template: string): RegExpMatchArray[] {
     return twoBraceMatches.concat(threeBraceMatches);
 }
 
-/** Match function/tool references in the prompt. The format is `~{functionId}`. */
+/**
+ * Match function/tool references in the prompt. The format is `~{functionId}`.
+ * A function may be marked as deferred by prefixing the id with `?`,
+ * e.g. `~{?functionId}`. Deferred tools are not loaded into the model's
+ * context upfront and are instead discovered on-demand via the model
+ * provider's built-in tool search mechanism (e.g. Anthropic's tool search
+ * tool, OpenAI's tool search) when supported by the provider.
+ */
 export const PROMPT_FUNCTION_REGEX = /\~\{\s*(.*?)\s*\}/g;
+
+/** Marker used in template syntax to flag a tool reference as deferred. */
+export const DEFERRED_FUNCTION_MARKER = '?';
+
+export interface ParsedFunctionReference {
+    /** The function/tool id without any markers. */
+    id: string;
+    /** Whether the reference was marked as deferred. */
+    deferred: boolean;
+}
+
+/**
+ * Parses the raw content captured between `~{` and `}` (or the token
+ * captured after `~`) and extracts the referenced tool id together with the
+ * deferred flag.
+ */
+export function parseFunctionReference(rawIdOrToken: string): ParsedFunctionReference {
+    const trimmed = rawIdOrToken.trim();
+    if (trimmed.startsWith(DEFERRED_FUNCTION_MARKER)) {
+        return { id: trimmed.slice(DEFERRED_FUNCTION_MARKER.length).trim(), deferred: true };
+    }
+    return { id: trimmed, deferred: false };
+}
 
 export function matchFunctionsRegEx(template: string): RegExpMatchArray[] {
     return [...template.matchAll(PROMPT_FUNCTION_REGEX)];

@@ -32,6 +32,7 @@ import { PreferenceOpenHandler } from './preference-open-handler';
 import { CliPreferences, CliPreferencesPath } from '../common/cli-preferences';
 import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { PreferenceFrontendContribution } from './preference-frontend-contribution';
+import { SessionPreferenceStatusBarContribution } from './session-preference-status-bar-contribution';
 import { PreferenceLayoutProvider } from './util/preference-layout';
 import { PreferencesWidget } from './views/preference-widget';
 import { PreferenceStorageFactory } from '../common/abstract-resource-preference-provider';
@@ -70,6 +71,8 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
     bind(CliPreferences).toDynamicValue(ctx => ServiceConnectionProvider.createProxy<CliPreferences>(ctx.container, CliPreferencesPath)).inSingletonScope();
     bind(PreferenceFrontendContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(PreferenceFrontendContribution);
+    bind(SessionPreferenceStatusBarContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(SessionPreferenceStatusBarContribution);
 
     bind(WidgetStatusBarContribution).toConstantValue(noopWidgetStatusBarContribution(PreferencesWidget));
 }

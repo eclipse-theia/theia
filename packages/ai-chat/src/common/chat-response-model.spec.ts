@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { MutableChatResponseModel, ToolCallChatResponseContentImpl } from './chat-model';
+import { MarkdownChatResponseContentImpl, MutableChatResponseModel, ToolCallChatResponseContentImpl } from './chat-model';
 
 describe('MutableChatResponseModel', () => {
     describe('content change propagation', () => {
@@ -34,6 +34,46 @@ describe('MutableChatResponseModel', () => {
             // through addContent/merge (e.g. renderer-side partial results) would be
             // lost on reload.
             expect(fireCount).to.equal(1);
+        });
+
+        it('should not accumulate duplicate listeners when content is cleared and re-added', () => {
+            const response = new MutableChatResponseModel('req-1');
+            const toolCall = new ToolCallChatResponseContentImpl('tool-1', 'tool', '{}', false);
+            response.response.addContent(toolCall);
+
+            // Simulate AbstractStreamParsingChatAgent.addStreamResponse: for every streamed
+            // text token, the whole content is cleared and re-added, tool call included.
+            for (let i = 0; i < 10; i++) {
+                const contentBeforeMarker = response.response.content.slice(0, 1);
+                response.response.clearContent();
+                response.response.addContents(contentBeforeMarker);
+                response.response.addContents([new MarkdownChatResponseContentImpl(`token ${i}`)]);
+            }
+
+            let fireCount = 0;
+            response.onDidChange(() => { fireCount++; });
+
+            toolCall.updateResult('result');
+
+            // A single tool call change must fire exactly once, no matter how often the
+            // content array was rebuilt during streaming (see #17858).
+            expect(fireCount).to.equal(1);
+        });
+
+        it('should stop propagating changes of content that was cleared and not re-added', () => {
+            const response = new MutableChatResponseModel('req-1');
+            const toolCall = new ToolCallChatResponseContentImpl('tool-1', 'tool', '{}', false);
+            response.response.addContent(toolCall);
+            response.response.clearContent();
+
+            let fireCount = 0;
+            response.onDidChange(() => { fireCount++; });
+
+            toolCall.updateResult('result');
+
+            // Content that is no longer part of the response must not trigger response changes
+            // (and with that auto-save) anymore.
+            expect(fireCount).to.equal(0);
         });
     });
 
@@ -61,6 +101,93 @@ describe('MutableChatResponseModel', () => {
             expect(response.tokenUsageEntries).to.have.lengthOf(2);
             expect(response.tokenUsageEntries[0]).to.deep.equal(usage1);
             expect(response.tokenUsageEntries[1]).to.deep.equal(usage2);
+        });
+    });
+
+    describe('waiting-for-input ref counting', () => {
+        it('should not be waiting for input initially', () => {
+            const response = new MutableChatResponseModel('req-1');
+            expect(response.isWaitingForInput).to.equal(false);
+        });
+
+        it('should be waiting after a single waitForInput call', () => {
+            const response = new MutableChatResponseModel('req-1');
+            response.waitForInput();
+            expect(response.isWaitingForInput).to.equal(true);
+        });
+
+        it('should stay waiting until all parallel waitForInput calls are released', () => {
+            const response = new MutableChatResponseModel('req-1');
+
+            response.waitForInput();
+            response.waitForInput();
+            expect(response.isWaitingForInput).to.equal(true);
+
+            response.stopWaitingForInput();
+            // Still waiting because the second waitForInput has not been released yet.
+            expect(response.isWaitingForInput).to.equal(true);
+
+            response.stopWaitingForInput();
+            expect(response.isWaitingForInput).to.equal(false);
+        });
+
+        it('should clamp at zero on extra stopWaitingForInput calls (underflow guard)', () => {
+            const response = new MutableChatResponseModel('req-1');
+
+            response.waitForInput();
+            response.stopWaitingForInput();
+            // Extra release: must not push the counter negative, otherwise a later waitForInput
+            // would have to be called twice before isWaitingForInput becomes true again.
+            response.stopWaitingForInput();
+            expect(response.isWaitingForInput).to.equal(false);
+
+            response.waitForInput();
+            expect(response.isWaitingForInput).to.equal(true);
+        });
+
+        it('should fire onDidChange on each waitForInput / stopWaitingForInput', () => {
+            const response = new MutableChatResponseModel('req-1');
+            let fireCount = 0;
+            response.onDidChange(() => { fireCount++; });
+
+            response.waitForInput();
+            response.stopWaitingForInput();
+
+            expect(fireCount).to.equal(2);
+        });
+
+        it('should hard-reset the waiting state on complete()', () => {
+            const response = new MutableChatResponseModel('req-1');
+            response.waitForInput();
+            response.waitForInput();
+
+            response.complete();
+
+            expect(response.isWaitingForInput).to.equal(false);
+            // Counter is fully reset, not merely decremented: a subsequent stopWaitingForInput
+            // must not flip the state back via underflow.
+            response.stopWaitingForInput();
+            expect(response.isWaitingForInput).to.equal(false);
+        });
+
+        it('should hard-reset the waiting state on cancel()', () => {
+            const response = new MutableChatResponseModel('req-1');
+            response.waitForInput();
+            response.waitForInput();
+
+            response.cancel();
+
+            expect(response.isWaitingForInput).to.equal(false);
+        });
+
+        it('should hard-reset the waiting state on error()', () => {
+            const response = new MutableChatResponseModel('req-1');
+            response.waitForInput();
+            response.waitForInput();
+
+            response.error(new Error('boom'));
+
+            expect(response.isWaitingForInput).to.equal(false);
         });
     });
 });

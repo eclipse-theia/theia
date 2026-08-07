@@ -1169,7 +1169,7 @@
   display: flex;
   align-items: center;
   gap: var(--theia-ui-padding);
-  padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 2);
+  padding: var(--theia-ui-padding);
   border-radius: 3px;
   cursor: pointer;
   outline: none;
@@ -1187,26 +1187,42 @@
 }
 
 .theia-chat-session-item-icon-col {
-  position: relative;
   display: inline-flex;
   align-items: center;
   gap: calc(var(--theia-ui-padding) / 2);
   flex-shrink: 0;
 }
 
-.theia-chat-session-item-unread-dot {
+/* Positioning context for the unread/attention badges so they anchor to the status icon itself
+   rather than to the whole column (which now also holds the expand toggle to the left). */
+.theia-chat-session-item-status-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.theia-chat-session-item-unread-dot,
+.theia-chat-session-item-attention-dot {
   position: absolute;
   top: -1px;
   left: -2px;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: var(--theia-activityBarBadge-background);
   border: 1px solid var(--theia-editor-background);
   pointer-events: none;
 }
 
-.theia-chat-session-item-unread .theia-chat-session-item-title {
+.theia-chat-session-item-unread-dot {
+  background-color: var(--theia-activityBarBadge-background);
+}
+
+.theia-chat-session-item-attention-dot {
+  background-color: var(--theia-editorWarning-foreground);
+}
+
+.theia-chat-session-item-unread .theia-chat-session-item-title,
+.theia-chat-session-item-attention .theia-chat-session-item-title {
   font-weight: 600;
 }
 
@@ -1222,6 +1238,10 @@
   color: var(--theia-focusBorder);
 }
 
+.theia-chat-session-item-attention .theia-chat-session-item-agent-icon {
+  color: var(--theia-editorWarning-foreground);
+}
+
 .theia-chat-session-item-error .theia-chat-session-item-agent-icon,
 .theia-chat-session-item-error .theia-chat-session-item-archive-icon {
   color: var(--theia-errorForeground);
@@ -1231,9 +1251,55 @@
    foreground so they stay readable on the highlighted background. */
 .theia-chat-session-item:focus .theia-chat-session-item-agent-icon,
 .theia-chat-session-item:focus .theia-chat-session-item-archive-icon,
+.theia-chat-session-item:focus .theia-chat-session-item-expand-icon,
 .theia-chat-session-item:focus-within .theia-chat-session-item-agent-icon,
-.theia-chat-session-item:focus-within .theia-chat-session-item-archive-icon {
+.theia-chat-session-item:focus-within .theia-chat-session-item-archive-icon,
+.theia-chat-session-item:focus-within .theia-chat-session-item-expand-icon {
   color: inherit;
+}
+
+/* Expand/collapse toggle shown next to the agent icon on parent sessions.
+   Non-parent rows render a same-sized placeholder so agent icons stay aligned. */
+.theia-chat-session-item-expand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: content-box;
+  width: var(--theia-ui-font-size0);
+  padding: calc(var(--theia-ui-padding) / 2);
+  border-radius: 3px;
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+  outline: none;
+}
+
+.theia-chat-session-item-expand-icon:not(.theia-chat-session-item-expand-placeholder) {
+  cursor: pointer;
+}
+
+.theia-chat-session-item-expand-icon:not(.theia-chat-session-item-expand-placeholder):hover {
+  color: var(--theia-icon-foreground);
+  background-color: var(--theia-toolbar-hoverBackground, var(--theia-list-hoverBackground));
+}
+
+/* Only show a focus ring for keyboard focus, not on pointer clicks. */
+.theia-chat-session-item-expand-icon:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+}
+
+/* The placeholder only reserves layout space and must not be interactive. */
+.theia-chat-session-item-expand-placeholder {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Child session indentation */
+.theia-chat-session-item-child {
+  padding-left: calc(var(--tree-indent, 0px) + var(--theia-ui-padding) * 3);
+}
+
+.theia-chat-session-item-child .theia-chat-session-item-content {
+  font-size: calc(var(--theia-ui-font-size1) * 0.95);
 }
 
 .theia-chat-session-item-content {
@@ -1310,6 +1376,7 @@
 
 .theia-chat-session-badge-unread-tooltip,
 .theia-chat-session-badge-running-tooltip,
+.theia-chat-session-badge-attention-tooltip,
 .theia-chat-session-badge-error-tooltip,
 .theia-chat-session-badge-restored-tooltip {
   font-size: var(--theia-ui-font-size0);
@@ -1328,6 +1395,11 @@
 .theia-chat-session-badge-running-tooltip {
   color: var(--theia-activityBarBadge-foreground);
   background-color: var(--theia-progressBar-background);
+}
+
+.theia-chat-session-badge-attention-tooltip {
+  color: var(--theia-activityBarBadge-foreground);
+  background-color: var(--theia-editorWarning-foreground);
 }
 
 .theia-chat-session-badge-error-tooltip {
@@ -1986,6 +2058,12 @@
   word-break: normal;
 }
 
+/* Give embedded Mermaid diagrams some breathing room from the surrounding message text. The shared
+   component only carries a bottom margin (which is enough in the chat), so add a matching top margin here. */
+.user-interaction-tool.message .theia-MermaidViewer-root {
+  margin-top: var(--theia-ui-padding);
+}
+
 .user-interaction-tool.options {
   display: flex;
   flex-wrap: wrap;
@@ -2144,4 +2222,98 @@
 .user-interaction-tool.option-button.selected {
   outline: 2px solid var(--theia-focusBorder);
   outline-offset: -2px;
+}
+
+/* AI Sessions View */
+.ai-sessions-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.ai-sessions-view-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--theia-ui-padding) 0;
+}
+
+.ai-sessions-view-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--theia-descriptionForeground);
+  gap: var(--theia-ui-padding);
+}
+
+.ai-sessions-view-empty .codicon {
+  font-size: calc(var(--theia-ui-font-size1) * 2.5);
+  opacity: 0.5;
+}
+
+/* Persistent banner strip rendered above the AI chat content when an AI session
+ * override (e.g. --session-preference) is active. */
+.chat-banner-host {
+  flex: none;
+  width: 100%;
+}
+
+.chat-banner-host:empty {
+  display: none;
+}
+
+.theia-ai-allow-all-mode-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--theia-ui-padding) * 0.75);
+  padding: calc(var(--theia-ui-padding) * 0.6) calc(var(--theia-ui-padding) * 1.5);
+  background-color: var(--theia-inputValidation-warningBackground);
+  font-size: var(--theia-ui-font-size1);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: default;
+}
+
+.theia-ai-allow-all-mode-strip.is-allow-all {
+  background-color: var(--theia-inputValidation-errorBackground);
+}
+
+.theia-ai-allow-all-mode-strip-icon {
+  flex: none;
+}
+
+.theia-ai-allow-all-mode-strip.is-allow-all .theia-ai-allow-all-mode-strip-icon {
+  color: var(--theia-errorForeground);
+}
+
+.theia-ai-allow-all-mode-strip-title {
+  font-weight: 600;
+}
+
+.theia-ai-allow-all-mode-strip-dismiss {
+  flex: none;
+  margin-left: calc(var(--theia-ui-padding) * 0.5);
+  padding: 2px;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: inherit;
+  opacity: 0.7;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.theia-ai-allow-all-mode-strip-dismiss:hover {
+  opacity: 1;
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-ai-allow-all-mode-strip-dismiss:focus {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
 }

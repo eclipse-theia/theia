@@ -250,6 +250,10 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         return this.tree.validateNode(node);
     }
 
+    removeNode(node: TreeNode | undefined): void {
+        this.tree.removeNode(node);
+    }
+
     async refresh(parent?: Readonly<CompositeTreeNode>): Promise<CompositeTreeNode | undefined> {
         if (parent) {
             return this.tree.refresh(parent);

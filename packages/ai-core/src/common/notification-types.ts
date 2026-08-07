@@ -45,3 +45,13 @@ export const NOTIFICATION_TYPE_DESCRIPTIONS: Record<NotificationType, string> = 
     [NOTIFICATION_TYPE_MESSAGE]: nls.localize('theia/ai/core/notification/message/description', 'Show a notification message inside the application'),
     [NOTIFICATION_TYPE_BLINK]: nls.localize('theia/ai/core/notification/windowBlink/description', 'Blink the application title to attract attention'),
 };
+
+/**
+ * The event that triggered an agent notification. Drives the notification wording while
+ * sharing the same delivery channel and user preference.
+ */
+export const AGENT_NOTIFICATION_KIND_COMPLETED = 'completed';
+export const AGENT_NOTIFICATION_KIND_INPUT_NEEDED = 'inputNeeded';
+export type AgentNotificationKind =
+    | typeof AGENT_NOTIFICATION_KIND_COMPLETED
+    | typeof AGENT_NOTIFICATION_KIND_INPUT_NEEDED;
