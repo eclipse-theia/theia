@@ -34,7 +34,6 @@ import { OpenerService, open } from '../browser/opener-service';
 import { ApplicationShell } from './shell/application-shell';
 import { SHELL_TABBAR_CONTEXT_CLOSE, SHELL_TABBAR_CONTEXT_COPY, SHELL_TABBAR_CONTEXT_PIN, SHELL_TABBAR_CONTEXT_SPLIT } from './shell/tab-bars';
 import { AboutDialog } from './about-dialog';
-import * as browser from './browser';
 import URI from '../common/uri';
 import { ContextKey, ContextKeyService } from './context-key-service';
 import { OS, isOSX, isWindows, EOL } from '../common/os';
@@ -62,6 +61,7 @@ import { nls } from '../common/nls';
 import { CurrentWidgetCommandAdapter } from './shell/current-widget-command-adapter';
 import { ConfirmDialog, confirmExit, ConfirmSaveDialog, Dialog } from './dialogs';
 import { WindowService } from './window/window-service';
+import { SecondaryWindowService } from './window/secondary-window-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { DecorationStyle } from './decoration-style';
 import { codicon, isPinned, Title, togglePinned, Widget } from './widgets';
@@ -75,10 +75,12 @@ import { timeout } from '../common/promise-util';
 
 export const supportCut = environment.electron.is() || document.queryCommandSupported('cut');
 export const supportCopy = environment.electron.is() || document.queryCommandSupported('copy');
-// Chrome incorrectly returns true for document.queryCommandSupported('paste')
-// when the paste feature is available but the calling script has insufficient
-// privileges to actually perform the action
-export const supportPaste = environment.electron.is() || (!browser.isChrome && document.queryCommandSupported('paste'));
+// Browsers block programmatic paste (document.execCommand('paste') is a no-op and
+// document.queryCommandSupported('paste') returns false), so supportPaste is effectively
+// electron-only. Keeping it false in browsers is intentional: the ctrlcmd+v keybinding stays
+// unregistered, so native paste events reach widget-level listeners (e.g. the navigator), and
+// menu paste is handled by dedicated handlers using the async clipboard API.
+export const supportPaste = environment.electron.is() || document.queryCommandSupported('paste');
 
 export const RECENT_COMMANDS_STORAGE_KEY = 'commands';
 
@@ -145,6 +147,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     @inject(WindowService)
     protected readonly windowService: WindowService;
+
+    @inject(SecondaryWindowService)
+    protected readonly secondaryWindowService: SecondaryWindowService;
 
     @inject(UserWorkingDirectoryProvider)
     protected readonly workingDirProvider: UserWorkingDirectoryProvider;
@@ -217,12 +222,20 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     protected setOsClass(): void {
+        const osClass = this.getOsClass();
+        document.body.classList.add(osClass);
+        // The OS class selects the platform-specific font stacks in os.css. Secondary windows
+        // have their own document, so apply it there as well.
+        this.secondaryWindowService.onWindowLoaded(win => win.document.body.classList.add(osClass));
+    }
+
+    protected getOsClass(): string {
         if (isOSX) {
-            document.body.classList.add(CLASSNAME_OS_MAC);
+            return CLASSNAME_OS_MAC;
         } else if (isWindows) {
-            document.body.classList.add(CLASSNAME_OS_WINDOWS);
+            return CLASSNAME_OS_WINDOWS;
         } else {
-            document.body.classList.add(CLASSNAME_OS_LINUX);
+            return CLASSNAME_OS_LINUX;
         }
     }
 
@@ -680,7 +693,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             }
         });
         commandRegistry.registerCommand(CommonCommands.TOGGLE_BOTTOM_PANEL, {
-            isEnabled: () => this.shell.getWidgets('bottom').length > 0,
             execute: () => {
                 if (this.shell.isExpanded('bottom')) {
                     this.shell.collapsePanel('bottom');
@@ -1393,7 +1405,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             // list.focusBackground, list.focusForeground, list.inactiveFocusBackground, list.filterMatchBorder,
             // list.dropBackground, listFilterWidget.outline, listFilterWidget.noMatchesOutline
             // list.invalidItemForeground => tree node needs an respective class
-            { id: 'list.activeSelectionBackground', defaults: { dark: '#094771', light: '#0074E8', hcLight: Color.transparent('#0F4A85', 0.1) }, description: 'List/Tree background color for the selected item when the list/tree is active. An active list/tree has keyboard focus, an inactive does not.' },
+            { id: 'list.activeSelectionBackground', defaults: { dark: '#094771', light: '#E8E8E8', hcLight: Color.transparent('#0F4A85', 0.1) }, description: 'List/Tree background color for the selected item when the list/tree is active. An active list/tree has keyboard focus, an inactive does not.' },
             { id: 'list.activeSelectionForeground', defaults: { dark: '#FFF', light: '#FFF' }, description: 'List/Tree foreground color for the selected item when the list/tree is active. An active list/tree has keyboard focus, an inactive does not.' },
             { id: 'list.inactiveSelectionBackground', defaults: { dark: '#37373D', light: '#E4E6F1', hcLight: Color.transparent('#0F4A85', 0.1) }, description: 'List/Tree background color for the selected item when the list/tree is inactive. An active list/tree has keyboard focus, an inactive does not.' },
             { id: 'list.inactiveSelectionForeground', description: 'List/Tree foreground color for the selected item when the list/tree is inactive. An active list/tree has keyboard focus, an inactive does not.' },

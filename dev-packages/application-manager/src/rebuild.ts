@@ -36,8 +36,6 @@ export const DEFAULT_MODULES = [
     'find-git-repositories',
     'drivelist',
     'keytar',
-    'ssh2',
-    'cpu-features'
 ];
 
 export interface RebuildOptions {

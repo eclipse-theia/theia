@@ -29,8 +29,8 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/code',
             defaultModelIds: [
-                'anthropic/claude-opus-4-8',
-                'openai/gpt-5.5',
+                'anthropic/claude-opus-5',
+                'openai/gpt-5.6-sol',
                 'google/gemini-3.1-pro-preview'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/code/description', 'Optimized for code understanding and generation tasks.')
@@ -38,8 +38,8 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/universal',
             defaultModelIds: [
-                'anthropic/claude-opus-4-8',
-                'openai/gpt-5.5',
+                'anthropic/claude-opus-5',
+                'openai/gpt-5.6-sol',
                 'google/gemini-3.1-pro-preview'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/universal/description', 'Well-balanced for both code and general language use.')
@@ -47,8 +47,8 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/code-completion',
             defaultModelIds: [
-                'anthropic/claude-sonnet-4-6',
-                'openai/gpt-5.5',
+                'anthropic/claude-sonnet-5',
+                'openai/gpt-5.6-sol',
                 'google/gemini-3.1-pro-preview'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/code-completion/description', 'Best suited for code autocompletion scenarios.')
@@ -56,8 +56,8 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/summarize',
             defaultModelIds: [
-                'anthropic/claude-opus-4-8',
-                'openai/gpt-5.5',
+                'anthropic/claude-opus-5',
+                'openai/gpt-5.6-sol',
                 'google/gemini-3.1-pro-preview'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/summarize/description', 'Models prioritized for summarization and condensation of content.')
@@ -66,8 +66,8 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
             id: 'default/fast',
             defaultModelIds: [
                 'anthropic/claude-haiku-4-5',
-                'openai/gpt-5.4-mini',
-                'google/gemini-3.5-flash'
+                'openai/gpt-5.6-luna',
+                'google/gemini-3.6-flash'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/fast/description',
                 'Faster and cheaper models for simpler tasks like exploration or basic tool calling, where deep reasoning is not required.')

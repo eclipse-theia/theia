@@ -28,6 +28,8 @@ import { WindowFocusService } from './window-focus-service';
 export class DefaultSecondaryWindowService implements SecondaryWindowService {
     protected readonly onWindowOpenedEmitter = new Emitter<Window>;
     readonly onWindowOpened: Event<Window> = this.onWindowOpenedEmitter.event;
+    protected readonly onWindowLoadedEmitter = new Emitter<Window>;
+    readonly onWindowLoaded: Event<Window> = this.onWindowLoadedEmitter.event;
     protected readonly onWindowClosedEmitter = new Emitter<Window>;
     readonly onWindowClosed: Event<Window> = this.onWindowClosedEmitter.event;
     protected readonly beforeWidgetRestoreEmitter = new Emitter<[Widget, Window]>;
@@ -110,6 +112,10 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
             this.secondaryWindows.push(newWindow);
             this.onWindowOpenedEmitter.fire(newWindow);
             newWindow.addEventListener('DOMContentLoaded', () => {
+                // This fires for the final secondary-window.html document, not for the initial
+                // about:blank document the window starts out with, so onWindowLoaded listeners
+                // can safely modify the document.
+                this.onWindowLoadedEmitter.fire(newWindow);
                 const focusRegistration = this.windowFocusService.registerWindow(newWindow);
                 newWindow.addEventListener('beforeunload', evt => {
                     const widgets = getAllWidgetsFromSecondaryWindow(newWindow) ?? [widget];
@@ -124,7 +130,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                     }
                 }, { capture: true });
 
-                newWindow.addEventListener('unload', () => {
+                newWindow.addEventListener('pagehide', () => {
                     focusRegistration.dispose();
                     const extIndex = this.secondaryWindows.indexOf(newWindow);
                     if (extIndex > -1) {
@@ -140,7 +146,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
     }
 
     protected windowCreated(newWindow: Window, widget: ExtractableWidget, shell: ApplicationShell): void {
-        newWindow.addEventListener('unload', () => {
+        newWindow.addEventListener('pagehide', () => {
             this.restoreWidgets(newWindow, widget, shell);
         });
     }

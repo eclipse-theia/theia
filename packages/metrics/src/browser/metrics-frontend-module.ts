@@ -15,14 +15,9 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { MetricsFrontendApplicationContribution } from './metrics-frontend-application-contribution';
-import { MeasurementNotificationService, measurementNotificationServicePath } from '../common';
-import { FrontendApplicationContribution, WebSocketConnectionProvider } from '@theia/core/lib/browser';
 
 export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).to(MetricsFrontendApplicationContribution).inSingletonScope();
-    bind(MeasurementNotificationService).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        return connection.createProxy<MeasurementNotificationService>(measurementNotificationServicePath);
-    }).inSingletonScope();
 });

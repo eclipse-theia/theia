@@ -15,12 +15,14 @@
 // *****************************************************************************
 
 import { AI_CORE_PREFERENCES_TITLE, PREFERENCE_NAME_SERVER_SIDE_COMPACTION } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM } from '@theia/ai-core/lib/common/language-model';
 import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.openAiOfficial.openAiApiKey';
 export const MODELS_PREF = 'ai-features.openAiOfficial.officialOpenAiModels';
 export const USE_RESPONSE_API_PREF = 'ai-features.openAiOfficial.useResponseApi';
 export const SERVER_SIDE_COMPACTION_PREF = 'ai-features.openAiOfficial.serverSideCompaction';
+export const SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF = 'ai-features.openAiOfficial.serverSideCompactionTokenThreshold';
 export const CUSTOM_ENDPOINTS_PREF = 'ai-features.openAiCustom.customOpenAiModels';
 
 export const OpenAiPreferencesSchema: PreferenceSchema = {
@@ -37,12 +39,11 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             description: nls.localize('theia/ai/openai/models/description', 'Official OpenAI models to use'),
             title: AI_CORE_PREFERENCES_TITLE,
             default: [
+                'gpt-5.6-sol',
+                'gpt-5.6-terra',
+                'gpt-5.6-luna',
                 'gpt-5.5',
-                'gpt-5.5-pro',
-                'gpt-5.4',
-                'gpt-5.4-pro',
-                'gpt-5.4-mini',
-                'gpt-5.4-nano'
+                'gpt-5.5-pro'
             ],
             items: {
                 type: 'string'
@@ -53,12 +54,8 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             default: false,
             title: AI_CORE_PREFERENCES_TITLE,
             markdownDescription: nls.localize('theia/ai/openai/useResponseApi/mdDescription',
-                'Use the newer OpenAI Response API instead of the Chat Completion API for official OpenAI models.\
-\
-This setting only applies to official OpenAI models - custom providers must configure this individually.\
-\
-Note that for the response API, tool call definitions must satisfy Open AI\'s [strict schema definition](https://platform.openai.com/docs/guides/function-calling#strict-mode).\
-Best effort is made to convert non-conformant schemas, but errors are still possible.')
+                'Use the newer OpenAI Response API instead of the Chat Completion API for official OpenAI models. ' +
+                'This setting only applies to official OpenAI models - custom providers must configure this individually.')
         },
         [SERVER_SIDE_COMPACTION_PREF]: {
             type: 'string',
@@ -74,6 +71,14 @@ Best effort is made to convert non-conformant schemas, but errors are still poss
                 'the Chat Completions API ignores it. "default" follows the global chat setting ({0}). When effectively ' +
                 'enabled, the Response API is asked to summarize older turns once the conversation grows past the provider\'s threshold.',
                 `\`#${PREFERENCE_NAME_SERVER_SIDE_COMPACTION}#\``),
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF]: {
+            type: 'integer',
+            minimum: SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM,
+            markdownDescription: nls.localize('theia/ai/openai/compactionTokenThreshold/description',
+                'Override the global input-token threshold for server-side compaction for official OpenAI models. When unset, the global setting or provider default applies. ' +
+                'If set, the value must be at least 50,000 tokens.'),
             title: AI_CORE_PREFERENCES_TITLE,
         },
         [CUSTOM_ENDPOINTS_PREF]: {

@@ -16,9 +16,17 @@
 
 import { ContainerModule } from 'inversify';
 import { WsRequestValidatorContribution } from '../../node/ws-request-validators';
+import { HttpConnectionValidator } from '../../node/hosting/browser-connection-token';
 import { ElectronWsOriginValidator } from './electron-ws-origin-validator';
 
 export default new ContainerModule(bind => {
     bind(ElectronWsOriginValidator).toSelf().inSingletonScope();
     bind(WsRequestValidatorContribution).toService(ElectronWsOriginValidator);
+
+    // Electron uses its own `ElectronSecurityToken`, so the connection-token cookie is not used.
+    // Bind a no-op validator so consumers can inject it uniformly.
+    const noopValidator: HttpConnectionValidator = {
+        validateRequest: (_req, _res, next) => next()
+    };
+    bind(HttpConnectionValidator).toConstantValue(noopValidator);
 });

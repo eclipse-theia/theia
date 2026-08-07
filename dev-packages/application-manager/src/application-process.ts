@@ -32,10 +32,26 @@ export class ApplicationProcess {
     ) { }
 
     spawn(command: string, args?: string[], options?: cp.SpawnOptions): cp.ChildProcess {
-        return cp.spawn(command, args || [], Object.assign({}, this.defaultOptions, {
+        // Build a single quoted command line rather than passing an args array together with `shell: true`.
+        // Node.js 24 deprecates the latter (DEP0190) because it does not escape the arguments.
+        const commandLine = this.buildCommandLine(command, args || []);
+        return cp.spawn(commandLine, [], Object.assign({}, this.defaultOptions, {
             ...options,
             shell: true
         }));
+    }
+
+    protected buildCommandLine(command: string, args: string[]): string {
+        return [command, ...args].map(arg => this.quoteArg(arg)).join(' ');
+    }
+
+    protected quoteArg(arg: string): string {
+        if (process.platform === 'win32') {
+            // cmd.exe: wrap in double quotes and escape embedded double quotes by doubling them.
+            return `"${arg.replace(/"/g, '""')}"`;
+        }
+        // POSIX shell: single-quote and escape embedded single quotes (' becomes '\'').
+        return `'${arg.replace(/'/g, '\'\\\'\'')}'`;
     }
 
     fork(modulePath: string, args?: string[], options?: cp.ForkOptions): cp.ChildProcess {
@@ -57,10 +73,7 @@ export class ApplicationProcess {
         if (!binPath) {
             throw new Error(`Could not resolve ${command} relative to ${this.binProjectPath}`);
         }
-        return this.spawn(binPath, args, {
-            ...options,
-            shell: true
-        });
+        return this.spawn(binPath, args, options);
     }
 
     protected resolveBin(rootPath: string, command: string): string | undefined {

@@ -77,4 +77,26 @@ describe('DefaultWindowService', () => {
         assert(windowService['collectContributionUnloadVetoes']().length > 0, 'there should be vetoes');
         assert(frontendContributions.every(contribution => contribution.onWillStopCalled), 'contributions should have been called');
     });
+    it('should reload unconditionally when restored from the back/forward cache', () => {
+        const frontendContributions: TestFrontendApplicationContribution[] = [
+            new TestFrontendApplicationContribution(true),
+        ];
+        const windowService = setupWindowService('always', frontendContributions);
+        let reloaded = 0;
+        windowService.reload = () => { reloaded++; };
+        windowService['handlePageShow']({ persisted: false } as PageTransitionEvent);
+        const reloadsBeforeRestore = reloaded;
+        windowService['handlePageShow']({ persisted: true } as PageTransitionEvent);
+        assert(reloadsBeforeRestore === 0, 'a regular page show should not reload');
+        assert(reloaded === 1, 'a restored page should reload');
+        assert(windowService['collectContributionUnloadVetoes']().length === 0, 'the recovery reload should not be vetoed');
+    });
+    it('onUnload should fire at most once, even if `pagehide` fires repeatedly', () => {
+        const windowService = setupWindowService('never', []);
+        let fired = 0;
+        windowService.onUnload(() => fired++);
+        windowService['handlePageHide']();
+        windowService['handlePageHide']();
+        assert(fired === 1, `onUnload should have fired once, but fired ${fired} time(s)`);
+    });
 });

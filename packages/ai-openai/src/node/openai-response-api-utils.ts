@@ -21,9 +21,9 @@ import {
     LanguageModelResponse,
     LanguageModelStreamResponsePart,
     TextMessage,
+    ToolCallResult,
     ToolInvocationContext,
     ToolRequest,
-    ToolRequestParameters,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, nls, unreachable } from '@theia/core';
@@ -37,6 +37,7 @@ import type {
     ResponseFunctionCallArgumentsDeltaEvent,
     ResponseFunctionCallArgumentsDoneEvent,
     ResponseFunctionToolCall,
+    ResponseFunctionWebSearch,
     ResponseInputItem,
     ResponseStreamEvent,
     ResponseToolSearchCall,
@@ -44,7 +45,9 @@ import type {
 } from 'openai/resources/responses/responses';
 import type { ResponsesModel } from 'openai/resources/shared';
 import { DeveloperMessageSettings, OpenAiModelUtils } from './openai-language-model';
-import { JSONSchema, JSONSchemaDefinition } from 'openai/lib/jsonschema';
+import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools';
+
+export const OPENAI_FUNCTION_CALL_REASONING_DATA_KEY = 'openAiFunctionCallReasoning';
 
 /**
  * User-facing name under which the provider's built-in deferred-tool search is surfaced in the chat UI.
@@ -63,9 +66,10 @@ interface ToolCall {
     call_id?: string;
     name: string;
     arguments: string;
-    result?: unknown;
+    result?: ToolCallResult;
     error?: Error;
     executed: boolean;
+    reasoningItems?: ResponseInputItem[];
 }
 
 /**
@@ -98,7 +102,13 @@ export class OpenAiResponseApiUtils {
         }
 
         const { instructions, input } = this.processMessages(request.messages, developerMessageSettings, model);
-        const tools = this.convertToolsForResponseApi(request.tools, request.deferredToolIds);
+        const tools = this.convertToolsForResponseApi(request.tools, request.deferredToolIds, request.serverTools);
+        const include = [...new Set([
+            ...(Array.isArray(settings.include) ? settings.include : []),
+            ...(request.serverTools?.includes(OPENAI_WEB_SEARCH) ? ['web_search_call.action.sources'] : []),
+            ...(request.tools?.length || request.serverTools?.includes(OPENAI_WEB_SEARCH) ? ['reasoning.encrypted_content'] : [])
+        ])];
+        const effectiveSettings = include.length > 0 ? { ...settings, include } : settings;
 
         // If no tools are provided, use simple response handling
         if (!tools || tools.length === 0) {
@@ -107,7 +117,7 @@ export class OpenAiResponseApiUtils {
                     model: model as ResponsesModel,
                     instructions,
                     input,
-                    ...settings
+                    ...effectiveSettings
                 });
                 return { stream: this.createSimpleResponseApiStreamIterator(stream, cancellationToken) };
             } else {
@@ -115,7 +125,7 @@ export class OpenAiResponseApiUtils {
                     model: model as ResponsesModel,
                     instructions,
                     input,
-                    ...settings
+                    ...effectiveSettings
                 });
 
                 return {
@@ -132,7 +142,7 @@ export class OpenAiResponseApiUtils {
         const iterator = new ResponseApiToolCallIterator(
             openai,
             request,
-            settings,
+            effectiveSettings,
             model,
             modelUtils,
             developerMessageSettings,
@@ -149,32 +159,30 @@ export class OpenAiResponseApiUtils {
     /**
      * Converts ToolRequest objects to the format expected by the Response API.
      */
-    convertToolsForResponseApi(tools?: ToolRequest[], deferredToolIds?: string[]): Tool[] | undefined {
-        if (!tools || tools.length === 0) {
-            return undefined;
-        }
-
+    convertToolsForResponseApi(tools?: ToolRequest[], deferredToolIds?: string[], serverTools?: string[]): Tool[] | undefined {
         const deferred = new Set(deferredToolIds ?? []);
-        const converted: Tool[] = tools.map(tool => ({
+        const converted: Tool[] = (tools ?? []).map(tool => ({
             type: 'function' as const,
             name: tool.name,
             description: tool.description || '',
-            // The Response API is very strict re: JSON schema: all properties must be listed as required,
-            // and additional properties must be disallowed.
-            // https://platform.openai.com/docs/guides/function-calling#strict-mode
-            parameters: this.recursiveStrictToolCallParameters(tool.parameters),
-            strict: true,
+            // Tool schemas are passed through as-is (non-strict). Strict mode (`strict: true`) is opt-in and
+            // only supports a JSON-schema subset (all properties required, `additionalProperties: false`
+            // everywhere), which cannot express the open-ended maps common in MCP tool schemas.
+            parameters: tool.parameters as unknown as FunctionTool['parameters'],
+            strict: false,
             defer_loading: deferred.has(tool.id) ? true : undefined
         }));
         if (deferred.size > 0) {
             converted.push({ type: 'tool_search', execution: 'server' });
         }
-        console.debug(`Converted ${tools.length} tools for Response API:`, converted.map(t => t.type === 'function' ? t.name : t.type));
+        if (serverTools?.includes(OPENAI_WEB_SEARCH)) {
+            converted.push({ type: 'web_search' });
+        }
+        if (converted.length === 0) {
+            return undefined;
+        }
+        console.debug(`Converted ${(tools ?? []).length} tools for Response API:`, converted.map(t => t.type === 'function' ? t.name : t.type));
         return converted;
-    }
-
-    recursiveStrictToolCallParameters(schema: ToolRequestParameters): FunctionTool['parameters'] {
-        return recursiveStrictJSONSchema(schema) as FunctionTool['parameters'];
     }
 
     protected createSimpleResponseApiStreamIterator(
@@ -311,6 +319,14 @@ export class OpenAiResponseApiUtils {
                     });
                 }
             } else if (LanguageModelMessage.isToolUseMessage(message)) {
+                const rawReasoning = message.data?.[OPENAI_FUNCTION_CALL_REASONING_DATA_KEY];
+                if (rawReasoning) {
+                    try {
+                        input.push(...JSON.parse(rawReasoning) as ResponseInputItem[]);
+                    } catch {
+                        // Skip malformed provider data.
+                    }
+                }
                 input.push({
                     type: 'function_call',
                     call_id: message.id,
@@ -339,8 +355,14 @@ export class OpenAiResponseApiUtils {
             } else if (LanguageModelMessage.isThinkingMessage(message)) {
                 // Pass
             } else if (LanguageModelMessage.isServerToolUseMessage(message)) {
-                // 'server_tool_use' replay messages can appear when switching providers within a
-                // session; OpenAI has no equivalent, so they are skipped.
+                const rawReplay = message.data?.[OPENAI_WEB_SEARCH_REPLAY_DATA_KEY];
+                if (message.name === OPENAI_WEB_SEARCH && rawReplay) {
+                    try {
+                        input.push(...JSON.parse(rawReplay) as ResponseInputItem[]);
+                    } catch {
+                        // Skip malformed provider data.
+                    }
+                }
             } else {
                 unreachable(message);
             }
@@ -377,6 +399,8 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
     protected readonly tools: Tool[] | undefined;
     protected readonly instructions?: string;
     protected currentResponseText = '';
+    protected pendingReasoningItems: ResponseInputItem[] = [];
+    protected currentWebSearchReplayItems: ResponseInputItem[] = [];
 
     constructor(
         protected readonly openai: OpenAI,
@@ -394,7 +418,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
         const { instructions, input } = utils.processMessages(request.messages, developerMessageSettings, model);
         this.instructions = instructions;
         this.currentInput = input;
-        this.tools = utils.convertToolsForResponseApi(request.tools, request.deferredToolIds);
+        this.tools = utils.convertToolsForResponseApi(request.tools, request.deferredToolIds, request.serverTools);
         this.maxIterations = runnerOptions.maxChatCompletions || 100;
 
         // Start the first iteration
@@ -463,6 +487,8 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
     protected async processStream(): Promise<void> {
         this.currentToolCalls.clear();
         this.currentResponseText = '';
+        this.pendingReasoningItems = [];
+        this.currentWebSearchReplayItems = [];
 
         if (this.isStreaming) {
             // Use streaming API
@@ -509,6 +535,21 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             this.handleIncoming({ content: this.currentResponseText });
         }
 
+        const pendingReasoningItems: ResponseInputItem[] = [];
+        for (const item of response.output ?? []) {
+            if (item.type === 'reasoning') {
+                pendingReasoningItems.push(item);
+            } else if (item.type === 'web_search_call') {
+                this.handleWebSearchCall(item, true, [...pendingReasoningItems, item]);
+                pendingReasoningItems.length = 0;
+            } else if (item.type === 'function_call' && item.id) {
+                const toolCall = this.createToolCall(item, item.id);
+                toolCall.reasoningItems = pendingReasoningItems.splice(0);
+                this.currentToolCalls.set(item.id, toolCall);
+                this.handleFunctionCall(toolCall, false);
+            }
+        }
+
         // Surface any deferred-tool search OpenAI executed while producing this response (see handleToolSearchOutput).
         const toolSearchOutputs = response.output?.filter((item): item is ResponseToolSearchOutputItem => item.type === 'tool_search_output') || [];
         for (const output of toolSearchOutputs) {
@@ -523,35 +564,6 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             });
         }
 
-        // Find function calls in the response
-        const functionCalls = response.output?.filter((item): item is ResponseFunctionToolCall => item.type === 'function_call') || [];
-
-        // Process each function call
-        for (const functionCall of functionCalls) {
-            if (functionCall.id && functionCall.name) {
-                const toolCall: ToolCall = {
-                    id: functionCall.id,
-                    call_id: functionCall.call_id || functionCall.id,
-                    name: functionCall.name,
-                    arguments: functionCall.arguments || '',
-                    executed: false
-                };
-
-                this.currentToolCalls.set(functionCall.id, toolCall);
-
-                // Yield the tool call initiation
-                this.handleIncoming({
-                    tool_calls: [{
-                        id: functionCall.id,
-                        finished: false,
-                        function: {
-                            name: functionCall.name,
-                            arguments: functionCall.arguments || ''
-                        }
-                    }]
-                });
-            }
-        }
     }
 
     protected async handleStreamEvent(event: ResponseStreamEvent): Promise<void> {
@@ -566,6 +578,8 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                     this.handleFunctionCallAdded(event.item);
                 } else if (event.item?.type === 'tool_search_call') {
                     this.handleToolSearchCall(event.item);
+                } else if (event.item?.type === 'web_search_call') {
+                    this.handleWebSearchCall(event.item, false);
                 }
                 break;
 
@@ -589,6 +603,11 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                     });
                 } else if (event.item?.type === 'tool_search_output') {
                     this.handleToolSearchOutput(event.item);
+                } else if (event.item?.type === 'reasoning') {
+                    this.pendingReasoningItems.push(event.item);
+                } else if (event.item?.type === 'web_search_call') {
+                    this.handleWebSearchCall(event.item, true, [...this.pendingReasoningItems, event.item]);
+                    this.pendingReasoningItems = [];
                 }
                 break;
 
@@ -611,27 +630,38 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
         if (functionCall.id && functionCall.call_id) {
             console.debug(`Function call added: ${functionCall.name} with id ${functionCall.id} and call_id ${functionCall.call_id}`);
 
-            const toolCall: ToolCall = {
-                id: functionCall.id,
-                call_id: functionCall.call_id,
-                name: functionCall.name || '',
-                arguments: functionCall.arguments || '',
-                executed: false
-            };
-
+            const toolCall = this.createToolCall(functionCall, functionCall.id);
+            toolCall.reasoningItems = this.pendingReasoningItems.splice(0);
             this.currentToolCalls.set(functionCall.id, toolCall);
-
-            this.handleIncoming({
-                tool_calls: [{
-                    id: functionCall.id,
-                    finished: false,
-                    function: {
-                        name: functionCall.name || '',
-                        arguments: functionCall.arguments || ''
-                    }
-                }]
-            });
+            this.handleFunctionCall(toolCall, false);
         }
+    }
+
+    protected createToolCall(functionCall: ResponseFunctionToolCall, id: string): ToolCall {
+        return {
+            id,
+            call_id: functionCall.call_id || functionCall.id,
+            name: functionCall.name || '',
+            arguments: functionCall.arguments || '',
+            executed: false
+        };
+    }
+
+    protected handleFunctionCall(toolCall: ToolCall, finished: boolean, result?: ToolCallResult): void {
+        this.handleIncoming({
+            tool_calls: [{
+                id: toolCall.id,
+                finished,
+                function: {
+                    name: toolCall.name,
+                    arguments: toolCall.arguments
+                },
+                result,
+                data: finished && toolCall.reasoningItems?.length ? {
+                    [OPENAI_FUNCTION_CALL_REASONING_DATA_KEY]: JSON.stringify(toolCall.reasoningItems)
+                } : undefined
+            }]
+        });
     }
 
     protected handleFunctionCallArgsDelta(event: ResponseFunctionCallArgumentsDeltaEvent): void {
@@ -661,7 +691,8 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                 id: event.item_id,
                 name: event.name || '',
                 arguments: event.arguments || '',
-                executed: false
+                executed: false,
+                reasoningItems: this.pendingReasoningItems.splice(0)
             };
             this.currentToolCalls.set(event.item_id, toolCall);
 
@@ -680,6 +711,32 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             toolCall.name = event.name || toolCall.name;
             toolCall.arguments = event.arguments || toolCall.arguments;
         }
+    }
+
+    protected handleWebSearchCall(item: ResponseFunctionWebSearch, finished: boolean, replayItems?: ResponseInputItem[]): void {
+        if (finished && replayItems) {
+            this.currentWebSearchReplayItems.push(...replayItems);
+        }
+        const action = JSON.stringify(item.action);
+        this.handleIncoming({
+            server_tool_calls: [{
+                id: item.id,
+                name: OPENAI_WEB_SEARCH,
+                arguments: action,
+                finished,
+                result: finished ? {
+                    content: [{
+                        type: 'text',
+                        text: item.status === 'failed'
+                            ? nls.localize('theia/ai/openai/webSearch/failed', 'Web search failed.')
+                            : nls.localize('theia/ai/openai/webSearch/completed', 'Web search completed.')
+                    }]
+                } : undefined,
+                data: finished && replayItems ? {
+                    [OPENAI_WEB_SEARCH_REPLAY_DATA_KEY]: JSON.stringify(replayItems)
+                } : undefined
+            }]
+        });
     }
 
     /**
@@ -733,50 +790,25 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                     toolCall.result = result;
 
                     // Yield the tool call completion
-                    this.handleIncoming({
-                        tool_calls: [{
-                            id: itemId,
-                            finished: true,
-                            function: {
-                                name: toolCall.name,
-                                arguments: toolCall.arguments
-                            },
-                            result
-                        }]
-                    });
+                    this.handleFunctionCall(toolCall, true, result);
                 } catch (error) {
                     console.error(`Error executing tool ${toolCall.name}:`, error);
                     toolCall.error = error instanceof Error ? error : new Error(String(error));
 
                     // Yield the tool call error
-                    this.handleIncoming({
-                        tool_calls: [{
-                            id: itemId,
-                            finished: true,
-                            function: {
-                                name: toolCall.name,
-                                arguments: toolCall.arguments
-                            },
-                            result: createToolCallError(error instanceof Error ? error.message : String(error))
-                        }]
-                    });
+                    this.handleFunctionCall(toolCall, true, createToolCallError(error instanceof Error ? error.message : String(error)));
+
                 }
             } else {
                 console.warn(`Tool ${toolCall.name} not found in request tools`);
                 toolCall.error = new Error(`Tool ${toolCall.name} not found`);
 
                 // Yield the tool call error
-                this.handleIncoming({
-                    tool_calls: [{
-                        id: itemId,
-                        finished: true,
-                        function: {
-                            name: toolCall.name,
-                            arguments: toolCall.arguments
-                        },
-                        result: createToolCallError(`Tool '${toolCall.name}' not found in the available tools for this request.`, 'tool-not-available')
-                    }]
-                });
+                this.handleFunctionCall(
+                    toolCall,
+                    true,
+                    createToolCallError(`Tool '${toolCall.name}' not found in the available tools for this request.`, 'tool-not-available')
+                );
             }
 
             toolCall.executed = true;
@@ -793,7 +825,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
         // Add the function calls that were made by the assistant
         const functionCalls: ResponseInputItem[] = [];
         for (const [itemId, toolCall] of this.currentToolCalls) {
-            functionCalls.push({
+            functionCalls.push(...toolCall.reasoningItems ?? [], {
                 type: 'function_call',
                 call_id: toolCall.call_id || itemId,
                 name: toolCall.name,
@@ -822,7 +854,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             }
         }
 
-        this.currentInput = [...this.currentInput, assistantMessage, ...functionCalls, ...toolResults];
+        this.currentInput = [...this.currentInput, ...this.currentWebSearchReplayItems, assistantMessage, ...functionCalls, ...toolResults];
     }
 
     protected handleIncoming(message: LanguageModelStreamResponsePart): void {
@@ -882,51 +914,4 @@ export function processSystemMessages(
         return updated;
     }
     return messages;
-}
-
-export function recursiveStrictJSONSchema(schema: JSONSchemaDefinition): JSONSchemaDefinition {
-    if (typeof schema === 'boolean') { return schema; }
-    let result: JSONSchema | undefined = undefined;
-    if (schema.properties) {
-        result ??= { ...schema };
-        result.additionalProperties = false;
-        result.required = Object.keys(schema.properties);
-        result.properties = Object.fromEntries(Object.entries(schema.properties).map(([key, props]) => [key, recursiveStrictJSONSchema(props)]));
-    }
-    if (schema.items) {
-        result ??= { ...schema };
-        result.items = Array.isArray(schema.items)
-            ? schema.items.map(recursiveStrictJSONSchema)
-            : recursiveStrictJSONSchema(schema.items);
-    }
-    if (schema.oneOf) {
-        result ??= { ...schema };
-        result.oneOf = schema.oneOf.map(recursiveStrictJSONSchema);
-    }
-    if (schema.anyOf) {
-        result ??= { ...schema };
-        result.anyOf = schema.anyOf.map(recursiveStrictJSONSchema);
-    }
-    if (schema.allOf) {
-        result ??= { ...schema };
-        result.allOf = schema.allOf.map(recursiveStrictJSONSchema);
-    }
-    if (schema.if) {
-        result ??= { ...schema };
-        result.if = recursiveStrictJSONSchema(schema.if);
-    }
-    if (schema.then) {
-        result ??= { ...schema };
-        result.then = recursiveStrictJSONSchema(schema.then);
-    }
-    if (schema.else) {
-        result ??= { ...schema };
-        result.else = recursiveStrictJSONSchema(schema.else);
-    }
-    if (schema.not) {
-        result ??= { ...schema };
-        result.not = recursiveStrictJSONSchema(schema.not);
-    }
-
-    return result ?? schema;
 }

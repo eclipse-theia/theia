@@ -15,9 +15,11 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LanguageModelMessage, LanguageModelRequest, ReasoningSupport } from '@theia/ai-core';
+import { LanguageModelMessage, LanguageModelRequest, LanguageModelResponse, ReasoningSupport, UserRequest } from '@theia/ai-core';
+import { OpenAI } from 'openai';
 import { OpenAiModel, OpenAiModelUtils } from './openai-language-model';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
+import { OPENAI_WEB_SEARCH } from './openai-server-tools';
 
 const GPT5_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
@@ -30,11 +32,20 @@ const O_SERIES_REASONING_SUPPORT: ReasoningSupport = {
 };
 
 class TestableOpenAiModel extends OpenAiModel {
+    chatCompletionsRequests = 0;
+
     public callGetSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
         return this.getSettings(request, forResponseApi);
     }
     public callApplyResponseApiCompaction(settings: Record<string, unknown>, request: LanguageModelRequest): Record<string, unknown> {
         return this.applyResponseApiCompaction(settings, request);
+    }
+    public callHandleResponseApiRequest(request: UserRequest): Promise<LanguageModelResponse> {
+        return this.handleResponseApiRequest({} as OpenAI, request);
+    }
+    protected override async handleChatCompletionsRequest(): Promise<LanguageModelResponse> {
+        this.chatCompletionsRequests++;
+        return { text: 'fallback' };
     }
 }
 
@@ -48,13 +59,18 @@ function createModel(modelId: string, reasoningSupport?: ReasoningSupport): Test
     );
 }
 
-function createCompactionModel(serverSideCompactionEnabledByDefault: boolean, useResponseApi: boolean = true): TestableOpenAiModel {
+function createCompactionModel(
+    serverSideCompactionEnabledByDefault: boolean,
+    useResponseApi: boolean = true,
+    serverSideCompactionTokenThresholdByDefault?: number
+): TestableOpenAiModel {
     return new TestableOpenAiModel(
         'test-id', 'gpt-5', { status: 'ready' }, true,
         () => 'test-key', () => undefined,
         false, undefined, undefined,
         new OpenAiModelUtils(), new OpenAiResponseApiUtils(),
-        'developer', 3, useResponseApi, undefined, undefined, undefined, useResponseApi, serverSideCompactionEnabledByDefault
+        'developer', 3, useResponseApi, undefined, undefined, undefined, undefined, useResponseApi, serverSideCompactionEnabledByDefault,
+        serverSideCompactionTokenThresholdByDefault
     );
 }
 
@@ -116,6 +132,53 @@ describe('OpenAiModel reasoning translation', () => {
     });
 });
 
+describe('OpenAiModel Response API fallback', () => {
+    function createFailingModel(): TestableOpenAiModel {
+        const responseApiUtils = {
+            handleRequest: async () => { throw new Error('Response API unavailable'); }
+        } as unknown as OpenAiResponseApiUtils;
+        return new TestableOpenAiModel(
+            'test-id', 'gpt-5', { status: 'ready' }, true,
+            () => 'test-key', () => undefined,
+            false, undefined, undefined,
+            new OpenAiModelUtils(), responseApiUtils,
+            'developer', 3, true
+        );
+    }
+
+    it('does not fall back to Chat Completions when a server tool is selected', async () => {
+        const model = createFailingModel();
+        const request: UserRequest = {
+            sessionId: 'session-1',
+            requestId: 'request-1',
+            messages: [],
+            serverTools: [OPENAI_WEB_SEARCH]
+        };
+
+        let error: unknown;
+        try {
+            await model.callHandleResponseApiRequest(request);
+        } catch (caught) {
+            error = caught;
+        }
+
+        expect(error).to.be.instanceOf(Error).with.property('message', 'Response API unavailable');
+        expect(model.chatCompletionsRequests).to.equal(0);
+    });
+
+    it('retains Chat Completions fallback when no server tool is selected', async () => {
+        const model = createFailingModel();
+        const request: UserRequest = {
+            sessionId: 'session-1',
+            requestId: 'request-1',
+            messages: []
+        };
+
+        expect(await model.callHandleResponseApiRequest(request)).to.deep.equal({ text: 'fallback' });
+        expect(model.chatCompletionsRequests).to.equal(1);
+    });
+});
+
 describe('OpenAiModelUtils Chat Completions processMessages', () => {
     it('drops a CompactionMessage without throwing when useResponseApi is off', () => {
         const utils = new OpenAiModelUtils();
@@ -146,6 +209,18 @@ describe('OpenAiModel server-side compaction (Response API)', () => {
         const result = model.callApplyResponseApiCompaction({ stream: true }, { messages: [] });
         expect(result.context_management).to.deep.equal([{ type: 'compaction' }]);
         expect(result.stream).to.equal(true);
+    });
+
+    it('adds the model default token threshold', () => {
+        const model = createCompactionModel(true, true, 200_000);
+        const result = model.callApplyResponseApiCompaction({}, { messages: [] });
+        expect(result.context_management).to.deep.equal([{ type: 'compaction', compact_threshold: 200_000 }]);
+    });
+
+    it('uses the session token threshold over the model default', () => {
+        const model = createCompactionModel(true, true, 200_000);
+        const result = model.callApplyResponseApiCompaction({}, { messages: [], compaction: { tokenThreshold: 300_000 } });
+        expect(result.context_management).to.deep.equal([{ type: 'compaction', compact_threshold: 300_000 }]);
     });
 
     it('leaves settings unchanged when model default is off and request has no compaction setting', () => {

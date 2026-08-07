@@ -75,6 +75,15 @@
         "apiKey": {
           "description": "Saisissez une clé API de votre compte Anthropic officiel. **Remarque :** en utilisant cette préférence, la clé API Anthropic sera stockée en texte clair sur la machine exécutant Theia. Utilisez la variable d'environnement `ANTHROPIC_API_KEY` pour définir la clé en toute sécurité."
         },
+        "compaction": {
+          "default": "Respectez le paramètre global de compaction côté serveur du chat.",
+          "description": "Remplacer la compaction côté serveur native du fournisseur pour les modèles Anthropic. La valeur « default » suit le paramètre global de chat ({0}). Lorsqu’elle est effectivement activée, l’API Anthropic Beta Messages est utilisée afin que le fournisseur puisse résumer les anciens tours de conversation une fois que la conversation dépasse son seuil.",
+          "disabled": "Ne demandez jamais de compactage côté serveur pour les modèles Anthropic.",
+          "enabled": "Demandez toujours une compaction côté serveur pour les modèles Anthropic."
+        },
+        "compactionTokenThreshold": {
+          "description": "Remplace le seuil global de tokens d'entrée pour la compaction côté serveur des modèles Anthropic. Si ce paramètre n'est pas défini, le paramètre global ou la valeur par défaut du fournisseur s'applique. S'il est défini, la valeur doit être d'au moins 50 000 tokens."
+        },
         "customEndpoints": {
           "apiKey": {
             "title": "Soit la clé pour accéder à l'API fournie à l'URL donnée, soit « true » pour utiliser la clé API globale Anthropic."
@@ -142,7 +151,12 @@
         "couldNotFindMatchingLM": "Impossible de trouver un modèle linguistique correspondant. Veuillez vérifier votre configuration !",
         "couldNotFindReadyLMforAgent": "Impossible de trouver un modèle linguistique prêt à l'emploi pour l'{0} de l'agent. Veuillez vérifier votre configuration !",
         "customAgents": {
-          "migrationResult": "Migration des agents personnalisés : {0} migré, {1} a échoué, {2} le fichier legacy customAgents.yml a été sauvegardé dans .bak, {3} les remplacements d'invite ont été intégrés dans agent.md.",
+          "migratePrompt": {
+            "message": "Vos agents personnalisés utilisent toujours l’ancien format `customAgents.yml`. Nous vous recommandons de les migrer vers le nouveau format par agent (`agents/<id>/agent.md`), que {0} utilisera désormais. Chaque agent dispose de son propre fichier à côté de votre fichier `customAgents.yml`, et l'original est conservé sous forme de sauvegarde dans le fichier `customAgents.yml.bak`."
+          },
+          "migrationResult": {
+            "empty": "Migration de l'agent personnalisé : rien à migrer."
+          },
           "rerunMigration": "Relancer la migration de l'agent personnalisé"
         },
         "defaultAgent": {
@@ -230,8 +244,10 @@
       },
       "chat-ui": {
         "addContextVariable": "Ajouter une variable de contexte",
+        "agentDefaultModel": "agent par défaut",
         "agentDelegationDescription": "Autres agents IA pouvant être délégués à",
         "aiDisabled": "Les fonctionnalités d'IA sont désactivées.",
+        "allowedResourceUrls": "Les ressources externes (images, feuilles de style, fichiers multimédias, etc.) mentionnées dans les réponses du chat IA sont bloquées par défaut et remplacées par un espace réservé jusqu’à ce qu’elles soient explicitement autorisées. Les ressources dont l’URL commence par l’un des préfixes configurés sont affichées directement sans être bloquées. Indiquez l’origine complète avec une barre oblique finale (par exemple « https://example.com/ ») pour éviter toute correspondance involontaire. N’ajoutez que des sources auxquelles vous faites entièrement confiance.",
         "applyAll": "Appliquer tout",
         "applyAllTitle": "Appliquer toutes les modifications en attente",
         "askQuestion": "Poser une question",
@@ -265,8 +281,12 @@
         "command-part-renderer": {
           "commandNotExecutable": "La commande a l'identifiant « {0} », mais elle n'est pas exécutable à partir de la fenêtre de chat."
         },
+        "compaction-part-renderer": {
+          "compactionMarker": "Conversation condensée"
+        },
         "copyCodeBlock": "Copier le bloc de code",
         "couldNotSendRequestToSession": "Impossible d'envoyer la requête « {0} » à la session {1}",
+        "delegatedSession": "Délégué",
         "delegation-response-renderer": {
           "interactionNeeded": "Interaction de l'utilisateur requise",
           "prompt": {
@@ -279,13 +299,11 @@
           "starting": "Démarrage de la délégation...",
           "status": {
             "canceled": "annulé",
-            "error": "erreur",
             "generating": "génération en cours...",
             "starting": "démarrage..."
           }
         },
         "deleteChangeSet": "Supprimer le jeu de modifications",
-        "deleteChat": "Supprimer le chat",
         "editRequest": "Modifier",
         "edited": "édité",
         "editedTooltipHint": "Cette variante d'invite a été modifiée. Vous pouvez la réinitialiser dans la vue Configuration IA.",
@@ -312,6 +330,8 @@
           "title": "Diagramme Mermaid",
           "wheelZoomHint": "{0} + Faire défiler"
         },
+        "modelBadgeTooltip": "Modèle linguistique utilisé pour cette réponse : {0}",
+        "modelUnavailable": "indisponible",
         "noChatAgentsAvailable": "Aucun agent de chat disponible.",
         "noMatchingCapabilities": "Aucune correspondance trouvée",
         "openDiff": "Ouvrir Diff",
@@ -344,6 +364,9 @@
         "serverTools": "Outils serveur",
         "serverToolsDescription": "Les outils serveur sont exécutés côté serveur par le LLM sur l'infrastructure du fournisseur.",
         "serverToolsWarning": "Ces outils sont automatiquement approuvés lorsqu'ils sont sélectionnés. Ils peuvent être exécutés par le modèle à tout moment.",
+        "sessionModel": "Modèle pour ce chat",
+        "sessionModelDefault": "Modèle pour ce chat ({0})",
+        "sessionModelUnavailable": "Le modèle pour ce chat n'est pas disponible ({0}) ; les requêtes utilisent l'agent par défaut.",
         "sessionNotFoundForRetry": "Session introuvable, veuillez réessayer.",
         "skillsDescription": "Instructions réutilisables pouvant être ajoutées à la conversation.",
         "switchAgentMode": "Basculer en mode agent",
@@ -356,6 +379,8 @@
         "tokenUsageOverflow": "L'utilisation des jetons dépasse largement le seuil d'avertissement. Envisagez de compacter ou de démarrer une nouvelle session.",
         "tokenUsageTooltipCacheCreate": "Création du cache : {0}",
         "tokenUsageTooltipCacheRead": "Lecture du cache : {0}",
+        "tokenUsageTooltipCompactions": "{0}s condensées x",
+        "tokenUsageTooltipCumulative": "Cumulatif : {0}",
         "tokenUsageTooltipTotal": "Total : {0} / {1} ({2} %)",
         "tokenUsageWarning": "Seuil d'avertissement d'utilisation des jetons atteint.",
         "tokenUsageWarningEnabled": "Détermine si une notification s'affiche lorsque l'utilisation des jetons d'une session de chat dépasse le seuil configuré. Nécessite que le fournisseur de modèle linguistique signale l'utilisation des jetons.",
@@ -486,7 +511,6 @@
         "openFileTooltip": "Cliquez pour ouvrir le fichier dans l'éditeur.",
         "optionsCount": "{0} options",
         "partial": "Partiel",
-        "pattern": "Modèle",
         "plan": "Plan mode",
         "project": "projet",
         "projectRoot": "racine du projet",
@@ -860,6 +884,12 @@
           },
           "title": "Paramètres de demande personnalisés"
         },
+        "serverSideCompaction": {
+          "description": "Activer par défaut la compaction côté serveur native du fournisseur pour les requêtes de chat. Lorsque cette option est activée, les modèles qui la prennent en charge peuvent automatiquement résumer les anciens tours de conversation dès que la conversation dépasse leur propre seuil, ce qui permet aux longues sessions de se poursuivre au-delà de la limite de contexte. Chaque fournisseur propose sa propre option de remplacement, et les sessions de chat individuelles peuvent remplacer ce paramètre dans leurs paramètres de session. Les modèles qui ne prennent pas en charge cette fonctionnalité l'ignorent."
+        },
+        "serverSideCompactionTokenThreshold": {
+          "description": "Seuil par défaut de tokens d'entrée à partir duquel la compaction côté serveur native du fournisseur doit s'exécuter. Les fournisseurs et les sessions de chat individuelles peuvent remplacer cette valeur. Si ce paramètre n'est pas défini, le fournisseur choisit son seuil par défaut. S'il est défini, la valeur doit être d'au moins 50 000 tokens."
+        },
         "skillDirectories": {
           "description": "Répertoires supplémentaires contenant les définitions de compétences (fichiers SKILL.md). Les compétences fournissent des instructions réutilisables auxquelles les agents IA peuvent se référer. Les répertoires .prompts/skills et .agents/skills de votre espace de travail, le répertoire .agents/skills de votre répertoire personnel, ainsi que le répertoire skills du dossier de configuration de votre produit sont toujours inclus."
         },
@@ -932,7 +962,6 @@
         "open-history-tooltip": "Ouvrir l'historique AI...",
         "request-card": {
           "promptVariant": "Variante d'invite",
-          "response": "Réponse",
           "timestamp": "Horodatage"
         },
         "sortChronologically": {
@@ -1008,6 +1037,11 @@
           "msg": "Cet agent utilise un **mode agentique**. Pour permettre un flux autonome, il est capable d'écrire directement dans les fichiers de votre espace de travail sans confirmation supplémentaire.\n\nIl est recommandé d'utiliser un système de contrôle de version (par exemple Git) afin de pouvoir examiner et annuler les modifications.\n\nVous pouvez passer en **mode Édition** à l'aide du sélecteur de mode dans la zone de saisie du chat ci-dessous, ou utiliser l'agent **Architect** pour une planification en lecture seule.\n\nCette confirmation est enregistrée pour cet espace de travail et ne s'affichera plus. Pour la réinitialiser ou la configurer globalement, recherchez `ai-features.agentMode.confirmed` dans les paramètres.",
           "waiting": "En attente de confirmation..."
         },
+        "allowAllMode": {
+          "stripTooltip": "Les appels aux outils d'IA s'exécutent sans confirmation au cours de cette session. Ne les activez que dans des environnements auxquels vous faites confiance.",
+          "stripTooltipFooter": "Configuration via l'option --session-preference. Redémarrez sans cette option pour restaurer vos paramètres enregistrés.",
+          "title": "Mode « Allow-All » de Theia AI"
+        },
         "app-tester": {
           "errorCheckingDevToolsServerStatus": "Vérification des erreurs Statut du serveur DevTools MCP : {0}",
           "errorCheckingPlaywrightServerStatus": "Vérification d'erreur Statut du serveur Playwright MCP : {0}",
@@ -1045,6 +1079,7 @@
         "chatRestrictedMessage": {
           "title": "Les fonctionnalités d'IA sont limitées"
         },
+        "childInteractionNeeded": "Une session déléguée nécessite votre attention",
         "codeReviewerAgent": {
           "description": "Assistant de révision de code qui analyse les modifications apportées au code et renvoie des verdicts structurés. Vérifie les critères de complétion, les preuves de compilation/lint/test et la qualité du code."
         },
@@ -1061,6 +1096,7 @@
             "startNewChat": "Les discussions doivent être courtes et ciblées. [Commencez une nouvelle discussion]({0}) pour une nouvelle tâche ou [commencez une nouvelle discussion avec un résumé de celle-ci]({1})."
           }
         },
+        "collapseSession": "Réduire l'{0}",
         "commandAgent": {
           "commandCallback": {
             "confirmAction": "Compris",
@@ -1089,10 +1125,10 @@
             "edit": "Mode par défaut"
           }
         },
-        "deleteChat": "Supprimer le chat",
         "enableAI": {
           "mdDescription": "Ce paramètre vous permet d'accéder aux dernières fonctionnalités d'IA.            \n            Il est important de savoir que ces fonctionnalités peuvent générer            des requêtes continues vers les modèles linguistiques (LLM) auxquels vous donnez accès. Cela peut entraîner des coûts que vous            devrez surveiller de près. En activant cette option, vous reconnaissez ces risques.            \n            **Remarque importante ! Les paramètres ci-dessous dans cette section ne prendront effet\n            qu'une fois le paramètre de la fonctionnalité principale activé. Après avoir activé la fonctionnalité, vous devez configurer au moins un            fournisseur LLM ci-dessous. Consultez également [la documentation](https://theia-ide.org/docs/user_ai/)**."
         },
+        "expandSession": "Développer « {0} »",
         "exploreAgent": {
           "description": "Un assistant d'exploration de base de code qui extrait et synthétise les informations de la base de code. Il rend compte de ce qui existe, fournit des extraits de code et décrit les modèles observés."
         },
@@ -1168,10 +1204,16 @@
           "description": "Un agent de révision de PR alimenté par l'IA qui orchestre un workflow complet de révision de code : il récupère les informations de PR, explore la base de code, effectue une analyse structurée, guide l'utilisateur de manière interactive à travers les résultats à l'aide de visualiseurs de différences et, en option, crée une révision en attente sur GitHub."
         },
         "prompt-template-description": "Sélectionnez les variantes d'invite et personnalisez les modèles d'invite pour les agents IA dans la [vue Configuration IA]({0}).",
+        "requiresApproval": "Nécessite votre validation",
         "restoredSession": "Session restaurée",
         "restrictedModeDetails": "Le chat IA, les suggestions en ligne, les actions de code et les modèles de prompt sont désactivés",
         "restrictedModeLabel": "Fonctionnalités IA (désactivées en mode restreint)",
         "sectionRestored": "Restauré",
+        "sessionOverride": {
+          "defaultToolConfirmation": "Confirmation par défaut de l'outil : {0}",
+          "toolConfirmation": "Remplacements de confirmation par outil : {0}",
+          "toolConfirmationGeneric": "Définition des règles de remplacement des confirmations par outil"
+        },
         "shellAllowlist": {
           "placeholder": "Par exemple, « git log » (exact) ou « git log * » (avec arguments)."
         },
@@ -1192,6 +1234,10 @@
         },
         "toolConfirmationInfo": {
           "header": "Confirmation de l'outil"
+        },
+        "toolConfirmationOverrides": {
+          "stripTooltip": "Un ou plusieurs outils d'IA sont automatiquement approuvés pour cette session via des options de ligne de commande.",
+          "title": "Remplacement des confirmations par l'outil d'IA"
         },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
@@ -1244,7 +1290,6 @@
           "errorMessage": "Message d'erreur",
           "lastActivity": "Dernière activité",
           "lastMessage": "Dernier message",
-          "messages": "Messages",
           "multipleExchanges": "{0} échanges",
           "oneExchange": "1 échange",
           "unread": "Non lu"
@@ -1333,8 +1378,7 @@
             "title": "Variables d'environnement"
           },
           "headers": {
-            "mdDescription": "En-têtes supplémentaires facultatifs inclus dans chaque requête adressée au serveur. Les valeurs des en-têtes sont stockées dans les préférences sous forme de texte brut ; évitez d'utiliser les paramètres de l'espace de travail s'ils contiennent des valeurs sensibles.",
-            "title": "En-têtes"
+            "mdDescription": "En-têtes supplémentaires facultatifs inclus dans chaque requête adressée au serveur. Les valeurs des en-têtes sont stockées dans les préférences sous forme de texte brut ; évitez d'utiliser les paramètres de l'espace de travail s'ils contiennent des valeurs sensibles."
           },
           "mdDescription": "Configurez les serveurs MCP soit en local à l'aide d'une commande, d'arguments et, éventuellement, de variables d'environnement, soit à distance à l'aide de l'URL du serveur, d'un jeton d'authentification, d'une configuration OAuth et, éventuellement, d'un nom d'en-tête d'authentification. Il est également possible de configurer le démarrage automatique (activé par défaut). Chaque serveur est identifié par une clé unique, telle que « brave-search » ou « filesystem ». Pour démarrer un serveur, utilisez la commande « MCP : Démarrer le serveur MCP », qui vous permet de sélectionner le serveur souhaité. Pour arrêter un serveur, utilisez la commande « MCP : Arrêter le serveur MCP ». Veuillez noter que le démarrage automatique ne prendra effet qu’après un redémarrage ; vous devez donc démarrer le serveur manuellement la première fois. Les serveurs installés à partir d’un registre IA comportent un bloc `registryMetadata` supplémentaire qui est géré automatiquement et n’est pas destiné à être modifié manuellement.\nExemple de configuration :\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"VOTRE_CLÉ_API\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/VOTRE_NOM_D'UTILISATEUR/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\" : {\n    \"serverUrl\" : \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\" : \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  },\n  \"oauth-protected-server\": {\n    \"serverUrl\": \"VOTRE_URL_DU_SERVEUR_MCP_PROTÉGÉ_PAR_OAUTH\",\n    \"oauth\" : {\n      \"clientId\" : \"ID_CLIENT_FACULTATIF\",\n      \"scopes\" : [\"CHAMP D'APPLICATION_FACULTATIF\"]\n    }\n  }\n  }\n```",
           "oauth": {
@@ -1403,9 +1447,6 @@
         "stop": {
           "label": "MCP : Arrêter le serveur MCP"
         },
-        "tool": {
-          "noTools": "Aucun outil disponible."
-        },
         "useWorkspaceAsRoot": {
           "mdDescription": "Les racines définissent les limites dans lesquelles les serveurs peuvent fonctionner au sein du système de fichiers. Si cette option est activée, les dossiers de l'espace de travail seront utilisés comme racines, sinon les serveurs MCP auront accès à l'ensemble du système de fichiers. La modification de ce paramètre entraînera le redémarrage de tous les serveurs MCP en cours d'exécution afin d'appliquer la nouvelle configuration des racines.",
           "title": "Utiliser l'espace de travail en tant que racine"
@@ -1422,7 +1463,6 @@
         "command": {
           "addServer": "Ajouter une configuration MCP locale..."
         },
-        "connectingServer": "Connexion...",
         "copiedAllList": "Tous les outils ont été copiés dans le presse-papiers (liste de tous les outils)",
         "copiedAllSingle": "Tous les outils ont été copiés dans le presse-papiers (fragment d'invite unique avec tous les outils).",
         "copiedForPromptTemplate": "Copie de tous les outils dans le presse-papiers pour le modèle d'invite (fragment d'invite unique avec tous les outils)",
@@ -1466,12 +1506,10 @@
           "saveChanges": "Enregistrer les modifications",
           "serverName": "Nom du serveur",
           "serverNamePlaceholder": "Par exemple, my-mcp-server",
-          "serverType": "Type de serveur",
           "serverUrlPlaceholder": "Par exemple, https://mcp.example.com",
           "serverUrlRequired": "L'URL du serveur est requise pour les serveurs distants."
         },
         "fromRegistryLink": "Extrait du registre",
-        "headers": "En-têtes",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "Serveur d'autorisation",
         "oauthClientId": "ID client OAuth",
@@ -1497,6 +1535,15 @@
       "openai": {
         "apiKey": {
           "mdDescription": "Saisissez la clé API de votre compte OpenAI officiel. **Remarque :** en utilisant cette préférence, la clé API Open AI sera stockée en texte clair sur la machine exécutant Theia. Utilisez la variable d'environnement `OPENAI_API_KEY` pour définir la clé de manière sécurisée."
+        },
+        "compaction": {
+          "default": "Respectez le paramètre global de compaction côté serveur du chat.",
+          "description": "Remplacer la compaction côté serveur native du fournisseur pour les modèles OpenAI officiels. Cela s'applique uniquement à l'API OpenAI Response ; l'API Chat Completions l'ignore. La valeur « default » suit le paramètre global de chat ({0}). Lorsqu'elle est effectivement activée, l'API Response est chargée de résumer les anciens tours de conversation dès que la conversation dépasse le seuil défini par le fournisseur.",
+          "disabled": "Ne demandez jamais de compactage côté serveur pour les modèles officiels d'OpenAI.",
+          "enabled": "Demandez toujours la compaction côté serveur pour les modèles officiels d'OpenAI."
+        },
+        "compactionTokenThreshold": {
+          "description": "Remplace le seuil global de tokens d'entrée pour la compaction côté serveur des modèles OpenAI officiels. Si ce paramètre n'est pas défini, le paramètre global ou la valeur par défaut du fournisseur s'applique. S'il est défini, la valeur doit être d'au moins 50 000 tokens."
         },
         "customEndpoints": {
           "apiKey": {
@@ -1538,7 +1585,7 @@
           "description": "Modèles OpenAI officiels à utiliser"
         },
         "useResponseApi": {
-          "mdDescription": "Utilisez la nouvelle API OpenAI Response à la place de l'API Chat Completion pour les modèles OpenAI officiels.Ce paramètre s'applique uniquement aux modèles OpenAI officiels. Les fournisseurs personnalisés doivent le configurer individuellement. Notez que pour l'API de réponse, les définitions d'appel d'outil doivent respecter la [définition de schéma stricte](https://platform.openai.com/docs/guides/function-calling#strict-mode) d'Open AI. Nous faisons tout notre possible pour convertir les schémas non conformes, mais des erreurs sont toujours possibles."
+          "mdDescription": "Utilisez la nouvelle API OpenAI Response à la place de l'API Chat Completion pour les modèles officiels d'OpenAI. Ce paramètre s'applique uniquement aux modèles officiels d'OpenAI ; les fournisseurs personnalisés doivent le configurer individuellement."
         }
       },
       "promptTemplates": {
@@ -1588,6 +1635,10 @@
       },
       "session-settings-dialog": {
         "advancedSettings": "Paramètres avancés (JSON)",
+        "compactionHeader": "Compactage côté serveur",
+        "compactionLabel": "Compactage :",
+        "compactionNote": "Remplace le paramètre de compaction global et propre à chaque fournisseur pour cette session. S'applique uniquement aux fournisseurs prenant en charge la compaction côté serveur.",
+        "compactionTokenThreshold": "Seuil de jetons :",
         "confirmationTimeout": "Délai d'expiration de la confirmation",
         "confirmationTimeoutNote": "Refuser automatiquement les confirmations de l'outil après le délai spécifié. Remplace la préférence globale pour cette session.",
         "enableConfirmationTimeout": "Activer le délai d'expiration de la confirmation",
@@ -1722,6 +1773,13 @@
       "fileChangeSetTitle": "Modifications proposées"
     },
     "ai-chat-ui": {
+      "blockedResource": {
+        "allow": "Autoriser ce contenu bloqué",
+        "aria": "Ressources externes bloquées : {0}",
+        "inlineContent": "(contenu externe intégré)",
+        "label": "Ressource externe bloquée :",
+        "resourcesToAllow": "{0} les ressources seront activées"
+      },
       "browseAllChats": "Parcourir toutes les discussions...",
       "confirm": "Confirmer",
       "deleteChat": "Supprimer le chat",
@@ -1730,6 +1788,7 @@
       "noOutput": "Pas de sortie",
       "open-current-session-summary": "Ouvrir le résumé de la session actuelle",
       "open-settings-tooltip": "Ouvrir les paramètres AI...",
+      "openSession": "Ouvrir une session de chat",
       "renameChat": "Renommer le chat",
       "scroll-lock": "Verrouiller le défilement",
       "scroll-unlock": "Déverrouiller le défilement",
@@ -1774,11 +1833,17 @@
         "argumentHint": "<numéro de ticket>",
         "description": "Analyser un ticket GitHub et mettre en œuvre la solution."
       },
+      "newChat": "Nouveau chat",
+      "noSessions": "Aucune session de chat pour l'instant.",
       "open-ai-configuration-tooltip": "Open AI Configuration",
+      "perspective": {
+        "aiFirst": "AI First"
+      },
       "rememberCommand": {
         "argumentHint": "[topic-hint]",
         "description": "Extraire les sujets d'une conversation et mettre à jour les informations sur le projet"
       },
+      "sessionsView": "AI Sessions",
       "ticketCommand": {
         "argumentHint": "<numéro de ticket>",
         "description": "Analyser un ticket GitHub et créer un plan de mise en œuvre"
@@ -1900,6 +1965,41 @@
       "timeout": "Délai d'expiration",
       "workingDirectory": "Répertoire de travail"
     },
+    "ai-tool-sketchpad": {
+      "addItemProperty": "Ajouter une propriété d'élément",
+      "addParameter": "Ajouter un paramètre",
+      "addProperty": "Ajouter une propriété",
+      "addTool": "Ajouter un outil",
+      "askAtRuntimeHint": "Lorsque le LLM appelle cet outil, une fenêtre de saisie rapide s'ouvre pour vous demander de fournir la valeur de retour.",
+      "askReturnPlaceholder": "Saisissez la valeur de retour pour cet appel d'outil...",
+      "askReturnPrompt": "L'outil « {0} » a été appelé avec : {1}",
+      "confirmDelete": "Êtes-vous sûr de vouloir supprimer l'outil « {0} » ?",
+      "descriptionPlaceholder": "Décrivez le fonctionnement de l'outil...",
+      "itemType": "Type d'élément :",
+      "label": "Esquisse de l'outil d'IA",
+      "nParameters": "{0} paramètres",
+      "nameDuplicate": "Un outil portant ce nom existe déjà.",
+      "nameEmpty": "Le nom de l'outil ne doit pas être vide.",
+      "nameInvalid": "Le nom de l'outil ne peut contenir que des lettres, des chiffres, des traits de soulignement et des tirets (1 à 128 caractères).",
+      "noItemProperties": "Aucune propriété d'élément n'est définie.",
+      "noParameters": "Aucun paramètre défini.",
+      "noTools": "Aucun outil pour le moment.",
+      "oneParameter": "1 paramètre",
+      "parameters": "Paramètres",
+      "required": "Obligatoire",
+      "returnMode": "Mode de retour",
+      "returnModeAskAtRuntime": "Demander lors de l'exécution",
+      "returnModeAskShort": "Demander lors de l'exécution",
+      "returnModeStatic": "Valeur de retour statique",
+      "returnModeStaticShort": "Statique",
+      "selectTool": "Sélectionnez un outil à modifier ou ajoutez-en un nouveau pour commencer à esquisser.",
+      "staticReturn": "Valeur de retour statique",
+      "staticReturnHint": "Cette valeur statique est renvoyée à chaque fois que l'outil est appelé, quels que soient les arguments fournis.",
+      "staticReturnPlaceholder": "Valeur renvoyée lorsque cet outil est appelé (par exemple, une chaîne JSON)",
+      "toolName": "Nom de l'outil",
+      "toolNamePlaceholder": "Ex. : getWeather",
+      "untitledTool": "Outil sans titre"
+    },
     "callhierarchy": {
       "noCallers": "Aucun appelant n'a été détecté.",
       "open": "Ouvrir la hiérarchie des appels"
@@ -1985,6 +2085,7 @@
         "visual": "Afficher un aperçu visuel de l'onglet."
       },
       "highlightModifiedTabs": "Contrôle si une bordure supérieure est dessinée ou non sur les onglets d'éditeur modifiés (salissés).",
+      "jumpListName": "Espaces de travail récents",
       "keybinding": {
         "duplicateModifierError": "Impossible d'analyser l'{0} des raccourcis clavier Modificateurs en double",
         "metaError": "Impossible d'analyser la combinaison de touches L'{0}-méta est réservée à OSX",
@@ -2005,6 +2106,11 @@
         "clipboardWarnFirefox": "L'API du presse-papiers n'est pas disponible. Elle peut être activée via l'option « {0} » (Autoriser l'accès au presse-papiers) sur la page « {1} » (Configuration de l'application). Rechargez ensuite Theia. Notez que cela permettra à FireFox d'accéder pleinement au presse-papiers du système."
       },
       "pasteWarn": "Veuillez utiliser la commande Coller ou le raccourci du navigateur.",
+      "perspective": {
+        "resetPerspective": "Réinitialiser la perspective (fonctionnalité expérimentale)",
+        "selectPerspective": "Sélectionnez une perspective",
+        "switchPerspective": "Changer de perspective (fonctionnalité expérimentale)"
+      },
       "quitMessage": "Les modifications non enregistrées ne seront pas sauvegardées.",
       "resetWorkbenchLayout": "Réinitialiser la disposition de l'atelier",
       "searchbox": {
@@ -2223,6 +2329,11 @@
     },
     "markers": {
       "clearAll": "Tout effacer",
+      "copyAsText": "Copier sous forme de texte",
+      "export": "Exporter",
+      "exportProblems": "Problèmes d'exportation",
+      "exportSuccess": "Les problèmes ont été exportés avec succès.",
+      "jsonFiles": "Fichiers JSON",
       "noProblems": "Aucun problème n'a été détecté dans l'espace de travail jusqu'à présent.",
       "tabbarDecorationsEnabled": "Afficher les décorateurs de problèmes (marqueurs de diagnostic) dans les barres d'onglets."
     },
@@ -2317,6 +2428,7 @@
       "autoReveal": "Affichage automatique",
       "clipboardWarn": "L'accès au presse-papiers est refusé. Vérifiez les autorisations de votre navigateur.",
       "clipboardWarnFirefox": "L'API du presse-papiers n'est pas disponible. Elle peut être activée via l'option « {0} » (Autoriser l'accès au presse-papiers) sur la page « {1} » (Configuration de l'application). Rechargez ensuite Theia. Notez que cela permettra à FireFox d'accéder pleinement au presse-papiers du système.",
+      "nothingToPaste": "Le presse-papiers ne contient aucun fichier de l'espace de travail pouvant être collé ici.",
       "openWithSystemEditor": "Ouvrir avec l'éditeur système",
       "refresh": "Actualiser dans l'Explorateur",
       "reveal": "Afficher dans l'Explorateur",
@@ -2380,6 +2492,18 @@
       "hostedPlugin": "Plugin hébergé",
       "input": {
         "browse": "Parcourir"
+      },
+      "sessionOverride": {
+        "suffix": "Remplacé par la session",
+        "suffixTooltip": "Cette préférence dispose d'une valeur de session définie via --session-preference. La modifier ici efface la modification de session pour le reste de la session en cours."
+      },
+      "sessionPreferences": {
+        "statusBar": "Préférences de session ({0})",
+        "tooltipBody": "Ces éléments ont été transmis via l'option --session-preference et ne résident qu'en mémoire. Cliquez sur le nom d'un paramètre pour y accéder directement dans la vue Paramètres.",
+        "tooltipChangeNote": "La modification de l'un de ces paramètres efface sa valeur de session pour cette exécution. Pour utiliser les valeurs enregistrées dès le prochain lancement, redémarrez sans les arguments --session-preference.",
+        "tooltipHeader": "Ces paramètres sont remplacés pour cette session",
+        "valueOff": "désactivé",
+        "valueOn": "sur"
       },
       "toolbar": "Barre d'outils"
     },
@@ -2506,6 +2630,9 @@
       "taskRestricted": "L'exécution des tâches est désactivée en mode restreint.",
       "taskTerminatedBySignal": "La tâche « {0} » a été interrompue par l'{1} de signal.",
       "terminalWillBeReusedByTasks": "Le terminal sera réutilisé par les tâches."
+    },
+    "telemetry": {
+      "filters": "Limiter les modèles de sujets transmis à chaque collecteur de télémétrie. L'absence d'entrées autorise tous les centres d'intérêt du collecteur ; les tableaux vides désactivent un collecteur."
     },
     "terminal": {
       "defaultProfile": "Profil par défaut utilisé sur {0}",

@@ -49,7 +49,7 @@ export class TelemetryLogger {
     readonly options: TelemetryLoggerOptions | undefined;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     readonly commonProperties: Record<string, any>;
-    telemetryEnabled: boolean;
+    private _telemetryEnabled: boolean;
 
     private readonly onDidChangeEnableStatesEmitter: Emitter<TelemetryLogger> = new Emitter();
     readonly onDidChangeEnableStates: Event<TelemetryLogger> = this.onDidChangeEnableStatesEmitter.event;
@@ -60,9 +60,20 @@ export class TelemetryLogger {
         this.sender = sender;
         this.options = options;
         this.commonProperties = this.getCommonProperties();
-        this._isErrorsEnabled = true;
-        this._isUsageEnabled = true;
-        this.telemetryEnabled = telemetryEnabled;
+        this._telemetryEnabled = telemetryEnabled;
+        this._isErrorsEnabled = telemetryEnabled;
+        this._isUsageEnabled = telemetryEnabled;
+    }
+
+    get telemetryEnabled(): boolean {
+        return this._telemetryEnabled;
+    }
+
+    set telemetryEnabled(telemetryEnabled: boolean) {
+        if (this._telemetryEnabled !== telemetryEnabled) {
+            this._telemetryEnabled = telemetryEnabled;
+            this.updateEnableStates(telemetryEnabled, telemetryEnabled);
+        }
     }
 
     get isUsageEnabled(): boolean {
@@ -82,6 +93,14 @@ export class TelemetryLogger {
 
     set isErrorsEnabled(isErrorsEnabled: boolean) {
         if (this._isErrorsEnabled !== isErrorsEnabled) {
+            this._isErrorsEnabled = isErrorsEnabled;
+            this.onDidChangeEnableStatesEmitter.fire(this);
+        }
+    }
+
+    private updateEnableStates(isUsageEnabled: boolean, isErrorsEnabled: boolean): void {
+        if (this._isUsageEnabled !== isUsageEnabled || this._isErrorsEnabled !== isErrorsEnabled) {
+            this._isUsageEnabled = isUsageEnabled;
             this._isErrorsEnabled = isErrorsEnabled;
             this.onDidChangeEnableStatesEmitter.fire(this);
         }

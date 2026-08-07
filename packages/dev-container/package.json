@@ -1,13 +1,13 @@
 {
   "name": "@theia/dev-container",
-  "version": "1.73.0",
+  "version": "1.74.0",
   "description": "Theia - Dev Container Extension",
   "dependencies": {
-    "@theia/core": "1.73.0",
-    "@theia/output": "1.73.0",
-    "@theia/remote": "1.73.0",
-    "@theia/workspace": "1.73.0",
-    "dockerode": "^4.0.12",
+    "@theia/core": "1.74.0",
+    "@theia/output": "1.74.0",
+    "@theia/remote": "1.74.0",
+    "@theia/workspace": "1.74.0",
+    "dockerode": "^5.0.1",
     "jsonc-parser": "^3.3.1"
   },
   "publishConfig": {
@@ -44,7 +44,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.73.0",
+    "@theia/ext-scripts": "1.74.0",
     "@types/dockerode": "^3.3.47"
   },
   "nyc": {

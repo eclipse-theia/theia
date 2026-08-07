@@ -84,7 +84,7 @@
       "path": "../../packages/ai-terminal"
     },
     {
-      "path": "../../packages/ai-vercel-ai"
+      "path": "../../packages/ai-tool-sketchpad"
     },
     {
       "path": "../../packages/bulk-edit"
@@ -202,6 +202,9 @@
     },
     {
       "path": "../../packages/task"
+    },
+    {
+      "path": "../../packages/telemetry"
     },
     {
       "path": "../../packages/terminal"
