@@ -220,10 +220,13 @@ export class ParcelWatcher {
 
     /**
      * When starting a watcher, we'll first check and wait for the path to exists
-     * before running a parcel watcher.
+     * before running a parcel watcher. If the path only came into existence while we
+     * were waiting, its creation is reported synthetically once we are subscribed.
      */
     protected async start(): Promise<void> {
+        let createdWhileWaiting = false;
         while (await fsp.stat(this.fsPath).then(() => false, () => true)) {
+            createdWhileWaiting = true;
             await timeout(500);
             this.assertNotDisposed();
         }
@@ -263,6 +266,14 @@ export class ParcelWatcher {
             throw WatcherDisposal;
         }
         this.watcher = watcher;
+        if (createdWhileWaiting) {
+            // The path did not exist when we were asked to watch it, so the actual creation
+            // happened before parcel was subscribed and its event is lost. Report the creation
+            // synthetically, otherwise clients keep the state they observed while the path was
+            // still missing until the next change. VS Code behaves the same way when it resumes
+            // a watch request that was suspended because its path did not exist.
+            this.handleWatcherEvents([{ type: 'create', path: this.fsPath }]);
+        }
     }
 
     /**
