@@ -19,8 +19,11 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { PluginLogger } from '../../plugin/logger';
 import { format } from 'util';
 
-export function setupPluginHostLogger(rpc: RPCProtocol): void {
-    const logger = new PluginLogger(rpc, 'plugin-host');
+/**
+ * @param name the logger name on the main side, so that hosts can be configured independently
+ */
+export function setupPluginHostLogger(rpc: RPCProtocol, name = 'plugin-host'): void {
+    const logger = new PluginLogger(rpc, name);
 
     function createLog(level: LogLevel): typeof console.log {
         return (message, ...params) => {
