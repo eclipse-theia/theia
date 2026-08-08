@@ -1,0 +1,118 @@
+name: Good-first-issue candidate digest
+# Runs on a schedule, scans open issues for heuristic "good first issue"
+# signals, and posts a ranked digest as a new issue for maintainer triage.
+# Does NOT apply the good-first-issue label itself — a maintainer reviews
+# the digest and labels candidates manually or in bulk.
+on:
+  schedule:
+    - cron: "0 9 * * 1" # every Monday at 09:00 UTC
+  workflow_dispatch: {} # allow manual runs for testing
+
+permissions:
+  issues: write
+
+jobs:
+  scan-candidates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scan issues and post digest
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const MAX_AGE_MONTHS = 6;      // ignore issues older than this (avoid stale ones)
+            const MAX_COMMENTS = 3;        // low discussion = likely still open/unclaimed
+            const MIN_BODY_LENGTH = 80;    // filter out one-line "it's broken" issues
+            const DIGEST_SIZE = 10;        // how many candidates to include
+
+            const now = new Date();
+            const monthsAgo = (date) => (now - new Date(date)) / (1000 * 60 * 60 * 24 * 30);
+
+            // File-path / symbol references in the body are used as a weak proxy
+            // for "small, well-scoped change" since issues (unlike PRs) have no diff.
+            const FILE_REF_RE = /`[^`]+\.(ts|tsx|js|jsx|json|md)`|\b[\w-]+\/[\w-]+\.(ts|tsx|js|jsx)\b/g;
+
+            const candidates = [];
+            let page = 1;
+
+            while (true) {
+              const { data: issues } = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: "open",
+                per_page: 100,
+                page,
+              });
+              if (issues.length === 0) break;
+
+              for (const issue of issues) {
+                if (issue.pull_request) continue; // skip PRs, API returns both
+                if (issue.assignee || (issue.assignees && issue.assignees.length > 0)) continue;
+
+                const labelNames = issue.labels.map((l) =>
+                  typeof l === "string" ? l : l.name
+                );
+                if (labelNames.includes("good first issue")) continue;
+
+                const ageMonths = monthsAgo(issue.updated_at);
+                if (ageMonths > MAX_AGE_MONTHS) continue;
+                if (issue.comments > MAX_COMMENTS) continue;
+
+                const body = issue.body || "";
+                if (body.length < MIN_BODY_LENGTH) continue;
+
+                // --- Scoring: lower is "better" candidate ---
+                let score = 0;
+                score += issue.comments;                 // more discussion = less likely simple/unclaimed
+                score += ageMonths / MAX_AGE_MONTHS;      // slight preference for fresher issues
+                const fileRefs = (body.match(FILE_REF_RE) || []).length;
+                score -= Math.min(fileRefs, 3) * 0.5;     // named files/symbols = more scoped, reward it
+                const hasRepro = /steps to reproduce|repro|expected behavior/i.test(body);
+                if (hasRepro) score -= 0.5;               // clearer description = easier for a newcomer
+
+                candidates.push({
+                  number: issue.number,
+                  title: issue.title,
+                  url: issue.html_url,
+                  score,
+                  fileRefs,
+                  ageMonths: Math.round(ageMonths * 10) / 10,
+                  comments: issue.comments,
+                });
+              }
+
+              if (issues.length < 100) break;
+              page++;
+            }
+
+            candidates.sort((a, b) => a.score - b.score);
+            const top = candidates.slice(0, DIGEST_SIZE);
+
+            if (top.length === 0) {
+              console.log("No candidates found matching the heuristics this run.");
+              return;
+            }
+
+            const lines = top.map(
+              (c, i) =>
+                `${i + 1}. #${c.number} — [${c.title}](${c.url})\n` +
+                `   _${c.comments} comments · updated ${c.ageMonths}mo ago · ${c.fileRefs} file/symbol ref(s) in body_`
+            );
+
+            const bodyText =
+              `Heuristic scan of open issues for possible **good first issue** candidates.\n\n` +
+              `These are *suggestions only* — please review and apply the \`good first issue\` label ` +
+              `to whichever of these actually look approachable. None of these were auto-labeled.\n\n` +
+              lines.join("\n\n") +
+              `\n\n---\n` +
+              `_Heuristics: no assignee, no existing \`good first issue\` label, ` +
+              `updated within ${MAX_AGE_MONTHS} months, \u2264${MAX_COMMENTS} comments, ` +
+              `body \u2265${MIN_BODY_LENGTH} chars. File/symbol references in the body are used as a rough ` +
+              `proxy for scope, since issues don't have a diff to measure directly._`;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Good-first-issue candidates — week of ${now.toISOString().slice(0, 10)}`,
+              body: bodyText,
+              labels: ["triage"],
+            });
