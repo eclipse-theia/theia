@@ -1,0 +1,72 @@
+name: Auto-label on intake
+
+# Fires the moment a new issue is opened via the structured issue form.
+# Reads the "Type" dropdown answer and applies the matching label —
+# removes the "bug" vs "type: bug" vs title-prefix ambiguity from Section 2.3.
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  apply-type-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Parse Type field and apply label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.issue.body || "";
+
+            // Update this map to match whatever label taxonomy the team settles on.
+            // Keys must exactly match the dropdown options in report.yml.
+            const typeToLabel = {
+            "Bug": "bug",
+            "Feature": "enhancement",
+            "Enhancement": "enhancement",
+            "Question": "question",
+          };
+
+            // Issue forms render each field as "### <Label>\n\n<answer>".
+            // This pulls out whatever follows the "### Type" heading, up to the next heading or end of body.
+            const match = body.match(/### Type\s*\n+([^\n#]+)/i);
+
+            if (!match) {
+              console.log("Could not find a 'Type' field in the issue body — skipping auto-label. " +
+                          "This issue was likely opened without the structured form.");
+              return;
+            }
+
+            const selected = match[1].trim();
+            const label = typeToLabel[selected];
+
+            if (!label) {
+              console.log(`Type value "${selected}" did not match any known option — skipping auto-label.`);
+              return;
+            }
+
+            // Make sure the label exists in the repo before applying it, so a missing
+            // label doesn't silently fail the whole run.
+            try {
+              await github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: label,
+              });
+            } catch (error) {
+              console.log(`Label "${label}" does not exist in this repo yet — create it or update the ` +
+                          `typeToLabel map in this workflow to match an existing label. Skipping.`);
+              return;
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: [label],
+            });
+
+            console.log(`Applied label "${label}" based on Type: "${selected}".`);
