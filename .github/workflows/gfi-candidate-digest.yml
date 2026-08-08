@@ -47,11 +47,13 @@ jobs:
               for (const issue of issues) {
                 if (issue.pull_request) continue; // skip PRs, API returns both
                 if (issue.assignee || (issue.assignees && issue.assignees.length > 0)) continue;
+                if (issue.user && issue.user.type === "Bot") continue; // skip issues opened by bots (e.g. this workflow's own past digests)
 
                 const labelNames = issue.labels.map((l) =>
                   typeof l === "string" ? l : l.name
                 );
                 if (labelNames.includes("good first issue")) continue;
+                if (labelNames.includes("triage")) continue; // skip prior digest issues by label too, as a second safety net
 
                 const ageMonths = monthsAgo(issue.updated_at);
                 if (ageMonths > MAX_AGE_MONTHS) continue;
