@@ -562,6 +562,62 @@ describe('PromptService', () => {
             expect(fragment).to.be.undefined;
         });
     });
+
+    describe('isKnownCommand', () => {
+        it('accepts a registered command name', () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'sample-debug',
+                template: 'Help debug: $ARGUMENTS',
+                isCommand: true,
+                commandName: 'debug'
+            });
+
+            expect(promptService.isKnownCommand('debug')).to.be.true;
+        });
+
+        it('accepts a command fragment referenced by its id', () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'sample-debug',
+                template: 'Help debug: $ARGUMENTS',
+                isCommand: true,
+                commandName: 'debug'
+            });
+
+            expect(promptService.isKnownCommand('sample-debug')).to.be.true;
+        });
+
+        it('accepts the id of a fragment that is not marked as a command', () => {
+            // The `prompt` variable falls back to a plain fragment lookup, so `/normal-fragment`
+            // resolves and must therefore be recognized here as well.
+            promptService.addBuiltInPromptFragment({
+                id: 'normal-fragment',
+                template: 'Not a command'
+            });
+
+            expect(promptService.isKnownCommand('normal-fragment')).to.be.true;
+        });
+
+        it('rejects unknown names', () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'sample-debug',
+                template: 'Help debug: $ARGUMENTS',
+                isCommand: true,
+                commandName: 'debug'
+            });
+
+            expect(promptService.isKnownCommand('home')).to.be.false;
+            expect(promptService.isKnownCommand('usr')).to.be.false;
+            expect(promptService.isKnownCommand('debugger')).to.be.false;
+        });
+
+        it('rejects the empty name', () => {
+            expect(promptService.isKnownCommand('')).to.be.false;
+        });
+
+        it('rejects names when nothing is registered', () => {
+            expect(promptService.isKnownCommand('anything')).to.be.false;
+        });
+    });
 });
 
 describe('CustomAgentDescription', () => {

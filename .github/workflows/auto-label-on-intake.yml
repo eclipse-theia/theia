@@ -24,11 +24,19 @@ jobs:
             // Update this map to match whatever label taxonomy the team settles on.
             // Keys must exactly match the dropdown options in report.yml.
             const typeToLabel = {
+<<<<<<< HEAD
               "Bug": "type: bug",
               "Feature": "type: feature",
               "Enhancement": "type: enhancement",
               "Question": "type: question",
             };
+=======
+            "Bug": "bug",
+            "Feature": "enhancement",
+            "Enhancement": "enhancement",
+            "Question": "question",
+          };
+>>>>>>> master
 
             // Issue forms render each field as "### <Label>\n\n<answer>".
             // This pulls out whatever follows the "### Type" heading, up to the next heading or end of body.

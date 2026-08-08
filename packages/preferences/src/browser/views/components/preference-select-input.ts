@@ -77,7 +77,25 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
         const root = createRoot(interactable);
         root.render(selectComponent);
         parent.appendChild(interactable);
+
+        this.addResizeHandler();
     }
+
+    protected addResizeHandler(): void {
+    const resizeHandler = () => {
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+    };
+    
+    window.addEventListener('resize', resizeHandler);
+
+    const dispose = this.dispose.bind(this);
+    this.dispose = () => {
+        window.removeEventListener('resize', resizeHandler);
+        dispose();
+    };
+}
 
     protected getFallbackValue(): JSONValue {
         const { default: schemaDefault, enum: enumValues } = this.preferenceNode.preference.data;
