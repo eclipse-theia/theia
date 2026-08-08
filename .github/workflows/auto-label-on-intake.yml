@@ -21,22 +21,15 @@ jobs:
           script: |
             const body = context.payload.issue.body || "";
 
-            // Update this map to match whatever label taxonomy the team settles on.
+            // Matches Theia's existing label set (no separate "feature" label exists,
+            // so Feature and Enhancement both map to "enhancement").
             // Keys must exactly match the dropdown options in report.yml.
             const typeToLabel = {
-<<<<<<< HEAD
-              "Bug": "type: bug",
-              "Feature": "type: feature",
-              "Enhancement": "type: enhancement",
-              "Question": "type: question",
+              "Bug": "bug",
+              "Feature": "enhancement",
+              "Enhancement": "enhancement",
+              "Question": "question",
             };
-=======
-            "Bug": "bug",
-            "Feature": "enhancement",
-            "Enhancement": "enhancement",
-            "Question": "question",
-          };
->>>>>>> master
 
             // Issue forms render each field as "### <Label>\n\n<answer>".
             // This pulls out whatever follows the "### Type" heading, up to the next heading or end of body.
@@ -56,8 +49,6 @@ jobs:
               return;
             }
 
-            // Make sure the label exists in the repo before applying it, so a missing
-            // label doesn't silently fail the whole run.
             try {
               await github.rest.issues.getLabel({
                 owner: context.repo.owner,
