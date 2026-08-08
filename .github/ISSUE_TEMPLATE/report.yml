@@ -1,5 +1,5 @@
 name: Issue Report
-description: Report a bug, request a feature, suggest an enhancement, or ask a question.
+description: Report a bug, request a feature, or suggest an enhancement.
 title: "[<type>] <short summary>"
 labels: []
 body:
@@ -8,6 +8,13 @@ body:
       value: |
         Thanks for taking the time to file this issue. Please fill out the fields below —
         the **Type** field determines which label gets applied automatically.
+
+        **Note:** This template is not meant for security vulnerability disclosures.
+        Any such issue created here will be removed on sight. Please report vulnerabilities
+        to the Eclipse Foundation's security team instead — see SECURITY.md in the repository root.
+
+        Have a question instead of a bug/feature? Please use
+        [GitHub Discussions](https://github.com/eclipse-theia/theia/discussions) rather than filing an issue.
 
   - type: dropdown
     id: type
@@ -18,7 +25,6 @@ body:
         - Bug
         - Feature
         - Enhancement
-        - Question
     validations:
       required: true
 
@@ -47,6 +53,14 @@ body:
     attributes:
       label: Expected Behavior
       description: What did you expect to happen? (For bugs) or what should the feature/enhancement do?
+    validations:
+      required: false
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: Which OS are you running, if applicable?
     validations:
       required: false
 
