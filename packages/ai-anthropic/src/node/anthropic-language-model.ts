@@ -72,6 +72,13 @@ const createMessageContent = (message: LanguageModelMessage, compactionEnabled: 
     } else if (LanguageModelMessage.isTextMessage(message)) {
         return [{ type: 'text', text: message.text }];
     } else if (LanguageModelMessage.isThinkingMessage(message)) {
+        // Anthropic rejects replayed thinking blocks without content ('each thinking block must contain thinking')
+        // or without a signature. Both can reach us from API-compatible endpoints that omit thinking text or
+        // signature deltas, and from streams cancelled before the signature arrived. Returning [] drops the block
+        // so the surrounding history still replays.
+        if (!message.thinking.trim() || !message.signature) {
+            return [];
+        }
         return [{ signature: message.signature, thinking: message.thinking, type: 'thinking' }];
     } else if (LanguageModelMessage.isToolUseMessage(message)) {
         return [{ id: message.id, input: message.input, name: message.name, type: 'tool_use' }];

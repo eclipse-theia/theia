@@ -320,6 +320,55 @@ describe('AnthropicModel', () => {
         });
     });
 
+    describe('transformToAnthropicParams thinking blocks', () => {
+        function thinkingMessage(thinking: string, signature: string): LanguageModelMessage {
+            return { actor: 'ai', type: 'thinking', thinking, signature };
+        }
+
+        function userText(text: string): LanguageModelMessage {
+            return { actor: 'user', type: 'text', text };
+        }
+
+        function thinkingBlocks(messages: MessageParam[]): Anthropic.Messages.ContentBlockParam[] {
+            return messages.flatMap(message => Array.isArray(message.content) ? message.content : [])
+                .filter(block => block.type === 'thinking');
+        }
+
+        it('drops a thinking block with empty thinking text, which Anthropic rejects on replay', () => {
+            const messages = [userText('do something'), thinkingMessage('', 'signature'), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.be.empty;
+            expect(JSON.stringify(result)).to.contain('do something');
+            expect(JSON.stringify(result)).to.contain('continue');
+        });
+
+        it('drops a thinking block whose thinking text is only whitespace', () => {
+            const messages = [thinkingMessage('  \n', 'signature'), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.be.empty;
+        });
+
+        it('drops a thinking block without a signature', () => {
+            const messages = [thinkingMessage('some reasoning', ''), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.be.empty;
+        });
+
+        it('keeps a signed thinking block that has content', () => {
+            const messages = [thinkingMessage('some reasoning', 'signature'), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.deep.equal([{ type: 'thinking', thinking: 'some reasoning', signature: 'signature' }]);
+        });
+    });
+
     describe('streaming token usage', () => {
         /**
          * Builds a mock Anthropic client whose messages.stream() yields
