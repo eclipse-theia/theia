@@ -32,6 +32,8 @@ export interface AnthropicModelDescription {
     useCaching: boolean;
     /** Maximum number of retry attempts when a request fails. Default is 3. */
     maxRetries: number;
+    /** Additional HTTP headers sent with every request to the endpoint, e.g. headers required by a gateway in front of the API. */
+    headers?: Record<string, string>;
     /** Resolved default enablement of server-side compaction (global preference folded with the per-provider override). Defaults to disabled when omitted. */
     serverSideCompactionEnabledByDefault?: boolean;
     /** Resolved default input-token threshold for server-side compaction. `undefined` preserves the provider default. */
