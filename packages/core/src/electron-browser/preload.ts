@@ -250,7 +250,7 @@ const api: TheiaCoreAPI = {
     useNativeElements: !('THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS' in process.env && process.env.THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS === '1'),
 
     updateRecentWorkspaces: (workspaceUris: string[], categoryName: string): void => { ipcRenderer.send(CHANNEL_UPDATE_RECENT_WORKSPACES, workspaceUris, categoryName); },
-    redeemLaunchArgs: (launchId: string): Promise<string[]> => ipcRenderer.invoke(CHANNEL_REDEEM_LAUNCH_ARGS, launchId)
+    redeemLaunchArgs: (): Promise<string[] | undefined> => ipcRenderer.invoke(CHANNEL_REDEEM_LAUNCH_ARGS)
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

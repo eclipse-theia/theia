@@ -59,23 +59,31 @@ describe('PreferenceFrontendContribution#resolveCliPreferences', () => {
         expect(contribution.sessionBackendCalls).to.equal(1);
     });
 
-    it('reads --session-preference from the forwarded argv on a second-instance window', async () => {
+    it('layers --session-preference from the forwarded argv on top of the backend values', async () => {
         contribution.forwardedArgv = ['--session-preference', 'editor.fontSize=20', '--attach-container', 'B'];
 
         const result = await contribution.resolve();
 
-        expect(result.session).to.deep.equal([['editor.fontSize', 20]]);
-        // The stale backend values (from the first launch) must not be consulted.
-        expect(contribution.sessionBackendCalls).to.equal(0);
-        expect(contribution.persistentBackendCalls).to.equal(0);
+        // Process-wide backend values are kept (base) and the forwarded value is added on top.
+        expect(result.session).to.deep.equal([['backend.session', 1], ['editor.fontSize', 20]]);
+        expect(result.persistent).to.deep.equal([['backend.persistent', 2]]);
+        expect(contribution.sessionBackendCalls).to.equal(1);
     });
 
-    it('reads --set-preference from the forwarded argv on a second-instance window', async () => {
+    it('layers --set-preference from the forwarded argv on top of the backend values', async () => {
         contribution.forwardedArgv = ['--set-preference', 'editor.tabSize=2'];
 
         const result = await contribution.resolve();
 
-        expect(result.persistent).to.deep.equal([['editor.tabSize', 2]]);
-        expect(result.session).to.deep.equal([]);
+        expect(result.persistent).to.deep.equal([['backend.persistent', 2], ['editor.tabSize', 2]]);
+        expect(result.session).to.deep.equal([['backend.session', 1]]);
+    });
+
+    it('lets a forwarded value override a same-key backend value', async () => {
+        contribution.forwardedArgv = ['--session-preference', 'backend.session=99'];
+
+        const result = await contribution.resolve();
+
+        expect(result.session).to.deep.equal([['backend.session', 99]]);
     });
 });

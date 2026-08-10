@@ -16,24 +16,33 @@
 
 import { injectable } from 'inversify';
 
+export const WindowLaunchArgs = Symbol('WindowLaunchArgs');
+
 /**
  * Provides the CLI arguments a window was launched with, when it was opened by a *forwarded*
- * (second-instance) launch. See the `second-instance` handling in `ElectronMainApplication`.
- *
- * The default (browser) implementation always reports "no launch arguments": there is no trusted
- * per-window launch channel in a plain browser deployment, and the window URL must never be treated
- * as one. Electron rebinds this to an implementation that redeems the arguments over the
- * authenticated IPC channel using the one-shot launch id from the window URL.
+ * (second-instance) launch. See the `second-instance` handling in `ElectronMainApplication`, and
+ * `LaunchArgsStore` for why the arguments are redeemed over a trusted channel rather than the URL.
  */
-@injectable()
-export class WindowLaunchArgs {
+export interface WindowLaunchArgs {
 
     /**
      * Returns the forwarded launch `argv` for the current window, or `undefined` when the window
-     * was not opened by a forwarded launch (a cold-start window, or any browser deployment). The
-     * result is cached, so repeated calls from different contributions observe the same arguments
-     * even though redemption is one-shot.
+     * was not opened by a forwarded launch (a cold-start window, or any browser deployment).
+     * Implementations cache the result, so repeated calls from different contributions observe the
+     * same arguments.
      */
+    getLaunchArgs(): Promise<string[] | undefined>;
+}
+
+/**
+ * Default (browser) implementation: there is no trusted per-window launch channel in a plain
+ * browser deployment, and the window URL must never be treated as one, so this always reports "no
+ * launch arguments". Electron rebinds {@link WindowLaunchArgs} to an implementation that redeems the
+ * arguments over the authenticated IPC channel.
+ */
+@injectable()
+export class DefaultWindowLaunchArgs implements WindowLaunchArgs {
+
     async getLaunchArgs(): Promise<string[] | undefined> {
         return undefined;
     }

@@ -19,12 +19,12 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { AttachContainerArgs, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { AbstractRemoteRegistryContribution } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
 import { ILogger, nls } from '@theia/core';
-import { ATTACH_PENDING_PARAM, LaunchArgv } from '@theia/core/lib/common/window';
+import { WINDOW_CLAIMED_PARAM, LaunchArgv } from '@theia/core/lib/common/window';
 import { WindowLaunchArgs } from '@theia/core/lib/browser/window/window-launch-args';
 import { RemotePreferences } from '@theia/remote/lib/electron-common/remote-preferences';
 import { ContainerOutputProvider } from './container-output-provider';
 import { DevContainerAttachScreen } from './dev-container-attach-screen';
-import { RemoteCliArgsCollector } from './remote-cli-args-collector';
+import { RemoteCliArgsCollector } from '@theia/remote/lib/electron-browser/remote-cli-args-collector';
 
 @injectable()
 export class DevContainerStartupContribution extends AbstractRemoteRegistryContribution implements FrontendApplicationContribution {
@@ -140,7 +140,6 @@ export class DevContainerStartupContribution extends AbstractRemoteRegistryContr
             this.logger.error('CLI: Failed to attach to container during startup:', e);
             const message = e instanceof Error ? e.message : String(e);
             this.attachScreen.reportError(message, {
-                // Returns the promise so callers/tests can await a retry; the button handler ignores it.
                 retry: () => this.runStartupAttach(args),
                 close: () => this.attachScreen.dispose()
             });
@@ -149,9 +148,9 @@ export class DevContainerStartupContribution extends AbstractRemoteRegistryContr
         }
     }
 
-    /** Whether this window was opened to attach to a container from the CLI (see {@link ATTACH_PENDING_PARAM}). */
+    /** Whether this window was claimed for a CLI-driven attach (see {@link WINDOW_CLAIMED_PARAM}). */
     protected isAttachPending(): boolean {
-        return new URLSearchParams(location.search).get(ATTACH_PENDING_PARAM) !== null; // eslint-disable-line no-null/no-null
+        return new URLSearchParams(location.search).get(WINDOW_CLAIMED_PARAM) !== null; // eslint-disable-line no-null/no-null
     }
 
     /**

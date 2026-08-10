@@ -36,7 +36,7 @@ import { ElectronSecurityTokenService } from './electron-security-token-service'
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 import Storage = require('electron-store');
 import { CancellationTokenSource, Disposable, DisposableCollection, Path, isOSX, isWindows } from '../common';
-import { ATTACH_PENDING_PARAM, DEFAULT_WINDOW_HASH, LAUNCH_ID_PARAM, LaunchArgv, WindowSearchParams } from '../common/window';
+import { DEFAULT_WINDOW_HASH, WINDOW_CLAIMED_PARAM, WindowSearchParams } from '../common/window';
 import { LaunchArgsStore } from './launch-args-store';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory } from './theia-electron-window';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
@@ -79,11 +79,12 @@ export interface ElectronMainCommandOptions {
     readonly argv?: string[];
 
     /**
-     * Whether this launch requests attaching to a remote target (e.g. `--attach-container`). When
-     * set, an empty window is opened (instead of restoring the last workspace) and the frontend is
-     * told to show its "attaching" screen until the window reloads into the remote.
+     * Whether an {@link ElectronMainApplicationContribution} has *claimed* this launch via its
+     * `claimsWindow` hook (e.g. a `--attach-container` launch claimed by `@theia/dev-container`).
+     * When set, an empty window is opened (instead of restoring the last workspace) and the frontend
+     * is told, via {@link WINDOW_CLAIMED_PARAM}, to show a placeholder until the window reloads.
      */
-    readonly attachRequested?: boolean;
+    readonly claimed?: boolean;
 }
 
 /**
@@ -118,6 +119,14 @@ export interface ElectronMainApplicationContribution {
      * The application is stopping. Contributions must perform only synchronous operations.
      */
     onStop?(application: ElectronMainApplication): void;
+    /**
+     * Whether this contribution *claims* responsibility for a window opened for the given launch
+     * `argv`, e.g. a `--attach-container` launch claimed by `@theia/dev-container`. A claimed launch
+     * opens an empty window (rather than restoring the last workspace) and is flagged to the
+     * frontend via {@link WINDOW_CLAIMED_PARAM}, so the responsible frontend contribution can show a
+     * placeholder while it takes over. Core itself stays agnostic of the concrete CLI options.
+     */
+    claimsWindow?(argv: string[]): MaybePromise<boolean>;
 }
 
 // Extracted and modified the functionality from `yargs@15.4.0-beta.0`.
@@ -274,7 +283,7 @@ export class ElectronMainApplication {
                         file: args.file,
                         cwd: process.cwd(),
                         secondInstance: false,
-                        attachRequested: this.isAttachRequested(argv)
+                        claimed: await this.isWindowClaimed(argv)
                     });
                 },
             ).parse();
@@ -464,6 +473,7 @@ export class ElectronMainApplication {
                 this.activeWindowStack.splice(stackIndex, 1);
             }
             this.windows.delete(id);
+            this.launchArgsStore.delete(id);
         });
         electronWindow.window.on('maximize', () => TheiaRendererAPI.sendWindowEvent(electronWindow.window.webContents, 'maximize'));
         electronWindow.window.on('unmaximize', () => TheiaRendererAPI.sendWindowEvent(electronWindow.window.webContents, 'unmaximize'));
@@ -543,18 +553,31 @@ export class ElectronMainApplication {
         }
     }
 
-    async openDefaultWindow(params?: WindowSearchParams): Promise<BrowserWindow> {
+    async openDefaultWindow(params?: WindowSearchParams, argv?: string[]): Promise<BrowserWindow> {
         const options = this.getDefaultTheiaWindowOptions();
         const [uri, electronWindow] = await Promise.all([this.createWindowUri(params), this.reuseOrCreateWindow(options)]);
+        this.stashLaunchArgs(electronWindow, argv);
         electronWindow.loadURL(uri.withFragment(DEFAULT_WINDOW_HASH).toString(true));
         return electronWindow;
     }
 
-    protected async openWindowWithWorkspace(workspacePath: string, params?: WindowSearchParams): Promise<BrowserWindow> {
+    protected async openWindowWithWorkspace(workspacePath: string, params?: WindowSearchParams, argv?: string[]): Promise<BrowserWindow> {
         const options = await this.getLastWindowOptions();
         const [uri, electronWindow] = await Promise.all([this.createWindowUri(params), this.reuseOrCreateWindow(options)]);
+        this.stashLaunchArgs(electronWindow, argv);
         electronWindow.loadURL(uri.withFragment(encodeURI(workspacePath)).toString(true));
         return electronWindow;
+    }
+
+    /**
+     * Associates a forwarded launch `argv` with the target window before it loads its URL, so the
+     * renderer can later redeem it over IPC (keyed by the window id) without the renderer being able
+     * to redeem before the arguments are stored. No-op for a cold-start launch (no `argv`).
+     */
+    protected stashLaunchArgs(window: BrowserWindow, argv?: string[]): void {
+        if (argv && argv.length > 0) {
+            this.launchArgsStore.store(window.webContents.id, argv);
+        }
     }
 
     protected async reuseOrCreateWindow(asyncOptions: MaybePromise<TheiaBrowserWindowOptions>): Promise<BrowserWindow> {
@@ -580,11 +603,12 @@ export class ElectronMainApplication {
         // there instead of being lost. Cold-start launches keep reading their args from the
         // shared backend and pass no params here.
         const params = this.getWindowSearchParams(options);
-        // A CLI attach opens an empty window rather than restoring the last workspace: the local
-        // workbench would only be discarded when the window reloads into the remote, so loading a
-        // real workspace behind the "attaching" screen wastes work and can trigger side effects.
-        if (options.attachRequested) {
-            await this.openDefaultWindow(params);
+        // A claimed launch (e.g. a CLI attach) opens an empty window rather than restoring the last
+        // workspace: the local workbench would only be discarded when the window reloads into the
+        // claimed target, so loading a real workspace behind the placeholder wastes work and can
+        // trigger side effects.
+        if (options.claimed) {
+            await this.openDefaultWindow(params, options.argv);
             return;
         }
         let workspacePath: string | undefined;
@@ -596,49 +620,54 @@ export class ElectronMainApplication {
             }
         }
         if (workspacePath !== undefined) {
-            await this.openWindowWithWorkspace(workspacePath, params);
+            await this.openWindowWithWorkspace(workspacePath, params, options.argv);
         } else {
             if (options.secondInstance === false) {
-                await this.openWindowWithWorkspace('', params); // restore previous workspace.
+                await this.openWindowWithWorkspace('', params, options.argv); // restore previous workspace.
             } else if (options.file === undefined) {
-                await this.openDefaultWindow(params);
+                await this.openDefaultWindow(params, options.argv);
             }
         }
     }
 
     /**
-     * Builds the search parameters passed to a newly created window. For forwarded
-     * (second-instance) launches this stashes the launch `argv` in the trusted main process and
-     * carries only a one-shot launch id in the URL, so that per-window CLI options can be redeemed
-     * and re-applied in the renderer without ever putting them on the untrusted URL. For CLI attach
-     * launches it flags the window so the frontend shows its "attaching" screen from the first paint.
+     * Builds the search parameters passed to a newly created window. The forwarded launch `argv` is
+     * *not* put here: it is stashed in the trusted main process keyed by the new window's id (see
+     * {@link openDefaultWindow}) and redeemed over authenticated IPC, so per-window CLI options never
+     * ride on the untrusted URL. For a claimed launch this only flags the window, via
+     * {@link WINDOW_CLAIMED_PARAM}, so the responsible frontend contribution can show a placeholder
+     * from the first paint.
      */
     protected getWindowSearchParams(options: ElectronMainCommandOptions): WindowSearchParams | undefined {
         const params: WindowSearchParams = {};
-        if (options.argv && options.argv.length > 0) {
-            params[LAUNCH_ID_PARAM] = this.launchArgsStore.store(options.argv);
-        }
-        if (options.attachRequested) {
-            params[ATTACH_PENDING_PARAM] = '1';
+        if (options.claimed) {
+            params[WINDOW_CLAIMED_PARAM] = '1';
         }
         return Object.keys(params).length > 0 ? params : undefined;
     }
 
     /**
-     * Redeems the forwarded launch `argv` previously stashed under `launchId`. Invoked over the
-     * authenticated Electron IPC channel by the window that carries the id. One-shot: a second
-     * redemption of the same id yields an empty array.
+     * Returns the forwarded launch `argv` stored for the window with the given `webContents` id, or
+     * `undefined` for a cold-start window. Invoked over the authenticated Electron IPC channel; the
+     * caller passes the IPC sender id, so a window can only read its own arguments. Repeatable for
+     * the window's lifetime, so a reload still observes them.
      */
-    redeemLaunchArgs(launchId: string): string[] {
-        return this.launchArgsStore.redeem(launchId);
+    redeemLaunchArgs(windowId: number): string[] | undefined {
+        return this.launchArgsStore.get(windowId);
     }
 
     /**
-     * Whether the given launch `argv` requests attaching to a remote target on startup, currently
-     * a dev container via `--attach-container`.
+     * Whether any {@link ElectronMainApplicationContribution} claims responsibility for a window
+     * opened for the given launch `argv` (see its `claimsWindow` hook). Core stays agnostic of the
+     * concrete CLI options; e.g. `@theia/dev-container` claims `--attach-container` launches.
      */
-    protected isAttachRequested(argv: string[]): boolean {
-        return LaunchArgv.getValue(argv, 'attach-container') !== undefined;
+    protected async isWindowClaimed(argv: string[]): Promise<boolean> {
+        for (const contribution of this.contributions.getContributions()) {
+            if (await contribution.claimsWindow?.(argv)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     async openUrl(url: string): Promise<void> {
@@ -911,7 +940,7 @@ export class ElectronMainApplication {
                             cwd: cwd,
                             secondInstance: true,
                             argv,
-                            attachRequested: this.isAttachRequested(argv)
+                            claimed: await this.isWindowClaimed(argv)
                         });
                     },
                 ).parse();

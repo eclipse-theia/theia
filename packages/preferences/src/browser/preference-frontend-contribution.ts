@@ -63,19 +63,14 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
     /**
      * Resolves the CLI-provided preferences to apply to this window.
      *
-     * A forwarded (second-instance) launch carries its CLI arguments, redeemed here from the trusted
-     * main process. For such windows those arguments are the only source, because the shared backend
-     * still reflects the original cold-start launch and cannot distinguish between windows. A
-     * cold-start window has no forwarded arguments and reads them from the backend instead.
+     * The shared backend reflects the original cold-start launch (it cannot distinguish between
+     * windows), so it supplies the process-wide CLI preferences. A forwarded (second-instance)
+     * window additionally carries its own arguments, redeemed here from the trusted main process, and
+     * layers them on top, overriding by key. Merging (rather than replacing) means a plain
+     * second-instance window keeps the process-wide values instead of dropping them, while an attach
+     * window still gets its own overrides.
      */
     protected async resolveCliPreferences(): Promise<{ session: [string, unknown][], persistent: [string, unknown][] }> {
-        const forwarded = await this.launchArgs.getLaunchArgs();
-        if (forwarded !== undefined) {
-            return {
-                session: CliPreferenceEntry.parseAll(LaunchArgv.getValues(forwarded, 'session-preference')),
-                persistent: CliPreferenceEntry.parseAll(LaunchArgv.getValues(forwarded, 'set-preference'))
-            };
-        }
         // Fetch both buckets in parallel; both are RPC hops to the same backend and
         // can overlap with the preference service initialising its providers.
         const [session, persistent] = await Promise.all([
@@ -88,7 +83,23 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
                 return [] as [string, unknown][];
             })
         ]);
-        return { session, persistent };
+        const forwarded = await this.launchArgs.getLaunchArgs();
+        if (forwarded === undefined) {
+            return { session, persistent };
+        }
+        return {
+            session: this.mergeEntries(session, CliPreferenceEntry.parseAll(LaunchArgv.getValues(forwarded, 'session-preference'))),
+            persistent: this.mergeEntries(persistent, CliPreferenceEntry.parseAll(LaunchArgv.getValues(forwarded, 'set-preference')))
+        };
+    }
+
+    /** Overlays `overrides` onto `base`, later entries winning per key while preserving order (base first). */
+    protected mergeEntries(base: ReadonlyArray<[string, unknown]>, overrides: ReadonlyArray<[string, unknown]>): [string, unknown][] {
+        const merged = new Map<string, unknown>();
+        for (const [key, value] of [...base, ...overrides]) {
+            merged.set(key, value);
+        }
+        return [...merged];
     }
 
     /**

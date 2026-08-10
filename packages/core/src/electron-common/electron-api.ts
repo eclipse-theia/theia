@@ -108,12 +108,12 @@ export interface TheiaCoreAPI {
     updateRecentWorkspaces(workspaceUris: string[], categoryName: string): void;
 
     /**
-     * Redeems the CLI arguments of a *forwarded* launch that the main process stashed under the
-     * given one-shot `launchId` (see `LAUNCH_ID_PARAM`). Returns the `argv` and discards it, so a
-     * second redemption of the same id yields an empty array. The arguments travel over this
-     * authenticated IPC channel instead of the window URL, keeping them off an untrusted channel.
+     * Redeems the CLI arguments of a *forwarded* launch for the calling window. The main process
+     * identifies the window by the IPC sender and returns the `argv` it stored for it (or
+     * `undefined` for a cold-start window). The arguments travel over this authenticated IPC channel
+     * instead of the window URL; see `LaunchArgsStore` for the rationale.
      */
-    redeemLaunchArgs(launchId: string): Promise<string[]>;
+    redeemLaunchArgs(): Promise<string[] | undefined>;
 }
 
 declare global {

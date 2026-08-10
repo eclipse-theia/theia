@@ -34,37 +34,32 @@ export interface WindowSearchParams {
 }
 
 /**
- * Query parameter carrying a one-shot, opaque identifier for the CLI arguments of a *forwarded*
- * launch (i.e. a second launch of the app while an instance is already running, whose `argv`
- * Electron delivers to the primary instance via the `second-instance` event).
+ * Query parameter set on a window whose contents a main-process `ElectronMainApplicationContribution`
+ * has *claimed* (see its `claimsWindow` hook), e.g. a window opened from the CLI to attach to a
+ * remote target. It is a synchronous, first-paint hint that lets the responsible frontend
+ * contribution show a dedicated placeholder (such as an "attaching" screen) instead of briefly
+ * exposing an interactive local workbench that is about to be replaced when the window reloads.
  *
- * The arguments themselves are never placed in the URL: the URL is the one channel that carries
- * no trust (in a browser deployment it is attacker-writable), so putting `--session-preference`
- * or similar there would let a crafted link inject settings. Instead the Electron main process
- * keeps the `argv` keyed by this identifier and the window redeems it once, over the authenticated
- * Electron IPC channel, via {@link WindowSearchParams}. See `WindowLaunchArgs`.
+ * The flag carries no sensitive data and, deliberately, no instructions: the claiming contribution
+ * (not core) knows what `--attach-container` and similar mean. The actual per-window CLI options are
+ * never placed in the URL; they are redeemed over the authenticated IPC channel. See `LaunchArgsStore`.
  */
-export const LAUNCH_ID_PARAM = 'launchId';
-
-/**
- * Query parameter set on a window that is being opened to attach to a remote target from the CLI
- * (e.g. `--attach-container`). It lets the frontend show a dedicated "attaching" screen from the
- * very first paint, instead of briefly exposing an interactive local workbench that is about to be
- * replaced when the window reloads into the remote. This flag carries no sensitive data; it only
- * controls whether the transient "attaching" screen is shown.
- */
-export const ATTACH_PENDING_PARAM = 'attachPending';
+export const WINDOW_CLAIMED_PARAM = 'windowClaimed';
 
 /**
  * Dependency-free helpers to read individual CLI options out of a launch `argv`. Usable both in
  * the Electron main process (to inspect a forwarded launch) and in the renderer (to apply the
  * redeemed options to the current window).
+ *
+ * The grammar intentionally mirrors what yargs accepts on cold start for the same flags: a value
+ * given as either `--name value` or `--name=value`, options repeatable to yield multiple values,
+ * and a token that itself looks like an option (starts with `-`) never consumed as a value.
  */
 export namespace LaunchArgv {
 
     /**
      * Returns the last value of a `--name value` or `--name=value` option, or `undefined` if
-     * the option is absent. A token starting with `--` is never consumed as a value.
+     * the option is absent. A token starting with `-` is never consumed as a value.
      */
     export function getValue(argv: string[], name: string): string | undefined {
         const values = getValues(argv, name);
@@ -83,7 +78,8 @@ export namespace LaunchArgv {
                 result.push(token.substring(inline.length));
             } else if (token === `--${name}`) {
                 const next = argv[i + 1];
-                if (next !== undefined && !next.startsWith('--')) {
+                // Like yargs, do not consume a following option-looking token (`-x`/`--x`) as the value.
+                if (next !== undefined && !next.startsWith('-')) {
                     result.push(next);
                     i++;
                 }

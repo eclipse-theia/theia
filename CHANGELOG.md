@@ -7,6 +7,7 @@
 ## 1.75.0 - tbd
 
 - [ai-ide] added an opt-in "Memory" prompt capability that lets agents maintain a wiki-style knowledge base per workspace, stored in the workspace metadata store and exposed to prompts via the new `{{memoryDirectory}}` variable [#17865](https://github.com/eclipse-theia/theia/pull/17865)
+- [core, dev-container, preferences, remote] fixed attaching to a dev container from the CLI while an instance is already running, and added a dedicated attach screen for that startup [#17801](https://github.com/eclipse-theia/theia/pull/17801)
 - [core, monaco] fixed Monaco theme CSS, `SelectComponent` dropdown placement, and the OS font class in secondary windows [#17874](https://github.com/eclipse-theia/theia/pull/17874)
 - [plugin-ext] moved scanner, manifest, and localization helpers to `@theia/plugin-utils` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
 - [plugin-utils] added `@theia/plugin-utils` for shared plugin manifest utilities; browser-only builds prepare plugins into `hostedPlugin/` with `list.json` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
@@ -18,6 +19,8 @@
 
 - [ai-ide] removed `WorkspaceFunctionScope.ensureWithinWorkspace(targetUri, workspaceRootUri)`. Every path-taking AI tool now resolves and checks its argument through `WorkspaceFunctionScope.resolveAccessiblePath(pathOrUri)`, which in addition to the workspace roots accepts locations covered by the `ai-features.workspaceFunctions.allowedExternalPaths` preference or contributed via the new `AccessibleRootContribution`. Adopters that called `ensureWithinWorkspace`, or `resolveRelativePath` followed by their own boundary check, should call `resolveAccessiblePath` instead [#17865](https://github.com/eclipse-theia/theia/pull/17865)
 - [core] added `onWindowLoaded` to the `SecondaryWindowService` interface; adopters implementing the interface from scratch (rather than extending `DefaultSecondaryWindowService`) must provide it [#17874](https://github.com/eclipse-theia/theia/pull/17874)
+- [core] added the required member `redeemLaunchArgs(): Promise<string[] | undefined>` to `TheiaCoreAPI` (`@theia/core/lib/electron-common/electron-api`); adopters with a custom Electron preload script, or with a test double implementing `TheiaCoreAPI`, must provide it [#17801](https://github.com/eclipse-theia/theia/pull/17801)
+- [dev-container] added an `electronMain` entry point to `@theia/dev-container` (`lib/electron-main/dev-container-electron-main-module`); Electron adopters that assemble their extension list manually must include it, otherwise a `--attach-container` launch into a running instance opens a regular window instead of attaching [#17801](https://github.com/eclipse-theia/theia/pull/17801)
 - [monaco] removed the `protected secondaryWindowHandler` field from `MonacoFrontendApplicationContribution`; the Monaco theme stylesheet is now injected into every secondary window via `SecondaryWindowService.onWindowLoaded` [#17874](https://github.com/eclipse-theia/theia/pull/17874)
 - [plugin-ext] aliased `DebuggerContribution` to `PluginPackageDebuggersContribution` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
 - [plugin-ext] changed `Keybinding.args` from `any` to `unknown` [#17758](https://github.com/eclipse-theia/theia/pull/17758)

@@ -24,7 +24,7 @@ import { WorkspaceStorageService } from '@theia/workspace/lib/browser/workspace-
 import { Command, ILogger, MaybePromise, MessageService, nls, QuickInputService, URI } from '@theia/core';
 import { WorkspaceInput, WorkspaceOpenHandlerContribution, WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { ContainerOutputProvider } from './container-output-provider';
-import { RemoteCliArgsCollector } from './remote-cli-args-collector';
+import { RemoteCliArgsCollector } from '@theia/remote/lib/electron-browser/remote-cli-args-collector';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import { DEV_CONTAINER_PATH_QUERY, DEV_CONTAINER_WORKSPACE_SCHEME } from '../electron-common/dev-container-workspaces';
 import { RemotePreferences } from '@theia/remote/lib/electron-common/remote-preferences';
