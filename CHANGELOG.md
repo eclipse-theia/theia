@@ -6,6 +6,7 @@
 
 ## 1.75.0 - tbd
 
+- [ai-anthropic, ai-openai] added support for custom HTTP headers on custom model endpoints [#17907](https://github.com/eclipse-theia/theia/pull/17907) - Contributed on behalf of K2view
 - [ai-ide] added an opt-in "Memory" prompt capability that lets agents maintain a wiki-style knowledge base per workspace, stored in the workspace metadata store and exposed to prompts via the new `{{memoryDirectory}}` variable [#17865](https://github.com/eclipse-theia/theia/pull/17865)
 - [core, monaco] fixed Monaco theme CSS, `SelectComponent` dropdown placement, and the OS font class in secondary windows [#17874](https://github.com/eclipse-theia/theia/pull/17874)
 - [plugin-ext] moved scanner, manifest, and localization helpers to `@theia/plugin-utils` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
