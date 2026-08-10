@@ -138,6 +138,9 @@ export class ScmHistoryGraphWidget extends ReactWidget {
         const provider = this.model.provider;
         this.scmContextKeys.scmCurrentHistoryItemRefHasRemote.set(!!provider?.currentHistoryItemRemoteRef);
         this.scmContextKeys.scmCurrentHistoryItemRefHasBase.set(!!provider?.currentHistoryItemBaseRef);
+        // The graph has no ref filter yet, so the current ref is always considered part of it.
+        // Commands like git.pullRef/git.pushRef gate their enablement on this key.
+        this.scmContextKeys.scmCurrentHistoryItemRefInFilter.set(!!provider?.currentHistoryItemRef);
     }
 
     protected render(): React.ReactNode {
