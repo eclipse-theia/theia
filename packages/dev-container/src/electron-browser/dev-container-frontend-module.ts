@@ -21,7 +21,6 @@ import { RemoteContainerConnectionProvider, RemoteContainerConnectionProviderPat
 import { ContainerConnectionContribution } from './container-connection-contribution';
 import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ContainerOutputProvider } from './container-output-provider';
-import { RemoteCliArgsCollector } from './remote-cli-args-collector';
 import { ContainerInfoContribution } from './container-info-contribution';
 import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import { WorkspaceOpenHandlerContribution } from '@theia/workspace/lib/browser/workspace-service';
@@ -36,7 +35,6 @@ export default new ContainerModule(bind => {
     bind(WorkspaceOpenHandlerContribution).toService(ContainerConnectionContribution);
 
     bind(ContainerOutputProvider).toSelf().inSingletonScope();
-    bind(RemoteCliArgsCollector).toSelf().inSingletonScope();
     bindDevContainerPreferences(bind);
 
     bind(RemoteContainerConnectionProvider).toDynamicValue(ctx => {

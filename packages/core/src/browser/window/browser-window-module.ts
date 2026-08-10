@@ -25,7 +25,7 @@ import { DefaultSecondaryWindowService } from './default-secondary-window-servic
 import { bindRootContributionProvider } from '../../common';
 import { WindowTitleContribution } from './window-title-service';
 import { WindowFocusService } from './window-focus-service';
-import { WindowLaunchArgs } from './window-launch-args';
+import { DefaultWindowLaunchArgs, WindowLaunchArgs } from './window-launch-args';
 
 export default new ContainerModule(bind => {
     bind(DefaultWindowService).toSelf().inSingletonScope();
@@ -34,6 +34,7 @@ export default new ContainerModule(bind => {
     bind(ClipboardService).to(BrowserClipboardService).inSingletonScope();
     bind(SecondaryWindowService).to(DefaultSecondaryWindowService).inSingletonScope();
     bind(WindowFocusService).toSelf().inSingletonScope();
-    bind(WindowLaunchArgs).toSelf().inSingletonScope();
+    bind(DefaultWindowLaunchArgs).toSelf().inSingletonScope();
+    bind(WindowLaunchArgs).toService(DefaultWindowLaunchArgs);
     bindRootContributionProvider(bind, WindowTitleContribution);
 });

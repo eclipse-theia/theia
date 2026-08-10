@@ -40,6 +40,7 @@ import { envVariablesPath, EnvVariablesServer } from '@theia/core/lib/common/env
 import { WorkspaceHandlingContribution, WorkspaceOpenHandlerContribution } from '@theia/workspace/lib/browser';
 import { RemoteLocalWorkspaceContribution } from './remote-local-workspace-contribution';
 import { FileServiceContribution } from '@theia/filesystem/lib/browser/file-service';
+import { RemoteCliArgsCollector } from './remote-cli-args-collector';
 
 export default new ContainerModule((bind, _, __, rebind) => {
     bind(RemoteFrontendContribution).toSelf().inSingletonScope();
@@ -55,6 +56,8 @@ export default new ContainerModule((bind, _, __, rebind) => {
     rebind(ElectronFileDialogService).to(RemoteElectronFileDialogService).inSingletonScope();
 
     bind(RemoteService).toSelf().inSingletonScope();
+
+    bind(RemoteCliArgsCollector).toSelf().inSingletonScope();
 
     bind(PortForwardingWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({

@@ -52,7 +52,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     // `browser-window-module` (which binds `WindowLaunchArgs`) is not loaded in Electron, since the
     // `window` extension provides `electron-window-module` as its `frontendElectron` replacement.
     // Bind here directly, mirroring how `WindowService` is bound in each of the two modules.
-    bind(WindowLaunchArgs).to(ElectronWindowLaunchArgs).inSingletonScope();
+    bind(ElectronWindowLaunchArgs).toSelf().inSingletonScope();
+    bind(WindowLaunchArgs).toService(ElectronWindowLaunchArgs);
     bind(SecondaryWindowService).to(ElectronSecondaryWindowService).inSingletonScope();
     bind(ExternalAppOpenHandler).toSelf().inSingletonScope();
     bind(OpenHandler).toService(ExternalAppOpenHandler);

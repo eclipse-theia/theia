@@ -19,31 +19,38 @@ import { LaunchArgsStore } from './launch-args-store';
 
 describe('LaunchArgsStore', () => {
 
-    it('redeems the stored argv for its launch id', () => {
+    it('returns the stored argv for its window id', () => {
         const store = new LaunchArgsStore();
         const argv = ['--attach-container', 'B', '--session-preference', 'foo=1'];
-        const id = store.store(argv);
-        expect(store.redeem(id)).to.deep.equal(argv);
+        store.store(1, argv);
+        expect(store.get(1)).to.deep.equal(argv);
     });
 
-    it('is one-shot: a second redemption of the same id yields an empty array', () => {
+    it('keeps the argv for the window lifetime, so a reload still sees it', () => {
         const store = new LaunchArgsStore();
-        const id = store.store(['--attach-container', 'B']);
-        store.redeem(id);
-        expect(store.redeem(id)).to.deep.equal([]);
+        store.store(1, ['--attach-container', 'B']);
+        expect(store.get(1)).to.deep.equal(['--attach-container', 'B']);
+        // a second read (e.g. after a reload) still returns the arguments
+        expect(store.get(1)).to.deep.equal(['--attach-container', 'B']);
     });
 
-    it('returns an empty array for an unknown id', () => {
+    it('returns undefined for an unknown (cold-start) window id', () => {
         const store = new LaunchArgsStore();
-        expect(store.redeem('does-not-exist')).to.deep.equal([]);
+        expect(store.get(42)).to.equal(undefined);
     });
 
-    it('keeps entries independent and hands out distinct ids', () => {
+    it('drops the argv once the window is deleted', () => {
         const store = new LaunchArgsStore();
-        const idA = store.store(['A']);
-        const idB = store.store(['B']);
-        expect(idA).to.not.equal(idB);
-        expect(store.redeem(idB)).to.deep.equal(['B']);
-        expect(store.redeem(idA)).to.deep.equal(['A']);
+        store.store(1, ['A']);
+        store.delete(1);
+        expect(store.get(1)).to.equal(undefined);
+    });
+
+    it('keeps entries independent per window id', () => {
+        const store = new LaunchArgsStore();
+        store.store(1, ['A']);
+        store.store(2, ['B']);
+        expect(store.get(2)).to.deep.equal(['B']);
+        expect(store.get(1)).to.deep.equal(['A']);
     });
 });

@@ -15,39 +15,52 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { generateUuid } from '../common/uuid';
 
 /**
  * Holds the CLI arguments of *forwarded* launches (see the `second-instance` handling in
- * `ElectronMainApplication`) in the trusted Electron main process, keyed by a one-shot,
- * unguessable launch id.
+ * `ElectronMainApplication`) in the trusted Electron main process, keyed by the `webContents` id of
+ * the window that was opened for them.
  *
- * The id travels to the new window through its URL while the arguments stay here, and the window
- * redeems them once over the authenticated Electron IPC channel. This keeps per-window options such
- * as `--session-preference` off the untrusted URL, where a crafted link could otherwise inject them
- * in a browser deployment.
+ * ### Why the arguments never travel on the window URL
+ *
+ * The URL is the one channel in the system that carries no trust: in a browser deployment it is
+ * attacker-writable, so putting per-window options such as `--session-preference` there would let a
+ * crafted link inject settings (some of which persist to the User scope). The arguments therefore
+ * stay here in the main process, and the window reads them back over the authenticated Electron IPC
+ * channel, where main identifies the calling window by `event.sender.id` rather than by any value
+ * from the URL. This is the single place that documents that rationale; other files point here.
+ *
+ * The entry is kept for the lifetime of the window (not consumed on first read) so that a plain
+ * `Reload Window`, which re-runs the renderer against the same window, still observes the arguments.
+ * It is removed when the window is closed.
  */
 @injectable()
 export class LaunchArgsStore {
 
-    protected readonly argsById = new Map<string, string[]>();
+    protected readonly argsByWindowId = new Map<number, string[]>();
 
     /**
-     * Stores an `argv` and returns the one-shot id under which the window can redeem it.
+     * Associates a forwarded launch `argv` with the window identified by `windowId` (its
+     * `webContents` id). Must be called before the window loads its URL, so the renderer cannot
+     * redeem before the arguments are stored.
      */
-    store(argv: string[]): string {
-        const id = generateUuid();
-        this.argsById.set(id, argv);
-        return id;
+    store(windowId: number, argv: string[]): void {
+        this.argsByWindowId.set(windowId, argv);
     }
 
     /**
-     * Returns the `argv` stored under `id` and discards it, so it can be redeemed at most once.
-     * Returns an empty array for an unknown or already-redeemed id.
+     * Returns the forwarded launch `argv` for the window identified by `windowId`, or `undefined`
+     * for a window that was not opened by a forwarded launch (a cold-start window). Repeatable for
+     * the lifetime of the window, so a reload still sees the arguments.
      */
-    redeem(id: string): string[] {
-        const argv = this.argsById.get(id);
-        this.argsById.delete(id);
-        return argv ?? [];
+    get(windowId: number): string[] | undefined {
+        return this.argsByWindowId.get(windowId);
+    }
+
+    /**
+     * Drops the arguments stored for `windowId`. Called when the window is closed.
+     */
+    delete(windowId: number): void {
+        this.argsByWindowId.delete(windowId);
     }
 }

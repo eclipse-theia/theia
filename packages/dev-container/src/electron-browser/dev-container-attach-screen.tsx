@@ -19,11 +19,11 @@ import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import { codicon, ReactWidget, Widget } from '@theia/core/lib/browser';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
-import { nls } from '@theia/core';
+import { MaybePromise, nls } from '@theia/core';
 
 export interface AttachScreenErrorActions {
-    /** Re-run the attach. */
-    retry: () => void;
+    /** Re-run the attach. May be asynchronous; callers/tests can await it, the button handler ignores the result. */
+    retry: () => MaybePromise<void>;
     /** Dismiss the screen and reveal the (empty) local window. */
     close: () => void;
 }

@@ -15,19 +15,18 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import { ILogger } from '../../common/logger';
+import { MockLogger } from '../../common/test/mock-logger';
 import { ElectronWindowLaunchArgs } from './electron-window-launch-args';
 
 class TestElectronWindowLaunchArgs extends ElectronWindowLaunchArgs {
     redeemCalls = 0;
-    constructor(protected launchId: string | undefined, protected result: string[] | Error) {
+    constructor(protected result: string[] | undefined | Error) {
         super();
+        (this as unknown as { logger: ILogger }).logger = new MockLogger();
     }
 
-    protected override getLaunchId(): string | undefined {
-        return this.launchId;
-    }
-
-    protected override redeemFromMain(launchId: string): Promise<string[]> {
+    protected override redeemFromMain(): Promise<string[] | undefined> {
         this.redeemCalls++;
         if (this.result instanceof Error) {
             return Promise.reject(this.result);
@@ -38,20 +37,19 @@ class TestElectronWindowLaunchArgs extends ElectronWindowLaunchArgs {
 
 describe('ElectronWindowLaunchArgs', () => {
 
-    it('returns undefined for a cold-start window (no launch id)', async () => {
-        const service = new TestElectronWindowLaunchArgs(undefined, ['--attach-container', 'B']);
+    it('returns undefined for a cold-start window (main has no stored argv)', async () => {
+        const service = new TestElectronWindowLaunchArgs(undefined);
         expect(await service.getLaunchArgs()).to.be.undefined;
-        expect(service.redeemCalls).to.equal(0);
     });
 
-    it('redeems the forwarded argv when a launch id is present', async () => {
+    it('redeems the forwarded argv for a claimed window', async () => {
         const argv = ['--attach-container', 'B', '--session-preference', 'foo=1'];
-        const service = new TestElectronWindowLaunchArgs('nonce-1', argv);
+        const service = new TestElectronWindowLaunchArgs(argv);
         expect(await service.getLaunchArgs()).to.deep.equal(argv);
     });
 
-    it('redeems only once even when called concurrently and repeatedly', async () => {
-        const service = new TestElectronWindowLaunchArgs('nonce-1', ['--attach-container', 'B']);
+    it('redeems only once per page load even when called concurrently and repeatedly', async () => {
+        const service = new TestElectronWindowLaunchArgs(['--attach-container', 'B']);
         const [a, b] = await Promise.all([service.getLaunchArgs(), service.getLaunchArgs()]);
         const c = await service.getLaunchArgs();
         expect(a).to.deep.equal(['--attach-container', 'B']);
@@ -60,8 +58,8 @@ describe('ElectronWindowLaunchArgs', () => {
         expect(service.redeemCalls).to.equal(1);
     });
 
-    it('treats a redemption failure as a forwarded window with no args (does not fall back)', async () => {
-        const service = new TestElectronWindowLaunchArgs('nonce-1', new Error('ipc failed'));
-        expect(await service.getLaunchArgs()).to.deep.equal([]);
+    it('treats a redemption failure as "no forwarded args" (falls back to the backend)', async () => {
+        const service = new TestElectronWindowLaunchArgs(new Error('ipc failed'));
+        expect(await service.getLaunchArgs()).to.be.undefined;
     });
 });

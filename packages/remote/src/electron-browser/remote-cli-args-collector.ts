@@ -19,10 +19,10 @@ import { ContributionProvider, ILogger } from '@theia/core';
 import { RemoteCliArgsContribution } from '@theia/core/lib/common/remote-cli-args-contribution';
 
 /**
- * Collects the extra CLI arguments to pass to a container's remote backend from all
+ * Collects the extra CLI arguments to pass to a remote backend from all
  * {@link RemoteCliArgsContribution}s. This carries per-window options (e.g. the forwarded
  * `--session-preference` values of a second-instance window) that the shared local backend cannot
- * provide. Shared by the CLI startup attach and the manual attach so both stay consistent.
+ * provide. Usable by any remote attach flow (dev container, SSH) so they stay consistent.
  */
 @injectable()
 export class RemoteCliArgsCollector {
@@ -30,7 +30,7 @@ export class RemoteCliArgsCollector {
     @inject(ContributionProvider) @named(RemoteCliArgsContribution)
     protected readonly contributions: ContributionProvider<RemoteCliArgsContribution>;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('remote:RemoteCliArgsCollector')
     protected readonly logger: ILogger;
 
     async collect(): Promise<string[]> {

@@ -39,6 +39,10 @@ describe('LaunchArgv', () => {
         it('does not treat a following flag as the value', () => {
             expect(LaunchArgv.getValue(['--attach-container', '--dev-json'], 'attach-container')).to.be.undefined;
         });
+
+        it('does not treat a following short option as the value (matches yargs)', () => {
+            expect(LaunchArgv.getValue(['--attach-container', '-x'], 'attach-container')).to.be.undefined;
+        });
     });
 
     describe('getValues', () => {
