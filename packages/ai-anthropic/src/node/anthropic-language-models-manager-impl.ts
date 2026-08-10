@@ -95,7 +95,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 maxInputTokens: metadata.maxInputTokens,
                 serverSideCompactionSupport: metadata.serverSideCompactionSupport,
                 serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false,
-                serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault
+                serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault,
+                headers: modelDescription.headers
             });
         } else {
             this.languageModelRegistry.addLanguageModels([
@@ -117,7 +118,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                     ANTHROPIC_SERVER_TOOLS,
                     metadata.serverSideCompactionSupport,
                     modelDescription.serverSideCompactionEnabledByDefault ?? false,
-                    modelDescription.serverSideCompactionTokenThresholdByDefault
+                    modelDescription.serverSideCompactionTokenThresholdByDefault,
+                    modelDescription.headers
                 )
             ]);
         }
@@ -194,7 +196,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
         const anthropic = new Anthropic({
             apiKey,
             baseURL: modelDescription.url,
-            fetch: createProxyFetch(proxyUrl)
+            fetch: createProxyFetch(proxyUrl),
+            defaultHeaders: modelDescription.headers
         });
         return anthropic.models.retrieve(modelDescription.model);
     }
