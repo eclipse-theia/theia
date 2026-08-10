@@ -99,6 +99,8 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
             \n\
             - specify `maxRetries: <number>` to indicate the maximum number of retries when a request fails. 3 by default.\
             \n\
+            - specify `headers` to send additional HTTP headers with every request to the endpoint, e.g. headers required by a gateway in front of the API.\
+            \n\
             Reasoning capabilities and the maximum output token limit are derived from the endpoint\'s `/v1/models` response.'),
             default: [],
             items: {
@@ -135,6 +137,12 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
                         type: 'number',
                         title: nls.localize('theia/ai/anthropic/customEndpoints/maxRetries/title',
                             'Maximum number of retries when a request fails. 3 by default'),
+                    },
+                    headers: {
+                        type: 'object',
+                        additionalProperties: { type: 'string' },
+                        title: nls.localize('theia/ai/anthropic/customEndpoints/headers/title',
+                            'Additional HTTP headers sent with every request to the endpoint'),
                     }
                 }
             }

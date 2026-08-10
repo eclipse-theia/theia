@@ -360,6 +360,19 @@ export function resolveCompactionTokenThresholdDefault(
     return perProviderThreshold ?? globalThreshold;
 }
 
+/**
+ * Resolves the `headers` attribute of a custom model preference entry. Since preferences are
+ * user-authored JSON, entries with a non-string value are dropped. Returns `undefined` when no
+ * usable header remains, so that the default request headers are left untouched.
+ */
+export function resolveCustomModelHeaders(headers: unknown): Record<string, string> | undefined {
+    if (typeof headers !== 'object' || !headers || Array.isArray(headers)) {
+        return undefined;
+    }
+    const resolved = Object.entries(headers).filter((entry): entry is [string, string] => typeof entry[1] === 'string');
+    return resolved.length > 0 ? Object.fromEntries(resolved) : undefined;
+}
+
 export function resolveCompactionTokenThreshold(
     thresholdByDefault: number | undefined,
     compaction: CompactionSettings | undefined
