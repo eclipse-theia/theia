@@ -24,7 +24,7 @@ import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { StandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneThemeService';
 import { Color } from '@theia/monaco-editor-core/esm/vs/base/common/color';
-import { MixStandaloneTheme, TextmateRegistryFactory, ThemeMix } from './monaco-theme-types';
+import { MixStandaloneTheme, MonacoThemeColor, TextmateRegistryFactory, ThemeMix } from './monaco-theme-types';
 import { ILogger } from '@theia/core';
 import { ThemeType } from '@theia/core/lib/common/theme';
 
@@ -73,6 +73,17 @@ export class MonacoThemeRegistry {
     }
 
     setTheme(name: string, data: ThemeMix): void {
+        // normalize colors as monaco rejects shorthand hex like #000 for token colors
+        for (const key of Object.keys(data.colors)) {
+            data.colors[key] = MonacoThemeColor.expandShorthandHex(data.colors[key]);
+        }
+        // monaco lifts these into token rules and throws on other formats, keeping the previous editor theme
+        for (const key of ['editor.foreground', 'editor.background']) {
+            if (key in data.colors && !MonacoThemeColor.isTokenColor(data.colors[key])) {
+                this.logger.warn(`Dropping color '${key}' of theme '${name}': monaco rejects '${data.colors[key]}'`);
+                delete data.colors[key];
+            }
+        }
         // monaco auto refreshes a theme with new data
         monaco.editor.defineTheme(name, data);
     }
