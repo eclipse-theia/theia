@@ -130,6 +130,23 @@ describe('FileTreeDecoratorAdapter', () => {
         expect(provider.queried.length).to.equal(queriesAfterFirstRender);
     });
 
+    it('does not query the decorations service for undecorated resources on repeated renders', async () => {
+        const originalGetDecoration = service.getDecoration.bind(service);
+        let queries = 0;
+        service.getDecoration = (uri, includeChildren) => {
+            queries++;
+            return originalGetDecoration(uri, includeChildren);
+        };
+        await adapter.decorations(tree);
+        await sleep(20);
+        const queriesAfterFirstRender = queries;
+
+        await adapter.decorations(tree);
+        await adapter.decorations(tree);
+
+        expect(queries).to.equal(queriesAfterFirstRender);
+    });
+
     it('recovers decorations of resources cached as undecorated after a flush event', async () => {
         // resources are queried before the provider has any data, e.g. before
         // the initial git status is computed

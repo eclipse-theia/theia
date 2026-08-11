@@ -137,6 +137,58 @@ describe('DecorationsServiceImpl', () => {
         expect(service.getDecoration(uriA, false)).to.have.lengthOf(0);
     });
 
+    it('announces a removal that settles synchronously after a cancelled in-flight request', async () => {
+        provider.decorations.set(uriA.toString(), { letter: 'A' });
+        service.getDecoration(uriA, false);
+        await sleep(20);
+        events.length = 0;
+
+        // an async re-fetch is superseded by a synchronous one that removes the decoration
+        provider.fireDidChange([uriA]);
+        provider.asynchronous = false;
+        provider.decorations.delete(uriA.toString());
+        provider.fireDidChange([uriA]);
+        await sleep(20);
+
+        expect(events).to.have.lengthOf(1);
+        expect(events[0].has(uriA.toString())).to.equal(false);
+        expect(service.getDecoration(uriA, false)).to.have.lengthOf(0);
+    });
+
+    it('keeps serving the previous decoration while a selective re-fetch is in flight', async () => {
+        provider.decorations.set(uriA.toString(), { letter: 'A' });
+        service.getDecoration(uriA, false);
+        await sleep(20);
+
+        provider.decorations.set(uriA.toString(), { letter: 'D' });
+        provider.fireDidChange([uriA]);
+
+        const whileInFlight = service.getDecoration(uriA, false);
+        expect(whileInFlight).to.have.lengthOf(1);
+        expect(whileInFlight[0].letter).to.equal('A');
+
+        await sleep(20);
+        expect(service.getDecoration(uriA, false)[0].letter).to.equal('D');
+    });
+
+    it('keeps serving the last known decoration while a flush re-fetch is in flight', async () => {
+        provider.decorations.set(uriA.toString(), { letter: 'A' });
+        service.getDecoration(uriA, false);
+        await sleep(20);
+
+        provider.decorations.set(uriA.toString(), { letter: 'D' });
+        provider.fireDidChange(undefined);
+        await sleep(20);
+
+        // the first query after the flush triggers the re-fetch but serves the stale value
+        const whileInFlight = service.getDecoration(uriA, false);
+        expect(whileInFlight).to.have.lengthOf(1);
+        expect(whileInFlight[0].letter).to.equal('A');
+
+        await sleep(20);
+        expect(service.getDecoration(uriA, false)[0].letter).to.equal('D');
+    });
+
     it('drops all cached data on a flush event and re-fetches on demand', async () => {
         provider.decorations.set(uriA.toString(), { letter: 'A' });
         service.getDecoration(uriA, false);
