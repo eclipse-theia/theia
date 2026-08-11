@@ -7,11 +7,13 @@
 ## 1.75.0 - tbd
 
 - [core, monaco] fixed Monaco theme CSS, `SelectComponent` dropdown placement, and the OS font class in secondary windows [#17874](https://github.com/eclipse-theia/theia/pull/17874)
+- [scm-extra] deprecated `@theia/scm-extra` package [#17882](https://github.com/eclipse-theia/theia/pull/17882)
 
 <a name="breaking_changes_1.75.0">[Breaking Changes:](#breaking_changes_1.75.0)</a>
 
 - [core] added `onWindowLoaded` to the `SecondaryWindowService` interface; adopters implementing the interface from scratch (rather than extending `DefaultSecondaryWindowService`) must provide it [#17874](https://github.com/eclipse-theia/theia/pull/17874)
 - [monaco] removed the `protected secondaryWindowHandler` field from `MonacoFrontendApplicationContribution`; the Monaco theme stylesheet is now injected into every secondary window via `SecondaryWindowService.onWindowLoaded` [#17874](https://github.com/eclipse-theia/theia/pull/17874)
+- [scm-extra] deprecated the `@theia/scm-extra` extension and stopped publishing it on npm; it has also been removed from the example applications, which drops its `SCM History` view, the `History` context menu items in the navigator and editor, and the `alt+h` keybinding. The view has been non-functional in the default application since the removal of `@theia/git`, as nothing implements `ScmHistorySupport` anymore. Please use the SCM history graph in `@theia/scm` for branch history and the Timeline view in `@theia/timeline` for per-file history instead [#17882](https://github.com/eclipse-theia/theia/pull/17882)
 
 ## 1.74.0 - 7/31/2026
 

@@ -1,7 +1,8 @@
 {
   "name": "@theia/scm-extra",
   "version": "1.74.0",
-  "description": "Theia - Source control extras Extension",
+  "description": "Theia - Source control extras Extension (deprecated, superseded by the SCM history graph in @theia/scm and the Timeline view)",
+  "private": true,
   "dependencies": {
     "@theia/core": "1.74.0",
     "@theia/editor": "1.74.0",
