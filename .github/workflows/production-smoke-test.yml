@@ -19,7 +19,7 @@ on:
 
 jobs:
   build-and-test-playwright:
-    name: Smoke Test for Browser Example Production Build on ubuntu-22.04 with Node.js 22.x
+    name: Smoke Test for Browser Example Production Build on ubuntu-22.04 with Node.js 24.x
 
     runs-on: ubuntu-22.04
     timeout-minutes: 60
@@ -28,10 +28,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Use Node.js "22.x"
+      - name: Use Node.js "24.x"
         uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
-          node-version: "22.x"
+          node-version: "24.x"
           registry-url: "https://registry.npmjs.org"
 
       - name: Use Python 3.13
