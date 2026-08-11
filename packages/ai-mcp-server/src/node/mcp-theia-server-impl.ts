@@ -22,7 +22,6 @@ import { generateUuid } from '@theia/core';
 
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import * as express from '@theia/core/shared/express';
-import { randomUUID } from 'crypto';
 import { MCPTheiaServer } from './mcp-theia-server';
 import { MCPBackendContributionManager } from './mcp-backend-contribution-manager';
 import { MCPFrontendContributionManager } from './mcp-frontend-contribution-manager';
@@ -40,7 +39,6 @@ export class MCPTheiaServerImpl implements MCPTheiaServer, BackendApplicationCon
     protected readonly frontendContributionManager: MCPFrontendContributionManager;
 
     protected server?: McpServer;
-    protected httpTransports: Map<string, StreamableHTTPServerTransport> = new Map();
     protected httpApp?: express.Application;
     protected running = false;
     protected serverId: string = generateUuid();
@@ -92,11 +90,6 @@ export class MCPTheiaServerImpl implements MCPTheiaServer, BackendApplicationCon
             if (this.serverId) {
                 await this.frontendContributionManager.unregisterFrontendContributions(this.serverId);
             }
-
-            for (const transport of this.httpTransports.values()) {
-                transport.close();
-            }
-            this.httpTransports.clear();
 
             if (this.server) {
                 this.server.close();
@@ -152,30 +145,21 @@ export class MCPTheiaServerImpl implements MCPTheiaServer, BackendApplicationCon
             return;
         }
 
-        const sessionId = req.headers['mcp-session-id'] as string | undefined;
-        let transport: StreamableHTTPServerTransport;
-
         try {
-            if (sessionId && this.httpTransports.has(sessionId)) {
-                transport = this.httpTransports.get(sessionId)!;
-            } else {
-                transport = new StreamableHTTPServerTransport({
-                    sessionIdGenerator: () => randomUUID(),
-                    onsessioninitialized: newSessionId => {
-                        this.httpTransports.set(newSessionId, transport);
-                    }
-                });
+            // Stateless mode: each request gets its own transport with no session tracking.
+            // This aligns with the MCP 2026-07-28 spec where each request is self-describing
+            // and can land on any server instance behind a load balancer.
+            const transport = new StreamableHTTPServerTransport({
+                sessionIdGenerator: undefined
+            });
 
-                transport.onclose = () => {
-                    if (transport.sessionId) {
-                        this.httpTransports.delete(transport.sessionId);
-                    }
-                };
-
-                await this.server.connect(transport);
-            }
-
+            await this.server.connect(transport);
             await transport.handleRequest(req, res, req.body);
+
+            // Clean up after the response is sent
+            res.on('close', () => {
+                transport.close();
+            });
         } catch (error) {
             this.logger.error('Error handling MCP Streamable HTTP request:', error);
             if (!res.headersSent) {
@@ -221,11 +205,6 @@ export class MCPTheiaServerImpl implements MCPTheiaServer, BackendApplicationCon
                     this.frontendContributionManager.unregisterFrontendContributions(this.serverId)
                         .catch(error => this.logger.warn('Failed to unregister frontend contributions during shutdown:', error));
                 }
-
-                for (const transport of this.httpTransports.values()) {
-                    transport.close();
-                }
-                this.httpTransports.clear();
 
                 if (this.server) {
                     this.server.close();
