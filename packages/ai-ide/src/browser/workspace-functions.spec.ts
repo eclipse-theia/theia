@@ -822,6 +822,15 @@ describe('FindFilesByPattern.findFiles', () => {
     before(() => { disableJSDOMInner = enableJSDOM(); });
     after(() => { disableJSDOMInner(); });
 
+    // External hits are rendered with `Path.fsPath()`, which branches on the backend OS, so the POSIX
+    // fixtures below pin it instead of inheriting the OS the tests happen to run on.
+    let originalIsWindows: boolean;
+    beforeEach(() => {
+        originalIsWindows = OS.backend.isWindows;
+        OS.backend.isWindows = false;
+    });
+    afterEach(() => { OS.backend.isWindows = originalIsWindows; });
+
     beforeEach(() => {
         container = new Container();
         searchResults = [];
@@ -955,10 +964,6 @@ describe('FindFilesByPattern.findFiles', () => {
     });
 
     describe('on Windows', () => {
-        let originalIsWindows: boolean;
-        beforeEach(() => { originalIsWindows = OS.backend.isWindows; });
-        afterEach(() => { OS.backend.isWindows = originalIsWindows; });
-
         // The tool promises the returned paths can be passed back to the file tools, so an external
         // hit must be rendered as a native path and not as the URI-style `/c:/...`.
         it('returns native paths for an allow-listed external searchRoot', async () => {
@@ -1543,6 +1548,15 @@ describe('FindFilesByPattern with searchRoot', () => {
     let disableJSDOMInner: () => void;
     before(() => { disableJSDOMInner = enableJSDOM(); });
     after(() => { disableJSDOMInner(); });
+
+    // External hits are rendered with `Path.fsPath()`, which branches on the backend OS, so the POSIX
+    // fixtures below pin it instead of inheriting the OS the tests happen to run on.
+    let originalIsWindows: boolean;
+    beforeEach(() => {
+        originalIsWindows = OS.backend.isWindows;
+        OS.backend.isWindows = false;
+    });
+    afterEach(() => { OS.backend.isWindows = originalIsWindows; });
 
     beforeEach(() => {
         container = new Container();

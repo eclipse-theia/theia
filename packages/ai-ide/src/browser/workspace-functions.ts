@@ -643,8 +643,8 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
             name: GetWorkspaceDirectoryStructure.ID,
             description: 'Retrieves the directory tree structure as a nested JSON object. ' +
                 'By default returns all workspace roots with root names as keys. ' +
-                'Pass `root` to inspect a specific directory listed in the ' +
-                '`ai-features.workspaceFunctions.allowedExternalPaths` preference instead. ' +
+                'Pass `root` to inspect a specific directory the tools may access, such as one listed in the ' +
+                '`ai-features.workspaceFunctions.allowedExternalPaths` preference, instead. ' +
                 'Lists only directories (no files), excluding common non-essential directories (node_modules, hidden files, etc.). ' +
                 'Useful for getting a high-level overview of project organization. ' +
                 'For listing files within a specific directory, use getWorkspaceFileList instead. ' +
@@ -655,7 +655,7 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
                     root: {
                         type: 'string',
                         description: 'Optional absolute path or `file://` URI to inspect instead of the workspace. ' +
-                            'Must be inside, or equal to, an entry of the `allowedExternalPaths` preference. ' +
+                            'Must point to a directory the tools may access, such as one listed in the `allowedExternalPaths` preference. ' +
                             'When omitted, all workspace roots are returned.'
                     }
                 },
@@ -755,8 +755,8 @@ export class FileContentFunction implements ToolProvider {
             description: 'Returns the content of a specified file as a raw string. ' +
                 'File paths use the same format returned by other workspace tools ' +
                 '(e.g., "my-project/src/index.ts"). ' +
-                'Absolute paths and `file://` URIs are accepted when the target is inside the workspace ' +
-                'or covered by the `ai-features.workspaceFunctions.allowedExternalPaths` preference. ' +
+                'Absolute paths and `file://` URIs are accepted when the target is a location the tools may access, ' +
+                'such as a directory listed in the `ai-features.workspaceFunctions.allowedExternalPaths` preference. ' +
                 'If the file is currently open in an editor with unsaved changes, returns the editor\'s current content (not the saved file on disk). ' +
                 'Binary files may not be readable and will return an error. ' +
                 'Use this tool to read file contents before making any edits with replacement functions. ' +
@@ -773,8 +773,8 @@ export class FileContentFunction implements ToolProvider {
                         type: 'string',
                         description: 'Path to the target file. May be workspace-relative ' +
                             '(e.g., "my-project/src/index.ts"), an absolute path, or a `file://` URI. ' +
-                            'Absolute / URI forms must point inside the workspace ' +
-                            'or inside a directory listed in the `allowedExternalPaths` preference.',
+                            'Absolute / URI forms must point to a location the tools may access, such as a directory listed in the ' +
+                            '`allowedExternalPaths` preference.',
                     },
                     offset: {
                         type: 'number',
@@ -1034,7 +1034,8 @@ export class GetWorkspaceFileList implements ToolProvider {
                         description: 'Path to a directory. Workspace-relative paths use the format \'rootName/path\' ' +
                             '(e.g., \'my-project/src\', \'backend/src/components\'). ' +
                             'Use \'\' or \'.\' to list the workspace top-level directories. ' +
-                            'Absolute paths and `file://` URIs are accepted when covered by the `allowedExternalPaths` preference.'
+                            'Absolute paths and `file://` URIs are accepted when they point to a location the tools may access, ' +
+                            'such as a directory listed in the `allowedExternalPaths` preference.'
                     }
                 },
                 required: ['path']
@@ -1153,8 +1154,9 @@ export class FileDiagnosticProvider implements ToolProvider {
                 properties: {
                     file: {
                         type: 'string',
-                        description: 'The path to the target file within the workspace ' +
-                            '(e.g., "my-project/src/index.ts", "backend/src/main.ts").'
+                        description: 'The path to the target file. May be workspace-relative ' +
+                            '(e.g., "my-project/src/index.ts", "backend/src/main.ts"), an absolute path, or a `file://` URI ' +
+                            'pointing to a location the tools may access.'
                     }
                 },
                 required: ['file']
@@ -1287,8 +1289,8 @@ export class FindFilesByPattern implements ToolProvider {
             name: FindFilesByPattern.ID,
             description: 'Find files matching a given glob pattern. ' +
                 'By default searches across all workspace roots. ' +
-                'Pass `searchRoot` to search a directory listed in the ' +
-                '`ai-features.workspaceFunctions.allowedExternalPaths` preference instead. ' +
+                'Pass `searchRoot` to search a directory the tools may access, such as one listed in the ' +
+                '`ai-features.workspaceFunctions.allowedExternalPaths` preference, instead. ' +
                 'This function allows efficient discovery of files using patterns like \'**/*.ts\' for all TypeScript files or ' +
                 '\'src/**/*.js\' for JavaScript files in the src directory. The function respects gitignore patterns and user exclusions, ' +
                 'returns workspace-relative paths (e.g., "my-project/src/index.ts") or absolute paths for external roots, ' +
@@ -1313,7 +1315,7 @@ export class FindFilesByPattern implements ToolProvider {
                     searchRoot: {
                         type: 'string',
                         description: 'Optional absolute path or `file://` URI to search instead of the workspace. ' +
-                            'Must be inside, or equal to, an entry of the `allowedExternalPaths` preference. ' +
+                            'Must point to a directory the tools may access, such as one listed in the `allowedExternalPaths` preference. ' +
                             'When set, results are returned as absolute paths so they can be passed back to getFileContent. ' +
                             'When omitted (default), all workspace roots are searched and results are workspace-relative.'
                     }
