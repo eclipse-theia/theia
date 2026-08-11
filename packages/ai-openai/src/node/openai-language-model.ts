@@ -24,7 +24,10 @@ import {
     UserRequest,
     ImageContent,
     LanguageModelStatus,
-    ReasoningSupport
+    ReasoningSupport,
+    resolveCompactionTokenThreshold,
+    resolveServerSideCompaction,
+    ServerToolDescriptor
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
@@ -69,6 +72,8 @@ export type DeveloperMessageSettings = 'user' | 'system' | 'developer' | 'mergeW
 
 export class OpenAiModel implements LanguageModel {
 
+    readonly vendor = 'openai';
+
     /**
      * The options for the OpenAI runner.
      */
@@ -89,6 +94,8 @@ export class OpenAiModel implements LanguageModel {
      * @param url the OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
      * @param maxRetries the maximum number of retry attempts when a request fails
      * @param useResponseApi whether to use the newer OpenAI Response API instead of the Chat Completion API
+     * @param serverSideCompactionSupport whether this model supports server-side compaction (only available via the Response API)
+     * @param serverSideCompactionEnabledByDefault resolved default enablement of server-side compaction (global preference folded with the per-provider override)
      */
     constructor(
         public readonly id: string,
@@ -107,7 +114,11 @@ export class OpenAiModel implements LanguageModel {
         public useResponseApi: boolean = false,
         public proxy?: string,
         public reasoningSupport?: ReasoningSupport,
-        public maxInputTokens?: number
+        public maxInputTokens?: number,
+        public serverTools?: ServerToolDescriptor[],
+        public serverSideCompactionSupport: boolean = false,
+        public serverSideCompactionEnabledByDefault: boolean = false,
+        public serverSideCompactionTokenThresholdByDefault?: number
     ) { }
 
     /** Reasoning-level translation lives in {@link openAiReasoningFor}. */
@@ -248,8 +259,26 @@ export class OpenAiModel implements LanguageModel {
         }
     }
 
+    /**
+     * Augments the Response API settings with the server-side compaction directive when compaction is enabled for the
+     * given request. When disabled, the settings are returned unchanged so the default path is byte-for-byte identical.
+     */
+    protected applyResponseApiCompaction(settings: Record<string, unknown>, request: LanguageModelRequest): Record<string, unknown> {
+        if (resolveServerSideCompaction(this.serverSideCompactionSupport, this.serverSideCompactionEnabledByDefault, request.compaction)) {
+            const tokenThreshold = resolveCompactionTokenThreshold(this.serverSideCompactionTokenThresholdByDefault, request.compaction);
+            return {
+                ...settings,
+                context_management: [{
+                    type: 'compaction',
+                    ...(tokenThreshold !== undefined && { compact_threshold: tokenThreshold })
+                }]
+            };
+        }
+        return settings;
+    }
+
     protected async handleResponseApiRequest(openai: OpenAI, request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
-        const settings = this.getSettings(request, true);
+        const settings = this.applyResponseApiCompaction(this.getSettings(request, true), request);
         const isStreamingRequest = this.enableStreaming && !(typeof settings.stream === 'boolean' && !settings.stream);
 
         try {
@@ -266,8 +295,8 @@ export class OpenAiModel implements LanguageModel {
                 cancellationToken
             );
         } catch (error) {
-            // If Response API fails, fall back to Chat Completions API
-            if (error instanceof Error) {
+            // Chat Completions cannot execute Response API server tools.
+            if (error instanceof Error && !request.serverTools?.length) {
                 console.warn(`Response API failed for model ${this.id}, falling back to Chat Completions API:`, error.message);
                 return this.handleChatCompletionsRequest(openai, request, cancellationToken);
             }
@@ -369,10 +398,10 @@ export class OpenAiModelUtils {
         model?: string
     ): ChatCompletionMessageParam[] {
         const processed = this.processSystemMessages(messages, developerMessageSettings);
-        // 'server_tool_use' replay messages can appear when switching providers within a session;
-        // OpenAI has no equivalent, so they are dropped (like 'thinking' messages).
+        // 'server_tool_use' and 'compaction' replay markers can appear when switching providers within a session;
+        // OpenAI Chat Completions has no equivalent, so they are dropped (like 'thinking' messages).
         const converted = processed
-            .filter(m => m.type !== 'thinking' && m.type !== 'server_tool_use')
+            .filter(m => m.type !== 'thinking' && m.type !== 'server_tool_use' && m.type !== 'compaction')
             .map(m => this.toOpenAIMessage(m, developerMessageSettings));
         return this.mergeConsecutiveAssistantMessages(converted);
     }

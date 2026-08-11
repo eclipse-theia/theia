@@ -2,8 +2,6 @@
 
 <br />
 
-<img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
-
 <h2>ECLIPSE THEIA - EXAMPLE HEADLESS PLUGIN USING THE API PROVIDER SAMPLE</h2>
 
 <hr />

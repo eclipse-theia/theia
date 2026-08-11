@@ -16,6 +16,7 @@
 
 export * from './defaults-preference-provider';
 export * from './preference-language-override-service';
+export * from './session-preference-provider';
 export * from './preference-provider-impl';
 export * from './preference-provider';
 export * from './preference-schema-service';

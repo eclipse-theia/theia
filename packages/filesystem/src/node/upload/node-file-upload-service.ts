@@ -19,16 +19,19 @@ import path = require('path');
 import os = require('os');
 import express = require('@theia/core/shared/express');
 import fs = require('@theia/core/shared/fs-extra');
-import { BackendApplicationContribution, FileUri } from '@theia/core/lib/node';
+import { BackendApplicationContribution, FileUri, HttpConnectionValidator } from '@theia/core/lib/node';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { HTTP_FILE_UPLOAD_PATH } from '../../common/file-upload';
-import { ILogger } from '@theia/core';
+import { ILogger, URI } from '@theia/core';
 
 @injectable()
 export class NodeFileUploadService implements BackendApplicationContribution {
 
     @inject(ILogger) @named('filesystem:NodeFileUploadService')
     protected readonly logger: ILogger;
+
+    @inject(HttpConnectionValidator)
+    protected readonly connectionValidator: HttpConnectionValidator;
 
     private static readonly UPLOAD_DIR = 'theia_upload';
 
@@ -39,8 +42,11 @@ export class NodeFileUploadService implements BackendApplicationContribution {
         ]);
         this.logger.debug(`HTTP file upload URL path: ${http_path}`);
         this.logger.debug(`Backend file upload cache path: ${dest}`);
+        // Reject unauthenticated/cross-origin requests before `multer` writes any temp file.
+        const guard: express.RequestHandler = (request, response, next) => this.connectionValidator.validateRequest(request, response, next);
         app.post(
             http_path,
+            guard,
             // `multer` handles `multipart/form-data` containing our file to upload.
             multer({ dest }).single('file'),
             (request, response, next) => this.handleFileUpload(request, response)
@@ -63,7 +69,7 @@ export class NodeFileUploadService implements BackendApplicationContribution {
 
     protected async handleFileUpload(request: express.Request, response: express.Response): Promise<void> {
         const fields = request.body;
-        if (!request.file || typeof fields !== 'object' || typeof fields.uri !== 'string') {
+        if (!request.file || typeof fields !== 'object' || typeof fields.uri !== 'string' || new URI(fields.uri).scheme !== 'file') {
             response.sendStatus(400); // bad request
             return;
         }

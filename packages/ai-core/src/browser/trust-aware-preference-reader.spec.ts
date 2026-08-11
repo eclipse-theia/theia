@@ -165,6 +165,35 @@ describe('TrustAwarePreferenceReader', () => {
         });
     });
 
+    describe('suppressUntrusted', () => {
+        const inspection = {
+            preferenceName: PREFERENCE_NAME,
+            defaultValue: 'default',
+            globalValue: 'user',
+            workspaceValue: 'workspace',
+            workspaceFolderValue: 'folder',
+            value: 'folder'
+        };
+
+        it('clears the workspace and folder values when untrusted', async () => {
+            trust.trustDeferred.resolve(false);
+            await reader.ready;
+            const result = reader.suppressUntrusted({ ...inspection });
+            expect(result.workspaceValue).to.equal(undefined);
+            expect(result.workspaceFolderValue).to.equal(undefined);
+            expect(result.globalValue).to.equal('user');
+            expect(result.defaultValue).to.equal('default');
+        });
+
+        it('returns the inspection unchanged when trusted', async () => {
+            trust.trustDeferred.resolve(true);
+            await reader.ready;
+            const result = reader.suppressUntrusted({ ...inspection });
+            expect(result.workspaceValue).to.equal('workspace');
+            expect(result.workspaceFolderValue).to.equal('folder');
+        });
+    });
+
     describe('onDidChangeTrust', () => {
         beforeEach(async () => {
             trust.trustDeferred.resolve(false);

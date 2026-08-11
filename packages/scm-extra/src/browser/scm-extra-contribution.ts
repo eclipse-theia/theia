@@ -15,4 +15,9 @@
 // *****************************************************************************
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 
+/**
+ * @deprecated since 1.75.0 - superseded by the SCM history graph in `@theia/scm`
+ * and the Timeline view in `@theia/timeline`. This package will be removed in a
+ * future release - see https://github.com/eclipse-theia/theia/issues/17457.
+ */
 export const EDITOR_CONTEXT_MENU_SCM = [...EDITOR_CONTEXT_MENU, '3_scm'];

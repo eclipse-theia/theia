@@ -36,7 +36,7 @@ export const GooglePreferencesSchema: PreferenceSchema = {
             type: 'array',
             description: nls.localize('theia/ai/google/models/description', 'Official Google Gemini models to use'),
             title: AI_CORE_PREFERENCES_TITLE,
-            default: ['gemini-3.1-pro-preview', 'gemini-3.5-flash'],
+            default: ['gemini-3.1-pro-preview', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'],
             items: {
                 type: 'string'
             }

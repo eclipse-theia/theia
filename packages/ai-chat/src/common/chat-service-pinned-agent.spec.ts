@@ -74,17 +74,38 @@ describe('ChatService pinned agent behavior', () => {
         prompts: []
     };
 
+    const mockHiddenAgent: ChatAgent = {
+        id: 'hidden-worker',
+        name: 'Hidden Worker',
+        description: 'Test agent that is hidden from chat (showInChat: false)',
+        locations: [ChatAgentLocation.Panel],
+        invoke: async () => { },
+        languageModelRequirements: [],
+        tags: [],
+        variables: [],
+        agentSpecificVariables: [],
+        functions: [],
+        prompts: []
+    };
+
     class MockChatAgentService {
         private agents = new Map<string, ChatAgent>([
             ['pinned-agent', mockPinnedAgent],
             ['mentioned-agent', mockMentionedAgent],
-            ['default-agent', mockDefaultAgent]
+            ['default-agent', mockDefaultAgent],
+            ['hidden-worker', mockHiddenAgent]
         ]);
+
+        /** Mirrors ChatAgentServiceImpl: agents with showInChat === false are only returned with includeHidden. */
+        private hiddenIds = new Set<string>(['hidden-worker']);
 
         readonly onDidChangeAgents = { dispose: () => { } };
         readonly onDefaultAgentChanged = { dispose: () => { } };
 
-        getAgent(id: string): ChatAgent | undefined {
+        getAgent(id: string, includeHidden: boolean = false): ChatAgent | undefined {
+            if (!includeHidden && this.hiddenIds.has(id)) {
+                return undefined;
+            }
             return this.agents.get(id);
         }
 
@@ -221,5 +242,40 @@ describe('ChatService pinned agent behavior', () => {
 
         // The selected agent (mentioned-agent) becomes the new pinned agent
         expect(session.pinnedAgent).to.equal(mockMentionedAgent);
+    });
+
+    it('should resolve a hidden pinned agent instead of falling back to the default agent', () => {
+        // AgentDelegationTool pins the delegated agent on the session it creates; worker agents
+        // are typically hidden (showInChat: false). The pin is an explicit choice, so it must
+        // resolve even for hidden agents — falling back to the default agent would silently run
+        // the wrong agent with the wrong prompt and toolset.
+        const session = createMockSession(mockHiddenAgent);
+        const parsedRequest: ParsedChatRequest = {
+            request: { text: 'test message' },
+            parts: [new ParsedChatRequestTextPart({ start: 0, endExclusive: 'test message'.length }, 'test message')],
+            toolRequests: new Map(),
+            variables: []
+        };
+
+        const agent = chatService.getAgent(parsedRequest, session);
+        expect(agent).to.equal(mockHiddenAgent);
+    });
+
+    it('should resolve a hidden pinned agent when the request mentions that hidden agent', () => {
+        // A delegated request's text is '@<agentId> <prompt>'. The mention of a hidden agent does
+        // not resolve (mentions stay hidden-excluding), but the pin must still catch it.
+        const session = createMockSession(mockHiddenAgent);
+        const parsedRequest: ParsedChatRequest = {
+            request: { text: '@hidden-worker test' },
+            parts: [
+                new ParsedChatRequestAgentPart({ start: 0, endExclusive: '@hidden-worker'.length }, 'hidden-worker', 'hidden-worker'),
+                new ParsedChatRequestTextPart({ start: '@hidden-worker '.length, endExclusive: '@hidden-worker test'.length }, 'test')
+            ],
+            toolRequests: new Map(),
+            variables: []
+        };
+
+        const agent = chatService.getAgent(parsedRequest, session);
+        expect(agent).to.equal(mockHiddenAgent);
     });
 });

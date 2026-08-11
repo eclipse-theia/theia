@@ -55,6 +55,13 @@ export interface SecondaryWindowService {
      */
     createSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell): SecondaryWindow | Window | undefined;
     readonly onWindowOpened: Event<Window>;
+    /**
+     * Emitted once a secondary window's final document has finished loading. Listeners can safely
+     * modify the window's document, unlike with {@link onWindowOpened}: at that point the window
+     * still shows the initial `about:blank` document, and anything added to it is discarded when
+     * the final document replaces it.
+     */
+    readonly onWindowLoaded: Event<Window>;
     readonly onWindowClosed: Event<Window>;
     readonly beforeWidgetRestore: Event<[Widget, Window]>;
 

@@ -30,6 +30,7 @@ import {
     CodePartRenderer,
     CodePartRendererAction,
     CommandPartRenderer,
+    CompactionPartRenderer,
     CopyToClipboardButtonAction,
     ErrorPartRenderer,
     HorizontalLayoutPartRenderer,
@@ -51,12 +52,15 @@ import {
     TypeDocSymbolSelectionResolver,
 } from './chat-response-renderer/ai-selection-resolver';
 import { QuestionPartRenderer } from './chat-response-renderer/question-part-renderer';
+import { ExternalResourceAllowlistContribution } from './chat-response-renderer/external-resource-allowlist-contribution';
 import { createChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatViewMenuContribution } from './chat-view-contribution';
 import { ChatViewLanguageContribution } from './chat-view-language-contribution';
 import { bindChatViewPreferences } from './chat-view-preferences';
 import { ChatViewWidget } from './chat-view-widget';
+import { ChatBannerProvider } from './chat-banner-provider';
+import { ChatBannerWidget } from './chat-banner-widget';
 import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-contribution';
 import { ContextVariablePicker } from './context-variable-picker';
 import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service';
@@ -73,7 +77,7 @@ import { ChatCapabilitiesService, ChatCapabilitiesServiceImpl } from './chat-cap
 import { ChatInputCapabilitiesContribution } from './chat-input-capabilities-contribution';
 import { GenericCapabilitiesContribution, GenericCapabilitiesService, GenericCapabilitiesServiceImpl } from './generic-capabilities-service';
 import { ToolConfirmationKeybindingContribution } from './tool-confirmation-keybinding-contribution';
-import { ChatInputNeededNotificationContribution } from './chat-input-needed-notification-contribution';
+import { ChatSessionNotificationContribution } from './chat-session-notification-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindChatViewPreferences(bind);
@@ -116,11 +120,13 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(CommandContribution).toService(ToolConfirmationKeybindingContribution);
     bind(KeybindingContribution).toService(ToolConfirmationKeybindingContribution);
 
-    bind(ChatInputNeededNotificationContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(ChatInputNeededNotificationContribution);
+    bind(ChatSessionNotificationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ChatSessionNotificationContribution);
 
     bindRootContributionProvider(bind, ChatResponsePartRenderer);
     bindRootContributionProvider(bind, ChatWelcomeMessageProvider);
+    bindRootContributionProvider(bind, ChatBannerProvider);
+    bind(ChatBannerWidget).toSelf();
 
     bindChatViewWidget(bind);
 
@@ -186,6 +192,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatResponsePartRenderer).to(NotAvailableToolCallRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ErrorPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ThinkingPartRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(CompactionPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(QuestionPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ProgressPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(TextPartRenderer).inSingletonScope();
@@ -210,6 +217,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(TabBarToolbarContribution).toService(ChatViewWidgetToolbarContribution);
 
     bind(FrontendApplicationContribution).to(ChatViewLanguageContribution).inSingletonScope();
+    bind(ExternalResourceAllowlistContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ExternalResourceAllowlistContribution);
     bind(ChangeSetActionService).toSelf().inSingletonScope();
     bind(ChangeSetAcceptAction).toSelf().inSingletonScope();
     bind(ChangeSetActionRenderer).toService(ChangeSetAcceptAction);

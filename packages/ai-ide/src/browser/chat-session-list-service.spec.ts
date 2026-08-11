@@ -20,10 +20,11 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { Emitter } from '@theia/core';
-import { ChatAgentLocation, ChatService, ChatSession, ChatSessionMetadata } from '@theia/ai-chat';
+import { ChatAgentLocation, ChatService, ChatSession, ChatSessionMetadata, ChatSessionStatus } from '@theia/ai-chat';
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
 import { ApplicationShell, Widget } from '@theia/core/lib/browser';
-import { ChatSessionsWelcomeMessageProvider, SectionedSessions, computeVisibleSessionSlots } from './chat-sessions-welcome-message-provider';
+import { ChatSessionListService } from './chat-session-list-service';
+import { SectionedSessions, SessionRow, computeVisibleSessionSlots } from './chat-session-list-components';
 disableJSDOM();
 
 /**
@@ -32,7 +33,7 @@ disableJSDOM();
  * unread bookkeeping; spinning up the full container would pull in unrelated
  * services and obscure the assertion.
  */
-class TestableProvider extends ChatSessionsWelcomeMessageProvider {
+class TestableService extends ChatSessionListService {
     constructor(chatService: ChatService, shell: ApplicationShell) {
         super();
         (this as unknown as { chatService: ChatService }).chatService = chatService;
@@ -59,6 +60,7 @@ function createFakeSession(id: string): {
         id,
         isActive: false,
         model: {
+            status: 'idle' as ChatSessionStatus,
             getRequests: () => requests,
             onDidChange: onDidChangeEmitter.event,
         }
@@ -70,7 +72,7 @@ function createFakeSession(id: string): {
     };
 }
 
-describe('ChatSessionsWelcomeMessageProvider', () => {
+describe('ChatSessionListService', () => {
 
     describe('unread state', () => {
         let activeSessionId: string | undefined;
@@ -112,33 +114,33 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
         });
 
         it('marks the session unread when a new request arrives and the chat view is not focused', () => {
-            const provider = new TestableProvider(chatService, shell);
+            const service = new TestableService(chatService, shell);
             const { session, fire, pushRequest } = createFakeSession('s1');
             activeSessionId = 's1';
             activeWidget = otherWidget;
 
-            provider.watch(session);
+            service.watch(session);
             pushRequest(true);
             fire();
 
-            expect(provider.isUnread('s1')).to.equal(true);
+            expect(service.isUnread('s1')).to.equal(true);
         });
 
         it('does not mark unread when the session is active AND the chat view is focused', () => {
-            const provider = new TestableProvider(chatService, shell);
+            const service = new TestableService(chatService, shell);
             const { session, fire, pushRequest } = createFakeSession('s1');
             activeSessionId = 's1';
             activeWidget = chatViewWidget;
 
-            provider.watch(session);
+            service.watch(session);
             pushRequest(true);
             fire();
 
-            expect(provider.isUnread('s1')).to.equal(false);
+            expect(service.isUnread('s1')).to.equal(false);
         });
 
         it('does not mark unread when focus is inside a child widget of the chat view', () => {
-            const provider = new TestableProvider(chatService, shell);
+            const service = new TestableService(chatService, shell);
             const { session, fire, pushRequest } = createFakeSession('s1');
             activeSessionId = 's1';
             // Simulate focus inside a descendant (e.g. AIChatInputWidget): the shell's
@@ -147,42 +149,42 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
             activeWidget = childWidget;
             widgetForActiveElement = childWidget;
 
-            provider.watch(session);
+            service.watch(session);
             pushRequest(true);
             fire();
 
-            expect(provider.isUnread('s1')).to.equal(false);
+            expect(service.isUnread('s1')).to.equal(false);
         });
 
         it('marks unread when the session is not the active one, even if the chat view is focused', () => {
-            const provider = new TestableProvider(chatService, shell);
+            const service = new TestableService(chatService, shell);
             const { session, fire, pushRequest } = createFakeSession('s1');
             activeSessionId = 'other';
             activeWidget = chatViewWidget;
 
-            provider.watch(session);
+            service.watch(session);
             pushRequest(true);
             fire();
 
-            expect(provider.isUnread('s1')).to.equal(true);
+            expect(service.isUnread('s1')).to.equal(true);
         });
 
         it('fires onUnreadChanged once when a session transitions to unread', () => {
-            const provider = new TestableProvider(chatService, shell);
+            const service = new TestableService(chatService, shell);
             const { session, fire, pushRequest } = createFakeSession('s1');
             activeSessionId = undefined;
             activeWidget = otherWidget;
 
             let fired = 0;
-            provider.onUnreadChanged(() => { fired++; });
+            service.onUnreadChanged(() => { fired++; });
 
-            provider.watch(session);
+            service.watch(session);
             pushRequest(true);
             fire();
             pushRequest(true);
             fire();
 
-            expect(provider.isUnread('s1')).to.equal(true);
+            expect(service.isUnread('s1')).to.equal(true);
             expect(fired).to.equal(1);
         });
     });
@@ -239,11 +241,11 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
 
     describe('getSections', () => {
 
-        class SectionsTestProvider extends ChatSessionsWelcomeMessageProvider {
+        class SectionsTestService extends ChatSessionListService {
             constructor(sessions: ChatSession[], persistedSessions: ChatSessionMetadata[]) {
                 super();
                 (this as unknown as { chatService: ChatService }).chatService = { getSessions: () => sessions } as unknown as ChatService;
-                this._persistedSessions = persistedSessions;
+                (this as unknown as { _persistedSessions: ChatSessionMetadata[] })._persistedSessions = persistedSessions;
             }
             sections(): SectionedSessions {
                 return this.getSections();
@@ -254,9 +256,8 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
             lastInteraction?: Date;
             pinnedAgentId?: string;
             location?: ChatAgentLocation;
-            lastRequest?: { isComplete: boolean; isError: boolean };
+            status?: ChatSessionStatus;
         }): ChatSession {
-            const requests = opts?.lastRequest ? [{ response: opts.lastRequest }] : [];
             return {
                 id,
                 title,
@@ -265,7 +266,8 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
                 pinnedAgent: opts?.pinnedAgentId ? { id: opts.pinnedAgentId } : undefined,
                 model: {
                     location: opts?.location ?? ChatAgentLocation.Panel,
-                    getRequests: () => requests
+                    status: opts?.status ?? 'idle',
+                    getRequests: () => []
                 }
             } as unknown as ChatSession;
         }
@@ -275,7 +277,7 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
         }
 
         function getSections(sessions: ChatSession[], persistedSessions: ChatSessionMetadata[]): SectionedSessions {
-            return new SectionsTestProvider(sessions, persistedSessions).sections();
+            return new SectionsTestService(sessions, persistedSessions).sections();
         }
 
         it('excludes active sessions without a title', () => {
@@ -304,11 +306,11 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
             expect(sections.restored.map(s => s.sessionId)).to.deep.equal(['b']);
         });
 
-        it('flags an active session whose last request completed with an error', () => {
+        it('flags an active session whose status is failed', () => {
             const sections = getSections([
-                makeSession('ok', 'Ok', { lastRequest: { isComplete: true, isError: false } }),
-                makeSession('err', 'Err', { lastRequest: { isComplete: true, isError: true } }),
-                makeSession('running', 'Running', { lastRequest: { isComplete: false, isError: false } })
+                makeSession('ok', 'Ok', { status: 'idle' }),
+                makeSession('err', 'Err', { status: 'failed' }),
+                makeSession('running', 'Running', { status: 'running' })
             ], []);
             const byId = new Map(sections.active.map(s => [s.sessionId, s.hasError]));
             expect(byId.get('ok')).to.equal(false);
@@ -322,6 +324,110 @@ describe('ChatSessionsWelcomeMessageProvider', () => {
             ], []);
             expect(sections.active[0].pinnedAgentId).to.equal('Coder');
             expect(sections.active[0].location).to.equal(ChatAgentLocation.Panel);
+        });
+    });
+
+    describe('session hierarchy', () => {
+
+        class HierarchyTestService extends ChatSessionListService {
+            constructor(chatService: ChatService, persistedSessions: ChatSessionMetadata[] = []) {
+                super();
+                (this as unknown as { chatService: ChatService }).chatService = chatService;
+                (this as unknown as { _persistedSessions: ChatSessionMetadata[] })._persistedSessions = persistedSessions;
+            }
+            rows(sections: SectionedSessions): SessionRow[] {
+                return this.buildRows(sections);
+            }
+            subtreeRequiresAction(row: SessionRow): boolean {
+                return this.descendantRequiresAction(row);
+            }
+            expand(session: ChatSession): void {
+                this.expandAncestors(session);
+            }
+            get expanded(): Set<string> {
+                return this.expandedRoots;
+            }
+        }
+
+        function meta(sessionId: string, opts?: { rootSessionId?: string; parentSessionId?: string }): ChatSessionMetadata {
+            return {
+                sessionId,
+                title: sessionId,
+                saveDate: 0,
+                location: ChatAgentLocation.Panel,
+                rootSessionId: opts?.rootSessionId,
+                parentSessionId: opts?.parentSessionId
+            };
+        }
+
+        function loadedSession(id: string, status: ChatSessionStatus, opts?: { rootSessionId?: string; parentSessionId?: string }): ChatSession {
+            return {
+                id,
+                rootSessionId: opts?.rootSessionId,
+                parentSessionId: opts?.parentSessionId,
+                model: { status }
+            } as unknown as ChatSession;
+        }
+
+        function findRow(rows: SessionRow[], sessionId: string): SessionRow {
+            const row = rows.find(r => r.session.sessionId === sessionId);
+            expect(row, `row ${sessionId}`).to.not.be.undefined;
+            return row!;
+        }
+
+        it('nests a restored A -> B hierarchy with an active C under the root', () => {
+            const service = new HierarchyTestService({ getSession: () => undefined } as unknown as ChatService);
+            const sections: SectionedSessions = {
+                active: [meta('C', { rootSessionId: 'A', parentSessionId: 'B' })],
+                restored: [meta('A'), meta('B', { rootSessionId: 'A', parentSessionId: 'A' })]
+            };
+
+            const rows = service.rows(sections);
+            const rowA = findRow(rows, 'A');
+            expect(rowA.isRestored).to.equal(true);
+            expect(rowA.childSessions.map(c => c.session.sessionId)).to.deep.equal(['B']);
+            const rowB = rowA.childSessions[0];
+            expect(rowB.isRestored).to.equal(true);
+            expect(rowB.childSessions.map(c => c.session.sessionId)).to.deep.equal(['C']);
+            expect(rowB.childSessions[0].isRestored).to.equal(false);
+        });
+
+        it('propagates a deep descendant needing action up the tree', () => {
+            // Only the leaf C awaits input; both B and the root A must report a descendant needing action.
+            const chatService = {
+                getSession: (id: string) => id === 'C' ? loadedSession('C', 'awaitingInput') : loadedSession(id, 'idle')
+            } as unknown as ChatService;
+            const service = new HierarchyTestService(chatService);
+            const sections: SectionedSessions = {
+                active: [meta('C', { rootSessionId: 'A', parentSessionId: 'B' })],
+                restored: [meta('A'), meta('B', { rootSessionId: 'A', parentSessionId: 'A' })]
+            };
+
+            const rows = service.rows(sections);
+            const rowA = findRow(rows, 'A');
+            const rowB = rowA.childSessions[0];
+            const rowC = rowB.childSessions[0];
+            expect(service.subtreeRequiresAction(rowA)).to.equal(true);
+            expect(service.subtreeRequiresAction(rowB)).to.equal(true);
+            expect(service.subtreeRequiresAction(rowC)).to.equal(false);
+        });
+
+        it('expands every ancestor of a session that needs action, falling back to persisted-only ancestors', () => {
+            // C is loaded and awaiting input; its ancestors B and A exist only in the persisted index
+            // (e.g. C was opened directly from "Browse all chats"). The walk must reach the root A, not
+            // stop at the first ancestor `getSession` cannot resolve.
+            const c = loadedSession('C', 'awaitingInput', { rootSessionId: 'A', parentSessionId: 'B' });
+            const chatService = {
+                getSession: (id: string) => id === 'C' ? c : undefined
+            } as unknown as ChatService;
+            const service = new HierarchyTestService(chatService, [
+                meta('A'),
+                meta('B', { rootSessionId: 'A', parentSessionId: 'A' })
+            ]);
+
+            service.expand(c);
+
+            expect([...service.expanded].sort()).to.deep.equal(['A', 'B']);
         });
     });
 });
