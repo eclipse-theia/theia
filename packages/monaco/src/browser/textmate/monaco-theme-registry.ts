@@ -73,15 +73,16 @@ export class MonacoThemeRegistry {
     }
 
     setTheme(name: string, data: ThemeMix): void {
-        // normalize colors as monaco rejects shorthand hex like #000 for token colors
-        for (const key of Object.keys(data.colors)) {
-            data.colors[key] = MonacoThemeColor.expandShorthandHex(data.colors[key]);
-        }
-        // monaco lifts these into token rules and throws on other formats, keeping the previous editor theme
+        // monaco lifts these two into token rules and throws on anything else, keeping the previous editor theme.
+        // all other colors are read via monaco's `Color.fromHex`, which accepts shorthand hex as is.
         for (const key of ['editor.foreground', 'editor.background']) {
-            if (key in data.colors && !MonacoThemeColor.isTokenColor(data.colors[key])) {
-                this.logger.warn(`Dropping color '${key}' of theme '${name}': monaco rejects '${data.colors[key]}'`);
-                delete data.colors[key];
+            if (key in data.colors) {
+                const normalized = this.normalizeColor(data.colors[key]);
+                if (normalized) {
+                    data.colors[key] = normalized;
+                } else {
+                    delete data.colors[key];
+                }
             }
         }
         // monaco auto refreshes a theme with new data
@@ -174,13 +175,14 @@ export class MonacoThemeRegistry {
         if (!color) {
             return undefined;
         }
-        const normalized = String(color).replace(/^\#/, '').slice(0, 6);
-        if (normalized.length < 6 || !(normalized).match(/^[0-9A-Fa-f]{6}$/)) {
+        const expanded = MonacoThemeColor.expandShorthandHex(String(color));
+        if (!MonacoThemeColor.isTokenColor(expanded)) {
             // ignoring not normalized colors to avoid breaking token color indexes between monaco and vscode-textmate
-            this.logger.error(`Color '${normalized}' is NOT normalized, it must have 6 positions.`);
+            this.logger.error(`Color '${expanded}' is NOT normalized, it must be a 6 or 8 digit hex value.`);
             return undefined;
         }
-        return '#' + normalized;
+        // monaco discards alpha for token colors, drop it here so that its color map stays aligned with vscode-textmate's
+        return expanded.slice(0, 7);
     }
 }
 
