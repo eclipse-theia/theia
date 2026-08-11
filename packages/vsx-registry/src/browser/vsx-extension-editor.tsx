@@ -78,13 +78,11 @@ export class VSXExtensionEditor extends ReactWidget {
     };
 
     protected resolveScrollContainer = (element: VSXExtensionEditorComponent | null) => {
-        if (!element) {
-            this.deferredScrollContainer.reject(new Error('element is null'));
-        } else if (!element.scrollContainer) {
-            this.deferredScrollContainer.reject(new Error('element.scrollContainer is undefined'));
-        } else {
-            this.deferredScrollContainer.resolve(element.scrollContainer);
-        }
+        // The dedicated scroll container only exists when the extension has a README to render.
+        // When it is missing (no README, or the component is being unmounted) fall back to the
+        // editor's own node so that scrolling still works and the deferred is never left rejected
+        // without a handler, which would otherwise surface as an uncaught promise rejection.
+        this.deferredScrollContainer.resolve(element?.scrollContainer ?? this.node);
     };
 
     protected render(): React.ReactNode {

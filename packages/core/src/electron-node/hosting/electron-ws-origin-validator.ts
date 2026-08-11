@@ -30,8 +30,11 @@ export class ElectronWsOriginValidator implements WsRequestValidatorContribution
         if (this.backendRemoteService.isRemoteServer()) {
             return true;
         }
+        const origin = request.headers.origin;
         // On Electron the main page is served from the `file` protocol.
-        // We don't expect the requests to come from anywhere else.
-        return request.headers.origin === 'file://';
+        // Chromium may send "file://" or "null" (opaque origin) or omit the
+        // header entirely depending on the request type (WebSocket upgrade vs
+        // HTTP polling). All three are expected for same-origin Electron requests.
+        return !origin || origin === 'file://' || origin === 'null';
     }
 }

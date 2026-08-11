@@ -1,11 +1,31 @@
-# Eclipse Theia Vulnerability Reporting Policy
+# Security Policy
 
-If you think or suspect that you have discovered a new security vulnerability
-in this project, please __do not__ disclose it on GitHub, e.g. in an issue, a
-PR, or a discussion. Any such disclosure will be removed/deleted on sight, to
-promote orderly disclosure, as per the Eclipse Foundation Security Policy (1).
+This Eclipse Foundation Project adheres to the [Eclipse Foundation Vulnerability Reporting Policy](https://www.eclipse.org/security/policy/).
 
-Instead, please report any potential vulnerability to the Eclipse Foundation [Security Team](https://www.eclipse.org/security/). Make sure to provide a concise description of the issue, a CWE, and other supporting information.
+## How To Report a Vulnerability
 
-(1) _Eclipse Foundation Vulnerability Reporting Policy_:
-[https://www.eclipse.org/security/policy.php](https://www.eclipse.org/security/policy.php)
+If you think you have found a vulnerability in this repository, please report it to us through coordinated disclosure.
+
+**Please do not report security vulnerabilities through public issues, discussions, or pull requests.**
+
+Instead, please create a [confidential issue](https://gitlab.eclipse.org/security/vulnerability-reports/-/issues/new?issuable_template=new_vulnerability) in the Eclipse Foundation Vulnerability Reporting Tracker.
+
+You can find more information about reporting and disclosure at the [Eclipse Foundation Security page](https://www.eclipse.org/security/).
+
+Please include as much of the information listed below as you can to help us better understand and resolve the issue:
+
+* The type of issue (e.g., buffer overflow, SQL injection, or cross-site scripting)
+* Affected version(s)
+* Impact of the issue, including how an attacker might exploit the issue
+* Step-by-step instructions to reproduce the issue
+* The location of the affected source code (tag/branch/commit or direct URL)
+* Full paths of source file(s) related to the manifestation of the issue
+* Configuration required to reproduce the issue
+* Log files that are related to this issue (if possible)
+* Proof-of-concept or exploit code (if possible)
+
+This information will help us triage your report more quickly.
+
+## Supported Versions
+
+Eclipse Theia is released on a monthly cadence. Security fixes are addressed in the next upcoming release and are not backported to previously released versions.

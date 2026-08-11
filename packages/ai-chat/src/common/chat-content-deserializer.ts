@@ -19,6 +19,8 @@ import {
     ChatResponseContent,
     CodeChatResponseContentImpl,
     CommandChatResponseContentImpl,
+    CompactionChatResponseContentImpl,
+    CompactionContentData,
     ErrorChatResponseContentImpl,
     HorizontalLayoutChatResponseContentImpl,
     InformationalChatResponseContentImpl,
@@ -28,6 +30,7 @@ import {
     TextChatResponseContentImpl,
     ThinkingChatResponseContentImpl,
     ToolCallChatResponseContentImpl,
+    ServerToolCallChatResponseContentImpl,
     UnknownChatResponseContentImpl,
     TextContentData,
     ThinkingContentData,
@@ -35,6 +38,7 @@ import {
     InformationalContentData,
     CodeContentData,
     ToolCallContentData,
+    ServerToolCallContentData,
     CommandContentData,
     HorizontalLayoutContentData,
     ProgressContentData,
@@ -249,6 +253,15 @@ export class DefaultChatContentDeserializerContribution implements ChatContentDe
         });
 
         registry.register({
+            kind: 'compaction',
+            deserialize: (data: CompactionContentData) => new CompactionChatResponseContentImpl(
+                data.provider,
+                data.data,
+                data.summary
+            )
+        });
+
+        registry.register({
             kind: 'markdownContent',
             deserialize: (data: MarkdownContentData) => new MarkdownChatResponseContentImpl(data.content)
         });
@@ -285,6 +298,19 @@ export class DefaultChatContentDeserializerContribution implements ChatContentDe
                     data.data
                 );
             }
+        });
+
+        registry.register({
+            kind: 'serverToolCall',
+            // Server tools are executed by the provider; a restored call is always finished.
+            deserialize: (data: ServerToolCallContentData) => new ServerToolCallChatResponseContentImpl(
+                data.id,
+                data.name,
+                data.arguments,
+                true,
+                data.result,
+                data.data
+            )
         });
 
         registry.register({

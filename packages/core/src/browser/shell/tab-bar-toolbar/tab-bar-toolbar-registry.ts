@@ -141,11 +141,11 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
                 const menu = this.menuRegistry.getMenu(delegate.menuPath);
                 if (menu) {
                     for (const child of menu.children) {
-                        if (child.isVisible([...delegate.menuPath, child.id], this.contextKeyService, widget.node)) {
+                        if (child.isVisible([...delegate.menuPath, child.id], this.contextKeyService, widget.node, widget)) {
                             if (CompoundMenuNode.is(child)) {
                                 for (const grandchild of child.children) {
                                     if (grandchild.isVisible([...delegate.menuPath, child.id, grandchild.id],
-                                        this.contextKeyService, widget.node) && RenderedMenuNode.is(grandchild)) {
+                                        this.contextKeyService, widget.node, widget) && RenderedMenuNode.is(grandchild)) {
                                         if (CommandMenu.is(grandchild)) {
                                             result.push(new CommandMenuAsToolbarItemWrapper([...delegate.menuPath, child.id, grandchild.id], this.commandRegistry,
                                                 this.menuRegistry, this.contextKeyService, this.contextMenuRenderer, grandchild, child.id));

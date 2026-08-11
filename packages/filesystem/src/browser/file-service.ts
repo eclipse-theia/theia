@@ -1442,8 +1442,7 @@ export class FileService {
     watch(resource: URI, options: WatchOptions = { recursive: false, excludes: [] }): Disposable {
         const resolvedOptions: WatchOptions = {
             ...options,
-            // always ignore temporary upload files
-            excludes: options.excludes.concat('**/theia_upload_*')
+            excludes: this.resolveWatcherExcludes(resource, options.excludes)
         };
 
         let watchDisposed = false;
@@ -1460,6 +1459,32 @@ export class FileService {
         }, error => this.logger.error(error));
 
         return Disposable.create(() => watchDisposable.dispose());
+    }
+
+    /**
+     * Resolve the effective exclude globs for a watcher: the caller-supplied `excludes`, the
+     * always-on temporary-upload exclude, and the user's `files.watcherExclude` preference.
+     *
+     * Applying `files.watcherExclude` here, for every watcher, rather than relying on individual
+     * callers, keeps the number of OS file watches (e.g. inotify watches on Linux) bounded even for
+     * watchers that request `excludes: []` - internal recursive watchers as well as plugin and
+     * language-server watchers created via `vscode.workspace.createFileSystemWatcher`. It also gives
+     * overlapping watchers a consistent set of excludes, so the watcher subsumption in `doWatch` can
+     * collapse them into a single OS watch instead of leaving duplicates that emit duplicate events.
+     */
+    protected resolveWatcherExcludes(resource: URI, excludes: string[]): string[] {
+        const resolved = new Set(excludes);
+        // always ignore temporary upload files
+        resolved.add('**/theia_upload_*');
+        const configured = this.preferences.get('files.watcherExclude', undefined, resource.toString());
+        if (configured) {
+            for (const pattern of Object.keys(configured)) {
+                if (configured[pattern]) {
+                    resolved.add(pattern);
+                }
+            }
+        }
+        return Array.from(resolved);
     }
 
     async doWatch(resource: URI, options: WatchOptions): Promise<Disposable> {

@@ -276,6 +276,11 @@
   background: inherit;
 }
 
+/* Ensure the empty bottom panel keeps a top border separating it from the main panel. */
+#theia-bottom-content-panel:not(:has(.lm-TabBar)) {
+  border-top: var(--theia-border-width) solid var(--theia-panel-border);
+}
+
 #theia-bottom-content-panel .lm-TabBar-tab {
   background: inherit;
 }

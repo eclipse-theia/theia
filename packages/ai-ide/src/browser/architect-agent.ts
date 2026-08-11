@@ -26,8 +26,9 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands';
 import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
+import { ArchitectAgentId } from '../common/agent-ids';
 
-export const ArchitectAgentId = 'Architect';
+export { ArchitectAgentId };
 
 @injectable()
 export class ArchitectAgent extends AbstractModeAwareChatAgent {

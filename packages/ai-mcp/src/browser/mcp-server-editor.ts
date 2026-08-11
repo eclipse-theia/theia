@@ -27,6 +27,7 @@ import {
     RemoteMCPServerDescription
 } from '../common/mcp-server-manager';
 import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
+import { MCPOAuthConfig } from '../common/mcp-oauth';
 import type { DialogProps } from '@theia/core/lib/browser/dialogs';
 import type { MCPServerEditDialog, MCPServerFormData } from './mcp-server-edit-dialog';
 
@@ -73,6 +74,10 @@ export interface MCPInstallOverrides {
     autostart?: boolean;
     /** Filled into a remote server's `serverAuthToken` slot when supplied by the user. */
     serverAuthToken?: string;
+    /** Filled into the entry's `oauth.clientId` slot when supplied by the user. */
+    oauthClientId?: string;
+    /** Filled into the entry's `oauth.clientSecret` slot when supplied by the user. */
+    oauthClientSecret?: string;
 }
 
 /**
@@ -203,6 +208,15 @@ export class MCPServerEditorImpl implements MCPServerEditor {
         if (overrides.serverAuthToken !== undefined && 'serverAuthToken' in config) {
             merged.serverAuthToken = overrides.serverAuthToken;
         }
+        // Replace the registry's OAuth client placeholders with the user-supplied credentials,
+        // keeping the registry-fixed parts (scopes, authorization server, resource) intact.
+        if (config.oauth && (overrides.oauthClientId !== undefined || overrides.oauthClientSecret !== undefined)) {
+            merged.oauth = {
+                ...config.oauth,
+                ...(overrides.oauthClientId !== undefined && { clientId: overrides.oauthClientId }),
+                ...(overrides.oauthClientSecret !== undefined && { clientSecret: overrides.oauthClientSecret })
+            };
+        }
         return merged;
     }
 
@@ -217,10 +231,16 @@ export class MCPServerEditorImpl implements MCPServerEditor {
         const serverConfig = formData.serverType === 'local'
             ? this.toLocalConfig(formData)
             : this.toRemoteConfig(formData);
+        const merged: Record<string, unknown> = { ...existing, ...serverConfig };
+        // Preserving extra fields must not retain keys of another server type (e.g. a leftover
+        // `oauth` block after switching to "Remote"), which would make the stored entry invalid.
+        for (const staleKey of STALE_KEYS_BY_SERVER_TYPE[formData.serverType]) {
+            delete merged[staleKey];
+        }
         try {
             await this.preferenceService.set(
                 MCP_SERVERS_PREF,
-                { ...currentServers, [serverName]: { ...existing, ...serverConfig } },
+                { ...currentServers, [serverName]: merged },
                 PreferenceScope.User
             );
         } catch (error) {
@@ -240,13 +260,19 @@ export class MCPServerEditorImpl implements MCPServerEditor {
                 serverAuthToken: '',
                 serverAuthTokenHeader: '',
                 headers: '',
-                autostart: server.autostart ?? true
+                oauthClientId: '',
+                oauthClientSecret: '',
+                oauthScopes: '',
+                oauthAuthorizationServer: '',
+                oauthResource: '',
+                autostart: server.autostart ?? true,
+                deferLoading: server.deferLoading ?? false
             };
         }
         if (isRemoteMCPServerDescription(server)) {
             return {
                 name: server.name,
-                serverType: 'remote',
+                serverType: server.oauth ? 'remote-oauth' : 'remote',
                 command: '',
                 args: '',
                 env: '',
@@ -256,7 +282,13 @@ export class MCPServerEditorImpl implements MCPServerEditor {
                 headers: server.headers
                     ? Object.entries(server.headers).map(([k, v]) => `${k}=${v}`).join('\n')
                     : '',
-                autostart: server.autostart ?? true
+                oauthClientId: server.oauth?.clientId ?? '',
+                oauthClientSecret: server.oauth?.clientSecret ?? '',
+                oauthScopes: server.oauth?.scopes?.join(' ') ?? '',
+                oauthAuthorizationServer: server.oauth?.authorizationServer ?? '',
+                oauthResource: server.oauth?.resource ?? '',
+                autostart: server.autostart ?? true,
+                deferLoading: server.deferLoading ?? false
             };
         }
         return undefined;
@@ -265,7 +297,8 @@ export class MCPServerEditorImpl implements MCPServerEditor {
     protected toLocalConfig(formData: MCPServerFormData): Partial<LocalMCPServerDescription> {
         const config: Partial<LocalMCPServerDescription> = {
             command: formData.command.trim(),
-            autostart: formData.autostart
+            autostart: formData.autostart,
+            deferLoading: formData.deferLoading
         };
         if (formData.args.trim()) {
             config.args = formData.args.trim().split(/\s+/);
@@ -280,21 +313,34 @@ export class MCPServerEditorImpl implements MCPServerEditor {
     protected toRemoteConfig(formData: MCPServerFormData): Partial<RemoteMCPServerDescription> {
         const config: Partial<RemoteMCPServerDescription> = {
             serverUrl: formData.serverUrl.trim(),
-            autostart: formData.autostart
+            autostart: formData.autostart,
+            deferLoading: formData.deferLoading
         };
-        if (formData.serverAuthToken.trim()) {
-            config.serverAuthToken = formData.serverAuthToken.trim();
-        }
-        if (formData.serverAuthTokenHeader.trim()) {
-            config.serverAuthTokenHeader = formData.serverAuthTokenHeader.trim();
+        if (formData.serverType === 'remote') {
+            if (formData.serverAuthToken.trim()) {
+                config.serverAuthToken = formData.serverAuthToken.trim();
+            }
+            if (formData.serverAuthTokenHeader.trim()) {
+                config.serverAuthTokenHeader = formData.serverAuthTokenHeader.trim();
+            }
         }
         const headers = parseKeyValuePairs(formData.headers);
         if (headers) {
             config.headers = headers;
         }
+        const oauth = toOAuthConfig(formData);
+        if (oauth) {
+            config.oauth = oauth;
+        }
         return config;
     }
 }
+
+const STALE_KEYS_BY_SERVER_TYPE: Record<MCPServerFormData['serverType'], readonly string[]> = {
+    'local': ['serverUrl', 'serverAuthToken', 'serverAuthTokenHeader', 'headers', 'oauth'],
+    'remote': ['command', 'args', 'env', 'oauth'],
+    'remote-oauth': ['command', 'args', 'env', 'serverAuthToken', 'serverAuthTokenHeader']
+};
 
 function parseKeyValuePairs(input: string): Record<string, string> | undefined {
     if (!input.trim()) {
@@ -312,4 +358,18 @@ function parseKeyValuePairs(input: string): Record<string, string> | undefined {
         }
     }
     return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function toOAuthConfig(formData: MCPServerFormData): MCPOAuthConfig | undefined {
+    if (formData.serverType !== 'remote-oauth') {
+        return undefined;
+    }
+    const scopes = formData.oauthScopes.trim() ? formData.oauthScopes.trim().split(/\s+/) : undefined;
+    return {
+        ...(formData.oauthClientId.trim() && { clientId: formData.oauthClientId.trim() }),
+        ...(formData.oauthClientSecret.trim() && { clientSecret: formData.oauthClientSecret.trim() }),
+        ...(scopes && { scopes }),
+        ...(formData.oauthAuthorizationServer.trim() && { authorizationServer: formData.oauthAuthorizationServer.trim() }),
+        ...(formData.oauthResource.trim() && { resource: formData.oauthResource.trim() })
+    };
 }

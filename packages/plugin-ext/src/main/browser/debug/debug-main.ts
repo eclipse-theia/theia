@@ -26,8 +26,6 @@ import {
 } from '../../../common/plugin-api-rpc';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { Breakpoint, DebugStackFrameDTO, DebugThreadDTO, WorkspaceFolder } from '../../../common/plugin-api-rpc-model';
-import { LabelProvider } from '@theia/core/lib/browser';
-import { EditorManager } from '@theia/editor/lib/browser';
 import { BreakpointManager, BreakpointsChangeEvent } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
 import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { SourceBreakpoint, FunctionBreakpoint, BaseBreakpoint } from '@theia/debug/lib/browser/breakpoint/breakpoint-marker';
@@ -35,10 +33,6 @@ import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
-import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { MessageClient } from '@theia/core/lib/common/message-service-protocol';
-import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
-import { DebugPreferences } from '@theia/debug/lib/common/debug-preferences';
 import { PluginDebugAdapterContribution } from './plugin-debug-adapter-contribution';
 import { PluginDebugConfigurationProvider } from './plugin-debug-configuration-provider';
 import { PluginDebugSessionContributionRegistrator, PluginDebugSessionContributionRegistry } from './plugin-debug-session-contribution-registry';
@@ -46,17 +40,12 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { PluginDebugSessionFactory } from './plugin-debug-session-factory';
 import { PluginDebugService } from './plugin-debug-service';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ConsoleSessionManager } from '@theia/console/lib/browser/console-session-manager';
 import { DebugConsoleSession } from '@theia/debug/lib/browser/console/debug-console-session';
-import { CommandService, ContributionProvider } from '@theia/core/lib/common';
-import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
 import { ConnectionImpl } from '../../../common/connection';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { DebugSessionOptions as TheiaDebugSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
 import { DebugStackFrame } from '@theia/debug/lib/browser/model/debug-stack-frame';
 import { DebugThread } from '@theia/debug/lib/browser/model/debug-thread';
-import { TestService } from '@theia/test/lib/browser/test-service';
 import { DebugBreakpoint } from '@theia/debug/lib/browser/model/debug-breakpoint';
 
 function toOrigin<T extends BaseBreakpoint>(input: DebugBreakpoint<T>): T {
@@ -75,24 +64,14 @@ function eventToOrigins<T extends BaseBreakpoint>({ added, removed, changed, uri
 export class DebugMainImpl implements DebugMain, Disposable {
     private readonly debugExt: DebugExt;
 
+    private readonly container: interfaces.Container;
     private readonly sessionManager: DebugSessionManager;
-    private readonly labelProvider: LabelProvider;
-    private readonly editorManager: EditorManager;
     private readonly breakpointsManager: BreakpointManager;
     private readonly consoleSessionManager: ConsoleSessionManager;
     private readonly configurationManager: DebugConfigurationManager;
-    private readonly terminalService: TerminalService;
-    private readonly messages: MessageClient;
-    private readonly outputChannelManager: OutputChannelManager;
-    private readonly debugPreferences: DebugPreferences;
     private readonly sessionContributionRegistrator: PluginDebugSessionContributionRegistrator;
     private readonly pluginDebugService: PluginDebugService;
-    private readonly fileService: FileService;
     private readonly pluginService: HostedPluginSupport;
-    private readonly debugContributionProvider: ContributionProvider<DebugContribution>;
-    private readonly testService: TestService;
-    private readonly workspaceService: WorkspaceService;
-    private readonly commandService: CommandService;
 
     private readonly debuggerContributions = new Map<string, DisposableCollection>();
     private readonly configurationProviders = new Map<number, DisposableCollection>();
@@ -100,24 +79,14 @@ export class DebugMainImpl implements DebugMain, Disposable {
 
     constructor(rpc: RPCProtocol, readonly connectionMain: ConnectionImpl, container: interfaces.Container) {
         this.debugExt = rpc.getProxy(MAIN_RPC_CONTEXT.DEBUG_EXT);
+        this.container = container;
         this.sessionManager = container.get(DebugSessionManager);
-        this.labelProvider = container.get(LabelProvider);
-        this.editorManager = container.get(EditorManager);
         this.breakpointsManager = container.get(BreakpointManager);
         this.consoleSessionManager = container.get(ConsoleSessionManager);
         this.configurationManager = container.get(DebugConfigurationManager);
-        this.terminalService = container.get(TerminalService);
-        this.messages = container.get(MessageClient);
-        this.outputChannelManager = container.get(OutputChannelManager);
-        this.debugPreferences = container.get(DebugPreferences);
         this.pluginDebugService = container.get(PluginDebugService);
         this.sessionContributionRegistrator = container.get(PluginDebugSessionContributionRegistry);
-        this.debugContributionProvider = container.getNamed(ContributionProvider, DebugContribution);
-        this.fileService = container.get(FileService);
         this.pluginService = container.get(HostedPluginSupport);
-        this.testService = container.get(TestService);
-        this.workspaceService = container.get(WorkspaceService);
-        this.commandService = container.get(CommandService);
 
         const fireDidChangeBreakpoints = ({ added, removed, changed }: BreakpointsChangeEvent<SourceBreakpoint | FunctionBreakpoint>) => {
             this.debugExt.$breakpointsDidChange(
@@ -168,23 +137,12 @@ export class DebugMainImpl implements DebugMain, Disposable {
         }
 
         const debugSessionFactory = new PluginDebugSessionFactory(
-            this.terminalService,
-            this.editorManager,
-            this.breakpointsManager,
-            this.labelProvider,
-            this.messages,
-            this.outputChannelManager,
-            this.debugPreferences,
             async (sessionId: string) => {
                 const connection = await this.connectionMain.ensureConnection(sessionId);
                 return connection;
             },
-            this.fileService,
             terminalOptionsExt,
-            this.debugContributionProvider,
-            this.testService,
-            this.workspaceService,
-            this.commandService,
+            this.container,
         );
 
         const toDispose = new DisposableCollection(

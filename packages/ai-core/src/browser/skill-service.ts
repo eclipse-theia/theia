@@ -79,6 +79,11 @@ export class DefaultSkillService implements SkillService {
 
     protected updateDebounceTimeout: ReturnType<typeof setTimeout> | undefined;
 
+    /** True while {@link update} is running, so concurrent callers do not duplicate the scan and its log output. */
+    protected updateInProgress = false;
+    /** Set when {@link update} is called while another run is in progress; triggers a follow-up scan when the current one finishes. */
+    protected updateRescheduled = false;
+
     protected _ready = new Deferred<void>();
     get ready(): Promise<void> {
         return this._ready.promise;
@@ -174,6 +179,28 @@ export class DefaultSkillService implements SkillService {
             clearTimeout(this.updateDebounceTimeout);
             this.updateDebounceTimeout = undefined;
         }
+        // Serialise concurrent update() calls: a workspace-ready trigger and a file-change-driven
+        // scheduleUpdate() can fire within the same async tick, in which case both runs would
+        // scan and log everything, producing the duplicated log lines that motivated this guard.
+        // The second caller records a pending request and lets the first finish; the follow-up
+        // is then re-scheduled through the debouncer so any further events coalesce into it.
+        if (this.updateInProgress) {
+            this.updateRescheduled = true;
+            return;
+        }
+        this.updateInProgress = true;
+        try {
+            await this.doUpdate();
+        } finally {
+            this.updateInProgress = false;
+            if (this.updateRescheduled) {
+                this.updateRescheduled = false;
+                this.scheduleUpdate();
+            }
+        }
+    }
+
+    protected async doUpdate(): Promise<void> {
         this.toDispose.dispose();
         const newDisposables = new DisposableCollection();
         const newSkills = new Map<string, Skill>();
@@ -258,9 +285,9 @@ export class DefaultSkillService implements SkillService {
                     const parentUriString = parentURI.toString();
                     disposables.push(this.fileService.watch(parentURI, { recursive: false, excludes: [] }));
                     parentWatchers.set(parentUriString, directoryPath);
-                    this.logger.info(`Watching parent directory '${parentPath}' for skills folder creation`);
+                    this.logger.debug(`Watching parent directory '${parentPath}' for skills folder creation`);
                 } else {
-                    this.logger.warn(`Cannot watch skills directory '${directoryPath}': parent directory does not exist`);
+                    this.logger.debug(`Cannot watch skills directory '${directoryPath}': parent directory does not exist`);
                 }
             }
         } catch (error) {

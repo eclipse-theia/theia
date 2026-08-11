@@ -36,7 +36,7 @@ import {
 } from '../common';
 import {
     BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution,
-    BackendApplicationServer, BackendApplicationPath, RootContainer
+    BackendApplicationServer, BackendApplicationPath, EarlyExpressMiddleware, RootContainer
 } from './backend-application';
 import { CliManager, CliContribution } from './cli';
 import { IPCConnectionProvider } from './messaging';
@@ -55,7 +55,7 @@ import { ProcessUtils } from './process-utils';
 import { ProxyCliContribution } from './request/proxy-cli-contribution';
 import { bindNodeStopwatch, bindBackendStopwatchServer } from './performance';
 import { OSBackendProviderImpl } from './os-backend-provider';
-import { BackendRequestFacade } from './request/backend-request-facade';
+import { BackendRequestFacade, BackendRequestAllowedContribution } from './request/backend-request-facade';
 import { FileSystemLocking, FileSystemLockingImpl } from './filesystem-locking';
 import { BackendRemoteService } from './remote/backend-remote-service';
 import { RemoteCliContribution } from './remote/remote-cli-contribution';
@@ -89,6 +89,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(BackendApplicationCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toService(BackendApplicationCliContribution);
 
+    bind(EarlyExpressMiddleware).toSelf().inSingletonScope();
     bind(BackendApplication).toSelf().inSingletonScope();
     bind(RootContainer).toDynamicValue(({ container }) => {
         let root = container;
@@ -152,6 +153,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bindRootContributionProvider(bind, RemoteCliContribution);
     bind(BackendRemoteService).toSelf().inSingletonScope();
+    bindRootContributionProvider(bind, BackendRequestAllowedContribution);
     bind(BackendRequestFacade).toSelf().inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(
         ctx => new RpcConnectionHandler(REQUEST_SERVICE_PATH, () => ctx.container.get(BackendRequestFacade))

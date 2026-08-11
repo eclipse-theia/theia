@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { MCPServerManagerImpl } from './mcp-server-manager-impl';
 import {
@@ -26,9 +27,20 @@ import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connec
 import { McpServersPreferenceSchema } from '../common/mcp-preferences';
 import { MCPServerManagerServerImpl } from './mcp-server-manager-server';
 import { MCPServerManagerServer, MCPServerManagerServerClient, MCPServerManagerServerPath } from '../common/mcp-protocol';
+import { MCPOAuthFrontendDelegate, MCPOAuthFrontendDelegateClient, mcpOAuthFrontendDelegatePath } from '../common/mcp-oauth';
+import { MCPOAuthFrontendDelegateImpl } from './mcp-oauth-frontend-delegate';
+import { MCPOAuthCallbackService } from './mcp-oauth-callback-service';
+import { MCPOAuthCallbackResponder } from './mcp-oauth-callback-responder';
+import { MCPOAuthCallbackBackendContribution } from './mcp-oauth-callback-backend-contribution';
+import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-factory';
+import { MCPOAuthCredentialStore } from './mcp-oauth-credential-store';
 
 // We use a connection module to handle AI services separately for each frontend.
 const mcpConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
+    bind(MCPOAuthClientProviderFactory).toSelf().inSingletonScope();
+    bind(MCPOAuthCredentialStore).toSelf().inSingletonScope();
+    bind(MCPOAuthFrontendDelegateImpl).toSelf().inSingletonScope();
+    bind(MCPOAuthFrontendDelegate).toService(MCPOAuthFrontendDelegateImpl);
     bind(MCPServerManager).to(MCPServerManagerImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx => new RpcConnectionHandler<MCPFrontendNotificationService>(
         MCPServerManagerPath, client => {
@@ -43,12 +55,25 @@ const mcpConnectionModule = ConnectionContainerModule.create(({ bind, bindBacken
         MCPServerManagerServerPath, client => {
             const server = ctx.container.get<MCPServerManagerServer>(MCPServerManagerServer);
             server.setClient(client);
+            client.onDidCloseConnection(() => server.disconnectClient(client));
             return server;
+        }
+    )).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(ctx => new RpcConnectionHandler<MCPOAuthFrontendDelegateClient>(
+        mcpOAuthFrontendDelegatePath, client => {
+            const delegate = ctx.container.get<MCPOAuthFrontendDelegate>(MCPOAuthFrontendDelegate);
+            delegate.setClient(client);
+            client.onDidCloseConnection(() => delegate.disconnectClient(client));
+            return delegate;
         }
     )).inSingletonScope();
 });
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: McpServersPreferenceSchema });
+    bind(MCPOAuthCallbackService).toSelf().inSingletonScope();
+    bind(MCPOAuthCallbackResponder).toSelf().inSingletonScope();
+    bind(MCPOAuthCallbackBackendContribution).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toService(MCPOAuthCallbackBackendContribution);
     bind(ConnectionContainerModule).toConstantValue(mcpConnectionModule);
 });

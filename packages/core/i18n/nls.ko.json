@@ -2,6 +2,7 @@
   "ai-chat-ui.show-settings": "AI 설정 표시",
   "ai.executePlanWithCoder": "Coder로 현재 계획 실행",
   "aiConfiguration:open": "AI 구성 보기 열기",
+  "aiConfiguration:openTools": "AI 도구 구성 열기",
   "aiHistory:clear": "AI 기록: 기록 지우기",
   "aiHistory:open": "AI 기록 보기 열기",
   "aiHistory:sortChronologically": "AI 기록: 시간순으로 정렬",
@@ -27,8 +28,8 @@
           "title": "기능 재정의"
         },
         "completionNotification": {
-          "mdDescription": "이 에이전트가 작업을 완료할 때의 알림 동작. 설정되지 않은 경우 전역 기본 알림 설정이 사용됩니다.\n                - `os-notification`: OS/시스템 알림 표시\n                - `message`: 상태 표시줄/메시지 영역에 알림 표시\n                - `blink`: UI 깜박임 또는 강조 표시\n                - `off`: 이 에이전트의 알림 비활성화",
-          "title": "완료 알림"
+          "mdDescription": "이 에이전트가 사용자의 주의를 필요로 할 때(예: 작업 완료 또는 사용자 입력 요청 시)의 알림 동작입니다.                     설정하지 않은 경우, 전역 기본 알림 설정이 사용됩니다.\n                    - `os-notification`: OS/시스템 알림 표시\n                    - `message`: 상태 표시줄/메시지 영역에 알림 표시\n                    - `blink`: UI 깜빡이거나 강조 표시\n                    - `off`: 이 에이전트에 대한 알림 비활성화",
+          "title": "알림"
         },
         "enable": {
           "mdDescription": "에이전트를 활성화(true)할지 비활성화(false)할지를 지정합니다.",
@@ -60,6 +61,10 @@
           "mdDescription": "이 에이전트에 대해 현재 선택된 프롬프트 변형을 지정합니다.",
           "title": "선택된 변형"
         },
+        "serverToolSelections": {
+          "mdDescription": "모델 공급업체별로 분류된 공급자 서버 도구에 대한 사용자 선택 항목입니다. 각 값에는 해당 공급업체에 대해 활성화된 서버 도구 ID가 포함되어 있습니다.",
+          "title": "서버 도구 선택"
+        },
         "showInChat": {
           "mdDescription": "에이전트를 채팅 UI에 표시할지(true) 숨길지(false)를 지정합니다.",
           "title": "채팅에 표시"
@@ -69,6 +74,15 @@
       "anthropic": {
         "apiKey": {
           "description": "공식 Anthropic 계정의 API 키를 입력하세요. **참고:** 이 설정을 사용하면 Anthropic API 키가 Theia가 실행되는 머신에 평문으로 저장됩니다. 키를 안전하게 설정하려면 환경 변수 `ANTHROPIC_API_KEY`를 사용하세요."
+        },
+        "compaction": {
+          "default": "전역 채팅 서버 측 압축 설정을 따릅니다.",
+          "description": "Anthropic 모델에 대해 제공업체의 기본 서버 측 압축 기능을 재정의합니다. “default”는 전역 채팅 설정({0})을 따릅니다. 이 기능이 활성화되면, 대화가 임계값을 초과할 경우 제공업체가 이전 대화 내용을 요약할 수 있도록 Anthropic 베타 메시지 API가 사용됩니다.",
+          "disabled": "Anthropic 모델에 대해서는 절대로 서버 측 압축을 요청하지 마십시오.",
+          "enabled": "Anthropic 모델의 경우 항상 서버 측 압축을 요청하십시오."
+        },
+        "compactionTokenThreshold": {
+          "description": "Anthropic 모델에 대한 서버 측 압축의 전역 입력 토큰 임계값을 재정의합니다. 이 설정이 지정되지 않은 경우, 전역 설정 또는 공급자 기본값이 적용됩니다. 설정된 경우, 값은 50,000 토큰 이상이어야 합니다."
         },
         "customEndpoints": {
           "apiKey": {
@@ -111,6 +125,7 @@
         "bypassModelRequirement": {
           "description": "언어 모델 요구 사항 검사를 우회합니다. Theia 언어 모델이 필요 없는 외부 에이전트(예: Claude Code)를 사용하는 경우 이 옵션을 활성화하십시오."
         },
+        "category": "AI",
         "changeSetDefaultTitle": "제안된 변경 사항",
         "changeSetFileDiffUriLabel": "AI 변경 사항: {0}",
         "chatAgentsVariable": {
@@ -135,6 +150,15 @@
         "confirmRevertSuggestion": "이 제안이 생성된 이후 {0} 파일이 변경되었습니다. 변경 사항을 되돌리시겠습니까?",
         "couldNotFindMatchingLM": "일치하는 언어 모델을 찾을 수 없습니다. 설정을 확인해 주세요!",
         "couldNotFindReadyLMforAgent": "에이전트{0}용 준비된 언어 모델을 찾을 수 없습니다. 설정을 확인해 주세요!",
+        "customAgents": {
+          "migratePrompt": {
+            "message": "사용자 정의 에이전트는 여전히 구형 `customAgents.yml` 형식을 사용하고 있습니다. {0}에서 앞으로 사용할 새로운 에이전트별 형식(`agents/<id>/agent.md`)으로 마이그레이션하는 것을 권장합니다. 각 에이전트는 `customAgents.yml` 파일 옆에 별도의 파일을 갖게 되며, 원본 파일은 `customAgents.yml.bak`라는 이름으로 백업으로 보관됩니다."
+          },
+          "migrationResult": {
+            "empty": "사용자 지정 에이전트 마이그레이션: 마이그레이션할 항목이 없습니다."
+          },
+          "rerunMigration": "사용자 지정 에이전트 마이그레이션 다시 실행"
+        },
         "defaultAgent": {
           "description": "선택 사항: 사용자 쿼리에서 @<에이전트명>으로 명시적으로 언급된 에이전트가 없는 경우 호출될 채팅 에이전트의 <에이전트명>.         기본 에이전트가 구성되지 않은 경우 Theia의 기본값이 적용됩니다."
         },
@@ -215,13 +239,15 @@
           "label": "AI 채팅"
         },
         "welcomeScreenSessions": {
-          "description": "환영 화면에 표시할 최근 채팅 세션의 행 수. 표시되는 세션 수는 사용 가능한 너비에 따라 달라집니다. 최근 채팅 섹션을 숨기려면 0으로 설정하십시오."
+          "description": "채팅 개요(홈 화면)에 표시할 채팅 세션의 최대 개수입니다. 활성 세션이 우선 표시되며, 초과된 세션은 “모든 채팅 보기...” 링크를 통해 확인할 수 있습니다. 편집기 확대 비율이 높아져 스크롤바가 표시될 경우 이 값을 낮추십시오. 0으로 설정하면 인라인 목록이 완전히 숨겨지지만, “모든 채팅 보기...” 링크를 통해 세션에 계속 접근할 수 있습니다."
         }
       },
       "chat-ui": {
         "addContextVariable": "컨텍스트 변수 추가",
+        "agentDefaultModel": "에이전트 기본값",
         "agentDelegationDescription": "위임할 수 있는 다른 AI 에이전트들",
         "aiDisabled": "AI 기능이 비활성화되었습니다",
+        "allowedResourceUrls": "AI 채팅 응답에서 참조되는 외부 리소스(이미지, 스타일시트, 미디어 등)는 기본적으로 차단되며, 명시적으로 허용될 때까지 자리 표시자로 대체됩니다. 설정된 접두사 중 하나로 시작하는 URL을 가진 리소스는 차단되지 않고 직접 렌더링됩니다. 의도하지 않은 일치 현상을 방지하려면 슬래시(/)로 끝나는 전체 원본 주소(예: \"https://example.com/\")를 포함하십시오. 완전히 신뢰할 수 있는 출처만 추가하십시오.",
         "applyAll": "모두 적용",
         "applyAllTitle": "모든 보류 중인 변경 사항 적용",
         "askQuestion": "질문하기",
@@ -255,8 +281,12 @@
         "command-part-renderer": {
           "commandNotExecutable": "해당 명령어의 ID는 \"{0}\"이지만, 채팅 창에서는 실행할 수 없습니다."
         },
+        "compaction-part-renderer": {
+          "compactionMarker": "대화 요약"
+        },
         "copyCodeBlock": "코드 블록 복사",
         "couldNotSendRequestToSession": "세션 {1}에 \"{0}\" 요청을 보낼 수 없었습니다.",
+        "delegatedSession": "위임됨",
         "delegation-response-renderer": {
           "interactionNeeded": "사용자 상호작용 필요",
           "prompt": {
@@ -269,13 +299,11 @@
           "starting": "위임 시작 중...",
           "status": {
             "canceled": "취소됨",
-            "error": "오류",
             "generating": "생성 중...",
             "starting": "시작 중..."
           }
         },
         "deleteChangeSet": "변경 세트 삭제",
-        "deleteChat": "채팅 삭제",
         "editRequest": "편집",
         "edited": "수정됨",
         "editedTooltipHint": "이 프롬프트 변형은 편집되었습니다. AI 구성 보기에서 재설정할 수 있습니다.",
@@ -292,6 +320,18 @@
         "functionsDescription": "{0} 확장 프로그램에서 제공하는 내장 기능",
         "genericCapabilities": "일반 기능",
         "mcpFunctionsDescription": "연결된 서버의 모델 컨텍스트 프로토콜(MCP) 기능",
+        "mermaid-rendering": {
+          "copySource": "소스 복사",
+          "error": "Mermaid 다이어그램을 렌더링할 수 없습니다. 정의를 확인하려면 소스 보기로 전환하십시오.",
+          "rendering": "도식 표시 중…",
+          "resetView": "보기 초기화",
+          "showDiagram": "다이어그램 보기",
+          "showSource": "소스 보기",
+          "title": "머메이드 다이어그램",
+          "wheelZoomHint": "{0} + 스크롤"
+        },
+        "modelBadgeTooltip": "이 응답에 사용된 언어 모델: {0}",
+        "modelUnavailable": "사용 불가",
         "noChatAgentsAvailable": "사용 가능한 채팅 에이전트가 없습니다.",
         "noMatchingCapabilities": "일치하는 기능 없음",
         "openDiff": "차이점 열기",
@@ -300,14 +340,12 @@
         "performThisTask": "이 작업을 수행하십시오.",
         "persistedSession": "지속 세션 (복원하려면 클릭)",
         "promptFragmentsDescription": "대화에 포함할 사용자 지정 프롬프트 조각",
-        "reasoning": {
-          "minimal": "최소"
-        },
         "removeChat": "채팅 제거",
         "requestNotFoundForRetry": "요청을 찾을 수 없습니다. 재시도하십시오.",
         "responseFrom": "{0}의 응답",
         "saveCurrentSelectionsToSettings": "기능 설정 저장",
         "searchCapabilities": "검색 기능",
+        "sectionRestored": "복원됨",
         "selectAgentQuickPickPlaceholder": "새 세션에 대한 에이전트를 선택하십시오",
         "selectAllInCategory": "이 카테고리의 모든 항목 선택",
         "selectChat": "채팅 선택",
@@ -318,6 +356,17 @@
         "selectTaskContextQuickPickPlaceholder": "작업 컨텍스트를 선택하여 연결하십시오",
         "selectVariableArguments": "선택적 가변 인수",
         "send": "보내기(Enter)",
+        "server-toolcall-part-renderer": {
+          "indicator": "서버",
+          "serverTooltip": "제공업체의 서버에서 실행됩니다(로컬이 아님). 서버 도구는 선택 시 자동으로 승인됩니다."
+        },
+        "serverToolWarning": "이 도구는 선택 시 자동으로 승인됩니다. 모델이 언제든지 이 도구를 실행할 수 있습니다.",
+        "serverTools": "서버 도구",
+        "serverToolsDescription": "서버 도구는 공급업체의 인프라에서 LLM에 의해 서버 측에서 실행됩니다.",
+        "serverToolsWarning": "이러한 도구는 선택 시 자동으로 승인됩니다. 모델은 언제든지 이를 실행할 수 있습니다.",
+        "sessionModel": "이 채팅의 모델",
+        "sessionModelDefault": "이 채팅의 모델 ({0})",
+        "sessionModelUnavailable": "이 채팅에 대한 모델은 사용할 수 없습니다({0}); 요청 시 에이전트 기본값을 사용합니다.",
         "sessionNotFoundForRetry": "재시도할 세션을 찾을 수 없음",
         "skillsDescription": "대화에 추가할 수 있는 재사용 가능한 기술 지침",
         "switchAgentMode": "에이전트 모드 전환",
@@ -330,6 +379,8 @@
         "tokenUsageOverflow": "토큰 사용량이 경고 기준을 훨씬 초과했습니다. 토큰을 압축하거나 새 세션을 시작하는 것을 고려해 보십시오.",
         "tokenUsageTooltipCacheCreate": "캐시 생성: {0}",
         "tokenUsageTooltipCacheRead": "캐시 읽기: {0}",
+        "tokenUsageTooltipCompactions": "{0} 압축 x",
+        "tokenUsageTooltipCumulative": "누적 버전: {0}",
         "tokenUsageTooltipTotal": "총계: {0} / {1} ({2} %)",
         "tokenUsageWarning": "토큰 사용 경고 기준치에 도달했습니다.",
         "tokenUsageWarningEnabled": "채팅 세션의 토큰 사용량이 설정된 임계값을 초과할 때 알림이 표시될지 여부를 제어합니다. 이를 위해서는 언어 모델 제공자가 토큰 사용량을 보고해야 합니다.",
@@ -349,6 +400,7 @@
           "alwaysAllowConfirm": "알겠습니다, 자동 승인을 활성화합니다.",
           "alwaysAllowGenericWarning": "이 도구는 자동 승인 기능을 활성화하기 전에 확인이 필요합니다. 활성화 후에는 향후 모든 호출이 확인 없이 실행됩니다. 해당 도구를 신뢰하고 잠재적 위험을 이해하는 경우에만 활성화하십시오.",
           "alwaysAllowTitle": "\"{0}\"에 대한 자동 승인을 활성화하시겠습니까?",
+          "approveLatest": "최신 도구 승인 확인",
           "autoCancel": "{0}의 자동 취소",
           "canceled": "도구 실행이 취소되었습니다",
           "denied": "도구 실행이 거부되었습니다",
@@ -357,6 +409,7 @@
           "deny-reason-placeholder": "거부 사유를 입력하세요...",
           "deny-session": "이 채팅에 대해 거부",
           "deny-with-reason": "이유를 제시하며 거부...",
+          "denyLatest": "최신 도구 확인 거부",
           "executionDenied": "도구 실행이 거부되었습니다",
           "header": "도구 실행 확인"
         },
@@ -390,8 +443,6 @@
         },
         "currentDirectory": "현재 디렉터리",
         "differentAgentRequestWarning": "이전 채팅 요청은 다른 에이전트가 처리했습니다. Claude Code는 해당 메시지를 확인할 수 없습니다.",
-        "directory": "디렉터리",
-        "domain": "도메인",
         "edit": "{0} 편집",
         "editAutomatically": "자동으로 편집",
         "editing": "편집",
@@ -460,7 +511,6 @@
         "openFileTooltip": "클릭하여 편집기에서 파일 열기",
         "optionsCount": "{0} 옵션",
         "partial": "부분",
-        "pattern": "패턴",
         "plan": "계획 모드",
         "project": "프로젝트",
         "projectRoot": "프로젝트 루트",
@@ -615,10 +665,9 @@
       },
       "core": {
         "agentConfiguration": {
-          "actions": "작업",
           "addCustomAgent": "사용자 지정 에이전트 추가",
           "availableCapabilities": "사용 가능한 기능",
-          "completionNotificationDescriptionPrefix": "이 에이전트가 작업을 완료할 때 알림을 받을 방식을 선택하십시오. \"기본값\"은 ",
+          "completionNotificationDescriptionPrefix": "이 에이전트가 사용자의 주의가 필요할 때(예: 작업 완료 시 또는 사용자 입력을 요청할 때) 알림을 받는 방식을 선택하십시오. “기본값”은 ",
           "defaultNotificationDescription": "전역 AI 알림 설정을 사용합니다",
           "enableAgent": "에이전트 활성화",
           "llmRequirements": "LLM 요구사항",
@@ -687,7 +736,7 @@
           }
         },
         "defaultNotification": {
-          "mdDescription": "AI 에이전트가 작업을 완료할 때 사용되는 기본 알림 방식입니다. 개별 에이전트는 이 설정을 재정의할 수 있습니다.\n                - `os-notification`: OS/시스템 알림 표시\n                - `message`: 상태 표시줄/메시지 영역에 알림 표시\n                - `blink`: UI 깜빡임 또는 강조 표시\n                - `off`: 모든 알림 비활성화",
+          "mdDescription": "AI 에이전트가 사용자의 주의를 필요로 할 때(예: 작업을 완료했거나 사용자의 입력을 요청할 때) 사용되는 기본 알림 방식입니다. 개별 에이전트는 이 설정을 재정의할 수 있습니다.",
           "title": "기본 알림 유형"
         },
         "discard": {
@@ -835,8 +884,14 @@
           },
           "title": "사용자 지정 요청 설정"
         },
+        "serverSideCompaction": {
+          "description": "채팅 요청에 대해 기본적으로 제공업체 고유의 서버 측 압축 기능을 활성화합니다. 이 기능이 켜져 있으면, 이를 지원하는 모델은 대화 분량이 자체 임계값을 초과할 경우 오래된 대화 내용을 자동으로 요약하여, 긴 세션이 컨텍스트 제한을 넘어 계속 진행될 수 있도록 합니다. 각 제공업체는 자체적인 재정의 옵션을 제공하며, 개별 채팅 세션에서는 세션 설정에서 이 설정을 재정의할 수 있습니다. 이 기능을 지원하지 않는 모델은 이를 무시합니다."
+        },
+        "serverSideCompactionTokenThreshold": {
+          "description": "프로바이더 고유의 서버 측 압축이 실행되어야 하는 기본 입력 토큰 임계값입니다. 프로바이더 및 개별 채팅 세션에서 이 값을 재정의할 수 있습니다. 설정되지 않은 경우, 프로바이더가 자체 기본 임계값을 선택합니다. 설정된 경우, 값은 50,000 토큰 이상이어야 합니다."
+        },
         "skillDirectories": {
-          "description": "스킬 정의(SKILL.md 파일)를 포함하는 추가 디렉터리. 스킬은 AI 에이전트가 참조할 수 있는 재사용 가능한 지침을 제공합니다. 작업 공간의 .prompts/skills 디렉터리와 제품 구성 폴더의 skills 디렉터리는 항상 포함됩니다."
+          "description": "스킬 정의(SKILL.md 파일)가 포함된 추가 디렉터리. 스킬은 AI 에이전트가 참조할 수 있는 재사용 가능한 지침을 제공합니다. 작업 공간의 .prompts/skills 및 .agents/skills 디렉터리, 홈 디렉터리의 .agents/skills 디렉터리, 그리고 제품 구성 폴더의 skills 디렉터리는 항상 포함됩니다."
         },
         "skillsVariable": {
           "description": "AI 에이전트가 사용할 수 있는 사용 가능한 기술 목록을 반환합니다."
@@ -907,7 +962,6 @@
         "open-history-tooltip": "AI 기록 열기...",
         "request-card": {
           "promptVariant": "프롬프트 변형",
-          "response": "응답",
           "timestamp": "타임스탬프"
         },
         "sortChronologically": {
@@ -947,10 +1001,8 @@
         "agent-description": "[AI 구성 보기]({0})에서 AI 에이전트 설정을 구성하세요. 여기에는 활성화, LLM 선택, 프롬프트 템플릿 사용자 지정 및 사용자 정의 에이전트 생성이 포함됩니다.",
         "agentConfiguration": {
           "customAgentLocationQuickPick": {
-            "createNewFile": "새 파일 만들기",
-            "openExistingFile": "기존 파일 열기",
-            "placeholder": "사용자 지정 에이전트 파일을 생성하거나 열 위치 선택",
-            "title": "사용자 지정 에이전트 파일의 위치 선택"
+            "placeholder": "agents/<id>/agent.md 파일을 생성할 위치를 선택하세요",
+            "title": "새 사용자 지정 에이전트의 위치를 선택하십시오"
           },
           "genericCapabilitiesSettings": "일반 기능",
           "genericCapabilityType": {
@@ -958,6 +1010,15 @@
             "functions": "기능",
             "mcpFunctions": "MCP 기능",
             "promptFragments": "프롬프트 조각"
+          },
+          "newAgent": {
+            "createFailed": "사용자 지정 에이전트 \"{0}\"을(를) 생성할 수 없습니다: {1}",
+            "defaultDescription": "사용자 정의 에이전트. agent.md 파일에서 이 설명을 편집하십시오.",
+            "defaultPrompt": "당신은 도움이 되는 에이전트입니다. 필요에 맞게 이 프롬프트를 수정해 주세요.",
+            "idInvalid": "문자, 숫자, 대시, 밑줄 또는 점만 사용하십시오.",
+            "idPrompt": "에이전트 ID(agents/ 폴더 내 폴더 이름으로 사용됨)",
+            "idTitle": "새로운 사용자 지정 에이전트",
+            "noLocation": "사용자 지정 에이전트를 생성할 수 없습니다. 프롬프트 템플릿 위치가 구성되지 않았습니다. 전역 또는 작업 공간 프롬프트 템플릿 폴더를 설정하고 다시 시도하십시오."
           },
           "noDescription": "설명 없음",
           "resetAllCapabilities": "모든 기능을 기본값으로 재설정",
@@ -975,6 +1036,11 @@
           "info": "에이전트 모드로 계속 진행하면 확인 내용이 저장됩니다. 나중에 `ai-features.agentMode.enabled` 설정을 통해 이 설정을 다시 취소할 수 있습니다.\n\n편집 모드로 계속 진행하면 기본 모드가 편집 모드로 변경됩니다.\n\n모드 선택기나 AI 구성에서 언제든지 모드를 변경할 수 있습니다.",
           "msg": "이 에이전트는 **에이전트 모드**를 사용합니다. 자율적인 작업 흐름을 활성화하기 위해, 별도의 확인 절차 없이 작업 공간 파일에 직접 기록할 수 있습니다.\n\n변경 사항을 검토하고 되돌릴 수 있도록 버전 관리 시스템(예: Git)을 사용하는 것이 좋습니다.\n\n아래 채팅 입력 영역의 모드 선택기를 사용하여 **편집 모드**로 전환하거나, 읽기 전용 계획 수립을 위해 **Architect** 에이전트를 사용할 수 있습니다.\n\n이 확인 메시지는 해당 작업 공간에 저장되며 다시 표시되지 않습니다. 이 설정을 초기화하거나 전역적으로 구성하려면 설정에서 `ai-features.agentMode.confirmed`를 찾아주세요.",
           "waiting": "확인 중..."
+        },
+        "allowAllMode": {
+          "stripTooltip": "이 세션에서는 AI 도구 호출이 확인 절차 없이 실행됩니다. 신뢰할 수 있는 환경에서만 활성화하십시오.",
+          "stripTooltipFooter": "--session-preference 옵션을 통해 설정합니다. 저장된 설정을 복원하려면 해당 플래그를 지정하지 않고 다시 시작하십시오.",
+          "title": "Theia AI 허용 모드"
         },
         "app-tester": {
           "errorCheckingDevToolsServerStatus": "DevTools MCP 서버 상태 확인 중 오류: {0}",
@@ -1013,6 +1079,7 @@
         "chatRestrictedMessage": {
           "title": "AI 기능 사용 제한"
         },
+        "childInteractionNeeded": "위임된 세션에 대한 확인이 필요합니다.",
         "codeReviewerAgent": {
           "description": "코드 변경 사항을 분석하여 체계적인 평가 결과를 제공하는 코드 검토 보조 도구입니다.         완료 기준, 빌드/린트/테스트 결과, 그리고 코드 품질을 확인합니다."
         },
@@ -1029,6 +1096,7 @@
             "startNewChat": "대화는 짧고 핵심만 전달하세요. 새 작업에 대해서는 [새 대화 시작]({0})하거나, [이 대화 내용을 요약한 새 대화 시작]({1})하세요."
           }
         },
+        "collapseSession": "{0} 접기",
         "commandAgent": {
           "commandCallback": {
             "confirmAction": "알겠습니다",
@@ -1057,10 +1125,10 @@
             "edit": "기본 모드"
           }
         },
-        "deleteChat": "채팅 삭제",
         "enableAI": {
           "mdDescription": "이 설정을 통해 최신 AI 기능에 접근할 수 있습니다.            \n            특히, 이 기능들은 사용자가 접근 권한을 부여한 언어 모델(LLM)에 지속적인 요청을 발생시킬 수 있다는 점을 인지해야 합니다. 이로 인해 비용이 발생할 수 있으므로 주의 깊게 모니터링해야 합니다. 이 옵션을 활성화함으로써 귀하는 이러한 위험을 인지한 것으로 간주됩니다.            \n            **주의! 본 섹션의 아래 설정은 메인 기능 설정이 활성화된 후에만 적용됩니다.            기능 활성화 후 아래에서 최소 한 개의 LLM 공급자를 구성해야 합니다. [관련 문서](https://theia-ide.org/docs/user_ai/)도 참조하십시오.**"
         },
+        "expandSession": "{0} 확장",
         "exploreAgent": {
           "description": "코드베이스에서 정보를 추출하고 요약해 주는 코드베이스 탐색 도우미입니다.         존재하는 요소에 대한 정보를 보고하고, 코드 발췌문을 제공하며, 관찰된 패턴을 설명합니다."
         },
@@ -1136,9 +1204,16 @@
           "description": "전체 코드 리뷰 워크플로를 조율하는 AI 기반 PR 검토 에이전트: PR 정보를 가져오고, 코드베이스를 탐색하며, 구조화된 분석을 수행하고, diff 뷰어를 통해 사용자에게 발견 사항을 대화형으로 안내하며, 선택적으로 GitHub에 검토 대기 중인 이슈를 생성합니다."
         },
         "prompt-template-description": "[AI 구성 보기]({0})에서 AI 에이전트의 프롬프트 변형을 선택하고 프롬프트 템플릿을 사용자 정의하세요.",
-        "recentChats": "최근 채팅",
+        "requiresApproval": "승인이 필요합니다",
+        "restoredSession": "세션 복원",
         "restrictedModeDetails": "AI 채팅, 인라인 제안, 코드 작업 및 프롬프트 템플릿이 비활성화되었습니다.",
         "restrictedModeLabel": "AI 기능(제한 모드에서는 비활성화됨)",
+        "sectionRestored": "복원됨",
+        "sessionOverride": {
+          "defaultToolConfirmation": "기본 도구 확인 메시지: {0}",
+          "toolConfirmation": "도구별 확인 메시지 재정의: {0}",
+          "toolConfirmationGeneric": "도구별 확인 설정 재정의"
+        },
         "shellAllowlist": {
           "placeholder": "예: \"git log\" (정확한 명령어) 또는 \"git log *\" (인수 포함)"
         },
@@ -1157,6 +1232,13 @@
           },
           "slashCommandsSectionHeader": "슬래시 명령어"
         },
+        "toolConfirmationInfo": {
+          "header": "도구 확인"
+        },
+        "toolConfirmationOverrides": {
+          "stripTooltip": "명령줄 플래그를 통해 이 세션에 하나 이상의 AI 도구가 자동으로 승인됩니다.",
+          "title": "AI 도구 확인 설정 재정의"
+        },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
             "confirm": "알겠습니다, 자동 승인을 활성화합니다.",
@@ -1168,6 +1250,19 @@
           },
           "default": {
             "label": "기본 도구 확인 모드:"
+          },
+          "recommendedDefaults": {
+            "apply": "기본 도구 허용",
+            "dialogConfirm": "알겠습니다, 허용합니다",
+            "dialogTitle": "기본 도구 사용 허용?",
+            "message": "현재 도구 호출에는 승인이 필요합니다. 모든 내장 도구를 한 번에 자동으로 허용합니다. 추가 확인이 필요한 도구(예: 셸 실행), MCP 도구 및 나중에 추가된 도구는 실행 전에 여전히 확인을 요청합니다.",
+            "msg": {
+              "line1": "이렇게 하면 현재 등록된 모든 내장 도구가 “항상 허용”으로 설정됩니다.",
+              "line2": "추가 확인이 필요한 도구(예: 셸 실행)의 경우, 실행 전에 여전히 확인을 요청합니다.",
+              "line3": "MCP 도구는 타사 제품으로, 기본 제공되지 않습니다. 이 화면에서 각 도구를 개별적으로 허용할 수 있습니다.",
+              "line4": "나중에 추가된 도구들도 여전히 기본적으로 “확인”으로 설정되므로, 이를 검토할 수 있습니다.",
+              "line5": "이 화면에서 나중에 이 설정을 변경할 수 있습니다."
+            }
           },
           "resetAll": "모두 재설정",
           "resetAllConfirmDialog": {
@@ -1195,7 +1290,6 @@
           "errorMessage": "오류 메시지",
           "lastActivity": "마지막 활동",
           "lastMessage": "마지막 메시지",
-          "messages": "메시지",
           "multipleExchanges": "{0} 교환",
           "oneExchange": "1 교환",
           "unread": "읽지 않음"
@@ -1203,7 +1297,8 @@
         "variableConfiguration": {
           "selectVariable": "변수를 선택하십시오.",
           "usedByAgents": "에이전트 사용"
-        }
+        },
+        "waitingForInput": "사용자의 입력을 기다리고 있습니다"
       },
       "llamaFile": {
         "prefs": {
@@ -1231,14 +1326,35 @@
         }
       },
       "mcp": {
+        "blockedServersLabel": "MCP 서버(자동 시작 차단됨)",
         "error": {
           "allServersRunning": "모든 MCP 서버는 이미 실행 중입니다.",
+          "authenticationRequired": "MCP 서버 \"{0}\"는 인증이 필요합니다. 로그인하려면 서버를 다시 시작하십시오.",
+          "getRedirectUrlFailed": "MCP OAuth 리디렉션 URL을 확인하는 과정에서 오류가 발생했습니다.",
+          "noOAuthServersConfigured": "OAuth가 활성화된 MCP 서버가 구성되지 않았습니다.",
           "noRunningServers": "실행 중인 MCP 서버가 없습니다.",
           "noServersConfigured": "구성된 MCP 서버가 없습니다.",
-          "startFailed": "MCP 서버 시작 중 오류가 발생했습니다."
+          "oauthRequiresTrustedWorkspace": "OAuth가 활성화된 MCP 서버를 시작하려면 신뢰할 수 있는 작업 공간이 필요합니다.",
+          "signInFailed": "MCP 서버에 로그인하는 동안 오류가 발생했습니다.",
+          "signOutFailed": "MCP 서버에서 로그아웃하는 동안 오류가 발생했습니다.",
+          "startFailed": "MCP 서버 시작 중 오류가 발생했습니다.",
+          "stopFailed": "MCP 서버를 중지하는 과정에서 오류가 발생했습니다."
+        },
+        "getRedirectUrl": {
+          "label": "MCP: MCP OAuth 리디렉션 URL 가져오기"
         },
         "info": {
-          "serverStarted": "MCP 서버 \"{0}\"가 성공적으로 시작되었습니다. 등록된 도구: {1}"
+          "oauthRedirectUrl": "MCP OAuth 리디렉션 URL: {0}",
+          "serverSignedIn": "MCP 서버 \"{0}\"에 로그인했습니다.",
+          "serverSignedOut": "MCP 서버 \"{0}\"에서 로그아웃되었습니다.",
+          "serverStarted": "MCP 서버 \"{0}\"가 성공적으로 시작되었습니다. 등록된 도구: {1}",
+          "signInCancelled": "MCP 서버 \"{0}\"에 대한 로그인이 취소되었습니다."
+        },
+        "oauth": {
+          "completeSignInInBrowser": "브라우저에서 MCP OAuth 로그인을 완료하십시오. 로그인 탭이 열리지 않았다면, 브라우저에서 팝업 창을 차단했을 수 있습니다.",
+          "notification": {
+            "signInPrompt": "MCP 서버 \"{0}\"는 시작하기 위해 인증이 필요합니다."
+          }
         },
         "servers": {
           "args": {
@@ -1253,17 +1369,60 @@
             "mdDescription": "MCP 서버를 시작하는 데 사용되는 명령어, 예: \"uvx\" 또는 \"npx\".",
             "title": "MCP 서버 실행 명령어"
           },
+          "deferLoading": {
+            "mdDescription": "이 기능이 활성화되면, 이 서버에서 제공하는 도구는 생성된 프롬프트 조각 `mcp_<server>_tools`에서 '지연(deferred)'으로 표시됩니다. 지연 도구는 모델의 컨텍스트에 미리 로드되지 않습니다. 대신, 지원되는 경우 모델은 제공업체(Anthropic, OpenAI)의 내장 도구 검색 메커니즘을 통해 필요에 따라 해당 도구를 탐색합니다. 이를 통해 많은 도구를 노출하는 서버의 토큰 오버헤드를 크게 줄일 수 있습니다.",
+            "title": "로딩 연기"
+          },
           "env": {
             "mdDescription": "서버에 설정할 선택적 환경 변수(예: API 키).",
             "title": "환경 변수"
           },
           "headers": {
-            "mdDescription": "서버에 대한 각 요청에 포함될 수 있는 선택적 추가 헤더.",
-            "title": "헤더"
+            "mdDescription": "서버에 보내는 각 요청에 포함되는 선택적 추가 헤더입니다. 헤더 값은 환경 설정에 일반 텍스트로 저장되므로, 민감한 값이 포함된 경우 작업 공간 설정을 사용하지 마십시오."
           },
-          "mdDescription": "MCP 서버를 로컬(명령어, 인수 및 선택적 환경 변수) 또는 원격(서버 URL, 인증 토큰 및 선택적 인증 헤더 이름)으로 구성합니다. 또한 자동 시작(기본값 true)을 설정할 수 있습니다. 각 서버는 \"brave-search\" 또는 \"filesystem\"과 같은 고유 키로 식별됩니다. 서버를 시작하려면 원하는 서버를 선택할 수 있는 \"MCP: Start MCP Server\" 명령을 사용하세요. 서버를 중지하려면 \"MCP: Stop MCP Server\" 명령을 사용하세요. 자동 시작은 재시작 후에만 적용되며, 처음에는 서버를 수동으로 시작해야 합니다.\n구성 예시:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  }\n}\n```",
+          "mdDescription": "명령어, 인수 및 선택적으로 환경 변수를 사용하여 로컬 MCP 서버를 구성하거나, 서버 URL, 인증 토큰, OAuth 구성 및 선택적으로 인증 헤더 이름을 사용하여 원격 MCP 서버를 구성할 수 있습니다. 또한 자동 시작을 구성할 수도 있습니다(기본값은 true). 각 서버는 \"brave-search\"나 \"filesystem\"과 같은 고유한 키로 식별됩니다. 서버를 시작하려면 \"MCP: Start MCP Server\" 명령을 사용하여 원하는 서버를 선택하십시오. 서버를 중지하려면 \"MCP: Stop MCP Server\" 명령을 사용하십시오. 자동 시작 설정은 재시작 후에만 적용되므로, 처음에는 서버를 수동으로 시작해야 합니다. AI 레지스트리에서 설치된 서버에는 자동으로 관리되며 수동으로 편집해서는 안 되는 추가적인 `registryMetadata` 블록이 포함되어 있습니다.\n구성 예시:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  },\n  \"oauth-protected-server\": {\n    \"serverUrl\": \"YOUR_OAUTH_PROTECTED_MCP_SERVER_URL\",\n    \"oauth\": {\n      \"clientId\": \"OPTIONAL_CLIENT_ID\",\n      \"scopes\": [\"OPTIONAL_SCOPE\"]\n    }\n  }\n  }\n```",
+          "oauth": {
+            "authorizationServer": {
+              "mdDescription": "선택 사항인 인증 서버 URL 재정의. 생략할 경우, Theia는 MCP 서버에서 해당 URL을 자동으로 탐지합니다.",
+              "title": "인증 서버"
+            },
+            "clientId": {
+              "mdDescription": "선택 사항인 정적 OAuth 클라이언트 ID입니다. 생략할 경우, Theia는 동적 클라이언트 등록을 시도합니다.",
+              "title": "클라이언트 ID"
+            },
+            "clientSecret": {
+              "mdDescription": "사전 등록된 기밀 클라이언트만 허용하는(동적 클라이언트 등록 불가) 인증 서버용 선택적 OAuth 클라이언트 시크릿입니다. 클라이언트 ID와 함께 사용해야만 합니다. 이 정보는 환경 설정에 일반 텍스트로 저장되므로, 시크릿이 민감한 정보인 경우 작업 공간 설정을 사용하지 마십시오.",
+              "title": "클라이언트 시크릿"
+            },
+            "mdDescription": "인증이 필요한 원격 MCP 서버를 위한 선택적 OAuth 2.1 구성입니다. 이 객체가 존재하면 서버에서 OAuth가 활성화되며, 제거하면 OAuth가 비활성화됩니다. Theia는 기본적으로 PKCE를 사용하는 공개 클라이언트를 사용하므로, 사전 등록된 기밀 클라이언트가 필요한 서버에 대해서만 클라이언트 시크릿을 구성하십시오. 변경 사항은 MCP 서버를 재시작한 후에 적용됩니다.",
+            "resource": {
+              "mdDescription": "이 MCP 서버에 대한 선택적 RFC 8707 리소스 표시기 재정의.",
+              "title": "리소스"
+            },
+            "scopes": {
+              "mdDescription": "서버가 범위를 공개하지 않는 경우 요청할 수 있는 선택적 OAuth 범위.",
+              "title": "적용 범위"
+            },
+            "title": "OAuth"
+          },
+          "registryMetadata": {
+            "configHash": {
+              "mdDescription": "이 서버를 설치하는 데 사용된 레지스트리 승인 내용의 해시 값입니다.",
+              "title": "레지스트리 구성 해시"
+            },
+            "mdDescription": "AI 레지스트리에서 설치된 서버에 대한 출처 메타데이터입니다. `@theia/ai-registry`가 작성했으며, 사용자가 편집할 수 없습니다.",
+            "serverId": {
+              "mdDescription": "이 서버가 설치된 AI 레지스트리 항목을 식별합니다.",
+              "title": "레지스트리 서버 ID"
+            },
+            "title": "레지스트리 메타데이터",
+            "version": {
+              "mdDescription": "설치 시점에 기록된 레지스트리에 게시된 버전입니다.",
+              "title": "레지스트리 버전"
+            }
+          },
           "serverAuthToken": {
-            "mdDescription": "필요한 경우 서버의 인증 토큰입니다. 이는 원격 서버와의 인증에 사용됩니다.",
+            "mdDescription": "필요한 경우 서버용 인증 토큰. 이 토큰은 환경 설정에 일반 텍스트로 저장되므로, 토큰이 민감한 정보인 경우 작업 공간 설정을 사용하지 마십시오.",
             "title": "인증 토큰"
           },
           "serverAuthTokenHeader": {
@@ -1276,6 +1435,12 @@
           },
           "title": "MCP 서버 구성"
         },
+        "signin": {
+          "label": "MCP: MCP 서버에 로그인"
+        },
+        "signout": {
+          "label": "MCP: MCP 서버에서 로그아웃"
+        },
         "start": {
           "label": "MCP: MCP 서버 시작"
         },
@@ -1285,12 +1450,19 @@
         "useWorkspaceAsRoot": {
           "mdDescription": "루트는 파일 시스템 내에서 서버가 작동할 수 있는 경계를 정의합니다. 활성화된 경우 작업 공간 폴더가 루트로 사용되며, 그렇지 않으면 MCP 서버가 전체 파일 시스템에 접근할 수 있습니다. 이 설정을 변경하면 새 루트 구성을 적용하기 위해 실행 중인 모든 MCP 서버가 재시작됩니다.",
           "title": "루트로 작업 공간 사용"
+        },
+        "warn": {
+          "serverPreferenceChangeFailed": "MCP 서버 기본 설정 변경 사항을 적용하지 못했습니다: {0}",
+          "signInNotCompleted": "MCP 서버 \"{0}\"에 대한 로그인이 완료되지 않았습니다."
         }
       },
       "mcpConfiguration": {
         "autostart": "자동 시작",
-        "connectServer": "연결",
-        "connectingServer": "연결 중...",
+        "browseAIRegistry": "AI 레지스트리 찾아보기",
+        "browseAIRegistryTooltip": "확장 프로그램 보기를 열어 AI 레지스트리 항목을 살펴보세요.",
+        "command": {
+          "addServer": "로컬 MCP 구성 추가..."
+        },
         "copiedAllList": "모든 도구를 클립보드에 복사함 (모든 도구 목록)",
         "copiedAllSingle": "모든 도구를 클립보드에 복사함 (모든 도구가 포함된 단일 프롬프트 조각)",
         "copiedForPromptTemplate": "모든 도구를 클립보드에 복사하여 프롬프트 템플릿 생성                                     (모든 도구가 포함된 단일 프롬프트 조각)",
@@ -1298,6 +1470,7 @@
         "copyAllSingle": "채팅용 전체 복사 (모든 도구가 포함된 단일 프롬프트 조각)",
         "copyForPrompt": "복사 도구 (채팅 또는 프롬프트 템플릿용)",
         "copyForPromptTemplate": "프롬프트 템플릿용 전체 복사 (모든 도구가 포함된 단일 프롬프트 조각)",
+        "deferLoading": "도구 로딩 연기",
         "deleteServer": "서버 삭제",
         "deleteServerDialogMsg": "서버 \"{0}\"를 삭제하시겠습니까?",
         "deleteServerDialogTitle": "MCP 서버 삭제",
@@ -1312,29 +1485,65 @@
           "autostart": "자동 시작",
           "commandPlaceholder": "예: npx 또는 uvx",
           "commandRequired": "로컬 서버에는 명령어가 필요합니다",
+          "deferLoading": "도구 로딩 연기 (프로바이더 도구 검색을 통해 필요 시 도구를 검색)",
           "envPlaceholder": "KEY=value (한 줄에 하나씩)",
           "headersPlaceholder": "헤더-이름=값 (한 줄에 하나씩)",
           "localServer": "로컬 (명령)",
           "nameExists": "이 이름의 서버가 이미 존재합니다",
           "nameRequired": "서버 이름이 필요합니다",
+          "oauthAuthorizationServerInvalid": "OAuth 인증 서버는 유효한 http(s) URL이어야 합니다.",
+          "oauthAuthorizationServerPlaceholder": "선택적 인증 서버 URL",
+          "oauthClientIdPlaceholder": "선택적 정적 클라이언트 ID",
+          "oauthClientSecretPlaceholder": "기밀 클라이언트가 필요한 서버 전용",
+          "oauthPublicClientDescription": "Theia는 기본적으로 PKCE를 사용하는 공개 OAuth 클라이언트를 사용합니다. 서버에서 사전 등록된 기밀 클라이언트를 요구하는 경우에만 클라이언트 시크릿을 제공하십시오.",
+          "oauthRedirectUrlDescription": "인증 콜백은 이 URL로 전송됩니다. 고정된 클라이언트 ID를 사용하여 OAuth 제공업체에 리디렉션 URI로 등록하십시오.",
+          "oauthResourceInvalid": "OAuth 리소스는 유효한 http(s) URL이어야 합니다.",
+          "oauthResourcePlaceholder": "선택적 리소스 URI",
+          "oauthScopesPlaceholder": "공백으로 구분된 범위",
+          "oauthSharedCredentialsDescription": "저장된 OAuth 세션은 동일한 서버 이름과 URL(또는 리소스)을 사용하는 워크스페이스 간에 공유됩니다.",
+          "remoteOAuthServer": "원격(OAuth)",
           "remoteServer": "원격 (URL)",
           "saveChanges": "변경 사항 저장",
           "serverName": "서버 이름",
           "serverNamePlaceholder": "예: my-mcp-server",
-          "serverType": "서버 유형",
           "serverUrlPlaceholder": "예: https://mcp.example.com",
           "serverUrlRequired": "원격 서버에는 서버 URL이 필요합니다."
         },
-        "headers": "헤더",
+        "fromRegistryLink": "레지스트리에서",
+        "oauth": "OAuth",
+        "oauthAuthorizationServer": "인증 서버",
+        "oauthClientId": "OAuth 클라이언트 ID",
+        "oauthClientSecret": "OAuth 클라이언트 시크릿",
+        "oauthRedirectUrl": "리디렉션 URL",
+        "oauthResource": "OAuth 리소스",
+        "oauthScopes": "OAuth 범위",
+        "openInRegistry": "AI 레지스트리에서 열기: {0}",
         "saveServerError": "MCP 서버 구성을 저장하지 못했습니다: {0}",
         "serverAuthToken": "인증 토큰",
         "serverAuthTokenHeader": "인증 헤더 이름",
         "serverUrl": "서버 URL",
+        "signInServerFailed": "MCP 서버 \"{0}\"에 로그인하는 데 실패했습니다.",
+        "signInServerNotCompleted": "MCP 서버 \"{0}\"에 대한 로그인이 완료되지 않았습니다.",
+        "signInServerSucceeded": "MCP 서버 \"{0}\"에 로그인했습니다.",
+        "signOutServerDialogMsg": "\"{0}\" 서버에서 로그아웃하시겠습니까? 이 작업을 수행하면 해당 서버에 저장된 OAuth 토큰이 삭제됩니다.",
+        "signOutServerDialogTitle": "MCP 서버에서 로그아웃",
+        "signOutServerFailed": "MCP 서버 \"{0}\"에서 로그아웃하는 데 실패했습니다.",
+        "startServerFailed": "MCP 서버 \"{0}\"을(를) 시작하지 못했습니다.",
+        "stopServerFailed": "MCP 서버 \"{0}\"을 중지하는 데 실패했습니다.",
         "tools": "도구: "
       },
       "openai": {
         "apiKey": {
           "mdDescription": "공식 OpenAI 계정의 API 키를 입력하세요. **참고:** 이 설정을 사용하면 OpenAI API 키가 Theia가 실행되는 머신에 평문으로 저장됩니다. 키를 안전하게 설정하려면 환경 변수 `OPENAI_API_KEY`를 사용하세요."
+        },
+        "compaction": {
+          "default": "전역 채팅 서버 측 압축 설정을 따릅니다.",
+          "description": "공식 OpenAI 모델에 대해 제공업체 기본 서버 측 압축 기능을 재정의합니다. 이는 OpenAI Response API에만 적용되며, Chat Completions API는 이를 무시합니다. “default”는 전역 채팅 설정({0})을 따릅니다. 이 기능이 활성화되면, 대화 내용이 제공업체의 임계값을 초과할 경우 Response API에 이전 대화 내용을 요약하도록 요청됩니다.",
+          "disabled": "공식 OpenAI 모델에 대해서는 절대로 서버 측 압축을 요청하지 마십시오.",
+          "enabled": "공식 OpenAI 모델의 경우 항상 서버 측 압축을 요청하십시오."
+        },
+        "compactionTokenThreshold": {
+          "description": "공식 OpenAI 모델에 대한 서버 측 압축의 전역 입력 토큰 임계값을 재정의합니다. 이 설정이 지정되지 않은 경우, 전역 설정 또는 공급자 기본값이 적용됩니다. 설정된 경우, 값은 50,000 토큰 이상이어야 합니다."
         },
         "customEndpoints": {
           "apiKey": {
@@ -1376,7 +1585,7 @@
           "description": "사용할 공식 OpenAI 모델"
         },
         "useResponseApi": {
-          "mdDescription": "공식 OpenAI 모델의 경우 Chat Completion API 대신 최신 OpenAI 응답 API를 사용하십시오.이 설정은 공식 OpenAI 모델에만 적용됩니다. 사용자 지정 공급자는 개별적으로 구성해야 합니다. 응답 API의 경우 도구 호출 정의가 OpenAI의 [엄격한 스키마 정의](https://platform.openai.com/docs/guides/function-calling#strict-mode)를 충족해야 합니다. 비준수 스키마 변환을 위해 최선을 다하지만 오류가 발생할 수 있습니다."
+          "mdDescription": "공식 OpenAI 모델의 경우, Chat Completion API 대신 최신 OpenAI Response API를 사용하십시오. 이 설정은 공식 OpenAI 모델에만 적용되며, 사용자 정의 제공자는 이를 개별적으로 구성해야 합니다."
         }
       },
       "promptTemplates": {
@@ -1426,6 +1635,10 @@
       },
       "session-settings-dialog": {
         "advancedSettings": "고급 설정 (JSON)",
+        "compactionHeader": "서버 측 압축",
+        "compactionLabel": "압축:",
+        "compactionNote": "이 세션에 대한 전역 및 제공자별 압축 설정을 재정의합니다. 서버 측 압축을 지원하는 제공자에게만 적용됩니다.",
+        "compactionTokenThreshold": "토큰 임계값:",
         "confirmationTimeout": "확인 시간 초과",
         "confirmationTimeoutNote": "지정된 시간이 지나면 도구 확인 메시지를 자동으로 거부합니다. 이 세션에 대해서는 전체 환경 설정을 무시합니다.",
         "enableConfirmationTimeout": "활성화 확인 시간 제한",
@@ -1480,7 +1693,6 @@
         "outputTokens": "출력 토큰",
         "readCachedInputTokens": "캐시에서 읽은 입력 토큰",
         "readCachedInputTokensTooltip": "'입력 토큰'에 추가로 추적됩니다. 일반적으로 캐시되지 않은 경우보다 훨씬 저렴합니다. 일반적으로 속도 제한에 포함되지 않습니다.",
-        "total": "총계",
         "totalTokensTooltip": "'입력 토큰' + '출력 토큰'"
       },
       "vercelai": {
@@ -1535,7 +1747,7 @@
           "title": ".gitignore를 고려하십시오"
         },
         "createSkillAgent": {
-          "description": "새로운 스킬을 생성하는 AI 어시스턴트입니다. 스킬은 AI 에이전트를 위한 재사용 가능한 지침과 도메인 지식을 제공합니다. 이 에이전트는 적절한 YAML 프론트매터와 마크다운 콘텐츠를 갖춘 .prompts/skills 디렉토리에 잘 구조화된 스킬을 생성하도록 도와줍니다."
+          "description": "새로운 스킬을 생성하기 위한 AI 어시스턴트입니다. 스킬은 AI 에이전트를 위한 재사용 가능한 지침과 도메인 지식을 제공합니다. 이 에이전트는 적절한 YAML 프론트매터와 마크다운 콘텐츠를 포함하여 .agents/skills 또는 .prompts/skills 디렉터리에 잘 구조화된 스킬을 생성할 수 있도록 도와줍니다. 이 기능은 아직 초기 단계에 있으며 변경될 수 있습니다."
         },
         "excludedPattern": {
           "description": "제외할 파일/폴더에 대한 패턴(글로브 또는 정규식) 목록.",
@@ -1561,19 +1773,26 @@
       "fileChangeSetTitle": "제안된 변경 사항"
     },
     "ai-chat-ui": {
+      "blockedResource": {
+        "allow": "이 차단된 콘텐츠 허용",
+        "aria": "차단된 외부 리소스: {0}",
+        "inlineContent": "(인라인 외부 콘텐츠)",
+        "label": "외부 리소스 차단됨:",
+        "resourcesToAllow": "{0} 리소스가 활성화됩니다"
+      },
+      "browseAllChats": "모든 채팅 보기...",
       "confirm": "확인",
       "deleteChat": "채팅 삭제",
+      "home": "홈",
       "initiate-session-task-context": "작업 컨텍스트: 세션 시작",
-      "navigate-back": "뒤로 가기",
-      "navigate-forward": "앞으로 이동",
       "noOutput": "출력 없음",
       "open-current-session-summary": "현재 세션 요약 열기",
       "open-settings-tooltip": "AI 설정 열기...",
+      "openSession": "채팅 세션 열기",
       "renameChat": "채팅 이름 변경",
       "scroll-lock": "스크롤 잠금",
       "scroll-unlock": "스크롤 잠금 해제",
       "session-settings": "세션 설정 지정",
-      "showChats": "채팅 표시...",
       "summarize-current-session": "현재 세션 요약"
     },
     "ai-claude-code": {
@@ -1584,6 +1803,9 @@
       "agentCompletionMessage": "에이전트 \"{0}\"가 작업을 완료했습니다.",
       "agentCompletionMessageWithSession": "에이전트 \"{0}\"가 \"{1}\"에서 작업을 완료했습니다.",
       "agentCompletionTitle": "에이전트 \"{0}\" 작업 완료됨",
+      "agentInputNeededMessage": "에이전트 \"{0}\"가 사용자의 입력을 기다리고 있습니다.",
+      "agentInputNeededMessageWithSession": "에이전트 \"{0}\"가 \"{1}\"에서 사용자의 입력을 기다리고 있습니다.",
+      "agentInputNeededTitle": "에이전트 “{0}”가 여러분의 의견을 기다립니다",
       "aiDisabledInRestrictedMode": "신뢰할 수 없는 작업 공간에서는 AI 기능을 사용할 수 없습니다.",
       "preferences": {
         "linuxEnvHint": "Linux에서 데스크톱 바로 가기를 통해 애플리케이션을 실행하는 경우, 변수가 `~/.bashrc`뿐만 아니라 `~/.profile`에도 정의되어 있는지 확인하십시오. 자세한 내용은 [문서](https://theia-ide.org/docs/user_ai/#setting-api-keys)를 참조하십시오.",
@@ -1611,11 +1833,17 @@
         "argumentHint": "<티켓 번호>",
         "description": "GitHub 티켓을 분석하고 해결책을 구현하십시오."
       },
+      "newChat": "새 채팅",
+      "noSessions": "아직 채팅 세션이 없습니다.",
       "open-ai-configuration-tooltip": "OpenAI 구성",
+      "perspective": {
+        "aiFirst": "AI 우선"
+      },
       "rememberCommand": {
         "argumentHint": "[topic-hint]",
         "description": "대화에서 주제를 추출하고 프로젝트 정보를 업데이트하십시오."
       },
+      "sessionsView": "AI 세션",
       "ticketCommand": {
         "argumentHint": "<티켓 번호>",
         "description": "GitHub 티켓을 분석하고 구현 계획을 수립하십시오."
@@ -1623,7 +1851,6 @@
       "todoTool": {
         "noTasks": "작업 없음"
       },
-      "userInteractionCanceled": "취소됨",
       "userInteractionCommentPlaceholder": "이 단계에 대한 설명을 추가하세요...",
       "userInteractionEmpty": "비어 있음",
       "userInteractionFinishStep": "완료",
@@ -1633,11 +1860,78 @@
       "userInteractionPreparing": "사용자 상호작용 준비 중...",
       "userInteractionPreparingSteps": "준비: {0} ({1} 단계)",
       "userInteractionPreparingTitle": "준비 중: {0}",
-      "userInteractionStepLabel": "{1}의 3단계{0}",
       "userInteractionWorkingCopy": "Working Copy"
     },
     "ai-mcp": {
-      "blockedServersLabel": "MCP 서버 (자동 시작 차단됨)"
+      "installDialog": {
+        "authTokenPlaceholder": "이 서버에 연결하기 위해 필요합니다.",
+        "authTokenRequired": "이 서버를 설치하려면 인증 토큰이 필요합니다.",
+        "oauthClientIdPlaceholder": "이 서버에 연결하기 위해 필요합니다.",
+        "oauthClientSecretPlaceholder": "이 서버에 연결하기 위해 필수적인 사항",
+        "oauthCredentialsRequired": "이 서버를 설치하려면 OAuth 클라이언트 ID와 클라이언트 시크릿이 필요합니다.",
+        "oauthDescription": "이 서버는 사전 등록된 기밀 클라이언트와 함께 OAuth를 사용합니다. OAuth 제공업체에서 발급한 클라이언트 ID와 시크릿을 입력하십시오.",
+        "title": "MCP 서버 설치",
+        "trust": {
+          "unknown": "AI 레지스트리가 구성되어 있지 않습니다. 신뢰성을 확인할 수 없습니다.",
+          "unverified": "이 서버는 AI 레지스트리({0})에 등록되어 있지 않습니다. 설치는 전적으로 사용자의 책임 하에 진행하십시오.",
+          "verified": "AI 레지스트리({0})의 승인을 받았습니다."
+        }
+      },
+      "installUri": {
+        "alreadyInstalled": {
+          "msg": "\"{0}\"이라는 이름의 MCP 서버가 이미 구성되어 있습니다. 계속 진행하면 레지스트리의 구성 정보로 기존 항목을 덮어쓰게 됩니다.",
+          "title": "MCP 서버가 이미 설치되어 있습니다"
+        },
+        "missingId": "설치 링크에 필수 \"id\" 매개변수가 누락되었습니다.",
+        "noRegistry": "MCP 서버 \"{0}\"을 설치할 수 없습니다. 이 제품에 AI 레지스트리가 구성되어 있지 않습니다.",
+        "success": "AI 레지스트리에서 MCP 서버 “{0}”를 설치했습니다.",
+        "unknownId": "MCP 서버 \"{0}\"가 AI 레지스트리에 등록되어 있지 않습니다."
+      }
+    },
+    "ai-registry": {
+      "action": {
+        "fix": "설정 수정",
+        "link": "레지스트리 링크",
+        "unlink": "연결 해제",
+        "updateTooltip": "{0}에서 {1}로 업데이트됨"
+      },
+      "skill": {
+        "action": {
+          "fix": "스킬 수정",
+          "link": "레지스트리 링크",
+          "unlink": "연결 해제"
+        },
+        "fixed": "\"{0}\" 스킬을 복원했습니다.",
+        "githubToken": {
+          "mdDescription": "GitHub에서 스킬을 다운로드할 때 사용되는 선택적 GitHub 개인 액세스 토큰입니다. 이 토큰을 사용하면 GitHub의 요청 제한이 시간당 60회에서 5000회로 늘어납니다. **주의 사항:** 이 설정을 사용하면 토큰이 Theia가 실행 중인 컴퓨터에 일반 텍스트로 저장됩니다. 안전하게 토큰을 제공하려면 환경 변수 `GITHUB_TOKEN`을 사용하는 것이 좋습니다."
+        },
+        "installUri": {
+          "confirm": {
+            "msg": "{1}에서 파일을 다운로드하여 “{0}” 스킬을 설치하십시오.",
+            "title": "스킬 설치"
+          },
+          "fetchFailed": "\"{0}\" 스킬을 설치하기 위해 AI 레지스트리를 불러올 수 없습니다.",
+          "missingId": "설치 링크에 필수 \"id\" 매개변수가 누락되었습니다.",
+          "success": "AI 레지스트리에서 “{0}” 스킬을 설치했습니다.",
+          "unknownId": "\"{0}\" 스킬이 AI 레지스트리에 등록되어 있지 않습니다."
+        },
+        "installed": "\"{0}\" 스킬이 설치되었습니다.",
+        "linked": "연관 기술: “{0}”.",
+        "uninstalled": "\"{0}\" 스킬이 제거되었습니다.",
+        "unlinked": "연결되지 않은 스킬 “{0}”.",
+        "updated": "\"{0}\" 스킬을 업데이트했습니다.",
+        "warning": {
+          "fix": "이 스킬의 파일은 레지스트리와 다릅니다. '스킬 수정'을 클릭하여 파일을 복원하십시오.",
+          "linkStale": "이 스킬은 레지스트리를 통해 설치되었으나, 더 이상 레지스트리에 표시되지 않습니다. ‘연결 해제’를 클릭하여 레지스트리 연결을 제거하고 파일을 유지하거나, ‘제거’를 클릭하여 스킬을 제거하십시오.",
+          "notInRegistry": "레지스트리에 없음"
+        },
+        "watcherStopped": "스킬 폴더의 변경 사항을 더 이상 모니터링하지 않습니다. 설치된 스킬이 더 이상 자동으로 새로 고쳐지지 않을 수 있습니다. 창을 다시 불러오면 기능을 재개할 수 있습니다."
+      },
+      "warning": {
+        "fixConfig": "이 서버의 구성이 레지스트리와 다릅니다. '구성 수정'을 클릭하여 복원하십시오.",
+        "linkStale": "이 서버는 레지스트리를 통해 설치되었으나, 더 이상 레지스트리에 나열되어 있지 않습니다. 이 서버를 계속 유지하고자 하고 정상적으로 작동한다면, [연결 해제]를 클릭하여 레지스트리 연결을 해제하십시오. 그렇지 않은 경우 [제거]를 클릭하여 서버를 제거하십시오.",
+        "notInRegistry": "레지스트리에 없음"
+      }
     },
     "ai-terminal": {
       "allowAllConfirm": "알겠습니다, 모두 허용합니다",
@@ -1659,7 +1953,6 @@
       "configurePermissions": "셸 명령어 권한 구성",
       "confirmExecution": "셸 명령어 확인",
       "denialReason": "이유",
-      "executionCanceled": "취소됨",
       "executionDenied": "거부됨",
       "executionDeniedWithReason": "거부됨 (이유 포함)",
       "partialOutput": "부분 출력",
@@ -1671,6 +1964,41 @@
       },
       "timeout": "타임아웃",
       "workingDirectory": "작업 디렉터리"
+    },
+    "ai-tool-sketchpad": {
+      "addItemProperty": "항목 속성 추가",
+      "addParameter": "매개변수 추가",
+      "addProperty": "속성 추가",
+      "addTool": "도구 추가",
+      "askAtRuntimeHint": "LLM이 이 도구를 호출하면, 반환 값을 입력하라는 메시지가 표시되는 빠른 입력 창이 열립니다.",
+      "askReturnPlaceholder": "이 도구 호출의 반환 값을 입력하십시오...",
+      "askReturnPrompt": "\"{0}\" 도구가 다음 명령으로 호출되었습니다: {1}",
+      "confirmDelete": "\"{0}\" 도구를 삭제하시겠습니까?",
+      "descriptionPlaceholder": "이 도구의 기능을 설명해 주세요...",
+      "itemType": "항목 유형:",
+      "label": "AI 도구 스케치패드",
+      "nParameters": "{0} 매개변수",
+      "nameDuplicate": "이 이름의 도구가 이미 존재합니다.",
+      "nameEmpty": "도구 이름은 비워둘 수 없습니다.",
+      "nameInvalid": "도구 이름에는 영문자, 숫자, 밑줄 및 하이픈만 사용할 수 있습니다(1~128자).",
+      "noItemProperties": "정의된 항목 속성이 없습니다.",
+      "noParameters": "정의된 매개변수가 없습니다.",
+      "noTools": "아직 도구가 없습니다.",
+      "oneParameter": "매개변수 1개",
+      "parameters": "매개변수",
+      "required": "필수",
+      "returnMode": "리턴 모드",
+      "returnModeAskAtRuntime": "실행 시 문의",
+      "returnModeAskShort": "실행 시 확인",
+      "returnModeStatic": "정적 반환 값",
+      "returnModeStaticShort": "정적",
+      "selectTool": "편집할 도구를 선택하거나, 새로운 도구를 추가하여 스케치를 시작하세요.",
+      "staticReturn": "정적 반환 값",
+      "staticReturnHint": "이 정적 값은 입력 인자에 관계없이 도구가 호출될 때마다 반환됩니다.",
+      "staticReturnPlaceholder": "이 도구가 호출될 때 반환되는 값(예: JSON 문자열)",
+      "toolName": "도구 이름",
+      "toolNamePlaceholder": "예: getWeather",
+      "untitledTool": "제목 없음 도구"
     },
     "callhierarchy": {
       "noCallers": "발신자가 감지되지 않았습니다.",
@@ -1757,6 +2085,7 @@
         "visual": "탭의 시각적 미리보기를 표시합니다."
       },
       "highlightModifiedTabs": "수정된(더티) 편집기 탭에 상단 테두리를 그릴지 여부를 제어합니다.",
+      "jumpListName": "최근 작업 공간",
       "keybinding": {
         "duplicateModifierError": "{0} 키 바인딩을 해석할 수 없음 중복 수정자",
         "metaError": "{0} 키 바인딩을 구문 분석할 수 없음. meta는 OSX 전용입니다.",
@@ -1777,6 +2106,11 @@
         "clipboardWarnFirefox": "클립보드 API를 사용할 수 없습니다. '{1}' 페이지의 '{0}' 환경설정으로 활성화할 수 있습니다. 이후 Theia를 재로드하세요. 참고: 이 설정은 파이어폭스가 시스템 클립보드에 대한 전체 접근 권한을 얻도록 허용합니다."
       },
       "pasteWarn": "브라우저의 붙여넣기 명령 또는 단축키를 사용하십시오.",
+      "perspective": {
+        "resetPerspective": "퍼스펙티브 재설정 (실험적 기능)",
+        "selectPerspective": "관점 선택",
+        "switchPerspective": "관점 전환 (실험적 기능)"
+      },
       "quitMessage": "저장되지 않은 변경 사항은 저장되지 않습니다.",
       "resetWorkbenchLayout": "워크벤치 레이아웃 재설정",
       "searchbox": {
@@ -1995,6 +2329,11 @@
     },
     "markers": {
       "clearAll": "모두 지우기",
+      "copyAsText": "텍스트로 복사",
+      "export": "내보내기",
+      "exportProblems": "내보내기 문제",
+      "exportSuccess": "문제가 성공적으로 내보내졌습니다.",
+      "jsonFiles": "JSON 파일",
       "noProblems": "현재까지 작업 공간에서 문제가 발견되지 않았습니다.",
       "tabbarDecorationsEnabled": "탭 바에 문제 표시기(진단 마커)를 표시합니다."
     },
@@ -2089,6 +2428,7 @@
       "autoReveal": "자동 표시",
       "clipboardWarn": "클립보드 접근이 거부되었습니다. 브라우저의 권한 설정을 확인하세요.",
       "clipboardWarnFirefox": "클립보드 API를 사용할 수 없습니다. '{1}' 페이지의 '{0}' 환경설정으로 활성화할 수 있습니다. 이후 Theia를 재로드하세요. 참고: 이 설정은 파이어폭스가 시스템 클립보드에 대한 전체 접근 권한을 얻도록 허용합니다.",
+      "nothingToPaste": "클립보드에는 여기에 붙여넣을 수 있는 작업 공간 파일이 포함되어 있지 않습니다.",
       "openWithSystemEditor": "시스템 편집기로 열기",
       "refresh": "탐색기에서 새로 고침",
       "reveal": "탐색기에서 보기",
@@ -2153,13 +2493,24 @@
       "input": {
         "browse": "찾아보기"
       },
+      "sessionOverride": {
+        "suffix": "세션에 의해 재정의됨",
+        "suffixTooltip": "이 환경 설정은 --session-preference를 통해 세션 값이 설정됩니다. 여기서 이 값을 편집하면 해당 세션이 끝날 때까지 세션 재정의가 해제됩니다."
+      },
+      "sessionPreferences": {
+        "statusBar": "세션 기본 설정 ({0})",
+        "tooltipBody": "이 설정들은 --session-preference 옵션을 통해 전달되었으며 메모리에만 존재합니다. 설정 이름을 클릭하면 설정 보기에서 해당 항목으로 이동합니다.",
+        "tooltipChangeNote": "이 중 하나를 편집하면 해당 실행에 대한 세션 재정의가 지워집니다. 다음 실행부터 저장된 값을 사용하려면 --session-preference 인수를 지정하지 않고 다시 시작하십시오.",
+        "tooltipHeader": "이 세션에서는 이러한 설정이 무시됩니다.",
+        "valueOff": "off",
+        "valueOn": "on"
+      },
       "toolbar": "도구 모음"
     },
     "preview": {
       "openByDefault": "기본적으로 편집기 대신 미리보기를 엽니다."
     },
     "property-view": {
-      "directory": "디렉터리",
       "lastModified": "마지막 수정일",
       "noProperties": "사용 가능한 속성이 없습니다.",
       "properties": "속성",
@@ -2222,7 +2573,6 @@
       "dirtyDiff": {
         "close": "닫기 변경 미리보기 보기"
       },
-      "history": "역사",
       "justNow": "방금",
       "mergeEditor": {
         "resetConfirmationTitle": "이 편집기에서 병합 결과를 정말 재설정하시겠습니까?"
@@ -2280,6 +2630,9 @@
       "taskRestricted": "제한 모드에서는 작업 실행이 비활성화됩니다.",
       "taskTerminatedBySignal": "작업 '{0}'가 신호{1}로 종료되었습니다.",
       "terminalWillBeReusedByTasks": "터미널은 작업에서 재사용됩니다."
+    },
+    "telemetry": {
+      "filters": "각 텔레메트리 싱크로 전달되는 토픽 패턴을 제한합니다. 항목을 지정하지 않으면 모든 싱크 관심사가 허용되며, 배열을 비워두면 해당 싱크가 비활성화됩니다."
     },
     "terminal": {
       "defaultProfile": "{0}에서 사용되는 기본 프로필",
@@ -2371,16 +2724,22 @@
       "errorFetching": "확장 프로그램 가져오기 중 오류 발생.",
       "errorFetchingConfigurationHint": "이는 네트워크 구성 문제로 인해 발생할 수 있습니다.",
       "failedInstallingVSIX": "{0}를 VSIX에서 설치하는 데 실패했습니다.",
+      "filter": {
+        "showBuiltin": "내장 기능 표시",
+        "showInstalled": "설치된 항목 표시",
+        "showRecommended": "추천 항목 표시"
+      },
       "invalidVSIX": "선택한 파일은 유효한 \"*.vsix\" 플러그인이 아닙니다.",
       "license": "라이선스: {0}",
       "onlyShowVerifiedExtensionsDescription": "이를 통해 {0}에서 검증된 확장 프로그램만 표시할 수 있습니다.",
       "onlyShowVerifiedExtensionsTitle": "검증된 확장 프로그램만 표시",
       "recommendedExtensions": "이 작업 공간에서 사용을 권장하는 확장 프로그램 이름 목록.",
       "restrictedModeInstallWarning": "'{0}' 확장 프로그램은 제한 모드(Restricted Mode)에서 실행을 지원하지 않는 경우 비활성화될 수 있습니다. 확장 프로그램이 정상적으로 작동하도록 하려면 이 작업 공간을 신뢰하십시오.",
-      "searchPlaceholder": "{0}에서 확장 프로그램 검색",
+      "searchPlaceholder": "Open VSX 레지스트리 검색",
       "showInstalled": "설치된 확장 프로그램 표시",
       "showRecommendedExtensions": "확장 프로그램 추천에 대한 알림 표시 여부를 제어합니다.",
       "vsx-extensions-contribution": {
+        "no-other-versions": "다른 버전은 제공되지 않습니다.",
         "update-version-uninstall-error": "확장 프로그램 제거 중 오류 발생: {0}.",
         "update-version-version-error": "{1}의 버전 {0} 설치에 실패했습니다."
       }

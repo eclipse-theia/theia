@@ -16,9 +16,10 @@
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { RequestContext, RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
+import { BackendRequestService, RequestContext, RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
 import { AIRegistryConfiguration } from './ai-registry-configuration';
 import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from './mcp/mcp-registry-entry-resolver';
+import { SkillRegistryEntryResolver, SkillRegistryEntryResolverImpl } from './skill/skill-registry-entry-resolver';
 import { RegistryFetchService, RegistryFetchServiceImpl } from './registry-fetch-service';
 
 class FakeRequestService implements RequestService {
@@ -63,6 +64,18 @@ function payload(): string {
                     config: { servers: { example: { command: 'npx', args: ['-y', 'example-mcp'] } } }
                 }]
             }]
+        }],
+        skills: [{
+            skillId: 'io.github.example/example-skill',
+            name: 'Example Skill',
+            description: 'Example skill',
+            source: { url: 'https://github.com/example/skills', path: 'skills/example' },
+            contentHash: 'abc123abc123',
+            approvals: [{
+                organizationId: 'theia',
+                date: '2026-04-01',
+                installConfigs: [{ tool: 'theia-ide', installUrl: 'theia://install-skill?id=io.github.example/example-skill' }]
+            }]
         }]
     });
 }
@@ -71,23 +84,25 @@ describe('RegistryFetchService', () => {
 
     function buildContainer(requestService: RequestService, config: AIRegistryConfiguration): Container {
         const container = new Container();
-        container.bind(RequestService).toConstantValue(requestService);
+        container.bind(BackendRequestService).toConstantValue(requestService);
         container.bind(AIRegistryConfiguration).toConstantValue(config);
         container.bind(MCPRegistryEntryResolverImpl).toSelf().inSingletonScope();
         container.bind(MCPRegistryEntryResolver).toService(MCPRegistryEntryResolverImpl);
+        container.bind(SkillRegistryEntryResolverImpl).toSelf().inSingletonScope();
+        container.bind(SkillRegistryEntryResolver).toService(SkillRegistryEntryResolverImpl);
         container.bind(RegistryFetchServiceImpl).toSelf().inSingletonScope();
         container.bind(RegistryFetchService).toService(RegistryFetchServiceImpl);
         return container;
     }
 
-    it('fetches the per-tool JSON from <baseUrl>/<toolName>.json and returns resolved entries', async () => {
+    it('fetches the per-tool JSON from <baseUrl>/tools/<toolName>.json and returns resolved entries', async () => {
         const request = new FakeRequestService(payload());
         const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
         const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
 
         const entries = await service.getEntries();
 
-        expect(request.lastUrl).to.equal('https://example.test/api/v1/theia-ide.json');
+        expect(request.lastUrl).to.equal('https://example.test/api/v1/tools/theia-ide.json');
         expect(entries).to.have.length(1);
         expect(entries[0]).to.deep.equal({
             serverId: 'io.github.example/example-mcp',
@@ -99,6 +114,44 @@ describe('RegistryFetchService', () => {
             configHash: 'hash-v1',
             mcpRegistryVerified: true
         });
+    });
+
+    it('fetches the aggregate registry from <baseUrl>/all.json for the default "all" tool', async () => {
+        const request = new FakeRequestService(payload());
+        const config = new FakeConfiguration('all', 'https://example.test/api/v1/');
+        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
+
+        await service.getEntries();
+
+        expect(request.lastUrl).to.equal('https://example.test/api/v1/all.json');
+    });
+
+    it('fetches and resolves skill entries from the same per-tool JSON', async () => {
+        const request = new FakeRequestService(payload());
+        const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
+        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
+
+        const skills = await service.getSkillEntries();
+
+        expect(skills).to.have.length(1);
+        expect(skills[0]).to.deep.equal({
+            skillId: 'io.github.example/example-skill',
+            name: 'Example Skill',
+            description: 'Example skill',
+            sourceUrl: 'https://github.com/example/skills',
+            sourcePath: 'skills/example',
+            contentHash: 'abc123abc123'
+        });
+    });
+
+    it('shares a single HTTP request between MCP and skill slices', async () => {
+        const request = new FakeRequestService(payload());
+        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get<RegistryFetchService>(RegistryFetchService);
+
+        await service.getEntries();
+        await service.getSkillEntries();
+
+        expect(request.callCount).to.equal(1);
     });
 
     it('serves cached entries on a second call without issuing a new request', async () => {

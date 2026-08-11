@@ -90,7 +90,7 @@ const WebFetchToolComponent: React.FC<{
                 <code className="claude-code-tool detail-value">{input.url}</code>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/domain', 'Domain')}</span>
+                <span className="claude-code-tool detail-label">{nls.localizeByDefault('Domain')}</span>
                 <span className="claude-code-tool detail-value">{getDomain(input.url)}</span>
             </div>
             <div className="claude-code-tool detail-row">

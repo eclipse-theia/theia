@@ -25,11 +25,11 @@ import { findSubstringIndex, matchRank } from '@theia/core/lib/common/fuzzy-matc
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import {
     KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope,
-    SingleTextInputDialogProps, Key, ScopedKeybinding, codicon, StatefulWidget, Widget, ContextMenuRenderer, SELECTED_CLASS
+    SingleTextInputDialogProps, Key, ScopedKeybinding, codicon, StatefulWidget, Widget, ContextMenuRenderer, SELECTED_CLASS, KeyCode
 } from '@theia/core/lib/browser';
 import { KeymapsService } from './keymaps-service';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
-import { DisposableCollection, isOSX, isObject } from '@theia/core';
+import { DisposableCollection, Disposable, isOSX, isObject } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
 
 /**
@@ -700,7 +700,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
             title: nls.localize('theia/keymaps/editKeybindingTitle', 'Edit Keybinding for {0}', item.labels.command.value),
             maxWidth: 400,
             initialValue: oldKeybinding?.keybinding,
-            validate: newKeybinding => this.validateKeybinding(command, oldKeybinding?.keybinding, newKeybinding),
+            validate: (newKeybinding, mode) => mode === 'preview' && !newKeybinding ? '' : this.validateKeybinding(command, oldKeybinding?.keybinding, newKeybinding),
         }, this.keymapsService, item, this.canResetKeybinding(item));
         dialog.open().then(async keybinding => {
             if (keybinding && keybinding !== oldKeybinding?.keybinding) {
@@ -749,11 +749,11 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
      */
     addKeybinding(item: KeybindingItem): void {
         const command = item.command.id;
-        const dialog = new SingleTextInputDialog({
+        const dialog = new EditKeybindingDialog({
             title: nls.localize('theia/keymaps/addKeybindingTitle', 'Add Keybinding for {0}', item.labels.command.value),
             maxWidth: 400,
-            validate: newKeybinding => this.validateKeybinding(command, undefined, newKeybinding),
-        });
+            validate: (newKeybinding, mode) => mode === 'preview' && !newKeybinding ? '' : this.validateKeybinding(command, undefined, newKeybinding),
+        }, this.keymapsService, item, false);
         dialog.open().then(async keybinding => {
             if (keybinding) {
                 await this.keymapsService.setKeybinding({
@@ -923,6 +923,12 @@ class EditKeybindingDialog extends SingleTextInputDialog {
      */
     protected resetButton: HTMLButtonElement | undefined;
 
+    // Tracks resources that need to be disposed of when the dialog closes.
+    protected readonly keystrokeDisposable = new DisposableCollection();
+
+    protected chordPrefix: string | undefined;
+    protected chordTimeout: number | undefined;
+
     constructor(
         @inject(SingleTextInputDialogProps) props: SingleTextInputDialogProps,
         @inject(KeymapsService) protected readonly keymapsService: KeymapsService,
@@ -942,7 +948,78 @@ class EditKeybindingDialog extends SingleTextInputDialog {
         if (this.resetButton) {
             this.addResetAction(this.resetButton, 'click');
         }
+        window.addEventListener('keydown', this.handleKeyDown, { capture: true });
+        this.keystrokeDisposable.push(Disposable.create(() => {
+            window.removeEventListener('keydown', this.handleKeyDown, { capture: true });
+        }));
+        setTimeout(() => {
+            const inputField = this.node.querySelector('input');
+            if (inputField) {
+                inputField.placeholder = nls.localizeByDefault('Press desired key combination and then press ENTER.');
+            }
+        }, 100);
     }
+    protected override onBeforeDetach(msg: Message): void {
+        super.onBeforeDetach(msg);
+        if (this.chordTimeout !== undefined) {
+            window.clearTimeout(this.chordTimeout);
+            this.chordTimeout = undefined;
+        }
+        this.keystrokeDisposable.dispose();
+    }
+
+    /**
+     * Intercepts keystrokes to format them into the expected keybinding string representation.
+     * Prevents default browser text input for non-navigation keys.
+     * @param event the keyboard event.
+     */
+    protected handleKeyDown = (event: KeyboardEvent): void => {
+        const target = event.target as HTMLElement;
+        if (target.tagName.toLowerCase() !== 'input') {
+            return;
+        }
+
+        // Only letting Enter and Escape bypass the capture
+        if (event.key === 'Enter' || event.key === 'Escape') {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const keyCode = KeyCode.createKeyCode(event);
+
+        if (keyCode.isModifierOnly()) {
+            return;
+        }
+
+        const inputField = target as HTMLInputElement;
+        const keyString = keyCode.toString();
+
+        // Clear any existing timeout since a new key was pressed
+        if (this.chordTimeout !== undefined) {
+            window.clearTimeout(this.chordTimeout);
+            this.chordTimeout = undefined;
+        }
+
+        if (this.chordPrefix) {
+            // This is the second keystroke of a chord
+            inputField.value = `${this.chordPrefix} ${keyString}`;
+            this.chordPrefix = undefined; // Reset for the next full capture
+        } else {
+            // This is the first keystroke
+            inputField.value = keyString;
+            this.chordPrefix = keyString;
+
+            // Wait 2 seconds for a potential second keystroke to form a chord
+            this.chordTimeout = window.setTimeout(() => {
+                this.chordPrefix = undefined;
+                this.chordTimeout = undefined;
+            }, 2000);
+        }
+
+        inputField.dispatchEvent(new window.Event('input', { bubbles: true }));
+    };
 
     /**
      * Add `Reset` action used to reset a custom keybinding, and close the dialog.

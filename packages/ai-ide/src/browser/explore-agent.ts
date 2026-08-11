@@ -19,8 +19,9 @@ import { LanguageModelRequirement } from '@theia/ai-core/lib/common';
 import { nls } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { exploreSystemPrompt, EXPLORE_SYSTEM_PROMPT_ID } from './explore-prompt-template';
+import { ExploreAgentId } from '../common/agent-ids';
 
-export const ExploreAgentId = 'explore';
+export { ExploreAgentId };
 
 @injectable()
 export class ExploreAgent extends AbstractStreamParsingChatAgent {

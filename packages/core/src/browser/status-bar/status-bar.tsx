@@ -35,6 +35,8 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
     protected backgroundColor: string | undefined;
     protected color: string | undefined;
 
+    protected preferencesReady = false;
+
     constructor(
         @inject(CommandService) protected readonly commands: CommandService,
         @inject(LabelParser) protected readonly entryService: LabelParser,
@@ -50,17 +52,25 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         // Hide the status bar until the `workbench.statusBar.visible` preference returns with a `true` value.
         this.hide();
         this.preferences.ready.then(() => {
-            const preferenceValue = this.preferences.get<boolean>('workbench.statusBar.visible', true);
-            this.setHidden(!preferenceValue);
+            this.preferencesReady = true;
+            this.updateVisibility();
         });
         this.toDispose.push(
             this.preferences.onPreferenceChanged(preference => {
                 if (preference.preferenceName === 'workbench.statusBar.visible') {
-                    this.setHidden(!this.preferences.get('workbench.statusBar.visible', true));
+                    this.updateVisibility();
                 }
             })
         );
         this.toDispose.push(this.viewModel.onDidChange(() => this.debouncedUpdate()));
+    }
+
+    protected updateVisibility(): void {
+        if (!this.preferencesReady) {
+            return; // Don't change visibility until preferences have loaded
+        }
+        const prefHides = !this.preferences.get<boolean>('workbench.statusBar.visible', true);
+        this.setHidden(prefHides);
     }
 
     protected debouncedUpdate = debounce(() => this.update(), 50);
@@ -99,7 +109,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
     protected internalSetColor(color?: string): void {
         this.color = color;
     }
-    protected render(): JSX.Element {
+    protected render(): React.JSX.Element {
         const leftEntries = Array.from(this.viewModel.getLeft(), entry => this.renderElement(entry));
         const rightEntries = Array.from(this.viewModel.getRight(), entry => this.renderElement(entry));
 
@@ -192,9 +202,9 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         return attrs;
     }
 
-    protected renderElement(entry: StatusBarViewEntry): JSX.Element {
+    protected renderElement(entry: StatusBarViewEntry): React.JSX.Element {
         const childStrings = this.entryService.parse(entry.entry.text);
-        const children: JSX.Element[] = [];
+        const children: React.JSX.Element[] = [];
 
         childStrings.forEach((val, key) => {
             if (LabelIcon.is(val)) {

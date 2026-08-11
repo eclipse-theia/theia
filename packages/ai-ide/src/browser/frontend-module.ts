@@ -79,7 +79,9 @@ import { TemplatePreferenceContribution } from './template-preference-contributi
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
 import { ChatSessionsWelcomeMessageProvider } from './chat-sessions-welcome-message-provider';
-import { ChatSessionCardActionContribution, DefaultChatSessionCardActionContribution } from './chat-session-card-action-contribution';
+import { ChatSessionItemActionContribution, DefaultChatSessionItemActionContribution } from './chat-session-item-action-contribution';
+import { AiAllowAllModeChatBanner } from './ai-allow-all-mode-chat-banner';
+import { ChatBannerProvider } from '@theia/ai-chat-ui/lib/browser/chat-banner-provider';
 import { DefaultChatAgentRecommendationService } from './default-chat-agent-recommendation-service';
 import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-configuration-widget';
 import { AISkillsConfigurationWidget } from './ai-configuration/skills-configuration-widget';
@@ -87,7 +89,7 @@ import { TaskContextSummaryVariableContribution } from './task-background-summar
 import { GitHubRepoVariableContribution } from './github-repo-variable-contribution';
 import { TaskContextFileStorageService } from './task-context-file-storage-service';
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
-import { bindContributionProvider, CommandContribution, PreferenceContribution } from '@theia/core';
+import { bindRootContributionProvider, CommandContribution, PreferenceContribution } from '@theia/core';
 import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-fragments-configuration-widget';
 import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
 import { GitHubRepoService, githubRepoServicePath } from '../common/github-repo-protocol';
@@ -125,6 +127,11 @@ import { CodeReviewerAgent } from './code-reviewer-agent';
 import { CodeReviewCapabilityContribution } from './code-review-capability-contribution';
 import { PRReviewAgent } from './review/pr-review-agent';
 import { PRReviewCapabilityContribution } from './review/pr-review-capability-contribution';
+import { PerspectiveContribution } from '@theia/core/lib/browser/perspective-service';
+import { AIFirstPerspectiveContribution } from './ai-first-perspective-contribution';
+import { ChatSessionListService } from './chat-session-list-service';
+import { AISessionsWidget } from './ai-sessions-widget';
+import { AISessionsViewContribution } from './ai-sessions-view-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -192,11 +199,14 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(Agent).toService(PRReviewAgent);
     bind(ChatAgent).toService(PRReviewAgent);
 
+    bind(ChatSessionListService).toSelf().inSingletonScope();
+
     bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider).inSingletonScope();
     bind(ChatWelcomeMessageProvider).to(ChatSessionsWelcomeMessageProvider).inSingletonScope();
-    bindContributionProvider(bind, ChatSessionCardActionContribution);
-    bind(DefaultChatSessionCardActionContribution).toSelf().inSingletonScope();
-    bind(ChatSessionCardActionContribution).toService(DefaultChatSessionCardActionContribution);
+    bind(ChatBannerProvider).to(AiAllowAllModeChatBanner).inSingletonScope();
+    bindRootContributionProvider(bind, ChatSessionItemActionContribution);
+    bind(DefaultChatSessionItemActionContribution).toSelf().inSingletonScope();
+    bind(ChatSessionItemActionContribution).toService(DefaultChatSessionItemActionContribution);
     bind(ChatAgentRecommendationService).to(DefaultChatAgentRecommendationService).inSingletonScope();
 
     bindToolProvider(GetWorkspaceFileList, bind);
@@ -350,4 +360,17 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(FrontendApplicationContribution).to(CodeReviewCapabilityContribution);
     bind(FrontendApplicationContribution).to(PRReviewCapabilityContribution);
+
+    bind(AIFirstPerspectiveContribution).toSelf().inSingletonScope();
+    bind(PerspectiveContribution).toService(AIFirstPerspectiveContribution);
+
+    bind(AISessionsWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: AISessionsWidget.ID,
+            createWidget: () => ctx.container.get(AISessionsWidget)
+        }))
+        .inSingletonScope();
+    bindViewContribution(bind, AISessionsViewContribution);
+    bind(TabBarToolbarContribution).toService(AISessionsViewContribution);
 });

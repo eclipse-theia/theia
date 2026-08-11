@@ -31,11 +31,11 @@ export class SubMenuLink implements CompoundMenuNode {
 
     get sortString(): string { return this._sortString || this.delegate.sortString; };
     isVisible<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
-        return this.delegate.isVisible(effectiveMenuPath, contextMatcher, context) && (!this._when || contextMatcher.match(this._when, context));
+        return this.delegate.isVisible(effectiveMenuPath, contextMatcher, context, ...args) && (!this._when || contextMatcher.match(this._when, context));
     }
 
     isEmpty<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
-        return this.delegate.isEmpty(effectiveMenuPath, contextMatcher, context, args);
+        return this.delegate.isEmpty(effectiveMenuPath, contextMatcher, context, ...args);
     }
 }
 
@@ -78,8 +78,8 @@ export abstract class AbstractCompoundMenuImpl implements MenuNode {
 
     isEmpty<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
         for (const child of this.children) {
-            if (child.isVisible(effectiveMenuPath, contextMatcher, context, args)) {
-                if (!CompoundMenuNode.is(child) || !child.isEmpty(effectiveMenuPath, contextMatcher, context, args)) {
+            if (child.isVisible(effectiveMenuPath, contextMatcher, context, ...args)) {
+                if (!CompoundMenuNode.is(child) || !child.isEmpty(effectiveMenuPath, contextMatcher, context, ...args)) {
                     return false;
                 }
             }

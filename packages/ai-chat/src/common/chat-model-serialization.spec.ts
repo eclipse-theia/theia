@@ -261,6 +261,39 @@ describe('ChatModel Serialization and Restoration', () => {
         });
     });
 
+    describe('Per-request capability selections', () => {
+        it('should serialize and restore serverToolSelections alongside the other capability selections', () => {
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
+            const parsedRequest: ParsedChatRequest = {
+                request: {
+                    text: 'Fetch a URL',
+                    serverToolSelections: { anthropic: ['web_fetch', 'web_search'], google: ['url_context'] },
+                    genericCapabilitySelections: { skills: ['skill-1'] },
+                    capabilityOverrides: { 'fragment-1': true }
+                },
+                parts: [new ParsedChatRequestTextPart({ start: 0, endExclusive: 11 }, 'Fetch a URL')],
+                toolRequests: new Map(),
+                variables: []
+            };
+            model.addRequest(parsedRequest);
+
+            const serialized = model.toSerializable();
+            expect(serialized.requests[0].serverToolSelections).to.deep.equal({
+                anthropic: ['web_fetch', 'web_search'],
+                google: ['url_context']
+            });
+
+            const restored = new MutableChatModel(serialized);
+            const restoredRequest = restored.getRequests()[0];
+            expect(restoredRequest.request.serverToolSelections).to.deep.equal({
+                anthropic: ['web_fetch', 'web_search'],
+                google: ['url_context']
+            });
+            expect(restoredRequest.request.genericCapabilitySelections).to.deep.equal({ skills: ['skill-1'] });
+            expect(restoredRequest.request.capabilityOverrides).to.deep.equal({ 'fragment-1': true });
+        });
+    });
+
     describe('Complete round-trip with complex tree', () => {
         it('should serialize and restore a complex tree structure', () => {
             // Create a complex chat with multiple edits
@@ -665,6 +698,44 @@ describe('ChatModel Serialization and Restoration', () => {
             expect(restoredPart.resolution?.variable.id).to.equal('f');
             expect(restoredPart.resolution?.value).to.equal('file content of main.ts');
             expect(restoredPart.resolution?.variable.description).to.equal('File variable');
+        });
+    });
+
+    describe('Session settings and response model serialization', () => {
+        it('should serialize and restore the per-session model override', () => {
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
+            model.addRequest(createParsedRequest('Hello'));
+            model.setSettings({ commonSettings: { modelId: 'anthropic/claude-opus-4-8' } });
+
+            const serialized = model.toSerializable();
+            expect(serialized.settings?.commonSettings?.modelId).to.equal('anthropic/claude-opus-4-8');
+
+            const restored = new MutableChatModel(serialized);
+            expect(restored.settings?.commonSettings?.modelId).to.equal('anthropic/claude-opus-4-8');
+        });
+
+        it('should leave settings undefined when none were set', () => {
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
+            model.addRequest(createParsedRequest('Hello'));
+
+            const serialized = model.toSerializable();
+            expect(serialized.settings).to.be.undefined;
+
+            const restored = new MutableChatModel(serialized);
+            expect(restored.settings).to.be.undefined;
+        });
+
+        it('should serialize and restore the language model recorded on a response', () => {
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
+            const request = model.addRequest(createParsedRequest('Hello'));
+            request.response.setLanguageModel('anthropic/claude-opus-4-8');
+            request.response.complete();
+
+            const serialized = model.toSerializable();
+            expect(serialized.responses[0].languageModel).to.equal('anthropic/claude-opus-4-8');
+
+            const restored = new MutableChatModel(serialized);
+            expect(restored.getAllRequests()[0].response.languageModel).to.equal('anthropic/claude-opus-4-8');
         });
     });
 });

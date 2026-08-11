@@ -19,7 +19,7 @@ import { nls } from '@theia/core';
 import { HoverService } from '@theia/core/lib/browser';
 import { GenericCapabilitySelections } from '@theia/ai-core';
 import { AvailableGenericCapabilities } from './generic-capabilities-service';
-import { GenericCapabilitiesTree } from './generic-capabilities-tree';
+import { GenericCapabilitiesTree, ServerToolsSection } from './generic-capabilities-tree';
 
 export interface GenericCapabilitiesSectionProps {
     /** Current generic capability selections */
@@ -32,6 +32,8 @@ export interface GenericCapabilitiesSectionProps {
     availableCapabilities: AvailableGenericCapabilities;
     /** Items already in the agent prompt that should be disabled/greyed */
     disabledCapabilities: GenericCapabilitySelections;
+    /** Optional server tools section for the current model's provider */
+    serverTools?: ServerToolsSection;
     /** Whether the section is disabled */
     disabled?: boolean;
     /** Hover service for tooltips */
@@ -50,17 +52,19 @@ export const GenericCapabilitiesSection: React.FunctionComponent<GenericCapabili
     onResetGenericCapabilities,
     availableCapabilities,
     disabledCapabilities,
+    serverTools,
     disabled,
     hoverService
 }) => {
-    // Check if we have any available capabilities to show
+    // Check if we have any available capabilities or server tools to show
     const hasAvailableCapabilities =
         availableCapabilities.skills.length > 0 ||
         availableCapabilities.mcpFunctions.length > 0 ||
         availableCapabilities.functions.length > 0 ||
         availableCapabilities.promptFragments.length > 0 ||
         availableCapabilities.agentDelegation.length > 0 ||
-        availableCapabilities.variables.length > 0;
+        availableCapabilities.variables.length > 0 ||
+        (serverTools !== undefined && serverTools.tools.length > 0);
 
     if (!hasAvailableCapabilities) {
         return undefined;
@@ -77,6 +81,7 @@ export const GenericCapabilitiesSection: React.FunctionComponent<GenericCapabili
                 onResetGenericCapabilities={onResetGenericCapabilities}
                 availableCapabilities={availableCapabilities}
                 disabledCapabilities={disabledCapabilities}
+                serverTools={serverTools}
                 disabled={disabled}
                 hoverService={hoverService}
             />

@@ -23,7 +23,6 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorContextMenu, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoCommandRegistry, MonacoEditorCommandHandler } from '@theia/monaco/lib/browser/monaco-command-registry';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { AIChatNavigationService } from '@theia/ai-chat-ui/lib/browser/ai-chat-navigation-service';
 import { AskAIInputMonacoZoneWidget } from './ask-ai-input-monaco-zone-widget';
 import { AskAIInputFactory } from './ask-ai-input-widget';
 
@@ -56,9 +55,6 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
-
-    @inject(AIChatNavigationService)
-    protected readonly navigationService: AIChatNavigationService;
 
     protected askAiInputWidget: AskAIInputMonacoZoneWidget | undefined;
 
@@ -124,7 +120,6 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
 
     private createNewChatSession(request: ChatRequest): void {
         const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true });
-        this.navigationService.notifyInitialQuery(session.id);
         this.chatService.sendRequest(session.id, {
             ...request,
             text: `${request.text} #editorContext`,

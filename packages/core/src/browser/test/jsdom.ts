@@ -72,3 +72,21 @@ export function enableJSDOM(): () => void {
     };
     return disableJSDOM;
 }
+
+/**
+ * Enables React's act test environment and restores the previous value when disposed.
+ */
+export function enableReactActEnvironment(): () => void {
+    const reactActEnvironment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
+    const hadReactActEnvironment = Object.prototype.hasOwnProperty.call(reactActEnvironment, 'IS_REACT_ACT_ENVIRONMENT');
+    const previousReactActEnvironment = reactActEnvironment.IS_REACT_ACT_ENVIRONMENT;
+    reactActEnvironment.IS_REACT_ACT_ENVIRONMENT = true;
+
+    return () => {
+        if (hadReactActEnvironment) {
+            reactActEnvironment.IS_REACT_ACT_ENVIRONMENT = previousReactActEnvironment;
+        } else {
+            delete reactActEnvironment.IS_REACT_ACT_ENVIRONMENT;
+        }
+    };
+}

@@ -51,13 +51,13 @@ export class TerminalSearchWidget extends ReactWidget {
 
     protected render(): React.ReactNode {
         return <div className='theia-search-terminal-widget'>
-            <div className='theia-search-elem-box' ref={searchBox => this.searchBox = searchBox} >
+            <div className='theia-search-elem-box' ref={searchBox => { this.searchBox = searchBox; }} >
                 <input
                     title={nls.localizeByDefault('Find')}
                     type='text'
                     spellCheck='false'
                     placeholder={nls.localizeByDefault('Find')}
-                    ref={ip => this.searchInput = ip}
+                    ref={ip => { this.searchInput = ip; }}
                     onKeyUp={this.onInputChanged}
                     onFocus={this.onSearchInputFocus}
                     onBlur={this.onSearchInputBlur}

@@ -349,11 +349,38 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
             headlineWrapper.removeChild(currentFirstChild);
         }
 
-        const currentLastChild = headlineWrapper.lastChild as HTMLElement;
-        if (currentLastChild.classList.contains('preference-leaf-headline-suffix')) {
-            this.compareOtherModifiedScopes(headlineWrapper, currentLastChild);
+        const existingModifiedScopes = headlineWrapper.querySelector('.preference-modified-scopes-suffix') as HTMLElement | null;
+        if (existingModifiedScopes) {
+            this.compareOtherModifiedScopes(headlineWrapper, existingModifiedScopes);
         } else {
             this.createOtherModifiedScopes(headlineWrapper);
+        }
+        this.updateSessionOverrideState();
+    }
+
+    /**
+     * Adds (or removes) a subtle "Overridden by session" suffix in the headline when a
+     * session override (set via `--session-preference`) is active for this preference.
+     * Styled like the existing "Modified in:" suffix so it reads as a hint, not a warning.
+     * Editing remains enabled; writing a new value clears the session override via
+     * `PreferenceServiceImpl.evictSessionOverride`.
+     */
+    protected updateSessionOverrideState(): void {
+        const { headlineWrapper } = this;
+        // Defensive: remove any leftover marker from earlier prominent styling.
+        headlineWrapper.querySelector('.preference-session-override-marker')?.remove();
+
+        const hasSessionOverride = this.inspection?.sessionValue !== undefined;
+        const existingSuffix = headlineWrapper.querySelector('.preference-session-suffix') as HTMLElement | null;
+        if (hasSessionOverride && !existingSuffix) {
+            const suffix = document.createElement('i');
+            suffix.classList.add('preference-leaf-headline-suffix', 'preference-session-suffix');
+            suffix.textContent = nls.localize('theia/preferences/sessionOverride/suffix', 'Overridden by session');
+            suffix.title = nls.localize('theia/preferences/sessionOverride/suffixTooltip',
+                'This preference has a session value set via --session-preference. Editing it here clears the session override for the rest of this session.');
+            headlineWrapper.appendChild(suffix);
+        } else if (!hasSessionOverride && existingSuffix) {
+            existingSuffix.remove();
         }
     }
 
@@ -389,8 +416,14 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
         const modifiedScopes = this.getModifiedScopesAsStrings();
         if (modifiedScopes.length !== 0) {
             const wrapper = document.createElement('i');
-            wrapper.classList.add('preference-leaf-headline-suffix');
-            headlineWrapper.appendChild(wrapper);
+            wrapper.classList.add('preference-leaf-headline-suffix', 'preference-modified-scopes-suffix');
+            // The session suffix, if present, is always inserted after the modified-scopes suffix.
+            const sessionSuffix = headlineWrapper.querySelector('.preference-session-suffix');
+            if (sessionSuffix) {
+                headlineWrapper.insertBefore(wrapper, sessionSuffix);
+            } else {
+                headlineWrapper.appendChild(wrapper);
+            }
 
             const messagePrefix = this.getModifiedMessagePrefix();
             const messageWrapper = document.createElement('span');

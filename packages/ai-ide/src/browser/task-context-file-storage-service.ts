@@ -16,6 +16,7 @@
 
 import { Summary, SummaryMetadata, TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { InMemoryTaskContextStorage } from '@theia/ai-chat/lib/browser/task-context-storage-service';
+import { parseFrontmatter } from '@theia/ai-core/lib/common/frontmatter';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { DisposableCollection, EOL, Emitter, ILogger, Path, PreferenceService, URI, unreachable } from '@theia/core';
 import { OpenerService, open } from '@theia/core/lib/browser';
@@ -199,21 +200,12 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     }
 
     protected maybeReadFrontmatter(content: string): { body: string, frontmatter: SummaryMetadata | undefined } {
-        const frontmatterEnd = content.indexOf('---');
-        if (frontmatterEnd !== -1) {
-            try {
-                const frontmatter = yaml.load(content.slice(0, frontmatterEnd));
-                if (this.hasLabel(frontmatter)) {
-                    return { frontmatter, body: content.slice(frontmatterEnd + 3).trim() };
-                }
-            } catch { /* Probably not frontmatter, then. */ }
-        }
-        return { body: content, frontmatter: undefined };
+        const { metadata, body } = parseFrontmatter<SummaryMetadata>(content, { isValid: this.hasLabel });
+        return { frontmatter: metadata, body };
     }
 
-    protected hasLabel(candidate: unknown): candidate is SummaryMetadata {
-        return !!candidate && typeof candidate === 'object' && !Array.isArray(candidate) && 'label' in candidate && typeof candidate.label === 'string';
-    }
+    protected hasLabel = (candidate: unknown): candidate is SummaryMetadata =>
+        !!candidate && typeof candidate === 'object' && !Array.isArray(candidate) && 'label' in candidate && typeof candidate.label === 'string';
 
     async open(identifier: string): Promise<void> {
         const summary = await this.get(identifier);

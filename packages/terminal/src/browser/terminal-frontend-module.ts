@@ -31,6 +31,8 @@ import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } fro
 import { TerminalService } from './base/terminal-service';
 import { bindTerminalPreferences } from '../common/terminal-preferences';
 import { TerminalContribution } from './terminal-contribution';
+import { TerminalCreationHandler } from './terminal-creation-handler';
+import { TerminalShellHandler } from './terminal-shell-handler';
 import { TerminalSearchWidgetFactory } from './search/terminal-search-widget';
 import { TerminalQuickOpenService, TerminalQuickOpenContribution } from './terminal-quick-open-service';
 import { createTerminalSearchFactory } from './search/terminal-search-container';
@@ -41,6 +43,7 @@ import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/qui
 import { createXtermLinkFactory, TerminalLinkProvider, TerminalLinkProviderContribution, XtermLinkFactory } from './terminal-link-provider';
 import { UrlLinkProvider } from './terminal-url-link-provider';
 import { FileDiffPostLinkProvider, FileDiffPreLinkProvider, FileLinkProvider, LocalFileLinkProvider } from './terminal-file-link-provider';
+import { FileUriLinkProvider } from './terminal-file-uri-link-provider';
 import {
     ContributedTerminalProfileStore, DefaultProfileStore, DefaultTerminalProfileService,
     TerminalProfileService, TerminalProfileStore, UserTerminalProfileStore
@@ -105,6 +108,9 @@ export default new ContainerModule(bind => {
     bind(IShellTerminalServer).toService(ShellTerminalServerProxy);
 
     bindRootContributionProvider(bind, TerminalContribution);
+    bindRootContributionProvider(bind, TerminalCreationHandler);
+    bind(TerminalShellHandler).toSelf().inSingletonScope();
+    bind(TerminalCreationHandler).toService(TerminalShellHandler);
 
     // terminal link provider contribution point
     bindRootContributionProvider(bind, TerminalLinkProvider);
@@ -115,6 +121,8 @@ export default new ContainerModule(bind => {
     // default terminal link provider
     bind(UrlLinkProvider).toSelf().inSingletonScope();
     bind(TerminalLinkProvider).toService(UrlLinkProvider);
+    bind(FileUriLinkProvider).toSelf().inSingletonScope();
+    bind(TerminalLinkProvider).toService(FileUriLinkProvider);
     bind(FileLinkProvider).toSelf().inSingletonScope();
     bind(TerminalLinkProvider).toService(FileLinkProvider);
     bind(FileDiffPreLinkProvider).toSelf().inSingletonScope();

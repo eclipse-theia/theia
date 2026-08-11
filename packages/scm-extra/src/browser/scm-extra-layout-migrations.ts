@@ -19,6 +19,11 @@ import { ApplicationShellLayoutMigration, WidgetDescription, ApplicationShellLay
 import { SCM_HISTORY_ID } from './history/scm-history-contribution';
 
 @injectable()
+/**
+ * @deprecated since 1.75.0 - superseded by the SCM history graph in `@theia/scm`
+ * and the Timeline view in `@theia/timeline`. This package will be removed in a
+ * future release - see https://github.com/eclipse-theia/theia/issues/17457.
+ */
 export class ScmExtraLayoutVersion4Migration implements ApplicationShellLayoutMigration {
     readonly layoutVersion = 4.0;
     onWillInflateWidget(desc: WidgetDescription, { parent }: ApplicationShellLayoutMigrationContext): WidgetDescription | undefined {

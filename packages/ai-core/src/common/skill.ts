@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { load } from 'js-yaml';
+import { parseFrontmatter } from './frontmatter';
 
 /**
  * The standard filename for skill definition files.
@@ -137,31 +137,11 @@ export function validateSkillDescription(description: SkillDescription, director
  * @returns Object with parsed metadata (if valid) and the markdown content
  */
 export function parseSkillFile(content: string): { metadata: SkillDescription | undefined, content: string } {
-    const frontMatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
-    const match = content.match(frontMatterRegex);
-
-    if (!match) {
+    const { metadata, body } = parseFrontmatter<SkillDescription>(content, { isValid: SkillDescription.is });
+    if (!metadata) {
         return { metadata: undefined, content };
     }
-
-    try {
-        const yamlContent = match[1];
-        const markdownContent = match[2].trim();
-        const parsedYaml = load(yamlContent);
-
-        if (!parsedYaml || typeof parsedYaml !== 'object') {
-            return { metadata: undefined, content };
-        }
-
-        // Validate that required fields are present (name and description)
-        if (!SkillDescription.is(parsedYaml)) {
-            return { metadata: undefined, content };
-        }
-
-        return { metadata: parsedYaml, content: markdownContent };
-    } catch {
-        return { metadata: undefined, content };
-    }
+    return { metadata, content: body };
 }
 
 /**

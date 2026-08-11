@@ -82,6 +82,9 @@ export class MCPRegistryUiBridgeImpl implements MCPRegistryUiBridge {
         // (with a warning + Unlink / Uninstall); jumping to an empty search hides it, so
         // we just show the view and let the user see the warning in Installed.
         if (serverId && this.hasServer(serverId)) {
+            // Search by the raw server id: it's the clean, user-recognizable string (the same one
+            // shown on the registry website) and `RegistrySearchFilter` reduces it to surface the
+            // linked entry. See `RegistrySearchFilter.reduceQuery`.
             this.searchModel.query = serverId;
         }
         await this.viewContribution.openView({ activate: true });

@@ -22,8 +22,8 @@ import { codicon, CommonCommands, LocalizedMarkdown, MarkdownRenderer } from '@t
 import { CommandRegistry, DisposableCollection, Emitter, Event, PreferenceScope } from '@theia/core';
 import { AgentService, FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
 import { PreferenceService } from '@theia/core/lib/common';
-import { DEFAULT_CHAT_AGENT_PREF, BYPASS_MODEL_REQUIREMENT_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
-import { ChatAgentRecommendationService, ChatAgentService } from '@theia/ai-chat/lib/common';
+import { DEFAULT_CHAT_AGENT_PREF, BYPASS_MODEL_REQUIREMENT_PREF, PERSISTED_SESSION_LIMIT_PREF, SESSION_STORAGE_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
+import { ChatAgentRecommendationService, ChatAgentService, ChatService } from '@theia/ai-chat/lib/common';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { DEFAULT_TOOL_CONFIRMATION_PREFERENCE, TOOL_CONFIRMATION_PREFERENCE, ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { OPEN_AI_CONFIG_VIEW, OPEN_AI_CONFIG_VIEW_TOOLS } from './ai-configuration/ai-configuration-view-contribution';
@@ -91,11 +91,16 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
     @inject(AIActivationService)
     protected readonly activationService: AIActivationService;
 
+    @inject(ChatService)
+    protected readonly chatService: ChatService;
+
     protected readonly toDispose = new DisposableCollection();
     protected _hasReadyModels = false;
     protected _modelRequirementBypassed = false;
     protected _defaultAgent = '';
     protected modelConfig: { hasModels: boolean; errorMessages: string[] } | undefined;
+    /** True once the user has any chat (active or persisted). Drives the compact "has-chats" welcome variant. */
+    protected hasAnyChat = false;
 
     protected readonly onStateChangedEmitter = new Emitter<void>();
 
@@ -128,9 +133,15 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
                 } else if (e.preferenceName === DEFAULT_TOOL_CONFIRMATION_PREFERENCE || e.preferenceName === TOOL_CONFIRMATION_PREFERENCE) {
                     // Re-render so the tool-confirmation explainer is hidden once the user configures confirmation behavior.
                     this.notifyStateChanged();
+                } else if (e.preferenceName === SESSION_STORAGE_PREF || e.preferenceName === PERSISTED_SESSION_LIMIT_PREF) {
+                    this.refreshHasAnyChat();
                 }
             })
         );
+        this.toDispose.push(
+            this.chatService.onSessionEvent(() => this.refreshHasAnyChat())
+        );
+        this.refreshHasAnyChat();
         this.toDispose.push(
             this.agentService.onDidChangeAgents(() => {
                 this.notifyStateChanged();
@@ -182,6 +193,28 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
         this.onStateChangedEmitter.fire();
     }
 
+    /**
+     * Recomputes {@link hasAnyChat} (true when the user has any titled active session or any
+     * persisted session on disk). Fires a state change when the flag flips so the welcome
+     * variant updates between the rich onboarding (no chats yet) and the compact mode.
+     */
+    protected async refreshHasAnyChat(): Promise<void> {
+        const hasTitledActive = this.chatService.getSessions().some(s => !!s.title);
+        let hasPersisted = false;
+        if (!hasTitledActive) {
+            try {
+                hasPersisted = await this.chatService.hasPersistedSessions();
+            } catch {
+                hasPersisted = false;
+            }
+        }
+        const next = hasTitledActive || hasPersisted;
+        if (this.hasAnyChat !== next) {
+            this.hasAnyChat = next;
+            this.notifyStateChanged();
+        }
+    }
+
     get hasReadyModels(): boolean {
         return this._hasReadyModels;
     }
@@ -231,6 +264,32 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
     }
 
     protected renderWelcomeScreen(): React.ReactNode {
+        if (this.hasAnyChat) {
+            // Returning user: keep a slim banner (logo + heading + one-line tip) above the
+            // sessions list so the chat view still has identity, but skip the verbose
+            // multi-paragraph tutorial.
+            return <div className={'theia-WelcomeMessage theia-WelcomeMessage-Compact'} key="normal-welcome-compact">
+                <TheiaIdeAiLogo className="theia-WelcomeMessage-Logo" width={64} height={64} />
+                <LocalizedMarkdown
+                    localizationKey="theia/ai/ide/chatWelcomeMessageShort"
+                    defaultMarkdown={`
+## Ask the {0} AI
+
+Use *@agent* to call a specialized agent and *#* (or {1}) to attach context. [Learn more](https://theia-ide.org/docs/user_ai/#chat).
+`}
+                    args={[
+                        FrontendApplicationConfigProvider.get().applicationName,
+                        '<span class="codicon codicon-attach"></span>'
+                    ]}
+                    markdownRenderer={this.markdownRenderer}
+                    className="theia-WelcomeMessage-Content"
+                    markdownOptions={{ supportHtml: true }}
+                />
+                {this.renderToolConfirmationAlert()}
+            </div>;
+        }
+        // First-time user: original full-length onboarding with the larger logo and the
+        // verbose agent/context paragraphs so the empty panel feels welcoming.
         return <div className={'theia-WelcomeMessage theia-WelcomeMessage-Main'} key="normal-welcome">
             <TheiaIdeAiLogo className="theia-WelcomeMessage-Logo" />
             <LocalizedMarkdown
@@ -248,28 +307,35 @@ Attach context with *#{3}*, *#{4}*, *#{5}*, or click {6}. [Learn more](https://t
                 className="theia-WelcomeMessage-Content"
                 markdownOptions={{ supportHtml: true }}
             />
-            {this.shouldShowToolConfirmationInfo && (
-                <div className="theia-alert theia-info-alert theia-WelcomeMessage-Alert">
-                    <div className="theia-message-header">
-                        <span className={codicon('info')}></span>
-                        <span>{nls.localize('theia/ai/ide/toolConfirmationInfo/header', 'Tool confirmation')}</span>
-                    </div>
-                    <div className="theia-message-content">
-                        <LocalizedMarkdown
-                            localizationKey="theia/ai/ide/toolConfirmationInfo"
-                            defaultMarkdown={
-                                'AI agents may want to use tools to act on your workspace. ' +
-                                'By default each tool call needs your confirmation. ' +
-                                'You can change this default or pre-approve individual tools in the [Tools configuration view]({0}).'
-                            }
-                            args={[`command:${OPEN_AI_CONFIG_VIEW_TOOLS.id}`]}
-                            markdownRenderer={this.markdownRenderer}
-                            markdownOptions={{ isTrusted: { enabledCommands: [OPEN_AI_CONFIG_VIEW_TOOLS.id] } }}
-                        />
-                    </div>
-                </div>
-            )}
+            {this.renderToolConfirmationAlert()}
         </div>;
+    }
+
+    protected renderToolConfirmationAlert(): React.ReactNode {
+        if (!this.shouldShowToolConfirmationInfo) {
+            return undefined;
+        }
+        return (
+            <div className="theia-alert theia-info-alert theia-WelcomeMessage-Alert">
+                <div className="theia-message-header">
+                    <span className={codicon('info')}></span>
+                    <span>{nls.localize('theia/ai/ide/toolConfirmationInfo/header', 'Tool confirmation')}</span>
+                </div>
+                <div className="theia-message-content">
+                    <LocalizedMarkdown
+                        localizationKey="theia/ai/ide/toolConfirmationInfo"
+                        defaultMarkdown={
+                            'AI agents may want to use tools to act on your workspace. ' +
+                            'By default each tool call needs your confirmation. ' +
+                            'You can change this default or pre-approve individual tools in the [Tools configuration view]({0}).'
+                        }
+                        args={[`command:${OPEN_AI_CONFIG_VIEW_TOOLS.id}`]}
+                        markdownRenderer={this.markdownRenderer}
+                        markdownOptions={{ isTrusted: { enabledCommands: [OPEN_AI_CONFIG_VIEW_TOOLS.id] } }}
+                    />
+                </div>
+            </div>
+        );
     }
 
     protected renderModelConfigurationScreen(): React.ReactNode {

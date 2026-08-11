@@ -34,6 +34,11 @@ import { HistoryWidgetOptions, ScmCommitNode, ScmHistoryListNode, ScmHistorySupp
 export { HistoryWidgetOptions, ScmCommitNode, ScmHistoryListNode, ScmHistorySupport };
 
 @injectable()
+/**
+ * @deprecated since 1.75.0 - superseded by the SCM history graph in `@theia/scm`
+ * and the Timeline view in `@theia/timeline`. This package will be removed in a
+ * future release - see https://github.com/eclipse-theia/theia/issues/17457.
+ */
 export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode> implements StatefulWidget {
     protected options: HistoryWidgetOptions;
     protected singleFileMode: boolean;
@@ -354,7 +359,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
     protected renderCommitList(): React.ReactNode {
         const list = <div className='listContainer' id={this.scrollContainer}>
             <ScmHistoryList
-                ref={listView => this.listView = (listView || undefined)}
+                ref={listView => { this.listView = (listView || undefined); }}
                 rows={this.scmNodes}
                 hasMoreRows={this.hasMoreCommits}
                 loadMoreRows={this.loadMoreRows}
@@ -517,6 +522,11 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
     }
 }
 
+/**
+ * @deprecated since 1.75.0 - superseded by the SCM history graph in `@theia/scm`
+ * and the Timeline view in `@theia/timeline`. This package will be removed in a
+ * future release - see https://github.com/eclipse-theia/theia/issues/17457.
+ */
 export namespace ScmHistoryList {
     export interface Props {
         readonly rows: ScmHistoryListNode[]
@@ -526,6 +536,11 @@ export namespace ScmHistoryList {
         readonly renderFileChangeList: (fileChange: ScmFileChangeNode) => React.ReactNode
     }
 }
+/**
+ * @deprecated since 1.75.0 - superseded by the SCM history graph in `@theia/scm`
+ * and the Timeline view in `@theia/timeline`. This package will be removed in a
+ * future release - see https://github.com/eclipse-theia/theia/issues/17457.
+ */
 export class ScmHistoryList extends React.Component<ScmHistoryList.Props> {
     list: VirtuosoHandle | undefined;
 
@@ -538,7 +553,7 @@ export class ScmHistoryList extends React.Component<ScmHistoryList.Props> {
     override render(): React.ReactNode {
         const { hasMoreRows, loadMoreRows, rows } = this.props;
         return <Virtuoso
-            ref={list => this.list = (list || undefined)}
+            ref={(list: VirtuosoHandle | null) => { this.list = (list || undefined); }}
             data={rows}
             itemContent={index => this.renderRow(index)}
             endReached={hasMoreRows ? loadMoreRows : undefined}

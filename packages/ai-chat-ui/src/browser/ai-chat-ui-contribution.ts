@@ -15,15 +15,20 @@
 // *****************************************************************************
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { CommandRegistry, Emitter, isOSX, MessageService, nls, PreferenceService, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
-import { ILogger } from '@theia/core/lib/common/logger';
-import { ConfirmDialog, FrontendApplicationContribution, Widget } from '@theia/core/lib/browser';
 import {
-    AI_CHAT_NEW_CHAT_WINDOW_COMMAND,
+    CommandRegistry, Disposable, Emitter, Event, isOSX, MessageService, nls, PreferenceService,
+    QuickInputButton, QuickInputService, QuickPickItem, QuickPickSeparator
+} from '@theia/core';
+import { ILogger } from '@theia/core/lib/common/logger';
+import { ConfirmDialog, FrontendApplicationContribution, KeybindingRegistry, Widget } from '@theia/core/lib/browser';
+import { ACTIVE_PERSPECTIVE_CONTEXT_KEY } from '@theia/core/lib/browser/perspective-service';
+import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import {
+    AI_CHAT_HOME,
+    AI_CHAT_OPEN_SESSION,
     AI_CHAT_SHOW_CHATS_COMMAND,
     ChatCommands
 } from './chat-view-commands';
-import { AIChatNavigationService } from './ai-chat-navigation-service';
 import { ChatAgent, ChatAgentLocation, ChatService, ChatSessionMetadata, isActiveSessionChangedEvent } from '@theia/ai-chat';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
@@ -56,6 +61,16 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected readonly messageService: MessageService;
     @inject(ChatAgentService)
     protected readonly chatAgentService: ChatAgentService;
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
+    /**
+     * Context key set to true while the chat view widget is the active widget in the shell.
+     * Broader than `chatInputFocus`/`chatResponseFocus` (which require DOM focus on a specific
+     * sub-widget): clicks on non-focusable parts of the chat view still flip this key, so chat
+     * view keybindings remain available.
+     */
+    protected chatViewActiveKey: ContextKey<boolean>;
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
     @inject(AIActivationService)
@@ -71,17 +86,31 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
      */
     protected hasPersistedSessions = false;
 
+    /**
+     * Tracks whether the currently active session is empty (= the home / overview is shown).
+     * Used to hide toolbar items that only make sense within an open chat (Home,
+     * lock/unlock auto-scroll, Summarize Current Session, ...).
+     */
+    protected activeSessionEmpty = true;
+    /** Model listener for the active session; disposed and re-bound on active-session changes. */
+    protected activeSessionModelListener: Disposable | undefined;
+    protected readonly onActiveSessionEmptyChangedEmitter = new Emitter<void>();
+    /** Fires when {@link isActiveSessionEmpty} flips. Consumed by toolbar items that hide on the overview. */
+    readonly onActiveSessionEmptyChanged: Event<void> = this.onActiveSessionEmptyChangedEmitter.event;
+
+    /** True when the chat view currently displays the home/overview (the active session has no requests). */
+    get isActiveSessionEmpty(): boolean {
+        return this.activeSessionEmpty;
+    }
+
     protected static readonly RENAME_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-edit',
-        tooltip: nls.localizeByDefault('Rename Chat'),
+        tooltip: nls.localizeByDefault('Rename chat'),
     };
     protected static readonly REMOVE_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-remove-close',
         tooltip: nls.localize('theia/ai/chat-ui/removeChat', 'Remove Chat'),
     };
-
-    @inject(AIChatNavigationService)
-    protected readonly navigationService: AIChatNavigationService;
 
     @inject(SecondaryWindowHandler)
     protected readonly secondaryWindowHandler: SecondaryWindowHandler;
@@ -108,6 +137,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             if (event.focus) {
                 this.openView({ activate: true });
             }
+            this.attachToActiveSession();
         });
 
         // Re-check persisted sessions when storage preferences change
@@ -118,6 +148,44 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         });
 
         this.checkPersistedSessions();
+        this.attachToActiveSession();
+
+        this.chatViewActiveKey = this.contextKeyService.createKey<boolean>('chatViewActive', false);
+        this.updateChatViewActiveKey();
+        this.shell.onDidChangeActiveWidget(() => this.updateChatViewActiveKey());
+        this.shell.onDidChangeCurrentWidget(() => this.updateChatViewActiveKey());
+    }
+
+    protected updateChatViewActiveKey(): void {
+        const active = this.shell.activeWidget instanceof ChatViewWidget
+            || this.shell.currentWidget instanceof ChatViewWidget;
+        this.chatViewActiveKey.set(active);
+    }
+
+    /**
+     * (Re-)attach a model listener to the currently active session so the Home
+     * toolbar item can react when the user submits the first message and the welcome view
+     * is replaced by the chat tree.
+     */
+    protected attachToActiveSession(): void {
+        this.activeSessionModelListener?.dispose();
+        this.activeSessionModelListener = undefined;
+        const session = this.chatService.getActiveSession();
+        if (!session) {
+            this.setActiveSessionEmpty(true);
+            return;
+        }
+        this.setActiveSessionEmpty(session.model.isEmpty());
+        this.activeSessionModelListener = session.model.onDidChange(() => {
+            this.setActiveSessionEmpty(session.model.isEmpty());
+        });
+    }
+
+    protected setActiveSessionEmpty(empty: boolean): void {
+        if (this.activeSessionEmpty !== empty) {
+            this.activeSessionEmpty = empty;
+            this.onActiveSessionEmptyChangedEmitter.fire();
+        }
     }
 
     async initializeLayout(): Promise<void> {
@@ -140,23 +208,33 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     override registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
         registry.registerCommand(ChatCommands.SCROLL_LOCK_WIDGET, {
-            isEnabled: widget => this.withWidget(widget, chatWidget => !chatWidget.isLocked),
-            isVisible: widget => this.withWidget(widget, chatWidget => !chatWidget.isLocked),
+            isEnabled: widget => this.withWidget(widget, chatWidget => !chatWidget.isLocked) && !this.activeSessionEmpty,
+            isVisible: widget => this.withWidget(widget, chatWidget => !chatWidget.isLocked) && !this.activeSessionEmpty,
             execute: widget => this.withWidget(widget, chatWidget => {
                 chatWidget.lock();
                 return true;
             })
         });
         registry.registerCommand(ChatCommands.SCROLL_UNLOCK_WIDGET, {
-            isEnabled: widget => this.withWidget(widget, chatWidget => chatWidget.isLocked),
-            isVisible: widget => this.withWidget(widget, chatWidget => chatWidget.isLocked),
+            isEnabled: widget => this.withWidget(widget, chatWidget => chatWidget.isLocked) && !this.activeSessionEmpty,
+            isVisible: widget => this.withWidget(widget, chatWidget => chatWidget.isLocked) && !this.activeSessionEmpty,
             execute: widget => this.withWidget(widget, chatWidget => {
                 chatWidget.unlock();
                 return true;
             })
         });
-        registry.registerCommand(AI_CHAT_NEW_CHAT_WINDOW_COMMAND, {
-            execute: () => this.openView().then(() => this.chatService.createSession(ChatAgentLocation.Panel, { focus: true })),
+        registry.registerCommand(AI_CHAT_HOME, {
+            execute: async () => {
+                await this.openView();
+                const activeSession = this.chatService.getActiveSession();
+                // If the active session is already empty we are on the overview: just focus it
+                // instead of spawning another redundant empty session.
+                if (activeSession?.model.isEmpty()) {
+                    this.chatService.setActiveSession(activeSession.id, { focus: true });
+                } else {
+                    this.chatService.createSession(ChatAgentLocation.Panel, { focus: true });
+                }
+            },
             isVisible: widget => this.activationService.isActive,
             isEnabled: widget => this.activationService.canRun,
         });
@@ -178,6 +256,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 if (widget && !this.withWidget(widget)) { return false; }
                 const activeSession = this.chatService.getActiveSession();
                 return activeSession?.model.location === ChatAgentLocation.Panel
+                    && !activeSession.model.isEmpty()
                     && !this.taskContextService.hasSummary(activeSession);
             },
             isEnabled: widget => {
@@ -218,6 +297,17 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             isVisible: () => this.activationService.isActive,
             isEnabled: () => this.activationService.canRun
         });
+        registry.registerCommand(AI_CHAT_OPEN_SESSION, {
+            execute: async (sessionId: string) => {
+                const session = await this.chatService.getOrRestoreSession(sessionId);
+                if (!session) {
+                    throw new Error(`Chat session '${sessionId}' not found`);
+                }
+                await this.openView({ activate: true });
+                this.chatService.setActiveSession(sessionId, { focus: false });
+            },
+            isVisible: () => false,
+        });
         registry.registerCommand(AI_CHAT_SHOW_CHATS_COMMAND, {
             execute: async () => {
                 await this.openView();
@@ -242,16 +332,6 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 this.deleteSession(typeof session === 'string' ? session : session.sessionId, typeof session === 'string' ? confirm : true),
             isVisible: () => this.activationService.isActive,
             isEnabled: () => this.activationService.canRun
-        });
-        registry.registerCommand(ChatCommands.AI_CHAT_NAVIGATE_BACK, {
-            execute: () => this.navigationService.back(),
-            isEnabled: widget => this.withWidget(widget, () => this.navigationService.canGoBack),
-            isVisible: widget => this.activationService.isActive && !!this.withWidget(widget)
-        });
-        registry.registerCommand(ChatCommands.AI_CHAT_NAVIGATE_FORWARD, {
-            execute: () => this.navigationService.forward(),
-            isEnabled: widget => this.withWidget(widget, () => this.navigationService.canGoForward),
-            isVisible: widget => this.activationService.isActive && !!this.withWidget(widget)
         });
         registry.registerCommand(ChatNodeToolbarCommands.EDIT, {
             isEnabled: node => isEditableRequestNode(node) && !node.request.isEditing,
@@ -296,37 +376,44 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         });
     }
 
-    registerToolbarItems(registry: TabBarToolbarRegistry): void {
-        const navigationChangedEmitter = new Emitter<void>();
-        this.navigationService.onDidChange(() => navigationChangedEmitter.fire());
+    override registerKeybindings(keybindings: KeybindingRegistry): void {
+        super.registerKeybindings(keybindings);
+        // Scoped to chat view active so we don't shadow global bindings (e.g. ctrl+shift+l =
+        // "Select All Occurrences" in editors). We use chatViewActive in addition to the more
+        // specific input/response focus keys so clicks on non-focusable parts of the chat view
+        // (e.g. plain markdown text in a response) don't silently disable the keybindings.
+        // Avoid plain Ctrl+L: Monaco binds it to "Expand Line Selection" inside the chat input
+        // (a Monaco editor) and wins when the input has focus.
+        const chatScope = '(chatInputFocus || chatResponseFocus || chatViewActive)';
+        keybindings.registerKeybinding({
+            command: AI_CHAT_HOME.id,
+            keybinding: 'ctrlcmd+shift+l',
+            when: chatScope
+        });
+        keybindings.registerKeybinding({
+            command: AI_CHAT_SHOW_CHATS_COMMAND.id,
+            keybinding: 'ctrlcmd+alt+l',
+            when: chatScope
+        });
+    }
 
+    registerToolbarItems(registry: TabBarToolbarRegistry): void {
+        // No explicit `tooltip`: the toolbar framework falls back to the command label and appends
+        // the command's keybinding accelerator itself (see RenderedToolbarItemImpl.renderItem).
         registry.registerItem({
-            id: ChatCommands.AI_CHAT_NAVIGATE_BACK.id,
-            command: ChatCommands.AI_CHAT_NAVIGATE_BACK.id,
-            tooltip: nls.localize('theia/ai-chat-ui/navigate-back', 'Navigate Back'),
-            onDidChange: navigationChangedEmitter.event,
-            priority: 0,
-            when: ENABLE_AI_CONTEXT_KEY
-        });
-        registry.registerItem({
-            id: ChatCommands.AI_CHAT_NAVIGATE_FORWARD.id,
-            command: ChatCommands.AI_CHAT_NAVIGATE_FORWARD.id,
-            tooltip: nls.localize('theia/ai-chat-ui/navigate-forward', 'Navigate Forward'),
-            onDidChange: navigationChangedEmitter.event,
-            priority: 0,
-            when: ENABLE_AI_CONTEXT_KEY
-        });
-        registry.registerItem({
-            id: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
-            command: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
-            tooltip: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.label,
-            isVisible: widget => this.activationService.isActive && this.withWidget(widget),
-            when: ENABLE_AI_CONTEXT_KEY
+            id: AI_CHAT_HOME.id,
+            command: AI_CHAT_HOME.id,
+            onDidChange: this.onActiveSessionEmptyChangedEmitter.event,
+            // Hide on the overview itself (the active session is empty); only show when there
+            // is an actual chat to return from.
+            isVisible: widget => this.activationService.isActive
+                && this.withWidget(widget)
+                && !this.activeSessionEmpty,
+            when: `${ENABLE_AI_CONTEXT_KEY} && ${ACTIVE_PERSPECTIVE_CONTEXT_KEY} != 'ai-first'`
         });
         registry.registerItem({
             id: AI_CHAT_SHOW_CHATS_COMMAND.id,
             command: AI_CHAT_SHOW_CHATS_COMMAND.id,
-            tooltip: AI_CHAT_SHOW_CHATS_COMMAND.label,
             isVisible: widget => this.activationService.isActive && this.withWidget(widget),
             when: ENABLE_AI_CONTEXT_KEY
         });
@@ -344,6 +431,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         this.chatService.onSessionEvent(event => event.type === 'activeChange' && sessionSummarizibilityChangedEmitter.fire());
         this.activationService.onDidChangeActiveStatus(() => sessionSummarizibilityChangedEmitter.fire());
         this.activationService.onDidChangeCanRun(() => sessionSummarizibilityChangedEmitter.fire());
+        this.onActiveSessionEmptyChanged(() => sessionSummarizibilityChangedEmitter.fire());
         registry.registerItem({
             id: 'chat-view.' + ChatCommands.AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,
             command: ChatCommands.AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,
@@ -373,63 +461,110 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     }
 
     protected async askForChatSession(): Promise<QuickPickItem | undefined> {
-        const getItems = async (): Promise<QuickPickItem[]> => {
-            const activeSessions = this.chatService.getSessions()
-                .filter(session => session.title)
-                .map(session => ({
-                    session,
-                    isActive: true,
-                    lastDate: session.lastInteraction ? session.lastInteraction.getTime() : 0
-                }));
+        const getItems = async (): Promise<(QuickPickItem | QuickPickSeparator)[]> => {
+            const allActiveSessions = this.chatService.getSessions();
 
             // Try to load persisted sessions, but don't fail if it doesn't work
-            let persistedSessions: Array<{ metadata: { sessionId: string; title: string; saveDate: number }; isActive: false; lastDate: number }> = [];
+            interface PersistedSessionPickItem {
+                isActive: false;
+                isChild: boolean;
+                id: string;
+                title: string;
+                lastDate: number;
+                firstRequestText: undefined;
+                agentIconClass: string | undefined;
+                agentName: string | undefined;
+            }
+            let persistedIndex: Record<string, ChatSessionMetadata> = {};
             try {
-                const persistedIndex = await this.chatService.getPersistedSessions();
-                const activeIds = new Set(activeSessions.map(s => s.session.id));
-                persistedSessions = Object.values(persistedIndex)
-                    .filter(metadata => !activeIds.has(metadata.sessionId))
-                    .map(metadata => ({
-                        metadata,
-                        isActive: false,
-                        lastDate: metadata.saveDate
-                    }));
+                persistedIndex = await this.chatService.getPersistedSessions();
             } catch (error) {
                 this.logger.error('Failed to load persisted sessions, showing only active sessions', error);
                 // Continue with just active sessions
             }
 
-            // Combine and sort by last interaction/message date
-            const allSessions = [
-                ...activeSessions.map(s => ({
-                    isActive: true,
-                    id: s.session.id,
-                    title: s.session.title!,
-                    lastDate: s.lastDate,
-                    firstRequestText: s.session.model.getRequests().at(0)?.request.text
-                })),
-                ...persistedSessions.map(s => ({
-                    isActive: false,
-                    id: s.metadata.sessionId,
-                    title: s.metadata.title,
-                    lastDate: s.lastDate,
-                    firstRequestText: undefined
+            // Show every session here, including delegated child sessions, so all are reachable. Child
+            // sessions are flagged so the picker can mark them rather than nesting them like the home view.
+            const activeSessions = allActiveSessions
+                .filter(session => session.title)
+                .map(session => ({
+                    isActive: true as const,
+                    isChild: !!session.rootSessionId,
+                    id: session.id,
+                    title: session.title!,
+                    lastDate: session.lastInteraction ? session.lastInteraction.getTime() : 0,
+                    firstRequestText: session.model.getRequests().at(0)?.request.text,
+                    agentIconClass: session.pinnedAgent?.iconClass,
+                    agentName: session.pinnedAgent?.name
                 }))
-            ].sort((a, b) => b.lastDate - a.lastDate);
+                .sort((a, b) => b.lastDate - a.lastDate);
 
-            return allSessions.map(session => {
-                // Add icon for persisted sessions to visually distinguish them
-                const icon = session.isActive ? '' : '$(archive) ';
+            const activeIds = new Set(activeSessions.map(s => s.id));
+            const persistedSessions: PersistedSessionPickItem[] = Object.values(persistedIndex)
+                .filter(metadata => !activeIds.has(metadata.sessionId))
+                .map(metadata => {
+                    const agent = metadata.pinnedAgentId ? this.chatAgentService.getAgent(metadata.pinnedAgentId) : undefined;
+                    return {
+                        isActive: false as const,
+                        isChild: !!metadata.rootSessionId,
+                        id: metadata.sessionId,
+                        title: metadata.title,
+                        lastDate: metadata.saveDate,
+                        firstRequestText: undefined,
+                        agentIconClass: agent?.iconClass,
+                        agentName: agent?.name
+                    };
+                })
+                .sort((a, b) => b.lastDate - a.lastDate);
+
+            interface SessionPickItem {
+                isActive: boolean;
+                isChild: boolean;
+                id: string;
+                title: string;
+                lastDate: number;
+                firstRequestText: string | undefined;
+                agentIconClass: string | undefined;
+                agentName: string | undefined;
+            }
+            const toItem = (session: SessionPickItem): QuickPickItem => {
+                // Mark restored sessions with an archive icon; active sessions get the pinned agent's icon
+                // to match the home view. QuickPick labels support inline codicons via `$(name)`, so we
+                // extract the codicon name from the agent's iconClass (e.g. "codicon codicon-foo" -> "foo").
+                let icon: string;
+                if (session.isActive) {
+                    const codiconName = session.agentIconClass?.match(/codicon-([\w-]+)/)?.[1] ?? 'comment-discussion';
+                    icon = `$(${codiconName}) `;
+                } else {
+                    icon = '$(archive) ';
+                }
                 const label = `${icon}${session.title}`;
-
-                return <QuickPickItem>({
+                // Mirror the home-view item subtitle: "@Agent · time ago". Child sessions are shown
+                // flat here (the home view nests them), so tag them as delegated to keep them distinct.
+                const timeAgo = formatTimeAgo(session.lastDate);
+                const subtitle = session.agentName ? `@${session.agentName} · ${timeAgo}` : timeAgo;
+                const description = session.isChild
+                    ? `${subtitle} · ${nls.localize('theia/ai/chat-ui/delegatedSession', 'Delegated')}`
+                    : subtitle;
+                return {
                     label,
-                    description: formatTimeAgo(session.lastDate, false),
+                    description,
                     detail: session.firstRequestText || (session.isActive ? undefined : nls.localize('theia/ai/chat-ui/persistedSession', 'Persisted session (click to restore)')),
                     id: session.id,
                     buttons: [AIChatContribution.RENAME_CHAT_BUTTON, AIChatContribution.REMOVE_CHAT_BUTTON]
-                });
-            });
+                };
+            };
+
+            const items: (QuickPickItem | QuickPickSeparator)[] = [];
+            if (activeSessions.length > 0) {
+                items.push({ type: 'separator', label: nls.localizeByDefault('Active') });
+                items.push(...activeSessions.map(toItem));
+            }
+            if (persistedSessions.length > 0) {
+                items.push({ type: 'separator', label: nls.localize('theia/ai/chat-ui/sectionRestored', 'Restored') });
+                items.push(...persistedSessions.map(toItem));
+            }
+            return items;
         };
 
         const defer = new Deferred<QuickPickItem | undefined>();
@@ -503,7 +638,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected async deleteSession(sessionId: string, confirm = false): Promise<void> {
         if (confirm) {
             const confirmed = await new ConfirmDialog({
-                title: nls.localize('theia/ai/chat-ui/deleteChat', 'Delete Chat'),
+                title: nls.localizeByDefault('Delete Chat'),
                 msg: nls.localizeByDefault('Are you sure you want to delete this chat?')
             }).open();
             if (!confirmed) {
@@ -551,10 +686,6 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         });
     }
 
-    /**
-     * Prompts the user to select a chat agent
-     * @returns The selected agent or undefined if cancelled
-     */
     /**
      * Prompts the user to select a chat agent with an optional default (pre-selected) agent.
      * @param defaultAgentId The id of the agent to pre-select, if present

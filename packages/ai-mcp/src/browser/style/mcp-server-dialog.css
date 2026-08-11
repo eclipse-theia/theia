@@ -25,6 +25,12 @@
   margin-bottom: calc(var(--theia-ui-padding) * 1.5);
 }
 
+.mcp-dialog-form .mcp-form-section-title {
+  margin: calc(var(--theia-ui-padding) * 2) 0 var(--theia-ui-padding);
+  font-weight: 600;
+  color: var(--theia-foreground);
+}
+
 .mcp-dialog-form .mcp-form-field label {
   display: block;
   margin-bottom: calc(var(--theia-ui-padding) / 2);
@@ -36,6 +42,12 @@
 .mcp-dialog-form .mcp-form-field .theia-select {
   width: 100%;
   box-sizing: border-box;
+}
+
+.mcp-dialog-form .mcp-form-description {
+  margin-top: calc(var(--theia-ui-padding) / 2);
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
 }
 
 .mcp-dialog-form .mcp-form-field textarea.theia-input {
@@ -53,6 +65,13 @@
   margin-bottom: 0;
 }
 
+.mcp-dialog-form .mcp-form-checkbox .theia-input {
+  width: auto;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+}
+
 .mcp-dialog-form .mcp-form-static-value {
   display: block;
   padding: calc(var(--theia-ui-padding) / 2) calc(var(--theia-ui-padding));
@@ -62,6 +81,33 @@
   font-family: var(--monaco-monospace-font);
   font-size: var(--theia-ui-font-size1);
   color: var(--theia-descriptionForeground);
+}
+
+.mcp-dialog-form .mcp-oauth-redirect-url-row {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.mcp-dialog-form .mcp-oauth-redirect-url-row .mcp-form-static-value {
+  flex: 1 1 auto;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.mcp-dialog-form .mcp-icon-button {
+  flex: 0 0 auto;
+  background: transparent;
+  border: none;
+  padding: calc(var(--theia-ui-padding) / 4);
+  cursor: pointer;
+  color: var(--theia-icon-foreground);
+  opacity: 0.8;
+  transition: opacity 0.1s;
+}
+
+.mcp-dialog-form .mcp-icon-button:hover {
+  opacity: 1;
 }
 
 /* Trust banner rendered at the top of the install dialog when an MCPServerInstallTrust
