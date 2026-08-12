@@ -193,7 +193,8 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
             // Exclude right click
             if (event.button < 2) {
                 const uri = new URI(event.target.href);
-                open(this.openerService, uri);
+                // A `command:` link of a description may point at a command that is disabled in the current state.
+                open(this.openerService, uri).catch(error => console.warn(`Could not open the link ${uri.toString()}:`, error));
             }
         }
     }
