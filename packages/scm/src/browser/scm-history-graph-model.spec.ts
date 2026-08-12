@@ -17,7 +17,7 @@
 import { expect } from 'chai';
 import { Emitter } from '@theia/core/lib/common/event';
 import { ScmHistoryGraphModel, PAGE_SIZE } from './scm-history-graph-model';
-import { ScmHistoryItem, ScmHistoryItemRef, ScmHistoryItemChange, ScmHistoryOptions, ScmHistoryProvider } from './scm-provider';
+import { ScmHistoryItem, ScmHistoryItemRef, ScmHistoryItemRefsChangeEvent, ScmHistoryItemChange, ScmHistoryOptions, ScmHistoryProvider } from './scm-provider';
 import { ScmRepository } from './scm-repository';
 
 class StubHistoryProvider implements ScmHistoryProvider {
@@ -26,11 +26,12 @@ class StubHistoryProvider implements ScmHistoryProvider {
     currentHistoryItemBaseRef: ScmHistoryItemRef | undefined;
 
     readonly onDidChangeCurrentHistoryItemRefs = new Emitter<void>().event;
-    readonly onDidChangeHistoryItemRefs = new Emitter<{
-        readonly added: readonly ScmHistoryItemRef[];
-        readonly removed: readonly ScmHistoryItemRef[];
-        readonly modified: readonly ScmHistoryItemRef[];
-    }>().event;
+    protected readonly onDidChangeHistoryItemRefsEmitter = new Emitter<ScmHistoryItemRefsChangeEvent>();
+    readonly onDidChangeHistoryItemRefs = this.onDidChangeHistoryItemRefsEmitter.event;
+
+    fireHistoryItemRefsChanged(event: ScmHistoryItemRefsChangeEvent): void {
+        this.onDidChangeHistoryItemRefsEmitter.fire(event);
+    }
 
     /** Pages this provider will return on consecutive calls (FIFO). */
     pages: ScmHistoryItem[][] = [];
@@ -75,11 +76,14 @@ function makeItems(start: number, count: number): ScmHistoryItem[] {
 /**
  * Instantiates the model with a stub provider, bypassing inversify and the
  * SCM service so tests can drive pagination directly via loadPage().
+ * When `wireRepository` is set, the provider is instead wired through a stub
+ * selected repository and refresh(), so provider event subscriptions are live.
  */
 function createModel(
     provider: ScmHistoryProvider,
-    preferences: Record<string, unknown> = {}
-): { model: ScmHistoryGraphModel; loadPage(): Promise<void> } {
+    preferences: Record<string, unknown> = {},
+    wireRepository = false
+): { model: ScmHistoryGraphModel; loadPage(): Promise<void>; firePreferenceChanged(preferenceName: string): void } {
     const model = new ScmHistoryGraphModel();
     const internals = model as unknown as {
         scmService: {
@@ -91,17 +95,25 @@ function createModel(
         init(): void;
         loadPage(): Promise<void>;
     };
+    const preferenceEmitter = new Emitter<{ preferenceName: string }>();
     internals.scmService = {
         onDidChangeSelectedRepository: new Emitter<ScmRepository | undefined>().event,
-        selectedRepository: undefined,
+        selectedRepository: wireRepository ? { provider: { historyProvider: provider } } as unknown as ScmRepository : undefined,
     };
-    internals.scmPreferences = preferences;
+    internals.scmPreferences = Object.assign(preferences, { onPreferenceChanged: preferenceEmitter.event });
     internals.init();
-    internals._provider = provider;
+    if (!wireRepository) {
+        internals._provider = provider;
+    }
     return {
         model,
         loadPage: () => internals.loadPage(),
+        firePreferenceChanged: preferenceName => preferenceEmitter.fire({ preferenceName }),
     };
+}
+
+async function nextTick(): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, 0));
 }
 
 describe('ScmHistoryGraphModel - pagination', () => {
@@ -198,6 +210,23 @@ describe('ScmHistoryGraphModel - page size preference', () => {
 
         expect(provider.receivedOptions[0].limit).to.equal(PAGE_SIZE);
     });
+
+    it('reloads from the start when scm.graph.pageSize changes', async () => {
+        const provider = new StubHistoryProvider();
+        provider.pages = [makeItems(1, 10), makeItems(1, 5)];
+        const preferences: Record<string, unknown> = { 'scm.graph.pageSize': 10 };
+        const { loadPage, firePreferenceChanged } = createModel(provider, preferences);
+
+        await loadPage();
+        expect(provider.receivedOptions[0].limit).to.equal(10);
+
+        preferences['scm.graph.pageSize'] = 5;
+        firePreferenceChanged('scm.graph.pageSize');
+        await nextTick();
+
+        expect(provider.receivedOptions[1].limit).to.equal(5);
+        expect(provider.receivedOptions[1].skip).to.equal(0);
+    });
 });
 
 describe('ScmHistoryGraphModel - history item ref filter', () => {
@@ -209,10 +238,6 @@ describe('ScmHistoryGraphModel - history item ref filter', () => {
         provider.currentHistoryItemRef = mainRef;
         provider.pages = [makeItems(1, 3), makeItems(1, 3), makeItems(1, 3)];
         return provider;
-    }
-
-    async function nextTick(): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, 0));
     }
 
     it('is in auto mode by default: current ref revisions are requested and the current ref is in the filter', async () => {
@@ -265,6 +290,58 @@ describe('ScmHistoryGraphModel - history item ref filter', () => {
         model.setHistoryItemRefFilter(['refs/heads/feature']);
         await nextTick();
         expect(model.entries[0].graphRow.color).to.not.equal(0);
+    });
+});
+
+describe('ScmHistoryGraphModel - ref filter pruning', () => {
+
+    const mainRef: ScmHistoryItemRef = { id: 'refs/heads/main', name: 'main', revision: 'c1' };
+    const featureRef: ScmHistoryItemRef = { id: 'refs/heads/feature', name: 'feature', revision: 'c5' };
+
+    function createWiredProvider(): StubHistoryProvider {
+        const provider = new StubHistoryProvider();
+        provider.currentHistoryItemRef = mainRef;
+        return provider;
+    }
+
+    it('drops a removed ref from the filter and keeps the remaining ones', async () => {
+        const provider = createWiredProvider();
+        const { model } = createModel(provider, {}, true);
+        model.setHistoryItemRefFilter([featureRef.id, mainRef.id]);
+        await nextTick();
+
+        provider.fireHistoryItemRefsChanged({ added: [], removed: [featureRef], modified: [] });
+        await nextTick();
+
+        expect(model.historyItemRefFilter).to.deep.equal([mainRef.id]);
+        const last = provider.receivedOptions[provider.receivedOptions.length - 1];
+        expect(last.historyItemRefs).to.deep.equal([mainRef.id]);
+    });
+
+    it('falls back to auto mode when all filtered refs are removed', async () => {
+        const provider = createWiredProvider();
+        const { model } = createModel(provider, {}, true);
+        model.setHistoryItemRefFilter([featureRef.id]);
+        await nextTick();
+
+        provider.fireHistoryItemRefsChanged({ added: [], removed: [featureRef], modified: [] });
+        await nextTick();
+
+        expect(model.historyItemRefFilter).to.be.undefined;
+        const last = provider.receivedOptions[provider.receivedOptions.length - 1];
+        expect(last.historyItemRefs).to.deep.equal(['c1']);
+    });
+
+    it('keeps the filter when unrelated refs are removed', async () => {
+        const provider = createWiredProvider();
+        const { model } = createModel(provider, {}, true);
+        model.setHistoryItemRefFilter([mainRef.id]);
+        await nextTick();
+
+        provider.fireHistoryItemRefsChanged({ added: [], removed: [featureRef], modified: [] });
+        await nextTick();
+
+        expect(model.historyItemRefFilter).to.deep.equal([mainRef.id]);
     });
 });
 

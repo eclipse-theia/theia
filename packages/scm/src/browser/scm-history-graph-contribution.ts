@@ -22,8 +22,9 @@ import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { QuickInputService } from '@theia/core/lib/browser';
 import { QuickPickItem, QuickPickSeparator } from '@theia/core/lib/common/quick-pick-service';
 import { codicon } from '@theia/core/lib/browser/widgets/widget';
-import { ScmHistoryGraphModel } from './scm-history-graph-model';
-import { ScmHistoryItemRef } from './scm-provider';
+import { ScmHistoryGraphModel, ScmHistoryGraphModelProvider } from './scm-history-graph-model';
+import { ScmService } from './scm-service';
+import { ScmHistoryItemRef, ScmHistoryProvider } from './scm-provider';
 import { SCM_HISTORY_TITLE_MENU } from './scm-history-graph-widget';
 import { getRefBadgeClass } from './scm-history-graph-helpers';
 
@@ -53,18 +54,35 @@ type RefPickItem = QuickPickItem & { refId?: string; auto?: boolean };
 @injectable()
 export class ScmHistoryGraphContribution implements CommandContribution, MenuContribution {
 
-    @inject(ScmHistoryGraphModel) protected readonly model: ScmHistoryGraphModel;
+    @inject(ScmService) protected readonly scmService: ScmService;
+    @inject(ScmHistoryGraphModelProvider) protected readonly modelProvider: ScmHistoryGraphModelProvider;
     @inject(QuickInputService) @optional() protected readonly quickInputService: QuickInputService;
+
+    /**
+     * The graph model, resolved lazily: instantiating it starts loading
+     * history, so it must only be resolved when a graph command actually
+     * runs or the graph toolbar renders (the widget has created the model
+     * by then). In particular, `isEnabled`/`isVisible` are also queried by
+     * the command palette and therefore consult the `ScmService` instead.
+     */
+    protected get model(): ScmHistoryGraphModel {
+        return this.modelProvider();
+    }
+
+    protected get historyProvider(): ScmHistoryProvider | undefined {
+        return this.scmService.selectedRepository?.provider.historyProvider;
+    }
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(ScmHistoryGraphCommands.REFRESH, {
-            isEnabled: () => !!this.model.provider,
-            isVisible: () => !!this.model.provider,
+            isEnabled: () => !!this.historyProvider,
+            isVisible: () => !!this.historyProvider,
             execute: () => this.model.refresh()
         });
         commands.registerCommand(ScmHistoryGraphCommands.PICK_HISTORY_ITEM_REFS, {
-            isEnabled: () => !!this.model.provider && !!this.quickInputService,
-            isVisible: () => !!this.model.provider,
+            isEnabled: () => !!this.historyProvider && !!this.quickInputService,
+            isVisible: () => !!this.historyProvider,
+            isToggled: () => !!this.model.historyItemRefFilter,
             execute: () => this.pickHistoryItemRefs()
         });
     }
@@ -83,56 +101,86 @@ export class ScmHistoryGraphContribution implements CommandContribution, MenuCon
     }
 
     protected async pickHistoryItemRefs(): Promise<void> {
-        const provider = this.model.provider;
-        if (!provider || !this.quickInputService) {
+        if (!this.quickInputService) {
             return;
         }
-        const cts = new CancellationTokenSource();
-        const refs = await provider.provideHistoryItemRefs(undefined, cts.token) ?? [];
-
-        const currentFilter = this.model.historyItemRefFilter;
-        const items = this.createRefPickItems(refs);
-
+        const model = this.model;
+        const provider = model.provider;
+        if (!provider) {
+            return;
+        }
         const picker = this.quickInputService.createQuickPick<RefPickItem>();
-        picker.placeholder = nls.localize('theia/scm/pickHistoryItemRefsPlaceholder', 'Select one or more history item references');
-        picker.canSelectMany = true;
-        picker.matchOnDescription = true;
-        picker.items = items;
-        picker.selectedItems = items.filter((item): item is RefPickItem => !QuickPickSeparator.is(item)
-            && (currentFilter ? !!item.refId && currentFilter.includes(item.refId) : item.auto === true));
+        const cts = new CancellationTokenSource();
+        try {
+            picker.placeholder = nls.localize('theia/scm/pickHistoryItemRefsPlaceholder', 'Select one or more history item references');
+            picker.canSelectMany = true;
+            picker.matchOnDescription = true;
+            // Show the picker right away and populate it once the refs arrive,
+            // so that a slow ref lookup surfaces as a busy picker instead of a
+            // command that appears to do nothing.
+            picker.busy = true;
 
-        // "Auto" is exclusive: checking it unchecks everything else and vice versa
-        let lastSelection: readonly RefPickItem[] = picker.selectedItems;
-        picker.onDidChangeSelection(newSelection => {
-            const autoNow = newSelection.some(item => item.auto);
-            if (autoNow && newSelection.length > 1) {
-                const autoBefore = lastSelection.some(item => item.auto);
-                picker.selectedItems = autoBefore ? newSelection.filter(item => !item.auto) : newSelection.filter(item => item.auto);
-            }
-            lastSelection = picker.selectedItems;
-        });
+            const selection = await new Promise<readonly RefPickItem[] | undefined>(resolve => {
+                picker.onDidAccept(() => {
+                    resolve(picker.selectedItems);
+                    picker.hide();
+                });
+                // Also cancels a still-running ref lookup when the picker is dismissed.
+                picker.onDidHide(() => {
+                    cts.cancel();
+                    resolve(undefined);
+                });
+                picker.show();
 
-        const selection = await new Promise<readonly RefPickItem[] | undefined>(resolve => {
-            picker.onDidAccept(() => {
-                resolve(picker.selectedItems);
-                picker.hide();
+                provider.provideHistoryItemRefs(undefined, cts.token).then(refs => {
+                    if (cts.token.isCancellationRequested) {
+                        return;
+                    }
+                    const currentFilter = model.historyItemRefFilter;
+                    const items = this.createRefPickItems(refs ?? [], provider);
+                    picker.items = items;
+                    picker.selectedItems = items.filter((item): item is RefPickItem => !QuickPickSeparator.is(item)
+                        && (currentFilter ? !!item.refId && currentFilter.includes(item.refId) : item.auto === true));
+
+                    // "Auto" is exclusive: checking it unchecks everything else and vice versa
+                    let lastSelection: readonly RefPickItem[] = picker.selectedItems;
+                    picker.onDidChangeSelection(newSelection => {
+                        const autoNow = newSelection.some(item => item.auto);
+                        if (autoNow && newSelection.length > 1) {
+                            const autoBefore = lastSelection.some(item => item.auto);
+                            picker.selectedItems = autoBefore ? newSelection.filter(item => !item.auto) : newSelection.filter(item => item.auto);
+                        }
+                        lastSelection = picker.selectedItems;
+                    });
+                    picker.busy = false;
+                }, err => {
+                    if (!cts.token.isCancellationRequested) {
+                        console.error('ScmHistoryGraphContribution: failed to load history item refs', err);
+                    }
+                    picker.hide();
+                });
             });
-            picker.onDidHide(() => resolve(undefined));
-            picker.show();
-        });
-        picker.dispose();
 
-        if (!selection) {
-            return;
+            if (!selection) {
+                return;
+            }
+            // The selected repository may have changed while the picker was open;
+            // the picked refs belong to the old provider and must not be applied
+            // to the new one.
+            if (model.provider !== provider) {
+                return;
+            }
+            const refIds = selection.filter(item => item.refId !== undefined).map(item => item.refId!);
+            const auto = selection.some(item => item.auto) || refIds.length === 0;
+            model.setHistoryItemRefFilter(auto ? undefined : refIds);
+        } finally {
+            picker.dispose();
+            cts.dispose();
         }
-        const refIds = selection.filter(item => item.refId !== undefined).map(item => item.refId!);
-        const auto = selection.some(item => item.auto) || refIds.length === 0;
-        this.model.setHistoryItemRefFilter(auto ? undefined : refIds);
     }
 
-    protected createRefPickItems(refs: readonly ScmHistoryItemRef[]): (RefPickItem | QuickPickSeparator)[] {
-        const provider = this.model.provider;
-        const autoRefs = [provider?.currentHistoryItemRef, provider?.currentHistoryItemRemoteRef, provider?.currentHistoryItemBaseRef]
+    protected createRefPickItems(refs: readonly ScmHistoryItemRef[], provider: ScmHistoryProvider): (RefPickItem | QuickPickSeparator)[] {
+        const autoRefs = [provider.currentHistoryItemRef, provider.currentHistoryItemRemoteRef, provider.currentHistoryItemBaseRef]
             .filter((ref): ref is ScmHistoryItemRef => !!ref);
         const items: (RefPickItem | QuickPickSeparator)[] = [{
             label: nls.localizeByDefault('Auto'),

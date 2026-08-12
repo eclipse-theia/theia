@@ -30,6 +30,8 @@ import URI from '@theia/core/lib/common/uri';
 import { nls } from '@theia/core/lib/common/nls';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { Emitter, Event } from '@theia/core/lib/common/event';
+import { DynamicToolbarWidget } from '@theia/core/lib/browser/view-container';
 import { MenuPath } from '@theia/core/lib/common/menu/menu-types';
 import { ContextMenuRenderer } from '@theia/core/lib/browser/context-menu-renderer';
 import { OpenerService, open } from '@theia/core/lib/browser/opener-service';
@@ -83,7 +85,7 @@ function renderJsxRefBadge(
 // ── Widget ──────────────────────────────────────────────────────────────────
 
 @injectable()
-export class ScmHistoryGraphWidget extends ReactWidget {
+export class ScmHistoryGraphWidget extends ReactWidget implements DynamicToolbarWidget {
 
     static readonly ID = 'scm-history-graph-widget';
     static readonly LABEL = nls.localizeByDefault('Graph');
@@ -111,6 +113,10 @@ export class ScmHistoryGraphWidget extends ReactWidget {
     /** Cleanup for the content of the hover currently being shown. */
     protected readonly toDisposeOnHover = new DisposableCollection();
 
+    protected readonly onDidChangeToolbarItemsEmitter = new Emitter<void>();
+    /** Re-renders the part toolbar on model changes, e.g. to reflect the toggled state of the ref filter picker. */
+    readonly onDidChangeToolbarItems: Event<void> = this.onDidChangeToolbarItemsEmitter.event;
+
     constructor() {
         super();
         this.id = ScmHistoryGraphWidget.ID;
@@ -123,10 +129,12 @@ export class ScmHistoryGraphWidget extends ReactWidget {
 
     @postConstruct()
     protected init(): void {
+        this.toDispose.push(this.onDidChangeToolbarItemsEmitter);
         this.toDispose.push(
             this.model.onDidChange(() => {
                 this.updateContextKeys();
                 this.update();
+                this.onDidChangeToolbarItemsEmitter.fire();
             })
         );
         this.toDispose.push(

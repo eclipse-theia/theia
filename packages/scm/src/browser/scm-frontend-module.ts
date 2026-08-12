@@ -46,7 +46,7 @@ import { bindScmPreferences } from '../common/scm-preferences';
 import { bindMergeEditor } from './merge-editor/merge-editor-module';
 import { ScmRepositoriesWidget } from './scm-repositories-widget';
 import { ScmHistoryGraphWidget } from './scm-history-graph-widget';
-import { ScmHistoryGraphModel } from './scm-history-graph-model';
+import { ScmHistoryGraphModel, ScmHistoryGraphModelProvider } from './scm-history-graph-model';
 import { ScmHistoryGraphContribution } from './scm-history-graph-contribution';
 import { CommandContribution, MenuContribution } from '@theia/core';
 
@@ -93,6 +93,7 @@ export default new ContainerModule(bind => {
     })).inSingletonScope();
 
     bind(ScmHistoryGraphModel).toSelf().inSingletonScope();
+    bind(ScmHistoryGraphModelProvider).toFactory(ctx => () => ctx.container.get(ScmHistoryGraphModel));
     bind(ScmHistoryGraphContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(ScmHistoryGraphContribution);
     bind(MenuContribution).toService(ScmHistoryGraphContribution);

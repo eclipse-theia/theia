@@ -19,12 +19,22 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { Emitter } from '@theia/core/lib/common/event';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { ScmService } from './scm-service';
-import { ScmHistoryItem, ScmHistoryProvider, ScmHistoryOptions } from './scm-provider';
+import { ScmHistoryItem, ScmHistoryItemRef, ScmHistoryProvider, ScmHistoryOptions } from './scm-provider';
 import { computeGraphRows, GraphRow } from './scm-history-graph-lanes';
 import { getRefColorIndex } from './scm-history-graph-helpers';
 import { ScmPreferences } from '../common/scm-preferences';
 
 export const PAGE_SIZE = 50;
+
+export const ScmHistoryGraphModelProvider = Symbol('ScmHistoryGraphModelProvider');
+/**
+ * Resolves the {@link ScmHistoryGraphModel} singleton on first use. The model
+ * starts loading history and subscribing to provider events as soon as it is
+ * instantiated, so clients that may not need it (e.g. command contributions
+ * instantiated at application start) must inject this provider instead of the
+ * model itself.
+ */
+export type ScmHistoryGraphModelProvider = () => ScmHistoryGraphModel;
 
 export interface HistoryGraphEntry {
     readonly item: ScmHistoryItem;
@@ -61,6 +71,11 @@ export class ScmHistoryGraphModel {
             Disposable.create(() => this.toDisposeOnProviderChange.dispose()),
             this.onDidChangeEmitter,
             this.scmService.onDidChangeSelectedRepository(() => this.refresh()),
+            this.scmPreferences.onPreferenceChanged(e => {
+                if (e.preferenceName === 'scm.graph.pageSize') {
+                    this.reload();
+                }
+            }),
         ]);
         this.refresh();
     }
@@ -137,7 +152,10 @@ export class ScmHistoryGraphModel {
                 this._provider.onDidChangeCurrentHistoryItemRefs(() => this.refresh())
             );
             this.toDisposeOnProviderChange.push(
-                this._provider.onDidChangeHistoryItemRefs(() => this.refresh())
+                this._provider.onDidChangeHistoryItemRefs(e => {
+                    this.pruneHistoryItemRefFilter(e.removed);
+                    this.refresh();
+                })
             );
         } else if (repo) {
             // historyProvider is not yet available; listen for provider changes
@@ -148,6 +166,23 @@ export class ScmHistoryGraphModel {
         }
 
         this.reload();
+    }
+
+    /**
+     * Drops refs that no longer exist from the explicit filter, so that
+     * deleting or renaming a filtered ref does not leave the graph stuck
+     * requesting history for it. When the last filtered ref is removed,
+     * the filter falls back to auto mode.
+     */
+    protected pruneHistoryItemRefFilter(removed: readonly ScmHistoryItemRef[]): void {
+        if (!this._historyItemRefFilter || removed.length === 0) {
+            return;
+        }
+        const removedIds = new Set(removed.map(ref => ref.id));
+        const remaining = this._historyItemRefFilter.filter(id => !removedIds.has(id));
+        if (remaining.length !== this._historyItemRefFilter.length) {
+            this._historyItemRefFilter = remaining.length > 0 ? remaining : undefined;
+        }
     }
 
     /** Clears the loaded entries and loads the first page again from the current provider. */
