@@ -20,6 +20,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { HoverService } from '@theia/core/lib/browser/hover-service';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { ScmHistoryGraphModel, HistoryGraphEntry } from './scm-history-graph-model';
 import { ScmHistoryItemRef, ScmHistoryItemChange } from './scm-provider';
@@ -28,6 +29,7 @@ import { GraphRow } from './scm-history-graph-lanes';
 import URI from '@theia/core/lib/common/uri';
 import { nls } from '@theia/core/lib/common/nls';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MenuPath } from '@theia/core/lib/common/menu/menu-types';
 import { ContextMenuRenderer } from '@theia/core/lib/browser/context-menu-renderer';
 import { OpenerService, open } from '@theia/core/lib/browser/opener-service';
@@ -37,7 +39,7 @@ import {
     laneColor, getChangeStatus, getFileName, getFilePath, getRepoRelativePath,
     getRefBadgeClass, getRefBadgePresentation, isTagRef, isRemoteRef, deduplicateRefs, DeduplicatedRef
 } from './scm-history-graph-helpers';
-import { buildHtmlTooltip } from './scm-history-graph-tooltip';
+import { buildHtmlTooltip, buildProviderTooltip } from './scm-history-graph-tooltip';
 
 /** Menu path matching the VS Code 'scm/history/title' contribution point (graph section toolbar). */
 export const SCM_HISTORY_TITLE_MENU: MenuPath = ['plugin_scm/history/title'];
@@ -87,6 +89,7 @@ export class ScmHistoryGraphWidget extends ReactWidget {
 
     @inject(ScmHistoryGraphModel) protected readonly model: ScmHistoryGraphModel;
     @inject(HoverService) protected readonly hoverService: HoverService;
+    @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
     @inject(MarkdownRendererFactory) protected readonly markdownRendererFactory: MarkdownRendererFactory;
     @inject(ScmService) protected readonly scmService: ScmService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
@@ -103,6 +106,8 @@ export class ScmHistoryGraphWidget extends ReactWidget {
     protected expandedIds = new Set<string>();
     /** Map from commit id → in-flight CancellationTokenSource for loadChanges. */
     protected loadChangesCts = new Map<string, CancellationTokenSource>();
+    /** Cleanup for the content of the hover currently being shown. */
+    protected readonly toDisposeOnHover = new DisposableCollection();
 
     constructor() {
         super();
@@ -131,6 +136,7 @@ export class ScmHistoryGraphWidget extends ReactWidget {
                 this.loadChangesCts.clear();
             }
         });
+        this.toDispose.push(this.toDisposeOnHover);
         this.update();
     }
 
@@ -246,13 +252,48 @@ export class ScmHistoryGraphWidget extends ReactWidget {
     }
 
     protected handleRowMouseEnter = (e: React.MouseEvent<HTMLDivElement>, entry: HistoryGraphEntry): void => {
+        this.toDisposeOnHover.dispose();
         this.hoverService.requestHover({
-            content: buildHtmlTooltip(entry, this.markdownRenderer, this.model.provider),
+            content: this.buildTooltip(entry),
             target: e.currentTarget,
             position: 'right',
             interactive: true,
         });
     };
+
+    /**
+     * Prefers the hover content supplied by the provider, so that its own links and commands
+     * (author `mailto:`, "Open Commit", remote actions) stay intact, and falls back to the hover
+     * derived from the history item's fields for providers that supply none.
+     */
+    protected buildTooltip(entry: HistoryGraphEntry): HTMLElement {
+        const { tooltip } = entry.item;
+        if (tooltip) {
+            const provided = buildProviderTooltip(tooltip, this.markdownRenderer, this.openerService, this.toDisposeOnHover);
+            if (provided) {
+                return provided;
+            }
+        }
+        return buildHtmlTooltip(entry, this.markdownRenderer, this.model.provider, {
+            openCommit: () => this.openCommitFromTooltip(entry),
+            copyCommitHash: () => this.clipboardService.writeText(entry.item.id),
+        });
+    }
+
+    /** Selects the commit and expands its changes, closing the hover first. */
+    protected openCommitFromTooltip(entry: HistoryGraphEntry): void {
+        this.hoverService.cancelHover();
+        const idx = this.model.entries.indexOf(entry);
+        if (idx < 0) {
+            return;
+        }
+        if (this.expandedIds.has(entry.item.id)) {
+            this.selectedIndex = idx;
+            this.update();
+        } else {
+            this.handleRowClick(idx, entry);
+        }
+    }
 
     protected renderChangesRows(
         itemId: string,
