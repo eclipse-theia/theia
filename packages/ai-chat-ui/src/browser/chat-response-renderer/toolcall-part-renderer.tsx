@@ -22,7 +22,6 @@ import { nls } from '@theia/core/lib/common/nls';
 import { codicon, ContextMenuRenderer, HoverService, KeybindingRegistry, MarkdownRenderer, OpenerService } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { createConfirmationHandlers, ToolConfirmation, ToolConfirmationKeybindingHints, useToolConfirmationState } from './tool-confirmation';
-import { McpAppFrame } from './mcp-app-frame';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ResponseNode } from '../chat-tree-view';
 import { ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';

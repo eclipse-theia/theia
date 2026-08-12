@@ -543,7 +543,11 @@ export interface ToolCallContent {
 }
 
 export const isToolCallHtmlAppResult = (item: unknown): item is ToolCallHtmlAppResult =>
-    !!(item && typeof item === 'object' && 'type' in item && (item as ToolCallHtmlAppResult).type === 'html' && 'html' in item);
+    !!(item &&
+        typeof item === 'object' &&
+        'type' in item && (item as ToolCallHtmlAppResult).type === 'html' &&
+        'html' in item &&
+        typeof (item as ToolCallHtmlAppResult).html === 'string');
 
 export const isToolCallContent = (result: unknown): result is ToolCallContent =>
     !!(result && typeof result === 'object' && 'content' in result && Array.isArray((result as ToolCallContent).content));

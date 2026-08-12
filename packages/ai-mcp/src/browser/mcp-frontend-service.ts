@@ -210,7 +210,7 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
                                 return { type: 'image', base64data: callContent.data, mimeType: callContent.mimeType };
                             case 'text': {
                                 const text = callContent.text;
-                                if (text.startsWith('{')) {
+                                if (typeof text === 'string' && text.trim().startsWith('{')) {
                                     try {
                                         const parsed = JSON.parse(text);
                                         if (parsed && parsed.type === 'html' && typeof parsed.html === 'string') {

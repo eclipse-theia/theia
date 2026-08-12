@@ -1,6 +1,5 @@
 // *****************************************************************************
 // Copyright (C) 2026 EclipseSource GmbH.
-// Copyright (C) 2026 Ericsson and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -23,7 +22,7 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { MessageService } from '@theia/core';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
-import { PromptService, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { PromptService, ToolCallContentResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common/mcp-server-manager';
 import type { MCPFrontendServiceImpl } from './mcp-frontend-service';
 const MCPFrontendServiceImplConstructor: new () => MCPFrontendServiceImpl = require('./mcp-frontend-service').MCPFrontendServiceImpl;
@@ -248,8 +247,6 @@ describe('MCPFrontendServiceImpl', () => {
         });
     });
 });
-
-import { ToolCallContentResult } from '@theia/ai-core';
 
 describe('MCPFrontendServiceImpl html content mapping', () => {
 
