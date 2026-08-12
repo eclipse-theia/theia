@@ -14,14 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
 import {
     ContextMenuRenderer, codicon, OpenerService, open
 } from '@theia/core/lib/browser';
 import { Preference, PreferenceMenus } from '../../util/preference-types';
 import { PreferenceTreeLabelProvider } from '../../util/preference-tree-label-provider';
 import { PreferencesScopeTabBar } from '../preference-scope-tabbar-widget';
-import { Disposable, nls, PreferenceDataProperty, PreferenceInspection, PreferenceScope, PreferenceService } from '@theia/core/lib/common';
+import { Disposable, ILogger, nls, PreferenceDataProperty, PreferenceInspection, PreferenceScope, PreferenceService } from '@theia/core/lib/common';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { PreferenceTreeModel } from '../../preference-tree-model';
@@ -163,6 +163,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
     @inject(PreferencesSearchbarWidget) protected readonly searchbar: PreferencesSearchbarWidget;
     @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(PreferenceMarkdownRenderer) protected readonly markdownRenderer: PreferenceMarkdownRenderer;
+    @inject(ILogger) @named('preferences:PreferenceLeafNodeRenderer') protected readonly logger: ILogger;
 
     protected headlineWrapper: HTMLDivElement;
     protected gutter: HTMLDivElement;
@@ -193,7 +194,8 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
             // Exclude right click
             if (event.button < 2) {
                 const uri = new URI(event.target.href);
-                open(this.openerService, uri);
+                // A `command:` link of a description may point at a command that is disabled in the current state.
+                open(this.openerService, uri).catch(error => this.logger.warn(`Could not open the link ${uri.toString()}:`, error));
             }
         }
     }
