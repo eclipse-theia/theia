@@ -50,7 +50,6 @@
     "fs-extra": "^4.0.3",
     "http-server": "^14.1.1",
     "ignore-loader": "^0.1.2",
-    "less": "^4.8.1",
     "mini-css-extract-plugin": "^2.10.2",
     "node-loader": "^2.1.0",
     "path-browserify": "^1.0.1",
