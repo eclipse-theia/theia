@@ -134,20 +134,24 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
     }
 
     async deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<number> {
-        let successes = 0;
-        for (const plugin of frontendPlugins) {
-            if (await this.deployPlugin(plugin, 'frontend')) { successes++; }
-        }
+        const results = await Promise.all(frontendPlugins.map(plugin => this.deployPlugin(plugin, 'frontend').catch(e => {
+            this.logger.error(`Unexpected error while deploying frontend plugin '${plugin.id()}'`, e);
+            return false;
+        })));
+        const successes = results.filter(Boolean).length;
         // resolve on first deploy
         this.frontendPluginsMetadataDeferred.resolve(undefined);
         return successes;
     }
 
     async deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<number> {
-        let successes = 0;
-        for (const plugin of backendPlugins) {
-            if (await this.deployPlugin(plugin, 'backend')) { successes++; }
-        }
+        const measurement = this.stopwatch.start('deployBackendPluginsBatch');
+        const results = await Promise.all(backendPlugins.map(plugin => this.deployPlugin(plugin, 'backend').catch(e => {
+            this.logger.error(`Unexpected error while deploying backend plugin '${plugin.id()}'`, e);
+            return false;
+        })));
+        const successes = results.filter(Boolean).length;
+        measurement.log(`Deployed backend batch of ${successes}/${backendPlugins.length} accepted plugins`);
         // rebuild translation config after deployment
         await this.localizationService.buildTranslationConfig([...this.deployedBackendPlugins.values()]);
         // resolve on first deploy
