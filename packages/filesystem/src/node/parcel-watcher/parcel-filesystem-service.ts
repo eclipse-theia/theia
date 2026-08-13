@@ -272,7 +272,18 @@ export class ParcelWatcher {
             // synthetically, otherwise clients keep the state they observed while the path was
             // still missing until the next change. VS Code behaves the same way when it resumes
             // a watch request that was suspended because its path did not exist.
-            this.handleWatcherEvents([{ type: 'create', path: this.fsPath }]);
+            //
+            // Use the resolved path: `createWatcher` subscribes to the realpath, so every real
+            // event of this watcher is reported realpath'd. Reporting the raw path here would
+            // make clients that key on the URI see two different resources for the same file.
+            //
+            // Note that only the watched path itself is reported. If the path is a directory
+            // that was populated within the same poll interval, its entries are not reported
+            // individually. Clients which refresh recursively on the directory event, like the
+            // file tree, still pick them up; clients which only react to concrete paths, like
+            // plugin file watchers, do not.
+            const createdPath = await fsp.realpath(this.fsPath).catch(() => this.fsPath);
+            this.handleWatcherEvents([{ type: 'create', path: createdPath }]);
         }
     }
 
