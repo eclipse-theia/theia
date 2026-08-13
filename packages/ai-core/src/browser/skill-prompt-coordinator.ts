@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { SkillService } from './skill-service';
 import { PromptService } from '../common/prompt-service';
@@ -28,15 +29,20 @@ export class SkillPromptCoordinator implements FrontendApplicationContribution {
     @inject(PromptService)
     protected readonly promptService: PromptService;
 
+    @inject(ILogger) @named('ai-core:SkillPromptCoordinator')
+    protected readonly logger: ILogger;
+
     protected registeredSkillCommands = new Set<string>();
 
-    async onStart(): Promise<void> {
+    onStart(): void {
         this.skillService.onSkillsChanged(() => {
             this.updateSkillCommands();
         });
 
         this.skillService.ready.then(() => {
             this.updateSkillCommands();
+        }).catch(error => {
+            this.logger.error('Error while updating skill commands after skill service became ready', error);
         });
     }
 
