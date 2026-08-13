@@ -293,7 +293,8 @@ export class PluginDeployerImpl implements PluginDeployer {
      * deploy all plugins that have been accepted
      */
     async deployPlugins(pluginsToDeploy: PluginDeployerEntry[]): Promise<number> {
-        const acceptedPlugins = pluginsToDeploy.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted());
+        const acceptedPlugins = pluginsToDeploy.filter(pluginDeployerEntry =>
+            pluginDeployerEntry.isAccepted(PluginDeployerEntryType.FRONTEND, PluginDeployerEntryType.BACKEND, PluginDeployerEntryType.HEADLESS));
         const acceptedFrontendPlugins = pluginsToDeploy.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted(PluginDeployerEntryType.FRONTEND));
         const acceptedBackendPlugins = pluginsToDeploy.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted(PluginDeployerEntryType.BACKEND));
         const acceptedHeadlessPlugins = pluginsToDeploy.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted(PluginDeployerEntryType.HEADLESS));
