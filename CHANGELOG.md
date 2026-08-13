@@ -3,15 +3,6 @@
 ## History
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
-## Unreleased
-
-- [preferences] `PreferencesContribution` no longer eagerly constructs `PreferencesWidget` on startup. The `protected scopeTracker` field has been removed; subclasses that referenced it directly should use the inherited `widget` getter (or `tryGetWidget()` where forcing construction is undesirable) instead [#17877](https://github.com/eclipse-theia/theia/pull/17877)
-
-<a name="breaking_changes_unreleased">[Breaking Changes:](#breaking_changes_unreleased)</a>
-
-- [preferences] `PreferencesContribution.scopeTracker` (a `protected` field) has been removed. Subclasses relying on it directly should use the inherited `widget` getter (`Promise<PreferencesWidget>`, lazily constructs on first access) or `tryGetWidget()` (returns `undefined` if not yet constructed) instead [#17877](https://github.com/eclipse-theia/theia/pull/17877)
-
-
 ## 1.75.0 - tbd
 
 - [ai-ide] added an opt-in "Memory" prompt capability that lets agents maintain a wiki-style knowledge base per workspace, stored in the workspace metadata store and exposed to prompts via the new `{{memoryDirectory}}` variable [#17865](https://github.com/eclipse-theia/theia/pull/17865)
@@ -24,6 +15,7 @@
 - [ai-ide] removed `WorkspaceFunctionScope.ensureWithinWorkspace(targetUri, workspaceRootUri)`. Every path-taking AI tool now resolves and checks its argument through `WorkspaceFunctionScope.resolveAccessiblePath(pathOrUri)`, which in addition to the workspace roots accepts locations covered by the `ai-features.workspaceFunctions.allowedExternalPaths` preference or contributed via the new `AccessibleRootContribution`. Adopters that called `ensureWithinWorkspace`, or `resolveRelativePath` followed by their own boundary check, should call `resolveAccessiblePath` instead [#17865](https://github.com/eclipse-theia/theia/pull/17865)
 - [core] added `onWindowLoaded` to the `SecondaryWindowService` interface; adopters implementing the interface from scratch (rather than extending `DefaultSecondaryWindowService`) must provide it [#17874](https://github.com/eclipse-theia/theia/pull/17874)
 - [monaco] removed the `protected secondaryWindowHandler` field from `MonacoFrontendApplicationContribution`; the Monaco theme stylesheet is now injected into every secondary window via `SecondaryWindowService.onWindowLoaded` [#17874](https://github.com/eclipse-theia/theia/pull/17874)
+- [preferences] `PreferencesContribution.scopeTracker` (a `protected` field) has been removed. Subclasses relying on it directly should use the inherited `widget` getter (`Promise<PreferencesWidget>`, lazily constructs on first access) or `tryGetWidget()` (returns `undefined` if not yet constructed) instead [#17877](https://github.com/eclipse-theia/theia/pull/17877)
 - [scm] widened `ScmHistoryItem.tooltip` from `string` to `string | MarkdownString | readonly MarkdownString[]`, so that hovers supplied by a history provider keep their `isTrusted` command allow-list and their multi-section form; adopters reading the field as a string must narrow it [#17880](https://github.com/eclipse-theia/theia/pull/17880)
 - [scm-extra] deprecated the `@theia/scm-extra` extension and stopped publishing it on npm; it has also been removed from the example applications, which drops its `SCM History` view, the `History` context menu items in the navigator and editor, and the `alt+h` keybinding. The view has been non-functional in the default application since the removal of `@theia/git`, as nothing implements `ScmHistorySupport` anymore. Please use the SCM history graph in `@theia/scm` for branch history and the Timeline view in `@theia/timeline` for per-file history instead [#17882](https://github.com/eclipse-theia/theia/pull/17882)
 

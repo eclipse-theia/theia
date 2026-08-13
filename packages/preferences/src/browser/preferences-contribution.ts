@@ -91,8 +91,8 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         commands.registerCommand(PreferencesCommands.RESET_PREFERENCE, {
             isEnabled: Preference.EditorCommandArgs.is,
             isVisible: Preference.EditorCommandArgs.is,
-            execute: async ({ id }: Preference.EditorCommandArgs) => {
-                const { scope, uri } = (await this.widget).currentScope;
+            execute: ({ id }: Preference.EditorCommandArgs) => {
+                const { scope, uri } = this.tryGetWidget()?.currentScope ?? Preference.DEFAULT_SCOPE;
                 return this.preferenceService.set(id, undefined, Number(scope), uri);
             }
         });
