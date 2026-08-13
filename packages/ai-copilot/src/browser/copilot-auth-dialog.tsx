@@ -89,7 +89,12 @@ export class CopilotAuthDialog extends ReactDialog<boolean> {
 
     override async open(): Promise<boolean | undefined> {
         this.initiateFlow();
-        return super.open();
+        const result = await super.open();
+        if (this.state !== 'success') {
+            // Leave no Copilot CLI process behind when the dialog is dismissed or retried.
+            await this.authService.cancelSignIn();
+        }
+        return result;
     }
 
     override update(): void {
@@ -102,7 +107,7 @@ export class CopilotAuthDialog extends ReactDialog<boolean> {
             this.state = 'loading';
             this.update();
 
-            this.deviceCodeResponse = await this.authService.initiateDeviceFlow(this.props.enterpriseUrl);
+            this.deviceCodeResponse = await this.authService.startSignIn(this.props.enterpriseUrl);
             this.state = 'waiting';
             this.update();
         } catch (error) {
@@ -121,11 +126,7 @@ export class CopilotAuthDialog extends ReactDialog<boolean> {
         this.update();
 
         try {
-            const success = await this.authService.pollForToken(
-                this.deviceCodeResponse.device_code,
-                this.deviceCodeResponse.interval,
-                this.props.enterpriseUrl
-            );
+            const success = await this.authService.waitForSignIn();
 
             if (success) {
                 this.state = 'success';

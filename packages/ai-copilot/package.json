@@ -4,9 +4,7 @@
   "description": "Theia - GitHub Copilot Integration",
   "dependencies": {
     "@theia/ai-core": "1.74.0",
-    "@theia/ai-openai": "1.74.0",
     "@theia/core": "1.74.0",
-    "openai": "^6.49.0",
     "tslib": "^2.8.1"
   },
   "publishConfig": {
