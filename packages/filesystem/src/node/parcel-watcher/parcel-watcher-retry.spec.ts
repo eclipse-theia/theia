@@ -101,6 +101,32 @@ describe('parcel-filesystem-watcher transient ENOENT handling', function (): voi
         expect(onError.called, 'error must be reported to the client').to.equal(true);
     });
 
+    it('waits for the path again instead of failing when the watched path itself vanished while subscribing', async () => {
+        const target = root.resolve('target');
+        const targetPath = FileUri.fsPath(target);
+        fs.mkdirSync(targetPath);
+
+        let attempts = 0;
+        subscribeStub = sinon.stub(parcel, 'subscribe').callsFake(async () => {
+            attempts++;
+            if (attempts === 1) {
+                // The watched path is gone again by the time parcel gets to subscribe. Node's `fs`
+                // reports this in lower case, unlike parcel's own message.
+                fs.rmdirSync(targetPath);
+                setTimeout(() => fs.mkdirSync(targetPath), 100);
+                throw new Error(`ENOENT: no such file or directory, realpath '${targetPath}'`);
+            }
+            return { unsubscribe: async () => undefined };
+        });
+
+        await service.watchFileChanges(0, target.toString());
+        // The path is polled every 500ms, so allow a few intervals plus the subscribe.
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        expect(attempts, 'subscribe should have been repeated once the path came back').to.equal(2);
+        expect(onError.called, 'a path that vanished while subscribing must not fail the watcher').to.equal(false);
+    });
+
     it('gives up after the retry budget is exhausted on persistent ENOENT', async () => {
         subscribeStub = sinon.stub(parcel, 'subscribe').callsFake(async () => {
             throw new Error('No such file or directory at /tmp/rotated-log');

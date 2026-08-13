@@ -54,8 +54,9 @@ describe('parcel-filesystem-watcher missing path handling', function (): void {
         root = FileUri.create(fs.realpathSync(tempPath));
         changes = [];
         service = new ParcelFileSystemWatcherService({ verbose: false });
-        // Bind the array itself instead of the variable: disposing a service is asynchronous, so
-        // events of a previous test may still arrive after `changes` was reassigned here.
+        // Bind the array itself instead of the variable: `dispose` is a no-op for the service and
+        // the tests never unwatch, so the watchers of a previous test are still live and would
+        // otherwise push into the array of the current one.
         const ownChanges = changes;
         service.setClient({
             onDidFilesChanged: event => ownChanges.push(...event.changes),
@@ -113,6 +114,25 @@ describe('parcel-filesystem-watcher missing path handling', function (): void {
         // synthetic creation has to use the same path, otherwise clients which key on the URI see
         // two different resources for the same file.
         expect([...new Set(changes.map(change => change.uri))]).to.deep.equal([resolved]);
+    });
+
+    it('reports the creation of a watched directory, but not the entries it was populated with', async () => {
+        const directory = root.resolve('config');
+
+        await service.watchFileChanges(0, directory.toString());
+        await sleep(200);
+        // Populate the directory within the same poll interval as its creation. Those entries
+        // predate the subscription just like the directory itself, but only the watched path is
+        // reported. Clients which refresh recursively on the directory event, like the file tree,
+        // still pick them up; clients which only react to concrete paths do not.
+        fs.mkdirpSync(FileUri.fsPath(directory.resolve('nested')));
+        fs.writeFileSync(FileUri.fsPath(directory.resolve('nested').resolve('settings.json')), '{}');
+        await waitFor(() => changes.some(change => change.uri === directory.toString() && change.type === FileChangeType.ADDED), 5000);
+        expect(changes.map(change => change.uri), 'only the watched directory should be reported').to.deep.equal([directory.toString()]);
+
+        // The watcher is nevertheless live and reports entries created from now on.
+        fs.writeFileSync(FileUri.fsPath(directory.resolve('keymaps.json')), '[]');
+        await waitFor(() => changes.some(change => change.uri === directory.resolve('keymaps.json').toString()), 5000);
     });
 
     it('does not report a creation for a watched file that already exists', async () => {
