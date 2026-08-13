@@ -110,6 +110,68 @@ For example, in an `electron-builder` configuration, ensure the `lib/backend/she
 
 The `lib/**/*` glob already covers `lib/backend/shell-integrations/`. If you use a more restrictive `files` pattern, make sure `lib/backend/shell-integrations/**/*` is explicitly included, as `ShellIntegrationInjector` resolves these scripts relative to `__dirname` (i.e. `lib/backend/`).
 
+### v1.76.0
+
+#### GitHub Copilot is served through the Copilot CLI
+
+`@theia/ai-copilot` no longer talks to the Copilot REST API with a GitHub OAuth token of its own. All requests are served by
+the official GitHub Copilot CLI, which is launched as a background process on the machine running the backend and spoken to
+over the Copilot SDK.
+
+The reason is that GitHub grants access to the Copilot models per OAuth application. The application the previous integration
+used is not entitled for the current lineup, so it only ever saw a small legacy subset of the models regardless of the user's
+subscription. The Copilot CLI is entitled, so routing through it makes the current models available.
+
+The integration is experimental, and its preferences are marked as such in the settings UI: it is under development and its
+API and preferences are subject to change or removal.
+
+**For users:** the Copilot CLI has to be available on the machine running the backend, for example through
+`npm install -g @github/copilot`. It is looked up in the installation of the application, on the `PATH` and in the global `npm`
+directory; the new `ai-features.copilot.executablePath` preference (or the `COPILOT_CLI_PATH` environment variable of the
+backend) points at it when it is installed elsewhere. A packaged application cannot rely on carrying the CLI itself, since it
+is a platform-specific binary that cannot be executed from inside an application archive.
+
+The sign-in of the previous version cannot be carried over, because it belongs to that other OAuth application. It is removed
+from the credential store on first start, and a notification asks for a new sign-in. Nothing else has to be done: the sign-in
+dialog works as before, and it now signs the Copilot CLI in on the user's behalf. Signing out removes the credentials of the
+application again and never touches the system keyring entries of other tools or a sign-in of the GitHub CLI.
+
+**For adopters:** the following API has been removed.
+
+- `CopilotOAuthConfig` and `DEFAULT_COPILOT_OAUTH_CONFIG`. Configuring an own OAuth application no longer has an effect, since
+  the sign-in is performed by the Copilot CLI. Remove any rebinding of the symbol.
+- `CopilotLanguageModel`, `getCopilotApiBaseUrl` and `COPILOT_API_BASE_URL`, together with the REST transport they belonged to.
+  Copilot models are now instances of `CopilotSdkLanguageModel`.
+- `CopilotModelDescription.enableStreaming` and `CopilotModelDescription.supportsStructuredOutput`. Requests always stream, and
+  structured output is not available on this path.
+- `CopilotAuthService.initiateDeviceFlow`, `pollForToken` and `getAccessToken`. The sign-in is now driven with `startSignIn`,
+  `waitForSignIn` and `cancelSignIn`, since the CLI performs and polls the flow itself, and the resulting token is not exposed.
+
+`CopilotAuthService.setExecutablePath` has been added, so that the frontend can hand the configured location of the CLI to the
+backend, which cannot read preferences itself. Adopters implementing the interface from scratch have to provide it; the
+lookup itself is `CopilotCliLocator` and can be rebound.
+
+`@github/copilot-sdk` is deliberately **not** a dependency of this extension, not even a development one. The package depends
+on the CLI, which would put a large proprietary binary into the dependency tree and the lockfile of every application that
+includes `@theia/ai-copilot`, and a packaged application cannot execute it from inside its archive anyway. The CLI carries its
+own copy of the SDK, and `CopilotSdkLoader` loads it from the CLI that is going to serve the requests. An installed
+`@github/copilot-sdk` is used when the CLI does not carry one, so an application that does depend on the package keeps working.
+The part of the SDK API this integration uses is mirrored in `copilot-sdk-types.ts`, which records the SDK version it was taken
+from and how to update it.
+
+Two consequences are worth planning for. The CLI is a prerequisite on the backend host rather than something the application
+ships, so a distribution should either install it or tell its users to. And because the CLI runs on the backend host with one
+process per frontend connection, this integration is not suitable for multi-user backend deployments, where every connected
+frontend would share a single identity.
+
+Three behavioural details for adopters who look closely: the system prompt of a Theia agent is now the system message of the
+Copilot session, replacing the agent instructions the CLI would use, instead of being prepended to the user prompt. The
+runtime is pointed at a Copilot home below Theia's configuration directory, so requests sent from Theia no longer appear among
+the conversations the user started with their own CLI, and the session of a request is deleted once it has been answered. And
+the runtime is configured without the ambient behaviour of the CLI: only the tools of the request are available, and
+instructions and skills found on the host, the memory and session stores, host git operations and plugins are off, since
+Theia drives the conversation itself.
+
 ### v1.75.0
 
 #### React 19 and the automatic JSX runtime
