@@ -432,13 +432,16 @@ async function theiaCli(): Promise<void> {
                 if (!client) {
                     client = new OVSXHttpClient(apiUrl, requestService, rateLimiter);
                 }
+                // This handler must not call `process.exit`: on Windows that aborts the
+                // process, because Node calls `uv_async_send` on an already-closing handle
+                // while undici tears down the connections used to fetch the plugins
+                // (nodejs/node#56645). Let the event loop drain instead.
                 try {
                     await downloadPlugins(client, rateLimiter, requestService, options);
                 } catch (error) {
                     console.error(error);
-                    process.exit(1);
+                    process.exitCode = 1;
                 }
-                process.exit(0);
             },
         })
         .command<{

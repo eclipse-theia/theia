@@ -20,6 +20,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { HoverService } from '@theia/core/lib/browser/hover-service';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { ScmHistoryGraphModel, HistoryGraphEntry } from './scm-history-graph-model';
 import { ScmHistoryItemRef, ScmHistoryItemChange } from './scm-provider';
@@ -28,6 +29,7 @@ import { GraphRow } from './scm-history-graph-lanes';
 import URI from '@theia/core/lib/common/uri';
 import { nls } from '@theia/core/lib/common/nls';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MenuPath } from '@theia/core/lib/common/menu/menu-types';
 import { ContextMenuRenderer } from '@theia/core/lib/browser/context-menu-renderer';
 import { OpenerService, open } from '@theia/core/lib/browser/opener-service';
@@ -35,9 +37,9 @@ import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { ScmContextKeyService } from './scm-context-key-service';
 import {
     laneColor, getChangeStatus, getFileName, getFilePath, getRepoRelativePath,
-    getRefBadgeClass, isTagRef, isRemoteRef, deduplicateRefs, DeduplicatedRef
+    getRefBadgeClass, getRefBadgePresentation, isTagRef, isRemoteRef, deduplicateRefs, DeduplicatedRef
 } from './scm-history-graph-helpers';
-import { buildHtmlTooltip } from './scm-history-graph-tooltip';
+import { buildHtmlTooltip, buildProviderTooltip } from './scm-history-graph-tooltip';
 
 /** Menu path matching the VS Code 'scm/history/title' contribution point (graph section toolbar). */
 export const SCM_HISTORY_TITLE_MENU: MenuPath = ['plugin_scm/history/title'];
@@ -87,6 +89,7 @@ export class ScmHistoryGraphWidget extends ReactWidget {
 
     @inject(ScmHistoryGraphModel) protected readonly model: ScmHistoryGraphModel;
     @inject(HoverService) protected readonly hoverService: HoverService;
+    @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
     @inject(MarkdownRendererFactory) protected readonly markdownRendererFactory: MarkdownRendererFactory;
     @inject(ScmService) protected readonly scmService: ScmService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
@@ -103,6 +106,8 @@ export class ScmHistoryGraphWidget extends ReactWidget {
     protected expandedIds = new Set<string>();
     /** Map from commit id → in-flight CancellationTokenSource for loadChanges. */
     protected loadChangesCts = new Map<string, CancellationTokenSource>();
+    /** Cleanup for the content of the hover currently being shown. */
+    protected readonly toDisposeOnHover = new DisposableCollection();
 
     constructor() {
         super();
@@ -131,6 +136,7 @@ export class ScmHistoryGraphWidget extends ReactWidget {
                 this.loadChangesCts.clear();
             }
         });
+        this.toDispose.push(this.toDisposeOnHover);
         this.update();
     }
 
@@ -138,6 +144,9 @@ export class ScmHistoryGraphWidget extends ReactWidget {
         const provider = this.model.provider;
         this.scmContextKeys.scmCurrentHistoryItemRefHasRemote.set(!!provider?.currentHistoryItemRemoteRef);
         this.scmContextKeys.scmCurrentHistoryItemRefHasBase.set(!!provider?.currentHistoryItemBaseRef);
+        // The graph has no ref filter yet, so the current ref is always considered part of it.
+        // Commands like git.pullRef/git.pushRef gate their enablement on this key.
+        this.scmContextKeys.scmCurrentHistoryItemRefInFilter.set(!!provider?.currentHistoryItemRef);
     }
 
     protected render(): React.ReactNode {
@@ -208,8 +217,7 @@ export class ScmHistoryGraphWidget extends ReactWidget {
         const isSelected = idx === this.selectedIndex;
         const isExpanded = this.expandedIds.has(item.id);
         const changes = this.expandedChanges.get(item.id);
-        // The first commit (idx === 0) on lane 0 is treated as HEAD/current
-        const isHead = idx === 0 && graphRow.lane === 0;
+        const isHead = entry.isCurrent;
 
         return (
             <React.Fragment key={item.id}>
@@ -244,13 +252,48 @@ export class ScmHistoryGraphWidget extends ReactWidget {
     }
 
     protected handleRowMouseEnter = (e: React.MouseEvent<HTMLDivElement>, entry: HistoryGraphEntry): void => {
+        this.toDisposeOnHover.dispose();
         this.hoverService.requestHover({
-            content: buildHtmlTooltip(entry, this.markdownRenderer),
+            content: this.buildTooltip(entry),
             target: e.currentTarget,
             position: 'right',
             interactive: true,
         });
     };
+
+    /**
+     * Prefers the hover content supplied by the provider, so that its own links and commands
+     * (author `mailto:`, "Open Commit", remote actions) stay intact, and falls back to the hover
+     * derived from the history item's fields for providers that supply none.
+     */
+    protected buildTooltip(entry: HistoryGraphEntry): HTMLElement {
+        const { tooltip } = entry.item;
+        if (tooltip) {
+            const provided = buildProviderTooltip(tooltip, this.markdownRenderer, this.openerService, this.toDisposeOnHover);
+            if (provided) {
+                return provided;
+            }
+        }
+        return buildHtmlTooltip(entry, this.markdownRenderer, this.model.provider, {
+            openCommit: () => this.openCommitFromTooltip(entry),
+            copyCommitHash: () => this.clipboardService.writeText(entry.item.id),
+        });
+    }
+
+    /** Selects the commit and expands its changes, closing the hover first. */
+    protected openCommitFromTooltip(entry: HistoryGraphEntry): void {
+        this.hoverService.cancelHover();
+        const idx = this.model.entries.indexOf(entry);
+        if (idx < 0) {
+            return;
+        }
+        if (this.expandedIds.has(entry.item.id)) {
+            this.selectedIndex = idx;
+            this.update();
+        } else {
+            this.handleRowClick(idx, entry);
+        }
+    }
 
     protected renderChangesRows(
         itemId: string,
@@ -462,7 +505,9 @@ export class ScmHistoryGraphWidget extends ReactWidget {
 
         // Commit lane lines — split at cy=11
         // Top segment: only drawn if there is an incoming line from above
-        // (i.e. this commit was referenced as a parent by an earlier row)
+        // (i.e. this commit was referenced as a parent by an earlier row).
+        // It keeps the color inherited from the chain above, which may differ
+        // from the commit's own (ref-based) color.
         if (row.hasTopLine) {
             elements.push(
                 <path
@@ -471,7 +516,7 @@ export class ScmHistoryGraphWidget extends ReactWidget {
                     strokeWidth='1px'
                     strokeLinecap='round'
                     d={`M ${commitX} 0 V ${cy}`}
-                    style={{ stroke: commitColor }}
+                    style={{ stroke: laneColor(row.topColor) }}
                 />
             );
         }
@@ -560,11 +605,10 @@ export class ScmHistoryGraphWidget extends ReactWidget {
             return undefined;
         }
 
+        const provider = this.model.provider;
         const laneColorValue = entry ? laneColor(entry.graphRow.color) : undefined;
         const deduplicated = deduplicateRefs(refs);
-        const style: React.CSSProperties = laneColorValue
-            ? { backgroundColor: laneColorValue, color: 'var(--theia-scmGraph-historyItemRefForeground, var(--theia-badge-foreground))' }
-            : {};
+        const badgeForeground = 'var(--theia-scmGraph-historyItemRefForeground, var(--theia-badge-foreground))';
 
         const badges: React.ReactElement[] = [];
         for (const info of deduplicated) {
@@ -576,24 +620,25 @@ export class ScmHistoryGraphWidget extends ReactWidget {
             const isRemote = isRemoteRef(ref);
             const onContextMenu = entry ? (e: React.MouseEvent) => this.handleRefBadgeContextMenu(e, entry, ref) : undefined;
 
-            if (isTag) {
-                badges.push(renderJsxRefBadge(ref, 'codicon-tag', false, style, ref.id, onContextMenu));
-            } else if (isRemote) {
-                badges.push(renderJsxRefBadge(ref, 'codicon-cloud', true, style, ref.id, onContextMenu));
-            } else {
-                badges.push(renderJsxRefBadge(ref, 'codicon-git-branch', true, style, ref.id, onContextMenu));
-                if (hasBoth && badges.length < 3) {
-                    badges.push(
-                        <span
-                            key={`${ref.id}-cloud`}
-                            className='scm-history-ref-badge scm-history-ref-badge-cloud'
-                            title={ref.description ?? ref.name}
-                            style={style}
-                        >
-                            <i className='codicon codicon-cloud scm-history-ref-icon' />
-                        </span>
-                    );
-                }
+            // Current/remote/base refs are colored by role, others by the row's lane color
+            const { iconClass, colorIndex } = getRefBadgePresentation(ref, provider);
+            const backgroundColor = colorIndex !== undefined ? laneColor(colorIndex) : laneColorValue;
+            const style: React.CSSProperties = backgroundColor
+                ? { backgroundColor, color: badgeForeground }
+                : {};
+
+            badges.push(renderJsxRefBadge(ref, iconClass, !isTag, style, ref.id, onContextMenu));
+            if (!isTag && !isRemote && hasBoth && badges.length < 3) {
+                badges.push(
+                    <span
+                        key={`${ref.id}-cloud`}
+                        className='scm-history-ref-badge scm-history-ref-badge-cloud'
+                        title={ref.description ?? ref.name}
+                        style={style}
+                    >
+                        <i className='codicon codicon-cloud scm-history-ref-icon' />
+                    </span>
+                );
             }
         }
         return badges;
