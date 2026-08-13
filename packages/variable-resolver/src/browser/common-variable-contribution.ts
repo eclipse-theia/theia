@@ -110,7 +110,8 @@ export class CommonVariableContribution implements VariableContribution {
                     }
                     return this.quickInputService?.input({
                         prompt: input.description,
-                        value: input.default
+                        value: input.default,
+                        ignoreFocusLost: true
                     });
                 }
                 if (input.type === 'pickString') {
