@@ -15,17 +15,18 @@
 // *****************************************************************************
 
 import { Event, URI } from '@theia/core';
-import { LabelProvider } from '@theia/core/lib/browser';
 import { hash } from '@theia/core/lib/common/hash';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
+import { FileChangesEvent, FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FileReadTracker } from '../common/file-read-tracker';
 
 /** The content an agent saw, and whether anything has since signalled a possible change. */
 interface TrackedFile {
-    seenHash: number;
+    /** `undefined` until the read determining it returns, so that it matches no content. */
+    seenHash?: number;
     maybeStale: boolean;
 }
 
@@ -38,8 +39,8 @@ export class FileReadTrackerImpl implements FileReadTracker {
     @inject(MonacoWorkspace)
     protected readonly monacoWorkspace: MonacoWorkspace;
 
-    @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     /** Session id -> tracked file uri -> state. Both levels are insertion ordered and bounded. */
     protected readonly sessions = new Map<string, Map<string, TrackedFile>>();
@@ -51,7 +52,7 @@ export class FileReadTrackerImpl implements FileReadTracker {
     protected readonly maxSessions: number = 32;
     protected readonly maxFilesPerSession: number = 200;
 
-    /** A file grown past this is reported as changed and dropped instead of read to compare. The read tools hand an agent far less. */
+    /** A file grown past this is not read to compare, so a flagged one stays reported as changed. The read tools hand an agent far less. */
     protected readonly maxComparedFileSize: number = 4 * 1024 * 1024;
 
     /** Only flags entries; reading and hashing happens in {@link isStale} and {@link getChangedFiles}. */
@@ -72,16 +73,21 @@ export class FileReadTrackerImpl implements FileReadTracker {
 
     async recordRead(sessionId: string, uri: URI, content?: string): Promise<void> {
         const key = uri.toString();
-        const current = content ?? await this.resolveContent(uri);
-        if (current === undefined) {
-            this.sessions.get(sessionId)?.delete(key);
-            return;
-        }
         const files = this.touchSession(sessionId);
         // Re-insert to move the key last, so eviction drops the least recently used.
         files.delete(key);
-        files.set(key, { seenHash: hash(current), maybeStale: false });
+        // Tracked before the read, so a change arriving during it flags this entry instead of being overwritten.
+        const tracked: TrackedFile = { maybeStale: false };
+        files.set(key, tracked);
         this.evictOverflow(files, this.maxFilesPerSession);
+        const current = content ?? await this.resolveContent(uri);
+        if (current === undefined) {
+            if (files.get(key) === tracked) { // a later read may own the entry by now
+                files.delete(key);
+            }
+            return;
+        }
+        tracked.seenHash = hash(current);
     }
 
     async isStale(sessionId: string, uri: URI): Promise<boolean> {
@@ -120,10 +126,15 @@ export class FileReadTrackerImpl implements FileReadTracker {
 
     /** Compares a flagged file against what the agent saw, clearing the flag when the contents match again. */
     protected async recheck(files: Map<string, TrackedFile>, key: string, tracked: TrackedFile): Promise<'unchanged' | 'changed' | 'gone'> {
-        const current = await this.resolveContent(new URI(key));
-        if (current === undefined) {
-            files.delete(key);
-            return 'gone';
+        let current: string;
+        try {
+            current = await this.readCurrentContent(new URI(key));
+        } catch (error) {
+            if (this.isFileNotFound(error)) {
+                files.delete(key);
+                return 'gone';
+            }
+            return 'changed';
         }
         if (hash(current) === tracked.seenHash) {
             tracked.maybeStale = false;
@@ -132,7 +143,11 @@ export class FileReadTrackerImpl implements FileReadTracker {
         return 'changed';
     }
 
-    /** `undefined` when the content cannot be resolved at all, which both callers treat as gone. */
+    protected isFileNotFound(error: unknown): boolean {
+        return error instanceof FileOperationError && error.fileOperationResult === FileOperationResult.FILE_NOT_FOUND;
+    }
+
+    /** `undefined` when the content cannot be read at all. */
     protected async resolveContent(uri: URI): Promise<string | undefined> {
         try {
             return await this.readCurrentContent(uri);
@@ -147,12 +162,20 @@ export class FileReadTrackerImpl implements FileReadTracker {
         if (document) {
             return document.getText();
         }
-        return (await this.fileService.readFile(uri, { limits: { size: this.maxComparedFileSize } })).value.toString();
+        return (await this.fileService.read(uri, { limits: { size: this.maxComparedFileSize } })).value;
     }
 
-    /** A path the agent can pass back to `getFileContent`. */
+    /** A path the agent can pass back to `getFileContent`, which takes `<rootName>/<relativePath>` as well as a uri. */
     protected getLabel(uri: URI): string {
-        return this.labelProvider.getLongName(uri);
+        const roots = this.workspaceService.tryGetRoots().map(root => root.resource);
+        for (const root of roots) {
+            const relativePath = root.relative(uri)?.toString();
+            // A basename shared with another root would resolve to that other root.
+            if (relativePath && !roots.some(other => other.path.base === root.path.base && !other.isEqual(root))) {
+                return `${root.path.base}/${relativePath}`;
+            }
+        }
+        return uri.toString();
     }
 
     protected invalidate(uriString: string): void {
