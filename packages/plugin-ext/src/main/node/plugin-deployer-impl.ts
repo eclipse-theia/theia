@@ -32,7 +32,7 @@ import {
 import { ProxyPluginDeployerEntry } from './plugin-deployer-proxy-entry-impl';
 import { PluginDeployerFileHandlerContextImpl } from './plugin-deployer-file-handler-context-impl';
 import { PluginDeployerDirectoryHandlerContextImpl } from './plugin-deployer-directory-handler-context-impl';
-import { ILogger, Emitter, ContributionProvider } from '@theia/core';
+import { ILogger, Emitter, ContributionProvider, LogLevel } from '@theia/core';
 import { PluginCliContribution } from './plugin-cli-contribution';
 import { Measurement, Stopwatch } from '@theia/core/lib/common';
 
@@ -304,9 +304,11 @@ export class PluginDeployerImpl implements PluginDeployer {
         this.logger.debug('the acceptedBackendPlugins plugins are', acceptedBackendPlugins);
         this.logger.debug('the acceptedHeadlessPlugins plugins are', acceptedHeadlessPlugins);
 
-        acceptedPlugins.forEach(plugin => {
-            this.logger.debug('will deploy plugin', plugin.id(), 'with changes', JSON.stringify(plugin.getChanges()), 'and this plugin has been resolved by', plugin.resolvedBy());
-        });
+        if (await this.logger.isEnabled(LogLevel.DEBUG)) {
+            acceptedPlugins.forEach(plugin => {
+                this.logger.debug('will deploy plugin', plugin.id(), 'with changes', JSON.stringify(plugin.getChanges()), 'and this plugin has been resolved by', plugin.resolvedBy());
+            });
+        }
 
         // local path to launch
         const pluginPaths = [...acceptedBackendPlugins, ...acceptedHeadlessPlugins].map(pluginEntry => pluginEntry.path());
