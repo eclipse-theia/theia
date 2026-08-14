@@ -19,12 +19,12 @@ import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core';
 import {
     PluginDeployerHandler, PluginDeployerEntry, PluginEntryPoint, DeployedPlugin,
-    PluginDependencies, PluginType, PluginIdentifiers
+    PluginDependencies, PluginType, PluginIdentifiers, PluginPackage, PluginMetadata
 } from '../../common/plugin-protocol';
 import { HostedPluginReader } from './plugin-reader';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
-import { Stopwatch } from '@theia/core/lib/common';
+import { Measurement, Stopwatch } from '@theia/core/lib/common';
 import { PluginUninstallationManager } from '../../main/node/plugin-uninstallation-manager';
 
 @injectable()
@@ -56,6 +56,8 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
      * Managed plugin metadata frontend entries.
      */
     private readonly deployedFrontendPlugins = new Map<PluginIdentifiers.VersionedId, DeployedPlugin>();
+
+    private readonly pendingDeployments = new Map<string, Promise<boolean>>();
 
     private backendPluginsMetadataDeferred = new Deferred<void>();
 
@@ -166,20 +168,45 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
     protected async deployPlugin(entry: PluginDeployerEntry, entryPoint: keyof PluginEntryPoint): Promise<boolean> {
         const pluginPath = entry.path();
         const deployPlugin = this.stopwatch.start('deployPlugin');
-        let id;
-        let success = true;
         try {
             const manifest = await this.reader.readPackage(pluginPath);
             if (!manifest) {
                 deployPlugin.error(`Failed to read ${entryPoint} plugin manifest from '${pluginPath}''`);
-                return success = false;
+                return false;
             }
 
             const metadata = await this.reader.readMetadata(manifest);
             metadata.isUnderDevelopment = entry.getValue('isUnderDevelopment') ?? false;
 
-            id = PluginIdentifiers.componentsToVersionedId(metadata.model);
+            const id = PluginIdentifiers.componentsToVersionedId(metadata.model);
+            const reservationKey = `${entryPoint}:${id}`;
 
+            const pending = this.pendingDeployments.get(reservationKey);
+            if (pending) {
+                return pending;
+            }
+
+            const deployment = this.doDeployPlugin(entry, entryPoint, manifest, metadata, id, pluginPath, deployPlugin)
+                .finally(() => this.pendingDeployments.delete(reservationKey));
+            this.pendingDeployments.set(reservationKey, deployment);
+            return deployment;
+        } catch (e) {
+            deployPlugin.error(`Failed to deploy ${entryPoint} plugin from '${pluginPath}' path`, e);
+            return false;
+        }
+    }
+
+    protected async doDeployPlugin(
+        entry: PluginDeployerEntry,
+        entryPoint: keyof PluginEntryPoint,
+        manifest: PluginPackage,
+        metadata: PluginMetadata,
+        id: PluginIdentifiers.VersionedId,
+        pluginPath: string,
+        deployPlugin: Measurement
+    ): Promise<boolean> {
+        let success = true;
+        try {
             const deployedLocations = this.deployedLocations.get(id) ?? new Set<string>();
             deployedLocations.add(entry.rootPath);
             this.deployedLocations.set(id, deployedLocations);
@@ -201,7 +228,7 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
             deployPlugin.error(`Failed to deploy ${entryPoint} plugin from '${pluginPath}' path`, e);
             return success = false;
         } finally {
-            if (success && id) {
+            if (success) {
                 this.markAsInstalled(id);
             }
         }
