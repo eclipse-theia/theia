@@ -301,7 +301,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
         this.onDidRegisterAuthenticationProviderEmitter.fire({ id, label: authenticationProvider.label });
 
         this.updateAccountsMenuItem();
-        console.log(`An authentication provider with id '${id}' was registered.`);
+        this.logger.info(`An authentication provider with id '${id}' was registered.`);
     }
 
     unregisterAuthenticationProvider(id: string): void {

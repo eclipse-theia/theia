@@ -14,17 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import {
     FileSystemWatcherClient, FileSystemWatcherServiceClient,
     DidFilesChangedParams, FileSystemWatcherErrorParams
 } from '../common/filesystem-watcher-protocol';
-
+import { ILogger } from '@theia/core';
 /**
  * This component routes watch events to the right clients.
  */
 @injectable()
 export class FileSystemWatcherServiceDispatcher implements FileSystemWatcherServiceClient {
+
+    @inject(ILogger) @named('filesystem:FileSystemWatcherServiceDispatcher')
+    protected readonly logger: ILogger;
 
     /**
      * Mapping of `clientId` to actual clients.
@@ -48,14 +51,14 @@ export class FileSystemWatcherServiceDispatcher implements FileSystemWatcherServ
      */
     registerClient(clientId: number, client: FileSystemWatcherClient): void {
         if (this.clients.has(clientId)) {
-            console.warn(`FileSystemWatcherServer2Dispatcher: a client was already registered! clientId=${clientId}`);
+            this.logger.warn(`FileSystemWatcherServer2Dispatcher: a client was already registered! clientId=${clientId}`);
         }
         this.clients.set(clientId, client);
     }
 
     unregisterClient(clientId: number): void {
         if (!this.clients.has(clientId)) {
-            console.warn(`FileSystemWatcherServer2Dispatcher: tried to remove unknown client! clientId=${clientId}`);
+            this.logger.warn(`FileSystemWatcherServer2Dispatcher: tried to remove unknown client! clientId=${clientId}`);
         }
         this.clients.delete(clientId);
     }

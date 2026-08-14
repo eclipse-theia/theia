@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource, MessageService, isArray } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource, MessageService, isArray, ILogger } from '@theia/core';
 import {
     ApplicationShell,
     CommonCommands,
@@ -50,7 +50,7 @@ import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { WorkspaceService, WorkspaceInput } from '@theia/workspace/lib/browser/workspace-service';
 import { DiffService } from '@theia/workspace/lib/browser/diff-service';
-import { inject, injectable, optional } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
 import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { PluginDeployOptions, PluginIdentifiers, PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
@@ -206,6 +206,9 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     @inject(ScmContribution)
     protected scmContribution: ScmContribution;
 
+    @inject(ILogger) @named('plugin-ext-vscode:PluginVscodeCommandsContribution')
+    protected readonly logger: ILogger;
+
     private async openWith(commandId: string, resource: URI, columnOrOptions?: ViewColumn | TextDocumentShowOptions, openerId?: string): Promise<boolean> {
         if (!resource) {
             throw new Error(`${commandId} command requires at least URI argument.`);
@@ -268,7 +271,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     const message = nls.localizeByDefault("Unable to open '{0}'", resource.path);
                     const reason = nls.localizeByDefault('Error: {0}', error.message);
                     this.messageService.error(`${message}\n${reason}`);
-                    console.warn(error);
+                    this.logger.warn(error);
                 }
             }
         });

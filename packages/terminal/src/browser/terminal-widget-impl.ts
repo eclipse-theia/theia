@@ -152,7 +152,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(TerminalWidgetOptions) options: TerminalWidgetOptions;
     @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
     @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher;
-    @inject(ILogger) @named('terminal') protected readonly logger: ILogger;
+    @inject(ILogger) @named('terminal:TerminalWidgetImpl')
+    protected readonly logger: ILogger;
     @inject('terminal-dom-id') readonly _terminalDOMId: string;
     @inject(TerminalPreferences) protected readonly preferences: TerminalPreferences;
     @inject(ContributionProvider) @named(TerminalContribution) protected readonly terminalContributionProvider: ContributionProvider<TerminalContribution>;

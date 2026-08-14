@@ -19,7 +19,7 @@ import * as express from '@theia/core/shared/express';
 import * as escape_html from 'escape-html';
 import { realpath, stat } from 'fs/promises';
 import { ILogger } from '@theia/core';
-import { inject, injectable, optional, multiInject } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, multiInject, named } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { PluginMetadata, getPluginId, MetadataProcessor, PluginPackage, PluginContribution } from '../../common/plugin-protocol';
 import { MetadataScanner } from './metadata-scanner';
@@ -28,7 +28,7 @@ import { loadManifest } from './plugin-manifest-loader';
 @injectable()
 export class HostedPluginReader implements BackendApplicationContribution {
 
-    @inject(ILogger)
+    @inject(ILogger) @named('plugin-ext:HostedPluginReader')
     protected readonly logger: ILogger;
 
     @inject(MetadataScanner)
@@ -59,7 +59,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
                         // the file was found and successfully transferred
                         return;
                     }
-                    console.error(`Could not transfer '${filePath}' file from '${pluginId}'`, e);
+                    this.logger.error(`Could not transfer '${filePath}' file from '${pluginId}'`, e);
                     if (res.headersSent) {
                         // the request was already closed
                         return;

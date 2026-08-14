@@ -16,8 +16,8 @@
 
 import * as path from 'path';
 import * as fs from '@theia/core/shared/fs-extra';
-import { inject, injectable } from '@theia/core/shared/inversify';
-import type { RecursivePartial, URI } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { RecursivePartial, URI, ILogger } from '@theia/core';
 import { Deferred, firstTrue } from '@theia/core/lib/common/promise-util';
 import {
     PluginDeployerDirectoryHandler, PluginDeployerEntry, PluginDeployerDirectoryHandlerContext,
@@ -33,8 +33,11 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
 
     @inject(PluginCliContribution) protected readonly pluginCli: PluginCliContribution;
 
+    @inject(ILogger) @named('plugin-ext-vscode:PluginVsCodeDirectoryHandler')
+    protected readonly logger: ILogger;
+
     async accept(plugin: PluginDeployerEntry): Promise<boolean> {
-        console.debug(`Resolving "${plugin.id()}" as a VS Code extension...`);
+        this.logger.debug(`Resolving "${plugin.id()}" as a VS Code extension...`);
         if (plugin.path().startsWith(TMP_DIR_PREFIX)) {
             // avoid adding corrupted plugins from temporary directories
             return false;
@@ -107,7 +110,7 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
             plugin.rootPath = plugin.path();
             plugin.updatePath(pluginPath);
         }
-        console.debug(`Resolved "${plugin.id()}" to a VS Code extension "${pck.name}@${pck.version}" with engines:`, pck.engines);
+        this.logger.debug(`Resolved "${plugin.id()}" to a VS Code extension "${pck.name}@${pck.version}" with engines:`, pck.engines);
         return true;
     }
 

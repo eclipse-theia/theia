@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { Virtuoso } from '@theia/core/shared/react-virtuoso';
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { HoverService } from '@theia/core/lib/browser/hover-service';
@@ -38,6 +38,7 @@ import {
     getRefBadgeClass, isTagRef, isRemoteRef, deduplicateRefs, DeduplicatedRef
 } from './scm-history-graph-helpers';
 import { buildHtmlTooltip } from './scm-history-graph-tooltip';
+import { ILogger } from '@theia/core';
 
 /** Menu path matching the VS Code 'scm/history/title' contribution point (graph section toolbar). */
 export const SCM_HISTORY_TITLE_MENU: MenuPath = ['plugin_scm/history/title'];
@@ -93,6 +94,9 @@ export class ScmHistoryGraphWidget extends ReactWidget {
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
     @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(ScmContextKeyService) protected readonly scmContextKeys: ScmContextKeyService;
+
+    @inject(ILogger) @named('scm:ScmHistoryGraphWidget')
+    protected readonly logger: ILogger;
 
     protected selectedIndex = -1;
     /** Currently selected change row key (`${itemId}-${ci}`), or undefined. */
@@ -347,7 +351,7 @@ export class ScmHistoryGraphWidget extends ReactWidget {
                 open(this.openerService, new URI(change.uri));
             }
         } catch (err) {
-            console.error('ScmHistoryGraphWidget: failed to open change', err);
+            this.logger.error('ScmHistoryGraphWidget: failed to open change', err);
         }
     }
 
@@ -690,7 +694,7 @@ export class ScmHistoryGraphWidget extends ReactWidget {
             }
         } catch (err) {
             if (!cts.token.isCancellationRequested) {
-                console.error('ScmHistoryGraphWidget: failed to load changes', err);
+                this.logger.error('ScmHistoryGraphWidget: failed to load changes', err);
                 this.expandedChanges.set(item.id, []);
                 this.update();
             }
