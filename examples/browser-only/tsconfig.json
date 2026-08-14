@@ -126,9 +126,6 @@
       "path": "../../packages/scm"
     },
     {
-      "path": "../../packages/scm-extra"
-    },
-    {
       "path": "../../packages/search-in-workspace"
     },
     {
@@ -136,6 +133,9 @@
     },
     {
       "path": "../../packages/task"
+    },
+    {
+      "path": "../../packages/telemetry"
     },
     {
       "path": "../../packages/terminal"

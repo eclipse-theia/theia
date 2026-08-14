@@ -22,12 +22,15 @@ import { ScmService } from './scm-service';
 import { ScmHistoryItem, ScmHistoryProvider, ScmHistoryOptions } from './scm-provider';
 import { computeGraphRows, GraphRow } from './scm-history-graph-lanes';
 import { ILogger } from '@theia/core';
+import { getRefColorIndex } from './scm-history-graph-helpers';
 
 export const PAGE_SIZE = 50;
 
 export interface HistoryGraphEntry {
     readonly item: ScmHistoryItem;
     readonly graphRow: GraphRow;
+    /** True when this item is the commit the current history item ref points at (HEAD). */
+    readonly isCurrent: boolean;
 }
 
 @injectable()
@@ -168,11 +171,14 @@ export class ScmHistoryGraphModel {
             const graphRows = computeGraphRows(allItems.map(i => ({
                 id: i.id,
                 parentIds: i.parentIds,
+                colorIndex: this.resolveColorIndex(i),
             })));
 
+            const currentRevision = this._provider.currentHistoryItemRef?.revision;
             this._entries = allItems.map((item, idx) => ({
                 item,
                 graphRow: graphRows[idx],
+                isCurrent: currentRevision !== undefined && item.id === currentRevision,
             }));
         } catch (err) {
             if (!token.isCancellationRequested) {
@@ -185,6 +191,21 @@ export class ScmHistoryGraphModel {
                 this.onDidChangeEmitter.fire();
             }
         }
+    }
+
+    /**
+     * Resolves the ref-based color index of an item from its references,
+     * preferring current (0) over remote (1) over base (2).
+     */
+    protected resolveColorIndex(item: ScmHistoryItem): number | undefined {
+        let result: number | undefined;
+        for (const ref of item.references ?? []) {
+            const index = getRefColorIndex(ref, this._provider);
+            if (index !== undefined && (result === undefined || index < result)) {
+                result = index;
+            }
+        }
+        return result;
     }
 
     /**

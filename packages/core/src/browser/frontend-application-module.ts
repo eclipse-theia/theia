@@ -14,12 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+// Import Lumino rules first because some conflict with Theia's styles.
+// This ensures Theia rules with equal specificity take precedence (see GH-17872).
+import '@lumino/widgets/style/index.css';
+import 'perfect-scrollbar/css/perfect-scrollbar.css';
 import '../../src/browser/style/index.css';
 import '../../src/browser/style/materialcolors.css';
-import '@lumino/widgets/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
 import 'file-icons-js/css/style.css';
-import 'perfect-scrollbar/css/perfect-scrollbar.css';
 import '@vscode/codicons/dist/codicon.css';
 
 import { ContainerModule } from 'inversify';
@@ -51,7 +53,7 @@ import {
     SidePanelHandler, SidePanelHandlerFactory,
     SidebarMenuWidget, SidebarTopMenuWidgetFactory,
     SplitPositionHandler, DockPanelRendererFactory, ApplicationShellLayoutMigration, ApplicationShellLayoutMigrationError, SidebarBottomMenuWidgetFactory,
-    ShellLayoutTransformer
+    ShellLayoutTransformer, WidgetAreaResolver
 } from './shell';
 import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider';
@@ -146,6 +148,7 @@ import { WidgetStatusBarContribution, WidgetStatusBarService } from './widget-st
 import { SymbolIconColorContribution } from './symbol-icon-color-contribution';
 import { CorePreferences, bindCorePreferences } from '../common/core-preferences';
 import { bindBadgeDecoration } from './badges';
+import { PerspectiveContribution, PerspectiveService, PerspectiveServiceImpl, PerspectiveServiceInternal, WidgetAreaResolverImpl } from './perspective-service';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -482,6 +485,15 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bindRootContributionProvider(bind, UndoRedoHandler);
     bind(DomInputUndoRedoHandler).toSelf().inSingletonScope();
     bind(UndoRedoHandler).toService(DomInputUndoRedoHandler);
+
+    bind(WidgetAreaResolverImpl).toSelf().inSingletonScope();
+    bind(WidgetAreaResolver).toService(WidgetAreaResolverImpl);
+    bind(PerspectiveServiceImpl).toSelf().inSingletonScope();
+    bind(PerspectiveService).toService(PerspectiveServiceImpl);
+    bind(PerspectiveServiceInternal).toService(PerspectiveServiceImpl);
+    bind(FrontendApplicationContribution).toService(PerspectiveServiceImpl);
+    bind(CommandContribution).toService(PerspectiveServiceImpl);
+    bindRootContributionProvider(bind, PerspectiveContribution);
 
     bind(WidgetStatusBarService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WidgetStatusBarService);

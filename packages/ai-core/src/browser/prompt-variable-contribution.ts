@@ -76,11 +76,13 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
                 const promptIdOrCommandName = pipeIndex >= 0 ? arg.substring(0, pipeIndex) : arg;
                 const commandArgs = pipeIndex >= 0 ? arg.substring(pipeIndex + 1) : '';
 
-                // Determine the actual fragment ID
-                // If this is a command invocation (has args), try to find by command name first
-                let fragment = commandArgs
-                    ? this.promptService.getPromptFragmentByCommandName(promptIdOrCommandName)
-                    : undefined;
+                // Determine the actual fragment ID by looking up the command name first.
+                // This must not be conditional on arguments being present: a customized (file-based)
+                // command has a fragment id that differs from its command name, so `/deploy` without
+                // arguments would otherwise not resolve even though `/deploy prod` does. It also keeps
+                // this lookup aligned with `PromptService.isKnownCommand`, which the chat request
+                // parser uses to decide whether `/deploy` is a command at all.
+                let fragment = this.promptService.getPromptFragmentByCommandName(promptIdOrCommandName);
 
                 // Fall back to looking up by fragment ID if not found by command name
                 if (!fragment) {
@@ -90,11 +92,7 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
                 // If we still don't have a fragment, we can't resolve
                 if (!fragment) {
                     this.logger.debug(`Could not find prompt fragment or command '${promptIdOrCommandName}'`);
-                    return {
-                        variable: request.variable,
-                        value: '',
-                        allResolvedDependencies: []
-                    };
+                    return undefined;
                 }
 
                 const fragmentId = fragment.id;
@@ -124,12 +122,11 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
                 }
             }
         }
-        this.logger.debug(`Could not resolve prompt variable '${request.variable.name}' with arg '${request.arg}'. Returning empty string.`);
-        return {
-            variable: request.variable,
-            value: '',
-            allResolvedDependencies: []
-        };
+        // Returning `undefined` rather than an empty resolution keeps the original text in place:
+        // callers fall back to the literal `#prompt:...` / `{{prompt:...}}` placeholder instead of
+        // silently dropping it, which is also how every other unresolvable variable behaves.
+        this.logger.debug(`Could not resolve prompt variable '${request.variable.name}' with arg '${request.arg}'.`);
+        return undefined;
     }
 
     private substituteCommandArguments(template: string, commandName: string, commandArgs: string): string {

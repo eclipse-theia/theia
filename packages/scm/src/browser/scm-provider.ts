@@ -19,6 +19,7 @@
 import { Disposable, Event } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 
 export interface ScmProvider extends Disposable {
     readonly id: string;
@@ -145,7 +146,14 @@ export interface ScmHistoryItem {
     readonly authorIcon?: string;
     readonly displayId?: string;
     readonly timestamp?: number;
-    readonly tooltip?: string;
+    /**
+     * Hover content supplied by the provider. When present, it is rendered instead of the
+     * hover the history graph derives from the other fields, so that providers stay in control
+     * of their own links and commands. May be split into sections, which are rendered separated
+     * by horizontal rules. Note that `command:` links are only executed if the containing
+     * {@link MarkdownString} declares them via {@link MarkdownString.isTrusted}.
+     */
+    readonly tooltip?: string | MarkdownString | readonly MarkdownString[];
     readonly statistics?: ScmHistoryItemStatistics;
     readonly references?: readonly ScmHistoryItemRef[];
 }

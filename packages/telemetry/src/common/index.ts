@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 STMicroelectronics and others.
+// Copyright (C) 2026 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,16 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MeasurementResult } from '@theia/core';
-
-export const measurementNotificationServicePath = '/services/measurement-notification';
-
-export const MeasurementNotificationService = Symbol('MeasurementNotificationService');
-export interface MeasurementNotificationService {
-    /**
-     * Notify the backend when a fronted stopwatch provides a new measurement.
-     * @param frontendId The unique id associated with the frontend that sends the notification
-     * @param result The new measurement result
-     */
-    onFrontendMeasurement(frontendId: string, result: MeasurementResult): void;
-}
+export * from './telemetry-consent-provider';
+export * from './telemetry-preferences';
+export * from './telemetry-protocol';
+export * from './telemetry-service';
+export * from './telemetry-topic';
+export * from './telemetry-types';

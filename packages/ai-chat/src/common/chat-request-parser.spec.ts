@@ -26,11 +26,23 @@ import { ParsedChatRequestAgentPart, ParsedChatRequestFunctionPart, ParsedChatRe
 import { AgentDelegationTool } from '../browser/agent-delegation-tool';
 
 describe('ChatRequestParserImpl', () => {
+    /** Command names the stubbed `PromptService` knows about. Anything else is not a command. */
+    const KNOWN_COMMANDS = ['hello', 'explain', 'compare', 'cmd', 'summarize', 'skill-one', 'skill-two'];
+    /** Prompt fragments that are not marked as commands, but can still be invoked by their id. */
+    const KNOWN_FRAGMENT_IDS = ['coder-system'];
+
+    const promptService = {
+        isKnownCommand: (name: string) => KNOWN_COMMANDS.includes(name) || KNOWN_FRAGMENT_IDS.includes(name),
+        getCommands: () => KNOWN_COMMANDS.map(name => ({ id: `command-${name}`, template: '', isCommand: true, commandName: name }))
+    } as unknown as PromptService;
+
     const chatAgentService = sinon.createStubInstance(ChatAgentServiceImpl);
     const variableService = sinon.createStubInstance(DefaultAIVariableService);
     const toolInvocationRegistry = sinon.createStubInstance(ToolInvocationRegistryImpl);
     const logger: ILogger = sinon.createStubInstance(Logger);
     const parser = new ChatRequestParserImpl(chatAgentService, variableService, toolInvocationRegistry, logger);
+    // The parser injects the PromptService as a property, so it has to be assigned manually here.
+    (parser as unknown as { promptService: PromptService }).promptService = promptService;
 
     beforeEach(() => {
         // Reset our stubs before each test
@@ -324,24 +336,16 @@ describe('ChatRequestParserImpl', () => {
         expect(varPart.variableArg).to.equal('explain|/path/to/file');
     });
 
-    it('uses known command names to disambiguate slash command arguments', async () => {
-        const promptService = {
-            getCommands: () => [
-                { id: 'command-skill-one', template: '', isCommand: true, commandName: 'skill-one' },
-                { id: 'command-skill-two', template: '', isCommand: true, commandName: 'skill-two' },
-            ]
-        } as unknown as PromptService;
-        const parserWithPromptService = new ChatRequestParserImpl(chatAgentService, variableService, toolInvocationRegistry, logger);
-        (parserWithPromptService as unknown as { promptService: PromptService }).promptService = promptService;
+    it('does not treat path segments as commands', async () => {
+        const req: ChatRequest = {
+            text: 'please look at /home/user/notes.txt and fix the bug'
+        };
         const context: ChatContext = { variables: [] };
+        const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
 
-        const multipleCommands = await parserWithPromptService.parseChatRequest({ text: '/skill-one /skill-two' }, ChatAgentLocation.Panel, context);
-        expect((multipleCommands.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('skill-one');
-        expect((multipleCommands.parts[2] as ParsedChatRequestVariablePart).variableArg).to.equal('skill-two');
-
-        const pathArgument = await parserWithPromptService.parseChatRequest({ text: '/skill-one /tmp' }, ChatAgentLocation.Panel, context);
-        expect(pathArgument.parts.length).to.equal(1);
-        expect((pathArgument.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('skill-one|/tmp');
+        expect(result.parts.length).to.equal(1);
+        expect(result.parts[0].kind).to.equal('text');
+        expect(result.parts[0].text).to.equal(req.text);
     });
 
     it('treats the first @agent mention as the selector and does not allow later mentions to override it', async () => {
@@ -522,6 +526,334 @@ describe('ChatRequestParserImpl', () => {
             expect(result.deferredToolIds?.size).to.equal(1);
             expect(result.deferredToolIds?.has('deferredTool')).to.be.true;
             expect(result.deferredToolIds?.has('eagerTool')).to.be.false;
+        });
+    });
+
+    describe('slash command disambiguation', () => {
+        const parse = (text: string) => parser.parseChatRequest({ text }, ChatAgentLocation.Panel, { variables: [] });
+
+        /** Every character of the input has to be covered by exactly one part, in order and without gaps. */
+        const expectFullCoverage = (parts: ReadonlyArray<{ range: { start: number, endExclusive: number } }>, text: string): void => {
+            let expectedStart = 0;
+            for (const part of parts) {
+                expect(part.range.start, `part starting at ${part.range.start} does not continue at ${expectedStart}`).to.equal(expectedStart);
+                expectedStart = part.range.endExclusive;
+            }
+            expect(expectedStart, 'parts do not cover the whole message').to.equal(text.length);
+        };
+
+        const expectPlainText = async (text: string) => {
+            const result = await parse(text);
+            expect(result.parts.map(p => p.kind), `expected only text parts for ${JSON.stringify(text)}`).to.deep.equal(['text']);
+            expect(result.parts[0].text).to.equal(text);
+            expectFullCoverage(result.parts, text);
+        };
+
+        describe('unknown commands stay plain text', () => {
+            const unknownCommandInputs = [
+                'please look at /home/user/notes.txt and fix the bug',
+                '/home/user/notes.txt is broken',
+                'read /usr/local/bin/theia',
+                'the file is at /etc/hosts',
+                'compare /tmp/a.txt with /tmp/b.txt',
+                'run cd /home && ls',
+                'see /usr/lib/node/foo.js:12 for the stack trace',
+                'what does the option --foo /bar do?',
+                '/does-not-exist do something',
+                '/tmp',
+                'move it to /tmp',
+                'the separator is / on Unix'
+            ];
+
+            unknownCommandInputs.forEach(text => {
+                it(`keeps ${JSON.stringify(text)} as plain text`, () => expectPlainText(text));
+            });
+
+            it('does not drop any user text when a path follows a known command name prefix', async () => {
+                // `/summarizes` is not a known command, even though `/summarize` is.
+                await expectPlainText('/summarizes the file');
+            });
+
+            it('does not treat a known command name as a command when it is a path segment', async () => {
+                // `summarize` is known, but `/summarize/foo` is a path, not a command invocation.
+                await expectPlainText('/summarize/foo is a path');
+            });
+
+            it('does not treat a known command name followed by punctuation as a command', async () => {
+                await expectPlainText('did you mean /summarize?');
+            });
+        });
+
+        describe('slashes that are not command leaders', () => {
+            const nonLeaderInputs = [
+                'A: 10/20 and B: 30/40',
+                'use and/or here',
+                '2026/08/04 is the date',
+                'see https://example.com/foo/bar for details',
+                'the regex is a\\/b'
+            ];
+
+            nonLeaderInputs.forEach(text => {
+                it(`keeps ${JSON.stringify(text)} as plain text`, () => expectPlainText(text));
+            });
+        });
+
+        describe('known commands still parse', () => {
+            it('parses a known command without arguments', async () => {
+                const text = '/summarize';
+                const result = await parse(text);
+
+                expect(result.parts.length).to.equal(1);
+                const command = result.parts[0] as ParsedChatRequestVariablePart;
+                expect(command.variableName).to.equal('prompt');
+                expect(command.variableArg).to.equal('summarize');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('parses a known command with arguments', async () => {
+                const text = '/summarize foo bar';
+                const result = await parse(text);
+
+                expect(result.parts.length).to.equal(1);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('summarize|foo bar');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('keeps a path as the argument of a known command', async () => {
+                const text = '/summarize /home/user/notes.txt';
+                const result = await parse(text);
+
+                expect(result.parts.length).to.equal(1);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('summarize|/home/user/notes.txt');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('keeps an unknown slash token inside the arguments of a known command', async () => {
+                const text = '/summarize foo /unknown bar';
+                const result = await parse(text);
+
+                expect(result.parts.length).to.equal(1);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('summarize|foo /unknown bar');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('parses a known command in the middle of a message', async () => {
+                const text = 'please /summarize this';
+                const result = await parse(text);
+
+                expect(result.parts.map(p => p.kind)).to.deep.equal(['text', 'var']);
+                expect(result.parts[0].text).to.equal('please ');
+                expect((result.parts[1] as ParsedChatRequestVariablePart).variableArg).to.equal('summarize|this');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('parses two adjacent known commands', async () => {
+                const text = '/skill-one /skill-two';
+                const result = await parse(text);
+
+                expect(result.parts.map(p => p.kind)).to.deep.equal(['var', 'text', 'var']);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('skill-one');
+                expect(result.parts[1].text).to.equal(' ');
+                expect((result.parts[2] as ParsedChatRequestVariablePart).variableArg).to.equal('skill-two');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('separates two argument-taking known commands', async () => {
+                const text = '/summarize foo /explain bar';
+                const result = await parse(text);
+
+                expect(result.parts.map(p => p.kind)).to.deep.equal(['var', 'text', 'var']);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('summarize|foo');
+                expect(result.parts[1].text).to.equal(' ');
+                expect((result.parts[2] as ParsedChatRequestVariablePart).variableArg).to.equal('explain|bar');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('parses the same command twice, each with its own argument', async () => {
+                const text = '/hello Klaus /hello Maria';
+                const result = await parse(text);
+
+                expect(result.parts.map(p => p.kind)).to.deep.equal(['var', 'text', 'var']);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('hello|Klaus');
+                expect(result.parts[1].text).to.equal(' ');
+                expect((result.parts[2] as ParsedChatRequestVariablePart).variableArg).to.equal('hello|Maria');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('parses the same command three times', async () => {
+                const text = '/hello Klaus /hello Maria /hello Bob';
+                const result = await parse(text);
+
+                expect(result.parts.map(p => p.kind)).to.deep.equal(['var', 'text', 'var', 'text', 'var']);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('hello|Klaus');
+                expect((result.parts[2] as ParsedChatRequestVariablePart).variableArg).to.equal('hello|Maria');
+                expect((result.parts[4] as ParsedChatRequestVariablePart).variableArg).to.equal('hello|Bob');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('parses the same command twice without arguments', async () => {
+                const text = '/hello /hello';
+                const result = await parse(text);
+
+                expect(result.parts.map(p => p.kind)).to.deep.equal(['var', 'text', 'var']);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('hello');
+                expect(result.parts[1].text).to.equal(' ');
+                expect((result.parts[2] as ParsedChatRequestVariablePart).variableArg).to.equal('hello');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('accepts a prompt fragment id as a command', async () => {
+                const text = '/coder-system';
+                const result = await parse(text);
+
+                expect(result.parts.length).to.equal(1);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('coder-system');
+            });
+
+            it('keeps trailing whitespace out of the command part', async () => {
+                const text = '/summarize   ';
+                const result = await parse(text);
+
+                expect(result.parts.map(p => p.kind)).to.deep.equal(['var', 'text']);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('summarize');
+                expect(result.parts[1].text).to.equal('   ');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('trims whitespace around arguments', async () => {
+                const text = '/summarize \t foo \t ';
+                const result = await parse(text);
+
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('summarize|foo');
+                expectFullCoverage(result.parts, text);
+            });
+        });
+
+        describe('arguments do not span multiple lines', () => {
+            it('does not consume the following line for a command without arguments', async () => {
+                const text = '/summarize\nsecond line';
+                const result = await parse(text);
+
+                expect(result.parts.map(p => p.kind)).to.deep.equal(['var', 'text']);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('summarize');
+                expect(result.parts[1].text).to.equal('\nsecond line');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('does not consume the following line for a command with arguments', async () => {
+                const text = '/summarize foo\nsecond line\nthird line';
+                const result = await parse(text);
+
+                expect(result.parts.map(p => p.kind)).to.deep.equal(['var', 'text']);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('summarize|foo');
+                expect(result.parts[1].text).to.equal('\nsecond line\nthird line');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('handles CRLF line endings', async () => {
+                const text = '/summarize foo\r\nsecond line';
+                const result = await parse(text);
+
+                expect(result.parts.map(p => p.kind)).to.deep.equal(['var', 'text']);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('summarize|foo');
+                expect(result.parts[1].text).to.equal('\r\nsecond line');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('parses a command on a later line', async () => {
+                const text = 'first line\n/summarize foo\nthird line';
+                const result = await parse(text);
+
+                expect(result.parts.map(p => p.kind)).to.deep.equal(['text', 'var', 'text']);
+                expect(result.parts[0].text).to.equal('first line\n');
+                expect((result.parts[1] as ParsedChatRequestVariablePart).variableArg).to.equal('summarize|foo');
+                expect(result.parts[2].text).to.equal('\nthird line');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('parses one command per line', async () => {
+                const text = '/summarize foo\n/explain bar';
+                const result = await parse(text);
+
+                expect(result.parts.map(p => p.kind)).to.deep.equal(['var', 'text', 'var']);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('summarize|foo');
+                expect(result.parts[1].text).to.equal('\n');
+                expect((result.parts[2] as ParsedChatRequestVariablePart).variableArg).to.equal('explain|bar');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('parses the same command on consecutive lines', async () => {
+                const text = '/hello Klaus\n/hello Maria';
+                const result = await parse(text);
+
+                expect(result.parts.map(p => p.kind)).to.deep.equal(['var', 'text', 'var']);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('hello|Klaus');
+                expect(result.parts[1].text).to.equal('\n');
+                expect((result.parts[2] as ParsedChatRequestVariablePart).variableArg).to.equal('hello|Maria');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('keeps a blank line between two commands', async () => {
+                const text = '/hello Klaus\n\n/hello Maria';
+                const result = await parse(text);
+
+                expect(result.parts.map(p => p.kind)).to.deep.equal(['var', 'text', 'var']);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('hello|Klaus');
+                expect(result.parts[1].text).to.equal('\n\n');
+                expect((result.parts[2] as ParsedChatRequestVariablePart).variableArg).to.equal('hello|Maria');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('mixes a line break with a repetition on the same line', async () => {
+                const text = '/hello Klaus\n/hello Maria and /hello Bob';
+                const result = await parse(text);
+
+                expect(result.parts.map(p => p.kind)).to.deep.equal(['var', 'text', 'var', 'text', 'var']);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('hello|Klaus');
+                expect(result.parts[1].text).to.equal('\n');
+                expect((result.parts[2] as ParsedChatRequestVariablePart).variableArg).to.equal('hello|Maria and');
+                expect(result.parts[3].text).to.equal(' ');
+                expect((result.parts[4] as ParsedChatRequestVariablePart).variableArg).to.equal('hello|Bob');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('keeps a multi-line paste containing paths untouched', async () => {
+                await expectPlainText('here is a stack trace:\n at /usr/lib/node/foo.js:12\nplease fix it');
+            });
+        });
+
+        describe('interaction with other request parts', () => {
+            it('does not turn a path into a command when it follows a variable', async () => {
+                const text = '#file:/path/to/file.ext look at /home/user/notes.txt';
+                const result = await parse(text);
+
+                expect(result.parts.map(p => p.kind)).to.deep.equal(['var', 'text']);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableName).to.equal('file');
+                expect(result.parts[1].text).to.equal(' look at /home/user/notes.txt');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('does not turn a path into a command when it follows an agent mention', async () => {
+                chatAgentService.getAgents.returns([{
+                    id: 'agentA',
+                    name: 'agentA',
+                    description: '',
+                    tags: [],
+                    variables: [],
+                    prompts: [],
+                    agentSpecificVariables: [],
+                    functions: [],
+                    languageModelRequirements: [],
+                    locations: [ChatAgentLocation.Panel],
+                    invoke: async () => undefined
+                } as ChatAgent]);
+                const text = '@agentA please read /etc/hosts';
+                const result = await parse(text);
+
+                expect(result.parts.map(p => p.kind)).to.deep.equal(['agent', 'text']);
+                expect(result.parts[1].text).to.equal(' please read /etc/hosts');
+                expectFullCoverage(result.parts, text);
+            });
         });
     });
 
