@@ -306,7 +306,10 @@ export class PluginDeployerImpl implements PluginDeployer {
 
         if (await this.logger.isEnabled(LogLevel.DEBUG)) {
             acceptedPlugins.forEach(plugin => {
-                this.logger.debug('will deploy plugin', plugin.id(), 'with changes', JSON.stringify(plugin.getChanges()), 'and this plugin has been resolved by', plugin.resolvedBy());
+                this.logger.debug(
+                    'will deploy plugin', plugin.id(), 'with changes', JSON.stringify(plugin.getChanges()),
+                    'and this plugin has been resolved by', plugin.resolvedBy()
+                );
             });
         }
 
