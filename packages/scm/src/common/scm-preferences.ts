@@ -35,12 +35,39 @@ export const scmPreferenceSchema: PreferenceSchema = {
             ],
             description: nls.localizeByDefault('Controls the default Source Control repository view mode.'),
             default: 'list'
+        },
+        'scm.graph.badges': {
+            type: 'string',
+            enum: ['all', 'filter'],
+            enumDescriptions: [
+                nls.localizeByDefault('Show badges of all history item groups in the Source Control Graph view.'),
+                nls.localizeByDefault('Show only the badges of history item groups used as a filter in the Source Control Graph view.')
+            ],
+            description: nls.localizeByDefault(
+                // eslint-disable-next-line max-len
+                'Controls which badges are shown in the Source Control Graph view. The badges are shown on the right side of the graph indicating the names of history item groups.'),
+            default: 'filter'
+        },
+        'scm.graph.pageOnScroll': {
+            type: 'boolean',
+            description: nls.localizeByDefault('Controls whether the Source Control Graph view will load the next page of items when you scroll to the end of the list.'),
+            default: true
+        },
+        'scm.graph.pageSize': {
+            type: 'number',
+            minimum: 1,
+            maximum: 1000,
+            description: nls.localizeByDefault('The number of items to show in the Source Control Graph view by default and when loading more items.'),
+            default: 50
         }
     }
 };
 
 export interface ScmConfiguration {
     'scm.defaultViewMode': 'tree' | 'list'
+    'scm.graph.badges': 'all' | 'filter'
+    'scm.graph.pageOnScroll': boolean
+    'scm.graph.pageSize': number
 }
 
 export const ScmPreferenceContribution = Symbol('ScmPreferenceContribution');
