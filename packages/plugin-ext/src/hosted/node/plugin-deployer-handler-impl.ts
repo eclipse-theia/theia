@@ -27,6 +27,16 @@ import { HostedPluginLocalizationService } from './hosted-plugin-localization-se
 import { Measurement, Stopwatch } from '@theia/core/lib/common';
 import { PluginUninstallationManager } from '../../main/node/plugin-uninstallation-manager';
 
+interface DoDeployPluginOptions {
+    entry: PluginDeployerEntry;
+    entryPoint: keyof PluginEntryPoint;
+    manifest: PluginPackage;
+    metadata: PluginMetadata;
+    id: PluginIdentifiers.VersionedId;
+    pluginPath: string;
+    deployPlugin: Measurement;
+}
+
 @injectable()
 export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
     @inject(ILogger) @named('plugin-ext:PluginDeployerHandlerImpl')
@@ -147,13 +157,11 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
     }
 
     async deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<number> {
-        const measurement = this.stopwatch.start('deployBackendPluginsBatch');
         const results = await Promise.all(backendPlugins.map(plugin => this.deployPlugin(plugin, 'backend').catch(e => {
             this.logger.error(`Unexpected error while deploying backend plugin '${plugin.id()}'`, e);
             return false;
         })));
         const successes = results.filter(Boolean).length;
-        measurement.log(`Deployed backend batch of ${successes}/${backendPlugins.length} accepted plugins`);
         // rebuild translation config after deployment
         await this.localizationService.buildTranslationConfig([...this.deployedBackendPlugins.values()]);
         // resolve on first deploy
@@ -179,14 +187,21 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
             metadata.isUnderDevelopment = entry.getValue('isUnderDevelopment') ?? false;
 
             const id = PluginIdentifiers.componentsToVersionedId(metadata.model);
+
+            const deployedLocations = this.deployedLocations.get(id) ?? new Set<string>();
+            deployedLocations.add(entry.rootPath);
+            this.deployedLocations.set(id, deployedLocations);
+            this.setSourceLocationsForPlugin(id, entry);
+
             const reservationKey = `${entryPoint}:${id}`;
 
             const pending = this.pendingDeployments.get(reservationKey);
             if (pending) {
+                deployPlugin.debug(`Skipped ${entryPoint} plugin ${metadata.model.name} already deployed`);
                 return pending;
             }
 
-            const deployment = this.doDeployPlugin(entry, entryPoint, manifest, metadata, id, pluginPath, deployPlugin)
+            const deployment = this.doDeployPlugin({ entry, entryPoint, manifest, metadata, id, pluginPath, deployPlugin })
                 .finally(() => this.pendingDeployments.delete(reservationKey));
             this.pendingDeployments.set(reservationKey, deployment);
             return deployment;
@@ -196,22 +211,14 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
         }
     }
 
-    protected async doDeployPlugin(
-        entry: PluginDeployerEntry,
-        entryPoint: keyof PluginEntryPoint,
-        manifest: PluginPackage,
-        metadata: PluginMetadata,
-        id: PluginIdentifiers.VersionedId,
-        pluginPath: string,
-        deployPlugin: Measurement
-    ): Promise<boolean> {
+    /**
+     * @throws never! in order to isolate plugin deployment.
+     * @returns whether the plugin is deployed after running this function. If the plugin was already installed, will still return `true`.
+     */
+    protected async doDeployPlugin(options: DoDeployPluginOptions): Promise<boolean> {
+        const { entry, entryPoint, manifest, metadata, id, pluginPath, deployPlugin } = options;
         let success = true;
         try {
-            const deployedLocations = this.deployedLocations.get(id) ?? new Set<string>();
-            deployedLocations.add(entry.rootPath);
-            this.deployedLocations.set(id, deployedLocations);
-            this.setSourceLocationsForPlugin(id, entry);
-
             const deployedPlugins = entryPoint === 'backend' ? this.deployedBackendPlugins : this.deployedFrontendPlugins;
             if (deployedPlugins.has(id)) {
                 deployPlugin.debug(`Skipped ${entryPoint} plugin ${metadata.model.name} already deployed`);
