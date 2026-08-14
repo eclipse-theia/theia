@@ -35,14 +35,13 @@ export class SkillPromptCoordinator implements FrontendApplicationContribution {
     protected registeredSkillCommands = new Set<string>();
 
     onStart(): void {
-        this.skillService.onSkillsChanged(() => {
-            this.updateSkillCommands();
-        });
-
         this.skillService.ready.then(() => {
             this.updateSkillCommands();
+            this.skillService.onSkillsChanged(() => {
+                this.updateSkillCommands();
+            });
         }).catch(error => {
-            this.logger.error('Error while updating skill commands after skill service became ready', error);
+            this.logger.error('Failed to update skill commands', error);
         });
     }
 
