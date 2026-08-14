@@ -60,12 +60,12 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
     /**
      * Managed plugin metadata backend entries.
      */
-    private readonly deployedBackendPlugins = new Map<PluginIdentifiers.VersionedId, DeployedPlugin>();
+    protected readonly deployedBackendPlugins = new Map<PluginIdentifiers.VersionedId, DeployedPlugin>();
 
     /**
      * Managed plugin metadata frontend entries.
      */
-    private readonly deployedFrontendPlugins = new Map<PluginIdentifiers.VersionedId, DeployedPlugin>();
+    protected readonly deployedFrontendPlugins = new Map<PluginIdentifiers.VersionedId, DeployedPlugin>();
 
     private readonly pendingDeployments = new Map<string, Promise<boolean>>();
 

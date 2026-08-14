@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource and others.
+// Copyright (C) 2026 ankitsharma101 and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,8 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import 'reflect-metadata';
 import { expect } from 'chai';
+import { Container } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core/lib/common/logger';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { SimpleStopwatch } from '@theia/core/lib/common/performance/simple-stopwatch';
+import { Stopwatch } from '@theia/core/lib/common';
 import { PluginDeployerHandlerImpl } from './plugin-deployer-handler-impl';
 import { HostedPluginReader } from './plugin-reader';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
@@ -30,7 +35,7 @@ class TestPluginDeployerHandler extends PluginDeployerHandlerImpl {
     }
 
     countDeployedBackendPlugins(): number {
-        return (this as unknown as { deployedBackendPlugins: Map<unknown, unknown> }).deployedBackendPlugins.size;
+        return this.deployedBackendPlugins.size;
     }
 }
 
@@ -56,12 +61,12 @@ function createFakeEntry(rootPath: string, accepted: PluginDeployerEntryType[]):
     };
 }
 
-function createFakeMetadata(id: string, version: string): PluginMetadata {
+function createFakeMetadata(id: string, name: string, version: string): PluginMetadata {
     return {
         host: 'test',
         model: {
             id,
-            name: 'concurrent-plugin',
+            name,
             publisher: 'test-publisher',
             version,
             displayName: id,
@@ -79,48 +84,54 @@ function createFakeMetadata(id: string, version: string): PluginMetadata {
     };
 }
 
+function createHandler(overrides: {
+    reader?: Partial<HostedPluginReader>;
+    localizationService?: Partial<HostedPluginLocalizationService>;
+    uninstallationManager?: Partial<PluginUninstallationManager>;
+}): TestPluginDeployerHandler {
+    const container = new Container();
+    container.bind(TestPluginDeployerHandler).toSelf().inSingletonScope();
+    container.bind(ILogger).toConstantValue(new MockLogger());
+    container.bind(Stopwatch).toConstantValue(new SimpleStopwatch('test', () => Date.now()) as unknown as Stopwatch);
+    container.bind(HostedPluginReader).toConstantValue(overrides.reader as HostedPluginReader);
+    container.bind(HostedPluginLocalizationService).toConstantValue(overrides.localizationService as HostedPluginLocalizationService);
+    container.bind(PluginUninstallationManager).toConstantValue(overrides.uninstallationManager as PluginUninstallationManager);
+    return container.get(TestPluginDeployerHandler);
+}
+
 describe('PluginDeployerHandlerImpl - concurrent deployment', () => {
 
     it('deploys the same plugin id only once when deployPlugin is called concurrently', async () => {
         const pluginId = 'test-publisher.concurrent-plugin';
         const version = '1.0.0';
-        const metadata = createFakeMetadata(pluginId, version);
+        const metadata = createFakeMetadata(pluginId, 'concurrent-plugin', version);
         const pluginPackage = {} as PluginPackage;
 
         let readContributionCallCount = 0;
         let releaseReadContribution!: () => void;
         const readContributionGate = new Promise<void>(resolve => { releaseReadContribution = resolve; });
 
-        const fakeReader = {
-            readPackage: async () => pluginPackage,
-            readMetadata: async () => metadata,
-            readContribution: async () => {
-                readContributionCallCount++;
-                // Hold call A open here so call B's reservation check runs
-                // while A is still mid-flight, genuinely racing the window
-                // between reserving and completing.
-                await readContributionGate;
-                return undefined;
+        const handler = createHandler({
+            reader: {
+                readPackage: async () => pluginPackage,
+                readMetadata: async () => metadata,
+                readContribution: async () => {
+                    readContributionCallCount++;
+                    await readContributionGate;
+                    return undefined;
+                }
+            },
+            localizationService: {
+                deployLocalizations: async () => { /* no-op */ },
+                buildTranslationConfig: async () => { /* no-op */ }
+            },
+            uninstallationManager: {
+                markAsUninstalled: async () => true,
+                markAsInstalled: async () => true,
+                markAsEnabled: async () => true,
+                markAsDisabled: async () => true
             }
-        } as unknown as HostedPluginReader;
-
-        const fakeLocalizationService = {
-            deployLocalizations: async () => { /* no-op */ },
-            buildTranslationConfig: async () => { /* no-op */ }
-        } as unknown as HostedPluginLocalizationService;
-
-        const fakeUninstallationManager = {
-            markAsUninstalled: async () => true,
-            markAsInstalled: async () => true,
-            markAsEnabled: async () => true,
-            markAsDisabled: async () => true
-        } as unknown as PluginUninstallationManager;
-
-        const handler = new TestPluginDeployerHandler();
-        (handler as unknown as { reader: HostedPluginReader }).reader = fakeReader;
-        (handler as unknown as { localizationService: HostedPluginLocalizationService }).localizationService = fakeLocalizationService;
-        (handler as unknown as { uninstallationManager: PluginUninstallationManager }).uninstallationManager = fakeUninstallationManager;
-        (handler as unknown as { stopwatch: SimpleStopwatch }).stopwatch = new SimpleStopwatch('test', () => Date.now());
+        });
 
         const entryA = createFakeEntry('/plugins/concurrent-plugin-copy-a', [PluginDeployerEntryType.BACKEND]);
         const entryB = createFakeEntry('/plugins/concurrent-plugin-copy-b', [PluginDeployerEntryType.BACKEND]);
@@ -143,10 +154,47 @@ describe('PluginDeployerHandlerImpl - concurrent deployment', () => {
 
         expect(resultA).to.be.true;
         expect(resultB).to.be.true;
-        // The real assertion: readContribution — the actual deploy work —
-        // must only run once, proving B reused A's in-flight reservation
-        // rather than performing a second, concurrent deploy.
+        // readContribution must run only once.
         expect(readContributionCallCount).to.equal(1);
         expect(handler.countDeployedBackendPlugins()).to.equal(1);
+    });
+
+    it('deploys backend plugins in parallel and reports the correct success count when one fails', async () => {
+        const goodIdA = 'test-publisher.plugin-a';
+        const goodIdB = 'test-publisher.plugin-b';
+
+        const handler = createHandler({
+            reader: {
+                readPackage: async (path: string) => ({ name: path } as unknown as PluginPackage),
+                readMetadata: async (pkg: PluginPackage) => {
+                    const name = (pkg as unknown as { name: string }).name;
+                    if (name === '/plugins/bad') {
+                        throw new Error('boom: unreadable metadata');
+                    }
+                    const id = name === '/plugins/a' ? goodIdA : goodIdB;
+                    return createFakeMetadata(id, id, '1.0.0');
+                },
+                readContribution: async () => undefined
+            },
+            localizationService: {
+                deployLocalizations: async () => { /* no-op */ },
+                buildTranslationConfig: async () => { /* no-op */ }
+            },
+            uninstallationManager: {
+                markAsUninstalled: async () => true,
+                markAsInstalled: async () => true,
+                markAsEnabled: async () => true,
+                markAsDisabled: async () => true
+            }
+        });
+
+        const entryA = createFakeEntry('/plugins/a', [PluginDeployerEntryType.BACKEND]);
+        const entryB = createFakeEntry('/plugins/b', [PluginDeployerEntryType.BACKEND]);
+        const entryBad = createFakeEntry('/plugins/bad', [PluginDeployerEntryType.BACKEND]);
+
+        const successes = await handler.deployBackendPlugins([entryA, entryB, entryBad]);
+
+        expect(successes).to.equal(2);
+        expect(handler.countDeployedBackendPlugins()).to.equal(2);
     });
 });
