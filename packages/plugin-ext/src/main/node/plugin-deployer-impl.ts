@@ -299,12 +299,11 @@ export class PluginDeployerImpl implements PluginDeployer {
         const acceptedBackendPlugins = pluginsToDeploy.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted(PluginDeployerEntryType.BACKEND));
         const acceptedHeadlessPlugins = pluginsToDeploy.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted(PluginDeployerEntryType.HEADLESS));
 
-        this.logger.debug('the accepted plugins are', acceptedPlugins);
-        this.logger.debug('the acceptedFrontendPlugins plugins are', acceptedFrontendPlugins);
-        this.logger.debug('the acceptedBackendPlugins plugins are', acceptedBackendPlugins);
-        this.logger.debug('the acceptedHeadlessPlugins plugins are', acceptedHeadlessPlugins);
-
         if (await this.logger.isEnabled(LogLevel.DEBUG)) {
+            this.logger.debug('the accepted plugins are', acceptedPlugins);
+            this.logger.debug('the acceptedFrontendPlugins plugins are', acceptedFrontendPlugins);
+            this.logger.debug('the acceptedBackendPlugins plugins are', acceptedBackendPlugins);
+            this.logger.debug('the acceptedHeadlessPlugins plugins are', acceptedHeadlessPlugins);
             acceptedPlugins.forEach(plugin => {
                 this.logger.debug(
                     'will deploy plugin', plugin.id(), 'with changes', JSON.stringify(plugin.getChanges()),
