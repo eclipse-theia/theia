@@ -54,7 +54,7 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
     @inject(PluginUninstallationManager)
     protected readonly uninstallationManager: PluginUninstallationManager;
 
-    private readonly deployedLocations = new Map<PluginIdentifiers.VersionedId, Set<string>>();
+    protected readonly deployedLocations = new Map<PluginIdentifiers.VersionedId, Set<string>>();
     protected readonly sourceLocations = new Map<PluginIdentifiers.VersionedId, Set<string>>();
 
     /**

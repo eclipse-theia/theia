@@ -26,7 +26,7 @@ import { HostedPluginReader } from './plugin-reader';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
 import { PluginUninstallationManager } from '../../main/node/plugin-uninstallation-manager';
 import {
-    PluginDeployerEntry, PluginDeployerEntryType, PluginPackage, PluginMetadata, PluginType
+    PluginDeployerEntry, PluginDeployerEntryType, PluginPackage, PluginMetadata, PluginType, PluginIdentifiers
 } from '../../common/plugin-protocol';
 
 class TestPluginDeployerHandler extends PluginDeployerHandlerImpl {
@@ -36,6 +36,10 @@ class TestPluginDeployerHandler extends PluginDeployerHandlerImpl {
 
     countDeployedBackendPlugins(): number {
         return this.deployedBackendPlugins.size;
+    }
+
+    countDeployedLocations(id: PluginIdentifiers.VersionedId): number {
+        return this.deployedLocations.get(id)?.size ?? 0;
     }
 }
 
@@ -157,11 +161,12 @@ describe('PluginDeployerHandlerImpl - concurrent deployment', () => {
         // readContribution must run only once.
         expect(readContributionCallCount).to.equal(1);
         expect(handler.countDeployedBackendPlugins()).to.equal(1);
+        expect(handler.countDeployedLocations(`${pluginId}@${version}` as PluginIdentifiers.VersionedId)).to.equal(2);
     });
 
     it('deploys backend plugins in parallel and reports the correct success count when one fails', async () => {
-        const goodIdA = 'test-publisher.plugin-a';
-        const goodIdB = 'test-publisher.plugin-b';
+        const goodIdA = 'plugin-a';
+        const goodIdB = 'plugin-b';
 
         const handler = createHandler({
             reader: {
