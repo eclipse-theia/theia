@@ -57,6 +57,10 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         });
     }
 
+    protected get currentScope(): Preference.SelectedScopeDetails {
+        return this.tryGetWidget()?.currentScope ?? Preference.DEFAULT_SCOPE;
+    }
+
     override registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(CommonCommands.OPEN_PREFERENCES, {
             execute: async (query?: string) => {
@@ -92,7 +96,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
             isEnabled: Preference.EditorCommandArgs.is,
             isVisible: Preference.EditorCommandArgs.is,
             execute: ({ id }: Preference.EditorCommandArgs) => {
-                const { scope, uri } = this.tryGetWidget()?.currentScope ?? Preference.DEFAULT_SCOPE;
+                const { scope, uri } = this.currentScope;
                 return this.preferenceService.set(id, undefined, Number(scope), uri);
             }
         });
@@ -178,7 +182,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     }
 
     protected async openPreferencesJSON(opener: string | PreferencesWidget): Promise<void> {
-        const { scope, activeScopeIsFolder, uri } = this.tryGetWidget()?.currentScope ?? Preference.DEFAULT_SCOPE;
+        const { scope, activeScopeIsFolder, uri } = this.currentScope;
         const scopeID = Number(scope);
         let preferenceId = '';
         if (typeof opener === 'string') {

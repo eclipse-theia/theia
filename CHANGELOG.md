@@ -3,6 +3,7 @@
 ## History
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
+
 ## 1.75.0 - tbd
 
 - [ai-ide] added an opt-in "Memory" prompt capability that lets agents maintain a wiki-style knowledge base per workspace, stored in the workspace metadata store and exposed to prompts via the new `{{memoryDirectory}}` variable [#17865](https://github.com/eclipse-theia/theia/pull/17865)
