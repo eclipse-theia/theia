@@ -31,6 +31,7 @@
     "@theia/ai-anthropic": "1.74.0",
     "@theia/ai-chat": "1.74.0",
     "@theia/ai-chat-ui": "1.74.0",
+    "@theia/ai-chatgpt": "1.74.0",
     "@theia/ai-claude-code": "1.74.0",
     "@theia/ai-code-completion": "1.74.0",
     "@theia/ai-codex": "1.74.0",

@@ -323,6 +323,11 @@ export const DEFAULT_LAYOUT: PreferenceLayout[] = [
                 settings: ['ai-features.chat.*']
             },
             {
+                id: 'ai-features.chatGpt',
+                label: 'ChatGPT',
+                settings: ['ai-features.chatGpt.*']
+            },
+            {
                 id: 'ai-features.copilot',
                 label: 'GitHub Copilot',
                 settings: ['ai-features.copilot.*']
