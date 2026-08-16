@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { Virtuoso } from '@theia/core/shared/react-virtuoso';
+import { Virtuoso, VirtuosoHandle } from '@theia/core/shared/react-virtuoso';
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
@@ -40,7 +40,8 @@ import { ScmContextKeyService } from './scm-context-key-service';
 import { ScmPreferences } from '../common/scm-preferences';
 import {
     laneColor, filterRefsForBadges, getChangeStatus, getFileName, getFilePath, getRepoRelativePath,
-    getRefBadgeClass, getRefBadgePresentation, isTagRef, isRemoteRef, deduplicateRefs, DeduplicatedRef
+    getRefBadgeClass, getRefBadgePresentation, isTagRef, isRemoteRef, deduplicateRefs, DeduplicatedRef,
+    buildChangeTreeRows, ChangeTreeFolderRow
 } from './scm-history-graph-helpers';
 import { ILogger } from '@theia/core';
 import { buildHtmlTooltip, buildProviderTooltip } from './scm-history-graph-tooltip';
@@ -59,6 +60,19 @@ const ROW_HEIGHT = 22;
 const LANE_WIDTH = 22;
 /** Y position of the commit dot — vertically centered in the row. */
 const DOT_CY = 11;
+
+/** Indentation of one level of the change tree, in pixels. */
+const TREE_INDENT = 8;
+/** Shared empty set for history items whose change tree is fully expanded. */
+const EMPTY_FOLDER_SET: ReadonlySet<string> = new Set<string>();
+
+/**
+ * Indentation for a row of the change tree. Like Theia's tree widget, the depth
+ * is applied as padding rather than through a class, as it is not known upfront.
+ */
+function indentStyle(depth: number): React.CSSProperties | undefined {
+    return depth > 0 ? { paddingLeft: `${4 + depth * TREE_INDENT}px` } : undefined;
+}
 
 /** Renders a ref badge as a JSX element for the commit row. */
 function renderJsxRefBadge(
@@ -106,12 +120,16 @@ export class ScmHistoryGraphWidget extends ReactWidget implements DynamicToolbar
     protected readonly logger: ILogger;
 
     protected selectedIndex = -1;
+    /** Handle on the virtualized list, used to scroll an entry into view. */
+    protected readonly listRef = React.createRef<VirtuosoHandle>();
     /** Currently selected change row key (`${itemId}-${ci}`), or undefined. */
     protected selectedChangeKey: string | undefined;
     /** Map from commit id → loaded changes (undefined = not loaded yet). */
     protected expandedChanges = new Map<string, ScmHistoryItemChange[] | 'loading'>();
     /** Set of commit ids that are currently expanded. */
     protected expandedIds = new Set<string>();
+    /** Map from commit id → folder paths collapsed in its change tree. */
+    protected collapsedFolders = new Map<string, Set<string>>();
     /** Map from commit id → in-flight CancellationTokenSource for loadChanges. */
     protected loadChangesCts = new Map<string, CancellationTokenSource>();
     /** Cleanup for the content of the hover currently being shown. */
@@ -142,6 +160,9 @@ export class ScmHistoryGraphWidget extends ReactWidget implements DynamicToolbar
             })
         );
         this.toDispose.push(
+            this.model.onDidRequestReveal(index => this.revealIndex(index))
+        );
+        this.toDispose.push(
             this.scmPreferences.onPreferenceChanged(e => {
                 if (e.preferenceName.startsWith('scm.graph.')) {
                     this.update();
@@ -158,6 +179,14 @@ export class ScmHistoryGraphWidget extends ReactWidget implements DynamicToolbar
             }
         });
         this.toDispose.push(this.toDisposeOnHover);
+        this.update();
+    }
+
+    /** Scrolls the entry at `index` into view and selects it. */
+    protected revealIndex(index: number): void {
+        this.selectedIndex = index;
+        this.selectedChangeKey = undefined;
+        this.listRef.current?.scrollToIndex({ index, align: 'center' });
         this.update();
     }
 
@@ -215,6 +244,7 @@ export class ScmHistoryGraphWidget extends ReactWidget implements DynamicToolbar
 
         return (
             <Virtuoso
+                ref={this.listRef}
                 className='scm-history-graph-list'
                 data={entries as HistoryGraphEntry[]}
                 itemContent={(idx, entry) => this.renderRow(entry, idx, svgWidth)}
@@ -337,6 +367,18 @@ export class ScmHistoryGraphWidget extends ReactWidget implements DynamicToolbar
             );
         }
 
+        if (this.model.viewMode === 'tree') {
+            const rootUri = this.scmService.selectedRepository?.provider.rootUri;
+            const rows = buildChangeTreeRows(changes, rootUri, this.collapsedFolders.get(itemId) ?? EMPTY_FOLDER_SET);
+            return (
+                <React.Fragment key={`${itemId}-changes`}>
+                    {rows.map(row => row.type === 'folder'
+                        ? this.renderChangeFolderRow(row, itemId, svgWidth, graphRow)
+                        : this.renderChangeRow(row.change, row.index, itemId, svgWidth, graphRow, row.depth))}
+                </React.Fragment>
+            );
+        }
+
         return (
             <React.Fragment key={`${itemId}-changes`}>
                 {changes.map((change, ci) =>
@@ -346,18 +388,66 @@ export class ScmHistoryGraphWidget extends ReactWidget implements DynamicToolbar
         );
     }
 
+    protected renderChangeFolderRow(
+        row: ChangeTreeFolderRow,
+        itemId: string,
+        svgWidth: number,
+        graphRow: GraphRow
+    ): React.ReactElement {
+        const collapsed = this.isFolderCollapsed(itemId, row.path);
+        return (
+            <div
+                key={`${itemId}-folder-${row.path}`}
+                className='scm-history-change-row scm-history-change-folder-row'
+                onClick={e => this.handleFolderClick(e, itemId, row.path)}
+                role='treeitem'
+                aria-expanded={!collapsed}
+                tabIndex={-1}
+            >
+                {this.renderChangeRowSvg(graphRow, svgWidth)}
+                <div className='scm-history-change-info' style={indentStyle(row.depth)}>
+                    <span className={`codicon ${collapsed ? 'codicon-chevron-right' : 'codicon-chevron-down'} scm-history-change-twistie`} />
+                    <span className='name scm-history-change-name' title={row.path}>{row.label}</span>
+                </div>
+            </div>
+        );
+    }
+
+    protected isFolderCollapsed(itemId: string, path: string): boolean {
+        return !!this.collapsedFolders.get(itemId)?.has(path);
+    }
+
+    protected toggleFolder(itemId: string, path: string): void {
+        let collapsed = this.collapsedFolders.get(itemId);
+        if (!collapsed) {
+            collapsed = new Set<string>();
+            this.collapsedFolders.set(itemId, collapsed);
+        }
+        if (!collapsed.delete(path)) {
+            collapsed.add(path);
+        }
+        this.update();
+    }
+
+    protected handleFolderClick = (e: React.MouseEvent, itemId: string, path: string): void => {
+        e.stopPropagation();
+        this.toggleFolder(itemId, path);
+    };
+
     protected renderChangeRow(
         change: ScmHistoryItemChange,
         ci: number,
         itemId: string,
         svgWidth: number,
-        graphRow: GraphRow
+        graphRow: GraphRow,
+        depth = 0
     ): React.ReactElement {
         const rootUri = this.scmService.selectedRepository?.provider.rootUri;
         const uri = change.modifiedUri ?? change.originalUri ?? change.uri;
         const relativePath = getRepoRelativePath(uri, rootUri);
         const fileName = getFileName(relativePath);
-        const dirPath = relativePath.includes('/')
+        // In tree mode the folder rows already carry the directory.
+        const dirPath = this.model.viewMode === 'list' && relativePath.includes('/')
             ? relativePath.slice(0, relativePath.lastIndexOf('/'))
             : '';
         const status = getChangeStatus(change);
@@ -376,7 +466,7 @@ export class ScmHistoryGraphWidget extends ReactWidget implements DynamicToolbar
                 tabIndex={-1}
             >
                 {this.renderChangeRowSvg(graphRow, svgWidth)}
-                <div className='scm-history-change-info'>
+                <div className='scm-history-change-info' style={indentStyle(depth)}>
                     <span className={`${fileIcon} file-icon scm-history-change-file-icon`} />
                     <div className='scm-history-change-name-container'>
                         <span className='name scm-history-change-name' title={relativePath}>{fileName}</span>
@@ -719,6 +809,7 @@ export class ScmHistoryGraphWidget extends ReactWidget implements DynamicToolbar
 
         if (this.expandedIds.has(item.id)) {
             this.expandedIds.delete(item.id);
+            this.collapsedFolders.delete(item.id);
             const cts = this.loadChangesCts.get(item.id);
             if (cts) {
                 cts.cancel();
