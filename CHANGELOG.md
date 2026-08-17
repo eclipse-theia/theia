@@ -6,17 +6,26 @@
 
 ## 1.75.0 - tbd
 
+- [ai-ide] added an opt-in "Memory" prompt capability that lets agents maintain a wiki-style knowledge base per workspace, stored in the workspace metadata store and exposed to prompts via the new `{{memoryDirectory}}` variable [#17865](https://github.com/eclipse-theia/theia/pull/17865)
+- [core, monaco] fixed Monaco theme CSS, `SelectComponent` dropdown placement, and the OS font class in secondary windows [#17874](https://github.com/eclipse-theia/theia/pull/17874)
 - [plugin-ext] moved scanner, manifest, and localization helpers to `@theia/plugin-utils` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
 - [plugin-utils] added `@theia/plugin-utils` for shared plugin manifest utilities; browser-only builds prepare plugins into `hostedPlugin/` with `list.json` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
+- [scm] aligned the history graph with VS Code: ref-role lane and badge colors, a current-commit indicator, and a commit hover rendered from the content the history provider supplies [#17880](https://github.com/eclipse-theia/theia/pull/17880)
+- [scm-extra] deprecated `@theia/scm-extra` package [#17882](https://github.com/eclipse-theia/theia/pull/17882)
 
 <a name="breaking_changes_1.75.0">[Breaking Changes:](#breaking_changes_1.75.0)</a>
 
+- [ai-ide] removed `WorkspaceFunctionScope.ensureWithinWorkspace(targetUri, workspaceRootUri)`. Every path-taking AI tool now resolves and checks its argument through `WorkspaceFunctionScope.resolveAccessiblePath(pathOrUri)`, which in addition to the workspace roots accepts locations covered by the `ai-features.workspaceFunctions.allowedExternalPaths` preference or contributed via the new `AccessibleRootContribution`. Adopters that called `ensureWithinWorkspace`, or `resolveRelativePath` followed by their own boundary check, should call `resolveAccessiblePath` instead [#17865](https://github.com/eclipse-theia/theia/pull/17865)
+- [core] added `onWindowLoaded` to the `SecondaryWindowService` interface; adopters implementing the interface from scratch (rather than extending `DefaultSecondaryWindowService`) must provide it [#17874](https://github.com/eclipse-theia/theia/pull/17874)
+- [monaco] removed the `protected secondaryWindowHandler` field from `MonacoFrontendApplicationContribution`; the Monaco theme stylesheet is now injected into every secondary window via `SecondaryWindowService.onWindowLoaded` [#17874](https://github.com/eclipse-theia/theia/pull/17874)
 - [plugin-ext] aliased `DebuggerContribution` to `PluginPackageDebuggersContribution` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
 - [plugin-ext] changed `Keybinding.args` from `any` to `unknown` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
 - [plugin-ext] encoded `toPluginUrl` path segments separately for static hosting [#17758](https://github.com/eclipse-theia/theia/pull/17758)
 - [plugin-ext] moved `loadManifest` and `updateActivationEvents` to `@theia/plugin-utils` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
 - [plugin-ext] rejected grammar paths outside the plugin directory [#17758](https://github.com/eclipse-theia/theia/pull/17758)
 - [plugin-ext] removed `buildFrontendModuleName` from `plugin-protocol` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
+- [scm] widened `ScmHistoryItem.tooltip` from `string` to `string | MarkdownString | readonly MarkdownString[]`, so that hovers supplied by a history provider keep their `isTrusted` command allow-list and their multi-section form; adopters reading the field as a string must narrow it [#17880](https://github.com/eclipse-theia/theia/pull/17880)
+- [scm-extra] deprecated the `@theia/scm-extra` extension and stopped publishing it on npm; it has also been removed from the example applications, which drops its `SCM History` view, the `History` context menu items in the navigator and editor, and the `alt+h` keybinding. The view has been non-functional in the default application since the removal of `@theia/git`, as nothing implements `ScmHistorySupport` anymore. Please use the SCM history graph in `@theia/scm` for branch history and the Timeline view in `@theia/timeline` for per-file history instead [#17882](https://github.com/eclipse-theia/theia/pull/17882)
 
 ## 1.74.0 - 7/31/2026
 

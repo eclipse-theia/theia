@@ -1438,7 +1438,7 @@ export class ApplicationShell extends Widget {
         this.toDisposeOnActivationCheck.push(Disposable.create(() => widget.disposed.disconnect(onDispose)));
 
         let start = 0;
-        const step: FrameRequestCallback = () => {
+        const step = (): void => {
             const activeElement = widget.node.ownerDocument.activeElement;
             if (activeElement && widget.node.contains(activeElement)) {
                 return;
@@ -1449,13 +1449,13 @@ export class ApplicationShell extends Widget {
             }
             const delta = now - start;
             if (delta < this.activationTimeout) {
-                request = setTimeout(step, 0);
+                request = window.setTimeout(step, 0);
             } else {
                 this.logger.warn(`Widget was activated, but did not accept focus after ${this.activationTimeout}ms: ${widget.id}`);
             }
         };
-        let request = setTimeout(step, 0);
-        this.toDisposeOnActivationCheck.push(Disposable.create(() => window.cancelAnimationFrame(request)));
+        let request = window.setTimeout(step, 0);
+        this.toDisposeOnActivationCheck.push(Disposable.create(() => window.clearTimeout(request)));
     }
 
     /**
