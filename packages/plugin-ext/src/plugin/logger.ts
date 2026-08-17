@@ -54,7 +54,10 @@ export class PluginLogger {
     }
 
     private sendLog(level: LogLevel, message: string, params: any[]): void {
-        this.logger.$log(level, this.name, this.toLog(message), params.map(e => this.toLog(e)));
+        // `console.error` and the unhandled-rejection reporter both route through this logger,
+        // so a rejected `$log` must be swallowed or it would report itself without bound.
+        Promise.resolve(this.logger.$log(level, this.name, this.toLog(message), params.map(e => this.toLog(e))))
+            .catch(() => { });
     }
 
     private toLog(value: any): any {
