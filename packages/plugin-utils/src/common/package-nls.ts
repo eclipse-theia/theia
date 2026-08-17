@@ -47,14 +47,14 @@ export function coerceLocalizations(translations: Record<string, string | Locali
 
 /**
  * Recursively walks `value` and replaces strings matching `%key%` with the result of `resolve(key)`.
- * If `resolve(key)` returns `undefined`, the original string is kept.
+ * If `resolve(key)` returns `undefined` or an empty string, the original `%key%` is kept
+ * (same as the former worker `localize`: `translations[key] || value`).
  */
 export function localizeWithResolver<T>(value: T, resolve: (key: string) => string | undefined): T {
     if (typeof value === 'string') {
         if (value.length > 2 && value.startsWith('%') && value.endsWith('%')) {
-            const key = value.slice(1, -1);
-            const replaced = resolve(key);
-            return (replaced !== undefined ? replaced : value) as T;
+            const replaced = resolve(value.slice(1, -1));
+            return (replaced || value) as T;
         }
         return value;
     }

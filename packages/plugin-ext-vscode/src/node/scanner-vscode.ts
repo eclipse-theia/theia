@@ -20,7 +20,7 @@ import { PluginScanner, PluginEngine, PluginPackage, PluginModel, PluginLifecycl
 import { TheiaPluginScanner } from '@theia/plugin-ext/lib/hosted/node/scanners/scanner-theia';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { VSCodeExtensionUri } from '../common/plugin-vscode-uri';
-import { buildLifecycle, buildModelForVsCode } from '@theia/plugin-utils/lib/plugin-model';
+import { buildLifecycle, buildModelForVsCode } from '@theia/plugin-utils/lib/common/plugin-model';
 
 const uiKind = environment.electron.is() ? UIKind.Desktop : UIKind.Web;
 
@@ -39,7 +39,6 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
             publisher: plugin.publisher ?? PluginIdentifiers.UNPUBLISHED,
             packageUri: this.pluginUriFactory.createUri(plugin).toString(),
         }, { uiKind: uiKind === UIKind.Web ? 'web' : 'desktop' });
-        // Master parity: route through overridable hooks (readme/license/trust).
         result.licenseUrl = this.getLicenseUrl(plugin);
         result.readmeUrl = this.getReadmeUrl(plugin);
         this.applyTrustExtraction(plugin, result);

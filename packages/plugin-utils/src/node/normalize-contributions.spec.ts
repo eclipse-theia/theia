@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { CustomEditorPriority, type GrammarsContribution } from '../contribution-types';
-import { PreferenceScope } from '../protocol-shims';
+import { CustomEditorPriority, type GrammarsContribution } from '../common/contribution-types';
+import { PreferenceScope } from '../common/protocol-shims';
 import {
     deriveDefaultForType,
     extractPluginViewsIds,
@@ -47,8 +47,8 @@ import {
     toSchema,
     transformIconUrl
 } from './normalize-contributions';
-import { createNormalizeCtx, manifest } from '../test-helpers';
-import type { PluginManifest } from '../manifest-types';
+import { createNormalizeCtx, manifest } from '../common/test-helpers';
+import type { PluginManifest } from '../common/manifest-types';
 
 describe('normalize-contributions', () => {
 
@@ -562,6 +562,11 @@ describe('normalize-contributions', () => {
     });
 
     describe('normalizeContributions', () => {
+        it('leaves output empty when the manifest has no contribution kinds', async () => {
+            const contributions = await normalizeContributions(createNormalizeCtx({ name: 'empty' }), {});
+            expect(Object.keys(contributions)).to.deep.equal([]);
+        });
+
         it('normalizes supported contribution kinds via injectable readers', async () => {
             const ctx = createNormalizeCtx({
                 name: 'full',

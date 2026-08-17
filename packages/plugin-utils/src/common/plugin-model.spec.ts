@@ -38,7 +38,7 @@ import {
     pickEngineType,
     toPluginUrl
 } from './plugin-model';
-import { getPluginRootFileUrl } from './node/plugin-model';
+import { getPluginRootFileUrl } from '../node/plugin-model';
 import { manifest } from './test-helpers';
 
 describe('plugin-model', () => {

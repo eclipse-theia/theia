@@ -21,7 +21,7 @@ import { Theme } from '@theia/core/lib/common/theme';
 import { IconUrl } from '../../common/plugin-protocol';
 import { Reference, SyncReferenceCollection } from '@theia/core/lib/common/reference';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
-import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/constants';
+import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
 
 export interface PluginIconKey {
     url: IconUrl;

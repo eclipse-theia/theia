@@ -16,11 +16,11 @@
 
 import * as path from 'path';
 import * as fs from 'fs-extra';
-import { isENOENT } from '../utils';
+import { isENOENT } from '../common/utils';
 import {
     coerceLocalizations,
     type PackageTranslation,
-} from '../package-nls';
+} from '../common/package-nls';
 
 export async function loadPackageTranslations(pluginPath: string, locale?: string): Promise<PackageTranslation> {
     const defaultPath = path.join(pluginPath, 'package.nls.json');

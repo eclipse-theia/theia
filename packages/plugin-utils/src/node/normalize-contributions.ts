@@ -19,7 +19,7 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as jsoncparser from 'jsonc-parser';
-import { deepClone, isColorDefaults, isENOENT, isObject, isStringArray } from '../utils';
+import { deepClone, isColorDefaults, isENOENT, isObject, isStringArray } from '../common/utils';
 import {
     ICON_NAME_SEGMENT,
     type ColorDefinition,
@@ -30,7 +30,7 @@ import {
     type PreferenceSchema,
     PreferenceScope,
     type TaskDefinition,
-} from '../protocol-shims';
+} from '../common/protocol-shims';
 import {
     CustomEditorPriority,
     type AutoClosingPair,
@@ -73,8 +73,8 @@ import {
     type RawViewContainer,
     type RawViewWelcome,
     type ViewsByLocation,
-} from '../contribution-types';
-import { rawContributes, type PluginManifest } from '../manifest-types';
+} from '../common/contribution-types';
+import { rawContributes, type PluginManifest } from '../common/manifest-types';
 
 function isPluginUiTheme(value: unknown): value is PluginUiTheme {
     return value === 'vs' || value === 'vs-dark' || value === 'hc-black';
@@ -163,11 +163,9 @@ export async function normalizeContributions<TContrib extends object>(
     ctx: NormalizeContributionsContext,
     contributions: TContrib
 ): Promise<TContrib> {
+    const output = contributions as TContrib & NormalizedPluginContribution;
     const rawPlugin = ctx.plugin;
     const contributes = rawContributes(rawPlugin);
-    // Mutate through the normalized shape so field writes are type-checked;
-    // callers keep their own TContrib (e.g. plugin-ext PluginContribution with core types).
-    const output: NormalizedPluginContribution = contributions as NormalizedPluginContribution;
     const readConfigurationFn = ctx.readConfiguration ?? readConfiguration;
     const readSubmenusFn = ctx.readSubmenus ?? ((submenus, plugin) => readSubmenus(ctx, submenus, plugin));
     const readCustomEditorsFn = ctx.readCustomEditors ?? readCustomEditors;
@@ -391,7 +389,14 @@ export async function normalizeContributions<TContrib extends object>(
         }
     }
 
-    return contributions;
+    // Drop keys with `undefined`
+    for (const key of Object.keys(output) as (keyof NormalizedPluginContribution)[]) {
+        if (output[key] === undefined) {
+            delete output[key];
+        }
+    }
+
+    return output;
 }
 
 export function readTerminals(pck: PluginManifest): NormalizedTerminalProfile[] | undefined {

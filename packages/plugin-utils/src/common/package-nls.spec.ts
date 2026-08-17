@@ -19,7 +19,7 @@ import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
 import { coerceLocalizations, localizePackage, localizeWithResolver } from './package-nls';
-import { loadPackageTranslations } from './node/package-nls';
+import { loadPackageTranslations } from '../node/package-nls';
 
 describe('package-nls', () => {
 
@@ -52,6 +52,11 @@ describe('package-nls', () => {
                 nested: [{ label: '%nested.key%' }],
                 plain: 'unchanged'
             });
+        });
+
+        it('keeps %key% when resolve returns undefined or an empty string', () => {
+            expect(localizeWithResolver('%missing.key%', () => undefined)).to.equal('%missing.key%');
+            expect(localizeWithResolver('%empty.key%', () => '')).to.equal('%empty.key%');
         });
 
         it('ignores strings that are not %key% placeholders', () => {

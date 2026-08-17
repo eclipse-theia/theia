@@ -130,7 +130,7 @@ export interface PreferenceSchema {
 
 export interface ColorDefinition {
     id: string;
-    defaults?: unknown;
+    defaults?: { light: string; dark: string; hc: string };
     description: string;
 }
 

@@ -62,10 +62,9 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as jsoncparser from 'jsonc-parser';
 import { GrammarsReader } from './grammars-reader';
-import { isENOENT } from '@theia/plugin-utils/lib/utils';
+import { isENOENT } from '@theia/plugin-utils/lib/common/utils';
 import { PluginUriFactory } from './plugin-uri-factory';
 import { ILogger } from '@theia/core';
-import { ColorDefinition } from '@theia/core/lib/common/color';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
@@ -102,14 +101,15 @@ import {
 import type {
     IConfigurationNode,
     NormalizeContributionsContext,
-} from '@theia/plugin-utils/lib/contribution-types';
+} from '@theia/plugin-utils/lib/common/contribution-types';
+import type { ColorDefinition } from '@theia/plugin-utils/lib/common/protocol-shims';
 import {
     applyTrustExtraction as applyTrustExtractionShared,
     buildEntryPointForTheia as buildEntryPointForTheiaShared,
     buildLifecycle,
     buildModelForTheia as buildModelForTheiaShared,
     toPluginUrl as toPluginUrlShared
-} from '@theia/plugin-utils/lib/plugin-model';
+} from '@theia/plugin-utils/lib/common/plugin-model';
 import { getPluginRootFileUrl as getPluginRootFileUrlShared } from '@theia/plugin-utils/lib/node/plugin-model';
 
 /** Async-local contribution ctx — safe for concurrent scans on the singleton scanner. */
@@ -302,7 +302,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
     }
 
     protected readColors(pck: PluginPackage): ColorDefinition[] | undefined {
-        return readColorsShared(this.contributionCtx(pck), pck) as ColorDefinition[] | undefined;
+        return readColorsShared(this.contributionCtx(pck), pck);
     }
 
     protected readThemes(pck: PluginPackage): ThemeContribution[] | undefined {

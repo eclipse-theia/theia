@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { readdirSync } from 'fs';
-import { toPluginUrl, type PluginIdentifierSource } from '../plugin-model';
+import { toPluginUrl, type PluginIdentifierSource } from '../common/plugin-model';
 
 export function getPluginRootFileUrl(manifest: PluginIdentifierSource & { packagePath: string }, names: string[]): string | undefined {
     const nameSet = new Set(names.map(n => n.toLowerCase()));

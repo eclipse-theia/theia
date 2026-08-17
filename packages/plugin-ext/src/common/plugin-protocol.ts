@@ -27,7 +27,7 @@ import { PluginIdentifiers } from './plugin-identifiers';
 import {
     getPluginId,
     toPluginUrl as toPluginUrlFromUtils
-} from '@theia/plugin-utils/lib/plugin-model';
+} from '@theia/plugin-utils/lib/common/plugin-model';
 import {
     PLUGIN_HOST_BACKEND,
     PluginEntryPoint,
@@ -38,7 +38,7 @@ import {
     PluginPackageCapabilities,
     PluginType,
     DeployedPlugin as DeployedPluginBase,
-} from '@theia/plugin-utils/lib/manifest-types';
+} from '@theia/plugin-utils/lib/common/manifest-types';
 import {
     AutoClosingPair,
     AutoClosingPairConditional,
@@ -103,7 +103,7 @@ import {
     type NormalizedTranslation,
     type NormalizedViewContainer,
     type NormalizedViewWelcome,
-} from '@theia/plugin-utils/lib/contribution-types';
+} from '@theia/plugin-utils/lib/common/contribution-types';
 
 export { PluginIdentifiers };
 export { getPluginId };

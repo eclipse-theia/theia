@@ -19,8 +19,8 @@
 import { PluginModel, PluginPackage } from '../../../common/plugin-protocol';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import URI from '@theia/core/lib/common/uri';
-import { localizeWithResolver } from '@theia/plugin-utils/lib/package-nls';
-import { prepareLoadedManifest } from '@theia/plugin-utils/lib/plugin-manifest';
+import { localizeWithResolver } from '@theia/plugin-utils/lib/common/package-nls';
+import { prepareLoadedManifest } from '@theia/plugin-utils/lib/common/plugin-manifest';
 
 function getUri(pluginModel: PluginModel, relativePath: string): URI {
     const ownURI = new Endpoint().getRestUrl();

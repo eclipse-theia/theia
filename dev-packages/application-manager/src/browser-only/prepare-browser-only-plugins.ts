@@ -25,9 +25,9 @@ import {
     PLUGINS_BASE_PATH,
     PLUGIN_COPY_IGNORE,
     UNPUBLISHED,
-} from '@theia/plugin-utils/lib/constants';
-import { stripVscodeBuiltinNamePrefix } from '@theia/plugin-utils/lib/plugin-manifest';
-import { updateActivationEvents } from '@theia/plugin-utils/lib/plugin-activation-events';
+} from '@theia/plugin-utils/lib/common/constants';
+import { stripVscodeBuiltinNamePrefix } from '@theia/plugin-utils/lib/common/plugin-manifest';
+import { updateActivationEvents } from '@theia/plugin-utils/lib/common/plugin-activation-events';
 import {
     applyTrustExtraction,
     buildLifecycle,
@@ -35,16 +35,16 @@ import {
     getPluginId,
     pickEngineType,
     toPluginUrl
-} from '@theia/plugin-utils/lib/plugin-model';
+} from '@theia/plugin-utils/lib/common/plugin-model';
 import { getPluginRootFileUrl } from '@theia/plugin-utils/lib/node/plugin-model';
 import { normalizeContributions } from '@theia/plugin-utils/lib/node/normalize-contributions';
 import { readGrammarFromDisk } from '@theia/plugin-utils/lib/node/read-grammars';
-import { localizePackage } from '@theia/plugin-utils/lib/package-nls';
+import { localizePackage } from '@theia/plugin-utils/lib/common/package-nls';
 import { loadPackageTranslations } from '@theia/plugin-utils/lib/node/package-nls';
-import { deepClone } from '@theia/plugin-utils/lib/utils';
+import { deepClone } from '@theia/plugin-utils/lib/common/utils';
 import type {
     NormalizedPluginContribution,
-} from '@theia/plugin-utils/lib/contribution-types';
+} from '@theia/plugin-utils/lib/common/contribution-types';
 
 import {
     PLUGIN_HOST_BACKEND,
@@ -53,7 +53,7 @@ import {
     type PluginEntryPoint,
     type PluginManifest,
     type PluginModel,
-} from '@theia/plugin-utils/lib/manifest-types';
+} from '@theia/plugin-utils/lib/common/manifest-types';
 
 export async function prepareBrowserOnlyPlugins(applicationPackage: ApplicationPackage): Promise<void> {
     const hostedPluginDir = applicationPackage.lib('frontend', PLUGINS_BASE_PATH);
@@ -67,7 +67,8 @@ export async function prepareBrowserOnlyPlugins(applicationPackage: ApplicationP
     );
 
     const deployedPlugins: DeployedPlugin[] = [];
-    let skippedBackendOnly = 0;
+    const skippedByReason: Partial<Record<NonNullable<ProcessPluginResult['skipReason']>, string[]>> = {};
+    const errored: string[] = [];
 
     if (await fs.pathExists(pluginsDir)) {
         const names = await fs.readdir(pluginsDir);
@@ -75,28 +76,44 @@ export async function prepareBrowserOnlyPlugins(applicationPackage: ApplicationP
             const result = await processPlugin(path.join(pluginsDir, name), hostedPluginDir);
             if (result?.plugin) {
                 deployedPlugins.push(result.plugin);
-            } else if (result?.skipReason === 'backend-only') {
-                skippedBackendOnly += 1;
+            } else if (result?.skipReason) {
+                (skippedByReason[result.skipReason] ??= []).push(result.label ?? name);
+            } else {
+                errored.push(result?.label ?? name);
             }
         }
     }
 
     await fs.writeJson(path.join(hostedPluginDir, LIST_JSON), deployedPlugins);
-    const skipSuffix = skippedBackendOnly > 0 ? ` (skipped ${skippedBackendOnly} backend-only)` : '';
-    console.log(`browser-only: prepared ${deployedPlugins.length} plugins${skipSuffix}`);
+
+    const lines = [`browser-only: prepared ${deployedPlugins.length} plugins`];
+    for (const [reason, labels] of Object.entries(skippedByReason)) {
+        if (labels?.length) {
+            lines.push(`  skipped ${labels.length} ${reason}:`);
+            lines.push(`    ${labels.join(', ')}`);
+        }
+    }
+    if (errored.length > 0) {
+        lines.push(`  ${errored.length} errors:`);
+        lines.push(`    ${errored.join(', ')}`);
+    }
+    console.log(lines.join('\n'));
 }
 
 interface ProcessPluginResult {
     plugin?: DeployedPlugin;
     /** Set when the plugin was intentionally omitted (not a hard error). */
-    skipReason?: 'backend-only' | 'no-browser-surface' | 'no-package';
+    skipReason?: 'backend-only' | 'no-browser-surface' | 'no-package' | 'malformed';
+    /** Plugin id/name or source directory basename */
+    label?: string;
 }
 
 async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): Promise<ProcessPluginResult | undefined> {
+    const dirLabel = path.basename(pluginSourceDir);
     try {
         const packageRoot = resolvePluginRoot(pluginSourceDir);
         if (!packageRoot) {
-            return { skipReason: 'no-package' };
+            return { skipReason: 'no-package', label: dirLabel };
         }
 
         const buildTimePackageRoot = await realpath(packageRoot);
@@ -105,10 +122,13 @@ async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): 
 
         const skipReason = getBrowserOnlySkipReason(rawManifest);
         if (skipReason) {
+            const label = rawManifest.name || dirLabel;
             if (skipReason === 'backend-only') {
-                console.warn(`browser-only: skip '${rawManifest.name}' (backend-only)`);
+                console.warn(`browser-only: skip '${label}' (backend-only)`);
+            } else if (skipReason === 'malformed') {
+                console.warn(`browser-only: skip '${dirLabel}' (malformed manifest: missing name)`);
             }
-            return { skipReason };
+            return { skipReason, label };
         }
 
         let normalized = deepClone(rawManifest);
@@ -162,7 +182,7 @@ async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): 
         };
     } catch (err) {
         console.warn(`browser-only: skip plugin at ${pluginSourceDir}`, err);
-        return undefined;
+        return { label: dirLabel };
     }
 }
 
@@ -203,9 +223,9 @@ function hasBackendEntry(manifest: PluginManifest): boolean {
 /** `undefined` = include; backend-only even with contributes is excluded. */
 export function getBrowserOnlySkipReason(
     manifest: PluginManifest
-): 'backend-only' | 'no-browser-surface' | undefined {
+): 'backend-only' | 'no-browser-surface' | 'malformed' | undefined {
     if (!manifest.name) {
-        return 'no-browser-surface';
+        return 'malformed';
     }
     if (hasFrontendEntry(manifest)) {
         return undefined;
@@ -318,16 +338,6 @@ function resolveHostedEntryPoint(entryPoint: PluginEntryPoint, pluginRoot: strin
 function rewriteModelPathsForHostedStatic(model: PluginModel, buildTimePackageRoot: string, pluginId: string): void {
     model.packageUri = toHostedPluginUri(model.packageUri, buildTimePackageRoot, pluginId);
     model.packagePath = model.packageUri;
-
-    if (model.licenseUrl) {
-        model.licenseUrl = toHostedPluginUri(model.licenseUrl, buildTimePackageRoot, pluginId);
-    }
-    if (model.iconUrl) {
-        model.iconUrl = toHostedPluginUri(model.iconUrl, buildTimePackageRoot, pluginId);
-    }
-    if (model.readmeUrl) {
-        model.readmeUrl = toHostedPluginUri(model.readmeUrl, buildTimePackageRoot, pluginId);
-    }
 }
 
 export function resolvePluginEntryFileSync(absolutePath: string): string | undefined {

@@ -21,7 +21,7 @@ import { URI } from '@theia/core/shared/vscode-uri';
 import { MonacoIconRegistry } from '@theia/monaco/lib/browser/monaco-icon-registry';
 import * as path from 'path';
 import { IconContribution, DeployedPlugin, IconDefinition } from '../../common/plugin-protocol';
-import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/constants';
+import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
 
 @injectable()
 export class PluginIconService implements Disposable {

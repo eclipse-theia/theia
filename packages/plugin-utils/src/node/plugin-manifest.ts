@@ -16,8 +16,8 @@
 
 import * as path from 'path';
 import * as fs from 'fs-extra';
-import type { PluginManifest } from '../manifest-types';
-import { prepareLoadedManifest, type PrepareLoadedManifestOptions } from '../plugin-manifest';
+import type { PluginManifest } from '../common/manifest-types';
+import { prepareLoadedManifest, type PrepareLoadedManifestOptions } from '../common/plugin-manifest';
 
 type LoadedManifest = Pick<PluginManifest, 'name' | 'publisher' | 'contributes' | 'activationEvents'>;
 

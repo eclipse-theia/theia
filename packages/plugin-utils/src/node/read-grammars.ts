@@ -16,14 +16,14 @@
 
 import * as path from 'path';
 import * as fs from 'fs-extra';
-import { isObject } from '../utils';
+import { isObject } from '../common/utils';
 import type {
     GrammarsContribution,
     NormalizeContributionsContext,
     PluginPackageGrammarsContribution,
-} from '../contribution-types';
+} from '../common/contribution-types';
 
-export type { GrammarsContribution } from '../contribution-types';
+export type { GrammarsContribution } from '../common/contribution-types';
 
 /**
  * Returns a validation error message, or `undefined` if the contribution is valid.

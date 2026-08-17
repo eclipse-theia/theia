@@ -24,7 +24,7 @@ import { BackendApplicationContribution } from '@theia/core/lib/node/backend-app
 import { PluginMetadata, getPluginId, MetadataProcessor, PluginPackage, PluginContribution } from '../../common/plugin-protocol';
 import { MetadataScanner } from './metadata-scanner';
 import { loadManifest } from '@theia/plugin-utils/lib/node/plugin-manifest';
-import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/constants';
+import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
 
 @injectable()
 export class HostedPluginReader implements BackendApplicationContribution {

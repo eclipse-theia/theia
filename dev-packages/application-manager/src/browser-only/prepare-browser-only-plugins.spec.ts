@@ -19,13 +19,14 @@ import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
 import { pathToFileURL } from 'url';
-import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/constants';
-import type { PluginManifest } from '@theia/plugin-utils/lib/manifest-types';
+import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
+import type { PluginManifest } from '@theia/plugin-utils/lib/common/manifest-types';
 import {
     resolvePluginEntryFileSync,
     resolvePluginRoot,
     shouldCopyPluginPath,
     shouldIncludePluginInBrowserOnlyBuild,
+    getBrowserOnlySkipReason,
     toHostedPluginUri,
 } from './prepare-browser-only-plugins';
 
@@ -83,10 +84,12 @@ describe('prepare-browser-only-plugins helpers', () => {
             expect(shouldIncludePluginInBrowserOnlyBuild({
                 name: '', version: '1', packagePath: '', browser: 'x.js',
             })).to.equal(false);
+            expect(getBrowserOnlySkipReason({
+                name: '', version: '1', packagePath: '', browser: 'x.js',
+            })).to.equal('malformed');
             expect(shouldIncludePluginInBrowserOnlyBuild({
                 name: 'be', version: '1', packagePath: '', theiaPlugin: { backend: 'lib/node.js' },
             })).to.equal(false);
-            // sdirix: main without browser must be filtered even when contributes exist (e.g. git, eslint).
             expect(shouldIncludePluginInBrowserOnlyBuild({
                 name: 'git', version: '1', packagePath: '', main: './out/main.js',
                 contributes: { commands: [{ command: 'git.status', title: 'Status' }] },
@@ -94,6 +97,9 @@ describe('prepare-browser-only-plugins helpers', () => {
             expect(shouldIncludePluginInBrowserOnlyBuild({
                 name: 'empty', version: '1', packagePath: '', contributes: {},
             } as PluginManifest)).to.equal(false);
+            expect(getBrowserOnlySkipReason({
+                name: 'empty', version: '1', packagePath: '', contributes: {},
+            } as PluginManifest)).to.equal('no-browser-surface');
         });
     });
 
