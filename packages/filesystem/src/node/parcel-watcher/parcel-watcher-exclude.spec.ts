@@ -21,7 +21,7 @@ import * as fs from '@theia/core/shared/fs-extra';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
 import { Options } from '@theia/core/shared/@parcel/watcher';
-import { FileSystemWatcherServiceImpl } from './parcel-filesystem-service';
+import { FileSystemWatcherServiceImpl } from '../filesystem-watcher-service-impl';
 
 // We require the *same* module object that the production code imports from, so that
 // stubbing its `subscribe` export is observed by `ParcelWatcher`. The `@theia/core/shared`
@@ -36,7 +36,7 @@ const track = temp.track();
  * Reproduces the `files.watcherExclude` / exclude leak:
  *
  * Excludes flow `files.watcherExclude` -> `WatchOptions.excludes`
- * -> `disk-file-system-provider` (`{ ignored }`) -> `ParcelWatcherOptions.ignored`.
+ * -> `disk-file-system-provider` (`{ ignored }`) -> `ParcelWatcherExcludes.ignored`.
  * However `ParcelWatcher.createWatcher()` only uses `ignored` to *filter events after they
  * arrive* (`isIgnored`/`pushFileChange`). It never passes them to the native `@parcel/watcher`
  * `subscribe(..., { ignore })` option, so excluded directories are STILL crawled and given

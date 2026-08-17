@@ -21,7 +21,7 @@ import * as fs from '@theia/core/shared/fs-extra';
 import * as assert from 'assert';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
-import { FileSystemWatcherServiceImpl } from './parcel-filesystem-service';
+import { FileSystemWatcherServiceImpl } from '../filesystem-watcher-service-impl';
 import { DidFilesChangedParams, FileChange, FileChangeType } from '../../common/filesystem-watcher-protocol';
 
 const expect = chai.expect;
