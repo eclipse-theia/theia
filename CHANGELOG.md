@@ -6,6 +6,8 @@
 
 ## 1.78.0 - tbd
 
+- [plugin-ext] fixed a disposed plugin host RPC protocol continuing to answer requests after a reconnect, which made every main-side call from the plugin host fail and, through the plugin host logger, multiplied one failed log into thousands per second [#17925](https://github.com/eclipse-theia/theia/pull/17925)
+
 <a name="breaking_changes_1.78.0">[Breaking Changes:](#breaking_changes_1.78.0)</a>
 
 - [ai-chatgpt] split backend authentication into Codex and OSS modes with one signed-in account across both modes. Changing accounts requires signing out and back in; changing modes signs out. `ChatGptAuthServiceConfig` now configures OSS and requires `agentName`; move custom Codex `clientId` and callback overrides to `ChatGptCodexAuthServiceConfig`. Legacy OAuth constants and helpers moved from `chatgpt-oauth` to `chatgpt-codex-oauth`. Custom auth implementations must support login-ID-bound operations and backend mode selection; `ChatGptModel` takes mode-specific Responses utilities and passes credentials to its `initializeOpenAi` hook. See the [migration notes](https://github.com/eclipse-theia/theia/blob/master/doc/Migration.md#chatgpt-authentication-modes-18156) [#18156](https://github.com/eclipse-theia/theia/pull/18156)

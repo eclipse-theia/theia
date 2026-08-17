@@ -388,6 +388,11 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
         return rpc;
     }
 
+    /**
+     * Creates the protocol for a backend plugin host. Disposing it also disposes the watcher
+     * subscription and closes the channel, which the watcher would otherwise keep feeding after
+     * a reconnect, since it reuses `pluginHostId` for the next connection.
+     */
     protected createServerRpc(pluginHostId: string): RPCProtocol {
 
         const channel = new BasicChannel(() => {
@@ -401,13 +406,26 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
         // Create RPC protocol before adding the listener to the watcher to receive the watcher's cached messages after the rpc protocol was created.
         const rpc = new RPCProtocolImpl(channel);
 
-        this.watcher.onPostMessageEvent(received => {
-            if (pluginHostId === received.pluginHostId) {
-                channel.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(received.message));
-            }
-        });
+        const toDispose = new DisposableCollection(
+            this.watcher.onPostMessageEvent(received => {
+                if (pluginHostId === received.pluginHostId) {
+                    channel.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(received.message));
+                }
+            }),
+            Disposable.create(() => {
+                // `Channel.close()` emits no close event; fire it explicitly so that the protocol
+                // rejects the requests still in flight.
+                channel.onCloseEmitter.fire({ reason: 'The plugin host connection was closed.' });
+                channel.close();
+            }),
+            rpc
+        );
 
-        return rpc;
+        return {
+            getProxy: proxyId => rpc.getProxy(proxyId),
+            set: (identifier, instance) => rpc.set(identifier, instance),
+            dispose: () => toDispose.dispose()
+        };
     }
 
     protected async updateStoragePath(): Promise<void> {
