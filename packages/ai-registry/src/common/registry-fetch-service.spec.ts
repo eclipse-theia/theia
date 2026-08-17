@@ -24,19 +24,41 @@ import { RegistryFetchService, RegistryFetchServiceImpl } from './registry-fetch
 
 class FakeRequestService implements RequestService {
     public lastUrl: string | undefined;
+    public lastTimeout: number | undefined;
     public callCount = 0;
+    /** When set, every request rejects with this error instead of responding. */
+    public failWith: Error | undefined;
+    /** When `true`, every request stays pending forever, mimicking a network that drops packets. */
+    public hang = false;
     constructor(private readonly responseBody: string, private readonly statusCode = 200) { }
     async configure(): Promise<void> { /* no-op */ }
     async resolveProxy(): Promise<string | undefined> { return undefined; }
     async request(options: RequestOptions): Promise<RequestContext> {
         this.lastUrl = options.url;
+        this.lastTimeout = options.timeout;
         this.callCount += 1;
+        if (this.hang) {
+            return new Promise<RequestContext>(() => { /* never settles */ });
+        }
+        if (this.failWith) {
+            throw this.failWith;
+        }
         return {
             url: options.url,
             res: { headers: {}, statusCode: this.statusCode },
             buffer: new TextEncoder().encode(this.responseBody)
         };
     }
+}
+
+/** Exposes the timing knobs so the tests don't have to wait out the production values. */
+class TestRegistryFetchService extends RegistryFetchServiceImpl {
+    public timeout = 10;
+    public delay = 1000;
+    public currentTime = 0;
+    protected override get fetchTimeout(): number { return this.timeout; }
+    protected override get retryDelay(): number { return this.delay; }
+    protected override now(): number { return this.currentTime; }
 }
 
 class FakeConfiguration extends AIRegistryConfiguration {
@@ -172,6 +194,82 @@ describe('RegistryFetchService', () => {
         await service.getEntries(true);
 
         expect(request.callCount).to.equal(2);
+    });
+
+    function buildTestService(requestService: RequestService): TestRegistryFetchService {
+        const container = buildContainer(requestService, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/'));
+        container.rebind(RegistryFetchServiceImpl).to(TestRegistryFetchService).inSingletonScope();
+        return container.get(RegistryFetchServiceImpl) as TestRegistryFetchService;
+    }
+
+    async function expectRejection(promise: Promise<unknown>): Promise<Error> {
+        try {
+            await promise;
+        } catch (error) {
+            return error as Error;
+        }
+        throw new Error('Expected the fetch to be rejected.');
+    }
+
+    it('issues a single request for callers that ask concurrently', async () => {
+        const request = new FakeRequestService(payload());
+        const service = buildTestService(request);
+
+        // The Extensions view resolves its sections in parallel, and the auto-update check adds
+        // another caller, so the requests overlap in practice.
+        await Promise.all([service.getEntries(), service.getSkillEntries(), service.getEntries()]);
+
+        expect(request.callCount).to.equal(1);
+    });
+
+    it('gives up on a request that never settles', async () => {
+        const request = new FakeRequestService(payload());
+        request.hang = true;
+        const service = buildTestService(request);
+
+        const error = await expectRejection(service.getEntries());
+
+        expect(error.message).to.match(/Timed out fetching the AI registry/);
+        expect(request.lastTimeout).to.equal(service.timeout);
+    });
+
+    it('backs off instead of re-attempting a failed fetch on every call', async () => {
+        const request = new FakeRequestService(payload());
+        request.failWith = new Error('getaddrinfo ENOTFOUND example.test');
+        const service = buildTestService(request);
+
+        await expectRejection(service.getEntries());
+        const second = await expectRejection(service.getSkillEntries());
+
+        expect(request.callCount).to.equal(1);
+        expect(second.message).to.match(/ENOTFOUND/);
+    });
+
+    it('attempts the network again once the backoff window has passed', async () => {
+        const request = new FakeRequestService(payload());
+        request.failWith = new Error('offline');
+        const service = buildTestService(request);
+
+        await expectRejection(service.getEntries());
+        service.currentTime += service.delay;
+        request.failWith = undefined;
+        const entries = await service.getEntries();
+
+        expect(request.callCount).to.equal(2);
+        expect(entries).to.have.length(1);
+    });
+
+    it('ignores the backoff window on an explicit refresh', async () => {
+        const request = new FakeRequestService(payload());
+        request.failWith = new Error('offline');
+        const service = buildTestService(request);
+
+        await expectRejection(service.getEntries());
+        request.failWith = undefined;
+        const entries = await service.getEntries(true);
+
+        expect(request.callCount).to.equal(2);
+        expect(entries).to.have.length(1);
     });
 
     it('throws a descriptive error when the server returns a non-success status', async () => {

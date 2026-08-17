@@ -10,6 +10,7 @@
 - [core, monaco] fixed Monaco theme CSS, `SelectComponent` dropdown placement, and the OS font class in secondary windows [#17874](https://github.com/eclipse-theia/theia/pull/17874)
 - [scm] aligned the history graph with VS Code: ref-role lane and badge colors, a current-commit indicator, and a commit hover rendered from the content the history provider supplies [#17880](https://github.com/eclipse-theia/theia/pull/17880)
 - [scm-extra] deprecated `@theia/scm-extra` package [#17882](https://github.com/eclipse-theia/theia/pull/17882)
+- [vsx-registry] fixed missing counter badges in the Extensions view when no contribution changes after a section is created, for example when the application is started offline [#17887](https://github.com/eclipse-theia/theia/pull/17887)
 
 <a name="breaking_changes_1.75.0">[Breaking Changes:](#breaking_changes_1.75.0)</a>
 
@@ -19,6 +20,7 @@
 - [preferences] removed the `protected scopeTracker` field from `PreferencesContribution`, so the Settings widget is no longer constructed on startup. Adopters should read the scope via the new `protected currentScope` getter [#17877](https://github.com/eclipse-theia/theia/pull/17877)
 - [scm] widened `ScmHistoryItem.tooltip` from `string` to `string | MarkdownString | readonly MarkdownString[]`, so that hovers supplied by a history provider keep their `isTrusted` command allow-list and their multi-section form; adopters reading the field as a string must narrow it [#17880](https://github.com/eclipse-theia/theia/pull/17880)
 - [scm-extra] deprecated the `@theia/scm-extra` extension and stopped publishing it on npm; it has also been removed from the example applications, which drops its `SCM History` view, the `History` context menu items in the navigator and editor, and the `alt+h` keybinding. The view has been non-functional in the default application since the removal of `@theia/git`, as nothing implements `ScmHistorySupport` anymore. Please use the SCM history graph in `@theia/scm` for branch history and the Timeline view in `@theia/timeline` for per-file history instead [#17882](https://github.com/eclipse-theia/theia/pull/17882)
+- [vsx-registry] `VSXExtensionsWidget.resolveCount()` is now synchronous (`number | undefined` instead of `Promise<number | undefined>`) and counts the resolved tree nodes instead of re-resolving the source's elements; adopters overriding it must adapt the signature [#17887](https://github.com/eclipse-theia/theia/pull/17887)
 
 ## 1.74.0 - 7/31/2026
 
