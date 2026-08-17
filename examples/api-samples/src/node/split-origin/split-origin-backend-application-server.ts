@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 TypeFox and others.
+// Copyright (C) 2026 Maksim Kachurin and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,14 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { TextReplacementContribution } from '@theia/core/lib/browser/preload/text-replacement-contribution';
-import { TextSampleReplacementContribution } from './preload/text-replacement-sample';
-import { installSplitOriginFrontend } from './split-origin/install-split-origin-frontend';
+import { injectable } from '@theia/core/shared/inversify';
+import { BackendApplicationServer } from '@theia/core/lib/node';
+import { Application } from '@theia/core/shared/express';
 
-// Must run at module evaluation, before Socket.IO opens
-installSplitOriginFrontend();
-
-export default new ContainerModule(bind => {
-    bind(TextReplacementContribution).to(TextSampleReplacementContribution).inSingletonScope();
-});
+/**
+ * Replaces the generated `express.static(lib/frontend)` binding so Node does
+ * not serve the SPA. Do not register a catch-all `GET *` — that would steal
+ * `/files`, `/hostedPlugin`, and other backend routes.
+ */
+@injectable()
+export class SplitOriginBackendApplicationServer implements BackendApplicationServer {
+    configure(_app: Application): void {
+        // Intentionally empty.
+    }
+}

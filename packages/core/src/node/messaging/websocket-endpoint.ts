@@ -16,13 +16,14 @@
 import { MessagingService } from './messaging-service';
 import * as http from 'http';
 import * as https from 'https';
-import { inject, injectable, named } from 'inversify';
+import { inject, injectable, named, optional } from 'inversify';
 import { Server, Socket } from 'socket.io';
 import { WsRequestValidator } from '../ws-request-validators';
 import { MessagingListener } from './messaging-listeners';
 import { ConnectionHandlers } from './default-messaging-service';
 import { BackendApplicationContribution } from '../backend-application';
 import { ILogger } from '../../common/logger';
+import { BackendApplicationHosts } from '../hosting/backend-application-hosts';
 
 @injectable()
 export class WebsocketEndpoint implements BackendApplicationContribution {
@@ -35,6 +36,9 @@ export class WebsocketEndpoint implements BackendApplicationContribution {
     @inject(ILogger) @named('core:WebsocketEndpoint')
     protected readonly logger: ILogger;
 
+    @inject(BackendApplicationHosts) @optional()
+    protected readonly backendApplicationHosts?: BackendApplicationHosts;
+
     protected checkAliveTimeout = 30000; // 30 seconds
     protected maxHttpBufferSize = 1e8; // 100 MB
 
@@ -45,7 +49,26 @@ export class WebsocketEndpoint implements BackendApplicationContribution {
     }
 
     onStart(server: http.Server | https.Server): void {
-        const socketServer = new Server(server, {
+        const socketServer = new Server(server, this.createSocketIoOptions());
+        // Accept every namespace by using /.*/
+        socketServer.of(/.*/).on('connection', async socket => {
+            if (await this.allowConnect(socket.request)) {
+                await this.handleConnection(socket);
+                this.messagingListener.onDidWebSocketUpgrade(socket.request, socket);
+            } else {
+                socket.disconnect(true);
+            }
+        });
+    }
+
+    /**
+     * Options passed to the Socket.IO server.
+     *
+     * When {@link BackendApplicationHosts} has known hosts (`THEIA_HOSTS`),
+     * CORS is limited to that list with credentials enabled
+     */
+    protected createSocketIoOptions(): ConstructorParameters<typeof Server>[1] {
+        const options: NonNullable<ConstructorParameters<typeof Server>[1]> = {
             pingInterval: this.checkAliveTimeout,
             pingTimeout: this.checkAliveTimeout * 2,
             maxHttpBufferSize: this.maxHttpBufferSize,
@@ -60,16 +83,28 @@ export class WebsocketEndpoint implements BackendApplicationContribution {
                     }
                 );
             }
-        });
-        // Accept every namespace by using /.*/
-        socketServer.of(/.*/).on('connection', async socket => {
-            if (await this.allowConnect(socket.request)) {
-                await this.handleConnection(socket);
-                this.messagingListener.onDidWebSocketUpgrade(socket.request, socket);
-            } else {
-                socket.disconnect(true);
-            }
-        });
+        };
+
+        const backendApplicationHosts = this.backendApplicationHosts;
+        if (backendApplicationHosts?.hasKnownHosts()) {
+            // eslint-disable-next-line no-null/no-null
+            const noError = null;
+            options.cors = {
+                origin: (origin, callback) => {
+                    if (!origin) {
+                        callback(noError, true);
+                        return;
+                    }
+                    try {
+                        callback(noError, backendApplicationHosts.hosts.has(new URL(origin).host));
+                    } catch {
+                        callback(noError, false);
+                    }
+                },
+                credentials: true
+            };
+        }
+        return options;
     }
 
     /**

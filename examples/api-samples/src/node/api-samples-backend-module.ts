@@ -29,6 +29,7 @@ import { SampleBackendPreferencesService, sampleBackendPreferencesServicePath } 
 import { SampleBackendPreferencesBackendServiceImpl } from './sample-backend-preferences-service';
 import { TelemetrySink } from '@theia/telemetry/lib/node';
 import { ConsoleTelemetrySink } from './telemetry-sample/console-telemetry-sink';
+import { bindSplitOriginBackend } from './split-origin/bind-split-origin';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(SampleBackendPreferencesBackendServiceImpl).toSelf().inSingletonScope();
@@ -49,4 +50,5 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     if (process.env.SAMPLE_BACKEND_APPLICATION_SERVER) {
         bind(BackendApplicationServer).to(SampleBackendApplicationServer).inSingletonScope();
     }
+    bindSplitOriginBackend(bind, rebind, isBound);
 });

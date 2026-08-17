@@ -74,6 +74,9 @@ export class ExternalUriService {
      * @returns The remote host (where the backend is running).
      */
     protected getRemoteHost(): string {
-        return environment.electron.is() ? 'localhost' : window.location.hostname;
+        if (environment.electron.is()) {
+            return 'localhost';
+        }
+        return new Endpoint().host.replace(/:\d+$/, '');
     }
 }

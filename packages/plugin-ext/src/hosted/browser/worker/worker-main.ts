@@ -16,6 +16,7 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import 'reflect-metadata';
 import { Container } from '@theia/core/shared/inversify';
+import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import * as theia from '@theia/plugin';
 import { emptyPlugin, MAIN_RPC_CONTEXT, Plugin } from '../../../common/plugin-api-rpc';
 import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution';
@@ -30,7 +31,7 @@ import { KeyValueStorageProxy } from '../../../plugin/plugin-storage';
 import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry';
 import { WebviewsExtImpl } from '../../../plugin/webviews';
 import { WorkspaceExtImpl } from '../../../plugin/workspace';
-import { loadManifest } from './plugin-manifest-loader';
+import { loadManifest, hostedPluginRoot } from './plugin-manifest-loader';
 import { EnvExtImpl } from '../../../plugin/env';
 import { DebugExtImpl } from '../../../plugin/debug/debug-ext';
 import { LocalizationExtImpl } from '../../../plugin/localization-ext';
@@ -43,6 +44,11 @@ const pluginsApiImpl = new Map<string, typeof theia>();
 const pluginsModulesNames = new Map<string, Plugin>();
 
 const scripts = new Set<string>();
+
+const backend = new URLSearchParams(self.location.search).get('backend');
+if (backend) {
+    Endpoint.backend = backend;
+}
 
 function initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
     const path = './context/' + contextPath;
@@ -70,7 +76,7 @@ pluginManager.setPluginHost({
                         ctx.frontendModuleName = plugin.lifecycle.frontendModuleName;
                     }
 
-                    ctx.importScripts('./hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
+                    ctx.importScripts(hostedPluginRoot().resolve('hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath).toString());
                 }
             }
 

@@ -14,6 +14,7 @@
     "@theia/core": "1.74.0",
     "@theia/file-search": "1.74.0",
     "@theia/filesystem": "1.74.0",
+    "@theia/mini-browser": "1.74.0",
     "@theia/monaco": "1.74.0",
     "@theia/monaco-editor-core": "1.108.201",
     "@theia/output": "1.74.0",
@@ -24,11 +25,14 @@
     "@theia/toolbar": "1.74.0",
     "@theia/vsx-registry": "1.74.0",
     "@theia/workspace": "1.74.0",
+    "socket.io-client": "^4.8.3",
     "zod": "^4.4.3"
   },
   "theiaExtensions": [
     {
       "frontend": "lib/browser/api-samples-frontend-module",
+      "frontendPreload": "lib/browser/api-samples-preload-module",
+      "secondaryWindow": "lib/browser/api-samples-preload-module",
       "backend": "lib/node/api-samples-backend-module"
     },
     {
@@ -37,9 +41,6 @@
     },
     {
       "frontendOnly": "lib/browser-only/api-samples-frontend-only-module"
-    },
-    {
-      "frontendPreload": "lib/browser/api-samples-preload-module"
     }
   ],
   "keywords": [
@@ -59,6 +60,7 @@
     "src"
   ],
   "scripts": {
+    "start:split": "node split-origin/start.cjs",
     "lint": "theiaext lint",
     "build": "theiaext build",
     "watch": "theiaext watch",

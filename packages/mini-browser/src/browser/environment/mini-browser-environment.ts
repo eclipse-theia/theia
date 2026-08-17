@@ -82,6 +82,6 @@ export class MiniBrowserEnvironment implements FrontendApplicationContribution {
     }
 
     protected getDefaultHostname(): string {
-        return self.location.host;
+        return new Endpoint().host;
     }
 }
