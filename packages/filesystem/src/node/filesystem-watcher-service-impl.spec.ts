@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH.
+// Copyright (C) 2026 Ehab Younes and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,19 +15,53 @@
 // *****************************************************************************
 
 import * as assert from 'assert';
+import { wait } from '@theia/core/lib/common/promise-util';
 import * as temp from 'temp';
 import * as fs from '@theia/core/shared/fs-extra';
 import { isWindows } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
-import { NodeDirectoryWatcher } from '../nodejs-watcher/node-directory-watcher';
-import { NO_LOGGING, TempDir, WATCHER_TIMINGS as TIMINGS } from '../test/watcher-test-helper';
-import { FileSystemWatcherServiceImpl, ParcelFileSystemWatcherService, ParcelWatcher, ParcelWatcherOptions, WatcherInstance } from './parcel-filesystem-service';
-import { WatchOptions } from '../../common/filesystem-watcher-protocol';
+import { DirectoryWatcherProvider, NodeDirectoryWatcher } from './nodejs-watcher/node-directory-watcher';
+import { NO_LOGGING, TempDir, WATCHER_TIMINGS as TIMINGS } from './test/watcher-test-helper';
+import { FileSystemWatcher, WatcherProvider } from './filesystem-watcher';
+import {
+    FileSystemWatcherServiceImpl, ParcelFileSystemWatcherServerOptions, ParcelFileSystemWatcherService, ParcelWatcher, RecursiveWatcherProvider
+} from './parcel-watcher/parcel-filesystem-service';
+import { WatchOptions } from '../common/filesystem-watcher-protocol';
 
 const track = temp.track();
 
-const RECURSIVE: WatchOptions = { ignored: [], recursive: true };
-const NON_RECURSIVE: WatchOptions = { ignored: [], recursive: false };
+const RECURSIVE: Readonly<WatchOptions> = { ignored: [], recursive: true };
+const NON_RECURSIVE: Readonly<WatchOptions> = { ignored: [], recursive: false };
+
+/** Exposes what a provider allocated and who serves what, so a test can tell sharing from double-allocation. */
+interface TestProvider extends WatcherProvider {
+    readonly allocated: readonly FileSystemWatcher[];
+    watcherOf(watcherId: number): FileSystemWatcher | undefined;
+}
+
+class TestDirectoryProvider extends DirectoryWatcherProvider implements TestProvider {
+    get allocated(): readonly FileSystemWatcher[] {
+        return this.activeWatchers;
+    }
+
+    watcherOf(watcherId: number): FileSystemWatcher | undefined {
+        return this.watcherFor(watcherId);
+    }
+}
+
+class TestRecursiveProvider extends RecursiveWatcherProvider implements TestProvider {
+    get allocated(): readonly FileSystemWatcher[] {
+        return this.activeWatchers;
+    }
+
+    watcherOf(watcherId: number): FileSystemWatcher | undefined {
+        return this.watcherFor(watcherId);
+    }
+}
+
+function isTestProvider(provider: WatcherProvider): provider is TestProvider {
+    return provider instanceof TestDirectoryProvider || provider instanceof TestRecursiveProvider;
+}
 
 /** A temporary directory and a watcher service on it, one per test. */
 class Sandbox extends FileSystemWatcherServiceImpl {
@@ -50,13 +84,18 @@ class Sandbox extends FileSystemWatcherServiceImpl {
             .then(watcherId => (this.requested.push(watcherId), watcherId));
     }
 
-    /** The watchers currently allocated, one per distinct key. */
-    get allocated(): WatcherInstance[] {
-        return Array.from(this.watchers.values());
+    /** The watchers currently allocated, one per distinct key, across both providers. */
+    get allocated(): readonly FileSystemWatcher[] {
+        return this.testProviders.flatMap(provider => provider.allocated);
     }
 
-    watcherOf(watcherId: number): WatcherInstance | undefined {
-        return this.watcherHandles.get(watcherId)?.watcher;
+    protected get testProviders(): TestProvider[] {
+        return this.providers.filter(isTestProvider);
+    }
+
+    /** The watcher serving a request, asked of whichever provider holds it. */
+    watcherOf(watcherId: number): FileSystemWatcher | undefined {
+        return this.testProviders.map(provider => provider.watcherOf(watcherId)).find(Boolean);
     }
 
     async release(): Promise<void> {
@@ -66,13 +105,11 @@ class Sandbox extends FileSystemWatcherServiceImpl {
         await Promise.all(allocated.map(watcher => watcher.whenDisposed));
     }
 
-    protected override createDirectoryWatcher(directory: string): NodeDirectoryWatcher {
-        return new NodeDirectoryWatcher(directory, this.options, this.maybeClient, TIMINGS);
-    }
-
-    protected override createWatcher(clientId: number, fsPath: string, options: WatchOptions): ParcelWatcher {
-        const watcherOptions: ParcelWatcherOptions = { ignored: this.compileExcludes(options.ignored), ignorePatterns: options.ignored };
-        return new ParcelWatcher(clientId, fsPath, watcherOptions, this.options, this.maybeClient, TIMINGS.deferredDisposalTimeout);
+    protected override createProviders(options: ParcelFileSystemWatcherServerOptions): WatcherProvider[] {
+        return [
+            new TestRecursiveProvider(options, this.maybeClient, TIMINGS.deferredDisposalTimeout),
+            new TestDirectoryProvider(options, this.maybeClient, TIMINGS)
+        ];
     }
 }
 
@@ -214,7 +251,7 @@ describe('filesystem-watcher-service', function (): void {
             const watcher = box.watcherOf(first) as NodeDirectoryWatcher;
 
             await box.unwatchFileChanges(first);
-            await new Promise(resolve => setTimeout(resolve, TIMINGS.deferredDisposalTimeout * 2));
+            await wait(TIMINGS.deferredDisposalTimeout * 2);
             assert.strictEqual(watcher.isDisposed, false, 'the remaining request must keep the watcher alive');
 
             await box.unwatchFileChanges(second);
