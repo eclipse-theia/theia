@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH.
+// Copyright (C) 2026 Ehab Younes and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,45 +15,37 @@
 // *****************************************************************************
 
 import * as path from 'path';
-import { FSWatcher, promises as fsp, watch } from 'fs';
-import { Minimatch } from 'minimatch';
-import { isOSX, isWindows } from '@theia/core';
-import { FileUri } from '@theia/core/lib/common/file-uri';
-import { Deferred, timeout } from '@theia/core/lib/common/promise-util';
+import { timeout } from '@theia/core/lib/common/promise-util';
+import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
+import { DirectoryIdentity, WatcherHost } from './watcher-host';
 import { FileChangeType, FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol';
-import { FileChangeCollection } from '../file-change-collection';
+import { AbstractFileSystemWatcher, AbstractWatcherProvider, ResolvedWatchOptions, WatcherLogger, WatchRequest } from '../filesystem-watcher';
+import { DirectoryWatchRequest, ResolvedChange, WatchRequestRouter } from './watch-request-router';
+import throttle = require('@theia/core/shared/lodash.throttle');
 
-export interface NodeDirectoryWatcherOptions {
-    verbose: boolean;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    info: (message: string, ...args: any[]) => void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    error: (message: string, ...args: any[]) => void;
-}
-
-/** A single client request served by a {@link NodeDirectoryWatcher}. */
-export interface NodeWatchRequest {
-    /** Client to route the changes of this request to. */
-    clientId: number;
-    /** Path as requested by the client. Change URIs are built from it, never from the real path. */
-    path: string;
-    /** The single file this request wants, or `undefined` for the whole directory. */
-    fileName?: string;
-    /** Exclude patterns of this request alone. */
-    ignored: Minimatch[];
-}
-
-export type WatchEventListener = (eventType: string, fileName: string | null) => void;
+/** How far the poll interval stretches while a handle refuses to open. */
+const MAX_OPEN_BACKOFF = 10;
 
 export interface NodeDirectoryWatcherTimings {
     /** Aggregation window before raw events are resolved against the file system. */
-    changeDelay: number;
+    readonly changeDelay: number;
     /** Grace period before a deletion is confirmed, so an atomic save is not reported as one. */
-    deleteDelay: number;
+    readonly deleteDelay: number;
     /** Poll interval for a path that does not exist yet. */
-    existencePollDelay: number;
+    readonly existencePollDelay: number;
     /** How long an unreferenced watcher is kept, so a reconnecting frontend can reuse it. */
-    deferredDisposalTimeout: number;
+    readonly deferredDisposalTimeout: number;
+}
+
+export namespace NodeDirectoryWatcherTimings {
+    /** Every delay drives a `setTimeout`, where anything below 1ms silently becomes 1ms. */
+    export function validate(timings: NodeDirectoryWatcherTimings): void {
+        for (const [name, value] of Object.entries(timings)) {
+            if (!Number.isFinite(value) || value <= 0) {
+                throw new Error(`Watcher timing "${name}" must be a positive number, was ${value}`);
+            }
+        }
+    }
 }
 
 export const DEFAULT_WATCHER_TIMINGS: NodeDirectoryWatcherTimings = {
@@ -62,18 +54,6 @@ export const DEFAULT_WATCHER_TIMINGS: NodeDirectoryWatcherTimings = {
     existencePollDelay: 500,
     deferredDisposalTimeout: 10_000
 };
-
-/** A resolved change: a direct child of the watched directory, or the watched path itself. */
-interface ResolvedChange {
-    fileName?: string;
-    type: FileChangeType;
-}
-
-export interface DirectoryIdentity {
-    dev: number;
-    ino: number;
-    birthtimeMs: number;
-}
 
 interface PendingEvent {
     eventType: string;
@@ -88,161 +68,157 @@ interface PendingEvent {
  * `FSEventStream` per event loop and recreates it whenever any handle opens or closes, dropping the events of
  * every other watcher meanwhile.
  */
-export class NodeDirectoryWatcher {
+export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
 
-    protected static debugIdSequence = 0;
-
-    protected readonly debugId = NodeDirectoryWatcher.debugIdSequence++;
-    protected readonly requests = new Map<number, NodeWatchRequest>();
-    protected readonly pendingEvents: PendingEvent[] = [];
-    protected readonly pendingDeletes = new Map<string, NodeJS.Timeout>();
-    protected readonly disposalDeferred = new Deferred<void>();
-
+    // What is being watched, and what changes are resolved against.
+    protected watchedDirectory: string;
+    private handle: ReturnType<WatcherHost['watch']> | undefined;
+    private identity: DirectoryIdentity | undefined;
     /** Direct children of {@link watchedDirectory}, kept in sync to classify changes and to diff a rescan. */
     protected children = new Set<string>();
-    protected watchedDirectory: string;
-    protected identity: DirectoryIdentity | undefined;
-    protected handle: FSWatcher | undefined;
-    protected changeQueue: Promise<void> = Promise.resolve();
-    protected changeTimer: NodeJS.Timeout | undefined;
-    protected disposalTimer: NodeJS.Timeout | undefined;
-    protected openFailed = false;
-    protected restarting = false;
-    protected disposed = false;
 
-    /** Resolves once this watcher disposed itself and its resources. Never rejects. */
-    readonly whenDisposed = this.disposalDeferred.promise;
+    // Who asked, and what they excluded.
+    protected readonly router: WatchRequestRouter;
+
+    // Events in flight: aggregated, then resolved one batch at a time.
+    private readonly pendingEvents: PendingEvent[] = [];
+    private readonly pendingDeletes = new Map<string, NodeJS.Timeout>();
+    private changeQueue: Promise<void> = Promise.resolve();
+    /** Collects raw events for one `changeDelay` window, counted from the first. */
+    private readonly scheduleFlush: (() => void) & { cancel(): void };
+
+    // Lifecycle.
+    /** Cancels the start attempt in flight, so a superseded one writes no state and opens no handle. */
+    private attempt = new CancellationTokenSource();
+    private disposalTimer: NodeJS.Timeout | undefined;
+    private openFailed = false;
 
     /** Resolves once the watcher is up, or once it got disposed while starting. Never rejects. */
     readonly whenStarted: Promise<void>;
 
     constructor(
-        /**
-         * Path the watched directory is derived from: the directory itself, or, while the path does not exist
-         * yet, a guess that {@link resolveTarget} corrects once it appears.
-         */
-        readonly target: string,
-        protected readonly options: NodeDirectoryWatcherOptions,
+        target: string,
+        options: WatcherLogger,
         protected readonly client: FileSystemWatcherServiceClient,
-        protected readonly timings: NodeDirectoryWatcherTimings = DEFAULT_WATCHER_TIMINGS
+        protected readonly timings: NodeDirectoryWatcherTimings = DEFAULT_WATCHER_TIMINGS,
+        protected readonly host: WatcherHost = new WatcherHost(options)
     ) {
+        super(target, options);
+        this.router = this.createRouter();
+        NodeDirectoryWatcherTimings.validate(timings);
+        this.scheduleFlush = throttle(() => this.flush(), timings.changeDelay, { leading: false });
         this.watchedDirectory = target;
-        this.whenStarted = this.start().catch(error => this.options.error(`Watcher failed to start at "${this.target}":`, error));
+        this.whenStarted = this.start(this.attempt.token).catch(error => this.error(`Watcher failed to start at "${this.target}":`, error));
     }
 
-    get isDisposed(): boolean {
-        return this.disposed;
+    protected createRouter(): WatchRequestRouter {
+        return new WatchRequestRouter(this.client, this.host, () => this.watchedDirectory);
     }
 
-    isInUse(): boolean {
-        return this.requests.size > 0;
-    }
-
-    addRequest(watcherId: number, request: NodeWatchRequest): void {
-        this.requests.set(watcherId, request);
+    addRequest(watcherId: number, request: DirectoryWatchRequest): void {
+        this.router.add(watcherId, request);
         clearTimeout(this.disposalTimer);
-        this.debug('REQUEST++', `watcherId=${watcherId}, requests=${this.requests.size}`);
+        this.debug('REQUEST++', `watcherId=${watcherId}, requests=${this.router.size}`);
     }
 
     removeRequest(watcherId: number): void {
-        if (this.requests.delete(watcherId) && this.requests.size === 0) {
+        if (this.router.remove(watcherId) && this.router.size === 0) {
             this.disposalTimer = setTimeout(() => this.dispose(), this.timings.deferredDisposalTimeout);
         }
-        this.debug('REQUEST--', `watcherId=${watcherId}, requests=${this.requests.size}`);
+        this.debug('REQUEST--', `watcherId=${watcherId}, requests=${this.router.size}`);
     }
 
     dispose(): void {
-        if (this.disposed) {
+        if (!this.markDisposed()) {
             return;
         }
-        this.disposed = true;
+        this.attempt.cancel();
         this.closeHandle();
         this.clearPendingDeletes();
-        clearTimeout(this.changeTimer);
-        this.changeTimer = undefined;
+        this.scheduleFlush.cancel();
         clearTimeout(this.disposalTimer);
-        this.disposalTimer = undefined;
-        this.disposalDeferred.resolve();
         this.debug('DISPOSED');
     }
 
     /** Waits for the target, then opens the handle before reading the children, so no change is missed. */
-    protected async start(missing = false, previousChildren?: Set<string>): Promise<void> {
-        if (this.isUnsupportedTarget) {
-            this.options.error(`Refusing to watch "${this.target}": watching a macOS network share is unstable.`);
+    protected async start(token: CancellationToken, missing = false, previousChildren?: Set<string>): Promise<void> {
+        if (this.host.isUnsupportedTarget(this.target)) {
+            this.error(`Refusing to watch "${this.target}": watching a macOS network share is unstable.`);
             return;
         }
-        const wasMissing = await this.openWhenAvailable() || missing;
-        if (this.disposed) {
+        const wasMissing = await this.openWhenAvailable(token) || missing;
+        if (token.isCancellationRequested) {
             return;
         }
-        await this.takeSnapshot();
-        this.restarting = false;
+        const onDisk = await this.recordSnapshot();
+        if (token.isCancellationRequested) {
+            return;
+        }
         this.debug('STARTED', this.watchedDirectory);
         if (wasMissing) {
-            this.report([{ type: FileChangeType.ADDED }], await this.existingRequests());
+            const requests = await this.router.existingRequests();
+            if (token.isCancellationRequested) {
+                return;
+            }
+            this.router.reportWatchedPath(FileChangeType.ADDED, requests);
         }
         if (previousChildren) {
-            this.report(this.diff(previousChildren, this.children));
+            this.router.report(this.diff(previousChildren, onDisk));
         }
     }
 
     /** Polls until the target exists and a handle is open. Resolves to whether it was ever missing. */
-    protected async openWhenAvailable(): Promise<boolean> {
+    protected async openWhenAvailable(token: CancellationToken): Promise<boolean> {
         let wasMissing = false;
-        while (!this.disposed) {
-            if (!await this.exists(this.target)) {
+        let failedOpens = 0;
+        while (!token.isCancellationRequested) {
+            if (!await this.host.exists(this.target)) {
                 wasMissing = true;
             } else {
-                await this.resolveTarget();
-                if (this.disposed || this.openHandle()) {
+                await this.resolveWatchedDirectory();
+                if (token.isCancellationRequested || this.openHandle()) {
                     break;
                 }
+                // EACCES or an exhausted budget will not clear on its own; do not hammer the syscall.
+                failedOpens = Math.min(failedOpens + 1, MAX_OPEN_BACKOFF);
             }
-            await timeout(this.timings.existencePollDelay);
+            await timeout(this.timings.existencePollDelay * Math.max(failedOpens, 1), token).catch(() => undefined);
         }
         return wasMissing;
     }
 
     /** Records what changes are resolved against: the directory's children and its identity. */
-    protected async takeSnapshot(): Promise<void> {
-        const children = await this.readChildren();
-        // Anything reported while the directory was read counts as new rather than as modified.
+    private async recordSnapshot(): Promise<Set<string>> {
+        const onDisk = await this.host.readChildren(this.watchedDirectory);
+        const children = new Set(onDisk);
+        // Resolving an event that landed during the read against a set already holding the name would call
+        // a creation an update. Only the stored set is adjusted; the caller diffs against what is there.
         for (const event of this.pendingEvents) {
             if (event.fileName) {
                 children.delete(event.fileName);
             }
         }
         this.children = children;
-        this.identity = await this.readIdentity();
-    }
-
-    /** Requests whose own path exists, so a recovered directory does not announce files that are still gone. */
-    protected async existingRequests(): Promise<NodeWatchRequest[]> {
-        const requests = Array.from(this.requests.values());
-        const existing = await Promise.all(requests.map(request => this.exists(request.path)));
-        return requests.filter((_, index) => existing[index]);
+        this.identity = await this.host.readIdentity(this.watchedDirectory);
+        return onDisk;
     }
 
     /**
      * Applies {@link NodeDirectoryWatcher.resolveTarget} to this watcher. A target that turns out to be a file
      * only once it appears was requested as a directory, so its requests are narrowed to that file here.
      */
-    protected async resolveTarget(): Promise<void> {
-        const { directory, fileName } = await NodeDirectoryWatcher.resolveTarget(this.target);
-        this.watchedDirectory = directory;
-        if (fileName !== undefined) {
-            for (const request of this.requests.values()) {
-                if (request.path === this.target) {
-                    request.fileName = fileName;
-                }
-            }
+    protected async resolveWatchedDirectory(): Promise<void> {
+        const resolved = await this.host.resolveTarget(this.target);
+        this.watchedDirectory = resolved.directory;
+        if (!this.host.samePath(resolved.realPath, this.watchedDirectory)) {
+            // The target only turned out to be a file once it appeared, so requests for it are narrowed.
+            this.router.narrow(this.target, resolved.realPath);
         }
     }
 
     protected openHandle(): boolean {
         try {
-            this.handle = this.createWatchHandle(this.watchedDirectory, (eventType, fileName) => this.handleEvent(eventType, fileName));
+            this.handle = this.host.watch(this.watchedDirectory, (eventType, fileName) => this.handleEvent(eventType, fileName));
             this.handle.on('error', error => this.restart(error));
             this.openFailed = false;
             return true;
@@ -250,17 +226,13 @@ export class NodeDirectoryWatcher {
             // Polling recovers a missing directory, but not EACCES or an exhausted handle budget.
             if (!this.openFailed) {
                 this.openFailed = true;
-                this.options.error(`Watcher failed to open a handle at "${this.watchedDirectory}", retrying every ${this.timings.existencePollDelay}ms:`, error);
+                this.error(`Watcher failed to open a handle at "${this.watchedDirectory}", retrying every ${this.timings.existencePollDelay}ms:`, error);
             }
             return false;
         }
     }
 
-    protected createWatchHandle(directory: string, listener: WatchEventListener): FSWatcher {
-        return watch(directory, { recursive: false }, listener);
-    }
-
-    protected closeHandle(): void {
+    private closeHandle(): void {
         if (this.handle) {
             this.handle.removeAllListeners();
             this.handle.close();
@@ -269,40 +241,39 @@ export class NodeDirectoryWatcher {
     }
 
     protected handleEvent(eventType: string, fileName: string | null): void {
-        if (this.disposed) {
+        if (this.isDisposed) {
             return;
         }
         // Windows reports a `ReadDirectoryChangesW` buffer overflow as a change without a file name. Only a
         // rescan can recover the events lost with it.
-        this.pendingEvents.push({ eventType, fileName: fileName ? this.normalizeFileName(fileName) : undefined });
-        if (!this.changeTimer) {
-            this.changeTimer = setTimeout(() => this.flush(), this.timings.changeDelay);
-        }
+        this.pendingEvents.push({ eventType, fileName: fileName ? this.host.normalizeFileName(fileName) : undefined });
+        this.scheduleFlush();
     }
 
-    protected flush(): void {
-        this.changeTimer = undefined;
+    private flush(): void {
         const events = this.pendingEvents.splice(0);
         this.enqueue(() => this.processEvents(events));
     }
 
     /** Serializes the async parts of change handling so later events cannot overtake earlier ones. */
-    protected enqueue(task: () => Promise<void>): void {
-        this.changeQueue = this.changeQueue.then(async () => {
-            // Run even with no request attached: skipping would leave the children and a pending deletion
-            // stale for a request arriving within the disposal grace period.
-            if (!this.disposed) {
-                await task();
-            }
-        }, error => this.options.error(`Watcher failed to process changes at "${this.watchedDirectory}":`, error));
+    private enqueue(resolve: () => Promise<ResolvedChange[]>): void {
+        this.changeQueue = this.changeQueue
+            .then(async () => {
+                // Runs even with no request attached: skipping would leave the children and a pending
+                // deletion stale for a request arriving within the disposal grace period.
+                if (!this.isDisposed) {
+                    this.router.report(await resolve());
+                }
+            })
+            .catch(error => this.error(`Watcher failed to process changes at "${this.watchedDirectory}":`, error));
     }
 
-    protected async processEvents(events: PendingEvent[]): Promise<void> {
+    protected async processEvents(events: PendingEvent[]): Promise<ResolvedChange[]> {
         const changes: ResolvedChange[] = [];
         let renamed = false;
         for (const { eventType, fileName } of events) {
             if (fileName === undefined) {
-                const rescanned = await this.readChildren();
+                const rescanned = await this.host.readChildren(this.watchedDirectory);
                 const rescanChanges = this.diff(this.children, rescanned);
                 // Reading the directory settles what a pending deletion was waiting for.
                 rescanChanges.forEach(change => this.cancelDelete(change.fileName));
@@ -313,17 +284,24 @@ export class NodeDirectoryWatcher {
             } else if (eventType === 'rename') {
                 renamed = true;
                 if (!this.namesWatchedDirectory(fileName)) {
-                    await this.resolveRename(fileName, changes);
+                    const change = await this.resolveRename(fileName);
+                    if (change) {
+                        changes.push(change);
+                    }
                 }
-            } else {
+            } else if (this.children.has(fileName)) {
                 changes.push({ fileName, type: FileChangeType.UPDATED });
+            } else {
+                // Unknown, so it changed during the read. Recorded too, or the set stays stale.
+                this.children.add(fileName);
+                changes.push({ fileName, type: FileChangeType.ADDED });
             }
         }
         if (renamed && await this.isWatchedDirectoryGone()) {
             this.restart();
-            return;
+            return [];
         }
-        this.report(changes);
+        return changes;
     }
 
     /**
@@ -331,61 +309,64 @@ export class NodeDirectoryWatcher {
      * inside, so only {@link isWatchedDirectoryGone} settles whether it is still there.
      */
     protected namesWatchedDirectory(fileName: string): boolean {
-        return !this.children.has(fileName) && fileName === this.normalizeFileName(path.basename(this.watchedDirectory));
+        return !this.children.has(fileName)
+            && this.host.samePath(fileName, this.host.normalizeFileName(path.basename(this.watchedDirectory)));
     }
 
-    protected async resolveRename(fileName: string, changes: ResolvedChange[]): Promise<void> {
-        if (!await this.childExists(fileName)) {
+    /** The change this rename resolves to, or `undefined` when it is deferred to the delete timer. */
+    protected async resolveRename(fileName: string): Promise<ResolvedChange | undefined> {
+        if (!await this.host.childExists(this.watchedDirectory, fileName)) {
             this.scheduleDelete(fileName);
-            return;
+            return undefined;
         }
         this.cancelDelete(fileName);
         if (this.children.has(fileName)) {
-            changes.push({ fileName, type: FileChangeType.UPDATED });
-        } else {
-            this.children.add(fileName);
-            changes.push({ fileName, type: FileChangeType.ADDED });
+            return { fileName, type: FileChangeType.UPDATED };
         }
+        this.children.add(fileName);
+        return { fileName, type: FileChangeType.ADDED };
     }
 
     /**
      * A deletion is confirmed rather than reported right away: tools that save atomically delete and recreate
      * the file, which would otherwise surface as a deletion followed by an addition.
      */
-    protected scheduleDelete(fileName: string): void {
-        if (this.pendingDeletes.has(fileName)) {
+    private scheduleDelete(fileName: string): void {
+        if (this.isDisposed || this.pendingDeletes.has(fileName)) {
             return;
         }
         this.pendingDeletes.set(fileName, setTimeout(() => {
-            this.pendingDeletes.delete(fileName);
             this.enqueue(() => this.confirmDelete(fileName));
         }, this.timings.deleteDelay));
     }
 
-    protected cancelDelete(fileName: string): void {
+    private cancelDelete(fileName: string): void {
         clearTimeout(this.pendingDeletes.get(fileName));
         this.pendingDeletes.delete(fileName);
     }
 
-    protected clearPendingDeletes(): void {
+    private clearPendingDeletes(): void {
         for (const timer of this.pendingDeletes.values()) {
             clearTimeout(timer);
         }
         this.pendingDeletes.clear();
     }
 
-    protected async confirmDelete(fileName: string): Promise<void> {
+    protected async confirmDelete(fileName: string): Promise<ResolvedChange[]> {
+        if (!this.pendingDeletes.delete(fileName)) {
+            // Cancelled after the timer fired but before this ran, so the deletion was already settled.
+            return [];
+        }
         const known = this.children.has(fileName);
-        if (await this.childExists(fileName)) {
+        if (await this.host.childExists(this.watchedDirectory, fileName)) {
             this.children.add(fileName);
-            this.report([{ fileName, type: known ? FileChangeType.UPDATED : FileChangeType.ADDED }]);
-            return;
+            return [{ fileName, type: known ? FileChangeType.UPDATED : FileChangeType.ADDED }];
         }
         this.children.delete(fileName);
-        this.report(known
+        return known
             ? [{ fileName, type: FileChangeType.DELETED }]
             // It appeared and vanished within the delay, so report both rather than a deletion from nowhere.
-            : [{ fileName, type: FileChangeType.ADDED }, { fileName, type: FileChangeType.DELETED }]);
+            : [{ fileName, type: FileChangeType.ADDED }, { fileName, type: FileChangeType.DELETED }];
     }
 
     /**
@@ -393,7 +374,7 @@ export class NodeDirectoryWatcher {
      * bound to the old inode, where it would never report anything again.
      */
     protected async isWatchedDirectoryGone(): Promise<boolean> {
-        const identity = await this.readIdentity();
+        const identity = await this.host.readIdentity(this.watchedDirectory);
         if (!identity) {
             return true;
         }
@@ -404,71 +385,38 @@ export class NodeDirectoryWatcher {
 
     /** Closes the handle and starts over, reporting the watched paths as deleted if the directory is gone. */
     protected restart(error?: unknown): void {
-        if (this.disposed || this.restarting) {
+        if (this.isDisposed) {
             return;
         }
-        this.restarting = true;
+        // Supersede whatever attempt is in flight rather than decline to start one.
+        this.attempt.cancel();
+        const token = (this.attempt = new CancellationTokenSource()).token;
         this.debug('RESTART', error ?? '');
         this.closeHandle();
         this.clearPendingDeletes();
         this.pendingEvents.length = 0;
-        clearTimeout(this.changeTimer);
-        this.changeTimer = undefined;
-        const previousChildren = this.children;
+        this.scheduleFlush.cancel();
+        const previousChildren = new Set(this.children);
         this.changeQueue = this.changeQueue.then(async () => {
-            if (this.disposed) {
+            if (token.isCancellationRequested) {
                 return;
             }
             // A handle can also fail while the directory is untouched, and then nothing changed.
             const gone = await this.isWatchedDirectoryGone();
+            if (token.isCancellationRequested) {
+                return;
+            }
             if (gone) {
                 // Losing the directory takes every requested path inside it along.
-                this.report([{ type: FileChangeType.DELETED }]);
+                this.router.reportWatchedPath(FileChangeType.DELETED);
             }
             // Only a comparison of the contents can recover what happened while the watcher was down.
-            await this.start(gone, previousChildren);
-        }, restartError => this.options.error(`Watcher failed to restart at "${this.target}":`, restartError));
+            await this.start(token, gone, previousChildren);
+        }).catch(restartError => this.error(`Watcher failed to restart at "${this.target}":`, restartError));
     }
 
-    /**
-     * Notifies each client once per watched path that changed, so a client holding overlapping requests does
-     * not hear about the same change twice.
-     */
-    protected report(changes: ResolvedChange[], requests: Iterable<NodeWatchRequest> = this.requests.values()): void {
-        if (this.disposed || changes.length === 0) {
-            return;
-        }
-        const perClient = new Map<number, FileChangeCollection>();
-        for (const request of requests) {
-            for (const { fileName, type } of changes) {
-                const changed = this.resolveRequestPath(request, fileName);
-                if (changed && !request.ignored.some(pattern => pattern.match(changed))) {
-                    let collection = perClient.get(request.clientId);
-                    if (!collection) {
-                        perClient.set(request.clientId, collection = new FileChangeCollection());
-                    }
-                    collection.push({ uri: FileUri.create(changed).toString(), type });
-                }
-            }
-        }
-        for (const [clientId, collection] of perClient) {
-            this.client.onDidFilesChanged({ clients: [clientId], changes: collection.values() });
-        }
-    }
-
-    /** The path a request reports a change under, or `undefined` if the change is none of its business. */
-    protected resolveRequestPath(request: NodeWatchRequest, fileName?: string): string | undefined {
-        if (fileName === undefined) {
-            return request.path;
-        }
-        if (request.fileName === undefined) {
-            return path.resolve(request.path, fileName);
-        }
-        return this.sameFileName(request.fileName, fileName) ? request.path : undefined;
-    }
-
-    protected diff(previous: Set<string>, current: Set<string>): Required<ResolvedChange>[] {
-        const changes: Required<ResolvedChange>[] = [];
+    protected diff(previous: Set<string>, current: Set<string>): ResolvedChange[] {
+        const changes: ResolvedChange[] = [];
         for (const fileName of current) {
             if (!previous.has(fileName)) {
                 changes.push({ fileName, type: FileChangeType.ADDED });
@@ -482,74 +430,39 @@ export class NodeDirectoryWatcher {
         return changes;
     }
 
-    protected async readChildren(): Promise<Set<string>> {
-        const children = await fsp.readdir(this.watchedDirectory).catch(() => []);
-        return new Set(children.map(fileName => this.normalizeFileName(fileName)));
-    }
-
-    protected async readIdentity(): Promise<DirectoryIdentity | undefined> {
-        const stat = await fsp.stat(this.watchedDirectory).catch(() => undefined);
-        // The inode number alone is not enough: deleting a directory frees it for its replacement.
-        return stat && { dev: stat.dev, ino: stat.ino, birthtimeMs: stat.birthtimeMs };
-    }
-
-    protected exists(fsPath: string): Promise<boolean> {
-        return fsp.stat(fsPath).then(() => true, () => false);
-    }
-
-    /** Exact-case lookup. `stat` accepts a differing case, making a `foo.txt` to `Foo.txt` rename an update. */
-    protected async childExists(fileName: string): Promise<boolean> {
-        return this.caseInsensitiveFileNames
-            ? (await this.readChildren()).has(fileName)
-            : this.exists(path.resolve(this.watchedDirectory, fileName));
-    }
-
-    /** Windows and macOS resolve names irrespective of case. */
-    protected get caseInsensitiveFileNames(): boolean {
-        return isWindows || isOSX;
-    }
-
-    /** macOS crashes on watching a network share, so those are refused (microsoft/vscode#106879). */
-    protected get isUnsupportedTarget(): boolean {
-        return isOSX && (this.target === '/Volumes' || this.target.startsWith('/Volumes/'));
-    }
-
-    /** macOS reports decomposed names, which would not match a composed path a client asked to watch. */
-    protected normalizeFileName(fileName: string): string {
-        return isOSX ? fileName.normalize('NFC') : fileName;
-    }
-
-    protected sameFileName(expected: string, actual: string): boolean {
-        return this.caseInsensitiveFileNames ? expected.toLowerCase() === actual.toLowerCase() : expected === actual;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected debug(prefix: string, ...params: any[]): void {
-        if (this.options.verbose) {
-            this.options.info(`${prefix} NodeDirectoryWatcher(${this.debugId} at "${this.target}"):`, ...params);
-        }
-    }
 }
 
-export namespace NodeDirectoryWatcher {
+/** Serves non-recursive requests. Those resolving to the same directory share one watcher, file or folder alike. */
+export class DirectoryWatcherProvider extends AbstractWatcherProvider {
 
-    /** The directory a path is watched through, and the single file to report, if the path is one. */
-    export interface Target {
-        directory: string;
-        fileName?: string;
+    constructor(
+        protected readonly options: WatcherLogger,
+        protected readonly client: FileSystemWatcherServiceClient,
+        protected readonly timings?: NodeDirectoryWatcherTimings,
+        /** Shared, so every watcher this provider makes resolves paths the same way. */
+        protected readonly host: WatcherHost = new WatcherHost(options)
+    ) {
+        super();
     }
 
-    /**
-     * A file is watched through its parent directory, which also keeps a file that is deleted and recreated
-     * observable. A path that does not exist yet is assumed to be a directory, which
-     * {@link NodeDirectoryWatcher} corrects once it appears. The real path is resolved because macOS FSEvents
-     * reports real paths and libuv drops what it cannot match against the path it registered.
-     */
-    export async function resolveTarget(fsPath: string): Promise<Target> {
-        const realPath = await fsp.realpath(fsPath).catch(() => fsPath);
-        const stat = await fsp.stat(realPath).catch(() => undefined);
-        return stat?.isFile()
-            ? { directory: path.dirname(realPath), fileName: path.basename(realPath) }
-            : { directory: realPath };
+    canHandle(options: ResolvedWatchOptions): boolean {
+        return !options.recursive;
+    }
+
+    async watch(watcherId: number, request: WatchRequest): Promise<NodeDirectoryWatcher> {
+        const { directory, realPath } = await this.host.resolveTarget(request.path);
+        // Nothing is awaited below, so concurrent requests for one directory cannot both create a watcher.
+        const watcher = this.getOrCreateWatcher(this.watcherKey(directory), () => this.createWatcher(directory));
+        watcher.addRequest(watcherId, { ...request, realPath });
+        return watcher;
+    }
+
+    /** Excludes are left out: one level has nothing to prune, so they apply per request. */
+    protected watcherKey(directory: string): string {
+        return this.host.caseInsensitiveFileNames ? directory.toLowerCase() : directory;
+    }
+
+    protected createWatcher(directory: string): NodeDirectoryWatcher {
+        return new NodeDirectoryWatcher(directory, this.options, this.client, this.timings, this.host);
     }
 }
