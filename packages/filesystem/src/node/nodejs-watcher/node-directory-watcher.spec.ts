@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH.
+// Copyright (C) 2026 Ehab Younes and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -20,13 +20,14 @@ import * as temp from 'temp';
 import * as fs from '@theia/core/shared/fs-extra';
 import { EventEmitter } from 'events';
 import { FSWatcher } from 'fs';
-import { Minimatch } from 'minimatch';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { isWindows } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
 import { DidFilesChangedParams, FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol';
 import { NO_LOGGING, TempDir, WATCHER_TIMINGS as TIMINGS } from '../test/watcher-test-helper';
-import { DirectoryIdentity, NodeDirectoryWatcher, NodeWatchRequest, WatchEventListener } from './node-directory-watcher';
+import { NodeDirectoryWatcher } from './node-directory-watcher';
+import { DirectoryWatchRequest } from './watch-request-router';
+import { DirectoryIdentity, WatcherHost, WatchEventListener } from './watcher-host';
 
 const track = temp.track();
 
@@ -36,23 +37,39 @@ const SETTLE_DELAY = TIMINGS.deleteDelay * 3;
 /** Indexed by `FileChangeType`. */
 const CHANGE_NAMES = ['updated', 'added', 'deleted'];
 
-/** Replaces the `fs.watch` handle, so that platform behavior no host can reproduce is driven directly. */
-class TestWatcher extends NodeDirectoryWatcher {
+/** Replaces the whole platform boundary, so behaviour no host can reproduce is driven directly. */
+class TestHost extends WatcherHost {
 
-    /** Set to pretend the watched directory was replaced, which cannot be forced on a real file system. */
+    /** Set to pretend the watched directory was replaced, which no real file system will do on cue. */
     fakeIdentity: DirectoryIdentity | undefined;
-    /** Set to exercise the macOS and Windows file name handling on any host. */
+    /** Set to exercise the macOS and Windows name handling on any host. */
     decomposes = false;
-    caseInsensitive = false;
+    /** Defaults to what this host really is, so Windows and macOS behave like themselves. */
+    caseInsensitive = super.caseInsensitiveFileNames;
     /** Set to make `fs.watch` refuse, as on EACCES or an exhausted handle budget. */
     refuseToOpen = false;
 
     protected listener: WatchEventListener | undefined;
     protected handleEmitter: EventEmitter | undefined;
     protected readonly missing = new Deferred<void>();
+    protected missingTarget: string | undefined;
 
-    /** Resolves once the watcher has found its target missing, so that a test can then create it. */
+    /** Resolves once `expectMissing` was told a path and that path was found missing. */
     readonly whenMissing = this.missing.promise;
+
+    expectMissing(target: string): void {
+        this.missingTarget = target;
+    }
+
+    /** Runs once during the next directory read, to drive an event while a start is mid-flight. */
+    duringNextRead: (() => void) | undefined;
+
+    override async readChildren(directory: string): Promise<Set<string>> {
+        const during = this.duringNextRead;
+        this.duringNextRead = undefined;
+        during?.();
+        return super.readChildren(directory);
+    }
 
     /** Feeds the watcher an event as the platform would. */
     fire(eventType: string, fileName: string | null): void {
@@ -65,38 +82,38 @@ class TestWatcher extends NodeDirectoryWatcher {
         this.handleEmitter?.emit('error', error);
     }
 
-    protected override normalizeFileName(fileName: string): string {
-        return this.decomposes ? fileName.normalize('NFC') : fileName;
-    }
-
-    protected override get caseInsensitiveFileNames(): boolean {
+    override get caseInsensitiveFileNames(): boolean {
         return this.caseInsensitive;
     }
 
     /** Applies the network share check on any host, keyed on the target rather than on `/Volumes`. */
-    protected override get isUnsupportedTarget(): boolean {
-        return this.target.includes('network-share');
+    override isUnsupportedTarget(fsPath: string): boolean {
+        return fsPath.includes('network-share');
     }
 
-    protected override async readIdentity(): Promise<DirectoryIdentity | undefined> {
-        return this.fakeIdentity ?? super.readIdentity();
+    override normalizeFileName(fileName: string): string {
+        return this.decomposes ? fileName.normalize('NFC') : fileName;
     }
 
-    protected override async exists(fsPath: string): Promise<boolean> {
+    override async readIdentity(directory: string): Promise<DirectoryIdentity | undefined> {
+        return this.fakeIdentity ?? super.readIdentity(directory);
+    }
+
+    override async exists(fsPath: string): Promise<boolean> {
         const result = await super.exists(fsPath);
-        if (!result && fsPath === this.target) {
+        if (!result && fsPath === this.missingTarget) {
             this.missing.resolve();
         }
         return result;
     }
 
-    protected override createWatchHandle(directory: string, listener: WatchEventListener): FSWatcher {
+    override watch(directory: string, listener: WatchEventListener): FSWatcher {
         if (this.refuseToOpen) {
             throw new Error('EACCES');
         }
         this.listener = listener;
         this.handleEmitter = new EventEmitter();
-        return Object.assign(this.handleEmitter, { close: () => { } }) as unknown as FSWatcher;
+        return Object.assign(this.handleEmitter, { close: () => { this.listener = undefined; } }) as unknown as FSWatcher;
     }
 }
 
@@ -108,11 +125,14 @@ class Sandbox extends TempDir implements FileSystemWatcherServiceClient {
 
     protected readonly logging = { ...NO_LOGGING, error: (message: string) => this.errors.push(message) };
     protected readonly reports: DidFilesChangedParams[] = [];
+    /** The platform boundary every watcher of this sandbox shares. */
+    readonly host = new TestHost(this.logging);
+
     protected readonly watchers: NodeDirectoryWatcher[] = [];
     protected notify: (() => void) | undefined;
 
     constructor() {
-        super(fs.realpathSync(temp.mkdirSync('node-directory-watcher')));
+        super(fs.realpathSync.native(temp.mkdirSync('node-directory-watcher')));
     }
 
     onDidFilesChanged(report: DidFilesChangedParams): void {
@@ -122,31 +142,39 @@ class Sandbox extends TempDir implements FileSystemWatcherServiceClient {
 
     onError(): void { }
 
-    /** A request for every direct child of a directory. */
-    directory(directoryPath = this.root, clientId = 1, ignored: string[] = []): NodeWatchRequest {
-        return { clientId, path: directoryPath, ignored: ignored.map(pattern => new Minimatch(pattern, { dot: true })) };
+    /**
+     * A request for every direct child of a directory. `realPath` is what the provider would have resolved
+     * the path to, which only differs when a symlink is involved.
+     */
+    directory(directoryPath = this.root, clientId = 1, ignored: string[] = [], realPath = directoryPath): DirectoryWatchRequest {
+        return { clientId, path: directoryPath, ignored, realPath };
     }
 
-    /** A request for a single file. */
-    file(filePath: string, clientId = 1, ignored: string[] = []): NodeWatchRequest {
-        return { ...this.directory(filePath, clientId, ignored), fileName: path.basename(filePath) };
+    /** A request for a single file, which resolves to the file rather than to the directory holding it. */
+    file(filePath: string, clientId = 1, ignored: string[] = []): DirectoryWatchRequest {
+        return { ...this.directory(filePath, clientId, ignored), realPath: filePath };
     }
 
     /** A watcher whose events the test feeds in, already started. */
-    async watching(target = this.root, ...requests: NodeWatchRequest[]): Promise<TestWatcher> {
+    async watching(target = this.root, ...requests: DirectoryWatchRequest[]): Promise<NodeDirectoryWatcher> {
         const watcher = this.starting(target, ...requests);
         await watcher.whenStarted;
         return watcher;
     }
 
     /** A watcher whose events the test feeds in, not yet started. */
-    starting(target = this.root, ...requests: NodeWatchRequest[]): TestWatcher {
-        return this.track(new TestWatcher(target, this.logging, this, TIMINGS), requests);
+    starting(target = this.root, ...requests: DirectoryWatchRequest[]): NodeDirectoryWatcher {
+        return this.track(new NodeDirectoryWatcher(target, this.logging, this, TIMINGS, this.host), requests);
+    }
+
+    /** Feeds the watchers of this sandbox an event as the platform would. */
+    fire(eventType: string, fileName: string | null): void {
+        this.host.fire(eventType, fileName);
     }
 
     /** A watcher driven by a real `fs.watch` handle, already started. */
-    async watchingForReal(target = this.root, ...requests: NodeWatchRequest[]): Promise<NodeDirectoryWatcher> {
-        const watcher = this.track(new NodeDirectoryWatcher(target, this.logging, this, TIMINGS), requests);
+    async watchingForReal(target = this.root, ...requests: DirectoryWatchRequest[]): Promise<NodeDirectoryWatcher> {
+        const watcher = this.track(new NodeDirectoryWatcher(target, this.logging, this, TIMINGS, new WatcherHost(this.logging)), requests);
         await watcher.whenStarted;
         return watcher;
     }
@@ -179,7 +207,7 @@ class Sandbox extends TempDir implements FileSystemWatcherServiceClient {
         this.watchers.splice(0).forEach(watcher => watcher.dispose());
     }
 
-    protected track<T extends NodeDirectoryWatcher>(watcher: T, requests: NodeWatchRequest[]): T {
+    protected track<T extends NodeDirectoryWatcher>(watcher: T, requests: DirectoryWatchRequest[]): T {
         this.watchers.push(watcher);
         requests.forEach((request, index) => watcher.addRequest(index, request));
         return watcher;
@@ -216,31 +244,31 @@ describe('node-directory-watcher', function (): void {
     describe('resolving changes', () => {
 
         it('reports a new direct child as added, and a known one as updated', async () => {
-            const watcher = await box.watching(box.root, box.directory());
+            await box.watching(box.root, box.directory());
 
             box.write('a.txt');
-            watcher.fire('rename', 'a.txt');
+            box.fire('rename', 'a.txt');
             await box.expect(1, 'added a.txt');
 
-            watcher.fire('rename', 'a.txt');
+            box.fire('rename', 'a.txt');
             await box.expect(1, 'added a.txt', 'updated a.txt');
         });
 
         it('reports a modification as updated', async () => {
             box.write('a.txt');
-            const watcher = await box.watching(box.root, box.directory());
+            await box.watching(box.root, box.directory());
 
-            watcher.fire('change', 'a.txt');
+            box.fire('change', 'a.txt');
 
             await box.expect(1, 'updated a.txt');
         });
 
         it('reports a deletion only once the grace period passed', async () => {
             box.write('a.txt');
-            const watcher = await box.watching(box.root, box.directory());
+            await box.watching(box.root, box.directory());
 
             box.remove('a.txt');
-            watcher.fire('rename', 'a.txt');
+            box.fire('rename', 'a.txt');
             assert.deepStrictEqual(box.reported(1), [], 'nothing is reported before the grace period');
 
             await box.expect(1, 'deleted a.txt');
@@ -248,55 +276,69 @@ describe('node-directory-watcher', function (): void {
 
         it('reports an atomic save as an update rather than a deletion', async () => {
             box.write('a.txt');
-            const watcher = await box.watching(box.root, box.directory());
+            await box.watching(box.root, box.directory());
 
             box.remove('a.txt');
-            watcher.fire('rename', 'a.txt');
+            box.fire('rename', 'a.txt');
             box.write('a.txt');
 
             await box.expect(1, 'updated a.txt');
         });
 
         it('reports a file that appears and vanishes within the grace period as both', async () => {
-            const watcher = await box.watching(box.root, box.directory());
+            await box.watching(box.root, box.directory());
 
-            watcher.fire('rename', 'ghost.txt');
+            box.fire('rename', 'ghost.txt');
 
             await box.expect(1, 'added ghost.txt', 'deleted ghost.txt');
         });
 
         it('rescans when the platform reports a change without a file name', async () => {
             box.write('gone.txt');
-            const watcher = await box.watching(box.root, box.directory());
+            await box.watching(box.root, box.directory());
 
             box.write('new.txt');
             box.remove('gone.txt');
             // eslint-disable-next-line no-null/no-null
-            watcher.fire('change', null);
+            box.fire('change', null);
 
             await box.expect(1, 'added new.txt', 'deleted gone.txt');
         });
 
         it('reports a deletion once when a rescan settles it before the grace period', async () => {
             box.write('a.txt');
-            const watcher = await box.watching(box.root, box.directory());
+            await box.watching(box.root, box.directory());
 
             box.remove('a.txt');
-            watcher.fire('rename', 'a.txt');
+            box.fire('rename', 'a.txt');
             // eslint-disable-next-line no-null/no-null
-            watcher.fire('change', null);
+            box.fire('change', null);
 
             await box.expect(1, 'deleted a.txt');
+        });
+
+        it('reports a change to an unknown child as added, and keeps it known', async () => {
+            await box.watching(box.root, box.directory());
+
+            // A file the snapshot never saw, as happens when it changes while the directory is being read.
+            box.write('late.txt');
+            box.fire('change', 'late.txt');
+            await box.expect(1, 'added late.txt');
+
+            // Now known, so losing it is a plain deletion rather than an appearance out of nowhere.
+            box.remove('late.txt');
+            box.fire('rename', 'late.txt');
+            await box.expect(1, 'added late.txt', 'deleted late.txt');
         });
 
         it('ignores an event naming a path below the watched directory', async () => {
             box.mkdir('nested');
             box.write('nested', 'deep.txt');
             box.write('sentinel.txt');
-            const watcher = await box.watching(box.root, box.directory());
+            await box.watching(box.root, box.directory());
 
-            watcher.fire('rename', path.join('nested', 'deep.txt'));
-            watcher.fire('rename', 'sentinel.txt');
+            box.fire('rename', path.join('nested', 'deep.txt'));
+            box.fire('rename', 'sentinel.txt');
 
             await box.expect(1, 'updated sentinel.txt');
         });
@@ -305,31 +347,40 @@ describe('node-directory-watcher', function (): void {
     describe('routing', () => {
 
         it('tells a file request about its own file only', async () => {
-            const watcher = await box.watching(box.root, box.file(box.path('wanted.txt')));
+            await box.watching(box.root, box.file(box.path('wanted.txt')));
 
             box.write('other.txt');
             box.write('wanted.txt');
-            watcher.fire('rename', 'other.txt');
-            watcher.fire('rename', 'wanted.txt');
+            box.fire('rename', 'other.txt');
+            box.fire('rename', 'wanted.txt');
 
             await box.expect(1, 'added wanted.txt');
         });
 
         it('applies the excludes of each request separately', async () => {
-            const watcher = await box.watching(box.root, box.directory(box.root, 1, ['**/node_modules']), box.directory(box.root, 2));
+            await box.watching(box.root, box.directory(box.root, 1, ['**/node_modules']), box.directory(box.root, 2));
 
             box.mkdir('node_modules');
-            watcher.fire('rename', 'node_modules');
+            box.fire('rename', 'node_modules');
 
             await box.expect(2, 'added node_modules');
             await box.expect(1);
         });
 
+        it('does not apply the excludes of a request to the path it asked to watch', async () => {
+            const file = box.write('a.txt');
+            await box.watching(box.root, box.file(file, 1, ['**/a.txt']));
+
+            box.fire('change', 'a.txt');
+
+            await box.expect(1, 'updated a.txt');
+        });
+
         it('tells a client holding overlapping requests once, and other clients independently', async () => {
             const file = box.write('a.txt');
-            const watcher = await box.watching(box.root, box.directory(), box.file(file), box.directory(box.root, 2));
+            await box.watching(box.root, box.directory(), box.file(file), box.directory(box.root, 2));
 
-            watcher.fire('change', 'a.txt');
+            box.fire('change', 'a.txt');
 
             await box.expect(1, 'updated a.txt');
             await box.expect(2, 'updated a.txt');
@@ -338,10 +389,10 @@ describe('node-directory-watcher', function (): void {
         it('reports changes under the path each request asked for', async () => {
             const real = box.mkdir('real');
             fs.symlinkSync(real, box.path('link'), isWindows ? 'junction' : 'dir');
-            const watcher = await box.watching(real, box.directory(real), box.directory(box.path('link'), 2));
+            await box.watching(real, box.directory(real), box.directory(box.path('link'), 2, [], real));
 
             box.write('real', 'a.txt');
-            watcher.fire('rename', 'a.txt');
+            box.fire('rename', 'a.txt');
 
             await box.expect(1, 'added real/a.txt');
             await box.expect(2, 'added link/a.txt');
@@ -349,21 +400,21 @@ describe('node-directory-watcher', function (): void {
 
         it('matches a decomposed file name against the composed path a request asked for', async () => {
             const composed = 'café.txt'.normalize('NFC');
-            const watcher = await box.watching(box.root, box.file(box.path(composed)));
-            watcher.decomposes = true;
+            await box.watching(box.root, box.file(box.path(composed)));
+            box.host.decomposes = true;
 
             box.write(composed);
-            watcher.fire('rename', 'café.txt'.normalize('NFD'));
+            box.fire('rename', 'café.txt'.normalize('NFD'));
 
             await box.expect(1, `added ${composed}`);
         });
 
         it('matches a file name irrespective of case where the platform does', async () => {
-            const watcher = await box.watching(box.root, box.file(box.path('Wanted.txt')));
-            watcher.caseInsensitive = true;
+            await box.watching(box.root, box.file(box.path('Wanted.txt')));
+            box.host.caseInsensitive = true;
 
             box.write('wanted.txt');
-            watcher.fire('rename', 'wanted.txt');
+            box.fire('rename', 'wanted.txt');
 
             await box.expect(1, 'added Wanted.txt');
         });
@@ -373,26 +424,28 @@ describe('node-directory-watcher', function (): void {
 
         it('is reported and watched once it appears', async () => {
             const target = box.path('later');
+            box.host.expectMissing(target);
             const watcher = box.starting(target, box.directory(target));
 
-            await watcher.whenMissing;
+            await box.host.whenMissing;
             fs.mkdirSync(target);
             await watcher.whenStarted;
-            watcher.fire('rename', path.basename(box.write('later', 'a.txt')));
+            box.fire('rename', path.basename(box.write('later', 'a.txt')));
 
             await box.expect(1, 'added later', 'added later/a.txt');
         });
 
         it('is the parent when the target turns out to be a file', async () => {
             const target = box.path('later.txt');
+            box.host.expectMissing(target);
             const watcher = box.starting(target, box.directory(target));
 
-            await watcher.whenMissing;
+            await box.host.whenMissing;
             fs.writeFileSync(target, 'content');
             await watcher.whenStarted;
             box.write('sibling.txt');
-            watcher.fire('rename', 'sibling.txt');
-            watcher.fire('change', 'later.txt');
+            box.fire('rename', 'sibling.txt');
+            box.fire('change', 'later.txt');
 
             await box.expect(1, 'added later.txt', 'updated later.txt');
         });
@@ -400,10 +453,10 @@ describe('node-directory-watcher', function (): void {
         it('is reported as deleted, and its recovery reports what changed meanwhile', async () => {
             const target = box.mkdir('workspace');
             box.write('workspace', 'before.txt');
-            const watcher = await box.watching(target, box.directory(target));
+            await box.watching(target, box.directory(target));
 
             box.remove('workspace');
-            watcher.fire('rename', 'workspace');
+            box.fire('rename', 'workspace');
             await box.expect(1, 'deleted workspace');
 
             box.mkdir('workspace');
@@ -414,52 +467,66 @@ describe('node-directory-watcher', function (): void {
 
         it('is not lost when an event names it, as macOS reports any change inside it', async () => {
             box.write('a.txt');
-            const watcher = await box.watching(box.root, box.directory());
+            await box.watching(box.root, box.directory());
 
             // libuv names an event on the directory after the directory itself.
-            watcher.fire('rename', path.basename(box.root));
-            watcher.fire('change', 'a.txt');
+            box.fire('rename', path.basename(box.root));
+            box.fire('change', 'a.txt');
 
             await box.expect(1, 'updated a.txt');
         });
 
         it('keeps working after being replaced while its inode number was reused', async () => {
-            const watcher = await box.watching(box.root, box.directory());
+            await box.watching(box.root, box.directory());
 
-            watcher.fakeIdentity = { dev: 1, ino: 2, birthtimeMs: 3 };
-            watcher.fire('rename', 'a.txt');
+            box.host.fakeIdentity = { dev: 1, ino: 2, birthtimeMs: 3 };
+            box.fire('rename', 'a.txt');
             await box.expect(1, 'deleted .', 'added .');
 
             box.write('a.txt');
-            watcher.fire('rename', 'a.txt');
+            box.fire('rename', 'a.txt');
             await box.expect(1, 'deleted .', 'added .', 'added a.txt');
         });
 
         it('reports a handle that will not open once, then recovers when it does', async () => {
             const watcher = box.starting(box.root);
-            watcher.refuseToOpen = true;
+            box.host.refuseToOpen = true;
 
             // Several poll rounds, one report.
             await new Promise(resolve => setTimeout(resolve, TIMINGS.existencePollDelay * 4));
             assert.strictEqual(box.errors.length, 1, `expected one report, got ${JSON.stringify(box.errors)}`);
 
-            watcher.refuseToOpen = false;
+            box.host.refuseToOpen = false;
             watcher.addRequest(0, box.directory());
             await watcher.whenStarted;
             box.write('a.txt');
-            watcher.fire('rename', 'a.txt');
+            box.fire('rename', 'a.txt');
 
             await box.expect(1, 'added a.txt');
         });
 
-        it('keeps working after a handle failure, without reporting a change', async () => {
-            const watcher = await box.watching(box.root, box.directory());
+        it('recovers when the handle fails again while it is still restarting', async () => {
+            await box.watching(box.root, box.directory());
 
-            watcher.fail(new Error('EPERM'));
+            // The second failure lands inside the restart's snapshot. A flag guarding the restart would
+            // decline this one and leave the watcher holding a dead handle for good.
+            box.host.duringNextRead = () => box.host.fail(new Error('EPERM'));
+            box.host.fail(new Error('EPERM'));
+            await new Promise(resolve => setTimeout(resolve, TIMINGS.existencePollDelay * 5));
+
+            box.write('a.txt');
+            box.fire('rename', 'a.txt');
+            await box.expectAmong(1, 'added a.txt');
+        });
+
+        it('keeps working after a handle failure, without reporting a change', async () => {
+            await box.watching(box.root, box.directory());
+
+            box.host.fail(new Error('EPERM'));
             await box.expect(1);
 
             box.write('a.txt');
-            watcher.fire('rename', 'a.txt');
+            box.fire('rename', 'a.txt');
             await box.expect(1, 'added a.txt');
         });
     });
@@ -468,14 +535,19 @@ describe('node-directory-watcher', function (): void {
 
         it('reports a rename that only changes case as an addition and a deletion', async () => {
             box.write('foo.txt');
-            const watcher = await box.watching(box.root, box.directory());
-            watcher.caseInsensitive = true;
+            await box.watching(box.root, box.directory());
+            box.host.caseInsensitive = true;
 
             fs.renameSync(box.path('foo.txt'), box.path('Foo.txt'));
-            watcher.fire('rename', 'foo.txt');
-            watcher.fire('rename', 'Foo.txt');
+            box.fire('rename', 'foo.txt');
+            box.fire('rename', 'Foo.txt');
 
             await box.expect(1, 'added Foo.txt', 'deleted foo.txt');
+        });
+
+        it('rejects a timing that would silently become 1ms', () => {
+            assert.throws(() => new NodeDirectoryWatcher(box.root, NO_LOGGING, box, { ...TIMINGS, deleteDelay: 0 }), /positive number/);
+            assert.throws(() => new NodeDirectoryWatcher(box.root, NO_LOGGING, box, { ...TIMINGS, changeDelay: -1 }), /positive number/);
         });
 
         it('refuses to watch a network share, which crashes macOS', async () => {
@@ -485,7 +557,7 @@ describe('node-directory-watcher', function (): void {
             await watcher.whenStarted;
 
             assert.strictEqual(box.errors.length, 1, `expected a report, got ${JSON.stringify(box.errors)}`);
-            assert.throws(() => watcher.fire('change', 'a.txt'), /has not opened a handle/);
+            assert.throws(() => box.fire('change', 'a.txt'), /has not opened a handle/);
         });
     });
 
@@ -517,7 +589,7 @@ describe('node-directory-watcher', function (): void {
             const watcher = await box.watching(box.root, box.directory());
 
             box.remove('a.txt');
-            watcher.fire('rename', 'a.txt');
+            box.fire('rename', 'a.txt');
             watcher.dispose();
 
             await box.expect(1);

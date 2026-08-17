@@ -20,7 +20,7 @@ import * as temp from 'temp';
 import * as fs from '@theia/core/shared/fs-extra';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
-import { FileSystemWatcherServiceImpl } from './parcel-filesystem-service';
+import { FileSystemWatcherServiceImpl } from '../filesystem-watcher-service-impl';
 
 // We require the *same* module object that the production code imports from, so that
 // stubbing its `subscribe` export is observed by `ParcelWatcher`. The `@theia/core/shared`
