@@ -32,7 +32,7 @@ import {
 import { ProxyPluginDeployerEntry } from './plugin-deployer-proxy-entry-impl';
 import { PluginDeployerFileHandlerContextImpl } from './plugin-deployer-file-handler-context-impl';
 import { PluginDeployerDirectoryHandlerContextImpl } from './plugin-deployer-directory-handler-context-impl';
-import { ILogger, Emitter, ContributionProvider, LogLevel } from '@theia/core';
+import { ILogger, Emitter, ContributionProvider } from '@theia/core';
 import { PluginCliContribution } from './plugin-cli-contribution';
 import { Measurement, Stopwatch } from '@theia/core/lib/common';
 
@@ -299,18 +299,18 @@ export class PluginDeployerImpl implements PluginDeployer {
         const acceptedBackendPlugins = pluginsToDeploy.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted(PluginDeployerEntryType.BACKEND));
         const acceptedHeadlessPlugins = pluginsToDeploy.filter(pluginDeployerEntry => pluginDeployerEntry.isAccepted(PluginDeployerEntryType.HEADLESS));
 
-        if (await this.logger.isEnabled(LogLevel.DEBUG)) {
-            this.logger.debug('the accepted plugins are', acceptedPlugins);
-            this.logger.debug('the acceptedFrontendPlugins plugins are', acceptedFrontendPlugins);
-            this.logger.debug('the acceptedBackendPlugins plugins are', acceptedBackendPlugins);
-            this.logger.debug('the acceptedHeadlessPlugins plugins are', acceptedHeadlessPlugins);
+        this.logger.debug(log => {
+            log('the accepted plugins are', acceptedPlugins);
+            log('the acceptedFrontendPlugins plugins are', acceptedFrontendPlugins);
+            log('the acceptedBackendPlugins plugins are', acceptedBackendPlugins);
+            log('the acceptedHeadlessPlugins plugins are', acceptedHeadlessPlugins);
             acceptedPlugins.forEach(plugin => {
-                this.logger.debug(
+                log(
                     'will deploy plugin', plugin.id(), 'with changes', JSON.stringify(plugin.getChanges()),
                     'and this plugin has been resolved by', plugin.resolvedBy()
                 );
             });
-        }
+        });
 
         // local path to launch
         const pluginPaths = [...acceptedBackendPlugins, ...acceptedHeadlessPlugins].map(pluginEntry => pluginEntry.path());
