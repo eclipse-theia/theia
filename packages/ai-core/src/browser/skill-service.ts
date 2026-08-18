@@ -131,27 +131,27 @@ export class DefaultSkillService implements SkillService {
             }
         });
 
-        // Wait for workspace to be ready before initial update
-        this.workspaceService.ready.then(() => {
-            this.update().then(() => {
-                this._ready.resolve();
-                // Only after initial update, start listening for changes
-                this.lastSkillDirectoriesValue = JSON.stringify(this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES]);
+        // The workspace contributes the workspace skill directories, the preferences the configured ones.
+        Promise.all([this.workspaceService.ready, this.preferences.ready]).catch(error => {
+            this.logger.error('Failed to resolve skill directory sources, scanning the already known directories', error);
+        }).then(() => this.update()).then(() => {
+            this._ready.resolve();
+            // Only after initial update, start listening for changes
+            this.lastSkillDirectoriesValue = JSON.stringify(this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES]);
 
-                this.preferences.onPreferenceChanged(event => {
-                    if (event.preferenceName === PREFERENCE_NAME_SKILL_DIRECTORIES) {
-                        const currentValue = JSON.stringify(this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES]);
-                        if (currentValue === this.lastSkillDirectoriesValue) {
-                            return;
-                        }
-                        this.lastSkillDirectoriesValue = currentValue;
-                        this.scheduleUpdate();
+            this.preferences.onPreferenceChanged(event => {
+                if (event.preferenceName === PREFERENCE_NAME_SKILL_DIRECTORIES) {
+                    const currentValue = JSON.stringify(this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES]);
+                    if (currentValue === this.lastSkillDirectoriesValue) {
+                        return;
                     }
-                });
-
-                this.workspaceService.onWorkspaceChanged(() => {
+                    this.lastSkillDirectoriesValue = currentValue;
                     this.scheduleUpdate();
-                });
+                }
+            });
+
+            this.workspaceService.onWorkspaceChanged(() => {
+                this.scheduleUpdate();
             });
         });
     }
