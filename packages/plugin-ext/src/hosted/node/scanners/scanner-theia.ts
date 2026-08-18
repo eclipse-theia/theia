@@ -563,7 +563,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
         try {
             contributions.walkthroughs = this.readWalkthroughs(rawPlugin);
         } catch (err) {
-            console.error(`Could not read '${rawPlugin.name}' contribution 'walkthroughs'.`, rawPlugin.contributes.walkthroughs, err);
+            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'walkthroughs'.`, rawPlugin.contributes.walkthroughs, err);
         }
 
         return contributions;
@@ -607,28 +607,30 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             return undefined;
         }
         const pluginId = PluginIdentifiers.componentsToUnversionedId({ publisher: pck.publisher, name: pck.name, version: pck.version });
+        // `PluginModel` does not carry the extension icon, so it travels with the walkthroughs that show it.
+        const pluginIcon = pck.icon ? this.toPluginUrl(pck, pck.icon) : undefined;
         const result: WalkthroughContribution[] = [];
         for (const walkthrough of pck.contributes.walkthroughs) {
             if (typeof walkthrough.id !== 'string' || !walkthrough.id) {
-                console.error("'contributes.walkthroughs.id' must be defined and non-empty");
+                this.logger.error(`'contributes.walkthroughs.id' of '${pluginId}' must be defined and non-empty`);
                 continue;
             }
             if (typeof walkthrough.title !== 'string' || !walkthrough.title) {
-                console.error("'contributes.walkthroughs.title' must be defined and non-empty");
+                this.logger.error(`'contributes.walkthroughs.title' of '${pluginId}.${walkthrough.id}' must be defined and non-empty`);
                 continue;
             }
             if (!Array.isArray(walkthrough.steps)) {
-                console.error("'contributes.walkthroughs.steps' must be an array");
+                this.logger.error(`'contributes.walkthroughs.steps' of '${pluginId}.${walkthrough.id}' must be an array`);
                 continue;
             }
             const steps: WalkthroughStepContribution[] = [];
             for (const step of walkthrough.steps) {
                 if (typeof step.id !== 'string' || !step.id) {
-                    console.error("'contributes.walkthroughs.steps.id' must be defined and non-empty");
+                    this.logger.error(`'contributes.walkthroughs.steps.id' of '${pluginId}.${walkthrough.id}' must be defined and non-empty`);
                     continue;
                 }
                 if (typeof step.title !== 'string' || !step.title) {
-                    console.error("'contributes.walkthroughs.steps.title' must be defined and non-empty");
+                    this.logger.error(`'contributes.walkthroughs.steps.title' of '${pluginId}.${walkthrough.id}.${step.id}' must be defined and non-empty`);
                     continue;
                 }
                 steps.push({
@@ -649,7 +651,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                 when: walkthrough.when,
                 icon: walkthrough.icon,
                 pluginId,
-                extensionUri: pck.packagePath
+                pluginIcon
             });
         }
         return result.length > 0 ? result : undefined;
@@ -673,12 +675,15 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             if (typeof media.image === 'string') {
                 return { image: this.toPluginUrl(pck, media.image), ...(altText !== undefined && { altText }) };
             }
+            // Only `dark` and `light` are mandatory; the high contrast variants fall back to them.
+            const dark = this.toPluginUrl(pck, media.image.dark);
+            const light = this.toPluginUrl(pck, media.image.light);
             return {
                 image: {
-                    dark: this.toPluginUrl(pck, media.image.dark),
-                    light: this.toPluginUrl(pck, media.image.light),
-                    hc: this.toPluginUrl(pck, media.image.hc),
-                    hcLight: this.toPluginUrl(pck, media.image.hcLight)
+                    dark,
+                    light,
+                    hc: media.image.hc ? this.toPluginUrl(pck, media.image.hc) : dark,
+                    hcLight: media.image.hcLight ? this.toPluginUrl(pck, media.image.hcLight) : light
                 },
                 ...(altText !== undefined && { altText })
             };

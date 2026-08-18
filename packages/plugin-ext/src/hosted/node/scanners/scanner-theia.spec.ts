@@ -212,17 +212,46 @@ describe('TheiaPluginScanner - readWalkthroughs', () => {
 
     before(() => {
         scannerInstance = new (TheiaPluginScanner as any)();
+        (scannerInstance as any).logger = { error: () => { }, warn: () => { }, info: () => { }, debug: () => { } };
     });
 
-    function callReadWalkthroughs(walkthroughs: PluginPackageWalkthrough[], publisher = 'test-publisher', name = 'test-plugin'): WalkthroughContribution[] | undefined {
+    function callReadWalkthroughs(
+        walkthroughs: PluginPackageWalkthrough[],
+        publisher = 'test-publisher',
+        name = 'test-plugin',
+        icon?: string
+    ): WalkthroughContribution[] | undefined {
         const pkg = {
             name,
             publisher,
             version: '1.0.0',
+            icon,
             contributes: { walkthroughs }
         } as any;
         return (scannerInstance as any).readWalkthroughs(pkg);
     }
+
+    it('should resolve the icon of the contributing extension', () => {
+        const result = callReadWalkthroughs([{
+            id: 'wt1',
+            title: 'WT',
+            description: 'desc',
+            steps: [{ id: 's1', title: 'S1', description: 'd1' }]
+        }], 'test-publisher', 'test-plugin', 'images/icon.png');
+
+        expect(result![0].pluginIcon).to.equal('hostedPlugin/test_publisher_test_plugin/images%2Ficon.png');
+    });
+
+    it('should leave the extension icon undefined when the package declares none', () => {
+        const result = callReadWalkthroughs([{
+            id: 'wt1',
+            title: 'WT',
+            description: 'desc',
+            steps: [{ id: 's1', title: 'S1', description: 'd1' }]
+        }]);
+
+        expect(result![0].pluginIcon).to.be.undefined;
+    });
 
     it('should read a valid walkthrough contribution', () => {
         const result = callReadWalkthroughs([{

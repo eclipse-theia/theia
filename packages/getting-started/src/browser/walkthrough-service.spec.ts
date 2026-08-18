@@ -30,7 +30,7 @@ describe('WalkthroughService', () => {
     let onDidExecuteCommandEmitter: Emitter<{ commandId: string }>;
     let onPreferenceChangedEmitter: Emitter<{ preferenceName: string }>;
     let onDidChangeContextKeyEmitter: Emitter<ContextKeyChangeEvent>;
-    let mockPlugins: { model: { id: string; publisher: string; name: string } }[];
+    let mockPlugins: { model: { id: string; publisher: string; name: string }, outOfSync?: boolean }[];
     let mockDeployedPlugins: Map<string, any>;
     let mockContextKeyMatchResult: boolean;
     let executedCommands: { commandId: string; args: unknown[] }[];
@@ -38,6 +38,7 @@ describe('WalkthroughService', () => {
     let onDidExpandViewEmitter: Emitter<string>;
     let mockOpenerGetOpener: () => Promise<{ open: (...args: unknown[]) => void }>;
     let mockOpenerOpenCalls: string[];
+    let reportedErrors: string[];
 
     function createContribution(overrides?: Partial<WalkthroughContribution>): WalkthroughContribution {
         return {
@@ -45,7 +46,6 @@ describe('WalkthroughService', () => {
             title: 'Test Walkthrough',
             description: 'A walkthrough for testing',
             pluginId: 'test.publisher.test-plugin',
-            extensionUri: '/path/to/extension',
             steps: [
                 {
                     id: 'step1',
@@ -75,6 +75,7 @@ describe('WalkthroughService', () => {
         mockContextKeyMatchResult = false;
         executedCommands = [];
         mockOpenerOpenCalls = [];
+        reportedErrors = [];
         const mockOpener = { open: (...args: unknown[]) => { mockOpenerOpenCalls.push(String(args[0])); } };
         mockOpenerGetOpener = () => Promise.resolve(mockOpener);
         onDidExpandViewEmitter = new Emitter();
@@ -104,7 +105,9 @@ describe('WalkthroughService', () => {
         };
         (service as any).contextKeyService = {
             onDidChange: onDidChangeContextKeyEmitter.event,
-            match: () => mockContextKeyMatchResult
+            match: () => mockContextKeyMatchResult,
+            // Good enough for the expressions used here: every identifier is a key.
+            parseKeys: (expression: string) => new Set(expression.match(/[A-Za-z_][A-Za-z0-9_.]*/g) ?? [])
         };
         (service as any).gettingStartedPreferences = new Proxy({}, {
             get: (_target, prop) => mockPreferences[prop as string]
@@ -115,8 +118,20 @@ describe('WalkthroughService', () => {
         (service as any).openerService = {
             getOpener: () => mockOpenerGetOpener()
         };
+        (service as any).logger = {
+            warn: () => { },
+            error: () => { },
+            info: () => { },
+            debug: () => { }
+        };
+        (service as any).messageService = {
+            error: (message: string) => {
+                reportedErrors.push(message);
+                return Promise.resolve(undefined);
+            }
+        };
         (service as any).pluginSupport = {
-            get plugins(): { model: { id: string; publisher: string; name: string } }[] { return mockPlugins; },
+            get plugins(): { model: { id: string; publisher: string; name: string }, outOfSync?: boolean }[] { return mockPlugins; },
             getPlugin: (id: string) => mockDeployedPlugins.get(id),
             onDidChangePlugins: onDidChangePluginsEmitter.event
         };
@@ -218,6 +233,98 @@ describe('WalkthroughService', () => {
             const wtId = 'test.publisher.test-plugin.test-walkthrough';
             await service.markStepComplete(wtId, 'nonexistent-step');
             // should not throw
+        });
+    });
+
+    describe('markStepIncomplete', () => {
+        const wtId = 'test.publisher.test-plugin.test-walkthrough';
+
+        beforeEach(() => {
+            (service as any).registerWalkthrough(createContribution());
+        });
+
+        it('should take the completion mark off a step again', async () => {
+            await service.markStepComplete(wtId, 'step1');
+            expect(service.getWalkthrough(wtId)!.steps[0].isComplete).to.be.true;
+
+            await service.markStepIncomplete(wtId, 'step1');
+
+            expect(service.getWalkthrough(wtId)!.steps[0].isComplete).to.be.false;
+        });
+
+        it('should remove the step from the persisted progress', async () => {
+            await service.markStepComplete(wtId, 'step1');
+            await service.markStepComplete(wtId, 'step2');
+            await service.markStepIncomplete(wtId, 'step1');
+
+            expect((storedData['walkthrough-progress'] as any).completedSteps[wtId]).to.deep.equal(['step2']);
+        });
+
+        it('should no-op for a step that is not complete', async () => {
+            let fired = false;
+            service.onDidChangeWalkthroughs(() => { fired = true; });
+            await service.markStepIncomplete(wtId, 'step1');
+
+            expect(fired).to.be.false;
+        });
+
+        it('should no-op for an unknown step', async () => {
+            let fired = false;
+            service.onDidChangeWalkthroughs(() => { fired = true; });
+            await service.markStepIncomplete(wtId, 'nonexistent');
+
+            expect(fired).to.be.false;
+        });
+
+        it('should let the progress go back down', async () => {
+            await service.markAllStepsComplete(wtId);
+            expect(service.getStepProgress(wtId)).to.deep.equal({ completed: 2, total: 2 });
+
+            await service.markStepIncomplete(wtId, 'step1');
+
+            expect(service.getStepProgress(wtId)).to.deep.equal({ completed: 1, total: 2 });
+        });
+    });
+
+    describe('markAllStepsComplete', () => {
+        const wtId = 'test.publisher.test-plugin.test-walkthrough';
+
+        beforeEach(() => {
+            (service as any).registerWalkthrough(createContribution());
+        });
+
+        it('should complete every step', async () => {
+            await service.markAllStepsComplete(wtId);
+
+            const walkthrough = service.getWalkthrough(wtId)!;
+            for (const step of walkthrough.steps) {
+                expect(step.isComplete).to.be.true;
+            }
+        });
+
+        it('should persist the progress once', async () => {
+            await service.markAllStepsComplete(wtId);
+
+            const stored = storedData['walkthrough-progress'] as any;
+            expect(stored.completedSteps[wtId]).to.deep.equal(['step1', 'step2']);
+        });
+
+        it('should no-op when everything is already complete', async () => {
+            await service.markAllStepsComplete(wtId);
+
+            let fired = false;
+            service.onDidChangeWalkthroughs(() => { fired = true; });
+            await service.markAllStepsComplete(wtId);
+
+            expect(fired).to.be.false;
+        });
+
+        it('should no-op for an unknown walkthrough', async () => {
+            let fired = false;
+            service.onDidChangeWalkthroughs(() => { fired = true; });
+            await service.markAllStepsComplete('nonexistent');
+
+            expect(fired).to.be.false;
         });
     });
 
@@ -362,24 +469,244 @@ describe('WalkthroughService', () => {
         });
     });
 
-    describe('selectWalkthrough', () => {
-        it('should fire onDidSelectWalkthrough for a known walkthrough', () => {
-            (service as any).registerWalkthrough(createContribution());
-            const wtId = 'test.publisher.test-plugin.test-walkthrough';
+    describe('extension icon', () => {
+        it('should carry the icon of the contributing extension', () => {
+            (service as any).registerWalkthrough(createContribution({ pluginIcon: 'hostedPlugin/pub_name/icon.png' }));
 
-            let selectedId: string | undefined;
-            service.onDidSelectWalkthrough(id => { selectedId = id; });
-            service.selectWalkthrough(wtId);
-
-            expect(selectedId).to.equal(wtId);
+            const walkthrough = service.getWalkthrough('test.publisher.test-plugin.test-walkthrough')!;
+            expect(walkthrough.pluginIcon).to.equal('hostedPlugin/pub_name/icon.png');
         });
 
-        it('should not fire onDidSelectWalkthrough for unknown walkthrough', () => {
+        it('should leave the icon undefined when the extension declares none', () => {
+            (service as any).registerWalkthrough(createContribution());
+
+            const walkthrough = service.getWalkthrough('test.publisher.test-plugin.test-walkthrough')!;
+            expect(walkthrough.pluginIcon).to.be.undefined;
+        });
+    });
+
+    describe('selection', () => {
+        const wtId = 'test.publisher.test-plugin.test-walkthrough';
+
+        it('should have no selection initially', () => {
+            expect(service.selectedWalkthrough).to.be.undefined;
+            expect(service.selectedStep).to.be.undefined;
+        });
+
+        it('should retain the selected walkthrough and fire onDidChangeSelection', () => {
+            (service as any).registerWalkthrough(createContribution());
+
+            let fired = 0;
+            service.onDidChangeSelection(() => { fired++; });
+            service.selectWalkthrough(wtId);
+
+            expect(fired).to.equal(1);
+            expect(service.selectedWalkthrough?.id).to.equal(wtId);
+        });
+
+        it('should preselect the first pending step', () => {
+            (service as any).registerWalkthrough(createContribution());
+            service.selectWalkthrough(wtId);
+
+            expect(service.selectedStep?.id).to.equal('step1');
+        });
+
+        it('should preselect the first step that is not yet complete', async () => {
+            (service as any).registerWalkthrough(createContribution());
+            await service.markStepComplete(wtId, 'step1');
+            service.selectWalkthrough(wtId);
+
+            expect(service.selectedStep?.id).to.equal('step2');
+        });
+
+        it('should accept the VS Code `publisher.name#walkthroughId` form', () => {
+            (service as any).registerWalkthrough(createContribution());
+            service.selectWalkthrough('test.publisher.test-plugin#test-walkthrough');
+
+            expect(service.selectedWalkthrough?.id).to.equal(wtId);
+        });
+
+        it('should not select an unknown walkthrough', () => {
             let fired = false;
-            service.onDidSelectWalkthrough(() => { fired = true; });
+            service.onDidChangeSelection(() => { fired = true; });
             service.selectWalkthrough('nonexistent');
 
             expect(fired).to.be.false;
+            expect(service.selectedWalkthrough).to.be.undefined;
+        });
+
+        it('should select another step of the selected walkthrough', () => {
+            (service as any).registerWalkthrough(createContribution());
+            service.selectWalkthrough(wtId);
+            service.selectStep('step2');
+
+            expect(service.selectedStep?.id).to.equal('step2');
+        });
+
+        it('should ignore a step that does not belong to the selected walkthrough', () => {
+            (service as any).registerWalkthrough(createContribution());
+            service.selectWalkthrough(wtId);
+            service.selectStep('nonexistent');
+
+            expect(service.selectedStep?.id).to.equal('step1');
+        });
+
+        it('should clear the selection', () => {
+            (service as any).registerWalkthrough(createContribution());
+            service.selectWalkthrough(wtId);
+
+            let fired = 0;
+            service.onDidChangeSelection(() => { fired++; });
+            service.clearSelection();
+
+            expect(fired).to.equal(1);
+            expect(service.selectedWalkthrough).to.be.undefined;
+            expect(service.selectedStep).to.be.undefined;
+        });
+
+        it('should not fire onDidChangeSelection when clearing an empty selection', () => {
+            let fired = false;
+            service.onDidChangeSelection(() => { fired = true; });
+            service.clearSelection();
+
+            expect(fired).to.be.false;
+        });
+
+        it('should reflect step completion in the selected step', async () => {
+            (service as any).registerWalkthrough(createContribution());
+            service.selectWalkthrough(wtId);
+            await service.markStepComplete(wtId, 'step1');
+
+            expect(service.selectedStep?.id).to.equal('step1');
+            expect(service.selectedStep?.isComplete).to.be.true;
+        });
+    });
+
+    describe('when clauses', () => {
+        const wtId = 'test.publisher.test-plugin.test-walkthrough';
+
+        it('should hide a walkthrough whose when clause does not hold', () => {
+            mockContextKeyMatchResult = false;
+            (service as any).registerWalkthrough(createContribution({ when: 'someKey' }));
+
+            expect(service.getWalkthroughs()).to.be.empty;
+            expect(service.getWalkthrough(wtId)).to.be.undefined;
+        });
+
+        it('should list a walkthrough whose when clause holds', () => {
+            mockContextKeyMatchResult = true;
+            (service as any).registerWalkthrough(createContribution({ when: 'someKey' }));
+
+            expect(service.getWalkthroughs()).to.have.lengthOf(1);
+        });
+
+        it('should always list a walkthrough without a when clause', () => {
+            mockContextKeyMatchResult = false;
+            (service as any).registerWalkthrough(createContribution());
+
+            expect(service.getWalkthroughs()).to.have.lengthOf(1);
+        });
+
+        it('should hide the steps whose when clause does not hold', () => {
+            mockContextKeyMatchResult = false;
+            (service as any).registerWalkthrough(createContribution({
+                steps: [
+                    { id: 'always', title: 'Always', description: 'd' },
+                    { id: 'never', title: 'Never', description: 'd', when: 'someKey' }
+                ]
+            }));
+
+            const walkthrough = service.getWalkthrough(wtId)!;
+            expect(walkthrough.steps).to.have.lengthOf(1);
+            expect(walkthrough.steps[0].id).to.equal('always');
+        });
+
+        it('should exclude hidden steps from the progress', () => {
+            mockContextKeyMatchResult = false;
+            (service as any).registerWalkthrough(createContribution({
+                steps: [
+                    { id: 'always', title: 'Always', description: 'd' },
+                    { id: 'never', title: 'Never', description: 'd', when: 'someKey' }
+                ]
+            }));
+
+            expect(service.getStepProgress(wtId)).to.deep.equal({ completed: 0, total: 1 });
+        });
+
+        it('should not select a hidden walkthrough', () => {
+            mockContextKeyMatchResult = false;
+            (service as any).registerWalkthrough(createContribution({ when: 'someKey' }));
+            service.selectWalkthrough(wtId);
+
+            expect(service.selectedWalkthrough).to.be.undefined;
+        });
+
+        it('should preselect the first pending visible step', () => {
+            mockContextKeyMatchResult = false;
+            (service as any).registerWalkthrough(createContribution({
+                steps: [
+                    { id: 'hidden', title: 'Hidden', description: 'd', when: 'someKey' },
+                    { id: 'visible', title: 'Visible', description: 'd' }
+                ]
+            }));
+            service.selectWalkthrough(wtId);
+
+            expect(service.selectedStep?.id).to.equal('visible');
+        });
+
+        it('should re-evaluate visibility whenever it is queried', () => {
+            mockContextKeyMatchResult = false;
+            (service as any).registerWalkthrough(createContribution({ when: 'someKey' }));
+            expect(service.getWalkthroughs()).to.be.empty;
+
+            mockContextKeyMatchResult = true;
+            expect(service.getWalkthroughs()).to.have.lengthOf(1);
+        });
+
+        it('should collect the context keys of every when clause and onContext event', () => {
+            (service as any).registerWalkthrough(createContribution({
+                when: 'walkthroughKey',
+                steps: [{ id: 's1', title: 'S1', description: 'd', when: 'stepKey', completionEvents: ['onContext:eventKey'] }]
+            }));
+
+            const keys = (service as any).getContextKeys() as Set<string>;
+            expect(Array.from(keys).sort()).to.deep.equal(['eventKey', 'stepKey', 'walkthroughKey']);
+        });
+
+        it('should notify when visibility changed', () => {
+            (service as any).registerWalkthrough(createContribution({ when: 'someKey' }));
+
+            let fired = false;
+            service.onDidChangeWalkthroughs(() => { fired = true; });
+            (service as any).handleVisibilityChanged();
+
+            expect(fired).to.be.true;
+        });
+
+        it('should close a selected walkthrough that becomes hidden', () => {
+            mockContextKeyMatchResult = true;
+            (service as any).registerWalkthrough(createContribution({ when: 'someKey' }));
+            service.selectWalkthrough(wtId);
+            expect(service.selectedWalkthrough?.id).to.equal(wtId);
+
+            mockContextKeyMatchResult = false;
+            (service as any).handleVisibilityChanged();
+
+            expect(service.selectedWalkthrough).to.be.undefined;
+        });
+
+        it('should mark only the visible steps done', async () => {
+            mockContextKeyMatchResult = false;
+            (service as any).registerWalkthrough(createContribution({
+                steps: [
+                    { id: 'always', title: 'Always', description: 'd' },
+                    { id: 'never', title: 'Never', description: 'd', when: 'someKey' }
+                ]
+            }));
+
+            await service.markAllStepsComplete(wtId);
+
+            expect(storedData['walkthrough-progress']).to.deep.equal({ completedSteps: { [wtId]: ['always'] } });
         });
     });
 
@@ -398,6 +725,49 @@ describe('WalkthroughService', () => {
 
             const walkthroughs = service.getWalkthroughs();
             expect(walkthroughs).to.have.lengthOf(2);
+        });
+    });
+
+    describe('uninstalled and disabled plugins', () => {
+        const pluginId = 'test.publisher.test-plugin';
+        const wtId = 'test.publisher.test-plugin.test-walkthrough';
+
+        beforeEach(() => {
+            mockPlugins = [{ model: { id: pluginId, publisher: 'test.publisher', name: 'test-plugin' } }];
+            mockDeployedPlugins.set(pluginId, { contributes: { walkthroughs: [createContribution()] } });
+            (service as any).syncWalkthroughsFromPlugins();
+        });
+
+        it('should offer the walkthrough of an installed plugin', () => {
+            expect(service.getWalkthrough(wtId)).to.not.be.undefined;
+        });
+
+        it('should drop the walkthrough once the plugin is out of sync', () => {
+            // Theia keeps an uninstalled or disabled plugin loaded until the next reload, flagged as out of sync.
+            mockPlugins[0].outOfSync = true;
+            (service as any).syncWalkthroughsFromPlugins();
+
+            expect(service.getWalkthrough(wtId)).to.be.undefined;
+            expect(service.getWalkthroughs()).to.be.empty;
+        });
+
+        it('should notify when the walkthrough is dropped', () => {
+            let fired = false;
+            service.onDidChangeWalkthroughs(() => { fired = true; });
+            mockPlugins[0].outOfSync = true;
+            (service as any).syncWalkthroughsFromPlugins();
+
+            expect(fired).to.be.true;
+        });
+
+        it('should close the walkthrough if it was open', () => {
+            service.selectWalkthrough(wtId);
+            expect(service.selectedWalkthrough?.id).to.equal(wtId);
+
+            mockPlugins[0].outOfSync = true;
+            (service as any).syncWalkthroughsFromPlugins();
+
+            expect(service.selectedWalkthrough).to.be.undefined;
         });
     });
 
@@ -570,6 +940,34 @@ describe('WalkthroughService', () => {
         });
     });
 
+    describe('onContext expressions', () => {
+        it('should complete a step whose context expression already holds at registration', () => {
+            mockContextKeyMatchResult = true;
+            (service as any).registerWalkthrough(createContribution({
+                steps: [{ id: 'static', title: 'Static', description: 'd', completionEvents: ['onContext:isLinux'] }]
+            }));
+
+            const wtId = 'test.publisher.test-plugin.test-walkthrough';
+            expect(service.getWalkthrough(wtId)!.steps[0].isComplete).to.be.true;
+        });
+
+        it('should react to a context expression rather than treating it as a single key', () => {
+            (service as any).registerWalkthrough(createContribution({
+                steps: [{ id: 'expr', title: 'Expression', description: 'd', completionEvents: ['onContext:foo && bar'] }]
+            }));
+
+            // The keys of the expression have to be recognised, not the expression string itself.
+            const keys = (service as any).getContextKeys() as Set<string>;
+            expect(Array.from(keys).sort()).to.deep.equal(['bar', 'foo']);
+
+            mockContextKeyMatchResult = true;
+            (service as any).completeMatchingContextSteps();
+
+            const wtId = 'test.publisher.test-plugin.test-walkthrough';
+            expect(service.getWalkthrough(wtId)!.steps[0].isComplete).to.be.true;
+        });
+    });
+
     describe('onView completion event', () => {
         beforeEach(() => {
             (service as any).registerWalkthrough(createContribution({
@@ -701,6 +1099,33 @@ describe('WalkthroughService', () => {
             await new Promise(resolve => setTimeout(resolve, 10));
 
             const wtId = 'test.publisher.test-plugin.cmd-link-walkthrough';
+            const walkthrough = service.getWalkthrough(wtId)!;
+            expect(walkthrough.steps[0].isComplete).to.be.true;
+        });
+
+        it('should strip the `toSide:` prefix before opening a command link', async () => {
+            await service.handleLinkClick('command:toSide:jupyter.createnewnotebook');
+
+            expect(mockOpenerOpenCalls).to.have.lengthOf(1);
+            expect(mockOpenerOpenCalls[0]).to.equal('command:jupyter.createnewnotebook');
+            expect(reportedErrors).to.be.empty;
+        });
+
+        it('should report an error instead of rejecting when the link cannot be opened', async () => {
+            mockOpenerGetOpener = () => Promise.reject(new Error("The command 'missing.command' cannot be executed."));
+
+            await service.handleLinkClick('command:missing.command');
+
+            expect(reportedErrors).to.have.lengthOf(1);
+            expect(reportedErrors[0]).to.contain('missing.command');
+        });
+
+        it('should still complete the step when the link cannot be opened', async () => {
+            const wtId = 'test.publisher.test-plugin.test-walkthrough';
+            mockOpenerGetOpener = () => Promise.reject(new Error('no opener'));
+
+            await service.handleLinkClick('https://example.com');
+
             const walkthrough = service.getWalkthrough(wtId)!;
             expect(walkthrough.steps[0].isComplete).to.be.true;
         });

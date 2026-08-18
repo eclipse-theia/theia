@@ -14,22 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { nls } from '@theia/core/lib/common/nls';
+import { Endpoint } from '@theia/core/lib/browser/endpoint';
 
-export namespace WalkthroughCommands {
-    export const OPEN_WALKTHROUGH = {
-        id: 'walkthrough.open',
-        label: nls.localizeByDefault('Open Walkthrough...')
-    };
-    /**
-     * VS Code's id for opening a walkthrough, registered as an alias of {@link OPEN_WALKTHROUGH}.
-     * Walkthroughs link to it from their step descriptions.
-     */
-    export const OPEN_WALKTHROUGH_VSCODE = {
-        id: 'workbench.action.openWalkthrough'
-    };
-    export const RESET_WALKTHROUGH_PROGRESS = {
-        id: 'walkthrough.resetProgress',
-        label: nls.localize('theia/getting-started/resetWalkthroughProgress', 'Reset Walkthrough Progress')
-    };
+/**
+ * Resolves the resources a walkthrough refers to - its media and the icon of the contributing extension.
+ *
+ * A plugin contributes them as backend relative paths, which have to be resolved against the backend
+ * endpoint before the frontend can request them.
+ */
+export function toWalkthroughResourceUrl(path: string): string {
+    return path.startsWith('hostedPlugin/') ? new Endpoint({ path }).getRestUrl().toString() : path;
 }

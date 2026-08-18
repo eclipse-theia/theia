@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
@@ -24,6 +24,9 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { DeployedPlugin, PluginIdentifiers, PluginMetadata, WalkthroughContribution, WalkthroughStepContribution } from '@theia/plugin-ext/lib/common/plugin-protocol';
 
 import { OpenerService, open } from '@theia/core/lib/browser/opener-service';
+import { ILogger } from '@theia/core/lib/common/logger';
+import { MessageService } from '@theia/core/lib/common/message-service';
+import { nls } from '@theia/core/lib/common/nls';
 import { URI } from '@theia/core/lib/common/uri';
 import { Walkthrough, WalkthroughStep } from '../common/walkthrough-types';
 import { GettingStartedPreferences } from '../common/getting-started-preferences';
@@ -42,6 +45,7 @@ export interface WalkthroughPluginSupport {
 }
 
 const WALKTHROUGH_PROGRESS_KEY = 'walkthrough-progress';
+const ON_CONTEXT_EVENT_PREFIX = 'onContext:';
 
 interface WalkthroughProgressState {
     completedSteps: { [walkthroughId: string]: string[] };
@@ -74,39 +78,56 @@ export class WalkthroughService implements Disposable {
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
 
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
+    @inject(ILogger) @named('getting-started:WalkthroughService')
+    protected readonly logger: ILogger;
+
     protected readonly walkthroughs = new Map<string, Walkthrough>();
     protected readonly toDispose = new DisposableCollection();
 
     protected readonly onDidChangeWalkthroughsEmitter = new Emitter<void>();
     readonly onDidChangeWalkthroughs: Event<void> = this.onDidChangeWalkthroughsEmitter.event;
 
-    protected readonly onDidSelectWalkthroughEmitter = new Emitter<string>();
-    readonly onDidSelectWalkthrough: Event<string> = this.onDidSelectWalkthroughEmitter.event;
+    protected readonly onDidChangeSelectionEmitter = new Emitter<void>();
+    readonly onDidChangeSelection: Event<void> = this.onDidChangeSelectionEmitter.event;
 
     protected progressState: WalkthroughProgressState = { completedSteps: {} };
     protected progressLoaded = false;
     protected knownPluginIds: Set<string> = new Set();
+    protected pluginBaselineEstablished = false;
+
+    protected selectedWalkthroughId: string | undefined;
+    protected selectedStepId: string | undefined;
+
+    /** Cache of {@link getContextKeys}, invalidated whenever the set of walkthroughs changes. */
+    protected contextKeys: Set<string> | undefined;
 
     @postConstruct()
     protected init(): void {
         this.toDispose.push(this.onDidChangeWalkthroughsEmitter);
-        this.toDispose.push(this.onDidSelectWalkthroughEmitter);
+        this.toDispose.push(this.onDidChangeSelectionEmitter);
         this.loadProgress().then(() => {
             this.syncWalkthroughsFromPlugins();
-            this.knownPluginIds = new Set(this.pluginSupport.plugins.map(p => p.model.id));
+            this.establishPluginBaseline();
         });
 
         this.toDispose.push(this.pluginSupport.onDidChangePlugins(() => {
-            const previousIds = new Set(this.knownPluginIds);
+            const previousIds = this.knownPluginIds;
+            const baselineEstablished = this.pluginBaselineEstablished;
             this.syncWalkthroughsFromPlugins();
-            const newIds = new Set(this.pluginSupport.plugins.map(p => p.model.id));
-            for (const newId of newIds) {
+            this.establishPluginBaseline();
+            if (!baselineEstablished) {
+                // The plugins deployed while the application was starting are not new installations.
+                return;
+            }
+            for (const newId of this.knownPluginIds) {
                 if (!previousIds.has(newId)) {
                     this.handleCompletionEvent(`extensionInstalled:${newId}`);
                     this.handleExtensionInstalledAutoOpen(newId);
                 }
             }
-            this.knownPluginIds = newIds;
         }));
 
         this.toDispose.push(this.commandRegistry.onDidExecuteCommand(e => {
@@ -123,26 +144,102 @@ export class WalkthroughService implements Disposable {
         }));
 
         this.toDispose.push(this.contextKeyService.onDidChange(event => {
-            for (const [walkthroughId, walkthrough] of this.walkthroughs) {
-                for (const step of walkthrough.steps) {
-                    if (step.isComplete || !step.completionEvents) {
-                        continue;
-                    }
-                    for (const completionEvent of step.completionEvents) {
-                        if (completionEvent.startsWith('onContext:')) {
-                            const contextKey = completionEvent.substring('onContext:'.length);
-                            if (event.affects(new Set([contextKey])) && this.contextKeyService.match(contextKey)) {
-                                this.markStepComplete(walkthroughId, step.id);
-                            }
-                        }
-                    }
-                }
+            if (event.affects(this.getContextKeys())) {
+                this.completeMatchingContextSteps();
+                this.handleVisibilityChanged();
             }
         }));
     }
 
+    /**
+     * Complete every pending step whose `onContext:` expression currently holds.
+     */
+    protected completeMatchingContextSteps(): void {
+        for (const [walkthroughId, walkthrough] of this.walkthroughs) {
+            for (const step of walkthrough.steps) {
+                if (step.isComplete || !step.completionEvents) {
+                    continue;
+                }
+                for (const completionEvent of step.completionEvents) {
+                    if (completionEvent.startsWith(ON_CONTEXT_EVENT_PREFIX) && this.contextKeyService.match(completionEvent.substring(ON_CONTEXT_EVENT_PREFIX.length))) {
+                        this.markStepComplete(walkthroughId, step.id);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * The context keys that the `when` clauses and the `onContext:` completion events of all registered
+     * walkthroughs depend on.
+     *
+     * The set is cached because context keys change very frequently, while walkthroughs rarely do.
+     */
+    protected getContextKeys(): Set<string> {
+        if (!this.contextKeys) {
+            const keys = new Set<string>();
+            const collect = (expression: string | undefined) => {
+                if (expression) {
+                    this.contextKeyService.parseKeys(expression)?.forEach(key => keys.add(key));
+                }
+            };
+            for (const walkthrough of this.walkthroughs.values()) {
+                collect(walkthrough.when);
+                for (const step of walkthrough.steps) {
+                    collect(step.when);
+                    step.completionEvents
+                        ?.filter(event => event.startsWith(ON_CONTEXT_EVENT_PREFIX))
+                        .forEach(event => collect(event.substring(ON_CONTEXT_EVENT_PREFIX.length)));
+                }
+            }
+            this.contextKeys = keys;
+        }
+        return this.contextKeys;
+    }
+
+    /**
+     * Whether a `when` clause currently holds. A contribution without a `when` clause is always visible.
+     */
+    protected isVisible(when: string | undefined): boolean {
+        return !when || this.contextKeyService.match(when);
+    }
+
+    /**
+     * Restricts a walkthrough to the steps that are currently visible.
+     *
+     * Hidden steps also stay out of the progress, so that a walkthrough whose remaining steps do not apply to
+     * this platform or workspace can still be completed.
+     */
+    protected toVisibleWalkthrough(walkthrough: Walkthrough): Walkthrough {
+        const steps = walkthrough.steps.filter(step => this.isVisible(step.when));
+        return steps.length === walkthrough.steps.length ? walkthrough : { ...walkthrough, steps };
+    }
+
+    protected handleVisibilityChanged(): void {
+        if (this.selectedWalkthroughId !== undefined && !this.selectedWalkthrough) {
+            // The selected walkthrough is no longer visible, so the welcome view must not keep showing it.
+            this.clearSelection();
+        }
+        this.onDidChangeWalkthroughsEmitter.fire();
+    }
+
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    /**
+     * Remember the currently deployed plugins as the set that is not considered newly installed.
+     *
+     * Plugins are deployed asynchronously while the application starts, so the baseline can only be trusted
+     * once plugins have actually arrived. Without this, every plugin of a fresh session would look like a new
+     * installation and - with `workbench.welcomePage.walkthroughs.openOnInstall` enabled - open a walkthrough
+     * on startup.
+     */
+    protected establishPluginBaseline(): void {
+        this.knownPluginIds = new Set(this.pluginSupport.plugins.map(p => p.model.id));
+        if (this.knownPluginIds.size > 0) {
+            this.pluginBaselineEstablished = true;
+        }
     }
 
     protected async loadProgress(): Promise<void> {
@@ -162,6 +259,11 @@ export class WalkthroughService implements Disposable {
         const seenIds = new Set<string>();
 
         for (const pluginMeta of plugins) {
+            if (pluginMeta.outOfSync) {
+                // An uninstalled or disabled plugin stays loaded until the next reload, but its walkthroughs
+                // must not be offered any more.
+                continue;
+            }
             const deployed = this.pluginSupport.getPlugin(
                 PluginIdentifiers.componentsToUnversionedId(pluginMeta.model)
             );
@@ -181,10 +283,15 @@ export class WalkthroughService implements Disposable {
         for (const id of this.walkthroughs.keys()) {
             if (!seenIds.has(id)) {
                 this.walkthroughs.delete(id);
+                this.contextKeys = undefined;
                 changed = true;
             }
         }
         if (changed) {
+            if (this.selectedWalkthroughId && !this.walkthroughs.has(this.selectedWalkthroughId)) {
+                // The selected walkthrough was contributed by a plugin that is no longer available.
+                this.clearSelection();
+            }
             this.onDidChangeWalkthroughsEmitter.fire();
         }
     }
@@ -200,14 +307,17 @@ export class WalkthroughService implements Disposable {
             title: contribution.title,
             description: contribution.description,
             steps,
-            featuredFor: contribution.featuredFor,
             when: contribution.when,
             icon: contribution.icon,
             pluginId: contribution.pluginId,
-            extensionUri: contribution.extensionUri
+            pluginIcon: contribution.pluginIcon
         };
 
         this.walkthroughs.set(fullId, walkthrough);
+        this.contextKeys = undefined;
+        // A context key that is already set has to complete its steps right away; without this, a step keyed on a
+        // static context - `onContext:isLinux` for instance - would wait for a change that never comes.
+        this.completeMatchingContextSteps();
         this.onDidChangeWalkthroughsEmitter.fire();
     }
 
@@ -223,37 +333,74 @@ export class WalkthroughService implements Disposable {
         };
     }
 
+    /**
+     * All walkthroughs whose `when` clause currently holds, restricted to their currently visible steps.
+     */
     getWalkthroughs(): Walkthrough[] {
-        return Array.from(this.walkthroughs.values());
+        return Array.from(this.walkthroughs.values())
+            .filter(walkthrough => this.isVisible(walkthrough.when))
+            .map(walkthrough => this.toVisibleWalkthrough(walkthrough));
     }
 
+    /**
+     * The walkthrough with the given id, or `undefined` if it is unknown or its `when` clause does not hold.
+     */
     getWalkthrough(id: string): Walkthrough | undefined {
-        return this.walkthroughs.get(id);
+        const walkthrough = this.walkthroughs.get(id);
+        return walkthrough && this.isVisible(walkthrough.when) ? this.toVisibleWalkthrough(walkthrough) : undefined;
     }
 
     async markStepComplete(walkthroughId: string, stepId: string): Promise<void> {
+        return this.setStepComplete(walkthroughId, stepId, true);
+    }
+
+    /**
+     * Take the completion mark off a step again, for example when it was completed by mistake.
+     */
+    async markStepIncomplete(walkthroughId: string, stepId: string): Promise<void> {
+        return this.setStepComplete(walkthroughId, stepId, false);
+    }
+
+    protected async setStepComplete(walkthroughId: string, stepId: string, isComplete: boolean): Promise<void> {
         const walkthrough = this.walkthroughs.get(walkthroughId);
         if (!walkthrough) {
             return;
         }
 
         const stepIndex = walkthrough.steps.findIndex(s => s.id === stepId);
-        if (stepIndex === -1 || walkthrough.steps[stepIndex].isComplete) {
+        if (stepIndex === -1 || walkthrough.steps[stepIndex].isComplete === isComplete) {
             return;
         }
 
         const updatedSteps = walkthrough.steps.map((s, i) =>
-            i === stepIndex ? { ...s, isComplete: true } : s
+            i === stepIndex ? { ...s, isComplete } : s
         );
         const updatedWalkthrough: Walkthrough = { ...walkthrough, steps: updatedSteps };
         this.walkthroughs.set(walkthroughId, updatedWalkthrough);
 
-        if (!this.progressState.completedSteps[walkthroughId]) {
-            this.progressState.completedSteps[walkthroughId] = [];
+        const completedSteps = this.progressState.completedSteps[walkthroughId] ?? [];
+        this.progressState.completedSteps[walkthroughId] = isComplete
+            ? (completedSteps.includes(stepId) ? completedSteps : [...completedSteps, stepId])
+            : completedSteps.filter(id => id !== stepId);
+
+        await this.saveProgress();
+        this.onDidChangeWalkthroughsEmitter.fire();
+    }
+
+    /**
+     * Mark every step of the given walkthrough as complete, persisting the progress once.
+     */
+    async markAllStepsComplete(walkthroughId: string): Promise<void> {
+        const walkthrough = this.walkthroughs.get(walkthroughId);
+        // Only the steps that apply right now are completed; a hidden step may become relevant again later.
+        const visibleStepIds = new Set(this.getWalkthrough(walkthroughId)?.steps.map(step => step.id));
+        if (!walkthrough || walkthrough.steps.every(step => step.isComplete || !visibleStepIds.has(step.id))) {
+            return;
         }
-        if (!this.progressState.completedSteps[walkthroughId].includes(stepId)) {
-            this.progressState.completedSteps[walkthroughId].push(stepId);
-        }
+
+        const updatedSteps = walkthrough.steps.map(step => step.isComplete || !visibleStepIds.has(step.id) ? step : { ...step, isComplete: true });
+        this.walkthroughs.set(walkthroughId, { ...walkthrough, steps: updatedSteps });
+        this.progressState.completedSteps[walkthroughId] = updatedSteps.filter(step => step.isComplete).map(step => step.id);
 
         await this.saveProgress();
         this.onDidChangeWalkthroughsEmitter.fire();
@@ -275,7 +422,7 @@ export class WalkthroughService implements Disposable {
     }
 
     getStepProgress(walkthroughId: string): { completed: number; total: number } {
-        const walkthrough = this.walkthroughs.get(walkthroughId);
+        const walkthrough = this.getWalkthrough(walkthroughId);
         if (!walkthrough) {
             return { completed: 0, total: 0 };
         }
@@ -283,19 +430,100 @@ export class WalkthroughService implements Disposable {
         return { completed, total: walkthrough.steps.length };
     }
 
-    selectWalkthrough(walkthroughId: string): void {
-        if (this.walkthroughs.has(walkthroughId)) {
-            this.onDidSelectWalkthroughEmitter.fire(walkthroughId);
+    /**
+     * The walkthrough that is currently opened in the welcome view, if any.
+     * While a walkthrough is selected, the welcome view renders it instead of its regular content.
+     */
+    get selectedWalkthrough(): Walkthrough | undefined {
+        return this.selectedWalkthroughId === undefined ? undefined : this.getWalkthrough(this.selectedWalkthroughId);
+    }
+
+    /**
+     * The step of the {@link selectedWalkthrough} whose content is currently shown, if any.
+     */
+    get selectedStep(): WalkthroughStep | undefined {
+        const walkthrough = this.selectedWalkthrough;
+        if (!walkthrough || this.selectedStepId === undefined) {
+            return undefined;
         }
+        return walkthrough.steps.find(step => step.id === this.selectedStepId);
+    }
+
+    /**
+     * Open the given walkthrough in the welcome view and preselect its first pending step.
+     * Does nothing if no walkthrough is registered under that id.
+     */
+    selectWalkthrough(walkthroughId: string): void {
+        const walkthrough = this.getWalkthrough(walkthroughId) ?? this.getWalkthrough(this.fromVSCodeWalkthroughId(walkthroughId));
+        if (!walkthrough) {
+            return;
+        }
+        this.selectedWalkthroughId = walkthrough.id;
+        this.selectedStepId = this.getFirstPendingStep(walkthrough)?.id;
+        this.onDidChangeSelectionEmitter.fire();
+    }
+
+    /**
+     * Show the content of the given step of the currently selected walkthrough.
+     */
+    selectStep(stepId: string): void {
+        const walkthrough = this.selectedWalkthrough;
+        if (!walkthrough || this.selectedStepId === stepId || !walkthrough.steps.some(step => step.id === stepId)) {
+            return;
+        }
+        this.selectedStepId = stepId;
+        this.onDidChangeSelectionEmitter.fire();
+    }
+
+    /**
+     * Close the currently selected walkthrough and return the welcome view to its regular content.
+     */
+    clearSelection(): void {
+        if (this.selectedWalkthroughId === undefined) {
+            return;
+        }
+        this.selectedWalkthroughId = undefined;
+        this.selectedStepId = undefined;
+        this.onDidChangeSelectionEmitter.fire();
+    }
+
+    protected getFirstPendingStep(walkthrough: Walkthrough): WalkthroughStep | undefined {
+        return walkthrough.steps.find(step => !step.isComplete) ?? walkthrough.steps[0];
+    }
+
+    /**
+     * VS Code refers to a walkthrough as `publisher.name#walkthroughId`, for example in the `command:` links of a
+     * step description, while the ids used here are fully dot-separated.
+     */
+    protected fromVSCodeWalkthroughId(walkthroughId: string): string {
+        return walkthroughId.replace('#', '.');
     }
 
     /**
      * Handle a link click from a walkthrough step description.
      * Fires the `onLink:{url}` completion event and opens the link.
+     *
+     * Walkthroughs commonly link to `command:` URIs that Theia does not implement. Such a link must not
+     * reject unhandled, so the failure is reported to the user instead.
      */
-    handleLinkClick(url: string): void {
+    async handleLinkClick(url: string): Promise<void> {
         this.handleCompletionEvent(`onLink:${url}`);
-        open(this.openerService, new URI(url));
+        try {
+            await open(this.openerService, new URI(this.normalizeLinkUrl(url)));
+        } catch (error) {
+            const reason = error instanceof Error ? error.message : String(error);
+            this.logger.warn(`Could not open the walkthrough link '${url}'.`, error);
+            this.messageService.error(nls.localize('theia/getting-started/walkthroughLinkFailed', "Could not open '{0}': {1}", url, reason));
+        }
+    }
+
+    /**
+     * VS Code walkthroughs use `command:toSide:<commandId>` to open the result of a command beside the walkthrough.
+     * Theia has no generic equivalent, so the command is executed as usual rather than failing to resolve.
+     */
+    protected normalizeLinkUrl(url: string): string {
+        const toSidePrefix = 'command:toSide:';
+        return url.startsWith(toSidePrefix) ? `command:${url.substring(toSidePrefix.length)}` : url;
     }
 
     protected handleCompletionEvent(event: string): void {
@@ -312,7 +540,7 @@ export class WalkthroughService implements Disposable {
         if (!this.gettingStartedPreferences['workbench.welcomePage.walkthroughs.openOnInstall']) {
             return;
         }
-        for (const walkthrough of this.walkthroughs.values()) {
+        for (const walkthrough of this.getWalkthroughs()) {
             if (walkthrough.pluginId === pluginId) {
                 this.commandRegistry.executeCommand(WalkthroughCommands.OPEN_WALKTHROUGH.id, walkthrough.id);
                 return;

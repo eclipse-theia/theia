@@ -23,9 +23,13 @@ let disableJSDOM = enableJSDOM();
 import { createRoot, Root } from 'react-dom/client';
 import { Emitter } from '@theia/core/lib/common/event';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
+import { ThemeService } from '@theia/core/lib/browser/theming';
+import { Disposable } from '@theia/core/lib/common/disposable';
+import { ILogger } from '@theia/core/lib/common/logger';
+import { ThemeType } from '@theia/core/lib/common/theme';
 import { Walkthrough, WalkthroughStep } from '../common/walkthrough-types';
 import { WalkthroughService } from './walkthrough-service';
-import { WalkthroughSection } from './walkthrough-section';
+import { WALKTHROUGH_LIST_LIMIT, WalkthroughSection } from './walkthrough-section';
 
 function createMockStep(overrides?: Partial<WalkthroughStep>): WalkthroughStep {
     return {
@@ -47,33 +51,63 @@ function createMockWalkthrough(overrides?: Partial<Walkthrough>): Walkthrough {
             createMockStep({ id: 'step-2', title: 'Second Step' })
         ],
         pluginId: 'test.plugin',
-        extensionUri: '/test/path',
         ...overrides
     };
 }
 
 interface MockWalkthroughService extends Pick<WalkthroughService,
-    'getWalkthroughs' | 'getWalkthrough' | 'onDidChangeWalkthroughs' | 'onDidSelectWalkthrough' |
-    'markStepComplete' | 'resetProgress' | 'getStepProgress' | 'selectWalkthrough'
+    'getWalkthroughs' | 'getWalkthrough' | 'onDidChangeWalkthroughs' | 'onDidChangeSelection' |
+    'selectedWalkthrough' | 'selectedStep' | 'selectWalkthrough' | 'selectStep' | 'clearSelection' |
+    'markStepComplete' | 'markStepIncomplete' | 'markAllStepsComplete' | 'resetProgress' | 'getStepProgress' | 'handleLinkClick'
 > {
     changeEmitter: Emitter<void>;
-    selectEmitter: Emitter<string>;
+    selectionEmitter: Emitter<void>;
 }
 
+/**
+ * Mirrors the selection handling of the real service: the selection is owned by the service, not by the component.
+ */
 function createMockWalkthroughService(walkthroughs: Walkthrough[] = []): MockWalkthroughService {
     const changeEmitter = new Emitter<void>();
-    const selectEmitter = new Emitter<string>();
+    const selectionEmitter = new Emitter<void>();
+    let selectedWalkthroughId: string | undefined;
+    let selectedStepId: string | undefined;
     return {
         changeEmitter,
-        selectEmitter,
+        selectionEmitter,
         getWalkthroughs: () => [...walkthroughs],
         getWalkthrough: (id: string) => walkthroughs.find(w => w.id === id),
         onDidChangeWalkthroughs: changeEmitter.event,
-        onDidSelectWalkthrough: selectEmitter.event,
+        onDidChangeSelection: selectionEmitter.event,
+        get selectedWalkthrough(): Walkthrough | undefined {
+            return walkthroughs.find(w => w.id === selectedWalkthroughId);
+        },
+        get selectedStep(): WalkthroughStep | undefined {
+            return this.selectedWalkthrough?.steps.find(s => s.id === selectedStepId);
+        },
+        selectWalkthrough: (id: string) => {
+            const walkthrough = walkthroughs.find(w => w.id === id);
+            if (walkthrough) {
+                selectedWalkthroughId = id;
+                selectedStepId = (walkthrough.steps.find(s => !s.isComplete) ?? walkthrough.steps[0])?.id;
+                selectionEmitter.fire();
+            }
+        },
+        selectStep: (stepId: string) => {
+            selectedStepId = stepId;
+            selectionEmitter.fire();
+        },
+        clearSelection: () => {
+            selectedWalkthroughId = undefined;
+            selectedStepId = undefined;
+            selectionEmitter.fire();
+        },
         markStepComplete: () => Promise.resolve(),
+        markStepIncomplete: () => Promise.resolve(),
+        markAllStepsComplete: () => Promise.resolve(),
         resetProgress: () => Promise.resolve(),
         getStepProgress: () => ({ completed: 0, total: 0 }),
-        selectWalkthrough: () => { }
+        handleLinkClick: () => Promise.resolve()
     };
 }
 
@@ -85,6 +119,17 @@ function createMockMarkdownRenderer(): MarkdownRenderer {
             return { element: div, dispose: () => { } };
         }
     };
+}
+
+function createMockThemeService(themeType: ThemeType = 'dark'): ThemeService {
+    return {
+        getCurrentTheme: () => ({ id: 'test', label: 'Test', type: themeType }),
+        onDidColorThemeChange: () => Disposable.NULL
+    } as unknown as ThemeService;
+}
+
+function createMockLogger(): ILogger {
+    return { warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger;
 }
 
 describe('WalkthroughSection', () => {
@@ -114,6 +159,8 @@ describe('WalkthroughSection', () => {
             <WalkthroughSection
                 walkthroughService={mockService as unknown as WalkthroughService}
                 markdownRenderer={mockRenderer}
+                themeService={createMockThemeService()}
+                logger={createMockLogger()}
             />
         );
 
@@ -139,6 +186,8 @@ describe('WalkthroughSection', () => {
             <WalkthroughSection
                 walkthroughService={mockService as unknown as WalkthroughService}
                 markdownRenderer={mockRenderer}
+                themeService={createMockThemeService()}
+                logger={createMockLogger()}
             />
         );
 
@@ -163,6 +212,8 @@ describe('WalkthroughSection', () => {
             <WalkthroughSection
                 walkthroughService={mockService as unknown as WalkthroughService}
                 markdownRenderer={mockRenderer}
+                themeService={createMockThemeService()}
+                logger={createMockLogger()}
             />
         );
 
@@ -196,6 +247,8 @@ describe('WalkthroughSection', () => {
             <WalkthroughSection
                 walkthroughService={mockService as unknown as WalkthroughService}
                 markdownRenderer={mockRenderer}
+                themeService={createMockThemeService()}
+                logger={createMockLogger()}
             />
         );
 
@@ -235,6 +288,8 @@ describe('WalkthroughSection', () => {
             <WalkthroughSection
                 walkthroughService={mockService as unknown as WalkthroughService}
                 markdownRenderer={mockRenderer}
+                themeService={createMockThemeService()}
+                logger={createMockLogger()}
             />
         );
 
@@ -254,7 +309,7 @@ describe('WalkthroughSection', () => {
         }, 50);
     });
 
-    it('should select walkthrough when onDidSelectWalkthrough fires with a valid ID', done => {
+    it('should show the detail view when the service selects a valid walkthrough id', done => {
         const walkthroughs = [
             createMockWalkthrough({ id: 'wt1', title: 'First' }),
             createMockWalkthrough({ id: 'wt2', title: 'Second' })
@@ -265,12 +320,14 @@ describe('WalkthroughSection', () => {
             <WalkthroughSection
                 walkthroughService={mockService as unknown as WalkthroughService}
                 markdownRenderer={mockRenderer}
+                themeService={createMockThemeService()}
+                logger={createMockLogger()}
             />
         );
 
         setTimeout(() => {
-            // Fire select event for the second walkthrough
-            mockService.selectEmitter.fire('wt2');
+            // Select the second walkthrough through the service, as `walkthrough.open` does
+            mockService.selectWalkthrough('wt2');
 
             setTimeout(() => {
                 const detailView = container.querySelector('.gs-walkthrough-detail');
@@ -283,7 +340,7 @@ describe('WalkthroughSection', () => {
         }, 50);
     });
 
-    it('should not navigate to detail view when onDidSelectWalkthrough fires with invalid ID', done => {
+    it('should not navigate to detail view when an unknown walkthrough id is selected', done => {
         const walkthroughs = [
             createMockWalkthrough({ id: 'wt1', title: 'Only One' })
         ];
@@ -293,11 +350,13 @@ describe('WalkthroughSection', () => {
             <WalkthroughSection
                 walkthroughService={mockService as unknown as WalkthroughService}
                 markdownRenderer={mockRenderer}
+                themeService={createMockThemeService()}
+                logger={createMockLogger()}
             />
         );
 
         setTimeout(() => {
-            mockService.selectEmitter.fire('nonexistent');
+            mockService.selectWalkthrough('nonexistent');
 
             setTimeout(() => {
                 const detailView = container.querySelector('.gs-walkthrough-detail');
@@ -321,6 +380,8 @@ describe('WalkthroughSection', () => {
             <WalkthroughSection
                 walkthroughService={mockService as unknown as WalkthroughService}
                 markdownRenderer={mockRenderer}
+                themeService={createMockThemeService()}
+                logger={createMockLogger()}
             />
         );
 
@@ -331,11 +392,92 @@ describe('WalkthroughSection', () => {
             // Verify emitters can still fire without error (listeners were cleaned up)
             assert.doesNotThrow(() => {
                 mockService.changeEmitter.fire();
-                mockService.selectEmitter.fire('wt1');
+                mockService.selectionEmitter.fire();
             }, 'Should not throw after unmount');
 
             // Re-create root for afterEach cleanup
             root = createRoot(container);
+            done();
+        }, 50);
+    });
+    it('should list at most WALKTHROUGH_LIST_LIMIT walkthroughs and delegate More... to the picker', done => {
+        const walkthroughs = [1, 2, 3, 4, 5].map(i => createMockWalkthrough({ id: `wt${i}`, title: `WT ${i}` }));
+        const mockService = createMockWalkthroughService(walkthroughs);
+        let showAllCalled = false;
+
+        root.render(
+            <WalkthroughSection
+                walkthroughService={mockService as unknown as WalkthroughService}
+                markdownRenderer={mockRenderer}
+                themeService={createMockThemeService()}
+                logger={createMockLogger()}
+                onShowAll={() => { showAllCalled = true; }}
+            />
+        );
+
+        setTimeout(() => {
+            assert.strictEqual(container.querySelectorAll('.gs-walkthrough-card').length, WALKTHROUGH_LIST_LIMIT, 'Should list only the first few cards');
+
+            const more = container.querySelector('.gs-walkthrough-more') as HTMLElement;
+            assert.ok(more, 'More link should exist');
+            more.click();
+
+            setTimeout(() => {
+                assert.strictEqual(showAllCalled, true, 'More... should offer all walkthroughs for selection');
+                assert.strictEqual(container.querySelectorAll('.gs-walkthrough-card').length, WALKTHROUGH_LIST_LIMIT, 'The list itself should not expand');
+                done();
+            }, 50);
+        }, 50);
+    });
+
+    it('should not list a walkthrough whose steps are all complete', done => {
+        const walkthroughs = [
+            createMockWalkthrough({ id: 'pending', title: 'Pending' }),
+            createMockWalkthrough({
+                id: 'done',
+                title: 'Done',
+                steps: [createMockStep({ id: 's1', isComplete: true })]
+            })
+        ];
+        const mockService = createMockWalkthroughService(walkthroughs);
+
+        root.render(
+            <WalkthroughSection
+                walkthroughService={mockService as unknown as WalkthroughService}
+                markdownRenderer={mockRenderer}
+                themeService={createMockThemeService()}
+                logger={createMockLogger()}
+                onShowAll={() => { }}
+            />
+        );
+
+        setTimeout(() => {
+            const titles = Array.from(container.querySelectorAll('.gs-walkthrough-card-title')).map(e => e.textContent);
+            assert.deepStrictEqual(titles, ['Pending'], 'Only the unfinished walkthrough should be listed');
+            // The completed one is still reachable, so the link has to stay.
+            assert.ok(container.querySelector('.gs-walkthrough-more'), 'More link should be offered');
+            done();
+        }, 50);
+    });
+
+    it('should not offer More... when every walkthrough is listed', done => {
+        const walkthroughs = [1, 2].map(i => createMockWalkthrough({ id: `wt${i}`, title: `WT ${i}` }));
+        const mockService = createMockWalkthroughService(walkthroughs);
+
+        root.render(
+            <WalkthroughSection
+                walkthroughService={mockService as unknown as WalkthroughService}
+                markdownRenderer={mockRenderer}
+                themeService={createMockThemeService()}
+                logger={createMockLogger()}
+                onShowAll={() => { }}
+            />
+        );
+
+        setTimeout(() => {
+            assert.strictEqual(container.querySelectorAll('.gs-walkthrough-card').length, 2, 'Should list both cards');
+            // eslint-disable-next-line no-null/no-null
+            assert.strictEqual(container.querySelector('.gs-walkthrough-more'), null, 'More link should not exist');
             done();
         }, 50);
     });

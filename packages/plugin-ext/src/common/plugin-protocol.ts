@@ -121,7 +121,7 @@ export interface PluginPackageWalkthroughStep {
     id: string;
     title: string;
     description: string;
-    media?: { markdown: string } | { image: string | { dark: string; light: string; hc: string; hcLight: string }; altText?: string } | { svg: string };
+    media?: { markdown: string } | { image: string | { dark: string; light: string; hc?: string; hcLight?: string }; altText?: string } | { svg: string };
     completionEvents?: string[];
     when?: string;
 }
@@ -705,7 +705,8 @@ export interface WalkthroughContribution {
     when?: string;
     icon?: string;
     pluginId: string;
-    extensionUri: string;
+    /** Icon of the contributing extension, as a backend relative path. */
+    pluginIcon?: string;
 }
 
 export interface AuthenticationProviderInformation {

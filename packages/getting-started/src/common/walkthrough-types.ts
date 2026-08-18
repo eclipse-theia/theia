@@ -29,9 +29,9 @@ export interface Walkthrough {
     title: string;
     description: string;
     steps: WalkthroughStep[];
-    featuredFor?: string[];
     when?: string;
     icon?: string;
     pluginId: string;
-    extensionUri: string;
+    /** Icon of the contributing extension, as a backend relative path. */
+    pluginIcon?: string;
 }

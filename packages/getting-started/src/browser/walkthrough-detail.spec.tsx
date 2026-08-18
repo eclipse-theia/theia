@@ -22,8 +22,12 @@ let disableJSDOM = enableJSDOM();
 
 import { createRoot, Root } from 'react-dom/client';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
+import { ThemeService } from '@theia/core/lib/browser/theming';
+import { Disposable } from '@theia/core/lib/common/disposable';
+import { ILogger } from '@theia/core/lib/common/logger';
+import { ThemeType } from '@theia/core/lib/common/theme';
 import { Walkthrough, WalkthroughStep } from '../common/walkthrough-types';
-import { WalkthroughCard, WalkthroughDetail } from './walkthrough-widget';
+import { WalkthroughDetail } from './walkthrough-detail';
 
 function createMockStep(overrides?: Partial<WalkthroughStep>): WalkthroughStep {
     return {
@@ -46,7 +50,6 @@ function createMockWalkthrough(overrides?: Partial<Walkthrough>): Walkthrough {
             createMockStep({ id: 'step-3', title: 'Third Step' })
         ],
         pluginId: 'test.plugin',
-        extensionUri: '/test/path',
         ...overrides
     };
 }
@@ -61,159 +64,16 @@ function createMockMarkdownRenderer(): MarkdownRenderer {
     };
 }
 
-describe('WalkthroughCard', () => {
-    let container: HTMLElement;
-    let root: Root;
+function createMockThemeService(themeType: ThemeType = 'dark'): ThemeService {
+    return {
+        getCurrentTheme: () => ({ id: 'test', label: 'Test', type: themeType }),
+        onDidColorThemeChange: () => Disposable.NULL
+    } as unknown as ThemeService;
+}
 
-    before(() => disableJSDOM = enableJSDOM());
-    after(() => disableJSDOM());
-
-    beforeEach(() => {
-        container = document.createElement('div');
-        document.body.appendChild(container);
-        root = createRoot(container);
-    });
-
-    afterEach(() => {
-        root.unmount();
-        document.body.removeChild(container);
-    });
-
-    it('should render walkthrough title and description', done => {
-        const walkthrough = createMockWalkthrough({
-            title: 'My Walkthrough',
-            description: 'My description'
-        });
-
-        root.render(
-            <WalkthroughCard walkthrough={walkthrough} onSelect={() => { }} />
-        );
-
-        setTimeout(() => {
-            const title = container.querySelector('.gs-walkthrough-card-title');
-            assert.ok(title, 'Title element should exist');
-            assert.ok(title?.textContent?.includes('My Walkthrough'), 'Should contain the walkthrough title');
-
-            const description = container.querySelector('.gs-walkthrough-card-description');
-            assert.ok(description, 'Description element should exist');
-            assert.ok(description?.textContent?.includes('My description'), 'Should contain the walkthrough description');
-            done();
-        }, 50);
-    });
-
-    it('should display progress bar with correct percentage', done => {
-        const walkthrough = createMockWalkthrough({
-            steps: [
-                createMockStep({ id: 's1', isComplete: true }),
-                createMockStep({ id: 's2', isComplete: false }),
-                createMockStep({ id: 's3', isComplete: false })
-            ]
-        });
-
-        root.render(
-            <WalkthroughCard walkthrough={walkthrough} onSelect={() => { }} />
-        );
-
-        setTimeout(() => {
-            const progressFill = container.querySelector('.gs-walkthrough-progress-fill') as HTMLElement;
-            assert.ok(progressFill, 'Progress fill element should exist');
-            const expectedWidth = `${(1 / 3) * 100}%`;
-            assert.strictEqual(progressFill.style.width, expectedWidth, 'Progress fill should reflect 1 of 3 steps');
-
-            const progressText = container.querySelector('.gs-walkthrough-progress-text');
-            assert.ok(progressText, 'Progress text should exist');
-            assert.ok(progressText?.textContent?.includes('1'), 'Should show completed count');
-            assert.ok(progressText?.textContent?.includes('3'), 'Should show total count');
-            done();
-        }, 50);
-    });
-
-    it('should call onSelect when card is clicked', done => {
-        const walkthrough = createMockWalkthrough();
-        let selectedWalkthrough: Walkthrough | undefined;
-
-        root.render(
-            <WalkthroughCard walkthrough={walkthrough} onSelect={w => { selectedWalkthrough = w; }} />
-        );
-
-        setTimeout(() => {
-            const card = container.querySelector('.gs-walkthrough-card') as HTMLElement;
-            assert.ok(card, 'Card element should exist');
-            card.click();
-
-            setTimeout(() => {
-                assert.ok(selectedWalkthrough, 'onSelect should have been called');
-                assert.strictEqual(selectedWalkthrough?.id, walkthrough.id, 'Should pass the walkthrough to onSelect');
-                done();
-            }, 50);
-        }, 50);
-    });
-
-    it('should render icon when walkthrough.icon is provided', done => {
-        const walkthrough = createMockWalkthrough({ icon: 'play' });
-
-        root.render(
-            <WalkthroughCard walkthrough={walkthrough} onSelect={() => { }} />
-        );
-
-        setTimeout(() => {
-            const icon = container.querySelector('.gs-walkthrough-icon');
-            assert.ok(icon, 'Icon element should exist');
-            assert.ok(icon?.classList.contains('codicon-play'), 'Should have the codicon-play class');
-            done();
-        }, 50);
-    });
-
-    it('should not render icon when walkthrough.icon is not provided', done => {
-        const walkthrough = createMockWalkthrough({ icon: undefined });
-
-        root.render(
-            <WalkthroughCard walkthrough={walkthrough} onSelect={() => { }} />
-        );
-
-        setTimeout(() => {
-            const icon = container.querySelector('.gs-walkthrough-icon');
-            // eslint-disable-next-line no-null/no-null
-            assert.strictEqual(icon, null, 'Icon element should not exist');
-            done();
-        }, 50);
-    });
-
-    it('should show 0% progress when no steps are complete', done => {
-        const walkthrough = createMockWalkthrough();
-
-        root.render(
-            <WalkthroughCard walkthrough={walkthrough} onSelect={() => { }} />
-        );
-
-        setTimeout(() => {
-            const progressFill = container.querySelector('.gs-walkthrough-progress-fill') as HTMLElement;
-            assert.ok(progressFill, 'Progress fill element should exist');
-            assert.strictEqual(progressFill.style.width, '0%', 'Progress should be 0%');
-            done();
-        }, 50);
-    });
-
-    it('should show 100% progress when all steps are complete', done => {
-        const walkthrough = createMockWalkthrough({
-            steps: [
-                createMockStep({ id: 's1', isComplete: true }),
-                createMockStep({ id: 's2', isComplete: true }),
-            ]
-        });
-
-        root.render(
-            <WalkthroughCard walkthrough={walkthrough} onSelect={() => { }} />
-        );
-
-        setTimeout(() => {
-            const progressFill = container.querySelector('.gs-walkthrough-progress-fill') as HTMLElement;
-            assert.ok(progressFill, 'Progress fill element should exist');
-            assert.strictEqual(progressFill.style.width, '100%', 'Progress should be 100%');
-            done();
-        }, 50);
-    });
-});
+function createMockLogger(): ILogger {
+    return { warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger;
+}
 
 describe('WalkthroughDetail', () => {
     let container: HTMLElement;
@@ -240,6 +100,8 @@ describe('WalkthroughDetail', () => {
 
         root.render(
             <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
@@ -254,6 +116,8 @@ describe('WalkthroughDetail', () => {
 
             const backLink = container.querySelector('.gs-walkthrough-back-link');
             assert.ok(backLink, 'Back link should exist');
+            // The label is a separate element so that it, and not the arrow icon, can carry the hover underline.
+            assert.ok(backLink?.querySelector('.gs-walkthrough-back-label'), 'Back label should be its own element');
             done();
         }, 50);
     });
@@ -269,6 +133,8 @@ describe('WalkthroughDetail', () => {
 
         root.render(
             <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
@@ -300,6 +166,8 @@ describe('WalkthroughDetail', () => {
 
         root.render(
             <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
@@ -323,6 +191,8 @@ describe('WalkthroughDetail', () => {
 
         root.render(
             <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { backCalled = true; }}
@@ -352,6 +222,8 @@ describe('WalkthroughDetail', () => {
 
         root.render(
             <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
                 walkthrough={walkthrough}
                 onStepSelect={step => { selectedStep = step; }}
                 onBack={() => { }}
@@ -381,6 +253,8 @@ describe('WalkthroughDetail', () => {
 
         root.render(
             <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
@@ -409,6 +283,8 @@ describe('WalkthroughDetail', () => {
 
         root.render(
             <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
@@ -434,6 +310,8 @@ describe('WalkthroughDetail', () => {
 
         root.render(
             <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
@@ -462,6 +340,8 @@ describe('WalkthroughDetail', () => {
 
         root.render(
             <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
@@ -488,6 +368,8 @@ describe('WalkthroughDetail', () => {
 
         root.render(
             <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
@@ -500,6 +382,255 @@ describe('WalkthroughDetail', () => {
             const img = container.querySelector('.gs-walkthrough-media-image') as HTMLImageElement;
             assert.ok(img, 'SVG image element should exist');
             assert.strictEqual(img.getAttribute('src'), '/path/to/graphic.svg', 'SVG src should be set');
+            done();
+        }, 50);
+    });
+
+    it('should turn single newlines in a description into Markdown hard breaks', done => {
+        const renderedMarkdown: string[] = [];
+        const recordingRenderer: MarkdownRenderer = {
+            render: (markdown: { value: string }) => {
+                renderedMarkdown.push(markdown.value);
+                return { element: document.createElement('div'), dispose: () => { } };
+            }
+        };
+        const selectedStep = createMockStep({
+            id: 's1',
+            description: 'First line\nSecond line\n\nNew paragraph'
+        });
+        const walkthrough = createMockWalkthrough({ steps: [selectedStep] });
+
+        root.render(
+            <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
+                walkthrough={walkthrough}
+                onStepSelect={() => { }}
+                onBack={() => { }}
+                selectedStep={selectedStep}
+                markdownRenderer={recordingRenderer}
+            />
+        );
+
+        setTimeout(() => {
+            const description = renderedMarkdown.find(value => value.includes('First line'));
+            assert.ok(description, 'The description should have been rendered');
+            assert.ok(description?.includes('First line  \nSecond line'), 'A single newline should become a hard break');
+            assert.ok(description?.includes('Second line\n\nNew paragraph'), 'A blank line should stay a paragraph break');
+            done();
+        }, 50);
+    });
+    it('should mark a step done when its step icon is clicked, without selecting the step', done => {
+        const step = createMockStep({ id: 's1', isComplete: false });
+        const walkthrough = createMockWalkthrough({ steps: [step] });
+        let markedStep: WalkthroughStep | undefined;
+        let selectedStep: WalkthroughStep | undefined;
+
+        root.render(
+            <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
+                walkthrough={walkthrough}
+                onStepSelect={s => { selectedStep = s; }}
+                onBack={() => { }}
+                markdownRenderer={mockRenderer}
+                onToggleStepDone={s => { markedStep = s; }}
+            />
+        );
+
+        setTimeout(() => {
+            const icon = container.querySelector('.gs-walkthrough-step-icon') as HTMLElement;
+            assert.ok(icon, 'Step icon should exist');
+            icon.click();
+
+            setTimeout(() => {
+                assert.strictEqual(markedStep?.id, 's1', 'onToggleStepDone should receive the step');
+                assert.strictEqual(selectedStep, undefined, 'Clicking the icon should not select the step');
+                done();
+            }, 50);
+        }, 50);
+    });
+
+    it('should toggle a completed step back to pending when its step icon is clicked', done => {
+        const step = createMockStep({ id: 's1', isComplete: true });
+        const walkthrough = createMockWalkthrough({ steps: [step] });
+        let toggledStep: WalkthroughStep | undefined;
+
+        root.render(
+            <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
+                walkthrough={walkthrough}
+                onStepSelect={() => { }}
+                onBack={() => { }}
+                markdownRenderer={mockRenderer}
+                onToggleStepDone={s => { toggledStep = s; }}
+            />
+        );
+
+        setTimeout(() => {
+            const icon = container.querySelector('.gs-walkthrough-step-icon') as HTMLElement;
+            assert.strictEqual(icon.getAttribute('aria-checked'), 'true', 'A completed step should read as checked');
+            icon.click();
+
+            setTimeout(() => {
+                assert.strictEqual(toggledStep?.id, 's1', 'onToggleStepDone should receive the completed step');
+                done();
+            }, 50);
+        }, 50);
+    });
+
+    it('should offer a Mark All Done action below the step list', done => {
+        const walkthrough = createMockWalkthrough({
+            steps: [createMockStep({ id: 's1' }), createMockStep({ id: 's2' })]
+        });
+        let markedAll = false;
+
+        root.render(
+            <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
+                walkthrough={walkthrough}
+                onStepSelect={() => { }}
+                onBack={() => { }}
+                markdownRenderer={mockRenderer}
+                onMarkAllStepsDone={() => { markedAll = true; }}
+            />
+        );
+
+        setTimeout(() => {
+            const button = container.querySelector('.gs-walkthrough-mark-all-done') as HTMLButtonElement;
+            assert.ok(button, 'Mark All Done button should exist');
+            assert.ok(button.closest('.gs-walkthrough-steps'), 'It should sit with the step list');
+            assert.ok(!button.disabled, 'It should be enabled while steps are pending');
+            button.click();
+
+            setTimeout(() => {
+                assert.strictEqual(markedAll, true, 'onMarkAllStepsDone should have been called');
+                done();
+            }, 50);
+        }, 50);
+    });
+
+    it('should disable Mark All Done once every step is complete', done => {
+        const walkthrough = createMockWalkthrough({
+            steps: [createMockStep({ id: 's1', isComplete: true }), createMockStep({ id: 's2', isComplete: true })]
+        });
+
+        root.render(
+            <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
+                walkthrough={walkthrough}
+                onStepSelect={() => { }}
+                onBack={() => { }}
+                markdownRenderer={mockRenderer}
+                onMarkAllStepsDone={() => { }}
+            />
+        );
+
+        setTimeout(() => {
+            const button = container.querySelector('.gs-walkthrough-mark-all-done') as HTMLButtonElement;
+            assert.ok(button, 'Mark All Done button should exist');
+            assert.ok(button.disabled, 'It should be disabled when nothing is left to complete');
+            done();
+        }, 50);
+    });
+
+    it('should keep `command:` links as plain inline links', done => {
+        const selectedStep = createMockStep({ id: 's1', description: '[Do it](command:my.command)' });
+        const walkthrough = createMockWalkthrough({ steps: [selectedStep] });
+        const linkRenderer: MarkdownRenderer = {
+            render: () => {
+                const div = document.createElement('div');
+                const anchor = document.createElement('a');
+                anchor.setAttribute('data-href', 'command:my.command');
+                anchor.textContent = 'Do it';
+                div.appendChild(anchor);
+                return { element: div, dispose: () => { } };
+            }
+        };
+
+        root.render(
+            <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
+                walkthrough={walkthrough}
+                onStepSelect={() => { }}
+                onBack={() => { }}
+                selectedStep={selectedStep}
+                markdownRenderer={linkRenderer}
+            />
+        );
+
+        setTimeout(() => {
+            const anchor = container.querySelector('.gs-walkthrough-step-description a') as HTMLElement;
+            assert.ok(anchor, 'The command link should be rendered');
+            assert.ok(!anchor.classList.contains('theia-button'), 'A command link should not be styled as a button');
+            done();
+        }, 50);
+    });
+
+    it('should pick the image variant matching the current theme and resolve the plugin resource', done => {
+        const selectedStep = createMockStep({
+            id: 's1',
+            media: {
+                image: {
+                    dark: 'hostedPlugin/pub_name/dark.png',
+                    light: 'hostedPlugin/pub_name/light.png',
+                    hc: 'hostedPlugin/pub_name/hc.png',
+                    hcLight: 'hostedPlugin/pub_name/hc-light.png'
+                },
+                altText: 'themed'
+            }
+        });
+        const walkthrough = createMockWalkthrough({ steps: [selectedStep] });
+
+        root.render(
+            <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService('light')}
+                walkthrough={walkthrough}
+                onStepSelect={() => { }}
+                onBack={() => { }}
+                selectedStep={selectedStep}
+                markdownRenderer={mockRenderer}
+            />
+        );
+
+        setTimeout(() => {
+            const img = container.querySelector('.gs-walkthrough-media-image') as HTMLImageElement;
+            assert.ok(img, 'Image element should exist');
+            const src = img.getAttribute('src')!;
+            assert.ok(src.includes('light.png'), `Should use the light variant, was '${src}'`);
+            assert.ok(!src.startsWith('hostedPlugin/'), `Should resolve against the backend endpoint, was '${src}'`);
+            done();
+        }, 50);
+    });
+    it('should not render completion actions inside the step content', done => {
+        const selectedStep = createMockStep({ id: 's1', isComplete: false });
+        const walkthrough = createMockWalkthrough({ steps: [selectedStep] });
+
+        root.render(
+            <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
+                walkthrough={walkthrough}
+                onStepSelect={() => { }}
+                onBack={() => { }}
+                selectedStep={selectedStep}
+                markdownRenderer={mockRenderer}
+                onToggleStepDone={() => { }}
+                onMarkAllStepsDone={() => { }}
+            />
+        );
+
+        setTimeout(() => {
+            const content = container.querySelector('.gs-walkthrough-step-content')!;
+            // eslint-disable-next-line no-null/no-null
+            assert.strictEqual(content.querySelector('button'), null, 'The step content should carry no buttons');
+            // eslint-disable-next-line no-null/no-null
+            assert.strictEqual(content.querySelector('.gs-walkthrough-step-done'), null, 'The step content should carry no done indicator');
             done();
         }, 50);
     });

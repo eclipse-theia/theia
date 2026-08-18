@@ -16,8 +16,8 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
-    ArrayUtils, CommandRegistry, MenuModelRegistry, nls, PreferenceContribution,
-    PreferenceDataProperty, PreferenceSchemaService, PreferenceService
+    ArrayUtils, CommandRegistry, MenuModelRegistry, MessageService, nls, PreferenceContribution,
+    PreferenceDataProperty, PreferenceSchemaService, PreferenceService, QuickInputService, QuickPickItem
 } from '@theia/core/lib/common';
 import { CommonCommands, CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
@@ -44,6 +44,13 @@ export const GettingStartedCommand = {
 import { WalkthroughCommands } from '../common/walkthrough-commands';
 export { WalkthroughCommands };
 
+/**
+ * How a walkthrough can be referenced when opening it through a command.
+ * The object form is what VS Code's `workbench.action.openWalkthrough` accepts, e.g. from a `command:` link
+ * in a step description.
+ */
+export type WalkthroughReference = string | { category?: string; step?: string };
+
 @injectable()
 export class GettingStartedContribution extends AbstractViewContribution<GettingStartedWidget>
     implements FrontendApplicationContribution, PreferenceContribution, ColorContribution {
@@ -68,6 +75,12 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
 
     @inject(WalkthroughService)
     protected readonly walkthroughService: WalkthroughService;
+
+    @inject(QuickInputService)
+    protected readonly quickInputService: QuickInputService;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     constructor() {
         super({
@@ -144,13 +157,12 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
             execute: () => this.openView({ reveal: true, activate: true }),
         });
         registry.registerCommand(WalkthroughCommands.OPEN_WALKTHROUGH, {
-            execute: async (walkthroughId?: string) => {
-                await this.openView({ reveal: true, activate: true });
-                if (walkthroughId) {
-                    this.walkthroughService.selectWalkthrough(walkthroughId);
-                }
-            }
+            execute: (walkthrough?: WalkthroughReference) => this.openWalkthrough(walkthrough)
         });
+        registry.registerCommand(WalkthroughCommands.OPEN_WALKTHROUGH_VSCODE, {
+            execute: (walkthrough?: WalkthroughReference) => this.openWalkthrough(walkthrough)
+        });
+        registry.registerAlias(WalkthroughCommands.OPEN_WALKTHROUGH_VSCODE.id, WalkthroughCommands.OPEN_WALKTHROUGH.id);
         registry.registerCommand(WalkthroughCommands.RESET_WALKTHROUGH_PROGRESS, {
             execute: async (walkthroughId?: string) => {
                 if (walkthroughId) {
@@ -158,6 +170,56 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
                 }
             }
         });
+    }
+
+    /**
+     * Open the welcome view and, if a walkthrough is given, select it.
+     * Accepts both a plain id and the argument object that VS Code's `workbench.action.openWalkthrough` uses.
+     * Without a walkthrough, the available ones are offered for selection.
+     */
+    protected async openWalkthrough(walkthrough?: WalkthroughReference): Promise<void> {
+        const requestedId = typeof walkthrough === 'string' ? walkthrough : walkthrough?.category;
+        const walkthroughId = requestedId ?? await this.pickWalkthrough();
+        if (!walkthroughId) {
+            return;
+        }
+        // The selection is applied before the view opens so that its first render already shows the
+        // walkthrough, instead of briefly showing the regular welcome content.
+        this.walkthroughService.selectWalkthrough(walkthroughId);
+        const stepId = typeof walkthrough === 'string' ? undefined : walkthrough?.step;
+        if (stepId) {
+            // VS Code qualifies step ids with the walkthrough they belong to.
+            this.walkthroughService.selectStep(stepId.substring(stepId.lastIndexOf('#') + 1));
+        }
+        await this.openView({ reveal: true, activate: true });
+    }
+
+    /**
+     * Let the user choose one of the available walkthroughs, completed ones included.
+     *
+     * @returns the id of the chosen walkthrough, or `undefined` if there is nothing to choose or the user cancelled.
+     */
+    protected async pickWalkthrough(): Promise<string | undefined> {
+        const walkthroughs = this.walkthroughService.getWalkthroughs();
+        if (walkthroughs.length === 0) {
+            this.messageService.info(nls.localize('theia/getting-started/noWalkthroughs', 'No walkthroughs are available.'));
+            return undefined;
+        }
+        const items: QuickPickItem[] = walkthroughs.map(walkthrough => {
+            const { completed, total } = this.walkthroughService.getStepProgress(walkthrough.id);
+            return {
+                id: walkthrough.id,
+                label: walkthrough.title,
+                description: completed === total
+                    ? nls.localizeByDefault('Completed')
+                    : nls.localizeByDefault('{0} of {1}', String(completed), String(total)),
+                detail: walkthrough.description
+            };
+        });
+        const picked = await this.quickInputService.showQuickPick(items, {
+            placeholder: nls.localizeByDefault('Select a walkthrough to open')
+        });
+        return picked?.id;
     }
 
     override registerMenus(menus: MenuModelRegistry): void {
@@ -172,7 +234,7 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
         colors.register(
             {
                 id: 'walkthrough.stepTitle.foreground',
-                defaults: { dark: '#FFFFFF', light: '#000000', hcDark: '#FFFFFF', hcLight: '#000000' },
+                defaults: { dark: 'foreground', light: 'foreground', hcDark: 'foreground', hcLight: 'foreground' },
                 description: 'Foreground color of walkthrough step titles.'
             },
             {
@@ -184,6 +246,35 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
                     hcLight: 'foreground'
                 },
                 description: 'Foreground color for walkthrough progress indicators.'
+            },
+            {
+                id: 'walkthrough.card.background',
+                defaults: {
+                    // A foreground tint stays subtle and lightens on dark themes instead of darkening them.
+                    dark: Color.transparent('foreground', 0.04),
+                    light: Color.transparent('foreground', 0.04)
+                },
+                description: 'Background color of the walkthrough cards on the Welcome page.'
+            },
+            {
+                id: 'walkthrough.progress.background',
+                defaults: {
+                    dark: Color.transparent('foreground', 0.2),
+                    light: Color.transparent('foreground', 0.2),
+                    hcDark: 'contrastBorder',
+                    hcLight: 'contrastBorder'
+                },
+                description: 'Background color of the walkthrough progress bar.'
+            },
+            {
+                id: 'walkthrough.stepCompleted.foreground',
+                defaults: {
+                    dark: 'successBackground',
+                    light: 'successBackground',
+                    hcDark: 'successBackground',
+                    hcLight: 'successBackground'
+                },
+                description: 'Foreground color of the indicator marking a walkthrough step as completed.'
             }
         );
     }
