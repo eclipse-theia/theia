@@ -74,7 +74,7 @@ import { AIActivationService, AIActivationServiceImpl } from './ai-activation-se
 import { AgentService, AgentServiceImpl } from '../common/agent-service';
 import { AICommandHandlerFactory } from './ai-command-handler-factory';
 import { AISettingsService } from '../common/settings-service';
-import { DefaultSkillService, SkillService } from './skill-service';
+import { DefaultSkillService, SkillDirectoryContribution, SkillService } from './skill-service';
 import { SkillPromptCoordinator } from './skill-prompt-coordinator';
 import { AiCoreCommandContribution } from './ai-core-command-contribution';
 import { PromptVariableContribution } from './prompt-variable-contribution';
@@ -139,6 +139,9 @@ export default new ContainerModule(bind => {
 
     bind(SkillPromptCoordinator).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(SkillPromptCoordinator);
+
+    bindRootContributionProvider(bind, SkillDirectoryContribution);
+
     bindRootContributionProvider(bind, AIVariableContribution);
     bind(DefaultFrontendVariableService).toSelf().inSingletonScope();
     bind(FrontendVariableService).toService(DefaultFrontendVariableService);
