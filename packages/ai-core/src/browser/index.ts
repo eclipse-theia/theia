@@ -35,6 +35,7 @@ export * from './open-editors-variable-contribution';
 export * from './skills-variable-contribution';
 export * from './skill-service';
 export * from './skill-prompt-coordinator';
+export * from './agent-plugin-ui-bridge';
 export * from './frontend-variable-service';
 export * from './ai-core-command-contribution';
 export * from '../common/language-model-service';
