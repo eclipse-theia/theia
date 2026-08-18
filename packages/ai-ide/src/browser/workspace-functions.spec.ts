@@ -2178,6 +2178,13 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 const result = workspaceScope.resolveRelativePath('app/src/index.ts');
                 expect(result.toString()).to.equal('file:///workspace/a/app/src/index.ts');
             });
+
+            // The forms the external file change notice names files by: a root name for the mapped root, a uri for the other.
+            it('resolves a uri for the unmapped root', async () => {
+                workspaceScope = createScope(['file:///workspace/a/app', 'file:///workspace/b/app']);
+                const unmapped = 'file:///workspace/b/app/src/index.ts';
+                expect((await workspaceScope.resolveAccessiblePath(unmapped)).toString()).to.equal(unmapped);
+            });
         });
     });
 
@@ -2333,5 +2340,6 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 expect(resolved.toString()).to.equal(fileUri.toString());
             }
         });
+
     });
 });

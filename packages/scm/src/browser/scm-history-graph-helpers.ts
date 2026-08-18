@@ -105,6 +105,31 @@ export function getRefColorIndex(ref: ScmHistoryItemRef, provider: ScmHistoryPro
     return undefined;
 }
 
+/**
+ * Filters which refs get badges in the graph, following VS Code's
+ * `scm.graph.badges` setting: `'all'` shows every ref, `'filter'` shows only
+ * the refs used as the graph's filter — the explicitly picked ref ids, or,
+ * without an explicit filter (auto mode), the current, remote, and base refs.
+ * Without provider information all refs are kept.
+ */
+export function filterRefsForBadges(
+    refs: readonly ScmHistoryItemRef[],
+    provider: ScmHistoryProvider | undefined,
+    badges: 'all' | 'filter',
+    filter?: readonly string[]
+): readonly ScmHistoryItemRef[] {
+    if (badges === 'all') {
+        return refs;
+    }
+    if (filter) {
+        return refs.filter(ref => filter.includes(ref.id));
+    }
+    if (!provider) {
+        return refs;
+    }
+    return refs.filter(ref => getRefColorIndex(ref, provider) !== undefined);
+}
+
 export interface RefBadgePresentation {
     /** Icon class for the badge icon, e.g. 'codicon-git-branch'. */
     iconClass: string;
