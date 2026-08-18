@@ -21,7 +21,7 @@ import * as fs from '@theia/core/shared/fs-extra';
 import * as assert from 'assert';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
-import { ParcelFileSystemWatcherService } from './parcel-filesystem-service';
+import { FileSystemWatcherServiceImpl } from '../filesystem-watcher-service-impl';
 import { DidFilesChangedParams, FileChange, FileChangeType } from '../../common/filesystem-watcher-protocol';
 
 const expect = chai.expect;
@@ -30,7 +30,7 @@ const track = temp.track();
 describe('parcel-filesystem-watcher', function (): void {
 
     let root: URI;
-    let watcherService: ParcelFileSystemWatcherService;
+    let watcherService: FileSystemWatcherServiceImpl;
     let watcherId: number;
 
     this.timeout(100000);
@@ -88,7 +88,10 @@ describe('parcel-filesystem-watcher', function (): void {
         expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
         await waitForChange(actualUris, changeListeners, expectedUris[2]);
 
-        assert.deepStrictEqual([...actualUris], expectedUris);
+        // Each expected URI already arrived above, so what is left is that nothing else did. macOS may also
+        // report the root, since creating a child modifies it.
+        const unexpectedUris = [...actualUris].filter(uri => !expectedUris.includes(uri) && uri !== root.toString());
+        assert.deepStrictEqual(unexpectedUris, []);
     });
 
     it('Should not receive file changes events from in the workspace by default if unwatched', async function (): Promise<void> {
@@ -160,8 +163,8 @@ describe('parcel-filesystem-watcher', function (): void {
         }
     });
 
-    function createParcelFileSystemWatcherService(): ParcelFileSystemWatcherService {
-        return new ParcelFileSystemWatcherService({
+    function createParcelFileSystemWatcherService(): FileSystemWatcherServiceImpl {
+        return new FileSystemWatcherServiceImpl({
             verbose: true
         });
     }
