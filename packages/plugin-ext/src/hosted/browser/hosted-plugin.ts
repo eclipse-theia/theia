@@ -306,7 +306,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
         let manager = this.managers.get(host);
         if (!manager) {
             const pluginId = getPluginId(hostContributions[0].plugin.metadata.model);
-            const rpc = this.initRpc(host, pluginId);
+            const rpc = this.initRpc(host, pluginId, toDisconnect);
             toDisconnect.push(rpc);
 
             manager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
@@ -371,14 +371,14 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
         return manager;
     }
 
-    protected initRpc(host: PluginHost, pluginId: string): RPCProtocol {
-        const rpc = host === 'frontend' ? new PluginWorker().rpc : this.createServerRpc(host);
+    protected initRpc(host: PluginHost, pluginId: string, toDisconnect: DisposableCollection): RPCProtocol {
+        const rpc = host === 'frontend' ? new PluginWorker().rpc : this.createServerRpc(host, toDisconnect);
         setUpPluginApi(rpc, this.container);
         this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, this.container));
         return rpc;
     }
 
-    protected createServerRpc(pluginHostId: string): RPCProtocol {
+    protected createServerRpc(pluginHostId: string, toDisconnect: DisposableCollection): RPCProtocol {
 
         const channel = new BasicChannel(() => {
             const writer = new Uint8ArrayWriteBuffer();
@@ -391,11 +391,19 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
         // Create RPC protocol before adding the listener to the watcher to receive the watcher's cached messages after the rpc protocol was created.
         const rpc = new RPCProtocolImpl(channel);
 
-        this.watcher.onPostMessageEvent(received => {
+        // The watcher outlives the connection and reuses the same `pluginHostId` for its
+        // successor, so this subscription must not survive the disconnect.
+        toDisconnect.push(this.watcher.onPostMessageEvent(received => {
             if (pluginHostId === received.pluginHostId) {
                 channel.onMessageEmitter.fire(() => new Uint8ArrayReadBuffer(received.message));
             }
-        });
+        }));
+        toDisconnect.push(Disposable.create(() => {
+            // `Channel.close()` emits no close event; fire it explicitly so that the protocol
+            // rejects the requests still in flight.
+            channel.onCloseEmitter.fire({ reason: 'The plugin host connection was closed.' });
+            channel.close();
+        }));
 
         return rpc;
     }
