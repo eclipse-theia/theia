@@ -41,6 +41,8 @@ export const WalkthroughPluginSupport = Symbol('WalkthroughPluginSupport');
 export interface WalkthroughPluginSupport {
     readonly plugins: PluginMetadata[];
     getPlugin(id: PluginIdentifiers.UnversionedId): DeployedPlugin | undefined;
+    /** The plugins that are not loaded because the workspace is not trusted. */
+    readonly disabledByTrust: ReadonlySet<string>;
     readonly onDidChangePlugins: Event<void>;
 }
 
@@ -270,9 +272,12 @@ export class WalkthroughService implements Disposable {
                 // must not be offered any more.
                 continue;
             }
-            const deployed = this.pluginSupport.getPlugin(
-                PluginIdentifiers.componentsToUnversionedId(pluginMeta.model)
-            );
+            const unversionedId = PluginIdentifiers.componentsToUnversionedId(pluginMeta.model);
+            if (this.pluginSupport.disabledByTrust.has(unversionedId)) {
+                // A plugin restricted by workspace trust contributes nothing, so there is nothing to walk through.
+                continue;
+            }
+            const deployed = this.pluginSupport.getPlugin(unversionedId);
             if (!deployed?.contributes?.walkthroughs) {
                 continue;
             }

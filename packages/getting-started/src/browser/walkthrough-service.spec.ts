@@ -39,6 +39,7 @@ describe('WalkthroughService', () => {
     let mockOpenerGetOpener: () => Promise<{ open: (...args: unknown[]) => void }>;
     let mockOpenerOpenCalls: string[];
     let reportedErrors: string[];
+    let mockDisabledByTrust: Set<string>;
 
     function createContribution(overrides?: Partial<WalkthroughContribution>): WalkthroughContribution {
         return {
@@ -76,6 +77,7 @@ describe('WalkthroughService', () => {
         executedCommands = [];
         mockOpenerOpenCalls = [];
         reportedErrors = [];
+        mockDisabledByTrust = new Set();
         const mockOpener = { open: (...args: unknown[]) => { mockOpenerOpenCalls.push(String(args[0])); } };
         mockOpenerGetOpener = () => Promise.resolve(mockOpener);
         onDidExpandViewEmitter = new Emitter();
@@ -133,6 +135,7 @@ describe('WalkthroughService', () => {
         (service as any).pluginSupport = {
             get plugins(): { model: { id: string; publisher: string; name: string }, outOfSync?: boolean }[] { return mockPlugins; },
             getPlugin: (id: string) => mockDeployedPlugins.get(id),
+            get disabledByTrust(): ReadonlySet<string> { return mockDisabledByTrust; },
             onDidChangePlugins: onDidChangePluginsEmitter.event
         };
     });
@@ -794,6 +797,36 @@ describe('WalkthroughService', () => {
             (service as any).syncWalkthroughsFromPlugins();
 
             expect(fired, 'an unchanged sync must not notify').to.be.false;
+        });
+
+        it('should not offer the walkthrough of a plugin restricted by workspace trust', () => {
+            expect(service.getWalkthrough(wtId), 'offered while the workspace is trusted').to.not.be.undefined;
+
+            mockDisabledByTrust.add(pluginId);
+            (service as any).syncWalkthroughsFromPlugins();
+
+            expect(service.getWalkthroughs()).to.be.empty;
+        });
+
+        it('should offer it again once the workspace is trusted', () => {
+            mockDisabledByTrust.add(pluginId);
+            (service as any).syncWalkthroughsFromPlugins();
+            expect(service.getWalkthroughs()).to.be.empty;
+
+            mockDisabledByTrust.delete(pluginId);
+            (service as any).syncWalkthroughsFromPlugins();
+
+            expect(service.getWalkthrough(wtId)).to.not.be.undefined;
+        });
+
+        it('should close a restricted walkthrough that was open', () => {
+            service.selectWalkthrough(wtId);
+            expect(service.selectedWalkthrough?.id).to.equal(wtId);
+
+            mockDisabledByTrust.add(pluginId);
+            (service as any).syncWalkthroughsFromPlugins();
+
+            expect(service.selectedWalkthrough).to.be.undefined;
         });
 
         it('should drop the walkthrough once the plugin is out of sync', () => {
