@@ -21,7 +21,7 @@ import * as path from 'path';
 import { PreferenceService } from '@theia/core';
 import { RequestContext, RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
 import { ResolvedSkillEntry } from '../common/skill/skill-registry-types';
-import { computeSkillContentHash } from '../common/skill/skill-content-hash';
+import { computeContentHash } from '../common/content-hash';
 import { SkillInstallBackendServiceImpl } from './skill-install-backend-service';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
@@ -36,7 +36,7 @@ const HELPER_MD = 'helper content';
 function encode(text: string): Uint8Array {
     return new TextEncoder().encode(text);
 }
-const REGISTRY_HASH = computeSkillContentHash([
+const REGISTRY_HASH = computeContentHash([
     { relativePath: 'SKILL.md', content: encode(SKILL_MD) },
     { relativePath: 'helper.md', content: encode(HELPER_MD) }
 ]);
