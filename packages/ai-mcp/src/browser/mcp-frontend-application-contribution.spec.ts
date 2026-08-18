@@ -644,6 +644,55 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
     });
 });
 
+describe('McpFrontendApplicationContribution convertToMap', () => {
+
+    // `convertToMap` is a pure projection of the preference value, so no injected collaborators are needed.
+    let contribution: TestMcpFrontendApplicationContribution;
+
+    beforeEach(() => {
+        contribution = new TestMcpFrontendApplicationContribution();
+    });
+
+    it('carries cwd, pluginRoot and pluginData through to the local server description', () => {
+        const result = contribution.testConvertToMap({
+            validator: {
+                command: './bin/validator',
+                args: ['--data', '/home/alex/.agents/plugins/data/devtools/validator'],
+                cwd: '/home/alex/.agents/plugins/devtools',
+                pluginRoot: '/home/alex/.agents/plugins/devtools',
+                pluginData: '/home/alex/.agents/plugins/data/devtools'
+            }
+        });
+
+        expect(result.get('validator')).to.deep.equal({
+            name: 'validator',
+            command: './bin/validator',
+            args: ['--data', '/home/alex/.agents/plugins/data/devtools/validator'],
+            cwd: '/home/alex/.agents/plugins/devtools',
+            pluginRoot: '/home/alex/.agents/plugins/devtools',
+            pluginData: '/home/alex/.agents/plugins/data/devtools',
+            autostart: true
+        });
+    });
+
+    it('omits cwd, pluginRoot and pluginData when the preference entry does not set them', () => {
+        const result = contribution.testConvertToMap({ plain: { command: 'npx' } });
+
+        expect(result.get('plain')).to.deep.equal({ name: 'plain', command: 'npx', autostart: true });
+    });
+
+    it('carries a registryMetadata block that identifies an Agent Plugin instead of a registry server', () => {
+        const result = contribution.testConvertToMap({
+            'plugin-server': {
+                command: 'npx',
+                registryMetadata: { pluginId: 'io.github.acme/devtools', version: '1.0.0' }
+            }
+        });
+
+        expect(result.get('plugin-server')?.registryMetadata).to.deep.equal({ pluginId: 'io.github.acme/devtools', version: '1.0.0' });
+    });
+});
+
 class TestMcpFrontendApplicationContribution extends McpFrontendApplicationContribution {
     refreshCalls = 0;
 
@@ -674,6 +723,10 @@ class TestMcpFrontendApplicationContribution extends McpFrontendApplicationContr
     testEnqueueServerChanges(newServers: MCPServersPreference): Promise<void> {
         this.enqueueServerChanges(newServers);
         return this.serverChangeQueue;
+    }
+
+    testConvertToMap(servers: MCPServersPreference): Map<string, MCPServerDescription> {
+        return this.convertToMap(servers);
     }
 
     protected override updateBlockedServersStatusBar(): void {

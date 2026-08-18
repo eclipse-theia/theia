@@ -175,6 +175,62 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
         expect(calls).to.deep.equal(['update']);
     });
 
+    describe('an Agent Plugin server', () => {
+
+        const pluginServer = (overrides: Record<string, unknown> = {}) => ({
+            name: 'bigquery',
+            command: 'node',
+            args: ['server.js'],
+            cwd: '/home/u/.agents/plugins/acme_bq',
+            pluginRoot: '/home/u/.agents/plugins/acme_bq',
+            pluginData: '/home/u/.agents/plugin-data/acme_bq',
+            autostart: true,
+            registryMetadata: { pluginId: 'io.github.acme/bq', configHash: 'h1', installedAt: '2026-08-17T10:00:00.000Z' },
+            ...overrides
+        });
+
+        async function apply(next: Record<string, unknown>): Promise<string[]> {
+            const calls: string[] = [];
+            const manager = new MCPServerManagerImpl();
+            const server = {
+                isRunning: () => true,
+                isStopped: () => false,
+                isInFlight: () => false,
+                stop: async () => { calls.push('stop'); },
+                getCachedDescription: () => pluginServer(),
+                update: () => { calls.push('update'); },
+                setWorkspaceRoots: () => { },
+                onDidUpdateStatus: () => ({ dispose: () => { } })
+            };
+            (manager as unknown as { servers: Map<string, MCPServer> }).servers = new Map([
+                ['bigquery', server as unknown as MCPServer]
+            ]);
+            (manager as unknown as { credentialStore: Partial<MCPOAuthCredentialStore> }).credentialStore = { clear: async () => { } };
+            await manager.addOrUpdateServer(next as unknown as Parameters<typeof manager.addOrUpdateServer>[0]);
+            return calls;
+        }
+
+        it('restarts when the plugin was re-installed, even though its own configuration is identical', async () => {
+            // An update or a Fix deletes and re-creates the very directory the child is working in while
+            // changing nothing the server declared. Without a restart the process keeps running against
+            // a root that no longer exists.
+            const reinstalled = { ...pluginServer().registryMetadata, installedAt: '2026-08-17T12:00:00.000Z' };
+
+            expect(await apply(pluginServer({ registryMetadata: reinstalled }))).to.deep.equal(['stop', 'update']);
+        });
+
+        it('restarts when the working directory or either plugin path changes, because all three reach the process', async () => {
+            expect(await apply(pluginServer({ cwd: '/somewhere/else' }))).to.deep.equal(['stop', 'update']);
+            expect(await apply(pluginServer({ pluginRoot: '/other/root' }))).to.deep.equal(['stop', 'update']);
+            expect(await apply(pluginServer({ pluginData: '/other/data' }))).to.deep.equal(['stop', 'update']);
+        });
+
+        it('does not restart when nothing that reaches the process changed', async () => {
+            expect(await apply(pluginServer())).to.deep.equal(['update']);
+            expect(await apply(pluginServer({ autostart: false }))).to.deep.equal(['update']);
+        });
+    });
+
     it('restarts a running server for connection preference changes', async () => {
         const calls: string[] = [];
         const manager = new MCPServerManagerImpl();

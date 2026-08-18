@@ -370,6 +370,54 @@ describe('MCPServerEditor OAuth form handling', () => {
         });
     });
 
+    it('preserves the Agent Plugin fields of a local server, which the dialog never edits', async () => {
+        await prefs.set(MCP_SERVERS_PREF, {
+            'oauth-server': {
+                command: 'node',
+                cwd: '/plugins/io.example_bq',
+                pluginRoot: '/plugins/io.example_bq',
+                pluginData: '/plugin-data/io.example_bq',
+                registryMetadata: { pluginId: 'io.example/bq' }
+            }
+        });
+
+        await editor.save(remoteFormData({ serverType: 'local', command: 'node', args: 'server.js', autostart: true }));
+
+        expect(prefs.snapshot(MCP_SERVERS_PREF)).to.deep.equal({
+            'oauth-server': {
+                command: 'node',
+                args: ['server.js'],
+                cwd: '/plugins/io.example_bq',
+                pluginRoot: '/plugins/io.example_bq',
+                pluginData: '/plugin-data/io.example_bq',
+                autostart: true,
+                deferLoading: false,
+                registryMetadata: { pluginId: 'io.example/bq' }
+            }
+        });
+    });
+
+    it('drops the Agent Plugin fields when a local plugin server is switched to remote', async () => {
+        await prefs.set(MCP_SERVERS_PREF, {
+            'oauth-server': {
+                command: 'node',
+                cwd: '/plugins/io.example_bq',
+                pluginRoot: '/plugins/io.example_bq',
+                pluginData: '/plugin-data/io.example_bq'
+            }
+        });
+
+        await editor.save(remoteFormData({ serverType: 'remote', autostart: true }));
+
+        expect(prefs.snapshot(MCP_SERVERS_PREF)).to.deep.equal({
+            'oauth-server': {
+                serverUrl: 'https://mcp.example.com/mcp',
+                autostart: true,
+                deferLoading: false
+            }
+        });
+    });
+
     it('pre-populates OAuth fields when converting a remote server to form data', () => {
         const server: RemoteMCPServerDescription = {
             name: 'oauth-server',
