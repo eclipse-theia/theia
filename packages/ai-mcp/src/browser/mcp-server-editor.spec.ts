@@ -381,7 +381,7 @@ describe('MCPServerEditor OAuth form handling', () => {
             }
         });
 
-        await editor.save(remoteFormData({ serverType: 'local', command: 'node', args: 'server.js', autostart: true }));
+        await editor.save(remoteFormData({ serverType: 'local', command: 'node', args: ['server.js'], autostart: true }));
 
         expect(prefs.snapshot(MCP_SERVERS_PREF)).to.deep.equal({
             'oauth-server': {

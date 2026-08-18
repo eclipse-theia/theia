@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { AiConfigurationService } from '@theia/ai-core';
+import { AgentPluginUiBridge, InstalledAgentPluginInfo } from '@theia/ai-core/lib/browser/agent-plugin-ui-bridge';
 import { PROMPT_VARIABLE } from '@theia/ai-core/lib/browser/prompt-variable-contribution';
 import { Emitter, Event, ILogger, MessageService, nls, PreferenceScope } from '@theia/core';
 import { codicon, ConfirmDialog } from '@theia/core/lib/browser';
@@ -91,6 +92,9 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
     @inject(MCPRegistryUiBridge) @optional()
     protected readonly registryBridge?: MCPRegistryUiBridge;
 
+    @inject(AgentPluginUiBridge) @optional()
+    protected readonly agentPluginBridge?: AgentPluginUiBridge;
+
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
     protected readonly toDispose = new DisposableCollection(this.onDidChangeEmitter);
@@ -113,6 +117,10 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
     @postConstruct()
     protected init(): void {
         this.toDispose.push(this.mcpFrontendNotificationService.onDidUpdateMCPServers(() => this.loadServers()));
+        if (this.agentPluginBridge) {
+            // An install changes which plugin names resolve, so the provenance labels must re-render.
+            this.toDispose.push(this.agentPluginBridge.onDidChange(() => this.onDidChangeEmitter.fire()));
+        }
         this.loadServers();
     }
 
@@ -150,9 +158,27 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
         } satisfies AiConfigurationTreeItem));
     }
 
-    /** "From registry" for a server linked to a registry entry, mirroring the detail header's link. */
+    /** "From registry" and/or `via <plugin>` for a server that came from elsewhere, mirroring the detail header's links. */
     protected getServerTags(server: MCPServerDescription): string[] | undefined {
-        return server.registryMetadata?.serverId ? [nls.localize('theia/ai/mcpConfiguration/fromRegistry', 'From registry')] : undefined;
+        const tags: string[] = [];
+        if (server.registryMetadata?.serverId) {
+            tags.push(nls.localize('theia/ai/mcpConfiguration/fromRegistry', 'From registry'));
+        }
+        const plugin = this.getOwningPlugin(server);
+        if (plugin) {
+            tags.push(nls.localize('theia/ai/mcpConfiguration/viaAgentPlugin', 'via {0}', plugin.name));
+        }
+        return tags.length > 0 ? tags : undefined;
+    }
+
+    /**
+     * The Agent Plugin that contributed a server, or `undefined` when the server is the user's own, when the
+     * owning plugin is not installed - a bare identifier is not worth an affordance - or when no bridge is
+     * bound, i.e. in a product without `@theia/ai-registry`.
+     */
+    protected getOwningPlugin(server: MCPServerDescription): InstalledAgentPluginInfo | undefined {
+        const pluginId = server.registryMetadata?.pluginId;
+        return pluginId ? this.agentPluginBridge?.getPlugin(pluginId) : undefined;
     }
 
     /** Overview subtitle: the server type (Local/Remote) and, once known, its tool count — not the raw command/URL. */
@@ -235,7 +261,10 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
             title={server.name}
             iconClass={this.iconClass}
             subtitle={this.getServerSummary(server)}
-            titleSuffix={this.renderRegistryAffordance(server)}
+            titleSuffix={<>
+                {this.renderRegistryAffordance(server)}
+                {this.renderAgentPluginAffordance(server)}
+            </>}
             status={this.getServerStatus(server)}
             actions={this.renderServerActions(server)}
         />;
@@ -308,6 +337,26 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
     }
 
     /**
+     * In addition to the registry affordance, not replacing it: this reveals the owning plugin, and a
+     * plugin-contributed server has no `serverId` of its own to open in the registry.
+     */
+    protected renderAgentPluginAffordance(server: MCPServerDescription): React.ReactNode {
+        const plugin = this.getOwningPlugin(server);
+        if (!plugin) {
+            return undefined;
+        }
+        return <button
+            type='button'
+            className='mcp-server-registry-link'
+            onClick={() => this.agentPluginBridge?.revealPlugin(plugin.pluginId)}
+            title={nls.localize('theia/ai/mcpConfiguration/openAgentPlugin', 'Open the Agent Plugin that provides this server: {0}', plugin.name)}
+        >
+            <i className={`${codicon('extensions')} mcp-server-registry-link-icon`} />
+            {nls.localize('theia/ai/mcpConfiguration/viaAgentPlugin', 'via {0}', plugin.name)}
+        </button>;
+    }
+
+    /**
      * The per-server configuration, edited in place. Each field patches the server's form representation and
      * re-persists it via {@link MCPServerEditor.save} — the same write path (and stale-key cleanup) the Add
      * dialog uses — so there is no separate Edit dialog. The server type is shown read-only: changing it means
@@ -328,6 +377,7 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
                 values => this.updateServer(server, { args: values }))}
             {local && this.renderKeyValueField(nls.localize('theia/ai/mcpConfiguration/environmentVariables', 'Environment Variables'), server.env ?? {},
                 lines => this.updateServer(server, { env: lines }))}
+            {local && this.renderPluginPathsSection(server)}
             {remote && this.renderTextField(nls.localize('theia/ai/mcpConfiguration/serverUrl', 'Server URL'), server.serverUrl, false, false,
                 value => this.updateServer(server, { serverUrl: value }),
                 server.serverUrl.trim() ? undefined : nls.localize('theia/ai/mcpConfiguration/form/serverUrlRequired', 'Server URL is required for remote servers'))}
@@ -386,6 +436,33 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
             return server.oauth ? nls.localize('theia/ai/mcpConfiguration/typeRemoteOAuth', 'Remote (OAuth)') : nls.localizeByDefault('Remote');
         }
         return nls.localizeByDefault('Unknown');
+    }
+
+    /**
+     * Read-only on purpose: all three are derived from where `@theia/ai-registry` installed the Agent
+     * Plugin, so there is nothing for the user to author. Shown rather than hidden because they decide
+     * where the process runs and what `PLUGIN_ROOT` and `PLUGIN_DATA` point at.
+     */
+    protected renderPluginPathsSection(server: MCPServerDescription): React.ReactNode {
+        if (!isLocalMCPServerDescription(server)) {
+            return undefined;
+        }
+        return <>
+            {this.renderReadOnlyPath(nls.localizeByDefault('Working Directory'), server.cwd)}
+            {this.renderReadOnlyPath(nls.localize('theia/ai/mcpConfiguration/pluginRoot', 'Plugin Root'), server.pluginRoot, 'PLUGIN_ROOT')}
+            {this.renderReadOnlyPath(nls.localize('theia/ai/mcpConfiguration/pluginData', 'Plugin Data'), server.pluginData, 'PLUGIN_DATA')}
+        </>;
+    }
+
+    /** @param variable the environment variable the value is exported as, when it is one. */
+    protected renderReadOnlyPath(label: string, value: string | undefined, variable?: string): React.ReactNode {
+        if (!value) {
+            return undefined;
+        }
+        return this.renderFieldRow(label, <code className='mcp-property-readonly' title={value}>
+            {value}
+            {variable && <span className='mcp-property-variable'>{variable}</span>}
+        </code>);
     }
 
     protected renderFieldRow(label: string, control: React.ReactNode): React.ReactNode {

@@ -175,3 +175,19 @@
   outline: 1px dotted var(--theia-contrastActiveBorder, transparent);
   outline-offset: -1px;
 }
+
+/* Agent Plugin paths: displayed, never editable - `@theia/ai-registry` derives them from where the
+   plugin was installed, so the server form shows them without an input. */
+.mcp-property-readonly {
+  color: var(--theia-descriptionForeground);
+  word-break: break-all;
+}
+
+.mcp-property-variable {
+  margin-left: calc(var(--theia-ui-padding) / 2);
+  padding: 0 4px;
+  border: 1px solid var(--theia-panel-border);
+  border-radius: 3px;
+  font-size: calc(var(--theia-ui-font-size0) * 0.9);
+  color: var(--theia-descriptionForeground);
+}
