@@ -36,10 +36,10 @@ export class SkillPromptCoordinator implements FrontendApplicationContribution {
 
     onStart(): void {
         this.skillService.ready.then(() => {
-            this.updateSkillCommands();
             this.skillService.onSkillsChanged(() => {
                 this.updateSkillCommands();
             });
+            this.updateSkillCommands();
         }).catch(error => {
             this.logger.error('Failed to update skill commands', error);
         });
