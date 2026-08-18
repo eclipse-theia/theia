@@ -67,7 +67,8 @@ import {
     PluginPackageContribution,
     WalkthroughContribution,
     WalkthroughStepContribution,
-    PluginPackageWalkthroughStep
+    PluginPackageWalkthroughStepMedia,
+    WalkthroughStepMedia
 } from '../../../common/plugin-protocol';
 import { promises as fs, readdirSync } from 'fs';
 import * as path from 'path';
@@ -647,31 +648,27 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                 title: walkthrough.title,
                 description: walkthrough.description || '',
                 steps,
-                featuredFor: walkthrough.featuredFor,
                 when: walkthrough.when,
                 icon: walkthrough.icon,
                 pluginId,
-                pluginIcon
+                pluginIcon,
             });
         }
         return result.length > 0 ? result : undefined;
     }
 
-    protected resolveWalkthroughMedia(
-        pck: PluginPackage,
-        media?: PluginPackageWalkthroughStep['media']
-    ): WalkthroughStepContribution['media'] {
+    protected resolveWalkthroughMedia(pck: PluginPackage, media?: PluginPackageWalkthroughStepMedia): WalkthroughStepMedia | undefined {
         if (!media) {
             return undefined;
         }
         if ('markdown' in media) {
             return { markdown: this.toPluginUrl(pck, media.markdown) };
         }
+        const altText = 'altText' in media ? media.altText as string : undefined;
         if ('svg' in media) {
-            return { svg: this.toPluginUrl(pck, media.svg) };
+            return { svg: this.toPluginUrl(pck, media.svg), ...(altText !== undefined && { altText }) };
         }
         if ('image' in media) {
-            const altText = 'altText' in media ? media.altText as string : undefined;
             if (typeof media.image === 'string') {
                 return { image: this.toPluginUrl(pck, media.image), ...(altText !== undefined && { altText }) };
             }

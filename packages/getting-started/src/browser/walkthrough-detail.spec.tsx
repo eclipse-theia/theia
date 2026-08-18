@@ -21,7 +21,7 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
 import { createRoot, Root } from 'react-dom/client';
-import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
+import { MarkdownRenderer, MarkdownRenderOptions } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { ILogger } from '@theia/core/lib/common/logger';
@@ -631,6 +631,44 @@ describe('WalkthroughDetail', () => {
             assert.strictEqual(content.querySelector('button'), null, 'The step content should carry no buttons');
             // eslint-disable-next-line no-null/no-null
             assert.strictEqual(content.querySelector('.gs-walkthrough-step-done'), null, 'The step content should carry no done indicator');
+            done();
+        }, 50);
+    });
+    it('should render markdown media as trusted and with an action handler, so that its links work', done => {
+        const originalFetch = global.fetch;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (global as any).fetch = () => Promise.resolve({ ok: true, text: () => Promise.resolve('[Run](command:my.command)') });
+
+        const captured: { value: string, isTrusted?: boolean, options?: MarkdownRenderOptions }[] = [];
+        const recordingRenderer: MarkdownRenderer = {
+            render: (markdown: { value: string, isTrusted?: boolean }, options?: MarkdownRenderOptions) => {
+                captured.push({ ...markdown, options });
+                return { element: document.createElement('div'), dispose: () => { } };
+            }
+        };
+        const selectedStep = createMockStep({ id: 's1', media: { markdown: 'content.md' } });
+        const walkthrough = createMockWalkthrough({ steps: [selectedStep] });
+
+        root.render(
+            <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
+                walkthrough={walkthrough}
+                onStepSelect={() => { }}
+                onBack={() => { }}
+                selectedStep={selectedStep}
+                markdownRenderer={recordingRenderer}
+                onLinkClick={() => { }}
+            />
+        );
+
+        setTimeout(() => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (global as any).fetch = originalFetch;
+            const media = captured.find(entry => entry.value.includes('command:my.command'));
+            assert.ok(media, 'The media content should have been rendered');
+            assert.strictEqual(media?.isTrusted, true, 'Media has to be trusted, otherwise command links are stripped');
+            assert.ok(media?.options?.actionHandler, 'Media needs an action handler, otherwise its links are inert');
             done();
         }, 50);
     });

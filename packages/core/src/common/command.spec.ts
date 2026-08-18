@@ -156,7 +156,7 @@ describe('Commands', () => {
             const events: string[] = [];
             commandRegistry.onDidExecuteCommand(e => events.push(e.commandId));
             await commandRegistry.executeCommand('alias');
-            // Unidirectional: only target→alias fires, not alias→target
+            // Unidirectional: an alias fires for its target, but not the other way round
             expect(events).to.deep.equal(['alias']);
         });
 
@@ -179,29 +179,36 @@ describe('Commands', () => {
             expect(events).to.deep.equal(['target']);
         });
 
-        it('getAlias returns registered alias for target', () => {
+        it('getAliases returns the aliases registered for a target', () => {
             commandRegistry.registerAlias('a', 'b');
-            expect(commandRegistry.getAlias('b')).to.equal('a');
+            expect(commandRegistry.getAliases('b')).to.deep.equal(['a']);
         });
 
-        it('getAlias returns undefined for alias direction (unidirectional)', () => {
+        it('getAliases returns nothing for the alias direction (unidirectional)', () => {
             commandRegistry.registerAlias('a', 'b');
-            expect(commandRegistry.getAlias('a')).to.be.undefined;
+            expect(commandRegistry.getAliases('a')).to.be.empty;
         });
 
-        it('getAlias returns undefined for unaliased commands', () => {
-            expect(commandRegistry.getAlias('nonexistent')).to.be.undefined;
+        it('getAliases returns nothing for unaliased commands', () => {
+            expect(commandRegistry.getAliases('nonexistent')).to.be.empty;
         });
 
-        it('later registerAlias overwrites previous alias for the same target', async () => {
+        it('a target can carry several aliases', async () => {
             commandRegistry.registerCommand({ id: 'target' }, new StubCommandHandler());
             commandRegistry.registerAlias('alias1', 'target');
             commandRegistry.registerAlias('alias2', 'target');
             const events: string[] = [];
             commandRegistry.onDidExecuteCommand(e => events.push(e.commandId));
             await commandRegistry.executeCommand('target');
-            // Only the last alias registered fires
-            expect(events).to.deep.equal(['target', 'alias2']);
+            expect(events).to.deep.equal(['target', 'alias1', 'alias2']);
+        });
+
+        it('disposing one alias keeps the others', async () => {
+            commandRegistry.registerCommand({ id: 'target' }, new StubCommandHandler());
+            const first = commandRegistry.registerAlias('alias1', 'target');
+            commandRegistry.registerAlias('alias2', 'target');
+            first.dispose();
+            expect(commandRegistry.getAliases('target')).to.deep.equal(['alias2']);
         });
 
         it('alias events include correct args', async () => {
@@ -225,9 +232,34 @@ describe('Commands', () => {
             const events: string[] = [];
             commandRegistry.onDidExecuteCommand(e => events.push(e.commandId));
             await commandRegistry.executeCommand('alias');
-            // Inner executeCommand('target') fires: 'target', then alias 'alias'
-            // Outer executeCommand('alias') fires: 'alias' only (no reverse alias)
-            expect(events).to.deep.equal(['target', 'alias', 'alias']);
+            // The alias is on the stack while the target runs, so its event is only reported once.
+            expect(events).to.deep.equal(['target', 'alias']);
+        });
+
+        it('reports the alias once for the will execute event as well', async () => {
+            commandRegistry.registerCommand({ id: 'target' }, new StubCommandHandler());
+            commandRegistry.registerCommand({ id: 'alias' }, {
+                execute: () => commandRegistry.executeCommand('target')
+            });
+            commandRegistry.registerAlias('alias', 'target');
+            const events: string[] = [];
+            commandRegistry.onWillExecuteCommand(e => events.push(e.commandId));
+            await commandRegistry.executeCommand('alias');
+            expect(events).to.deep.equal(['alias', 'target']);
+        });
+
+        it('reports the alias again once the delegating execution finished', async () => {
+            commandRegistry.registerCommand({ id: 'target' }, new StubCommandHandler());
+            commandRegistry.registerCommand({ id: 'alias' }, {
+                execute: () => commandRegistry.executeCommand('target')
+            });
+            commandRegistry.registerAlias('alias', 'target');
+            await commandRegistry.executeCommand('alias');
+
+            const events: string[] = [];
+            commandRegistry.onDidExecuteCommand(e => events.push(e.commandId));
+            await commandRegistry.executeCommand('target');
+            expect(events).to.deep.equal(['target', 'alias']);
         });
 
     });

@@ -85,6 +85,8 @@ export class WalkthroughService implements Disposable {
     protected readonly logger: ILogger;
 
     protected readonly walkthroughs = new Map<string, Walkthrough>();
+    /** The definition each walkthrough was registered from, to detect a changed contribution. */
+    protected readonly contributionSignatures = new Map<string, string>();
     protected readonly toDispose = new DisposableCollection();
 
     protected readonly onDidChangeWalkthroughsEmitter = new Emitter<void>();
@@ -94,7 +96,8 @@ export class WalkthroughService implements Disposable {
     readonly onDidChangeSelection: Event<void> = this.onDidChangeSelectionEmitter.event;
 
     protected progressState: WalkthroughProgressState = { completedSteps: {} };
-    protected progressLoaded = false;
+    /** Resolves once the persisted progress has been read and the initial sync has run. */
+    protected progressReady: Promise<void> = Promise.resolve();
     protected knownPluginIds: Set<string> = new Set();
     protected pluginBaselineEstablished = false;
 
@@ -108,27 +111,14 @@ export class WalkthroughService implements Disposable {
     protected init(): void {
         this.toDispose.push(this.onDidChangeWalkthroughsEmitter);
         this.toDispose.push(this.onDidChangeSelectionEmitter);
-        this.loadProgress().then(() => {
+        // Plugins are deployed while the progress is still being read. Registering a walkthrough before
+        // that would report its completed steps as pending, so every sync waits for the progress.
+        this.progressReady = this.loadProgress().then(() => {
             this.syncWalkthroughsFromPlugins();
             this.establishPluginBaseline();
         });
 
-        this.toDispose.push(this.pluginSupport.onDidChangePlugins(() => {
-            const previousIds = this.knownPluginIds;
-            const baselineEstablished = this.pluginBaselineEstablished;
-            this.syncWalkthroughsFromPlugins();
-            this.establishPluginBaseline();
-            if (!baselineEstablished) {
-                // The plugins deployed while the application was starting are not new installations.
-                return;
-            }
-            for (const newId of this.knownPluginIds) {
-                if (!previousIds.has(newId)) {
-                    this.handleCompletionEvent(`extensionInstalled:${newId}`);
-                    this.handleExtensionInstalledAutoOpen(newId);
-                }
-            }
-        }));
+        this.toDispose.push(this.pluginSupport.onDidChangePlugins(() => this.handlePluginsChanged()));
 
         this.toDispose.push(this.commandRegistry.onDidExecuteCommand(e => {
             this.handleCompletionEvent(`onCommand:${e.commandId}`);
@@ -138,7 +128,6 @@ export class WalkthroughService implements Disposable {
             this.handleCompletionEvent(`onSettingChanged:${e.preferenceName}`);
         }));
 
-        // 5. onView: — on view expand (first open)
         this.toDispose.push(this.viewEventSource.onDidExpandView(viewId => {
             this.handleCompletionEvent(`onView:${viewId}`);
         }));
@@ -149,6 +138,24 @@ export class WalkthroughService implements Disposable {
                 this.handleVisibilityChanged();
             }
         }));
+    }
+
+    protected async handlePluginsChanged(): Promise<void> {
+        await this.progressReady;
+        const previousIds = this.knownPluginIds;
+        const baselineEstablished = this.pluginBaselineEstablished;
+        this.syncWalkthroughsFromPlugins();
+        this.establishPluginBaseline();
+        if (!baselineEstablished) {
+            // The plugins deployed while the application was starting are not new installations.
+            return;
+        }
+        for (const newId of this.knownPluginIds) {
+            if (!previousIds.has(newId)) {
+                this.handleCompletionEvent(`extensionInstalled:${newId}`);
+                this.handleExtensionInstalledAutoOpen(newId);
+            }
+        }
     }
 
     /**
@@ -247,7 +254,6 @@ export class WalkthroughService implements Disposable {
             WALKTHROUGH_PROGRESS_KEY,
             { completedSteps: {} }
         );
-        this.progressLoaded = true;
     }
 
     protected async saveProgress(): Promise<void> {
@@ -273,7 +279,10 @@ export class WalkthroughService implements Disposable {
             for (const contribution of deployed.contributes.walkthroughs) {
                 const fullId = `${contribution.pluginId}.${contribution.id}`;
                 seenIds.add(fullId);
-                if (!this.walkthroughs.has(fullId)) {
+                // Re-register when the definition changed, for instance because the plugin was updated.
+                const signature = JSON.stringify(contribution);
+                if (this.contributionSignatures.get(fullId) !== signature) {
+                    this.contributionSignatures.set(fullId, signature);
                     this.registerWalkthrough(contribution);
                 }
             }
@@ -283,6 +292,7 @@ export class WalkthroughService implements Disposable {
         for (const id of this.walkthroughs.keys()) {
             if (!seenIds.has(id)) {
                 this.walkthroughs.delete(id);
+                this.contributionSignatures.delete(id);
                 this.contextKeys = undefined;
                 changed = true;
             }

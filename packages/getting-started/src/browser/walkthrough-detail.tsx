@@ -24,8 +24,8 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import { ThemeType } from '@theia/core/lib/common/theme';
 import * as React from '@theia/core/shared/react';
 import { Walkthrough, WalkthroughStep } from '../common/walkthrough-types';
+import { PluginSharedStyle } from '@theia/plugin-ext/lib/main/browser/plugin-shared-style';
 import { WalkthroughIcon } from './walkthrough-icon';
-import { toWalkthroughResourceUrl } from './walkthrough-resources';
 
 export interface WalkthroughDetailProps {
     walkthrough: Walkthrough;
@@ -172,7 +172,7 @@ function WalkthroughStepContent(props: WalkthroughStepContentProps): React.React
                 markdownRenderer={markdownRenderer}
                 onLinkClick={props.onLinkClick}
             />
-            {step.media && renderMedia(step.media, markdownRenderer, themeService, props.logger)}
+            {step.media && renderMedia(step.media, markdownRenderer, themeService, props.logger, props.onLinkClick)}
         </div>
     );
 }
@@ -187,36 +187,57 @@ function WalkthroughDescriptionContent(props: WalkthroughDescriptionContentProps
     // eslint-disable-next-line no-null/no-null
     const containerRef = React.useRef<HTMLDivElement>(null);
     const renderResultRef = React.useRef<MarkdownRenderResult | undefined>();
+    const disposablesRef = React.useRef<DisposableCollection | undefined>();
     const onLinkClickRef = React.useRef(props.onLinkClick);
     onLinkClickRef.current = props.onLinkClick;
 
     React.useEffect(() => {
         if (!containerRef.current) { return; }
         renderResultRef.current?.dispose();
+        disposablesRef.current?.dispose();
 
-        // Trusted so that the `command:` links a step description relies on survive rendering. The content comes
-        // from an installed plugin, which can execute commands through its own API anyway.
-        const markdownString: MarkdownString = { value: toMarkdownWithLineBreaks(props.description), isTrusted: true };
-        const options: MarkdownRenderOptions | undefined = onLinkClickRef.current
-            ? {
-                actionHandler: {
-                    callback: (content: string) => {
-                        onLinkClickRef.current?.(content);
-                    },
-                    disposables: new DisposableCollection()
-                }
-            }
-            : undefined;
-
-        const result = props.markdownRenderer.render(markdownString, options);
+        const options = createMarkdownOptions(onLinkClickRef, disposablesRef);
+        const result = props.markdownRenderer.render(toTrustedMarkdown(toMarkdownWithLineBreaks(props.description)), options);
         renderResultRef.current = result;
         containerRef.current.innerHTML = '';
         containerRef.current.appendChild(result.element);
 
-        return () => { renderResultRef.current?.dispose(); };
+        return () => {
+            renderResultRef.current?.dispose();
+            disposablesRef.current?.dispose();
+        };
     }, [props.description, props.markdownRenderer]);
 
     return <div className='gs-walkthrough-step-description' ref={containerRef} />;
+}
+
+/**
+ * Walkthrough content is rendered as trusted Markdown so that the `command:` links it relies on survive
+ * rendering. It comes from an installed plugin, which can execute commands through its own API anyway.
+ */
+function toTrustedMarkdown(value: string): MarkdownString {
+    return { value, isTrusted: true };
+}
+
+/**
+ * Routes link activation to `onLinkClick`. Without an action handler the Monaco based renderer clears every
+ * `href` and installs no click handling, which leaves the links of the rendered content inert.
+ */
+function createMarkdownOptions(
+    onLinkClickRef: React.MutableRefObject<((url: string) => void) | undefined>,
+    disposablesRef: React.MutableRefObject<DisposableCollection | undefined>
+): MarkdownRenderOptions | undefined {
+    if (!onLinkClickRef.current) {
+        return undefined;
+    }
+    const disposables = new DisposableCollection();
+    disposablesRef.current = disposables;
+    return {
+        actionHandler: {
+            callback: (content: string) => onLinkClickRef.current?.(content),
+            disposables
+        }
+    };
 }
 
 /**
@@ -229,15 +250,21 @@ function toMarkdownWithLineBreaks(description: string): string {
     return description.replace(/(?<!\n)\n(?!\n)/g, '  \n');
 }
 
-function renderMedia(media: WalkthroughStep['media'], markdownRenderer: MarkdownRenderer, themeService: ThemeService, logger: ILogger): React.ReactNode {
+function renderMedia(
+    media: WalkthroughStep['media'],
+    markdownRenderer: MarkdownRenderer,
+    themeService: ThemeService,
+    logger: ILogger,
+    onLinkClick?: (url: string) => void
+): React.ReactNode {
     if (!media) {
         return undefined;
     }
     if ('markdown' in media) {
-        return <WalkthroughMedia src={media.markdown} markdownRenderer={markdownRenderer} logger={logger} />;
+        return <WalkthroughMedia src={media.markdown} markdownRenderer={markdownRenderer} logger={logger} onLinkClick={onLinkClick} />;
     }
     if ('svg' in media) {
-        return <WalkthroughMediaImage src={media.svg} altText='' themeService={themeService} />;
+        return <WalkthroughMediaImage src={media.svg} altText={media.altText || ''} themeService={themeService} />;
     }
     if ('image' in media) {
         return <WalkthroughMediaImage src={media.image} altText={media.altText || ''} themeService={themeService} />;
@@ -269,7 +296,7 @@ function WalkthroughMediaImage(props: { src: WalkthroughMediaImageSource, altTex
         return () => disposable.dispose();
     }, [themeService]);
 
-    const src = toWalkthroughResourceUrl(pickThemeVariant(props.src, themeType));
+    const src = PluginSharedStyle.toExternalIconUrl(pickThemeVariant(props.src, themeType));
     React.useEffect(() => setFailed(false), [src]);
 
     if (failed) {
@@ -279,19 +306,29 @@ function WalkthroughMediaImage(props: { src: WalkthroughMediaImageSource, altTex
     return <img className='gs-walkthrough-media-image' src={src} alt={props.altText} onError={() => setFailed(true)} />;
 }
 
-function WalkthroughMedia(props: { src: string; markdownRenderer: MarkdownRenderer; logger: ILogger }): React.ReactElement {
+function WalkthroughMedia(props: {
+    src: string;
+    markdownRenderer: MarkdownRenderer;
+    logger: ILogger;
+    onLinkClick?: (url: string) => void;
+}): React.ReactElement {
     // eslint-disable-next-line no-null/no-null
     const containerRef = React.useRef<HTMLDivElement>(null);
     const renderResultRef = React.useRef<MarkdownRenderResult | undefined>();
+    const disposablesRef = React.useRef<DisposableCollection | undefined>();
+    const onLinkClickRef = React.useRef(props.onLinkClick);
+    onLinkClickRef.current = props.onLinkClick;
 
     React.useEffect(() => {
         let cancelled = false;
-        fetch(toWalkthroughResourceUrl(props.src))
+        fetch(PluginSharedStyle.toExternalIconUrl(props.src))
             .then(response => !cancelled && response.ok ? response.text() : '')
             .then(text => {
                 if (!cancelled && containerRef.current && text) {
                     renderResultRef.current?.dispose();
-                    const result = props.markdownRenderer.render({ value: text });
+                    disposablesRef.current?.dispose();
+                    const options = createMarkdownOptions(onLinkClickRef, disposablesRef);
+                    const result = props.markdownRenderer.render(toTrustedMarkdown(text), options);
                     renderResultRef.current = result;
                     containerRef.current.innerHTML = '';
                     containerRef.current.appendChild(result.element);
@@ -302,6 +339,7 @@ function WalkthroughMedia(props: { src: string; markdownRenderer: MarkdownRender
             cancelled = true;
             renderResultRef.current?.dispose();
             renderResultRef.current = undefined;
+            disposablesRef.current?.dispose();
         };
     }, [props.src, props.markdownRenderer]);
 

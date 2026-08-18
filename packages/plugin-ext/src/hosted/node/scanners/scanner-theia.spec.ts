@@ -355,13 +355,11 @@ describe('TheiaPluginScanner - readWalkthroughs', () => {
                 completionEvents: ['onCommand:test']
             }],
             when: 'workspacePlatform == linux',
-            featuredFor: ['python'],
             icon: 'book'
         }]);
 
         expect(result).to.have.lengthOf(1);
         expect(result![0].when).to.equal('workspacePlatform == linux');
-        expect(result![0].featuredFor).to.deep.equal(['python']);
         expect(result![0].icon).to.equal('book');
         expect(result![0].steps[0].when).to.equal('isLinux');
         expect(result![0].steps[0].media).to.deep.equal({ markdown: 'hostedPlugin/test_publisher_test_plugin/content.md' });
@@ -394,6 +392,25 @@ describe('TheiaPluginScanner - readWalkthroughs', () => {
 
         expect(result).to.have.lengthOf(1);
         expect(result![0].steps[0].media).to.deep.equal({ image: 'hostedPlugin/test_publisher_test_plugin/media%2Fimage.png' });
+    });
+
+    it('should keep the alt text of svg media', () => {
+        const result = callReadWalkthroughs([{
+            id: 'wt1',
+            title: 'WT',
+            description: 'desc',
+            steps: [{
+                id: 's1',
+                title: 'S1',
+                description: 'd1',
+                media: { svg: 'media/icon.svg', altText: 'An icon' }
+            }]
+        }]);
+
+        expect(result![0].steps[0].media).to.deep.equal({
+            svg: 'hostedPlugin/test_publisher_test_plugin/media%2Ficon.svg',
+            altText: 'An icon'
+        });
     });
 
     it('should resolve media svg paths through toPluginUrl', () => {

@@ -31,6 +31,7 @@ import { ColorContribution } from '@theia/core/lib/browser/color-application-con
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { Color } from '@theia/core/lib/common/color';
 import { WalkthroughService } from './walkthrough-service';
+import { WalkthroughCommands } from '../common/walkthrough-commands';
 
 /**
  * Triggers opening the `GettingStartedWidget`.
@@ -39,10 +40,6 @@ export const GettingStartedCommand = {
     id: GettingStartedWidget.ID,
     label: GettingStartedWidget.LABEL
 };
-
-// WalkthroughCommands imported from common and re-exported for backward compatibility
-import { WalkthroughCommands } from '../common/walkthrough-commands';
-export { WalkthroughCommands };
 
 /**
  * How a walkthrough can be referenced when opening it through a command.
@@ -165,8 +162,9 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
         registry.registerAlias(WalkthroughCommands.OPEN_WALKTHROUGH_VSCODE.id, WalkthroughCommands.OPEN_WALKTHROUGH.id);
         registry.registerCommand(WalkthroughCommands.RESET_WALKTHROUGH_PROGRESS, {
             execute: async (walkthroughId?: string) => {
-                if (walkthroughId) {
-                    await this.walkthroughService.resetProgress(walkthroughId);
+                const id = walkthroughId ?? await this.pickWalkthrough();
+                if (id) {
+                    await this.walkthroughService.resetProgress(id);
                 }
             }
         });

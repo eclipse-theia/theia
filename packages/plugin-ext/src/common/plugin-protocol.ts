@@ -117,11 +117,20 @@ export interface PluginPackageContribution {
     walkthroughs?: PluginPackageWalkthrough[];
 }
 
+/**
+ * Media of a walkthrough step as contributed in `package.json`. Only the light and dark variant of an
+ * image are mandatory, the high contrast ones were added to the VS Code schema later.
+ */
+export type PluginPackageWalkthroughStepMedia =
+    { markdown: string }
+    | { image: string | { dark: string; light: string; hc?: string; hcLight?: string }; altText?: string }
+    | { svg: string; altText?: string };
+
 export interface PluginPackageWalkthroughStep {
     id: string;
     title: string;
     description: string;
-    media?: { markdown: string } | { image: string | { dark: string; light: string; hc?: string; hcLight?: string }; altText?: string } | { svg: string };
+    media?: PluginPackageWalkthroughStepMedia;
     completionEvents?: string[];
     when?: string;
 }
@@ -131,7 +140,6 @@ export interface PluginPackageWalkthrough {
     title: string;
     description: string;
     steps: PluginPackageWalkthroughStep[];
-    featuredFor?: string[];
     when?: string;
     icon?: string;
 }
@@ -687,11 +695,19 @@ export interface notebookPreloadContribution {
     entrypoint: string;
 }
 
+/**
+ * Media of a walkthrough step with every path resolved and every image variant filled in.
+ */
+export type WalkthroughStepMedia =
+    { markdown: string }
+    | { image: string | { dark: string; light: string; hc: string; hcLight: string }; altText?: string }
+    | { svg: string; altText?: string };
+
 export interface WalkthroughStepContribution {
     id: string;
     title: string;
     description: string;
-    media?: { markdown: string } | { image: string | { dark: string; light: string; hc: string; hcLight: string }; altText?: string } | { svg: string };
+    media?: WalkthroughStepMedia;
     completionEvents?: string[];
     when?: string;
 }
@@ -701,7 +717,6 @@ export interface WalkthroughContribution {
     title: string;
     description: string;
     steps: WalkthroughStepContribution[];
-    featuredFor?: string[];
     when?: string;
     icon?: string;
     pluginId: string;

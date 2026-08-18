@@ -16,8 +16,8 @@
 
 import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
+import { PluginSharedStyle } from '@theia/plugin-ext/lib/main/browser/plugin-shared-style';
 import { Walkthrough } from '../common/walkthrough-types';
-import { toWalkthroughResourceUrl } from './walkthrough-resources';
 
 /**
  * Renders the icon of a walkthrough: the codicon it contributes itself if there is one, otherwise the icon
@@ -33,7 +33,7 @@ export function WalkthroughIcon(props: { walkthrough: Walkthrough }): React.Reac
     if (walkthrough.pluginIcon && !failed) {
         return <img
             className='gs-walkthrough-icon gs-walkthrough-plugin-icon'
-            src={toWalkthroughResourceUrl(walkthrough.pluginIcon)}
+            src={PluginSharedStyle.toExternalIconUrl(walkthrough.pluginIcon)}
             alt=''
             onError={() => setFailed(true)}
         />;

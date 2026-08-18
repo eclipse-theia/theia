@@ -457,6 +457,34 @@ describe('WalkthroughService', () => {
             expect(walkthrough.steps[1].isComplete).to.be.false;
         });
 
+        it('should not register a walkthrough before the persisted progress was read', async () => {
+            const wtId = 'test.publisher.test-plugin.test-walkthrough';
+            const pluginId = 'test.publisher.test-plugin';
+            storedData['walkthrough-progress'] = { completedSteps: { [wtId]: ['step1'] } };
+
+            // Plugins are deployed while the storage read is still pending.
+            let releaseStorage = () => { };
+            const pendingRead = new Promise<void>(resolve => { releaseStorage = resolve; });
+            (service as any).storageService = {
+                getData: async (key: string, defaultValue: unknown) => {
+                    await pendingRead;
+                    return storedData[key] ?? defaultValue;
+                },
+                setData: () => Promise.resolve()
+            };
+            mockPlugins = [{ model: { id: pluginId, publisher: 'test.publisher', name: 'test-plugin' } }];
+            mockDeployedPlugins.set(pluginId, { contributes: { walkthroughs: [createContribution()] } });
+
+            (service as any).init();
+            onDidChangePluginsEmitter.fire();
+            expect(service.getWalkthroughs(), 'nothing may be registered yet').to.be.empty;
+
+            releaseStorage();
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            expect(service.getWalkthrough(wtId)!.steps[0].isComplete, 'the saved progress has to be applied').to.be.true;
+        });
+
         it('should handle missing storage data gracefully', async () => {
             await (service as any).loadProgress();
             (service as any).registerWalkthrough(createContribution());
@@ -740,6 +768,32 @@ describe('WalkthroughService', () => {
 
         it('should offer the walkthrough of an installed plugin', () => {
             expect(service.getWalkthrough(wtId)).to.not.be.undefined;
+        });
+
+        it('should replace a walkthrough whose definition changed', () => {
+            expect(service.getWalkthrough(wtId)!.steps).to.have.lengthOf(2);
+
+            // The plugin was updated and now contributes a single step.
+            mockDeployedPlugins.set(pluginId, {
+                contributes: {
+                    walkthroughs: [createContribution({
+                        steps: [{ id: 'only', title: 'Only Step', description: 'd' }]
+                    })]
+                }
+            });
+            (service as any).syncWalkthroughsFromPlugins();
+
+            const steps = service.getWalkthrough(wtId)!.steps;
+            expect(steps).to.have.lengthOf(1);
+            expect(steps[0].id).to.equal('only');
+        });
+
+        it('should keep a walkthrough whose definition is unchanged', () => {
+            let fired = false;
+            service.onDidChangeWalkthroughs(() => { fired = true; });
+            (service as any).syncWalkthroughsFromPlugins();
+
+            expect(fired, 'an unchanged sync must not notify').to.be.false;
         });
 
         it('should drop the walkthrough once the plugin is out of sync', () => {

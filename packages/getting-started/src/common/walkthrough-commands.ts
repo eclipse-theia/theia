@@ -13,23 +13,25 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-
+import { Command } from '@theia/core/lib/common/command';
 import { nls } from '@theia/core/lib/common/nls';
 
 export namespace WalkthroughCommands {
-    export const OPEN_WALKTHROUGH = {
+    export const OPEN_WALKTHROUGH = Command.toDefaultLocalizedCommand({
         id: 'walkthrough.open',
-        label: nls.localizeByDefault('Open Walkthrough...')
-    };
+        category: 'Help',
+        label: 'Open Walkthrough...'
+    });
     /**
      * VS Code's id for opening a walkthrough, registered as an alias of {@link OPEN_WALKTHROUGH}.
      * Walkthroughs link to it from their step descriptions.
      */
-    export const OPEN_WALKTHROUGH_VSCODE = {
+    export const OPEN_WALKTHROUGH_VSCODE: Command = {
         id: 'workbench.action.openWalkthrough'
     };
-    export const RESET_WALKTHROUGH_PROGRESS = {
+    export const RESET_WALKTHROUGH_PROGRESS = Command.toLocalizedCommand({
         id: 'walkthrough.resetProgress',
-        label: nls.localize('theia/getting-started/resetWalkthroughProgress', 'Reset Walkthrough Progress')
-    };
+        category: 'Help',
+        label: 'Reset Walkthrough Progress'
+    }, 'theia/getting-started/resetWalkthroughProgress', nls.getDefaultKey('Help'));
 }

@@ -14,11 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { WalkthroughStepMedia } from '@theia/plugin-ext/lib/common/plugin-protocol';
+
 export interface WalkthroughStep {
     id: string;
     title: string;
     description: string;
-    media?: { markdown: string } | { image: string | { dark: string; light: string; hc: string; hcLight: string }; altText?: string } | { svg: string };
+    media?: WalkthroughStepMedia;
     completionEvents?: string[];
     when?: string;
     isComplete: boolean;

@@ -203,11 +203,17 @@ export class CommandRegistry implements CommandService {
     protected _recent: string[] = [];
 
     /**
-     * Unidirectional alias map: target command ID → alias command ID.
-     * When the target (e.g., a native Theia command) is executed,
-     * events also fire for the alias (e.g., a VS Code command ID).
+     * Unidirectional alias map from a target command id to the alias command ids registered for it.
+     * When the target (for instance a native Theia command) is executed, events also fire for its
+     * aliases (for instance the VS Code command ids).
      */
-    protected readonly _aliases = new Map<string, string>();
+    protected readonly _aliases = new Map<string, Set<string>>();
+
+    /**
+     * How often each command is currently executing, so that an alias event can be skipped while the
+     * alias command itself is on the stack.
+     */
+    protected readonly executionDepth = new Map<string, number>();
 
     protected readonly onWillExecuteCommandEmitter = new Emitter<WillExecuteCommandEvent>();
     readonly onWillExecuteCommand = this.onWillExecuteCommandEmitter.event;
@@ -286,30 +292,35 @@ export class CommandRegistry implements CommandService {
 
     /**
      * Register a unidirectional alias from a target command to an alias command.
-     * When the target command is executed, {@link onDidExecuteCommand} and
-     * {@link onWillExecuteCommand} will also fire for the alias ID.
+     * When the target command is executed, {@link onDidExecuteCommand} and {@link onWillExecuteCommand}
+     * fire for the alias id as well.
      *
-     * This does NOT affect command handlers, enablement, or visibility —
-     * only event emission.
+     * This does not affect command handlers, enablement or visibility, only event emission. A target may
+     * carry several aliases. No event is fired for an alias that is itself executing, so that an alias
+     * command delegating to its target does not report the alias twice.
      *
-     * @param aliasId - The alias command ID (e.g., a VS Code command ID)
-     * @param targetId - The target command ID (e.g., the native Theia command ID)
-     * @returns a `Disposable` that removes the alias
+     * @param aliasId the alias command id, for instance a VS Code command id
+     * @param targetId the target command id, for instance the native Theia command id
+     * @returns a `Disposable` that removes this alias again
      */
     registerAlias(aliasId: string, targetId: string): Disposable {
-        this._aliases.set(targetId, aliasId);
+        const aliases = this._aliases.get(targetId) ?? new Set<string>();
+        aliases.add(aliasId);
+        this._aliases.set(targetId, aliases);
         return Disposable.create(() => {
-            if (this._aliases.get(targetId) === aliasId) {
+            const registered = this._aliases.get(targetId);
+            if (registered?.delete(aliasId) && registered.size === 0) {
                 this._aliases.delete(targetId);
             }
         });
     }
 
     /**
-     * Returns the alias ID registered for the given command ID, or `undefined`.
+     * Returns the alias ids registered for the given command id.
      */
-    getAlias(commandId: string): string | undefined {
-        return this._aliases.get(commandId);
+    getAliases(commandId: string): readonly string[] {
+        const aliases = this._aliases.get(commandId);
+        return aliases ? Array.from(aliases) : [];
     }
 
     /**
@@ -376,14 +387,23 @@ export class CommandRegistry implements CommandService {
     async executeCommand<T>(commandId: string, ...args: any[]): Promise<T | undefined> {
         const handler = this.getActiveHandler(commandId, ...args);
         if (handler) {
-            await this.fireWillExecuteCommand(commandId, args);
-            const result = await handler.execute(...args);
-            this.onDidExecuteCommandEmitter.fire({ commandId, args });
-            const alias = this._aliases.get(commandId);
-            if (alias) {
-                this.onDidExecuteCommandEmitter.fire({ commandId: alias, args });
+            this.executionDepth.set(commandId, (this.executionDepth.get(commandId) ?? 0) + 1);
+            try {
+                await this.fireWillExecuteCommand(commandId, args);
+                const result = await handler.execute(...args);
+                this.onDidExecuteCommandEmitter.fire({ commandId, args });
+                for (const alias of this.getPendingAliases(commandId)) {
+                    this.onDidExecuteCommandEmitter.fire({ commandId: alias, args });
+                }
+                return result;
+            } finally {
+                const depth = this.executionDepth.get(commandId) ?? 1;
+                if (depth > 1) {
+                    this.executionDepth.set(commandId, depth - 1);
+                } else {
+                    this.executionDepth.delete(commandId);
+                }
             }
-            return result;
         }
         throw Object.assign(new Error(`The command '${commandId}' cannot be executed. There are no active handlers available for the command.`), { code: 'NO_ACTIVE_HANDLER' });
     }
@@ -391,10 +411,17 @@ export class CommandRegistry implements CommandService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected async fireWillExecuteCommand(commandId: string, args: any[] = []): Promise<void> {
         await WaitUntilEvent.fire(this.onWillExecuteCommandEmitter, { commandId, args }, 30000);
-        const alias = this._aliases.get(commandId);
-        if (alias) {
+        for (const alias of this.getPendingAliases(commandId)) {
             await WaitUntilEvent.fire(this.onWillExecuteCommandEmitter, { commandId: alias, args }, 30000);
         }
+    }
+
+    /**
+     * The aliases of the given command that are not executing themselves, and for which events are
+     * therefore still owed.
+     */
+    protected getPendingAliases(commandId: string): readonly string[] {
+        return this.getAliases(commandId).filter(alias => !this.executionDepth.has(alias));
     }
 
     /**
