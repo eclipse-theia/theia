@@ -15,33 +15,33 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { computeSkillContentHash, SkillFileContent } from './skill-content-hash';
+import { computeContentHash, FileContent } from './content-hash';
 
-function file(relativePath: string, content: string): SkillFileContent {
+function file(relativePath: string, content: string): FileContent {
     return { relativePath, content: new TextEncoder().encode(content) };
 }
 
-describe('computeSkillContentHash', () => {
+describe('computeContentHash', () => {
 
     it('hashes an empty file set to the sha256-of-nothing 12-char prefix', () => {
         // sha256('') = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-        expect(computeSkillContentHash([])).to.equal('e3b0c44298fc');
+        expect(computeContentHash([])).to.equal('e3b0c44298fc');
     });
 
     it('produces a 12-character lowercase hex prefix', () => {
-        const hash = computeSkillContentHash([file('SKILL.md', '# Example')]);
+        const hash = computeContentHash([file('SKILL.md', '# Example')]);
         expect(hash).to.match(/^[0-9a-f]{12}$/);
     });
 
     it('is independent of the input order (paths are sorted lexicographically)', () => {
-        const a = computeSkillContentHash([file('a.txt', 'A'), file('b.txt', 'B'), file('c/d.txt', 'D')]);
-        const b = computeSkillContentHash([file('c/d.txt', 'D'), file('b.txt', 'B'), file('a.txt', 'A')]);
+        const a = computeContentHash([file('a.txt', 'A'), file('b.txt', 'B'), file('c/d.txt', 'D')]);
+        const b = computeContentHash([file('c/d.txt', 'D'), file('b.txt', 'B'), file('a.txt', 'A')]);
         expect(a).to.equal(b);
     });
 
     it('excludes dot-prefixed files at the root (e.g. the .registry.json registry metadata file)', () => {
-        const withoutMetadata = computeSkillContentHash([file('SKILL.md', '# Example')]);
-        const withMetadata = computeSkillContentHash([
+        const withoutMetadata = computeContentHash([file('SKILL.md', '# Example')]);
+        const withMetadata = computeContentHash([
             file('SKILL.md', '# Example'),
             file('.registry.json', '{"skillId":"x"}')
         ]);
@@ -49,8 +49,8 @@ describe('computeSkillContentHash', () => {
     });
 
     it('excludes files inside dot-prefixed directories at any level', () => {
-        const baseline = computeSkillContentHash([file('SKILL.md', '# Example')]);
-        const withHidden = computeSkillContentHash([
+        const baseline = computeContentHash([file('SKILL.md', '# Example')]);
+        const withHidden = computeContentHash([
             file('SKILL.md', '# Example'),
             file('.git/config', 'ignored'),
             file('docs/.hidden/note.txt', 'ignored')
@@ -59,24 +59,24 @@ describe('computeSkillContentHash', () => {
     });
 
     it('excludes the empty set and a dot-only set identically', () => {
-        expect(computeSkillContentHash([file('.registry.json', '{}')])).to.equal(computeSkillContentHash([]));
+        expect(computeContentHash([file('.registry.json', '{}')])).to.equal(computeContentHash([]));
     });
 
     it('normalises backslash separators to POSIX so Windows and Linux backends agree', () => {
-        const windows = computeSkillContentHash([file('docs\\guide.md', 'content')]);
-        const posix = computeSkillContentHash([file('docs/guide.md', 'content')]);
+        const windows = computeContentHash([file('docs\\guide.md', 'content')]);
+        const posix = computeContentHash([file('docs/guide.md', 'content')]);
         expect(windows).to.equal(posix);
     });
 
     it('changes when a file path changes', () => {
-        const first = computeSkillContentHash([file('SKILL.md', 'same')]);
-        const renamed = computeSkillContentHash([file('OTHER.md', 'same')]);
+        const first = computeContentHash([file('SKILL.md', 'same')]);
+        const renamed = computeContentHash([file('OTHER.md', 'same')]);
         expect(first).to.not.equal(renamed);
     });
 
     it('changes when file content changes', () => {
-        const first = computeSkillContentHash([file('SKILL.md', 'one')]);
-        const second = computeSkillContentHash([file('SKILL.md', 'two')]);
+        const first = computeContentHash([file('SKILL.md', 'one')]);
+        const second = computeContentHash([file('SKILL.md', 'two')]);
         expect(first).to.not.equal(second);
     });
 });
