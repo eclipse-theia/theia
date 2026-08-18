@@ -133,6 +133,46 @@ describe('Endpoint', () => {
 
     });
 
+    describe('03 #backend', () => {
+
+        const cdn: Endpoint.Location = {
+            host: 'cdn.example:8080',
+            pathname: '/',
+            search: '',
+            protocol: 'http:'
+        };
+
+        afterEach(() => {
+            Endpoint.backend = undefined;
+        });
+
+        it('should use host, scheme, and pathname from Endpoint.backend', () => {
+            Endpoint.backend = 'https://api.example:8443/theia/';
+            const cut = new Endpoint({}, cdn);
+            expect(cut.host).to.equal('api.example:8443');
+            expect(cut.httpScheme).to.equal('https:');
+            expect(cut.getRestUrl().toString()).to.equal('https://api.example:8443/theia');
+        });
+
+        it('should prefer explicit options over Endpoint.backend', () => {
+            Endpoint.backend = 'https://api.example:8443/theia/';
+            const cut = new Endpoint({ host: 'forced.example', httpScheme: 'http:' }, cdn);
+            expect(cut.host).to.equal('forced.example');
+            expect(cut.httpScheme).to.equal('http:');
+        });
+
+        it('should throw for non-http(s) backend values', () => {
+            Endpoint.backend = 'file:///tmp';
+            expect(() => new Endpoint({}, cdn)).to.throw(/http\(s\)/);
+        });
+
+        it('should throw for invalid backend values', () => {
+            Endpoint.backend = 'not-a-url';
+            expect(() => new Endpoint({}, cdn)).to.throw();
+        });
+
+    });
+
 });
 
 function expectWsUri(options: Endpoint.Options, mockLocation: Endpoint.Location, expectedUri: string): void {

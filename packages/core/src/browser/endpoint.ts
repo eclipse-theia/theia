@@ -26,10 +26,32 @@ export class Endpoint {
     static readonly PROTO_WSS: string = 'wss:';
     static readonly PROTO_FILE: string = 'file:';
 
+    /**
+     * Optional backend origin (`http:` / `https:`). When set, REST and WebSocket
+     * URLs use this instead of the page location. Explicit {@link Endpoint.Options} win.
+     *
+     * @example
+     * Endpoint.backend = 'https://api.example:8443';
+     */
+    static backend: string | undefined;
+
     constructor(
         protected readonly options: Endpoint.Options = {},
-        protected readonly location: Endpoint.Location = self.location
-    ) { }
+        protected location: Endpoint.Location = self.location
+    ) {
+        if (Endpoint.backend) {
+            const url = new URL(Endpoint.backend);
+            if (url.protocol !== Endpoint.PROTO_HTTP && url.protocol !== Endpoint.PROTO_HTTPS) {
+                throw new Error(`Endpoint.backend must be an http(s) URL: ${Endpoint.backend}`);
+            }
+            this.location = {
+                host: url.host,
+                pathname: url.pathname,
+                search: url.search,
+                protocol: url.protocol
+            };
+        }
+    }
 
     getWebSocketUrl(): URI {
         return new URI(`${this.wsScheme}//${this.host}${this.pathname}${this.path}`);
@@ -39,7 +61,7 @@ export class Endpoint {
         return new URI(`${this.httpScheme}//${this.host}${this.pathname}${this.path}`);
     }
 
-    protected get pathname(): string {
+    get pathname(): string {
         if (this.location.protocol === Endpoint.PROTO_FILE) {
             return '';
         }

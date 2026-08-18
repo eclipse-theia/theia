@@ -101,6 +101,7 @@
     "rebuild:browser": "cd examples/browser && npm run rebuild",
     "rebuild:electron": "cd examples/electron && npm run rebuild",
     "start:browser": "cd examples/browser && npm run start",
+    "start:split": "cd examples/api-samples && npm run start:split",
     "start:browser-only": "cd examples/browser-only && npm run start",
     "start:electron": "cd examples/electron && npm run start",
     "test": "npm run -s test:theia && npm run -s electron test && npm run -s browser test",

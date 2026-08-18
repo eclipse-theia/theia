@@ -40,6 +40,9 @@
       "path": "../../packages/filesystem"
     },
     {
+      "path": "../../packages/mini-browser"
+    },
+    {
       "path": "../../packages/monaco"
     },
     {

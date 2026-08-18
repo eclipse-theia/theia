@@ -22,9 +22,14 @@ import URI from '@theia/core/lib/common/uri';
 
 const NLS_REGEX = /^%([\w\d.-]+)%$/i;
 
+export function hostedPluginRoot(): URI {
+    const rest = new Endpoint().getRestUrl();
+    // Worker `location.pathname` is `/plugin-worker.js`; `Endpoint.backend` replaces that with the API root.
+    return Endpoint.backend ? rest : rest.parent;
+}
+
 function getUri(pluginModel: PluginModel, relativePath: string): URI {
-    const ownURI = new Endpoint().getRestUrl();
-    return ownURI.parent.resolve(PluginPackage.toPluginUrl(pluginModel, relativePath));
+    return hostedPluginRoot().resolve(PluginPackage.toPluginUrl(pluginModel, relativePath));
 }
 
 function readPluginFile(pluginModel: PluginModel, relativePath: string): Promise<string> {

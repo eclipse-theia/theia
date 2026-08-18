@@ -41,10 +41,17 @@ import { bindSampleCodeCompletionVariableContribution } from './ai-code-completi
 import { bindSamplePreferenceContribution } from './preferences/sample-preferences-contribution';
 import { MCPFrontendContribution } from '@theia/ai-mcp-server/lib/browser/mcp-frontend-contribution';
 import { SampleFrontendMCPContribution } from './mcp/sample-frontend-mcp-contribution';
+import { DefaultSecondaryWindowService } from '@theia/core/lib/browser/window/default-secondary-window-service';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { CommandContribution } from '@theia/core/lib/common';
 import { ResolveMcpFrontendContribution } from './mcp/resolve-frontend-mcp-contribution';
 import { TelemetrySampleCommandContribution } from './telemetry-sample/telemetry-sample-command-contribution';
+import { parseRemoteBackend } from '../common/split-origin/remote-backend';
+
+if (parseRemoteBackend()) {
+    (DefaultSecondaryWindowService as unknown as { SECONDARY_WINDOW_URL: string }).SECONDARY_WINDOW_URL =
+        `secondary-window.html${location.search}`;
+}
 
 export default new ContainerModule((
     bind: interfaces.Bind,

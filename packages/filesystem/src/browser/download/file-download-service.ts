@@ -45,7 +45,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
     }
 
     async cancelDownload(id: string): Promise<void> {
-        await fetch(`${this.endpoint()}/download/?id=${id}&cancel=true`);
+        await fetch(`${this.endpoint()}/download/?id=${id}&cancel=true`, { credentials: 'include' });
     }
 
     async download(uris: URI[], options?: FileDownloadService.DownloadOptions): Promise<void> {
@@ -135,13 +135,15 @@ export class FileDownloadServiceImpl implements FileDownloadService {
         if (uris.length === 1) {
             return {
                 body: undefined,
-                method: 'GET'
+                method: 'GET',
+                credentials: 'include'
             };
         }
         return {
             method: 'PUT',
             body: JSON.stringify(this.body(uris)),
             headers: new Headers({ 'Content-Type': 'application/json' }),
+            credentials: 'include'
         };
     }
 

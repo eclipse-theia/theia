@@ -205,6 +205,7 @@ export class WebSocketConnectionSource implements ConnectionSource {
     protected createWebSocket(url: string): Socket {
         return io(url, {
             path: this.createSocketIoPath(url),
+            withCredentials: true,
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 10000,
@@ -219,7 +220,7 @@ export class WebSocketConnectionSource implements ConnectionSource {
         if (location.protocol === Endpoint.PROTO_FILE) {
             return '/socket.io';
         }
-        let { pathname } = location;
+        let pathname = new Endpoint().pathname || '/';
         if (!pathname.endsWith('/')) {
             pathname += '/';
         }

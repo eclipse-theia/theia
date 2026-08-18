@@ -344,6 +344,7 @@ export class FileUploadServiceImpl implements FileUploadService {
             }));
         });
         xhr.open('POST', this.getUploadUrl(), /* async: */ true);
+        xhr.withCredentials = true;
         xhr.send(data);
         return {
             upload,

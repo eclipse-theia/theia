@@ -7,6 +7,11 @@
 ## 1.75.0 - tbd
 
 - [ai-ide] added an opt-in "Memory" prompt capability that lets agents maintain a wiki-style knowledge base per workspace, stored in the workspace metadata store and exposed to prompts via the new `{{memoryDirectory}}` variable [#17865](https://github.com/eclipse-theia/theia/pull/17865)
+- [api-samples] added a split-origin sample: serve the browser SPA from another host, connect with `?backend=`, mint the connection cookie only after `POST /split-origin/session` with a Bearer token, and require that cookie on `/mini-browser` so file preview is not readable without a session
+- [core] `Endpoint.backend` optionally points REST and WebSocket URLs at another origin; Socket.IO sends cookies (`withCredentials`) and, when `THEIA_HOSTS` is set, uses that list for CORS with credentials
+- [plugin-ext] the frontend plugin worker inherits `Endpoint.backend` from its script URL and loads `hostedPlugin` from that origin
+- [filesystem] file upload and download send cookies (`withCredentials` / `credentials: 'include'`) so they work when `Endpoint.backend` is another origin
+- [mini-browser] the mini-browser hostname follows `Endpoint` so a remote backend origin reaches file preview
 - [core, monaco] fixed Monaco theme CSS, `SelectComponent` dropdown placement, and the OS font class in secondary windows [#17874](https://github.com/eclipse-theia/theia/pull/17874)
 - [scm] aligned the history graph with VS Code: ref-role lane and badge colors, a current-commit indicator, and a commit hover rendered from the content the history provider supplies [#17880](https://github.com/eclipse-theia/theia/pull/17880)
 - [scm-extra] deprecated `@theia/scm-extra` package [#17882](https://github.com/eclipse-theia/theia/pull/17882)
