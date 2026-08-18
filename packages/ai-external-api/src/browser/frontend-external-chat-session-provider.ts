@@ -14,11 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { SESSION_STORAGE_PREF, SessionStorageScope } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { ChatAgent, ChatAgentLocation } from '@theia/ai-chat/lib/common/chat-agents';
 import { ChatSessionStatus } from '@theia/ai-chat/lib/common/chat-model';
 import { ChatService, ChatSession, NoChatAgentError } from '@theia/ai-chat/lib/common/chat-service';
 import { ChatSessionMetadata } from '@theia/ai-chat/lib/common/chat-session-store';
+import { PreferenceService } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -31,8 +33,10 @@ import {
  * Answers the backend's external session queries from this frontend's {@link ChatService}.
  *
  * Reports sessions that are restored (live) in this frontend with their full state, and
- * persisted sessions that have not been restored with their persisted metadata. Each session
- * is attributed to the workspace this frontend has opened.
+ * persisted sessions that have not been restored with their persisted metadata. Live sessions
+ * are attributed to the workspace this frontend has opened; persisted sessions only when
+ * sessions are persisted per workspace, as the global session store holds sessions saved
+ * from any workspace.
  */
 @injectable()
 export class FrontendExternalChatSessionProvider implements ExternalChatSessionProvider {
@@ -54,14 +58,28 @@ export class FrontendExternalChatSessionProvider implements ExternalChatSessionP
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     async getSessions(): Promise<ExternalChatSessionSummary[]> {
         const workspace = await this.getWorkspaceUri();
+        const persistedWorkspace = await this.getPersistedSessionsWorkspace(workspace);
         const restored = this.chatService.getSessions().map(session => this.toSummary(session, workspace));
         const restoredIds = new Set(restored.map(summary => summary.id));
         const persisted = (await this.getPersistedMetadata())
             .filter(metadata => !restoredIds.has(metadata.sessionId))
-            .map(metadata => this.toPersistedSummary(metadata, workspace));
+            .map(metadata => this.toPersistedSummary(metadata, persistedWorkspace));
         return [...restored, ...persisted];
+    }
+
+    async getSessionSummary(sessionId: string): Promise<ExternalChatSessionSummary | undefined> {
+        const workspace = await this.getWorkspaceUri();
+        const live = this.chatService.getSession(sessionId);
+        if (live) {
+            return this.toSummary(live, workspace);
+        }
+        const metadata = (await this.getPersistedMetadata()).find(candidate => candidate.sessionId === sessionId);
+        return metadata && this.toPersistedSummary(metadata, await this.getPersistedSessionsWorkspace(workspace));
     }
 
     async getSession(sessionId: string): Promise<ExternalChatSessionDetail | undefined> {
@@ -71,7 +89,7 @@ export class FrontendExternalChatSessionProvider implements ExternalChatSessionP
             return this.toDetail(live, workspace);
         }
         const metadata = (await this.getPersistedMetadata()).find(candidate => candidate.sessionId === sessionId);
-        return metadata && this.toPersistedSummary(metadata, workspace);
+        return metadata && this.toPersistedSummary(metadata, await this.getPersistedSessionsWorkspace(workspace));
     }
 
     async openSession(sessionId: string): Promise<boolean> {
@@ -152,6 +170,17 @@ export class FrontendExternalChatSessionProvider implements ExternalChatSessionP
         return this.workspaceService.workspace?.resource.toString();
     }
 
+    /**
+     * Returns the workspace to attribute persisted sessions to: this frontend's workspace when
+     * sessions are persisted per workspace, and `undefined` when they are persisted globally,
+     * as the global session store holds sessions saved from any workspace.
+     */
+    protected async getPersistedSessionsWorkspace(workspace: string | undefined): Promise<string | undefined> {
+        await this.preferenceService.ready;
+        const scope = this.preferenceService.get<SessionStorageScope>(SESSION_STORAGE_PREF, 'workspace');
+        return scope === 'workspace' ? workspace : undefined;
+    }
+
     /** Returns the metadata of all persisted sessions, or an empty list if reading the persisted index fails. */
     protected async getPersistedMetadata(): Promise<ChatSessionMetadata[]> {
         try {
@@ -179,6 +208,8 @@ export class FrontendExternalChatSessionProvider implements ExternalChatSessionP
             preview: this.toPreview(session),
             agentId: session.pinnedAgent?.id,
             agentName: session.pinnedAgent?.name,
+            parentSessionId: session.parentSessionId,
+            rootSessionId: session.rootSessionId,
             restored: true
         };
     }
@@ -193,6 +224,8 @@ export class FrontendExternalChatSessionProvider implements ExternalChatSessionP
             workspace,
             agentId: metadata.pinnedAgentId,
             agentName: metadata.pinnedAgentId ? this.agentService.getAgent(metadata.pinnedAgentId, true)?.name : undefined,
+            parentSessionId: metadata.parentSessionId,
+            rootSessionId: metadata.rootSessionId,
             restored: false
         };
     }
@@ -216,14 +249,29 @@ export class FrontendExternalChatSessionProvider implements ExternalChatSessionP
         return messages;
     }
 
-    /** Returns the last few non-empty lines of the conversation, or `undefined` for an empty conversation. */
+    /**
+     * Returns the last few non-empty lines of the conversation, or `undefined` for an empty
+     * conversation. Walks the conversation from the end so that only as many entries as the
+     * preview needs are rendered, however long the conversation is.
+     */
     protected toPreview(session: ChatSession): string | undefined {
-        const lines = this.toMessages(session)
-            .flatMap(message => message.text.split('\n'))
+        const lines: string[] = [];
+        const requests = session.model.getRequests();
+        for (let index = requests.length - 1; index >= 0 && lines.length < this.previewLineCount; index--) {
+            const request = requests[index];
+            const entries = [request.request.text, request.response.response.asDisplayString()];
+            for (let entry = entries.length - 1; entry >= 0 && lines.length < this.previewLineCount; entry--) {
+                lines.push(...this.toPreviewLines(entries[entry]).slice(-(this.previewLineCount - lines.length)).reverse());
+            }
+        }
+        return lines.length > 0 ? lines.reverse().join('\n') : undefined;
+    }
+
+    /** Splits an entry into its non-empty, truncated preview lines. */
+    protected toPreviewLines(text: string | undefined): string[] {
+        return (text ?? '').split('\n')
             .map(line => line.trim())
             .filter(line => line.length > 0)
-            .slice(-this.previewLineCount)
             .map(line => line.length > this.previewLineLength ? `${line.substring(0, this.previewLineLength)}…` : line);
-        return lines.length > 0 ? lines.join('\n') : undefined;
     }
 }

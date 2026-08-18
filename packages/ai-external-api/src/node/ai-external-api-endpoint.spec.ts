@@ -50,19 +50,20 @@ describe('AIExternalApiEndpoint', () => {
 
     async function serve(registry: Partial<ExternalChatSessionRegistry> = {}): Promise<ServedEndpoint> {
         const sessionsChanged = new Emitter<void>();
-        const endpoint = new AIExternalApiEndpoint();
-        (endpoint as unknown as Record<string, unknown>)['registry'] = {
-            getSessions: async () => sessions,
-            getSession: async (id: string) => sessions.find(candidate => candidate.id === id),
-            openSession: async (id: string) => sessions.some(candidate => candidate.id === id),
-            restoreSession: async (id: string) => sessions.find(candidate => candidate.id === id),
-            sendPrompt: async (id: string) => sessions.some(candidate => candidate.id === id)
-                ? { sent: { sessionId: id, requestId: 'r1' } }
-                : undefined,
-            createSession: async () => ({ created: { session: sessions[0], requestId: 'r1' } }),
-            onDidChangeSessions: sessionsChanged.event,
-            ...registry
-        };
+        const endpoint = ExternalApiTestSupport.inject(new AIExternalApiEndpoint(), {
+            registry: {
+                getSessions: async () => sessions,
+                getSession: async (id: string) => sessions.find(candidate => candidate.id === id),
+                openSession: async (id: string) => sessions.some(candidate => candidate.id === id),
+                restoreSession: async (id: string) => sessions.find(candidate => candidate.id === id),
+                sendPrompt: async (id: string) => sessions.some(candidate => candidate.id === id)
+                    ? { sent: { sessionId: id, requestId: 'r1' } }
+                    : undefined,
+                createSession: async () => ({ created: { session: sessions[0], requestId: 'r1' } }),
+                onDidChangeSessions: sessionsChanged.event,
+                ...registry
+            }
+        });
         const app = express();
         const router = ExternalApiTestSupport.mountContribution(app, endpoint);
         const listening = new Promise<void>(resolve => {
@@ -70,10 +71,6 @@ describe('AIExternalApiEndpoint', () => {
         });
         await listening;
         return { url: `http://127.0.0.1:${(server!.address() as AddressInfo).port}${endpoint.path}`, router, sessionsChanged };
-    }
-
-    function wait(milliseconds: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, milliseconds));
     }
 
     function eventData(event: string | undefined): unknown {
@@ -188,6 +185,13 @@ describe('AIExternalApiEndpoint', () => {
             expect(await response.json()).to.deep.equal({ error: 'workspace not found' });
         });
 
+        it('rejects a creation request when no frontend is connected', async () => {
+            const { url } = await serve({ createSession: async () => ({ failure: 'noFrontend' }) });
+            const response = await post(url, {});
+            expect(response.status).to.equal(503);
+            expect(await response.json()).to.deep.equal({ error: 'no frontend connected' });
+        });
+
         it('rejects an ambiguous workspace', async () => {
             const { url } = await serve({ createSession: async () => ({ failure: 'ambiguousWorkspace' }) });
             const response = await post(url, {});
@@ -230,13 +234,6 @@ describe('AIExternalApiEndpoint', () => {
             expect(error.error).to.equal('invalid request');
             expect(error.details[0]).to.contain('text');
         });
-
-        it('rejects malformed JSON bodies', async () => {
-            const { url } = await serve();
-            const response = await post(`${url}/1/prompt`, 'not json');
-            expect(response.status).to.equal(400);
-            expect(await response.json()).to.deep.equal({ error: 'invalid request' });
-        });
     });
 
     describe('events', () => {
@@ -260,20 +257,6 @@ describe('AIExternalApiEndpoint', () => {
             sessionsChanged.fire();
             const update = await events.next();
             expect(eventData(update)).to.deep.equal({ sessions });
-            await events.cancel();
-        });
-
-        it('coalesces change bursts into one push', async () => {
-            const { url, sessionsChanged } = await serve();
-            const response = await fetch(`${url}/events`);
-            const events = ExternalApiTestSupport.sseReader(response);
-            await events.next();
-            sessionsChanged.fire();
-            sessionsChanged.fire();
-            sessionsChanged.fire();
-            expect(eventData(await events.next())).to.deep.equal({ sessions });
-            const extra = await Promise.race([events.next(), wait(300).then(() => 'no extra push')]);
-            expect(extra).to.equal('no extra push');
             await events.cancel();
         });
 

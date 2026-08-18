@@ -36,8 +36,9 @@ workspace settings.
 - `externalApi.port`: Port on which the external HTTP API is served. Only used with
   `separatePort` delivery.
 - `externalApi.hostname`: Hostname or IP address the dedicated server binds to. Defaults to
-  `localhost`; use `0.0.0.0` to accept remote connections. Only used with `separatePort`
-  delivery.
+  `localhost`; use `0.0.0.0` to accept remote connections. A name is bound as it resolves, so
+  clients using the other loopback address may not reach a server bound to `localhost`; use
+  `127.0.0.1` or `::1` to pin one. Only used with `separatePort` delivery.
 - `externalApi.token`: Bearer token required to access protected external API endpoints
   (`Authorization: Bearer <token>`). When empty (default), the external API is served without
   verification.
@@ -45,11 +46,19 @@ workspace settings.
 The backend applies preference changes immediately: the server starts, restarts, moves between
 delivery modes, or stops without requiring a restart.
 
+The configuration applies to the backend as a whole. When several frontends are connected, the
+configuration pushed last wins. In practice the frontends of one backend share the user
+preferences and push the same values. The configuration stays in effect until it is changed
+or the backend stops; it is not revoked when the frontend that pushed it disconnects.
+
 ### Contributing endpoints
 
 Extensions contribute endpoints by binding an `ExternalApiContribution` in their backend
 module. A contribution declares the absolute path it is mounted on (no path conventions are
-imposed) and registers its routes on the `ExternalApiRouter` passed to `configure`:
+imposed, but paths of different contributions must not nest, as each contribution answers all
+requests below its path) and registers its routes on the `ExternalApiRouter` passed to
+`configure`. With `samePort` delivery the path also must not nest with one of Theia's own
+routes, as it would shadow them:
 
 ```typescript
 @injectable()
@@ -80,7 +89,9 @@ external API behave consistently:
   malformed JSON with `400 { "error": "invalid request" }`, and bodies exceeding the size
   limit (default `1mb`, configurable per route via `jsonLimit`) with
   `413 { "error": "payload too large" }`. Unlike the stable `error` codes, `details` are
-  human-readable and make no stability promise.
+  human-readable and make no stability promise. Clients must send the body with a
+  `Content-Type: application/json` header; without it the body is not parsed and the request
+  is rejected as if it were empty.
 - Handlers return a `RestResult` (`RestResult.ok`, `created`, `accepted`, `noContent`,
   `badRequest`, `notFound`, `conflict`, ...) that is written to the response, so that
   success and error responses share one wire format (errors as `{ "error": "<code>" }`).
@@ -103,7 +114,7 @@ configure(router: ExternalApiRouter): void {
 
 `configure` is called whenever the routing is rebuilt, i.e. when the external API
 configuration changes. The router of the previous build is disposed beforehand: event
-streams are closed automatically — so clients reconnect against the new configuration — and
+streams are closed automatically, so clients reconnect against the new configuration, and
 contributions register their own build-scoped resources, such as the event listener above,
 in the router's `toDispose` collection.
 
@@ -112,7 +123,8 @@ router mounted at the contribution's path (behind the token verification): exist
 routers and middlewares can be mounted there unchanged, keeping their own request handling
 and response format. Errors they do not handle themselves are still reduced to the uniform
 error format: server errors are answered with `500 { "error": "internal error" }`, client
-errors keep their status with the HTTP status text as the error code.
+errors keep their status with the HTTP status text as the error code, except for plain
+`400`s, which keep the established `invalid request` code.
 
 The wire format is written by the `ExternalApiResponseWriter`; rebinding it changes the
 format of all typed routes, validation failures, the token verification, and the fallback
@@ -126,8 +138,8 @@ is served without token verification, but scopes the document to the requester: 
 is configured, requests without it receive a document covering only the unprotected
 contributions, while requests carrying the token receive the full document. Undocumented
 routes appear with their method, path, and body schema only; the optional route
-documentation makes the document useful to external consumers — for generated clients,
-documentation UIs, or MCP tool definitions:
+documentation makes the document useful to external consumers, for example for generated
+clients, documentation UIs, or MCP tool definitions:
 
 ```typescript
 router.post('/items/query', {
@@ -141,12 +153,12 @@ router.post('/items/query', {
 }, async ({ body }) => RestResult.ok(await this.service.query(body)));
 ```
 
-- `bodySchema` is a `RestBodySchema<B>` — a JSON Schema carrying the TypeScript type of the
+- `bodySchema` is a `RestBodySchema<B>`, a JSON Schema carrying the TypeScript type of the
   bodies it accepts. A schema constant is declared once, next to the body's interface, and is
   the single place asserting that schema and type agree; the type flows into the route's
   handler and `validate` function.
-- `validate` covers constraints JSON Schema cannot express — cross-field dependencies like
-  the range check above — and runs on the schema-valid body: it returns `undefined` (or an
+- `validate` covers constraints JSON Schema cannot express, such as cross-field dependencies
+  like the range check above, and runs on the schema-valid body: it returns `undefined` (or an
   empty string) for valid bodies, otherwise the message the request is rejected with. Prefer
   expressing constraints in the schema (e.g. non-blank strings as `"pattern": "\\S"`) so that
   they are visible to consumers of the OpenAPI document.
@@ -170,6 +182,11 @@ by declaring `unprotected = true`.
   prefer binding to `localhost` and use TLS-terminating reverse proxies for remote scenarios.
 - Without a token, anyone who can reach the configured port can call all contributed endpoints;
   the backend logs a warning when serving without a token on a non-local hostname.
+- The external API is for external tools, not for browser pages: requests carrying an `Origin`
+  header are rejected with `403 { "error": "forbidden" }`. Browsers execute CORS-simple
+  cross-origin requests before any preflight, so a malicious web page could otherwise drive
+  state-changing endpoints, most notably with `samePort` delivery. External tools do not send
+  an `Origin` header and are unaffected.
 
 ## Additional Information
 

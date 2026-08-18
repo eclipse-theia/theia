@@ -21,7 +21,8 @@ import { expect } from 'chai';
 import * as http from 'http';
 import * as net from 'net';
 import { ExternalApiContribution } from './external-api-contribution';
-import { ExternalApiResponseWriter } from './external-api-response-writer';
+import { ExternalApiResponseWriterImpl } from './external-api-response-writer';
+import { ExternalApiRouterOptions } from './external-api-router';
 import { ExternalApiServer } from './external-api-server';
 import { OpenApiDocumentBuilderImpl } from './openapi-document-builder';
 import { OpenApiSpecContribution } from './openapi-spec-contribution';
@@ -43,6 +44,8 @@ describe('ExternalApiServer', () => {
 
     let server: ExternalApiServer | undefined;
     let mainServer: http.Server | undefined;
+    /** The document builder injected into each created server, for the spec contribution to read. */
+    const documentBuilders = new WeakMap<ExternalApiServer, OpenApiDocumentBuilderImpl>();
 
     afterEach(async () => {
         await server?.updateConfig({ delivery: 'off', port: 0, hostname: '127.0.0.1' });
@@ -52,31 +55,47 @@ describe('ExternalApiServer', () => {
     });
 
     function createServer(contributions: ExternalApiContribution[] = [pingContribution, publicContribution]): ExternalApiServer {
-        server = new ExternalApiServer();
-        (server as unknown as Record<string, unknown>)['logger'] = new MockLogger();
-        (server as unknown as Record<string, unknown>)['contributions'] = { getContributions: () => contributions };
-        (server as unknown as Record<string, unknown>)['responseWriter'] = new ExternalApiResponseWriter();
-        (server as unknown as Record<string, unknown>)['routerFactory'] = ExternalApiTestSupport.createRouterFactory();
-        const documentBuilder = new OpenApiDocumentBuilderImpl();
-        (documentBuilder as unknown as Record<string, unknown>)['applicationPackage'] = {
-            pck: { version: '1.2.3' },
-            props: { frontend: { config: { applicationName: 'My IDE' } } }
-        };
-        (server as unknown as Record<string, unknown>)['documentBuilder'] = documentBuilder;
+        const documentBuilder = ExternalApiTestSupport.inject(new OpenApiDocumentBuilderImpl(), {
+            applicationPackage: {
+                pck: { version: '1.2.3' },
+                props: { frontend: { config: { applicationName: 'My IDE' } } }
+            }
+        });
+        server = ExternalApiTestSupport.inject(new ExternalApiServer(), {
+            logger: new MockLogger(),
+            contributions: { getContributions: () => contributions },
+            responseWriter: new ExternalApiResponseWriterImpl(),
+            routerFactory: ExternalApiTestSupport.createRouterFactory(),
+            documentBuilder
+        });
+        documentBuilders.set(server, documentBuilder);
         return server;
     }
 
     /** Creates a spec contribution reading from the given server's document builder. */
     function createSpecContribution(apiServer: ExternalApiServer): OpenApiSpecContribution {
-        const contribution = new OpenApiSpecContribution();
-        (contribution as unknown as Record<string, unknown>)['builder'] = (apiServer as unknown as Record<string, unknown>)['documentBuilder'];
-        return contribution;
+        return ExternalApiTestSupport.inject(new OpenApiSpecContribution(), { builder: documentBuilders.get(apiServer) });
+    }
+
+    /** Replaces the server's logger with one recording the warning messages. */
+    function captureWarnings(apiServer: ExternalApiServer): string[] {
+        const warnings: string[] = [];
+        ExternalApiTestSupport.inject(apiServer, {
+            logger: Object.assign(new MockLogger(), {
+                warn: async (message: string) => { warnings.push(message); }
+            })
+        });
+        return warnings;
     }
 
     /** Simulates Theia's main HTTP server with the api server's middleware installed. */
     async function serveMainApp(apiServer: ExternalApiServer): Promise<string> {
         const app = express();
         apiServer.configure(app);
+        // a route of the main server outside the external API, e.g. Theia's own endpoints
+        app.get('/main', (request: express.Request, response: express.Response) => {
+            response.json({ main: true });
+        });
         await new Promise<void>(resolve => {
             mainServer = app.listen(0, '127.0.0.1', () => resolve());
         });
@@ -113,8 +132,10 @@ describe('ExternalApiServer', () => {
 
         it('does not serve without a configured port', async () => {
             const apiServer = createServer();
+            const warnings = captureWarnings(apiServer);
             await apiServer.updateConfig({ delivery: 'separatePort', port: 0, hostname: '127.0.0.1' });
-            // applying the configuration must not fail; there is no port to probe
+            expect(warnings).to.have.length(1);
+            expect(warnings[0]).to.contain('no port is configured');
         });
 
         it('serves contributions without verification when no token is configured', async () => {
@@ -174,17 +195,71 @@ describe('ExternalApiServer', () => {
 
         it('warns when serving on a non-local hostname without a token', async () => {
             const apiServer = createServer();
-            const warnings: string[] = [];
-            (apiServer as unknown as Record<string, unknown>)['logger'] = Object.assign(new MockLogger(), {
-                warn: async (message: string) => { warnings.push(message); }
+            const warnings = captureWarnings(apiServer);
+            ExternalApiTestSupport.inject(apiServer, {
+                // do not bind real sockets: '0.0.0.0' would listen on all interfaces
+                start: () => Promise.resolve(http.createServer())
+            });
+            await apiServer.updateConfig({ delivery: 'separatePort', port: 3100, hostname: '127.0.0.1' });
+            expect(warnings).to.have.length(0);
+            await apiServer.updateConfig({ delivery: 'separatePort', port: 3100, hostname: '0.0.0.0' });
+            expect(warnings).to.have.length(1);
+            expect(warnings[0]).to.contain('0.0.0.0');
+            await apiServer.updateConfig({ delivery: 'separatePort', port: 3100, hostname: '0.0.0.0', token: 'secret' });
+            expect(warnings).to.have.length(1);
+        });
+
+        it('falls back to the default hostname when the configured hostname is blank', async () => {
+            const apiServer = createServer();
+            const port = await freePort();
+            await apiServer.updateConfig({ delivery: 'separatePort', port, hostname: '  ' });
+            // the default hostname 'localhost' may resolve to either loopback address
+            const served = await Promise.allSettled([
+                fetch(`http://127.0.0.1:${port}/api/ping`),
+                fetch(`http://[::1]:${port}/api/ping`)
+            ]);
+            const statuses = served.filter(result => result.status === 'fulfilled').map(result => result.value.status);
+            expect(statuses).to.contain(200);
+        });
+
+        it('retries a failed port bind when the same configuration is pushed again', async () => {
+            const apiServer = createServer();
+            const port = await freePort();
+            // occupy the port so that starting the external API server fails
+            const blocker = net.createServer();
+            await new Promise<void>((resolve, reject) => {
+                blocker.listen(port, '127.0.0.1', () => resolve());
+                blocker.on('error', reject);
+            });
+            try {
+                await apiServer.updateConfig({ delivery: 'separatePort', port, hostname: '127.0.0.1' });
+            } finally {
+                await new Promise<void>(resolve => blocker.close(() => resolve()));
+            }
+            await apiServer.updateConfig({ delivery: 'separatePort', port, hostname: '127.0.0.1' });
+            expect((await fetch(`http://127.0.0.1:${port}/api/ping`)).status).to.equal(200);
+        });
+
+        it('keeps applying configuration changes after a failed routing build', async () => {
+            const apiServer = createServer();
+            const routerFactory = ExternalApiTestSupport.createRouterFactory();
+            let failBuild = true;
+            ExternalApiTestSupport.inject(apiServer, {
+                routerFactory: (options: ExternalApiRouterOptions) => {
+                    if (failBuild) {
+                        throw new Error('cannot create a router');
+                    }
+                    return routerFactory(options);
+                }
             });
             const port = await freePort();
             await apiServer.updateConfig({ delivery: 'separatePort', port, hostname: '127.0.0.1' });
-            expect(warnings).to.have.length(0);
-            await apiServer.updateConfig({ delivery: 'separatePort', port, hostname: '0.0.0.0' });
-            expect(warnings).to.have.length(1);
-            await apiServer.updateConfig({ delivery: 'separatePort', port, hostname: '0.0.0.0', token: 'secret' });
-            expect(warnings).to.have.length(1);
+            await expectUnreachable(`http://127.0.0.1:${port}/api/ping`);
+            // the routing of the failed build is dropped instead of being documented as served
+            expect(documentBuilders.get(apiServer)!.build().paths).to.deep.equal({});
+            failBuild = false;
+            await apiServer.updateConfig({ delivery: 'separatePort', port, hostname: '127.0.0.1' });
+            expect((await fetch(`http://127.0.0.1:${port}/api/ping`)).status).to.equal(200);
         });
 
         it('stops when delivery is set back to off', async () => {
@@ -249,6 +324,38 @@ describe('ExternalApiServer', () => {
         });
     });
 
+    describe('cross-origin guard', () => {
+        it('rejects requests carrying an Origin header on the separate port', async () => {
+            const apiServer = createServer();
+            const port = await freePort();
+            await apiServer.updateConfig({ delivery: 'separatePort', port, hostname: '127.0.0.1', token: 'secret' });
+            const crossOrigin = await fetch(`http://127.0.0.1:${port}/api/ping`,
+                { headers: { origin: 'https://evil.example', authorization: 'Bearer secret' } });
+            expect(crossOrigin.status).to.equal(403);
+            expect(await crossOrigin.json()).to.deep.equal({ error: 'forbidden' });
+            const external = await fetch(`http://127.0.0.1:${port}/api/ping`, { headers: { authorization: 'Bearer secret' } });
+            expect(external.status).to.equal(200);
+        });
+
+        it('rejects requests carrying an Origin header with samePort delivery', async () => {
+            const apiServer = createServer();
+            const base = await serveMainApp(apiServer);
+            await apiServer.updateConfig({ delivery: 'samePort', port: 0, hostname: '127.0.0.1' });
+            const crossOrigin = await fetch(`${base}/api/ping`, { headers: { origin: 'https://evil.example' } });
+            expect(crossOrigin.status).to.equal(403);
+            expect((await fetch(`${base}/api/ping`)).status).to.equal(200);
+        });
+
+        it('does not guard main server routes outside the contributions with samePort delivery', async () => {
+            const apiServer = createServer();
+            const base = await serveMainApp(apiServer);
+            await apiServer.updateConfig({ delivery: 'samePort', port: 0, hostname: '127.0.0.1' });
+            const response = await fetch(`${base}/main`, { headers: { origin: 'https://some.origin' } });
+            expect(response.status).to.equal(200);
+            expect(await response.json()).to.deep.equal({ main: true });
+        });
+    });
+
     describe('routing rebuild', () => {
         it('disposes the previous build on effective configuration changes only', async () => {
             let disposals = 0;
@@ -288,6 +395,41 @@ describe('ExternalApiServer', () => {
             await apiServer.updateConfig({ delivery: 'separatePort', port, hostname: '127.0.0.1' });
             const response = await fetch(`http://127.0.0.1:${port}/api/ping`);
             expect(await response.json()).to.deep.equal({ pong: true });
+        });
+
+        it('skips a contribution whose path nests with the path of another contribution', async () => {
+            const nestedContribution: ExternalApiContribution = {
+                path: '/api/ping/nested',
+                configure: router => router.get('/', () => RestResult.ok({ nested: true }))
+            };
+            const apiServer = createServer([pingContribution, nestedContribution]);
+            const port = await freePort();
+            await apiServer.updateConfig({ delivery: 'separatePort', port, hostname: '127.0.0.1' });
+            expect(await (await fetch(`http://127.0.0.1:${port}/api/ping`)).json()).to.deep.equal({ pong: true });
+            expect((await fetch(`http://127.0.0.1:${port}/api/ping/nested`)).status).to.equal(404);
+        });
+
+        it('skips a contribution mounted on the root path, which nests with every path', async () => {
+            const rootContribution: ExternalApiContribution = {
+                path: '/',
+                configure: router => router.get('/', () => RestResult.ok({ root: true }))
+            };
+            const apiServer = createServer([pingContribution, rootContribution]);
+            const port = await freePort();
+            await apiServer.updateConfig({ delivery: 'separatePort', port, hostname: '127.0.0.1' });
+            expect(await (await fetch(`http://127.0.0.1:${port}/api/ping`)).json()).to.deep.equal({ pong: true });
+            expect((await fetch(`http://127.0.0.1:${port}/`)).status).to.equal(404);
+        });
+
+        it('skips a contribution whose path differs only in a trailing separator', async () => {
+            const trailingContribution: ExternalApiContribution = {
+                path: '/api/ping/',
+                configure: router => router.get('/', () => RestResult.ok({ trailing: true }))
+            };
+            const apiServer = createServer([pingContribution, trailingContribution]);
+            const port = await freePort();
+            await apiServer.updateConfig({ delivery: 'separatePort', port, hostname: '127.0.0.1' });
+            expect(await (await fetch(`http://127.0.0.1:${port}/api/ping`)).json()).to.deep.equal({ pong: true });
         });
     });
 

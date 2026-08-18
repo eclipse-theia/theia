@@ -17,6 +17,7 @@
 import { ILogger, PreferenceService } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
+import debounce = require('@theia/core/shared/lodash.debounce');
 import { ExternalApiConfigService } from '../common/external-api-configuration';
 import {
     EXTERNAL_API_DEFAULT_HOSTNAME,
@@ -30,9 +31,20 @@ import {
 /**
  * Pushes the external API preferences to the backend, initially and on every change,
  * so that the backend can start, reconfigure, or stop the external API server.
+ *
+ * The pushed configuration applies to the backend as a whole: when several frontends are
+ * connected, the configuration pushed last wins, and it stays in effect until it is changed
+ * or the backend stops. It is not revoked when this frontend disconnects. In practice the
+ * frontends of one backend share the user preferences and therefore push the same values.
  */
 @injectable()
 export class ExternalApiFrontendContribution implements FrontendApplicationContribution {
+
+    /**
+     * Debounce delay in milliseconds for pushing preference changes, so that editing several
+     * preferences at once does not make the backend serve the intermediate configurations.
+     */
+    protected readonly pushDelay = 200;
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
@@ -43,12 +55,14 @@ export class ExternalApiFrontendContribution implements FrontendApplicationContr
     @inject(ILogger) @named('external-api:ExternalApiFrontendContribution')
     protected readonly logger: ILogger;
 
+    protected readonly pushConfigDebounced = debounce(() => this.pushConfig(), this.pushDelay);
+
     onStart(): void {
         this.preferenceService.ready.then(() => {
             this.pushConfig();
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName.startsWith('externalApi.')) {
-                    this.pushConfig();
+                    this.pushConfigDebounced();
                 }
             });
         });

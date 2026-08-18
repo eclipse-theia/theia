@@ -18,6 +18,7 @@ import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { expect } from 'chai';
 import { ExternalApiContribution } from './external-api-contribution';
 import { OpenApiDocument, OpenApiDocumentBuilderImpl, OpenApiDocumentSource } from './openapi-document-builder';
+import { ExternalApiTestSupport } from './test/external-api-test-support';
 
 describe('OpenApiDocumentBuilder', () => {
 
@@ -53,11 +54,12 @@ describe('OpenApiDocumentBuilder', () => {
     }
 
     function build(sources: OpenApiDocumentSource[], tokenConfigured: boolean = false, includeProtected: boolean = true): OpenApiDocument {
-        const builder = new OpenApiDocumentBuilderImpl();
-        (builder as unknown as Record<string, unknown>)['applicationPackage'] = {
-            pck: { version: '1.2.3' },
-            props: { frontend: { config: { applicationName: 'My IDE' } } }
-        };
+        const builder = ExternalApiTestSupport.inject(new OpenApiDocumentBuilderImpl(), {
+            applicationPackage: {
+                pck: { version: '1.2.3' },
+                props: { frontend: { config: { applicationName: 'My IDE' } } }
+            }
+        });
         builder.update(sources, tokenConfigured);
         return builder.build(includeProtected);
     }

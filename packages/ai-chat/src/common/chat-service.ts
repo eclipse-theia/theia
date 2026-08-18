@@ -362,9 +362,13 @@ export class ChatServiceImpl implements ChatService {
                 'Alternatively, mention a specific agent with @AgentName.');
             this.logger.error(error.message);
             const chatResponseModel = new ErrorChatResponseModel(generateUuid(), error);
+            // share one handled rejection so that consumers awaiting only one of the
+            // promises do not trigger unhandled rejection reports for the other
+            const rejected = Promise.reject<never>(error);
+            rejected.catch(() => { });
             return {
-                requestCompleted: Promise.reject(error),
-                responseCreated: Promise.reject(error),
+                requestCompleted: rejected,
+                responseCreated: rejected,
                 responseCompleted: Promise.resolve(chatResponseModel),
             };
         }
@@ -419,7 +423,6 @@ export class ChatServiceImpl implements ChatService {
                     namingService.generateChatSessionName(session, otherSessionNames).then(name => {
                         if (name && session.title === requestText) {
                             session.title = name;
-                            this.onSessionEventEmitter.fire({ type: 'renamed', sessionId: session.id });
                             // Trigger persistence when title changes
                             this.saveSession(session.id);
                             this.onSessionEventEmitter.fire({ type: 'renamed', sessionId: session.id });

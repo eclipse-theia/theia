@@ -86,7 +86,7 @@ export interface OpenApiDocumentBuilder {
     /**
      * Builds the OpenAPI document for the routes of the current routing build. With
      * `includeProtected` set to `false`, the document covers only the contributions served
-     * without token verification — the view presented to unauthorized requests.
+     * without token verification, i.e. the view presented to unauthorized requests.
      */
     build(includeProtected?: boolean): OpenApiDocument;
 }

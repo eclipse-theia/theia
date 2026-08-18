@@ -124,7 +124,8 @@ export class AIExternalApiEndpoint implements ExternalApiContribution {
                 201: { description: 'The created session and, if an initial prompt was sent, the id of the created request.', schema: SESSION_CREATED_SCHEMA },
                 400: { description: 'The requested agent is not registered.' },
                 404: { description: 'No connected frontend matches the requested workspace.' },
-                409: { description: 'The workspace is ambiguous or no agent could handle the initial prompt.' }
+                409: { description: 'The workspace is ambiguous or no agent could handle the initial prompt.' },
+                503: { description: 'No frontend is connected.' }
             }
         }, ({ body }) => this.createSession(body));
         router.post('/:id/open', {
@@ -172,6 +173,8 @@ export class AIExternalApiEndpoint implements ExternalApiContribution {
                 return RestResult.badRequest('unknown agent');
             case 'noAgent':
                 return RestResult.conflict('no agent available');
+            case 'noFrontend':
+                return RestResult.error(503, 'no frontend connected');
             case 'workspaceNotFound':
                 return RestResult.notFound('workspace not found');
             case 'ambiguousWorkspace':

@@ -44,7 +44,7 @@ export interface RestRouteDocumentation {
     description?: string;
     /** Documentation of the route's path parameters, e.g. of `id` for a route registered on `/:id`. */
     params?: Record<string, RestParamDocumentation>;
-    /** Documented responses of the route by status code. Declarative documentation only — not enforced. */
+    /** Documented responses of the route by status code. Declarative documentation only, not enforced. */
     responses?: Record<number, RestResponseDocumentation>;
 }
 
@@ -74,16 +74,19 @@ export interface RestResponseDocumentation {
 export interface RestRouteOptions<B = undefined> extends RestRouteDocumentation {
     /**
      * JSON Schema of the request body. When declared, the request body is parsed as JSON and
-     * validated against the schema — violations are rejected with a client error carrying
-     * the validation messages as details, without invoking the handler — and the schema is
+     * validated against the schema. Violations are rejected with a client error carrying
+     * the validation messages as details, without invoking the handler, and the schema is
      * published in the OpenAPI document.
+     *
+     * The body must be sent with a `Content-Type: application/json` header; without it the
+     * body is not parsed and the request is rejected as if it were empty.
      */
     bodySchema?: RestBodySchema<B>;
     /**
      * Additional validation for constraints the {@link bodySchema} cannot express, such as
      * cross-field dependencies, running on the schema-valid body. Returns `undefined` (or an
      * empty string) when the body is valid, otherwise the error message the request is
-     * rejected with.
+     * rejected with. Only used together with {@link bodySchema}.
      */
     validate?: (body: B) => string | undefined;
     /** JSON body size limit of this route, e.g. '2mb'. Defaults to '1mb'. Only used together with {@link bodySchema}. */
@@ -168,7 +171,7 @@ export const ExternalApiRouter = Symbol('ExternalApiRouter');
  *
  * - Typed routes ({@link get}, {@link post}, ...) parse request bodies as JSON, validate them
  *   against the declared body schema (plus the optional custom validation), and write the
- *   handler's {@link RestResult} — including all error cases — through the
+ *   handler's {@link RestResult}, including all error cases, through the
  *   {@link ExternalApiResponseWriter}, giving all endpoints one wire format.
  * - Typed routes and their optional documentation are recorded and published in the OpenAPI
  *   document of the external API, see `OpenApiDocumentBuilder`.
@@ -179,7 +182,7 @@ export const ExternalApiRouter = Symbol('ExternalApiRouter');
  *
  * A router is created for each routing build and disposed before the next build (on
  * configuration changes) and on shutdown: event streams are closed automatically, and
- * contributions register their own build-scoped resources — such as event listeners — in
+ * contributions register their own build-scoped resources, such as event listeners, in
  * {@link toDispose}.
  */
 export interface ExternalApiRouter extends Disposable {
@@ -234,7 +237,7 @@ export interface ExternalApiRouter extends Disposable {
 
     /**
      * Appends the fallback handling that answers unmatched paths below the contribution with
-     * `404` and reduces unhandled route errors — including malformed JSON bodies — to the
+     * `404` and reduces unhandled route errors, including malformed JSON bodies, to the
      * uniform error format. Called by the external API server once the contribution is
      * configured, so that it runs after all contributed routes.
      */
@@ -347,6 +350,10 @@ export class ExternalApiRouterImpl implements ExternalApiRouter {
 
     protected route<B>(method: RestMethod, path: string, options: RestRouteOptions<B> | undefined, handler: RestHandler<B>): void {
         this.routes.push({ method, path, documentation: options, bodySchema: options?.bodySchema });
+        if (options?.validate && !options.bodySchema) {
+            this.logger.warn(`The route '${method.toUpperCase()} ${this.options.contributionPath}${path === '/' ? '' : path}' declares 'validate' `
+                + "without a 'bodySchema'; it never runs as there is no parsed body to validate.");
+        }
         const validator = options?.bodySchema && this.compileBodySchema(options.bodySchema);
         const handlers: express.RequestHandler[] = [];
         if (options?.bodySchema) {

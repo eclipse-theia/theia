@@ -28,7 +28,19 @@ export default new ContainerModule(bind => {
     bind(ExternalChatSessionBackendService).toDynamicValue(ctx => {
         const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
         const provider = ctx.container.get<ExternalChatSessionProvider>(ExternalChatSessionProvider);
-        return connection.createProxy<ExternalChatSessionBackendService>(EXTERNAL_CHAT_SESSION_PROVIDER_PATH, provider);
+        // expose only the provider interface over RPC: handing out the implementation itself
+        // would make all of its methods, including the internal ones, remotely callable
+        const exposed: ExternalChatSessionProvider = {
+            getWorkspace: () => provider.getWorkspace(),
+            getSessions: () => provider.getSessions(),
+            getSessionSummary: sessionId => provider.getSessionSummary(sessionId),
+            getSession: sessionId => provider.getSession(sessionId),
+            openSession: sessionId => provider.openSession(sessionId),
+            restoreSession: sessionId => provider.restoreSession(sessionId),
+            sendPrompt: (sessionId, prompt) => provider.sendPrompt(sessionId, prompt),
+            createSession: request => provider.createSession(request)
+        };
+        return connection.createProxy<ExternalChatSessionBackendService>(EXTERNAL_CHAT_SESSION_PROVIDER_PATH, exposed);
     }).inSingletonScope();
 
     bind(AIExternalApiFrontendContribution).toSelf().inSingletonScope();

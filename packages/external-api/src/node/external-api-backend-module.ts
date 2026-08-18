@@ -20,7 +20,7 @@ import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { EXTERNAL_API_CONFIG_SERVICE_PATH, ExternalApiConfigService } from '../common/external-api-configuration';
 import { ExternalApiContribution } from './external-api-contribution';
 import { ExternalApiEventStream, ExternalApiEventStreamFactory, ExternalApiEventStreamImpl, ExternalApiEventStreamOptions } from './external-api-event-stream';
-import { ExternalApiResponseWriter } from './external-api-response-writer';
+import { ExternalApiResponseWriter, ExternalApiResponseWriterImpl } from './external-api-response-writer';
 import { ExternalApiRouter, ExternalApiRouterFactory, ExternalApiRouterImpl, ExternalApiRouterOptions } from './external-api-router';
 import { ExternalApiServer } from './external-api-server';
 import { OpenApiDocumentBuilder, OpenApiDocumentBuilderImpl } from './openapi-document-builder';
@@ -35,7 +35,7 @@ export default new ContainerModule(bind => {
     bind(OpenApiSpecContribution).toSelf().inSingletonScope();
     bind(ExternalApiContribution).toService(OpenApiSpecContribution);
 
-    bind(ExternalApiResponseWriter).toSelf().inSingletonScope();
+    bind(ExternalApiResponseWriter).to(ExternalApiResponseWriterImpl).inSingletonScope();
     // routers and event streams are transient: the factories create one per routing build,
     // resolving through a child container carrying the instantiation options
     bind(ExternalApiRouter).to(ExternalApiRouterImpl);
@@ -56,8 +56,14 @@ export default new ContainerModule(bind => {
     bindRootContributionProvider(bind, ExternalApiContribution);
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new RpcConnectionHandler(EXTERNAL_API_CONFIG_SERVICE_PATH, () =>
-            ctx.container.get<ExternalApiConfigService>(ExternalApiConfigService)
-        )
+        new RpcConnectionHandler(EXTERNAL_API_CONFIG_SERVICE_PATH, () => {
+            // expose only the config service interface over RPC: handing out the server itself
+            // would make all of its public methods remotely callable
+            const server = ctx.container.get<ExternalApiConfigService>(ExternalApiConfigService);
+            const configService: ExternalApiConfigService = {
+                updateConfig: config => server.updateConfig(config)
+            };
+            return configService;
+        })
     ).inSingletonScope();
 });

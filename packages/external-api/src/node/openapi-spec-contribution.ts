@@ -29,7 +29,7 @@ export const OPENAPI_SPEC_PATH = '/api/openapi.json';
  *
  * The endpoint itself is served without token verification, but scopes the document to the
  * requester: when a token is configured, requests without it receive a document covering only
- * the unprotected contributions, while requests carrying the token receive the full document —
+ * the unprotected contributions, while requests carrying the token receive the full document, so that
  * the protected API surface is not revealed to unauthorized clients.
  */
 @injectable()

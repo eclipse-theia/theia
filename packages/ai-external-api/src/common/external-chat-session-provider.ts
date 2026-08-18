@@ -33,7 +33,11 @@ export interface ExternalChatSessionSummary {
     status: ChatSessionStatus;
     /** Timestamp in milliseconds since epoch of the last interaction with the session. */
     lastInteraction?: number;
-    /** URI of the workspace the session belongs to, or `undefined` if its frontend has no open workspace. */
+    /**
+     * URI of the workspace the session belongs to, or `undefined` if its frontend has no open
+     * workspace. Also `undefined` for not-restored sessions when sessions are persisted
+     * globally, as the global session store holds sessions saved from any workspace.
+     */
     workspace?: string;
     /** The last few lines of the conversation as plain text, or `undefined` for an empty conversation. */
     preview?: string;
@@ -41,6 +45,13 @@ export interface ExternalChatSessionSummary {
     agentId?: string;
     /** Human-readable name of the agent driving the session, or `undefined` if no agent is pinned or the agent is not registered. */
     agentName?: string;
+    /**
+     * ID of the session that delegated this one, or `undefined` for a top-level session.
+     * Delegated sessions are listed alongside top-level ones; use this to group them.
+     */
+    parentSessionId?: string;
+    /** ID of the topmost session of the delegation chain, or `undefined` for a top-level session. */
+    rootSessionId?: string;
     /**
      * Whether the session is restored (live) in a connected frontend. Sessions that are only
      * persisted report metadata only: their status is reduced to `idle` or `failed` and they
@@ -64,13 +75,26 @@ export namespace ExternalChatSessionSummary {
                     + "'awaitingApproval' and 'awaitingInput' mean the session is blocked on the user."
             },
             lastInteraction: { type: 'number', description: 'Timestamp in milliseconds since epoch of the last interaction with the session.' },
-            workspace: { type: 'string', description: "URI of the workspace the session belongs to; absent when the session's frontend has no open workspace." },
+            workspace: {
+                type: 'string',
+                description: "URI of the workspace the session belongs to; absent when the session's frontend has no open workspace "
+                    + 'and for not-restored sessions when sessions are persisted globally.'
+            },
             preview: {
                 type: 'string',
                 description: 'The last few lines of the conversation as plain text; absent for an empty conversation and for sessions that are not restored.'
             },
             agentId: { type: 'string', description: 'ID of the agent driving the session; absent when no agent is pinned to the session.' },
             agentName: { type: 'string', description: 'Human-readable name of the agent driving the session.' },
+            parentSessionId: {
+                type: 'string',
+                description: 'ID of the session that delegated this one; absent for a top-level session. '
+                    + 'Delegated sessions are listed alongside top-level ones; use this to group them.'
+            },
+            rootSessionId: {
+                type: 'string',
+                description: 'ID of the topmost session of the delegation chain; absent for a top-level session.'
+            },
             restored: {
                 type: 'boolean',
                 description: 'Whether the session is restored in a connected frontend. Sessions that are not restored report persisted metadata only.'
@@ -181,7 +205,8 @@ export type ExternalChatPromptResult =
 export interface ExternalChatSessionCreateRequest {
     /**
      * URI of the workspace in which to create the session. The session is created in a
-     * frontend that has this workspace open. May be omitted when only one frontend is connected.
+     * frontend that has this workspace open. May be omitted when all connected frontends
+     * share the same workspace.
      */
     workspace?: string;
     /** ID of the agent to pin to the session. When omitted, the default agent handles prompts. */
@@ -228,15 +253,16 @@ export namespace ExternalChatSessionCreateRequest {
 /**
  * Result of a session creation: the created session, or the reason creation was rejected.
  *
- * `unknownAgent` means the requested agent id is not registered; `noAgent` means the initial
+ * `unknownAgent` means the requested agent id is not registered. `noAgent` means the initial
  * prompt could not be handled because no agent was available (the session is not kept in that
- * case); `workspaceNotFound` means no connected frontend matches the requested workspace;
+ * case). `noFrontend` means no connected frontend is available to create the session.
+ * `workspaceNotFound` means no connected frontend matches the requested workspace.
  * `ambiguousWorkspace` means no workspace was given and the connected frontends have
  * different workspaces open.
  */
 export type ExternalChatSessionCreateResult =
     | { created: { session: ExternalChatSessionSummary; requestId?: string } }
-    | { failure: 'unknownAgent' | 'noAgent' | 'workspaceNotFound' | 'ambiguousWorkspace' };
+    | { failure: 'unknownAgent' | 'noAgent' | 'noFrontend' | 'workspaceNotFound' | 'ambiguousWorkspace' };
 
 export const ExternalChatSessionProvider = Symbol('ExternalChatSessionProvider');
 /**
@@ -254,6 +280,12 @@ export interface ExternalChatSessionProvider {
      * persisted metadata and `restored: false`).
      */
     getSessions(): Promise<ExternalChatSessionSummary[]>;
+    /**
+     * Returns the summary of the given session, or `undefined` if the session is unknown to this
+     * frontend. Used to pick the frontend a session action is routed to, so it must stay cheap:
+     * unlike {@link getSession} it does not carry the conversation.
+     */
+    getSessionSummary(sessionId: string): Promise<ExternalChatSessionSummary | undefined>;
     /**
      * Returns the detail of the given session, or `undefined` if the session is unknown to this
      * frontend. For persisted sessions that are not restored, the detail carries no messages.

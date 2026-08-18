@@ -26,6 +26,7 @@ import { ChatSessionMetadata } from '@theia/ai-chat/lib/common/chat-session-stor
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { expect } from 'chai';
+import { ExternalApiTestSupport } from '@theia/external-api/lib/node/test/external-api-test-support';
 import { FrontendExternalChatSessionProvider } from './frontend-external-chat-session-provider';
 
 disableJSDOM();
@@ -39,14 +40,14 @@ describe('FrontendExternalChatSessionProvider', () => {
 
     function liveSession(
         id: string, status: ChatSessionStatus, exchanges: Exchange[] = [], lastInteraction?: Date, title?: string,
-        pinnedAgent?: { id: string; name: string }
+        pinnedAgent?: { id: string; name: string }, delegation?: { parentSessionId?: string; rootSessionId?: string }
     ): ChatSession {
         const requests = exchanges.map(exchange => ({
             request: { text: exchange.request ?? '' },
             response: { response: { asDisplayString: () => exchange.response ?? '' } }
         }));
         const model = { status, getRequests: () => requests } as unknown as ChatModel;
-        return { id, title, lastInteraction, model, isActive: false, pinnedAgent } as ChatSession;
+        return { id, title, lastInteraction, model, isActive: false, pinnedAgent, ...delegation } as ChatSession;
     }
 
     function persisted(id: string, extra: Partial<ChatSessionMetadata> = {}): ChatSessionMetadata {
@@ -68,6 +69,7 @@ describe('FrontendExternalChatSessionProvider', () => {
         restorable?: ChatSession[],
         agents?: Record<string, { id: string; name: string }>,
         workspace?: string,
+        sessionStorageScope?: 'workspace' | 'global',
         noAgent?: boolean,
         requestFailure?: Error
     }): ProviderContext {
@@ -114,13 +116,16 @@ describe('FrontendExternalChatSessionProvider', () => {
             ready: Promise.resolve(),
             workspace: options.workspace ? { resource: { toString: () => options.workspace } } : undefined
         } as unknown as WorkspaceService;
-        const provider = new FrontendExternalChatSessionProvider();
-        (provider as unknown as Record<string, unknown>)['logger'] = new MockLogger();
-        (provider as unknown as Record<string, unknown>)['chatService'] = chatService;
-        (provider as unknown as Record<string, unknown>)['agentService'] = {
-            getAgent: (id: string) => options.agents?.[id]
-        };
-        (provider as unknown as Record<string, unknown>)['workspaceService'] = workspaceService;
+        const provider = ExternalApiTestSupport.inject(new FrontendExternalChatSessionProvider(), {
+            logger: new MockLogger(),
+            chatService,
+            agentService: { getAgent: (id: string) => options.agents?.[id] },
+            workspaceService,
+            preferenceService: {
+                ready: Promise.resolve(),
+                get: (preference: string, fallback: unknown) => options.sessionStorageScope ?? fallback
+            }
+        });
         return { provider, activatedSessions, sentRequests, createdSessions, deletedSessions };
     }
 
@@ -141,6 +146,8 @@ describe('FrontendExternalChatSessionProvider', () => {
                 preview: 'fix the build\nSure.',
                 agentId: 'coder',
                 agentName: 'Coder',
+                parentSessionId: undefined,
+                rootSessionId: undefined,
                 restored: true
             }]);
         });
@@ -179,6 +186,38 @@ describe('FrontendExternalChatSessionProvider', () => {
             expect(lines[1].endsWith('…')).to.equal(true);
         });
 
+        it('reports the delegation ids of live and persisted sessions', async () => {
+            const { provider } = createProvider({
+                sessions: [liveSession('1', 'idle', [], undefined, undefined, undefined, { parentSessionId: 'root', rootSessionId: 'root' })],
+                persisted: [persisted('2', { parentSessionId: '1', rootSessionId: 'root' })]
+            });
+            const sessions = await provider.getSessions();
+            expect(sessions.map(session => [session.id, session.parentSessionId, session.rootSessionId])).to.deep.equal([
+                ['1', 'root', 'root'],
+                ['2', '1', 'root']
+            ]);
+        });
+
+        it('renders only the conversation entries the preview needs', async () => {
+            const rendered: string[] = [];
+            const session = liveSession('1', 'idle', [
+                { request: 'old question', response: 'old answer' },
+                { request: 'recent question', response: 'one\ntwo\nthree\nfour\nfive' }
+            ]);
+            for (const request of session.model.getRequests()) {
+                const response = request.response.response;
+                const original = response.asDisplayString.bind(response);
+                response.asDisplayString = () => {
+                    rendered.push(original());
+                    return original();
+                };
+            }
+            const { provider } = createProvider({ sessions: [session] });
+            const sessions = await provider.getSessions();
+            expect(sessions[0].preview).to.equal('one\ntwo\nthree\nfour\nfive');
+            expect(rendered).to.deep.equal(['one\ntwo\nthree\nfour\nfive']);
+        });
+
         it('reports persisted sessions with their metadata', async () => {
             const { provider } = createProvider({
                 persisted: [persisted('2', { pinnedAgentId: 'coder', hasError: true })],
@@ -194,8 +233,22 @@ describe('FrontendExternalChatSessionProvider', () => {
                 workspace: 'file:///test/workspace',
                 agentId: 'coder',
                 agentName: 'Coder',
+                parentSessionId: undefined,
+                rootSessionId: undefined,
                 restored: false
             }]);
+        });
+
+        it('does not attribute a workspace to persisted sessions stored globally', async () => {
+            const { provider } = createProvider({
+                sessions: [liveSession('1', 'running')],
+                persisted: [persisted('2')],
+                workspace: 'file:///test/workspace',
+                sessionStorageScope: 'global'
+            });
+            const sessions = await provider.getSessions();
+            expect(sessions.map(session => `${session.id}:${session.workspace}`)).to.deep.equal(
+                ['1:file:///test/workspace', '2:undefined']);
         });
 
         it('reports persisted sessions as idle without a recorded error', async () => {
@@ -244,6 +297,8 @@ describe('FrontendExternalChatSessionProvider', () => {
                 preview: 'fix the build\nDone, the build passes now.\nthanks',
                 agentId: undefined,
                 agentName: undefined,
+                parentSessionId: undefined,
+                rootSessionId: undefined,
                 restored: true,
                 messages: [
                     { actor: 'user', text: 'fix the build' },
@@ -264,6 +319,29 @@ describe('FrontendExternalChatSessionProvider', () => {
         it('returns undefined for unknown sessions', async () => {
             const { provider } = createProvider({});
             expect(await provider.getSession('missing')).to.equal(undefined);
+        });
+    });
+
+    describe('getSessionSummary', () => {
+        it('reports a live session without its conversation', async () => {
+            const { provider } = createProvider({
+                sessions: [liveSession('1', 'running', [{ request: 'fix the build', response: 'Done.' }])]
+            });
+            const summary = await provider.getSessionSummary('1');
+            expect(summary?.status).to.equal('running');
+            expect(summary).to.not.have.property('messages');
+        });
+
+        it('reports a persisted session that is not restored', async () => {
+            const { provider } = createProvider({ persisted: [persisted('2')] });
+            const summary = await provider.getSessionSummary('2');
+            expect(summary?.id).to.equal('2');
+            expect(summary?.restored).to.equal(false);
+        });
+
+        it('returns undefined for unknown sessions', async () => {
+            const { provider } = createProvider({});
+            expect(await provider.getSessionSummary('missing')).to.equal(undefined);
         });
     });
 

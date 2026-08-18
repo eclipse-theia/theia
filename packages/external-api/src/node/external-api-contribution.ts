@@ -41,7 +41,11 @@ export const ExternalApiContribution = Symbol('ExternalApiContribution');
 export interface ExternalApiContribution {
     /**
      * Absolute path under which this contribution's routes are mounted, e.g. `/api/ai/sessions`.
-     * The server imposes no path conventions.
+     * The server imposes no path conventions, but each contribution answers all requests below
+     * its path, so contribution paths must not nest: a contribution whose path nests with the
+     * path of another contribution is skipped with a warning. With `samePort` delivery the path
+     * also must not nest with one of Theia's own routes on the main server, as it would shadow
+     * them; the server cannot detect that case.
      */
     readonly path: string;
     /**
@@ -59,8 +63,8 @@ export interface ExternalApiContribution {
      * Registers the contribution's routes, see {@link ExternalApiRouter}.
      *
      * Called whenever the routing is (re)built, i.e. when the external API server
-     * configuration changes. The router of the previous build — including everything
-     * registered in its `toDispose` collection — is disposed beforehand, so build-scoped
+     * configuration changes. The router of the previous build, including everything
+     * registered in its `toDispose` collection, is disposed beforehand, so build-scoped
      * state is set up here rather than held across builds.
      */
     configure(router: ExternalApiRouter): void;

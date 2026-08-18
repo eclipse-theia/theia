@@ -19,13 +19,11 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { EXTERNAL_API_CONFIG_SERVICE_PATH, ExternalApiConfigService } from '../common/external-api-configuration';
-import { createExternalApiPreferenceSchema } from '../common/external-api-preferences';
+import { externalApiPreferenceSchema } from '../common/external-api-preferences';
 import { ExternalApiFrontendContribution } from './external-api-frontend-contribution';
 
 export default new ContainerModule(bind => {
-    // the frontend is served by the backend, so its location determines the backend port
-    const backendPort = typeof location !== 'undefined' && location.port ? location.port : undefined;
-    bind(PreferenceContribution).toConstantValue({ schema: createExternalApiPreferenceSchema(backendPort) });
+    bind(PreferenceContribution).toConstantValue({ schema: externalApiPreferenceSchema });
 
     bind(ExternalApiConfigService).toDynamicValue(ctx => {
         const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);

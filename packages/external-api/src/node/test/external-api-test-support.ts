@@ -18,43 +18,45 @@ import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import * as express from '@theia/core/shared/express';
 import { ExternalApiContribution } from '../external-api-contribution';
 import { ExternalApiEventStream, ExternalApiEventStreamFactory, ExternalApiEventStreamImpl, ExternalApiEventStreamOptions } from '../external-api-event-stream';
-import { ExternalApiResponseWriter } from '../external-api-response-writer';
+import { ExternalApiResponseWriterImpl } from '../external-api-response-writer';
 import { ExternalApiRouter, ExternalApiRouterFactory, ExternalApiRouterImpl } from '../external-api-router';
-
-function assign(target: object, property: string, value: unknown): void {
-    (target as Record<string, unknown>)[property] = value;
-}
 
 /**
  * Wires the external API endpoint infrastructure for tests, without a DI container.
  */
 export namespace ExternalApiTestSupport {
 
+    /**
+     * Assigns the injected fields of a service instance, standing in for the DI container.
+     * The field names are not type-checked, as the injected fields are `protected`.
+     */
+    export function inject<T extends object>(target: T, fields: Record<string, unknown>): T {
+        Object.assign(target, fields);
+        return target;
+    }
+
     /** Creates an event stream factory backed by a mock logger. */
     export function createEventStreamFactory(): ExternalApiEventStreamFactory {
-        return <T>(options: ExternalApiEventStreamOptions<T>): ExternalApiEventStream<T> => {
-            const stream = new ExternalApiEventStreamImpl<T>();
-            assign(stream, 'logger', new MockLogger());
-            assign(stream, 'options', options);
-            return stream;
-        };
+        return <T>(options: ExternalApiEventStreamOptions<T>): ExternalApiEventStream<T> =>
+            inject(new ExternalApiEventStreamImpl<T>(), {
+                logger: new MockLogger(),
+                options
+            });
     }
 
     /** Creates a router factory backed by a mock logger and the default response writer. */
     export function createRouterFactory(): ExternalApiRouterFactory {
-        return options => {
-            const router = new ExternalApiRouterImpl();
-            assign(router, 'logger', new MockLogger());
-            assign(router, 'options', options);
-            assign(router, 'responseWriter', new ExternalApiResponseWriter());
-            assign(router, 'eventStreamFactory', createEventStreamFactory());
-            return router;
-        };
+        return options => inject(new ExternalApiRouterImpl(), {
+            logger: new MockLogger(),
+            options,
+            responseWriter: new ExternalApiResponseWriterImpl(),
+            eventStreamFactory: createEventStreamFactory()
+        });
     }
 
     /**
      * Configures the contribution on the given express application the way the external API
-     * server does — mounted at the contribution's path, with the fallback error handling,
+     * server does, i.e. mounted at the contribution's path, with the fallback error handling,
      * but without token verification. An `isAuthorized` check may be given to test the
      * `authorized` flag of typed route requests. Returns the contribution's router, e.g. to
      * dispose it as a routing rebuild would.

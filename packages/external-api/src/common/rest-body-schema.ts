@@ -22,7 +22,7 @@ import { IJSONSchema } from '@theia/core/lib/common/json-schema';
  * Routes of the external API declaring a `RestBodySchema` get their request body validated
  * against the schema and the schema published in the OpenAPI document, while the carried
  * type flows into the route's handler and custom validation. The declaration of a schema
- * constant is the single place asserting that schema and type agree — the type is not
+ * constant is the single place asserting that schema and type agree. The type is not
  * verified against the schema:
  *
  * ```ts

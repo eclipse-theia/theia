@@ -28,8 +28,8 @@ export interface ExternalApiEventStreamOptions<T = unknown> {
     /** Name under which the events are sent, i.e. the `event:` field of each server-sent event. */
     event: string;
     /**
-     * Provides the data snapshot that is sent to each connecting client and broadcast —
-     * coalesced — on {@link ExternalApiEventStream.notifyChanged}.
+     * Provides the data snapshot that is sent to each connecting client and broadcast,
+     * coalesced, on {@link ExternalApiEventStream.notifyChanged}.
      */
     snapshot?: () => MaybePromise<T>;
     /** Delay in milliseconds by which {@link ExternalApiEventStream.notifyChanged} broadcasts are coalesced. Defaults to 100. */
@@ -55,7 +55,7 @@ export const ExternalApiEventStream = Symbol('ExternalApiEventStream');
  * Serves data as server-sent events to the clients of an external API endpoint.
  *
  * The stream manages the connected clients, sends periodic keep-alive comments, delivers the
- * configured snapshot to connecting clients, and broadcasts — coalescing bursts — a fresh
+ * configured snapshot to connecting clients, and broadcasts, coalescing bursts, a fresh
  * snapshot when {@link notifyChanged} is called. Disposing the stream ends all client
  * connections; streams created through `ExternalApiRouter#eventStream` are disposed
  * automatically when the routing is rebuilt, so that clients reconnect against the new

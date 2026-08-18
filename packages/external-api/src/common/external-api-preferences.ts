@@ -27,62 +27,55 @@ export const EXTERNAL_API_DEFAULT_HOSTNAME = 'localhost';
 export type ExternalApiDelivery = 'off' | 'samePort' | 'separatePort';
 
 /**
- * Creates the external API preference schema. The preferences configure the backend and
- * therefore apply per user: their maximum scope is {@link PreferenceScope.User}, so they
- * cannot be overridden in workspace settings.
- *
- * @param backendPort the port of the backend serving this frontend, if known.
- *  It is shown in the description of the `samePort` delivery option.
+ * The external API preference schema. The preferences configure the backend and therefore
+ * apply per user: their maximum scope is {@link PreferenceScope.User}, so they cannot be
+ * overridden in workspace settings.
  */
-export function createExternalApiPreferenceSchema(backendPort?: string): PreferenceSchema {
-    const samePortDescription = backendPort
-        ? nls.localize('theia/external-api/delivery/samePortKnown', 'Serve the external API on the same port as the backend (currently {0}).', backendPort)
-        : nls.localize('theia/external-api/delivery/samePort', 'Serve the external API on the same port as the backend.');
-    return {
-        properties: {
-            [EXTERNAL_API_DELIVERY_PREF]: {
-                type: 'string',
-                enum: ['off', 'samePort', 'separatePort'],
-                enumItemLabels: [
-                    nls.localizeByDefault('Off'),
-                    nls.localize('theia/external-api/delivery/samePortLabel', 'Same port as backend'),
-                    nls.localize('theia/external-api/delivery/separatePortLabel', 'Separate port')
-                ],
-                enumDescriptions: [
-                    nls.localize('theia/external-api/delivery/off', 'Do not serve the external API.'),
-                    samePortDescription,
-                    nls.localize('theia/external-api/delivery/separatePort', 'Serve the external API on a dedicated port, configured via "externalApi.port".')
-                ],
-                default: 'off',
-                scope: PreferenceScope.User,
-                description: nls.localize('theia/external-api/delivery/description',
-                    'Controls whether and how the external HTTP API is served.')
-            },
-            [EXTERNAL_API_PORT_PREF]: {
-                type: 'number',
-                minimum: 0,
-                maximum: 65535,
-                default: 0,
-                scope: PreferenceScope.User,
-                description: nls.localize('theia/external-api/port/description',
-                    'Port on which the external HTTP API is served. Only used when "externalApi.delivery" is set to "separatePort".')
-            },
-            [EXTERNAL_API_HOSTNAME_PREF]: {
-                type: 'string',
-                default: EXTERNAL_API_DEFAULT_HOSTNAME,
-                scope: PreferenceScope.User,
-                description: nls.localize('theia/external-api/hostname/description',
-                    'Hostname or IP address the external HTTP API server binds to. Use "0.0.0.0" to accept remote connections. \
-Only used when "externalApi.delivery" is set to "separatePort".')
-            },
-            [EXTERNAL_API_TOKEN_PREF]: {
-                type: 'string',
-                default: '',
-                scope: PreferenceScope.User,
-                description: nls.localize('theia/external-api/token/description',
-                    'Bearer token required to access protected external API endpoints ("Authorization: Bearer <token>"). \
+export const externalApiPreferenceSchema: PreferenceSchema = {
+    properties: {
+        [EXTERNAL_API_DELIVERY_PREF]: {
+            type: 'string',
+            enum: ['off', 'samePort', 'separatePort'],
+            enumItemLabels: [
+                nls.localizeByDefault('Off'),
+                nls.localize('theia/external-api/delivery/samePortLabel', 'Same port as backend'),
+                nls.localize('theia/external-api/delivery/separatePortLabel', 'Separate port')
+            ],
+            enumDescriptions: [
+                nls.localize('theia/external-api/delivery/off', 'Do not serve the external API.'),
+                nls.localize('theia/external-api/delivery/samePort', 'Serve the external API on the same port as the backend.'),
+                nls.localize('theia/external-api/delivery/separatePort', 'Serve the external API on a dedicated port, configured via "externalApi.port".')
+            ],
+            default: 'off',
+            scope: PreferenceScope.User,
+            description: nls.localize('theia/external-api/delivery/description',
+                'Controls whether and how the external HTTP API is served.')
+        },
+        [EXTERNAL_API_PORT_PREF]: {
+            type: 'number',
+            minimum: 0,
+            maximum: 65535,
+            default: 0,
+            scope: PreferenceScope.User,
+            description: nls.localize('theia/external-api/port/description',
+                'Port on which the external HTTP API is served. Only used when "externalApi.delivery" is set to "separatePort".')
+        },
+        [EXTERNAL_API_HOSTNAME_PREF]: {
+            type: 'string',
+            default: EXTERNAL_API_DEFAULT_HOSTNAME,
+            scope: PreferenceScope.User,
+            description: nls.localize('theia/external-api/hostname/description',
+                'Hostname or IP address the external HTTP API server binds to. Use "0.0.0.0" to accept remote connections. \
+A name such as "localhost" is bound as it resolves, so clients using the other loopback address may not reach the server; \
+use "127.0.0.1" or "::1" to pin one. Only used when "externalApi.delivery" is set to "separatePort".')
+        },
+        [EXTERNAL_API_TOKEN_PREF]: {
+            type: 'string',
+            default: '',
+            scope: PreferenceScope.User,
+            description: nls.localize('theia/external-api/token/description',
+                'Bearer token required to access protected external API endpoints ("Authorization: Bearer <token>"). \
 When empty, the external API is served without verification.')
-            }
         }
-    };
-}
+    }
+};

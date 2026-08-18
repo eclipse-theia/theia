@@ -287,9 +287,17 @@ export type ChatSessionStatus =
 
 export namespace ChatSessionStatus {
     /**
-     * All {@link ChatSessionStatus} values, e.g. for schema declarations.
+     * All {@link ChatSessionStatus} values, e.g. for schema declarations. Derived from an
+     * exhaustive record so that adding a status without listing it here fails to compile.
      */
-    export const VALUES: readonly ChatSessionStatus[] = ['idle', 'running', 'awaitingApproval', 'awaitingToolCall', 'awaitingInput', 'failed'];
+    export const VALUES: readonly ChatSessionStatus[] = Object.keys({
+        idle: true,
+        running: true,
+        awaitingApproval: true,
+        awaitingToolCall: true,
+        awaitingInput: true,
+        failed: true
+    } satisfies Record<ChatSessionStatus, true>) as ChatSessionStatus[];
 
     /**
      * Whether a request is in progress in this status, including the states waiting on the user or a tool.

@@ -17,15 +17,32 @@
 import { ChatSessionStatus } from '@theia/ai-chat/lib/common/chat-model';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { expect } from 'chai';
+import { ExternalApiTestSupport } from '@theia/external-api/lib/node/test/external-api-test-support';
 import { ExternalChatSessionDetail, ExternalChatSessionProvider, ExternalChatSessionSummary } from '../common/external-chat-session-provider';
 import { ExternalChatSessionRegistry } from './external-chat-session-registry';
 
 describe('ExternalChatSessionRegistry', () => {
 
-    function createRegistry(): ExternalChatSessionRegistry {
-        const registry = new ExternalChatSessionRegistry();
-        (registry as unknown as Record<string, unknown>)['logger'] = new MockLogger();
-        return registry;
+    function createRegistry(queryTimeout?: number): ExternalChatSessionRegistry {
+        return ExternalApiTestSupport.inject(new ExternalChatSessionRegistry(), {
+            logger: new MockLogger(),
+            ...queryTimeout === undefined ? {} : { queryTimeout }
+        });
+    }
+
+    /** A provider whose queries never answer, standing in for an unresponsive frontend. */
+    function unresponsiveProvider(): ExternalChatSessionProvider {
+        const hang = (): Promise<never> => new Promise<never>(() => { });
+        return {
+            getWorkspace: hang,
+            getSessions: hang,
+            getSessionSummary: hang,
+            getSession: hang,
+            openSession: hang,
+            restoreSession: hang,
+            sendPrompt: hang,
+            createSession: hang
+        };
     }
 
     function summary(id: string, status: ChatSessionStatus = 'idle', lastInteraction?: number, restored: boolean = true): ExternalChatSessionSummary {
@@ -44,6 +61,7 @@ describe('ExternalChatSessionRegistry', () => {
         return {
             getWorkspace: async () => undefined,
             getSessions: async () => sessions,
+            getSessionSummary: async sessionId => details.find(candidate => candidate.id === sessionId) ?? sessions.find(candidate => candidate.id === sessionId),
             getSession: async sessionId => details.find(candidate => candidate.id === sessionId),
             openSession: async () => false,
             restoreSession: async () => undefined,
@@ -58,6 +76,7 @@ describe('ExternalChatSessionRegistry', () => {
         return {
             getWorkspace: fail,
             getSessions: fail,
+            getSessionSummary: fail,
             getSession: fail,
             openSession: fail,
             restoreSession: fail,
@@ -124,6 +143,14 @@ describe('ExternalChatSessionRegistry', () => {
             const sessions = await registry.getSessions();
             expect(sessions.map(session => session.id)).to.deep.equal(['1']);
         });
+
+        it('skips unresponsive providers instead of waiting for them', async () => {
+            const registry = createRegistry(20);
+            registry.addProvider(unresponsiveProvider());
+            registry.addProvider(provider([summary('1')]));
+            const sessions = await registry.getSessions();
+            expect(sessions.map(session => session.id)).to.deep.equal(['1']);
+        });
     });
 
     describe('getSession', () => {
@@ -164,6 +191,18 @@ describe('ExternalChatSessionRegistry', () => {
             registry.addProvider(provider([], [detail('1')]));
             const session = await registry.getSession('1');
             expect(session?.id).to.equal('1');
+        });
+
+        it('reads the conversation from the preferred frontend only', async () => {
+            const registry = createRegistry();
+            const read: string[] = [];
+            const tracking = (name: string, known: ExternalChatSessionDetail): ExternalChatSessionProvider =>
+                provider([], [known], { getSession: async sessionId => { read.push(name); return sessionId === known.id ? known : undefined; } });
+            registry.addProvider(tracking('idle', detail('1', 'idle', 200)));
+            registry.addProvider(tracking('running', detail('1', 'running', 100)));
+            const session = await registry.getSession('1');
+            expect(session?.status).to.equal('running');
+            expect(read).to.deep.equal(['running']);
         });
     });
 
@@ -287,7 +326,8 @@ describe('ExternalChatSessionRegistry', () => {
     describe('createSession', () => {
         it('rejects when no frontend is connected', async () => {
             const registry = createRegistry();
-            expect(await registry.createSession({})).to.deep.equal({ failure: 'workspaceNotFound' });
+            expect(await registry.createSession({})).to.deep.equal({ failure: 'noFrontend' });
+            expect(await registry.createSession({ workspace: 'file:///project' })).to.deep.equal({ failure: 'noFrontend' });
         });
 
         it('creates in the frontend with the requested workspace', async () => {
