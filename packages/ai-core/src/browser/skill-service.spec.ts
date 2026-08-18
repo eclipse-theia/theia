@@ -25,6 +25,7 @@ import * as sinon from 'sinon';
 import { parseSkillFile, combineSkillDirectories } from '../common/skill';
 import { Path } from '@theia/core/lib/common/path';
 import { Disposable, Emitter, ILogger, Logger, URI } from '@theia/core';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
 import { DefaultSkillService } from './skill-service';
 
@@ -365,6 +366,7 @@ description: Skill with no content
 
             preferencesMock = {
                 'ai-features.skills.skillDirectories': [],
+                ready: Promise.resolve(),
                 onPreferenceChanged: preferenceChangedEmitter.event
             };
         });
@@ -484,6 +486,41 @@ description: Skill with no content
             // Verify warning is logged for non-existent configured directory
             expect(loggerWarnSpy.calledWith(
                 sinon.match(/Configured skill directory.*does not exist/)
+            )).to.be.true;
+        });
+
+        it('should scan configured directories that only become known once the preferences are ready', async () => {
+            // The preference proxy serves defaults until its `ready` promise resolves, so a scan started before
+            // that point misses the configured directories.
+            const preferencesReady = new Deferred<void>();
+            preferencesMock.ready = preferencesReady.promise;
+
+            // Default skills directory exists and is empty, so the configured directory is the only source of warnings.
+            fileServiceMock.exists
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
+                .resolves(true);
+            fileServiceMock.resolve
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
+                .resolves({ children: [] });
+            fileServiceMock.exists
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/custom/configured/skills'))
+                .resolves(false);
+
+            const service = createService();
+            (service as unknown as { init: () => void }).init();
+            await workspaceServiceMock.ready;
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // Nothing may be scanned yet, the preference value is still the default one.
+            expect(fileServiceMock.exists.called).to.be.false;
+
+            (preferencesMock as Record<string, unknown>)['ai-features.skills.skillDirectories'] = ['/custom/configured/skills'];
+            preferencesReady.resolve();
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // The scan picked up the configured directory instead of the default preference value.
+            expect(loggerWarnSpy.calledWith(
+                sinon.match(/Configured skill directory '\/custom\/configured\/skills' does not exist/)
             )).to.be.true;
         });
 
