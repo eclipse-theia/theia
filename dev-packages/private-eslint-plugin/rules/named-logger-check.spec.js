@@ -59,6 +59,76 @@ ruleTester.run('named-logger-check', rule, {
                     }
                 }
             `
+        },
+        {
+            code: `
+                @injectable()
+                class GoodClass {
+                    constructor(@inject(ILogger) @named('[auth]my-package:GoodClass') logger) {}
+                }
+            `,
+            filename: 'packages/my-package/src/browser/good-class.ts'
+        },
+        {
+            code: `
+                @injectable()
+                class GoodDevClass {
+                    constructor(@inject(ILogger) @named('private-eslint-plugin:GoodDevClass') logger) {}
+                }
+            `,
+            filename: 'dev-packages/private-eslint-plugin/src/rules/good-dev-class.ts'
+        },
+        {
+            code: `
+                @injectable()
+                class OutsidePackagesClass {
+                                        constructor(@inject(ILogger) @named('anything-goes-here:OutsidePackagesClass') logger) {}
+                }
+            `,
+            filename: 'examples/browser-only/src/browser/outside-packages-class.ts'
+        },
+        {
+            code: `
+                @injectable()
+                export default class {
+                    constructor(@inject(ILogger) @named('my-package:AnyNameWorks') logger) {}
+                }
+            `,
+            filename: 'packages/my-package/src/browser/anonymous-class.ts'
+        },
+        {
+            code: `
+                @injectable()
+                class AmbiguousPathClass {
+                    constructor(@inject(ILogger) @named('mypackages:AmbiguousPathClass') logger) {}
+                }
+            `,
+            filename: 'mypackages/foo/ambiguous-path-class.ts'
+        },
+        {
+            code: `
+                const SOME_CONSTANT = 'my-package:NonLiteralClass';
+                @injectable()
+                class NonLiteralClass {
+                    constructor(@inject(ILogger) @named(SOME_CONSTANT) logger) {}
+                }
+            `,
+            filename: 'packages/my-package/src/browser/non-literal-class.ts'
+        },
+        {
+            code: `
+                @injectable()
+                class OuterClass {
+                    doSomething() {
+                        @injectable()
+                        class InnerClass {
+                            constructor(@inject(ILogger) @named('my-package:InnerClass') logger) {}
+                        }
+                        return InnerClass;
+                    }
+                }
+            `,
+            filename: 'packages/my-package/src/browser/nested-classes.ts'
         }
     ],
     invalid: [
@@ -91,6 +161,36 @@ ruleTester.run('named-logger-check', rule, {
             `,
             filename: 'src/browser/bad-format.ts',
             errors: [{ messageId: 'invalidNameFormat' }]
+        },
+        {
+            code: `
+                @injectable()
+                class RealClassName {
+                    constructor(@inject(ILogger) @named('my-package:WrongClassName') logger) {}
+                }
+            `,
+            filename: 'packages/my-package/src/browser/real-class-name.ts',
+            errors: [{ messageId: 'classNameMismatch', data: { expected: 'RealClassName', actual: 'WrongClassName' } }]
+        },
+        {
+            code: `
+                @injectable()
+                class CorrectClass {
+                    constructor(@inject(ILogger) @named('wrong-package:CorrectClass') logger) {}
+                }
+            `,
+            filename: 'packages/my-package/src/browser/correct-class.ts',
+            errors: [{ messageId: 'packageNameMismatch', data: { expected: 'my-package', actual: 'wrong-package' } }]
+        },
+        {
+            code: `
+                @injectable()
+                class BothWrongClass {
+                    constructor(@inject(ILogger) @named('wrong-package:WrongClass') logger) {}
+                }
+            `,
+            filename: 'packages/my-package/src/browser/both-wrong-class.ts',
+            errors: [{ messageId: 'classNameMismatch' }, { messageId: 'packageNameMismatch' }]
         }
     ]
 });

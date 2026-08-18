@@ -34,6 +34,8 @@ module.exports = {
             noConsole: 'Use injected ILogger instead of console statements in @injectable classes.',
             missingNamed: 'Injected ILoggers must use the @named decorator.',
             invalidNameFormat: 'Logger name must follow the convention: [optional-purpose]package-name:class-name#optional-suffix',
+            classNameMismatch: 'Logger name\'s class segment should be "{{expected}}" (the enclosing class), but found "{{actual}}".',
+            packageNameMismatch: 'Logger name\'s package segment should be "{{expected}}" (derived from the file path), but found "{{actual}}".'
         }
     },
     create(context) {
@@ -62,6 +64,7 @@ module.exports = {
             return {};
         }
 
+        /** @type {Array<{ isInjectable: boolean, className: string | undefined }>} */
         const injectableClassStack = [];
 
         /**
@@ -94,6 +97,18 @@ module.exports = {
             return !variable || variable.defs.length === 0;
         }
 
+        /**
+        * Derives the Theia package name from a normalized (forward-slash) file path, e.g.
+        * 'packages/plugin-ext/src/main/node/plugin-deployer-impl.ts' -> 'plugin-ext'.
+        * Returns undefined for paths outside packages/ or dev-packages/ (e.g. examples/,
+        * doc/), where the convention doesn't cleanly apply.
+        * @param {string} normalizedFilename
+        */
+        function derivePackageName(normalizedFilename) {
+            const match = /(?:^|\/)(?:packages|dev-packages)\/([^/]+)\//.exec(normalizedFilename);
+            return match ? match[1] : undefined;
+        }
+
         return {
             /**
              * @param {ClassDeclaration} node
@@ -106,7 +121,7 @@ module.exports = {
                         d.expression.callee &&
                         d.expression.callee.name === 'injectable'
                 );
-                injectableClassStack.push(!!hasInjectable);
+                injectableClassStack.push({ isInjectable: !!hasInjectable, className: node.id ? node.id.name : undefined });
             },
 
             'ClassDeclaration:exit'() {
@@ -114,7 +129,7 @@ module.exports = {
             },
 
             CallExpression(node) {
-                const isInsideInjectable = injectableClassStack.some(Boolean);
+                const isInsideInjectable = injectableClassStack.some(entry => entry.isInjectable);
                 if (
                     isInsideInjectable &&
                     node.callee &&
@@ -153,10 +168,31 @@ module.exports = {
                         } else {
                             const namedArg = namedDecorator.expression.arguments[0];
                             if (namedArg && namedArg.type === 'Literal' && typeof namedArg.value === 'string') {
-                                const namePattern = /^(\[[a-zA-Z0-9_.-]+\])?[a-zA-Z0-9_.-]+:[a-zA-Z0-9_.-]+(#[a-zA-Z0-9_.-]+)?$/;
+                                const namePattern = /^(?:\[[a-zA-Z0-9_.-]+\])?([a-zA-Z0-9_.-]+):([a-zA-Z0-9_.-]+)(?:#[a-zA-Z0-9_.-]+)?$/;
+                                const match = namePattern.exec(namedArg.value);
 
-                                if (!namePattern.test(namedArg.value)) {
+                                if (!match) {
                                     context.report({ node: namedArg, messageId: 'invalidNameFormat' });
+                                } else {
+                                    const [, actualPackageName, actualClassName] = match;
+                                    const enclosingClass = injectableClassStack[injectableClassStack.length - 1];
+                                    const expectedClassName = enclosingClass && enclosingClass.className;
+                                    const expectedPackageName = derivePackageName(filename);
+
+                                    if (expectedClassName && actualClassName !== expectedClassName) {
+                                        context.report({
+                                            node: namedArg,
+                                            messageId: 'classNameMismatch',
+                                            data: { expected: expectedClassName, actual: actualClassName }
+                                        });
+                                    }
+                                    if (expectedPackageName && actualPackageName !== expectedPackageName) {
+                                        context.report({
+                                            node: namedArg,
+                                            messageId: 'packageNameMismatch',
+                                            data: { expected: expectedPackageName, actual: actualPackageName }
+                                        });
+                                    }
                                 }
                             }
                         }
