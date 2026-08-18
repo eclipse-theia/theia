@@ -30,13 +30,16 @@ import URI from '@theia/core/lib/common/uri';
 import { nls } from '@theia/core/lib/common/nls';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { Emitter, Event } from '@theia/core/lib/common/event';
+import { DynamicToolbarWidget } from '@theia/core/lib/browser/view-container';
 import { MenuPath } from '@theia/core/lib/common/menu/menu-types';
 import { ContextMenuRenderer } from '@theia/core/lib/browser/context-menu-renderer';
 import { OpenerService, open } from '@theia/core/lib/browser/opener-service';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { ScmContextKeyService } from './scm-context-key-service';
+import { ScmPreferences } from '../common/scm-preferences';
 import {
-    laneColor, getChangeStatus, getFileName, getFilePath, getRepoRelativePath,
+    laneColor, filterRefsForBadges, getChangeStatus, getFileName, getFilePath, getRepoRelativePath,
     getRefBadgeClass, getRefBadgePresentation, isTagRef, isRemoteRef, deduplicateRefs, DeduplicatedRef
 } from './scm-history-graph-helpers';
 import { buildHtmlTooltip, buildProviderTooltip } from './scm-history-graph-tooltip';
@@ -82,7 +85,7 @@ function renderJsxRefBadge(
 // ── Widget ──────────────────────────────────────────────────────────────────
 
 @injectable()
-export class ScmHistoryGraphWidget extends ReactWidget {
+export class ScmHistoryGraphWidget extends ReactWidget implements DynamicToolbarWidget {
 
     static readonly ID = 'scm-history-graph-widget';
     static readonly LABEL = nls.localizeByDefault('Graph');
@@ -96,6 +99,7 @@ export class ScmHistoryGraphWidget extends ReactWidget {
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
     @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(ScmContextKeyService) protected readonly scmContextKeys: ScmContextKeyService;
+    @inject(ScmPreferences) protected readonly scmPreferences: ScmPreferences;
 
     protected selectedIndex = -1;
     /** Currently selected change row key (`${itemId}-${ci}`), or undefined. */
@@ -109,6 +113,10 @@ export class ScmHistoryGraphWidget extends ReactWidget {
     /** Cleanup for the content of the hover currently being shown. */
     protected readonly toDisposeOnHover = new DisposableCollection();
 
+    protected readonly onDidChangeToolbarItemsEmitter = new Emitter<void>();
+    /** Re-renders the part toolbar on model changes, e.g. to reflect the toggled state of the ref filter picker. */
+    readonly onDidChangeToolbarItems: Event<void> = this.onDidChangeToolbarItemsEmitter.event;
+
     constructor() {
         super();
         this.id = ScmHistoryGraphWidget.ID;
@@ -121,10 +129,19 @@ export class ScmHistoryGraphWidget extends ReactWidget {
 
     @postConstruct()
     protected init(): void {
+        this.toDispose.push(this.onDidChangeToolbarItemsEmitter);
         this.toDispose.push(
             this.model.onDidChange(() => {
                 this.updateContextKeys();
                 this.update();
+                this.onDidChangeToolbarItemsEmitter.fire();
+            })
+        );
+        this.toDispose.push(
+            this.scmPreferences.onPreferenceChanged(e => {
+                if (e.preferenceName.startsWith('scm.graph.')) {
+                    this.update();
+                }
             })
         );
         this.toDispose.push({
@@ -144,9 +161,8 @@ export class ScmHistoryGraphWidget extends ReactWidget {
         const provider = this.model.provider;
         this.scmContextKeys.scmCurrentHistoryItemRefHasRemote.set(!!provider?.currentHistoryItemRemoteRef);
         this.scmContextKeys.scmCurrentHistoryItemRefHasBase.set(!!provider?.currentHistoryItemBaseRef);
-        // The graph has no ref filter yet, so the current ref is always considered part of it.
         // Commands like git.pullRef/git.pushRef gate their enablement on this key.
-        this.scmContextKeys.scmCurrentHistoryItemRefInFilter.set(!!provider?.currentHistoryItemRef);
+        this.scmContextKeys.scmCurrentHistoryItemRefInFilter.set(!!provider?.currentHistoryItemRef && this.model.isCurrentRefInFilter());
     }
 
     protected render(): React.ReactNode {
@@ -198,7 +214,7 @@ export class ScmHistoryGraphWidget extends ReactWidget {
                 className='scm-history-graph-list'
                 data={entries as HistoryGraphEntry[]}
                 itemContent={(idx, entry) => this.renderRow(entry, idx, svgWidth)}
-                endReached={hasMore && !loading ? this.handleEndReached : undefined}
+                endReached={hasMore && !loading && this.scmPreferences['scm.graph.pageOnScroll'] !== false ? this.handleEndReached : undefined}
                 overscan={500}
                 components={footer ? { Footer: footer } : {}}
                 style={{ overflowX: 'hidden' }}
@@ -606,8 +622,12 @@ export class ScmHistoryGraphWidget extends ReactWidget {
         }
 
         const provider = this.model.provider;
+        const visibleRefs = filterRefsForBadges(refs, provider, this.scmPreferences['scm.graph.badges'] ?? 'filter', this.model.historyItemRefFilter);
+        if (visibleRefs.length === 0) {
+            return undefined;
+        }
         const laneColorValue = entry ? laneColor(entry.graphRow.color) : undefined;
-        const deduplicated = deduplicateRefs(refs);
+        const deduplicated = deduplicateRefs(visibleRefs);
         const badgeForeground = 'var(--theia-scmGraph-historyItemRefForeground, var(--theia-badge-foreground))';
 
         const badges: React.ReactElement[] = [];

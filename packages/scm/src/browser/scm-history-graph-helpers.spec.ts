@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { getRefBadgePresentation, getRefColorIndex } from './scm-history-graph-helpers';
+import { filterRefsForBadges, getRefBadgePresentation, getRefColorIndex } from './scm-history-graph-helpers';
 import { ScmHistoryItemRef, ScmHistoryProvider } from './scm-provider';
 
 describe('getRefColorIndex', () => {
@@ -81,5 +81,38 @@ describe('getRefBadgePresentation', () => {
         expect(getRefBadgePresentation(mainRef, provider).colorIndex).to.equal(0);
         expect(getRefBadgePresentation(remoteRef, provider).colorIndex).to.equal(1);
         expect(getRefBadgePresentation({ id: 'refs/heads/feature', name: 'feature' }, provider).colorIndex).to.be.undefined;
+    });
+});
+
+describe('filterRefsForBadges', () => {
+
+    const mainRef: ScmHistoryItemRef = { id: 'refs/heads/main', name: 'main' };
+    const remoteRef: ScmHistoryItemRef = { id: 'refs/remotes/origin/main', name: 'origin/main' };
+    const featureRef: ScmHistoryItemRef = { id: 'refs/heads/feature', name: 'feature' };
+    const refs = [mainRef, remoteRef, featureRef];
+
+    const provider = {
+        currentHistoryItemRef: mainRef,
+        currentHistoryItemRemoteRef: remoteRef,
+    } as ScmHistoryProvider;
+
+    it("returns all refs in 'all' mode", () => {
+        expect(filterRefsForBadges(refs, provider, 'all')).to.deep.equal(refs);
+    });
+
+    it("keeps only the refs used as a filter in 'filter' mode", () => {
+        expect(filterRefsForBadges(refs, provider, 'filter')).to.deep.equal([mainRef, remoteRef]);
+    });
+
+    it("returns all refs in 'filter' mode when no provider is available", () => {
+        expect(filterRefsForBadges(refs, undefined, 'filter')).to.deep.equal(refs);
+    });
+
+    it("keeps only the explicitly picked refs in 'filter' mode with an explicit filter", () => {
+        expect(filterRefsForBadges(refs, provider, 'filter', ['refs/heads/feature'])).to.deep.equal([featureRef]);
+    });
+
+    it("ignores an explicit filter in 'all' mode", () => {
+        expect(filterRefsForBadges(refs, provider, 'all', ['refs/heads/feature'])).to.deep.equal(refs);
     });
 });

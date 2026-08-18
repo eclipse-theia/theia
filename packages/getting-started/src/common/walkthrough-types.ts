@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,20 +13,27 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './chat-agents';
-export * from './chat-agent-service';
-export * from './chat-agent-recommendation-service';
-export * from './chat-model';
-export * from './chat-model-serialization';
-export * from './chat-content-deserializer';
-export * from './chat-model-util';
-export * from './chat-request-parser';
-export * from './chat-service';
-export * from './chat-session-store';
-export * from './custom-chat-agent';
-export * from './parsed-chat-request';
-export * from './context-variables';
-export * from './chat-tool-request-service';
-export * from './file-read-tracker';
-export * from './chat-tool-confirmation-timeout';
-export * from './provider-error-formatter';
+
+import { WalkthroughStepMedia } from '@theia/plugin-ext/lib/common/plugin-protocol';
+
+export interface WalkthroughStep {
+    id: string;
+    title: string;
+    description: string;
+    media?: WalkthroughStepMedia;
+    completionEvents?: string[];
+    when?: string;
+    isComplete: boolean;
+}
+
+export interface Walkthrough {
+    id: string;
+    title: string;
+    description: string;
+    steps: WalkthroughStep[];
+    when?: string;
+    icon?: string;
+    pluginId: string;
+    /** Icon of the contributing extension, as a backend relative path. */
+    pluginIcon?: string;
+}

@@ -13,14 +13,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { assertChatContext, ChatToolContext } from '@theia/ai-chat';
+import { assertChatContext, ChatToolContext, FileReadTracker } from '@theia/ai-chat';
 import { ChangeSet } from '@theia/ai-chat/lib/common/change-set';
 import { ChangeSetElementArgs, ChangeSetFileElement, ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { ToolInvocationContext, ToolProvider, ToolRequest, ToolRequestParameters, ToolRequestParametersProperties } from '@theia/ai-core';
 import { ContentReplacerV1Impl, Replacement, ContentReplacer } from '@theia/core/lib/common/content-replacer';
 import { ContentReplacerV2Impl } from '@theia/core/lib/common/content-replacer-v2-impl';
 import { URI } from '@theia/core/lib/common/uri';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceFunctionScope } from './workspace-functions';
 
@@ -54,6 +54,14 @@ function createPathShortLabel(args: string, hasMore: boolean): { label: string; 
     return undefined;
 }
 
+/**
+ * Whole-file writes from an outdated read would silently discard whatever changed in between. The replacement
+ * tools need no such guard: they re-read and fail when their matched content is gone.
+ */
+function staleFileError(path: string): string {
+    return `File ${path} changed since you last read it. Read it again before overwriting it, so that the changes made in the meantime are not lost.`;
+}
+
 export const FileChangeSetTitleProvider = Symbol('FileChangeSetTitleProvider');
 
 export interface FileChangeSetTitleProvider {
@@ -75,6 +83,10 @@ export class SuggestFileContent implements ToolProvider {
 
     @inject(FileChangeSetTitleProvider)
     protected readonly fileChangeSetTitleProvider: FileChangeSetTitleProvider;
+
+    /** Optional: the guard is advisory, so containers without a tracker still get a working tool. */
+    @inject(FileReadTracker) @optional()
+    protected readonly fileReadTracker: FileReadTracker | undefined;
 
     getTool(): ToolRequest {
         return {
@@ -113,6 +125,9 @@ export class SuggestFileContent implements ToolProvider {
                     uri = await this.workspaceFunctionScope.resolveAccessiblePath(path);
                 } catch (error) {
                     return JSON.stringify({ error: error.message });
+                }
+                if (await this.fileReadTracker?.isStale(chatSessionId, uri)) {
+                    return JSON.stringify({ error: staleFileError(path) });
                 }
                 let type: ChangeSetElementArgs['type'] = 'modify';
                 if (content === '') {
@@ -156,6 +171,10 @@ export class WriteFileContent implements ToolProvider {
     @inject(FileChangeSetTitleProvider)
     protected readonly fileChangeSetTitleProvider: FileChangeSetTitleProvider;
 
+    /** Optional: the guard is advisory, so containers without a tracker still get a working tool. */
+    @inject(FileReadTracker) @optional()
+    protected readonly fileReadTracker: FileReadTracker | undefined;
+
     getTool(): ToolRequest {
         return {
             id: WriteFileContent.ID,
@@ -193,6 +212,9 @@ export class WriteFileContent implements ToolProvider {
                     uri = await this.workspaceFunctionScope.resolveAccessiblePath(path);
                 } catch (error) {
                     return JSON.stringify({ error: error.message });
+                }
+                if (await this.fileReadTracker?.isStale(chatSessionId, uri)) {
+                    return JSON.stringify({ error: staleFileError(path) });
                 }
                 let type = 'modify';
                 if (content === '') {

@@ -17,7 +17,7 @@
 import { expect } from 'chai';
 import { Emitter } from '@theia/core/lib/common/event';
 import { ScmHistoryGraphModel, PAGE_SIZE } from './scm-history-graph-model';
-import { ScmHistoryItem, ScmHistoryItemRef, ScmHistoryItemChange, ScmHistoryOptions, ScmHistoryProvider } from './scm-provider';
+import { ScmHistoryItem, ScmHistoryItemRef, ScmHistoryItemRefsChangeEvent, ScmHistoryItemChange, ScmHistoryOptions, ScmHistoryProvider } from './scm-provider';
 import { ScmRepository } from './scm-repository';
 
 class StubHistoryProvider implements ScmHistoryProvider {
@@ -26,11 +26,12 @@ class StubHistoryProvider implements ScmHistoryProvider {
     currentHistoryItemBaseRef: ScmHistoryItemRef | undefined;
 
     readonly onDidChangeCurrentHistoryItemRefs = new Emitter<void>().event;
-    readonly onDidChangeHistoryItemRefs = new Emitter<{
-        readonly added: readonly ScmHistoryItemRef[];
-        readonly removed: readonly ScmHistoryItemRef[];
-        readonly modified: readonly ScmHistoryItemRef[];
-    }>().event;
+    protected readonly onDidChangeHistoryItemRefsEmitter = new Emitter<ScmHistoryItemRefsChangeEvent>();
+    readonly onDidChangeHistoryItemRefs = this.onDidChangeHistoryItemRefsEmitter.event;
+
+    fireHistoryItemRefsChanged(event: ScmHistoryItemRefsChangeEvent): void {
+        this.onDidChangeHistoryItemRefsEmitter.fire(event);
+    }
 
     /** Pages this provider will return on consecutive calls (FIFO). */
     pages: ScmHistoryItem[][] = [];
@@ -75,28 +76,44 @@ function makeItems(start: number, count: number): ScmHistoryItem[] {
 /**
  * Instantiates the model with a stub provider, bypassing inversify and the
  * SCM service so tests can drive pagination directly via loadPage().
+ * When `wireRepository` is set, the provider is instead wired through a stub
+ * selected repository and refresh(), so provider event subscriptions are live.
  */
-function createModel(provider: ScmHistoryProvider): { model: ScmHistoryGraphModel; loadPage(): Promise<void> } {
+function createModel(
+    provider: ScmHistoryProvider,
+    preferences: Record<string, unknown> = {},
+    wireRepository = false
+): { model: ScmHistoryGraphModel; loadPage(): Promise<void>; firePreferenceChanged(preferenceName: string): void } {
     const model = new ScmHistoryGraphModel();
     const internals = model as unknown as {
         scmService: {
             onDidChangeSelectedRepository: Emitter<ScmRepository | undefined>['event'];
             selectedRepository: ScmRepository | undefined;
         };
+        scmPreferences: Record<string, unknown>;
         _provider: ScmHistoryProvider | undefined;
         init(): void;
         loadPage(): Promise<void>;
     };
+    const preferenceEmitter = new Emitter<{ preferenceName: string }>();
     internals.scmService = {
         onDidChangeSelectedRepository: new Emitter<ScmRepository | undefined>().event,
-        selectedRepository: undefined,
+        selectedRepository: wireRepository ? { provider: { historyProvider: provider } } as unknown as ScmRepository : undefined,
     };
+    internals.scmPreferences = Object.assign(preferences, { onPreferenceChanged: preferenceEmitter.event });
     internals.init();
-    internals._provider = provider;
+    if (!wireRepository) {
+        internals._provider = provider;
+    }
     return {
         model,
         loadPage: () => internals.loadPage(),
+        firePreferenceChanged: preferenceName => preferenceEmitter.fire({ preferenceName }),
     };
+}
+
+async function nextTick(): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, 0));
 }
 
 describe('ScmHistoryGraphModel - pagination', () => {
@@ -167,6 +184,164 @@ describe('ScmHistoryGraphModel - pagination', () => {
 
         await loadPage();
         expect(model.entries).to.have.length(PAGE_SIZE, 'should not grow when all items are duplicates');
+    });
+});
+
+describe('ScmHistoryGraphModel - page size preference', () => {
+
+    it('requests the configured page size and paginates by it', async () => {
+        const provider = new StubHistoryProvider();
+        provider.pages = [makeItems(1, 10)];
+        const { model, loadPage } = createModel(provider, { 'scm.graph.pageSize': 10 });
+
+        await loadPage();
+
+        expect(provider.receivedOptions[0].limit).to.equal(10);
+        expect(model.entries).to.have.length(10);
+        expect(model.hasMore).to.be.true;
+    });
+
+    it('falls back to the default page size without a preference value', async () => {
+        const provider = new StubHistoryProvider();
+        provider.pages = [makeItems(1, 10)];
+        const { loadPage } = createModel(provider);
+
+        await loadPage();
+
+        expect(provider.receivedOptions[0].limit).to.equal(PAGE_SIZE);
+    });
+
+    it('reloads from the start when scm.graph.pageSize changes', async () => {
+        const provider = new StubHistoryProvider();
+        provider.pages = [makeItems(1, 10), makeItems(1, 5)];
+        const preferences: Record<string, unknown> = { 'scm.graph.pageSize': 10 };
+        const { loadPage, firePreferenceChanged } = createModel(provider, preferences);
+
+        await loadPage();
+        expect(provider.receivedOptions[0].limit).to.equal(10);
+
+        preferences['scm.graph.pageSize'] = 5;
+        firePreferenceChanged('scm.graph.pageSize');
+        await nextTick();
+
+        expect(provider.receivedOptions[1].limit).to.equal(5);
+        expect(provider.receivedOptions[1].skip).to.equal(0);
+    });
+});
+
+describe('ScmHistoryGraphModel - history item ref filter', () => {
+
+    const mainRef: ScmHistoryItemRef = { id: 'refs/heads/main', name: 'main', revision: 'c1' };
+
+    function createFilterProvider(): StubHistoryProvider {
+        const provider = new StubHistoryProvider();
+        provider.currentHistoryItemRef = mainRef;
+        provider.pages = [makeItems(1, 3), makeItems(1, 3), makeItems(1, 3)];
+        return provider;
+    }
+
+    it('is in auto mode by default: current ref revisions are requested and the current ref is in the filter', async () => {
+        const provider = createFilterProvider();
+        const { model, loadPage } = createModel(provider);
+        await loadPage();
+        expect(provider.receivedOptions[0].historyItemRefs).to.deep.equal(['c1']);
+        expect(model.historyItemRefFilter).to.be.undefined;
+        expect(model.isCurrentRefInFilter()).to.be.true;
+    });
+
+    it('passes the picked ref ids to the provider and reloads', async () => {
+        const provider = createFilterProvider();
+        const { model } = createModel(provider);
+        model.setHistoryItemRefFilter(['refs/heads/feature']);
+        await nextTick();
+        expect(provider.receivedOptions[0].historyItemRefs).to.deep.equal(['refs/heads/feature']);
+        expect(model.historyItemRefFilter).to.deep.equal(['refs/heads/feature']);
+    });
+
+    it('reports whether the current ref is part of the filter', async () => {
+        const provider = createFilterProvider();
+        const { model } = createModel(provider);
+        model.setHistoryItemRefFilter(['refs/heads/feature']);
+        await nextTick();
+        expect(model.isCurrentRefInFilter()).to.be.false;
+        model.setHistoryItemRefFilter(['refs/heads/feature', 'refs/heads/main']);
+        await nextTick();
+        expect(model.isCurrentRefInFilter()).to.be.true;
+    });
+
+    it('returns to auto mode when the filter is cleared', async () => {
+        const provider = createFilterProvider();
+        const { model } = createModel(provider);
+        model.setHistoryItemRefFilter(['refs/heads/feature']);
+        await nextTick();
+        model.setHistoryItemRefFilter(undefined);
+        await nextTick();
+        expect(model.historyItemRefFilter).to.be.undefined;
+        expect(provider.receivedOptions[1].historyItemRefs).to.deep.equal(['c1']);
+    });
+
+    it('does not apply ref role colors to refs excluded by the filter', async () => {
+        const provider = createFilterProvider();
+        provider.pages = [[
+            { id: 'c1', subject: 'head', parentIds: ['c2'], references: [mainRef] },
+            { id: 'c2', subject: 'base', parentIds: [] },
+        ]];
+        const { model } = createModel(provider);
+        model.setHistoryItemRefFilter(['refs/heads/feature']);
+        await nextTick();
+        expect(model.entries[0].graphRow.color).to.not.equal(0);
+    });
+});
+
+describe('ScmHistoryGraphModel - ref filter pruning', () => {
+
+    const mainRef: ScmHistoryItemRef = { id: 'refs/heads/main', name: 'main', revision: 'c1' };
+    const featureRef: ScmHistoryItemRef = { id: 'refs/heads/feature', name: 'feature', revision: 'c5' };
+
+    function createWiredProvider(): StubHistoryProvider {
+        const provider = new StubHistoryProvider();
+        provider.currentHistoryItemRef = mainRef;
+        return provider;
+    }
+
+    it('drops a removed ref from the filter and keeps the remaining ones', async () => {
+        const provider = createWiredProvider();
+        const { model } = createModel(provider, {}, true);
+        model.setHistoryItemRefFilter([featureRef.id, mainRef.id]);
+        await nextTick();
+
+        provider.fireHistoryItemRefsChanged({ added: [], removed: [featureRef], modified: [] });
+        await nextTick();
+
+        expect(model.historyItemRefFilter).to.deep.equal([mainRef.id]);
+        const last = provider.receivedOptions[provider.receivedOptions.length - 1];
+        expect(last.historyItemRefs).to.deep.equal([mainRef.id]);
+    });
+
+    it('falls back to auto mode when all filtered refs are removed', async () => {
+        const provider = createWiredProvider();
+        const { model } = createModel(provider, {}, true);
+        model.setHistoryItemRefFilter([featureRef.id]);
+        await nextTick();
+
+        provider.fireHistoryItemRefsChanged({ added: [], removed: [featureRef], modified: [] });
+        await nextTick();
+
+        expect(model.historyItemRefFilter).to.be.undefined;
+        const last = provider.receivedOptions[provider.receivedOptions.length - 1];
+        expect(last.historyItemRefs).to.deep.equal(['c1']);
+    });
+
+    it('keeps the filter when unrelated refs are removed', async () => {
+        const provider = createWiredProvider();
+        const { model } = createModel(provider, {}, true);
+        model.setHistoryItemRefFilter([mainRef.id]);
+        await nextTick();
+
+        provider.fireHistoryItemRefsChanged({ added: [], removed: [featureRef], modified: [] });
+        await nextTick();
+
+        expect(model.historyItemRefFilter).to.deep.equal([mainRef.id]);
     });
 });
 
