@@ -66,6 +66,8 @@ import { PluginMcpRegistrar, PluginMcpRegistrarImpl } from './plugin/plugin-mcp-
 import { PluginMcpReconciler } from './plugin/plugin-mcp-reconciler';
 import { PluginSkillDirectoryContribution } from './plugin/plugin-skill-directory-contribution';
 import { AgentPluginUiBridgeImpl } from './plugin/agent-plugin-ui-bridge-impl';
+import { InstallPluginUriConfiguration } from './plugin/install-plugin-uri-configuration';
+import { InstallPluginUriHandler } from './plugin/install-plugin-uri-handler';
 import { AIRegistryToolbarContribution } from './ai-registry-toolbar-contribution';
 import { AIRegistryMenuContribution } from './ai-registry-menu-contribution';
 import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from './auto-update/registry-auto-update-policy';
@@ -143,6 +145,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     // Nothing binds the bridge without this package, which is what makes every Agent Plugin
     // affordance disappear from the AI configuration widgets there.
     bind(AgentPluginUiBridge).toService(AgentPluginUiBridgeImpl);
+
+    bind(InstallPluginUriConfiguration).toSelf().inSingletonScope();
+    bind(InstallPluginUriHandler).toSelf().inSingletonScope();
+    bind(OpenHandler).toService(InstallPluginUriHandler);
 
     bind(AIRegistryToolbarContribution).toSelf().inSingletonScope();
     bind(TabBarToolbarContribution).toService(AIRegistryToolbarContribution);
