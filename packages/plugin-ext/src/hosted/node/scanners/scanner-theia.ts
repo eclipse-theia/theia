@@ -651,7 +651,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
                 when: walkthrough.when,
                 icon: walkthrough.icon,
                 pluginId,
-                pluginIcon,
+                pluginIcon
             });
         }
         return result.length > 0 ? result : undefined;

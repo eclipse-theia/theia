@@ -296,8 +296,11 @@ export class CommandRegistry implements CommandService {
      * fire for the alias id as well.
      *
      * This does not affect command handlers, enablement or visibility, only event emission. A target may
-     * carry several aliases. No event is fired for an alias that is itself executing, so that an alias
-     * command delegating to its target does not report the alias twice.
+     * carry several aliases.
+     *
+     * No event is fired for an alias while that alias is executing, which keeps an alias command that
+     * delegates to its target from reporting itself twice. The check is by command id rather than by call
+     * stack, so an unrelated execution of the alias that happens to overlap suppresses the event as well.
      *
      * @param aliasId the alias command id, for instance a VS Code command id
      * @param targetId the target command id, for instance the native Theia command id
