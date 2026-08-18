@@ -84,6 +84,11 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
     protected readonly hashCache = new Map<string, { signature: string; contentHash: string }>();
 
     /**
+     * Disambiguates staging folders created within the same millisecond. See {@link writeSkill}.
+     */
+    protected stagingCounter = 0;
+
+    /**
      * Runs once after construction to sweep any stale staging folders left behind by a
      * backend crash mid-install (see {@link writeSkill}). Best-effort: failures are logged
      * and swallowed so an unreachable skills root never blocks the service from starting.
@@ -232,8 +237,15 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
         const root = this.skillsRoot();
         await fs.mkdir(root, { recursive: true });
         const target = this.skillDir(entry.name);
-        const staging = path.join(root, `${STAGING_PREFIX}${entry.name}-${Date.now()}`);
+        // A counter as well as the clock: `Date.now()` only has millisecond resolution, so two
+        // installs of the same skill in the same millisecond would otherwise pick the same staging
+        // folder, and whichever finished first would delete it from under the other's rename.
+        const staging = path.join(root, `${STAGING_PREFIX}${entry.name}-${Date.now()}-${this.stagingCounter++}`);
+        let renamed = false;
         try {
+            // Created up front rather than by the first file's `mkdir`, so that the metadata write
+            // below has somewhere to go even for a skill whose file list came back empty.
+            await fs.mkdir(staging, { recursive: true });
             for (const file of files) {
                 const segments = file.relativePath.split('/');
                 if (segments.some(segment => segment === '' || segment === '.' || segment === '..' || segment.includes('\\'))) {
@@ -248,11 +260,13 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
                 await fs.rm(target, { recursive: true, force: true });
             }
             await fs.rename(staging, target);
+            renamed = true;
         } finally {
-            // After a successful rename the staging path no longer exists; force makes the
-            // call a no-op in that case. Otherwise (thrown error, or rename failure because
-            // the target was raced into existence) this removes the partial staging folder.
-            await fs.rm(staging, { recursive: true, force: true });
+            // Only when the rename did not happen. Removing unconditionally would, after a
+            // successful rename, delete a path another install may already have staged there.
+            if (!renamed) {
+                await fs.rm(staging, { recursive: true, force: true });
+            }
         }
     }
 
