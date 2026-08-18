@@ -410,7 +410,7 @@ export class ScmHistoryGraphWidget extends ReactWidget implements DynamicToolbar
                 open(this.openerService, new URI(change.uri));
             }
         } catch (err) {
-            this.logger.error('ScmHistoryGraphWidget: failed to open change', err);
+            this.logger.error('Failed to open change', err);
         }
     }
 
@@ -759,7 +759,7 @@ export class ScmHistoryGraphWidget extends ReactWidget implements DynamicToolbar
             }
         } catch (err) {
             if (!cts.token.isCancellationRequested) {
-                this.logger.error('ScmHistoryGraphWidget: failed to load changes', err);
+                this.logger.error('Failed to load changes', err);
                 this.expandedChanges.set(item.id, []);
                 this.update();
             }

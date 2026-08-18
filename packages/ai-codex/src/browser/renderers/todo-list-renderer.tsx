@@ -48,7 +48,7 @@ export class TodoListRenderer implements ChatResponsePartRenderer<CodexToolCallC
                     ? JSON.parse(content.result)
                     : content.result as TodoListItem;
             } catch (error) {
-                this.logger.error('[TodoListRenderer] Failed to parse todo_list result:', error);
+                this.logger.error('Failed to parse todo_list result:', error);
             }
         }
 
@@ -63,7 +63,7 @@ export class TodoListRenderer implements ChatResponsePartRenderer<CodexToolCallC
                     };
                 }
             } catch (error) {
-                this.logger.error('[TodoListRenderer] Failed to parse todo_list arguments:', error);
+                this.logger.error('Failed to parse todo_list arguments:', error);
             }
         }
 

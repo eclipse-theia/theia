@@ -293,7 +293,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
             await this.viewRegistry.initWidgets();
             // remove restored plugin widgets which were not registered by contributions
             this.viewRegistry.removeStaleWidgets();
-        }).catch(this.logger.error);
+        }).catch(e => this.logger.error(e));
         this.workspaceTrustService.refreshRestrictedModeIndicator();
     }
 

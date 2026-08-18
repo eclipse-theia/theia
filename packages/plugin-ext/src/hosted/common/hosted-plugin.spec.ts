@@ -65,7 +65,7 @@ function createNoopMeasurement(): Measurement {
 class TestHostedPluginSupport extends AbstractHostedPluginSupport<any, any> {
     constructor() {
         super('test-client');
-        this.logger = new MockLogger();
+        (this as unknown as { logger: MockLogger }).logger = new MockLogger();
     }
 
     protected createTheiaReadyPromise(): Promise<unknown> {

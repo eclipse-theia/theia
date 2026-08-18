@@ -90,7 +90,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
             try {
                 await this.doDownload(uris, abortController.signal);
             } finally {
-                progress.cancel();
+            progress.cancel();
             }
         } catch (e) {
             if (!abortController.signal.aborted) {
@@ -215,7 +215,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
         } finally {
             try {
                 reader.releaseLock();
-            } catch { }
+            } catch {}
         }
     }
 
@@ -314,7 +314,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
                     cleanup();
                     try {
                         entry.destroy?.(err);
-                    } catch { }
+                    } catch {}
                     reject(err);
                 };
 
@@ -383,7 +383,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
                     file,
                     abortSignal
                 );
-            } catch (error) {
+        } catch (error) {
                 this.logger.error(
                     `Failed to read file ${file.uri.toString()}:`,
                     error
@@ -404,11 +404,11 @@ export class FileDownloadServiceImpl implements FileDownloadService {
             ): void {
                 const cleanup = () => {
                     try {
-                        tarPack.removeAllListeners();
-                    } catch { }
+                    tarPack.removeAllListeners();
+                    } catch {}
                     try {
                         tarPack.destroy?.();
-                    } catch { }
+                    } catch {}
                     abortSignal.removeEventListener('abort', onAbort);
                 };
 
@@ -461,7 +461,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
                 try {
                     tarPack.finalize?.();
                     tarPack.destroy?.();
-                } catch { }
+                } catch {}
             },
         });
     }
@@ -484,14 +484,14 @@ export class FileDownloadServiceImpl implements FileDownloadService {
         try {
             // @ts-expect-error non-standard
             fileHandle = await window.showSaveFilePicker({
-                suggestedName: filename,
+            suggestedName: filename,
                 types: isArchive
                     ? [
-                        {
-                            description: 'Archive files',
-                            accept: { 'application/x-tar': ['.tar'] },
-                        },
-                    ]
+                          {
+                description: 'Archive files',
+                              accept: { 'application/x-tar': ['.tar'] },
+                          },
+                      ]
                     : undefined,
             });
         } catch (error) {
@@ -507,13 +507,13 @@ export class FileDownloadServiceImpl implements FileDownloadService {
             const stat = await this.fileService.resolve(uris[0]);
             stream = stat.isDirectory
                 ? this.createArchiveStream(abortSignal, async tarPack => {
-                    await this.addFilesToArchive(
-                        tarPack,
-                        files,
-                        directories,
-                        abortSignal
-                    );
-                })
+                      await this.addFilesToArchive(
+                          tarPack,
+                          files,
+                          directories,
+                          abortSignal
+                      );
+                  })
                 : await this.createFileStream(uris[0], abortSignal);
         } else {
             stream = this.createArchiveStream(abortSignal, async tarPack => {
@@ -532,7 +532,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
         } catch (error) {
             try {
                 await writable.abort?.();
-            } catch { }
+            } catch {}
             throw error;
         }
     }

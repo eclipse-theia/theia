@@ -925,39 +925,39 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         for (const id of this.viewContainers.keys()) {
             promises.push((async () => {
                 await this.initViewContainer(id);
-            })().catch(this.logger.error));
+            })().catch(e => this.logger.error(e)));
         }
         promises.push((async () => {
             const explorer = await this.widgetManager.getWidget(EXPLORER_VIEW_CONTAINER_ID);
             if (explorer instanceof ViewContainerWidget) {
                 await this.prepareViewContainer('explorer', explorer);
             }
-        })().catch(this.logger.error));
+        })().catch(e => this.logger.error(e)));
         promises.push((async () => {
             const scm = await this.widgetManager.getWidget(SCM_VIEW_CONTAINER_ID);
             if (scm instanceof ViewContainerWidget) {
                 await this.prepareViewContainer('scm', scm);
             }
-        })().catch(this.logger.error));
+        })().catch(e => this.logger.error(e)));
         promises.push((async () => {
             const search = await this.widgetManager.getWidget(SEARCH_VIEW_CONTAINER_ID);
             if (search instanceof ViewContainerWidget) {
                 await this.prepareViewContainer('search', search);
             }
-        })().catch(this.logger.error));
+        })().catch(e => this.logger.error(e)));
         promises.push((async () => {
             const test = await this.widgetManager.getWidget(TEST_VIEW_CONTAINER_ID);
             if (test instanceof ViewContainerWidget) {
                 await this.prepareViewContainer('test', test);
             }
-        })().catch(this.logger.error));
+        })().catch(e => this.logger.error(e)));
         promises.push((async () => {
             const debug = await this.widgetManager.getWidget(DebugWidget.ID);
             if (debug instanceof DebugWidget) {
                 const viewContainer = debug['sessionWidget']['viewContainer'];
                 await this.prepareViewContainer('debug', viewContainer);
             }
-        })().catch(this.logger.error));
+        })().catch(e => this.logger.error(e)));
         await Promise.all(promises);
     }
 

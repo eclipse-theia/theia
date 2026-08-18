@@ -40,10 +40,11 @@ export class EditorModelService {
     readonly onModelModeChanged = this.modelModeChangedEmitter.event;
     readonly onModelRemoved = this.onModelRemovedEmitter.event;
 
+    @inject(ILogger) @named('plugin-ext:EditorModelService')
+    protected readonly logger: ILogger;
+
     constructor(@inject(MonacoTextModelService) monacoModelService: MonacoTextModelService,
-        @inject(MonacoWorkspace) monacoWorkspace: MonacoWorkspace,
-        @inject(ILogger) @named('plugin-ext:EditorModelService')
-        protected readonly logger: ILogger) {
+        @inject(MonacoWorkspace) monacoWorkspace: MonacoWorkspace) {
 
         this.monacoModelService = monacoModelService;
         monacoModelService.models.forEach(model => this.modelCreated(model));

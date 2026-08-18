@@ -185,7 +185,7 @@ export class PluginCommentService implements CommentsService {
         this.commentControls.forEach(control => {
             commentControlResult.push(control.getDocumentComments(resource, CancellationToken.None)
                 .catch(e => {
-                    this.logger.error(e);
+                    this.logger.info(e);
                     return null;
                 }));
         });

@@ -45,11 +45,12 @@ export class DefaultPreferenceNodeRendererCreatorRegistry implements PreferenceN
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
 
+    @inject(ILogger) @named('preferences:DefaultPreferenceNodeRendererCreatorRegistry')
+    protected readonly logger: ILogger;
+
     constructor(
         @inject(ContributionProvider) @named(PreferenceNodeRendererContribution)
-        protected readonly contributionProvider: ContributionProvider<PreferenceNodeRendererContribution>,
-        @inject(ILogger) @named('preferences:DefaultPreferenceNodeRendererCreatorRegistry')
-        protected readonly logger: ILogger
+        protected readonly contributionProvider: ContributionProvider<PreferenceNodeRendererContribution>
     ) {
         const contributions = this.contributionProvider.getContributions();
         for (const contrib of contributions) {

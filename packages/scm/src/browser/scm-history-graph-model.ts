@@ -257,7 +257,7 @@ export class ScmHistoryGraphModel {
             }));
         } catch (err) {
             if (!token.isCancellationRequested) {
-                this.logger.error('ScmHistoryGraphModel: failed to load history', err);
+                this.logger.error('Failed to load history', err);
             }
         } finally {
             if (!token.isCancellationRequested) {

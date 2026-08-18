@@ -55,7 +55,7 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
     protected container: interfaces.Container;
 
     @inject(ILogger) @named('plugin-ext:AbstractHostedPluginSupport')
-    protected logger: ILogger;
+    protected readonly logger: ILogger;
 
     @inject(HostedPluginServer)
     protected readonly server: HPS;

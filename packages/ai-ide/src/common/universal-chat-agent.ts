@@ -23,8 +23,8 @@ import { universalTemplate, universalTemplateVariant } from './universal-prompt-
 export const UniversalChatAgentId = 'Universal';
 @injectable()
 export class UniversalChatAgent extends AbstractStreamParsingChatAgent {
-   @inject(ILogger) @named('ai-ide:UniversalChatAgent')
-   protected override readonly logger: ILogger;
+    @inject(ILogger) @named('ai-ide:UniversalChatAgent')
+    protected override readonly logger: ILogger;
 
    id: string = UniversalChatAgentId;
    name = UniversalChatAgentId;

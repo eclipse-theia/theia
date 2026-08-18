@@ -622,7 +622,7 @@ export class MiniBrowserContent extends BaseWidget {
                 clearTimeout(this.frameLoadTimeout);
                 this.hideLoadIndicator();
                 this.showErrorBar(String(e));
-                this.logger.error(e);
+                this.logger.info(e);
             }
         }
     }

@@ -26,7 +26,7 @@ import { ChatSessionListService } from './chat-session-list-service';
 import { SectionedSessions, SessionRow, SessionsList } from './chat-session-list-components';
 import { ChatSessionItem } from './chat-session-item';
 import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
-import { CommandRegistry, ContributionProvider, Emitter, Event, PreferenceService, ILogger } from '@theia/core';
+import { CommandRegistry, ContributionProvider, Emitter, Event, PreferenceService } from '@theia/core';
 import { ApplicationShell, HoverService } from '@theia/core/lib/browser';
 import { AISessionsWidget } from './ai-sessions-widget';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
@@ -61,9 +61,6 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
 
     @inject(FrontendLanguageModelRegistry)
     protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
-
-    @inject(ILogger) @named('ai-ide:ChatSessionsWelcomeMessageProvider')
-    protected readonly logger: ILogger;
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;

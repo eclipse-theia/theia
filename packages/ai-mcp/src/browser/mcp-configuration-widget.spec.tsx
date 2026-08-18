@@ -42,7 +42,6 @@ import {
 import { AIMCPConfigurationWidget } from './mcp-configuration-widget';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import * as sinon from 'sinon';
 
 disableJSDOM();
 
@@ -104,16 +103,11 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
         onStopServer?: (serverName: string) => void;
         onWarn?: (message: string) => void;
         onInfo?: (message: string) => void;
-        onLog?: (message: string) => void;
     } = {}): TestAIMCPConfigurationWidget {
         const onDidUpdateMCPServersEmitter = new Emitter<void>();
         const widget = new TestAIMCPConfigurationWidget();
 
-        const mockLogger = new MockLogger();
-
-        sinon.stub(mockLogger, 'warn').callsFake(async (msg: unknown) => { options.onLog?.(String(msg)); });
-        sinon.stub(mockLogger, 'error').callsFake(async (msg: unknown) => { options.onLog?.(String(msg)); });
-        (widget as unknown as { logger: MockLogger }).logger = mockLogger;
+        (widget as unknown as { logger: MockLogger }).logger = new MockLogger();
 
         widget.setServers(options.servers ?? []);
         (widget as unknown as { mcpFrontendService: Partial<MCPFrontendService> }).mcpFrontendService = {
