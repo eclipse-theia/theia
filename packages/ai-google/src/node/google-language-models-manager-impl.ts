@@ -20,7 +20,7 @@ import { GoogleGenAI, Model } from '@google/genai';
 import { GoogleModel } from './google-language-model';
 import { GOOGLE_SERVER_TOOLS } from './google-server-tools';
 import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
-import { ILogger } from '@theia/core/lib/common';
+import { ILogger } from '@theia/core';
 
 export interface GoogleLanguageModelRetrySettings {
     maxRetriesOnErrors: number;

@@ -65,6 +65,7 @@ export class EditToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
                 workspaceService={this.workspaceService}
                 labelProvider={this.labelProvider}
                 editorManager={this.editorManager}
+                logger={this.logger}
             />;
         } catch (error) {
             this.logger.warn('Failed to parse Edit tool input:', error);
@@ -78,7 +79,8 @@ const EditToolComponent: React.FC<{
     workspaceService: WorkspaceService;
     labelProvider: LabelProvider;
     editorManager: EditorManager;
-}> = ({ input, workspaceService, labelProvider, editorManager }) => {
+    logger: ILogger;
+}> = ({ input, workspaceService, labelProvider, editorManager, logger }) => {
     const getFileName = (filePath: string): string => filePath.split('/').pop() || filePath;
     const getWorkspaceRelativePath = async (filePath: string): Promise<string> => {
         try {
@@ -104,7 +106,7 @@ const EditToolComponent: React.FC<{
             const uri = new URI(input.file_path);
             await editorManager.open(uri);
         } catch (error) {
-            console.error('Failed to open file:', error);
+            logger.error('Failed to open file:', error);
         }
     };
 

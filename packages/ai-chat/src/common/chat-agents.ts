@@ -740,9 +740,6 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
     @inject(ServerToolCallResponseContentFactory)
     protected serverToolCallResponseContentFactory: ServerToolCallResponseContentFactory;
 
-    @inject(ILogger) @named('ai-chat:AbstractStreamParsingChatAgent')
-    protected override readonly logger: ILogger;
-
     protected override async addContentsToResponse(languageModelResponse: LanguageModelResponse, request: MutableChatRequestModel): Promise<void> {
         if (isLanguageModelTextResponse(languageModelResponse)) {
             const contents = this.parseContents(languageModelResponse.text, request);

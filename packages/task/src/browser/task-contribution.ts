@@ -18,7 +18,7 @@ import { injectable, postConstruct, inject, named } from '@theia/core/shared/inv
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { TaskConfiguration } from '../common/task-protocol';
 import { WaitUntilEvent, Emitter } from '@theia/core/lib/common/event';
-import { ILogger } from '@theia/core/lib/common';
+import { ILogger } from '@theia/core';
 
 export const TaskContribution = Symbol('TaskContribution');
 

@@ -19,7 +19,7 @@ import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MCPOAuthCallback } from '../common/mcp-oauth';
 import { randomUUID } from 'crypto';
-import { ILogger } from '@theia/core/lib/common';
+import { ILogger } from '@theia/core';
 
 /**
  * Maximum time the backend will wait for an OAuth authorization callback after creating a `state`.

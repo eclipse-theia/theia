@@ -152,15 +152,9 @@ describe('MCPOAuthLoopbackCallbackServer', () => {
 
         it('falls back to the default for an invalid environment-variable value', () => {
             process.env[MCP_OAUTH_CALLBACK_PORT_ENV] = 'not-a-port';
-            const originalWarn = console.warn;
-            console.warn = () => { /* suppress fallback diagnostic */ };
-            try {
-                const server = new TestableMCPOAuthLoopbackCallbackServer();
-                (server as unknown as { logger: ILogger }).logger = new MockLogger();
-                expect(server.configuredPort()).to.equal(MCP_OAUTH_DEFAULT_ELECTRON_CALLBACK_PORT);
-            } finally {
-                console.warn = originalWarn;
-            }
+            const server = new TestableMCPOAuthLoopbackCallbackServer();
+            (server as unknown as { logger: ILogger }).logger = new MockLogger();
+            expect(server.configuredPort()).to.equal(MCP_OAUTH_DEFAULT_ELECTRON_CALLBACK_PORT);
         });
     });
 });

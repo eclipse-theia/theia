@@ -17,7 +17,7 @@ import {
     ChatMode, ChatRequestModel, ChatService, ChatSession,
     MutableChatModel, MutableChatRequestModel
 } from '@theia/ai-chat/lib/common';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import {
     CODER_SYSTEM_PROMPT_ID,
     CODER_EDIT_TEMPLATE_ID,
@@ -29,7 +29,7 @@ import {
     getCoderPromptTemplateEditNext
 } from '../common/coder-replace-prompt-template';
 import { LanguageModelRequirement, PromptVariantSet } from '@theia/ai-core';
-import { nls } from '@theia/core';
+import { ILogger, nls } from '@theia/core';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { AI_CHAT_HOME, ChatCommands } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
@@ -40,6 +40,9 @@ export const CoderAgentId = 'Coder';
 
 @injectable()
 export class CoderAgent extends AbstractModeAwareChatAgent {
+    @inject(ILogger) @named('ai-ide:CoderAgent')
+    protected override readonly logger: ILogger;
+
     @inject(ChatService) protected readonly chatService: ChatService;
     @inject(AgentModeConfirmationService) protected readonly agentModeConfirmation: AgentModeConfirmationService;
     id: string = CoderAgentId;

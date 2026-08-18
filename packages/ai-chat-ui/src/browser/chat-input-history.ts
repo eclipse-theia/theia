@@ -16,7 +16,7 @@
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { StorageService } from '@theia/core/lib/browser';
-import { ILogger } from '@theia/core/lib/common';
+import { ILogger } from '@theia/core';
 
 /**
  * Manages navigation state for a single chat input widget.

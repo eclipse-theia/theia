@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, optional } from '@theia/core/shared/inversify';
+import { injectable, inject, named, optional } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { nls } from '@theia/core/lib/common/nls';
@@ -57,6 +58,7 @@ export class ScmHistoryGraphContribution implements CommandContribution, MenuCon
     @inject(ScmService) protected readonly scmService: ScmService;
     @inject(ScmHistoryGraphModelProvider) protected readonly modelProvider: ScmHistoryGraphModelProvider;
     @inject(QuickInputService) @optional() protected readonly quickInputService: QuickInputService;
+    @inject(ILogger) @named('scm:ScmHistoryGraphContribution') protected readonly logger: ILogger;
 
     /**
      * The graph model, resolved lazily: instantiating it starts loading
@@ -155,7 +157,7 @@ export class ScmHistoryGraphContribution implements CommandContribution, MenuCon
                     picker.busy = false;
                 }, err => {
                     if (!cts.token.isCancellationRequested) {
-                        console.error('ScmHistoryGraphContribution: failed to load history item refs', err);
+                        this.logger.error('Failed to load history item refs', err);
                     }
                     picker.hide();
                 });

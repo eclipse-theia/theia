@@ -130,29 +130,23 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
 
     it('still clears OAuth credentials and removes the server when stopping it fails', async () => {
         const calls: string[] = [];
-        const originalConsoleError = console.error;
-        console.error = () => { };
-        try {
-            const manager = new MCPServerManagerImpl();
-            (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
-            const server = {
-                stop: async () => { calls.push('stop'); throw new Error('transport hung'); }
-            };
-            const servers = new Map<string, MCPServer>([
-                ['asana', server as unknown as MCPServer]
-            ]);
-            (manager as unknown as { servers: Map<string, MCPServer> }).servers = servers;
-            (manager as unknown as { credentialStore: Partial<MCPOAuthCredentialStore> }).credentialStore = {
-                clear: async () => { calls.push('clear'); }
-            };
+        const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
+        const server = {
+            stop: async () => { calls.push('stop'); throw new Error('transport hung'); }
+        };
+        const servers = new Map<string, MCPServer>([
+            ['asana', server as unknown as MCPServer]
+        ]);
+        (manager as unknown as { servers: Map<string, MCPServer> }).servers = servers;
+        (manager as unknown as { credentialStore: Partial<MCPOAuthCredentialStore> }).credentialStore = {
+            clear: async () => { calls.push('clear'); }
+        };
 
-            await manager.removeServer('asana');
+        await manager.removeServer('asana');
 
-            expect(calls).to.deep.equal(['stop', 'clear']);
-            expect(servers.has('asana')).to.be.false;
-        } finally {
-            console.error = originalConsoleError;
-        }
+        expect(calls).to.deep.equal(['stop', 'clear']);
+        expect(servers.has('asana')).to.be.false;
     });
 
     it('does not stop a running server for non-connection preference changes', async () => {
@@ -527,32 +521,26 @@ describe('MCPServerManagerImpl OAuth cleanup', () => {
     it('signOut isolates credential cleanup and client notification from a failing stop()', async () => {
         // A failing stop() must not block credential wipe or UI refresh.
         const calls: string[] = [];
-        const originalConsoleError = console.error;
-        console.error = () => { /* suppress expected diagnostic */ };
-        try {
-            const manager = new MCPServerManagerImpl();
-            (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
-            const server = {
-                isRunning: () => true,
-                isStopped: () => false,
-                isInFlight: () => false,
-                stop: async () => { calls.push('stop'); throw new Error('transport hung'); }
-            };
-            (manager as unknown as { servers: Map<string, MCPServer> }).servers = new Map([
-                ['asana', server as unknown as MCPServer]
-            ]);
-            (manager as unknown as { credentialStore: Partial<MCPOAuthCredentialStore> }).credentialStore = {
-                clear: async () => { calls.push('clear'); }
-            };
-            const client = { onDidUpdateMCPServers: () => ({ dispose: () => { } }), didUpdateMCPServers: () => { calls.push('notify'); } };
-            manager.setClient(client as never);
+        const manager = new MCPServerManagerImpl();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
+        const server = {
+            isRunning: () => true,
+            isStopped: () => false,
+            isInFlight: () => false,
+            stop: async () => { calls.push('stop'); throw new Error('transport hung'); }
+        };
+        (manager as unknown as { servers: Map<string, MCPServer> }).servers = new Map([
+            ['asana', server as unknown as MCPServer]
+        ]);
+        (manager as unknown as { credentialStore: Partial<MCPOAuthCredentialStore> }).credentialStore = {
+            clear: async () => { calls.push('clear'); }
+        };
+        const client = { onDidUpdateMCPServers: () => ({ dispose: () => { } }), didUpdateMCPServers: () => { calls.push('notify'); } };
+        manager.setClient(client as never);
 
-            await manager.signOut('asana');
+        await manager.signOut('asana');
 
-            expect(calls).to.deep.equal(['stop', 'clear', 'notify']);
-        } finally {
-            console.error = originalConsoleError;
-        }
+        expect(calls).to.deep.equal(['stop', 'clear', 'notify']);
     });
 
     it('signOut stops an in-flight (AuthenticationRequired) server and clears credentials', async () => {

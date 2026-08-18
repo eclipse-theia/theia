@@ -79,7 +79,7 @@ export class WorkspaceFunctionScope {
 
     @inject(ILogger) @named('ai-ide:WorkspaceFunctionScope')
     protected readonly logger: ILogger;
-  
+
     @inject(ContributionProvider) @named(AccessibleRootContribution) @optional()
     protected readonly accessibleRootContributions: ContributionProvider<AccessibleRootContribution> | undefined;
 
@@ -381,7 +381,7 @@ export class WorkspaceFunctionScope {
                     roots.push(WorkspaceFunctionScope.withoutTrailingSeparator(root.normalizePath()));
                 }
             } catch (error) {
-                console.warn('Failed to resolve accessible roots from a contribution.', error);
+                this.logger.warn('Failed to resolve accessible roots from a contribution.', error);
             }
         }
         return roots;

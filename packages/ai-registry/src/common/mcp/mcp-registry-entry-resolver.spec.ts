@@ -22,11 +22,9 @@ import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import * as sinon from 'sinon';
 
-let logger: MockLogger;
-
-function createResolver(toolName: string = 'theia-ide'): MCPRegistryEntryResolver {
+function createResolver(toolName: string = 'theia-ide'): { resolver: MCPRegistryEntryResolver, logger: MockLogger } {
     const resolver = new MCPRegistryEntryResolverImpl();
-    logger = new MockLogger();
+    const logger = new MockLogger();
     (resolver as unknown as { logger: ILogger }).logger = logger;
     const configuration: AIRegistryConfiguration = Object.assign(new AIRegistryConfiguration(), {
         getToolName(): string {
@@ -34,15 +32,16 @@ function createResolver(toolName: string = 'theia-ide'): MCPRegistryEntryResolve
         }
     });
     Object.assign(resolver, { configuration });
-    return resolver;
+    return { resolver, logger };
 }
 
 describe('MCPRegistryEntryResolver.resolve', () => {
 
     let resolver: MCPRegistryEntryResolver;
+    let logger: MockLogger;
 
     beforeEach(() => {
-        resolver = createResolver();
+        ({ resolver, logger } = createResolver());
     });
 
     it('normalises a server with a single approval, install config and inner server, propagating configHash', () => {
@@ -158,7 +157,7 @@ describe('MCPRegistryEntryResolver.resolve', () => {
     });
 
     it('picks the install config matching the configured tool name when multiple are present', () => {
-        const productResolver = createResolver('my-product');
+        const { resolver: productResolver } = createResolver('my-product');
         const raw: RegistryMCPServer = {
             serverId: 'io.github.example/multi-tool',
             name: 'Multi Tool',
@@ -179,7 +178,7 @@ describe('MCPRegistryEntryResolver.resolve', () => {
     });
 
     it('accepts an untagged install config as a fallback when no tool-specific config matches', () => {
-        const productResolver = createResolver('my-product');
+        const { resolver: productResolver } = createResolver('my-product');
         const raw: RegistryMCPServer = {
             serverId: 'io.github.example/untagged',
             name: 'Untagged',
@@ -199,7 +198,7 @@ describe('MCPRegistryEntryResolver.resolve', () => {
     });
 
     it("accepts every install config when the configured tool name is 'all'", () => {
-        const allResolver = createResolver('all');
+        const { resolver: allResolver } = createResolver('all');
         const raw: RegistryMCPServer = {
             serverId: 'io.github.example/all',
             name: 'Any tool',
@@ -241,13 +240,9 @@ describe('MCPRegistryEntryResolver.resolve', () => {
         };
 
         const warnSpy = sinon.spy(logger, 'warn');
-        try {
-            const resolved = resolver.resolve(raw);
-            expect(resolved?.localName).to.equal('primary');
-            expect(resolved?.config).to.deep.equal({ command: 'first-cmd' });
-            expect(warnSpy.calledWithMatch(sinon.match('multiple servers'))).to.be.true;
-        } finally {
-            warnSpy.restore();
-        }
+        const resolved = resolver.resolve(raw);
+        expect(resolved?.localName).to.equal('primary');
+        expect(resolved?.config).to.deep.equal({ command: 'first-cmd' });
+        expect(warnSpy.calledWithMatch(sinon.match('multiple servers'))).to.be.true;
     });
 });

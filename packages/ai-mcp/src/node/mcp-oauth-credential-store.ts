@@ -17,7 +17,7 @@
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
 import { MCPOAuthConfig } from '../common/mcp-oauth';
-import { ILogger } from '@theia/core/lib/common';
+import { ILogger } from '@theia/core';
 import {
     deriveCredentialScope,
     MCP_OAUTH_KEYSTORE_SERVICE,

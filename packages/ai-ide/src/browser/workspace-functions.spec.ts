@@ -1348,6 +1348,7 @@ describe('WorkspaceFunctionScope accessible root contributions', () => {
 
     beforeEach(() => {
         container = new Container();
+        container.bind(ILogger).to(MockLogger);
         contributedRoots = [];
         contributionFails = false;
         rootQueries = 0;

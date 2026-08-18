@@ -104,14 +104,15 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
         onStopServer?: (serverName: string) => void;
         onWarn?: (message: string) => void;
         onInfo?: (message: string) => void;
+        onLog?: (message: string) => void;
     } = {}): TestAIMCPConfigurationWidget {
         const onDidUpdateMCPServersEmitter = new Emitter<void>();
         const widget = new TestAIMCPConfigurationWidget();
 
         const mockLogger = new MockLogger();
 
-        sinon.stub(mockLogger, 'warn').callsFake(async (msg: unknown) => { options.onWarn?.(String(msg)); });
-        sinon.stub(mockLogger, 'error').callsFake(async (msg: unknown) => { options.onWarn?.(String(msg)); });
+        sinon.stub(mockLogger, 'warn').callsFake(async (msg: unknown) => { options.onLog?.(String(msg)); });
+        sinon.stub(mockLogger, 'error').callsFake(async (msg: unknown) => { options.onLog?.(String(msg)); });
         (widget as unknown as { logger: MockLogger }).logger = mockLogger;
 
         widget.setServers(options.servers ?? []);
@@ -200,24 +201,18 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
 
     it('surfaces a warning toast when signOut rejects', async () => {
         let warning: string | undefined;
-        const originalConsoleError = console.error;
-        console.error = () => { };
-        try {
-            const widget = createWidget({
-                servers: [oauthServer],
-                onSignOut: () => { throw new Error('rpc broken'); },
-                onWarn: message => warning = message
-            });
-            renderWidget(widget);
+        const widget = createWidget({
+            servers: [oauthServer],
+            onSignOut: () => { throw new Error('rpc broken'); },
+            onWarn: message => warning = message
+        });
+        renderWidget(widget);
 
-            const signOutButton = host.querySelector('button[title="Sign Out"]') as HTMLButtonElement | null;
-            expect(signOutButton).to.not.be.null;
-            signOutButton!.click();
-            await Promise.resolve();
-            await Promise.resolve();
-        } finally {
-            console.error = originalConsoleError;
-        }
+        const signOutButton = host.querySelector('button[title="Sign Out"]') as HTMLButtonElement | null;
+        expect(signOutButton).to.not.be.null;
+        signOutButton!.click();
+        await Promise.resolve();
+        await Promise.resolve();
 
         expect(warning).to.contain('oauth-server');
     });
@@ -349,22 +344,16 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
 
         it('surfaces a warning toast when startServerInteractive rejects', async () => {
             let warning: string | undefined;
-            const originalConsoleError = console.error;
-            console.error = () => { };
-            try {
-                const widget = createWidget({
-                    servers: [localServer],
-                    onStartServerInteractive: () => { throw new Error('rpc broken'); },
-                    onWarn: message => warning = message
-                });
-                renderWidget(widget);
+            const widget = createWidget({
+                servers: [localServer],
+                onStartServerInteractive: () => { throw new Error('rpc broken'); },
+                onWarn: message => warning = message
+            });
+            renderWidget(widget);
 
-                const startButton = host.querySelector('button[title="Start Server"]') as HTMLButtonElement | null;
-                startButton!.click();
-                await flushClickHandlers();
-            } finally {
-                console.error = originalConsoleError;
-            }
+            const startButton = host.querySelector('button[title="Start Server"]') as HTMLButtonElement | null;
+            startButton!.click();
+            await flushClickHandlers();
 
             expect(warning).to.contain('local-server');
         });

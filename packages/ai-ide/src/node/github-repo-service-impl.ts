@@ -17,7 +17,7 @@
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { simpleGit, SimpleGit } from 'simple-git';
 import { GitHubRepoService, GitHubRepoInfo } from '../common/github-repo-protocol';
-import { ILogger } from '@theia/core/lib/common';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class GitHubRepoServiceImpl implements GitHubRepoService {

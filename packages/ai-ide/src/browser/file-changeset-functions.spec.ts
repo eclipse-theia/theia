@@ -345,6 +345,7 @@ describe('File Changeset Functions access control', () => {
         };
 
         container = new Container();
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
         container.bind(WorkspaceService).toConstantValue({
             roots: [{ resource: new URI('file:///workspace') }],
             tryGetRoots: () => [{ resource: new URI('file:///workspace') }],

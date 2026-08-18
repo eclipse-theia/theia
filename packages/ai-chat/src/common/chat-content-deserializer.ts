@@ -194,7 +194,7 @@ export class ChatContentDeserializerRegistryImpl implements ChatContentDeseriali
     @inject(ContributionProvider) @named(ChatContentDeserializerContribution)
     protected readonly deserializerContributions: ContributionProvider<ChatContentDeserializerContribution>;
 
-    @inject(ILogger) @named('ai-chat:ChatContentDeserializerRegistry')
+    @inject(ILogger) @named('ai-chat:ChatContentDeserializerRegistryImpl')
     protected readonly logger: ILogger;
 
     /**

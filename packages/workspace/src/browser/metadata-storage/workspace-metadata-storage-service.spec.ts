@@ -83,7 +83,7 @@ describe('WorkspaceMetadataStorageService', () => {
         container.bind(FileService).toConstantValue(fileService as unknown as FileService);
         container.bind(WorkspaceService).toConstantValue(workspaceService);
         container.bind(EnvVariablesServer).toConstantValue(envVariableServer as unknown as EnvVariablesServer);
-        container.bind(ILogger).toConstantValue(logger).whenTargetNamed('WorkspaceMetadataStorage');
+        container.bind(ILogger).toConstantValue(logger);
         container.bind(WorkspaceMetadataStoreImpl).toSelf();
         container.bind(WorkspaceMetadataStoreFactory).toFactory(ctx => () => ctx.container.get(WorkspaceMetadataStoreImpl));
         container.bind(WorkspaceMetadataStorageServiceImpl).toSelf();

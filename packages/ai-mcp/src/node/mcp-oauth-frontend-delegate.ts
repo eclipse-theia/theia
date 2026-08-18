@@ -17,7 +17,7 @@
 import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
 import { MCPOAuthFrontendDelegate, MCPOAuthFrontendDelegateClient } from '../common/mcp-oauth';
 import { MCPOAuthCallbackEndpoint } from './mcp-oauth-callback-endpoint';
-import { ILogger } from '@theia/core/lib/common';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class MCPOAuthFrontendDelegateImpl implements MCPOAuthFrontendDelegate {
