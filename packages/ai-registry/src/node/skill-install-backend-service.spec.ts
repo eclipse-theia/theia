@@ -259,6 +259,42 @@ describe('SkillInstallBackendService', () => {
         expect(leftovers).to.deep.equal([]);
     });
 
+    it('gives two installs of the same skill in the same millisecond separate staging folders', async () => {
+        // `Date.now()` alone is millisecond-resolution, so a shared staging path was possible and
+        // whichever install finished first deleted it from under the other's rename (ENOENT).
+        const svc = service(githubResponses(SKILL_MD)) as unknown as {
+            writeSkill(entry: ResolvedSkillEntry, files: { relativePath: string; content: Uint8Array }[], replace: boolean): Promise<void>;
+        };
+        const stagingPaths = new Set<string>();
+        const original = fs.rename;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (fs as any).rename = async (from: string, to: string) => {
+            stagingPaths.add(String(from));
+            return original(from, to);
+        };
+        try {
+            const files = [{ relativePath: 'SKILL.md', content: Buffer.from(SKILL_MD) }];
+            await svc.writeSkill(entry, files, false);
+            await fs.rm(path.join(root, 'example-skill'), { recursive: true, force: true });
+            await svc.writeSkill(entry, files, false);
+        } finally {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (fs as any).rename = original;
+        }
+        expect(stagingPaths.size).to.equal(2);
+    });
+
+    it('leaves the installed skill in place when a later install stages under the same path', async () => {
+        // The `finally` used to remove the staging path unconditionally, which after a successful
+        // rename could delete whatever another install had since staged there.
+        const svc = service(githubResponses(SKILL_MD));
+        await svc.install(entry);
+
+        expect(await fs.readFile(path.join(root, 'example-skill', 'SKILL.md'), 'utf8')).to.contain('example-skill');
+        const leftovers = (await fs.readdir(root)).filter(name => name.startsWith('.installing-'));
+        expect(leftovers).to.deep.equal([]);
+    });
+
     it('sweepStagingFolders removes any leftover .installing-* folders from previous backend crashes', async () => {
         await fs.mkdir(path.join(root, '.installing-example-skill-123'), { recursive: true });
         await fs.writeFile(path.join(root, '.installing-example-skill-123', 'partial.txt'), 'leftover');
