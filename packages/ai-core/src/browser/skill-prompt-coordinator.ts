@@ -47,28 +47,38 @@ export class SkillPromptCoordinator implements FrontendApplicationContribution {
 
     protected updateSkillCommands(): void {
         const currentSkills = this.skillService.getSkills();
-        const currentSkillNames = new Set(currentSkills.map(s => s.name));
+        // Keyed by qualified name: two skills owned by different plugins can share a plain name.
+        const currentSkillNames = new Set(currentSkills.map(s => s.qualifiedName));
 
         // Unregister removed skills
         for (const name of this.registeredSkillCommands) {
             if (!currentSkillNames.has(name)) {
-                this.promptService.removePromptFragment(`skill-command-${name}`);
+                this.promptService.removePromptFragment(this.fragmentId(name));
                 this.registeredSkillCommands.delete(name);
             }
         }
 
         // Register new skills
         for (const skill of currentSkills) {
-            if (!this.registeredSkillCommands.has(skill.name)) {
+            if (!this.registeredSkillCommands.has(skill.qualifiedName)) {
                 this.promptService.addBuiltInPromptFragment({
-                    id: `skill-command-${skill.name}`,
-                    template: `Load the skill ${skill.name} using ~{getSkillFileContent}.`,
+                    id: this.fragmentId(skill.qualifiedName),
+                    template: `Load the skill ${skill.qualifiedName} using ~{getSkillFileContent}.`,
                     isCommand: true,
-                    commandName: skill.name,
+                    commandName: skill.qualifiedName,
                     commandDescription: skill.description
                 });
-                this.registeredSkillCommands.add(skill.name);
+                this.registeredSkillCommands.add(skill.qualifiedName);
             }
         }
+    }
+
+    /**
+     * A fragment id becomes a file name when the user customizes the fragment, so the qualifier's `:`
+     * cannot survive into it - it is reserved on Windows. Only the id is sanitized; the command keeps
+     * the qualified name.
+     */
+    protected fragmentId(qualifiedName: string): string {
+        return `skill-command-${qualifiedName.replace(/:/g, '__')}`;
     }
 }

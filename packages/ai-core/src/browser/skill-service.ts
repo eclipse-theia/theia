@@ -16,7 +16,7 @@
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { DisposableCollection, Emitter, Event, ILogger, URI } from '@theia/core';
+import { ContributionProvider, Disposable, DisposableCollection, Emitter, Event, ILogger, MaybePromise, URI } from '@theia/core';
 import { Path } from '@theia/core/lib/common/path';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -26,6 +26,7 @@ import { AICorePreferences, PREFERENCE_NAME_SKILL_DIRECTORIES } from '../common/
 import {
     Skill,
     SkillDescription,
+    SkillDirectoryEntry,
     SKILL_FILE_NAME,
     validateSkillDescription,
     parseSkillFile,
@@ -35,12 +36,28 @@ import {
 /** Debounce delay for coalescing rapid file system events */
 const UPDATE_DEBOUNCE_MS = 50;
 
+export const SkillDirectoryContribution = Symbol('SkillDirectoryContribution');
+/**
+ * Contributes further roots to scan for skills. Point this at the *parent* of the skill folders,
+ * never at a skill folder itself. Contributed roots form the lowest-precedence `plugin` tier, so a
+ * directory the user controls always wins a path collision.
+ */
+export interface SkillDirectoryContribution {
+    /** Entries carrying a {@link SkillDirectoryEntry.qualifier} have their skills prefixed with it. */
+    getSkillDirectories(): MaybePromise<SkillDirectoryEntry[]>;
+    readonly onDidChange?: Event<void>;
+}
+
 export const SkillService = Symbol('SkillService');
 export interface SkillService {
     /** Get all discovered skills */
     getSkills(): Skill[];
 
-    /** Get a skill by name */
+    /**
+     * Matched against {@link Skill.qualifiedName} first, then the plain
+     * {@link SkillDescription.name} so unqualified references keep resolving. A plain name shared by
+     * several skills is ambiguous and resolves to `undefined`.
+     */
     getSkill(name: string): Skill | undefined;
 
     /** Event fired when skills change */
@@ -51,7 +68,7 @@ export interface SkillService {
 }
 
 @injectable()
-export class DefaultSkillService implements SkillService {
+export class DefaultSkillService implements SkillService, Disposable {
     @inject(AICorePreferences)
     protected readonly preferences: AICorePreferences;
 
@@ -68,8 +85,16 @@ export class DefaultSkillService implements SkillService {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
+    @inject(ContributionProvider)
+    @named(SkillDirectoryContribution)
+    protected readonly skillDirectoryContributions: ContributionProvider<SkillDirectoryContribution>;
+
+    /** Keyed by {@link Skill.qualifiedName}. */
     protected skills = new Map<string, Skill>();
+    /** Watchers of the current scan; disposed and rebuilt on every rescan. */
     protected toDispose = new DisposableCollection();
+    /** Kept apart from {@link toDispose}, which does not survive a rescan. */
+    protected readonly toDisposeOnServiceDispose = new DisposableCollection();
     protected watchedDirectories = new Set<string>();
     protected parentWatchers = new Map<string, string>();
 
@@ -91,6 +116,12 @@ export class DefaultSkillService implements SkillService {
 
     @postConstruct()
     protected init(): void {
+        for (const contribution of this.skillDirectoryContributions.getContributions()) {
+            if (contribution.onDidChange) {
+                this.toDisposeOnServiceDispose.push(contribution.onDidChange(() => this.scheduleUpdate()));
+            }
+        }
+
         this.fileService.onDidFilesChange(async (event: FileChangesEvent) => {
             for (const change of event.changes) {
                 if (change.type === FileChangeType.ADDED) {
@@ -161,7 +192,19 @@ export class DefaultSkillService implements SkillService {
     }
 
     getSkill(name: string): Skill | undefined {
-        return this.skills.get(name);
+        const qualifiedMatch = this.skills.get(name);
+        if (qualifiedMatch) {
+            return qualifiedMatch;
+        }
+        // Ambiguous plain names resolve to nothing: guessing would silently load a skill the caller
+        // did not ask for.
+        const plainMatches = this.getSkills().filter(skill => skill.name === name);
+        return plainMatches.length === 1 ? plainMatches[0] : undefined;
+    }
+
+    dispose(): void {
+        this.toDisposeOnServiceDispose.dispose();
+        this.toDispose.dispose();
     }
 
     protected scheduleUpdate(): void {
@@ -213,21 +256,25 @@ export class DefaultSkillService implements SkillService {
         const configuredDirectories = (this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES] ?? [])
             .map(dir => Path.untildify(dir, homePath));
         const defaultSkillsDirs = await this.getDefaultSkillsDirectoryPaths();
+        const pluginSkillsDirs = await this.getContributedSkillDirectories();
 
         const newWatchedDirectories = new Set<string>();
         const newParentWatchers = new Map<string, string>();
 
-        const allDirectories = combineSkillDirectories(workspaceSkillsDirs, configuredDirectories, defaultSkillsDirs);
-        for (const { path: directoryPath, tier } of allDirectories) {
+        const allDirectories = combineSkillDirectories(workspaceSkillsDirs, configuredDirectories, defaultSkillsDirs, pluginSkillsDirs);
+        for (const { path: directoryPath, tier, qualifier } of allDirectories) {
             if (tier === 'configured') {
-                await this.processConfiguredSkillDirectory(directoryPath, newSkills, newDisposables, newWatchedDirectories);
+                await this.processConfiguredSkillDirectory(directoryPath, newSkills, newDisposables, newWatchedDirectories, qualifier);
             } else {
+                // `plugin` roots take this path too: a plugin with no `skills` directory is a
+                // plugin without skills, worth watching for rather than warning about.
                 await this.processSkillDirectoryWithParentWatching(
                     directoryPath,
                     newSkills,
                     newDisposables,
                     newWatchedDirectories,
-                    newParentWatchers
+                    newParentWatchers,
+                    qualifier
                 );
             }
         }
@@ -242,6 +289,19 @@ export class DefaultSkillService implements SkillService {
         this.parentWatchers = newParentWatchers;
 
         this.onSkillsChangedEmitter.fire();
+    }
+
+    /** A failing contribution is skipped: one broken root must not cost every other skill. */
+    protected async getContributedSkillDirectories(): Promise<SkillDirectoryEntry[]> {
+        const entries: SkillDirectoryEntry[] = [];
+        for (const contribution of this.skillDirectoryContributions.getContributions()) {
+            try {
+                entries.push(...await contribution.getSkillDirectories());
+            } catch (error) {
+                this.logger.error(`Failed to collect contributed skill directories: ${error}`);
+            }
+        }
+        return entries;
     }
 
     protected getWorkspaceSkillsDirectoryPaths(): string[] {
@@ -267,7 +327,8 @@ export class DefaultSkillService implements SkillService {
         skills: Map<string, Skill>,
         disposables: DisposableCollection,
         watchedDirectories: Set<string>,
-        parentWatchers: Map<string, string>
+        parentWatchers: Map<string, string>,
+        qualifier?: string
     ): Promise<void> {
         const dirURI = URI.fromFilePath(directoryPath);
 
@@ -275,7 +336,7 @@ export class DefaultSkillService implements SkillService {
             const dirExists = await this.fileService.exists(dirURI);
 
             if (dirExists) {
-                await this.processExistingSkillDirectory(dirURI, skills, disposables, watchedDirectories);
+                await this.processExistingSkillDirectory(dirURI, skills, disposables, watchedDirectories, qualifier);
             } else {
                 const parentPath = dirURI.parent.path.fsPath();
                 const parentURI = URI.fromFilePath(parentPath);
@@ -299,7 +360,8 @@ export class DefaultSkillService implements SkillService {
         directoryPath: string,
         skills: Map<string, Skill>,
         disposables: DisposableCollection,
-        watchedDirectories: Set<string>
+        watchedDirectories: Set<string>,
+        qualifier?: string
     ): Promise<void> {
         const dirURI = URI.fromFilePath(directoryPath);
 
@@ -311,7 +373,7 @@ export class DefaultSkillService implements SkillService {
                 return;
             }
 
-            await this.processExistingSkillDirectory(dirURI, skills, disposables, watchedDirectories);
+            await this.processExistingSkillDirectory(dirURI, skills, disposables, watchedDirectories, qualifier);
         } catch (error) {
             this.logger.error(`Error processing configured directory '${directoryPath}': ${error}`);
         }
@@ -321,7 +383,8 @@ export class DefaultSkillService implements SkillService {
         dirURI: URI,
         skills: Map<string, Skill>,
         disposables: DisposableCollection,
-        watchedDirectories: Set<string>
+        watchedDirectories: Set<string>,
+        qualifier?: string
     ): Promise<void> {
         const stat = await this.fileService.resolve(dirURI);
         if (!stat.children) {
@@ -331,14 +394,14 @@ export class DefaultSkillService implements SkillService {
         for (const child of stat.children) {
             if (child.isDirectory) {
                 const directoryName = child.name;
-                await this.loadSkillFromDirectory(child.resource, directoryName, skills);
+                await this.loadSkillFromDirectory(child.resource, directoryName, skills, qualifier);
             }
         }
 
         this.setupDirectoryWatcher(dirURI, disposables, watchedDirectories);
     }
 
-    protected async loadSkillFromDirectory(directoryUri: URI, directoryName: string, skills: Map<string, Skill>): Promise<void> {
+    protected async loadSkillFromDirectory(directoryUri: URI, directoryName: string, skills: Map<string, Skill>, qualifier?: string): Promise<void> {
         const skillFileUri = directoryUri.resolve(SKILL_FILE_NAME);
 
         const fileExists = await this.fileService.exists(skillFileUri);
@@ -366,19 +429,20 @@ export class DefaultSkillService implements SkillService {
                 return;
             }
 
-            const skillName = parsed.metadata.name;
+            const qualifiedName = Skill.qualifyName(parsed.metadata.name, qualifier);
 
-            if (skills.has(skillName)) {
-                this.logger.warn(`Skill '${skillName}': Duplicate skill found in '${directoryName}', using first discovered instance`);
+            if (skills.has(qualifiedName)) {
+                this.logger.warn(`Skill '${qualifiedName}': Duplicate skill found in '${directoryName}', using first discovered instance`);
                 return;
             }
 
             const skill: Skill = {
                 ...parsed.metadata,
-                location: skillFileUri.path.fsPath()
+                location: skillFileUri.path.fsPath(),
+                qualifiedName
             };
 
-            skills.set(skillName, skill);
+            skills.set(qualifiedName, skill);
         } catch (error) {
             this.logger.error(`Failed to load skill from '${directoryName}': ${error}`);
         }
