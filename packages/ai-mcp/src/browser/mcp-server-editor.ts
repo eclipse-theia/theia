@@ -338,8 +338,10 @@ export class MCPServerEditorImpl implements MCPServerEditor {
 
 const STALE_KEYS_BY_SERVER_TYPE: Record<MCPServerFormData['serverType'], readonly string[]> = {
     'local': ['serverUrl', 'serverAuthToken', 'serverAuthTokenHeader', 'headers', 'oauth'],
-    'remote': ['command', 'args', 'env', 'oauth'],
-    'remote-oauth': ['command', 'args', 'env', 'serverAuthToken', 'serverAuthTokenHeader']
+    // The plugin fields go with `command`: they only mean anything for a local server, and leaving
+    // them on an entry the user just turned into a remote one would keep a dead plugin root on it.
+    'remote': ['command', 'args', 'env', 'cwd', 'pluginRoot', 'pluginData', 'oauth'],
+    'remote-oauth': ['command', 'args', 'env', 'cwd', 'pluginRoot', 'pluginData', 'serverAuthToken', 'serverAuthTokenHeader']
 };
 
 function parseKeyValuePairs(input: string): Record<string, string> | undefined {
