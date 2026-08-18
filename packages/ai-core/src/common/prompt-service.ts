@@ -983,10 +983,12 @@ export class PromptServiceImpl implements PromptService {
             let variableName = variableAndArg;
             let argument: string | undefined;
 
-            const parts = variableAndArg.split(':', 2);
-            if (parts.length > 1) {
-                variableName = parts[0];
-                argument = parts[1];
+            // First colon only, keeping the whole remainder: `split(':', 2)` truncates instead, which
+            // mangles every argument containing a colon, e.g. `{{file:C:\some\path}}`.
+            const separatorIndex = variableAndArg.indexOf(':');
+            if (separatorIndex >= 0) {
+                variableName = variableAndArg.substring(0, separatorIndex);
+                argument = variableAndArg.substring(separatorIndex + 1);
             }
 
             let replacementValue: string;
