@@ -31,6 +31,36 @@ import { MessageService, nls, PreferenceScope, PreferenceService } from '@theia/
 import { PROMPT_VARIABLE } from '@theia/ai-core/lib/browser/prompt-variable-contribution';
 import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
 import { MCPServerEditor } from './mcp-server-editor';
+import { AgentPluginUiBridge } from '@theia/ai-core/lib/browser/agent-plugin-ui-bridge';
+
+interface AgentPluginProvenanceLinkProps {
+    pluginId: string;
+    pluginName: string;
+    reveal: (pluginId: string) => void;
+}
+
+/** A component rather than an inline handler, so the click closes over the id without reallocating. */
+class AgentPluginProvenanceLink extends React.Component<AgentPluginProvenanceLinkProps> {
+
+    protected readonly handleClick = (event: React.MouseEvent<HTMLButtonElement>): void => {
+        event.stopPropagation();
+        this.props.reveal(this.props.pluginId);
+    };
+
+    override render(): React.ReactNode {
+        return (
+            <button
+                type="button"
+                className="mcp-server-registry-link"
+                onClick={this.handleClick}
+                title={nls.localize('theia/ai/mcpConfiguration/openAgentPlugin', 'Open the Agent Plugin that provides this server: {0}', this.props.pluginName)}
+            >
+                <i className={`${codicon('extensions')} mcp-server-registry-link-icon`} />
+                {nls.localize('theia/ai/mcpConfiguration/viaAgentPlugin', 'via {0}', this.props.pluginName)}
+            </button>
+        );
+    }
+}
 
 @injectable()
 export class AIMCPConfigurationWidget extends ReactWidget {
@@ -67,6 +97,9 @@ export class AIMCPConfigurationWidget extends ReactWidget {
     @inject(MCPRegistryUiBridge) @optional()
     protected readonly registryBridge?: MCPRegistryUiBridge;
 
+    @inject(AgentPluginUiBridge) @optional()
+    protected readonly agentPluginBridge?: AgentPluginUiBridge;
+
     @postConstruct()
     protected init(): void {
         this.id = AIMCPConfigurationWidget.ID;
@@ -75,8 +108,16 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         this.toDispose.push(this.mcpFrontendNotificationService.onDidUpdateMCPServers(async () => {
             this.loadServers();
         }));
+        if (this.agentPluginBridge) {
+            // An install changes which plugin names resolve, so the labels must re-render.
+            this.toDispose.push(this.agentPluginBridge.onDidChange(() => this.update()));
+        }
         this.loadServers();
     }
+
+    protected readonly revealPlugin = (pluginId: string): void => {
+        this.agentPluginBridge?.revealPlugin(pluginId);
+    };
 
     protected async loadServers(): Promise<void> {
         const serverNames = (await this.mcpFrontendService.getServerNames()).sort((a, b) => a.localeCompare(b));
@@ -262,6 +303,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                 <div className="mcp-server-name">
                     {server.name}
                     {this.renderRegistryAffordance(server)}
+                    {this.renderAgentPluginAffordance(server)}
                 </div>
                 <div className="mcp-server-header-controls">
                     {this.renderStatusBadge(server)}
@@ -353,6 +395,40 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                         </div>
                     ))}
                 </div>
+            </div>
+        );
+    }
+
+    /**
+     * Read-only on purpose: all three are derived from where `@theia/ai-registry` installed the Agent
+     * Plugin, so there is nothing for the user to author. Shown rather than hidden because they
+     * decide where the process runs and what `PLUGIN_ROOT` and `PLUGIN_DATA` point at.
+     */
+    protected renderPluginPathsSection(server: MCPServerDescription): React.ReactNode {
+        if (!isLocalMCPServerDescription(server)) {
+            return;
+        }
+        return (
+            <>
+                {this.renderReadOnlyPath(nls.localizeByDefault('Working Directory'), server.cwd)}
+                {this.renderReadOnlyPath(nls.localize('theia/ai/mcpConfiguration/pluginRoot', 'Plugin Root'), server.pluginRoot, 'PLUGIN_ROOT')}
+                {this.renderReadOnlyPath(nls.localize('theia/ai/mcpConfiguration/pluginData', 'Plugin Data'), server.pluginData, 'PLUGIN_DATA')}
+            </>
+        );
+    }
+
+    /** @param variable the environment variable the value is exported as, when it is one. */
+    protected renderReadOnlyPath(label: string, value: string | undefined, variable?: string): React.ReactNode {
+        if (!value) {
+            return;
+        }
+        return (
+            <div className="mcp-property-row">
+                <span className="mcp-property-label">{label}:</span>
+                <code className="mcp-property-value mcp-property-readonly" title={value}>
+                    {value}
+                    {variable && <span className="mcp-property-variable">{variable}</span>}
+                </code>
             </div>
         );
     }
@@ -571,6 +647,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                     {this.renderCommandSection(server)}
                     {this.renderArgumentsSection(server)}
                     {this.renderEnvironmentSection(server)}
+                    {this.renderPluginPathsSection(server)}
                     {this.renderServerUrlSection(server)}
                     {this.renderServerAuthTokenHeaderSection(server)}
                     {this.renderServerAuthTokenSection(server)}
@@ -636,6 +713,29 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                 <i className={`${codicon('link-external')} mcp-server-registry-link-icon`} />
                 {nls.localize('theia/ai/mcpConfiguration/fromRegistryLink', 'From registry')}
             </button>
+        );
+    }
+
+    /**
+     * In addition to the registry affordance, not replacing it: this reveals the owning plugin, and a
+     * plugin-contributed server has no `serverId` of its own. Hidden when no bridge is bound or the
+     * plugin is not installed, either of which would leave only a bare identifier to show.
+     */
+    protected renderAgentPluginAffordance(server: MCPServerDescription): React.ReactNode {
+        const pluginId = server.registryMetadata?.pluginId;
+        if (!pluginId) {
+            return undefined;
+        }
+        const plugin = this.agentPluginBridge?.getPlugin(pluginId);
+        if (!plugin) {
+            return undefined;
+        }
+        return (
+            <AgentPluginProvenanceLink
+                pluginId={pluginId}
+                pluginName={plugin.name}
+                reveal={this.revealPlugin}
+            />
         );
     }
 

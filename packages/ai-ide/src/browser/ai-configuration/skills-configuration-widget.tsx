@@ -14,15 +14,44 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { nls, URI } from '@theia/core';
+import { Disposable, nls, URI } from '@theia/core';
 import { codicon, OpenerService, open, ReactWidget } from '@theia/core/lib/browser';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { Skill } from '@theia/ai-core/lib/common/skill';
 import { SkillService } from '@theia/ai-core/lib/browser/skill-service';
+import { AgentPluginUiBridge } from '@theia/ai-core/lib/browser/agent-plugin-ui-bridge';
 import { PromptFragment, PromptService } from '@theia/ai-core/lib/common/prompt-service';
 import { Agent, AgentService } from '@theia/ai-core';
 import { isChatAgent } from '@theia/ai-chat';
+
+/** A component rather than an inline handler, so the reveal closes over the id without reallocating. */
+export class SkillPluginOrigin extends React.Component<SkillPluginOrigin.Props> {
+
+    override render(): React.ReactNode {
+        const { pluginName } = this.props;
+        return (
+            <button
+                className="ai-skill-plugin-origin"
+                onClick={this.reveal}
+                title={nls.localize('theia/ai/ide/skillsConfiguration/skill/revealPlugin', 'Show the plugin \'{0}\'', pluginName)}
+            >
+                {nls.localize('theia/ai/ide/skillsConfiguration/skill/viaPlugin', 'via {0}', pluginName)}
+            </button>
+        );
+    }
+
+    protected reveal = () => {
+        this.props.revealPlugin(this.props.pluginId);
+    };
+}
+export namespace SkillPluginOrigin {
+    export interface Props {
+        pluginId: string;
+        pluginName: string;
+        revealPlugin: (pluginId: string) => void;
+    }
+}
 
 @injectable()
 export class AISkillsConfigurationWidget extends ReactWidget {
@@ -40,6 +69,9 @@ export class AISkillsConfigurationWidget extends ReactWidget {
 
     @inject(AgentService)
     protected readonly agentService: AgentService;
+
+    @inject(AgentPluginUiBridge) @optional()
+    protected readonly agentPluginUiBridge?: AgentPluginUiBridge;
 
     protected skills: Skill[] = [];
     protected slashCommands: PromptFragment[] = [];
@@ -68,12 +100,14 @@ export class AISkillsConfigurationWidget extends ReactWidget {
             this.agentService.onDidChangeAgents(() => {
                 this.loadAgents();
                 this.update();
-            })
+            }),
+            // Names come from the bridge, so an install changes this even when the skills do not.
+            this.agentPluginUiBridge?.onDidChange(() => this.update()) ?? Disposable.NULL
         ]);
     }
 
     protected loadSkills(): void {
-        this.skills = this.skillService.getSkills().sort((a, b) => a.name.localeCompare(b.name));
+        this.skills = this.skillService.getSkills().sort((a, b) => a.qualifiedName.localeCompare(b.qualifiedName));
     }
 
     protected loadSlashCommands(): void {
@@ -143,8 +177,11 @@ export class AISkillsConfigurationWidget extends ReactWidget {
 
     protected renderSkillRow(skill: Skill): React.ReactNode {
         return (
-            <tr key={skill.name}>
-                <td className="skill-name-column"><span>{skill.name}</span></td>
+            <tr key={skill.qualifiedName}>
+                <td className="skill-name-column">
+                    <span>{skill.qualifiedName}</span>
+                    {this.renderSkillPluginOrigin(skill)}
+                </td>
                 <td className="skill-description-column"><span>{skill.description}</span></td>
                 <td className="skill-location-column"><span>{skill.location}</span></td>
                 <td className="skill-open-column">
@@ -159,6 +196,26 @@ export class AISkillsConfigurationWidget extends ReactWidget {
             </tr>
         );
     }
+
+    /**
+     * Nothing for a skill from a built-in root, which is the common case, and nothing when the
+     * qualifier belongs to no installed plugin - a bare qualifier is not worth a link.
+     */
+    protected renderSkillPluginOrigin(skill: Skill): React.ReactNode {
+        const qualifier = Skill.qualifierOf(skill);
+        if (!qualifier) {
+            return undefined;
+        }
+        const plugin = this.agentPluginUiBridge?.getPluginByQualifier(qualifier);
+        if (!plugin) {
+            return undefined;
+        }
+        return <SkillPluginOrigin pluginId={plugin.pluginId} pluginName={plugin.name} revealPlugin={this.revealPlugin} />;
+    }
+
+    protected revealPlugin = (pluginId: string): void => {
+        this.agentPluginUiBridge?.revealPlugin(pluginId);
+    };
 
     protected renderSlashCommandsSection(): React.ReactNode {
         return (

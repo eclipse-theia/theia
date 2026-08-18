@@ -312,3 +312,19 @@
 .mcp-server-header .mcp-action-button.mcp-delete-button:hover {
   background-color: var(--theia-errorBackground);
 }
+
+/* Agent Plugin paths: displayed, never editable - `@theia/ai-registry` derives them from where the
+   plugin was installed, and the edit dialog has no field for them. */
+.mcp-property-readonly {
+  color: var(--theia-descriptionForeground);
+  word-break: break-all;
+}
+
+.mcp-property-variable {
+  margin-left: calc(var(--theia-ui-padding) / 2);
+  padding: 0 4px;
+  border: 1px solid var(--theia-panel-border);
+  border-radius: 3px;
+  font-size: calc(var(--theia-ui-font-size0) * 0.9);
+  color: var(--theia-descriptionForeground);
+}

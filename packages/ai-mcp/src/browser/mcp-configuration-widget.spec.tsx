@@ -41,6 +41,8 @@ import {
 } from '../common/mcp-server-manager';
 import { AIMCPConfigurationWidget } from './mcp-configuration-widget';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { AgentPluginUiBridge, InstalledAgentPluginInfo } from '@theia/ai-core/lib/browser/agent-plugin-ui-bridge';
+import { MCPRegistryUiBridge } from './mcp-registry-ui-bridge';
 
 disableJSDOM();
 
@@ -102,6 +104,9 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
         onStopServer?: (serverName: string) => void;
         onWarn?: (message: string) => void;
         onInfo?: (message: string) => void;
+        installedPlugins?: InstalledAgentPluginInfo[];
+        onRevealPlugin?: (pluginId: string) => void;
+        onOpenRegistry?: (serverId?: string) => void;
     } = {}): TestAIMCPConfigurationWidget {
         const onDidUpdateMCPServersEmitter = new Emitter<void>();
         const widget = new TestAIMCPConfigurationWidget();
@@ -133,6 +138,19 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
                 options.onPreferenceSet?.(value as Record<string, object>);
             }
         };
+        const installedPlugins = options.installedPlugins ?? [];
+        (widget as unknown as { agentPluginBridge: AgentPluginUiBridge }).agentPluginBridge = {
+            getPlugin: pluginId => installedPlugins.find(plugin => plugin.pluginId === pluginId),
+            // Only the skills widget looks a plugin up by qualifier; a server carries the identifier.
+            getPluginByQualifier: () => undefined,
+            revealPlugin: pluginId => options.onRevealPlugin?.(pluginId),
+            onDidChange: Event.None
+        };
+        if (options.onOpenRegistry) {
+            (widget as unknown as { registryBridge: Partial<MCPRegistryUiBridge> }).registryBridge = {
+                openRegistry: async serverId => { options.onOpenRegistry?.(serverId); }
+            };
+        }
         return widget;
     }
 
@@ -412,6 +430,107 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
             renderWidget(widget);
 
             expect(host.querySelector('button[title="Sign In"]')).to.be.null;
+        });
+    });
+
+    describe('Agent Plugin paths', () => {
+
+        const pluginRoot = '/home/user/.agents/plugins/io.github.acme_devtools';
+        const pluginServer: LocalMCPServerDescription = {
+            name: 'validator',
+            command: './bin/validator',
+            status: MCPServerStatus.NotRunning,
+            cwd: pluginRoot,
+            pluginRoot,
+            pluginData: '/home/user/.agents/plugin-data/io.github.acme_devtools'
+        };
+
+        it('shows the working directory and the plugin roots, which the user cannot author', () => {
+            const widget = createWidget({ servers: [pluginServer] });
+            renderWidget(widget);
+
+            const readOnly = Array.from(host.querySelectorAll('.mcp-property-readonly')).map(node => node.textContent);
+            expect(readOnly).to.have.lengthOf(3);
+            expect(readOnly[0]).to.contain(pluginRoot);
+            expect(readOnly[1]).to.contain('PLUGIN_ROOT');
+            expect(readOnly[2]).to.contain('/home/user/.agents/plugin-data/io.github.acme_devtools');
+            expect(readOnly[2]).to.contain('PLUGIN_DATA');
+        });
+
+        it('shows no plugin path rows for a server the user configured by hand', () => {
+            const widget = createWidget({ servers: [{ name: 'own', command: 'my-server', status: MCPServerStatus.NotRunning }] });
+            renderWidget(widget);
+
+            expect(host.querySelectorAll('.mcp-property-readonly')).to.have.lengthOf(0);
+        });
+    });
+
+    describe('Agent Plugin provenance', () => {
+        const devtools: InstalledAgentPluginInfo = { pluginId: 'io.github.acme/devtools', name: 'Acme Devtools' };
+
+        const pluginServer: LocalMCPServerDescription = {
+            name: 'validator',
+            command: './bin/validator',
+            status: MCPServerStatus.NotRunning,
+            registryMetadata: { pluginId: devtools.pluginId }
+        };
+
+        function pluginLink(): HTMLButtonElement | null {
+            return host.querySelector('button[title^="Open the Agent Plugin"]') as HTMLButtonElement | null;
+        }
+
+        it('labels a plugin-provided server with the name of the plugin that supplied it', () => {
+            const widget = createWidget({ servers: [pluginServer], installedPlugins: [devtools] });
+            renderWidget(widget);
+
+            expect(host.textContent).to.contain('via Acme Devtools');
+        });
+
+        it('reveals the owning plugin rather than a registry server when the provenance link is clicked', () => {
+            const revealed: string[] = [];
+            const openedRegistryEntries: (string | undefined)[] = [];
+            const widget = createWidget({
+                servers: [pluginServer],
+                installedPlugins: [devtools],
+                onRevealPlugin: pluginId => revealed.push(pluginId),
+                onOpenRegistry: serverId => openedRegistryEntries.push(serverId)
+            });
+            renderWidget(widget);
+
+            pluginLink()!.click();
+
+            expect(revealed).to.deep.equal([devtools.pluginId]);
+            expect(openedRegistryEntries).to.be.empty;
+        });
+
+        it('renders nothing rather than a bare identifier when the owning plugin is not installed', () => {
+            const widget = createWidget({ servers: [pluginServer], installedPlugins: [] });
+            renderWidget(widget);
+
+            expect(pluginLink()).to.be.null;
+            expect(host.textContent).to.not.contain(devtools.pluginId);
+        });
+
+        it('shows the plugin label alongside the registry indicator when the entry carries both', () => {
+            const widget = createWidget({
+                servers: [{ ...pluginServer, registryMetadata: { serverId: 'io.github.acme/validator', pluginId: devtools.pluginId } }],
+                installedPlugins: [devtools],
+                onOpenRegistry: () => { }
+            });
+            renderWidget(widget);
+
+            expect(host.textContent).to.contain('From registry');
+            expect(host.textContent).to.contain('via Acme Devtools');
+        });
+
+        it('shows no provenance label for a server that was not contributed by a plugin', () => {
+            const widget = createWidget({
+                servers: [{ name: 'plain-local', command: 'npx', status: MCPServerStatus.NotRunning }],
+                installedPlugins: [devtools]
+            });
+            renderWidget(widget);
+
+            expect(pluginLink()).to.be.null;
         });
     });
 });

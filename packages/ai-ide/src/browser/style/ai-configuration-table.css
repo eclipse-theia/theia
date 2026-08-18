@@ -95,6 +95,23 @@
   margin-bottom: calc(var(--theia-ui-padding) * 3);
 }
 
+.ai-skills-section .ai-skill-plugin-origin {
+  display: block;
+  margin-top: calc(var(--theia-ui-padding) / 3);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--theia-textLink-foreground);
+  font-size: 0.9em;
+  cursor: pointer;
+  text-align: left;
+}
+
+.ai-skills-section .ai-skill-plugin-origin:hover {
+  color: var(--theia-textLink-activeForeground);
+  text-decoration: underline;
+}
+
 .ai-slash-commands-section .slash-command-name-column {
   font-family: var(--theia-code-font-family);
   white-space: nowrap;
