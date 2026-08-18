@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 STMicroelectronics and others.
+// Copyright (C) 2026 EclipseSource and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,16 +14,26 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MeasurementResult } from '@theia/core';
+import { WalkthroughStepMedia } from '@theia/plugin-ext/lib/common/plugin-protocol';
 
-export const measurementNotificationServicePath = '/services/measurement-notification';
+export interface WalkthroughStep {
+    id: string;
+    title: string;
+    description: string;
+    media?: WalkthroughStepMedia;
+    completionEvents?: string[];
+    when?: string;
+    isComplete: boolean;
+}
 
-export const MeasurementNotificationService = Symbol('MeasurementNotificationService');
-export interface MeasurementNotificationService {
-    /**
-     * Notify the backend when a fronted stopwatch provides a new measurement.
-     * @param frontendId The unique id associated with the frontend that sends the notification
-     * @param result The new measurement result
-     */
-    onFrontendMeasurement(frontendId: string, result: MeasurementResult): void;
+export interface Walkthrough {
+    id: string;
+    title: string;
+    description: string;
+    steps: WalkthroughStep[];
+    when?: string;
+    icon?: string;
+    pluginId: string;
+    /** Icon of the contributing extension, as a backend relative path. */
+    pluginIcon?: string;
 }

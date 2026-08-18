@@ -34,4 +34,21 @@ describe('PreferenceProviderImpl', () => {
         );
         expect(result).deep.equals({ 'configurations': [{ 'name': 'test1', 'request': 'launch' }, { 'name': 'test2' }], 'compounds': [] });
     });
+    it('should ignore reserved keys when merging', () => {
+        const payload = JSON.parse('{"__proto__":{"injected":"yes"}}');
+        const result = PreferenceUtils.merge({ 'safe': true }, payload);
+        // A modified Object.prototype leaks onto every object, so a freshly created `{}`
+        // must not inherit the injected key and the result must stay a plain object.
+        expect(({} as Record<string, unknown>).injected).to.equal(undefined);
+        expect(Object.getPrototypeOf(result)).to.equal(Object.prototype);
+        expect(result).deep.equals({ 'safe': true });
+    });
+    it('should ignore nested reserved keys when merging', () => {
+        const payload = JSON.parse('{"parent":{"__proto__":{"injected":"yes"},"valid":"true"}}');
+        const result = PreferenceUtils.merge({ 'parent': { 'existing': true } }, payload);
+        // The nested reserved key is dropped while the sibling `valid` is still merged, and a
+        // freshly created `{}` must not inherit the injected key.
+        expect(({} as Record<string, unknown>).injected).to.equal(undefined);
+        expect(result).deep.equals({ 'parent': { 'existing': true, 'valid': 'true' } });
+    });
 });

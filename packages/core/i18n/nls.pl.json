@@ -75,6 +75,15 @@
         "apiKey": {
           "description": "Wprowadź klucz API swojego oficjalnego konta Anthropic. **Uwaga:** Korzystając z tej preferencji, klucz API Anthropic zostanie zapisany w postaci zwykłego tekstu na komputerze, na którym działa Theia. Aby bezpiecznie ustawić klucz, użyj zmiennej środowiskowej `ANTHROPIC_API_KEY`."
         },
+        "compaction": {
+          "default": "Należy stosować się do globalnego ustawienia kompresji po stronie serwera czatu.",
+          "description": "Zastąpienie natywnej dla dostawcy funkcji kompresji po stronie serwera dla modeli Anthropic. Opcja „default” stosuje się do globalnego ustawienia czatu ({0}). Po skutecznym włączeniu tej opcji wykorzystywane jest API Anthropic Beta Messages, dzięki czemu dostawca może podsumowywać starsze tur rozmowy, gdy rozmowa przekroczy określony próg.",
+          "disabled": "Nigdy nie należy żądać kompakcji po stronie serwera dla modeli Anthropic.",
+          "enabled": "W przypadku modeli Anthropic należy zawsze żądać kompaktacji po stronie serwera."
+        },
+        "compactionTokenThreshold": {
+          "description": "Zastąp globalny próg tokenów wejściowych dla kompakcji po stronie serwera w modelach Anthropic. Jeśli opcja nie jest ustawiona, obowiązuje ustawienie globalne lub domyślne dostawcy. Jeśli opcja jest ustawiona, wartość musi wynosić co najmniej 50 000 tokenów."
+        },
         "customEndpoints": {
           "apiKey": {
             "title": "Klucz dostępu do API udostępnianego pod podanym adresem URL lub „true”, aby użyć globalnego klucza API Anthropic."
@@ -142,7 +151,12 @@
         "couldNotFindMatchingLM": "Nie znaleziono pasującego modelu językowego. Sprawdź ustawienia!",
         "couldNotFindReadyLMforAgent": "Nie można znaleźć gotowego modelu językowego dla agenta {0}. Sprawdź swoją konfigurację!",
         "customAgents": {
-          "migrationResult": "Migracja niestandardowych agentów: {0} – migracja zakończona sukcesem, {1} – migracja nie powiodła się, {2} – kopia zapasowa starego pliku customAgents.yml zapisana w formacie .bak, {3} – nadpisania monitów włączone do pliku agent.md.",
+          "migratePrompt": {
+            "message": "Twoje niestandardowe agenty nadal korzystają ze starszego formatu `customAgents.yml`. Zalecamy migrację do nowego formatu dla poszczególnych agentów (`agents/<id>/agent.md`), z którego w przyszłości będzie korzystać {0}. Każdy agent otrzymuje własny plik umieszczony obok pliku `customAgents.yml`, a oryginał jest zachowywany jako kopia zapasowa o nazwie `customAgents.yml.bak`."
+          },
+          "migrationResult": {
+            "empty": "Migracja niestandardowego agenta: nie ma nic do migracji."
+          },
           "rerunMigration": "Ponowne uruchomienie migracji niestandardowego agenta"
         },
         "defaultAgent": {
@@ -230,8 +244,10 @@
       },
       "chat-ui": {
         "addContextVariable": "Dodaj zmienną kontekstową",
+        "agentDefaultModel": "domyślny agent",
         "agentDelegationDescription": "Inne agenty AI, którym można powierzyć zadania",
         "aiDisabled": "Funkcje AI są wyłączone.",
+        "allowedResourceUrls": "Zasoby zewnętrzne (obrazy, arkusze stylów, multimedia itp.), do których odwołują się odpowiedzi czatu AI, są domyślnie blokowane i zastępowane symbolem zastępczym, dopóki nie zostaną wyraźnie dozwolone. Zasoby, których adres URL zaczyna się od jednego ze skonfigurowanych prefiksów, są wyświetlane bezpośrednio, bez blokowania. Należy podać pełny adres źródłowy z końcowym ukośnikiem (np. „https://example.com/”), aby uniknąć niezamierzonych dopasowań. Należy dodawać wyłącznie źródła, którym w pełni ufasz.",
         "applyAll": "Zastosuj wszystko",
         "applyAllTitle": "Zastosuj wszystkie oczekujące zmiany",
         "askQuestion": "Zadaj pytanie",
@@ -265,8 +281,12 @@
         "command-part-renderer": {
           "commandNotExecutable": "Polecenie ma identyfikator „{0}”, ale nie można go wykonać z okna czatu."
         },
+        "compaction-part-renderer": {
+          "compactionMarker": "Skrócona wersja rozmowy"
+        },
         "copyCodeBlock": "Skopiuj blok kodu",
         "couldNotSendRequestToSession": "Nie udało się wysłać żądania „{0}” do sesji {1}",
+        "delegatedSession": "Delegowane",
         "delegation-response-renderer": {
           "interactionNeeded": "Wymagana interakcja użytkownika",
           "prompt": {
@@ -279,13 +299,11 @@
           "starting": "Rozpoczęcie delegowania...",
           "status": {
             "canceled": "anulowany",
-            "error": "błąd",
             "generating": "generowanie...",
             "starting": "rozpoczęcie..."
           }
         },
         "deleteChangeSet": "Usuń zestaw zmian",
-        "deleteChat": "Usuń czat",
         "editRequest": "Edytuj",
         "edited": "edytowane",
         "editedTooltipHint": "Ta wersja monitu została edytowana. Można ją zresetować w widoku konfiguracji AI.",
@@ -312,6 +330,8 @@
           "title": "Diagram Mermaid",
           "wheelZoomHint": "{0} + Przewiń"
         },
+        "modelBadgeTooltip": "Model językowy użyty do sformułowania tej odpowiedzi: {0}",
+        "modelUnavailable": "niedostępne",
         "noChatAgentsAvailable": "Brak dostępnych agentów czatu.",
         "noMatchingCapabilities": "Brak pasujących możliwości",
         "openDiff": "Otwórz Diff",
@@ -344,6 +364,9 @@
         "serverTools": "Narzędzia serwerowe",
         "serverToolsDescription": "Narzędzia serwerowe są uruchamiane po stronie serwera przez model LLM w infrastrukturze dostawcy.",
         "serverToolsWarning": "Narzędzia te są automatycznie zatwierdzane po ich wybraniu. Model może je uruchomić w dowolnym momencie.",
+        "sessionModel": "Model dla tego czatu",
+        "sessionModelDefault": "Wzór dla tego czatu ({0})",
+        "sessionModelUnavailable": "Model dla tego czatu jest niedostępny ({0}); w żądaniach należy używać domyślnego agenta",
         "sessionNotFoundForRetry": "Nie znaleziono sesji do ponownej próby",
         "skillsDescription": "Instrukcje dotyczące umiejętności wielokrotnego użytku, które można dodać do rozmowy.",
         "switchAgentMode": "Przełącz tryb agenta",
@@ -356,6 +379,8 @@
         "tokenUsageOverflow": "Wykorzystanie tokenów znacznie przekroczyło próg ostrzegawczy. Rozważ kompresję lub rozpoczęcie nowej sesji.",
         "tokenUsageTooltipCacheCreate": "Tworzenie pamięci podręcznej: {0}",
         "tokenUsageTooltipCacheRead": "Odczyt z pamięci podręcznej: {0}",
+        "tokenUsageTooltipCompactions": "Skrót {0} x",
+        "tokenUsageTooltipCumulative": "Wersja zbiorcza: {0}",
         "tokenUsageTooltipTotal": "Łącznie: {0} / {1} ({2} %)",
         "tokenUsageWarning": "Osiągnięto próg ostrzegawczy dotyczący wykorzystania tokenów.",
         "tokenUsageWarningEnabled": "Kontroluje, czy wyświetlane jest powiadomienie, gdy wykorzystanie tokenów w sesji czatu przekroczy skonfigurowany próg. Wymaga, aby dostawca modelu językowego zgłaszał wykorzystanie tokenów.",
@@ -486,7 +511,6 @@
         "openFileTooltip": "Kliknij, aby otworzyć plik w edytorze",
         "optionsCount": "{0} opcje",
         "partial": "Częściowe",
-        "pattern": "Wzorzec",
         "plan": "Tryb planu",
         "project": "projekt",
         "projectRoot": "katalog główny projektu",
@@ -860,6 +884,12 @@
           },
           "title": "Ustawienia niestandardowych żądań"
         },
+        "serverSideCompaction": {
+          "description": "Domyślnie włącz kompakcję po stronie serwera natywną dla danego dostawcy w przypadku żądań czatu. Gdy opcja jest włączona, modele, które ją obsługują, mogą automatycznie podsumowywać starsze tur rozmowy, gdy rozmowa przekroczy ustalony przez model próg, umożliwiając kontynuowanie długich sesji poza limitem kontekstu. Każdy dostawca oferuje własną opcję nadpisania, a poszczególne sesje czatu mogą tę opcję nadpisać w swoich ustawieniach sesji. Modele, które nie obsługują tej funkcji, ignorują ją."
+        },
+        "serverSideCompactionTokenThreshold": {
+          "description": "Domyślny próg liczby tokenów wejściowych, przy którym powinna zostać uruchomiona natywna dla dostawcy kompresja po stronie serwera. Dostawcy i poszczególne sesje czatu mogą nadpisać tę wartość. Jeśli nie jest ustawiona, dostawca wybiera swój domyślny próg. Jeśli jest ustawiona, wartość musi wynosić co najmniej 50 000 tokenów."
+        },
         "skillDirectories": {
           "description": "Dodatkowe katalogi zawierające definicje umiejętności (pliki SKILL.md). Umiejętności zapewniają instrukcje wielokrotnego użytku, do których mogą odwoływać się agenci AI. Katalogi .prompts/skills i .agents/skills w obszarze roboczym, katalog .agents/skills w katalogu domowym oraz katalog skills w folderze konfiguracyjnym produktu są zawsze uwzględnione."
         },
@@ -932,7 +962,6 @@
         "open-history-tooltip": "Otwórz historię AI...",
         "request-card": {
           "promptVariant": "Wariant monitu",
-          "response": "Odpowiedź",
           "timestamp": "Sygnatura czasowa"
         },
         "sortChronologically": {
@@ -1008,6 +1037,11 @@
           "msg": "Ten agent korzysta z **trybu agentycznego**. Aby umożliwić autonomiczny przebieg pracy, może on bezpośrednio zapisywać zmiany w plikach obszaru roboczego bez dodatkowego potwierdzenia.\n\nZaleca się korzystanie z kontroli wersji (np. Git), aby można było przeglądać i cofać zmiany.\n\nMożesz przełączyć się do **trybu edycji** za pomocą selektora trybu w obszarze wprowadzania czatu poniżej lub użyć agenta **Architect** do planowania w trybie tylko do odczytu.\n\nTo potwierdzenie jest zapisywane dla tego obszaru roboczego i nie będzie wyświetlane ponownie. Aby zresetować lub skonfigurować je globalnie, poszukaj `ai-features.agentMode.confirmed` w Ustawieniach.",
           "waiting": "Oczekiwanie na potwierdzenie..."
         },
+        "allowAllMode": {
+          "stripTooltip": "W tej sesji wywołania narzędzi AI są uruchamiane bez potwierdzenia. Należy je włączać wyłącznie w zaufanych środowiskach.",
+          "stripTooltipFooter": "Ustawia się za pomocą opcji --session-preference. Aby przywrócić zapisane ustawienia, należy ponownie uruchomić program bez tej opcji.",
+          "title": "Tryb „Zezwól na wszystko” w Theia AI"
+        },
         "app-tester": {
           "errorCheckingDevToolsServerStatus": "Sprawdzanie błędów statusu serwera DevTools MCP: {0}",
           "errorCheckingPlaywrightServerStatus": "Sprawdzanie błędów statusu serwera Playwright MCP: {0}",
@@ -1045,6 +1079,7 @@
         "chatRestrictedMessage": {
           "title": "Funkcje AI są ograniczone"
         },
+        "childInteractionNeeded": "Sesja delegowana wymaga Twojej uwagi",
         "codeReviewerAgent": {
           "description": "Asystent do przeglądu kodu, który analizuje zmiany w kodzie i zwraca ustrukturyzowane oceny. Sprawdza kryteria ukończenia, dowody kompilacji/lintowania/testowania oraz jakość kodu."
         },
@@ -1061,6 +1096,7 @@
             "startNewChat": "Rozmowy powinny być krótkie i konkretne. [Rozpocznij nową rozmowę]({0}) w sprawie nowego zadania lub [rozpocznij nową rozmowę z podsumowaniem tej rozmowy]({1})."
           }
         },
+        "collapseSession": "Zwiń „{0}”",
         "commandAgent": {
           "commandCallback": {
             "confirmAction": "Rozumiem",
@@ -1089,10 +1125,10 @@
             "edit": "Tryb domyślny"
           }
         },
-        "deleteChat": "Usuń czat",
         "enableAI": {
           "mdDescription": "To ustawienie umożliwia dostęp do najnowszych funkcji AI.            \n            Należy pamiętać, że funkcje te mogą generować            ciągłe żądania do modeli językowych (LLM), do których zapewniasz dostęp. Może to wiązać się z kosztami, które            należy dokładnie monitorować. Włączając tę opcję, użytkownik potwierdza świadomość tych zagrożeń.            \n            **Uwaga! Poniższe ustawienia w tej sekcji zaczną obowiązywać dopiero\n            po włączeniu głównego ustawienia funkcji. Po włączeniu funkcji należy skonfigurować co najmniej jednego            dostawcę LLM poniżej. Zobacz także [dokumentację](https://theia-ide.org/docs/user_ai/)**."
         },
+        "expandSession": "Rozwiń „{0}”",
         "exploreAgent": {
           "description": "Asystent do eksploracji kodu źródłowego, który wyodrębnia i syntetyzuje informacje z kodu źródłowego.         Przedstawia fakty dotyczące tego, co istnieje, dostarcza fragmenty kodu i opisuje zaobserwowane wzorce."
         },
@@ -1168,10 +1204,16 @@
           "description": "Agent do przeglądu PR oparty na sztucznej inteligencji, który koordynuje cały proces przeglądu kodu: pobiera informacje o PR, bada bazę kodu, przeprowadza ustrukturyzowaną analizę, interaktywnie prowadzi użytkownika przez wyniki za pomocą przeglądarek różnic, a opcjonalnie tworzy oczekujący przegląd na GitHubie."
         },
         "prompt-template-description": "Wybierz warianty monitów i dostosuj szablony monitów dla agentów AI w [widoku konfiguracji AI]({0}).",
+        "requiresApproval": "Wymagana jest Twoja zgoda",
         "restoredSession": "Przywrócona sesja",
         "restrictedModeDetails": "Czat AI, sugestie wbudowane, akcje kodu i szablony monitów są wyłączone",
         "restrictedModeLabel": "Funkcje AI (wyłączone w trybie ograniczonym)",
         "sectionRestored": "Przywrócono",
+        "sessionOverride": {
+          "defaultToolConfirmation": "Domyślne potwierdzenie działania narzędzia: {0}",
+          "toolConfirmation": "Nadpisywanie potwierdzeń dla poszczególnych narzędzi: {0}",
+          "toolConfirmationGeneric": "Zestaw nadpisów potwierdzeń dla poszczególnych narzędzi"
+        },
         "shellAllowlist": {
           "placeholder": "Np. „git log” (dokładnie) lub „git log *” (z argumentami)"
         },
@@ -1192,6 +1234,10 @@
         },
         "toolConfirmationInfo": {
           "header": "Potwierdzenie narzędzia"
+        },
+        "toolConfirmationOverrides": {
+          "stripTooltip": "Jedno lub więcej narzędzi AI zostało automatycznie zatwierdzonych dla tej sesji za pomocą flag wiersza poleceń.",
+          "title": "Nadpisywanie potwierdzeń narzędzia AI"
         },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
@@ -1244,7 +1290,6 @@
           "errorMessage": "Komunikat o błędzie",
           "lastActivity": "Ostatnia aktywność",
           "lastMessage": "Ostatni komunikat",
-          "messages": "Komunikaty",
           "multipleExchanges": "{0} giełdy",
           "oneExchange": "1 wymiana",
           "unread": "Nieprzeczytane"
@@ -1333,8 +1378,7 @@
             "title": "Zmienne środowiskowe"
           },
           "headers": {
-            "mdDescription": "Opcjonalne dodatkowe nagłówki dołączane do każdego żądania wysyłanego do serwera. Wartości nagłówków są przechowywane w preferencjach jako zwykły tekst; należy unikać zapisywania ich w ustawieniach obszaru roboczego, jeśli zawierają one poufne wartości.",
-            "title": "Nagłówki"
+            "mdDescription": "Opcjonalne dodatkowe nagłówki dołączane do każdego żądania wysyłanego do serwera. Wartości nagłówków są przechowywane w preferencjach jako zwykły tekst; należy unikać zapisywania ich w ustawieniach obszaru roboczego, jeśli zawierają one poufne wartości."
           },
           "mdDescription": "Serwery MCP można skonfigurować lokalnie za pomocą polecenia, argumentów i opcjonalnie zmiennych środowiskowych lub zdalnie, podając adres URL serwera, token uwierzytelniający, konfigurację OAuth oraz opcjonalnie nazwę nagłówka uwierzytelniającego. Dodatkowo można skonfigurować automatyczne uruchamianie (domyślnie włączone). Każdy serwer jest identyfikowany za pomocą unikalnego klucza, takiego jak „brave-search” lub „filesystem”. Aby uruchomić serwer, należy użyć polecenia „MCP: Start MCP Server”, które umożliwia wybranie żądanego serwera. Aby zatrzymać serwer, należy użyć polecenia „MCP: Stop MCP Server”. Należy pamiętać, że automatyczne uruchamianie zacznie obowiązywać dopiero po ponownym uruchomieniu systemu; za pierwszym razem serwer należy uruchomić ręcznie. Serwery zainstalowane z rejestru AI zawierają dodatkowy blok `registryMetadata`, który jest zarządzany automatycznie i nie jest przeznaczony do ręcznej edycji.\nPrzykładowa konfiguracja:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  },\n  \"oauth-protected-server\": {\n    \"serverUrl\": \"YOUR_OAUTH_PROTECTED_MCP_SERVER_URL\",\n    \"oauth\": {\n      \"clientId\": \"OPCJONALNY_IDENTYFIKATOR_KLIENTA\",\n      \"scopes\": [\"OPCJONALNY_ZAKRES\"]\n    }\n  }\n  }\n```",
           "oauth": {
@@ -1403,9 +1447,6 @@
         "stop": {
           "label": "MCP: Zatrzymaj serwer MCP"
         },
-        "tool": {
-          "noTools": "Brak dostępnych narzędzi."
-        },
         "useWorkspaceAsRoot": {
           "mdDescription": "Katalogi główne określają granice, w których serwery mogą działać w systemie plików. Jeśli opcja jest włączona, foldery obszaru roboczego będą używane jako katalogi główne, w przeciwnym razie serwery MCP będą miały dostęp do całego systemu plików. Zmiana tego ustawienia spowoduje ponowne uruchomienie wszystkich działających serwerów MCP w celu zastosowania nowej konfiguracji katalogów głównych.",
           "title": "Użyj obszaru roboczego jako root"
@@ -1422,7 +1463,6 @@
         "command": {
           "addServer": "Dodaj lokalną konfigurację MCP..."
         },
-        "connectingServer": "Łączenie...",
         "copiedAllList": "Skopiowano wszystkie narzędzia do schowka (lista wszystkich narzędzi)",
         "copiedAllSingle": "Skopiowano wszystkie narzędzia do schowka (pojedynczy fragment monitu ze wszystkimi narzędziami)",
         "copiedForPromptTemplate": "Skopiowano wszystkie narzędzia do schowka dla szablonu monitu                                     (pojedynczy fragment monitu ze wszystkimi narzędziami)",
@@ -1466,12 +1506,10 @@
           "saveChanges": "Zapisz zmiany",
           "serverName": "Nazwa serwera",
           "serverNamePlaceholder": "np. my-mcp-server",
-          "serverType": "Typ serwera",
           "serverUrlPlaceholder": "Np. https://mcp.example.com",
           "serverUrlRequired": "Adres URL serwera jest wymagany w przypadku serwerów zdalnych."
         },
         "fromRegistryLink": "Z rejestru",
-        "headers": "Nagłówki",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "Serwer autoryzacji",
         "oauthClientId": "Identyfikator klienta OAuth",
@@ -1497,6 +1535,15 @@
       "openai": {
         "apiKey": {
           "mdDescription": "Wprowadź klucz API swojego oficjalnego konta OpenAI. **Uwaga:** Korzystając z tej preferencji, klucz API Open AI zostanie zapisany w postaci zwykłego tekstu na komputerze, na którym działa Theia. Aby bezpiecznie ustawić klucz, użyj zmiennej środowiskowej `OPENAI_API_KEY`."
+        },
+        "compaction": {
+          "default": "Należy stosować się do globalnego ustawienia kompresji po stronie serwera czatu.",
+          "description": "Zastąp domyślną kompresję po stronie serwera dostawcy dla oficjalnych modeli OpenAI. Dotyczy to wyłącznie interfejsu API OpenAI Response; interfejs API Chat Completions ignoruje to ustawienie. Wartość „default” jest zgodna z globalnym ustawieniem czatu ({0}). Po skutecznym włączeniu tej opcji interfejs API Response otrzymuje polecenie podsumowania starszych tur rozmowy, gdy rozmowa przekroczy próg ustalony przez dostawcę.",
+          "disabled": "Nigdy nie należy żądać kompakcji po stronie serwera w przypadku oficjalnych modeli OpenAI.",
+          "enabled": "W przypadku oficjalnych modeli OpenAI należy zawsze żądać kompaktowania po stronie serwera."
+        },
+        "compactionTokenThreshold": {
+          "description": "Zastąp globalny próg tokenów wejściowych dla kompresji po stronie serwera w przypadku oficjalnych modeli OpenAI. Jeśli opcja nie jest ustawiona, obowiązuje ustawienie globalne lub domyślne dostawcy. Jeśli opcja jest ustawiona, wartość musi wynosić co najmniej 50 000 tokenów."
         },
         "customEndpoints": {
           "apiKey": {
@@ -1538,7 +1585,7 @@
           "description": "Oficjalne modele OpenAI do wykorzystania"
         },
         "useResponseApi": {
-          "mdDescription": "W przypadku oficjalnych modeli OpenAI należy używać nowszego interfejsu API OpenAI Response zamiast interfejsu API Chat Completion.To ustawienie dotyczy tylko oficjalnych modeli OpenAI — dostawcy niestandardowi muszą skonfigurować to indywidualnie. Należy pamiętać, że w przypadku interfejsu API odpowiedzi definicje wywołań narzędzi muszą być zgodne z [ścisłą definicją schematu](https://platform.openai.com/docs/guides/function-calling#strict-mode) Open AI. Dokładamy wszelkich starań, aby przekonwertować schematy niezgodne, ale nadal mogą wystąpić błędy."
+          "mdDescription": "W przypadku oficjalnych modeli OpenAI należy używać nowszego interfejsu API OpenAI Response zamiast interfejsu API Chat Completion. To ustawienie dotyczy wyłącznie oficjalnych modeli OpenAI — dostawcy niestandardowi muszą skonfigurować to indywidualnie."
         }
       },
       "promptTemplates": {
@@ -1588,6 +1635,10 @@
       },
       "session-settings-dialog": {
         "advancedSettings": "Ustawienia zaawansowane (JSON)",
+        "compactionHeader": "Kompaktowanie po stronie serwera",
+        "compactionLabel": "Kompaktowanie:",
+        "compactionNote": "Zastępuje globalne i indywidualne dla dostawcy ustawienia kompakcji dla tej sesji. Dotyczy wyłącznie dostawców obsługujących kompakcję po stronie serwera.",
+        "compactionTokenThreshold": "Próg tokenów:",
         "confirmationTimeout": "Limit czasu potwierdzenia",
         "confirmationTimeoutNote": "Automatycznie odrzucaj potwierdzenia narzędzi po upływie określonego czasu. Zastępuje to globalne ustawienie dla tej sesji.",
         "enableConfirmationTimeout": "Włącz limit czasu potwierdzenia",
@@ -1722,6 +1773,13 @@
       "fileChangeSetTitle": "Proponowane zmiany"
     },
     "ai-chat-ui": {
+      "blockedResource": {
+        "allow": "Zezwól na tę zablokowaną treść",
+        "aria": "Zablokowane zasoby zewnętrzne: {0}",
+        "inlineContent": "(treść zewnętrzna wbudowana)",
+        "label": "Zablokowano zasób zewnętrzny:",
+        "resourcesToAllow": "{0} zasoby zostaną włączone"
+      },
       "browseAllChats": "Przeglądaj wszystkie czaty...",
       "confirm": "Potwierdź",
       "deleteChat": "Usuń czat",
@@ -1730,6 +1788,7 @@
       "noOutput": "Brak danych wyjściowych",
       "open-current-session-summary": "Otwórz podsumowanie bieżącej sesji",
       "open-settings-tooltip": "Otwórz ustawienia AI...",
+      "openSession": "Otwórz sesję czatu",
       "renameChat": "Zmień nazwę czatu",
       "scroll-lock": "Zablokuj przewijanie",
       "scroll-unlock": "Odblokuj przewijanie",
@@ -1774,11 +1833,17 @@
         "argumentHint": "<numer biletu>",
         "description": "Przeanalizuj zgłoszenie GitHub i wdroż rozwiązanie."
       },
+      "newChat": "Nowy czat",
+      "noSessions": "Brak sesji czatu.",
       "open-ai-configuration-tooltip": "Konfiguracja Open AI",
+      "perspective": {
+        "aiFirst": "AI First"
+      },
       "rememberCommand": {
         "argumentHint": "[wskazówka dotycząca tematu]",
         "description": "Wyodrębnij tematy z rozmowy i zaktualizuj informacje o projekcie."
       },
+      "sessionsView": "Sesje AI",
       "ticketCommand": {
         "argumentHint": "<numer biletu>",
         "description": "Przeanalizuj zgłoszenie GitHub i stwórz plan wdrożenia."
@@ -1900,6 +1965,41 @@
       "timeout": "Limit czasu",
       "workingDirectory": "Katalog roboczy"
     },
+    "ai-tool-sketchpad": {
+      "addItemProperty": "Dodaj właściwość elementu",
+      "addParameter": "Dodaj parametr",
+      "addProperty": "Dodaj właściwość",
+      "addTool": "Dodaj narzędzie",
+      "askAtRuntimeHint": "Gdy model LLM wywoła to narzędzie, otworzy się okienko z prośbą o podanie wartości zwracanej.",
+      "askReturnPlaceholder": "Wprowadź wartość zwracaną dla tego wywołania narzędzia...",
+      "askReturnPrompt": "Narzędzie „{0}” zostało wywołane za pomocą: {1}",
+      "confirmDelete": "Czy na pewno chcesz usunąć narzędzie „{0}”?",
+      "descriptionPlaceholder": "Opisz, do czego służy to narzędzie...",
+      "itemType": "Typ elementu:",
+      "label": "Narzędzie AI Sketchpad",
+      "nParameters": "{0} parametry",
+      "nameDuplicate": "Narzędzie o tej nazwie już istnieje.",
+      "nameEmpty": "Nazwa narzędzia nie może być pusta.",
+      "nameInvalid": "Nazwa narzędzia może zawierać wyłącznie litery, cyfry, znaki podkreślenia i łączniki (1–128 znaków).",
+      "noItemProperties": "Nie zdefiniowano żadnych właściwości elementów.",
+      "noParameters": "Nie zdefiniowano żadnych parametrów.",
+      "noTools": "Brak narzędzi.",
+      "oneParameter": "1 parametr",
+      "parameters": "Parametry",
+      "required": "Wymagane",
+      "returnMode": "Tryb powrotu",
+      "returnModeAskAtRuntime": "Zapytaj w czasie wykonywania",
+      "returnModeAskShort": "Zapytaj w czasie wykonywania",
+      "returnModeStatic": "Statyczna wartość zwracana",
+      "returnModeStaticShort": "Statyczne",
+      "selectTool": "Wybierz narzędzie do edycji lub dodaj nowe, aby rozpocząć szkicowanie.",
+      "staticReturn": "Statyczna wartość zwracana",
+      "staticReturnHint": "Ta stała wartość jest zwracana za każdym razem, gdy wywoływane jest narzędzie, niezależnie od argumentów wejściowych.",
+      "staticReturnPlaceholder": "Wartość zwracana po uruchomieniu tego narzędzia (np. ciąg JSON)",
+      "toolName": "Nazwa narzędzia",
+      "toolNamePlaceholder": "np. getWeather",
+      "untitledTool": "Narzędzie bez tytułu"
+    },
     "callhierarchy": {
       "noCallers": "Nie wykryto żadnych połączeń.",
       "open": "Otwórz hierarchię wywołań"
@@ -1985,6 +2085,7 @@
         "visual": "Wyświetl wizualny podgląd karty."
       },
       "highlightModifiedTabs": "Kontroluje, czy górna ramka jest rysowana na zmodyfikowanych (brudnych) zakładkach edytora, czy nie.",
+      "jumpListName": "Ostatnie obszary robocze",
       "keybinding": {
         "duplicateModifierError": "Nie można przetworzyć skrótu klawiszowego {0} Duplikaty modyfikatorów",
         "metaError": "Nie można przetworzyć skrótu klawiszowego {0} meta dotyczy wyłącznie systemu OSX",
@@ -2005,6 +2106,11 @@
         "clipboardWarnFirefox": "Interfejs API schowka nie jest dostępny. Można go włączyć, wybierając opcję „{0}” na stronie „{1}”. Następnie należy ponownie załadować Theia. Należy pamiętać, że umożliwi to przeglądarce FireFox pełny dostęp do schowka systemowego."
       },
       "pasteWarn": "Proszę użyć polecenia wklejania lub skrótu klawiszowego przeglądarki.",
+      "perspective": {
+        "resetPerspective": "Resetuj perspektywę (funkcja eksperymentalna)",
+        "selectPerspective": "Wybierz perspektywę",
+        "switchPerspective": "Zmiana perspektywy (funkcja eksperymentalna)"
+      },
       "quitMessage": "Wszelkie niezapisane zmiany nie zostaną zapisane.",
       "resetWorkbenchLayout": "Resetuj układ środowiska roboczego",
       "searchbox": {
@@ -2223,6 +2329,11 @@
     },
     "markers": {
       "clearAll": "Wyczyść wszystko",
+      "copyAsText": "Kopiuj jako tekst",
+      "export": "Eksportuj",
+      "exportProblems": "Problemy z eksportem",
+      "exportSuccess": "Problemy zostały pomyślnie wyeksportowane.",
+      "jsonFiles": "Pliki JSON",
       "noProblems": "Jak dotąd nie wykryto żadnych problemów w obszarze roboczym.",
       "tabbarDecorationsEnabled": "Pokaż dekoratory problemów (znaczniki diagnostyczne) na paskach zakładek."
     },
@@ -2317,6 +2428,7 @@
       "autoReveal": "Automatyczne ujawnianie",
       "clipboardWarn": "Dostęp do schowka jest zabroniony. Sprawdź uprawnienia przeglądarki.",
       "clipboardWarnFirefox": "Interfejs API schowka nie jest dostępny. Można go włączyć, wybierając opcję „{0}” na stronie „{1}”. Następnie należy ponownie załadować Theia. Należy pamiętać, że umożliwi to przeglądarce FireFox pełny dostęp do schowka systemowego.",
+      "nothingToPaste": "Schowek nie zawiera plików z obszaru roboczego, które można by tutaj wkleić.",
       "openWithSystemEditor": "Otwórz za pomocą edytora systemowego",
       "refresh": "Odśwież w Eksploratorze",
       "reveal": "Ujawnij w Eksploratorze",
@@ -2380,6 +2492,18 @@
       "hostedPlugin": "Wtyczka hostowana",
       "input": {
         "browse": "Przeglądaj"
+      },
+      "sessionOverride": {
+        "suffix": "Zastąpione przez sesję",
+        "suffixTooltip": "To ustawienie ma wartość sesyjną ustalaną za pomocą opcji --session-preference. Edytowanie go w tym miejscu powoduje wyczyszczenie nadpisania sesji na pozostałą część bieżącej sesji."
+      },
+      "sessionPreferences": {
+        "statusBar": "Preferencje sesji ({0})",
+        "tooltipBody": "Zostały one przekazane za pomocą opcji --session-preference i istnieją wyłącznie w pamięci. Kliknij nazwę ustawienia, aby przejść do niego w widoku Ustawienia.",
+        "tooltipChangeNote": "Edytowanie którejkolwiek z tych wartości powoduje wyczyszczenie jej nadpisania sesji dla bieżącego uruchomienia. Aby korzystać z zapisanych wartości od następnego uruchomienia, należy ponownie uruchomić program bez argumentów --session-preference.",
+        "tooltipHeader": "Ustawienia te są zastępowane na czas tej sesji",
+        "valueOff": "wyłączony",
+        "valueOn": "on"
       },
       "toolbar": "Pasek narzędzi"
     },
@@ -2506,6 +2630,9 @@
       "taskRestricted": "W trybie ograniczonym wykonanie zadania jest wyłączone.",
       "taskTerminatedBySignal": "Zadanie „{0}” zostało zakończone przez sygnał {1}.",
       "terminalWillBeReusedByTasks": "Terminal będzie ponownie wykorzystywany przez zadania."
+    },
+    "telemetry": {
+      "filters": "Ogranicz wzorce tematyczne dostarczane do każdego odbiornika danych telemetrycznych. Brak wpisów zezwala na wszystkie zainteresowania odbiornika; puste tablice dezaktywują odbiornik."
     },
     "terminal": {
       "defaultProfile": "Domyślny profil używany w programie {0}",

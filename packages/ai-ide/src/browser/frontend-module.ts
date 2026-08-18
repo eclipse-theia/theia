@@ -23,6 +23,7 @@ import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
 import { SummarizeSessionCommandContribution } from './summarize-session-command-contribution';
 import {
+    AccessibleRootContribution,
     FileContentFunction,
     FileDiagnosticProvider,
     FindFilesByPattern,
@@ -31,6 +32,7 @@ import {
     WorkspaceFunctionScope
 } from './workspace-functions';
 import { WorkspaceSearchProvider } from './workspace-search-provider';
+import { MemoryDirectoryVariableContribution } from './memory-directory-variable-contribution';
 import {
     FrontendApplicationContribution,
     WidgetFactory,
@@ -121,12 +123,18 @@ import { AddressGhReviewCommandContribution } from './address-pr-review-command-
 import { AppTesterCapabilityContribution } from './apptester-capability-contribution';
 import { GitHubCapabilityContribution } from './github-capability-contribution';
 import { ShellExecutionCapabilityContribution } from './shell-execution-capability-contribution';
+import { MemoryCapabilityContribution } from './memory-capability-contribution';
 import { AgentModeConfirmationService, AgentModeConfirmationServiceImpl } from './agent-mode-confirmation-service';
 import { ExploreAgent } from './explore-agent';
 import { CodeReviewerAgent } from './code-reviewer-agent';
 import { CodeReviewCapabilityContribution } from './code-review-capability-contribution';
 import { PRReviewAgent } from './review/pr-review-agent';
 import { PRReviewCapabilityContribution } from './review/pr-review-capability-contribution';
+import { PerspectiveContribution } from '@theia/core/lib/browser/perspective-service';
+import { AIFirstPerspectiveContribution } from './ai-first-perspective-contribution';
+import { ChatSessionListService } from './chat-session-list-service';
+import { AISessionsWidget } from './ai-sessions-widget';
+import { AISessionsViewContribution } from './ai-sessions-view-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -194,6 +202,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(Agent).toService(PRReviewAgent);
     bind(ChatAgent).toService(PRReviewAgent);
 
+    bind(ChatSessionListService).toSelf().inSingletonScope();
+
     bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider).inSingletonScope();
     bind(ChatWelcomeMessageProvider).to(ChatSessionsWelcomeMessageProvider).inSingletonScope();
     bind(ChatBannerProvider).to(AiAllowAllModeChatBanner).inSingletonScope();
@@ -210,6 +220,11 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(GetSkillFileContent, bind);
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
     bindToolProvider(WorkspaceSearchProvider, bind);
+
+    bindRootContributionProvider(bind, AccessibleRootContribution);
+    bind(MemoryDirectoryVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(MemoryDirectoryVariableContribution);
+    bind(AccessibleRootContribution).toService(MemoryDirectoryVariableContribution);
 
     bindToolProvider(SuggestFileContent, bind);
     bindToolProvider(WriteFileContent, bind);
@@ -350,7 +365,21 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).to(AppTesterCapabilityContribution);
     bind(FrontendApplicationContribution).to(GitHubCapabilityContribution);
     bind(FrontendApplicationContribution).to(ShellExecutionCapabilityContribution);
+    bind(FrontendApplicationContribution).to(MemoryCapabilityContribution);
 
     bind(FrontendApplicationContribution).to(CodeReviewCapabilityContribution);
     bind(FrontendApplicationContribution).to(PRReviewCapabilityContribution);
+
+    bind(AIFirstPerspectiveContribution).toSelf().inSingletonScope();
+    bind(PerspectiveContribution).toService(AIFirstPerspectiveContribution);
+
+    bind(AISessionsWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: AISessionsWidget.ID,
+            createWidget: () => ctx.container.get(AISessionsWidget)
+        }))
+        .inSingletonScope();
+    bindViewContribution(bind, AISessionsViewContribution);
+    bind(TabBarToolbarContribution).toService(AISessionsViewContribution);
 });

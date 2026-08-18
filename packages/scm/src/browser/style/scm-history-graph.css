@@ -286,18 +286,59 @@
     opacity: 0.6;
 }
 
+/* Markdown rendered into the tooltip keeps the browser's default paragraph margins,
+   which spaces the commit hover out far more than the git blame hover it mirrors. */
+.scm-history-tooltip p {
+    margin: 0;
+}
+
+.scm-history-tooltip p + p {
+    margin-top: 4px;
+}
+
 /* ── Tooltip header icon alignment ──────────────────────────────────────── */
+.scm-history-tooltip-header {
+    margin-bottom: 4px;
+}
+
 .scm-history-tooltip-header .icon-inline {
     vertical-align: middle;
 }
 
+.scm-history-tooltip-header a {
+    color: var(--theia-textLink-foreground);
+    text-decoration: none;
+}
+
+.scm-history-tooltip-header a:hover {
+    text-decoration: underline;
+}
+
+.scm-history-tooltip-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
+/* ── Tooltip actions (aligned with the git blame hover command links) ───── */
+.scm-history-tooltip-actions a.scm-history-tooltip-action {
+    color: var(--theia-textLink-foreground);
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.scm-history-tooltip-actions a.scm-history-tooltip-action:hover {
+    text-decoration: underline;
+}
+
 /* ── Tooltip stat colors (used inside .theia-hover) ─────────────────────── */
 .scm-history-stat-added {
-    color: var(--theia-gitDecoration-addedResourceForeground, #388a34);
+    color: var(--theia-scmGraph-historyItemHoverAdditionsForeground, var(--theia-gitDecoration-addedResourceForeground, #388a34));
 }
 
 .scm-history-stat-deleted {
-    color: var(--theia-gitDecoration-deletedResourceForeground, #a1260d);
+    color: var(--theia-scmGraph-historyItemHoverDeletionsForeground, var(--theia-gitDecoration-deletedResourceForeground, #a1260d));
 }
 
 /* ── Empty state ─────────────────────────────────────────────────────────── */

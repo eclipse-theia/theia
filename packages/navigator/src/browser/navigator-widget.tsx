@@ -136,26 +136,37 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
 
     protected handlePaste(event: ClipboardEvent): void {
         if (event.clipboardData) {
-            if (this.pasteFiles(event.clipboardData.getData('text/plain'))) {
+            const raw = event.clipboardData.getData('text/plain');
+            // the consume decision must be made synchronously, before pasteFiles completes
+            if (this.canPasteFiles(raw)) {
                 event.preventDefault();
+                this.pasteFiles(raw).catch(error => this.messageService.error(error.message));
             }
         }
+    }
+
+    /**
+     * Whether {@link pasteFiles} would handle a paste, i.e. a paste target is selected and,
+     * if already known, the clipboard text is not empty.
+     *
+     * @param raw the clipboard text, if it has been obtained already
+     */
+    canPasteFiles(raw?: string): boolean {
+        return raw !== '' && this.model.selectedFileStatNodes.length > 0;
     }
 
     /**
      * Pastes the files given as newline-separated URIs or absolute paths into the selected directory.
      *
      * @param raw the clipboard text, expected to hold one file URI or absolute file system path per line
-     * @returns `true` if the paste was handled, i.e. clipboard text and a paste target were available
+     * @returns `true` if the paste was handled, i.e. clipboard text and a paste target were available;
+     *   the promise resolves once all file copies have completed
      */
-    pasteFiles(raw: string): boolean {
-        if (!raw) {
+    async pasteFiles(raw: string): Promise<boolean> {
+        if (!this.canPasteFiles(raw)) {
             return false;
         }
         const target = this.model.selectedFileStatNodes[0];
-        if (!target) {
-            return false;
-        }
         const sources = this.parsePastedUris(raw);
         if (sources.length === 0) {
             this.messageService.info(nls.localize(
@@ -164,9 +175,7 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
             ));
             return true;
         }
-        for (const source of sources) {
-            this.model.copy(source, target);
-        }
+        await Promise.all(sources.map(source => this.model.copy(source, target)));
         return true;
     }
 
@@ -188,7 +197,7 @@ export class FileNavigatorWidget extends AbstractNavigatorTreeWidget {
     /** Interprets the given clipboard line as a URI or an absolute file system path, e.g. from the Copy Path command. */
     protected asPastedFileUri(candidate: string): URI | undefined {
         // check for absolute paths first: Windows paths like C:\foo also parse as URLs (scheme 'c:')
-        if (candidate.startsWith('/') || /^[a-zA-Z]:[\\/]/.test(candidate)) {
+        if (candidate.startsWith('/') || candidate.startsWith('\\\\') || /^[a-zA-Z]:[\\/]/.test(candidate)) {
             return URI.fromFilePath(candidate);
         }
         try {

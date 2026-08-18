@@ -468,6 +468,19 @@ export interface PromptService {
     getPromptFragmentByCommandName(commandName: string): PromptFragment | undefined;
 
     /**
+     * Checks whether `/name` can be resolved as a slash command.
+     *
+     * This mirrors the lookup performed when resolving the `prompt` variable: the name may either be
+     * the command name of a fragment marked as a command, or the id of any existing prompt fragment.
+     * Use this before interpreting a `/name` token as a command, so that unrelated text such as Unix
+     * paths is not mistaken for a command.
+     *
+     * @param name The command name or prompt fragment id
+     * @returns `true` if a matching command or prompt fragment exists
+     */
+    isKnownCommand(name: string): boolean;
+
+    /**
      * Resolves a prompt fragment by replacing variables and function references
      * @param fragmentId The prompt fragment ID
      * @param args Optional object with values for variable replacement
@@ -756,6 +769,15 @@ export class PromptServiceImpl implements PromptService {
         return this._builtInFragments.find(fragment =>
             fragment.isCommand && fragment.commandName === commandName
         );
+    }
+
+    isKnownCommand(name: string): boolean {
+        if (!name) {
+            return false;
+        }
+        // Both lookups are needed because the `prompt` variable resolves a command either by its
+        // command name or, as a fallback, by prompt fragment id.
+        return this.getPromptFragmentByCommandName(name) !== undefined || this.getRawPromptFragment(name) !== undefined;
     }
 
     /**

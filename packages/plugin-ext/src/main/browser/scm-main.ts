@@ -138,7 +138,9 @@ function historyItemFromDto(dto: ScmHistoryItemDto): ScmHistoryItem {
             'light' in dto.authorIcon ? vscodeURI.revive(dto.authorIcon.light).toString() : vscodeURI.revive(dto.authorIcon as UriComponents).toString()) : undefined,
         displayId: dto.displayId,
         timestamp: dto.timestamp,
-        tooltip: typeof dto.tooltip === 'string' ? dto.tooltip : dto.tooltip?.value,
+        // Passed through as-is so that the provider's own links, commands and `isTrusted`
+        // declaration survive; flattening to `value` would strip the command allow-list.
+        tooltip: dto.tooltip,
         statistics: dto.statistics ? {
             files: dto.statistics.files,
             insertions: dto.statistics.insertions,

@@ -75,6 +75,15 @@
         "apiKey": {
           "description": "請輸入您官方 Anthropic 帳戶的 API 金鑰。**請注意:**使用此設定將使 Anthropic API 金鑰以明文形式儲存於運行 Theia 的機器上。請使用環境變數 `ANTHROPIC_API_KEY` 以安全方式設定金鑰。"
         },
+        "compaction": {
+          "default": "遵循全域聊天伺服器端的壓縮設定。",
+          "description": "覆寫 Anthropic 模型的供應商原生伺服器端壓縮功能。「預設」將遵循全域聊天設定({0})。當此功能實際啟用時,系統將使用 Anthropic Beta Messages API,以便當對話長度超過閾值時,供應商能對較早的對話回合進行摘要。",
+          "disabled": "切勿針對 Anthropic 模型請求伺服器端的壓縮處理。",
+          "enabled": "針對 Anthropic 模型,請務必請求執行伺服器端的壓縮操作。"
+        },
+        "compactionTokenThreshold": {
+          "description": "覆寫 Anthropic 模型伺服器端壓縮的全球輸入標記閾值。若未設定此選項,則適用全球設定或提供者預設值。若已設定,其值必須至少為 50,000 個標記。"
+        },
         "customEndpoints": {
           "apiKey": {
             "title": "請提供以下任一項:- 存取指定網址所提供 API 的金鑰- 或使用全局 Anthropic API 金鑰(值為 `true`)"
@@ -142,7 +151,12 @@
         "couldNotFindMatchingLM": "未能找到相符的語言模型。請檢查您的設定！",
         "couldNotFindReadyLMforAgent": "無法為代理程式{0}找到現成的語言模型。請檢查您的設定！",
         "customAgents": {
-          "migrationResult": "自訂代理程式遷移:{0} 已遷移,{1} 失敗,{2} 舊版 customAgents.yml 已備份至 .bak,{3} 提示覆寫內容已整合至 agent.md。",
+          "migratePrompt": {
+            "message": "您的自訂代理程式仍使用舊版 `customAgents.yml` 格式。 我們建議將它們遷移至新的「單一代理程式」格式(`agents/<id>/agent.md`),此為 {0} 未來將採用的格式。每個代理程式都會在您的 `customAgents.yml` 旁擁有專屬檔案,而原始檔案則會保留為 `customAgents.yml.bak` 備份。"
+          },
+          "migrationResult": {
+            "empty": "自訂代理程式遷移:無需遷移的項目。"
+          },
           "rerunMigration": "重新執行自訂代理程式遷移"
         },
         "defaultAgent": {
@@ -230,8 +244,10 @@
       },
       "chat-ui": {
         "addContextVariable": "新增上下文變數",
+        "agentDefaultModel": "代理程式預設值",
         "agentDelegationDescription": "可委派的其他 AI 代理程式",
         "aiDisabled": "AI 功能已停用",
+        "allowedResourceUrls": "AI 聊天回應中引用的外部資源(圖片、樣式表、多媒體等)預設會被封鎖,並以佔位符取代,直到明確允許為止。 URL 以已設定的前綴之一開頭的資源,將直接顯示而不被封鎖。請包含完整的來源網址並以尾隨斜線結尾(例如「https://example.com/」),以避免意外匹配。僅應新增您完全信任的來源。",
         "applyAll": "全部套用",
         "applyAllTitle": "套用所有待處理變更",
         "askQuestion": "提出問題",
@@ -265,8 +281,12 @@
         "command-part-renderer": {
           "commandNotExecutable": "該指令的識別碼為「{0}」,但無法從聊天視窗執行。"
         },
+        "compaction-part-renderer": {
+          "compactionMarker": "對話內容已精簡"
+        },
         "copyCodeBlock": "複製程式碼區塊",
         "couldNotSendRequestToSession": "無法向會話 {1} 發送請求 \"{0}\"",
+        "delegatedSession": "委派",
         "delegation-response-renderer": {
           "interactionNeeded": "需要使用者互動",
           "prompt": {
@@ -279,13 +299,11 @@
           "starting": "開始委派...",
           "status": {
             "canceled": "已取消",
-            "error": "錯誤",
             "generating": "生成中...",
             "starting": "正在啟動..."
           }
         },
         "deleteChangeSet": "刪除變更集",
-        "deleteChat": "刪除對話",
         "editRequest": "編輯",
         "edited": "編輯",
         "editedTooltipHint": "此提示變體已進行編輯。您可在 AI 設定視圖中重設此設定。",
@@ -312,6 +330,8 @@
           "title": "Mermaid 圖表",
           "wheelZoomHint": "{0} + 捲動"
         },
+        "modelBadgeTooltip": "此回應所使用的語言模型:{0}",
+        "modelUnavailable": "不可用",
         "noChatAgentsAvailable": "目前沒有可用的聊天代理程式。",
         "noMatchingCapabilities": "無匹配功能",
         "openDiff": "開啟差異檢視",
@@ -344,6 +364,9 @@
         "serverTools": "伺服器工具",
         "serverToolsDescription": "伺服器工具由大型語言模型(LLM)在供應商的基础設施上於伺服器端執行。",
         "serverToolsWarning": "選取這些工具時,系統會自動核准其使用權限。模型可隨時執行這些工具。",
+        "sessionModel": "此聊天對話的範本",
+        "sessionModelDefault": "此聊天模型({0})",
+        "sessionModelUnavailable": "此聊天模式目前不可用({0});請求將使用代理的預設設定",
         "sessionNotFoundForRetry": "未找到可重試的會話",
         "skillsDescription": "可重複使用的技能指令,可添加至對話中",
         "switchAgentMode": "切換代理模式",
@@ -356,6 +379,8 @@
         "tokenUsageOverflow": "代幣使用量已遠超過警告閾值。請考慮壓縮資料或開始新的工作階段。",
         "tokenUsageTooltipCacheCreate": "快取建立:{0}",
         "tokenUsageTooltipCacheRead": "快取讀取:{0}",
+        "tokenUsageTooltipCompactions": "{0} 壓縮版 x",
+        "tokenUsageTooltipCumulative": "彙總:{0}",
         "tokenUsageTooltipTotal": "總計:{0} / {1} ({2} %)",
         "tokenUsageWarning": "已達到代碼使用警告閾值。",
         "tokenUsageWarningEnabled": "控制當聊天會話的字元使用量超過設定的閾值時,是否顯示通知。此功能需語言模型提供者回報字元使用量。",
@@ -486,7 +511,6 @@
         "openFileTooltip": "點擊以編輯器開啟檔案",
         "optionsCount": "{0} 選項",
         "partial": "部分",
-        "pattern": "模式",
         "plan": "平面模式",
         "project": "專案",
         "projectRoot": "專案根目錄",
@@ -860,6 +884,12 @@
           },
           "title": "自訂請求設定"
         },
+        "serverSideCompaction": {
+          "description": "預設為聊天請求啟用供應商原生的伺服器端壓縮功能。啟用後,當對話長度超過模型自身的閾值時,支援此功能的模型會自動彙總較早的對話輪次,讓長篇對話能突破上下文限制繼續進行。各供應商皆提供專屬的覆寫選項,個別聊天會話亦可透過會話設定覆寫此設定。不支援此功能的模型則會忽略此設定。"
+        },
+        "serverSideCompactionTokenThreshold": {
+          "description": "提供者原生伺服器端壓縮應執行的預設輸入令牌閾值。提供者及個別聊天會話可覆寫此值。若未設定,則由提供者選擇其預設閾值。若已設定,該值必須至少為 50,000 個令牌。"
+        },
         "skillDirectories": {
           "description": "包含技能定義(SKILL.md 檔案)的額外目錄。 技能提供可重複使用的指令,供 AI 代理程式參考。您工作區中的 .prompts/skills 和 .agents/skills 目錄、您的家目錄中的 .agents/skills 目錄,以及您產品配置資料夾中的 skills 目錄,都會被自動納入。"
         },
@@ -932,7 +962,6 @@
         "open-history-tooltip": "開啟 AI 歷史紀錄...",
         "request-card": {
           "promptVariant": "提示變體",
-          "response": "回應",
           "timestamp": "時間戳記"
         },
         "sortChronologically": {
@@ -1008,6 +1037,11 @@
           "msg": "此代理程式採用 **代理模式**。為啟用自主流程,它能夠在無需進一步確認的情況下,直接寫入您的工作區檔案。\n\n建議使用版本控制系統(例如 Git),以便您能檢視並還原變更。\n\n您可以透過下方聊天輸入區的模式選擇器切換至 **編輯模式**,或使用 **Architect** 代理程式進行唯讀規劃。\n\n此確認設定將儲存於此工作區,且不會再次顯示。若要重設或進行全域設定,請在「設定」中搜尋 `ai-features.agentMode.confirmed`。",
           "waiting": "等待確認中..."
         },
+        "allowAllMode": {
+          "stripTooltip": "在此工作階段中,AI 工具的呼叫將在無需確認的情況下執行。請僅在您信任的環境中啟用此功能。",
+          "stripTooltipFooter": "可透過 --session-preference 參數設定。若不帶此參數重新啟動,即可還原已儲存的設定。",
+          "title": "Theia AI 全許可模式"
+        },
         "app-tester": {
           "errorCheckingDevToolsServerStatus": "錯誤檢查開發工具 MCP 伺服器狀態:{0}",
           "errorCheckingPlaywrightServerStatus": "檢查 Playwright MCP 伺服器狀態錯誤:{0}",
@@ -1045,6 +1079,7 @@
         "chatRestrictedMessage": {
           "title": "AI 功能受限"
         },
+        "childInteractionNeeded": "有個委派會話需要您處理",
         "codeReviewerAgent": {
           "description": "一款能分析程式碼變更並回傳結構化評估結果的程式碼審查助手。         會檢查完成標準、建置／語法檢查／測試證明,以及程式碼品質。"
         },
@@ -1061,6 +1096,7 @@
             "startNewChat": "保持對話簡短且聚焦。若需討論新任務,請[開啟新對話]({0});若需[開啟包含本對話摘要的新對話]({1})。"
           }
         },
+        "collapseSession": "收起 {0}",
         "commandAgent": {
           "commandCallback": {
             "confirmAction": "明白了",
@@ -1089,10 +1125,10 @@
             "edit": "預設模式"
           }
         },
-        "deleteChat": "刪除對話",
         "enableAI": {
           "mdDescription": "此設定可讓您存取最新的人工智慧功能。            \n            請務必知悉,這些功能可能對您授權存取的語言模型(LLMs)產生持續性請求,可能產生相關費用,需密切監控。 啟用此選項即表示您已知悉相關風險。            \n            **請注意！本節下方設定僅在主功能啟用後生效。啟用功能後,您需於下方至少設定一組            LLM供應商。詳見[官方文件](https://theia-ide.org/docs/user_ai/)**。"
         },
+        "expandSession": "展開{0}",
         "exploreAgent": {
           "description": "一款從程式碼庫中提取並提煉資訊的程式碼庫探索助手。         報告現有內容的相關事實、提供程式碼片段,並描述觀察到的模式。"
         },
@@ -1168,10 +1204,16 @@
           "description": "一款由人工智慧驅動的 PR 審查代理程式,可統籌完整的程式碼審查工作流程:擷取 PR 資訊、探索程式碼庫、執行結構化分析、透過 diff 檢視器引導使用者互動檢視發現的問題,並可選擇在 GitHub 上建立待審查項目。"
         },
         "prompt-template-description": "在 [AI 設定檢視窗] ({0}) 中選擇提示語變體並自訂 AI 代理的提示語範本。",
+        "requiresApproval": "需經您核准",
         "restoredSession": "已還原的會話",
         "restrictedModeDetails": "AI 聊天、內嵌建議、程式碼操作及提示範本已停用",
         "restrictedModeLabel": "AI 功能(在受限模式下已停用)",
         "sectionRestored": "已還原",
+        "sessionOverride": {
+          "defaultToolConfirmation": "預設工具確認訊息:{0}",
+          "toolConfirmation": "各工具的確認設定覆寫:{0}",
+          "toolConfirmationGeneric": "設定各工具的確認覆寫選項"
+        },
         "shellAllowlist": {
           "placeholder": "例如:\"git log\"(精確指令)或 \"git log *\"(帶參數指令)"
         },
@@ -1192,6 +1234,10 @@
         },
         "toolConfirmationInfo": {
           "header": "工具確認"
+        },
+        "toolConfirmationOverrides": {
+          "stripTooltip": "透過命令列參數,本工作階段中已自動核准一項或多項 AI 工具。",
+          "title": "AI 工具確認設定覆寫"
         },
         "toolsConfiguration": {
           "confirmAlwaysAllow": {
@@ -1244,7 +1290,6 @@
           "errorMessage": "錯誤訊息",
           "lastActivity": "最後活動",
           "lastMessage": "最後訊息",
-          "messages": "訊息",
           "multipleExchanges": "{0} 交易所",
           "oneExchange": "1 交換",
           "unread": "未讀"
@@ -1333,8 +1378,7 @@
             "title": "環境變數"
           },
           "headers": {
-            "mdDescription": "發送至伺服器的每個請求中,可選地包含額外的標頭。標頭值以純文字形式儲存於偏好設定中;若工作區設定中包含敏感值,請避免使用工作區設定。",
-            "title": "標題"
+            "mdDescription": "發送至伺服器的每個請求中,可選地包含額外的標頭。標頭值以純文字形式儲存於偏好設定中;若工作區設定中包含敏感值,請避免使用工作區設定。"
           },
           "mdDescription": "可透過命令、參數及(可選)環境變數來配置本機 MCP 伺服器,或透過伺服器 URL、驗證憑證、OAuth 設定及(可選)驗證標頭名稱來配置遠端 MCP 伺服器。此外,亦可設定自動啟動(預設為 true)。 每個伺服器皆由一個唯一金鑰識別,例如「brave-search」或「filesystem」。要啟動伺服器,請使用「MCP: Start MCP Server」指令,該指令可讓您選擇所需的伺服器。要停止伺服器,請使用「MCP: Stop MCP Server」指令。 請注意,自動啟動功能僅會在重新啟動後生效,首次啟動伺服器時需手動執行。從 AI 註冊表安裝的伺服器會附帶一個額外的 `registryMetadata` 區塊,該區塊由系統自動管理,不應手動編輯。\n配置範例:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"您的 API 金鑰\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"您的 JIRA MCP 伺服器網址\",\n    \"serverAuthToken\": \"您的 JIRA MCP 伺服器憑證\"\n  },\n  \"oauth-protected-server\": {\n    \"serverUrl\": \"您的 OAuth 受保護 MCP 伺服器網址\",\n    \"oauth\": {\n      \"clientId\": \"OPTIONAL_CLIENT_ID\",\n      \"scopes\": [\"OPTIONAL_SCOPE\"]\n    }\n  }\n  }\n```",
           "oauth": {
@@ -1403,9 +1447,6 @@
         "stop": {
           "label": "MCP:停止 MCP 伺服器"
         },
-        "tool": {
-          "noTools": "目前沒有可用工具。"
-        },
         "useWorkspaceAsRoot": {
           "mdDescription": "根目錄定義了伺服器在檔案系統中的運作邊界。若啟用此設定,工作區資料夾將作為根目錄;否則 MCP 伺服器將可存取整個檔案系統。變更此設定將重啟所有執行中的 MCP 伺服器,以套用新的根目錄配置。",
           "title": "以工作區作為根目錄"
@@ -1422,7 +1463,6 @@
         "command": {
           "addServer": "新增本機 MCP 設定..."
         },
-        "connectingServer": "正在連接...",
         "copiedAllList": "已將所有工具複製至剪貼簿(完整工具清單)",
         "copiedAllSingle": "已將所有工具複製至剪貼簿(單一提示片段包含                                     所有工具)",
         "copiedForPromptTemplate": "將所有工具複製至剪貼簿作為提示模板                                    (單一提示片段含所有工具)",
@@ -1466,12 +1506,10 @@
           "saveChanges": "儲存變更",
           "serverName": "伺服器名稱",
           "serverNamePlaceholder": "例如:my-mcp-server",
-          "serverType": "伺服器類型",
           "serverUrlPlaceholder": "例如:https://mcp.example.com",
           "serverUrlRequired": "遠端伺服器需提供伺服器網址"
         },
         "fromRegistryLink": "來自登錄檔",
-        "headers": "標題",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "授權伺服器",
         "oauthClientId": "OAuth 客戶端 ID",
@@ -1497,6 +1535,15 @@
       "openai": {
         "apiKey": {
           "mdDescription": "請輸入您官方 OpenAI 帳戶的 API 金鑰。**請注意:**使用此設定時,OpenAI API 金鑰將以明文形式儲存於執行 Theia 的機器上。請使用環境變數 `OPENAI_API_KEY` 以安全方式設定金鑰。"
+        },
+        "compaction": {
+          "default": "遵循全域聊天伺服器端的壓縮設定。",
+          "description": "覆寫官方 OpenAI 模型的供應商原生伺服器端壓縮功能。此設定僅適用於 OpenAI Response API;Chat Completions API 將忽略此設定。「default」將遵循全域聊天設定({0})。當此功能實際啟用時,一旦對話長度超過供應商的閾值,系統便會要求 Response API 對較早的對話回合進行摘要。",
+          "disabled": "切勿針對官方 OpenAI 模型請求伺服器端壓縮。",
+          "enabled": "針對官方 OpenAI 模型,請務必請求伺服器端壓縮。"
+        },
+        "compactionTokenThreshold": {
+          "description": "覆寫官方 OpenAI 模型在伺服器端壓縮功能中的全域輸入標記閾值。若未設定此選項,則適用全域設定或提供者預設值。若已設定,其值必須至少為 50,000 個標記。"
         },
         "customEndpoints": {
           "apiKey": {
@@ -1538,7 +1585,7 @@
           "description": "官方 OpenAI 模型供使用"
         },
         "useResponseApi": {
-          "mdDescription": "針對官方 OpenAI 模型,請改用新版 OpenAI 回應 API 取代 Chat Completion API。此設定僅適用於官方 OpenAI 模型——自訂供應商需個別配置。請注意,使用回應 API 時,工具呼叫定義必須符合 OpenAI 的 [嚴格架構定義](https://platform.openai.com/docs/guides/function-calling#strict-mode)。系統將盡力轉換不符合規範的架構,但仍可能發生錯誤。"
+          "mdDescription": "對於官方 OpenAI 模型,請使用較新的 OpenAI Response API 取代 Chat Completion API。此設定僅適用於官方 OpenAI 模型——自訂提供者必須個別進行配置。"
         }
       },
       "promptTemplates": {
@@ -1588,6 +1635,10 @@
       },
       "session-settings-dialog": {
         "advancedSettings": "進階設定 (JSON)",
+        "compactionHeader": "伺服器端壓縮",
+        "compactionLabel": "壓縮:",
+        "compactionNote": "覆寫此工作階段的全域及各提供者層級的壓縮設定。僅適用於支援伺服器端壓縮的提供者。",
+        "compactionTokenThreshold": "代碼片段閾值:",
         "confirmationTimeout": "確認超時",
         "confirmationTimeoutNote": "在指定時間後自動拒絕工具確認視窗。此設定將覆寫本次工作階段的全球偏好設定。",
         "enableConfirmationTimeout": "啟用確認超時",
@@ -1722,6 +1773,13 @@
       "fileChangeSetTitle": "建議修改內容"
     },
     "ai-chat-ui": {
+      "blockedResource": {
+        "allow": "允許此被封鎖的內容",
+        "aria": "被封鎖的外部資源:{0}",
+        "inlineContent": "(內嵌外部內容)",
+        "label": "外部資源遭封鎖:",
+        "resourcesToAllow": "{0} 資源將被啟用"
+      },
       "browseAllChats": "瀏覽所有聊天記錄...",
       "confirm": "確認",
       "deleteChat": "刪除對話",
@@ -1730,6 +1788,7 @@
       "noOutput": "無輸出",
       "open-current-session-summary": "開啟當前工作階段摘要",
       "open-settings-tooltip": "開啟 AI 設定...",
+      "openSession": "開啟聊天視窗",
       "renameChat": "重新命名聊天",
       "scroll-lock": "鎖定捲動",
       "scroll-unlock": "解鎖捲動",
@@ -1774,11 +1833,17 @@
         "argumentHint": "<票號>",
         "description": "分析 GitHub 問題單並實作解決方案"
       },
+      "newChat": "新聊天室",
+      "noSessions": "目前尚無聊天對話紀錄。",
       "open-ai-configuration-tooltip": "OpenAI 設定",
+      "perspective": {
+        "aiFirst": "AI First"
+      },
       "rememberCommand": {
         "argumentHint": "[主題提示]",
         "description": "從對話中提取主題並更新專案資訊"
       },
+      "sessionsView": "AI 會話",
       "ticketCommand": {
         "argumentHint": "<票號>",
         "description": "分析 GitHub 票證並制定實施計畫"
@@ -1900,6 +1965,41 @@
       "timeout": "超時",
       "workingDirectory": "工作目錄"
     },
+    "ai-tool-sketchpad": {
+      "addItemProperty": "新增項目屬性",
+      "addParameter": "新增參數",
+      "addProperty": "新增屬性",
+      "addTool": "新增工具",
+      "askAtRuntimeHint": "當大型語言模型(LLM)呼叫此工具時,會彈出一個快速輸入視窗,要求您提供回傳值。",
+      "askReturnPlaceholder": "請輸入此工具呼叫的回傳值...",
+      "askReturnPrompt": "工具「{0}」是透過以下指令呼叫的:{1}",
+      "confirmDelete": "您確定要刪除工具「{0}」嗎?",
+      "descriptionPlaceholder": "請描述該工具的功能……",
+      "itemType": "項目類型:",
+      "label": "AI 工具 Sketchpad",
+      "nParameters": "{0} 參數",
+      "nameDuplicate": "目前已存在同名的工具。",
+      "nameEmpty": "工具名稱不得為空。",
+      "nameInvalid": "工具名稱僅可包含字母、數字、底線及連字號(1 至 128 個字元)。",
+      "noItemProperties": "未定義任何項目屬性。",
+      "noParameters": "未定義任何參數。",
+      "noTools": "目前尚無工具。",
+      "oneParameter": "1 個參數",
+      "parameters": "參數",
+      "required": "必填",
+      "returnMode": "返回模式",
+      "returnModeAskAtRuntime": "執行時詢問",
+      "returnModeAskShort": "於執行時查詢",
+      "returnModeStatic": "靜態回傳值",
+      "returnModeStaticShort": "靜態",
+      "selectTool": "選擇一個工具進行編輯,或新增一個工具以開始草圖繪製。",
+      "staticReturn": "靜態回傳值",
+      "staticReturnHint": "此靜態值會在每次呼叫該工具時返回,無論輸入參數為何。",
+      "staticReturnPlaceholder": "呼叫此工具時所返回的值(例如 JSON 字串)",
+      "toolName": "工具名稱",
+      "toolNamePlaceholder": "例如:getWeather",
+      "untitledTool": "無標題工具"
+    },
     "callhierarchy": {
       "noCallers": "未偵測到任何呼叫方。",
       "open": "開啟呼叫層級"
@@ -1985,6 +2085,7 @@
         "visual": "顯示標籤頁的視覺預覽。"
       },
       "highlightModifiedTabs": "控制是否在已修改(髒污狀態)的編輯器標籤頁上繪製頂部邊框。",
+      "jumpListName": "最近的工作區",
       "keybinding": {
         "duplicateModifierError": "無法解析鍵盤快捷鍵 {0} 重複修飾符",
         "metaError": "無法解析鍵盤快捷鍵 {0} meta 僅適用於 OSX",
@@ -2005,6 +2106,11 @@
         "clipboardWarnFirefox": "剪貼簿 API 目前不可用。可透過「{1}」頁面中的「{0}」選項啟用此功能,啟用後請重新載入 Theia。請注意,此設定將允許 Firefox 完全存取系統剪貼簿。"
       },
       "pasteWarn": "請使用瀏覽器的貼上指令或快捷鍵。",
+      "perspective": {
+        "resetPerspective": "重設視角(實驗性功能)",
+        "selectPerspective": "選擇視角",
+        "switchPerspective": "切換視角(實驗性功能)"
+      },
       "quitMessage": "任何未儲存的變更將不會被儲存。",
       "resetWorkbenchLayout": "重設工作區佈局",
       "searchbox": {
@@ -2223,6 +2329,11 @@
     },
     "markers": {
       "clearAll": "清除所有",
+      "copyAsText": "複製為文字",
+      "export": "匯出",
+      "exportProblems": "匯出問題",
+      "exportSuccess": "問題已成功匯出。",
+      "jsonFiles": "JSON 檔案",
       "noProblems": "迄今為止,工作區中尚未偵測到任何問題。",
       "tabbarDecorationsEnabled": "在分頁列中顯示問題標記(診斷標記)。"
     },
@@ -2317,6 +2428,7 @@
       "autoReveal": "自動顯示",
       "clipboardWarn": "剪貼簿存取權限遭拒絕。請檢查瀏覽器的權限設定。",
       "clipboardWarnFirefox": "剪貼簿 API 目前不可用。可透過「{1}」頁面中的「{0}」選項啟用此功能,啟用後請重新載入 Theia。請注意,此設定將允許 Firefox 完全存取系統剪貼簿。",
+      "nothingToPaste": "剪貼簿中沒有可在此處貼上的工作區檔案。",
       "openWithSystemEditor": "使用系統編輯器開啟",
       "refresh": "在資源管理器中重新整理",
       "reveal": "在資源管理器中顯示",
@@ -2380,6 +2492,18 @@
       "hostedPlugin": "託管外掛程式",
       "input": {
         "browse": "瀏覽"
+      },
+      "sessionOverride": {
+        "suffix": "由工作階段覆寫",
+        "suffixTooltip": "此偏好設定具有透過 --session-preference 設定的會話值。在此處編輯該設定,將清除本會話剩餘時間內的會話覆寫設定。"
+      },
+      "sessionPreferences": {
+        "statusBar": "工作階段偏好設定({0})",
+        "tooltipBody": "這些設定是透過 --session-preference 參數傳入的,僅存在於記憶體中。點擊設定名稱即可跳轉至「設定」視圖中的對應項目。",
+        "tooltipChangeNote": "編輯其中任何一項,都會清除本次執行階段的設定覆寫。若要在下次啟動時使用已儲存的值,請勿使用 --session-preference 參數重新啟動程式。",
+        "tooltipHeader": "這些設定在本次工作階段中已被覆寫",
+        "valueOff": "關閉",
+        "valueOn": "on"
       },
       "toolbar": "工具列"
     },
@@ -2506,6 +2630,9 @@
       "taskRestricted": "在受限模式下,任務執行功能已停用",
       "taskTerminatedBySignal": "任務 '{0}' 已因信號 {1} 而終止。",
       "terminalWillBeReusedByTasks": "終端機將被任務重複使用。"
+    },
+    "telemetry": {
+      "filters": "限制傳送至各遙測接收端的話題模式。若未指定條目,則允許所有接收端感興趣的話題;若陣列為空,則會停用該接收端。"
     },
     "terminal": {
       "defaultProfile": "{0} 預設使用的設定檔",
