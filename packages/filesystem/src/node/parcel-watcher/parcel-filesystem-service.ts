@@ -244,7 +244,6 @@ export class ParcelWatcher {
             // to wait for it to come back instead of failing the watcher for good.
             watcher = await this.subscribeWithRetries();
         }
-        this.assertNotDisposed();
         this.debug('STARTED', `disposed=${this.disposed}`);
         // The watcher could be disposed while it was starting, make sure to check for this:
         if (this.disposed) {

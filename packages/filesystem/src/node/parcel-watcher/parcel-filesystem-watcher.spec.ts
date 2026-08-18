@@ -21,7 +21,7 @@ import * as fs from '@theia/core/shared/fs-extra';
 import * as assert from 'assert';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
-import { ParcelFileSystemWatcherService } from './parcel-filesystem-service';
+import { ParcelWatcherTestService } from './test/parcel-watcher-test-service';
 import { DidFilesChangedParams, FileChange, FileChangeType } from '../../common/filesystem-watcher-protocol';
 
 const expect = chai.expect;
@@ -30,7 +30,7 @@ const track = temp.track();
 describe('parcel-filesystem-watcher', function (): void {
 
     let root: URI;
-    let watcherService: ParcelFileSystemWatcherService;
+    let watcherService: ParcelWatcherTestService;
     let watcherId: number;
 
     this.timeout(100000);
@@ -52,6 +52,9 @@ describe('parcel-filesystem-watcher', function (): void {
     });
 
     afterEach(async () => {
+        // Unsubscribe before deleting the watched directories: deleting a still subscribed
+        // root strands parcel's shared macOS FSEvents backend, see ParcelWatcherTestService.
+        await watcherService.disposeAllWatchers();
         track.cleanupSync();
         watcherService.dispose();
     });
@@ -160,8 +163,8 @@ describe('parcel-filesystem-watcher', function (): void {
         }
     });
 
-    function createParcelFileSystemWatcherService(): ParcelFileSystemWatcherService {
-        return new ParcelFileSystemWatcherService({
+    function createParcelFileSystemWatcherService(): ParcelWatcherTestService {
+        return new ParcelWatcherTestService({
             verbose: true
         });
     }

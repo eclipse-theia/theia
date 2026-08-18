@@ -20,7 +20,7 @@ import * as temp from 'temp';
 import * as fs from '@theia/core/shared/fs-extra';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
-import { ParcelFileSystemWatcherService } from './parcel-filesystem-service';
+import { ParcelWatcherTestService } from './test/parcel-watcher-test-service';
 import { FileChange, FileChangeType } from '../../common/filesystem-watcher-protocol';
 
 const expect = chai.expect;
@@ -38,7 +38,7 @@ describe('parcel-filesystem-watcher missing path handling', function (): void {
     this.timeout(20000);
 
     let root: URI;
-    let service: ParcelFileSystemWatcherService;
+    let service: ParcelWatcherTestService;
     let changes: FileChange[];
 
     beforeEach(() => {
@@ -53,10 +53,9 @@ describe('parcel-filesystem-watcher missing path handling', function (): void {
         }
         root = FileUri.create(fs.realpathSync(tempPath));
         changes = [];
-        service = new ParcelFileSystemWatcherService({ verbose: false });
-        // Bind the array itself instead of the variable: `dispose` is a no-op for the service and
-        // the tests never unwatch, so the watchers of a previous test are still live and would
-        // otherwise push into the array of the current one.
+        service = new ParcelWatcherTestService({ verbose: false });
+        // Bind the array itself instead of the variable, so that events arriving while a
+        // test is torn down cannot leak into the array of the next one.
         const ownChanges = changes;
         service.setClient({
             onDidFilesChanged: event => ownChanges.push(...event.changes),
@@ -64,7 +63,10 @@ describe('parcel-filesystem-watcher missing path handling', function (): void {
         });
     });
 
-    afterEach(() => {
+    afterEach(async () => {
+        // Unsubscribe before deleting the watched directories: deleting a still subscribed
+        // root strands parcel's shared macOS FSEvents backend, see ParcelWatcherTestService.
+        await service.disposeAllWatchers();
         service.dispose();
         track.cleanupSync();
     });
@@ -144,9 +146,11 @@ describe('parcel-filesystem-watcher missing path handling', function (): void {
         await sleep(1000);
         expect(changes, 'no change should be reported for an already existing path').to.be.empty;
 
-        // The watcher is nevertheless live and reports actual changes.
+        // The watcher is nevertheless live and reports actual changes. Only the URI is
+        // checked: FSEvents on macOS coalesces flags per path, so parcel can legitimately
+        // report this write as a creation instead of an update.
         fs.writeFileSync(FileUri.fsPath(file), '{ "breadcrumbs.enabled": true }');
-        await waitFor(() => changes.some(change => change.uri === file.toString() && change.type === FileChangeType.UPDATED), 5000);
+        await waitFor(() => changes.some(change => change.uri === file.toString()), 5000);
     });
 });
 
