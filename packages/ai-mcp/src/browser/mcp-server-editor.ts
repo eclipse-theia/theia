@@ -89,10 +89,16 @@ export const MCPServerEditor = Symbol('MCPServerEditor');
 export interface MCPServerEditor {
     /** Opens the "Add MCP Server" dialog and persists the result. */
     openAddServer(): Promise<void>;
-    /** Opens the "Edit MCP Server" dialog pre-filled from `server` and persists the result. */
-    openEditServer(server: MCPServerDescription, existingNames: string[]): Promise<void>;
     /** Installs a self-contained entry, applying any user-supplied overrides. */
     installFromEntry(entry: MCPInstallEntry, overrides?: MCPInstallOverrides): Promise<void>;
+    /**
+     * Persists an edited server from its form representation, preserving extra stored fields (e.g.
+     * `registryMetadata`) and clearing keys that don't belong to the chosen server type. Exposed so the
+     * configuration page can edit a server in place (field by field) without opening the dialog.
+     */
+    save(formData: MCPServerFormData): Promise<void>;
+    /** Converts a server description into the editable form representation, or `undefined` if unsupported. */
+    toFormData(server: MCPServerDescription): MCPServerFormData | undefined;
 }
 
 /**
@@ -121,23 +127,6 @@ export class MCPServerEditorImpl implements MCPServerEditor {
             props: { title: nls.localizeByDefault('Add MCP Server'), maxWidth: 500 },
             existingServerNames: existing,
             isEditing: false
-        });
-        const result = await dialog.open();
-        if (result) {
-            await this.save(result);
-        }
-    }
-
-    async openEditServer(server: MCPServerDescription, existingNames: string[]): Promise<void> {
-        const formData = this.toFormData(server);
-        if (!formData) {
-            return;
-        }
-        const dialog = this.editDialogFactory({
-            props: { title: nls.localize('theia/ai/mcpConfiguration/editServerTitle', 'Edit MCP Server'), maxWidth: 500 },
-            initialData: formData,
-            existingServerNames: existingNames.filter(n => n !== server.name),
-            isEditing: true
         });
         const result = await dialog.open();
         if (result) {
@@ -248,7 +237,7 @@ export class MCPServerEditorImpl implements MCPServerEditor {
         }
     }
 
-    protected toFormData(server: MCPServerDescription): MCPServerFormData | undefined {
+    toFormData(server: MCPServerDescription): MCPServerFormData | undefined {
         if (isLocalMCPServerDescription(server)) {
             return {
                 name: server.name,

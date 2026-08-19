@@ -5,6 +5,7 @@
   "dependencies": {
     "@theia/core": "1.74.0",
     "@theia/ai-core": "1.74.0",
+    "@theia/preferences": "1.74.0",
     "tslib": "^2.8.1"
   },
   "main": "lib/common",

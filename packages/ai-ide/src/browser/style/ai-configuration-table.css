@@ -43,13 +43,14 @@
   font-weight: 600;
   border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
   color: var(--theia-foreground);
+  /* Opaque background so the sticky header hides the rows scrolling underneath instead of overlapping them. */
+  background-color: var(--theia-editor-background);
 }
 
 .ai-configuration-table td {
   padding: calc(var(--theia-ui-padding) / 2) var(--theia-ui-padding);
   border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
   color: var(--theia-foreground);
-  vertical-align: top;
 }
 
 .ai-configuration-table .skill-description-column,
@@ -121,18 +122,4 @@
   display: flex;
   flex-wrap: wrap;
   gap: calc(var(--theia-ui-padding) / 2);
-}
-
-.ai-slash-commands-section .agent-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--theia-button-background);
-  color: var(--theia-editor-background);
-  gap: calc(var(--theia-ui-padding) / 2);
-  padding: calc(var(--theia-ui-padding) / 3) calc(var(--theia-ui-padding) / 1.5);
-  border-radius: 1em;
-  font-size: var(--theia-ui-font-size0);
-  font-weight: 500;
-  white-space: nowrap;
 }

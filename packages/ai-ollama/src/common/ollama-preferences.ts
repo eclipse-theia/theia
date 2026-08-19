@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { AI_CORE_PREFERENCES_TITLE, MODEL_PROVIDER_TYPE_DETAIL, ModelProviderTypeDetail } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { PreferenceSchema } from '@theia/core/lib/common';
 
 export const HOST_PREF = 'ai-features.ollama.ollamaHost';
@@ -24,6 +24,7 @@ export const OllamaPreferencesSchema: PreferenceSchema = {
     properties: {
         [HOST_PREF]: {
             type: 'string',
+            typeDetails: { [MODEL_PROVIDER_TYPE_DETAIL]: { label: 'Ollama' } satisfies ModelProviderTypeDetail },
             title: AI_CORE_PREFERENCES_TITLE,
             default: 'http://localhost:11434'
         },
