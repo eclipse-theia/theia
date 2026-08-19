@@ -73,8 +73,13 @@ import {
     type RawViewContainer,
     type RawViewWelcome,
     type ViewsByLocation,
+    type WalkthroughContribution,
+    type WalkthroughStepContribution,
+    type WalkthroughStepMedia,
+    type PluginPackageWalkthroughStepMedia,
 } from '../common/contribution-types';
 import { rawContributes, type PluginManifest } from '../common/manifest-types';
+import { UNPUBLISHED } from '../common/constants';
 
 function isPluginUiTheme(value: unknown): value is PluginUiTheme {
     return value === 'vs' || value === 'vs-dark' || value === 'hc-black';
@@ -184,6 +189,7 @@ export async function normalizeContributions<TContrib extends object>(
     const readColorsFn = ctx.readColors ?? (plugin => readColors(ctx, plugin));
     const readTerminalsFn = ctx.readTerminals ?? readTerminals;
     const readLocalizationsFn = ctx.readLocalizations ?? (plugin => readLocalizations(plugin, ctx));
+    const readWalkthroughsFn = ctx.readWalkthroughs ?? (plugin => readWalkthroughs(plugin, ctx));
     const readLanguagesFn = ctx.readLanguages ?? ((languages, plugin) => readLanguages(ctx, languages, plugin));
 
     try {
@@ -366,6 +372,12 @@ export async function normalizeContributions<TContrib extends object>(
         ctx.onError('localizations', err, contributes.localizations);
     }
 
+    try {
+        output.walkthroughs = readWalkthroughsFn(rawPlugin);
+    } catch (err) {
+        ctx.onError('walkthroughs', err, contributes.walkthroughs);
+    }
+
     const [languagesResult, grammarsResult] = await Promise.allSettled([
         contributes.languages ? readLanguagesFn(contributes.languages, rawPlugin) : undefined,
         contributes.grammars && ctx.readGrammars
@@ -447,6 +459,98 @@ export function readTranslation(packageTranslation: RawTranslation, _pluginPath:
         id: packageTranslation.id,
         path: packageTranslation.path
     };
+}
+
+export function readWalkthroughs(
+    pck: PluginManifest,
+    ctx: Pick<NormalizeContributionsContext, 'resolveUrl' | 'onWarn'>
+): WalkthroughContribution[] | undefined {
+    const walkthroughs = rawContributes(pck).walkthroughs;
+    if (!walkthroughs) {
+        return undefined;
+    }
+    const pluginId = `${(pck.publisher ?? UNPUBLISHED).toLowerCase()}.${pck.name.toLowerCase()}`;
+    // `PluginModel` does not carry the extension icon, so it travels with the walkthroughs that show it.
+    const pluginIcon = pck.icon ? ctx.resolveUrl(pck.icon) : undefined;
+    const result: WalkthroughContribution[] = [];
+    for (const walkthrough of walkthroughs) {
+        if (typeof walkthrough.id !== 'string' || !walkthrough.id) {
+            ctx.onWarn(`'contributes.walkthroughs.id' of '${pluginId}' must be defined and non-empty`);
+            continue;
+        }
+        if (typeof walkthrough.title !== 'string' || !walkthrough.title) {
+            ctx.onWarn(`'contributes.walkthroughs.title' of '${pluginId}.${walkthrough.id}' must be defined and non-empty`);
+            continue;
+        }
+        if (!Array.isArray(walkthrough.steps)) {
+            ctx.onWarn(`'contributes.walkthroughs.steps' of '${pluginId}.${walkthrough.id}' must be an array`);
+            continue;
+        }
+        const steps: WalkthroughStepContribution[] = [];
+        for (const step of walkthrough.steps) {
+            if (typeof step.id !== 'string' || !step.id) {
+                ctx.onWarn(`'contributes.walkthroughs.steps.id' of '${pluginId}.${walkthrough.id}' must be defined and non-empty`);
+                continue;
+            }
+            if (typeof step.title !== 'string' || !step.title) {
+                ctx.onWarn(`'contributes.walkthroughs.steps.title' of '${pluginId}.${walkthrough.id}.${step.id}' must be defined and non-empty`);
+                continue;
+            }
+            steps.push({
+                id: step.id,
+                title: step.title,
+                description: step.description || '',
+                media: resolveWalkthroughMedia(ctx, step.media),
+                completionEvents: step.completionEvents,
+                when: step.when
+            });
+        }
+        result.push({
+            id: walkthrough.id,
+            title: walkthrough.title,
+            description: walkthrough.description || '',
+            steps,
+            when: walkthrough.when,
+            icon: walkthrough.icon,
+            pluginId,
+            pluginIcon
+        });
+    }
+    return result.length > 0 ? result : undefined;
+}
+
+function resolveWalkthroughMedia(
+    ctx: Pick<NormalizeContributionsContext, 'resolveUrl'>,
+    media?: PluginPackageWalkthroughStepMedia
+): WalkthroughStepMedia | undefined {
+    if (!media) {
+        return undefined;
+    }
+    if ('markdown' in media) {
+        return { markdown: ctx.resolveUrl(media.markdown) };
+    }
+    const altText = 'altText' in media ? media.altText as string : undefined;
+    if ('svg' in media) {
+        return { svg: ctx.resolveUrl(media.svg), ...(altText !== undefined && { altText }) };
+    }
+    if ('image' in media) {
+        if (typeof media.image === 'string') {
+            return { image: ctx.resolveUrl(media.image), ...(altText !== undefined && { altText }) };
+        }
+        // Only `dark` and `light` are mandatory; the high contrast variants fall back to them.
+        const dark = ctx.resolveUrl(media.image.dark);
+        const light = ctx.resolveUrl(media.image.light);
+        return {
+            image: {
+                dark,
+                light,
+                hc: media.image.hc ? ctx.resolveUrl(media.image.hc) : dark,
+                hcLight: media.image.hcLight ? ctx.resolveUrl(media.image.hcLight) : light
+            },
+            ...(altText !== undefined && { altText })
+        };
+    }
+    return undefined;
 }
 
 export function readCommand(ctx: NormalizeContributionsContext, command: RawCommand, pck: PluginManifest): NormalizedCommand {

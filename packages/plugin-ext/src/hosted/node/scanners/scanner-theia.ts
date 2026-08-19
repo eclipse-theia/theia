@@ -58,9 +58,6 @@ import {
     ViewContainer,
     ViewWelcome,
     WalkthroughContribution,
-    WalkthroughStepContribution,
-    WalkthroughStepMedia,
-    PluginPackageWalkthroughStepMedia,
 } from '../../../common/plugin-protocol';
 import { promises as fs } from 'fs';
 import * as path from 'path';
@@ -96,6 +93,7 @@ import {
     readTerminals as readTerminalsShared,
     readThemes as readThemesShared,
     readTranslation as readTranslationShared,
+    readWalkthroughs as readWalkthroughsShared,
     readView as readViewShared,
     readViewContainer as readViewContainerShared,
     readViewWelcome as readViewWelcomeShared,
@@ -226,13 +224,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
 
     protected override async readContributions(rawPlugin: PluginPackage, contributions: PluginContribution): Promise<PluginContribution> {
         const ctx = this.contributionCtx(rawPlugin);
-        const result = await contributionCtxStorage.run(ctx, () => normalizeContributions(ctx, contributions));
-        try {
-            result.walkthroughs = this.readWalkthroughs(rawPlugin);
-        } catch (err) {
-            this.logger.error(`Could not read '${rawPlugin.name}' contribution 'walkthroughs'.`, rawPlugin.contributes?.walkthroughs, err);
-        }
-        return result;
+        return contributionCtxStorage.run(ctx, () => normalizeContributions(ctx, contributions));
     }
 
     protected contributionCtx(pck: PluginPackage): NormalizeContributionsContext<PluginPackage> {
@@ -271,6 +263,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
             readColors: plugin => this.readColors(plugin),
             readTerminals: plugin => this.readTerminals(plugin),
             readLocalizations: plugin => this.readLocalizations(plugin),
+            readWalkthroughs: plugin => this.readWalkthroughs(plugin),
             readLanguages: (languages, plugin) => this.readLanguages(languages, plugin),
         };
         ctx.readGrammars = (grammars, pluginPath) => this.grammarsReader.readGrammars(
@@ -300,88 +293,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
     }
 
     protected readWalkthroughs(pck: PluginPackage): WalkthroughContribution[] | undefined {
-        if (!pck.contributes || !pck.contributes.walkthroughs) {
-            return undefined;
-        }
-        const pluginId = PluginIdentifiers.componentsToUnversionedId({ publisher: pck.publisher, name: pck.name, version: pck.version });
-        // `PluginModel` does not carry the extension icon, so it travels with the walkthroughs that show it.
-        const pluginIcon = pck.icon ? this.toPluginUrl(pck, pck.icon) : undefined;
-        const result: WalkthroughContribution[] = [];
-        for (const walkthrough of pck.contributes.walkthroughs) {
-            if (typeof walkthrough.id !== 'string' || !walkthrough.id) {
-                this.logger.error(`'contributes.walkthroughs.id' of '${pluginId}' must be defined and non-empty`);
-                continue;
-            }
-            if (typeof walkthrough.title !== 'string' || !walkthrough.title) {
-                this.logger.error(`'contributes.walkthroughs.title' of '${pluginId}.${walkthrough.id}' must be defined and non-empty`);
-                continue;
-            }
-            if (!Array.isArray(walkthrough.steps)) {
-                this.logger.error(`'contributes.walkthroughs.steps' of '${pluginId}.${walkthrough.id}' must be an array`);
-                continue;
-            }
-            const steps: WalkthroughStepContribution[] = [];
-            for (const step of walkthrough.steps) {
-                if (typeof step.id !== 'string' || !step.id) {
-                    this.logger.error(`'contributes.walkthroughs.steps.id' of '${pluginId}.${walkthrough.id}' must be defined and non-empty`);
-                    continue;
-                }
-                if (typeof step.title !== 'string' || !step.title) {
-                    this.logger.error(`'contributes.walkthroughs.steps.title' of '${pluginId}.${walkthrough.id}.${step.id}' must be defined and non-empty`);
-                    continue;
-                }
-                steps.push({
-                    id: step.id,
-                    title: step.title,
-                    description: step.description || '',
-                    media: this.resolveWalkthroughMedia(pck, step.media),
-                    completionEvents: step.completionEvents,
-                    when: step.when
-                });
-            }
-            result.push({
-                id: walkthrough.id,
-                title: walkthrough.title,
-                description: walkthrough.description || '',
-                steps,
-                when: walkthrough.when,
-                icon: walkthrough.icon,
-                pluginId,
-                pluginIcon
-            });
-        }
-        return result.length > 0 ? result : undefined;
-    }
-
-    protected resolveWalkthroughMedia(pck: PluginPackage, media?: PluginPackageWalkthroughStepMedia): WalkthroughStepMedia | undefined {
-        if (!media) {
-            return undefined;
-        }
-        if ('markdown' in media) {
-            return { markdown: this.toPluginUrl(pck, media.markdown) };
-        }
-        const altText = 'altText' in media ? media.altText as string : undefined;
-        if ('svg' in media) {
-            return { svg: this.toPluginUrl(pck, media.svg), ...(altText !== undefined && { altText }) };
-        }
-        if ('image' in media) {
-            if (typeof media.image === 'string') {
-                return { image: this.toPluginUrl(pck, media.image), ...(altText !== undefined && { altText }) };
-            }
-            // Only `dark` and `light` are mandatory; the high contrast variants fall back to them.
-            const dark = this.toPluginUrl(pck, media.image.dark);
-            const light = this.toPluginUrl(pck, media.image.light);
-            return {
-                image: {
-                    dark,
-                    light,
-                    hc: media.image.hc ? this.toPluginUrl(pck, media.image.hc) : dark,
-                    hcLight: media.image.hcLight ? this.toPluginUrl(pck, media.image.hcLight) : light
-                },
-                ...(altText !== undefined && { altText })
-            };
-        }
-        return undefined;
+        return readWalkthroughsShared(pck, this.contributionCtx(pck));
     }
 
     protected readCommand(command: PluginPackageCommand, pck: PluginPackage): PluginCommand {

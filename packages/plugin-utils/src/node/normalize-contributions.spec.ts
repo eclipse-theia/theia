@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { CustomEditorPriority, type GrammarsContribution } from '../common/contribution-types';
+import { CustomEditorPriority, type GrammarsContribution, type WalkthroughContribution } from '../common/contribution-types';
 import { PreferenceScope } from '../common/protocol-shims';
 import {
     deriveDefaultForType,
@@ -44,6 +44,7 @@ import {
     readViewContainer,
     readViewWelcome,
     readViewsWelcome,
+    readWalkthroughs,
     toSchema,
     transformIconUrl
 } from './normalize-contributions';
@@ -870,6 +871,61 @@ describe('normalize-contributions', () => {
             expect(errors).to.have.lengthOf(1);
             expect(errors[0].kind).to.equal('configuration');
             expect(errors[0].message).to.be.instanceOf(Error);
+        });
+    });
+
+    describe('readWalkthroughs', () => {
+        it('resolves media and plugin icon URLs for browser-only static hosting', async () => {
+            const ctx = createNormalizeCtx({
+                name: 'test-plugin',
+                publisher: 'test-publisher',
+                icon: 'images/icon.png',
+                contributes: {
+                    walkthroughs: [{
+                        id: 'getStarted',
+                        title: 'Get Started',
+                        description: 'Intro',
+                        steps: [{
+                            id: 'open',
+                            title: 'Open a folder',
+                            description: '',
+                            media: { markdown: 'walkthroughs/open.md' }
+                        }]
+                    }]
+                }
+            });
+
+            const contributions = await normalizeContributions(ctx, {} as { walkthroughs?: WalkthroughContribution[] });
+            expect(contributions).to.have.property('walkthroughs').with.lengthOf(1);
+            const walkthrough = contributions.walkthroughs![0];
+            expect(walkthrough.pluginId).to.equal('test-publisher.test-plugin');
+            expect(walkthrough.pluginIcon).to.equal('hostedPlugin/test_publisher_test_plugin/images/icon.png');
+            expect(walkthrough.steps[0].media).to.deep.equal({
+                markdown: 'hostedPlugin/test_publisher_test_plugin/walkthroughs/open.md'
+            });
+        });
+
+        it('skips walkthroughs with a missing id', () => {
+            const warnings: string[] = [];
+            const ctx = createNormalizeCtx({
+                name: 'test-plugin',
+                publisher: 'test-publisher',
+                contributes: {
+                    walkthroughs: [{
+                        id: '',
+                        title: 'Broken',
+                        description: '',
+                        steps: [{ id: 's1', title: 'S1', description: '' }]
+                    }]
+                }
+            }, {
+                onWarn: msg => {
+                    warnings.push(msg);
+                }
+            });
+
+            expect(readWalkthroughs(ctx.plugin, ctx)).to.be.undefined;
+            expect(warnings).to.have.lengthOf(1);
         });
     });
 });

@@ -63,6 +63,7 @@ export interface PluginManifestContribution {
     notebookPreload?: PluginPackageNotebookPreload[];
     mcpServerDefinitionProviders?: PluginPackageMcpServerDefinitionProviderContribution[];
     languageModelTools?: PluginPackageLanguageModelToolContribution[];
+    walkthroughs?: PluginPackageWalkthrough[];
 }
 
 export interface PluginPackageNotebook {
@@ -97,6 +98,62 @@ export interface PluginPackageLanguageModelToolContribution {
     userDescription?: string;
     inputSchema?: object;
     tags?: string[];
+}
+
+/**
+ * Media of a walkthrough step as contributed in `package.json`. Only the light and dark variant of an
+ * image are mandatory, the high contrast ones were added to the VS Code schema later.
+ */
+export type PluginPackageWalkthroughStepMedia =
+    { markdown: string }
+    | { image: string | { dark: string; light: string; hc?: string; hcLight?: string }; altText?: string }
+    | { svg: string; altText?: string };
+
+export interface PluginPackageWalkthroughStep {
+    id: string;
+    title: string;
+    description: string;
+    media?: PluginPackageWalkthroughStepMedia;
+    completionEvents?: string[];
+    when?: string;
+}
+
+export interface PluginPackageWalkthrough {
+    id: string;
+    title: string;
+    description: string;
+    steps: PluginPackageWalkthroughStep[];
+    when?: string;
+    icon?: string;
+}
+
+/**
+ * Media of a walkthrough step with every path resolved and every image variant filled in.
+ */
+export type WalkthroughStepMedia =
+    { markdown: string }
+    | { image: string | { dark: string; light: string; hc: string; hcLight: string }; altText?: string }
+    | { svg: string; altText?: string };
+
+export interface WalkthroughStepContribution {
+    id: string;
+    title: string;
+    description: string;
+    media?: WalkthroughStepMedia;
+    completionEvents?: string[];
+    when?: string;
+}
+
+export interface WalkthroughContribution {
+    id: string;
+    title: string;
+    description: string;
+    steps: WalkthroughStepContribution[];
+    when?: string;
+    icon?: string;
+    pluginId: string;
+    /** Icon of the contributing extension, as a backend relative path. */
+    pluginIcon?: string;
 }
 
 export interface PluginPackageAuthenticationProvider {
@@ -421,6 +478,7 @@ export interface NormalizeContributionsContext<TPlugin extends PluginManifest = 
     readColors?(plugin: TPlugin): ColorDefinition[] | undefined;
     readTerminals?(plugin: TPlugin): NormalizedTerminalProfile[] | undefined;
     readLocalizations?(plugin: TPlugin): NormalizedLocalization[] | undefined;
+    readWalkthroughs?(plugin: TPlugin): WalkthroughContribution[] | undefined;
     readLocalization?(entry: RawLocalization, pluginPath: string): NormalizedLocalization;
     readTranslation?(entry: RawTranslation, pluginPath: string): NormalizedTranslation;
     readLanguages?(languages: readonly RawLanguage[], plugin: TPlugin): Promise<NormalizedLanguage[] | undefined>;
@@ -615,4 +673,5 @@ export interface NormalizedPluginContribution {
     notebooks?: PluginPackageNotebook[];
     notebookRenderer?: PluginNotebookRendererContribution[];
     notebookPreload?: PluginPackageNotebookPreload[];
+    walkthroughs?: WalkthroughContribution[];
 }
