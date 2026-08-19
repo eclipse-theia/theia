@@ -63,7 +63,7 @@ export class MCPInstalledEntry implements TreeElement, RegistryEntryContext {
     }
 
     get autoUpdateId(): string | undefined {
-        return autoUpdateId(this.state, this.matchedEntry?.serverId);
+        return RegistryEntryContext.autoUpdateId(this.state, this.matchedEntry?.serverId ?? this.local.registryMetadata?.serverId);
     }
 
     render(): React.ReactNode {
@@ -108,7 +108,7 @@ export class MCPSearchResultEntry implements TreeElement, RegistryEntryContext {
     }
 
     get autoUpdateId(): string | undefined {
-        return autoUpdateId(this.state, this.entry.serverId);
+        return RegistryEntryContext.autoUpdateId(this.state, this.entry.serverId);
     }
 
     render(): React.ReactNode {
@@ -125,14 +125,6 @@ export class MCPSearchResultEntry implements TreeElement, RegistryEntryContext {
             />
         );
     }
-}
-
-/**
- * An auto-update policy is only meaningful for a server that is installed and linked to a live
- * registry entry - which excludes drifted servers, as the auto-updater does.
- */
-function autoUpdateId(state: ClassificationResult, serverId: string | undefined): string | undefined {
-    return state.kind === 'installed-from-registry' ? serverId : undefined;
 }
 
 interface MCPCardProps {

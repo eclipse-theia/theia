@@ -32,7 +32,7 @@ import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdo
 import * as React from '@theia/core/shared/react';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { flushSync } from '@theia/core/shared/react-dom';
-import { InstalledPluginInfo } from '../../common/plugin/plugin-registry-types';
+import { InstalledPluginInfo, PluginClassificationResult } from '../../common/plugin/plugin-registry-types';
 import { PluginEntryHandlers, PluginInstalledEntry } from './plugin-entries';
 
 disableJSDOM();
@@ -73,6 +73,29 @@ function installed(overrides: Partial<InstalledPluginInfo> = {}): InstalledPlugi
         ...overrides
     };
 }
+
+describe('PluginInstalledEntry auto-update context', () => {
+
+    function entryFor(state: PluginClassificationResult, info = installed()): PluginInstalledEntry {
+        return new PluginInstalledEntry(info, undefined, state, handlers, hoverService, markdownRenderer, contextMenuRenderer);
+    }
+
+    const hoverService = {} as unknown as HoverService;
+    const contextMenuRenderer = {} as unknown as ContextMenuRenderer;
+
+    it('offers a policy for a drifted plugin, which shows a warning and has to be fixed first', () => {
+        expect(entryFor({ kind: 'fix-plugin' }, installed({ drifted: true })).autoUpdateId).to.equal('io.github.acme/tools');
+    });
+
+    it('keeps the policy of a plugin whose registry entry has gone missing, using the recorded identifier', () => {
+        // `matchedEntry` is undefined by definition here, so this only works via the local marker.
+        expect(entryFor({ kind: 'installed-link-stale' }).autoUpdateId).to.equal('io.github.acme/tools');
+    });
+
+    it('offers no policy for a directory the registry has never known', () => {
+        expect(entryFor({ kind: 'installed-user-added' }, installed({ pluginId: undefined })).autoUpdateId).to.be.undefined;
+    });
+});
 
 describe('PluginInstalledEntry hover', () => {
 
