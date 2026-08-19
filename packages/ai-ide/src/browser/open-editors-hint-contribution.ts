@@ -19,8 +19,6 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { PromptService } from '@theia/ai-core/lib/common';
 import { OPEN_EDITORS_HINT_FRAGMENT_ID } from '../common/open-editors-hint-fragment-id';
 
-export { OPEN_EDITORS_HINT_FRAGMENT_ID };
-
 @injectable()
 export class OpenEditorsHintContribution implements FrontendApplicationContribution {
 
