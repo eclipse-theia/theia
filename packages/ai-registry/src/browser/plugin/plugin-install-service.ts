@@ -16,6 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { PluginDirectoryNaming } from '../../common/plugin/plugin-directory-naming';
+import { RegistryAutoUpdatePolicy } from '../auto-update/registry-auto-update-policy';
 import { PluginInstallBackendService } from '../../common/plugin/plugin-install-protocol';
 import {
     InstalledPluginInfo,
@@ -53,6 +54,9 @@ export class PluginInstallServiceImpl implements PluginInstallService {
     @inject(PluginDirectoryNaming)
     protected readonly directoryNaming: PluginDirectoryNaming;
 
+    @inject(RegistryAutoUpdatePolicy)
+    protected readonly autoUpdatePolicy: RegistryAutoUpdatePolicy;
+
     stage(entry: ResolvedPluginEntry): Promise<StagedPluginInstall> {
         return this.backend.stage(entry);
     }
@@ -65,16 +69,21 @@ export class PluginInstallServiceImpl implements PluginInstallService {
         return this.backend.discard(stagingId);
     }
 
-    uninstall(pluginId: string): Promise<void> {
-        return this.backend.uninstall(pluginId);
+    async uninstall(pluginId: string): Promise<void> {
+        await this.backend.uninstall(pluginId);
+        // The plugin is gone, so its override would linger with nothing left to apply it to.
+        await this.autoUpdatePolicy.clearMode('plugin', pluginId);
     }
 
     link(entry: ResolvedPluginEntry, directoryName: string): Promise<InstalledPluginInfo> {
         return this.backend.link(entry, directoryName);
     }
 
-    unlink(pluginId: string): Promise<void> {
-        return this.backend.unlink(pluginId);
+    async unlink(pluginId: string): Promise<void> {
+        // Unlinking is the other way a plugin stops being registry-managed, so it drops the
+        // override for the same reason uninstall does. Re-linking starts from the default again.
+        await this.backend.unlink(pluginId);
+        await this.autoUpdatePolicy.clearMode('plugin', pluginId);
     }
 
     listInstalledPlugins(): Promise<InstalledPluginInfo[]> {
@@ -112,17 +121,22 @@ export class PluginInstallServiceImpl implements PluginInstallService {
     }
 
     /**
-     * Update takes precedence over Fix: only when the registry offers nothing new do local edits
-     * surface. Both are decided against the one recorded hash, which is always the endorsed one -
-     * an update means the registry published a different hash, drift means the tree on disk no
-     * longer produces it.
+     * Drift takes precedence over Update, mirroring the skill and MCP classifiers: a plugin whose
+     * root no longer matches what was installed must be fixed before it counts as updatable, and
+     * that is also what keeps the auto-updater from silently replacing edited content. Nothing is
+     * lost by fixing first - Fix and Update are the same clean replace, so a single Fix already
+     * lands the current registry content.
+     *
+     * Both are decided against the one recorded hash, which is always the endorsed one: an update
+     * means the registry published a different hash, drift means the tree on disk no longer
+     * produces it.
      */
     protected classifyLinked(registryHash: string, info: InstalledPluginInfo): PluginClassificationResult {
-        if (registryHash !== info.contentHash) {
-            return { kind: 'installed-from-registry', updateAvailable: true };
-        }
         if (info.drifted) {
             return { kind: 'fix-plugin' };
+        }
+        if (registryHash !== info.contentHash) {
+            return { kind: 'installed-from-registry', updateAvailable: true };
         }
         return { kind: 'installed-from-registry', updateAvailable: false };
     }

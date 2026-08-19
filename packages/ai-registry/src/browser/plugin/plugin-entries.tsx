@@ -16,13 +16,16 @@
 
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core';
-import { HoverService } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, HoverService } from '@theia/core/lib/browser';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { TypeBadge } from '@theia/vsx-registry/lib/browser/type-badge';
 import { ExtensionCard } from '@theia/vsx-registry/lib/browser/extension-card';
+import { RegistryArtifactKind } from '../../common/ai-registry-preferences';
 import { InstalledPluginInfo, PluginClassificationResult, ResolvedPluginEntry } from '../../common/plugin/plugin-registry-types';
+import { RegistryEntryContext } from '../registry-entry-context';
+import { RegistryEntryGear, RegistryEntryMenuEvent, showEntryMenu } from '../registry-entry-menu';
 
 export const AGENT_PLUGINS_LABEL = nls.localizeByDefault('Agent Plugins');
 
@@ -41,9 +44,10 @@ export interface PluginEntryHandlers {
     uninstall(pluginId: string): Promise<void>;
 }
 
-export class PluginInstalledEntry implements TreeElement {
+export class PluginInstalledEntry implements TreeElement, RegistryEntryContext {
 
     readonly id: string;
+    readonly artifactKind: RegistryArtifactKind = 'plugin';
     /** Precomputed so the Link action's argument stays stable across renders. */
     protected readonly linkTarget: PluginLinkTarget | undefined;
 
@@ -53,10 +57,19 @@ export class PluginInstalledEntry implements TreeElement {
         readonly state: PluginClassificationResult,
         readonly handlers: PluginEntryHandlers,
         readonly hoverService: HoverService,
-        readonly markdownRenderer: MarkdownRenderer
+        readonly markdownRenderer: MarkdownRenderer,
+        readonly contextMenuRenderer: ContextMenuRenderer
     ) {
         this.id = `agent-plugin-installed-${local.directoryName}`;
         this.linkTarget = matchedEntry && { entry: matchedEntry, directoryName: local.directoryName };
+    }
+
+    get copyableId(): string | undefined {
+        return this.local.pluginId ?? this.matchedEntry?.pluginId ?? this.local.directoryName;
+    }
+
+    get autoUpdateId(): string | undefined {
+        return autoUpdateId(this.state, this.local.pluginId ?? this.matchedEntry?.pluginId);
     }
 
     render(): React.ReactNode {
@@ -76,15 +89,17 @@ export class PluginInstalledEntry implements TreeElement {
                 diagnostics={diagnostics}
                 hoverService={this.hoverService}
                 markdownRenderer={this.markdownRenderer}
+                onManage={event => showEntryMenu(event, this, this.contextMenuRenderer)}
                 actions={renderActions(this.state, this.matchedEntry, identifier, this.linkTarget, this.handlers)}
             />
         );
     }
 }
 
-export class PluginSearchResultEntry implements TreeElement {
+export class PluginSearchResultEntry implements TreeElement, RegistryEntryContext {
 
     readonly id: string;
+    readonly artifactKind: RegistryArtifactKind = 'plugin';
     protected readonly linkTarget: PluginLinkTarget | undefined;
 
     constructor(
@@ -93,11 +108,20 @@ export class PluginSearchResultEntry implements TreeElement {
         readonly handlers: PluginEntryHandlers,
         readonly hoverService: HoverService,
         readonly markdownRenderer: MarkdownRenderer,
+        readonly contextMenuRenderer: ContextMenuRenderer,
         /** Directory of an unlinked local copy of this plugin, when there is one to adopt. */
         readonly linkDirectoryName?: string
     ) {
         this.id = `agent-plugin-search-${entry.pluginId}`;
         this.linkTarget = linkDirectoryName !== undefined ? { entry, directoryName: linkDirectoryName } : undefined;
+    }
+
+    get copyableId(): string | undefined {
+        return this.entry.pluginId;
+    }
+
+    get autoUpdateId(): string | undefined {
+        return autoUpdateId(this.state, this.entry.pluginId);
     }
 
     render(): React.ReactNode {
@@ -115,10 +139,19 @@ export class PluginSearchResultEntry implements TreeElement {
                 servers={servers}
                 hoverService={this.hoverService}
                 markdownRenderer={this.markdownRenderer}
+                onManage={event => showEntryMenu(event, this, this.contextMenuRenderer)}
                 actions={renderActions(this.state, this.entry, this.entry.pluginId, this.linkTarget, this.handlers)}
             />
         );
     }
+}
+
+/**
+ * An auto-update policy is only meaningful for a plugin that is installed and linked to a live
+ * registry entry - which excludes drifted plugins, as the auto-updater does.
+ */
+function autoUpdateId(state: PluginClassificationResult, pluginId: string | undefined): string | undefined {
+    return state.kind === 'installed-from-registry' ? pluginId : undefined;
 }
 
 interface PluginDiagnostics {
@@ -139,6 +172,7 @@ interface PluginCardProps {
     diagnostics?: PluginDiagnostics;
     hoverService: HoverService;
     markdownRenderer: MarkdownRenderer;
+    onManage: (event: RegistryEntryMenuEvent) => void;
     actions?: React.ReactNode;
 }
 
@@ -247,6 +281,7 @@ const PluginCard: React.FC<PluginCardProps> = props => (
         // Only endorsed plugins are published and the feed has no per-plugin verified flag.
         trust="verified"
         hover={{ content: buildHoverContent(props), hoverService: props.hoverService }}
+        onContextMenu={props.onManage}
         actions={
             <div className="theia-agent-plugin-extension-actions">
                 {props.diagnostics && (
@@ -256,12 +291,7 @@ const PluginCard: React.FC<PluginCardProps> = props => (
                     </span>
                 )}
                 {props.actions}
-                {/* Reserves the width VSX cards use for their context-menu gear, so every card type's
-                    action bar ends at the same place. Same placeholder the MCP and skill cards use. */}
-                <div
-                    className="codicon codicon-settings-gear action theia-agent-plugin-extension-gear-placeholder"
-                    aria-hidden="true"
-                />
+                <RegistryEntryGear className="theia-agent-plugin-extension-gear" onManage={props.onManage} />
             </div>
         }
     />

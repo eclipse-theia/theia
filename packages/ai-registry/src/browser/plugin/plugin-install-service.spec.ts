@@ -15,7 +15,12 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { PluginDirectoryNamingImpl } from '../../common/plugin/plugin-directory-naming';
+import { PreferenceService } from '@theia/core';
+import { Container } from '@theia/core/shared/inversify';
+import { AUTO_UPDATE_OVERRIDES_PREF } from '../../common/ai-registry-preferences';
+import { PluginDirectoryNaming, PluginDirectoryNamingImpl } from '../../common/plugin/plugin-directory-naming';
+import { PluginInstallBackendService } from '../../common/plugin/plugin-install-protocol';
+import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from '../auto-update/registry-auto-update-policy';
 import { InstalledPluginInfo, ResolvedPluginEntry } from '../../common/plugin/plugin-registry-types';
 import { PluginInstallService, PluginInstallServiceImpl } from './plugin-install-service';
 
@@ -91,9 +96,11 @@ describe('PluginInstallService.classifyInstalledPlugin', () => {
         expect(service.classifyInstalledPlugin(info, [entry])).to.deep.equal({ kind: 'fix-plugin' });
     });
 
-    it('prefers Update over Fix when the registry hash differs even if the local files have also drifted', () => {
+    it('prefers Fix over Update when the root drifted and the registry hash also moved on', () => {
+        // Mirrors the skill and MCP classifiers, and is what keeps the auto-updater from replacing
+        // edited content: nothing is lost, because Fix and Update are the same clean replace.
         const info = installed({ pluginId: entry.pluginId, contentHash: 'hash-v0', drifted: true });
-        expect(service.classifyInstalledPlugin(info, [entry])).to.deep.equal({ kind: 'installed-from-registry', updateAvailable: true });
+        expect(service.classifyInstalledPlugin(info, [entry])).to.deep.equal({ kind: 'fix-plugin' });
     });
 
     it('offers an Update once the registry publishes a hash other than the recorded one', () => {
@@ -163,5 +170,72 @@ describe('PluginInstallService.findLinkDirectory', () => {
     it('returns undefined for a directory that already carries a provenance marker, which needs no adoption', () => {
         const info = installed({ pluginId: entry.pluginId, contentHash: 'hash-v1' });
         expect(service.findLinkDirectory(entry, [info])).to.be.undefined;
+    });
+});
+
+describe('PluginInstallService override cleanup', () => {
+
+    class FakePreferenceService {
+        private readonly store = new Map<string, unknown>();
+        get<T>(key: string, defaultValue?: T): T | undefined {
+            return (this.store.has(key) ? this.store.get(key) : defaultValue) as T | undefined;
+        }
+        async set(key: string, value: unknown): Promise<void> {
+            this.store.set(key, value);
+        }
+        snapshot<T>(key: string): T | undefined {
+            return this.store.get(key) as T | undefined;
+        }
+    }
+
+    let prefs: FakePreferenceService;
+    let uninstalled: string[];
+    let unlinked: string[];
+    let service: PluginInstallService;
+
+    beforeEach(() => {
+        const container = new Container();
+        prefs = new FakePreferenceService();
+        uninstalled = [];
+        unlinked = [];
+        container.bind(PreferenceService).toConstantValue(prefs);
+        container.bind(PluginInstallBackendService).toConstantValue({
+            uninstall: async (pluginId: string) => { uninstalled.push(pluginId); },
+            unlink: async (pluginId: string) => { unlinked.push(pluginId); }
+        } as unknown as PluginInstallBackendService);
+        container.bind(PluginDirectoryNaming).to(PluginDirectoryNamingImpl).inSingletonScope();
+        container.bind(RegistryAutoUpdatePolicyImpl).toSelf().inSingletonScope();
+        container.bind(RegistryAutoUpdatePolicy).toService(RegistryAutoUpdatePolicyImpl);
+        container.bind(PluginInstallServiceImpl).toSelf().inSingletonScope();
+        container.bind(PluginInstallService).toService(PluginInstallServiceImpl);
+        service = container.get(PluginInstallService);
+    });
+
+    it('drops the override on uninstall, since nothing is left to apply it to', async () => {
+        await prefs.set(AUTO_UPDATE_OVERRIDES_PREF, {
+            [`plugin:${entry.pluginId}`]: 'on',
+            'plugin:io.github.other/other-plugin': 'off'
+        });
+
+        await service.uninstall(entry.pluginId);
+
+        expect(uninstalled).to.deep.equal([entry.pluginId]);
+        expect(prefs.snapshot(AUTO_UPDATE_OVERRIDES_PREF)).to.deep.equal({ 'plugin:io.github.other/other-plugin': 'off' });
+    });
+
+    it('drops the override on unlink too, since the plugin stops being registry-managed', async () => {
+        await prefs.set(AUTO_UPDATE_OVERRIDES_PREF, { [`plugin:${entry.pluginId}`]: 'off' });
+
+        await service.unlink(entry.pluginId);
+
+        expect(unlinked).to.deep.equal([entry.pluginId]);
+        expect(prefs.snapshot(AUTO_UPDATE_OVERRIDES_PREF)).to.deep.equal({});
+    });
+
+    it('writes nothing when the plugin had no override', async () => {
+        await service.uninstall(entry.pluginId);
+
+        expect(uninstalled).to.deep.equal([entry.pluginId]);
+        expect(prefs.snapshot(AUTO_UPDATE_OVERRIDES_PREF)).to.be.undefined;
     });
 });
