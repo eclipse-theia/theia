@@ -810,6 +810,76 @@ describe('DefaultPromptFragmentCustomizationService - custom agent scopes', () =
         expect(agents).to.have.lengthOf(1);
         expect(agents[0].description).to.equal('agents version');
     });
+
+    describe('allowedTools/disallowedTools frontmatter', () => {
+        // Mirrors serializeCustomAgentFile's own logic (a key is only written when defined) using
+        // serializeFrontmatter directly: serializeCustomAgentFile itself is not exported, and the
+        // actual write path (createCustomAgentFile) additionally needs an OpenerService, which this
+        // harness does not stub. serializeFrontmatter is the primitive that both go through, so it
+        // is the nearest public seam for exercising serialization without new scaffolding.
+        const agentFileWithTools = (name: string, description: string, allowedTools?: string[], disallowedTools?: string[]): string => {
+            const metadata: Record<string, unknown> = { name, description, defaultLLM: 'default/universal' };
+            if (allowedTools !== undefined) {
+                metadata.allowedTools = allowedTools;
+            }
+            if (disallowedTools !== undefined) {
+                metadata.disallowedTools = disallowedTools;
+            }
+            return serializeFrontmatter(metadata, `${name} prompt`);
+        };
+
+        it('carries allowedTools and disallowedTools through verbatim', async () => {
+            service.setCustomAgentDirs(['/ws/.agents']);
+            fileService.write(
+                agentMd(new URI('file:///ws/.agents'), 'foo'),
+                agentFileWithTools('Foo', 'Foo agent', ['toolA', 'mcp_*'], ['toolB'])
+            );
+
+            const agents = await service.getCustomAgents();
+
+            expect(agents).to.have.lengthOf(1);
+            expect(agents[0].allowedTools).to.deep.equal(['toolA', 'mcp_*']);
+            expect(agents[0].disallowedTools).to.deep.equal(['toolB']);
+        });
+
+        it('rejects the agent file when allowedTools is not an array', async () => {
+            service.setCustomAgentDirs(['/ws/.agents']);
+            fileService.write(
+                agentMd(new URI('file:///ws/.agents'), 'foo'),
+                '---\nname: Foo\ndescription: Foo agent\ndefaultLLM: default/universal\nallowedTools: notAnArray\n---\nFoo prompt'
+            );
+
+            const agents = await service.getCustomAgents();
+
+            expect(agents.map(a => a.id)).to.not.include('foo');
+        });
+
+        it('serialize round-trip: a description with both keys serializes and round-trips them', async () => {
+            service.setCustomAgentDirs(['/ws/.agents']);
+            const content = agentFileWithTools('Foo', 'Foo agent', ['toolA'], ['toolB']);
+            expect(content).to.contain('allowedTools:');
+            expect(content).to.contain('disallowedTools:');
+            fileService.write(agentMd(new URI('file:///ws/.agents'), 'foo'), content);
+
+            const [agent] = await service.getCustomAgents();
+
+            expect(agent.allowedTools).to.deep.equal(['toolA']);
+            expect(agent.disallowedTools).to.deep.equal(['toolB']);
+        });
+
+        it('serialize round-trip: a description without either key omits both from the frontmatter', async () => {
+            service.setCustomAgentDirs(['/ws/.agents']);
+            const content = agentFileWithTools('Foo', 'Foo agent');
+            expect(content).to.not.contain('allowedTools');
+            expect(content).to.not.contain('disallowedTools');
+            fileService.write(agentMd(new URI('file:///ws/.agents'), 'foo'), content);
+
+            const [agent] = await service.getCustomAgents();
+
+            expect(agent.allowedTools).to.be.undefined;
+            expect(agent.disallowedTools).to.be.undefined;
+        });
+    });
 });
 
 describe('DefaultPromptFragmentCustomizationService - custom agent change detection', () => {

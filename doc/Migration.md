@@ -126,6 +126,21 @@ A new framework API, `AiConfigurationService` (`@theia/ai-core`), wraps `Prefere
 - Prefer `AiConfigurationService` over `PreferenceService` for `ai-features.*` keys in frontend code. Its `get`/`inspect` are workspace-trust-aware (workspace/folder values are suppressed while the workspace is untrusted); writes (`set`/`update`) are never gated by trust.
 - **Behavior change:** the AI terminal's shell-command allowlist/denylist (`ai-features.terminal.shellCommand{Allowlist,Denylist}`) are now read trust-aware via `AiConfigurationService`. Previously they were read with a raw `PreferenceService.get`, so an untrusted workspace could contribute allowlist entries. Now workspace/folder-scoped entries are suppressed until the workspace is trusted (an untrusted workspace can no longer widen the shell allowlist). User- and default-scoped entries are unaffected.
 
+#### Optional per-agent tool policy: `allowedTools`/`disallowedTools` [#17851](https://github.com/eclipse-theia/theia/pull/17851)
+
+Chat agents (built-in and custom) can now optionally cap and deny which of their already-granted tools are exposed to the model, via `allowedTools`/`disallowedTools` glob lists enforced centrally in `ChatToolRequestService`. Both keys are entirely optional; omitting them preserves today's behavior exactly.
+
+**End-user-facing:**
+
+- Custom agents defined in `agent.md` may add `allowedTools`/`disallowedTools` frontmatter keys, next to `name`/`description`/`defaultLLM`/`showInChat` (introduced in v1.73.0), each a list of case-sensitive glob patterns (`*` matches any character sequence, every other character is literal). A tool is exposed only if it matches some `allowedTools` pattern (omitted list = no cap) and no `disallowedTools` pattern (omitted list = deny nothing); `disallowedTools` always wins over `allowedTools`. These lists only filter tools already parsed from the prompt/request — they never grant a tool that nothing referenced.
+- Delegated chat sessions (created via agent delegation) no longer honor tool names mentioned in the delegation request text: previously such wording could grant the delegated agent tools the delegating agent never intended to hand over. Only the skill-loading tool (`getSkillFileContent`) is still grantable this way, so a delegating agent can still prime a sub-agent with a skill. This fixes [#17836](https://github.com/eclipse-theia/theia/issues/17836).
+
+**Adopter-facing:**
+
+- `ChatAgent` (`@theia/ai-chat`) gained optional `allowedTools`/`disallowedTools: string[]` properties; `AbstractChatAgent` passes `this` as the new optional `agent` parameter on the three `ChatToolRequestService` calls it makes. If you implement `ChatAgent` directly rather than extending `AbstractChatAgent` and want the policy enforced, pass the agent as that same optional parameter to `ChatToolRequestService.getChatToolRequests`/`toChatToolRequests`.
+- `CustomAgentDescription` (`@theia/ai-core`) and `CustomAgentFrontmatter` gained the same two optional properties, round-tripped through `readCustomAgentFile`/`serializeCustomAgentFile`. A frontmatter key present with a value that is not a string array now causes the whole `agent.md` file to be rejected on read, the same convention already used for a mistyped `showInChat`.
+- `CustomAgentFactory` gained two new optional trailing parameters, `allowedTools?: string[]` and `disallowedTools?: string[]`; existing callers are unaffected since the parameters are optional and appended at the end.
+
 ### v1.73.0
 
 #### Custom agents reorganized into per-agent folders [#17523](https://github.com/eclipse-theia/theia/pull/17523)

@@ -15,8 +15,7 @@
 // *****************************************************************************
 
 import { ToolInvocationContext, ToolRequest } from '@theia/ai-core';
-import { ILogger } from '@theia/core';
-import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatToolRequestService, normalizeToolArgs } from '../common/chat-tool-request-service';
 import { raceConfirmationWithTimeout } from '../common/chat-tool-confirmation-timeout';
 import { MutableChatRequestModel, ToolCallChatResponseContent } from '../common/chat-model';
@@ -28,9 +27,6 @@ import { ToolConfirmationManager } from './chat-tool-preference-bindings';
  */
 @injectable()
 export class FrontendChatToolRequestService extends ChatToolRequestService {
-
-    @inject(ILogger) @named('ChatToolRequestService')
-    protected readonly logger: ILogger;
 
     @inject(ToolConfirmationManager)
     protected readonly confirmationManager: ToolConfirmationManager;
