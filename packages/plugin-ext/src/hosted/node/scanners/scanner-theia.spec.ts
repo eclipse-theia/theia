@@ -239,7 +239,7 @@ describe('TheiaPluginScanner - readWalkthroughs', () => {
             steps: [{ id: 's1', title: 'S1', description: 'd1' }]
         }], 'test-publisher', 'test-plugin', 'images/icon.png');
 
-        expect(result![0].pluginIcon).to.equal('hostedPlugin/test_publisher_test_plugin/images%2Ficon.png');
+        expect(result![0].pluginIcon).to.equal('hostedPlugin/test_publisher_test_plugin/images/icon.png');
     });
 
     it('should leave the extension icon undefined when the package declares none', () => {
@@ -391,7 +391,7 @@ describe('TheiaPluginScanner - readWalkthroughs', () => {
         }]);
 
         expect(result).to.have.lengthOf(1);
-        expect(result![0].steps[0].media).to.deep.equal({ image: 'hostedPlugin/test_publisher_test_plugin/media%2Fimage.png' });
+        expect(result![0].steps[0].media).to.deep.equal({ image: 'hostedPlugin/test_publisher_test_plugin/media/image.png' });
     });
 
     it('should keep the alt text of svg media', () => {
@@ -408,7 +408,7 @@ describe('TheiaPluginScanner - readWalkthroughs', () => {
         }]);
 
         expect(result![0].steps[0].media).to.deep.equal({
-            svg: 'hostedPlugin/test_publisher_test_plugin/media%2Ficon.svg',
+            svg: 'hostedPlugin/test_publisher_test_plugin/media/icon.svg',
             altText: 'An icon'
         });
     });
@@ -427,6 +427,6 @@ describe('TheiaPluginScanner - readWalkthroughs', () => {
         }]);
 
         expect(result).to.have.lengthOf(1);
-        expect(result![0].steps[0].media).to.deep.equal({ svg: 'hostedPlugin/test_publisher_test_plugin/media%2Ficon.svg' });
+        expect(result![0].steps[0].media).to.deep.equal({ svg: 'hostedPlugin/test_publisher_test_plugin/media/icon.svg' });
     });
 });
