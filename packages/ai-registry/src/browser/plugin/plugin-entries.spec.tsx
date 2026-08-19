@@ -26,7 +26,7 @@ try {
 }
 
 import { expect } from 'chai';
-import { HoverRequest, HoverService } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, HoverRequest, HoverService } from '@theia/core/lib/browser';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import * as React from '@theia/core/shared/react';
@@ -93,6 +93,8 @@ describe('PluginInstalledEntry hover', () => {
         cancelHover: () => { }
     } as unknown as HoverService;
 
+    const contextMenuRenderer = { render: () => { } } as unknown as ContextMenuRenderer;
+
     beforeEach(() => {
         host = document.createElement('div');
         document.body.appendChild(host);
@@ -108,7 +110,7 @@ describe('PluginInstalledEntry hover', () => {
     /** Renders the entry and hovers the card, which is when the tooltip content is handed over. */
     function hover(info: InstalledPluginInfo): HoverRequest['content'] {
         const entry = new PluginInstalledEntry(info, undefined, { kind: 'installed-from-registry', updateAvailable: false },
-            handlers, hoverService, markdownRenderer);
+            handlers, hoverService, markdownRenderer, contextMenuRenderer);
         root ??= createRoot(host);
         flushSync(() => root!.render(<div>{entry.render()}</div>));
         const card = host.querySelector('.theia-vsx-extension') as HTMLElement;

@@ -36,11 +36,8 @@
     flex-shrink: 0;
 }
 
-/* Invisible spacer reserving the same width VSX cards use for their context-menu gear,
-   so Agent Plugin, MCP and VSX action bars line up across the unified Extensions view. */
-.theia-agent-plugin-extension-gear-placeholder {
-    visibility: hidden;
-    pointer-events: none;
+.theia-agent-plugin-extension-gear {
+    cursor: pointer;
 }
 
 .theia-agent-plugin-extension-warning {

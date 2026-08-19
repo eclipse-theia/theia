@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Disposable, DisposableCollection, Emitter, Event, ILogger, MessageService, nls } from '@theia/core';
-import { HoverService } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, HoverService } from '@theia/core/lib/browser';
 import { CoreMarkdownRenderer, MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
@@ -57,6 +57,9 @@ export class PluginExtensionsContribution implements ExtensionsSourceContributio
 
     @inject(HoverService)
     protected readonly hoverService: HoverService;
+
+    @inject(ContextMenuRenderer)
+    protected readonly contextMenuRenderer: ContextMenuRenderer;
 
     @inject(CoreMarkdownRenderer)
     protected readonly markdownRenderer: MarkdownRenderer;
@@ -130,7 +133,7 @@ export class PluginExtensionsContribution implements ExtensionsSourceContributio
             }
             const matchedEntry = (info.pluginId && byPluginId.get(info.pluginId))
                 || registryEntries.find(entry => this.installService.findLinkDirectory(entry, [info]) !== undefined);
-            result.push(new PluginInstalledEntry(info, matchedEntry, state, this.handlers, this.hoverService, this.markdownRenderer));
+            result.push(new PluginInstalledEntry(info, matchedEntry, state, this.handlers, this.hoverService, this.markdownRenderer, this.contextMenuRenderer));
         }
         return result;
     }
@@ -152,7 +155,7 @@ export class PluginExtensionsContribution implements ExtensionsSourceContributio
             const state = this.installService.classifyRegistryEntry(entry, installed);
             result.push({
                 element: new PluginSearchResultEntry(entry, state, this.handlers, this.hoverService, this.markdownRenderer,
-                    this.installService.findLinkDirectory(entry, installed)),
+                    this.contextMenuRenderer, this.installService.findLinkDirectory(entry, installed)),
                 searchableText: `${entry.name} ${entry.pluginId} ${entry.description}`
             });
         }
