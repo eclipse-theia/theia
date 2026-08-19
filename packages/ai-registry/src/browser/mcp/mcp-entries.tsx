@@ -16,13 +16,16 @@
 
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core';
-import { HoverService } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, HoverService } from '@theia/core/lib/browser';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { TypeBadge } from '@theia/vsx-registry/lib/browser/type-badge';
 import { ExtensionCard, ExtensionCardTrust } from '@theia/vsx-registry/lib/browser/extension-card';
 import { MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manager';
+import { RegistryArtifactKind } from '../../common/ai-registry-preferences';
 import { ClassificationResult, ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
+import { RegistryEntryContext } from '../registry-entry-context';
+import { RegistryEntryGear, RegistryEntryMenuEvent, showEntryMenu } from '../registry-entry-menu';
 
 /**
  * Per-entry action callbacks provided by the contribution. Entries close over
@@ -39,18 +42,28 @@ export interface MCPEntryHandlers {
 }
 
 /** An entry surfacing a locally installed MCP server in the Installed section. */
-export class MCPInstalledEntry implements TreeElement {
+export class MCPInstalledEntry implements TreeElement, RegistryEntryContext {
 
     readonly id: string;
+    readonly artifactKind: RegistryArtifactKind = 'mcp';
 
     constructor(
         readonly local: MCPServerDescription,
         readonly matchedEntry: ResolvedRegistryEntry | undefined,
         readonly state: ClassificationResult,
         readonly handlers: MCPEntryHandlers,
-        readonly hoverService: HoverService
+        readonly hoverService: HoverService,
+        readonly contextMenuRenderer: ContextMenuRenderer
     ) {
         this.id = `mcp-installed-${local.name}`;
+    }
+
+    get copyableId(): string | undefined {
+        return this.matchedEntry?.serverId ?? this.local.registryMetadata?.serverId ?? this.local.name;
+    }
+
+    get autoUpdateId(): string | undefined {
+        return autoUpdateId(this.state, this.matchedEntry?.serverId);
     }
 
     render(): React.ReactNode {
@@ -67,6 +80,7 @@ export class MCPInstalledEntry implements TreeElement {
                 identifier={this.matchedEntry?.serverId ?? this.local.registryMetadata?.serverId}
                 verified={this.matchedEntry?.mcpRegistryVerified}
                 hoverService={this.hoverService}
+                onManage={event => showEntryMenu(event, this, this.contextMenuRenderer)}
                 actions={renderActions(this.state, this.matchedEntry, this.local.name, this.handlers, localVersion)}
             />
         );
@@ -74,17 +88,27 @@ export class MCPInstalledEntry implements TreeElement {
 }
 
 /** An entry surfacing a registry-resolved MCP server in the Search Results section. */
-export class MCPSearchResultEntry implements TreeElement {
+export class MCPSearchResultEntry implements TreeElement, RegistryEntryContext {
 
     readonly id: string;
+    readonly artifactKind: RegistryArtifactKind = 'mcp';
 
     constructor(
         readonly entry: ResolvedRegistryEntry,
         readonly state: ClassificationResult,
         readonly handlers: MCPEntryHandlers,
-        readonly hoverService: HoverService
+        readonly hoverService: HoverService,
+        readonly contextMenuRenderer: ContextMenuRenderer
     ) {
         this.id = `mcp-search-${entry.serverId}`;
+    }
+
+    get copyableId(): string | undefined {
+        return this.entry.serverId;
+    }
+
+    get autoUpdateId(): string | undefined {
+        return autoUpdateId(this.state, this.entry.serverId);
     }
 
     render(): React.ReactNode {
@@ -96,10 +120,19 @@ export class MCPSearchResultEntry implements TreeElement {
                 identifier={this.entry.serverId}
                 verified={this.entry.mcpRegistryVerified}
                 hoverService={this.hoverService}
+                onManage={event => showEntryMenu(event, this, this.contextMenuRenderer)}
                 actions={renderActions(this.state, this.entry, this.entry.localName, this.handlers)}
             />
         );
     }
+}
+
+/**
+ * An auto-update policy is only meaningful for a server that is installed and linked to a live
+ * registry entry - which excludes drifted servers, as the auto-updater does.
+ */
+function autoUpdateId(state: ClassificationResult, serverId: string | undefined): string | undefined {
+    return state.kind === 'installed-from-registry' ? serverId : undefined;
 }
 
 interface MCPCardProps {
@@ -111,6 +144,7 @@ interface MCPCardProps {
     /** Drives the trust icon next to `identifier`: verified -> filled check, otherwise question mark. */
     verified?: boolean;
     hoverService: HoverService;
+    onManage: (event: RegistryEntryMenuEvent) => void;
     actions?: React.ReactNode;
 }
 
@@ -135,8 +169,8 @@ function buildHoverContent(props: MCPCardProps): MarkdownStringImpl {
  * trust icon and hover tooltip. The MCP-specific bits are the codicon icon, the type
  * badge, the derived trust state and the action set.
  *
- * The trailing invisible settings-gear element reserves the same layout space VSX cards
- * use for their context-menu gear, so MCP and VSX action bars align across the view.
+ * The trailing settings-gear opens the shared entry context menu, occupying the same layout
+ * slot VSX cards use for theirs so MCP and VSX action bars align across the view.
  */
 const MCPCard: React.FC<MCPCardProps> = props => {
     const trust: ExtensionCardTrust = props.verified === true ? 'verified' : 'unknown';
@@ -158,13 +192,11 @@ const MCPCard: React.FC<MCPCardProps> = props => {
             publisherTitle={props.identifier}
             trust={trust}
             hover={{ content: buildHoverContent(props), hoverService: props.hoverService }}
+            onContextMenu={props.onManage}
             actions={
                 <div className="theia-mcp-extension-actions">
                     {props.actions}
-                    <div
-                        className="codicon codicon-settings-gear action theia-mcp-extension-gear-placeholder"
-                        aria-hidden="true"
-                    />
+                    <RegistryEntryGear className="theia-mcp-extension-gear" onManage={props.onManage} />
                 </div>
             }
         />

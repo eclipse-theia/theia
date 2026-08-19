@@ -16,7 +16,7 @@
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection, Emitter, Event, ILogger, MessageService, nls } from '@theia/core';
-import { HoverService } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, HoverService } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { ExtensionsSourceContribution, SearchContext, SearchResult } from '@theia/vsx-registry/lib/browser/extensions-source-contribution';
@@ -44,6 +44,9 @@ export class SkillExtensionsContribution implements ExtensionsSourceContribution
 
     @inject(HoverService)
     protected readonly hoverService: HoverService;
+
+    @inject(ContextMenuRenderer)
+    protected readonly contextMenuRenderer: ContextMenuRenderer;
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
@@ -122,7 +125,7 @@ export class SkillExtensionsContribution implements ExtensionsSourceContribution
                 continue;
             }
             const matchedEntry = (info.skillId && bySkillId.get(info.skillId)) || byName.get(info.name);
-            result.push(new SkillInstalledEntry(info, matchedEntry, state, this.handlers, this.hoverService));
+            result.push(new SkillInstalledEntry(info, matchedEntry, state, this.handlers, this.hoverService, this.contextMenuRenderer));
         }
         return result;
     }
@@ -143,7 +146,7 @@ export class SkillExtensionsContribution implements ExtensionsSourceContribution
             }
             const state = this.installService.classifyRegistryEntry(entry, installed);
             result.push({
-                element: new SkillSearchResultEntry(entry, state, this.handlers, this.hoverService),
+                element: new SkillSearchResultEntry(entry, state, this.handlers, this.hoverService, this.contextMenuRenderer),
                 searchableText: `${entry.name} ${entry.skillId} ${entry.description}`
             });
         }
