@@ -69,7 +69,7 @@ export class PluginInstalledEntry implements TreeElement, RegistryEntryContext {
     }
 
     get autoUpdateId(): string | undefined {
-        return autoUpdateId(this.state, this.local.pluginId ?? this.matchedEntry?.pluginId);
+        return RegistryEntryContext.autoUpdateId(this.state, this.local.pluginId ?? this.matchedEntry?.pluginId);
     }
 
     render(): React.ReactNode {
@@ -121,7 +121,7 @@ export class PluginSearchResultEntry implements TreeElement, RegistryEntryContex
     }
 
     get autoUpdateId(): string | undefined {
-        return autoUpdateId(this.state, this.entry.pluginId);
+        return RegistryEntryContext.autoUpdateId(this.state, this.entry.pluginId);
     }
 
     render(): React.ReactNode {
@@ -144,14 +144,6 @@ export class PluginSearchResultEntry implements TreeElement, RegistryEntryContex
             />
         );
     }
-}
-
-/**
- * An auto-update policy is only meaningful for a plugin that is installed and linked to a live
- * registry entry - which excludes drifted plugins, as the auto-updater does.
- */
-function autoUpdateId(state: PluginClassificationResult, pluginId: string | undefined): string | undefined {
-    return state.kind === 'installed-from-registry' ? pluginId : undefined;
 }
 
 interface PluginDiagnostics {
