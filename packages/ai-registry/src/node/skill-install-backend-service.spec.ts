@@ -18,11 +18,12 @@ import { expect } from 'chai';
 import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
-import { ILogger, PreferenceService } from '@theia/core';
+import { PreferenceService } from '@theia/core';
 import { RequestContext, RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
 import { ResolvedSkillEntry } from '../common/skill/skill-registry-types';
 import { computeSkillContentHash } from '../common/skill/skill-content-hash';
 import { SkillInstallBackendServiceImpl } from './skill-install-backend-service';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 const REGISTRY_METADATA_FILE = '.registry.json';
 
@@ -65,18 +66,11 @@ class FakeRequestService implements RequestService {
 }
 
 const fakePreferenceService = { get: () => undefined } as unknown as PreferenceService;
-const silentLogger = {
-    warn: () => Promise.resolve(),
-    error: () => Promise.resolve(),
-    info: () => Promise.resolve(),
-    debug: () => Promise.resolve(),
-    trace: () => Promise.resolve()
-} as unknown as ILogger;
 
 class TestSkillInstallBackendService extends SkillInstallBackendServiceImpl {
     constructor(private readonly root: string, request: RequestService) {
         super();
-        Object.assign(this, { requestService: request, preferenceService: fakePreferenceService, logger: silentLogger });
+        Object.assign(this, { requestService: request, preferenceService: fakePreferenceService, logger: new MockLogger() });
     }
     protected override skillsRoot(): string {
         return this.root;

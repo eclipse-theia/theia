@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { PreferenceTreeModel } from '../../preference-tree-model';
 import { PreferenceTreeLabelProvider } from '../../util/preference-tree-label-provider';
 import * as markdownit from '@theia/core/shared/markdown-it';
 import * as markdownitemoji from '@theia/core/shared/markdown-it-emoji';
-import { CommandRegistry } from '@theia/core';
+import { CommandRegistry, ILogger } from '@theia/core';
 
 @injectable()
 export class PreferenceMarkdownRenderer {
@@ -30,6 +30,9 @@ export class PreferenceMarkdownRenderer {
     protected readonly labelProvider: PreferenceTreeLabelProvider;
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
+
+    @inject(ILogger) @named('preferences:PreferenceMarkdownRenderer')
+    protected readonly logger: ILogger;
 
     protected _renderer?: markdownit;
 
@@ -72,7 +75,7 @@ export class PreferenceMarkdownRenderer {
                     return `<span class="command-link" title="${id}">${name}</span>`;
                 }
                 // If nothing was found, print a warning
-                console.warn(`Linked preference "${id}" not found.`);
+                this.logger.warn(`Linked preference "${id}" not found.`);
             }
             return inlineCode ? inlineCode(tokens, idx, options, env, self) : '';
         };

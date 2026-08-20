@@ -24,7 +24,7 @@ import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { getPluginId, DeployedPlugin, HostedPluginServer, PluginDeployer } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { setUpPluginApi } from '../../main/node/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '@theia/plugin-ext/lib/common/rpc-protocol';
-import { ContributionProvider, Disposable, DisposableCollection, nls } from '@theia/core';
+import { ContributionProvider, Disposable, DisposableCollection, ILogger, nls } from '@theia/core';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { IPCChannel } from '@theia/core/lib/node';
 import { BackendApplicationConfigProvider } from '@theia/core/lib/node/backend-application-config-provider';
@@ -48,6 +48,9 @@ export function isHeadlessPlugin(plugin: DeployedPlugin): boolean {
 
 @injectable()
 export class HeadlessHostedPluginSupport extends AbstractHostedPluginSupport<HeadlessPluginManagerExt, HostedPluginServer> {
+
+    @inject(ILogger) @named('plugin-ext-headless:HeadlessHostedPluginSupport')
+    protected override logger: ILogger;
 
     @inject(HostedPluginProcess)
     protected readonly pluginProcess: HostedPluginProcess;

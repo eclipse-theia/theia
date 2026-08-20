@@ -16,7 +16,8 @@
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { MessageService, PreferenceService } from '@theia/core';
+import { ILogger, MessageService, PreferenceService } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { MCPFrontendService } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { MCPServerEditor, MCPServerEditorImpl, MCPServerEditDialogFactory } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
@@ -361,6 +362,7 @@ describe('MCPInstallService actions', () => {
         const container = new Container();
         prefs = new FakePreferenceService();
         container.bind(PreferenceService).toConstantValue(prefs);
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
         // Stubs for the editor's deps - we only exercise installFromEntry which uses
         // PreferenceService; MessageService and MCPFrontendService are referenced by other
         // editor methods that the install path doesn't touch.

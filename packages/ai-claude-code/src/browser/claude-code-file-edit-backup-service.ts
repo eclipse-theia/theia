@@ -81,7 +81,7 @@ export class FileEditBackupServiceImpl implements FileEditBackupService {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(ILogger) @named('claude-code')
+    @inject(ILogger) @named('ai-claude-code:FileEditBackupServiceImpl')
     protected readonly logger: ILogger;
 
     getLocation(workspaceRoot: URI): URI {

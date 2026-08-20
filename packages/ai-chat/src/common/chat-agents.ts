@@ -188,7 +188,10 @@ export function isChatAgent(agent: Agent): agent is ChatAgent {
 @injectable()
 export abstract class AbstractChatAgent implements ChatAgent {
     @inject(LanguageModelRegistry) protected languageModelRegistry: LanguageModelRegistry;
-    @inject(ILogger) protected logger: ILogger;
+
+    @inject(ILogger) @named('ai-chat:AbstractChatAgent')
+    protected readonly logger: ILogger;
+
     @inject(ChatToolRequestService) protected chatToolRequestService: ChatToolRequestService;
     @inject(LanguageModelService) protected languageModelService: LanguageModelService;
     @inject(PromptService) protected promptService: PromptService;
@@ -330,7 +333,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
     };
 
     protected handleError(request: MutableChatRequestModel, error: Error): void {
-        console.error('Error handling chat interaction:', error);
+        this.logger.error('Error handling chat interaction:', error);
         request.response.response.addContent(new ErrorChatResponseContentImpl(error));
         request.response.error(error);
     }
@@ -774,7 +777,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         for await (const token of languageModelResponse.stream) {
             // Skip unknown tokens. For example OpenAI sends empty tokens around tool calls
             if (!isLanguageModelStreamResponsePart(token)) {
-                console.debug(`Unknown token: '${JSON.stringify(token)}'. Skipping`);
+                this.logger.debug(`Unknown token: '${JSON.stringify(token)}'. Skipping`);
                 continue;
             }
             const newContent = this.parse(token, request);

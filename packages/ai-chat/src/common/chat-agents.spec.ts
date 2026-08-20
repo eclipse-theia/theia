@@ -42,6 +42,7 @@ class TestChatAgent extends AbstractChatAgent {
     readonly name = 'Test Agent';
     readonly languageModelRequirements: LanguageModelRequirement[] = [];
     protected readonly defaultLanguageModelPurpose = 'chat';
+    protected override logger: ILogger = new MockLogger();
 
     protected addContentsToResponse(): Promise<void> {
         return Promise.resolve();
@@ -71,9 +72,6 @@ class TestChatAgent extends AbstractChatAgent {
         this.fileReadTracker = tracker;
     }
 
-    public setLogger(logger: ILogger): void {
-        this.logger = logger;
-    }
 }
 
 function createParsedRequest(text: string, request?: Partial<ChatRequest>): ParsedChatRequest {
@@ -216,6 +214,7 @@ class StreamParsingTestChatAgent extends AbstractStreamParsingChatAgent {
     readonly name = 'Stream Test Agent';
     readonly languageModelRequirements: LanguageModelRequirement[] = [];
     protected readonly defaultLanguageModelPurpose = 'chat';
+    protected override logger: ILogger = new MockLogger();
 
     exposeParse(token: LanguageModelStreamResponsePart): ChatResponseContent | ChatResponseContent[] {
         return this.parse(token, undefined as never);
@@ -312,7 +311,6 @@ describe('AbstractChatAgent.appendExternalFileChangeNotice', () => {
 
     function createAgent(getChangedFiles: () => Promise<string[]>): TestChatAgent {
         const agent = new TestChatAgent();
-        agent.setLogger(new MockLogger());
         agent.setFileReadTracker({
             recordRead: async () => { },
             isStale: async () => false,

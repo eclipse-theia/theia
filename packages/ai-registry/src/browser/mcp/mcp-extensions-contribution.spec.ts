@@ -27,7 +27,7 @@ try {
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { Emitter, MessageService, PreferenceService } from '@theia/core';
+import { Emitter, MessageService, PreferenceService, ILogger } from '@theia/core';
 import { ContextMenuRenderer, HoverService } from '@theia/core/lib/browser';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { MCPFrontendService } from '@theia/ai-mcp/lib/common/mcp-server-manager';
@@ -41,6 +41,7 @@ import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from '../auto-
 import { MCPInstallService, MCPInstallServiceImpl } from './mcp-install-service';
 import { MCPExtensionsContribution } from './mcp-extensions-contribution';
 import { MCPInstalledEntry, MCPSearchResultEntry } from './mcp-entries';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 after(() => disableJSDOM());
 
@@ -75,6 +76,7 @@ function buildContainer(prefs: FakePreferenceService, fetch: StubRegistryFetchSe
     const container = new Container();
     container.bind(PreferenceService).toConstantValue(prefs);
     container.bind(RegistryFetchService).toConstantValue(fetch as unknown as RegistryFetchService);
+    container.bind(ILogger).to(MockLogger).inSingletonScope();
     container.bind(RegistrySearchFilter).toSelf().inSingletonScope();
     container.bind(MCPRegistryEntryResolverImpl).toSelf().inSingletonScope();
     container.bind(MCPRegistryEntryResolver).toService(MCPRegistryEntryResolverImpl);

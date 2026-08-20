@@ -14,10 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { MaybePromise } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { MaybePromise, ILogger } from '@theia/core';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { ILogger } from '@theia/core/lib/common/logger';
 import { MCPToolFrontendDelegate } from '../common/mcp-tool-delegate';
 
 /**
@@ -33,7 +32,7 @@ export class MCPFrontendBootstrap implements FrontendApplicationContribution {
     @inject(MCPToolFrontendDelegate)
     protected readonly frontendDelegate: MCPToolFrontendDelegate;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('ai-mcp-server:MCPFrontendBootstrap')
     protected readonly logger: ILogger;
 
     onStart(_app: FrontendApplication): MaybePromise<void> {

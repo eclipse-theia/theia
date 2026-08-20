@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Disposable, DisposableCollection, Emitter, nls } from '@theia/core';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { Disposable, DisposableCollection, Emitter, nls, ILogger } from '@theia/core';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { DebugSession, DebugState } from '@theia/debug/lib/browser/debug-session';
 import { ASCII_TOGGLE_ID, AUTO_UPDATE_TOGGLE_ID, MemoryOptionsWidget } from '../memory-widget/memory-options-widget';
@@ -85,6 +85,9 @@ export class RegisterOptionsWidget extends MemoryOptionsWidget {
 
     @inject(RegisterWidgetOptions) protected override readonly memoryWidgetOptions: RegisterWidgetOptions;
     @inject(RegisterFilterService) protected readonly filterService: RegisterFilterService;
+
+    @inject(ILogger) @named('memory-inspector:RegisterOptionsWidget')
+    protected override readonly logger: ILogger;
 
     get registers(): RegisterReadResult {
         return {
@@ -323,7 +326,7 @@ export class RegisterOptionsWidget extends MemoryOptionsWidget {
             this.doShowRegisterErrors(true);
         } catch (err) {
             this.registerReadError = nls.localize('theia/memory-inspector/registerReadError', 'There was an error fetching registers.');
-            console.error('Failed to read registers', err);
+            this.logger.error('Failed to read registers', err);
             this.doShowRegisterErrors();
         } finally {
             this.registerFilterUpdate = false;

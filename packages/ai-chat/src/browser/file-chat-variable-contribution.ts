@@ -18,7 +18,7 @@ import { AIVariableContext, AIVariableResolutionRequest, PromptText } from '@the
 import { AIVariableCompletionContext, AIVariableDropResult, FrontendVariableContribution, FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
 import { CancellationToken, ILogger, nls, QuickInputService, QuickPickItemOrSeparator, URI } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { FileQuickPickItem, QuickFileSelectService } from '@theia/file-search/lib/browser/quick-file-select-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -51,7 +51,7 @@ export class FileChatVariableContribution implements FrontendVariableContributio
     @inject(QuickFileSelectService)
     protected readonly quickFileSelectService: QuickFileSelectService;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('ai-chat:FileChatVariableContribution')
     protected readonly logger: ILogger;
 
     @inject(ApplicationShell)

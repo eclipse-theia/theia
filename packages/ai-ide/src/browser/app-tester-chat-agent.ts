@@ -20,8 +20,8 @@ import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-a
 import { ErrorChatResponseContentImpl, MarkdownChatResponseContentImpl, MutableChatRequestModel, QuestionResponseContentImpl } from '@theia/ai-chat/lib/common/chat-model';
 import { LanguageModelRequirement } from '@theia/ai-core/lib/common';
 import { MCPFrontendService, MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manager';
-import { nls } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { ILogger, nls } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { PreferenceScope, PreferenceService } from '@theia/core/lib/common';
 import { appTesterPlaywrightTemplate, appTesterDefaultTemplate, appTesterNextTemplate, REQUIRED_MCP_SERVERS, REQUIRED_MCP_SERVERS_NEXT } from './app-tester-prompt-template';
@@ -29,6 +29,9 @@ import { appTesterPlaywrightTemplate, appTesterDefaultTemplate, appTesterNextTem
 export const AppTesterChatAgentId = 'AppTester';
 @injectable()
 export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
+
+    @inject(ILogger) @named('ai-ide:AppTesterChatAgent')
+    protected override readonly logger: ILogger;
 
     @inject(MCPFrontendService)
     protected readonly mcpService: MCPFrontendService;

@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { PreferenceScope, PreferenceService } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { ILogger, PreferenceScope, PreferenceService } from '@theia/core';
 import {
     isLocalMCPServerDescription,
     isRemoteMCPServerDescription,
@@ -71,6 +71,9 @@ export class MCPInstallServiceImpl implements MCPInstallService {
 
     @inject(RegistryAutoUpdatePolicy)
     protected readonly autoUpdatePolicy: RegistryAutoUpdatePolicy;
+
+    @inject(ILogger) @named('ai-registry:MCPInstallServiceImpl')
+    protected readonly logger: ILogger;
 
     /** Delegates to the generic editor so both registry installs and `install-mcp` URL handlers go through the same code path. */
     async install(entry: ResolvedRegistryEntry, overrides?: MCPInstallOverrides): Promise<void> {
@@ -194,7 +197,7 @@ export class MCPInstallServiceImpl implements MCPInstallService {
             // same guard `McpFrontendApplicationContribution` applies, so a `command: 42` entry is
             // rejected here too instead of being cast straight to a description.
             if (!MCPServersPreference.isValue(value)) {
-                console.warn(`Ignoring malformed MCP server "${name}": value does not match the MCP servers preference schema.`);
+                this.logger.warn(`Ignoring malformed MCP server "${name}": value does not match the MCP servers preference schema.`);
                 continue;
             }
             result.push({ name, ...value } as MCPServerDescription);

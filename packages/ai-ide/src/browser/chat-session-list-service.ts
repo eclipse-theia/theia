@@ -17,9 +17,9 @@
 import { ChatService, ChatSession, ChatSessionMetadata, ChatSessionStatus } from '@theia/ai-chat';
 import { PERSISTED_SESSION_LIMIT_PREF, SESSION_STORAGE_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
-import { DisposableCollection, Emitter, Event, PreferenceService } from '@theia/core';
+import { DisposableCollection, Emitter, Event, ILogger, PreferenceService } from '@theia/core';
 import { ApplicationShell } from '@theia/core/lib/browser';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { UnreadStateProvider } from './chat-session-item';
 import { SectionedSessions, SessionRow, parentIdOf } from './chat-session-list-components';
 
@@ -34,6 +34,9 @@ export class ChatSessionListService implements UnreadStateProvider {
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
+
+    @inject(ILogger) @named('ai-ide:ChatSessionListService')
+    protected readonly logger: ILogger;
 
     private readonly unreadSessions = new Map<string, {
         unread: boolean;
@@ -174,7 +177,7 @@ export class ChatSessionListService implements UnreadStateProvider {
             this._persistedSessions = Object.values(index)
                 .toSorted((a, b) => b.saveDate - a.saveDate);
         } catch (error) {
-            console.error('Failed to load persisted sessions:', error);
+            this.logger.error('Failed to load persisted sessions:', error);
             this._persistedSessions = [];
         } finally {
             this.onStateChangedEmitter.fire();

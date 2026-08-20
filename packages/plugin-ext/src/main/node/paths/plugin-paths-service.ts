@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import * as path from 'path';
 import * as fs from '@theia/core/shared/fs-extra';
@@ -35,7 +35,7 @@ const SESSION_TIMESTAMP_PATTERN = /^\d{8}T\d{6}$/;
 @injectable()
 export class PluginPathsServiceImpl implements PluginPathsService {
 
-    @inject(ILogger)
+    @inject(ILogger) @named('plugin-ext:PluginPathsServiceImpl')
     protected readonly logger: ILogger;
 
     @inject(EnvVariablesServer)

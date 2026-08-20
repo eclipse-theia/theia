@@ -14,13 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter } from '@theia/core/lib/common/event';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { ScmService } from './scm-service';
 import { ScmHistoryItem, ScmHistoryItemRef, ScmHistoryProvider, ScmHistoryOptions } from './scm-provider';
 import { computeGraphRows, GraphRow } from './scm-history-graph-lanes';
+import { ILogger } from '@theia/core';
 import { getRefColorIndex } from './scm-history-graph-helpers';
 import { ScmPreferences } from '../common/scm-preferences';
 
@@ -48,6 +49,9 @@ export class ScmHistoryGraphModel {
 
     @inject(ScmService) protected readonly scmService: ScmService;
     @inject(ScmPreferences) protected readonly scmPreferences: ScmPreferences;
+
+    @inject(ILogger) @named('scm:ScmHistoryGraphModel')
+    protected readonly logger: ILogger;
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly toDisposeOnProviderChange = new DisposableCollection();
@@ -253,7 +257,7 @@ export class ScmHistoryGraphModel {
             }));
         } catch (err) {
             if (!token.isCancellationRequested) {
-                console.error('ScmHistoryGraphModel: failed to load history', err);
+                this.logger.error('Failed to load history', err);
             }
         } finally {
             if (!token.isCancellationRequested) {

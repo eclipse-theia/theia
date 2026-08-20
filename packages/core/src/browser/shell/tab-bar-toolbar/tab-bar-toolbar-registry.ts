@@ -17,7 +17,7 @@
 import debounce = require('lodash.debounce');
 import { inject, injectable, named } from 'inversify';
 // eslint-disable-next-line max-len
-import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, MenuModelRegistry, MenuPath } from '../../../common';
+import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, MenuModelRegistry, MenuPath, ILogger } from '../../../common';
 import { ContextKeyService } from '../../context-key-service';
 import { FrontendApplicationContribution } from '../../frontend-application-contribution';
 import { Widget } from '../../widgets';
@@ -67,6 +67,9 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
 
     @inject(ContributionProvider) @named(TabBarToolbarContribution)
     protected readonly contributionProvider: ContributionProvider<TabBarToolbarContribution>;
+
+    @inject(ILogger) @named('core:TabBarToolbarRegistry')
+    protected readonly logger: ILogger;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
@@ -223,7 +226,7 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
             this.fireOnDidChange();
             return { dispose: () => this.unregisterMenuDelegate(menuPath) };
         }
-        console.warn('Unable to register menu delegate. Delegate has already been registered', menuPath);
+        this.logger.warn('Unable to register menu delegate. Delegate has already been registered', menuPath);
         return Disposable.NULL;
     }
 

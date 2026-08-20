@@ -22,7 +22,7 @@ import { open, OpenerService } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MEMORY_TEXT, MEMORY_TEXT_READONLY, ResourceProvider } from '@theia/core/lib/common/resource';
 import URI from '@theia/core/lib/common/uri';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { WorkspaceFunctionScope } from './workspace-functions';
@@ -39,6 +39,7 @@ import {
     parseUserInteractionArgs,
     resolveContentRef
 } from '../common/user-interaction-tool';
+import { ILogger } from '@theia/core';
 
 interface PendingInteraction {
     deferred: Deferred<string>;
@@ -181,6 +182,9 @@ export class UserInteractionTool implements ToolProvider {
     @inject(ResourceProvider)
     protected readonly resourceProvider: ResourceProvider;
 
+    @inject(ILogger) @named('ai-ide:UserInteractionTool')
+    protected readonly logger: ILogger;
+
     protected readonly pendingInteractions = new Map<string, PendingInteraction>();
 
     getTool(): ToolRequest {
@@ -299,7 +303,7 @@ export class UserInteractionTool implements ToolProvider {
             if (repo) {
                 return repo.toUriAtRef(fileUri, ref.gitRef);
             }
-            console.warn(`No SCM repository found to resolve gitRef '${ref.gitRef}' for '${ref.path}'`);
+            this.logger.warn(`No SCM repository found to resolve gitRef '${ref.gitRef}' for '${ref.path}'`);
             return undefined;
         }
         return fileUri;

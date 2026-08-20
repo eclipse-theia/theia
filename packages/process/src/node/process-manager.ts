@@ -28,7 +28,8 @@ export class ProcessManager implements ManagedProcessManager, BackendApplication
     protected readonly deleteEmitter: Emitter<number>;
 
     constructor(
-        @inject(ILogger) @named('process') protected logger: ILogger
+        @inject(ILogger) @named('process:ProcessManager')
+        protected readonly logger: ILogger
     ) {
         this.processes = new Map();
         this.deleteEmitter = new Emitter<number>();
