@@ -22,6 +22,7 @@
 - [monaco] removed the `protected secondaryWindowHandler` field from `MonacoFrontendApplicationContribution`; the Monaco theme stylesheet is now injected into every secondary window via `SecondaryWindowService.onWindowLoaded` [#17874](https://github.com/eclipse-theia/theia/pull/17874)
 - [plugin-ext] aliased `DebuggerContribution` to `PluginPackageDebuggersContribution` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
 - [plugin-ext] changed `Keybinding.args` from `any` to `unknown` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
+- [plugin-ext] changed plugin deployment to call `PluginDeployerHandler.deployFrontendPlugins` and `PluginDeployerHandler.deployBackendPlugins` concurrently. Adopter overrides must tolerate both calls running in parallel [#17867](https://github.com/eclipse-theia/theia/pull/17867)
 - [plugin-ext] encoded `toPluginUrl` path segments separately for static hosting [#17758](https://github.com/eclipse-theia/theia/pull/17758)
 - [plugin-ext] moved `loadManifest` and `updateActivationEvents` to `@theia/plugin-utils` [#17758](https://github.com/eclipse-theia/theia/pull/17758)
 - [plugin-ext] rejected grammar paths outside the plugin directory [#17758](https://github.com/eclipse-theia/theia/pull/17758)

@@ -552,7 +552,15 @@ export interface PluginDependencies {
 
 export const PluginDeployerHandler = Symbol('PluginDeployerHandler');
 export interface PluginDeployerHandler {
+    /**
+     * May be called concurrently with {@link deployBackendPlugins}. Implementations must ensure
+     * the two calls can run in parallel.
+     */
     deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<number | undefined>;
+    /**
+     * May be called concurrently with {@link deployFrontendPlugins}. Implementations must ensure
+     * the two calls can run in parallel.
+     */
     deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<number | undefined>;
     getDeployedPluginIds(): Promise<readonly PluginIdentifiers.VersionedId[]>;
 
