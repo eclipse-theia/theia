@@ -320,6 +320,190 @@ describe('AnthropicModel', () => {
         });
     });
 
+    describe('transformToAnthropicParams thinking blocks', () => {
+        function thinkingMessage(thinking: string, signature: string): LanguageModelMessage {
+            return { actor: 'ai', type: 'thinking', thinking, signature };
+        }
+
+        function userText(text: string): LanguageModelMessage {
+            return { actor: 'user', type: 'text', text };
+        }
+
+        function thinkingBlocks(messages: MessageParam[]): Anthropic.Messages.ContentBlockParam[] {
+            return messages.flatMap(message => Array.isArray(message.content) ? message.content : [])
+                .filter(block => block.type === 'thinking');
+        }
+
+        it('drops a thinking block with empty thinking text, which Anthropic rejects on replay', () => {
+            const messages = [userText('do something'), thinkingMessage('', 'signature'), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.be.empty;
+            expect(JSON.stringify(result)).to.contain('do something');
+            expect(JSON.stringify(result)).to.contain('continue');
+        });
+
+        it('drops a thinking block whose thinking text is only whitespace', () => {
+            const messages = [thinkingMessage('  \n', 'signature'), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.be.empty;
+        });
+
+        it('drops a thinking block without a signature', () => {
+            const messages = [thinkingMessage('some reasoning', ''), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.be.empty;
+        });
+
+        it('keeps a signed thinking block that has content', () => {
+            const messages = [thinkingMessage('some reasoning', 'signature'), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.deep.equal([{ type: 'thinking', thinking: 'some reasoning', signature: 'signature' }]);
+        });
+
+        it('logs a debug message when dropping a thinking block', () => {
+            const originalDebug = console.debug;
+            const logged: string[] = [];
+            console.debug = (...args: unknown[]) => { logged.push(args.map(String).join(' ')); };
+            try {
+                transformToAnthropicParams([thinkingMessage('', 'signature'), userText('continue')], false);
+            } finally {
+                console.debug = originalDebug;
+            }
+            expect(logged.some(line => line.includes('thinking'))).to.be.true;
+        });
+    });
+
+    describe('tool loop thinking block replay', () => {
+        /**
+         * Mock client whose first stream() call yields the given events and whose follow-up calls yield none.
+         * All params passed to stream() are captured so the tool loop's follow-up request can be inspected.
+         */
+        function createToolLoopModel(firstCallEvents: object[], capturedParams: Anthropic.MessageCreateParams[]): AnthropicModel {
+            let call = 0;
+            return new class extends AnthropicModel {
+                protected override initializeAnthropic(): Anthropic {
+                    return {
+                        messages: {
+                            stream: (params: Anthropic.MessageCreateParams) => {
+                                capturedParams.push(params);
+                                const events = call++ === 0 ? firstCallEvents : [];
+                                async function* iterate(): AsyncGenerator<object> {
+                                    for (const event of events) {
+                                        yield event;
+                                    }
+                                }
+                                const iter = iterate();
+                                (iter as unknown as Record<string, unknown>).on = () => { /* no-op */ };
+                                (iter as unknown as Record<string, unknown>).abort = () => { /* no-op */ };
+                                return iter;
+                            }
+                        }
+                    } as unknown as Anthropic;
+                }
+            }('test-id', 'claude-opus-4-5', { status: 'ready' }, true, false, () => 'test-key', undefined);
+        }
+
+        function toolLoopEvents(thinkingBlock: { type: 'thinking'; thinking: string; signature: string }): object[] {
+            return [
+                // The SDK accumulates streamed content blocks into the message_start message in place, so by the
+                // time the tool loop replays it, its content holds the raw blocks exactly as streamed. The mock
+                // provides that end state up front.
+                {
+                    type: 'message_start',
+                    message: {
+                        role: 'assistant',
+                        content: [thinkingBlock, { type: 'tool_use', id: 'call_1', name: 'myTool', input: {} }],
+                        usage: { input_tokens: 10, output_tokens: 0 }
+                    }
+                },
+                { type: 'content_block_start', index: 0, content_block: thinkingBlock },
+                { type: 'content_block_stop', index: 0 },
+                { type: 'content_block_start', index: 1, content_block: { type: 'tool_use', id: 'call_1', name: 'myTool', input: {} } },
+                { type: 'content_block_delta', index: 1, delta: { type: 'input_json_delta', partial_json: '{}' } },
+                { type: 'content_block_stop', index: 1 },
+                { type: 'message_delta', delta: { stop_reason: 'tool_use' }, usage: { output_tokens: 5 } },
+                { type: 'message_stop' },
+            ];
+        }
+
+        async function runToolLoop(firstCallEvents: object[]): Promise<Anthropic.MessageCreateParams[]> {
+            const capturedParams: Anthropic.MessageCreateParams[] = [];
+            const model = createToolLoopModel(firstCallEvents, capturedParams);
+            const request: UserRequest = {
+                messages: [{ actor: 'user', type: 'text', text: 'do something' }],
+                tools: [{ id: 'myTool', name: 'myTool', parameters: { type: 'object', properties: {} }, handler: async () => 'ok' }],
+                agentId: 'test', sessionId: 'session', requestId: 'req'
+            };
+            const response = await model.request(request);
+            if ('stream' in response) {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                for await (const _part of response.stream) { /* drain */ }
+            }
+            return capturedParams;
+        }
+
+        function contentBlocks(params: Anthropic.MessageCreateParams): Anthropic.Messages.ContentBlockParam[] {
+            return params.messages.flatMap(message => Array.isArray(message.content) ? message.content : []);
+        }
+
+        it('drops an unreplayable thinking block from the tool loop follow-up request', async () => {
+            const params = await runToolLoop(toolLoopEvents({ type: 'thinking', thinking: '', signature: '' }));
+
+            expect(params).to.have.lengthOf(2);
+            const blocks = contentBlocks(params[1]);
+            expect(blocks.some(block => block.type === 'thinking')).to.be.false;
+            // The rest of the streamed assistant turn and the tool result still replay.
+            expect(blocks.some(block => block.type === 'tool_use' && block.id === 'call_1')).to.be.true;
+            expect(blocks.some(block => block.type === 'tool_result' && block.tool_use_id === 'call_1')).to.be.true;
+        });
+
+        it('replays a valid thinking block unchanged in the tool loop follow-up request', async () => {
+            const params = await runToolLoop(toolLoopEvents({ type: 'thinking', thinking: 'some reasoning', signature: 'sig' }));
+
+            expect(params).to.have.lengthOf(2);
+            const thinking = contentBlocks(params[1]).find(block => block.type === 'thinking');
+            expect(thinking).to.deep.equal({ type: 'thinking', thinking: 'some reasoning', signature: 'sig' });
+        });
+
+        it('drops a message left empty after filtering its only (unreplayable) thinking block', async () => {
+            // Two messages in one stream: the first holds only the invalid thinking block, the second the tool_use.
+            // After filtering, the first message has no content and must not be replayed at all.
+            const events = [
+                {
+                    type: 'message_start',
+                    message: { role: 'assistant', content: [{ type: 'thinking', thinking: '', signature: '' }], usage: { input_tokens: 10, output_tokens: 0 } }
+                },
+                { type: 'content_block_start', index: 0, content_block: { type: 'thinking', thinking: '', signature: '' } },
+                { type: 'content_block_stop', index: 0 },
+                { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 1 } },
+                { type: 'message_stop' },
+                {
+                    type: 'message_start',
+                    message: { role: 'assistant', content: [{ type: 'tool_use', id: 'call_1', name: 'myTool', input: {} }], usage: { input_tokens: 10, output_tokens: 0 } }
+                },
+                { type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'call_1', name: 'myTool', input: {} } },
+                { type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: '{}' } },
+                { type: 'content_block_stop', index: 0 },
+                { type: 'message_delta', delta: { stop_reason: 'tool_use' }, usage: { output_tokens: 5 } },
+                { type: 'message_stop' },
+            ];
+
+            const params = await runToolLoop(events);
+
+            expect(params).to.have.lengthOf(2);
+            const emptyMessages = params[1].messages.filter(message => Array.isArray(message.content) && message.content.length === 0);
+            expect(emptyMessages).to.be.empty;
+        });
+    });
+
     describe('streaming token usage', () => {
         /**
          * Builds a mock Anthropic client whose messages.stream() yields
