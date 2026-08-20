@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
-import { Disposable, DisposableCollection } from '@theia/core';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID, getCopilotApiBaseUrl } from '../common';
-import { CopilotOAuthConfig } from '../common/copilot-oauth-config';
-import { CopilotLanguageModel } from './copilot-language-model';
+import { DisposableCollection, ILogger } from '@theia/core';
+import { inject, injectable, named, postConstruct, preDestroy } from '@theia/core/shared/inversify';
+import { CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID } from '../common';
+import { CopilotSdkLanguageModel } from './copilot-sdk-language-model';
+import { CopilotSdkClientProvider } from './copilot-sdk-client-provider';
 import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
 
 /**
@@ -27,7 +27,7 @@ import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
  * Manages registration and lifecycle of Copilot language models in the AI language model registry.
  */
 @injectable()
-export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsManager, Disposable {
+export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsManager {
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
@@ -35,33 +35,51 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
     @inject(CopilotAuthServiceImpl)
     protected readonly authService: CopilotAuthServiceImpl;
 
-    @inject(CopilotOAuthConfig)
-    protected readonly oauthConfig: CopilotOAuthConfig;
+    @inject(CopilotSdkClientProvider)
+    protected readonly sdkClientProvider: CopilotSdkClientProvider;
 
-    protected enterpriseUrl: string | undefined;
+    @inject(ILogger) @named('ai-copilot:CopilotLanguageModelsManagerImpl')
+    protected readonly logger: ILogger;
+
     protected readonly toDispose = new DisposableCollection();
+
+    /**
+     * Why the last model discovery failed, if it did.
+     *
+     * Being signed in does not imply that requests are accepted: the credentials can lack the Copilot
+     * entitlement, be revoked, or belong to a subscription served by a different API host. Reporting
+     * the models as ready in those cases claims a working setup that is not there, so the failure is
+     * remembered and reflected in the status of the models.
+     */
+    protected discoveryFailure: string | undefined;
 
     @postConstruct()
     protected init(): void {
         this.toDispose.push(this.authService.onAuthStateChanged(() => {
-            this.refreshModelsStatus();
+            // The listener cannot be awaited, so the failure is reported here rather than escaping as
+            // an unhandled rejection.
+            this.refreshModelsStatus().catch(error => this.logger.warn('Copilot: failed to update the status of the models:', error));
         }));
     }
 
-    dispose(): void {
+    /**
+     * Detaches from the auth service when the container this manager lives in goes away.
+     * Unbinding a container runs `@preDestroy` rather than `dispose`, see the client provider.
+     */
+    @preDestroy()
+    protected stop(): void {
         this.toDispose.dispose();
-    }
-
-    setEnterpriseUrl(url: string | undefined): void {
-        this.enterpriseUrl = url;
     }
 
     protected async calculateStatus(): Promise<LanguageModelStatus> {
         const authState = await this.authService.getAuthState();
-        if (authState.isAuthenticated) {
-            return { status: 'ready' };
+        if (!authState.isAuthenticated) {
+            return { status: 'unavailable', message: 'Not signed in to GitHub Copilot' };
         }
-        return { status: 'unavailable', message: 'Not signed in to GitHub Copilot' };
+        if (this.discoveryFailure) {
+            return { status: 'unavailable', message: this.discoveryFailure };
+        }
+        return { status: 'ready' };
     }
 
     async createOrUpdateLanguageModels(...modelDescriptions: CopilotModelDescription[]): Promise<void> {
@@ -71,29 +89,24 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
             const model = await this.languageModelRegistry.getLanguageModel(modelDescription.id);
 
             if (model) {
-                if (!(model instanceof CopilotLanguageModel)) {
-                    console.warn(`Copilot: model ${modelDescription.id} is not a Copilot model`);
+                if (!(model instanceof CopilotSdkLanguageModel)) {
+                    this.logger.warn(`Copilot: model ${modelDescription.id} is not a Copilot model`);
                     continue;
                 }
-                await this.languageModelRegistry.patchLanguageModel<CopilotLanguageModel>(modelDescription.id, {
+                await this.languageModelRegistry.patchLanguageModel<CopilotSdkLanguageModel>(modelDescription.id, {
                     model: modelDescription.model,
-                    enableStreaming: modelDescription.enableStreaming,
-                    supportsStructuredOutput: modelDescription.supportsStructuredOutput,
                     status,
                     maxRetries: modelDescription.maxRetries
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
-                    new CopilotLanguageModel(
+                    new CopilotSdkLanguageModel(
                         modelDescription.id,
                         modelDescription.model,
                         status,
-                        modelDescription.enableStreaming,
-                        modelDescription.supportsStructuredOutput,
                         modelDescription.maxRetries,
-                        () => this.authService.getAccessToken(),
-                        () => this.enterpriseUrl,
-                        () => this.oauthConfig.userAgent
+                        () => this.sdkClientProvider.getClient(),
+                        this.logger
                     )
                 ]);
             }
@@ -109,8 +122,8 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
         const allModels = await this.languageModelRegistry.getLanguageModels();
 
         for (const model of allModels) {
-            if (model instanceof CopilotLanguageModel && model.id.startsWith(`${COPILOT_PROVIDER_ID}/`)) {
-                await this.languageModelRegistry.patchLanguageModel<CopilotLanguageModel>(model.id, {
+            if (model instanceof CopilotSdkLanguageModel && model.id.startsWith(`${COPILOT_PROVIDER_ID}/`)) {
+                await this.languageModelRegistry.patchLanguageModel<CopilotSdkLanguageModel>(model.id, {
                     status
                 });
             }
@@ -118,70 +131,26 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
     }
 
     async fetchAvailableModelIds(): Promise<string[]> {
-        const accessToken = await this.authService.getAccessToken();
-        if (!accessToken) {
-            return [];
-        }
-
-        const baseURL = getCopilotApiBaseUrl(this.enterpriseUrl);
-
         try {
-            const response = await fetch(`${baseURL}/models`, {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'User-Agent': this.oauthConfig.userAgent,
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                console.warn(`Copilot: failed to fetch available models: ${response.status} ${response.statusText}`);
-                return [];
-            }
-
-            const data = await response.json() as {
-                data?: Array<{ id: string; capabilities?: { family?: string } }>
-            };
-            const models = data.data ?? [];
-            const modelIds = this.deduplicateModels(models);
-            console.log(`Copilot: discovered ${modelIds.length} available models: ${modelIds.join(', ')}`);
+            const modelIds = await this.sdkClientProvider.listModelIds();
+            this.logger.info(`Copilot: discovered ${modelIds.length} models [${modelIds.join(', ')}]`);
+            await this.setDiscoveryFailure(undefined);
             return modelIds;
         } catch (error) {
-            console.warn('Copilot: failed to fetch available models:', error);
+            this.logger.warn('Copilot: failed to fetch available models via the Copilot CLI:', error);
+            await this.setDiscoveryFailure(error instanceof Error ? error.message : String(error));
             return [];
         }
     }
 
     /**
-     * Deduplicates models returned by the Copilot API.
-     * The API returns both alias IDs (e.g., `gpt-4o`) and versioned IDs
-     * (e.g., `gpt-4o-2024-11-20`) for the same model family.
-     * We keep only the family alias when it exists, falling back to
-     * the versioned ID otherwise.
+     * Records the outcome of the last model discovery and reflects it in the status of the models.
      */
-    protected deduplicateModels(models: Array<{ id: string; capabilities?: { family?: string } }>): string[] {
-        const allIds = new Set(models.map(m => m.id));
-        const result: string[] = [];
-        const seenFamilies = new Set<string>();
-
-        for (const model of models) {
-            const family = model.capabilities?.family;
-            if (family && seenFamilies.has(family)) {
-                continue;
-            }
-            if (family) {
-                seenFamilies.add(family);
-                // Prefer the family alias if it exists as a model ID
-                if (allIds.has(family)) {
-                    result.push(family);
-                } else {
-                    result.push(model.id);
-                }
-            } else {
-                result.push(model.id);
-            }
+    protected async setDiscoveryFailure(failure: string | undefined): Promise<void> {
+        if (this.discoveryFailure === failure) {
+            return;
         }
-
-        return result;
+        this.discoveryFailure = failure;
+        await this.refreshModelsStatus();
     }
 }

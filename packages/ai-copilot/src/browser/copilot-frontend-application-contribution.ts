@@ -19,7 +19,7 @@ import { CommandService, nls, PreferenceService } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { CopilotAuthService, CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID } from '../common';
-import { COPILOT_ENABLED_PREF, COPILOT_MODEL_OVERRIDES_PREF, COPILOT_ENTERPRISE_URL_PREF } from '../common/copilot-preferences';
+import { COPILOT_ENABLED_PREF, COPILOT_EXECUTABLE_PATH_PREF, COPILOT_MODEL_OVERRIDES_PREF } from '../common/copilot-preferences';
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { CopilotCommands } from './copilot-command-contribution';
 
@@ -49,19 +49,25 @@ export class CopilotFrontendApplicationContribution implements FrontendApplicati
 
     onStart(): void {
         this.preferenceService.ready.then(async () => {
-            const enterpriseUrl = this.preferenceService.get<string>(COPILOT_ENTERPRISE_URL_PREF);
-            this.manager.setEnterpriseUrl(enterpriseUrl || undefined);
-
+            // Before anything reaches for the CLI: the backend cannot read the preferences itself.
+            await this.updateExecutablePath();
             if (this.isCopilotEnabled()) {
                 const authState = await this.authService.getAuthState();
                 if (authState.migrationRequired) {
-                    this.notifyTokenMigration();
+                    this.notifySignInRequired();
                 }
                 await this.initializeModels();
             }
 
             this.preferenceService.onPreferenceChanged(event => {
-                if (event.preferenceName === COPILOT_ENABLED_PREF) {
+                if (event.preferenceName === COPILOT_EXECUTABLE_PATH_PREF) {
+                    this.updateExecutablePath().then(() => {
+                        if (this.isCopilotEnabled() && this.useAutoDiscovery) {
+                            // A CLI that could not be found before may be reachable now.
+                            this.discoverAndRegisterModels();
+                        }
+                    });
+                } else if (event.preferenceName === COPILOT_ENABLED_PREF) {
                     if (this.isCopilotEnabled()) {
                         this.initializeModels();
                     } else {
@@ -76,15 +82,6 @@ export class CopilotFrontendApplicationContribution implements FrontendApplicati
                         this.useAutoDiscovery = true;
                         this.removeAllCopilotModels();
                         this.discoverAndRegisterModels();
-                    }
-                } else if (event.preferenceName === COPILOT_ENTERPRISE_URL_PREF && this.isCopilotEnabled()) {
-                    const url = this.preferenceService.get<string>(COPILOT_ENTERPRISE_URL_PREF);
-                    this.manager.setEnterpriseUrl(url || undefined);
-                    if (this.useAutoDiscovery) {
-                        this.removeAllCopilotModels();
-                        this.discoverAndRegisterModels();
-                    } else {
-                        this.manager.refreshModelsStatus();
                     }
                 }
             });
@@ -109,6 +106,32 @@ export class CopilotFrontendApplicationContribution implements FrontendApplicati
 
     protected isCopilotEnabled(): boolean {
         return this.preferenceService.get<boolean>(COPILOT_ENABLED_PREF, true);
+    }
+
+    /**
+     * Hands the configured location of the Copilot CLI to the backend, which searches for it when
+     * none is configured.
+     */
+    protected async updateExecutablePath(): Promise<void> {
+        const executablePath = this.preferenceService.get<string>(COPILOT_EXECUTABLE_PATH_PREF, '').trim();
+        await this.authService.setExecutablePath(executablePath || undefined);
+    }
+
+    /**
+     * Tells the user why they are signed out after an update, since the sign-in of the previous
+     * version cannot be carried over: it belonged to an OAuth application that is no longer used.
+     */
+    protected async notifySignInRequired(): Promise<void> {
+        const signIn = nls.localize('theia/ai/copilot/commands/signIn', 'Sign in to GitHub Copilot');
+        const action = await this.messageService.info(
+            nls.localize('theia/ai/copilot/signInAgain',
+                'GitHub Copilot now signs in through the GitHub Copilot CLI. Your previous sign-in could not be carried over and has been '
+                + 'removed, please sign in again to use Copilot models.'),
+            signIn
+        );
+        if (action === signIn) {
+            this.commandService.executeCommand(CopilotCommands.SIGN_IN.id);
+        }
     }
 
     protected async initializeModels(): Promise<void> {
@@ -171,18 +194,6 @@ export class CopilotFrontendApplicationContribution implements FrontendApplicati
         this.manager.createOrUpdateLanguageModels(...models.map((modelId: string) => this.createCopilotModelDescription(modelId)));
     }
 
-    protected async notifyTokenMigration(): Promise<void> {
-        const signIn = nls.localize('theia/ai/copilot/commands/signIn', 'Sign in to GitHub Copilot');
-        const action = await this.messageService.info(
-            nls.localize('theia/ai/copilot/tokenMigration',
-                'Your GitHub Copilot session used an outdated authentication method and has been cleared. Please sign in again to access all available models.'),
-            signIn
-        );
-        if (action === signIn) {
-            this.commandService.executeCommand(CopilotCommands.SIGN_IN.id);
-        }
-    }
-
     protected createCopilotModelDescription(modelId: string): CopilotModelDescription {
         const id = `${COPILOT_PROVIDER_ID}/${modelId}`;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
@@ -190,8 +201,6 @@ export class CopilotFrontendApplicationContribution implements FrontendApplicati
         return {
             id,
             model: modelId,
-            enableStreaming: true,
-            supportsStructuredOutput: true,
             maxRetries
         };
     }
