@@ -28,7 +28,8 @@ try {
 
 import { expect } from 'chai';
 import * as React from '@theia/core/shared/react';
-import * as ReactDOM from '@theia/core/shared/react-dom';
+import { createRoot, Root } from '@theia/core/shared/react-dom/client';
+import { flushSync } from '@theia/core/shared/react-dom';
 import { Emitter, Event, MessageService, PreferenceScope, PreferenceService } from '@theia/core';
 import {
     LocalMCPServerDescription,
@@ -40,6 +41,7 @@ import {
 } from '../common/mcp-server-manager';
 import { AIMCPConfigurationWidget } from './mcp-configuration-widget';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 disableJSDOM();
 
@@ -70,6 +72,7 @@ class TestAIMCPConfigurationWidget extends AIMCPConfigurationWidget {
 
 describe('AIMCPConfigurationWidget MCP OAuth support', () => {
     let host: HTMLElement;
+    let root: Root | undefined;
 
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -85,7 +88,8 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
     });
 
     afterEach(() => {
-        ReactDOM.unmountComponentAtNode(host);
+        root?.unmount();
+        root = undefined;
         host.remove();
     });
 
@@ -102,6 +106,9 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
     } = {}): TestAIMCPConfigurationWidget {
         const onDidUpdateMCPServersEmitter = new Emitter<void>();
         const widget = new TestAIMCPConfigurationWidget();
+
+        (widget as unknown as { logger: MockLogger }).logger = new MockLogger();
+
         widget.setServers(options.servers ?? []);
         (widget as unknown as { mcpFrontendService: Partial<MCPFrontendService> }).mcpFrontendService = {
             signOut: async serverName => options.onSignOut?.(serverName),
@@ -134,7 +141,9 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
     }
 
     function renderWidget(widget: TestAIMCPConfigurationWidget): void {
-        ReactDOM.render(widget.testRender() as React.ReactElement, host);
+        root ??= createRoot(host);
+        // root.render is async; flushSync keeps the tests' immediate assertions valid.
+        flushSync(() => root!.render(widget.testRender() as React.ReactElement));
     }
 
     const oauthServer: RemoteMCPServerDescription = {
@@ -186,24 +195,18 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
 
     it('surfaces a warning toast when signOut rejects', async () => {
         let warning: string | undefined;
-        const originalConsoleError = console.error;
-        console.error = () => { };
-        try {
-            const widget = createWidget({
-                servers: [oauthServer],
-                onSignOut: () => { throw new Error('rpc broken'); },
-                onWarn: message => warning = message
-            });
-            renderWidget(widget);
+        const widget = createWidget({
+            servers: [oauthServer],
+            onSignOut: () => { throw new Error('rpc broken'); },
+            onWarn: message => warning = message
+        });
+        renderWidget(widget);
 
-            const signOutButton = host.querySelector('button[title="Sign Out"]') as HTMLButtonElement | null;
-            expect(signOutButton).to.not.be.null;
-            signOutButton!.click();
-            await Promise.resolve();
-            await Promise.resolve();
-        } finally {
-            console.error = originalConsoleError;
-        }
+        const signOutButton = host.querySelector('button[title="Sign Out"]') as HTMLButtonElement | null;
+        expect(signOutButton).to.not.be.null;
+        signOutButton!.click();
+        await Promise.resolve();
+        await Promise.resolve();
 
         expect(warning).to.contain('oauth-server');
     });
@@ -335,22 +338,16 @@ describe('AIMCPConfigurationWidget MCP OAuth support', () => {
 
         it('surfaces a warning toast when startServerInteractive rejects', async () => {
             let warning: string | undefined;
-            const originalConsoleError = console.error;
-            console.error = () => { };
-            try {
-                const widget = createWidget({
-                    servers: [localServer],
-                    onStartServerInteractive: () => { throw new Error('rpc broken'); },
-                    onWarn: message => warning = message
-                });
-                renderWidget(widget);
+            const widget = createWidget({
+                servers: [localServer],
+                onStartServerInteractive: () => { throw new Error('rpc broken'); },
+                onWarn: message => warning = message
+            });
+            renderWidget(widget);
 
-                const startButton = host.querySelector('button[title="Start Server"]') as HTMLButtonElement | null;
-                startButton!.click();
-                await flushClickHandlers();
-            } finally {
-                console.error = originalConsoleError;
-            }
+            const startButton = host.querySelector('button[title="Start Server"]') as HTMLButtonElement | null;
+            startButton!.click();
+            await flushClickHandlers();
 
             expect(warning).to.contain('local-server');
         });

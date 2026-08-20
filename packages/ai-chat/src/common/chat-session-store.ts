@@ -28,6 +28,10 @@ export interface ChatModelWithMetadata {
     lastInteraction?: number;
     /** Whether the last request ended with an error. */
     hasError?: boolean;
+    /** ID of the root session in the delegation chain. */
+    rootSessionId?: string;
+    /** ID of the immediate parent session that delegated this one. */
+    parentSessionId?: string;
 }
 
 export interface ChatSessionStore {
@@ -75,4 +79,8 @@ export interface ChatSessionMetadata {
     pinnedAgentId?: string;
     /** Whether the last request ended with an error. */
     hasError?: boolean;
+    /** ID of the root session in the delegation chain. */
+    rootSessionId?: string;
+    /** ID of the immediate parent session that delegated this one. */
+    parentSessionId?: string;
 }

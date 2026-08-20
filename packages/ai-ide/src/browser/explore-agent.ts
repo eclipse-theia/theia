@@ -16,8 +16,8 @@
 
 import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-agents';
 import { LanguageModelRequirement } from '@theia/ai-core/lib/common';
-import { nls } from '@theia/core';
-import { injectable } from '@theia/core/shared/inversify';
+import { ILogger, nls } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { exploreSystemPrompt, EXPLORE_SYSTEM_PROMPT_ID } from './explore-prompt-template';
 import { ExploreAgentId } from '../common/agent-ids';
 
@@ -25,6 +25,9 @@ export { ExploreAgentId };
 
 @injectable()
 export class ExploreAgent extends AbstractStreamParsingChatAgent {
+    @inject(ILogger) @named('ai-ide:ExploreAgent')
+    protected override readonly logger: ILogger;
+
     name = 'Explore';
     id = ExploreAgentId;
     languageModelRequirements: LanguageModelRequirement[] = [{

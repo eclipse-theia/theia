@@ -17,7 +17,7 @@
 import * as path from 'path';
 import * as semver from 'semver';
 import * as fs from '@theia/core/shared/fs-extra';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { PluginDeployerHandler, PluginDeployerResolver, PluginDeployerResolverContext, PluginDeployOptions, PluginIdentifiers } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { FileUri } from '@theia/core/lib/node';
@@ -27,6 +27,7 @@ import { OVSXApiFilterProvider, VSXExtensionRaw, VSXTargetPlatform } from '@thei
 import { RequestService } from '@theia/core/shared/@theia/request';
 import { PluginVSCodeEnvironment } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-environment';
 import { PluginUninstallationManager } from '@theia/plugin-ext/lib/main/node/plugin-uninstallation-manager';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class VSXExtensionResolver implements PluginDeployerResolver {
@@ -37,6 +38,9 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
     @inject(PluginVSCodeEnvironment) protected readonly environment: PluginVSCodeEnvironment;
     @inject(PluginUninstallationManager) protected readonly uninstallationManager: PluginUninstallationManager;
     @inject(OVSXApiFilterProvider) protected vsxApiFilter: OVSXApiFilterProvider;
+
+    @inject(ILogger) @named('vsx-registry:VSXExtensionResolver')
+    protected readonly logger: ILogger;
 
     accept(pluginId: string): boolean {
         return !!VSCodeExtensionUri.toId(new URI(pluginId));
@@ -54,7 +58,7 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
         const filter = await this.vsxApiFilter();
         const version = options?.version || id.version;
         if (version) {
-            console.log(`[${id.id}]: trying to resolve version ${version}...`);
+            this.logger.info(`[${id.id}]: trying to resolve version ${version}...`);
             extension = await filter.findLatestCompatibleExtension({
                 extensionId: id.id,
                 extensionVersion: version,
@@ -62,7 +66,7 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
                 targetPlatform: VSXExtensionResolver.TARGET_PLATFORM
             });
         } else {
-            console.log(`[${id.id}]: trying to resolve latest version...`);
+            this.logger.info(`[${id.id}]: trying to resolve latest version...`);
             extension = await filter.findLatestCompatibleExtension({
                 extensionId: id.id,
                 includeAllVersions: true,
@@ -75,26 +79,30 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
         if (extension.error) {
             throw new Error(extension.error);
         }
-        const resolvedId = id.id + '-' + extension.version;
+        const resolvedId = PluginIdentifiers.componentsToVersionedId({
+            publisher: extension.namespace,
+            name: extension.name,
+            version: extension.version
+        });
         const downloadUrl = extension.files.download;
-        console.log(`[${id.id}]: resolved to '${resolvedId}'`);
+        this.logger.info(`[${id.id}]: resolved to '${resolvedId}'`);
 
         if (!options?.ignoreOtherVersions) {
             const existingVersion = this.hasSameOrNewerVersion(id.id, extension);
             if (existingVersion) {
-                console.log(`[${id.id}]: is already installed with the same or newer version '${existingVersion}'`);
+                this.logger.info(`[${id.id}]: is already installed with the same or newer version '${existingVersion}'`);
                 return;
             }
         }
         const downloadDir = await this.getTempDir();
         await fs.ensureDir(downloadDir);
         const downloadedExtensionPath = path.resolve(downloadDir, path.basename(downloadUrl));
-        console.log(`[${resolvedId}]: trying to download from "${downloadUrl}"...`, 'to path', downloadDir);
+        this.logger.info(`[${resolvedId}]: trying to download from "${downloadUrl}"...`, 'to path', downloadDir);
         if (!await this.download(downloadUrl, downloadedExtensionPath)) {
-            console.log(`[${resolvedId}]: not found`);
+            this.logger.info(`[${resolvedId}]: not found`);
             return;
         }
-        console.log(`[${resolvedId}]: downloaded to ${downloadedExtensionPath}"`);
+        this.logger.info(`[${resolvedId}]: downloaded to ${downloadedExtensionPath}"`);
         context.addPlugin(resolvedId, downloadedExtensionPath);
     }
 

@@ -15,7 +15,19 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { isModelMatching, isToolCallContent, LanguageModel, LanguageModelSelector } from './language-model';
+import {
+    DefaultLanguageModelRegistryImpl,
+    isCompactionResponsePart,
+    isLanguageModelStreamResponsePart,
+    isModelMatching,
+    isToolCallContent,
+    LanguageModel,
+    LanguageModelSelector,
+    resolveCompactionDefault,
+    resolveCompactionTokenThreshold,
+    resolveCompactionTokenThresholdDefault,
+    resolveServerSideCompaction
+} from './language-model';
 
 describe('isModelMatching', () => {
     it('returns false with one of two parameter mismatches', () => {
@@ -162,4 +174,89 @@ describe('isToolCallContent', () => {
         expect(isToolCallContent(value)).to.be.false;
     });
 
+});
+
+describe('DefaultLanguageModelRegistryImpl', () => {
+    function createRegistry(): DefaultLanguageModelRegistryImpl {
+        const registry = new DefaultLanguageModelRegistryImpl();
+        // No DI container in this unit test, so resolve the internal `initialized` gate manually.
+        (registry as unknown as { markInitialized: () => void }).markInitialized();
+        return registry;
+    }
+
+    function model(id: string): LanguageModel {
+        return { id, status: { status: 'ready' } } as LanguageModel;
+    }
+
+    it('getLanguageModels returns a fresh array so consumers can detect changes by reference', async () => {
+        const registry = createRegistry();
+        registry.addLanguageModels([model('a')]);
+
+        const first = await registry.getLanguageModels();
+        expect(first).to.have.length(1);
+
+        registry.addLanguageModels([model('b')]);
+        const second = await registry.getLanguageModels();
+
+        // A new snapshot must be a different array reference (React memoization relies on this).
+        expect(second).to.not.equal(first);
+        // The earlier snapshot must not be mutated in place by later registry changes.
+        expect(first.map(m => m.id)).to.deep.equal(['a']);
+        expect(second.map(m => m.id)).to.deep.equal(['a', 'b']);
+    });
+
+    it('reflects removals in a fresh snapshot without mutating an earlier one', async () => {
+        const registry = createRegistry();
+        registry.addLanguageModels([model('a'), model('b')]);
+        const before = await registry.getLanguageModels();
+
+        registry.removeLanguageModels(['a']);
+        const after = await registry.getLanguageModels();
+
+        expect(before.map(m => m.id)).to.deep.equal(['a', 'b']);
+        expect(after.map(m => m.id)).to.deep.equal(['b']);
+    });
+});
+
+describe('compaction contract', () => {
+    it('recognizes a compaction response part', () => {
+        const part = { compaction: { provider: 'anthropic', data: { foo: 1 } } };
+        expect(isCompactionResponsePart(part)).to.equal(true);
+        expect(isLanguageModelStreamResponsePart(part)).to.equal(true);
+    });
+    it('rejects a non-compaction part', () => {
+        expect(isCompactionResponsePart({ content: 'hi' })).to.equal(false);
+        // eslint-disable-next-line no-null/no-null
+        expect(isCompactionResponsePart(null)).to.equal(false);
+        expect(isCompactionResponsePart(undefined)).to.equal(false);
+        // eslint-disable-next-line no-null/no-null
+        expect(isCompactionResponsePart({ compaction: null })).to.equal(false);
+        expect(isCompactionResponsePart({ compaction: { provider: 42 } })).to.equal(false);
+    });
+    it('resolves a model default from the global preference and the per-provider override', () => {
+        expect(resolveCompactionDefault(true, 'default')).to.equal(true);
+        expect(resolveCompactionDefault(false, 'default')).to.equal(false);
+        expect(resolveCompactionDefault(false, 'enabled')).to.equal(true);
+        expect(resolveCompactionDefault(true, 'disabled')).to.equal(false);
+    });
+    it('resolves compaction token thresholds with session, provider, global precedence', () => {
+        expect(resolveCompactionTokenThresholdDefault(undefined, undefined)).to.equal(undefined);
+        expect(resolveCompactionTokenThresholdDefault(100_000, undefined)).to.equal(100_000);
+        expect(resolveCompactionTokenThresholdDefault(100_000, 200_000)).to.equal(200_000);
+        expect(resolveCompactionTokenThreshold(undefined, undefined)).to.equal(undefined);
+        expect(resolveCompactionTokenThreshold(200_000, undefined)).to.equal(200_000);
+        expect(resolveCompactionTokenThreshold(200_000, { tokenThreshold: 300_000 })).to.equal(300_000);
+    });
+    it('resolves server-side compaction with capability gate and session-wins precedence', () => {
+        // capability gate
+        expect(resolveServerSideCompaction(false, true, { enabled: true })).to.equal(false);
+        expect(resolveServerSideCompaction(undefined, true, undefined)).to.equal(false);
+        // no per-session setting -> model default
+        expect(resolveServerSideCompaction(true, true, undefined)).to.equal(true);
+        expect(resolveServerSideCompaction(true, false, undefined)).to.equal(false);
+        expect(resolveServerSideCompaction(true, true, {})).to.equal(true);
+        // explicit per-session setting wins over the model default (which already folds in the per-provider override)
+        expect(resolveServerSideCompaction(true, false, { enabled: true })).to.equal(true);
+        expect(resolveServerSideCompaction(true, true, { enabled: false })).to.equal(false);
+    });
 });

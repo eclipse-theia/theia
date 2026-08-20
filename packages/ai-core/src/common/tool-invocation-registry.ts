@@ -16,7 +16,7 @@
 
 import { inject, injectable, named, postConstruct, interfaces } from '@theia/core/shared/inversify';
 import { ToolRequest } from './language-model';
-import { ContributionProvider, Emitter, Event } from '@theia/core';
+import { ContributionProvider, Emitter, Event, ILogger } from '@theia/core';
 
 export const ToolInvocationRegistry = Symbol('ToolInvocationRegistry');
 
@@ -57,6 +57,13 @@ export interface ToolInvocationRegistry {
     getAllFunctions(): ToolRequest[];
 
     /**
+     * Unregisters a single tool from the registry.
+     *
+     * @param toolId - The unique identifier of the tool to unregister.
+     */
+    unregisterTool(toolId: string): void;
+
+    /**
      * Unregisters all tools provided by a specific tool provider.
      *
      * @param providerName - The name of the tool provider whose tools should be removed (as specificed in the `ToolRequest`).
@@ -92,11 +99,20 @@ export class ToolInvocationRegistryImpl implements ToolInvocationRegistry {
     @named(ToolProvider)
     private providers: ContributionProvider<ToolProvider>;
 
+    @inject(ILogger) @named('ai-core:ToolInvocationRegistryImpl')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     init(): void {
         this.providers.getContributions().forEach(provider => {
             this.registerTool(provider.getTool());
         });
+    }
+
+    unregisterTool(toolId: string): void {
+        if (this.tools.delete(toolId)) {
+            this.onDidChangeEmitter.fire();
+        }
     }
 
     unregisterAllTools(providerName: string): void {
@@ -122,7 +138,7 @@ export class ToolInvocationRegistryImpl implements ToolInvocationRegistry {
 
     registerTool(tool: ToolRequest): void {
         if (this.tools.has(tool.id)) {
-            console.warn(`Function with id ${tool.id} is already registered.`);
+            this.logger.warn(`Function with id ${tool.id} is already registered.`);
         } else {
             this.tools.set(tool.id, tool);
             this.onDidChangeEmitter.fire();

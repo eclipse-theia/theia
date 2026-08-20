@@ -78,6 +78,13 @@ export function getUsageColorClass(totalTokens: number, threshold: number, conte
     return 'token-usage-red';
 }
 
+function sumUsageTokens(usage: ResponseTokenUsage): number {
+    return usage.inputTokens
+        + usage.outputTokens
+        + (usage.cacheCreationInputTokens ?? 0)
+        + (usage.cacheReadInputTokens ?? 0);
+}
+
 export function computeSessionTokenUsage(chatModel?: ChatModel): number {
     if (!chatModel) {
         return 0;
@@ -86,13 +93,44 @@ export function computeSessionTokenUsage(chatModel?: ChatModel): number {
     for (let i = requests.length - 1; i >= 0; i--) {
         const usage: ResponseTokenUsage | undefined = requests[i].response.tokenUsage;
         if (usage) {
-            return usage.inputTokens
-                + usage.outputTokens
-                + (usage.cacheCreationInputTokens ?? 0)
-                + (usage.cacheReadInputTokens ?? 0);
+            return sumUsageTokens(usage);
         }
     }
     return 0;
+}
+
+/** Sum of input + output (+ cache) tokens across every response in the session. Represents cumulative billed usage. */
+export function computeCumulativeTokenUsage(chatModel?: ChatModel): number {
+    if (!chatModel) {
+        return 0;
+    }
+    let total = 0;
+    for (const request of chatModel.getRequests()) {
+        const usage: ResponseTokenUsage | undefined = request.response.tokenUsage;
+        if (usage) {
+            total += sumUsageTokens(usage);
+        }
+    }
+    return total;
+}
+
+/**
+ * Number of provider compaction events recorded across the session.
+ * Counts every `compaction` content part; a single response may contain more than one.
+ */
+export function countCompactions(chatModel?: ChatModel): number {
+    if (!chatModel) {
+        return 0;
+    }
+    let count = 0;
+    for (const request of chatModel.getRequests()) {
+        for (const content of request.response.response.content) {
+            if (content.kind === 'compaction') {
+                count++;
+            }
+        }
+    }
+    return count;
 }
 
 export function getLatestTokenUsage(chatModel?: ChatModel): ResponseTokenUsage | undefined {
@@ -113,7 +151,8 @@ export function buildBarTooltip(
     usage: ResponseTokenUsage | undefined,
     totalTokens: number,
     threshold: number,
-    contextWindowSize: number = CHAT_CONTEXT_WINDOW_SIZE_FALLBACK
+    contextWindowSize: number = CHAT_CONTEXT_WINDOW_SIZE_FALLBACK,
+    chatModel?: ChatModel
 ): MarkdownString | undefined {
     if (!usage) {
         return undefined;
@@ -148,5 +187,13 @@ export function buildBarTooltip(
         formatTokenCount(contextWindowSize),
         percentage
     ));
+    const cumulative = computeCumulativeTokenUsage(chatModel);
+    if (cumulative > 0) {
+        lines.push(nls.localize('theia/ai/chat-ui/tokenUsageTooltipCumulative', 'Cumulative: {0}', formatTokenCount(cumulative)));
+    }
+    const compactions = countCompactions(chatModel);
+    if (compactions > 0) {
+        lines.push(nls.localize('theia/ai/chat-ui/tokenUsageTooltipCompactions', 'Compacted {0}x', compactions));
+    }
     return { value: lines.join('  \n') };
 }

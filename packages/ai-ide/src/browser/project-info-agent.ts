@@ -15,12 +15,15 @@
 // *****************************************************************************
 import { AbstractStreamParsingChatAgent } from '@theia/ai-chat';
 import { LanguageModelRequirement } from '@theia/ai-core';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { projectInfoSystemVariants, projectInfoTemplateVariants } from '../common/project-info-prompt-template';
-import { nls } from '@theia/core';
+import { ILogger, nls } from '@theia/core';
 
 @injectable()
 export class ProjectInfoAgent extends AbstractStreamParsingChatAgent {
+
+    @inject(ILogger) @named('ai-ide:ProjectInfoAgent')
+    protected override readonly logger: ILogger;
 
     name = 'ProjectInfo';
     id = 'ProjectInfo';

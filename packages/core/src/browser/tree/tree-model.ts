@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct, named } from 'inversify';
 import { Event, Emitter, WaitUntilEvent } from '../../common/event';
 import { DisposableCollection } from '../../common/disposable';
 import { CancellationToken } from '../../common/cancellation';
@@ -165,7 +165,9 @@ export interface TreeModel extends Tree, TreeSelectionService, TreeExpansionServ
 @injectable()
 export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray<Readonly<SelectableTreeNode>>> {
 
-    @inject(ILogger) protected readonly logger: ILogger;
+    @inject(ILogger) @named('core:TreeModelImpl')
+    protected readonly logger: ILogger;
+
     @inject(Tree) protected readonly tree: Tree;
     @inject(TreeSelectionService) protected readonly selectionService: TreeSelectionService;
     @inject(TreeExpansionService) protected readonly expansionService: TreeExpansionService;
@@ -248,6 +250,10 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
 
     validateNode(node: TreeNode | undefined): TreeNode | undefined {
         return this.tree.validateNode(node);
+    }
+
+    removeNode(node: TreeNode | undefined): void {
+        this.tree.removeNode(node);
     }
 
     async refresh(parent?: Readonly<CompositeTreeNode>): Promise<CompositeTreeNode | undefined> {

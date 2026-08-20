@@ -16,12 +16,13 @@
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection, Emitter, Event, ILogger, MessageService, nls } from '@theia/core';
-import { HoverService } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, HoverService } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { ExtensionsSourceContribution, SearchContext, SearchResult } from '@theia/vsx-registry/lib/browser/extensions-source-contribution';
 import { RegistryFetchService } from '../../common/registry-fetch-service';
 import { ResolvedSkillEntry } from '../../common/skill/skill-registry-types';
+import { RegistrySearchFilter } from '../../common/registry-search-filter';
 import { SkillInstallService } from './skill-install-service';
 import { SkillInstallClientImpl } from './skill-install-client';
 import { SkillEntryHandlers, SkillInstalledEntry, SkillSearchResultEntry } from './skill-entries';
@@ -31,6 +32,7 @@ export class SkillExtensionsContribution implements ExtensionsSourceContribution
 
     readonly type = 'skill';
     readonly displayName = nls.localizeByDefault('Skills');
+    readonly searchToken = '@skills';
     // Skills sort below MCP servers (priority 100), which in turn sort below extensions.
     readonly priority = 200;
 
@@ -43,6 +45,9 @@ export class SkillExtensionsContribution implements ExtensionsSourceContribution
     @inject(HoverService)
     protected readonly hoverService: HoverService;
 
+    @inject(ContextMenuRenderer)
+    protected readonly contextMenuRenderer: ContextMenuRenderer;
+
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
@@ -51,6 +56,9 @@ export class SkillExtensionsContribution implements ExtensionsSourceContribution
 
     @inject(SkillInstallClientImpl)
     protected readonly installClient: SkillInstallClientImpl;
+
+    @inject(RegistrySearchFilter)
+    protected readonly searchFilter: RegistrySearchFilter;
 
     @inject(ILogger) @named('ai-registry:SkillExtensionsContribution')
     protected readonly logger: ILogger;
@@ -117,7 +125,7 @@ export class SkillExtensionsContribution implements ExtensionsSourceContribution
                 continue;
             }
             const matchedEntry = (info.skillId && bySkillId.get(info.skillId)) || byName.get(info.name);
-            result.push(new SkillInstalledEntry(info, matchedEntry, state, this.handlers, this.hoverService));
+            result.push(new SkillInstalledEntry(info, matchedEntry, state, this.handlers, this.hoverService, this.contextMenuRenderer));
         }
         return result;
     }
@@ -130,9 +138,15 @@ export class SkillExtensionsContribution implements ExtensionsSourceContribution
         const installed = await this.installService.listInstalledSkills();
         const result: SearchResult[] = [];
         for (const entry of registryEntries) {
+            // Pre-filter to genuine matches. The shared Extensions ranker fuzzy-matches scattered
+            // characters across the combined searchable text, which - given long skill descriptions -
+            // otherwise treats almost every skill as a hit for any short query.
+            if (!this.searchFilter.matches({ name: entry.name, identifier: entry.skillId, description: entry.description }, query)) {
+                continue;
+            }
             const state = this.installService.classifyRegistryEntry(entry, installed);
             result.push({
-                element: new SkillSearchResultEntry(entry, state, this.handlers, this.hoverService),
+                element: new SkillSearchResultEntry(entry, state, this.handlers, this.hoverService, this.contextMenuRenderer),
                 searchableText: `${entry.name} ${entry.skillId} ${entry.description}`
             });
         }

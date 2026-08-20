@@ -63,6 +63,7 @@ export class LSToolRenderer implements ChatResponsePartRenderer<ToolCallChatResp
                 workspaceService={this.workspaceService}
                 labelProvider={this.labelProvider}
                 editorManager={this.editorManager}
+                logger={this.logger}
             />;
         } catch (error) {
             this.logger.warn('Failed to parse LS tool input:', error);
@@ -76,7 +77,8 @@ const LSToolComponent: React.FC<{
     workspaceService: WorkspaceService;
     labelProvider: LabelProvider;
     editorManager: EditorManager;
-}> = ({ input, workspaceService, labelProvider, editorManager }) => {
+    logger: ILogger;
+}> = ({ input, workspaceService, labelProvider, editorManager, logger }) => {
     const getDirectoryName = (dirPath: string): string => dirPath.split('/').pop() || dirPath;
     const getWorkspaceRelativePath = async (dirPath: string): Promise<string> => {
         try {
@@ -94,7 +96,7 @@ const LSToolComponent: React.FC<{
             // Note: This might need to be adjusted based on how directories are opened in Theia
             await editorManager.open(uri);
         } catch (error) {
-            console.error('Failed to open directory:', error);
+            logger.error('Failed to open directory:', error);
         }
     };
 
@@ -129,7 +131,7 @@ const LSToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/directory', 'Directory')}</span>
+                <span className="claude-code-tool detail-label">{nls.localizeByDefault('Directory')}</span>
                 <code className="claude-code-tool detail-value">{input.path}</code>
             </div>
             {input.ignore && input.ignore.length > 0 && (

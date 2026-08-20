@@ -119,7 +119,8 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
     }
 
     protected get currentEditorTheme(): string {
-        return this.themeService.getCurrentTheme().editorTheme || MonacoThemeRegistry.DARK_DEFAULT_THEME;
+        const theme = this.themeService.getCurrentTheme();
+        return theme.editorTheme || MonacoThemeRegistry.getDefaultTheme(theme.type);
     }
 
     activateLanguage(language: string): Disposable {

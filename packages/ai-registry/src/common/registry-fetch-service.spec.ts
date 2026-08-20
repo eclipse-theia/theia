@@ -16,27 +16,51 @@
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { RequestContext, RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
+import { BackendRequestService, RequestContext, RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
 import { AIRegistryConfiguration } from './ai-registry-configuration';
 import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from './mcp/mcp-registry-entry-resolver';
 import { SkillRegistryEntryResolver, SkillRegistryEntryResolverImpl } from './skill/skill-registry-entry-resolver';
 import { RegistryFetchService, RegistryFetchServiceImpl } from './registry-fetch-service';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 class FakeRequestService implements RequestService {
     public lastUrl: string | undefined;
+    public lastTimeout: number | undefined;
     public callCount = 0;
+    /** When set, every request rejects with this error instead of responding. */
+    public failWith: Error | undefined;
+    /** When `true`, every request stays pending forever, mimicking a network that drops packets. */
+    public hang = false;
     constructor(private readonly responseBody: string, private readonly statusCode = 200) { }
     async configure(): Promise<void> { /* no-op */ }
     async resolveProxy(): Promise<string | undefined> { return undefined; }
     async request(options: RequestOptions): Promise<RequestContext> {
         this.lastUrl = options.url;
+        this.lastTimeout = options.timeout;
         this.callCount += 1;
+        if (this.hang) {
+            return new Promise<RequestContext>(() => { /* never settles */ });
+        }
+        if (this.failWith) {
+            throw this.failWith;
+        }
         return {
             url: options.url,
             res: { headers: {}, statusCode: this.statusCode },
             buffer: new TextEncoder().encode(this.responseBody)
         };
     }
+}
+
+/** Exposes the timing knobs so the tests don't have to wait out the production values. */
+class TestRegistryFetchService extends RegistryFetchServiceImpl {
+    public timeout = 10;
+    public delay = 1000;
+    public currentTime = 0;
+    protected override get fetchTimeout(): number { return this.timeout; }
+    protected override get retryDelay(): number { return this.delay; }
+    protected override now(): number { return this.currentTime; }
 }
 
 class FakeConfiguration extends AIRegistryConfiguration {
@@ -84,8 +108,9 @@ describe('RegistryFetchService', () => {
 
     function buildContainer(requestService: RequestService, config: AIRegistryConfiguration): Container {
         const container = new Container();
-        container.bind(RequestService).toConstantValue(requestService);
+        container.bind(BackendRequestService).toConstantValue(requestService);
         container.bind(AIRegistryConfiguration).toConstantValue(config);
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
         container.bind(MCPRegistryEntryResolverImpl).toSelf().inSingletonScope();
         container.bind(MCPRegistryEntryResolver).toService(MCPRegistryEntryResolverImpl);
         container.bind(SkillRegistryEntryResolverImpl).toSelf().inSingletonScope();
@@ -95,14 +120,14 @@ describe('RegistryFetchService', () => {
         return container;
     }
 
-    it('fetches the per-tool JSON from <baseUrl>/<toolName>.json and returns resolved entries', async () => {
+    it('fetches the per-tool JSON from <baseUrl>/tools/<toolName>.json and returns resolved entries', async () => {
         const request = new FakeRequestService(payload());
         const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
         const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
 
         const entries = await service.getEntries();
 
-        expect(request.lastUrl).to.equal('https://example.test/api/v1/theia-ide.json');
+        expect(request.lastUrl).to.equal('https://example.test/api/v1/tools/theia-ide.json');
         expect(entries).to.have.length(1);
         expect(entries[0]).to.deep.equal({
             serverId: 'io.github.example/example-mcp',
@@ -114,6 +139,16 @@ describe('RegistryFetchService', () => {
             configHash: 'hash-v1',
             mcpRegistryVerified: true
         });
+    });
+
+    it('fetches the aggregate registry from <baseUrl>/all.json for the default "all" tool', async () => {
+        const request = new FakeRequestService(payload());
+        const config = new FakeConfiguration('all', 'https://example.test/api/v1/');
+        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
+
+        await service.getEntries();
+
+        expect(request.lastUrl).to.equal('https://example.test/api/v1/all.json');
     });
 
     it('fetches and resolves skill entries from the same per-tool JSON', async () => {
@@ -136,7 +171,8 @@ describe('RegistryFetchService', () => {
 
     it('shares a single HTTP request between MCP and skill slices', async () => {
         const request = new FakeRequestService(payload());
-        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get<RegistryFetchService>(RegistryFetchService);
+        const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
+        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
 
         await service.getEntries();
         await service.getSkillEntries();
@@ -146,7 +182,8 @@ describe('RegistryFetchService', () => {
 
     it('serves cached entries on a second call without issuing a new request', async () => {
         const request = new FakeRequestService(payload());
-        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get<RegistryFetchService>(RegistryFetchService);
+        const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
+        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
 
         await service.getEntries();
         await service.getEntries();
@@ -156,7 +193,8 @@ describe('RegistryFetchService', () => {
 
     it('refetches when forceRefresh is true', async () => {
         const request = new FakeRequestService(payload());
-        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get<RegistryFetchService>(RegistryFetchService);
+        const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
+        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
 
         await service.getEntries();
         await service.getEntries(true);
@@ -164,9 +202,86 @@ describe('RegistryFetchService', () => {
         expect(request.callCount).to.equal(2);
     });
 
+    function buildTestService(requestService: RequestService): TestRegistryFetchService {
+        const container = buildContainer(requestService, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/'));
+        container.rebind(RegistryFetchServiceImpl).to(TestRegistryFetchService).inSingletonScope();
+        return container.get(RegistryFetchServiceImpl) as TestRegistryFetchService;
+    }
+
+    async function expectRejection(promise: Promise<unknown>): Promise<Error> {
+        try {
+            await promise;
+        } catch (error) {
+            return error as Error;
+        }
+        throw new Error('Expected the fetch to be rejected.');
+    }
+
+    it('issues a single request for callers that ask concurrently', async () => {
+        const request = new FakeRequestService(payload());
+        const service = buildTestService(request);
+
+        // The Extensions view resolves its sections in parallel, and the auto-update check adds
+        // another caller, so the requests overlap in practice.
+        await Promise.all([service.getEntries(), service.getSkillEntries(), service.getEntries()]);
+
+        expect(request.callCount).to.equal(1);
+    });
+
+    it('gives up on a request that never settles', async () => {
+        const request = new FakeRequestService(payload());
+        request.hang = true;
+        const service = buildTestService(request);
+
+        const error = await expectRejection(service.getEntries());
+
+        expect(error.message).to.match(/Timed out fetching the AI registry/);
+        expect(request.lastTimeout).to.equal(service.timeout);
+    });
+
+    it('backs off instead of re-attempting a failed fetch on every call', async () => {
+        const request = new FakeRequestService(payload());
+        request.failWith = new Error('getaddrinfo ENOTFOUND example.test');
+        const service = buildTestService(request);
+
+        await expectRejection(service.getEntries());
+        const second = await expectRejection(service.getSkillEntries());
+
+        expect(request.callCount).to.equal(1);
+        expect(second.message).to.match(/ENOTFOUND/);
+    });
+
+    it('attempts the network again once the backoff window has passed', async () => {
+        const request = new FakeRequestService(payload());
+        request.failWith = new Error('offline');
+        const service = buildTestService(request);
+
+        await expectRejection(service.getEntries());
+        service.currentTime += service.delay;
+        request.failWith = undefined;
+        const entries = await service.getEntries();
+
+        expect(request.callCount).to.equal(2);
+        expect(entries).to.have.length(1);
+    });
+
+    it('ignores the backoff window on an explicit refresh', async () => {
+        const request = new FakeRequestService(payload());
+        request.failWith = new Error('offline');
+        const service = buildTestService(request);
+
+        await expectRejection(service.getEntries());
+        request.failWith = undefined;
+        const entries = await service.getEntries(true);
+
+        expect(request.callCount).to.equal(2);
+        expect(entries).to.have.length(1);
+    });
+
     it('throws a descriptive error when the server returns a non-success status', async () => {
         const request = new FakeRequestService('', 404);
-        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get<RegistryFetchService>(RegistryFetchService);
+        const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
+        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
 
         let caught: Error | undefined;
         try {

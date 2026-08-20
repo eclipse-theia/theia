@@ -142,3 +142,282 @@ body {
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
   }
 }
+
+/* Walkthrough styles */
+
+/* The cards form a quiet single column: card-like blocks, but without borders. */
+.gs-walkthrough-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--theia-ui-padding);
+  margin-top: var(--theia-ui-padding);
+  max-width: 640px;
+}
+
+.gs-walkthrough-card {
+  padding: calc(var(--theia-ui-padding) * 1.5) calc(var(--theia-ui-padding) * 2);
+  border-radius: calc(var(--theia-ui-padding) / 2);
+  cursor: pointer;
+  background-color: var(--theia-walkthrough-card-background);
+  /* Only set in high contrast themes, where the card has no background to delimit it. */
+  border: var(--theia-border-width) solid var(--theia-contrastBorder);
+}
+
+/*
+ * High contrast themes define none of the `welcomePage`, `list` and `secondaryButton` hover colors, which
+ * leaves the hover feedback below inert. `contrastActiveBorder` is set in those themes only and is the
+ * established affordance for it, see `dockpanel.css` in `@theia/core`.
+ */
+.gs-walkthrough-card:hover {
+  background-color: var(--theia-welcomePage-buttonHoverBackground);
+  outline: var(--theia-border-width) dashed var(--theia-contrastActiveBorder);
+  outline-offset: calc(var(--theia-border-width) * -1);
+}
+
+.gs-walkthrough-card:focus {
+  outline: var(--theia-border-width) solid var(--theia-focusBorder);
+}
+
+.gs-walkthrough-card-header {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  margin-bottom: calc(var(--theia-ui-padding) / 2);
+}
+
+.gs-walkthrough-card-title {
+  font-size: var(--theia-ui-font-size1);
+  font-weight: 600;
+  margin: 0;
+}
+
+.gs-walkthrough-icon {
+  font-size: var(--theia-ui-font-size1);
+  flex: 0 0 auto;
+}
+
+/* The extension icon is an image, so it needs an explicit box to sit in. */
+.gs-walkthrough-plugin-icon {
+  width: var(--theia-icon-size);
+  height: var(--theia-icon-size);
+  object-fit: contain;
+}
+
+/* Kept to a single line so that every card stays the same height. */
+.gs-walkthrough-card-description {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gs-walkthrough-card-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  margin-top: var(--theia-ui-padding);
+}
+
+.gs-walkthrough-progress-bar {
+  flex: 0 1 180px;
+  height: calc(var(--theia-ui-padding) / 3);
+  background-color: var(--theia-walkthrough-progress-background);
+  border-radius: calc(var(--theia-ui-padding) / 3);
+  overflow: hidden;
+}
+
+.gs-walkthrough-progress-fill {
+  height: 100%;
+  /* The fallback keeps the filled part visible should a theme leave `progressBar.background` unset. */
+  background-color: var(--theia-progressBar-background, var(--theia-focusBorder));
+  border-radius: calc(var(--theia-ui-padding) / 3);
+  transition: width 0.3s ease;
+}
+
+.gs-walkthrough-progress-text {
+  color: var(--theia-walkthrough-progress-foreground);
+  font-size: var(--theia-ui-font-size0);
+  white-space: nowrap;
+}
+
+.gs-walkthrough-more {
+  display: inline-block;
+  margin-top: calc(var(--theia-ui-padding) / 2);
+  padding-left: var(--theia-ui-padding);
+  cursor: pointer;
+}
+
+/* A selected walkthrough takes over the whole welcome view. */
+.gs-walkthrough-container {
+  padding: calc(var(--theia-ui-padding) * 6);
+  overflow: auto;
+}
+
+.gs-walkthrough-detail {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.gs-walkthrough-detail-header {
+  margin-bottom: calc(var(--theia-ui-padding) * 4);
+}
+
+.gs-walkthrough-detail-body {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: calc(var(--theia-ui-padding) * 4);
+  min-height: 0;
+}
+
+.gs-walkthrough-back-link {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  margin-bottom: calc(var(--theia-ui-padding) * 6);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+/*
+ * The label carries the underline rather than the link itself: text decoration of a flex container is not
+ * propagated to its flex items, and underlining the arrow icon along with the label would look off anyway.
+ */
+.gs-walkthrough-back-link:hover .gs-walkthrough-back-label {
+  text-decoration: underline;
+}
+
+.gs-walkthrough-detail-title {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  font-size: var(--theia-ui-font-size3);
+  font-weight: 600;
+  margin: 0;
+}
+
+.gs-walkthrough-detail-title .gs-walkthrough-plugin-icon {
+  width: var(--theia-ui-font-size3);
+  height: var(--theia-ui-font-size3);
+}
+
+.gs-walkthrough-detail-description {
+  color: var(--theia-descriptionForeground);
+  margin: var(--theia-ui-padding) 0 0 0;
+}
+
+.gs-walkthrough-steps {
+  display: flex;
+  flex: 1 1 280px;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) / 2);
+  max-width: 420px;
+}
+
+.gs-walkthrough-step-item {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  padding: var(--theia-ui-padding);
+  border-radius: calc(var(--theia-ui-padding) / 2);
+  border-left: calc(var(--theia-border-width) * 2) solid transparent;
+  cursor: pointer;
+}
+
+.gs-walkthrough-step-item:hover {
+  background-color: var(--theia-list-hoverBackground);
+  outline: var(--theia-border-width) dashed var(--theia-contrastActiveBorder);
+  outline-offset: calc(var(--theia-border-width) * -1);
+}
+
+/*
+ * The selected step keeps the regular foreground colors: the active selection background does not
+ * guarantee readable contrast for the step title in every theme, so the selection is conveyed by a
+ * quiet background plus an accent border instead.
+ */
+.gs-walkthrough-step-item.selected {
+  background-color: var(--theia-list-inactiveSelectionBackground);
+  border-left-color: var(--theia-focusBorder);
+}
+
+.gs-walkthrough-step-item.completed .gs-walkthrough-step-icon {
+  color: var(--theia-walkthrough-stepCompleted-foreground);
+}
+
+.gs-walkthrough-step-item .gs-walkthrough-step-icon:hover {
+  color: var(--theia-focusBorder);
+}
+
+.gs-walkthrough-step-icon {
+  font-size: var(--theia-ui-font-size2);
+  cursor: pointer;
+}
+
+.gs-walkthrough-step-title {
+  color: var(--theia-walkthrough-stepTitle-foreground);
+  font-weight: 500;
+}
+
+.gs-walkthrough-step-content {
+  flex: 2 1 360px;
+  min-width: 0;
+  padding: calc(var(--theia-ui-padding) * 2);
+  border: var(--theia-border-width) solid var(--theia-panel-border);
+  border-radius: var(--theia-ui-padding);
+}
+
+.gs-walkthrough-step-detail h3 {
+  margin-top: 0;
+}
+
+.gs-walkthrough-step-detail p {
+  color: var(--theia-descriptionForeground);
+  line-height: var(--theia-content-line-height);
+}
+
+.gs-walkthrough-mark-all-done {
+  align-self: flex-start;
+  margin: var(--theia-ui-padding) 0 0 0;
+}
+
+/* `.theia-button` brings no hover state of its own. */
+.gs-walkthrough-mark-all-done:hover:not([disabled]) {
+  background-color: var(--theia-secondaryButton-hoverBackground);
+  outline: var(--theia-border-width) dashed var(--theia-contrastActiveBorder);
+}
+
+.gs-walkthrough-media-image {
+  max-width: 100%;
+  border-radius: calc(var(--theia-ui-padding) / 2);
+  margin-top: var(--theia-ui-padding);
+}
+
+.gs-walkthrough-media-markdown {
+  margin-top: var(--theia-ui-padding);
+}
+
+.gs-walkthrough-step-description {
+  line-height: var(--theia-content-line-height);
+}
+
+.gs-walkthrough-step-description a {
+  color: var(--theia-textLink-foreground);
+  text-decoration: none;
+}
+
+.gs-walkthrough-step-description a:hover {
+  text-decoration: underline;
+}
+
+.gs-walkthrough-step-description code {
+  font-family: var(--theia-code-font-family);
+  font-size: var(--theia-code-font-size);
+  background: var(--theia-textCodeBlock-background);
+  padding: 0 calc(var(--theia-ui-padding) / 2);
+  border-radius: calc(var(--theia-ui-padding) / 3);
+}

@@ -25,6 +25,7 @@ import {
     BackendApplication,
     BackendApplicationCliContribution,
     BackendApplicationContribution,
+    EarlyExpressMiddleware,
     RootContainer
 } from './backend-application';
 import { CliContribution } from './cli';
@@ -87,6 +88,7 @@ describe('BackendApplication', () => {
         container.bind(ProcessUtils).toSelf().inSingletonScope();
         container.bind(BackendApplicationCliContribution).toSelf().inSingletonScope();
         container.bind(CliContribution).toService(BackendApplicationCliContribution);
+        container.bind(EarlyExpressMiddleware).toSelf().inSingletonScope();
         bindContributionProvider(container, BackendApplicationContribution);
 
         container.bind(TestBackendApplication).toSelf().inSingletonScope();
@@ -140,7 +142,8 @@ describe('BackendApplication', () => {
             const container = createTestContainer();
             const cleanupError = new Error('cleanup boom');
             sandbox.stub(container, 'unbindAllAsync').rejects(cleanupError);
-            const warnStub = sandbox.stub(console, 'warn');
+            const mockLogger = container.get(ILogger) as ILogger;
+            const warnStub = sandbox.stub(mockLogger, 'warn');
 
             const app = container.get(TestBackendApplication);
 
@@ -155,7 +158,8 @@ describe('BackendApplication', () => {
             const clock = sandbox.useFakeTimers();
             const container = createTestContainer();
             sandbox.stub(container, 'unbindAllAsync').returns(new Promise<void>(() => { /* never */ }));
-            const warnStub = sandbox.stub(console, 'warn');
+            const mockLogger = container.get(ILogger) as ILogger;
+            const warnStub = sandbox.stub(mockLogger, 'warn');
 
             const app = container.get(TestBackendApplication);
 
@@ -218,7 +222,8 @@ describe('BackendApplication', () => {
                 onStop: () => new Promise<void>(() => { /* never */ })
             });
             const unbindSpy = sandbox.spy(container, 'unbindAllAsync');
-            const warnStub = sandbox.stub(console, 'warn');
+            const mockLogger = container.get(ILogger) as ILogger;
+            const warnStub = sandbox.stub(mockLogger, 'warn');
 
             const app = container.get(TestBackendApplication);
             const shutdownPromise = app.invokeGracefulShutdown();

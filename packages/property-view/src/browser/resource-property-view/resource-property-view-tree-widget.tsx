@@ -98,7 +98,7 @@ export class ResourcePropertyViewTreeWidget extends TreeWidget implements Proper
             const infoNode = this.createCategoryNode('info', nls.localizeByDefault('Info'));
             this.propertiesTree.set('info', infoNode);
 
-            infoNode.children.push(this.createResultLineNode('isDirectory', nls.localize('theia/property-view/directory', 'Directory'), fileStatObject.isDirectory, infoNode));
+            infoNode.children.push(this.createResultLineNode('isDirectory', nls.localizeByDefault('Directory'), fileStatObject.isDirectory, infoNode));
             infoNode.children.push(this.createResultLineNode('isFile', nls.localizeByDefault('File'), fileStatObject.isFile, infoNode));
             infoNode.children.push(this.createResultLineNode('isSymbolicLink', nls.localize('theia/property-view/symbolicLink', 'Symbolic link'),
                 fileStatObject.isSymbolicLink, infoNode));

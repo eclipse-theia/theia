@@ -19,7 +19,6 @@ import { Widget } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ADD_MCP_SERVER_COMMAND } from '@theia/ai-mcp/lib/browser/mcp-configuration-command-contribution';
 import { VSXExtensionsViewContainer } from '@theia/vsx-registry/lib/browser/vsx-extensions-view-container';
-import { VSXExtensionsWidget } from '@theia/vsx-registry/lib/browser/vsx-extensions-widget';
 import { inject, injectable } from '@theia/core/shared/inversify';
 
 @injectable()
@@ -33,19 +32,36 @@ export class AIRegistryToolbarContribution implements TabBarToolbarContribution 
             id: 'ai-registry.addMcpServerManually',
             command: ADD_MCP_SERVER_COMMAND.id,
             group: 'other_1',
-            // The view container's own in-container items use `widget === getTabBarDelegate()`,
-            // which resolves to either the container itself (multi-part mode) or one of its
-            // child parts (single-part modes like Installed / Search). A separate toolbar
-            // contribution cannot reach the container instance, so we match both shapes by id
-            // and by the part-id prefix produced by `generateExtensionWidgetId`.
+            // Mirror the visibility of the view container's own items (Install from VSIX, Refresh,
+            // ...): they use `widget === getTabBarDelegate()`, which resolves to the container in
+            // multi-part mode and to the single visible part otherwise. Replicating that exact
+            // check keeps this command on the main Extensions toolbar only, not on every section
+            // header. We locate the container by walking up from the toolbar's widget rather than
+            // matching part ids, which would (wrongly) match every sub-view.
             isVisible: (widget: Widget) =>
-                this.isVsxExtensionsWidget(widget)
+                this.isOnExtensionsTabBar(widget)
                 && this.commandRegistry.getCommand(ADD_MCP_SERVER_COMMAND.id) !== undefined
         });
     }
 
-    protected isVsxExtensionsWidget(widget: Widget): boolean {
-        return widget.id === VSXExtensionsViewContainer.ID
-            || widget.id.startsWith(VSXExtensionsWidget.ID + ':');
+    /**
+     * True when `widget` is the toolbar delegate of the Extensions view container - i.e. the
+     * widget whose toolbar represents the main Extensions view, exactly as the container's own
+     * items are gated. Returns false for the individual section parts.
+     */
+    protected isOnExtensionsTabBar(widget: Widget): boolean {
+        const container = this.findExtensionsContainer(widget);
+        return !!container && widget === container.getTabBarDelegate();
+    }
+
+    protected findExtensionsContainer(widget: Widget): VSXExtensionsViewContainer | undefined {
+        let current: Widget | undefined = widget;
+        while (current) {
+            if (current instanceof VSXExtensionsViewContainer) {
+                return current;
+            }
+            current = current.parent ?? undefined;
+        }
+        return undefined;
     }
 }

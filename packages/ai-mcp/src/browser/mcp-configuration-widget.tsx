@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { codicon, ConfirmDialog, ReactWidget } from '@theia/core/lib/browser';
-import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, postConstruct, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { HoverService } from '@theia/core/lib/browser/hover-service';
 import {
@@ -27,7 +27,7 @@ import {
     MCPServerStatus
 } from '../common/mcp-server-manager';
 import { MCPRegistryUiBridge } from './mcp-registry-ui-bridge';
-import { MessageService, nls, PreferenceScope, PreferenceService } from '@theia/core';
+import { MessageService, nls, PreferenceScope, PreferenceService, ILogger } from '@theia/core';
 import { PROMPT_VARIABLE } from '@theia/ai-core/lib/browser/prompt-variable-contribution';
 import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
 import { MCPServerEditor } from './mcp-server-editor';
@@ -59,6 +59,9 @@ export class AIMCPConfigurationWidget extends ReactWidget {
 
     @inject(MCPServerEditor)
     protected readonly serverEditor: MCPServerEditor;
+
+    @inject(ILogger) @named('ai-mcp:AIMCPConfigurationWidget')
+    protected readonly logger: ILogger;
 
     /**
      * Registry integration is optional - `@theia/ai-registry` binds it. When absent
@@ -133,7 +136,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         } catch (error) {
             // Surface pre-terminal failures (e.g. RPC channel drops) that would otherwise be unhandled
             // rejections; terminal states already surface via the status badge.
-            console.error(`Failed to start MCP server "${server.name}"`, error);
+            this.logger.error(`Failed to start MCP server "${server.name}"`, error);
             this.messageService.warn(nls.localize('theia/ai/mcpConfiguration/startServerFailed',
                 'Failed to start MCP server "{0}".', server.name));
         }
@@ -143,7 +146,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         try {
             await this.mcpFrontendService.stopServer(serverName);
         } catch (error) {
-            console.error(`Failed to stop MCP server "${serverName}"`, error);
+            this.logger.error(`Failed to stop MCP server "${serverName}"`, error);
             this.messageService.warn(nls.localize('theia/ai/mcpConfiguration/stopServerFailed',
                 'Failed to stop MCP server "{0}".', serverName));
         }
@@ -160,7 +163,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                     'Sign-in to MCP server "{0}" was not completed.', serverName));
             }
         } catch (error) {
-            console.error(`Failed to sign in to MCP server "${serverName}"`, error);
+            this.logger.error(`Failed to sign in to MCP server "${serverName}"`, error);
             this.messageService.warn(nls.localize('theia/ai/mcpConfiguration/signInServerFailed',
                 'Failed to sign in to MCP server "{0}".', serverName));
         }
@@ -171,7 +174,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
             try {
                 await this.mcpFrontendService.signOut(serverName);
             } catch (error) {
-                console.error(`Failed to sign out from MCP server "${serverName}"`, error);
+                this.logger.error(`Failed to sign out from MCP server "${serverName}"`, error);
                 this.messageService.warn(nls.localize('theia/ai/mcpConfiguration/signOutServerFailed',
                     'Failed to sign out from MCP server "{0}".', serverName));
             }
@@ -248,10 +251,10 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         const startingIcon = 'loading';
         const stopIcon = isRemote ? 'debug-disconnect' : 'debug-stop';
         const startLabel = isRemote
-            ? nls.localize('theia/ai/mcpConfiguration/connectServer', 'Connect')
+            ? nls.localizeByDefault('Connect')
             : nls.localizeByDefault('Start Server');
         const startingLabel = isRemote
-            ? nls.localize('theia/ai/mcpConfiguration/connectingServer', 'Connecting...')
+            ? nls.localizeByDefault('Connecting...')
             : nls.localizeByDefault('Starting...');
         const stopLabel = isRemote
             ? nls.localizeByDefault('Disconnect')
@@ -399,7 +402,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         }
         return (
             <div className="mcp-property-row">
-                <span className="mcp-property-label">{nls.localize('theia/ai/mcpConfiguration/headers', 'Headers')}:</span>
+                <span className="mcp-property-label">{nls.localizeByDefault('Headers')}:</span>
                 <div className="mcp-property-value">
                     {Object.entries(server.headers).map(([key, value]) => (
                         <div key={key} className="mcp-env-entry">
@@ -457,6 +460,20 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                     color: server.autostart ? 'var(--theia-successForeground)' : 'var(--theia-errorForeground)',
                 }}>
                     {server.autostart ? nls.localizeByDefault('Enabled') : nls.localizeByDefault('Disabled')}
+                </span>
+            </div>
+        );
+    }
+
+    protected renderDeferLoadingSection(server: MCPServerDescription): React.ReactNode {
+        if (!server.deferLoading) {
+            return;
+        }
+        return (
+            <div className="mcp-property-row">
+                <span className="mcp-property-label">{nls.localize('theia/ai/mcpConfiguration/deferLoading', 'Defer tool loading')}:</span>
+                <span className="mcp-autostart-badge" style={{ color: 'var(--theia-successForeground)' }}>
+                    {nls.localizeByDefault('Enabled')}
                 </span>
             </div>
         );
@@ -563,6 +580,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                     {this.renderServerHeadersSection(server)}
                     {this.renderOAuthSection(server)}
                     {this.renderAutostartSection(server)}
+                    {this.renderDeferLoadingSection(server)}
                 </div>
                 {this.renderToolsSection(server)}
             </div>

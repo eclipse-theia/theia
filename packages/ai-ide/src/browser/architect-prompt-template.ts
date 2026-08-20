@@ -19,6 +19,7 @@ import {
   GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, SEARCH_IN_WORKSPACE_FUNCTION_ID, FIND_FILES_BY_PATTERN_FUNCTION_ID
 } from '../common/workspace-functions';
 import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from '../common/context-variables';
+import { OPEN_EDITORS_HINT_FRAGMENT_ID } from '../common/open-editors-hint-fragment-id';
 import {
   CREATE_TASK_CONTEXT_FUNCTION_ID,
   GET_TASK_CONTEXT_FUNCTION_ID,
@@ -184,11 +185,17 @@ Present your plan to the user. Incorporate feedback using ~{${EDIT_TASK_CONTEXT_
 - If ~{${EDIT_TASK_CONTEXT_FUNCTION_ID}} fails repeatedly (e.g., because the user made significant changes), \
   use ~{${REWRITE_TASK_CONTEXT_FUNCTION_ID}} to replace the entire plan content.
 
+# Diagrams
+
+When a diagram clarifies an architectural concept or how something is implemented, include a Mermaid diagram (a fenced \`mermaid\` code block) in your chat response. It is rendered directly in the chat. Keep diagrams small and focused. The chat has limited space, so prefer a few simple diagrams over a single large, complex one.
+
 # Context
 
 {{${CONTEXT_FILES_VARIABLE_ID}}}
 
 {{prompt:project-info}}
+
+{{prompt:${OPEN_EDITORS_HINT_FRAGMENT_ID}}}
 
 {{${TASK_CONTEXT_SUMMARY_VARIABLE_ID}}}
 `
@@ -217,12 +224,18 @@ Use the following functions to interact with the workspace files as needed:
 2. **Confirm Paths**: Always verify paths by listing directories or files as you navigate. Avoid assumptions based on user input alone.
 3. **Navigate Step-by-Step**: Move into subdirectories only as needed, confirming each directory level.
 
+## Diagrams
+
+When a diagram clarifies an architectural concept or how something is implemented, include a Mermaid diagram (a fenced \`mermaid\` code block). It is rendered directly in the chat. Keep diagrams small and focused. The chat has limited space, so prefer a few simple diagrams over a single large, complex one.
+
 ## Additional Context
 The following files have been provided for additional context. Some of them may also be referred to by the user (e.g. "this file" or "the attachment"). \
 Always look at the relevant files to understand your task using the function ~{${FILE_CONTENT_FUNCTION_ID}}
 {{${CONTEXT_FILES_VARIABLE_ID}}}
 
 {{prompt:project-info}}
+
+{{prompt:${OPEN_EDITORS_HINT_FRAGMENT_ID}}}
 `
     },
     {
@@ -446,11 +459,17 @@ When editing a plan:
 2. Apply changes with ~{${EDIT_TASK_CONTEXT_FUNCTION_ID}} or ~{${REWRITE_TASK_CONTEXT_FUNCTION_ID}}
 3. Summarize what you changed in chat
 
+# Diagrams
+
+When a diagram clarifies an architectural concept or how something is implemented, include a Mermaid diagram (a fenced \`mermaid\` code block) in your chat response. It is rendered directly in the chat. Keep diagrams small and focused. The chat has limited space, so prefer a few simple diagrams over a single large, complex one.
+
 # Context
 
 {{${CONTEXT_FILES_VARIABLE_ID}}}
 
 {{prompt:project-info}}
+
+{{prompt:${OPEN_EDITORS_HINT_FRAGMENT_ID}}}
 
 {{${TASK_CONTEXT_SUMMARY_VARIABLE_ID}}}
 `

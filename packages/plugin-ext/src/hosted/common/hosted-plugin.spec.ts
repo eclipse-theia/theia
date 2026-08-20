@@ -19,6 +19,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { DeployedPlugin, PluginIdentifiers } from '../../common/plugin-protocol';
 import { AbstractHostedPluginSupport, PluginContributions } from './hosted-plugin';
 import { Measurement } from '@theia/core/lib/common/performance/measurement';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -64,6 +65,7 @@ function createNoopMeasurement(): Measurement {
 class TestHostedPluginSupport extends AbstractHostedPluginSupport<any, any> {
     constructor() {
         super('test-client');
+        (this as unknown as { logger: MockLogger }).logger = new MockLogger();
     }
 
     protected createTheiaReadyPromise(): Promise<unknown> {

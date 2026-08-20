@@ -26,6 +26,7 @@ import {
     ChatRequestParserImpl,
     ChatService,
     ToolCallChatResponseContentFactory,
+    ServerToolCallResponseContentFactory,
     PinChatAgent,
     ChatServiceFactory,
     ChatAgentServiceFactory
@@ -41,6 +42,8 @@ import { CustomAgentFactory } from './custom-agent-factory';
 import { ChatToolRequestService } from '../common/chat-tool-request-service';
 import { FrontendChatToolRequestService } from './chat-tool-request-service';
 import { ChangeSetFileService } from './change-set-file-service';
+import { FileReadTracker } from '../common/file-read-tracker';
+import { FileReadTrackerImpl } from './file-read-tracker-impl';
 import { ContextVariableLabelProvider } from './context-variable-label-provider';
 import { ContextFileVariableLabelProvider } from './context-file-variable-label-provider';
 import { FileChatVariableContribution } from './file-chat-variable-contribution';
@@ -167,6 +170,9 @@ export default new ContainerModule(bind => {
     bind(ContextFileVariableLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(ContextFileVariableLabelProvider);
 
+    bind(FileReadTrackerImpl).toSelf().inSingletonScope();
+    bind(FileReadTracker).toService(FileReadTrackerImpl);
+
     bind(ChangeSetFileService).toSelf().inSingletonScope();
     bind(ChangeSetFileElementFactory).toFactory(ctx => (args: ChangeSetElementArgs) => {
         const container = ctx.container.createChild();
@@ -179,6 +185,7 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(ChangeSetDecoratorService);
     bindRootContributionProvider(bind, ChangeSetDecorator);
     bind(ToolCallChatResponseContentFactory).toSelf().inSingletonScope();
+    bind(ServerToolCallResponseContentFactory).toSelf().inSingletonScope();
     bind(AIVariableContribution).to(FileChatVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(ContextSummaryVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(ContextDetailsVariableContribution).inSingletonScope();

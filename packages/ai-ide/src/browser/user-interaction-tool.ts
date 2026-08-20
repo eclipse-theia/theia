@@ -16,12 +16,13 @@
 
 import { ToolProvider, ToolRequest, ToolRequestParameterProperty, ToolRequestParameters } from '@theia/ai-core';
 import { ToolInvocationContext } from '@theia/ai-core/lib/common/language-model';
+import { ChatToolContext } from '@theia/ai-chat';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MEMORY_TEXT, MEMORY_TEXT_READONLY, ResourceProvider } from '@theia/core/lib/common/resource';
 import URI from '@theia/core/lib/common/uri';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { WorkspaceFunctionScope } from './workspace-functions';
@@ -38,6 +39,7 @@ import {
     parseUserInteractionArgs,
     resolveContentRef
 } from '../common/user-interaction-tool';
+import { ILogger } from '@theia/core';
 
 interface PendingInteraction {
     deferred: Deferred<string>;
@@ -180,6 +182,9 @@ export class UserInteractionTool implements ToolProvider {
     @inject(ResourceProvider)
     protected readonly resourceProvider: ResourceProvider;
 
+    @inject(ILogger) @named('ai-ide:UserInteractionTool')
+    protected readonly logger: ILogger;
+
     protected readonly pendingInteractions = new Map<string, PendingInteraction>();
 
     getTool(): ToolRequest {
@@ -298,7 +303,7 @@ export class UserInteractionTool implements ToolProvider {
             if (repo) {
                 return repo.toUriAtRef(fileUri, ref.gitRef);
             }
-            console.warn(`No SCM repository found to resolve gitRef '${ref.gitRef}' for '${ref.path}'`);
+            this.logger.warn(`No SCM repository found to resolve gitRef '${ref.gitRef}' for '${ref.path}'`);
             return undefined;
         }
         return fileUri;
@@ -346,9 +351,15 @@ export class UserInteractionTool implements ToolProvider {
         const cancellationToken = ToolInvocationContext.getCancellationToken(ctx);
         const cancellationListener = cancellationToken?.onCancellationRequested(() => this.cancelPending(toolCallId));
 
+        // Mark the response as waiting for input while the interaction is pending, so it is
+        // surfaced consistently with agent questions and tool confirmations (e.g. in the
+        // session overview and notifications).
+        const response = ChatToolContext.is(ctx) ? ctx.response : undefined;
+        response?.waitForInput();
         try {
             return await pending.deferred.promise;
         } finally {
+            response?.stopWaitingForInput();
             cancellationListener?.dispose();
             this.pendingInteractions.delete(toolCallId);
         }

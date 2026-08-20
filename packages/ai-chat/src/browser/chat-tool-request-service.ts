@@ -29,7 +29,7 @@ import { ToolConfirmationManager } from './chat-tool-preference-bindings';
 @injectable()
 export class FrontendChatToolRequestService extends ChatToolRequestService {
 
-    @inject(ILogger) @named('ChatToolRequestService')
+    @inject(ILogger) @named('ai-chat:FrontendChatToolRequestService')
     protected readonly logger: ILogger;
 
     @inject(ToolConfirmationManager)
@@ -85,7 +85,14 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                             toolCallContent.confirmationTimeout = timeoutSeconds;
                             toolCallContent.requestUserConfirmation();
                             request.response.fireInteractionNeeded(toolCallContent);
-                            confirmed = await raceConfirmationWithTimeout(toolCallContent, timeoutSeconds);
+                            // Mark the response as waiting for input so the pending confirmation is
+                            // surfaced consistently with agent questions (e.g. in the session overview).
+                            request.response.waitForInput();
+                            try {
+                                confirmed = await raceConfirmationWithTimeout(toolCallContent, timeoutSeconds);
+                            } finally {
+                                request.response.stopWaitingForInput();
+                            }
                         }
 
                         if (confirmed) {

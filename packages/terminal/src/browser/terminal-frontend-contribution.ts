@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
 import {
     CommandContribution,
     Command,
@@ -26,7 +26,7 @@ import {
     SelectionService,
     Emitter,
     Event,
-    ViewColumn,
+
     OS,
     MAIN_MENU_BAR,
     PreferenceService,
@@ -39,9 +39,9 @@ import {
 } from '@theia/core/lib/browser';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl } from './terminal-widget-impl';
+import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl, nextTerminalCreationToken } from './terminal-widget-impl';
 import { TerminalService } from './base/terminal-service';
-import { TerminalWidgetOptions, TerminalWidget, TerminalLocation } from './base/terminal-widget';
+import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 import { ContributedTerminalProfileStore, NULL_PROFILE, TerminalProfile, TerminalProfileService, TerminalProfileStore, UserTerminalProfileStore } from './terminal-profile-service';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
@@ -59,6 +59,8 @@ import { Profiles, terminalAnsiColorMap, TerminalPreferences } from '../common/t
 import { ShellTerminalProfile } from './shell-terminal-profile';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { Color } from '@theia/core/lib/common/color';
+import { ContributionProvider, ILogger } from '@theia/core';
+import { TerminalCreationHandler } from './terminal-creation-handler';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -247,6 +249,12 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
+    @inject(ContributionProvider) @named(TerminalCreationHandler)
+    protected readonly terminalCreationHandlers: ContributionProvider<TerminalCreationHandler>;
+
+    @inject(ILogger) @named('terminal:TerminalFrontendContribution')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     protected init(): void {
         this.shell.onDidChangeCurrentWidget(() => this.updateCurrentTerminal());
@@ -336,7 +344,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             // to the bottom panel without expanding it on startup.
             this.shell.addWidget(termWidget, { area: 'bottom' });
         } catch (error) {
-            console.error('Failed to initialize terminal in default layout', error);
+            this.logger.error('Failed to initialize terminal in default layout', error);
         }
     }
 
@@ -941,8 +949,13 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             keybinding: 'ctrlcmd+k',
             when: 'terminalFocus'
         });
+        // A passthrough binding claims ctrlcmd+v for the terminal (winning over the global
+        // CommonCommands.PASTE binding via the local terminalFocus context) but runs no command,
+        // letting the keystroke reach xterm's native paste event. That avoids the permission-gated
+        // Clipboard API (navigator.clipboard.readText) that the PASTE_TERMINAL command requires, while
+        // preserving bracketed paste. terminal.enablePaste is enforced in TerminalWidgetImpl.customKeyHandler.
         keybindings.registerKeybinding({
-            command: TerminalCommands.PASTE_TERMINAL.id,
+            command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
             keybinding: 'ctrlcmd+v',
             when: 'terminalFocus'
         });
@@ -999,55 +1012,19 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     async newTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget> {
         const widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(TERMINAL_WIDGET_FACTORY_ID, <TerminalWidgetFactoryOptions>{
-            created: new Date().toISOString(),
+            created: nextTerminalCreationToken(),
             ...options
         });
         return widget;
     }
 
-    // TODO: reuse WidgetOpenHandler.open
-    open(widget: TerminalWidget, options?: WidgetOpenerOptions): void {
-        const area = widget.location === TerminalLocation.Editor ? 'main' : 'bottom';
-        const widgetOptions: ApplicationShell.WidgetOptions = { area: area, ...options?.widgetOptions };
-        let preserveFocus = false;
-
-        if (typeof widget.location === 'object') {
-            if ('parentTerminal' in widget.location) {
-                widgetOptions.ref = this.getById(widget.location.parentTerminal);
-                widgetOptions.mode = 'split-right';
-            } else if ('viewColumn' in widget.location) {
-                preserveFocus = widget.location.preserveFocus ?? false;
-                switch (widget.location.viewColumn) {
-                    case ViewColumn.Active:
-                        widgetOptions.ref = this.shell.currentWidget;
-                        widgetOptions.mode = 'tab-after';
-                        break;
-                    case ViewColumn.Beside:
-                        widgetOptions.ref = this.shell.currentWidget;
-                        widgetOptions.mode = 'split-right';
-                        break;
-                    default:
-                        widgetOptions.area = 'main';
-                        const mainAreaTerminals = this.shell.getWidgets('main').filter(w => w instanceof TerminalWidget && w.isVisible);
-                        const column = Math.min(widget.location.viewColumn, mainAreaTerminals.length);
-                        widgetOptions.mode = widget.location.viewColumn <= mainAreaTerminals.length ? 'split-left' : 'split-right';
-                        widgetOptions.ref = mainAreaTerminals[column - 1];
-                }
+    async open(widget: TerminalWidget, options?: WidgetOpenerOptions): Promise<void> {
+        const handlers = this.terminalCreationHandlers.getContributions(true)
+            .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+        for (const handler of handlers) {
+            if (await handler.onWillOpenTerminal(widget, options)) {
+                return;
             }
-        }
-
-        const op: WidgetOpenerOptions = {
-            mode: 'activate',
-            ...options,
-            widgetOptions: widgetOptions
-        };
-        if (!widget.isAttached) {
-            this.shell.addWidget(widget, op.widgetOptions);
-        }
-        if (op.mode === 'activate' && !preserveFocus) {
-            this.shell.activateWidget(widget.id);
-        } else if (op.mode === 'reveal' || preserveFocus) {
-            this.shell.revealWidget(widget.id);
         }
     }
 

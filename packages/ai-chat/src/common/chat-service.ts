@@ -22,7 +22,7 @@
 import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { Emitter, Event, ILogger, URI, generateUuid } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { inject, injectable, optional } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
 import { ChatAgentService, DefaultChatAgentId, FallbackChatAgentId } from './chat-agent-service';
 import { ChatAgent, ChatAgentLocation, ChatSessionContext } from './chat-agents';
 import {
@@ -73,6 +73,8 @@ export interface ChatSession {
     pinnedAgent?: ChatAgent;
     /** ID of the root session in the delegation chain. For delegated sessions, this points to the topmost session where task contexts are stored. */
     rootSessionId?: string;
+    /** ID of the immediate parent session that delegated this one. Undefined for top-level sessions. */
+    parentSessionId?: string;
 }
 
 export interface ActiveSessionChangedEvent {
@@ -182,8 +184,8 @@ export class ChatServiceImpl implements ChatService {
     @inject(AIVariableService)
     protected variableService: AIVariableService;
 
-    @inject(ILogger)
-    protected logger: ILogger;
+    @inject(ILogger) @named('ai-chat:ChatServiceImpl')
+    protected readonly logger: ILogger;
 
     @inject(ChatSessionStore) @optional()
     protected sessionStore: ChatSessionStore | undefined;
@@ -198,6 +200,9 @@ export class ChatServiceImpl implements ChatService {
     protected toolInvocationRegistry: ToolInvocationRegistry;
 
     protected _sessions: ChatSessionInternal[] = [];
+
+    /** In-flight session restores by id, so concurrent requests for the same session share one restore. */
+    protected readonly pendingSessionRestores = new Map<string, Promise<ChatSession | undefined>>();
 
     getSessions(): ChatSessionInternal[] {
         return [...this._sessions];
@@ -224,6 +229,43 @@ export class ChatServiceImpl implements ChatService {
     }
 
     async deleteSession(sessionId: string): Promise<void> {
+        await this.deleteSessionAndChildren(sessionId, new Set<string>());
+    }
+
+    protected async deleteSessionAndChildren(sessionId: string, visited: Set<string>): Promise<void> {
+        if (visited.has(sessionId)) {
+            return;
+        }
+        visited.add(sessionId);
+
+        // Delete children first. A child is any session whose immediate parent (parentSessionId) or root
+        // (rootSessionId) points to this session. Matching parentSessionId is what lets us cascade through
+        // intermediate levels: deleting B in A -> B -> C reaches C via its parentSessionId even though C's
+        // rootSessionId still points at A. Children may live only in memory, only in persisted storage
+        // (e.g. after a reload, not yet restored), or both, so collect ids from both sources. The visited
+        // set guards against cycles and re-deleting a child reachable from more than one ancestor.
+        const childIds = new Set<string>();
+        for (const s of this._sessions) {
+            if (s.parentSessionId === sessionId || s.rootSessionId === sessionId) {
+                childIds.add(s.id);
+            }
+        }
+        if (this.sessionStore) {
+            try {
+                const index = await this.sessionStore.getSessionIndex();
+                for (const metadata of Object.values(index)) {
+                    if (metadata.parentSessionId === sessionId || metadata.rootSessionId === sessionId) {
+                        childIds.add(metadata.sessionId);
+                    }
+                }
+            } catch (error) {
+                this.logger.error('Failed to read session index for cascade delete', { sessionId, error });
+            }
+        }
+        for (const childId of childIds) {
+            await this.deleteSessionAndChildren(childId, visited);
+        }
+
         const sessionIndex = this._sessions.findIndex(candidate => candidate.id === sessionId);
 
         // If session is in memory, remove it
@@ -351,6 +393,7 @@ export class ChatServiceImpl implements ChatService {
         }
         const requestText = request.request.displayText ?? request.request.text;
         session.title = requestText;
+        this.onSessionEventEmitter.fire({ type: 'renamed', sessionId: session.id });
         if (this.chatSessionNamingService) {
             const otherSessionNames = this._sessions.map(s => s.title).filter((title): title is string => title !== undefined);
             const namingService = this.chatSessionNamingService;
@@ -362,6 +405,7 @@ export class ChatServiceImpl implements ChatService {
                             session.title = name;
                             // Trigger persistence when title changes
                             this.saveSession(session.id);
+                            this.onSessionEventEmitter.fire({ type: 'renamed', sessionId: session.id });
                         }
                         didGenerateName = true;
                     }).catch(error => this.logger.error('Failed to generate chat session name', error));
@@ -411,8 +455,12 @@ export class ChatServiceImpl implements ChatService {
             return mentionedAgent;
         } else if (session.pinnedAgent) {
             // If we have a valid pinned agent, use it (pinned agent may become stale
-            // if it was disabled; so we always need to recheck)
-            const pinnedAgent = this.chatAgentService.getAgent(session.pinnedAgent.id);
+            // if it was disabled; so we always need to recheck). A pin is an explicit choice —
+            // e.g. AgentDelegationTool pins the delegated agent on the session it creates, and
+            // worker agents are often hidden (showInChat: false) — so hidden agents are honored
+            // here, while plain @-mentions above stay hidden-excluding. Without this, a request
+            // in a session pinned to a hidden agent silently falls back to the default agent.
+            const pinnedAgent = this.chatAgentService.getAgent(session.pinnedAgent.id, true);
             if (pinnedAgent) {
                 return pinnedAgent;
             }
@@ -458,9 +506,15 @@ export class ChatServiceImpl implements ChatService {
         // Store session with title, pinned agent info, last interaction timestamp, and error state
         const lastRequest = session.model.getRequests().at(-1);
         const hasError = lastRequest?.response.isComplete === true && lastRequest?.response.isError === true;
-        return this.sessionStore.storeSessions(
-            { model: session.model, title: session.title, pinnedAgentId: session.pinnedAgent?.id, lastInteraction: session.lastInteraction?.getTime(), hasError }
-        ).catch(error => {
+        return this.sessionStore.storeSessions({
+            model: session.model,
+            title: session.title,
+            pinnedAgentId: session.pinnedAgent?.id,
+            lastInteraction: session.lastInteraction?.getTime(),
+            hasError,
+            rootSessionId: session.rootSessionId,
+            parentSessionId: session.parentSessionId
+        }).catch(error => {
             this.logger.error('Failed to store chat sessions', error);
         });
     }
@@ -481,7 +535,21 @@ export class ChatServiceImpl implements ChatService {
             this.logger.debug('Session already loaded', { sessionId });
             return existing;
         }
+        // Share one in-flight restore per session id: restoring a large session takes long
+        // enough that a second request (e.g. a double-click in the session list) can arrive
+        // mid-restore. Without this guard both restores register the session, and
+        // setActiveSession then marks both copies active, breaking getActiveSession()
+        // (and with it e.g. the chat Home button) until the page is reloaded.
+        let pending = this.pendingSessionRestores.get(sessionId);
+        if (!pending) {
+            pending = this.restoreSession(sessionId)
+                .finally(() => this.pendingSessionRestores.delete(sessionId));
+            this.pendingSessionRestores.set(sessionId, pending);
+        }
+        return pending;
+    }
 
+    protected async restoreSession(sessionId: string): Promise<ChatSession | undefined> {
         if (!this.sessionStore) {
             this.logger.debug('Session store not available, cannot restore', { sessionId });
             return undefined;
@@ -505,9 +573,10 @@ export class ChatServiceImpl implements ChatService {
         const model = new MutableChatModel(serialized.model);
         await this.restoreSessionData(model, serialized.model);
 
-        // Determine pinned agent
+        // Determine pinned agent (hidden agents included — a restored pin, like a live one,
+        // is an explicit choice; see getPinnedAgent)
         const pinnedAgent = serialized.pinnedAgentId
-            ? this.chatAgentService.getAgent(serialized.pinnedAgentId)
+            ? this.chatAgentService.getAgent(serialized.pinnedAgentId, true)
             : undefined;
 
         // Register as session
@@ -517,8 +586,12 @@ export class ChatServiceImpl implements ChatService {
             lastInteraction: new Date(serialized.saveDate),
             model,
             isActive: false,
-            pinnedAgent
+            pinnedAgent,
+            rootSessionId: serialized.rootSessionId,
+            parentSessionId: serialized.parentSessionId
         };
+        session.model.rootSessionId = serialized.rootSessionId;
+        session.model.parentSessionId = serialized.parentSessionId;
         this._sessions.push(session);
         this.setupAutoSaveForSession(session);
         this.onSessionEventEmitter.fire({ type: 'created', sessionId: session.id });

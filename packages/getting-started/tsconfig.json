@@ -22,7 +22,7 @@
       "path": "../keymaps"
     },
     {
-      "path": "../preview"
+      "path": "../plugin-ext"
     },
     {
       "path": "../workspace"

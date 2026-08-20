@@ -115,6 +115,7 @@ export class InstallMcpUriHandler implements OpenHandler {
             name: entry.localName,
             autostart: true,
             requireAuthToken: 'serverAuthToken' in entry.config,
+            requireOAuth: 'oauth' in entry.config,
             // Bridge already resolved this id, so trust is always "verified" here.
             trust: { status: 'verified', serverId } satisfies MCPServerInstallTrust
         });

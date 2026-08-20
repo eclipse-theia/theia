@@ -60,8 +60,25 @@ import { TerminalCommandHistoryStateFactory } from './terminal-command-history';
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
 export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOptions> {
-    /* a unique string per terminal */
+    /**
+     * An opaque, unique string per terminal. Historically a date string, but
+     * it should not be interpreted as a date. Callers should use
+     * {@link nextTerminalCreationToken} to obtain a value that is guaranteed
+     * unique within the current process.
+     */
     created: string
+}
+
+let terminalCreationCounter = 0;
+/**
+ * Produce a token suitable for {@link TerminalWidgetFactoryOptions.created}
+ * that is guaranteed unique within the current process. Combines the current
+ * wall-clock time with a monotonically increasing counter so callers cannot
+ * accidentally collide even when constructing terminals within the same
+ * millisecond.
+ */
+export function nextTerminalCreationToken(): string {
+    return `${Date.now()}-${terminalCreationCounter++}`;
 }
 
 export const TerminalContribution = Symbol('TerminalContribution');
@@ -135,7 +152,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(TerminalWidgetOptions) options: TerminalWidgetOptions;
     @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
     @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher;
-    @inject(ILogger) @named('terminal') protected readonly logger: ILogger;
+    @inject(ILogger) @named('terminal:TerminalWidgetImpl')
+    protected readonly logger: ILogger;
     @inject('terminal-dom-id') readonly _terminalDOMId: string;
     @inject(TerminalPreferences) protected readonly preferences: TerminalPreferences;
     @inject(ContributionProvider) @named(TerminalContribution) protected readonly terminalContributionProvider: ContributionProvider<TerminalContribution>;
@@ -1179,8 +1197,15 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (ctrlCmdCopy && this.enableCopy && this.term.hasSelection()) {
             return false;
         }
-        if (ctrlCmdPaste && this.enablePaste) {
-            return false;
+        if (ctrlCmdPaste) {
+            if (this.enablePaste) {
+                // Defer to the browser's native paste event (see the ctrlcmd+v passthrough keybinding).
+                return false;
+            }
+            // Paste disabled: cancel the native paste so the preference is honored even where xterm
+            // would otherwise let the key through to the browser (e.g. cmd+v on macOS). Non-macOS
+            // ctrl+v still reaches the shell as ^V below.
+            event.preventDefault();
         }
         return true;
     }

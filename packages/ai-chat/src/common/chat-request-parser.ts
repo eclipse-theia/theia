@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatRequestParser.ts
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import { ChatAgentLocation } from './chat-agents';
 import { ChatContext, ChatRequest } from './chat-model';
@@ -36,14 +36,22 @@ import {
     ParsedChatRequest,
     ParsedChatRequestPart,
 } from './parsed-chat-request';
-import { AIVariable, AIVariableService, createAIResolveVariableCache, getAllResolvedAIVariables, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import {
+    AIVariable, AIVariableService, createAIResolveVariableCache, getAllResolvedAIVariables, parseFunctionReference, PromptService, ToolInvocationRegistry, ToolRequest
+} from '@theia/ai-core';
 import { ILogger } from '@theia/core';
 
 const agentReg = /^@([\w_\-\.]+)(?=(\s|$|\b))/i; // An @-agent
-const functionReg = /^~([\w_\-\.]+)(?=(\s|$|\b))/i; // A ~ tool function
-const functionPromptFormatReg = /^\~\{\s*(.*?)\s*\}/i; // A ~{} prompt-format tool function
+// A ~ tool function. The optional `?` prefix marks the tool as deferred,
+// e.g. `~?functionId` (chat format) or `~{?functionId}` (prompt format).
+const functionReg = /^~(\??[\w_\-\.]+)(?=(\s|$|\b))/i;
+const functionPromptFormatReg = /^\~\{\s*(.*?)\s*\}/i;
 const variableReg = /^#([\w_\-]+)(?::([\w_\-_\/\\.:]+))?(?=(\s|$|\b))/i; // A #-variable with an optional : arg (#file:workspace/path/name.ext)
-const commandReg = /^\/([\w_\-]+)(?:\s+(.+?))?(?=\s*$)/; // A /-command with optional arguments (/commandname arg1 arg2)
+// A /-command (/commandname) with optional arguments parsed separately. The command name must be
+// terminated by whitespace or the end of the input, so that path segments such as `/home/user` are
+// not mistaken for a command.
+const commandReg = /^\/([\w_\-]+)(?=\s|$)/;
+const nextCommandReg = /\s+\/([\w_\-]+)(?=\s|$)/g;
 
 export const ChatRequestParser = Symbol('ChatRequestParser');
 export interface ChatRequestParser {
@@ -58,16 +66,21 @@ function offsetRange(start: number, endExclusive: number): OffsetRange {
 }
 @injectable()
 export class ChatRequestParserImpl implements ChatRequestParser {
+
+    @inject(PromptService)
+    protected readonly promptService: PromptService;
+
     constructor(
         @inject(ChatAgentService) private readonly agentService: ChatAgentService,
         @inject(AIVariableService) private readonly variableService: AIVariableService,
         @inject(ToolInvocationRegistry) private readonly toolInvocationRegistry: ToolInvocationRegistry,
-        @inject(ILogger) private readonly logger: ILogger
+        @inject(ILogger) @named('ai-chat:ChatRequestParserImpl')
+        protected readonly logger: ILogger
     ) { }
 
     async parseChatRequest(request: ChatRequest, location: ChatAgentLocation, context: ChatContext): Promise<ParsedChatRequest> {
         // Parse the request into parts
-        const { parts, toolRequests } = this.parseParts(request, location);
+        const { parts, toolRequests, deferredToolIds } = this.parseParts(request, location);
 
         // Resolve all variables and add them to the variable parts.
         // Parse resolved variable texts again for tool requests.
@@ -84,7 +97,7 @@ export class ChatRequestParserImpl implements ChatRequestParser {
                 if (resolvedVariable) {
                     part.resolution = resolvedVariable;
                     // Resolve tool requests in resolved variables
-                    this.parseFunctionsFromVariableText(resolvedVariable.value, toolRequests);
+                    this.parseFunctionsFromVariableText(resolvedVariable.value, toolRequests, deferredToolIds);
                 } else {
                     this.logger.warn(`Failed to resolve variable ${part.variableName}${part.variableArg ? ':' + part.variableArg : ''} for ${location}`);
                 }
@@ -95,19 +108,21 @@ export class ChatRequestParserImpl implements ChatRequestParser {
         // We want to return all recursively resolved variables, thus use the whole cache.
         const resolvedVariables = await getAllResolvedAIVariables(variableCache);
 
-        return { request, parts, toolRequests, variables: resolvedVariables };
+        return { request, parts, toolRequests, deferredToolIds, variables: resolvedVariables };
     }
 
     protected parseParts(request: ChatRequest, location: ChatAgentLocation): {
         parts: ParsedChatRequestPart[];
         toolRequests: Map<string, ToolRequest>;
+        deferredToolIds: Set<string>;
         variables: Map<string, AIVariable>;
     } {
         const parts: ParsedChatRequestPart[] = [];
         const variables = new Map<string, AIVariable>();
         const toolRequests = new Map<string, ToolRequest>();
+        const deferredToolIds = new Set<string>();
         if (!request.text) {
-            return { parts, toolRequests, variables };
+            return { parts, toolRequests, deferredToolIds, variables };
         }
         const message = request.text;
         for (let i = 0; i < message.length; i++) {
@@ -138,6 +153,9 @@ export class ChatRequestParserImpl implements ChatRequestParser {
                     newPart = functionPart;
                     if (functionPart) {
                         toolRequests.set(functionPart.toolRequest.id, functionPart.toolRequest);
+                        if (functionPart.deferred) {
+                            deferredToolIds.add(functionPart.toolRequest.id);
+                        }
                     }
                 } else if (char === chatVariableLeader) {
                     const variablePart = this.tryToParseVariable(
@@ -176,6 +194,7 @@ export class ChatRequestParserImpl implements ChatRequestParser {
                 }
 
                 parts.push(newPart);
+                i = newPart.range.endExclusive - 1;
             }
         }
 
@@ -189,13 +208,13 @@ export class ChatRequestParserImpl implements ChatRequestParser {
                 )
             );
         }
-        return { parts, toolRequests, variables };
+        return { parts, toolRequests, deferredToolIds, variables };
     }
 
     /**
      * Parse text for tool requests and add them to the given map
      */
-    private parseFunctionsFromVariableText(text: string, toolRequests: Map<string, ToolRequest>): void {
+    private parseFunctionsFromVariableText(text: string, toolRequests: Map<string, ToolRequest>, deferredToolIds: Set<string>): void {
         for (let i = 0; i < text.length; i++) {
             const char = text.charAt(i);
 
@@ -205,6 +224,9 @@ export class ChatRequestParserImpl implements ChatRequestParser {
                 if (functionPart) {
                     // Add the found tool request to the given map
                     toolRequests.set(functionPart.toolRequest.id, functionPart.toolRequest);
+                    if (functionPart.deferred) {
+                        deferredToolIds.add(functionPart.toolRequest.id);
+                    }
                 }
             }
         }
@@ -280,21 +302,68 @@ export class ChatRequestParserImpl implements ChatRequestParser {
             return;
         }
 
-        const [full, commandName, commandArgs] = nextCommandMatch;
-        const commandRange = offsetRange(offset, offset + full.length);
+        const [commandText, commandName] = nextCommandMatch;
+        if (!this.isCommandCandidate(commandName)) {
+            // Not a command we know about, so leave the text alone. Otherwise anything the user
+            // types after a `/word` token, e.g. a Unix path, would be swallowed as command
+            // arguments and silently dropped when the non-existing command fails to resolve.
+            return;
+        }
+        let commandEnd = commandText.length;
+        let commandArgs: string | undefined;
+
+        // Arguments never span multiple lines: a command only consumes the remainder of its own line.
+        const lineBreakOffset = message.indexOf('\n', commandEnd);
+        const lineEnd = lineBreakOffset === -1 ? message.length : lineBreakOffset;
+        const nextCommandOffset = this.findNextCommandOffset(message, commandEnd, lineEnd);
+        const argsEnd = nextCommandOffset ?? lineEnd;
+        const rawArgs = message.slice(commandEnd, argsEnd);
+        const args = rawArgs.trim();
+        if (args) {
+            commandArgs = args;
+            // Advance the consumed range only up to the end of the trimmed argument, not up to the
+            // next command. This keeps the whitespace between the argument and a following command
+            // out of this part's range, so parseParts emits it as a separator text part. Otherwise
+            // the two resolved prompt fragments would run into each other with no space between them.
+            commandEnd = argsEnd - (rawArgs.length - rawArgs.trimEnd().length);
+        }
+
+        const commandRange = offsetRange(offset, offset + commandEnd);
 
         const variableArg = commandArgs ? `${commandName}|${commandArgs}` : commandName;
         return new ParsedChatRequestVariablePart(commandRange, 'prompt', variableArg);
     }
 
+    private findNextCommandOffset(message: string, startOffset: number, endOffset: number): number | undefined {
+        nextCommandReg.lastIndex = startOffset;
+        let match = nextCommandReg.exec(message);
+        while (match && match.index < endOffset) {
+            if (this.isCommandCandidate(match[1])) {
+                return match.index + match[0].indexOf(chatSubcommandLeader);
+            }
+            match = nextCommandReg.exec(message);
+        }
+        return undefined;
+    }
+
+    /**
+     * Whether a `/name` token should be treated as a command. Only names that actually resolve to a
+     * command or prompt fragment are accepted, which keeps unknown `/word` tokens (e.g. `/tmp`,
+     * `/path/to/file`) as plain text.
+     */
+    protected isCommandCandidate(commandName: string): boolean {
+        return this.promptService.isKnownCommand(commandName);
+    }
+
     private tryToParseFunction(message: string, offset: number): ParsedChatRequestFunctionPart | undefined {
-        // Support both the and chat and prompt formats for functions
+        // Support both the chat and prompt formats for functions
         const nextFunctionMatch = message.match(functionPromptFormatReg) || message.match(functionReg);
         if (!nextFunctionMatch) {
             return;
         }
 
-        const [full, id] = nextFunctionMatch;
+        const [full, rawId] = nextFunctionMatch;
+        const { id, deferred } = parseFunctionReference(rawId);
 
         const maybeToolRequest = this.toolInvocationRegistry.getFunction(id);
         if (!maybeToolRequest) {
@@ -302,6 +371,6 @@ export class ChatRequestParserImpl implements ChatRequestParser {
         }
 
         const functionRange = offsetRange(offset, offset + full.length);
-        return new ParsedChatRequestFunctionPart(functionRange, maybeToolRequest);
+        return new ParsedChatRequestFunctionPart(functionRange, maybeToolRequest, deferred);
     }
 }

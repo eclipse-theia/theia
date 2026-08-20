@@ -17,22 +17,32 @@
 import 'reflect-metadata';
 
 import { expect } from 'chai';
-import { LanguageModelMessage, LanguageModelRequirement } from '@theia/ai-core';
-import { AbstractChatAgent, ChatAgentLocation } from './chat-agents';
 import {
+    LanguageModel, LanguageModelMessage, LanguageModelRegistry, LanguageModelRequirement, LanguageModelResponse,
+    LanguageModelSelector, LanguageModelService, LanguageModelStreamResponsePart, ServerToolDescriptor, UserRequest
+} from '@theia/ai-core';
+import { AbstractChatAgent, AbstractStreamParsingChatAgent, ChatAgentLocation } from './chat-agents';
+import {
+    ChatResponseContent,
+    CompactionChatResponseContent,
     MutableChatModel,
     MutableChatRequestModel,
     ChatModel,
+    ChatRequest,
     TextChatResponseContentImpl,
     ThinkingChatResponseContentImpl,
 } from './chat-model';
 import { ParsedChatRequest, ParsedChatRequestTextPart } from './parsed-chat-request';
+import { FileReadTracker } from './file-read-tracker';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 class TestChatAgent extends AbstractChatAgent {
     readonly id = 'test-agent';
     readonly name = 'Test Agent';
     readonly languageModelRequirements: LanguageModelRequirement[] = [];
     protected readonly defaultLanguageModelPurpose = 'chat';
+    protected override logger: ILogger = new MockLogger();
 
     protected addContentsToResponse(): Promise<void> {
         return Promise.resolve();
@@ -41,11 +51,32 @@ class TestChatAgent extends AbstractChatAgent {
     public async exposeGetMessages(model: ChatModel, includeResponseInProgress = false): Promise<LanguageModelMessage[]> {
         return this.getMessages(model, includeResponseInProgress);
     }
+
+    public exposeSendLlmRequest(request: MutableChatRequestModel, languageModel: LanguageModel): Promise<LanguageModelResponse> {
+        return this.sendLlmRequest(request, [], [], undefined, languageModel);
+    }
+
+    public exposeGetLanguageModelForRequest(request: MutableChatRequestModel, purpose = 'chat'): Promise<LanguageModel> {
+        return this.getLanguageModelForRequest(request, purpose);
+    }
+
+    public setLanguageModelRegistry(registry: LanguageModelRegistry): void {
+        this.languageModelRegistry = registry;
+    }
+
+    public exposeAppendExternalFileChangeNotice(request: MutableChatRequestModel, messages: LanguageModelMessage[]): Promise<void> {
+        return this.appendExternalFileChangeNotice(request, messages);
+    }
+
+    public setFileReadTracker(tracker: FileReadTracker): void {
+        this.fileReadTracker = tracker;
+    }
+
 }
 
-function createParsedRequest(text: string): ParsedChatRequest {
+function createParsedRequest(text: string, request?: Partial<ChatRequest>): ParsedChatRequest {
     return {
-        request: { text },
+        request: { text, ...request },
         parts: [
             new ParsedChatRequestTextPart({ start: 0, endExclusive: text.length }, text)
         ],
@@ -120,5 +151,216 @@ describe('AbstractChatAgent.getMessages', () => {
             .filter(m => m.actor === 'ai');
         expect(aiTextMessages).to.have.lengthOf(1);
         expect(aiTextMessages[0].text).to.equal('Partial reply before cancel');
+    });
+});
+
+describe('AbstractChatAgent.sendLlmRequest server tools', () => {
+
+    const ANTHROPIC_SERVER_TOOLS: ServerToolDescriptor[] = [
+        { id: 'web_fetch', name: 'Web Fetch' },
+        { id: 'web_search', name: 'Web Search' }
+    ];
+
+    function createModel(vendor: string, serverTools?: ServerToolDescriptor[]): LanguageModel {
+        return {
+            id: `${vendor}/model`,
+            vendor,
+            status: { status: 'ready' as const },
+            serverTools,
+            async request(): Promise<LanguageModelResponse> { return { text: '' }; }
+        } as unknown as LanguageModel;
+    }
+
+    function setup(languageModel: LanguageModel, serverToolSelections?: Record<string, string[]>): { agent: TestChatAgent; captured: () => UserRequest | undefined } {
+        const agent = new TestChatAgent();
+        let capturedRequest: UserRequest | undefined;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (agent as any).languageModelService = {
+            sessions: [],
+            onSessionChanged: () => ({ dispose: () => { } }),
+            async sendRequest(_model: LanguageModel, sentRequest: UserRequest): Promise<LanguageModelResponse> {
+                capturedRequest = sentRequest;
+                return { text: '' };
+            }
+        } as unknown as LanguageModelService;
+
+        const chatModel = new MutableChatModel(ChatAgentLocation.Panel);
+        const request = chatModel.addRequest(createParsedRequest('Hello', { serverToolSelections }));
+        agent.exposeSendLlmRequest(request, languageModel);
+        return { agent, captured: () => capturedRequest };
+    }
+
+    it('sends server tools for the selected model vendor, intersected with the model\'s declared tools', () => {
+        const model = createModel('anthropic', ANTHROPIC_SERVER_TOOLS);
+        const { captured } = setup(model, { anthropic: ['web_fetch', 'unknown_tool'] });
+        expect(captured()!.serverTools).to.deep.equal(['web_fetch']);
+    });
+
+    it('does not send selections stored for a different vendor', () => {
+        const model = createModel('google', [{ id: 'url_context', name: 'URL Context' }]);
+        const { captured } = setup(model, { anthropic: ['web_fetch'] });
+        expect(captured()!.serverTools).to.equal(undefined);
+    });
+
+    it('leaves serverTools undefined when there are no selections', () => {
+        const model = createModel('anthropic', ANTHROPIC_SERVER_TOOLS);
+        const { captured } = setup(model, undefined);
+        expect(captured()!.serverTools).to.equal(undefined);
+    });
+});
+
+class StreamParsingTestChatAgent extends AbstractStreamParsingChatAgent {
+    readonly id = 'stream-test-agent';
+    readonly name = 'Stream Test Agent';
+    readonly languageModelRequirements: LanguageModelRequirement[] = [];
+    protected readonly defaultLanguageModelPurpose = 'chat';
+    protected override logger: ILogger = new MockLogger();
+
+    exposeParse(token: LanguageModelStreamResponsePart): ChatResponseContent | ChatResponseContent[] {
+        return this.parse(token, undefined as never);
+    }
+}
+
+describe('AbstractChatAgent.parse compaction', () => {
+    it('creates compaction content from a compaction response part', () => {
+        const agent = new StreamParsingTestChatAgent();
+        const content = agent.exposeParse({ compaction: { provider: 'anthropic', data: { b: 1 }, summary: 's' } });
+        expect(ChatResponseContent.is(content)).to.equal(true);
+        expect(CompactionChatResponseContent.is(content)).to.equal(true);
+        const compaction = content as CompactionChatResponseContent;
+        expect(compaction.provider).to.equal('anthropic');
+        expect(compaction.data).to.deep.equal({ b: 1 });
+        expect(compaction.summary).to.equal('s');
+    });
+});
+
+describe('AbstractChatAgent.getLanguageModelForRequest', () => {
+
+    const DEFAULT_MODEL = 'default-model';
+    const OVERRIDE_MODEL = 'override-model';
+
+    let agent: TestChatAgent;
+    let requestedIdentifiers: (string | undefined)[];
+
+    function fakeModel(id: string): LanguageModel {
+        return { id } as LanguageModel;
+    }
+
+    beforeEach(() => {
+        agent = new TestChatAgent();
+        agent.languageModelRequirements.push({ purpose: 'chat', identifier: DEFAULT_MODEL });
+        requestedIdentifiers = [];
+        // Resolve any of the known model ids; anything else (e.g. an unavailable override) resolves to undefined.
+        const known = new Set([DEFAULT_MODEL, OVERRIDE_MODEL]);
+        agent.setLanguageModelRegistry({
+            // Settings-aware selection used for the agent default (fallback) path.
+            async selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined> {
+                requestedIdentifiers.push(request.identifier);
+                return request.identifier && known.has(request.identifier) ? fakeModel(request.identifier) : undefined;
+            },
+            // Direct resolution used for the per-session override path (bypasses agent settings).
+            async getReadyLanguageModel(idOrAlias: string): Promise<LanguageModel | undefined> {
+                requestedIdentifiers.push(idOrAlias);
+                return known.has(idOrAlias) ? fakeModel(idOrAlias) : undefined;
+            }
+        } as unknown as LanguageModelRegistry);
+    });
+
+    function createRequest(modelOverride?: string): MutableChatRequestModel {
+        const model = new MutableChatModel(ChatAgentLocation.Panel);
+        const request = model.addRequest(createParsedRequest('Hello'));
+        if (modelOverride !== undefined) {
+            model.setSettings({ commonSettings: { modelId: modelOverride } });
+        }
+        return request;
+    }
+
+    it('uses the agent default when no session override is set', async () => {
+        const resolved = await agent.exposeGetLanguageModelForRequest(createRequest());
+        expect(resolved.id).to.equal(DEFAULT_MODEL);
+    });
+
+    it('honors the session model override when it resolves', async () => {
+        const resolved = await agent.exposeGetLanguageModelForRequest(createRequest(OVERRIDE_MODEL));
+        expect(resolved.id).to.equal(OVERRIDE_MODEL);
+        // The override id must be the first thing tried.
+        expect(requestedIdentifiers[0]).to.equal(OVERRIDE_MODEL);
+    });
+
+    it('falls back to the agent default when the session override does not resolve', async () => {
+        const resolved = await agent.exposeGetLanguageModelForRequest(createRequest('no-such-model'));
+        expect(resolved.id).to.equal(DEFAULT_MODEL);
+        // First the unavailable override is attempted, then the agent default.
+        expect(requestedIdentifiers).to.deep.equal(['no-such-model', DEFAULT_MODEL]);
+    });
+
+    it('throws when neither the override nor the default resolves', async () => {
+        agent.languageModelRequirements.length = 0;
+        agent.languageModelRequirements.push({ purpose: 'chat', identifier: 'missing-default' });
+        let error: Error | undefined;
+        try {
+            await agent.exposeGetLanguageModelForRequest(createRequest('also-missing'));
+        } catch (e) {
+            error = e as Error;
+        }
+        expect(error).to.be.an('error');
+    });
+});
+
+describe('AbstractChatAgent.appendExternalFileChangeNotice', () => {
+
+    function createAgent(getChangedFiles: () => Promise<string[]>): TestChatAgent {
+        const agent = new TestChatAgent();
+        agent.setFileReadTracker({
+            recordRead: async () => { },
+            isStale: async () => false,
+            getChangedFiles
+        });
+        return agent;
+    }
+
+    function createRequest(): MutableChatRequestModel {
+        return new MutableChatModel(ChatAgentLocation.Panel).addRequest(createParsedRequest('Hello'));
+    }
+
+    function textsOf(messages: LanguageModelMessage[]): string[] {
+        return messages.flatMap(message => message.type === 'text' ? [message.text] : []);
+    }
+
+    it('appends a trailing user message listing the changed files', async () => {
+        const agent = createAgent(async () => ['/workspace/a.ts', '/workspace/b.ts']);
+        const messages: LanguageModelMessage[] = [];
+
+        await agent.exposeAppendExternalFileChangeNotice(createRequest(), messages);
+
+        expect(messages).to.have.lengthOf(1);
+        expect(messages[0].actor).to.equal('user');
+        expect(textsOf(messages)[0]).to.contain('/workspace/a.ts').and.to.contain('/workspace/b.ts');
+    });
+
+    it('appends nothing when no file changed', async () => {
+        const agent = createAgent(async () => []);
+        const messages: LanguageModelMessage[] = [];
+
+        await agent.exposeAppendExternalFileChangeNotice(createRequest(), messages);
+
+        expect(messages).to.be.empty;
+    });
+
+    it('appends nothing when no tracker is bound', async () => {
+        const messages: LanguageModelMessage[] = [];
+
+        await new TestChatAgent().exposeAppendExternalFileChangeNotice(createRequest(), messages);
+
+        expect(messages).to.be.empty;
+    });
+
+    it('does not fail the request when the changed files cannot be determined', async () => {
+        const agent = createAgent(async () => { throw new Error('tracker unavailable'); });
+        const messages: LanguageModelMessage[] = [];
+
+        await agent.exposeAppendExternalFileChangeNotice(createRequest(), messages);
+
+        expect(messages).to.be.empty;
     });
 });

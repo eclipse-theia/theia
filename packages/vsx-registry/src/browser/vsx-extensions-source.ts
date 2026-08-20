@@ -15,12 +15,13 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core/lib/common/logger';
 import { TreeElement, TreeSource } from '@theia/core/lib/browser/source-tree';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { FuzzySearch } from '@theia/core/lib/common/fuzzy-search';
 import { VSXExtensionsModel } from './vsx-extensions-model';
-import { ExtensionsSourceContribution, SearchContext } from './extensions-source-contribution';
+import { ExtensionsSourceContribution, SearchContext, SearchResult } from './extensions-source-contribution';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
@@ -54,12 +55,18 @@ export class VSXExtensionsSource extends TreeSource {
     @inject(FuzzySearch)
     protected readonly fuzzySearch: FuzzySearch;
 
+    @inject(ILogger) @named('vsx-registry:VSXExtensionsSource')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     protected init(): void {
         this.fireDidChange();
         for (const contribution of this.contributions.getContributions()) {
             this.toDispose.push(contribution.onDidChange(() => this.scheduleFireDidChange()));
         }
+        // The query carries both the search text and the per-contribution-type filter (via
+        // `@`-prefixed tokens), so any query change must re-collect the entries.
+        this.toDispose.push(this.searchModel.onDidChangeQuery(() => this.scheduleFireDidChange()));
     }
 
     protected scheduleFireDidChange = debounce(() => this.fireDidChange(), 100, { leading: false, trailing: true });
@@ -71,14 +78,20 @@ export class VSXExtensionsSource extends TreeSource {
     async getElements(): Promise<IterableIterator<TreeElement>> {
         const ordered = [...this.contributions.getContributions()]
             .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+        // Apply the type-token filter to every section, not just search results, so the two
+        // filtering mechanisms compose (e.g. `@installed @mcp` only lists installed MCP servers).
+        const enabled = ordered.filter(c => this.searchModel.isTokenEnabled(c.searchToken));
 
         if (this.options.id === VSXExtensionsSourceOptions.SEARCH_RESULT) {
-            return this.collectSearchResults(ordered);
+            return this.collectSearchResults(enabled);
         }
 
+        // Resolve concurrently and isolate each contribution: a section is shared between all of
+        // them, so one that is slow (e.g. waiting on a remote registry) must not hold up the
+        // others, and one that rejects must not empty the whole section.
+        const resolved = await Promise.all(enabled.map(contribution => this.safeResolveForSection(contribution)));
         const entries: TreeElement[] = [];
-        for (const contribution of ordered) {
-            const iter = await this.resolveForSection(contribution);
+        for (const iter of resolved) {
             if (!iter) {
                 continue;
             }
@@ -94,13 +107,16 @@ export class VSXExtensionsSource extends TreeSource {
      * regardless of which contribution produced them.
      */
     protected async collectSearchResults(contributions: ExtensionsSourceContribution[]): Promise<IterableIterator<TreeElement>> {
-        const query = this.searchModel.query;
+        // Contributions only see the free-text portion of the query - the `@`-prefixed mode and
+        // type tokens have already been consumed by `parseQuery` to pick the mode and the
+        // contribution filter, so they would otherwise leak into substring matching.
+        const { freeText } = this.searchModel.parseQuery();
         const ctx: SearchContext = {
             verifiedOnly: this.preferenceService.get<boolean>('extensions.onlyShowVerifiedExtensions', false)
         };
-        const results = await Promise.all(contributions.map(c => c.resolveSearchResults?.(query, ctx) ?? []));
+        const results = await Promise.all(contributions.map(c => this.safeResolveSearchResults(c, freeText, ctx)));
         const all = results.flatMap(r => [...r]);
-        const trimmed = query.trim();
+        const trimmed = freeText.trim();
         if (!trimmed || all.length <= 1) {
             return all.map(r => r.element).values();
         }
@@ -110,6 +126,24 @@ export class VSXExtensionsSource extends TreeSource {
             transform: r => r.searchableText
         });
         return matches.map(m => m.item.element).values();
+    }
+
+    protected async safeResolveForSection(contribution: ExtensionsSourceContribution): Promise<Iterable<TreeElement> | undefined> {
+        try {
+            return await this.resolveForSection(contribution);
+        } catch (error) {
+            this.logger.warn(`Failed to resolve '${this.options.id}' entries of contribution '${contribution.type}'.`, error);
+            return undefined;
+        }
+    }
+
+    protected async safeResolveSearchResults(contribution: ExtensionsSourceContribution, query: string, context: SearchContext): Promise<Iterable<SearchResult>> {
+        try {
+            return await (contribution.resolveSearchResults?.(query, context) ?? []);
+        } catch (error) {
+            this.logger.warn(`Failed to resolve search results of contribution '${contribution.type}'.`, error);
+            return [];
+        }
     }
 
     protected async resolveForSection(contribution: ExtensionsSourceContribution): Promise<Iterable<TreeElement> | undefined> {

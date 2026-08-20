@@ -27,6 +27,7 @@ import {
     ParsedCapability,
     parseCapabilitiesFromTemplate,
     PromptFragmentCustomizationService,
+    CustomAgentsLocation,
     PromptService,
     NotificationType,
     PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE,
@@ -42,7 +43,7 @@ import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { LanguageModelRenderer } from './language-model-renderer';
 import { LanguageModelAliasRegistry, LanguageModelAlias } from '@theia/ai-core/lib/common/language-model-alias';
 import { AIVariableConfigurationWidget } from './variable-configuration-widget';
-import { MessageService, nls } from '@theia/core';
+import { MessageService, nls, URI } from '@theia/core';
 import { PromptVariantRenderer } from './template-settings-renderer';
 import { AIListDetailConfigurationWidget } from './base/ai-list-detail-configuration-widget';
 import { AgentNotificationSettings } from './components/agent-notification-settings';
@@ -53,6 +54,12 @@ interface ParsedPrompt {
     agentSpecificVariables: string[];
     capabilities: ParsedCapability[];
 };
+
+/** A candidate location for creating a new custom agent: its scope directory and `agents/` folder. */
+interface CustomAgentScopeOption {
+    scopeDir: URI;
+    agentsDir: URI;
+}
 
 @injectable()
 export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<Agent> {
@@ -312,7 +319,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
                             <tr>
                                 <th>{nls.localize('theia/ai/core/agentConfiguration/templateName', 'Template')}</th>
                                 <th>{nls.localize('theia/ai/core/agentConfiguration/variant', 'Variant')}</th>
-                                <th className="template-actions-header">{nls.localize('theia/ai/core/agentConfiguration/actions', 'Actions')}</th>
+                                <th className="template-actions-header">{nls.localizeByDefault('Actions')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -486,14 +493,23 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
         this.aiConfigurationSelectionService.selectConfigurationTab(AIVariableConfigurationWidget.ID);
     }
 
+    /**
+     * Selects the candidate creation locations from the reported agent locations. Only `agents/`
+     * directories are considered (legacy `customAgents.yml` entries exist for discovery only). A
+     * scope is offered when it already contains an `agents/` folder; the preferred scope (the first
+     * one, i.e. `.agents`) is always kept so a fresh workspace defaults to `.agents` without
+     * surfacing empty fallback folders such as `.prompts`.
+     */
+    protected selectAgentScopeOptions(locations: CustomAgentsLocation[]): CustomAgentScopeOption[] {
+        return locations
+            .filter(location => location.kind === 'agents-dir')
+            .filter((location, index) => index === 0 || location.exists)
+            .map(location => ({ scopeDir: location.uri.parent, agentsDir: location.uri }));
+    }
+
     protected async addCustomAgent(): Promise<void> {
-        // Locations are reported as `<scope>/agents/` directories + legacy `customAgents.yml`
-        // entries (one of each per scope). For new agents we only consider the `agents/` form;
-        // the YAML entries exist only for backward-compat / discovery.
         const allLocations = await this.promptFragmentCustomizationService.getCustomAgentsLocations();
-        const scopeOptions = allLocations
-            .filter(l => l.kind === 'agents-dir')
-            .map(l => ({ scopeDir: l.uri.parent, agentsDir: l.uri }));
+        const scopeOptions = this.selectAgentScopeOptions(allLocations);
         if (scopeOptions.length === 0) {
             this.messageService.warn(nls.localize('theia/ai/ide/agentConfiguration/newAgent/noLocation',
                 'Cannot create a custom agent: no prompt-templates location is configured. Set a global or workspace prompt-templates folder and try again.'));
@@ -882,7 +898,7 @@ const AgentGenericCapabilitiesSettings = ({ agentId, savedSelections, aiSettings
                 <tr>
                     <th>{nls.localizeByDefault('Type')}</th>
                     <th>{nls.localize('theia/ai/ide/agentConfiguration/selections', 'Selections')}</th>
-                    <th className="template-actions-header">{nls.localize('theia/ai/core/agentConfiguration/actions', 'Actions')}</th>
+                    <th className="template-actions-header">{nls.localizeByDefault('Actions')}</th>
                 </tr>
             </thead>
             <tbody>

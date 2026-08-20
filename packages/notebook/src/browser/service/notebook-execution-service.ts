@@ -50,7 +50,7 @@ export class NotebookExecutionService {
     @inject(NotebookKernelQuickPickService)
     protected notebookKernelQuickPickService: NotebookKernelQuickPickService;
 
-    @inject(ILogger) @named('notebook')
+    @inject(ILogger) @named('notebook:NotebookExecutionService')
     protected readonly logger: ILogger;
 
     protected readonly cellExecutionParticipants = new Set<CellExecutionParticipant>();

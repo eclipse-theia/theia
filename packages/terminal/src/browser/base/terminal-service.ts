@@ -29,7 +29,7 @@ export interface TerminalService {
      */
     newTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget>;
 
-    open(terminal: TerminalWidget, options?: WidgetOpenerOptions): void;
+    open(terminal: TerminalWidget, options?: WidgetOpenerOptions): Promise<void>;
 
     readonly all: TerminalWidget[];
 

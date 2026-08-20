@@ -48,6 +48,14 @@ export interface ParsedChatRequest {
     readonly request: ChatRequest;
     readonly parts: ParsedChatRequestPart[];
     readonly toolRequests: Map<string, ToolRequest>;
+    /**
+     * Ids of tools referenced in the request that were marked as deferred,
+     * e.g. `~?toolId` (chat format) or `~{?toolId}` (prompt format).
+     * Deferred tools are not loaded into the model's context upfront and
+     * may instead be discovered on-demand via the model provider's built-in
+     * tool search mechanism (Anthropic, OpenAI) when supported.
+     */
+    readonly deferredToolIds?: Set<string>;
     readonly variables: ResolvedAIVariable[];
 }
 
@@ -114,10 +122,11 @@ export class ParsedChatRequestVariablePart implements ParsedChatRequestPart {
 
 export class ParsedChatRequestFunctionPart implements ParsedChatRequestPart {
     readonly kind = 'function';
-    constructor(readonly range: OffsetRange, readonly toolRequest: ToolRequest) { }
+    constructor(readonly range: OffsetRange, readonly toolRequest: ToolRequest, readonly deferred: boolean = false) { }
 
     get text(): string {
-        return `${chatFunctionLeader}${this.toolRequest.id}`;
+        const marker = this.deferred ? '?' : '';
+        return `${chatFunctionLeader}${marker}${this.toolRequest.id}`;
     }
 
     get promptText(): string {
@@ -128,7 +137,8 @@ export class ParsedChatRequestFunctionPart implements ParsedChatRequestPart {
         return {
             kind: 'function',
             range: this.range,
-            toolRequestId: this.toolRequest.id
+            toolRequestId: this.toolRequest.id,
+            deferred: this.deferred ? true : undefined
         };
     }
 }
@@ -168,7 +178,8 @@ export namespace ParsedChatRequest {
                 throw new Error(`Unknown part type: ${part.kind}`);
             }),
             toolRequests: Array.from(parsed.toolRequests.keys()).map(toolId => ({
-                id: toolId
+                id: toolId,
+                deferred: parsed.deferredToolIds?.has(toolId) ? true : undefined
             })),
             variables: parsed.variables.map(variable => ({
                 variableId: variable.variable.id,

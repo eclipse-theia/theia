@@ -1,0 +1,286 @@
+// *****************************************************************************
+// Copyright (C) 2026 STMicroelectronics and others.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License v. 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0.
+//
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License v. 2.0 are satisfied: GNU General Public License, version 2
+// with the GNU Classpath Exception which is available at
+// https://www.gnu.org/software/classpath/license.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
+
+import { expect } from 'chai';
+import * as http from 'http';
+import { environment } from '../../common';
+import {
+    BrowserConnectionToken,
+    BrowserConnectionTokenBackendContribution,
+    BROWSER_TOKEN_COOKIE_NAME,
+    createBrowserConnectionToken
+} from './browser-connection-token';
+
+describe('BrowserConnectionToken', () => {
+
+    it('should generate unique tokens', () => {
+        const token1 = createBrowserConnectionToken();
+        const token2 = createBrowserConnectionToken();
+        expect(token1.value).to.not.equal(token2.value);
+    });
+
+    it('should generate tokens of sufficient length', () => {
+        const token = createBrowserConnectionToken();
+        expect(token.value.length).to.be.greaterThan(16);
+    });
+});
+
+describe('BrowserConnectionTokenBackendContribution', () => {
+
+    const token: BrowserConnectionToken = createBrowserConnectionToken();
+
+    function createContribution(): BrowserConnectionTokenBackendContribution {
+        const contribution = new BrowserConnectionTokenBackendContribution();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (contribution as any)['browserConnectionToken'] = token;
+        return contribution;
+    }
+
+    function createRequest(cookieValue?: string): http.IncomingMessage {
+        const request = {
+            headers: {} as http.IncomingHttpHeaders
+        } as http.IncomingMessage;
+        if (cookieValue !== undefined) {
+            request.headers.cookie = `${BROWSER_TOKEN_COOKIE_NAME}=${cookieValue}`;
+        }
+        return request;
+    }
+
+    describe('allowWsUpgrade (WebSocket validation)', () => {
+
+        it('should allow WebSocket with valid token cookie', () => {
+            const contribution = createContribution();
+            expect(contribution.allowWsUpgrade(createRequest(token.value))).to.be.true;
+        });
+
+        it('should reject WebSocket with no cookie', () => {
+            const contribution = createContribution();
+            expect(contribution.allowWsUpgrade(createRequest())).to.be.false;
+        });
+
+        it('should reject WebSocket with invalid token', () => {
+            const contribution = createContribution();
+            expect(contribution.allowWsUpgrade(createRequest('wrong-token'))).to.be.false;
+        });
+
+        it('should reject WebSocket with stale token from previous server', () => {
+            const contribution = createContribution();
+            const staleToken = createBrowserConnectionToken().value;
+            expect(contribution.allowWsUpgrade(createRequest(staleToken))).to.be.false;
+        });
+
+        it('should reject WebSocket with empty token', () => {
+            const contribution = createContribution();
+            expect(contribution.allowWsUpgrade(createRequest(''))).to.be.false;
+        });
+
+        it('should handle multiple cookies correctly', () => {
+            const contribution = createContribution();
+            const request = {
+                headers: {
+                    cookie: `other-cookie=foo; ${BROWSER_TOKEN_COOKIE_NAME}=${token.value}; another=bar`
+                } as http.IncomingHttpHeaders
+            } as http.IncomingMessage;
+            expect(contribution.allowWsUpgrade(request)).to.be.true;
+        });
+    });
+
+    describe('expressMiddleware (HTTP cookie flow)', () => {
+
+        interface CookieCall {
+            name: string;
+            value: string;
+            options: Record<string, unknown>;
+        }
+
+        interface MockResponse {
+            cookieCalls: CookieCall[];
+            nextCalled: boolean;
+            requestHeaders: Record<string, string | undefined>;
+        }
+
+        function callMiddleware(cookieValue?: string, conditionalHeaders = false): MockResponse {
+            const contribution = createContribution();
+            const req = {
+                headers: {} as Record<string, string | undefined>,
+                socket: { remoteAddress: '127.0.0.1' }
+            };
+            const result: MockResponse = { cookieCalls: [], nextCalled: false, requestHeaders: req.headers };
+
+            if (cookieValue !== undefined) {
+                req.headers.cookie = `${BROWSER_TOKEN_COOKIE_NAME}=${cookieValue}`;
+            }
+            if (conditionalHeaders) {
+                req.headers['if-none-match'] = 'W/"etag"';
+                req.headers['if-modified-since'] = 'Thu, 01 Jan 2026 00:00:00 GMT';
+            }
+
+            const res = {
+                cookie: (name: string, value: string, options: Record<string, unknown>) => {
+                    result.cookieCalls.push({ name, value, options });
+                }
+            };
+
+            const next = (): void => { result.nextCalled = true; };
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (contribution as any).expressMiddleware(req, res, next);
+            return result;
+        }
+
+        it('should set cookie and allow request when no cookie present', () => {
+            const result = callMiddleware();
+            expect(result.nextCalled).to.be.true;
+            expect(result.cookieCalls).to.have.length(1);
+            expect(result.cookieCalls[0].name).to.equal(BROWSER_TOKEN_COOKIE_NAME);
+            expect(result.cookieCalls[0].value).to.equal(token.value);
+        });
+
+        it('should set cookie with HttpOnly, SameSite=Strict, and path=/', () => {
+            const result = callMiddleware();
+            const opts = result.cookieCalls[0].options;
+            expect(opts.httpOnly).to.be.true;
+            expect(opts.sameSite).to.equal('strict');
+            expect(opts.path).to.equal('/');
+        });
+
+        it('should allow request with valid cookie without re-setting it', () => {
+            const result = callMiddleware(token.value);
+            expect(result.nextCalled).to.be.true;
+            expect(result.cookieCalls).to.have.length(0);
+        });
+
+        it('should refresh stale cookie and allow request', () => {
+            const result = callMiddleware('stale-token-from-old-server');
+            expect(result.nextCalled).to.be.true;
+            expect(result.cookieCalls).to.have.length(1);
+            expect(result.cookieCalls[0].value).to.equal(token.value);
+        });
+
+        it('should drop conditional request headers when re-issuing the cookie (stale token)', () => {
+            const result = callMiddleware('stale-token-from-old-server', true);
+            expect(result.nextCalled).to.be.true;
+            expect(result.cookieCalls).to.have.length(1);
+            expect(result.requestHeaders['if-none-match']).to.be.undefined;
+            expect(result.requestHeaders['if-modified-since']).to.be.undefined;
+        });
+
+        it('should drop conditional request headers when issuing the cookie (no cookie)', () => {
+            const result = callMiddleware(undefined, true);
+            expect(result.cookieCalls).to.have.length(1);
+            expect(result.requestHeaders['if-none-match']).to.be.undefined;
+            expect(result.requestHeaders['if-modified-since']).to.be.undefined;
+        });
+
+        it('should keep conditional request headers when the cookie is valid', () => {
+            const result = callMiddleware(token.value, true);
+            expect(result.cookieCalls).to.have.length(0);
+            expect(result.requestHeaders['if-none-match']).to.equal('W/"etag"');
+            expect(result.requestHeaders['if-modified-since']).to.equal('Thu, 01 Jan 2026 00:00:00 GMT');
+        });
+    });
+
+    describe('validateRequest (HTTP token enforcement)', () => {
+
+        interface ValidationResult {
+            nextCalled: boolean;
+            sentStatus?: number;
+        }
+
+        function callValidate(cookieValue?: string): ValidationResult {
+            const contribution = createContribution();
+            const result: ValidationResult = { nextCalled: false };
+
+            const req = { headers: {} as Record<string, string | undefined> };
+            if (cookieValue !== undefined) {
+                req.headers.cookie = `${BROWSER_TOKEN_COOKIE_NAME}=${cookieValue}`;
+            }
+
+            const res = {
+                sendStatus: (status: number) => { result.sentStatus = status; }
+            };
+
+            const next = (): void => { result.nextCalled = true; };
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (contribution as any).validateRequest(req, res, next);
+            return result;
+        }
+
+        it('should allow request with valid token cookie', () => {
+            const result = callValidate(token.value);
+            expect(result.nextCalled).to.be.true;
+            expect(result.sentStatus).to.be.undefined;
+        });
+
+        it('should reject request with no cookie', () => {
+            const result = callValidate();
+            expect(result.nextCalled).to.be.false;
+            expect(result.sentStatus).to.equal(403);
+        });
+
+        it('should reject request with invalid token', () => {
+            const result = callValidate('wrong-token');
+            expect(result.nextCalled).to.be.false;
+            expect(result.sentStatus).to.equal(403);
+        });
+
+        it('should reject request with stale token from previous server', () => {
+            const staleToken = createBrowserConnectionToken().value;
+            const result = callValidate(staleToken);
+            expect(result.nextCalled).to.be.false;
+            expect(result.sentStatus).to.equal(403);
+        });
+
+        it('should reject request with empty token', () => {
+            const result = callValidate('');
+            expect(result.nextCalled).to.be.false;
+            expect(result.sentStatus).to.equal(403);
+        });
+    });
+
+    describe('Electron deployment (no-op)', () => {
+
+        let originalIsElectron: () => boolean;
+
+        beforeEach(() => {
+            originalIsElectron = environment.electron.is;
+            environment.electron.is = () => true;
+        });
+
+        afterEach(() => {
+            environment.electron.is = originalIsElectron;
+        });
+
+        it('validateRequest should call next() without a cookie', () => {
+            const contribution = createContribution();
+            let nextCalled = false;
+            let sentStatus: number | undefined;
+            const req = { headers: {} as Record<string, string | undefined> };
+            const res = { sendStatus: (status: number) => { sentStatus = status; } };
+            const next = (): void => { nextCalled = true; };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (contribution as any).validateRequest(req, res, next);
+            expect(nextCalled).to.be.true;
+            expect(sentStatus).to.be.undefined;
+        });
+
+        it('allowWsUpgrade should return true without a cookie', () => {
+            const contribution = createContribution();
+            expect(contribution.allowWsUpgrade(createRequest())).to.be.true;
+        });
+    });
+});

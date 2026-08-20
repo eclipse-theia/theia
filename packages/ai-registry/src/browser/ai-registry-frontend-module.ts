@@ -18,15 +18,17 @@ import '../../src/browser/style/mcp-entries.css';
 import '../../src/browser/style/skill-entries.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { PreferenceContribution } from '@theia/core';
-import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
+import { CommandContribution, MenuContribution, PreferenceContribution } from '@theia/core';
+import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import { OpenHandler } from '@theia/core/lib/browser/opener-service';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ExtensionsSourceContribution } from '@theia/vsx-registry/lib/browser/extensions-source-contribution';
 import { MCPRegistryUiBridge } from '@theia/ai-mcp/lib/browser/mcp-registry-ui-bridge';
 import { AIRegistryConfiguration } from '../common/ai-registry-configuration';
+import { AIRegistryPreferencesSchema } from '../common/ai-registry-preferences';
 import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from '../common/mcp/mcp-registry-entry-resolver';
 import { RegistryFetchService, RegistryFetchServiceImpl } from '../common/registry-fetch-service';
+import { RegistrySearchFilter } from '../common/registry-search-filter';
 import { SkillRegistryEntryResolver, SkillRegistryEntryResolverImpl } from '../common/skill/skill-registry-entry-resolver';
 import { SkillInstallBackendService, SkillInstallBackendServicePath, SkillInstallClient } from '../common/skill/skill-install-protocol';
 import { SkillRegistryPreferencesSchema } from '../common/skill/skill-registry-preferences';
@@ -39,6 +41,10 @@ import { SkillExtensionsContribution } from './skill/skill-extensions-contributi
 import { InstallSkillUriConfiguration } from './skill/install-skill-uri-configuration';
 import { InstallSkillUriHandler } from './skill/install-skill-uri-handler';
 import { AIRegistryToolbarContribution } from './ai-registry-toolbar-contribution';
+import { AIRegistryMenuContribution } from './ai-registry-menu-contribution';
+import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from './auto-update/registry-auto-update-policy';
+import { RegistryAutoUpdateService } from './auto-update/registry-auto-update-service';
+import { RegistryAutoUpdateContribution } from './auto-update/registry-auto-update-contribution';
 
 export default new ContainerModule(bind => {
     bind(AIRegistryConfiguration).toSelf().inSingletonScope();
@@ -48,6 +54,7 @@ export default new ContainerModule(bind => {
     bind(SkillRegistryEntryResolver).toService(SkillRegistryEntryResolverImpl);
     bind(RegistryFetchServiceImpl).toSelf().inSingletonScope();
     bind(RegistryFetchService).toService(RegistryFetchServiceImpl);
+    bind(RegistrySearchFilter).toSelf().inSingletonScope();
     bind(MCPInstallServiceImpl).toSelf().inSingletonScope();
     bind(MCPInstallService).toService(MCPInstallServiceImpl);
 
@@ -76,4 +83,15 @@ export default new ContainerModule(bind => {
 
     bind(AIRegistryToolbarContribution).toSelf().inSingletonScope();
     bind(TabBarToolbarContribution).toService(AIRegistryToolbarContribution);
+
+    bind(PreferenceContribution).toConstantValue({ schema: AIRegistryPreferencesSchema });
+    bind(RegistryAutoUpdatePolicyImpl).toSelf().inSingletonScope();
+    bind(RegistryAutoUpdatePolicy).toService(RegistryAutoUpdatePolicyImpl);
+    bind(RegistryAutoUpdateService).toSelf().inSingletonScope();
+    bind(RegistryAutoUpdateContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(RegistryAutoUpdateContribution);
+
+    bind(AIRegistryMenuContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(AIRegistryMenuContribution);
+    bind(MenuContribution).toService(AIRegistryMenuContribution);
 });

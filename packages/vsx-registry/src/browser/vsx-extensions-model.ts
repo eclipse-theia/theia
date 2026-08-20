@@ -28,11 +28,11 @@ import { PreferenceInspection, PreferenceInspectionScope, PreferenceService } fr
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { RecommendedExtensions } from '../common/recommended-extensions-preference-contribution';
 import URI from '@theia/core/lib/common/uri';
-import { OVSXClient, VSXAllVersions, VSXExtensionRaw, VSXResponseError, VSXSearchEntry, VSXSearchOptions, VSXTargetPlatform } from '@theia/ovsx-client/lib/ovsx-types';
-import { OVSXClientProvider } from '../common/ovsx-client-provider';
-import { RequestContext, RequestService } from '@theia/core/shared/@theia/request';
+import { VSXAllVersions, VSXExtensionRaw, VSXSearchEntry, VSXSearchOptions, VSXTargetPlatform } from '@theia/ovsx-client/lib/ovsx-types';
 import { OVSXApiFilterProvider } from '@theia/ovsx-client';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
+import { VSXRegistryService } from '../common/vsx-registry-service';
+import { RequestContext, RequestService } from '@theia/core/shared/@theia/request';
 import { HostedPluginServer, PluginIdentifiers, PluginType } from '@theia/plugin-ext';
 import { HostedPluginWatcher } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin-watcher';
 import { ILogger } from '@theia/core';
@@ -58,11 +58,17 @@ export class VSXExtensionsModel {
     protected searchCancellationTokenSource = new CancellationTokenSource();
     protected updateSearchResult = debounce(async () => {
         const { token } = this.resetSearchCancellationTokenSource();
-        await this.doUpdateSearchResult({ query: this.search.query, includeAllVersions: true }, token);
+        // Only the free-text portion is sent to OVSX; `@`-prefixed mode and type tokens are
+        // consumed locally by the search model and would otherwise return no OVSX matches.
+        const { freeText } = this.search.parseQuery();
+        await this.doUpdateSearchResult({ query: freeText, includeAllVersions: true }, token);
     }, 500);
 
-    @inject(OVSXClientProvider)
-    protected clientProvider: OVSXClientProvider;
+    @inject(VSXRegistryService)
+    protected readonly vsxRegistryService: VSXRegistryService;
+
+    @inject(RequestService)
+    protected readonly request: RequestService;
 
     @inject(HostedPluginSupport)
     protected readonly pluginSupport: HostedPluginSupport;
@@ -87,9 +93,6 @@ export class VSXExtensionsModel {
 
     @inject(VSXExtensionsSearchModel)
     readonly search: VSXExtensionsSearchModel;
-
-    @inject(RequestService)
-    protected request: RequestService;
 
     @inject(OVSXApiFilterProvider)
     protected vsxApiFilter: OVSXApiFilterProvider;
@@ -185,15 +188,18 @@ export class VSXExtensionsModel {
             }
             if (extension.readme === undefined && extension.readmeUrl) {
                 try {
-                    const rawReadme = RequestContext.asText(
-                        await this.request.request({ url: extension.readmeUrl })
-                    );
-                    const readme = this.compileReadme(rawReadme);
-                    extension.update({ readme });
-                } catch (e) {
-                    if (!VSXResponseError.is(e) || e.statusCode !== 404) {
-                        this.logger.error(`[${id}]: failed to compile readme, reason:`, e);
+                    // A README served by the local plugin host (installed extensions) is same-origin and can be
+                    // fetched directly by the frontend. A remote registry README must go through the backend
+                    // `VSXRegistryService`, which only allows fetching from configured OVSX registry origins.
+                    const rawReadme = extension.localReadmeUrl
+                        ? RequestContext.asText(await this.request.request({ url: extension.localReadmeUrl }))
+                        : await this.vsxRegistryService.fetchReadme(extension.readmeUrl);
+                    if (rawReadme) {
+                        const readme = this.compileReadme(rawReadme);
+                        extension.update({ readme });
                     }
+                } catch (e) {
+                    this.logger.error(`[${id}]: failed to compile readme, reason:`, e);
                 }
             }
             return extension;
@@ -272,10 +278,9 @@ export class VSXExtensionsModel {
             if (!param.query) {
                 return;
             }
-            const client = await this.clientProvider();
             const filter = await this.vsxApiFilter();
             try {
-                const result = await client.search(param);
+                const result = await this.vsxRegistryService.search(param);
 
                 if (token.isCancellationRequested) {
                     return;
@@ -287,7 +292,7 @@ export class VSXExtensionsModel {
                         continue;
                     }
                     if (this.preferences.get('extensions.onlyShowVerifiedExtensions')) {
-                        this.fetchVerifiedStatus(id, client, allVersions).then(verified => {
+                        this.fetchVerifiedStatus(id, allVersions).then(verified => {
                             this.doChange(() => {
                                 this.addExtensions(data, id, allVersions, !!verified);
                                 return Promise.resolve();
@@ -295,7 +300,7 @@ export class VSXExtensionsModel {
                         });
                     } else {
                         this.addExtensions(data, id, allVersions);
-                        this.fetchVerifiedStatus(id, client, allVersions).then(verified => {
+                        this.fetchVerifiedStatus(id, allVersions).then(verified => {
                             this.doChange(() => {
                                 let extension = this.getExtension(id);
                                 extension = this.setExtension(id);
@@ -314,9 +319,9 @@ export class VSXExtensionsModel {
         }, token);
     }
 
-    protected async fetchVerifiedStatus(id: string, client: OVSXClient, allVersions: VSXAllVersions): Promise<boolean | undefined> {
+    protected async fetchVerifiedStatus(id: string, allVersions: VSXAllVersions): Promise<boolean | undefined> {
         try {
-            const res = await client.query({ extensionId: id, extensionVersion: allVersions.version, includeAllVersions: true });
+            const res = await this.vsxRegistryService.query({ extensionId: id, extensionVersion: allVersions.version, includeAllVersions: true });
             const extension = res.extensions?.[0];
             let verified = extension?.verified;
             if (!verified && extension?.publishedBy.loginName === 'open-vsx') {
@@ -455,17 +460,16 @@ export class VSXExtensionsModel {
             if (!this.shouldRefresh(extension)) {
                 return extension;
             }
-            const filter = await this.vsxApiFilter();
             const targetPlatform = await this.applicationServer.getApplicationPlatform() as VSXTargetPlatform;
             let data: VSXExtensionRaw | undefined;
             if (version === undefined) {
-                data = await filter.findLatestCompatibleExtension({
+                data = await this.vsxRegistryService.findLatestCompatibleExtension({
                     extensionId: id,
                     includeAllVersions: true,
                     targetPlatform
                 });
             } else {
-                data = await filter.findLatestCompatibleExtension({
+                data = await this.vsxRegistryService.findLatestCompatibleExtension({
                     extensionId: id,
                     extensionVersion: version,
                     includeAllVersions: true,

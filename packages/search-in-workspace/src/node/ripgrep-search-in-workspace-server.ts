@@ -20,7 +20,7 @@ import { ILogger } from '@theia/core';
 import { RawProcess, RawProcessFactory, RawProcessOptions } from '@theia/process/lib/node';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import URI from '@theia/core/lib/common/uri';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { SearchInWorkspaceServer, SearchInWorkspaceOptions, SearchInWorkspaceResult, SearchInWorkspaceClient, LinePreview } from '../common/search-in-workspace-interface';
 
 export const RgPath = Symbol('RgPath');
@@ -87,7 +87,8 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
     protected readonly rgPath: string;
 
     constructor(
-        @inject(ILogger) protected readonly logger: ILogger,
+        @inject(ILogger) @named('search-in-workspace:RipgrepSearchInWorkspaceServer')
+        protected readonly logger: ILogger,
         @inject(RawProcessFactory) protected readonly rawProcessFactory: RawProcessFactory,
     ) { }
 

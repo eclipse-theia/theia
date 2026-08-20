@@ -54,6 +54,16 @@ const DEFAULT_HOST = 'localhost';
 const DEFAULT_SSL = false;
 const DEFAULT_DNS_DEFAULT_RESULT_ORDER: DnsResultOrder = 'ipv4first';
 
+/**
+ * Shared registry for Express middleware that must run before static file handlers.
+ * Contributions push handlers during `initialize()`, and `BackendApplication`
+ * applies them at the start of `configure()`, before gzipped handlers and `express.static()`.
+ */
+@injectable()
+export class EarlyExpressMiddleware {
+    readonly handlers: express.Handler[] = [];
+}
+
 export const BackendApplicationServer = Symbol('BackendApplicationServer');
 /**
  * This service is responsible for serving the frontend files.
@@ -175,6 +185,9 @@ export class BackendApplication {
 
     protected readonly app: express.Application = express();
 
+    @inject(EarlyExpressMiddleware)
+    protected readonly earlyMiddleware: EarlyExpressMiddleware;
+
     @inject(ProcessUtils)
     protected readonly processUtils: ProcessUtils;
 
@@ -213,7 +226,7 @@ export class BackendApplication {
 
         // Handles `Ctrl+C` and `kill pid`. Delegates to gracefulShutdown so that
         // root-scoped singletons get their @preDestroy hooks invoked before exit.
-        const onSignal = () => { this.gracefulShutdown().catch(err => console.error(err)); };
+        const onSignal = () => { this.gracefulShutdown().catch(err => this.logger.error(err)); };
         process.on('SIGINT', onSignal);
         process.on('SIGTERM', onSignal);
     }
@@ -243,6 +256,11 @@ export class BackendApplication {
 
     protected async configure(): Promise<void> {
         await this.initialize();
+
+        // Apply early middleware before static file handlers.
+        for (const handler of this.earlyMiddleware.handlers) {
+            this.app.use(handler);
+        }
 
         this.app.get('*.js', this.serveGzipped.bind(this, 'text/javascript'));
         this.app.get('*.js.map', this.serveGzipped.bind(this, 'application/json'));
@@ -389,7 +407,7 @@ export class BackendApplication {
             ]);
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            console.warn(`Backend contributions cleanup failed: ${message}`);
+            this.logger.warn(`Backend contributions cleanup failed: ${message}`);
         }
 
         try {
@@ -399,7 +417,7 @@ export class BackendApplication {
             ]);
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            console.warn(`Backend root container cleanup failed: ${message}`);
+            this.logger.warn(`Backend root container cleanup failed: ${message}`);
         }
 
         process.exit(1);
@@ -410,7 +428,7 @@ export class BackendApplication {
             return;
         }
         this.stoppedContributions = true;
-        console.info('>>> Stopping backend contributions...');
+        this.logger.info('>>> Stopping backend contributions...');
         // The `async` wrapper converts a synchronous throw inside a non-async
         // contribution's `onStop` into a rejected promise so the per-contribution
         // try/catch can handle it; otherwise `Promise.all` would abort.
@@ -423,7 +441,7 @@ export class BackendApplication {
                 }
             }
         }));
-        console.info('<<< All backend contributions have been stopped.');
+        this.logger.info('<<< All backend contributions have been stopped.');
     }
 
     protected onStop(): void {

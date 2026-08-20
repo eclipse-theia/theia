@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { Event, Emitter, URI, ILogger, DisposableCollection } from '@theia/core';
-import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, postConstruct, named } from '@theia/core/shared/inversify';
 import { AIVariableArg, AIVariableContext, AIVariableService, createAIResolveVariableCache, ResolvedAIVariable } from './variable-service';
 import { ToolInvocationRegistry } from './tool-invocation-registry';
 import { toolRequestToPromptText } from './language-model-util';
 import { ToolRequest } from './language-model';
-import { FRONT_MATTER_REGEX, matchFunctionsRegEx, matchVariablesRegEx, stripFrontMatter } from './prompt-service-util';
+import { FRONT_MATTER_REGEX, matchFunctionsRegEx, matchVariablesRegEx, parseFunctionReference, stripFrontMatter } from './prompt-service-util';
 import { AISettingsService } from './settings-service';
 
 export interface CommandPromptFragmentMetadata {
@@ -123,6 +123,16 @@ export interface ResolvedPromptFragment {
 
     /** All functions referenced in the prompt fragment */
     functionDescriptions?: Map<string, ToolRequest>;
+
+    /**
+     * Ids of functions referenced in the prompt fragment that were marked as
+     * deferred (`~{?functionId}`). Deferred tools should not be loaded into
+     * the model's context upfront. Providers that support deferred tool
+     * loading (e.g. Anthropic, OpenAI) may use this information to set the
+     * appropriate flag on the tool definition and include the tool search
+     * tool in the request.
+     */
+    deferredFunctionIds?: Set<string>;
 
     /** All variables resolved in the prompt fragment */
     variables?: ResolvedAIVariable[];
@@ -375,11 +385,21 @@ export interface PromptFragmentCustomizationService {
     createCustomAgentFile(parentDirectory: URI, agent: CustomAgentDescription): Promise<URI>;
 
     /**
-     * Migrates every reachable `customAgents.yml` to the per-agent `agents/<id>/agent.md` layout.
+     * Returns `true` if migration would write anything: a scope still holds a legacy
+     * `customAgents.yml`, or a previously migrated scope has `agent.md` files that can be corrected
+     * (e.g. headings that were folded by an earlier migration). Read-only; performs no writes and is
+     * intended for deciding whether to prompt the user before migrating.
+     */
+    hasPendingCustomAgentMigration(): Promise<boolean>;
+
+    /**
+     * Migrates every reachable `customAgents.yml` to the per-agent `agents/<id>/agent.md` layout and
+     * corrects already-migrated `agent.md` files whose headings were folded by an earlier migration.
      * The user's original content is never deleted: on success (or on partial failure when no backup
      * exists yet) the YAML is renamed to `customAgents.yml.bak`; if a `.bak` already exists it is not
-     * overwritten and the YAML is left in place.
-     * Idempotent — rerunning never overwrites an already-migrated agent file.
+     * overwritten and the YAML is left in place. Corrections only overwrite `agent.md` files the user
+     * has not edited since migration.
+     * Idempotent — rerunning never overwrites an already up-to-date agent file.
      */
     migrateCustomAgentsYaml(): Promise<Array<{
         scope: URI;
@@ -389,6 +409,7 @@ export interface PromptFragmentCustomizationService {
         failed: number;
         yamlBackedUp: boolean;
         promptOverridesMigrated: number;
+        corrected: number;
     }>>;
 
     /**
@@ -445,6 +466,19 @@ export interface PromptService {
      * @returns The fragment with the matching command name or undefined if not found
      */
     getPromptFragmentByCommandName(commandName: string): PromptFragment | undefined;
+
+    /**
+     * Checks whether `/name` can be resolved as a slash command.
+     *
+     * This mirrors the lookup performed when resolving the `prompt` variable: the name may either be
+     * the command name of a fragment marked as a command, or the id of any existing prompt fragment.
+     * Use this before interpreting a `/name` token as a command, so that unrelated text such as Unix
+     * paths is not mistaken for a command.
+     *
+     * @param name The command name or prompt fragment id
+     * @returns `true` if a matching command or prompt fragment exists
+     */
+    isKnownCommand(name: string): boolean;
 
     /**
      * Resolves a prompt fragment by replacing variables and function references
@@ -573,7 +607,7 @@ export interface PromptService {
 
 @injectable()
 export class PromptServiceImpl implements PromptService {
-    @inject(ILogger)
+    @inject(ILogger) @named('ai-core:PromptServiceImpl')
     protected readonly logger: ILogger;
 
     @inject(AISettingsService) @optional()
@@ -737,6 +771,15 @@ export class PromptServiceImpl implements PromptService {
         );
     }
 
+    isKnownCommand(name: string): boolean {
+        if (!name) {
+            return false;
+        }
+        // Both lookups are needed because the `prompt` variable resolves a command either by its
+        // command name or, as a fallback, by prompt fragment id.
+        return this.getPromptFragmentByCommandName(name) !== undefined || this.getRawPromptFragment(name) !== undefined;
+    }
+
     /**
      * Strips comments from a template string
      * @param templateText The template text to process
@@ -860,12 +903,16 @@ export class PromptServiceImpl implements PromptService {
         // This allows to resolve function references contained in resolved variables (e.g. prompt fragments)
         const functionMatches = matchFunctionsRegEx(resolvedTemplate);
         const functionMap = new Map<string, ToolRequest>();
+        const deferredFunctionIds = new Set<string>();
         const functionReplacements = functionMatches.map(match => {
             const completeText = match[0];
-            const functionId = match[1];
+            const { id: functionId, deferred } = parseFunctionReference(match[1]);
             const toolRequest = this.toolInvocationRegistry?.getFunction(functionId);
             if (toolRequest) {
                 functionMap.set(toolRequest.id, toolRequest);
+                if (deferred) {
+                    deferredFunctionIds.add(toolRequest.id);
+                }
             }
             return {
                 placeholder: completeText,
@@ -879,6 +926,7 @@ export class PromptServiceImpl implements PromptService {
             id: systemOrFragmentId,
             text: resolvedTemplate,
             functionDescriptions: functionMap.size > 0 ? functionMap : undefined,
+            deferredFunctionIds: deferredFunctionIds.size > 0 ? deferredFunctionIds : undefined,
             variables: variableAndArgResolutions.resolvedVariables
         };
     }

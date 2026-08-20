@@ -59,8 +59,11 @@ export default new ContainerModule(bind => {
             parameters.isEditing,
             () => ctx.container.get<MCPOAuthFrontendDelegate>(MCPOAuthFrontendDelegate).getEffectiveRedirectUrl()
         ));
-    bind(MCPServerInstallDialogFactory).toFactory(() =>
-        (options: MCPServerInstallDialogOptions) => new MCPServerInstallDialog(options));
+    bind(MCPServerInstallDialogFactory).toFactory(ctx =>
+        (options: MCPServerInstallDialogOptions) => new MCPServerInstallDialog(
+            options,
+            () => ctx.container.get<MCPOAuthFrontendDelegate>(MCPOAuthFrontendDelegate).getEffectiveRedirectUrl()
+        ));
     bind(MCPServerEditorImpl).toSelf().inSingletonScope();
     bind(MCPServerEditor).toService(MCPServerEditorImpl);
 

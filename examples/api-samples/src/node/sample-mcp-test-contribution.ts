@@ -14,16 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { MCPBackendContribution } from '@theia/ai-mcp-server/lib/node/mcp-theia-server';
-import { z } from 'zod';
 
 @injectable()
 export class MCPTestContribution implements MCPBackendContribution {
 
-    @inject(ILogger)
+    @inject(ILogger) @named('api-samples:MCPTestContribution')
     protected readonly logger: ILogger;
 
     async configure(server: McpServer): Promise<void> {
@@ -31,7 +30,7 @@ export class MCPTestContribution implements MCPBackendContribution {
 
         server.registerTool('test-tool', {
             description: 'Theia MCP server test-tool',
-            inputSchema: z.object({})
+            inputSchema: {}
         }, async () => {
             this.logger.info('test-tool called');
             return {

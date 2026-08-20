@@ -36,8 +36,16 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 
 export function getPreferences(preferenceProviderProvider: PreferenceProviderProvider, rootFolders: FileStat[]): PreferenceData {
     const folders = rootFolders.map(root => root.resource.toString());
+    // Session-scoped values are process-lifetime CLI overrides (see PreferenceScope.Session).
+    // The plugin-side `parse()` in `preference-registry.ts` only reads up to Folder, so
+    // shipping session data across would leak potentially security-sensitive overrides
+    // (e.g. AI tool auto-approval) into the plugin host without any consumer on the other
+    // side. Exclude the scope explicitly until plugins can opt in to session values.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return PreferenceScope.getScopes().reduce((result: { [key: number]: any }, scope: PreferenceScope) => {
+        if (scope === PreferenceScope.Session) {
+            return result;
+        }
         result[scope] = {};
         const provider = preferenceProviderProvider(scope);
         if (provider) {

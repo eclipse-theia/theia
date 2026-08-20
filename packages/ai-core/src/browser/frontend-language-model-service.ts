@@ -18,7 +18,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Prioritizeable } from '@theia/core/lib/common/prioritizeable';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
-import { LanguageModel, LanguageModelResponse, ReasoningSettings, UserRequest } from '../common';
+import { AiConfigurationService, LanguageModel, LanguageModelResponse, ReasoningSettings, UserRequest } from '../common';
 import { LanguageModelServiceImpl } from '../common/language-model-service';
 import {
     PREFERENCE_NAME_REQUEST_SETTINGS,
@@ -27,7 +27,6 @@ import {
     ReasoningPreferenceEntry,
     getRequestSettingSpecificity
 } from '../common/ai-core-preferences';
-import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
 
 @injectable()
 export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
@@ -35,15 +34,15 @@ export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
     @inject(WorkspaceTrustService)
     protected readonly workspaceTrustService: WorkspaceTrustService;
 
-    @inject(TrustAwarePreferenceReader)
-    protected readonly trustAwareReader: TrustAwarePreferenceReader;
+    @inject(AiConfigurationService)
+    protected readonly aiConfiguration: AiConfigurationService;
 
     override async sendRequest(
         languageModel: LanguageModel,
         languageModelRequest: UserRequest
     ): Promise<LanguageModelResponse> {
-        const requestSettings = this.trustAwareReader.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []) ?? [];
-        const reasoningEntries = this.trustAwareReader.get<ReasoningPreferenceEntry[]>(PREFERENCE_NAME_REASONING, []) ?? [];
+        const requestSettings = this.aiConfiguration.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []) ?? [];
+        const reasoningEntries = this.aiConfiguration.get<ReasoningPreferenceEntry[]>(PREFERENCE_NAME_REASONING, []) ?? [];
         const trusted = await this.workspaceTrustService.getWorkspaceTrust();
         if (!trusted) {
             throw new Error(nls.localize('theia/ai-core/aiDisabledInRestrictedMode', 'AI features are not available in untrusted workspaces.'));

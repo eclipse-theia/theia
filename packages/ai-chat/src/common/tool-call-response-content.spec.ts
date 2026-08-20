@@ -290,6 +290,48 @@ describe('ToolCallChatResponseContent - confirmation state transitions', () => {
         expect(result).to.be.false;
         expect(content.result).to.deep.equal({ denied: true, reason: undefined });
     });
+
+    describe('isAwaitingUserConfirmation', () => {
+        it('should be false initially', () => {
+            const content = createToolCallContent();
+            expect(content.isAwaitingUserConfirmation).to.be.false;
+        });
+
+        it('should be true after requestUserConfirmation()', () => {
+            const content = createToolCallContent();
+            content.requestUserConfirmation();
+            expect(content.isAwaitingUserConfirmation).to.be.true;
+        });
+
+        it('should be false after the user confirms', () => {
+            const content = createToolCallContent();
+            content.requestUserConfirmation();
+            content.confirm();
+            expect(content.isAwaitingUserConfirmation).to.be.false;
+        });
+
+        it('should be false after the user denies', () => {
+            const content = createToolCallContent();
+            content.requestUserConfirmation();
+            content.deny('rejected');
+            expect(content.isAwaitingUserConfirmation).to.be.false;
+        });
+
+        it('should be false after the confirmation is canceled', () => {
+            const content = createToolCallContent();
+            content.confirmed.catch(() => undefined);
+            content.requestUserConfirmation();
+            content.cancelConfirmation(new Error('request canceled'));
+            expect(content.isAwaitingUserConfirmation).to.be.false;
+        });
+
+        it('should be false once the tool call is finished', () => {
+            const content = createToolCallContent();
+            content.requestUserConfirmation();
+            content.complete('result');
+            expect(content.isAwaitingUserConfirmation).to.be.false;
+        });
+    });
 });
 
 describe('Tool Confirmation Timeout', () => {

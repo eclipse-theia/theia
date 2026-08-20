@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import * as Docker from 'dockerode';
-import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable, interfaces, named } from '@theia/core/shared/inversify';
 import { ContainerCreationContribution } from '../docker-container-service';
 import { DevContainerConfiguration, DockerfileContainer, ImageContainer, NonComposeContainerBase } from '../devcontainer-file';
 import { ILogger, Path } from '@theia/core';
@@ -233,7 +233,7 @@ export class HostConfigSharingContribution implements ContainerCreationContribut
 
     protected static readonly ISOLATED_SSH_DIR = path.join(os.homedir(), '.theia', 'dev-container', 'ssh');
 
-    @inject(ILogger)
+    @inject(ILogger) @named('dev-container:HostConfigSharingContribution')
     protected readonly logger: ILogger;
 
     async handleContainerCreation(createOptions: Docker.ContainerCreateOptions, containerConfig: DevContainerConfiguration): Promise<void> {

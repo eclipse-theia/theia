@@ -23,9 +23,10 @@ FrontendApplicationConfigProvider.set({});
 import 'reflect-metadata';
 
 import { expect } from 'chai';
-import { dump } from 'js-yaml';
+import { dump, load } from 'js-yaml';
 import URI from '@theia/core/lib/common/uri';
 import { parseTemplateWithMetadata, ParsedTemplate } from './prompttemplate-parser';
+import { serializeFrontmatter } from '../common/frontmatter';
 import {
     CustomizationSource, DefaultPromptFragmentCustomizationService, CUSTOM_AGENTS_DIRECTORY, CUSTOM_AGENT_FILE_NAME
 } from './frontend-prompt-customization-service';
@@ -518,6 +519,12 @@ describe('DefaultPromptFragmentCustomizationService - customAgents.yml migration
         protected override getTemplatesDirectoryURI(): Promise<URI> {
             return Promise.resolve(this.templatesDir);
         }
+        testParse(raw: string): unknown {
+            return this.parseCustomAgentsYaml(raw);
+        }
+        testUnfold(raw: string): string {
+            return this.unfoldPromptBlockScalars(raw);
+        }
     }
 
     const scope = new URI('file:///ws/.prompts');
@@ -616,5 +623,226 @@ describe('DefaultPromptFragmentCustomizationService - customAgents.yml migration
         expect(fileService.content(backupURI)).to.equal('ORIGINAL BACKUP');
         // ...and because a backup already exists, the yaml is left untouched for inspection.
         expect(await fileService.exists(yamlURI)).to.be.true;
+    });
+
+    describe('folded block-scalar prompts', () => {
+        // A folded YAML scalar (`>-`) collapses single newlines into spaces, which merges markdown
+        // headings into the paragraph below them. Migration must recover the original line breaks.
+        const foldedYaml =
+            '- id: rel\n' +
+            '  name: Rel\n' +
+            '  description: Release agent\n' +
+            '  defaultLLM: default/code\n' +
+            '  prompt: >-\n' +
+            '    ## Task\n' +
+            '    Do the thing.\n' +
+            '\n' +
+            '    ## Workflow\n' +
+            '    Step one.\n';
+
+        it('migrates a folded prompt with its headings on separate lines', async () => {
+            fileService.write(yamlURI, foldedYaml);
+
+            const [report] = await service.migrateCustomAgentsYaml();
+
+            expect(report.migrated).to.equal(1);
+            const content = fileService.content(agentMd('rel'))!;
+            // js-yaml would have folded these into '## Task Do the thing.'; the fix keeps them split.
+            expect(content).to.contain('## Task\nDo the thing.');
+            expect(content).to.contain('## Workflow\nStep one.');
+            expect(content).to.not.contain('## Task Do the thing.');
+        });
+
+        it('loads an un-migrated folded prompt with separated headings at runtime', async () => {
+            fileService.write(yamlURI, foldedYaml);
+
+            const [agent] = await service.getCustomAgents();
+
+            expect(agent.prompt).to.contain('## Task\nDo the thing.');
+            expect(agent.prompt).to.not.contain('## Task Do the thing.');
+        });
+
+        it('leaves plain and quoted prompt values untouched', () => {
+            const plain = 'prompt: just a short prompt';
+            const quoted = 'prompt: "> not a header"';
+            expect(service.testUnfold(plain)).to.equal(plain);
+            expect(service.testUnfold(quoted)).to.equal(quoted);
+            // Folded headers (with or without indicators) become literal.
+            expect(service.testUnfold('prompt: >-')).to.equal('prompt: |-');
+            expect(service.testUnfold('prompt: >2-')).to.equal('prompt: |2-');
+        });
+    });
+
+    describe('correcting already-migrated agents', () => {
+        // Reproduces the bytes the v1.73.0 migration wrote: parse the backup the old (folded) way and
+        // serialize it with the same frontmatter format the migration used.
+        const buggyAgentMd = (raw: string, id: string): string => {
+            const entry = (load(raw) as Array<{ id: string; name: string; description: string; prompt: string; defaultLLM: string }>).find(e => e.id === id)!;
+            return serializeFrontmatter({ name: entry.name, description: entry.description, defaultLLM: entry.defaultLLM }, entry.prompt);
+        };
+        const foldedYaml =
+            '- id: rel\n' +
+            '  name: Rel\n' +
+            '  description: Release agent\n' +
+            '  defaultLLM: default/code\n' +
+            '  prompt: >-\n' +
+            '    ## Task\n' +
+            '    Do the thing.\n';
+
+        it('rewrites an untouched agent.md to recover folded headings', async () => {
+            // Simulate the post-v1.73.0 state: yaml already backed up, agent.md written with merged headings.
+            fileService.write(backupURI, foldedYaml);
+            fileService.write(agentMd('rel'), buggyAgentMd(foldedYaml, 'rel'));
+
+            const [report] = await service.migrateCustomAgentsYaml();
+
+            expect(report.corrected).to.equal(1);
+            expect(fileService.content(agentMd('rel'))!).to.contain('## Task\nDo the thing.');
+        });
+
+        it('does not touch an agent.md the user edited after migration', async () => {
+            fileService.write(backupURI, foldedYaml);
+            const edited = buggyAgentMd(foldedYaml, 'rel') + '\n\nManually added section.';
+            fileService.write(agentMd('rel'), edited);
+
+            const reports = await service.migrateCustomAgentsYaml();
+
+            // Nothing is migrated and the edited file is not eligible for correction, so no report.
+            expect(reports).to.have.lengthOf(0);
+            expect(fileService.content(agentMd('rel'))).to.equal(edited);
+        });
+
+        it('reports nothing to do when the backup prompt has no folded headings', async () => {
+            fileService.write(backupURI, dump(agents));
+            fileService.write(agentMd('foo'), buggyAgentMd(dump(agents), 'foo'));
+
+            const reports = await service.migrateCustomAgentsYaml();
+
+            // Nothing to migrate and nothing correctable -> no report for the scope.
+            expect(reports).to.have.lengthOf(0);
+        });
+    });
+
+    describe('hasPendingCustomAgentMigration', () => {
+        it('is true while a legacy customAgents.yml exists', async () => {
+            fileService.write(yamlURI, dump(agents));
+            expect(await service.hasPendingCustomAgentMigration()).to.be.true;
+        });
+
+        it('is true when a backup has correctable agents', async () => {
+            const foldedYaml =
+                '- id: rel\n  name: Rel\n  description: d\n  defaultLLM: default/code\n  prompt: >-\n    ## Task\n    Body.\n';
+            fileService.write(backupURI, foldedYaml);
+            const entry = (load(foldedYaml) as Array<{ name: string; description: string; prompt: string; defaultLLM: string }>)[0];
+            fileService.write(agentMd('rel'), serializeFrontmatter({ name: entry.name, description: entry.description, defaultLLM: entry.defaultLLM }, entry.prompt));
+
+            expect(await service.hasPendingCustomAgentMigration()).to.be.true;
+        });
+
+        it('is false once everything is migrated and correct', async () => {
+            fileService.write(yamlURI, dump(agents));
+            await service.migrateCustomAgentsYaml();
+
+            expect(await service.hasPendingCustomAgentMigration()).to.be.false;
+        });
+    });
+});
+
+describe('DefaultPromptFragmentCustomizationService - custom agent scopes', () => {
+    before(() => disableJSDOM = enableJSDOM());
+    after(() => disableJSDOM());
+
+    /** Test subclass: skip @postConstruct and pin the global templates directory. */
+    class AgentScopeTestService extends DefaultPromptFragmentCustomizationService {
+        globalDir = new URI('file:///global/prompt-templates');
+        protected override init(): void { }
+        protected override getTemplatesDirectoryURI(): Promise<URI> {
+            return Promise.resolve(this.globalDir);
+        }
+        setCustomAgentDirs(paths: string[]): void {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (this as any).customAgentDirs = new Set(paths);
+        }
+    }
+
+    const agentMd = (scope: URI, id: string): URI => scope.resolve(CUSTOM_AGENTS_DIRECTORY).resolve(id).resolve(CUSTOM_AGENT_FILE_NAME);
+    const agentFile = (name: string, description: string): string =>
+        `---\nname: ${name}\ndescription: ${description}\ndefaultLLM: default/universal\n---\n${name} prompt`;
+
+    let fileService: FakeFileService;
+    let service: AgentScopeTestService;
+
+    beforeEach(() => {
+        fileService = new FakeFileService();
+        service = new AgentScopeTestService();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (service as any).fileService = fileService;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (service as any).logger = { debug(): void { }, info(): void { }, warn(): void { }, error(): void { } };
+    });
+
+    it('lists the built-in .agents scope before .prompts and the global directory', async () => {
+        service.setCustomAgentDirs(['/ws/.agents', '/ws/.prompts']);
+
+        const locations = await service.getCustomAgentsLocations();
+
+        const agentDirParents = locations.filter(l => l.kind === 'agents-dir').map(l => l.uri.parent.path.toString());
+        expect(agentDirParents).to.deep.equal(['/ws/.agents', '/ws/.prompts', '/global/prompt-templates']);
+    });
+
+    it('discovers custom agents stored under the .agents directory', async () => {
+        service.setCustomAgentDirs(['/ws/.agents']);
+        fileService.write(agentMd(new URI('file:///ws/.agents'), 'foo'), agentFile('Foo', 'Foo agent'));
+
+        const agents = await service.getCustomAgents();
+
+        expect(agents.map(a => a.id)).to.deep.equal(['foo']);
+        expect(agents[0].name).to.equal('Foo');
+    });
+
+    it('prefers an agent in .agents over one with the same id in .prompts', async () => {
+        service.setCustomAgentDirs(['/ws/.agents', '/ws/.prompts']);
+        fileService.write(agentMd(new URI('file:///ws/.agents'), 'shared'), agentFile('FromAgents', 'agents version'));
+        fileService.write(agentMd(new URI('file:///ws/.prompts'), 'shared'), agentFile('FromPrompts', 'prompts version'));
+
+        const agents = await service.getCustomAgents();
+
+        expect(agents).to.have.lengthOf(1);
+        expect(agents[0].description).to.equal('agents version');
+    });
+});
+
+describe('DefaultPromptFragmentCustomizationService - custom agent change detection', () => {
+    before(() => disableJSDOM = enableJSDOM());
+    after(() => disableJSDOM());
+
+    class ChangeDetectionTestService extends DefaultPromptFragmentCustomizationService {
+        protected override init(): void { }
+        isAgentChange(path: string): boolean {
+            return this.isCustomAgentChange(path);
+        }
+    }
+
+    let service: ChangeDetectionTestService;
+    beforeEach(() => { service = new ChangeDetectionTestService(); });
+
+    it('detects deletion of the whole agents directory', () => {
+        expect(service.isAgentChange('file:///ws/.agents/agents')).to.be.true;
+    });
+
+    it('detects changes to an agent.md inside the agents directory', () => {
+        expect(service.isAgentChange('file:///ws/.agents/agents/foo/agent.md')).to.be.true;
+    });
+
+    it('detects changes to a legacy customAgents.yml', () => {
+        expect(service.isAgentChange('file:///ws/.prompts/customAgents.yml')).to.be.true;
+    });
+
+    it('ignores the scope directory itself', () => {
+        expect(service.isAgentChange('file:///ws/.agents')).to.be.false;
+    });
+
+    it('ignores unrelated files such as skills', () => {
+        expect(service.isAgentChange('file:///ws/.agents/skills/foo/SKILL.md')).to.be.false;
     });
 });

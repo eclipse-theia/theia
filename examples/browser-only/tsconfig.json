@@ -114,9 +114,6 @@
       "path": "../../packages/preferences"
     },
     {
-      "path": "../../packages/preview"
-    },
-    {
       "path": "../../packages/process"
     },
     {
@@ -129,9 +126,6 @@
       "path": "../../packages/scm"
     },
     {
-      "path": "../../packages/scm-extra"
-    },
-    {
       "path": "../../packages/search-in-workspace"
     },
     {
@@ -139,6 +133,9 @@
     },
     {
       "path": "../../packages/task"
+    },
+    {
+      "path": "../../packages/telemetry"
     },
     {
       "path": "../../packages/terminal"

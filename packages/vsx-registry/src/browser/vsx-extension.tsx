@@ -270,12 +270,18 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get readmeUrl(): string | undefined {
-        const plugin = this.plugin;
-        const readmeUrl = plugin && plugin.metadata.model.readmeUrl;
-        if (readmeUrl) {
-            return new Endpoint({ path: readmeUrl }).getRestUrl().toString();
-        }
-        return this.data['readmeUrl'];
+        return this.localReadmeUrl ?? this.data['readmeUrl'];
+    }
+
+    /**
+     * The README URL served by the local plugin host for an installed extension, or `undefined`
+     * if the README is not available locally (e.g. for a non-installed extension whose README is
+     * hosted by the remote registry). A local README is same-origin and can be fetched directly by
+     * the frontend, whereas a remote README must be retrieved through the backend `VSXRegistryService`.
+     */
+    get localReadmeUrl(): string | undefined {
+        const readmeUrl = this.plugin?.metadata.model.readmeUrl;
+        return readmeUrl ? new Endpoint({ path: readmeUrl }).getRestUrl().toString() : undefined;
     }
 
     get licenseUrl(): string | undefined {

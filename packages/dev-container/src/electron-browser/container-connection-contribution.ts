@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { AbstractRemoteRegistryContribution, RemoteRegistry } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
 import {
     DevContainerFile, LastContainerInfo, RemoteContainerConnectionProvider,
@@ -92,7 +92,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
     @inject(DevContainerPreferences)
     protected readonly devContainerPreferences: DevContainerPreferences;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('dev-container:ContainerConnectionContribution')
     protected readonly logger: ILogger;
 
     protected hasDevContainerFiles = false;

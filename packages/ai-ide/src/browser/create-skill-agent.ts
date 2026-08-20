@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { ChatMode } from '@theia/ai-chat';
 import { LanguageModelRequirement } from '@theia/ai-core';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import {
     createSkillSystemVariants,
     CREATE_SKILL_SYSTEM_PROMPT_TEMPLATE_ID,
@@ -23,10 +23,13 @@ import {
     CREATE_SKILL_SYSTEM_AGENT_MODE_TEMPLATE_ID,
 } from '../common/create-skill-prompt-template';
 import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
-import { nls } from '@theia/core';
+import { ILogger, nls } from '@theia/core';
 
 @injectable()
 export class CreateSkillAgent extends AbstractModeAwareChatAgent {
+
+    @inject(ILogger) @named('ai-ide:CreateSkillAgent')
+    protected override readonly logger: ILogger;
 
     name = 'CreateSkill';
     id = 'CreateSkill';

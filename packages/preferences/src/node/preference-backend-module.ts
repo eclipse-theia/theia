@@ -16,6 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { CliContribution } from '@theia/core/lib/node/cli';
+import { RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-contribution';
 import { PreferenceCliContribution } from './preference-cli-contribution';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { CliPreferences, CliPreferencesPath } from '../common/cli-preferences';
@@ -35,6 +36,7 @@ export default new ContainerModule(bind => {
     bind(PreferenceCliContribution).toSelf().inSingletonScope();
     bind(CliPreferences).toService(PreferenceCliContribution);
     bind(CliContribution).toService(PreferenceCliContribution);
+    bind(RemoteCliContribution).toService(PreferenceCliContribution);
     bind(JSONCEditor).toSelf().inSingletonScope();
 
     bind(PreferenceStorageFactory).toFactory(({ container }) => (uri: URI, scope: PreferenceScope) => new BackendPreferenceStorage(

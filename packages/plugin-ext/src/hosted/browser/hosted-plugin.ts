@@ -22,7 +22,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { generateUuid } from '@theia/core/lib/common/uuid';
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { PluginWorker } from './plugin-worker';
 import { getPluginId, DeployedPlugin, HostedPluginServer } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
@@ -33,7 +33,7 @@ import {
     Disposable, DisposableCollection, isCancelled,
     CommandRegistry, WillExecuteCommandEvent,
     CancellationTokenSource, ProgressService, nls,
-    RpcProxy
+    RpcProxy, ILogger
 } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/common/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -183,6 +183,9 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     @inject(WorkspaceTrustService)
     protected readonly workspaceTrustService: WorkspaceTrustService;
 
+    @inject(ILogger) @named('plugin-ext:HostedPluginSupport')
+    protected override readonly logger: ILogger;
+
     constructor() {
         super(generateUuid());
     }
@@ -277,9 +280,20 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     }
 
     protected override async afterLoadContributions(toDisconnect: DisposableCollection): Promise<void> {
-        await this.viewRegistry.initWidgets();
-        // remove restored plugin widgets which were not registered by contributions
-        this.viewRegistry.removeStaleWidgets();
+        // Defer view initialization until the layout has been restored: initWidgets/removeStaleWidgets
+        // must not run while the ShellLayoutRestorer still holds restored plugin view widgets, otherwise
+        // removeStaleWidgets can dispose a restored view container mid-restore and abort the whole
+        // layout restoration (see https://github.com/eclipse-theia/theia/issues/17770).
+        // Deliberately not awaited: startPlugins runs after this hook and may register file system
+        // providers the layout restoration depends on (see beforeLoadContributions).
+        this.appState.reachedState('initialized_layout').then(async () => {
+            if (toDisconnect.disposed) {
+                return;
+            }
+            await this.viewRegistry.initWidgets();
+            // remove restored plugin widgets which were not registered by contributions
+            this.viewRegistry.removeStaleWidgets();
+        }).catch(e => this.logger.error(e));
         this.workspaceTrustService.refreshRestrictedModeIndicator();
     }
 
@@ -572,7 +586,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
                     return result.length > 0;
                 } catch (e) {
                     if (!isCancelled(e)) {
-                        console.error(e);
+                        this.logger.error(e);
                     }
                     return false;
                 } finally {
@@ -633,7 +647,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
                 webview.setHTML(this.getDeserializationFailedContents(`
                 An error occurred while restoring '${webview.viewType}' view. Please check logs.
                 `));
-                console.error('Failed to restore the webview', e);
+                this.logger.error('Failed to restore the webview', e);
             }
         }
     }

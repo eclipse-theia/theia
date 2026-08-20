@@ -16,7 +16,7 @@
 
 import {
     ChatAgentService, ChatRequestModel, ChatResponseContent, ChatSession, ChatSessionMetadata,
-    ErrorChatResponseContent, FormattedProviderError, formatProviderError, ThinkingChatResponseContent
+    ChatSessionStatus, ErrorChatResponseContent, FormattedProviderError, formatProviderError, ThinkingChatResponseContent
 } from '@theia/ai-chat';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { nls } from '@theia/core/lib/common/nls';
@@ -89,21 +89,41 @@ function addDefinitionEntry(definitionList: HTMLDListElement, term: string, deta
 export function buildSessionTooltip(
     session: ChatSession, metadata: ChatSessionMetadata,
     agentService: ChatAgentService, markdownRenderer: MarkdownRenderer,
-    isUnread: boolean, isRunning: boolean, hasError: boolean
+    isUnread: boolean, descendantNeedsAttention: boolean = false
 ): SessionTooltip {
     const toDispose = new DisposableCollection();
     const requests = session.model.getRequests();
     const lastRequest = requests.at(-1);
+    const status = session.model.status;
 
     const container = document.createElement('div');
     container.className = 'theia-chat-session-tooltip';
 
-    if (isRunning) {
+    // Waiting on the user takes precedence over the generic running badge: it signals that the
+    // user, not the agent, needs to act.
+    if (status === 'awaitingApproval') {
+        const badge = document.createElement('div');
+        badge.className = 'theia-chat-session-badge-attention-tooltip';
+        badge.textContent = nls.localize('theia/ai/ide/requiresApproval', 'Requires your approval');
+        container.appendChild(badge);
+    } else if (status === 'awaitingInput') {
+        const badge = document.createElement('div');
+        badge.className = 'theia-chat-session-badge-attention-tooltip';
+        badge.textContent = nls.localize('theia/ai/ide/waitingForInput', 'Waiting for your input');
+        container.appendChild(badge);
+    } else if (descendantNeedsAttention) {
+        // The session itself is not awaiting the user, but one of its delegated children is;
+        // surface that instead of the generic running badge so the reason is clear.
+        const badge = document.createElement('div');
+        badge.className = 'theia-chat-session-badge-attention-tooltip';
+        badge.textContent = nls.localize('theia/ai/ide/childInteractionNeeded', 'A delegated session needs your attention');
+        container.appendChild(badge);
+    } else if (ChatSessionStatus.isInProgress(status)) {
         const badge = document.createElement('div');
         badge.className = 'theia-chat-session-badge-running-tooltip';
         badge.textContent = nls.localizeByDefault('Running');
         container.appendChild(badge);
-    } else if (hasError) {
+    } else if (status === 'failed') {
         const badge = document.createElement('div');
         badge.className = 'theia-chat-session-badge-error-tooltip';
         badge.textContent = nls.localizeByDefault('Error');
@@ -117,7 +137,7 @@ export function buildSessionTooltip(
 
     if (lastRequest) {
         const lastResponse = lastRequest.response;
-        const errorText = hasError ? getResponseErrorMessage(lastResponse) : undefined;
+        const errorText = status === 'failed' ? getResponseErrorMessage(lastResponse) : undefined;
 
         if (errorText) {
             const label = document.createElement('div');
@@ -169,7 +189,7 @@ export function buildSessionTooltip(
     const exchangeLabel = count === 1
         ? nls.localize('theia/ai/ide/tooltip/oneExchange', '1 exchange')
         : nls.localize('theia/ai/ide/tooltip/multipleExchanges', '{0} exchanges', count);
-    addDefinitionEntry(definitionList, nls.localize('theia/ai/ide/tooltip/messages', 'Messages'), exchangeLabel);
+    addDefinitionEntry(definitionList, nls.localizeByDefault('Messages'), exchangeLabel);
 
     const date = session.lastInteraction ?? new Date(metadata.saveDate);
     addDefinitionEntry(definitionList, nls.localize('theia/ai/ide/tooltip/lastActivity', 'Last activity'), date.toLocaleString());
@@ -183,14 +203,20 @@ export function buildSessionTooltip(
  * shown on the home view). Avoids any restore I/O so hover does not promote the item to Active.
  */
 export function buildRestoredSessionTooltip(
-    metadata: ChatSessionMetadata, agentService: ChatAgentService
+    metadata: ChatSessionMetadata, agentService: ChatAgentService, descendantNeedsAttention: boolean = false
 ): SessionTooltip {
     const container = document.createElement('div');
     container.className = 'theia-chat-session-tooltip';
 
     const badge = document.createElement('div');
-    badge.className = 'theia-chat-session-badge-restored-tooltip';
-    badge.textContent = nls.localize('theia/ai/ide/restoredSession', 'Restored session');
+    if (descendantNeedsAttention) {
+        // A persisted parent whose delegated child needs the user; show that rather than "Restored".
+        badge.className = 'theia-chat-session-badge-attention-tooltip';
+        badge.textContent = nls.localize('theia/ai/ide/childInteractionNeeded', 'A delegated session needs your attention');
+    } else {
+        badge.className = 'theia-chat-session-badge-restored-tooltip';
+        badge.textContent = nls.localize('theia/ai/ide/restoredSession', 'Restored session');
+    }
     container.appendChild(badge);
 
     const definitionList = document.createElement('dl');
