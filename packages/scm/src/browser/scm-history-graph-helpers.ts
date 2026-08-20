@@ -83,6 +83,105 @@ export function getRepoRelativePath(uri: string, rootUri: string | undefined): s
     return fullPath;
 }
 
+export interface ChangeTreeRowBase {
+    /** Repo-relative path of the row; the expansion key for folders. */
+    readonly path: string;
+    /** Nesting level, used for indentation. */
+    readonly depth: number;
+}
+
+export interface ChangeTreeFolderRow extends ChangeTreeRowBase {
+    readonly type: 'folder';
+    /** Segments rendered for this row; a compacted chain shows `browser/model`. */
+    readonly label: string;
+}
+
+export interface ChangeTreeFileRow extends ChangeTreeRowBase {
+    readonly type: 'file';
+    readonly change: ScmHistoryItemChange;
+    /** Position of the change in the list it came from, so row keys stay stable. */
+    readonly index: number;
+}
+
+export type ChangeTreeRow = ChangeTreeFolderRow | ChangeTreeFileRow;
+
+interface ChangeTreeFolder {
+    readonly folders: Map<string, ChangeTreeFolder>;
+    readonly files: { change: ScmHistoryItemChange; index: number; name: string }[];
+}
+
+/**
+ * Arranges history item changes into the rows of a file tree: folders before
+ * files, each sorted by name, with single-child folder chains compacted into
+ * one row (`src/browser`) the way VS Code's SCM tree renders them. Folders
+ * listed in `collapsedFolders` (by their full path) hide their descendants.
+ */
+export function buildChangeTreeRows(
+    changes: readonly ScmHistoryItemChange[],
+    rootUri: string | undefined,
+    collapsedFolders: ReadonlySet<string>
+): ChangeTreeRow[] {
+    const root: ChangeTreeFolder = { folders: new Map(), files: [] };
+    changes.forEach((change, index) => {
+        const relativePath = getRepoRelativePath(change.modifiedUri ?? change.originalUri ?? change.uri, rootUri);
+        const segments = relativePath.split('/').filter(segment => segment.length > 0);
+        const name = segments.pop() ?? relativePath;
+        let folder = root;
+        for (const segment of segments) {
+            let child = folder.folders.get(segment);
+            if (!child) {
+                child = { folders: new Map(), files: [] };
+                folder.folders.set(segment, child);
+            }
+            folder = child;
+        }
+        folder.files.push({ change, index, name });
+    });
+
+    const rows: ChangeTreeRow[] = [];
+    collectChangeTreeRows(root, '', '', 0, collapsedFolders, rows);
+    return rows;
+}
+
+function collectChangeTreeRows(
+    folder: ChangeTreeFolder,
+    path: string,
+    label: string,
+    depth: number,
+    collapsedFolders: ReadonlySet<string>,
+    rows: ChangeTreeRow[]
+): void {
+    for (const name of [...folder.folders.keys()].sort(compareNames)) {
+        let child = folder.folders.get(name)!;
+        let childPath = path ? `${path}/${name}` : name;
+        let childLabel = label ? `${label}/${name}` : name;
+        // Compact a chain of folders that each hold nothing but one folder.
+        while (child.files.length === 0 && child.folders.size === 1) {
+            const [onlyName, onlyChild] = [...child.folders][0];
+            child = onlyChild;
+            childPath = `${childPath}/${onlyName}`;
+            childLabel = `${childLabel}/${onlyName}`;
+        }
+        rows.push({ type: 'folder', path: childPath, label: childLabel, depth });
+        if (!collapsedFolders.has(childPath)) {
+            collectChangeTreeRows(child, childPath, '', depth + 1, collapsedFolders, rows);
+        }
+    }
+    for (const file of [...folder.files].sort((left, right) => compareNames(left.name, right.name))) {
+        rows.push({
+            type: 'file',
+            path: path ? `${path}/${file.name}` : file.name,
+            depth,
+            change: file.change,
+            index: file.index
+        });
+    }
+}
+
+function compareNames(left: string, right: string): number {
+    return left.localeCompare(right);
+}
+
 /**
  * Returns the ref-based color index of the given ref (0 = current ref,
  * 1 = remote ref, 2 = base ref), or `undefined` when the ref is none of
