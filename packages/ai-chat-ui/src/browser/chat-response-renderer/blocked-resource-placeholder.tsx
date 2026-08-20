@@ -15,8 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { renderToStaticMarkup } from 'react-dom/server';
+import { renderToStaticMarkup } from '@theia/core/shared/react-dom/server';
 import { nls } from '@theia/core/lib/common/nls';
 
 export interface BlockedResourcePlaceholderProps {

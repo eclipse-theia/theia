@@ -112,6 +112,32 @@ For example, in an `electron-builder` configuration, ensure the `lib/backend/she
 
 The `lib/**/*` glob already covers `lib/backend/shell-integrations/`. If you use a more restrictive `files` pattern, make sure `lib/backend/shell-integrations/**/*` is explicitly included, as `ShellIntegrationInjector` resolves these scripts relative to `__dirname` (i.e. `lib/backend/`).
 
+### v1.75.0
+
+#### React 19 and the automatic JSX runtime
+
+Theia now requires `react`/`react-dom` `^19` and React 18 is no longer supported.
+The `@theia/core` peer dependency ranges for `react`, `react-dom`, `@types/react`, and `@types/react-dom` are narrowed to `^19.0.0`, so all four need to be bumped.
+Since v1.74.0 `react`/`react-dom` are peer dependencies instead of direct dependencies of `@theia/core`.
+Thus, depending on your package manager and its settings, you might need to add them as explicit dependencies of your product.
+
+Upgrading React itself is covered by the [React 19 upgrade guide](https://react.dev/blog/2024/04/25/react-19-upgrade-guide).
+The change most likely to affect extension code is that `useRef` no longer has a zero-argument overload, so `React.useRef<T | undefined>()` becomes `React.useRef<T | undefined>(undefined)`.
+
+All Theia packages are now compiled with the automatic JSX runtime:
+
+```json
+"jsx": "react-jsx",
+"jsxImportSource": "@theia/core/shared/react"
+```
+
+`@theia/core/shared/react/jsx-runtime` and `@theia/core/shared/react/jsx-dev-runtime` are new re-exports, so the generated JSX calls still resolve to the single React instance shared by `@theia/core`.
+
+Adopters do not have to switch, but if you want the same setup in your own extensions:
+
+- set `jsx` and `jsxImportSource` as above in your `tsconfig.json` (if you use `jsx: "react-jsxdev"`, the `jsx-dev-runtime` re-export is used instead)
+- remove `import * as React from '@theia/core/shared/react'` from files that only needed it for JSX. Keep the import wherever `React.*` types or APIs are used (`React.ReactNode`, `React.FC`, `React.MouseEvent`, hooks, …). With `noUnusedLocals` enabled the compiler reports the now-obsolete imports.
+
 ### v1.74.0
 
 #### Deprecation of @theia/ai-vercel-ai package

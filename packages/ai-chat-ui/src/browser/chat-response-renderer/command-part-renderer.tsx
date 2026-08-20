@@ -18,7 +18,6 @@ import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ChatResponseContent, CommandChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
-import * as React from '@theia/core/shared/react';
 import { CommandRegistry, CommandService, nls, ILogger } from '@theia/core';
 
 @injectable()
