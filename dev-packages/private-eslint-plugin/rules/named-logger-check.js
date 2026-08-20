@@ -23,7 +23,58 @@
  * @typedef {import('eslint').Rule.RuleModule} RuleModule
  */
 
-/** @type {RuleModule} */
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * @param {string} packageJsonPath
+ * @param {{ existsSync: typeof fs.existsSync, readFileSync: typeof fs.readFileSync }} fsImpl
+ */
+function readPackageName(packageJsonPath, fsImpl) {
+    if (!fsImpl.existsSync(packageJsonPath)) {
+        return undefined;
+    }
+    try {
+        const pkg = JSON.parse(fsImpl.readFileSync(packageJsonPath, 'utf8'));
+        return typeof pkg.name === 'string' ? pkg.name.replace(/^@[^/]+\//, '') : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+/**
+ * Derives the Theia package name from a normalized (forward-slash) file path. Locates the
+ * LAST 'packages' or 'dev-packages' path segment (so a checkout nested under a directory that
+ * happens to be named 'packages' resolves against the real package, not an outer decoy), then
+ * prefers that package's package.json `name` field (npm scope stripped) over the directory
+ * name itself, since they can differ (e.g. directory 'ai-hugging-face' vs package name
+ * 'ai-huggingface'). Falls back to the directory name if no package.json/name is found there.
+ * Returns undefined for paths with no packages/dev-packages segment, where the convention
+ * doesn't apply (examples/, doc/, etc.) — this boundary is intentional and matches segments
+ * exactly, so 'mypackages/foo/bar.ts' does not accidentally match.
+ * @param {string} normalizedFilename
+ * @param {{ existsSync: typeof fs.existsSync, readFileSync: typeof fs.readFileSync }} [fsImpl]
+ *   Test-only override; defaults to real fs.
+ */
+function derivePackageName(normalizedFilename, fsImpl) {
+    fsImpl = fsImpl || fs;
+    const segments = normalizedFilename.split('/');
+    let rootIndex = -1;
+    for (let i = 0; i < segments.length - 1; i++) {
+        if (segments[i] === 'packages' || segments[i] === 'dev-packages') {
+            rootIndex = i;
+        }
+    }
+    if (rootIndex === -1) {
+        return undefined;
+    }
+    const dirName = segments[rootIndex + 1];
+    const packageDir = segments.slice(0, rootIndex + 2).join('/');
+    const nameFromPackageJson = readPackageName(path.join(packageDir, 'package.json'), fsImpl);
+    return nameFromPackageJson || dirName;
+}
+
+/** @type {RuleModule & { derivePackageName: typeof derivePackageName }} */
 module.exports = {
     meta: {
         type: 'problem',
@@ -97,18 +148,6 @@ module.exports = {
             return !variable || variable.defs.length === 0;
         }
 
-        /**
-        * Derives the Theia package name from a normalized (forward-slash) file path, e.g.
-        * 'packages/plugin-ext/src/main/node/plugin-deployer-impl.ts' -> 'plugin-ext'.
-        * Returns undefined for paths outside packages/ or dev-packages/ (e.g. examples/,
-        * doc/), where the convention doesn't cleanly apply.
-        * @param {string} normalizedFilename
-        */
-        function derivePackageName(normalizedFilename) {
-            const match = /(?:^|\/)(?:packages|dev-packages)\/([^/]+)\//.exec(normalizedFilename);
-            return match ? match[1] : undefined;
-        }
-
         return {
             /**
              * @param {ClassDeclaration} node
@@ -119,6 +158,7 @@ module.exports = {
                         d.expression &&
                         d.expression.type === 'CallExpression' &&
                         d.expression.callee &&
+                        d.expression.callee.type === 'Identifier' &&
                         d.expression.callee.name === 'injectable'
                 );
                 injectableClassStack.push({ isInjectable: !!hasInjectable, className: node.id ? node.id.name : undefined });
@@ -148,6 +188,7 @@ module.exports = {
                     node.expression &&
                     node.expression.type === 'CallExpression' &&
                     node.expression.callee &&
+                    node.expression.callee.type === 'Identifier' &&
                     node.expression.callee.name === 'inject'
                 ) {
                     const arg = node.expression.arguments[0];
@@ -160,6 +201,7 @@ module.exports = {
                                 d.expression &&
                                 d.expression.type === 'CallExpression' &&
                                 d.expression.callee &&
+                                d.expression.callee.type === 'Identifier' &&
                                 d.expression.callee.name === 'named'
                         );
 
@@ -177,7 +219,8 @@ module.exports = {
                                     const [, actualPackageName, actualClassName] = match;
                                     const enclosingClass = injectableClassStack[injectableClassStack.length - 1];
                                     const expectedClassName = enclosingClass && enclosingClass.className;
-                                    const expectedPackageName = derivePackageName(filename);
+                                    const testFsImpl = context.options && context.options[0] && context.options[0].__testFsImpl;
+                                    const expectedPackageName = derivePackageName(filename, testFsImpl);
 
                                     if (expectedClassName && actualClassName !== expectedClassName) {
                                         context.report({
@@ -202,3 +245,5 @@ module.exports = {
         };
     }
 };
+
+module.exports.derivePackageName = derivePackageName;

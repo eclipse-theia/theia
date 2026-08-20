@@ -14,8 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+const assert = require('assert');
+const path = require('path');
 const { RuleTester } = require('eslint');
 const rule = require('./named-logger-check');
+const { derivePackageName } = require('./named-logger-check');
+
+function fakePackageJsonFs(byPath) {
+    return {
+        existsSync: p => Object.prototype.hasOwnProperty.call(byPath, p),
+        readFileSync: p => JSON.stringify(byPath[p])
+    };
+}
 
 const ruleTester = new RuleTester({
     parser: require.resolve('@typescript-eslint/parser'),
@@ -67,7 +77,12 @@ ruleTester.run('named-logger-check', rule, {
                     constructor(@inject(ILogger) @named('[auth]my-package:GoodClass') logger) {}
                 }
             `,
-            filename: 'packages/my-package/src/browser/good-class.ts'
+            filename: 'packages/my-package/src/browser/good-class.ts',
+            options: [{
+                __testFsImpl: fakePackageJsonFs({
+                    [path.join('packages', 'my-package', 'package.json')]: { name: '@theia/my-package' }
+                })
+            }]
         },
         {
             code: `
@@ -76,13 +91,18 @@ ruleTester.run('named-logger-check', rule, {
                     constructor(@inject(ILogger) @named('private-eslint-plugin:GoodDevClass') logger) {}
                 }
             `,
-            filename: 'dev-packages/private-eslint-plugin/src/rules/good-dev-class.ts'
+            filename: 'dev-packages/private-eslint-plugin/src/rules/good-dev-class.ts',
+            options: [{
+                __testFsImpl: fakePackageJsonFs({
+                    [path.join('dev-packages', 'private-eslint-plugin', 'package.json')]: { name: '@theia/private-eslint-plugin' }
+                })
+            }]
         },
         {
             code: `
                 @injectable()
                 class OutsidePackagesClass {
-                                        constructor(@inject(ILogger) @named('anything-goes-here:OutsidePackagesClass') logger) {}
+                    constructor(@inject(ILogger) @named('anything-goes-here:OutsidePackagesClass') logger) {}
                 }
             `,
             filename: 'examples/browser-only/src/browser/outside-packages-class.ts'
@@ -114,6 +134,20 @@ ruleTester.run('named-logger-check', rule, {
                 }
             `,
             filename: 'packages/my-package/src/browser/non-literal-class.ts'
+        },
+        {
+            code: `
+                @injectable()
+                class HuggingFaceLanguageModelsManagerImpl {
+                    constructor(@inject(ILogger) @named('ai-huggingface:HuggingFaceLanguageModelsManagerImpl') logger) {}
+                }
+            `,
+            filename: 'packages/ai-hugging-face/src/node/hugging-face-language-models-manager-impl.ts',
+            options: [{
+                __testFsImpl: fakePackageJsonFs({
+                    [path.join('packages', 'ai-hugging-face', 'package.json')]: { name: '@theia/ai-huggingface' }
+                })
+            }]
         },
         {
             code: `
@@ -170,6 +204,11 @@ ruleTester.run('named-logger-check', rule, {
                 }
             `,
             filename: 'packages/my-package/src/browser/real-class-name.ts',
+            options: [{
+                __testFsImpl: fakePackageJsonFs({
+                    [path.join('packages', 'my-package', 'package.json')]: { name: '@theia/my-package' }
+                })
+            }],
             errors: [{ messageId: 'classNameMismatch', data: { expected: 'RealClassName', actual: 'WrongClassName' } }]
         },
         {
@@ -180,6 +219,11 @@ ruleTester.run('named-logger-check', rule, {
                 }
             `,
             filename: 'packages/my-package/src/browser/correct-class.ts',
+            options: [{
+                __testFsImpl: fakePackageJsonFs({
+                    [path.join('packages', 'my-package', 'package.json')]: { name: '@theia/my-package' }
+                })
+            }],
             errors: [{ messageId: 'packageNameMismatch', data: { expected: 'my-package', actual: 'wrong-package' } }]
         },
         {
@@ -190,7 +234,56 @@ ruleTester.run('named-logger-check', rule, {
                 }
             `,
             filename: 'packages/my-package/src/browser/both-wrong-class.ts',
+            options: [{
+                __testFsImpl: fakePackageJsonFs({
+                    [path.join('packages', 'my-package', 'package.json')]: { name: '@theia/my-package' }
+                })
+            }],
             errors: [{ messageId: 'classNameMismatch' }, { messageId: 'packageNameMismatch' }]
+        },
+        {
+            code: `
+                @injectable()
+                class HuggingFaceLanguageModelsManagerImpl {
+                    constructor(@inject(ILogger) @named('ai-hugging-face:HuggingFaceLanguageModelsManagerImpl') logger) {}
+                }
+            `,
+            filename: 'packages/ai-hugging-face/src/node/hugging-face-language-models-manager-impl.ts',
+            options: [{
+                __testFsImpl: fakePackageJsonFs({
+                    [path.join('packages', 'ai-hugging-face', 'package.json')]: { name: '@theia/ai-huggingface' }
+                })
+            }],
+            errors: [{ messageId: 'packageNameMismatch', data: { expected: 'ai-huggingface', actual: 'ai-hugging-face' } }]
         }
     ]
+});
+
+describe('derivePackageName', () => {
+    it('reads the scoped package name from the nearest package.json', () => {
+        const fsImpl = fakePackageJsonFs({
+            [path.join('packages', 'ai-hugging-face', 'package.json')]: { name: '@theia/ai-huggingface' }
+        });
+        assert.strictEqual(
+            derivePackageName(path.join('packages', 'ai-hugging-face', 'src', 'browser', 'foo.ts'), fsImpl),
+            'ai-huggingface'
+        );
+    });
+
+    it('is not fooled by an earlier "packages" segment in the path', () => {
+        const fsImpl = fakePackageJsonFs({
+            [path.join('~', 'packages', 'theia', 'packages', 'core', 'package.json')]: { name: '@theia/core' }
+        });
+        assert.strictEqual(
+            derivePackageName(path.join('~', 'packages', 'theia', 'packages', 'core', 'src', 'foo.ts'), fsImpl),
+            'core'
+        );
+    });
+
+    it('returns undefined when no package.json is found', () => {
+        assert.strictEqual(
+            derivePackageName(path.join('some', 'random', 'path', 'foo.ts'), fakePackageJsonFs({})),
+            undefined
+        );
+    });
 });
