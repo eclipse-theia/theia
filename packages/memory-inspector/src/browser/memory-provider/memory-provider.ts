@@ -14,13 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { DebugVariable } from '@theia/debug/lib/browser/console/debug-console-items';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { Interfaces } from '../utils/memory-widget-utils';
 import { VariableRange } from '../utils/memory-widget-variable-utils';
 import Long from 'long';
+import { ILogger } from '@theia/core';
 
 export const MemoryProvider = Symbol('MemoryProvider');
 /**
@@ -56,13 +57,17 @@ export function base64ToBytes(base64: string): Interfaces.LabeledUint8Array {
 
 @injectable()
 export class DefaultMemoryProvider implements Required<MemoryProvider> {
+
+    @inject(ILogger) @named('memory-inspector:DefaultMemoryProvider')
+    protected readonly logger: ILogger;
+
     // This provider should only be used a fallback - it shouldn't volunteer to handle any session.
     canHandle(): false {
         return false;
     }
 
     async readMemory(session: DebugSession, readMemoryArguments: DebugProtocol.ReadMemoryArguments): Promise<Interfaces.MemoryReadResult> {
-        console.log('Requesting memory with the following arguments:', readMemoryArguments);
+        this.logger.info('Requesting memory with the following arguments:', readMemoryArguments);
         const result = await session.sendRequest('readMemory', readMemoryArguments) as DebugProtocol.ReadMemoryResponse;
 
         if (result.body?.data) {

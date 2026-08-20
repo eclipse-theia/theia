@@ -54,7 +54,7 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
 
     protected container: interfaces.Container;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('plugin-ext:AbstractHostedPluginSupport')
     protected readonly logger: ILogger;
 
     @inject(HostedPluginServer)
@@ -147,7 +147,7 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
         try {
             await this.runOperation(() => this.doLoad());
         } catch (e) {
-            console.error('Failed to load plugins:', e);
+            this.logger.error('Failed to load plugins:', e);
             // Resolve the startup deferreds so that clients awaiting `willStart` or `didStart`,
             // e.g. file system provider activations, do not hang forever on a failed load.
             this.deferredWillStart.resolve();
@@ -316,7 +316,7 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
         const loadPluginsMeasurement = this.measure('loadPlugins');
 
         const hostContributions = new Map<PluginHost, PluginContributions[]>();
-        console.log(`[${this.clientId}] Loading plugin contributions`);
+        this.logger.info(`[${this.clientId}] Loading plugin contributions`);
         for (const contributions of this.contributions.values()) {
             if (!this.workspaceTrusted && contributions.plugin.metadata.model.untrustedWorkspacesSupport === false) {
                 this._disabledByTrust.add(PluginIdentifiers.componentsToUnversionedId(contributions.plugin.metadata.model));
@@ -327,10 +327,10 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
             const pluginId = plugin.model.id;
             if (contributions.state === PluginContributions.State.INITIALIZING) {
                 contributions.state = PluginContributions.State.LOADING;
-                contributions.push(Disposable.create(() => console.log(`[${pluginId}]: Unloaded plugin.`)));
+                contributions.push(Disposable.create(() => this.logger.info(`[${pluginId}]: Unloaded plugin.`)));
                 contributions.push(this.handleContributions(contributions.plugin));
                 contributions.state = PluginContributions.State.LOADED;
-                console.debug(`[${this.clientId}][${pluginId}]: Loaded contributions.`);
+                this.logger.debug(`[${this.clientId}][${pluginId}]: Loaded contributions.`);
                 loaded++;
             }
 
@@ -342,7 +342,7 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
                 hostContributions.set(host, dynamicContributions);
                 toDisconnect.push(Disposable.create(() => {
                     contributions!.state = PluginContributions.State.LOADED;
-                    console.debug(`[${this.clientId}][${pluginId}]: Disconnected.`);
+                    this.logger.debug(`[${this.clientId}][${pluginId}]: Disconnected.`);
                 }));
             }
         }
@@ -398,22 +398,22 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
                     if (toDisconnect.disposed) {
                         return;
                     }
-                    console.log(`[${this.clientId}] Starting plugins.`);
+                    this.logger.info(`[${this.clientId}] Starting plugins.`);
                     for (const contributions of hostContributions) {
                         started++;
                         const plugin = contributions.plugin;
                         const id = plugin.metadata.model.id;
                         contributions.state = PluginContributions.State.STARTED;
-                        console.debug(`[${this.clientId}][${id}]: Started plugin.`);
+                        this.logger.debug(`[${this.clientId}][${id}]: Started plugin.`);
                         toDisconnect.push(contributions.push(Disposable.create(() => {
-                            console.debug(`[${this.clientId}][${id}]: Stopped plugin.`);
+                            this.logger.debug(`[${this.clientId}][${id}]: Stopped plugin.`);
                             manager.$stop(id);
                         })));
 
                         this.handlePluginStarted(manager, plugin);
                     }
                 } catch (e) {
-                    console.error(`Failed to start plugins for '${host}' host`, e);
+                    this.logger.error(`Failed to start plugins for '${host}' host`, e);
                 }
             })());
         }

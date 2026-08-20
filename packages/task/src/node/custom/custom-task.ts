@@ -35,7 +35,7 @@ export class CustomTask extends Task {
 
     constructor(
         @inject(TaskManager) taskManager: TaskManager,
-        @inject(ILogger) @named('task') logger: ILogger,
+        @inject(ILogger) @named('task:CustomTask') logger: ILogger,
         @inject(TaskCustomOptions) protected override readonly options: TaskCustomOptions
     ) {
         super(taskManager, logger, options);

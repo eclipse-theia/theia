@@ -3,7 +3,7 @@
   "version": "1.74.0",
   "description": "Theia - Hugging Face Integration",
   "dependencies": {
-    "@huggingface/inference": "^4.13.22",
+    "@huggingface/inference": "^4.13.25",
     "@theia/ai-core": "1.74.0",
     "@theia/core": "1.74.0"
   },

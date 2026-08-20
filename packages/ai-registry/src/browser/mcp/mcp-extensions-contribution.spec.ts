@@ -27,8 +27,8 @@ try {
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { Emitter, MessageService, PreferenceService } from '@theia/core';
-import { HoverService } from '@theia/core/lib/browser';
+import { Emitter, MessageService, PreferenceService, ILogger } from '@theia/core';
+import { ContextMenuRenderer, HoverService } from '@theia/core/lib/browser';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { MCPFrontendService } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { MCPServerEditor, MCPServerEditorImpl, MCPServerEditDialogFactory } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
@@ -37,9 +37,11 @@ import { RegistryFetchService } from '../../common/registry-fetch-service';
 import { RegistrySearchFilter } from '../../common/registry-search-filter';
 import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
 import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from '../../common/mcp/mcp-registry-entry-resolver';
+import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from '../auto-update/registry-auto-update-policy';
 import { MCPInstallService, MCPInstallServiceImpl } from './mcp-install-service';
 import { MCPExtensionsContribution } from './mcp-extensions-contribution';
 import { MCPInstalledEntry, MCPSearchResultEntry } from './mcp-entries';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 after(() => disableJSDOM());
 
@@ -74,6 +76,7 @@ function buildContainer(prefs: FakePreferenceService, fetch: StubRegistryFetchSe
     const container = new Container();
     container.bind(PreferenceService).toConstantValue(prefs);
     container.bind(RegistryFetchService).toConstantValue(fetch as unknown as RegistryFetchService);
+    container.bind(ILogger).to(MockLogger).inSingletonScope();
     container.bind(RegistrySearchFilter).toSelf().inSingletonScope();
     container.bind(MCPRegistryEntryResolverImpl).toSelf().inSingletonScope();
     container.bind(MCPRegistryEntryResolver).toService(MCPRegistryEntryResolverImpl);
@@ -82,6 +85,8 @@ function buildContainer(prefs: FakePreferenceService, fetch: StubRegistryFetchSe
     container.bind(MessageService).toConstantValue({ error: () => undefined } as unknown as MessageService);
     container.bind(MCPFrontendService).toConstantValue({} as unknown as MCPFrontendService);
     container.bind(HoverService).toConstantValue({ requestHover: () => undefined } as unknown as HoverService);
+    // Entries take the renderer to open their gear menu; these tests never click it.
+    container.bind(ContextMenuRenderer).toConstantValue({ render: () => undefined } as unknown as ContextMenuRenderer);
     // The contribution doesn't open dialogs in these tests; bind factories that fail loudly if used.
     container.bind(MCPServerEditDialogFactory).toConstantValue(() => {
         throw new Error('MCPServerEditDialogFactory should not be invoked in these tests');
@@ -91,6 +96,9 @@ function buildContainer(prefs: FakePreferenceService, fetch: StubRegistryFetchSe
     });
     container.bind(MCPServerEditorImpl).toSelf().inSingletonScope();
     container.bind(MCPServerEditor).toService(MCPServerEditorImpl);
+    // The install service clears an artifact's auto-update override when it is uninstalled.
+    container.bind(RegistryAutoUpdatePolicyImpl).toSelf().inSingletonScope();
+    container.bind(RegistryAutoUpdatePolicy).toService(RegistryAutoUpdatePolicyImpl);
     container.bind(MCPInstallServiceImpl).toSelf().inSingletonScope();
     container.bind(MCPInstallService).toService(MCPInstallServiceImpl);
     container.bind(MCPExtensionsContribution).toSelf().inSingletonScope();

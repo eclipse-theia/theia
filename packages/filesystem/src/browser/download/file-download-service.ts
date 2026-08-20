@@ -16,11 +16,10 @@
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { ILogger } from '@theia/core/lib/common/logger';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { addClipboardListener } from '@theia/core/lib/browser/widgets';
-import { nls } from '@theia/core';
+import { ILogger, nls } from '@theia/core';
 import type { FileDownloadData, FileDownloadService } from '../../common/download/file-download';
 
 @injectable()
@@ -29,8 +28,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
     protected anchor: HTMLAnchorElement | undefined;
     protected downloadCounter: number = 0;
 
-    @inject(ILogger)
-    @named('file-download')
+    @inject(ILogger) @named('filesystem:FileDownloadServiceImpl')
     protected readonly logger: ILogger;
 
     @inject(MessageService)

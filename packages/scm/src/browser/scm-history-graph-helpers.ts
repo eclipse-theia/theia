@@ -14,16 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ScmHistoryItemRef, ScmHistoryItemChange } from './scm-provider';
+import { ScmHistoryItemRef, ScmHistoryItemChange, ScmHistoryProvider } from './scm-provider';
 
 /**
- * Returns the CSS color variable for the given lane index.
+ * Returns the CSS color variable for the given color index.
  * Uses Theia's `--theia-scmGraph-*` variables, mirroring the VS Code
  * scm graph color scheme:
- *   lane 0 (current ref)  → historyItemRefColor
- *   lane 1 (remote ref)   → historyItemRemoteRefColor
- *   lane 2 (base ref)     → historyItemBaseRefColor
- *   lane 3–7              → foreground1–5
+ *   0 (current ref)  → historyItemRefColor
+ *   1 (remote ref)   → historyItemRemoteRefColor
+ *   2 (base ref)     → historyItemBaseRefColor
+ *   3–7 (default rotation) → foreground1–5
  */
 export function laneColor(index: number): string {
     switch (index % 8) {
@@ -81,6 +81,81 @@ export function getRepoRelativePath(uri: string, rootUri: string | undefined): s
         return fullPath.slice(rootPrefix.length);
     }
     return fullPath;
+}
+
+/**
+ * Returns the ref-based color index of the given ref (0 = current ref,
+ * 1 = remote ref, 2 = base ref), or `undefined` when the ref is none of
+ * the provider's current history item refs. Mirrors VS Code's scm graph
+ * color map.
+ */
+export function getRefColorIndex(ref: ScmHistoryItemRef, provider: ScmHistoryProvider | undefined): number | undefined {
+    if (!provider) {
+        return undefined;
+    }
+    if (ref.id === provider.currentHistoryItemRef?.id) {
+        return 0;
+    }
+    if (ref.id === provider.currentHistoryItemRemoteRef?.id) {
+        return 1;
+    }
+    if (ref.id === provider.currentHistoryItemBaseRef?.id) {
+        return 2;
+    }
+    return undefined;
+}
+
+/**
+ * Filters which refs get badges in the graph, following VS Code's
+ * `scm.graph.badges` setting: `'all'` shows every ref, `'filter'` shows only
+ * the refs used as the graph's filter — the explicitly picked ref ids, or,
+ * without an explicit filter (auto mode), the current, remote, and base refs.
+ * Without provider information all refs are kept.
+ */
+export function filterRefsForBadges(
+    refs: readonly ScmHistoryItemRef[],
+    provider: ScmHistoryProvider | undefined,
+    badges: 'all' | 'filter',
+    filter?: readonly string[]
+): readonly ScmHistoryItemRef[] {
+    if (badges === 'all') {
+        return refs;
+    }
+    if (filter) {
+        return refs.filter(ref => filter.includes(ref.id));
+    }
+    if (!provider) {
+        return refs;
+    }
+    return refs.filter(ref => getRefColorIndex(ref, provider) !== undefined);
+}
+
+export interface RefBadgePresentation {
+    /** Icon class for the badge icon, e.g. 'codicon-git-branch'. */
+    iconClass: string;
+    /** Ref-based color index (0-2), or `undefined` to use the row color. */
+    colorIndex?: number;
+}
+
+/**
+ * Resolves how a ref badge is presented: the provider-supplied codicon icon
+ * when available (VS Code renders `ref.icon` unconditionally), otherwise a
+ * category fallback with the `target` icon marking the current ref; plus the
+ * ref-based color index.
+ */
+export function getRefBadgePresentation(ref: ScmHistoryItemRef, provider: ScmHistoryProvider | undefined): RefBadgePresentation {
+    const colorIndex = getRefColorIndex(ref, provider);
+    let iconClass: string;
+    if (ref.icon && ref.icon.startsWith('codicon ')) {
+        iconClass = ref.icon.substring('codicon '.length);
+    } else if (isTagRef(ref)) {
+        iconClass = 'codicon-tag';
+    } else if (isRemoteRef(ref)) {
+        iconClass = 'codicon-cloud';
+    } else {
+        iconClass = colorIndex === 0 ? 'codicon-target' : 'codicon-git-branch';
+    }
+    return { iconClass, colorIndex };
 }
 
 export function getRefBadgeClass(ref: ScmHistoryItemRef): string {

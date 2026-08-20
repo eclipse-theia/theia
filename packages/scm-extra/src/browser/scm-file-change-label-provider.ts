@@ -21,6 +21,11 @@ import URI from '@theia/core/lib/common/uri';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 
 @injectable()
+/**
+ * @deprecated since 1.75.0 - superseded by the SCM history graph in `@theia/scm`
+ * and the Timeline view in `@theia/timeline`. This package will be removed in a
+ * future release - see https://github.com/eclipse-theia/theia/issues/17457.
+ */
 export class ScmFileChangeLabelProvider implements LabelProviderContribution {
 
     @inject(LabelProvider)

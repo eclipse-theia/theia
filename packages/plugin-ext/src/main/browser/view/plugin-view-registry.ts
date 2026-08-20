@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, postConstruct, optional } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, optional, named } from '@theia/core/shared/inversify';
 import {
     ApplicationShell, ViewContainer as ViewContainerWidget, WidgetManager, QuickViewService,
     ViewContainerIdentifier, ViewContainerTitleOptions, Widget, FrontendApplicationContribution,
@@ -47,7 +47,7 @@ import { WebviewView, WebviewViewResolver } from '../webview-views/webview-views
 import { WebviewWidget, WebviewWidgetIdentifier } from '../webview/webview';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { generateUuid } from '@theia/core/lib/common/uuid';
-import { nls } from '@theia/core';
+import { nls, ILogger } from '@theia/core';
 import { TheiaDockPanel } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
@@ -101,6 +101,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     @inject(ViewContextKeyService)
     protected readonly viewContextKeys: ViewContextKeyService;
+
+    @inject(ILogger) @named('plugin-ext:PluginViewRegistry')
+    protected readonly logger: ILogger;
 
     protected readonly onDidExpandViewEmitter = new Emitter<string>();
     readonly onDidExpandView = this.onDidExpandViewEmitter.event;
@@ -312,7 +315,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     registerViewContainer(location: string, viewContainer: ViewContainer): Disposable {
         const containerId = `workbench.view.extension.${viewContainer.id}`;
         if (this.viewContainers.has(containerId)) {
-            console.warn('view container such id already registered: ', JSON.stringify(viewContainer));
+            this.logger.warn('view container such id already registered: ', JSON.stringify(viewContainer));
             return Disposable.NULL;
         }
         const toDispose = new DisposableCollection();
@@ -521,7 +524,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             viewContainerId = `workbench.view.extension.${viewContainerId}`;
         }
         if (this.views.has(view.id)) {
-            console.warn('view with such id already registered: ', JSON.stringify(view));
+            this.logger.warn('view with such id already registered: ', JSON.stringify(view));
             return Disposable.NULL;
         }
         const toDispose = new DisposableCollection();
@@ -922,39 +925,39 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         for (const id of this.viewContainers.keys()) {
             promises.push((async () => {
                 await this.initViewContainer(id);
-            })().catch(console.error));
+            })().catch(e => this.logger.error(e)));
         }
         promises.push((async () => {
             const explorer = await this.widgetManager.getWidget(EXPLORER_VIEW_CONTAINER_ID);
             if (explorer instanceof ViewContainerWidget) {
                 await this.prepareViewContainer('explorer', explorer);
             }
-        })().catch(console.error));
+        })().catch(e => this.logger.error(e)));
         promises.push((async () => {
             const scm = await this.widgetManager.getWidget(SCM_VIEW_CONTAINER_ID);
             if (scm instanceof ViewContainerWidget) {
                 await this.prepareViewContainer('scm', scm);
             }
-        })().catch(console.error));
+        })().catch(e => this.logger.error(e)));
         promises.push((async () => {
             const search = await this.widgetManager.getWidget(SEARCH_VIEW_CONTAINER_ID);
             if (search instanceof ViewContainerWidget) {
                 await this.prepareViewContainer('search', search);
             }
-        })().catch(console.error));
+        })().catch(e => this.logger.error(e)));
         promises.push((async () => {
             const test = await this.widgetManager.getWidget(TEST_VIEW_CONTAINER_ID);
             if (test instanceof ViewContainerWidget) {
                 await this.prepareViewContainer('test', test);
             }
-        })().catch(console.error));
+        })().catch(e => this.logger.error(e)));
         promises.push((async () => {
             const debug = await this.widgetManager.getWidget(DebugWidget.ID);
             if (debug instanceof DebugWidget) {
                 const viewContainer = debug['sessionWidget']['viewContainer'];
                 await this.prepareViewContainer('debug', viewContainer);
             }
-        })().catch(console.error));
+        })().catch(e => this.logger.error(e)));
         await Promise.all(promises);
     }
 
@@ -1016,7 +1019,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     registerViewDataProvider(viewId: string, provider: ViewDataProvider): Disposable {
         if (this.viewDataProviders.has(viewId)) {
-            console.error(`data provider for '${viewId}' view is already registered`);
+            this.logger.error(`data provider for '${viewId}' view is already registered`);
             return Disposable.NULL;
         }
         this.viewDataProviders.set(viewId, provider);

@@ -28,7 +28,7 @@ export class TerminalBackendContribution implements MessagingService.Contributio
     @inject(ProcessManager)
     protected readonly processManager: ProcessManager;
 
-    @inject(ILogger) @named('terminal')
+    @inject(ILogger) @named('terminal:TerminalBackendContribution')
     protected readonly logger: ILogger;
 
     configure(service: MessagingService): void {

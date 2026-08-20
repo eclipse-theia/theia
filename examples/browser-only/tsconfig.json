@@ -126,9 +126,6 @@
       "path": "../../packages/scm"
     },
     {
-      "path": "../../packages/scm-extra"
-    },
-    {
       "path": "../../packages/search-in-workspace"
     },
     {

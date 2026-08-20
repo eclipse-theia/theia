@@ -49,6 +49,7 @@ import { ContextVariablePicker } from './context-variable-picker';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 import { IModelDeltaDecoration } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
+import { SuggestController } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggestController';
 import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-history';
 import { ContextFileValidationService, FileValidationResult, FileValidationState } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { PendingImageRegistry } from '@theia/ai-chat/lib/browser/pending-image-registry';
@@ -301,7 +302,7 @@ export class AIChatInputWidget extends ReactWidget {
                 });
                 this.savedReasoning = { level };
             } catch (error) {
-                console.error('Failed to persist reasoning selection:', error);
+                this.logger.error('Failed to persist reasoning selection:', error);
             }
         }
 
@@ -382,7 +383,7 @@ export class AIChatInputWidget extends ReactWidget {
                             break;
                         }
                     } catch (error) {
-                        console.warn('Failed to resolve language model for reasoning support:', error);
+                        this.logger.warn('Failed to resolve language model for reasoning support:', error);
                     }
                 }
             }
@@ -814,7 +815,7 @@ export class AIChatInputWidget extends ReactWidget {
 
             this.update();
         } catch (error) {
-            console.error('Failed to save capability selections to settings:', error);
+            this.logger.error('Failed to save capability selections to settings:', error);
         }
     }
 
@@ -1213,15 +1214,15 @@ export class AIChatInputWidget extends ReactWidget {
         const selected = await this.messageService.warn(message, summarizeAction, newSessionAction, openSettingsAction);
         if (selected === summarizeAction) {
             this.commandService.executeCommand(ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id).catch(error => {
-                console.error(`Failed to execute '${ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id}' from token usage warning`, error);
+                this.logger.error(`Failed to execute '${ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id}' from token usage warning`, error);
             });
         } else if (selected === newSessionAction) {
             this.commandService.executeCommand(AI_CHAT_HOME.id).catch(error => {
-                console.error(`Failed to execute '${AI_CHAT_HOME.id}' from token usage warning`, error);
+                this.logger.error(`Failed to execute '${AI_CHAT_HOME.id}' from token usage warning`, error);
             });
         } else if (selected === openSettingsAction) {
             this.commandService.executeCommand(CommonCommands.OPEN_PREFERENCES.id, CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE).catch(error => {
-                console.error(`Failed to execute '${CommonCommands.OPEN_PREFERENCES.id}' from token usage warning`, error);
+                this.logger.error(`Failed to execute '${CommonCommands.OPEN_PREFERENCES.id}' from token usage warning`, error);
             });
         }
     }
@@ -1400,6 +1401,15 @@ export class AIChatInputWidget extends ReactWidget {
             }
             this.scheduleUpdateReceivingAgent();
         }));
+
+        // Force the suggest widget above the input, otherwise Monaco measures the available
+        // space against the document body and opens it downward behind the bottom panel when
+        // the chat is in the main area. Assert this on every trigger because the inline
+        // completions controller resets the flag whenever there is no ghost text.
+        const suggestController = SuggestController.get(editor);
+        if (suggestController) {
+            this.toDispose.push(suggestController.model.onDidTrigger(() => suggestController.forceRenderingAbove()));
+        }
 
         if (editor.hasWidgetFocus()) {
             this.chatInputFocusKey.set(true);

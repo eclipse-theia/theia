@@ -21,6 +21,7 @@ import { Container } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalBlock, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { AiTerminalCommandBlockVariableContribution } from './ai-terminal-command-block-variable';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 function createMockTerminal(overrides: Partial<{
     bufferLines: string[];
@@ -66,7 +67,7 @@ describe('AiTerminalCommandBlockVariableContribution.resolve()', () => {
 
         container.bind(TerminalService).toConstantValue(mockTerminalService as unknown as TerminalService);
         container.bind(QuickInputService).toConstantValue({} as unknown as QuickInputService);
-        container.bind(ILogger).toConstantValue({ warn: () => { } } as unknown as ILogger);
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
         container.bind(AiTerminalCommandBlockVariableContribution).toSelf();
         contribution = container.get(AiTerminalCommandBlockVariableContribution);
     });

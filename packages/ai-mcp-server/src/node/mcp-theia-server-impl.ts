@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -30,7 +30,7 @@ import { MCPFrontendContributionManager } from './mcp-frontend-contribution-mana
 @injectable()
 export class MCPTheiaServerImpl implements MCPTheiaServer, BackendApplicationContribution {
 
-    @inject(ILogger)
+    @inject(ILogger) @named('ai-mcp-server:MCPTheiaServerImpl')
     protected readonly logger: ILogger;
 
     @inject(MCPBackendContributionManager)

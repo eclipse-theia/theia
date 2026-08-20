@@ -12751,7 +12751,12 @@ export module '@theia/plugin' {
         readonly timestamp?: number;
         readonly statistics?: SourceControlHistoryItemStatistics;
         readonly references?: readonly SourceControlHistoryItemRef[];
-        readonly tooltip?: string | MarkdownString;
+        /**
+         * Hover content for the history item. When several markdown strings are given, they are
+         * rendered as separate sections. `command:` links are only executed if the containing
+         * markdown string declares them via its `isTrusted` option.
+         */
+        readonly tooltip?: string | MarkdownString | MarkdownString[];
     }
 
     export interface SourceControlHistoryItemChange {

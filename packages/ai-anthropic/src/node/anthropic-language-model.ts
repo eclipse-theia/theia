@@ -60,6 +60,24 @@ interface ToolCallback {
     args: string;
 }
 
+/**
+ * Anthropic rejects replayed thinking blocks without content ('each thinking block must contain thinking')
+ * or without a signature. Both can reach us from API-compatible endpoints that omit thinking text or
+ * signature deltas, and from streams cancelled before the signature arrived.
+ */
+const isReplayableThinking = (thinking: string | undefined, signature: string | undefined): boolean =>
+    !!thinking?.trim() && !!signature;
+
+/** The tool loop replays streamed messages raw (bypassing {@link createMessageContent}); drop thinking blocks Anthropic would reject. */
+const dropUnreplayableThinking = (content: Message['content']): Message['content'] =>
+    content.filter(block => {
+        if (block.type === 'thinking' && !isReplayableThinking(block.thinking, block.signature)) {
+            console.debug('Anthropic: dropping thinking block from tool loop replay that cannot be replayed (missing thinking text or signature)');
+            return false;
+        }
+        return true;
+    });
+
 const createMessageContent = (message: LanguageModelMessage, compactionEnabled: boolean): MessageParam['content'] => {
     if (LanguageModelMessage.isCompactionMessage(message)) {
         // Only replay our own provider's compaction blocks, and only when the request will use the beta endpoint.
@@ -72,6 +90,11 @@ const createMessageContent = (message: LanguageModelMessage, compactionEnabled: 
     } else if (LanguageModelMessage.isTextMessage(message)) {
         return [{ type: 'text', text: message.text }];
     } else if (LanguageModelMessage.isThinkingMessage(message)) {
+        // Returning [] drops an unreplayable thinking block so the surrounding history still replays.
+        if (!isReplayableThinking(message.thinking, message.signature)) {
+            console.debug('Anthropic: dropping thinking block from history that cannot be replayed (missing thinking text or signature)');
+            return [];
+        }
         return [{ signature: message.signature, thinking: message.thinking, type: 'thinking' }];
     } else if (LanguageModelMessage.isToolUseMessage(message)) {
         return [{ id: message.id, input: message.input, name: message.name, type: 'tool_use' }];
@@ -611,7 +634,8 @@ export class AnthropicModel implements LanguageModel {
                         cancellationToken,
                         [
                             ...(toolMessages ?? []),
-                            ...currentMessages.map(m => ({ role: m.role, content: m.content })),
+                            ...currentMessages.map(m => ({ role: m.role, content: dropUnreplayableThinking(m.content) }))
+                                .filter(m => m.content.length > 0),
                             toolResponseMessage
                         ]
                     );

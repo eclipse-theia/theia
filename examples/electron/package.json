@@ -89,7 +89,6 @@
     "@theia/remote-wsl": "1.74.0",
     "@theia/scanoss": "1.74.0",
     "@theia/scm": "1.74.0",
-    "@theia/scm-extra": "1.74.0",
     "@theia/search-in-workspace": "1.74.0",
     "@theia/secondary-window": "1.74.0",
     "@theia/task": "1.74.0",
@@ -121,6 +120,6 @@
   },
   "devDependencies": {
     "@theia/cli": "1.74.0",
-    "electron": "42.3.0"
+    "electron": "42.8.1"
   }
 }

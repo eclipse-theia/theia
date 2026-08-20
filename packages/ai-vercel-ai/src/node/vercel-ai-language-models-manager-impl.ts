@@ -30,7 +30,7 @@ export class VercelAiLanguageModelsManagerImpl implements VercelAiLanguageModels
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
 
-    @inject(ILogger) @named('vercel-ai')
+    @inject(ILogger) @named('ai-vercel-ai:VercelAiLanguageModelsManagerImpl')
     protected readonly logger: ILogger;
 
     @inject(VercelAiLanguageModelFactory)

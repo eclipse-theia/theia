@@ -22,7 +22,7 @@
 import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { Emitter, Event, ILogger, URI, generateUuid } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { inject, injectable, optional } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
 import { ChatAgentService, DefaultChatAgentId, FallbackChatAgentId } from './chat-agent-service';
 import { ChatAgent, ChatAgentLocation, ChatSessionContext } from './chat-agents';
 import {
@@ -184,8 +184,8 @@ export class ChatServiceImpl implements ChatService {
     @inject(AIVariableService)
     protected variableService: AIVariableService;
 
-    @inject(ILogger)
-    protected logger: ILogger;
+    @inject(ILogger) @named('ai-chat:ChatServiceImpl')
+    protected readonly logger: ILogger;
 
     @inject(ChatSessionStore) @optional()
     protected sessionStore: ChatSessionStore | undefined;
@@ -200,6 +200,9 @@ export class ChatServiceImpl implements ChatService {
     protected toolInvocationRegistry: ToolInvocationRegistry;
 
     protected _sessions: ChatSessionInternal[] = [];
+
+    /** In-flight session restores by id, so concurrent requests for the same session share one restore. */
+    protected readonly pendingSessionRestores = new Map<string, Promise<ChatSession | undefined>>();
 
     getSessions(): ChatSessionInternal[] {
         return [...this._sessions];
@@ -532,7 +535,21 @@ export class ChatServiceImpl implements ChatService {
             this.logger.debug('Session already loaded', { sessionId });
             return existing;
         }
+        // Share one in-flight restore per session id: restoring a large session takes long
+        // enough that a second request (e.g. a double-click in the session list) can arrive
+        // mid-restore. Without this guard both restores register the session, and
+        // setActiveSession then marks both copies active, breaking getActiveSession()
+        // (and with it e.g. the chat Home button) until the page is reloaded.
+        let pending = this.pendingSessionRestores.get(sessionId);
+        if (!pending) {
+            pending = this.restoreSession(sessionId)
+                .finally(() => this.pendingSessionRestores.delete(sessionId));
+            this.pendingSessionRestores.set(sessionId, pending);
+        }
+        return pending;
+    }
 
+    protected async restoreSession(sessionId: string): Promise<ChatSession | undefined> {
         if (!this.sessionStore) {
             this.logger.debug('Session store not available, cannot restore', { sessionId });
             return undefined;

@@ -292,6 +292,9 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
         onSignInPromptCancel?: (message: ProgressMessage) => void;
     }): TestMcpFrontendApplicationContribution {
         const contribution = new TestMcpFrontendApplicationContribution();
+
+        (contribution as unknown as { logger: MockLogger }).logger = new MockLogger();
+
         const runningServers = [...(options.runningServers ?? [])];
         // Default active set = running set. Tests that exercise in-flight (Starting/Connecting/
         // AuthenticationRequired) behavior pass `activeServers` explicitly.
@@ -424,46 +427,43 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
 
     describe('enqueueServerChanges', () => {
         it('surfaces preference-change failures via the message service and keeps the queue healthy', async () => {
-            // Without messageService.warn, a failed preference apply only writes to console.error and the
+            // Without messageService.warn, a failed preference apply only writes to the log and the
             // user has no UI signal that their edit did not land. The queue must also stay healthy so a
             // subsequent successful edit applies; pinning both invariants here.
-            const originalConsoleError = console.error;
-            console.error = () => { /* suppress expected diagnostic */ };
-            try {
-                const contribution = new TestMcpFrontendApplicationContribution();
-                const warnings: string[] = [];
-                (contribution as unknown as { messageService: Partial<MessageService> }).messageService = {
-                    warn: async (message: string) => { warnings.push(message); return undefined; }
-                };
-                let addCallCount = 0;
-                (contribution as unknown as { manager: Partial<MCPServerManager> }).manager = {
-                    addOrUpdateServer: async () => {
-                        addCallCount++;
-                        if (addCallCount === 1) {
-                            throw new Error('first apply fails');
-                        }
-                    },
-                    removeServer: async () => { /* not used */ }
-                };
-                (contribution as unknown as { frontendMCPService: Partial<MCPFrontendService> }).frontendMCPService = {
-                    getStartedServers: async () => []
-                };
-                (contribution as unknown as { workspaceTrustService: Partial<WorkspaceTrustService> }).workspaceTrustService = {
-                    getWorkspaceTrust: async () => true,
-                    refreshRestrictedModeIndicator: () => { /* tracked elsewhere */ }
-                };
+            const contribution = new TestMcpFrontendApplicationContribution();
 
-                await contribution.testEnqueueServerChanges({ asana: { command: 'node' } });
+            (contribution as unknown as { logger: MockLogger }).logger = new MockLogger();
 
-                expect(warnings).to.have.length(1);
-                expect(warnings[0]).to.contain('first apply fails');
+            const warnings: string[] = [];
+            (contribution as unknown as { messageService: Partial<MessageService> }).messageService = {
+                warn: async (message: string) => { warnings.push(message); return undefined; }
+            };
+            let addCallCount = 0;
+            (contribution as unknown as { manager: Partial<MCPServerManager> }).manager = {
+                addOrUpdateServer: async () => {
+                    addCallCount++;
+                    if (addCallCount === 1) {
+                        throw new Error('first apply fails');
+                    }
+                },
+                removeServer: async () => { /* not used */ }
+            };
+            (contribution as unknown as { frontendMCPService: Partial<MCPFrontendService> }).frontendMCPService = {
+                getStartedServers: async () => []
+            };
+            (contribution as unknown as { workspaceTrustService: Partial<WorkspaceTrustService> }).workspaceTrustService = {
+                getWorkspaceTrust: async () => true,
+                refreshRestrictedModeIndicator: () => { /* tracked elsewhere */ }
+            };
 
-                // Queue still healthy: a second enqueue applies (addCallCount increments to 2 without throwing).
-                await contribution.testEnqueueServerChanges({ asana: { command: 'node' } });
-                expect(addCallCount).to.equal(2);
-            } finally {
-                console.error = originalConsoleError;
-            }
+            await contribution.testEnqueueServerChanges({ asana: { command: 'node' } });
+
+            expect(warnings).to.have.length(1);
+            expect(warnings[0]).to.contain('first apply fails');
+
+            // Queue still healthy: a second enqueue applies (addCallCount increments to 2 without throwing).
+            await contribution.testEnqueueServerChanges({ asana: { command: 'node' } });
+            expect(addCallCount).to.equal(2);
         });
     });
 

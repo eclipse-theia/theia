@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger, MaybePromise, nls, URI } from '@theia/core';
 import {
     AIVariable, AIVariableContext, AIVariableContribution, AIVariableResolutionRequest,
@@ -54,7 +54,7 @@ export class SkillsVariableContribution implements AIVariableContribution, AIVar
     @inject(SkillService)
     protected readonly skillService: SkillService;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('ai-core:SkillsVariableContribution')
     protected readonly logger: ILogger;
 
     @inject(FileService)

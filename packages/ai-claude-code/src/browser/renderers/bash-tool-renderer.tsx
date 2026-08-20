@@ -18,12 +18,12 @@ import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-res
 import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { codicon } from '@theia/core/lib/browser';
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
 import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
-import { nls } from '@theia/core';
+import { nls, ILogger } from '@theia/core';
 
 interface BashToolInput {
     command: string;
@@ -33,6 +33,9 @@ interface BashToolInput {
 
 @injectable()
 export class BashToolRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
+
+    @inject(ILogger) @named('ai-claude-code:BashToolRenderer')
+    protected readonly logger: ILogger;
 
     canHandle(response: ChatResponseContent): number {
         if (ClaudeCodeToolCallChatResponseContent.is(response) && response.name === 'Bash') {
@@ -46,7 +49,7 @@ export class BashToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
             const input = JSON.parse(response.arguments || '{}') as BashToolInput;
             return <BashToolComponent input={input} />;
         } catch (error) {
-            console.warn('Failed to parse Bash tool input:', error);
+            this.logger.warn('Failed to parse Bash tool input:', error);
             return <div className="claude-code-tool error">{nls.localize('theia/ai/claude-code/failedToParseBashToolData', 'Failed to parse Bash tool data')}</div>;
         }
     }

@@ -19,6 +19,8 @@ import * as fs from 'fs-extra';
 import * as cp from 'child_process';
 import * as semver from 'semver';
 import { ApplicationPackage, ApplicationPackageOptions } from '@theia/application-package';
+import { prepareBrowserOnlyPlugins } from './browser-only/prepare-browser-only-plugins';
+import { writeBrowserOnlyExtensionsList } from './browser-only/write-browser-only-extensions-list';
 import { BundlerGenerator, FrontendGenerator, BackendGenerator } from './generator';
 import { ApplicationProcess } from './application-process';
 import { GeneratorOptions } from './generator/abstract-generator';
@@ -111,6 +113,15 @@ export class ApplicationPackageManager {
     async copy(): Promise<void> {
         await fs.ensureDir(this.pck.lib('frontend'));
         await fs.copy(this.pck.frontend('index.html'), this.pck.lib('frontend', 'index.html'));
+
+        if (this.pck.isBrowserOnly()) {
+            await this.prepareBrowserOnly();
+        }
+    }
+
+    protected async prepareBrowserOnly(): Promise<void> {
+        await prepareBrowserOnlyPlugins(this.pck);
+        await writeBrowserOnlyExtensionsList(this.pck);
     }
 
     async build(args: string[] = [], options: GeneratorOptions = {}): Promise<void> {
