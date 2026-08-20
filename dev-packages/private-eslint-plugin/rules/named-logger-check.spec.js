@@ -264,20 +264,16 @@ describe('derivePackageName', () => {
         const fsImpl = fakePackageJsonFs({
             [path.join('packages', 'ai-hugging-face', 'package.json')]: { name: '@theia/ai-huggingface' }
         });
-        assert.strictEqual(
-            derivePackageName(path.join('packages', 'ai-hugging-face', 'src', 'browser', 'foo.ts'), fsImpl),
-            'ai-huggingface'
-        );
+        const filename = path.join('packages', 'ai-hugging-face', 'src', 'browser', 'foo.ts').replace(/\\/g, '/');
+        assert.strictEqual(derivePackageName(filename, fsImpl), 'ai-huggingface');
     });
 
     it('is not fooled by an earlier "packages" segment in the path', () => {
         const fsImpl = fakePackageJsonFs({
             [path.join('~', 'packages', 'theia', 'packages', 'core', 'package.json')]: { name: '@theia/core' }
         });
-        assert.strictEqual(
-            derivePackageName(path.join('~', 'packages', 'theia', 'packages', 'core', 'src', 'foo.ts'), fsImpl),
-            'core'
-        );
+        const filename = path.join('~', 'packages', 'theia', 'packages', 'core', 'src', 'foo.ts').replace(/\\/g, '/');
+        assert.strictEqual(derivePackageName(filename, fsImpl), 'core');
     });
 
     it('returns undefined when no package.json is found', () => {
