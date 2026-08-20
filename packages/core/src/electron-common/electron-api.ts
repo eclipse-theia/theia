@@ -106,6 +106,14 @@ export interface TheiaCoreAPI {
     useNativeElements: boolean;
 
     updateRecentWorkspaces(workspaceUris: string[], categoryName: string): void;
+
+    /**
+     * Redeems the CLI arguments of a *forwarded* launch for the calling window. The main process
+     * identifies the window by the IPC sender and returns the `argv` it stored for it (or
+     * `undefined` for a cold-start window). The arguments travel over this authenticated IPC channel
+     * instead of the window URL; see `LaunchArgsStore` for the rationale.
+     */
+    redeemLaunchArgs(): Promise<string[] | undefined>;
 }
 
 declare global {
@@ -113,6 +121,8 @@ declare global {
         electronTheiaCore: TheiaCoreAPI
     }
 }
+
+export const CHANNEL_REDEEM_LAUNCH_ARGS = 'RedeemLaunchArgs';
 
 export const CHANNEL_WC_METADATA = 'WebContentMetadata';
 export const CHANNEL_SET_MENU = 'SetMenu';

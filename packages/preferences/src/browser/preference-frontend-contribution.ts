@@ -16,7 +16,9 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { CliPreferences } from '../common/cli-preferences';
+import { LaunchArgv } from '@theia/core/lib/common/window';
+import { WindowLaunchArgs } from '@theia/core/lib/browser/window/window-launch-args';
+import { CliPreferences, CliPreferenceEntry } from '../common/cli-preferences';
 import { PreferenceService, PreferenceScope } from '@theia/core/lib/common/preferences';
 
 @injectable()
@@ -27,23 +29,15 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(WindowLaunchArgs)
+    protected readonly launchArgs: WindowLaunchArgs;
+
     onStart(): void {
         this.applyCliPreferences();
     }
 
     protected async applyCliPreferences(): Promise<void> {
-        // Fetch both buckets in parallel; both are RPC hops to the same backend and
-        // can overlap with the preference service initialising its providers.
-        const [session, persistent] = await Promise.all([
-            this.CliPreferences.getSessionPreferences().catch(e => {
-                console.warn('Failed to fetch --session-preference values:', e);
-                return [] as [string, unknown][];
-            }),
-            this.CliPreferences.getPreferences().catch(e => {
-                console.warn('Failed to fetch --set-preference values:', e);
-                return [] as [string, unknown][];
-            })
-        ]);
+        const { session, persistent } = await this.resolveCliPreferences();
 
         // `preferenceService.set()` needs the target provider registered in the providers
         // map, which only happens once `initializeProviders()` has walked every scope and
@@ -64,6 +58,48 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
         }
 
         await this.applyAll(persistent, PreferenceScope.User);
+    }
+
+    /**
+     * Resolves the CLI-provided preferences to apply to this window.
+     *
+     * The shared backend reflects the original cold-start launch (it cannot distinguish between
+     * windows), so it supplies the process-wide CLI preferences. A forwarded (second-instance)
+     * window additionally carries its own arguments, redeemed here from the trusted main process, and
+     * layers them on top, overriding by key. Merging (rather than replacing) means a plain
+     * second-instance window keeps the process-wide values instead of dropping them, while an attach
+     * window still gets its own overrides.
+     */
+    protected async resolveCliPreferences(): Promise<{ session: [string, unknown][], persistent: [string, unknown][] }> {
+        // Fetch both buckets in parallel; both are RPC hops to the same backend and
+        // can overlap with the preference service initialising its providers.
+        const [session, persistent] = await Promise.all([
+            this.CliPreferences.getSessionPreferences().catch(e => {
+                console.warn('Failed to fetch --session-preference values:', e);
+                return [] as [string, unknown][];
+            }),
+            this.CliPreferences.getPreferences().catch(e => {
+                console.warn('Failed to fetch --set-preference values:', e);
+                return [] as [string, unknown][];
+            })
+        ]);
+        const forwarded = await this.launchArgs.getLaunchArgs();
+        if (forwarded === undefined) {
+            return { session, persistent };
+        }
+        return {
+            session: this.mergeEntries(session, CliPreferenceEntry.parseAll(LaunchArgv.getValues(forwarded, 'session-preference'))),
+            persistent: this.mergeEntries(persistent, CliPreferenceEntry.parseAll(LaunchArgv.getValues(forwarded, 'set-preference')))
+        };
+    }
+
+    /** Overlays `overrides` onto `base`, later entries winning per key while preserving order (base first). */
+    protected mergeEntries(base: ReadonlyArray<[string, unknown]>, overrides: ReadonlyArray<[string, unknown]>): [string, unknown][] {
+        const merged = new Map<string, unknown>();
+        for (const [key, value] of [...base, ...overrides]) {
+            merged.set(key, value);
+        }
+        return [...merged];
     }
 
     /**

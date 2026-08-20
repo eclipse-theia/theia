@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 Typefox and others.
+// Copyright (C) 2026 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,12 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export interface ContainerOutputProvider {
-    onRemoteOutput(output: string): void;
-    /**
-     * Receives curated status messages (from {@link RemoteStatusReport}) describing the current
-     * attach phase, e.g. "Starting application on remote...". Used to drive the "attaching" screen.
-     * Optional so that existing implementers of this interface keep compiling.
-     */
-    onRemoteStatus?(message: string): void;
-}
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
+import { DevContainerClaimContribution } from './dev-container-claim-contribution';
+
+export default new ContainerModule(bind => {
+    bind(DevContainerClaimContribution).toSelf().inSingletonScope();
+    bind(ElectronMainApplicationContribution).toService(DevContainerClaimContribution);
+});

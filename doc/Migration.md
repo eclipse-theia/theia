@@ -9,6 +9,14 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 
 ### General
 
+_Electron launch-argument forwarding APIs_:
+
+Forwarding a second launch's CLI arguments to the new window added a few APIs that adopters implementing the affected extension points need to be aware of:
+
+- `TheiaCoreAPI` (the Electron preload API, `@theia/core/lib/electron-common/electron-api`) gained a `redeemLaunchArgs(): Promise<string[] | undefined>` member. Adopters with a custom preload or a test double that implements/stubs `TheiaCoreAPI` must provide it.
+- `ElectronMainApplicationContribution` gained an optional `claimsWindow?(argv: string[]): MaybePromise<boolean>` hook. A contribution returning `true` opens an empty window for that launch and flags it via the `windowClaimed` query parameter (`WINDOW_CLAIMED_PARAM`), so the responsible frontend contribution can show a placeholder until the window reloads. `@theia/dev-container` uses this to claim `--attach-container` launches, from a new `electronMain` entry point (`lib/electron-main/dev-container-electron-main-module`) that adopters assembling their extension list manually must include.
+- New replaceable service `WindowLaunchArgs` (interface + symbol, `@theia/core/lib/browser/window/window-launch-args`) and new contribution point `RemoteCliArgsContribution` (`@theia/core/lib/common/remote-cli-args-contribution`) provide the redeemed per-window arguments and let extensions contribute extra CLI arguments to a remote backend.
+
 _ESBuild_:
 
 In addition to `webpack`, Theia is now also supporting [`ESBuild`](https://esbuild.github.io/) for bundling the application (frontend+backend). We will soon deprecate and then remove the `webpack` bundling option. Adopters can already use the ESBuild based bundler simply by deleting their `webpack.config.js`, which will automatically generate an `esbuild.mjs` file upon the next build.
