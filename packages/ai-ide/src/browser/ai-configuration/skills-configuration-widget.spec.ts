@@ -30,6 +30,7 @@ import { Emitter, URI } from '@theia/core';
 import { OpenHandler, OpenerService } from '@theia/core/lib/browser';
 import { Skill } from '@theia/ai-core/lib/common/skill';
 import { SkillService } from '@theia/ai-core/lib/browser/skill-service';
+import { AgentPluginUiBridge, InstalledAgentPluginInfo } from '@theia/ai-core/lib/browser/agent-plugin-ui-bridge';
 import { PromptFragment, PromptService } from '@theia/ai-core/lib/common/prompt-service';
 import { Agent, AgentService } from '@theia/ai-core';
 
@@ -41,6 +42,8 @@ disableJSDOM();
 describe('AISkillsConfigurationWidget', () => {
     let host: HTMLElement;
     let widgets: AISkillsConfigurationWidget[];
+    /** Records the plugin ids the widget asked to reveal, so a test can assert on the reveal action. */
+    let revealedPluginIds: string[];
 
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -56,6 +59,7 @@ describe('AISkillsConfigurationWidget', () => {
         host = document.createElement('div');
         document.body.appendChild(host);
         widgets = [];
+        revealedPluginIds = [];
     });
 
     afterEach(() => {
@@ -98,17 +102,35 @@ describe('AISkillsConfigurationWidget', () => {
         };
     }
 
+    /** A plugin as the bridge knows it, plus the qualifier its contributed skill root carries. */
+    type InstalledPlugin = InstalledAgentPluginInfo & { qualifier: string };
+
+    function createMockAgentPluginUiBridge(plugins: InstalledPlugin[] = []): AgentPluginUiBridge {
+        const onDidChangeEmitter = new Emitter<void>();
+        return {
+            getPlugin: (pluginId: string) => plugins.find(plugin => plugin.pluginId === pluginId),
+            getPluginByQualifier: (qualifier: string) => plugins.find(plugin => plugin.qualifier === qualifier),
+            revealPlugin: (pluginId: string) => { revealedPluginIds.push(pluginId); },
+            onDidChange: onDidChangeEmitter.event
+        };
+    }
+
     function createWidget(
         skills: Skill[] = [],
         commands: PromptFragment[] = [],
         agents: Agent[] = [],
-        openerService?: Partial<OpenerService>
+        openerService?: Partial<OpenerService>,
+        installedPlugins?: InstalledPlugin[]
     ): AISkillsConfigurationWidget {
         const widget = new AISkillsConfigurationWidget();
         (widget as unknown as { skillService: SkillService }).skillService = createMockSkillService(skills) as SkillService;
         (widget as unknown as { promptService: PromptService }).promptService = createMockPromptService(commands) as PromptService;
         (widget as unknown as { agentService: AgentService }).agentService = createMockAgentService(agents) as AgentService;
         (widget as unknown as { openerService: OpenerService }).openerService = (openerService ?? {}) as OpenerService;
+        // Left unset when no plugins are passed, so the default is the `@theia/ai-registry`-less product.
+        if (installedPlugins) {
+            (widget as unknown as { agentPluginUiBridge: AgentPluginUiBridge }).agentPluginUiBridge = createMockAgentPluginUiBridge(installedPlugins);
+        }
         (widget as unknown as { init: () => void }).init();
         host.appendChild(widget.node);
         widgets.push(widget);
@@ -130,8 +152,8 @@ describe('AISkillsConfigurationWidget', () => {
 
     it('renders multiple skills with correct name/description/location', () => {
         const skills: Skill[] = [
-            { name: 'Skill A', description: 'Desc A', location: '/path/a' } as Skill,
-            { name: 'Skill B', description: 'Desc B', location: '/path/b' } as Skill
+            { name: 'Skill A', qualifiedName: 'Skill A', description: 'Desc A', location: '/path/a' } as Skill,
+            { name: 'Skill B', qualifiedName: 'Skill B', description: 'Desc B', location: '/path/b' } as Skill
         ];
 
         const widget = createWidget(skills);
@@ -154,7 +176,7 @@ describe('AISkillsConfigurationWidget', () => {
 
     it('clicking "Open" calls opener with URI.fromFilePath(skill.location)', async () => {
         const skills: Skill[] = [
-            { name: 'Skill A', description: 'Desc A', location: '/path/a' } as Skill
+            { name: 'Skill A', qualifiedName: 'Skill A', description: 'Desc A', location: '/path/a' } as Skill
         ];
 
         let openedUri: URI | undefined;
@@ -178,6 +200,92 @@ describe('AISkillsConfigurationWidget', () => {
         await Promise.resolve();
 
         expect(openedUri?.toString()).to.equal(URI.fromFilePath('/path/a').toString());
+    });
+
+    it('renders no plugin provenance for a skill that does not come from a plugin', () => {
+        const skills: Skill[] = [
+            { name: 'Skill A', qualifiedName: 'Skill A', description: 'Desc A', location: '/path/a' } as Skill
+        ];
+
+        const widget = createWidget(skills);
+        renderWidget(widget);
+
+        expect(host.querySelector('.ai-skill-plugin-origin')).to.be.null;
+    });
+
+    it('renders the qualified name and a "via <plugin>" affordance for a skill owned by a plugin', () => {
+        const skills: Skill[] = [
+            {
+                name: 'query-builder',
+                qualifiedName: 'bigquery:query-builder',
+                description: 'Build SQL',
+                location: '/plugins/bigquery/skills/query-builder/SKILL.md'
+            } as Skill
+        ];
+        const installed: InstalledPlugin[] = [{ pluginId: 'io.example/bq', name: 'BigQuery Data Analytics', qualifier: 'bigquery' }];
+
+        const widget = createWidget(skills, [], [], undefined, installed);
+        renderWidget(widget);
+
+        // Scoped to the body: the header cell carries the same class and comes first in document order.
+        const nameColumn = host.querySelector('tbody tr .skill-name-column');
+        expect(nameColumn?.textContent).to.contain('bigquery:query-builder');
+        // The name comes from the bridge; the skill itself only carries the qualifier.
+        expect(nameColumn?.querySelector('.ai-skill-plugin-origin')?.textContent).to.contain('BigQuery Data Analytics');
+    });
+
+    it('renders no affordance when the qualifier belongs to no installed plugin, rather than a bare qualifier', () => {
+        const skills: Skill[] = [
+            {
+                name: 'query-builder',
+                qualifiedName: 'bigquery:query-builder',
+                description: 'Build SQL',
+                location: '/plugins/bigquery/skills/query-builder/SKILL.md'
+            } as Skill
+        ];
+
+        const widget = createWidget(skills, [], [], undefined, []);
+        renderWidget(widget);
+
+        expect(host.querySelector('tbody tr .skill-name-column')?.textContent).to.contain('bigquery:query-builder');
+        expect(host.querySelector('.ai-skill-plugin-origin')).to.be.null;
+    });
+
+    it('renders no affordance when no bridge is bound, i.e. without `@theia/ai-registry`', () => {
+        const skills: Skill[] = [
+            {
+                name: 'query-builder',
+                qualifiedName: 'bigquery:query-builder',
+                description: 'Build SQL',
+                location: '/plugins/bigquery/skills/query-builder/SKILL.md'
+            } as Skill
+        ];
+
+        const widget = createWidget(skills);
+        renderWidget(widget);
+
+        expect(host.querySelector('.ai-skill-plugin-origin')).to.be.null;
+    });
+
+    it('clicking the "via <plugin>" affordance reveals the owning plugin', () => {
+        const skills: Skill[] = [
+            {
+                name: 'query-builder',
+                qualifiedName: 'bigquery:query-builder',
+                description: 'Build SQL',
+                location: '/plugins/bigquery/skills/query-builder/SKILL.md'
+            } as Skill
+        ];
+        const installed: InstalledPlugin[] = [{ pluginId: 'io.example/bq', name: 'BigQuery', qualifier: 'bigquery' }];
+
+        const widget = createWidget(skills, [], [], undefined, installed);
+        renderWidget(widget);
+
+        const origin = host.querySelector('.ai-skill-plugin-origin') as HTMLButtonElement;
+        expect(origin).to.not.be.null;
+        React.act(() => origin.click());
+
+        expect(revealedPluginIds).to.deep.equal(['io.example/bq']);
     });
 
     // --- Slash commands section tests ---

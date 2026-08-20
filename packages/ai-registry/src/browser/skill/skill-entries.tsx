@@ -62,7 +62,7 @@ export class SkillInstalledEntry implements TreeElement, RegistryEntryContext {
     }
 
     get autoUpdateId(): string | undefined {
-        return autoUpdateId(this.state, this.matchedEntry?.skillId);
+        return RegistryEntryContext.autoUpdateId(this.state, this.matchedEntry?.skillId ?? this.local.skillId);
     }
 
     render(): React.ReactNode {
@@ -100,7 +100,7 @@ export class SkillSearchResultEntry implements TreeElement, RegistryEntryContext
     }
 
     get autoUpdateId(): string | undefined {
-        return autoUpdateId(this.state, this.entry.skillId);
+        return RegistryEntryContext.autoUpdateId(this.state, this.entry.skillId);
     }
 
     render(): React.ReactNode {
@@ -115,14 +115,6 @@ export class SkillSearchResultEntry implements TreeElement, RegistryEntryContext
             />
         );
     }
-}
-
-/**
- * An auto-update policy is only meaningful for a skill that is installed and linked to a live
- * registry entry - which excludes drifted skills, as the auto-updater does.
- */
-function autoUpdateId(state: SkillClassificationResult, skillId: string | undefined): string | undefined {
-    return state.kind === 'installed-from-registry' ? skillId : undefined;
 }
 
 interface SkillCardProps {

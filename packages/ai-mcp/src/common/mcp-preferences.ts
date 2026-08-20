@@ -88,6 +88,12 @@ Example configuration:\n\
                             type: 'string'
                         }
                     },
+                    // `cwd`, `pluginRoot` and `pluginData` are deliberately absent: they are written by
+                    // `@theia/ai-registry` for a server contributed by an Agent Plugin and derived from
+                    // where that plugin was installed, so there is nothing for a user to author here.
+                    // Undeclared rather than documented as read-only, because a declared property is an
+                    // invitation to edit and the preference schema has no read-only affordance. Extra
+                    // properties stay legal, so the values still round-trip through the editor.
                     autostart: {
                         type: 'boolean',
                         title: nls.localize('theia/ai/mcp/servers/autostart/title', 'Autostart'),
@@ -191,7 +197,14 @@ Example configuration:\n\
                                 type: 'string',
                                 title: nls.localize('theia/ai/mcp/servers/registryMetadata/serverId/title', 'Registry Server Id'),
                                 markdownDescription: nls.localize('theia/ai/mcp/servers/registryMetadata/serverId/mdDescription',
-                                    'Identifies the AI registry entry this server was installed from.'),
+                                    'Identifies the AI registry entry this server was installed from. Absent for a server contributed by an Agent Plugin, ' +
+                                    'which carries `pluginId` instead.'),
+                            },
+                            pluginId: {
+                                type: 'string',
+                                title: nls.localize('theia/ai/mcp/servers/registryMetadata/pluginId/title', 'Agent Plugin Id'),
+                                markdownDescription: nls.localize('theia/ai/mcp/servers/registryMetadata/pluginId/mdDescription',
+                                    'Identifies the installed Agent Plugin that contributed this server. Written by `@theia/ai-registry`; not user-editable.'),
                             },
                             version: {
                                 type: 'string',
@@ -203,10 +216,22 @@ Example configuration:\n\
                                 type: 'string',
                                 title: nls.localize('theia/ai/mcp/servers/registryMetadata/configHash/title', 'Registry Config Hash'),
                                 markdownDescription: nls.localize('theia/ai/mcp/servers/registryMetadata/configHash/mdDescription',
-                                    'Content hash of the registry approval used to install this server.'),
+                                    'Content hash of the registry approval used to install this server, or of the Agent Plugin that contributed it.'),
+                            },
+                            installedAt: {
+                                type: 'string',
+                                title: nls.localize('theia/ai/mcp/servers/registryMetadata/installedAt/title', 'Agent Plugin Installed At'),
+                                markdownDescription: nls.localize('theia/ai/mcp/servers/registryMetadata/installedAt/mdDescription',
+                                    'When the Agent Plugin that contributed this server was last written to disk. Changing it restarts the server, '
+                                    + 'which is what makes an update take effect. Written by `@theia/ai-registry`; not user-editable.'),
                             }
                         },
-                        required: ['serverId']
+                        // The validator drops a block identifying nothing; requiring one here keeps
+                        // the settings editor from silently accepting what it will throw away.
+                        anyOf: [
+                            { required: ['serverId'] },
+                            { required: ['pluginId'] }
+                        ]
                     }
                 },
                 required: []

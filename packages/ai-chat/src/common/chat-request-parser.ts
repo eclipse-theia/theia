@@ -50,8 +50,10 @@ const variableReg = /^#([\w_\-]+)(?::([\w_\-_\/\\.:]+))?(?=(\s|$|\b))/i; // A #-
 // A /-command (/commandname) with optional arguments parsed separately. The command name must be
 // terminated by whitespace or the end of the input, so that path segments such as `/home/user` are
 // not mistaken for a command.
-const commandReg = /^\/([\w_\-]+)(?=\s|$)/;
-const nextCommandReg = /\s+\/([\w_\-]+)(?=\s|$)/g;
+// The colon and the period are in the charset so a qualified skill is invocable as
+// `/<qualifier>:<skill>`; the qualifier comes from a plugin identifier, so it usually has periods.
+const commandReg = /^\/([\w_\-.:]+)(?=\s|$)/;
+const nextCommandReg = /\s+\/([\w_\-.:]+)(?=\s|$)/g;
 
 export const ChatRequestParser = Symbol('ChatRequestParser');
 export interface ChatRequestParser {
