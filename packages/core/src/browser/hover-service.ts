@@ -51,6 +51,22 @@ export namespace HoverPosition {
         }
         return position;
     }
+
+    /**
+     * Tests whether a hover of the given dimensions fits next to its target in the given
+     * position without extending beyond the window bounds.
+     */
+    export function fits(position: HoverPosition, target: DOMRect, host: DOMRect, totalWidth: number, totalHeight: number): boolean {
+        if (position === 'left') {
+            return target.left - host.width - 5 >= 0;
+        } else if (position === 'right') {
+            return target.right + host.width + 5 <= totalWidth;
+        } else if (position === 'top') {
+            return target.top - host.height - 5 >= 0;
+        } else {
+            return target.bottom + host.height + 5 <= totalHeight;
+        }
+    }
 }
 
 export interface HoverRequest {
@@ -163,7 +179,9 @@ export class HoverService {
         // handler then cancels the hover, and the cycle repeats: the tooltip flickers and never settles.
         // `visibility: hidden` still lays the host out (so it can be measured) but is not hit-tested.
         host.style.visibility = 'hidden';
-        document.body.append(host);
+        // Render the hover in the document of the target: it may be hosted in a secondary window,
+        // whose coordinate space is unrelated to the main window's.
+        target.ownerDocument.body.append(host);
         if (!host.matches(':popover-open')) {
             host.showPopover();
         }
@@ -188,7 +206,7 @@ export class HoverService {
             }
         }
 
-        await animationFrame(); // Allow the browser to size the host
+        await this.hostAnimationFrame(target); // Allow the browser to size the host
         const updatedPosition = this.setHostPosition(target, host, position);
         // Reveal the host only once it sits at its final position, so it never overlaps the target while
         // parked at (0,0). Dropping the declaration rather than assigning a value hands `visibility` back
@@ -206,14 +224,40 @@ export class HoverService {
         });
     }
 
+    /**
+     * Waits for an animation frame in the window hosting the given target element,
+     * which may be a secondary window whose rendering is independent of the main window's.
+     */
+    protected hostAnimationFrame(target: HTMLElement): Promise<void> {
+        const targetWindow = target.ownerDocument.defaultView;
+        if (!targetWindow || targetWindow === window) {
+            return animationFrame();
+        }
+        return new Promise(resolve => targetWindow.requestAnimationFrame(() => resolve()));
+    }
+
     protected setHostPosition(target: HTMLElement, host: HTMLElement, position: HoverPosition): HoverPosition {
+        const hostDocument = target.ownerDocument;
         const targetDimensions = target.getBoundingClientRect();
         const hostDimensions = host.getBoundingClientRect();
-        const documentWidth = document.body.getBoundingClientRect().width;
+        const documentWidth = hostDocument.body.getBoundingClientRect().width;
         // document.body.getBoundingClientRect().height doesn't work as expected
         // scrollHeight will always be accurate here: https://stackoverflow.com/a/44077777
-        const documentHeight = document.documentElement.scrollHeight;
+        const documentHeight = hostDocument.documentElement.scrollHeight;
         position = HoverPosition.invertIfNecessary(position, targetDimensions, hostDimensions, documentWidth, documentHeight);
+        if (!HoverPosition.fits(position, targetDimensions, hostDimensions, documentWidth, documentHeight)) {
+            // The hover fits on neither side of the target in the requested direction, e.g. when the
+            // target spans the full width of a narrow secondary window. Try the perpendicular direction
+            // so that the target and the hover both remain visible. If that does not fit either,
+            // keep the requested direction; the clamping below keeps the hover inside the viewport.
+            const fallback = HoverPosition.invertIfNecessary(
+                position === 'left' || position === 'right' ? 'bottom' : 'right',
+                targetDimensions, hostDimensions, documentWidth, documentHeight
+            );
+            if (HoverPosition.fits(fallback, targetDimensions, hostDimensions, documentWidth, documentHeight)) {
+                position = fallback;
+            }
+        }
         if (position === 'top' || position === 'bottom') {
             const targetMiddleWidth = targetDimensions.left + (targetDimensions.width / 2);
             const middleAlignment = targetMiddleWidth - (hostDimensions.width / 2);
@@ -230,9 +274,13 @@ export class HoverService {
             const middleAlignment = targetMiddleHeight - (hostDimensions.height / 2);
             const furthestTop = Math.min(documentHeight - hostDimensions.height, middleAlignment);
             const top = Math.max(0, furthestTop);
-            const left = position === 'left'
+            const desiredLeft = position === 'left'
                 ? targetDimensions.left - hostDimensions.width - 5
                 : targetDimensions.right + 5;
+            // the hover may not fit on either side of the target, e.g. when the target
+            // spans the full width of a narrow (secondary) window: keep it in the viewport
+            const furthestRight = Math.min(documentWidth - hostDimensions.width, desiredLeft);
+            const left = Math.max(0, furthestRight);
             host.style.setProperty('--theia-hover-before-position', `${targetMiddleHeight - top - 5}px`);
             host.style.left = `${left}px`;
             host.style.top = `${top}px`;
@@ -280,13 +328,20 @@ export class HoverService {
                 this.cancelHover();
             }
         };
-        document.addEventListener('mousedown', handleMouseDown, true);
-        this.disposeOnHide.push({ dispose: () => document.removeEventListener('mousedown', handleMouseDown, true) });
+        // Listen in the document of the target, which may be hosted in a secondary window
+        const targetDocument = request.target.ownerDocument;
+        targetDocument.addEventListener('mousedown', handleMouseDown, true);
+        this.disposeOnHide.push({ dispose: () => targetDocument.removeEventListener('mousedown', handleMouseDown, true) });
     }
 
     protected unRenderHover(): void {
-        if (this.hoverHost.matches(':popover-open')) {
-            this.hoverHost.hidePopover();
+        try {
+            if (this.hoverHost.matches(':popover-open')) {
+                this.hoverHost.hidePopover();
+            }
+        } catch {
+            // hidePopover throws for popovers in documents that are no longer fully active,
+            // e.g. when the secondary window hosting the hover has been closed in the meantime
         }
         this.hoverHost.remove();
         this.hoverHost.replaceChildren();
