@@ -15,12 +15,11 @@
 // *****************************************************************************
 
 import * as assert from 'assert';
-import * as React from 'react';
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 
 let disableJSDOM = enableJSDOM();
 
-import { createRoot, Root } from 'react-dom/client';
+import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { MarkdownRenderer, MarkdownRenderOptions } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { Disposable } from '@theia/core/lib/common/disposable';

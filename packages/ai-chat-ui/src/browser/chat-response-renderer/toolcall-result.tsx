@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { OpenerService } from '@theia/core/lib/browser';
 import { isToolCallContent, ToolCallResult } from '@theia/ai-core';
