@@ -656,19 +656,39 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.action.previousEditor' }, {
             execute: () => this.shell.activatePreviousTab()
         });
-        commands.registerCommand({ id: 'workbench.action.navigateLeft' }, {
+        commands.registerCommand({
+            id: 'workbench.action.navigateLeft',
+            label: nls.localizeByDefault('Navigate to the View on the Left'),
+            category: nls.localizeByDefault('View')
+        }, {
             execute: () => this.navigateEditorGroup('left')
         });
-        commands.registerCommand({ id: 'workbench.action.navigateRight' }, {
+        commands.registerCommand({
+            id: 'workbench.action.navigateRight',
+            label: nls.localizeByDefault('Navigate to the View on the Right'),
+            category: nls.localizeByDefault('View')
+        }, {
             execute: () => this.navigateEditorGroup('right')
         });
-        commands.registerCommand({ id: 'workbench.action.navigateUp' }, {
+        commands.registerCommand({
+            id: 'workbench.action.navigateUp',
+            label: nls.localizeByDefault('Navigate to the View Above'),
+            category: nls.localizeByDefault('View')
+        }, {
             execute: () => this.navigateEditorGroup('up')
         });
-        commands.registerCommand({ id: 'workbench.action.navigateDown' }, {
+        commands.registerCommand({
+            id: 'workbench.action.navigateDown',
+            label: nls.localizeByDefault('Navigate to the View Below'),
+            category: nls.localizeByDefault('View')
+        }, {
             execute: () => this.navigateEditorGroup('down')
         });
-        commands.registerCommand({ id: 'workbench.action.navigateEditorGroups' }, {
+        commands.registerCommand({
+            id: 'workbench.action.navigateEditorGroups',
+            label: nls.localizeByDefault('Navigate Between Editor Groups'),
+            category: nls.localizeByDefault('View')
+        }, {
             execute: () => this.navigateEditorGroups()
         });
         commands.registerCommand({ id: 'workbench.action.navigateBack' }, {
