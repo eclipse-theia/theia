@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-// The plugin host routes console.* calls to the frontend itself and has no ILogger available.
+// The plugin host routes console.* calls itself and has no ILogger available.
 /* eslint-disable @theia/named-logger-check */
 
 import * as path from 'path';
