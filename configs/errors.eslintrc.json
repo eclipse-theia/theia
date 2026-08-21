@@ -175,6 +175,14 @@
       "rules": {
         "import/no-dynamic-require": "off"
       }
+    },
+    {
+      "files": [
+        "**/electron-main/**"
+      ],
+      "rules": {
+        "@theia/named-logger-check": "off"
+      }
     }
   ]
 }

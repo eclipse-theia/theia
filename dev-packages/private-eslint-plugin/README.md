@@ -31,7 +31,15 @@ The rule prevents the following localization related issues:
 
 ### `named-logger-check`
 
-The rule enforces the new logger coding guidelines by preventing the use of `console.*` statements in `@injectable()` classes and ensuring that injected `ILogger` instances use the `@named` decorator with the correct naming convention.
+The rule enforces the [logging guidelines](https://github.com/eclipse-theia/theia/tree/master/doc/coding-guidelines.md#logging):
+
+- `@injectable()` classes must log through an injected `ILogger` instead of `console.log`, `console.info`, `console.warn`, `console.error`, `console.debug` or `console.trace`. Console methods without an `ILogger` counterpart, such as `console.time` or `console.group`, are allowed.
+- An injected `ILogger` must carry a `@named` decorator whose value follows `[optional-purpose]package-name:class-name#optional-suffix`. The package segment is checked against the `name` of the closest `package.json` without its npm scope, the class segment against the enclosing class. A `@named` value which is not a string literal is not checked.
+
+Code without an `ILogger` binding is exempted through ESLint itself rather than by the rule:
+
+- The `electron-main` runtime is turned off in the `overrides` of `configs/errors.eslintrc.json`, as the Electron main container binds no `ILogger`.
+- Individual files, such as the console logger and the log config parser, carry an inline `eslint-disable @theia/named-logger-check` with the reason.
 
 ### `no-src-import`
 

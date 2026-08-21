@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 Eclipse Foundation and others.
+// Copyright (C) 2026 ankitsharma101 and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -16,50 +16,24 @@
 
 const assert = require('assert');
 const fs = require('fs');
-const os = require('os');
-const path = require('path');
 const { Linter, RuleTester } = require('eslint');
 const rule = require('./named-logger-check');
-const { derivePackageName } = require('./named-logger-check');
-const { MalformedPackageJsonError } = require('./find-package-json');
+const { tempFiles } = require('../util/test/temp-files');
 
 /**
- * Absolute path of a file within this repository. Absolute paths keep the tests independent of
- * the working directory, as the rule resolves the package.json relative to the linted file.
- * @param {...string} segments
+ * Stand-in for the Theia monorepo, covering the package layouts the rule has to tell apart.
  */
-function repoFile(...segments) {
-    return path.join(__dirname, '..', '..', '..', ...segments);
-}
-
-/**
- * @param {...string} segments
- */
-function normalizedRepoFile(...segments) {
-    return repoFile(...segments).replace(/\\/g, '/');
-}
-
-/**
- * Writes the given files into a fresh temporary directory, so that a test needing a specific
- * package layout neither depends on the real repository nor on the other tests. A fresh directory
- * per call also matters because a malformed package.json is only reported once per path.
- * @param {{[relativePath: string]: string}} files
- */
-function tempFiles(files) {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'theia-named-logger-check-'));
-    for (const [relativePath, content] of Object.entries(files)) {
-        const file = path.join(root, relativePath);
-        fs.mkdirSync(path.dirname(file), { recursive: true });
-        fs.writeFileSync(file, content);
-    }
-    return {
-        /** @param {string} relativePath */
-        resolve: relativePath => path.join(root, relativePath),
-        /** @param {string} relativePath */
-        resolveNormalized: relativePath => path.join(root, relativePath).replace(/\\/g, '/'),
-        dispose: () => fs.rmSync(root, { recursive: true, force: true })
-    };
-}
+const repo = tempFiles({
+    'package.json': '{ "name": "@theia/monorepo" }',
+    'packages/my-package/package.json': '{ "name": "@theia/my-package" }',
+    // The directory 'ai-hugging-face' contains the package '@theia/ai-huggingface'.
+    'packages/ai-hugging-face/package.json': '{ "name": "@theia/ai-huggingface" }',
+    // The directory 'private-eslint-plugin' contains the package '@theia/eslint-plugin'.
+    'dev-packages/private-eslint-plugin/package.json': '{ "name": "@theia/eslint-plugin" }',
+    'examples/browser-only/package.json': '{ "name": "@theia/example-browser-only" }',
+    'mypackages/foo/package.json': '{ "name": "@theia/foo" }'
+});
+after(() => repo.dispose());
 
 const ruleTester = new RuleTester({
     parser: require.resolve('@typescript-eslint/parser'),
@@ -75,7 +49,7 @@ ruleTester.run('named-logger-check', rule, {
                     constructor(@inject(ILogger) @named('[auth]my-package:GoodClass') logger) {}
                 }
             `,
-            filename: repoFile('packages', 'my-package', 'src', 'browser', 'good-class.ts')
+            filename: repo.resolve('packages/my-package/src/browser/good-class.ts')
         },
         {
             code: `
@@ -83,16 +57,7 @@ ruleTester.run('named-logger-check', rule, {
                     doSomething() { console.log('This is fine'); }
                 }
             `,
-            filename: 'src/browser/normal-class.ts'
-        },
-        {
-            code: `
-                @injectable()
-                class MainClass {
-                    doSomething() { console.log('This is fine here'); }
-                }
-            `,
-            filename: 'src/electron-main/main-app.ts'
+            filename: repo.resolve('packages/my-package/src/browser/normal-class.ts')
         },
         {
             code: `
@@ -102,28 +67,56 @@ ruleTester.run('named-logger-check', rule, {
                         this.newCommandHandler(console => console.selectAll());
                     }
                 }
-            `
+            `,
+            filename: repo.resolve('packages/my-package/src/browser/shadowed-console-class.ts')
         },
         {
-            // The directory 'private-eslint-plugin' contains the package '@theia/eslint-plugin'.
+            // Only the console methods ILogger can replace are reported.
+            code: `
+                @injectable()
+                class ProfilingClass {
+                    doSomething() {
+                        console.time('work');
+                        console.group('details');
+                        console.table([]);
+                        console.timeEnd('work');
+                    }
+                }
+            `,
+            filename: repo.resolve('packages/my-package/src/browser/profiling-class.ts')
+        },
+        {
+            // A nested class is not covered by the @injectable() decorator of its enclosing class.
+            code: `
+                @injectable()
+                class InjectableOuterClass {
+                    createHelper() {
+                        return class PlainHelper {
+                            doSomething() { console.log('This is fine'); }
+                        };
+                    }
+                }
+            `,
+            filename: repo.resolve('packages/my-package/src/browser/plain-nested-class.ts')
+        },
+        {
             code: `
                 @injectable()
                 class GoodDevClass {
                     constructor(@inject(ILogger) @named('eslint-plugin:GoodDevClass') logger) {}
                 }
             `,
-            filename: repoFile('dev-packages', 'private-eslint-plugin', 'rules', 'good-dev-class.ts')
+            filename: repo.resolve('dev-packages/private-eslint-plugin/rules/good-dev-class.ts')
         },
         {
-            // Relative on purpose: the rule must not resolve a package here, while an absolute path
-            // would resolve one if the checkout itself sits below a directory named 'packages'.
+            // Not below packages/dev-packages, so the convention does not apply and any name passes.
             code: `
                 @injectable()
                 class OutsidePackagesClass {
                     constructor(@inject(ILogger) @named('anything-goes-here:OutsidePackagesClass') logger) {}
                 }
             `,
-            filename: 'examples/browser-only/src/browser/outside-packages-class.ts'
+            filename: repo.resolve('examples/browser-only/src/browser/outside-packages-class.ts')
         },
         {
             code: `
@@ -132,16 +125,17 @@ ruleTester.run('named-logger-check', rule, {
                     constructor(@inject(ILogger) @named('my-package:AnyNameWorks') logger) {}
                 }
             `,
-            filename: repoFile('packages', 'my-package', 'src', 'browser', 'anonymous-class.ts')
+            filename: repo.resolve('packages/my-package/src/browser/anonymous-class.ts')
         },
         {
+            // 'mypackages' is not 'packages', so this is outside of the convention as well.
             code: `
                 @injectable()
                 class AmbiguousPathClass {
-                    constructor(@inject(ILogger) @named('mypackages:AmbiguousPathClass') logger) {}
+                    constructor(@inject(ILogger) @named('anything-goes-here:AmbiguousPathClass') logger) {}
                 }
             `,
-            filename: 'mypackages/foo/ambiguous-path-class.ts'
+            filename: repo.resolve('mypackages/foo/src/ambiguous-path-class.ts')
         },
         {
             code: `
@@ -151,17 +145,16 @@ ruleTester.run('named-logger-check', rule, {
                     constructor(@inject(ILogger) @named(SOME_CONSTANT) logger) {}
                 }
             `,
-            filename: repoFile('packages', 'my-package', 'src', 'browser', 'non-literal-class.ts')
+            filename: repo.resolve('packages/my-package/src/browser/non-literal-class.ts')
         },
         {
-            // The directory 'ai-hugging-face' contains the package '@theia/ai-huggingface'.
             code: `
                 @injectable()
                 class HuggingFaceLanguageModelsManagerImpl {
                     constructor(@inject(ILogger) @named('ai-huggingface:HuggingFaceLanguageModelsManagerImpl') logger) {}
                 }
             `,
-            filename: repoFile('packages', 'ai-hugging-face', 'src', 'node', 'huggingface-language-models-manager-impl.ts')
+            filename: repo.resolve('packages/ai-hugging-face/src/node/huggingface-language-models-manager-impl.ts')
         },
         {
             code: `
@@ -176,7 +169,7 @@ ruleTester.run('named-logger-check', rule, {
                     }
                 }
             `,
-            filename: repoFile('packages', 'my-package', 'src', 'browser', 'nested-classes.ts')
+            filename: repo.resolve('packages/my-package/src/browser/nested-classes.ts')
         },
         {
             code: `
@@ -190,7 +183,7 @@ ruleTester.run('named-logger-check', rule, {
                     }
                 }
             `,
-            filename: repoFile('packages', 'my-package', 'src', 'browser', 'class-expression.ts')
+            filename: repo.resolve('packages/my-package/src/browser/class-expression.ts')
         }
     ],
     invalid: [
@@ -201,7 +194,23 @@ ruleTester.run('named-logger-check', rule, {
                     doSomething() { console.log('This should fail'); }
                 }
             `,
-            filename: 'src/browser/bad-console.ts',
+            filename: repo.resolve('packages/my-package/src/browser/bad-console.ts'),
+            errors: [{ messageId: 'noConsole' }]
+        },
+        {
+            // A nested @injectable() class is covered even if its enclosing class is not.
+            code: `
+                class PlainOuterClass {
+                    createService() {
+                        @injectable()
+                        class InjectableInnerClass {
+                            doSomething() { console.log('This should fail'); }
+                        }
+                        return InjectableInnerClass;
+                    }
+                }
+            `,
+            filename: repo.resolve('packages/my-package/src/browser/injectable-nested-class.ts'),
             errors: [{ messageId: 'noConsole' }]
         },
         {
@@ -211,7 +220,7 @@ ruleTester.run('named-logger-check', rule, {
                     constructor(@inject(ILogger) logger) {}
                 }
             `,
-            filename: 'src/browser/missing-named.ts',
+            filename: repo.resolve('packages/my-package/src/browser/missing-named.ts'),
             errors: [{ messageId: 'missingNamed' }]
         },
         {
@@ -221,7 +230,7 @@ ruleTester.run('named-logger-check', rule, {
                     constructor(@inject(ILogger) @named('just-a-random-name') logger) {}
                 }
             `,
-            filename: 'src/browser/bad-format.ts',
+            filename: repo.resolve('packages/my-package/src/browser/bad-format.ts'),
             errors: [{ messageId: 'invalidNameFormat' }]
         },
         {
@@ -231,7 +240,7 @@ ruleTester.run('named-logger-check', rule, {
                     constructor(@inject(ILogger) @named('my-package:WrongClassName') logger) {}
                 }
             `,
-            filename: repoFile('packages', 'my-package', 'src', 'browser', 'real-class-name.ts'),
+            filename: repo.resolve('packages/my-package/src/browser/real-class-name.ts'),
             errors: [{ messageId: 'classNameMismatch', data: { expected: 'RealClassName', actual: 'WrongClassName' } }]
         },
         {
@@ -241,7 +250,7 @@ ruleTester.run('named-logger-check', rule, {
                     constructor(@inject(ILogger) @named('wrong-package:CorrectClass') logger) {}
                 }
             `,
-            filename: repoFile('packages', 'my-package', 'src', 'browser', 'correct-class.ts'),
+            filename: repo.resolve('packages/my-package/src/browser/correct-class.ts'),
             errors: [{ messageId: 'packageNameMismatch', data: { expected: 'my-package', actual: 'wrong-package' } }]
         },
         {
@@ -251,7 +260,7 @@ ruleTester.run('named-logger-check', rule, {
                     constructor(@inject(ILogger) @named('wrong-package:WrongClass') logger) {}
                 }
             `,
-            filename: repoFile('packages', 'my-package', 'src', 'browser', 'both-wrong-class.ts'),
+            filename: repo.resolve('packages/my-package/src/browser/both-wrong-class.ts'),
             errors: [{ messageId: 'classNameMismatch' }, { messageId: 'packageNameMismatch' }]
         },
         {
@@ -261,7 +270,7 @@ ruleTester.run('named-logger-check', rule, {
                     constructor(@inject(ILogger) @named('ai-hugging-face:HuggingFaceLanguageModelsManagerImpl') logger) {}
                 }
             `,
-            filename: repoFile('packages', 'ai-hugging-face', 'src', 'node', 'huggingface-language-models-manager-impl.ts'),
+            filename: repo.resolve('packages/ai-hugging-face/src/node/huggingface-language-models-manager-impl.ts'),
             errors: [{ messageId: 'packageNameMismatch', data: { expected: 'ai-huggingface', actual: 'ai-hugging-face' } }]
         },
         {
@@ -276,73 +285,65 @@ ruleTester.run('named-logger-check', rule, {
                     }
                 }
             `,
-            filename: repoFile('packages', 'my-package', 'src', 'browser', 'class-expression.ts'),
+            filename: repo.resolve('packages/my-package/src/browser/class-expression.ts'),
             errors: [{ messageId: 'classNameMismatch', data: { expected: 'InnerExpression', actual: 'OuterClass' } }]
         }
     ]
 });
 
-describe('derivePackageName', () => {
-    it('prefers the package.json name over the directory name', () => {
-        assert.strictEqual(derivePackageName(normalizedRepoFile('packages', 'ai-hugging-face', 'src', 'browser', 'foo.ts')), 'ai-huggingface');
-        assert.strictEqual(derivePackageName(normalizedRepoFile('dev-packages', 'private-eslint-plugin', 'rules', 'foo.js')), 'eslint-plugin');
-    });
+describe('malformed package.json', () => {
 
-    it('reads the innermost package.json when an outer directory is called "packages" too', () => {
-        const nested = tempFiles({
-            'packages/outer/package.json': '{ "name": "@theia/outer" }',
-            'packages/outer/packages/inner/package.json': '{ "name": "@theia/inner" }'
-        });
-        try {
-            assert.strictEqual(derivePackageName(nested.resolveNormalized('packages/outer/packages/inner/src/foo.ts')), 'inner');
-        } finally {
-            nested.dispose();
-        }
-    });
+    /**
+     * Lints a class whose logger name matches the 'broken' package, and returns the problems.
+     * @param {string} filename
+     */
+    function lintBrokenClass(filename) {
+        const linter = new Linter();
+        linter.defineRule('named-logger-check', rule);
+        linter.defineParser('ts-parser', require('@typescript-eslint/parser'));
+        return linter.verify(
+            `
+            @injectable()
+            class BrokenClass {
+                constructor(@inject(ILogger) @named('broken:BrokenClass') logger) {}
+            }
+            `,
+            {
+                parser: 'ts-parser',
+                parserOptions: { ecmaVersion: 2020, sourceType: 'module' },
+                rules: { 'named-logger-check': 'error' }
+            },
+            filename
+        );
+    }
 
-    it('falls back to the directory name if the package has no package.json', () => {
-        assert.strictEqual(derivePackageName(normalizedRepoFile('packages', 'not-a-real-package', 'src', 'foo.ts')), 'not-a-real-package');
-    });
-
-    it('returns undefined outside of packages and dev-packages', () => {
-        assert.strictEqual(derivePackageName('examples/browser/src/foo.ts'), undefined);
-        assert.strictEqual(derivePackageName('mypackages/foo/bar.ts'), undefined);
-    });
-
-    it('throws if the package.json cannot be parsed', () => {
+    it('is reported on the linted file instead of aborting the lint run', () => {
         const broken = tempFiles({ 'packages/broken/package.json': '{ "name": ' });
         try {
-            assert.throws(() => derivePackageName(broken.resolveNormalized('packages/broken/src/broken-class.ts')), MalformedPackageJsonError);
+            const messages = lintBrokenClass(broken.resolve('packages/broken/src/broken-class.ts'));
+            assert.strictEqual(messages.length, 1);
+            assert.strictEqual(messages[0].ruleId, 'named-logger-check');
+            assert.ok(messages[0].message.startsWith(`Cannot read "${broken.resolve('packages/broken/package.json')}"`), messages[0].message);
         } finally {
             broken.dispose();
         }
     });
-});
 
-describe('malformed package.json', () => {
-    it('is reported on the linted file instead of aborting the lint run', () => {
+    it('is reported once per breakage rather than once per process', () => {
         const broken = tempFiles({ 'packages/broken/package.json': '{ "name": ' });
+        const packageJson = broken.resolve('packages/broken/package.json');
+        const linted = broken.resolve('packages/broken/src/broken-class.ts');
         try {
-            const linter = new Linter();
-            linter.defineRule('named-logger-check', rule);
-            linter.defineParser('ts-parser', require('@typescript-eslint/parser'));
-            const messages = linter.verify(
-                `
-                @injectable()
-                class BrokenClass {
-                    constructor(@inject(ILogger) @named('broken:BrokenClass') logger) {}
-                }
-                `,
-                {
-                    parser: 'ts-parser',
-                    parserOptions: { ecmaVersion: 2020, sourceType: 'module' },
-                    rules: { 'named-logger-check': 'error' }
-                },
-                broken.resolve('packages/broken/src/broken-class.ts')
-            );
-            assert.strictEqual(messages.length, 1);
-            assert.strictEqual(messages[0].ruleId, 'named-logger-check');
-            assert.ok(messages[0].message.startsWith(`Cannot read "${broken.resolve('packages/broken/package.json')}"`), messages[0].message);
+            assert.strictEqual(lintBrokenClass(linted).length, 1, 'the first breakage is reported');
+            assert.strictEqual(lintBrokenClass(linted).length, 0, 'the same breakage is not reported again');
+
+            // The contents below differ in length from the ones they replace, so that the cache is
+            // invalidated regardless of the modification time resolution.
+            fs.writeFileSync(packageJson, '{ "name": "@theia/broken" }');
+            assert.strictEqual(lintBrokenClass(linted).length, 0, 'a repaired package.json reports nothing');
+
+            fs.writeFileSync(packageJson, '{ "name":');
+            assert.strictEqual(lintBrokenClass(linted).length, 1, 'a new breakage is reported again');
         } finally {
             broken.dispose();
         }

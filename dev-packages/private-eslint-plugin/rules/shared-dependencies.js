@@ -18,7 +18,7 @@
 /* eslint-disable max-len */
 
 const { PackageReExports } = require('@theia/re-exports');
-const { findPackageJson, reportingMalformedPackageJson } = require('./find-package-json');
+const { findPackageJson, reportingMalformedPackageJson } = require('../util/package-json');
 
 const coreReExports = PackageReExports.FromPackageSync('@theia/core');
 

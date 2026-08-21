@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 Eclipse Foundation and others.
+// Copyright (C) 2026 ankitsharma101 and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -24,111 +24,55 @@
  * @typedef {import('eslint').Rule.RuleModule} RuleModule
  */
 
-const { readPackageJson, reportingMalformedPackageJson } = require('./find-package-json');
+const { derivePackageName, reportingMalformedPackageJson } = require('../util/package-json');
 
 /**
- * Derives the Theia package name from a normalized (forward-slash) file path, based on the last
- * 'packages' or 'dev-packages' segment, so that a checkout nested below a directory which happens
- * to be named 'packages' still resolves against the real package. The package.json `name` (without
- * npm scope) wins over the directory name as the two can differ, e.g. 'ai-hugging-face' contains
- * '@theia/ai-huggingface'. Returns undefined outside of packages/dev-packages, where the naming
- * convention does not apply.
- * @param {string} normalizedFilename
- * @returns {string | undefined}
- * @throws {import('./find-package-json').MalformedPackageJsonError} if the package.json of the
- * package cannot be read or parsed.
+ * The console methods `ILogger` can replace. Members without a logger counterpart, such as
+ * `console.time` or `console.group`, are left alone.
  */
-function derivePackageName(normalizedFilename) {
-    const segments = normalizedFilename.split('/');
-    let rootIndex = -1;
-    for (let i = 0; i < segments.length - 1; i++) {
-        if (segments[i] === 'packages' || segments[i] === 'dev-packages') {
-            rootIndex = i;
-        }
-    }
-    if (rootIndex === -1) {
-        return undefined;
-    }
-    const packageJson = readPackageJson(segments.slice(0, rootIndex + 2).join('/'));
-    const name = packageJson && typeof packageJson.name === 'string' ? packageJson.name.replace(/^@[^/]+\//, '') : undefined;
-    return name || segments[rootIndex + 1];
-}
+const loggingConsoleMethods = new Set(['log', 'trace', 'debug', 'info', 'warn', 'error']);
 
-/** @type {RuleModule & { derivePackageName: typeof derivePackageName }} */
+/** @type {RuleModule} */
 module.exports = {
-    // Exposed for the unit tests, not used by ESLint itself.
-    derivePackageName,
     meta: {
         type: 'problem',
         docs: {
             description: 'Enforce ILogger usage and naming conventions in @injectable classes',
+            recommended: true,
+            url: 'https://github.com/eclipse-theia/theia/tree/master/doc/coding-guidelines.md#logging'
         },
         messages: {
             noConsole: 'Use injected ILogger instead of console statements in @injectable classes.',
             missingNamed: 'Injected ILoggers must use the @named decorator.',
             invalidNameFormat: 'Logger name must follow the convention: [optional-purpose]package-name:class-name#optional-suffix',
             classNameMismatch: 'Logger name\'s class segment should be "{{expected}}" (the enclosing class), but found "{{actual}}".',
-            packageNameMismatch: 'Logger name\'s package segment should be "{{expected}}" (derived from the file path), but found "{{actual}}".'
+            packageNameMismatch: 'Logger name\'s package segment should be "{{expected}}" (the enclosing package), but found "{{actual}}".'
         },
         schema: []
     },
     create(context) {
-        const filename = context.getFilename().replace(/\\/g, '/');
-
-        // The Electron main process has no ILogger/DI setup available during early
-        // bootstrap, so this rule cannot apply there.
-        if (filename.includes('/electron-main/')) {
-            return {};
-        }
-
-        // These files sit below or alongside the logger/DI infrastructure itself and
-        // predate it being available, so they are exempt for the same reason:
-        // - console-logger-server.ts: this *is* the console logger implementation.
-        // - logger-cli-contribution.ts: parses the log config the logger depends on.
-        // - ws-connection-source.ts: the socket the frontend logger's RPC rides on.
-        // - plugin-host-rpc.ts: the plugin host already routes console.* calls itself
-        //   and has no ILogger available here either.
-        const exemptFiles = [
-            'packages/core/src/node/console-logger-server.ts',
-            'packages/core/src/node/logger-cli-contribution.ts',
-            'packages/core/src/browser/messaging/ws-connection-source.ts',
-            'packages/plugin-ext/src/hosted/node/plugin-host-rpc.ts'
-        ];
-        if (exemptFiles.some(exempt => filename.endsWith(exempt))) {
-            return {};
-        }
+        // Runtimes and files without an ILogger binding are exempted through ESLint itself, see
+        // the 'named-logger-check' overrides in configs/errors.eslintrc.json and the inline
+        // 'eslint-disable' comments in the logger and DI bootstrap files.
+        const expectedPackageName = reportingMalformedPackageJson(context, () => derivePackageName(context.getFilename()));
 
         /** @type {Array<{ isInjectable: boolean, className: string | undefined }>} */
         const injectableClassStack = [];
 
         /**
-         * Walks up from the given scope looking for the reference tied to `identifierNode`,
-         * and returns the variable it resolves to (or undefined if unresolved).
-         * @param {Node} identifierNode
+         * True only when the `console` of `console.log(...)` is the real global one, i.e. it is
+         * not shadowed by a local variable, parameter, or import of the same name. The reference
+         * lives in the scope of the call itself, as neither the member expression nor the call
+         * opens a new scope between the two.
+         * @param {Node} callNode the `console.log(...)` call.
+         * @param {Node} identifierNode the `console` of that call.
          */
-        function resolveVariable(identifierNode) {
-            let scope = context.getScope();
-            while (scope) {
-                const ref = scope.references.find(r => r.identifier === identifierNode);
-                if (ref) {
-                    return ref.resolved;
-                }
-                scope = scope.upper;
-            }
-            return undefined;
-        }
-
-        /**
-         * True only when `identifierNode` refers to the real global `console`, i.e. it is
-         * not shadowed by a local variable, parameter, or import of the same name.
-         * @param {Node} identifierNode
-         */
-        function isGlobalConsole(identifierNode) {
-            const variable = resolveVariable(identifierNode);
-            // No resolved variable, or a resolved variable with no local `defs` (how ESLint
-            // represents environment globals), both mean this is the real global console.
-            // Any variable with a def (parameter, `const console = ...`, etc.) is a shadow.
-            return !variable || variable.defs.length === 0;
+        function isGlobalConsole(callNode, identifierNode) {
+            const reference = context.sourceCode.getScope(callNode).references.find(r => r.identifier === identifierNode);
+            // An unresolved reference, or one resolving to a variable without local `defs` (how
+            // ESLint represents environment globals), is the real global console. Any variable
+            // with a def (parameter, `const console = ...`, an import) is a shadow.
+            return !reference?.resolved || reference.resolved.defs.length === 0;
         }
 
         /**
@@ -150,6 +94,14 @@ module.exports = {
             injectableClassStack.pop();
         }
 
+        /**
+         * The class a node belongs to, which is always the innermost one. A nested class is not
+         * covered by an enclosing `@injectable()` class and vice versa.
+         */
+        function enclosingClass() {
+            return injectableClassStack[injectableClassStack.length - 1];
+        }
+
         return {
             ClassDeclaration: enterClass,
             'ClassDeclaration:exit': exitClass,
@@ -157,15 +109,16 @@ module.exports = {
             'ClassExpression:exit': exitClass,
 
             CallExpression(node) {
-                const isInsideInjectable = injectableClassStack.some(entry => entry.isInjectable);
                 if (
-                    isInsideInjectable &&
+                    enclosingClass()?.isInjectable &&
                     node.callee &&
                     node.callee.type === 'MemberExpression' &&
                     node.callee.object &&
                     node.callee.object.type === 'Identifier' &&
                     node.callee.object.name === 'console' &&
-                    isGlobalConsole(node.callee.object)
+                    node.callee.property.type === 'Identifier' &&
+                    loggingConsoleMethods.has(node.callee.property.name) &&
+                    isGlobalConsole(node, node.callee.object)
                 ) {
                     context.report({ node, messageId: 'noConsole' });
                 }
@@ -205,9 +158,7 @@ module.exports = {
                                     context.report({ node: namedArg, messageId: 'invalidNameFormat' });
                                 } else {
                                     const [, actualPackageName, actualClassName] = match;
-                                    const enclosingClass = injectableClassStack[injectableClassStack.length - 1];
-                                    const expectedClassName = enclosingClass && enclosingClass.className;
-                                    const expectedPackageName = reportingMalformedPackageJson(context, () => derivePackageName(filename));
+                                    const expectedClassName = enclosingClass()?.className;
 
                                     if (expectedClassName && actualClassName !== expectedClassName) {
                                         context.report({
