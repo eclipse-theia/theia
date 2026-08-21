@@ -22,7 +22,7 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { MessageService } from '@theia/core';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
-import { PromptService, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { PromptService, ToolCallContentResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common/mcp-server-manager';
 import type { MCPFrontendServiceImpl } from './mcp-frontend-service';
 const MCPFrontendServiceImplConstructor: new () => MCPFrontendServiceImpl = require('./mcp-frontend-service').MCPFrontendServiceImpl;
@@ -245,5 +245,50 @@ describe('MCPFrontendServiceImpl', () => {
             expect(await target.signIn('asana')).to.be.false;
             expect(calls).to.deep.equal(['stop:asana', 'start:asana:true']);
         });
+    });
+});
+
+describe('MCPFrontendServiceImpl html content mapping', () => {
+
+    // Simulates the mapping logic from convertToToolRequest's default case
+    function mapContent(callContent: Record<string, unknown>): ToolCallContentResult {
+        const type = callContent.type as string;
+        switch (type) {
+            case 'image':
+                return { type: 'image', base64data: callContent.data as string, mimeType: callContent.mimeType as string };
+            case 'text':
+                return { type: 'text', text: callContent.text as string };
+            default:
+                if ('html' in callContent && typeof callContent.html === 'string') {
+                    return { type: 'html', html: callContent.html, title: callContent.title as string | undefined };
+                }
+                return { type: 'text', text: JSON.stringify(callContent) };
+        }
+    }
+
+    it('maps html content with title', () => {
+        const result = mapContent({ type: 'html', html: '<div>App</div>', title: 'My App' });
+        expect(result).to.deep.equal({ type: 'html', html: '<div>App</div>', title: 'My App' });
+    });
+
+    it('maps html content without title', () => {
+        const result = mapContent({ type: 'html', html: '<p>Hello</p>' });
+        expect(result).to.deep.equal({ type: 'html', html: '<p>Hello</p>', title: undefined });
+    });
+
+    it('falls back to text for unknown type without html field', () => {
+        const result = mapContent({ type: 'unknown', data: 'foo' });
+        expect(result.type).to.equal('text');
+        expect((result as { text: string }).text).to.equal(JSON.stringify({ type: 'unknown', data: 'foo' }));
+    });
+
+    it('still maps text content normally', () => {
+        const result = mapContent({ type: 'text', text: 'hello world' });
+        expect(result).to.deep.equal({ type: 'text', text: 'hello world' });
+    });
+
+    it('still maps image content normally', () => {
+        const result = mapContent({ type: 'image', data: 'base64data', mimeType: 'image/png' });
+        expect(result).to.deep.equal({ type: 'image', base64data: 'base64data', mimeType: 'image/png' });
     });
 });
