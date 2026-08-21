@@ -65,6 +65,7 @@ import { ApplicationServer, applicationPath } from '../common/application-protoc
 import { WebSocketConnectionProvider } from './messaging';
 import { AboutDialog, AboutDialogProps } from './about-dialog';
 import { EnvVariablesServer, envVariablesPath, EnvVariable } from './../common/env-variables';
+import { CachingEnvVariablesServer } from './env-variables/caching-env-variables-server';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { JsonSchemaStore, JsonSchemaContribution, DefaultJsonSchemaContribution, JsonSchemaDataStore } from './json-schema-store';
 import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
@@ -381,7 +382,10 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bind(EnvVariablesServer).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
-        return connection.createProxy<EnvVariablesServer>(envVariablesPath);
+        const rawEnvVariablesServer = connection.createProxy<EnvVariablesServer>(envVariablesPath);
+        // Cache `getConfigDirUri()` on the frontend so the many contributions that call it
+        // during startup share a single RPC round-trip instead of each paying for their own.
+        return new CachingEnvVariablesServer(rawEnvVariablesServer);
     }).inSingletonScope();
 
     bind(ThemeService).toSelf().inSingletonScope();
