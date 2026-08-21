@@ -22,9 +22,7 @@ The AI Configuration view (`@theia/ai-ide`) has been reworked from a tabbed dock
 
 _ESBuild_:
 
-In addition to `webpack`, Theia is now also supporting [`ESBuild`](https://esbuild.github.io/) for bundling the application (frontend+backend). We will soon deprecate and then remove the `webpack` bundling option. Adopters can already use the ESBuild based bundler simply by deleting their `webpack.config.js`, which will automatically generate an `esbuild.mjs` file upon the next build.
-
-In case you have added your own bundling instructions to the `webpack.config.js`, these need to be migrated to the ESBuild based bundler.
+Theia bundles the application (frontend+backend) with [`ESBuild`](https://esbuild.github.io/). The `webpack` bundling option was removed in 1.75.0, see [v1.75.0](#v1750). Deleting `webpack.config.js` generates an `esbuild.mjs` file upon the next build; bundling instructions you added to `webpack.config.js` need to be migrated to the ESBuild based bundler.
 
 Note that as a part of this change, the `@theia/native-webpack-plugin` dependency has been renamed to `@theia/bundle-plugin`.
 
@@ -95,7 +93,7 @@ _Terminal Shell Integration Scripts_:
 
 The `@theia/terminal` package now includes shell integration scripts for Bash and Zsh (`packages/terminal/src/node/shell-integrations/`). These scripts are used at runtime by `ShellIntegrationInjector` to inject shell integration into terminal sessions, enabling features such as command history tracking and command separators.
 
-For **browser** applications, the generated webpack configuration automatically copies these scripts to `lib/backend/shell-integrations/` via `CopyWebpackPlugin`.
+For **browser** applications, the generated bundler configuration automatically copies these scripts to `lib/backend/shell-integrations/`.
 
 For **Electron** applications that use custom packaging (e.g. `electron-builder`, `electron-forge`), you must ensure the `shell-integrations` directory is included in your packaged distribution. The scripts must be accessible relative to the compiled `ShellIntegrationInjector` module at `lib/backend/shell-integrations/`. If these files are missing, terminal shell integration will silently fail to activate.
 
@@ -138,6 +136,31 @@ Adopters do not have to switch, but if you want the same setup in your own exten
 
 - set `jsx` and `jsxImportSource` as above in your `tsconfig.json` (if you use `jsx: "react-jsxdev"`, the `jsx-dev-runtime` re-export is used instead)
 - remove `import * as React from '@theia/core/shared/react'` from files that only needed it for JSX. Keep the import wherever `React.*` types or APIs are used (`React.ReactNode`, `React.FC`, `React.MouseEvent`, hooks, …). With `noUnusedLocals` enabled the compiler reports the now-obsolete imports.
+
+
+#### Removal of the webpack bundler
+
+The `webpack` bundling option has been removed, `theia build` now always bundles with [esbuild](https://esbuild.github.io/). esbuild has been the default bundler since 1.72.0 for applications without a `webpack.config.js`, and 1.74.0 announced the removal of webpack.
+
+Applications that already build with esbuild are unaffected. Applications that still have a `webpack.config.js` get an `esbuild.mjs` generated on their next build; the leftover `webpack.config.js` is ignored and reported with a warning. Port any customization to `esbuild.mjs` and delete the `webpack.config.js`; the generated `gen-webpack.config.js` and `gen-webpack.node.config.js` are removed by `theia clean`.
+
+In detail:
+
+- `theia build` no longer reads `webpack.config.js` and no longer generates `gen-webpack.config.js` / `gen-webpack.node.config.js`.
+- `theia build [webpack-args...]` is now `theia build [bundler-args...]`; arguments are forwarded to the generated `esbuild.mjs` instead of the webpack CLI. `--webpack-help` remains as a deprecated alias of the new `--bundler-help`.
+- `@theia/bundle-plugin` no longer exports `NativeWebpackPlugin` and `MonacoWebpackPlugin` and no longer depends on `webpack`. The esbuild equivalents are `nativeDependenciesPlugin()` and `monacoNlsPlugin()`.
+- `@theia/application-manager/lib/expose-loader` has been removed. Use `exposeModulePlugin()` from `@theia/bundle-plugin` instead, as shown in [`examples/browser/esbuild.mjs`](../examples/browser/esbuild.mjs).
+- `@theia/application-manager` no longer depends on `webpack`, `webpack-cli`, `copy-webpack-plugin`, `compression-webpack-plugin`, `mini-css-extract-plugin`, `css-loader`, `style-loader`, `ignore-loader`, `source-map-loader`, `node-loader`, `string-replace-loader`, `umd-compat-loader`, `path-browserify` and `buffer`, nor on the packages that only the webpack setup pulled in: `babel-loader`, `worker-loader`, `@babel/*`, `source-map` and `source-map-support`. If your own build relies on any of these being installed transitively, declare them in your application's `devDependencies`.
+
+If you cannot migrate yet, stay on Theia 1.74.x or vendor the webpack setup into your own repository. The last generated configurations are in [`bundler-generator.ts`](https://github.com/eclipse-theia/theia/blob/v1.74.1/dev-packages/application-manager/src/generator/bundler-generator.ts) (`compileWebpackConfig` and `compileNodeWebpackConfig`), the plugins in [`webpack-plugin.ts`](https://github.com/eclipse-theia/theia/blob/v1.74.1/dev-packages/bundle-plugin/src/webpack-plugin.ts) and [`monaco-webpack-plugins.ts`](https://github.com/eclipse-theia/theia/blob/v1.74.1/dev-packages/bundle-plugin/src/monaco-webpack-plugins.ts), and the expose loader in [`expose-loader.ts`](https://github.com/eclipse-theia/theia/blob/v1.74.1/dev-packages/application-manager/src/expose-loader.ts). In that case you also have to declare `webpack`, `webpack-cli`, `terser-webpack-plugin` and the loaders listed above yourself.
+
+#### Pre-compressed frontend assets with esbuild
+
+Theia's backend serves a `<file>.gz` sibling instead of the original file whenever one exists and the client accepts `gzip`. This used to be produced by webpack's `CompressionPlugin`; it is now produced by the new `compressAssetsPlugin()` from `@theia/bundle-plugin`, which the generated esbuild browser configuration includes.
+
+The `--static-compression` flag of `theia build` keeps working, but its default changed: compression is only enabled for browser applications built with `--mode production`. Development and watch rebuilds therefore stay fast, and Electron applications, which load the frontend from their local backend over loopback, no longer carry compressed copies in the packaged application. Pass `--static-compression` or `--no-static-compression` to override.
+
+Whenever an asset is not compressed, the plugin removes its `.gz` file of a previous build. A development build therefore cannot leave the assets of an earlier production build behind for the backend to serve.
 
 ### v1.74.0
 

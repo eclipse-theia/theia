@@ -73,7 +73,7 @@ describe('Keybindings', function () {
             when: 'false'
         }));
 
-        const editor = await editorManager.open(workspaceService.tryGetRoots()[0].resource.resolve('webpack.config.js'), {
+        const editor = await editorManager.open(workspaceService.tryGetRoots()[0].resource.resolve('esbuild.mjs'), {
             mode: 'activate',
             selection: {
                 start: {
