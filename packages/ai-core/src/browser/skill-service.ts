@@ -130,29 +130,43 @@ export class DefaultSkillService implements SkillService {
             }
         });
 
-        // Wait for workspace to be ready before initial update
-        this.workspaceService.ready.then(() => {
-            this.update().then(() => {
-                this._ready.resolve();
-                // Only after initial update, start listening for changes
-                this.lastSkillDirectoriesValue = JSON.stringify(this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES]);
+        this.initializeSkills();
+    }
 
-                this.preferences.onPreferenceChanged(event => {
-                    if (event.preferenceName === PREFERENCE_NAME_SKILL_DIRECTORIES) {
-                        const currentValue = JSON.stringify(this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES]);
-                        if (currentValue === this.lastSkillDirectoriesValue) {
-                            return;
-                        }
-                        this.lastSkillDirectoriesValue = currentValue;
-                        this.scheduleUpdate();
-                    }
-                });
+    /** Runs the initial scan once the skill directory sources are known. {@link ready} always resolves, even if the scan failed. */
+    protected async initializeSkills(): Promise<void> {
+        try {
+            // The workspace contributes the workspace skill directories, the preferences the configured ones.
+            await Promise.all([this.workspaceService.ready, this.preferences.ready]);
+        } catch (error) {
+            this.logger.error('Failed to resolve skill directory sources, scanning the already known directories', error);
+        }
 
-                this.workspaceService.onWorkspaceChanged(() => {
-                    this.scheduleUpdate();
-                });
-            });
+        // Listen for changes before the initial scan, otherwise a change landing while it runs is recorded as
+        // already applied by the snapshot below and dropped. update()'s in-progress guard coalesces the overlap.
+        this.lastSkillDirectoriesValue = JSON.stringify(this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES]);
+
+        this.preferences.onPreferenceChanged(event => {
+            if (event.preferenceName === PREFERENCE_NAME_SKILL_DIRECTORIES) {
+                const currentValue = JSON.stringify(this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES]);
+                if (currentValue === this.lastSkillDirectoriesValue) {
+                    return;
+                }
+                this.lastSkillDirectoriesValue = currentValue;
+                this.scheduleUpdate();
+            }
         });
+
+        this.workspaceService.onWorkspaceChanged(() => {
+            this.scheduleUpdate();
+        });
+
+        try {
+            await this.update();
+        } catch (error) {
+            this.logger.error('Initial skill scan failed', error);
+        }
+        this._ready.resolve();
     }
 
     getSkills(): Skill[] {
