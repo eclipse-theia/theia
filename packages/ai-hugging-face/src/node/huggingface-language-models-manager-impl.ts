@@ -30,7 +30,7 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
 
-    @inject(ILogger) @named('ai-hugging-face:HuggingFaceLanguageModelsManagerImpl')
+    @inject(ILogger) @named('ai-huggingface:HuggingFaceLanguageModelsManagerImpl')
     protected readonly logger: ILogger;
 
     get apiKey(): string | undefined {

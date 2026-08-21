@@ -16,6 +16,9 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+// The plugin host routes console.* calls itself and has no ILogger available.
+/* eslint-disable @theia/named-logger-check */
+
 import * as path from 'path';
 import { pathToFileURL } from 'node:url';
 import { dynamicRequire, removeFromCache } from '@theia/core/lib/node/dynamic-require';
