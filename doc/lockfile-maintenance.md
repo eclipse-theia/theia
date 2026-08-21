@@ -37,6 +37,8 @@ npm 12 does not run dependency lifecycle scripts unless the package is listed in
 
 Missing `true` entries are easy to overlook because `npm ci` still succeeds — the failure only shows up later, when a native module is loaded or a build step needs its binary. `node scripts/verify-lockfile-platforms.js` cross-checks the allowlist against every lockfile entry with `hasInstallScript` and fails on unlisted or stale entries, so run it after changing dependencies as well.
 
+Do not maintain the allowlist with `npm install-scripts prune`: it resolves against the packages installed on the *current host*, so on Linux it offers to drop the Windows and macOS entries (`@vscode/windows-ca-certs`, `fsevents`). Only the verifier decides staleness from the lockfile, and therefore across all platforms.
+
 ## Outlook
 
 Once upstream npm produces a stable, platform-agnostic lockfile format, most of this file can be deleted.
