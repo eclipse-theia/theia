@@ -24,7 +24,8 @@ export namespace TodayVariableArgs {
 
 export const TODAY_VARIABLE: AIVariable = {
     id: 'today-provider',
-    description: nls.localize('theia/ai/core/todayVariable/description', 'Does something for today'),
+    description: nls.localize('theia/ai/core/todayVariable/description',
+        'The current date. Resolves to a human-readable date string by default, or to ISO 8601 or Unix seconds via the format argument.'),
     name: 'today',
     args: [
         {
