@@ -18,46 +18,25 @@
 
 /**
  * @typedef {import('@typescript-eslint/utils').TSESTree.ClassDeclaration} ClassDeclaration
+ * @typedef {import('@typescript-eslint/utils').TSESTree.ClassExpression} ClassExpression
  * @typedef {import('@typescript-eslint/utils').TSESTree.Decorator} Decorator
  * @typedef {import('estree').Node} Node
  * @typedef {import('eslint').Rule.RuleModule} RuleModule
  */
 
-const fs = require('fs');
-const path = require('path');
+const { readPackageJson } = require('./find-package-json');
 
 /**
- * @param {string} packageJsonPath
- * @param {{ existsSync: typeof fs.existsSync, readFileSync: typeof fs.readFileSync }} fsImpl
- */
-function readPackageName(packageJsonPath, fsImpl) {
-    if (!fsImpl.existsSync(packageJsonPath)) {
-        return undefined;
-    }
-    try {
-        const pkg = JSON.parse(fsImpl.readFileSync(packageJsonPath, 'utf8'));
-        return typeof pkg.name === 'string' ? pkg.name.replace(/^@[^/]+\//, '') : undefined;
-    } catch {
-        return undefined;
-    }
-}
-
-/**
- * Derives the Theia package name from a normalized (forward-slash) file path. Locates the
- * LAST 'packages' or 'dev-packages' path segment (so a checkout nested under a directory that
- * happens to be named 'packages' resolves against the real package, not an outer decoy), then
- * prefers that package's package.json `name` field (npm scope stripped) over the directory
- * name itself, since they can differ (e.g. directory 'ai-hugging-face' vs package name
- * 'ai-huggingface'). Falls back to the directory name if no package.json/name is found there.
- * Returns undefined for paths with no packages/dev-packages segment, where the convention
- * doesn't apply (examples/, doc/, etc.) — this boundary is intentional and matches segments
- * exactly, so 'mypackages/foo/bar.ts' does not accidentally match.
+ * Derives the Theia package name from a normalized (forward-slash) file path, based on the last
+ * 'packages' or 'dev-packages' segment, so that a checkout nested below a directory which happens
+ * to be named 'packages' still resolves against the real package. The package.json `name` (without
+ * npm scope) wins over the directory name as the two can differ, e.g. 'ai-hugging-face' contains
+ * '@theia/ai-huggingface'. Returns undefined outside of packages/dev-packages, where the naming
+ * convention does not apply.
  * @param {string} normalizedFilename
- * @param {{ existsSync: typeof fs.existsSync, readFileSync: typeof fs.readFileSync }} [fsImpl]
- *   Test-only override; defaults to real fs.
+ * @returns {string | undefined}
  */
-function derivePackageName(normalizedFilename, fsImpl) {
-    fsImpl = fsImpl || fs;
+function derivePackageName(normalizedFilename) {
     const segments = normalizedFilename.split('/');
     let rootIndex = -1;
     for (let i = 0; i < segments.length - 1; i++) {
@@ -68,14 +47,15 @@ function derivePackageName(normalizedFilename, fsImpl) {
     if (rootIndex === -1) {
         return undefined;
     }
-    const dirName = segments[rootIndex + 1];
-    const packageDir = segments.slice(0, rootIndex + 2).join('/');
-    const nameFromPackageJson = readPackageName(path.join(packageDir, 'package.json'), fsImpl);
-    return nameFromPackageJson || dirName;
+    const packageJson = readPackageJson(segments.slice(0, rootIndex + 2).join('/'));
+    const name = packageJson && typeof packageJson.name === 'string' ? packageJson.name.replace(/^@[^/]+\//, '') : undefined;
+    return name || segments[rootIndex + 1];
 }
 
 /** @type {RuleModule & { derivePackageName: typeof derivePackageName }} */
 module.exports = {
+    // Exposed for the unit tests, not used by ESLint itself.
+    derivePackageName,
     meta: {
         type: 'problem',
         docs: {
@@ -87,7 +67,8 @@ module.exports = {
             invalidNameFormat: 'Logger name must follow the convention: [optional-purpose]package-name:class-name#optional-suffix',
             classNameMismatch: 'Logger name\'s class segment should be "{{expected}}" (the enclosing class), but found "{{actual}}".',
             packageNameMismatch: 'Logger name\'s package segment should be "{{expected}}" (derived from the file path), but found "{{actual}}".'
-        }
+        },
+        schema: []
     },
     create(context) {
         const filename = context.getFilename().replace(/\\/g, '/');
@@ -148,25 +129,30 @@ module.exports = {
             return !variable || variable.defs.length === 0;
         }
 
-        return {
-            /**
-             * @param {ClassDeclaration} node
-             */
-            ClassDeclaration(node) {
-                const hasInjectable = node.decorators?.some(
-                    (/** @type {Decorator} */ d) =>
-                        d.expression &&
-                        d.expression.type === 'CallExpression' &&
-                        d.expression.callee &&
-                        d.expression.callee.type === 'Identifier' &&
-                        d.expression.callee.name === 'injectable'
-                );
-                injectableClassStack.push({ isInjectable: !!hasInjectable, className: node.id ? node.id.name : undefined });
-            },
+        /**
+         * @param {ClassDeclaration | ClassExpression} node
+         */
+        function enterClass(node) {
+            const hasInjectable = node.decorators?.some(
+                (/** @type {Decorator} */ d) =>
+                    d.expression &&
+                    d.expression.type === 'CallExpression' &&
+                    d.expression.callee &&
+                    d.expression.callee.type === 'Identifier' &&
+                    d.expression.callee.name === 'injectable'
+            );
+            injectableClassStack.push({ isInjectable: !!hasInjectable, className: node.id ? node.id.name : undefined });
+        }
 
-            'ClassDeclaration:exit'() {
-                injectableClassStack.pop();
-            },
+        function exitClass() {
+            injectableClassStack.pop();
+        }
+
+        return {
+            ClassDeclaration: enterClass,
+            'ClassDeclaration:exit': exitClass,
+            ClassExpression: enterClass,
+            'ClassExpression:exit': exitClass,
 
             CallExpression(node) {
                 const isInsideInjectable = injectableClassStack.some(entry => entry.isInjectable);
@@ -219,8 +205,7 @@ module.exports = {
                                     const [, actualPackageName, actualClassName] = match;
                                     const enclosingClass = injectableClassStack[injectableClassStack.length - 1];
                                     const expectedClassName = enclosingClass && enclosingClass.className;
-                                    const testFsImpl = context.options && context.options[0] && context.options[0].__testFsImpl;
-                                    const expectedPackageName = derivePackageName(filename, testFsImpl);
+                                    const expectedPackageName = derivePackageName(filename);
 
                                     if (expectedClassName && actualClassName !== expectedClassName) {
                                         context.report({
@@ -245,5 +230,3 @@ module.exports = {
         };
     }
 };
-
-module.exports.derivePackageName = derivePackageName;
