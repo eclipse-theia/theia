@@ -153,26 +153,28 @@ async function theiaCli(): Promise<void> {
         })
         .command<{
             mode: 'development' | 'production',
-            webpackHelp: boolean
+            bundlerHelp: boolean
             splitFrontend?: boolean
-            webpackArgs?: (string | number)[]
+            bundlerArgs?: (string | number)[]
         }>({
-            command: 'build [webpack-args...]',
-            describe: `Generate and bundle the ${target} frontend using webpack`,
+            command: 'build [bundler-args...]',
+            describe: `Generate and bundle the ${target} frontend using esbuild`,
             builder: cli => ApplicationPackageManager.defineGeneratorOptions(cli)
-                .option('webpack-help' as 'webpackHelp', {
+                .option('bundler-help' as 'bundlerHelp', {
                     boolean: true,
-                    description: 'Display Webpack\'s help',
-                    default: false
+                    description: 'Display the bundler\'s help',
+                    default: false,
+                    // Deprecated alias, kept so that scripts written for the webpack bundler keep working.
+                    alias: 'webpack-help'
                 }),
-            handler: async ({ mode, splitFrontend, webpackHelp, webpackArgs = [] }) => {
+            handler: async ({ mode, splitFrontend, bundlerHelp, bundlerArgs = [] }) => {
                 await manager.build(
-                    webpackHelp
+                    bundlerHelp
                         ? ['--help']
                         : [
-                            // Forward the `mode` argument to Webpack too:
+                            // Forward the `mode` argument to the bundler too:
                             '--mode', mode,
-                            ...toStringArray(webpackArgs)
+                            ...toStringArray(bundlerArgs)
                         ],
                     { mode, splitFrontend }
                 );

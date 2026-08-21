@@ -27,9 +27,9 @@
  * is allowed.
  */
 
-// Monaco's localization override is handled by a webpack alias that replaces
-// @theia/monaco-editor-core/esm/vs/nls with packages/monaco/src/browser/monaco-nls.ts.
-// See webpack-generator.ts for the alias configuration.
+// Monaco's localization override is handled at bundling time by the `monacoNlsPlugin` of
+// @theia/bundle-plugin, which replaces @theia/monaco-editor-core/esm/vs/nls with
+// packages/monaco/src/browser/monaco-nls.ts.
 
 import { Container } from '@theia/core/shared/inversify';
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';

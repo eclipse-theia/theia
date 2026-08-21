@@ -15,8 +15,11 @@
 // *****************************************************************************
 
 import * as chai from 'chai';
+import * as crypto from 'crypto';
 import * as fs from 'fs';
-import { nativeDependenciesPlugin } from './esbuild-plugin';
+import * as os from 'os';
+import * as path from 'path';
+import { compressAssetsPlugin, nativeDependenciesPlugin } from './esbuild-plugin';
 
 const expect = chai.expect;
 
@@ -28,10 +31,11 @@ interface Resolvers {
     callback: AnyCallback;
 }
 
-function createFakeBuild(): { build: unknown, resolvers: Resolvers[] } {
+function createFakeBuild(outdir: string = '/tmp/fake-outdir'): { build: unknown, resolvers: Resolvers[], onEnd: AnyCallback[] } {
     const resolvers: Resolvers[] = [];
+    const onEnd: AnyCallback[] = [];
     const build = {
-        initialOptions: { outdir: '/tmp/fake-outdir' },
+        initialOptions: { outdir },
         onResolve: (options: { filter: RegExp }, callback: AnyCallback) => {
             resolvers.push({ filter: options.filter, callback });
         },
@@ -39,9 +43,11 @@ function createFakeBuild(): { build: unknown, resolvers: Resolvers[] } {
             resolvers.push({ filter: options.filter, callback });
         },
         onStart: () => undefined,
-        onEnd: () => undefined,
+        onEnd: (callback: AnyCallback) => {
+            onEnd.push(callback);
+        },
     };
-    return { build, resolvers };
+    return { build, resolvers, onEnd };
 }
 
 describe('nativeDependenciesPlugin', () => {
@@ -106,5 +112,70 @@ describe('nativeDependenciesPlugin', () => {
         expect(result, 'callback must return a resolution result').to.be.an('object');
         expect(result.namespace, 'binding must be routed through the `node-file` namespace').to.equal('node-file');
         expect(result.path, 'binding must point at a prebuilt watcher.node file').to.match(/watcher\.node$/);
+    });
+});
+
+describe('compressAssetsPlugin', () => {
+
+    let outdir: string;
+
+    beforeEach(() => {
+        outdir = fs.mkdtempSync(path.join(os.tmpdir(), 'theia-compress-assets-'));
+    });
+
+    afterEach(() => {
+        fs.rmSync(outdir, { recursive: true, force: true });
+    });
+
+    async function runPlugin(options: { compress?: boolean, errors?: object[] } = {}): Promise<void> {
+        const { build, onEnd } = createFakeBuild(outdir);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        compressAssetsPlugin({ compress: options.compress }).setup(build as any);
+        expect(onEnd.length, 'plugin should register an onEnd callback').to.equal(1);
+        await onEnd[0]({ errors: options.errors ?? [] });
+    }
+
+    it('emits a `.gz` sibling for compressible assets and leaves other file types alone', async () => {
+        fs.writeFileSync(path.join(outdir, 'bundle.js'), 'const theia = 1;'.repeat(500));
+        fs.mkdirSync(path.join(outdir, 'nested'));
+        fs.writeFileSync(path.join(outdir, 'nested', 'style.css'), '.theia-widget { color: red; }'.repeat(500));
+        fs.writeFileSync(path.join(outdir, 'index.html'), '<html></html>');
+
+        await runPlugin();
+
+        expect(fs.existsSync(path.join(outdir, 'bundle.js.gz')), 'JS assets must be compressed').to.equal(true);
+        expect(fs.existsSync(path.join(outdir, 'nested', 'style.css.gz')), 'assets in nested directories must be compressed').to.equal(true);
+        expect(fs.existsSync(path.join(outdir, 'index.html.gz')), 'HTML is not served pre-compressed by the backend').to.equal(false);
+    });
+
+    it('removes a stale `.gz` file when the current asset does not compress well enough', async () => {
+        // The backend serves any existing `.gz` sibling, so an outdated one must not survive a rebuild.
+        const asset = path.join(outdir, 'bundle.js');
+        fs.writeFileSync(asset, crypto.randomBytes(4096));
+        fs.writeFileSync(asset + '.gz', 'stale');
+
+        await runPlugin();
+
+        expect(fs.existsSync(asset + '.gz'), 'stale compressed file must be removed').to.equal(false);
+    });
+
+    it('removes the `.gz` files of a previous build when compression is disabled', async () => {
+        // Otherwise a development build after a production build would keep serving the production assets.
+        const asset = path.join(outdir, 'bundle.js');
+        fs.writeFileSync(asset, 'const theia = 1;'.repeat(500));
+        fs.writeFileSync(asset + '.gz', 'from the previous build');
+
+        await runPlugin({ compress: false });
+
+        expect(fs.existsSync(asset), 'the asset itself must be kept').to.equal(true);
+        expect(fs.existsSync(asset + '.gz'), 'compressed files of a previous build must be removed').to.equal(false);
+    });
+
+    it('does not touch the output directory when the build failed', async () => {
+        fs.writeFileSync(path.join(outdir, 'bundle.js'), 'const theia = 1;'.repeat(500));
+
+        await runPlugin({ errors: [{ text: 'build failed' }] });
+
+        expect(fs.existsSync(path.join(outdir, 'bundle.js.gz')), 'a failed build must not produce compressed assets').to.equal(false);
     });
 });
