@@ -24,7 +24,7 @@
  * @typedef {import('eslint').Rule.RuleModule} RuleModule
  */
 
-const { readPackageJson } = require('./find-package-json');
+const { readPackageJson, reportingMalformedPackageJson } = require('./find-package-json');
 
 /**
  * Derives the Theia package name from a normalized (forward-slash) file path, based on the last
@@ -35,6 +35,8 @@ const { readPackageJson } = require('./find-package-json');
  * convention does not apply.
  * @param {string} normalizedFilename
  * @returns {string | undefined}
+ * @throws {import('./find-package-json').MalformedPackageJsonError} if the package.json of the
+ * package cannot be read or parsed.
  */
 function derivePackageName(normalizedFilename) {
     const segments = normalizedFilename.split('/');
@@ -205,7 +207,7 @@ module.exports = {
                                     const [, actualPackageName, actualClassName] = match;
                                     const enclosingClass = injectableClassStack[injectableClassStack.length - 1];
                                     const expectedClassName = enclosingClass && enclosingClass.className;
-                                    const expectedPackageName = derivePackageName(filename);
+                                    const expectedPackageName = reportingMalformedPackageJson(context, () => derivePackageName(filename));
 
                                     if (expectedClassName && actualClassName !== expectedClassName) {
                                         context.report({

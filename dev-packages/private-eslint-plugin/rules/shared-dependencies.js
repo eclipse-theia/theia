@@ -18,7 +18,7 @@
 /* eslint-disable max-len */
 
 const { PackageReExports } = require('@theia/re-exports');
-const { findPackageJson } = require('./find-package-json');
+const { findPackageJson, reportingMalformedPackageJson } = require('./find-package-json');
 
 const coreReExports = PackageReExports.FromPackageSync('@theia/core');
 
@@ -34,7 +34,7 @@ module.exports = {
     },
     create(context) {
         const filename = context.getFilename();
-        const packageJson = findPackageJson(filename);
+        const packageJson = reportingMalformedPackageJson(context, () => findPackageJson(filename));
         if (packageJson && dependsOnTheiaCore(packageJson)) {
             // Only show an error regarding the package.json file if this is the first
             // time we detect the error, else it will error for every file of the package:

@@ -15,10 +15,13 @@
 // *****************************************************************************
 
 const assert = require('assert');
+const fs = require('fs');
+const os = require('os');
 const path = require('path');
-const { RuleTester } = require('eslint');
+const { Linter, RuleTester } = require('eslint');
 const rule = require('./named-logger-check');
 const { derivePackageName } = require('./named-logger-check');
+const { MalformedPackageJsonError } = require('./find-package-json');
 
 /**
  * Absolute path of a file within this repository. Absolute paths keep the tests independent of
@@ -34,6 +37,28 @@ function repoFile(...segments) {
  */
 function normalizedRepoFile(...segments) {
     return repoFile(...segments).replace(/\\/g, '/');
+}
+
+/**
+ * Writes the given files into a fresh temporary directory, so that a test needing a specific
+ * package layout neither depends on the real repository nor on the other tests. A fresh directory
+ * per call also matters because a malformed package.json is only reported once per path.
+ * @param {{[relativePath: string]: string}} files
+ */
+function tempFiles(files) {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'theia-named-logger-check-'));
+    for (const [relativePath, content] of Object.entries(files)) {
+        const file = path.join(root, relativePath);
+        fs.mkdirSync(path.dirname(file), { recursive: true });
+        fs.writeFileSync(file, content);
+    }
+    return {
+        /** @param {string} relativePath */
+        resolve: relativePath => path.join(root, relativePath),
+        /** @param {string} relativePath */
+        resolveNormalized: relativePath => path.join(root, relativePath).replace(/\\/g, '/'),
+        dispose: () => fs.rmSync(root, { recursive: true, force: true })
+    };
 }
 
 const ruleTester = new RuleTester({
@@ -90,13 +115,15 @@ ruleTester.run('named-logger-check', rule, {
             filename: repoFile('dev-packages', 'private-eslint-plugin', 'rules', 'good-dev-class.ts')
         },
         {
+            // Relative on purpose: the rule must not resolve a package here, while an absolute path
+            // would resolve one if the checkout itself sits below a directory named 'packages'.
             code: `
                 @injectable()
                 class OutsidePackagesClass {
                     constructor(@inject(ILogger) @named('anything-goes-here:OutsidePackagesClass') logger) {}
                 }
             `,
-            filename: repoFile('examples', 'browser-only', 'src', 'browser', 'outside-packages-class.ts')
+            filename: 'examples/browser-only/src/browser/outside-packages-class.ts'
         },
         {
             code: `
@@ -261,8 +288,16 @@ describe('derivePackageName', () => {
         assert.strictEqual(derivePackageName(normalizedRepoFile('dev-packages', 'private-eslint-plugin', 'rules', 'foo.js')), 'eslint-plugin');
     });
 
-    it('is not fooled by an earlier "packages" segment in the path', () => {
-        assert.strictEqual(derivePackageName('home/packages/theia/packages/core/src/foo.ts'), 'core');
+    it('reads the innermost package.json when an outer directory is called "packages" too', () => {
+        const nested = tempFiles({
+            'packages/outer/package.json': '{ "name": "@theia/outer" }',
+            'packages/outer/packages/inner/package.json': '{ "name": "@theia/inner" }'
+        });
+        try {
+            assert.strictEqual(derivePackageName(nested.resolveNormalized('packages/outer/packages/inner/src/foo.ts')), 'inner');
+        } finally {
+            nested.dispose();
+        }
     });
 
     it('falls back to the directory name if the package has no package.json', () => {
@@ -272,5 +307,44 @@ describe('derivePackageName', () => {
     it('returns undefined outside of packages and dev-packages', () => {
         assert.strictEqual(derivePackageName('examples/browser/src/foo.ts'), undefined);
         assert.strictEqual(derivePackageName('mypackages/foo/bar.ts'), undefined);
+    });
+
+    it('throws if the package.json cannot be parsed', () => {
+        const broken = tempFiles({ 'packages/broken/package.json': '{ "name": ' });
+        try {
+            assert.throws(() => derivePackageName(broken.resolveNormalized('packages/broken/src/broken-class.ts')), MalformedPackageJsonError);
+        } finally {
+            broken.dispose();
+        }
+    });
+});
+
+describe('malformed package.json', () => {
+    it('is reported on the linted file instead of aborting the lint run', () => {
+        const broken = tempFiles({ 'packages/broken/package.json': '{ "name": ' });
+        try {
+            const linter = new Linter();
+            linter.defineRule('named-logger-check', rule);
+            linter.defineParser('ts-parser', require('@typescript-eslint/parser'));
+            const messages = linter.verify(
+                `
+                @injectable()
+                class BrokenClass {
+                    constructor(@inject(ILogger) @named('broken:BrokenClass') logger) {}
+                }
+                `,
+                {
+                    parser: 'ts-parser',
+                    parserOptions: { ecmaVersion: 2020, sourceType: 'module' },
+                    rules: { 'named-logger-check': 'error' }
+                },
+                broken.resolve('packages/broken/src/broken-class.ts')
+            );
+            assert.strictEqual(messages.length, 1);
+            assert.strictEqual(messages[0].ruleId, 'named-logger-check');
+            assert.ok(messages[0].message.startsWith(`Cannot read "${broken.resolve('packages/broken/package.json')}"`), messages[0].message);
+        } finally {
+            broken.dispose();
+        }
     });
 });
