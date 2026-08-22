@@ -78,6 +78,7 @@ export enum TheiaPreferenceScope {
 export class TheiaPreferenceView extends TheiaView {
     public customTimeout?: number;
     protected modificationIndicator = '.theia-mod-item-modified';
+    protected searchInput = '.settings-search-input';
     protected optionSelectLabel = '.theia-select-component-label';
     protected optionSelectDropdown = '.theia-select-component-dropdown';
     protected optionSelectDropdownValue = '.theia-select-component-option-value';
@@ -203,6 +204,7 @@ export class TheiaPreferenceView extends TheiaView {
     }
 
     private async findPreferenceEditorById(preferenceId: string, elementType: string = 'input'): Promise<ElementHandle<SVGElement | HTMLElement>> {
+        await this.ensurePreferenceVisible(preferenceId);
         const viewElement = await this.viewElement();
         const element = await viewElement?.waitForSelector(this.getPreferenceEditorSelector(preferenceId, elementType), { timeout: this.customTimeout });
         if (!element) {
@@ -211,8 +213,25 @@ export class TheiaPreferenceView extends TheiaView {
         return element;
     }
 
+    /**
+     * Preferences outside the currently selected category are hidden in the settings editor.
+     * If the preference is not visible, search for its id, which clears the category filter
+     * and reveals the preference.
+     */
+    protected async ensurePreferenceVisible(preferenceId: string): Promise<void> {
+        const viewElement = await this.viewElement();
+        if (await viewElement?.$(this.getPreferenceSelector(preferenceId))) {
+            return;
+        }
+        const input = await viewElement?.waitForSelector(this.searchInput, { timeout: this.customTimeout });
+        await input?.fill(preferenceId);
+        await viewElement?.waitForSelector(this.getPreferenceSelector(preferenceId), { timeout: this.customTimeout });
+    }
+
     private getPreferenceSelector(preferenceId: string): string {
-        return `li[data-pref-id="${preferenceId}"]`;
+        // ':visible' filters out hidden duplicates, e.g. the copy of a preference in the
+        // 'Commonly Used' section, which is hidden while a search filter is active.
+        return `li[data-pref-id="${preferenceId}"]:visible`;
     }
 
     private getPreferenceEditorSelector(preferenceId: string, elementType: string): string {
