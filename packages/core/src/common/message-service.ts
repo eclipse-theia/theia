@@ -147,7 +147,7 @@ export class MessageService {
             const options = (typeof first === 'object' && !Array.isArray(first))
                 ? <MessageOptions>first
                 : undefined;
-            return this.client.showMessage({ type, options, text, actions });
+            return this.client.showMessage({ type, options, text, actions, source: options?.source });
         }
         return this.client.showMessage({ type, text });
     }
