@@ -388,6 +388,8 @@
   justify-content: center;
   padding-inline: var(--theia-ui-padding);
   gap: 2px;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .lm-TabBar-content-container {
