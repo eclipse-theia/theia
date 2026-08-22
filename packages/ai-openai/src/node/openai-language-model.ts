@@ -118,7 +118,8 @@ export class OpenAiModel implements LanguageModel {
         public serverTools?: ServerToolDescriptor[],
         public serverSideCompactionSupport: boolean = false,
         public serverSideCompactionEnabledByDefault: boolean = false,
-        public serverSideCompactionTokenThresholdByDefault?: number
+        public serverSideCompactionTokenThresholdByDefault?: number,
+        public headers?: Record<string, string>
     ) { }
 
     /** Reasoning-level translation lives in {@link openAiReasoningFor}. */
@@ -253,9 +254,11 @@ export class OpenAiModel implements LanguageModel {
         const proxyFetch = createProxyFetch(this.proxy);
 
         if (apiVersion) {
-            return new AzureOpenAI({ apiKey: key, baseURL: this.url, apiVersion: apiVersion, deployment: this.deployment, fetch: proxyFetch });
+            return new AzureOpenAI({
+                apiKey: key, baseURL: this.url, apiVersion: apiVersion, deployment: this.deployment, fetch: proxyFetch, defaultHeaders: this.headers
+            });
         } else {
-            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url, fetch: proxyFetch });
+            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url, fetch: proxyFetch, defaultHeaders: this.headers });
         }
     }
 
