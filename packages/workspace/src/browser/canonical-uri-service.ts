@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CancellationToken, URI } from '@theia/core/lib/common';
-import { injectable } from '@theia/core/shared/inversify';
+import { CancellationToken, URI, ILogger } from '@theia/core/lib/common';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
 
 export interface CanonicalUriProvider extends Disposable {
@@ -25,6 +25,9 @@ export interface CanonicalUriProvider extends Disposable {
 @injectable()
 export class CanonicalUriService {
     private providers = new Map<string, CanonicalUriProvider>();
+
+    @inject(ILogger) @named('workspace:CanonicalUriService')
+    protected readonly logger: ILogger;
 
     registerCanonicalUriProvider(scheme: string, provider: CanonicalUriProvider): Disposable {
         if (this.providers.has(scheme)) {
@@ -48,7 +51,7 @@ export class CanonicalUriService {
     async provideCanonicalUri(uri: URI, targetScheme: string, token: CancellationToken = CancellationToken.None): Promise<URI | undefined> {
         const provider = this.providers.get(uri.scheme);
         if (!provider) {
-            console.warn(`No Canonical URI provider for scheme: '${uri.scheme}' exists`);
+            this.logger.warn(`No Canonical URI provider for scheme: '${uri.scheme}' exists`);
             return undefined;
         }
 

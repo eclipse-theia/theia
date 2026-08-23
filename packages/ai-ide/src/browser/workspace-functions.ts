@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { AiConfigurationService, ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
-import { CancellationToken, Disposable, OS, PreferenceService, URI, Path } from '@theia/core';
+import { ChatToolContext, FileReadTracker } from '@theia/ai-chat';
+import { CancellationToken, Disposable, OS, PreferenceService, URI, Path, ILogger } from '@theia/core';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
@@ -76,6 +77,9 @@ export class WorkspaceFunctionScope {
     @inject(EnvVariablesServer)
     protected readonly envVariablesServer: EnvVariablesServer;
 
+    @inject(ILogger) @named('ai-ide:WorkspaceFunctionScope')
+    protected readonly logger: ILogger;
+
     @inject(ContributionProvider) @named(AccessibleRootContribution) @optional()
     protected readonly accessibleRootContributions: ContributionProvider<AccessibleRootContribution> | undefined;
 
@@ -135,7 +139,7 @@ export class WorkspaceFunctionScope {
         for (const root of sortedRoots) {
             const basename = root.resource.path.base;
             if (mapping.has(basename)) {
-                console.debug(
+                this.logger.debug(
                     `Multiple workspace roots share the basename '${basename}'. ` +
                     `Only '${mapping.get(basename)!.toString()}' is addressable as '${basename}'. ` +
                     `'${root.resource.toString()}' can still be accessed but may require full paths.`
@@ -377,7 +381,7 @@ export class WorkspaceFunctionScope {
                     roots.push(WorkspaceFunctionScope.withoutTrailingSeparator(root.normalizePath()));
                 }
             } catch (error) {
-                console.warn('Failed to resolve accessible roots from a contribution.', error);
+                this.logger.warn('Failed to resolve accessible roots from a contribution.', error);
             }
         }
         return roots;
@@ -790,7 +794,7 @@ export class FileContentFunction implements ToolProvider {
             },
             handler: (arg_string: string, ctx?: ToolInvocationContext) => {
                 const { file, offset, limit } = this.parseArg(arg_string);
-                return this.getFileContent(file, ctx?.cancellationToken, offset, limit);
+                return this.getFileContent(file, ctx, offset, limit);
             },
             providerName: undefined,
             getArgumentsShortLabel: (args: string): { label: string; hasMore: boolean } | undefined => {
@@ -823,12 +827,17 @@ export class FileContentFunction implements ToolProvider {
     @inject(PreferenceService)
     protected readonly preferences: PreferenceService;
 
+    /** Optional: tracking is advisory, so containers without a tracker still get a working tool. */
+    @inject(FileReadTracker) @optional()
+    protected readonly fileReadTracker: FileReadTracker | undefined;
+
     private parseArg(arg_string: string): { file: string; offset?: number; limit?: number } {
         const result = JSON.parse(arg_string);
         return { file: result.file, offset: result.offset, limit: result.limit };
     }
 
-    private async getFileContent(file: string, cancellationToken?: CancellationToken, offset?: number, limit?: number): Promise<string> {
+    private async getFileContent(file: string, ctx?: ToolInvocationContext, offset?: number, limit?: number): Promise<string> {
+        const cancellationToken = ctx?.cancellationToken;
         if (cancellationToken?.isCancellationRequested) {
             return JSON.stringify({ error: 'Operation cancelled by user' });
         }
@@ -857,20 +866,23 @@ export class FileContentFunction implements ToolProvider {
         const isPaginated = offset !== undefined || limit !== undefined;
 
         if (isEditorOpen) {
-            return this.handleEditorContent(openEditorValue!, maxSizeKB, offset, limit);
+            return this.handleEditorContent(targetUri, openEditorValue!, maxSizeKB, ctx, offset, limit);
         } else if (isPaginated) {
             return this.readStreamedSlice(targetUri, maxSizeKB, offset, limit);
         } else {
-            return this.handleFullDiskRead(targetUri, maxSizeKB);
+            return this.handleFullDiskRead(targetUri, maxSizeKB, ctx);
         }
     }
 
-    private handleEditorContent(content: string, maxSizeKB: number, offset?: number, limit?: number): string {
+    private async handleEditorContent(
+        targetUri: URI, content: string, maxSizeKB: number, ctx?: ToolInvocationContext, offset?: number, limit?: number
+    ): Promise<string> {
         if (offset === undefined && limit === undefined) {
             const sizeKB = this.sizeInKB(content);
             if (sizeKB > maxSizeKB) {
                 return this.buildFileSizeLimitError(sizeKB, maxSizeKB);
             }
+            await this.trackRead(targetUri, content, ctx);
             return content;
         }
 
@@ -888,7 +900,17 @@ export class FileContentFunction implements ToolProvider {
         return `${header}\n${result}`;
     }
 
-    private async handleFullDiskRead(targetUri: URI, maxSizeKB: number): Promise<string> {
+    /**
+     * Remembers the content handed to the agent, if it came from a chat session at all. Only full reads are
+     * tracked: a slice says nothing about the rest of the file, so the streaming path is skipped.
+     */
+    private async trackRead(targetUri: URI, content: string, ctx?: ToolInvocationContext): Promise<void> {
+        if (ChatToolContext.is(ctx)) {
+            await this.fileReadTracker?.recordRead(ctx.request.session.id, targetUri, content);
+        }
+    }
+
+    private async handleFullDiskRead(targetUri: URI, maxSizeKB: number, ctx?: ToolInvocationContext): Promise<string> {
         try {
             const stat = await this.fileService.resolve(targetUri);
             if (stat.size !== undefined) {
@@ -907,6 +929,7 @@ export class FileContentFunction implements ToolProvider {
             if (sizeKB > maxSizeKB) {
                 return this.buildFileSizeLimitError(sizeKB, maxSizeKB);
             }
+            await this.trackRead(targetUri, rawContent, ctx);
             return rawContent;
         } catch (error) {
             if (error instanceof FileOperationError) {
@@ -1138,6 +1161,9 @@ export class FileDiagnosticProvider implements ToolProvider {
     @inject(MonacoTextModelService)
     protected readonly modelService: MonacoTextModelService;
 
+    @inject(ILogger) @named('ai-ide:FileDiagnosticProvider')
+    protected readonly logger: ILogger;
+
     getTool(): ToolRequest {
         return {
             id: FileDiagnosticProvider.ID,
@@ -1238,7 +1264,7 @@ export class FileDiagnosticProvider implements ToolProvider {
             if (err.message === 'Operation cancelled by user') {
                 return JSON.stringify({ error: 'Operation cancelled by user' });
             }
-            console.warn('Error when fetching markers for', uri.toString(), err);
+            this.logger.warn('Error when fetching markers for', uri.toString(), err);
             return JSON.stringify({ error: err instanceof Error ? err.message : 'Unknown error when fetching for problems for ' + uri.toString() });
         } finally {
             toDispose.forEach(disposable => disposable.dispose());

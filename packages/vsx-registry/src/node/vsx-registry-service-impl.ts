@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { LanguageInfo } from '@theia/core/lib/common/i18n/localization';
 import { RequestContext, RequestService } from '@theia/core/shared/@theia/request';
@@ -39,7 +39,7 @@ export class VSXRegistryServiceImpl implements VSXRegistryService {
     @inject(VSXEnvironment)
     protected readonly vsxEnvironment: VSXEnvironment;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('vsx-registry:VSXRegistryServiceImpl')
     protected readonly logger: ILogger;
 
     async search(searchOptions?: VSXSearchOptions): Promise<VSXSearchResult> {

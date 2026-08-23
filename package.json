@@ -6,8 +6,19 @@
     "node": ">=22"
   },
   "overrides": {
+    "@typescript-eslint/eslint-plugin-tslint": {
+      "@typescript-eslint/utils": "^7.18.0"
+    },
+    "adm-zip": "^0.6.0",
+    "dompurify": "^3.4.13",
+    "js-yaml": "^4.3.1",
+    "nx": {
+      "brace-expansion": "^5.0.9"
+    },
     "perfect-scrollbar": "1.5.5",
-    "yauzl": "~3.3.2"
+    "serialize-javascript": "^7.1.0",
+    "tar": "^7.5.22",
+    "uuid": "^11.1.1"
   },
   "devDependencies": {
     "@eclipse-dash/nodejs-wrapper": "^0.0.1",
@@ -16,7 +27,7 @@
     "@types/chai-string": "^1.4.5",
     "@types/express": "^4.17.25",
     "@types/jsdom": "^21.1.7",
-    "@types/node": "24",
+    "@types/node": "^24.13.3",
     "@types/sinon": "^10.0.20",
     "@types/temp": "^0.9.4",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
@@ -31,7 +42,7 @@
     "concurrently": "^3.6.1",
     "debug": "^4.4.3",
     "electron-mocha": "^13.1.0",
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.28.2",
     "eslint": "^8.57.1",
     "eslint-plugin-deprecation": "^3.0.0",
     "eslint-plugin-import": "^2.32.0",
@@ -43,7 +54,7 @@
     "ignore-styles": "^5.0.1",
     "jsdom": "^22.1.0",
     "lerna": "^9.0.7",
-    "minimatch": "^10.0.3",
+    "minimatch": "^10.2.6",
     "mkdirp": "^0.5.6",
     "node-abi": "^4.33.0",
     "node-gyp": "^11.5.0",

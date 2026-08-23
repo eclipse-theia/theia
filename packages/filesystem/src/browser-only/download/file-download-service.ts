@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MessageService } from '@theia/core/lib/common/message-service';
@@ -32,7 +32,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
     @inject(FileService)
     protected readonly fileService: FileService;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('filesystem:FileDownloadServiceImpl')
     protected readonly logger: ILogger;
 
     @inject(MessageService)

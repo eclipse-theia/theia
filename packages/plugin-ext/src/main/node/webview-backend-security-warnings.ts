@@ -16,11 +16,15 @@
 
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { BackendApplicationConfigProvider } from '@theia/core/lib/node/backend-application-config-provider';
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { WebviewExternalEndpoint } from '../common/webview-protocol';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class WebviewBackendSecurityWarnings implements BackendApplicationContribution {
+
+    @inject(ILogger) @named('plugin-ext:WebviewBackendSecurityWarnings')
+    protected readonly logger: ILogger;
 
     initialize(): void {
         this.checkHostPattern();
@@ -32,7 +36,7 @@ export class WebviewBackendSecurityWarnings implements BackendApplicationContrib
         }
         const envHostPattern = process.env[WebviewExternalEndpoint.pattern];
         if (envHostPattern && envHostPattern !== WebviewExternalEndpoint.defaultPattern) {
-            console.warn(`\
+            this.logger.warn(`\
 WEBVIEW SECURITY WARNING
 
     Changing the @theia/plugin-ext webview host pattern can lead to security vulnerabilities.

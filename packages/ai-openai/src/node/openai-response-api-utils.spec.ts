@@ -19,6 +19,7 @@ import {
     CompactionMessage, isCompactionResponsePart, isServerToolCallResponsePart, isUsageResponsePart, LanguageModelMessage, LanguageModelStreamResponsePart, UserRequest
 } from '@theia/ai-core';
 import { OpenAiModelUtils } from './openai-language-model';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { OPENAI_FUNCTION_CALL_REASONING_DATA_KEY, OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools';
 
@@ -28,9 +29,20 @@ async function* toStream(events: unknown[]): AsyncIterable<unknown> {
     }
 }
 
+function createTestUtils(): OpenAiResponseApiUtils {
+    const utils = new OpenAiResponseApiUtils();
+    (utils as unknown as { logger: MockLogger }).logger = new MockLogger();
+    return utils;
+}
+
 describe('OpenAiResponseApiUtils', () => {
+    let utils: OpenAiResponseApiUtils;
+
+    beforeEach(() => {
+        utils = createTestUtils();
+    });
+
     it('passes tool parameters through unchanged in non-strict mode', () => {
-        const utils = new OpenAiResponseApiUtils();
         const parameters = {
             type: 'object' as const,
             properties: {
@@ -63,8 +75,6 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('adds native web search without requiring client tools', () => {
-        const utils = new OpenAiResponseApiUtils();
-
         expect(utils.convertToolsForResponseApi(undefined, undefined, [OPENAI_WEB_SEARCH])).to.deep.equal([
             { type: 'web_search' }
         ]);
@@ -72,7 +82,6 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('combines native web search with function and deferred-tool search tools', () => {
-        const utils = new OpenAiResponseApiUtils();
         const tools = utils.convertToolsForResponseApi([{
             id: 'lookup',
             name: 'lookup',
@@ -84,7 +93,6 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('emits per-iteration usage for Response API tool calls instead of accumulated usage', async () => {
-        const utils = new OpenAiResponseApiUtils();
         const streams = [
             [
                 {
@@ -174,7 +182,6 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('preserves reasoning and web search items for the next function-tool iteration', async () => {
-        const utils = new OpenAiResponseApiUtils();
         const reasoningItem = { id: 'rs-1', type: 'reasoning', summary: [], encrypted_content: 'encrypted-reasoning' };
         const searchCall = {
             id: 'ws-1',
@@ -235,7 +242,6 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('yields a compaction part when the stream contains a response.output_item.done compaction event', async () => {
-        const utils = new OpenAiResponseApiUtils();
         const streamEvents = [
             {
                 type: 'response.output_item.done',
@@ -286,7 +292,6 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('surfaces the deferred-tool search as a running then finished server tool call', async () => {
-        const utils = new OpenAiResponseApiUtils();
         const streams = [
             [
                 {
@@ -358,7 +363,6 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('surfaces web search as a running then finished server tool call', async () => {
-        const utils = new OpenAiResponseApiUtils();
         const reasoningItem = {
             id: 'rs-1',
             type: 'reasoning',
@@ -411,7 +415,6 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('surfaces web search from a non-streaming response and requests sources', async () => {
-        const utils = new OpenAiResponseApiUtils();
         let createRequest: Record<string, unknown> | undefined;
         const openai = {
             responses: {
@@ -449,7 +452,6 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('replays persisted OpenAI reasoning before its web search call', () => {
-        const utils = new OpenAiResponseApiUtils();
         const reasoningItem = {
             id: 'rs-1',
             type: 'reasoning',
@@ -484,7 +486,6 @@ describe('OpenAiResponseApiUtils', () => {
     });
 
     it('persists and replays reasoning before a function call', async () => {
-        const utils = new OpenAiResponseApiUtils();
         const reasoningItem = { id: 'rs-1', type: 'reasoning', summary: [], encrypted_content: 'encrypted-reasoning' };
         const functionCall = {
             id: 'fc-1', call_id: 'call-1', type: 'function_call', name: 'lookup', arguments: '{"query":"test"}'
@@ -578,7 +579,6 @@ describe('OpenAiResponseApiUtils', () => {
         }
 
         it('replays the openai-responses compaction marker and drops the prefix before it', () => {
-            const utils = new OpenAiResponseApiUtils();
             const messages: LanguageModelMessage[] = [
                 userMessage('user A'),
                 aiMessage('ai B'),
@@ -600,7 +600,6 @@ describe('OpenAiResponseApiUtils', () => {
         });
 
         it('only replays the LAST openai-responses marker and drops everything before it', () => {
-            const utils = new OpenAiResponseApiUtils();
             const messages: LanguageModelMessage[] = [
                 userMessage('user A'),
                 compactionMessage('openai-responses', 'enc1'),
@@ -623,7 +622,6 @@ describe('OpenAiResponseApiUtils', () => {
         });
 
         it('skips a foreign-provider compaction marker without dropping the prefix', () => {
-            const utils = new OpenAiResponseApiUtils();
             const messages: LanguageModelMessage[] = [
                 userMessage('user A'),
                 compactionMessage('anthropic', 'enc1'),
@@ -640,7 +638,6 @@ describe('OpenAiResponseApiUtils', () => {
         });
 
         it('converts all messages unchanged when there is no compaction marker', () => {
-            const utils = new OpenAiResponseApiUtils();
             const messages: LanguageModelMessage[] = [userMessage('user A'), aiMessage('ai B'), userMessage('user C')];
 
             const { input } = utils.processMessages(messages, 'developer', 'gpt-5');

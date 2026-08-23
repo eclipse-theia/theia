@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { PreferenceScope, PreferenceService } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { ILogger, PreferenceScope, PreferenceService } from '@theia/core';
 import {
     isLocalMCPServerDescription,
     isRemoteMCPServerDescription,
@@ -24,8 +24,10 @@ import {
     MCPServerDescription
 } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
+import { MCPServersPreference } from '@theia/ai-mcp/lib/common/mcp-server-preference-validator';
 import { MCPInstallOverrides, MCPServerEditor } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
 import { ClassificationResult, ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
+import { RegistryAutoUpdatePolicy } from '../auto-update/registry-auto-update-policy';
 
 export { MCPInstallOverrides };
 
@@ -50,6 +52,8 @@ export interface MCPInstallService {
     unlink(name: string): Promise<void>;
     /** Removes an installed server entry by its local preference key. */
     uninstall(name: string): Promise<void>;
+    /** Lists every locally stored server, skipping entries that do not match the servers preference schema. */
+    listInstalledServers(): MCPServerDescription[];
     /** Classifies a locally stored server against the registry (for the Installed view). */
     classifyLocalServer(local: MCPServerDescription, registryEntries: ResolvedRegistryEntry[]): ClassificationResult;
     /** Classifies a registry entry against the locally stored servers (for the Search view). */
@@ -64,6 +68,12 @@ export class MCPInstallServiceImpl implements MCPInstallService {
 
     @inject(MCPServerEditor)
     protected readonly editor: MCPServerEditor;
+
+    @inject(RegistryAutoUpdatePolicy)
+    protected readonly autoUpdatePolicy: RegistryAutoUpdatePolicy;
+
+    @inject(ILogger) @named('ai-registry:MCPInstallServiceImpl')
+    protected readonly logger: ILogger;
 
     /** Delegates to the generic editor so both registry installs and `install-mcp` URL handlers go through the same code path. */
     async install(entry: ResolvedRegistryEntry, overrides?: MCPInstallOverrides): Promise<void> {
@@ -154,9 +164,15 @@ export class MCPInstallServiceImpl implements MCPInstallService {
         if (!existing || existing.registryMetadata === undefined) {
             return;
         }
+        const serverId = existing.registryMetadata.serverId;
         const next: StoredEntry = { ...existing };
         delete next.registryMetadata;
         await this.writeServers({ ...current, [name]: next });
+        if (serverId) {
+            // Unlinking is the other way a server stops being registry-managed, so it drops the
+            // override for the same reason uninstall does. Re-linking starts from the default again.
+            await this.autoUpdatePolicy.clearMode('mcp', serverId);
+        }
     }
 
     async uninstall(name: string): Promise<void> {
@@ -164,9 +180,29 @@ export class MCPInstallServiceImpl implements MCPInstallService {
         if (!(name in current)) {
             return;
         }
+        const serverId = current[name].registryMetadata?.serverId;
         const next: StoredServers = { ...current };
         delete next[name];
         await this.writeServers(next);
+        if (serverId) {
+            // The server is gone, so its override would linger with nothing left to apply it to.
+            await this.autoUpdatePolicy.clearMode('mcp', serverId);
+        }
+    }
+
+    listInstalledServers(): MCPServerDescription[] {
+        const result: MCPServerDescription[] = [];
+        for (const [name, value] of Object.entries(this.readServers())) {
+            // `StoredServers` is the expected shape of the preference, not a guarantee. Reuse the
+            // same guard `McpFrontendApplicationContribution` applies, so a `command: 42` entry is
+            // rejected here too instead of being cast straight to a description.
+            if (!MCPServersPreference.isValue(value)) {
+                this.logger.warn(`Ignoring malformed MCP server "${name}": value does not match the MCP servers preference schema.`);
+                continue;
+            }
+            result.push({ name, ...value } as MCPServerDescription);
+        }
+        return result;
     }
 
     protected readServers(): StoredServers {

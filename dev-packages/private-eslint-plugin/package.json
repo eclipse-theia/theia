@@ -6,7 +6,8 @@
   "main": "index.js",
   "scripts": {
     "afterInstall": "npm run compile",
-    "compile": "theiaext compile"
+    "compile": "theiaext compile",
+    "test": "theiaext test \"rules/*.spec.js\" \"util/*.spec.js\""
   },
   "dependencies": {
     "@theia/ext-scripts": "1.74.0",

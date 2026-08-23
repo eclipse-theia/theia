@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { JSONValue } from '@lumino/coreutils';
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct, named } from 'inversify';
 import { Disposable, DisposableCollection } from '../disposable';
 import { Emitter, Event } from '../event';
 import { Deferred } from '../promise-util';
@@ -29,6 +29,7 @@ import { PreferenceScope } from './preference-scope';
 import { PreferenceConfigurations } from './preference-configurations';
 import { deepFreeze } from '../objects';
 import { unreachable } from '../types';
+import { ILogger } from '../logger';
 
 /**
  * Representation of a preference change. A preference value can be set to `undefined` for a specific scope.
@@ -296,6 +297,9 @@ export class PreferenceServiceImpl implements PreferenceService {
     @inject(PreferenceLanguageOverrideService)
     protected readonly preferenceOverrideService: PreferenceLanguageOverrideService;
 
+    @inject(ILogger) @named('core:PreferenceServiceImpl')
+    protected readonly logger: ILogger;
+
     protected readonly preferenceProviders = new Map<PreferenceScope, PreferenceProvider>();
 
     protected async initializeProviders(): Promise<void> {
@@ -309,7 +313,7 @@ export class PreferenceServiceImpl implements PreferenceService {
                     ));
                     await provider.ready;
                 } else {
-                    console.warn(`No preference provider bound for ${PreferenceScope[scope]}`);
+                    this.logger.warn(`No preference provider bound for ${PreferenceScope[scope]}`);
                 }
             }
             this._ready.resolve();

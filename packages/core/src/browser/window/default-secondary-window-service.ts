@@ -13,13 +13,13 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct, named } from 'inversify';
 import { SecondaryWindow, SecondaryWindowService } from './secondary-window-service';
 import { WindowService } from './window-service';
 import { ExtractableWidget, Widget } from '../widgets';
 import { ApplicationShell } from '../shell';
 import { Saveable } from '../saveable';
-import { Emitter, environment, Event, PreferenceService } from '../../common';
+import { Emitter, environment, Event, PreferenceService, ILogger } from '../../common';
 import { SaveableService } from '../saveable-service';
 import { getAllWidgetsFromSecondaryWindow, getDefaultRestoreArea } from '../secondary-window-handler';
 import { WindowFocusService } from './window-focus-service';
@@ -59,17 +59,20 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
     @inject(WindowFocusService)
     protected readonly windowFocusService: WindowFocusService;
 
+    @inject(ILogger) @named('core:DefaultSecondaryWindowService')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     init(): void {
         // Set up messaging with secondary windows
         window.addEventListener('message', (event: MessageEvent) => {
-            console.trace('Message on main window', event);
+            this.logger.trace('Message on main window', event);
             if (event.data.fromSecondary) {
-                console.trace('Message comes from secondary window');
+                this.logger.trace('Message comes from secondary window');
                 return;
             }
             if (event.data.fromMain) {
-                console.trace('Message has mainWindow marker, therefore ignore it');
+                this.logger.trace('Message has mainWindow marker, therefore ignore it');
                 return;
             }
 
@@ -80,7 +83,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                 return;
             }
 
-            console.trace('Delegate main window message to secondary windows', event);
+            this.logger.trace('Delegate main window message to secondary windows', event);
             this.secondaryWindows.forEach(secondaryWindow => {
                 if (!secondaryWindow.window.closed) {
                     secondaryWindow.window.postMessage({ ...event.data, fromMain: true }, '*');

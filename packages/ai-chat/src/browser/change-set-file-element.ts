@@ -34,6 +34,7 @@ import { insertFinalNewline } from '@theia/monaco/lib/browser/monaco-utilities';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { ChangeSetElement } from '../common';
+import { FileReadTracker } from '../common/file-read-tracker';
 import { SerializableChangeSetElement } from '../common/chat-model-serialization';
 import { createChangeSetFileUri } from './change-set-file-resource';
 import { ChangeSetFileService } from './change-set-file-service';
@@ -105,6 +106,9 @@ export class ChangeSetFileElement implements ChangeSetElement {
     protected readonly logger: ILogger;
     @inject(MonacoWorkspace)
     protected readonly monacoWorkspace: MonacoWorkspace;
+
+    @inject(FileReadTracker)
+    protected readonly fileReadTracker: FileReadTracker;
 
     protected readonly toDispose = new DisposableCollection();
     protected _state: ChangeSetElementState;
@@ -303,13 +307,12 @@ export class ChangeSetFileElement implements ChangeSetElement {
         if (this.type === 'delete') {
             await this.changeSetFileService.delete(this.uri);
             this.state = 'applied';
-            this.changeSetFileService.closeDiff(this.readOnlyUri);
-            return;
+        } else {
+            await this.applyChangesWithMonaco(contents);
         }
-
-        // Load Monaco model for the base file URI and apply changes
-        await this.applyChangesWithMonaco(contents);
         this.changeSetFileService.closeDiff(this.readOnlyUri);
+        // Re-snapshot so the agent's own write is not reported back as external, reading because code actions and formatting on save alter the target state.
+        await this.fileReadTracker.recordRead(this.elementProps.chatSessionId, this.uri);
     }
 
     async writeChanges(contents?: string): Promise<void> {

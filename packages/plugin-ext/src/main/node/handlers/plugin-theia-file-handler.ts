@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { PluginDeployerFileHandler, PluginDeployerEntry, PluginDeployerFileHandlerContext, PluginType } from '../../../common/plugin-protocol';
-import type { URI } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { URI, ILogger } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { getTempDirPathAsync } from '../temp-dir-util';
 import * as fs from '@theia/core/shared/fs-extra';
@@ -31,6 +31,9 @@ export class PluginTheiaFileHandler implements PluginDeployerFileHandler {
 
     @inject(PluginTheiaEnvironment)
     protected readonly environment: PluginTheiaEnvironment;
+
+    @inject(ILogger) @named('plugin-ext:PluginTheiaFileHandler')
+    protected readonly logger: ILogger;
 
     constructor() {
         this.systemPluginsDirUri = new Deferred();
@@ -48,14 +51,14 @@ export class PluginTheiaFileHandler implements PluginDeployerFileHandler {
     async handle(context: PluginDeployerFileHandlerContext): Promise<void> {
         const id = context.pluginEntry().id();
         const pluginDir = await this.getPluginDir(context);
-        console.log(`[${id}]: trying to decompress into "${pluginDir}"...`);
+        this.logger.info(`[${id}]: trying to decompress into "${pluginDir}"...`);
         if (context.pluginEntry().type === PluginType.User && await fs.pathExists(pluginDir)) {
-            console.log(`[${id}]: already found`);
+            this.logger.info(`[${id}]: already found`);
             context.pluginEntry().updatePath(pluginDir);
             return;
         }
         await context.unzip(context.pluginEntry().path(), pluginDir);
-        console.log(`[${id}]: decompressed`);
+        this.logger.info(`[${id}]: decompressed`);
         context.pluginEntry().updatePath(pluginDir);
     }
 

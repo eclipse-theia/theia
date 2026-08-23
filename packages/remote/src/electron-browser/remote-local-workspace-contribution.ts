@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ILogger, MaybePromise, URI } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceHandlingContribution, WorkspaceInput, WorkspaceOpenHandlerContribution } from '@theia/workspace/lib/browser';
 import { LOCAL_FILE_SCHEME } from './local-backend-services';
 import { CURRENT_PORT_PARAM, LOCAL_PORT_PARAM, getCurrentPort, getLocalPort } from '@theia/core/lib/electron-browser/messaging/electron-local-ws-connection-source';
@@ -32,8 +32,8 @@ export class RemoteLocalWorkspaceContribution implements WorkspaceOpenHandlerCon
     @inject(WindowService)
     protected readonly windowService: WindowService;
 
-    @inject(ILogger)
-    protected logger: ILogger;
+    @inject(ILogger) @named('remote:RemoteLocalWorkspaceContribution')
+    protected readonly logger: ILogger;
 
     @inject(WorkspacePreferences)
     protected preferences: WorkspacePreferences;

@@ -58,8 +58,7 @@ export class DefaultSkillService implements SkillService {
     @inject(FileService)
     protected readonly fileService: FileService;
 
-    @inject(ILogger)
-    @named('SkillService')
+    @inject(ILogger) @named('ai-core:DefaultSkillService')
     protected readonly logger: ILogger;
 
     @inject(EnvVariablesServer)

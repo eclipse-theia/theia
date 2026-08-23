@@ -18,6 +18,8 @@ import { expect } from 'chai';
 import { OS } from '@theia/core/lib/common/os';
 import { RemoteCliContext } from '@theia/core/lib/node/remote/remote-cli-contribution';
 import { PreferenceCliContribution } from './preference-cli-contribution';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 const REMOTE_CLI_CONTEXT: RemoteCliContext = {
     platform: { os: OS.Type.Linux, arch: 'x64' },
@@ -30,6 +32,7 @@ describe('PreferenceCliContribution', () => {
 
     beforeEach(() => {
         contribution = new PreferenceCliContribution();
+        (contribution as unknown as { logger: ILogger }).logger = new MockLogger();
     });
 
     describe('--set-preference', () => {

@@ -88,7 +88,7 @@ export class MonacoTextModelService implements ITextModelService {
     @named(MonacoEditorModelFilter)
     protected readonly filters: ContributionProvider<MonacoEditorModelFilter>;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('monaco:MonacoTextModelService')
     protected readonly logger: ILogger;
 
     @inject(FileService)

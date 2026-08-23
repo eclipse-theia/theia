@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource, MessageService, isArray } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource, MessageService, isArray, ILogger } from '@theia/core';
 import {
     ApplicationShell,
     CommonCommands,
@@ -50,7 +50,7 @@ import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { WorkspaceService, WorkspaceInput } from '@theia/workspace/lib/browser/workspace-service';
 import { DiffService } from '@theia/workspace/lib/browser/diff-service';
-import { inject, injectable, optional } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
 import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { PluginDeployOptions, PluginIdentifiers, PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
@@ -206,6 +206,9 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     @inject(ScmContribution)
     protected scmContribution: ScmContribution;
 
+    @inject(ILogger) @named('plugin-ext-vscode:PluginVscodeCommandsContribution')
+    protected readonly logger: ILogger;
+
     private async openWith(commandId: string, resource: URI, columnOrOptions?: ViewColumn | TextDocumentShowOptions, openerId?: string): Promise<boolean> {
         if (!resource) {
             throw new Error(`${commandId} command requires at least URI argument.`);
@@ -268,7 +271,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     const message = nls.localizeByDefault("Unable to open '{0}'", resource.path);
                     const reason = nls.localizeByDefault('Error: {0}', error.message);
                     this.messageService.error(`${message}\n${reason}`);
-                    console.warn(error);
+                    this.logger.warn(error);
                 }
             }
         });
@@ -353,35 +356,44 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             commands.registerCommand({ id: 'workbench.action.files.openFileFolder' }, {
                 execute: () => commands.executeCommand(WorkspaceCommands.OPEN.id)
             });
+            commands.registerAlias('workbench.action.files.openFileFolder', WorkspaceCommands.OPEN.id);
         }
 
         commands.registerCommand({ id: 'workbench.action.files.openFile' }, {
             execute: () => commands.executeCommand(WorkspaceCommands.OPEN_FILE.id)
         });
+        commands.registerAlias('workbench.action.files.openFile', WorkspaceCommands.OPEN_FILE.id);
         commands.registerCommand({ id: 'workbench.action.files.openFolder' }, {
             execute: () => commands.executeCommand(WorkspaceCommands.OPEN_FOLDER.id)
         });
+        commands.registerAlias('workbench.action.files.openFolder', WorkspaceCommands.OPEN_FOLDER.id);
         commands.registerCommand({ id: 'workbench.action.addRootFolder' }, {
             execute: () => commands.executeCommand(WorkspaceCommands.ADD_FOLDER.id)
         });
+        commands.registerAlias('workbench.action.addRootFolder', WorkspaceCommands.ADD_FOLDER.id);
         commands.registerCommand({ id: 'workbench.action.saveWorkspaceAs' }, {
             execute: () => commands.executeCommand(WorkspaceCommands.SAVE_WORKSPACE_AS.id)
         });
+        commands.registerAlias('workbench.action.saveWorkspaceAs', WorkspaceCommands.SAVE_WORKSPACE_AS.id);
         commands.registerCommand({ id: 'workbench.action.gotoLine' }, {
             execute: () => commands.executeCommand(EditorCommands.GOTO_LINE_COLUMN.id)
         });
+        commands.registerAlias('workbench.action.gotoLine', EditorCommands.GOTO_LINE_COLUMN.id);
         commands.registerCommand({ id: 'workbench.action.quickOpen' }, {
             execute: (prefix?: unknown) => this.quickInput.open(typeof prefix === 'string' ? prefix : '')
         });
         commands.registerCommand({ id: 'workbench.action.openSettings' }, {
             execute: (query?: string) => commands.executeCommand(CommonCommands.OPEN_PREFERENCES.id, query)
         });
+        commands.registerAlias('workbench.action.openSettings', CommonCommands.OPEN_PREFERENCES.id);
         commands.registerCommand({ id: 'workbench.action.openWorkspaceConfigFile' }, {
             execute: () => commands.executeCommand(WorkspaceCommands.OPEN_WORKSPACE_FILE.id)
         });
+        commands.registerAlias('workbench.action.openWorkspaceConfigFile', WorkspaceCommands.OPEN_WORKSPACE_FILE.id);
         commands.registerCommand({ id: 'workbench.files.action.refreshFilesExplorer' }, {
             execute: () => commands.executeCommand(FileNavigatorCommands.REFRESH_NAVIGATOR.id)
         });
+        commands.registerAlias('workbench.files.action.refreshFilesExplorer', FileNavigatorCommands.REFRESH_NAVIGATOR.id);
         commands.registerCommand(VscodeCommands.INSTALL_EXTENSION_FROM_ID_OR_URI, {
             execute: async (vsixUriOrExtensionId: TheiaURI | UriComponents | string) => {
                 if (typeof vsixUriOrExtensionId === 'string') {
@@ -443,6 +455,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.action.closeActiveEditor' }, {
             execute: () => commands.executeCommand(CommonCommands.CLOSE_MAIN_TAB.id)
         });
+        commands.registerAlias('workbench.action.closeActiveEditor', CommonCommands.CLOSE_MAIN_TAB.id);
         commands.registerCommand({ id: 'workbench.action.closeOtherEditors' }, {
             execute: async (uri?: monaco.Uri) => {
                 let editor = this.editorManager.currentEditor || this.shell.currentWidget;
@@ -563,12 +576,15 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.action.navigateBack' }, {
             execute: () => commands.executeCommand(EditorCommands.GO_BACK.id)
         });
+        commands.registerAlias('workbench.action.navigateBack', EditorCommands.GO_BACK.id);
         commands.registerCommand({ id: 'workbench.action.navigateForward' }, {
             execute: () => commands.executeCommand(EditorCommands.GO_FORWARD.id)
         });
+        commands.registerAlias('workbench.action.navigateForward', EditorCommands.GO_FORWARD.id);
         commands.registerCommand({ id: 'workbench.action.navigateToLastEditLocation' }, {
             execute: () => commands.executeCommand(EditorCommands.GO_LAST_EDIT.id)
         });
+        commands.registerAlias('workbench.action.navigateToLastEditLocation', EditorCommands.GO_LAST_EDIT.id);
 
         commands.registerCommand({ id: 'openInTerminal' }, {
             execute: (resource: URI) => this.terminalContribution.openInTerminal(new TheiaURI(resource.toString()))
@@ -872,6 +888,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         }, {
             execute: () => commands.executeCommand(WorkspaceCommands.NEW_FOLDER.id)
         });
+        commands.registerAlias('explorer.newFolder', WorkspaceCommands.NEW_FOLDER.id);
         commands.registerCommand({
             id: 'workbench.action.terminal.sendSequence'
         }, {
@@ -907,16 +924,19 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         }, {
             execute: () => commands.executeCommand(FileNavigatorCommands.FOCUS.id)
         });
+        commands.registerAlias('workbench.view.explorer', FileNavigatorCommands.FOCUS.id);
         commands.registerCommand({
             id: 'copyFilePath'
         }, {
             execute: () => commands.executeCommand(CommonCommands.COPY_PATH.id)
         });
+        commands.registerAlias('copyFilePath', CommonCommands.COPY_PATH.id);
         commands.registerCommand({
             id: 'copyRelativeFilePath'
         }, {
             execute: () => commands.executeCommand(WorkspaceCommands.COPY_RELATIVE_FILE_PATH.id)
         });
+        commands.registerAlias('copyRelativeFilePath', WorkspaceCommands.COPY_RELATIVE_FILE_PATH.id);
         commands.registerCommand({
             id: 'revealInExplorer'
         }, {
