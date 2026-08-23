@@ -24,17 +24,20 @@ import {
 import { HostedPluginReader } from './plugin-reader';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
-import { Measurement, Stopwatch } from '@theia/core/lib/common';
+import { Stopwatch } from '@theia/core/lib/common';
 import { PluginUninstallationManager } from '../../main/node/plugin-uninstallation-manager';
 
-interface DoDeployPluginOptions {
+/**
+ * The result of {@link PluginDeployerHandlerImpl.readPlugin reading} a plugin's manifest and metadata
+ * from disk, ready to be handed to {@link PluginDeployerHandlerImpl.deployPlugin}. Exported so that
+ * subclasses overriding `deployPlugin` can name the parameter type.
+ */
+export interface PreparedPlugin {
     entry: PluginDeployerEntry;
     entryPoint: keyof PluginEntryPoint;
     manifest: PluginPackage;
     metadata: PluginMetadata;
     id: PluginIdentifiers.VersionedId;
-    pluginPath: string;
-    deployPlugin: Measurement;
 }
 
 @injectable()
@@ -67,7 +70,7 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
      */
     protected readonly deployedFrontendPlugins = new Map<PluginIdentifiers.VersionedId, DeployedPlugin>();
 
-    private readonly pendingDeployments = new Map<string, Promise<boolean>>();
+    protected readonly pendingDeployments = new Map<string, Promise<boolean>>();
 
     private backendPluginsMetadataDeferred = new Deferred<void>();
 
@@ -146,22 +149,14 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
     }
 
     async deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<number> {
-        const results = await Promise.all(frontendPlugins.map(plugin => this.deployPlugin(plugin, 'frontend').catch(e => {
-            this.logger.error(`Unexpected error while deploying frontend plugin '${plugin.id()}'`, e);
-            return false;
-        })));
-        const successes = results.filter(Boolean).length;
+        const successes = await this.deployPlugins(frontendPlugins, 'frontend');
         // resolve on first deploy
         this.frontendPluginsMetadataDeferred.resolve(undefined);
         return successes;
     }
 
     async deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<number> {
-        const results = await Promise.all(backendPlugins.map(plugin => this.deployPlugin(plugin, 'backend').catch(e => {
-            this.logger.error(`Unexpected error while deploying backend plugin '${plugin.id()}'`, e);
-            return false;
-        })));
-        const successes = results.filter(Boolean).length;
+        const successes = await this.deployPlugins(backendPlugins, 'backend');
         // rebuild translation config after deployment
         await this.localizationService.buildTranslationConfig([...this.deployedBackendPlugins.values()]);
         // resolve on first deploy
@@ -170,17 +165,44 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
     }
 
     /**
-     * @throws never! in order to isolate plugin deployment.
-     * @returns whether the plugin is deployed after running this function. If the plugin was already installed, will still return `true`.
+     * Reads every entry concurrently (pure I/O, safe to parallelize), then deploys the ones that were
+     * read successfully one at a time, in `entries` order, so bookkeeping like {@link markAsInstalled}
+     * stays deterministic.
      */
-    protected async deployPlugin(entry: PluginDeployerEntry, entryPoint: keyof PluginEntryPoint): Promise<boolean> {
+    protected async deployPlugins(entries: PluginDeployerEntry[], entryPoint: keyof PluginEntryPoint): Promise<number> {
+        const prepared = await Promise.all(entries.map(entry => this.readPlugin(entry, entryPoint)));
+        let successes = 0;
+        for (const plugin of prepared) {
+            if (!plugin) {
+                continue;
+            }
+            try {
+                if (await this.deployPlugin(plugin)) {
+                    successes++;
+                }
+            } catch (e) {
+                // deployPlugin is documented to never throw, but a subclass override could —
+                // don't let one bad entry abort deployment of the rest of the batch.
+                this.logger.error(`Unexpected error while deploying ${entryPoint} plugin '${plugin.id}'`, e);
+            }
+        }
+        return successes;
+    }
+
+    /**
+     * Reads a plugin's manifest and metadata from disk and records its known source location(s).
+     * Pure I/O plus per-id `Map`/`Set` bookkeeping, so it's safe to run concurrently across entries.
+     *
+     * @throws never! in order to isolate plugin deployment.
+     */
+    protected async readPlugin(entry: PluginDeployerEntry, entryPoint: keyof PluginEntryPoint): Promise<PreparedPlugin | undefined> {
         const pluginPath = entry.path();
-        const deployPlugin = this.stopwatch.start('deployPlugin');
+        const readPlugin = this.stopwatch.start('readPlugin');
         try {
             const manifest = await this.reader.readPackage(pluginPath);
             if (!manifest) {
-                deployPlugin.error(`Failed to read ${entryPoint} plugin manifest from '${pluginPath}''`);
-                return false;
+                readPlugin.error(`Failed to read ${entryPoint} plugin manifest from '${pluginPath}'`);
+                return undefined;
             }
 
             const metadata = await this.reader.readMetadata(manifest);
@@ -193,21 +215,11 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
             this.deployedLocations.set(id, deployedLocations);
             this.setSourceLocationsForPlugin(id, entry);
 
-            const reservationKey = `${entryPoint}:${id}`;
-
-            const pending = this.pendingDeployments.get(reservationKey);
-            if (pending) {
-                deployPlugin.debug(`Skipped ${entryPoint} plugin ${metadata.model.name} already deployed`);
-                return pending;
-            }
-
-            const deployment = this.doDeployPlugin({ entry, entryPoint, manifest, metadata, id, pluginPath, deployPlugin })
-                .finally(() => this.pendingDeployments.delete(reservationKey));
-            this.pendingDeployments.set(reservationKey, deployment);
-            return deployment;
+            readPlugin.debug(`Read ${entryPoint} plugin "${id}" from "${pluginPath}"`);
+            return { entry, entryPoint, manifest, metadata, id };
         } catch (e) {
-            deployPlugin.error(`Failed to deploy ${entryPoint} plugin from '${pluginPath}' path`, e);
-            return false;
+            readPlugin.error(`Failed to read ${entryPoint} plugin from '${pluginPath}' path`, e);
+            return undefined;
         }
     }
 
@@ -215,31 +227,47 @@ export class PluginDeployerHandlerImpl implements PluginDeployerHandler {
      * @throws never! in order to isolate plugin deployment.
      * @returns whether the plugin is deployed after running this function. If the plugin was already installed, will still return `true`.
      */
-    protected async doDeployPlugin(options: DoDeployPluginOptions): Promise<boolean> {
-        const { entry, entryPoint, manifest, metadata, id, pluginPath, deployPlugin } = options;
-        let success = true;
-        try {
-            const deployedPlugins = entryPoint === 'backend' ? this.deployedBackendPlugins : this.deployedFrontendPlugins;
-            if (deployedPlugins.has(id)) {
-                deployPlugin.debug(`Skipped ${entryPoint} plugin ${metadata.model.name} already deployed`);
-                return true;
-            }
+    protected deployPlugin(plugin: PreparedPlugin): Promise<boolean> {
+        const { entry, entryPoint, manifest, metadata, id } = plugin;
+        const reservationKey = `${entryPoint}:${id}`;
 
-            const { type } = entry;
-            const deployed: DeployedPlugin = { metadata, type };
-            deployed.contributes = await this.reader.readContribution(manifest);
-            await this.localizationService.deployLocalizations(deployed);
-            deployedPlugins.set(id, deployed);
-            deployPlugin.debug(`Deployed ${entryPoint} plugin "${id}" from "${metadata.model.entryPoint[entryPoint] || pluginPath}"`);
-        } catch (e) {
-            deployPlugin.error(`Failed to deploy ${entryPoint} plugin from '${pluginPath}' path`, e);
-            return success = false;
-        } finally {
-            if (success) {
-                this.markAsInstalled(id);
-            }
+        const pending = this.pendingDeployments.get(reservationKey);
+        if (pending) {
+            // Genuinely still in flight (not "already deployed") — piggyback on the in-progress deployment.
+            this.logger.debug(`Reusing in-flight deployment of ${entryPoint} plugin ${metadata.model.name}`);
+            return pending;
         }
-        return success;
+
+        const deploy = async (): Promise<boolean> => {
+            const measurement = this.stopwatch.start('deployPlugin');
+            let success = true;
+            try {
+                const deployedPlugins = entryPoint === 'backend' ? this.deployedBackendPlugins : this.deployedFrontendPlugins;
+                if (deployedPlugins.has(id)) {
+                    measurement.debug(`Skipped ${entryPoint} plugin ${metadata.model.name}: already deployed`);
+                    return true;
+                }
+
+                const { type } = entry;
+                const deployed: DeployedPlugin = { metadata, type };
+                deployed.contributes = await this.reader.readContribution(manifest);
+                await this.localizationService.deployLocalizations(deployed);
+                deployedPlugins.set(id, deployed);
+                measurement.debug(`Deployed ${entryPoint} plugin "${id}" from "${metadata.model.entryPoint[entryPoint] || entry.path()}"`);
+            } catch (e) {
+                success = false;
+                measurement.error(`Failed to deploy ${entryPoint} plugin '${id}'`, e);
+            } finally {
+                if (success) {
+                    this.markAsInstalled(id);
+                }
+            }
+            return success;
+        };
+
+        const deployment = deploy().finally(() => this.pendingDeployments.delete(reservationKey));
+        this.pendingDeployments.set(reservationKey, deployment);
+        return deployment;
     }
 
     async uninstallPlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean> {
