@@ -72,8 +72,10 @@ export class PreferenceTreeModel extends TreeModelImpl {
     protected _currentRows: Map<string, PreferenceTreeNodeRow> = new Map();
     protected _totalVisibleLeaves = 0;
     private _suppressSelection = false;
+    private preservingCategoryFilter = false;
     protected _categoryFilterId: string | undefined;
     protected _initialSelectionApplied = false;
+    protected lastSelectionId: string | undefined;
 
     get categoryFilterId(): string | undefined {
         return this._categoryFilterId;
@@ -112,6 +114,10 @@ export class PreferenceTreeModel extends TreeModelImpl {
         super.init();
         this.toDispose.pushAll([
             this.onSelectionChanged(selectionEvent => {
+                this.lastSelectionId = selectionEvent[0]?.id;
+                if (this.preservingCategoryFilter) {
+                    return;
+                }
                 const node = selectionEvent[0];
                 const newId = node ? this.categoryIdForSelection(node) : undefined;
                 if (newId !== this._categoryFilterId) {
@@ -129,16 +135,21 @@ export class PreferenceTreeModel extends TreeModelImpl {
                 const newSearchTermWithoutTags = newSearchTerm.replace(/@tag:[^\s]+/g, '');
                 this.lastSearchedLiteral = newSearchTermWithoutTags;
                 this.lastSearchedFuzzy = newSearchTermWithoutTags.replace(/\s/g, '');
+                const wasFiltered = this._isFiltered;
                 this._isFiltered = newSearchTerm.length > 2;
                 if (this._isFiltered) {
+                    // Search results span all categories: drop the category filter and the
+                    // now-stale selection so the tree matches the shown results.
                     this._categoryFilterId = undefined;
-                }
-                if (this.isFiltered) {
+                    this.clearSelection();
                     this.expandAll();
                 } else if (CompositeTreeNode.is(this.root)) {
                     const root = this.root;
                     // Avoid intermediate selection events while collapsing.
                     this.withSuppressedSelection(() => this.collapseAll(root));
+                    if (wasFiltered) {
+                        this.selectDefaultCategory();
+                    }
                 }
                 this.updateFilteredRows(PreferenceFilterChangeSource.Search);
             }),
@@ -160,26 +171,67 @@ export class PreferenceTreeModel extends TreeModelImpl {
             this.expandAll();
         }
         this.updateFilteredRows(PreferenceFilterChangeSource.Schema);
+        this.restoreSelectionInNewTree();
         this.applyInitialSelection();
+    }
+
+    /**
+     * Re-applies the selection after the tree has been rebuilt with new node instances,
+     * e.g. when plugins contribute preferences after startup. The selection state resolves
+     * nodes by id, but the rebuilt node lacks the `selected` flag that drives the tree
+     * highlight. If the selected node is gone from the new schema, falls back to the
+     * default category.
+     */
+    protected restoreSelectionInNewTree(): void {
+        if (!this.lastSelectionId) {
+            return;
+        }
+        const node = this.getNode(this.lastSelectionId);
+        if (node && SelectableTreeNode.is(node)) {
+            if (!node.selected) {
+                this.selectPreservingCategoryFilter(node);
+            }
+        } else {
+            this.clearSelection();
+            this._initialSelectionApplied = false;
+        }
     }
 
     protected applyInitialSelection(): void {
         if (this._initialSelectionApplied) {
             return;
         }
-        this._initialSelectionApplied = true;
         if (this.selectedNodes.length > 0) {
-            return; // restoreState already selected something
-        }
-        if (!CompositeTreeNode.is(this.root)) {
+            // Something is already selected, e.g. by the user before the schema change.
+            this._initialSelectionApplied = true;
             return;
+        }
+        if (this._isFiltered) {
+            // A search (e.g. restored on startup) is active; the default selection is
+            // applied when it is cleared instead.
+            return;
+        }
+        if (this.selectDefaultCategory()) {
+            this._initialSelectionApplied = true;
+        }
+    }
+
+    /**
+     * Selects the 'Commonly Used' category, the default detail page of the settings editor.
+     * @returns `true` if the category was found and selected.
+     */
+    protected selectDefaultCategory(): boolean {
+        if (!CompositeTreeNode.is(this.root)) {
+            return false;
         }
         const commonlyUsed = this.root.children.find(
             child => Preference.TreeNode.is(child) && child.id.startsWith(COMMONLY_USED_SECTION_PREFIX),
         );
         if (commonlyUsed && SelectableTreeNode.is(commonlyUsed)) {
             this.selectNode(commonlyUsed);
+            return true;
         }
+        return false;
     }
 
     protected updateRows(): void {
@@ -347,15 +399,27 @@ export class PreferenceTreeModel extends TreeModelImpl {
     }
 
     /**
+     * Selects `node` to mirror the editor's scroll position in the tree. Unlike an explicit
+     * selection, this does not change the category filter: scrolling must never narrow the
+     * settings editor, only an explicit selection may.
      * @returns true if selection changed, false otherwise
      */
     selectIfNotSelected(node: SelectableTreeNode): boolean {
         const currentlySelected = this.selectedNodes[0];
         if (!node.selected || node !== currentlySelected) {
-            node.selected = true;
-            this.selectNode(node);
+            this.selectPreservingCategoryFilter(node);
             return true;
         }
         return false;
+    }
+
+    protected selectPreservingCategoryFilter(node: SelectableTreeNode): void {
+        this.preservingCategoryFilter = true;
+        try {
+            node.selected = true;
+            this.selectNode(node);
+        } finally {
+            this.preservingCategoryFilter = false;
+        }
     }
 }

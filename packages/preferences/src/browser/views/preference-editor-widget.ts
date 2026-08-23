@@ -309,13 +309,15 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     }
 
     /**
-     * Pins ancestor + selected-category header rows to the top of the scroll container
-     * via stacked `position: sticky`, so scrolling moves only the items list below.
-     * Clears the styles when no category filter is active.
+     * Pins category header rows to the top of the scroll container via `position: sticky`.
+     * The headers of the selected category and its ancestors are stacked on top of each
+     * other; the headers of its subsections all share the single slot below that stack, so
+     * the subsection currently scrolled into view replaces the previous one instead of the
+     * headers piling up. Clears the styles when no category filter is active.
      */
     protected pinCategoryHeaders(): void {
         requestAnimationFrame(() => {
-            const pinned = !!this.model.categoryFilterId;
+            const categoryId = this.model.categoryFilterId;
             let cumulativeTop = 0;
             for (const [, renderer] of this.allRenderers()) {
                 const node = this.model.getNode(renderer.nodeId);
@@ -323,10 +325,12 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
                     continue;
                 }
                 const wrapper = renderer.node;
-                if (pinned && renderer.visible) {
+                if (categoryId && renderer.visible) {
                     wrapper.classList.add('theia-settings-pinned-category-header');
                     wrapper.style.top = `${cumulativeTop}px`;
-                    cumulativeTop += wrapper.offsetHeight;
+                    if (node.id === categoryId || this.model.isCompositeAncestorOfCategory(node, categoryId)) {
+                        cumulativeTop += wrapper.offsetHeight;
+                    }
                 } else {
                     wrapper.classList.remove('theia-settings-pinned-category-header');
                     wrapper.style.top = '';
@@ -477,7 +481,9 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     }
 
     restoreState(oldState: PreferencesEditorState): void {
-        this.firstVisibleChildID = oldState.firstVisibleChildID;
-        this.resetScroll(this.firstVisibleChildID);
+        // The stored scroll target is deliberately not restored: the editor always opens on
+        // the default 'Commonly Used' category, so a scroll target from a previous session
+        // would be hidden by the category filter, and restoring it would only cause the tree
+        // selection to get out of sync with the shown page.
     }
 }
