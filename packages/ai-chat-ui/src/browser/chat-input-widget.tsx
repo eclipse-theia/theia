@@ -1209,7 +1209,7 @@ export class AIChatInputWidget extends ReactWidget {
             percentage
         );
         const summarizeAction = nls.localize('theia/ai/chat-ui/tokenUsageWarningSummarizeAction', 'Summarize Current Session');
-        const newSessionAction = nls.localize('theia/ai/chat-ui/tokenUsageWarningNewSessionAction', 'Start New Chat');
+        const newSessionAction = nls.localizeByDefault('Start New Chat');
         const openSettingsAction = nls.localizeByDefault('Open Settings');
         const selected = await this.messageService.warn(message, summarizeAction, newSessionAction, openSettingsAction);
         if (selected === summarizeAction) {
