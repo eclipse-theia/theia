@@ -15,8 +15,10 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { filterRefsForBadges, getRefBadgePresentation, getRefColorIndex } from './scm-history-graph-helpers';
-import { ScmHistoryItemRef, ScmHistoryProvider } from './scm-provider';
+import {
+    buildChangeTreeRows, ChangeTreeFileRow, ChangeTreeRow, filterRefsForBadges, getFileName, getRefBadgePresentation, getRefColorIndex
+} from './scm-history-graph-helpers';
+import { ScmHistoryItemChange, ScmHistoryItemRef, ScmHistoryProvider } from './scm-provider';
 
 describe('getRefColorIndex', () => {
 
@@ -114,5 +116,78 @@ describe('filterRefsForBadges', () => {
 
     it("ignores an explicit filter in 'all' mode", () => {
         expect(filterRefsForBadges(refs, provider, 'all', ['refs/heads/feature'])).to.deep.equal(refs);
+    });
+});
+
+describe('buildChangeTreeRows', () => {
+
+    const rootUri = 'file:///repo';
+
+    function change(path: string): ScmHistoryItemChange {
+        return { uri: `${rootUri}/${path}`, modifiedUri: `${rootUri}/${path}` };
+    }
+
+    /** Renders the rows as indented lines, so the expectations read like a tree. */
+    function describeRows(rows: readonly ChangeTreeRow[]): string[] {
+        return rows.map(row => `${'  '.repeat(row.depth)}${row.type === 'folder' ? row.label + '/' : getFileName(row.path)}`);
+    }
+
+    it('keeps files at the root at depth 0', () => {
+        const rows = buildChangeTreeRows([change('a.ts'), change('b.ts')], rootUri, new Set());
+        expect(describeRows(rows)).to.deep.equal(['a.ts', 'b.ts']);
+    });
+
+    it('groups files under their folder', () => {
+        const rows = buildChangeTreeRows([change('src/a.ts'), change('src/b.ts')], rootUri, new Set());
+        expect(describeRows(rows)).to.deep.equal(['src/', '  a.ts', '  b.ts']);
+    });
+
+    it('compacts folder chains that hold a single child folder', () => {
+        const rows = buildChangeTreeRows([change('src/browser/a.ts')], rootUri, new Set());
+        expect(describeRows(rows)).to.deep.equal(['src/browser/', '  a.ts']);
+    });
+
+    it('stops compacting where a folder chain branches', () => {
+        const rows = buildChangeTreeRows([change('src/browser/a.ts'), change('src/node/b.ts')], rootUri, new Set());
+        expect(describeRows(rows)).to.deep.equal(['src/', '  browser/', '    a.ts', '  node/', '    b.ts']);
+    });
+
+    it('does not compact a folder that also holds files', () => {
+        const rows = buildChangeTreeRows([change('src/a.ts'), change('src/browser/b.ts')], rootUri, new Set());
+        expect(describeRows(rows)).to.deep.equal(['src/', '  browser/', '    b.ts', '  a.ts']);
+    });
+
+    it('sorts folders before files, each alphabetically', () => {
+        const rows = buildChangeTreeRows([change('z.ts'), change('a.ts'), change('src/b.ts')], rootUri, new Set());
+        expect(describeRows(rows)).to.deep.equal(['src/', '  b.ts', 'a.ts', 'z.ts']);
+    });
+
+    it('hides the descendants of a collapsed folder', () => {
+        const rows = buildChangeTreeRows([change('src/a.ts'), change('b.ts')], rootUri, new Set(['src']));
+        expect(describeRows(rows)).to.deep.equal(['src/', 'b.ts']);
+    });
+
+    it('addresses a compacted folder by its full path', () => {
+        const rows = buildChangeTreeRows([change('src/browser/a.ts')], rootUri, new Set(['src/browser']));
+        expect(describeRows(rows)).to.deep.equal(['src/browser/']);
+    });
+
+    it('carries the original change on each file row', () => {
+        const first = change('src/a.ts');
+        const rows = buildChangeTreeRows([first], rootUri, new Set());
+        expect(rows[1].type).to.equal('file');
+        expect((rows[1] as ChangeTreeFileRow).change).to.equal(first);
+    });
+
+    it('keeps the index of the change in the original list, so row keys stay stable', () => {
+        const rows = buildChangeTreeRows([change('z.ts'), change('src/a.ts')], rootUri, new Set());
+        // Sorted as: src/, src/a.ts (index 1), z.ts (index 0).
+        expect(rows.filter(row => row.type === 'file').map(row => (row as ChangeTreeFileRow).index)).to.deep.equal([1, 0]);
+    });
+
+    it('falls back to the full path when the change is outside the repository root', () => {
+        const outside: ScmHistoryItemChange = { uri: 'file:///elsewhere/x.ts', modifiedUri: 'file:///elsewhere/x.ts' };
+        const rows = buildChangeTreeRows([outside], rootUri, new Set());
+        expect(describeRows(rows)).to.deep.equal(['elsewhere/', '  x.ts']);
     });
 });
