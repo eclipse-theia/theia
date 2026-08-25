@@ -27,7 +27,8 @@ import {
     ReasoningSupport,
     resolveCompactionTokenThreshold,
     resolveServerSideCompaction,
-    ServerToolDescriptor
+    ServerToolDescriptor,
+    formatToolCallContentForModel
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
@@ -360,8 +361,7 @@ export class OpenAiModelUtils {
             return {
                 role: 'tool',
                 tool_call_id: message.tool_use_id,
-                // content only supports text content so we need to stringify any potential data we have, e.g., images
-                content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
+                content: typeof message.content === 'string' ? message.content : formatToolCallContentForModel(message.content)
             };
         }
         if (LanguageModelMessage.isImageMessage(message) && message.actor === 'user') {
