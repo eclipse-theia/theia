@@ -26,6 +26,7 @@ import {
     ToolCall,
     ToolRequest,
     ToolRequestParametersProperties,
+    formatToolCallContentForModel,
     ImageContent,
     LanguageModelRequest,
     LanguageModelStatus,
@@ -446,7 +447,7 @@ export class OllamaModel implements LanguageModel {
         } else if (LanguageModelMessage.isToolUseMessage(message)) {
             result.tool_calls = [{ function: { name: message.name, arguments: message.input as Record<string, unknown> } }];
         } else if (LanguageModelMessage.isToolResultMessage(message)) {
-            result.content = `Tool call ${message.name} returned: ${message.content}`;
+            result.content = `Tool call ${message.name} returned: ${formatToolCallContentForModel(message.content)}`;
         } else if (LanguageModelMessage.isThinkingMessage(message)) {
             result.thinking = message.thinking;
         } else if (LanguageModelMessage.isImageMessage(message) && ImageContent.isBase64(message.image)) {
