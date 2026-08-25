@@ -39,6 +39,16 @@ class MockContextKeyService extends ContextKeyServiceDummyImpl {
     }
 }
 
+/**
+ * Lets React finish the work it scheduled while the DOM is still in place.
+ * Disposing a `ReactWidget` unmounts its root, and React flushes the resulting
+ * passive effects on a `setImmediate` callback that accesses `window`. Without
+ * this, that callback runs after JSDOM has been torn down and fails.
+ */
+function flushReactWork(): Promise<void> {
+    return new Promise<void>(resolve => setImmediate(resolve));
+}
+
 function createScmContextKeyService(): ScmContextKeyService {
     const service = new ScmContextKeyService();
     (service as unknown as { contextKeyService: MockContextKeyService }).contextKeyService = new MockContextKeyService();
@@ -146,8 +156,9 @@ describe('ScmHistoryGraphWidget reveal', () => {
         (widget as unknown as { init(): void }).init();
     });
 
-    afterEach(() => {
+    afterEach(async () => {
         widget.dispose();
+        await flushReactWork();
         restoreJSDOM();
     });
 
@@ -240,8 +251,9 @@ describe('ScmHistoryGraphWidget change tree folders', () => {
         raw.update = () => { };
     });
 
-    afterEach(() => {
+    afterEach(async () => {
         widget.dispose();
+        await flushReactWork();
         restoreJSDOM();
     });
 
