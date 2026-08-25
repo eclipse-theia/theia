@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -29,22 +29,26 @@ const MCP_SCHEMA = 'https://agent-plugins.org/schemas/1.0.0/mcp.schema.json';
 const PLUGIN_ROOT = '/home/alex/.agents/plugins/devtools';
 const PLUGIN_DATA = '/home/alex/.agents/plugins/data/devtools';
 
-const reader = new AgentPluginManifestReader();
-
 /**
- * Pins the native path form to Windows, which is otherwise decided by the backend OS - and every test
- * here runs on Linux, where the `Path` form and the native form are identical and the conversion is
- * invisible.
+ * Pins the native path form, which production otherwise takes from the backend OS. Both forms are
+ * exercised below - the POSIX one against the POSIX-shaped fixtures, the Windows one against Windows
+ * paths - so neither is left to the host the suite happens to run on: on a Windows runner the default
+ * would turn every expected POSIX path into a backslashed one.
  *
  * Only the format is overridden, never `toNativePath` itself: overriding the conversion would mean the
  * production one is never executed by any test, and could be reverted to a no-op without a single test
  * going red.
  */
-class WindowsAgentPluginManifestReader extends AgentPluginManifestReader {
+class PinnedAgentPluginManifestReader extends AgentPluginManifestReader {
+    constructor(protected readonly format: Path.Format) {
+        super();
+    }
     protected override nativePathFormat(): Path.Format {
-        return Path.Format.Windows;
+        return this.format;
     }
 }
+
+const reader = new PinnedAgentPluginManifestReader(Path.Format.Posix);
 
 function manifest(fields: Record<string, unknown>): string {
     return JSON.stringify({ $schema: PLUGIN_SCHEMA, name: 'devtools', ...fields });
@@ -565,7 +569,7 @@ describe('AgentPluginManifestReader.resolveComponents', () => {
         // Theia's `Path` canonicalizes a Windows drive path to the `/c:/…` form, which is what
         // containment is decided in - and which no `spawn` accepts. Every value that leaves the reader
         // has to be converted back, `args` and `env` included: `cwd` alone is not enough.
-        const components = new WindowsAgentPluginManifestReader().resolveComponents({
+        const components = new PinnedAgentPluginManifestReader(Path.Format.Windows).resolveComponents({
             mcpJsonText: mcp({
                 s: {
                     type: 'stdio',
@@ -589,7 +593,7 @@ describe('AgentPluginManifestReader.resolveComponents', () => {
     });
 
     it('defaults cwd to the plugin root in native form when the entry omits it', () => {
-        const components = new WindowsAgentPluginManifestReader().resolveComponents({
+        const components = new PinnedAgentPluginManifestReader(Path.Format.Windows).resolveComponents({
             mcpJsonText: mcp({ s: { type: 'stdio', command: 'npx' } }),
             manifestSchema: PLUGIN_SCHEMA,
             pluginRoot: 'C:\\plugins\\devtools',
@@ -612,7 +616,7 @@ describe('AgentPluginManifestReader.resolveComponents', () => {
         // `Path.normalize` drops empty segments, which would fold `\\server\share` to `/server/share`.
         // The backend derives PLUGIN_ROOT with Node's `path.join`, which keeps the UNC prefix, so a
         // collapsed `cwd` would point somewhere else than the root the same entry advertises.
-        const components = new WindowsAgentPluginManifestReader().resolveComponents({
+        const components = new PinnedAgentPluginManifestReader(Path.Format.Windows).resolveComponents({
             mcpJsonText: mcp({ s: { type: 'stdio', command: './bin/a', args: ['${PLUGIN_ROOT}'] } }),
             manifestSchema: PLUGIN_SCHEMA,
             pluginRoot: '\\\\server\\share\\plugins\\devtools',
@@ -625,7 +629,7 @@ describe('AgentPluginManifestReader.resolveComponents', () => {
     });
 
     it('still contains a UNC-rooted plugin, so a ../ escape is rejected there too', () => {
-        const components = new WindowsAgentPluginManifestReader().resolveComponents({
+        const components = new PinnedAgentPluginManifestReader(Path.Format.Windows).resolveComponents({
             mcpJsonText: mcp({ s: { type: 'stdio', command: './../../elsewhere/evil.exe' } }),
             manifestSchema: PLUGIN_SCHEMA,
             pluginRoot: '\\\\server\\share\\plugins\\devtools',

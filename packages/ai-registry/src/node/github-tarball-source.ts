@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -53,6 +53,12 @@ interface TarExtractionState {
     /** Symlinks kept so far, so a later link cannot be resolved through one. */
     keptSymlinks: Set<string>;
     fileCount: number;
+    /**
+     * Entries found inside the requested subtree, of any type - directories and dropped links included.
+     * Distinguishes a subtree that is not in the archive at all from one that is there but holds no
+     * regular file, which are the same `fileCount` of 0 but not the same thing to tell the user.
+     */
+    subtreeEntryCount: number;
     byteCount: number;
     tooLarge?: boolean;
 }
@@ -151,7 +157,7 @@ export class GitHubTarballSourceImpl implements GitHubTarballSource {
     protected async extractTarball(archive: Uint8Array, request: PluginTarballRequest): Promise<ExtractedPluginTree> {
         const destination = path.resolve(request.destination);
         const prefix = this.normalizeSubPath(request.sourcePath);
-        const state: TarExtractionState = { unsafe: [], droppedLinks: [], keptSymlinks: new Set(), fileCount: 0, byteCount: 0 };
+        const state: TarExtractionState = { unsafe: [], droppedLinks: [], keptSymlinks: new Set(), fileCount: 0, subtreeEntryCount: 0, byteCount: 0 };
         const options: ExtractOptions = {
             map: header => this.mapEntry(header as TarEntryHeader, prefix, destination, state),
             ignore: (_name, header) => !header || header.name === DROPPED_ENTRY,
@@ -172,10 +178,7 @@ export class GitHubTarballSourceImpl implements GitHubTarballSource {
                 'The plugin archive contains the entry "{0}", which would be written outside the plugin directory.', state.unsafe[0]));
         }
         if (state.fileCount === 0) {
-            throw new Error(request.sourcePath
-                ? nls.localize('theia/ai-registry/plugin/tarballPathMissing',
-                    'The plugin path "{0}" does not exist in the repository "{1}".', request.sourcePath, request.sourceUrl)
-                : nls.localize('theia/ai-registry/plugin/tarballEmpty', 'The repository "{0}" contains no files.', request.sourceUrl));
+            throw new Error(this.nothingToInstall(request, state));
         }
         if (state.droppedLinks.length > 0) {
             this.logger.info(
@@ -185,6 +188,27 @@ export class GitHubTarballSourceImpl implements GitHubTarballSource {
             fileCount: state.fileCount,
             droppedLinks: state.droppedLinks
         };
+    }
+
+    /**
+     * No regular file was written, which has two causes worth telling apart: the requested subtree is not
+     * in the archive at all, or it is there and holds only directories and links whose targets were
+     * dropped. Reporting the second as a wrong path would send the user hunting for a typo that is not
+     * there.
+     */
+    protected nothingToInstall(request: PluginTarballRequest, state: TarExtractionState): string {
+        if (state.subtreeEntryCount > 0) {
+            return request.sourcePath
+                ? nls.localize('theia/ai-registry/plugin/tarballPathNoFiles',
+                    'The plugin path "{0}" in the repository "{1}" holds no file to install, only directories or links pointing outside it.',
+                    request.sourcePath, request.sourceUrl)
+                : nls.localize('theia/ai-registry/plugin/tarballNoFiles',
+                    'The repository "{0}" holds no file to install, only directories or links pointing outside it.', request.sourceUrl);
+        }
+        return request.sourcePath
+            ? nls.localize('theia/ai-registry/plugin/tarballPathMissing',
+                'The plugin path "{0}" does not exist in the repository "{1}".', request.sourcePath, request.sourceUrl)
+            : nls.localize('theia/ai-registry/plugin/tarballEmpty', 'The repository "{0}" contains no files.', request.sourceUrl);
     }
 
     /**
@@ -226,6 +250,7 @@ export class GitHubTarballSourceImpl implements GitHubTarballSource {
             return header;
         }
         header.name = withinSubtree;
+        state.subtreeEntryCount++;
         if (header.type === 'symlink' || header.type === 'link') {
             if (!this.isSafeLink(header, withinSubtree, prefix, destination, state)) {
                 state.droppedLinks.push(withinSubtree);

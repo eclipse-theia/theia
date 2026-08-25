@@ -272,7 +272,7 @@ export class RegistryAutoUpdateService {
         const answer = await this.messageService.info(
             `${nls.localize(
                 'theia/ai-registry/autoUpdate/defaultPrompt',
-                'Update skills and MCP servers from the AI registry automatically from now on?'
+                'Update skills, MCP servers and Agent Plugins from the AI registry automatically from now on?'
             )} ${this.settingsChangeHint()}`,
             enable, keepAsking, never
         );

@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -36,7 +36,7 @@ export const PluginHashMismatchDialogFactory = Symbol('PluginHashMismatchDialogF
 export type PluginHashMismatchDialogFactory = (options: PluginHashMismatchDialogOptions) => PluginHashMismatchDialog;
 
 function renderEndorsement(endorsement: PluginEndorsement): string {
-    const base = nls.localize('theia/ai-registry/plugin/dialog/endorsement', '{0} · {1}', endorsement.organizationId, endorsement.date);
+    const base = nls.localizeByDefault('{0} · {1}', endorsement.organizationId, endorsement.date);
     return endorsement.viaTrust
         ? nls.localizeByDefault('{0} ({1})', base, nls.localize('theia/ai-registry/plugin/dialog/viaTrust', 'via {0}', endorsement.viaTrust))
         : base;

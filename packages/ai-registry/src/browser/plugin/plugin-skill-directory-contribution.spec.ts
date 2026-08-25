@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -27,6 +27,7 @@ try {
 
 import { expect } from 'chai';
 import { ILogger } from '@theia/core';
+import { Path } from '@theia/core/lib/common/path';
 import { InstalledPluginInfo } from '../../common/plugin/plugin-registry-types';
 import { PluginInstallService } from './plugin-install-service';
 import { PluginSkillDirectoryContribution } from './plugin-skill-directory-contribution';
@@ -66,11 +67,15 @@ describe('PluginSkillDirectoryContribution.getSkillDirectories', () => {
             plugin('io.github.acme/bigquery-data-analytics', 'io.github.acme_bigquery-data-analytics', 'BigQuery Data Analytics')
         ]);
 
-        expect(await contribution.getSkillDirectories()).to.deep.equal([{
-            path: '/home/user/.agents/plugins/io.github.acme_bigquery-data-analytics/skills',
-            tier: 'plugin',
-            qualifier: 'io.github.acme_bigquery-data-analytics'
-        }]);
+        const directories = await contribution.getSkillDirectories();
+
+        expect(directories).to.have.lengthOf(1);
+        // The root is contributed in the backend's native form, so the separator is the host's; the
+        // separator-agnostic comparison keeps this about the joined `skills` segment. The native
+        // conversion itself is asserted, per format, in `agent-plugin-manifest.spec.ts`.
+        expect(Path.normalizePathSeparator(directories[0].path)).to.equal('/home/user/.agents/plugins/io.github.acme_bigquery-data-analytics/skills');
+        expect(directories[0].tier).to.equal('plugin');
+        expect(directories[0].qualifier).to.equal('io.github.acme_bigquery-data-analytics');
     });
 
     it('contributes nothing for a directory without a provenance marker, which has no identifier to qualify its skills with', async () => {

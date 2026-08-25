@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -200,6 +200,34 @@ describe('GitHubTarballSource', () => {
         const error = await expectRejection(service.fetch({ sourceUrl: 'https://github.com/example/plugins', sourcePath: 'plugins/missing', destination }));
 
         expect(error.message).to.match(/plugins\/missing/);
+        expect(error.message).to.match(/does not exist/i);
+    });
+
+    it('reports a subtree that exists but holds no installable file as such, not as a wrong path', async () => {
+        // Only a directory and a link out of the subtree: the path is right, there is just nothing to
+        // install under it. Telling the user the path does not exist would send them looking for a typo.
+        const { service } = source(archive([
+            { name: `${ARCHIVE_ROOT}/plugins/demo/`, type: 'directory' },
+            { name: `${ARCHIVE_ROOT}/plugins/demo/nested/`, type: 'directory' },
+            { name: `${ARCHIVE_ROOT}/plugins/demo/vendor`, type: 'symlink', linkname: '../..' }
+        ]));
+
+        const error = await expectRejection(service.fetch({ sourceUrl: 'https://github.com/example/plugins', sourcePath: 'plugins/demo', destination }));
+
+        expect(error.message).to.match(/holds no file to install/i);
+        expect(error.message).to.not.match(/does not exist/i);
+        expect(error.message).to.match(/plugins\/demo/);
+    });
+
+    it('reports a repository that holds no installable file as such, not as empty', async () => {
+        const { service } = source(archive([
+            { name: `${ARCHIVE_ROOT}/`, type: 'directory' },
+            { name: `${ARCHIVE_ROOT}/docs/`, type: 'directory' }
+        ]));
+
+        const error = await expectRejection(service.fetch({ sourceUrl: 'https://github.com/example/plugins', destination }));
+
+        expect(error.message).to.match(/holds no file to install/i);
     });
 
     it('rejects an entry with an absolute path, writing nothing outside the destination', async () => {
@@ -290,7 +318,9 @@ describe('GitHubTarballSource', () => {
         expect(await fs.readFile(path.join(destination, 'plugin.json'), 'utf8')).to.equal('{"name":"demo"}');
     });
 
-    it('keeps a symlink whose target stays inside the destination', async () => {
+    // Skipped on Windows, where creating a symlink needs elevation or developer mode: `tar-fs` drops the
+    // entry there whatever the guard decides, so the assertion would be about the OS, not about us.
+    (process.platform === 'win32' ? it.skip : it)('keeps a symlink whose target stays inside the destination', async () => {
         const { service } = source(archive([
             { name: `${ARCHIVE_ROOT}/plugin.json`, content: '{"name":"demo"}' },
             { name: `${ARCHIVE_ROOT}/alias.json`, type: 'symlink', linkname: 'plugin.json' }
