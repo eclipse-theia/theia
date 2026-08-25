@@ -186,6 +186,19 @@ export class ShellCommandPermissionService {
     }
 
     /**
+     * Why `pattern` is not acceptable, or `undefined` when it is. Same rules as the add methods, exposed for
+     * UI that refuses a pattern before writing it, so those rules live in one place.
+     */
+    checkPattern(pattern: string): string | undefined {
+        try {
+            this.validatePattern(pattern);
+            return undefined;
+        } catch (error) {
+            return error instanceof Error ? error.message : String(error);
+        }
+    }
+
+    /**
      * Validates a pattern and returns the trimmed version.
      * Throws an error if the pattern is invalid.
      */

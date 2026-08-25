@@ -395,6 +395,19 @@ export class GettingStartedWidget extends ReactWidget {
                     {nls.localizeByDefault('Open Settings')}
                 </a>
             </div>
+            {/* The AI preferences are managed in their own view, so it belongs next to the settings link.
+                Only shown when the AI packages are part of the product (see `aiIsIncluded`). */}
+            {this.aiIsIncluded &&
+                <div className='gs-action-container'>
+                    <a
+                        role={'button'}
+                        tabIndex={0}
+                        onClick={this.doOpenAiConfiguration}
+                        onKeyDown={this.doOpenAiConfigurationEnter}>
+                        {nls.localize('theia/getting-started/openAiConfiguration', 'Open AI Configuration')}
+                    </a>
+                </div>
+            }
             <div className='gs-action-container'>
                 <a
                     role={'button'}
@@ -635,6 +648,19 @@ Check out [the Theia AI documentation]({2})!
     protected doOpenPreferencesEnter = (e: React.KeyboardEvent) => {
         if (this.isEnterKey(e)) {
             this.doOpenPreferences();
+        }
+    };
+
+    /**
+     * Trigger the open AI configuration command.
+     * Used to open the AI Configuration view, which manages the AI preferences.
+     * Referenced by id because `@theia/getting-started` does not depend on the AI packages, as with the
+     * AI chat view above.
+     */
+    protected doOpenAiConfiguration = () => this.commandRegistry.executeCommand('aiConfiguration:open');
+    protected doOpenAiConfigurationEnter = (e: React.KeyboardEvent) => {
+        if (this.isEnterKey(e)) {
+            this.doOpenAiConfiguration();
         }
     };
 
