@@ -132,6 +132,7 @@ All Theia packages are now compiled with the automatic JSX runtime:
 ```
 
 `@theia/core/shared/react/jsx-runtime` and `@theia/core/shared/react/jsx-dev-runtime` are new re-exports, so the generated JSX calls still resolve to the single React instance shared by `@theia/core`.
+The only exception is `@theia/core`: it cannot import its own re-export, so `packages/core/tsconfig.json` overrides `jsxImportSource` with `react`, which resolves to the same module.
 
 Adopters do not have to switch, but if you want the same setup in your own extensions:
 
