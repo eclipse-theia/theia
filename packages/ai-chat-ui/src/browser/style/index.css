@@ -738,7 +738,7 @@ div:last-child>.theia-ChatNode {
 }
 
 /* Anchor for the off-level slash overlay drawn via ::after. */
-.theia-ChatInput-ReasoningSelector.theia-select-component {
+.theia-ReasoningLevelSelector.theia-select-component {
   position: relative;
 }
 
@@ -827,12 +827,22 @@ div:last-child>.theia-ChatNode {
   pointer-events: none;
 }
 
-/* Inject a leading lightbulb icon inside the reasoning selector so it shares the dropdown's
-   click area, hover/focus styles, and visual bounds (no DOM gap, single control). Sized to match
-   the toolbar's other codicons (e.g. capabilities wrench) rather than the small chevron.
+/* Reasoning level glyphs, shared by the chat input's selector and the AI Configuration view's agent
+   detail so a level looks the same wherever it is set. Keyed off `.theia-ReasoningLevelSelector` plus
+   `reasoning-level-<level>`; the chat toolbar's own sizing stays on `.theia-ChatInput-ReasoningSelector`.
+
+   Injected inside the select so the icon shares the dropdown's click area, hover/focus styles, and
+   visual bounds (no DOM gap, single control). Sized to match the toolbar's other codicons.
    The base glyph is the filled lightbulb (\ea61); per-level overrides below swap glyph, opacity
    or color to give a visual cue that scales with the chosen reasoning intensity. */
-.theia-ChatInput-ReasoningSelector.theia-select-component::before {
+.theia-ReasoningLevelSelector.theia-select-component {
+  /* Left inset of the glyph, i.e. the control's own left padding. The off-level slash is centered over the
+     glyph and has no way to read that padding, so each consumer states it here; the default matches the chat
+     toolbar's compact padding. Without this the slash drifts off the bulb in any differently padded host. */
+  --theia-reasoning-glyph-inset: calc(var(--theia-ui-padding) * 2 / 3);
+}
+
+.theia-ReasoningLevelSelector.theia-select-component::before {
   font-family: codicon;
   content: '\ea61';
   /* codicon-lightbulb (filled) — default for low/medium/high */
@@ -844,17 +854,17 @@ div:last-child>.theia-ChatNode {
 }
 
 /* Off: empty bulb glyph + CSS-drawn diagonal slash overlay (mimics MDI's lightbulb-off). */
-.theia-ChatInput-ReasoningSelector.reasoning-level-off::before {
+.theia-ReasoningLevelSelector.reasoning-level-off::before {
   content: '\ec40';
   /* codicon-lightbulb-empty */
   opacity: 0.85;
 }
 
-.theia-ChatInput-ReasoningSelector.reasoning-level-off::after {
+.theia-ReasoningLevelSelector.reasoning-level-off::after {
   content: '';
   position: absolute;
-  /* Center over the ::before icon area: padding-left + half icon width. */
-  left: calc(var(--theia-ui-padding) * 2 / 3 + var(--theia-icon-size) / 2);
+  /* Center over the ::before icon area: the control's left padding + half the icon width. */
+  left: calc(var(--theia-reasoning-glyph-inset) + var(--theia-icon-size) / 2);
   top: 50%;
   width: calc(var(--theia-icon-size) * 0.95);
   height: 1.5px;
@@ -868,29 +878,29 @@ div:last-child>.theia-ChatNode {
 /* Minimal: empty (outline only) bulb at low opacity — "on, but barely".
    Lower opacity than `low` so the brightness order matches the level order:
    the crisper outline at full opacity would otherwise read brighter than a filled bulb at 0.55. */
-.theia-ChatInput-ReasoningSelector.reasoning-level-minimal::before {
+.theia-ReasoningLevelSelector.reasoning-level-minimal::before {
   content: '\ec40';
   /* codicon-lightbulb-empty */
   opacity: 0.5;
 }
 
 /* Low: filled bulb, perceptibly more present than minimal. */
-.theia-ChatInput-ReasoningSelector.reasoning-level-low::before {
+.theia-ReasoningLevelSelector.reasoning-level-low::before {
   opacity: 0.7;
 }
 
 /* Medium: filled bulb, moderately bright. */
-.theia-ChatInput-ReasoningSelector.reasoning-level-medium::before {
+.theia-ReasoningLevelSelector.reasoning-level-medium::before {
   opacity: 0.9;
 }
 
 /* High: filled bulb at full opacity, tinted with the warning foreground (warm/yellow). */
-.theia-ChatInput-ReasoningSelector.reasoning-level-high::before {
+.theia-ReasoningLevelSelector.reasoning-level-high::before {
   color: var(--theia-editorWarning-foreground);
 }
 
 /* Auto: lightbulb-sparkle — "the model decides automatically". */
-.theia-ChatInput-ReasoningSelector.reasoning-level-auto::before {
+.theia-ReasoningLevelSelector.reasoning-level-auto::before {
   content: '\ec1f';
   /* codicon-lightbulb-sparkle */
 }

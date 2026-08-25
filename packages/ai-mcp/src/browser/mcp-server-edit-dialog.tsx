@@ -29,7 +29,11 @@ export interface MCPServerFormData {
     name: string;
     serverType: MCPServerType;
     command: string;
-    args: string;
+    /**
+     * One entry per argument, kept verbatim: joining them into a single string and splitting on whitespace
+     * again would tear an argument that contains a space (a path like `/home/me/My Documents`) in two.
+     */
+    args: string[];
     env: string;
     serverUrl: string;
     serverAuthToken: string;
@@ -48,7 +52,7 @@ export const DEFAULT_MCP_SERVER_FORM_DATA: MCPServerFormData = {
     name: '',
     serverType: 'local',
     command: '',
-    args: '',
+    args: [],
     env: '',
     serverUrl: '',
     serverAuthToken: '',
@@ -130,7 +134,17 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
         return errors.join('. ');
     }
 
-    protected handleFormChange = (field: keyof MCPServerFormData, value: string | boolean): void => {
+    /**
+     * Splits the arguments field, which is a single line and so can only express whitespace-separated
+     * arguments. Entering an argument that itself contains a space is done with the list editor on the
+     * server's detail page, which keeps each entry verbatim.
+     */
+    protected splitArguments(line: string): string[] {
+        const trimmed = line.trim();
+        return trimmed ? trimmed.split(/\s+/) : [];
+    }
+
+    protected handleFormChange = (field: keyof MCPServerFormData, value: string | boolean | string[]): void => {
         this.formData = { ...this.formData, [field]: value };
         if (field === 'serverType') {
             // serverType toggles which fields are shown - needs a re-render.
@@ -222,8 +236,8 @@ export class MCPServerEditDialog extends ReactDialog<MCPServerFormData | undefin
                     <input
                         type="text"
                         className="theia-input"
-                        defaultValue={this.formData.args}
-                        onChange={e => this.handleFormChange('args', e.target.value)}
+                        defaultValue={this.formData.args.join(' ')}
+                        onChange={e => this.handleFormChange('args', this.splitArguments(e.target.value))}
                         placeholder={nls.localize('theia/ai/mcpConfiguration/form/argsPlaceholder', 'Space-separated, e.g., -y @modelcontextprotocol/server-brave-search')}
                         spellCheck={false}
                     />
