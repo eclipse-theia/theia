@@ -202,13 +202,13 @@ describe('AI Configuration primitives', () => {
         host.remove();
     });
 
-    it('AiConfigurationEmptyState renders the message and an optional action', () => {
-        const tree = AiConfigurationEmptyState({ message: 'Nothing here', action: React.createElement('button', {}, 'Add') });
+    it('AiConfigurationEmptyState renders the message and an optional action', async () => {
+        const tree = await AiConfigurationEmptyState({ message: 'Nothing here', action: React.createElement('button', {}, 'Add') });
         expect(textOf(tree)).to.include('Nothing here').and.to.include('Add');
     });
 
-    it('AiConfigurationItemDetailHeader renders title and subtitle', () => {
-        const tree = AiConfigurationItemDetailHeader({ title: 'Coder', subtitle: 'agent-id-1' });
+    it('AiConfigurationItemDetailHeader renders title and subtitle', async () => {
+        const tree = await AiConfigurationItemDetailHeader({ title: 'Coder', subtitle: 'agent-id-1' });
         expect(textOf(tree)).to.include('Coder').and.to.include('agent-id-1');
     });
 
