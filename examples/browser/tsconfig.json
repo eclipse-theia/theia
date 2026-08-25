@@ -39,6 +39,9 @@
       "path": "../../packages/ai-editor"
     },
     {
+      "path": "../../packages/ai-external-api"
+    },
+    {
       "path": "../../packages/ai-google"
     },
     {
@@ -106,6 +109,9 @@
     },
     {
       "path": "../../packages/editor-preview"
+    },
+    {
+      "path": "../../packages/external-api"
     },
     {
       "path": "../../packages/file-search"
