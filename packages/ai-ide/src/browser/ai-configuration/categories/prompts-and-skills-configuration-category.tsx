@@ -49,6 +49,7 @@ import {
     CollapsibleRow,
     CollapsibleRowAction
 } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/collapsible-list';
+import { AiConfigurationOrigin } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-origin-badge';
 import { AgentChips } from './agent-chips';
 
 const SKILL_ROW_PREFIX = 'skill:';
@@ -225,27 +226,18 @@ export class PromptsAndSkillsConfigurationCategory extends SinglePageCategoryRen
         if (tools.length > 0) {
             pills.push(nls.localizeByDefault('{0} tools', tools.length));
         }
-        if (plugin) {
-            pills.push(nls.localize('theia/ai/ide/skillsConfiguration/skill/viaPlugin', 'via {0}', plugin.name));
-        }
         return {
             id: SKILL_ROW_PREFIX + skill.qualifiedName,
             title: skill.qualifiedName,
             description: skill.description,
             pills,
+            origins: plugin ? [AiConfigurationOrigin.agentPlugin(plugin, () => this.agentPluginUiBridge?.revealPlugin(plugin.pluginId))] : undefined,
             filterText: `${skill.qualifiedName} ${skill.description ?? ''} ${plugin?.name ?? ''}`.toLocaleLowerCase(),
-            actions: <>
-                {plugin && <CollapsibleRowAction
-                    iconClass={codicon('extensions')}
-                    label={nls.localize('theia/ai/ide/skillsConfiguration/skill/revealPlugin', 'Show the Agent Plugin \'{0}\' that provides this skill', plugin.name)}
-                    onActivate={() => this.agentPluginUiBridge?.revealPlugin(plugin.pluginId)}
-                />}
-                <CollapsibleRowAction
-                    iconClass={codicon('edit')}
-                    label={nls.localize('theia/ai/ide/skillsConfiguration/openSkillFile', 'Open SKILL.md')}
-                    onActivate={() => this.openSkill(skill)}
-                />
-            </>,
+            actions: <CollapsibleRowAction
+                iconClass={codicon('edit')}
+                label={nls.localize('theia/ai/ide/skillsConfiguration/openSkillFile', 'Open SKILL.md')}
+                onActivate={() => this.openSkill(skill)}
+            />,
             body: <>
                 <AiConfigurationValueRow label={nls.localizeByDefault('Location')} value={skill.location} onCopy={this.copyValue} />
                 {(skill.license || skill.compatibility || metadata.length > 0) && <div className='ai-variable-section'>

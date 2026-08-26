@@ -198,57 +198,64 @@ describe('McpServersConfigurationCategory', () => {
             return category;
         }
 
-        function pluginLink(host: HTMLElement): HTMLButtonElement | null {
-            return host.querySelector('button[title^="Open the Agent Plugin"]') as HTMLButtonElement | null;
+        const bothOrigins = { ...pluginServer, registryMetadata: { serverId: 'io.github.acme/validator', pluginId: devtools.pluginId } } as MCPServerDescription;
+
+        function pluginBadge(host: HTMLElement): HTMLButtonElement | null {
+            return host.querySelector('.ai-configuration-origin-badge[title^="Open the Agent Plugin"]') as HTMLButtonElement | null;
         }
 
-        it('tags a plugin-provided server in the list, so it is told apart without being opened', () => {
-            const children = categoryWithPlugins([pluginServer], [devtools]).getTreeChildren();
-            expect(children[0].tags).to.deep.equal(['via Acme Devtools']);
+        function originLabels(category: McpServersConfigurationCategory): string[] | undefined {
+            return category.getTreeChildren()[0].origins?.map(origin => origin.label);
+        }
+
+        it('labels a plugin-provided server in the list, so it is told apart without being opened', () => {
+            expect(originLabels(categoryWithPlugins([pluginServer], [devtools]))).to.deep.equal(['via Acme Devtools']);
         });
 
-        it('tags a server that carries both a registry entry and a plugin with both origins', () => {
-            const both = { ...pluginServer, registryMetadata: { serverId: 'io.github.acme/validator', pluginId: devtools.pluginId } } as MCPServerDescription;
-            const children = categoryWithPlugins([both], [devtools]).getTreeChildren();
-            expect(children[0].tags).to.deep.equal(['From registry', 'via Acme Devtools']);
+        it('labels a server that carries both a registry entry and a plugin with both origins, which lead to different places', () => {
+            expect(originLabels(categoryWithPlugins([bothOrigins], [devtools], { openedRegistryEntries: [] })))
+                .to.deep.equal(['From registry', 'via Acme Devtools']);
         });
 
-        it('tags nothing rather than a bare identifier when the owning plugin is not installed', () => {
-            expect(categoryWithPlugins([pluginServer], []).getTreeChildren()[0].tags).to.equal(undefined);
+        it('labels nothing rather than a bare identifier when the owning plugin is not installed', () => {
+            expect(originLabels(categoryWithPlugins([pluginServer], []))).to.equal(undefined);
         });
 
-        it('tags nothing when no bridge is bound, i.e. without `@theia/ai-registry`', () => {
-            expect(categoryWithPlugins([pluginServer], undefined).getTreeChildren()[0].tags).to.equal(undefined);
+        it('labels nothing when no bridge is bound, i.e. without `@theia/ai-registry`', () => {
+            expect(originLabels(categoryWithPlugins([pluginServer], undefined))).to.equal(undefined);
         });
 
-        it('labels the detail header with the name of the plugin that supplied the server', () => {
-            withServerDetail(categoryWithPlugins([pluginServer], [devtools]), 'validator', host => {
-                expect(pluginLink(host)?.textContent).to.contain('via Acme Devtools');
+        it('still states a registry origin without a registry UI to open, but not as a link', () => {
+            // Unlike a plugin, whose display name only the bridge knows, a registry entry names itself in
+            // the server's own preference entry - so the fact survives even when nothing can act on it.
+            const linked = { ...pluginServer, registryMetadata: { serverId: 'io.github.acme/validator' } } as MCPServerDescription;
+            const origins = categoryWithPlugins([linked], undefined).getTreeChildren()[0].origins;
+            expect(origins?.map(origin => origin.label)).to.deep.equal(['From registry']);
+            expect(origins![0].activate).to.equal(undefined);
+        });
+
+        it('shows the same origin badges on the detail header as in the list, rather than a second design', () => {
+            const category = categoryWithPlugins([bothOrigins], [devtools], { openedRegistryEntries: [] });
+            withServerDetail(category, 'validator', host => {
+                const badges = Array.from(host.querySelectorAll('.ai-configuration-origin-badge')).map(badge => badge.textContent);
+                expect(badges).to.deep.equal(originLabels(category));
             });
         });
 
-        it('reveals the owning plugin rather than a registry server when the provenance link is clicked', () => {
+        it('reveals the owning plugin rather than a registry server when the plugin badge is clicked', () => {
             const revealed: string[] = [];
             const openedRegistryEntries: (string | undefined)[] = [];
-            const category = categoryWithPlugins([pluginServer], [devtools], { revealed, openedRegistryEntries });
+            const category = categoryWithPlugins([bothOrigins], [devtools], { revealed, openedRegistryEntries });
             withServerDetail(category, 'validator', host => {
-                flushSync(() => pluginLink(host)!.click());
+                flushSync(() => pluginBadge(host)!.click());
             });
             expect(revealed).to.deep.equal([devtools.pluginId]);
             expect(openedRegistryEntries).to.be.empty;
         });
 
-        it('shows the plugin link alongside the registry link when the server carries both', () => {
-            const both = { ...pluginServer, registryMetadata: { serverId: 'io.github.acme/validator', pluginId: devtools.pluginId } } as MCPServerDescription;
-            withServerDetail(categoryWithPlugins([both], [devtools], { openedRegistryEntries: [] }), 'validator', host => {
-                expect(host.textContent).to.contain('From registry');
-                expect(host.textContent).to.contain('via Acme Devtools');
-            });
-        });
-
-        it('shows no provenance link for a server that was not contributed by a plugin', () => {
+        it('shows no origin badge for a server that was not contributed by a plugin', () => {
             withServerDetail(categoryWithPlugins([server('plain-local', MCPServerStatus.NotRunning)], [devtools]), 'plain-local', host => {
-                expect(pluginLink(host)).to.be.null;
+                expect(host.querySelector('.ai-configuration-origin-badge')).to.be.null;
             });
         });
     });

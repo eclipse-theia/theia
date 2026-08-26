@@ -35,6 +35,7 @@ import {
 } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
 import { CollectionCategoryRenderer, AiConfigurationAddDescriptor } from '@theia/ai-core-ui/lib/browser/ai-configuration/renderers/collection-category-renderer';
 import { AiConfigurationItemDetailHeader, AiConfigurationSection } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-primitives';
+import { AiConfigurationOrigin } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-origin-badge';
 import { AiConfigurationItemRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-item-row';
 import { AiSettingsRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
@@ -153,22 +154,30 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
             description: this.getServerSummary(server),
             // Provenance belongs in the list too, not just on the detail page: it is how you tell a server you
             // configured by hand from one installed from the registry without opening each of them.
-            tags: this.getServerTags(server),
+            origins: this.getServerOrigins(server),
             status: this.getServerStatus(server)
         } satisfies AiConfigurationTreeItem));
     }
 
-    /** "From registry" and/or `via <plugin>` for a server that came from elsewhere, mirroring the detail header's links. */
-    protected getServerTags(server: MCPServerDescription): string[] | undefined {
-        const tags: string[] = [];
-        if (server.registryMetadata?.serverId) {
-            tags.push(nls.localize('theia/ai/mcpConfiguration/fromRegistry', 'From registry'));
+    /**
+     * The registry entry and/or the Agent Plugin a server came from. Both, when it carries both: a
+     * plugin-contributed server can also be linked to a registry approval of its own, and the two lead to
+     * different places. Empty for a server the user configured by hand, which is the common case.
+     */
+    protected getServerOrigins(server: MCPServerDescription): AiConfigurationOrigin[] | undefined {
+        const origins: AiConfigurationOrigin[] = [];
+        const registryId = server.registryMetadata?.serverId;
+        const bridge = this.registryBridge;
+        if (registryId) {
+            // Stated even without `@theia/ai-registry`, which is what would open it: the server did come
+            // from the registry, and the preference it was written into says so whether or not we can link.
+            origins.push(AiConfigurationOrigin.registry(registryId, bridge && (() => bridge.openRegistry(registryId))));
         }
         const plugin = this.getOwningPlugin(server);
         if (plugin) {
-            tags.push(nls.localize('theia/ai/mcpConfiguration/viaAgentPlugin', 'via {0}', plugin.name));
+            origins.push(AiConfigurationOrigin.agentPlugin(plugin, () => this.agentPluginBridge?.revealPlugin(plugin.pluginId)));
         }
-        return tags.length > 0 ? tags : undefined;
+        return origins.length > 0 ? origins : undefined;
     }
 
     /**
@@ -255,16 +264,13 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
         if (!server) {
             return undefined;
         }
-        // Use the shared detail header (icon + title), matching the other detail pages. The "From registry"
-        // link sits next to the title; the status badge is grouped with the lifecycle/delete controls on the right.
+        // Use the shared detail header (icon + title), matching the other detail pages. The origin badges sit
+        // next to the title; the status badge is grouped with the lifecycle/delete controls on the right.
         return <AiConfigurationItemDetailHeader
             title={server.name}
             iconClass={this.iconClass}
             subtitle={this.getServerSummary(server)}
-            titleSuffix={<>
-                {this.renderRegistryAffordance(server)}
-                {this.renderAgentPluginAffordance(server)}
-            </>}
+            origins={this.getServerOrigins(server)}
             status={this.getServerStatus(server)}
             actions={this.renderServerActions(server)}
         />;
@@ -317,43 +323,6 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
                 title={nls.localize('theia/ai/mcpConfiguration/deleteServer', 'Delete Server')}
             />
         </>;
-    }
-
-    protected renderRegistryAffordance(server: MCPServerDescription): React.ReactNode {
-        const registryId = server.registryMetadata?.serverId;
-        const bridge = this.registryBridge;
-        if (!registryId || !bridge) {
-            return undefined;
-        }
-        return <button
-            type='button'
-            className='mcp-server-registry-link'
-            onClick={() => bridge.openRegistry(registryId)}
-            title={nls.localize('theia/ai/mcpConfiguration/openInRegistry', 'Open in AI registry: {0}', registryId)}
-        >
-            <i className={`${codicon('link-external')} mcp-server-registry-link-icon`} />
-            {nls.localize('theia/ai/mcpConfiguration/fromRegistry', 'From registry')}
-        </button>;
-    }
-
-    /**
-     * In addition to the registry affordance, not replacing it: this reveals the owning plugin, and a
-     * plugin-contributed server has no `serverId` of its own to open in the registry.
-     */
-    protected renderAgentPluginAffordance(server: MCPServerDescription): React.ReactNode {
-        const plugin = this.getOwningPlugin(server);
-        if (!plugin) {
-            return undefined;
-        }
-        return <button
-            type='button'
-            className='mcp-server-registry-link'
-            onClick={() => this.agentPluginBridge?.revealPlugin(plugin.pluginId)}
-            title={nls.localize('theia/ai/mcpConfiguration/openAgentPlugin', 'Open the Agent Plugin that provides this server: {0}', plugin.name)}
-        >
-            <i className={`${codicon('extensions')} mcp-server-registry-link-icon`} />
-            {nls.localize('theia/ai/mcpConfiguration/viaAgentPlugin', 'via {0}', plugin.name)}
-        </button>;
     }
 
     /**

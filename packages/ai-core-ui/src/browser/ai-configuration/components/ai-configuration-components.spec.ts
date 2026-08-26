@@ -31,6 +31,7 @@ import { flushSync } from '@theia/core/shared/react-dom';
 import { createRoot } from '@theia/core/shared/react-dom/client';
 import { AiConfigurationItemRow } from './ai-configuration-item-row';
 import { AiConfigurationEmptyState, AiConfigurationItemDetailHeader, AiConfigurationSection } from './ai-configuration-primitives';
+import { AiConfigurationOrigin, AiConfigurationOriginBadge, AiConfigurationOriginBadges } from './ai-configuration-origin-badge';
 import { AiConfigurationSettingRow } from './ai-configuration-setting-row';
 import { AiArrayInput, AiNumberStepper } from './ai-configuration-controls';
 import { ConfirmDialog } from '@theia/core/lib/browser';
@@ -210,6 +211,70 @@ describe('AI Configuration primitives', () => {
     it('AiConfigurationItemDetailHeader renders title and subtitle', async () => {
         const tree = await AiConfigurationItemDetailHeader({ title: 'Coder', subtitle: 'agent-id-1' });
         expect(textOf(tree)).to.include('Coder').and.to.include('agent-id-1');
+    });
+
+    it('AiConfigurationOriginBadge is a button that activates its origin, and does not open the row it sits in', () => {
+        let activated = 0;
+        let rowOpened = 0;
+        const { container, dispose } = mount(React.createElement('div', { onClick: () => { rowOpened++; } },
+            React.createElement(AiConfigurationOriginBadge, {
+                origin: { label: 'From registry', iconClass: 'codicon-link-external', tooltip: 'Open in AI registry: x', activate: () => { activated++; } }
+            })));
+        try {
+            const badge = container.querySelector('button.ai-configuration-origin-badge') as HTMLButtonElement;
+            expect(badge.getAttribute('title')).to.equal('Open in AI registry: x');
+            expect(badge.textContent).to.include('From registry');
+
+            flushSync(() => badge.click());
+            expect(activated).to.equal(1);
+            // The surrounding row and detail header are clickable themselves; following the badge must
+            // not also open them.
+            expect(rowOpened).to.equal(0);
+        } finally {
+            dispose();
+        }
+    });
+
+    it('AiConfigurationOriginBadge is not focusable when the origin leads nowhere', () => {
+        const { container, dispose } = mount(React.createElement(AiConfigurationOriginBadge, {
+            origin: { label: 'via Acme', iconClass: 'codicon-extensions', tooltip: 'Acme' }
+        }));
+        try {
+            expect(container.querySelector('button')).to.be.null;
+            expect(container.querySelector('span.ai-configuration-origin-badge')?.textContent).to.include('via Acme');
+        } finally {
+            dispose();
+        }
+    });
+
+    it('AiConfigurationOriginBadges renders one badge per origin, in order, and nothing without any', () => {
+        const origin = (label: string) => ({ label, iconClass: 'codicon-link-external', tooltip: label, activate: () => { } });
+        const { container, dispose } = mount(React.createElement(AiConfigurationOriginBadges,
+            { origins: [origin('From registry'), origin('via Acme Devtools')] }));
+        try {
+            expect(Array.from(container.querySelectorAll('.ai-configuration-origin-badge')).map(badge => badge.textContent))
+                .to.deep.equal(['From registry', 'via Acme Devtools']);
+        } finally {
+            dispose();
+        }
+        const empty = mount(React.createElement('div', {}, React.createElement(AiConfigurationOriginBadges, { origins: [] })));
+        try {
+            expect(empty.container.querySelector('.ai-configuration-origin-badges')).to.be.null;
+        } finally {
+            empty.dispose();
+        }
+    });
+
+    it('AiConfigurationOrigin builds the same registry and Agent Plugin badges for every page to use', () => {
+        const registry = AiConfigurationOrigin.registry('io.github.acme/validator', () => { });
+        expect(registry.label).to.equal('From registry');
+        expect(registry.iconClass).to.contain('codicon-link-external');
+        expect(registry.tooltip).to.contain('io.github.acme/validator');
+
+        const plugin = AiConfigurationOrigin.agentPlugin({ pluginId: 'io.github.acme/devtools', name: 'Acme Devtools' }, () => { });
+        expect(plugin.label).to.equal('via Acme Devtools');
+        expect(plugin.iconClass).to.contain('codicon-extensions');
+        expect(plugin.tooltip).to.contain('Acme Devtools');
     });
 
     it('AiConfigurationSettingRow renders title and control, marks modified rows, and hides the raw id', () => {

@@ -15,6 +15,8 @@
 // *****************************************************************************
 
 import { Event } from '@theia/core';
+// Type-only, so this contribution point stays free of a runtime dependency on the rendering component.
+import type { AiConfigurationOrigin } from './components/ai-configuration-origin-badge';
 
 /**
  * Contribution point for a category shown in the AI Configuration view.
@@ -178,10 +180,16 @@ export interface AiConfigurationTreeItem {
     readonly label: string;
     /**
      * Short labels shown as badges next to the item's name, for what it *is* rather than what it is doing
-     * (which is {@link status}): where it came from, for instance "From registry". The item detail can state
-     * the same thing in a richer way, e.g. as a link back to the registry entry.
+     * (which is {@link status}). Use {@link origins} for where the item came from, which is a badge of its
+     * own kind: it carries an icon and leads somewhere.
      */
     readonly tags?: string[];
+    /**
+     * Where the item came from, when that is not the user - an AI registry entry, an Agent Plugin. Shown
+     * next to the item's name on the overview and, unchanged, on the item's detail header, so that
+     * provenance reads the same in both places.
+     */
+    readonly origins?: AiConfigurationOrigin[];
     /** Status badge shown on the overview card and the item detail header. */
     readonly status?: AiConfigurationItemStatus;
     /** Short text for the overview card. */

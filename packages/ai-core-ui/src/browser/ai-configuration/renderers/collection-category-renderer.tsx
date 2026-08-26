@@ -65,6 +65,7 @@ export abstract class CollectionCategoryRenderer implements AiConfigurationCateg
                         iconClass={item.iconClass}
                         description={item.description}
                         tags={item.tags}
+                        origins={item.origins}
                         status={item.status}
                         onSelect={() => ctx.navigate({ categoryId: this.categoryId, itemId: item.id })}
                     />)}
@@ -138,9 +139,15 @@ export abstract class CollectionCategoryRenderer implements AiConfigurationCateg
         return undefined;
     }
 
-    /** Header of an item detail page; icon/title/subtitle from the item by default. */
+    /** Header of an item detail page; icon/title/subtitle/origins from the item by default. */
     protected renderItemHeader(item: AiConfigurationTreeItem, ctx: AiConfigurationRenderContext): React.ReactNode {
-        return <AiConfigurationItemDetailHeader title={item.label} iconClass={item.iconClass} subtitle={item.description} status={item.status} />;
+        return <AiConfigurationItemDetailHeader
+            title={item.label}
+            iconClass={item.iconClass}
+            subtitle={item.description}
+            status={item.status}
+            origins={item.origins}
+        />;
     }
 
     /** Body of an item detail page: typically {@link AiConfigurationSection}s of rows. */

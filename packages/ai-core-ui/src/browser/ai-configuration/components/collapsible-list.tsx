@@ -17,6 +17,7 @@
 import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { AiConfigurationEmptyState, AiConfigurationFilterInput, AiConfigurationSection } from './ai-configuration-primitives';
+import { AiConfigurationOrigin, AiConfigurationOriginBadges } from './ai-configuration-origin-badge';
 
 /** One expandable row of a {@link CollapsibleList}. */
 export interface CollapsibleRow {
@@ -27,6 +28,12 @@ export interface CollapsibleRow {
     readonly description?: string;
     /** Short badges shown before the actions, e.g. an argument count or the single agent using the row. */
     readonly pills?: string[];
+    /**
+     * Where the row's entry came from, when that is not the user. Shown after the pills as the same
+     * {@link AiConfigurationOriginBadge}s a collection item carries, and reachable while the row is
+     * collapsed - provenance is something you scan a list for, not something you expand rows to find.
+     */
+    readonly origins?: AiConfigurationOrigin[];
     /**
      * Actions rendered at the row's trailing edge, after the pills, and available whether the row is
      * expanded or not. Use {@link CollapsibleRowAction}, which stops the click from toggling the row.
@@ -183,8 +190,9 @@ const CollapsibleRowView: React.FC<CollapsibleRowViewProps> = ({ row, expanded, 
             {expanded
                 ? <span className='ai-config-collapsible-inline-description-spacer' aria-hidden='true'></span>
                 : <span className='ai-config-collapsible-inline-description' title={row.description || undefined}>{row.description}</span>}
-            {row.pills && row.pills.length > 0 && <div className='ai-config-collapsible-row-meta'>
-                {row.pills.map((pill, index) => <span key={index} className='ai-config-collapsible-count-pill'>{pill}</span>)}
+            {((row.pills && row.pills.length > 0) || (row.origins && row.origins.length > 0)) && <div className='ai-config-collapsible-row-meta'>
+                {row.pills?.map((pill, index) => <span key={index} className='ai-config-collapsible-count-pill'>{pill}</span>)}
+                <AiConfigurationOriginBadges origins={row.origins} />
             </div>}
             {/* Trailing edge, after the pills: the row's actions stay reachable while the row is collapsed. */}
             {row.actions && <div className='ai-config-collapsible-row-actions'>{row.actions}</div>}

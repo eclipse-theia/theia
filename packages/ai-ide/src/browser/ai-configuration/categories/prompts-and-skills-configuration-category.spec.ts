@@ -22,9 +22,6 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import { Event } from '@theia/core';
-import * as React from '@theia/core/shared/react';
-import { createRoot } from '@theia/core/shared/react-dom/client';
-import { flushSync } from '@theia/core/shared/react-dom';
 import { PromptFragment } from '@theia/ai-core/lib/common/prompt-service';
 import { Skill } from '@theia/ai-core/lib/common/skill';
 import { AgentPluginUiBridge, InstalledAgentPluginInfo } from '@theia/ai-core/lib/browser/agent-plugin-ui-bridge';
@@ -70,22 +67,6 @@ describe('PromptsAndSkillsConfigurationCategory', () => {
     function skillRow(category: PromptsAndSkillsConfigurationCategory, forSkill: Skill): CollapsibleRow {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return (category as any).buildSkillRow(forSkill) as CollapsibleRow;
-    }
-
-    /** Renders a row's action slot and clicks the action whose accessible name starts with `titlePrefix`. */
-    function clickRowAction(actions: React.ReactNode, titlePrefix: string): void {
-        const container = document.createElement('div');
-        document.body.appendChild(container);
-        const root = createRoot(container);
-        try {
-            flushSync(() => root.render(actions));
-            const button = container.querySelector(`button[aria-label^="${titlePrefix}"]`) as HTMLButtonElement | null;
-            expect(button, `no action labelled "${titlePrefix}…"`).to.not.be.null;
-            flushSync(() => button!.click());
-        } finally {
-            flushSync(() => root.unmount());
-            container.remove();
-        }
     }
 
     function skill(overrides: Partial<Skill>): Skill {
@@ -140,35 +121,41 @@ describe('PromptsAndSkillsConfigurationCategory', () => {
             expect(row.title).to.equal('bigquery:query-builder');
         });
 
-        it('labels a contributed skill with the name of the plugin that supplied it', () => {
+        it('labels a contributed skill with the shared origin badge naming the plugin that supplied it', () => {
             const row = skillRow(categoryWithPlugins([contributed], [bigquery]), contributed);
-            expect(row.pills).to.include('via BigQuery Data Analytics');
+            // The same descriptor the MCP page builds, so both pages render one badge rather than two designs.
+            expect(row.origins?.map(origin => origin.label)).to.deep.equal(['via BigQuery Data Analytics']);
             // Filterable by the plugin name too, so a plugin's skills can be listed together.
             expect(row.filterText).to.contain('bigquery data analytics');
         });
 
-        it('reveals the owning plugin when the provenance action is activated', () => {
+        it('reveals the owning plugin when the origin badge is activated', () => {
             const revealed: string[] = [];
             const row = skillRow(categoryWithPlugins([contributed], [bigquery], revealed), contributed);
-            clickRowAction(row.actions, 'Show the Agent Plugin');
+            // Activated directly: rendering the badge as a button is `AiConfigurationOriginBadge`'s
+            // contract, tested where it lives; what belongs here is where this page's badge leads.
+            row.origins![0].activate!();
             expect(revealed).to.deep.equal([bigquery.pluginId]);
+        });
+
+        it('keeps the provenance out of the pills, which state what the skill is rather than where it came from', () => {
+            const row = skillRow(categoryWithPlugins([contributed], [bigquery]), contributed);
+            expect(row.pills?.some(pill => pill.startsWith('via '))).to.not.equal(true);
         });
 
         it('labels nothing for a skill from a built-in root, which is the common case', () => {
             const own = skill({});
-            const row = skillRow(categoryWithPlugins([own], [bigquery]), own);
-            expect(row.pills?.some(pill => pill.startsWith('via '))).to.not.equal(true);
+            expect(skillRow(categoryWithPlugins([own], [bigquery]), own).origins).to.equal(undefined);
         });
 
         it('labels nothing rather than a bare qualifier when the qualifier belongs to no installed plugin', () => {
             const row = skillRow(categoryWithPlugins([contributed], []), contributed);
-            expect(row.pills?.some(pill => pill.startsWith('via '))).to.not.equal(true);
+            expect(row.origins).to.equal(undefined);
             expect(row.title).to.equal('bigquery:query-builder');
         });
 
         it('labels nothing when no bridge is bound, i.e. without `@theia/ai-registry`', () => {
-            const row = skillRow(categoryWithPlugins([contributed], undefined), contributed);
-            expect(row.pills?.some(pill => pill.startsWith('via '))).to.not.equal(true);
+            expect(skillRow(categoryWithPlugins([contributed], undefined), contributed).origins).to.equal(undefined);
         });
     });
 });
