@@ -22,7 +22,6 @@ import {
 } from '@theia/ai-core/lib/common';
 import { nls } from '@theia/core';
 import { SelectOption } from '@theia/core/lib/browser/widgets/select-component';
-import * as React from '@theia/core/shared/react';
 import { AiEnumSelect } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-controls';
 import { AiConfigurationSettingRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-setting-row';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';

@@ -107,7 +107,7 @@ Read on demand (not auto-loaded) — consult when the task calls for it:
 
 - Node.js ≥22 (per `package.json` `engines`)
 - TypeScript ~5.9.3 with strict settings (target ES2023, module CommonJS)
-- React 18.2.0 for UI components
+- React 19 for UI components, compiled with the automatic JSX runtime (`jsx: react-jsx`, `jsxImportSource: @theia/core/shared/react`), so JSX files only need to import React when they use `React.*` types or APIs. `@theia/core` cannot import its own re-export, so `packages/core/tsconfig.json` intentionally overrides `jsxImportSource` with `react` (the same module) — don't "align" it with the base config
 - Monaco Editor for code editing
 
 **Key Technologies:**

@@ -73,10 +73,10 @@
   },
   "peerDependencies": {
     "@theia/electron": "*",
-    "@types/react": "^18.3.0 || ^19.0.0",
-    "@types/react-dom": "^18.3.0 || ^19.0.0",
-    "react": "^18.3.1 || ^19.0.0",
-    "react-dom": "^18.3.1 || ^19.0.0"
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "peerDependenciesMeta": {
     "@theia/electron": {
@@ -119,7 +119,10 @@
         "inversify",
         "react-dom",
         "react-dom/client",
+        "react-dom/server",
         "react-virtuoso",
+        "react/jsx-dev-runtime",
+        "react/jsx-runtime",
         "vscode-languageserver-protocol",
         "vscode-uri"
       ],
@@ -220,12 +223,12 @@
   "devDependencies": {
     "@theia/ext-scripts": "1.74.0",
     "@theia/re-exports": "1.74.0",
-    "@types/react": "^18.3.31",
-    "@types/react-dom": "^18.3.7",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "minimist": "^1.2.8",
     "nodejs-file-downloader": "4.13.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
