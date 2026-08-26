@@ -226,6 +226,11 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
             label: GettingStartedCommand.label,
             order: 'a10'
         });
+        menus.registerMenuAction(CommonMenus.HELP, {
+            commandId: WalkthroughCommands.OPEN_WALKTHROUGH.id,
+            label: WalkthroughCommands.OPEN_WALKTHROUGH.label,
+            order: 'a20'
+        });
     }
 
     registerColors(colors: ColorRegistry): void {
