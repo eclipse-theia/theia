@@ -290,7 +290,7 @@ export interface PluginColorContribution {
     defaults?: { light?: string, dark?: string, highContrast?: string };
 }
 
-export type PluginUiTheme = 'vs' | 'vs-dark' | 'hc-black';
+export type PluginUiTheme = 'vs' | 'vs-dark' | 'hc-black' | 'hc-light';
 
 export interface PluginThemeContribution {
     id?: string;
