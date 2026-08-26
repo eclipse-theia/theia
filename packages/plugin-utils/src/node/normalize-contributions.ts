@@ -82,7 +82,7 @@ import { rawContributes, type PluginManifest } from '../common/manifest-types';
 import { UNPUBLISHED } from '../common/constants';
 
 function isPluginUiTheme(value: unknown): value is PluginUiTheme {
-    return value === 'vs' || value === 'vs-dark' || value === 'hc-black';
+    return value === 'vs' || value === 'vs-dark' || value === 'hc-black' || value === 'hc-light';
 }
 
 export const colorIdPattern = '^\\w+[.\\w+]*$';
