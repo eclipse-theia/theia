@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { AiConfigurationService } from '@theia/ai-core';
+import { AgentPluginUiBridge, InstalledAgentPluginInfo } from '@theia/ai-core/lib/browser/agent-plugin-ui-bridge';
 import { PROMPT_VARIABLE } from '@theia/ai-core/lib/browser/prompt-variable-contribution';
 import { Emitter, Event, ILogger, MessageService, nls, PreferenceScope } from '@theia/core';
 import { codicon, ConfirmDialog } from '@theia/core/lib/browser';
@@ -34,6 +35,7 @@ import {
 } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
 import { CollectionCategoryRenderer, AiConfigurationAddDescriptor } from '@theia/ai-core-ui/lib/browser/ai-configuration/renderers/collection-category-renderer';
 import { AiConfigurationItemDetailHeader, AiConfigurationSection } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-primitives';
+import { AiConfigurationOrigin } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-origin-badge';
 import { AiConfigurationItemRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-item-row';
 import { AiSettingsRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
@@ -91,6 +93,9 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
     @inject(MCPRegistryUiBridge) @optional()
     protected readonly registryBridge?: MCPRegistryUiBridge;
 
+    @inject(AgentPluginUiBridge) @optional()
+    protected readonly agentPluginBridge?: AgentPluginUiBridge;
+
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
     protected readonly toDispose = new DisposableCollection(this.onDidChangeEmitter);
@@ -113,6 +118,10 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
     @postConstruct()
     protected init(): void {
         this.toDispose.push(this.mcpFrontendNotificationService.onDidUpdateMCPServers(() => this.loadServers()));
+        if (this.agentPluginBridge) {
+            // An install changes which plugin names resolve, so the provenance labels must re-render.
+            this.toDispose.push(this.agentPluginBridge.onDidChange(() => this.onDidChangeEmitter.fire()));
+        }
         this.loadServers();
     }
 
@@ -145,14 +154,40 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
             description: this.getServerSummary(server),
             // Provenance belongs in the list too, not just on the detail page: it is how you tell a server you
             // configured by hand from one installed from the registry without opening each of them.
-            tags: this.getServerTags(server),
+            origins: this.getServerOrigins(server),
             status: this.getServerStatus(server)
         } satisfies AiConfigurationTreeItem));
     }
 
-    /** "From registry" for a server linked to a registry entry, mirroring the detail header's link. */
-    protected getServerTags(server: MCPServerDescription): string[] | undefined {
-        return server.registryMetadata?.serverId ? [nls.localize('theia/ai/mcpConfiguration/fromRegistry', 'From registry')] : undefined;
+    /**
+     * The registry entry and/or the Agent Plugin a server came from. Both, when it carries both: a
+     * plugin-contributed server can also be linked to a registry approval of its own, and the two lead to
+     * different places. Empty for a server the user configured by hand, which is the common case.
+     */
+    protected getServerOrigins(server: MCPServerDescription): AiConfigurationOrigin[] | undefined {
+        const origins: AiConfigurationOrigin[] = [];
+        const registryId = server.registryMetadata?.serverId;
+        const bridge = this.registryBridge;
+        if (registryId) {
+            // Stated even without `@theia/ai-registry`, which is what would open it: the server did come
+            // from the registry, and the preference it was written into says so whether or not we can link.
+            origins.push(AiConfigurationOrigin.registry(registryId, bridge && (() => bridge.openRegistry(registryId))));
+        }
+        const plugin = this.getOwningPlugin(server);
+        if (plugin) {
+            origins.push(AiConfigurationOrigin.agentPlugin(plugin, () => this.agentPluginBridge?.revealPlugin(plugin.pluginId)));
+        }
+        return origins.length > 0 ? origins : undefined;
+    }
+
+    /**
+     * The Agent Plugin that contributed a server, or `undefined` when the server is the user's own, when the
+     * owning plugin is not installed - a bare identifier is not worth an affordance - or when no bridge is
+     * bound, i.e. in a product without `@theia/ai-registry`.
+     */
+    protected getOwningPlugin(server: MCPServerDescription): InstalledAgentPluginInfo | undefined {
+        const pluginId = server.registryMetadata?.pluginId;
+        return pluginId ? this.agentPluginBridge?.getPlugin(pluginId) : undefined;
     }
 
     /** Overview subtitle: the server type (Local/Remote) and, once known, its tool count — not the raw command/URL. */
@@ -229,13 +264,13 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
         if (!server) {
             return undefined;
         }
-        // Use the shared detail header (icon + title), matching the other detail pages. The "From registry"
-        // link sits next to the title; the status badge is grouped with the lifecycle/delete controls on the right.
+        // Use the shared detail header (icon + title), matching the other detail pages. The origin badges sit
+        // next to the title; the status badge is grouped with the lifecycle/delete controls on the right.
         return <AiConfigurationItemDetailHeader
             title={server.name}
             iconClass={this.iconClass}
             subtitle={this.getServerSummary(server)}
-            titleSuffix={this.renderRegistryAffordance(server)}
+            origins={this.getServerOrigins(server)}
             status={this.getServerStatus(server)}
             actions={this.renderServerActions(server)}
         />;
@@ -290,23 +325,6 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
         </>;
     }
 
-    protected renderRegistryAffordance(server: MCPServerDescription): React.ReactNode {
-        const registryId = server.registryMetadata?.serverId;
-        const bridge = this.registryBridge;
-        if (!registryId || !bridge) {
-            return undefined;
-        }
-        return <button
-            type='button'
-            className='mcp-server-registry-link'
-            onClick={() => bridge.openRegistry(registryId)}
-            title={nls.localize('theia/ai/mcpConfiguration/openInRegistry', 'Open in AI registry: {0}', registryId)}
-        >
-            <i className={`${codicon('link-external')} mcp-server-registry-link-icon`} />
-            {nls.localize('theia/ai/mcpConfiguration/fromRegistry', 'From registry')}
-        </button>;
-    }
-
     /**
      * The per-server configuration, edited in place. Each field patches the server's form representation and
      * re-persists it via {@link MCPServerEditor.save} — the same write path (and stale-key cleanup) the Add
@@ -328,6 +346,7 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
                 values => this.updateServer(server, { args: values }))}
             {local && this.renderKeyValueField(nls.localize('theia/ai/mcpConfiguration/environmentVariables', 'Environment Variables'), server.env ?? {},
                 lines => this.updateServer(server, { env: lines }))}
+            {local && this.renderPluginPathsSection(server)}
             {remote && this.renderTextField(nls.localize('theia/ai/mcpConfiguration/serverUrl', 'Server URL'), server.serverUrl, false, false,
                 value => this.updateServer(server, { serverUrl: value }),
                 server.serverUrl.trim() ? undefined : nls.localize('theia/ai/mcpConfiguration/form/serverUrlRequired', 'Server URL is required for remote servers'))}
@@ -386,6 +405,33 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
             return server.oauth ? nls.localize('theia/ai/mcpConfiguration/typeRemoteOAuth', 'Remote (OAuth)') : nls.localizeByDefault('Remote');
         }
         return nls.localizeByDefault('Unknown');
+    }
+
+    /**
+     * Read-only on purpose: all three are derived from where `@theia/ai-registry` installed the Agent
+     * Plugin, so there is nothing for the user to author. Shown rather than hidden because they decide
+     * where the process runs and what `PLUGIN_ROOT` and `PLUGIN_DATA` point at.
+     */
+    protected renderPluginPathsSection(server: MCPServerDescription): React.ReactNode {
+        if (!isLocalMCPServerDescription(server)) {
+            return undefined;
+        }
+        return <>
+            {this.renderReadOnlyPath(nls.localizeByDefault('Working Directory'), server.cwd)}
+            {this.renderReadOnlyPath(nls.localize('theia/ai/mcpConfiguration/pluginRoot', 'Plugin Root'), server.pluginRoot, 'PLUGIN_ROOT')}
+            {this.renderReadOnlyPath(nls.localize('theia/ai/mcpConfiguration/pluginData', 'Plugin Data'), server.pluginData, 'PLUGIN_DATA')}
+        </>;
+    }
+
+    /** @param variable the environment variable the value is exported as, when it is one. */
+    protected renderReadOnlyPath(label: string, value: string | undefined, variable?: string): React.ReactNode {
+        if (!value) {
+            return undefined;
+        }
+        return this.renderFieldRow(label, <code className='mcp-property-readonly' title={value}>
+            {value}
+            {variable && <span className='mcp-property-variable'>{variable}</span>}
+        </code>);
     }
 
     protected renderFieldRow(label: string, control: React.ReactNode): React.ReactNode {

@@ -28,33 +28,6 @@
   color: var(--theia-descriptionForeground);
 }
 
-.mcp-server-registry-link {
-  display: inline-flex;
-  align-items: center;
-  gap: calc(var(--theia-ui-padding) / 2);
-  background: none;
-  border: none;
-  padding: 0 calc(var(--theia-ui-padding) / 2);
-  font-size: var(--theia-ui-font-size0);
-  font-weight: 400;
-  color: var(--theia-textLink-foreground);
-  cursor: pointer;
-}
-
-.mcp-server-registry-link:hover:not(:disabled) {
-  color: var(--theia-textLink-activeForeground);
-  text-decoration: underline;
-}
-
-.mcp-server-registry-link:disabled {
-  cursor: default;
-  opacity: 0.6;
-}
-
-.mcp-server-registry-link-icon {
-  font-size: var(--theia-ui-font-size1);
-}
-
 /* Inline-editable server configuration form: give the label column more room than the read-only view and
    let the control column fill the width, and align each label with the top of its (possibly multi-line) control. */
 .mcp-config-form .mcp-property-row {
@@ -174,4 +147,20 @@
      `contrastActiveBorder` exists only in those themes. */
   outline: 1px dotted var(--theia-contrastActiveBorder, transparent);
   outline-offset: -1px;
+}
+
+/* Agent Plugin paths: displayed, never editable - `@theia/ai-registry` derives them from where the
+   plugin was installed, so the server form shows them without an input. */
+.mcp-property-readonly {
+  color: var(--theia-descriptionForeground);
+  word-break: break-all;
+}
+
+.mcp-property-variable {
+  margin-left: calc(var(--theia-ui-padding) / 2);
+  padding: 0 4px;
+  border: 1px solid var(--theia-panel-border);
+  border-radius: 3px;
+  font-size: calc(var(--theia-ui-font-size0) * 0.9);
+  color: var(--theia-descriptionForeground);
 }

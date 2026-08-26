@@ -18,13 +18,15 @@ import { Agent, AgentService } from '@theia/ai-core';
 import { GENERIC_CAPABILITIES_SKILLS_PROMPT_ID, matchVariablesRegEx, parseCapabilitiesFromTemplate } from '@theia/ai-core/lib/common';
 import { PREFERENCE_NAME_SKILL_DIRECTORIES } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { SkillService } from '@theia/ai-core/lib/browser/skill-service';
+import { AgentPluginUiBridge, InstalledAgentPluginInfo } from '@theia/ai-core/lib/browser/agent-plugin-ui-bridge';
+import { SkillRegistryUiBridge } from '@theia/ai-core/lib/browser/skill-registry-ui-bridge';
 import { Skill } from '@theia/ai-core/lib/common/skill';
 import { isCustomizedPromptFragment, PromptFragment, PromptService } from '@theia/ai-core/lib/common/prompt-service';
 import { Emitter, Event, ILogger, nls, URI } from '@theia/core';
 import { codicon, open, OpenerService } from '@theia/core/lib/browser';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { DisposableCollection } from '@theia/core/lib/common';
-import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import {
     AiConfigurationCategory,
@@ -48,6 +50,7 @@ import {
     CollapsibleRow,
     CollapsibleRowAction
 } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/collapsible-list';
+import { AiConfigurationOrigin } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-origin-badge';
 import { AgentChips } from './agent-chips';
 
 const SKILL_ROW_PREFIX = 'skill:';
@@ -91,6 +94,12 @@ export class PromptsAndSkillsConfigurationCategory extends SinglePageCategoryRen
     @inject(ILogger) @named('ai-ide:PromptsAndSkillsConfigurationCategory')
     protected readonly logger: ILogger;
 
+    @inject(AgentPluginUiBridge) @optional()
+    protected readonly agentPluginUiBridge?: AgentPluginUiBridge;
+
+    @inject(SkillRegistryUiBridge) @optional()
+    protected readonly skillRegistryUiBridge?: SkillRegistryUiBridge;
+
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
     protected readonly toDispose = new DisposableCollection(this.onDidChangeEmitter);
@@ -131,6 +140,14 @@ export class PromptsAndSkillsConfigurationCategory extends SinglePageCategoryRen
             }),
             this.settingsRowService.onPreferenceChanged(() => this.onDidChangeEmitter.fire())
         ]);
+        if (this.agentPluginUiBridge) {
+            // The plugin names come from the bridge, so installing one changes this page even when the skills do not.
+            this.toDispose.push(this.agentPluginUiBridge.onDidChange(() => this.onDidChangeEmitter.fire()));
+        }
+        if (this.skillRegistryUiBridge) {
+            // Likewise: linking or unlinking a skill folder changes its provenance, not the skill itself.
+            this.toDispose.push(this.skillRegistryUiBridge.onDidChange(() => this.onDidChangeEmitter.fire()));
+        }
     }
 
     dispose(): void {
@@ -142,7 +159,8 @@ export class PromptsAndSkillsConfigurationCategory extends SinglePageCategoryRen
     }
 
     protected loadSkills(): void {
-        this.skills = this.skillService.getSkills().sort((a, b) => a.name.localeCompare(b.name));
+        // Sorted and keyed by the qualified name: it is what the model addresses and the only name unique across roots.
+        this.skills = this.skillService.getSkills().sort((a, b) => a.qualifiedName.localeCompare(b.qualifiedName));
     }
 
     protected loadSlashCommands(): void {
@@ -211,16 +229,19 @@ export class PromptsAndSkillsConfigurationCategory extends SinglePageCategoryRen
     protected buildSkillRow(skill: Skill): CollapsibleRow {
         const tools = skill.allowedTools ?? [];
         const metadata = skill.metadata ? Object.entries(skill.metadata) : [];
+        const plugin = this.getOwningPlugin(skill);
+        const origins = this.getSkillOrigins(skill);
         const pills: string[] = [];
         if (tools.length > 0) {
             pills.push(nls.localizeByDefault('{0} tools', tools.length));
         }
         return {
-            id: SKILL_ROW_PREFIX + skill.name,
-            title: skill.name,
+            id: SKILL_ROW_PREFIX + skill.qualifiedName,
+            title: skill.qualifiedName,
             description: skill.description,
             pills,
-            filterText: `${skill.name} ${skill.description ?? ''}`.toLocaleLowerCase(),
+            origins,
+            filterText: `${skill.qualifiedName} ${skill.description ?? ''} ${plugin?.name ?? ''}`.toLocaleLowerCase(),
             actions: <CollapsibleRowAction
                 iconClass={codicon('edit')}
                 label={nls.localize('theia/ai/ide/skillsConfiguration/openSkillFile', 'Open SKILL.md')}
@@ -341,17 +362,46 @@ export class PromptsAndSkillsConfigurationCategory extends SinglePageCategoryRen
         open(this.openerService, URI.fromFilePath(skill.location));
     }
 
+    /**
+     * The registry entry a skill was installed from, or the Agent Plugin that contributed it - never
+     * both: the registry installs a skill into a root of its own, a plugin ships it inside the plugin.
+     * Empty for a workspace or configured skill, which is the common case, and always empty without
+     * `@theia/ai-registry`, which binds both bridges.
+     */
+    protected getSkillOrigins(skill: Skill): AiConfigurationOrigin[] | undefined {
+        const plugin = this.getOwningPlugin(skill);
+        if (plugin) {
+            return [AiConfigurationOrigin.agentPlugin(plugin, () => this.agentPluginUiBridge?.revealPlugin(plugin.pluginId))];
+        }
+        const entryId = this.skillRegistryUiBridge?.getRegistryEntryId(skill);
+        if (entryId) {
+            return [AiConfigurationOrigin.registry(entryId, () => this.skillRegistryUiBridge?.revealSkill(entryId))];
+        }
+        return undefined;
+    }
+
+    /**
+     * The Agent Plugin a skill was contributed by, or `undefined` for a skill from a built-in root - the
+     * common case - and for a qualifier belonging to no installed plugin: a bare qualifier is worth neither
+     * a label nor a reveal action. Always `undefined` without `@theia/ai-registry`, which binds the bridge.
+     */
+    protected getOwningPlugin(skill: Skill): InstalledAgentPluginInfo | undefined {
+        const qualifier = Skill.qualifierOf(skill);
+        return qualifier ? this.agentPluginUiBridge?.getPluginByQualifier(qualifier) : undefined;
+    }
+
     getSearchItems(): AiConfigurationSearchItem[] {
         const items: AiConfigurationSearchItem[] = [];
         const skillLabel = nls.localizeByDefault('Skill');
         const slashCommandLabel = nls.localize('theia/ai/ide/skillsConfiguration/slashCommandsSectionHeader', 'Slash Commands');
         for (const skill of this.skills) {
             items.push({
-                label: skill.name,
+                label: skill.qualifiedName,
                 typeLabel: skillLabel,
                 categoryId: this.id,
-                target: { categoryId: this.id, highlight: { rowId: SKILL_ROW_PREFIX + skill.name } },
-                keywords: skill.description ?? ''
+                target: { categoryId: this.id, highlight: { rowId: SKILL_ROW_PREFIX + skill.qualifiedName } },
+                // The unqualified name too: a skill contributed by a plugin is still looked up by the name in its SKILL.md.
+                keywords: `${skill.name} ${skill.description ?? ''}`
             });
         }
         for (const command of this.slashCommands) {

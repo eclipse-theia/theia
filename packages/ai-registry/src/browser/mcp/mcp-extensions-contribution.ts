@@ -20,6 +20,7 @@ import { ContextMenuRenderer, HoverService } from '@theia/core/lib/browser';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { ExtensionsSourceContribution, SearchContext, SearchResult } from '@theia/vsx-registry/lib/browser/extensions-source-contribution';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
+import { MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { MCPServerInstallDialogFactory } from '@theia/ai-mcp/lib/browser/mcp-server-install-dialog';
 import { RegistryFetchService } from '../../common/registry-fetch-service';
 import { RegistrySearchFilter } from '../../common/registry-search-filter';
@@ -94,6 +95,9 @@ export class MCPExtensionsContribution implements ExtensionsSourceContribution, 
         const byName = new Map(registryEntries.map(e => [e.localName, e]));
         const result: TreeElement[] = [];
         for (const local of this.installService.listInstalledServers()) {
+            if (this.isPluginOwned(local)) {
+                continue;
+            }
             const state = this.installService.classifyLocalServer(local, registryEntries);
             // Hand-added local servers belong to the MCP configuration widget, not this view.
             // Stale-linked entries (registryMetadata.serverId set but registry no longer lists
@@ -113,7 +117,10 @@ export class MCPExtensionsContribution implements ExtensionsSourceContribution, 
             return [];
         }
         const registryEntries = await this.safeGetRegistryEntries();
-        const localDescriptions = this.installService.listInstalledServers();
+        // Plugin-owned servers are withheld here too: `classifyRegistryEntry` compares stored
+        // configs against registry entries, so a plugin's server could otherwise match a standalone
+        // registry entry and make that entry claim to be installed.
+        const localDescriptions = this.installService.listInstalledServers().filter(local => !this.isPluginOwned(local));
         const result: SearchResult[] = [];
         for (const entry of registryEntries) {
             // `verifiedOnly` comes from the OVSX-named `extensions.onlyShowVerifiedExtensions`
@@ -153,6 +160,16 @@ export class MCPExtensionsContribution implements ExtensionsSourceContribution, 
             this.logger.warn('AI registry fetch failed; MCP entries unavailable.', error);
             return [];
         }
+    }
+
+    /**
+     * Whether the installed server belongs to an installed Agent Plugin.
+     *
+     * Such a server is a component of its plugin, installed and removed with it, so it must never
+     * appear as a row of its own: the plugin is the single installed artifact the user manages.
+     */
+    protected isPluginOwned(local: MCPServerDescription): boolean {
+        return local.registryMetadata?.pluginId !== undefined;
     }
 
     /**

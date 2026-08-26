@@ -1053,6 +1053,51 @@
   font-size: var(--theia-ui-font-size0);
 }
 
+/* Origin badge: where an entry came from (an AI registry entry, an Agent Plugin). Shaped like the
+   outline kind badge so provenance reads as one kind of annotation wherever it appears - in an overview
+   list, on a detail header, on a collapsible row - and differentiated from a plain tag by its leading
+   icon. `button` resets are explicit: the activatable variant is a real button. */
+.ai-configuration-origin-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.ai-configuration-origin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  margin: 0;
+  padding: 1px 8px;
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  border-radius: 10px;
+  background-color: transparent;
+  color: var(--theia-descriptionForeground);
+  font-family: inherit;
+  font-size: var(--theia-ui-font-size0);
+  white-space: nowrap;
+}
+
+/* Link-coloured only when it leads somewhere, so the colour is the affordance rather than decoration. */
+.ai-configuration-origin-badge.activatable {
+  color: var(--theia-textLink-foreground);
+  cursor: pointer;
+}
+
+.ai-configuration-origin-badge.activatable:hover {
+  color: var(--theia-textLink-activeForeground);
+  border-color: var(--theia-focusBorder);
+}
+
+.ai-configuration-origin-badge.activatable:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: 1px;
+}
+
+.ai-configuration-origin-badge-icon {
+  font-size: var(--theia-ui-font-size0);
+}
+
 /* Horizontal, wrapping row of chips/badges */
 .ai-configuration-chip-row {
   display: flex;

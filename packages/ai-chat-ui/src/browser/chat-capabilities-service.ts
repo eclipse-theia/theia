@@ -129,8 +129,9 @@ export class ChatCapabilitiesServiceImpl implements ChatCapabilitiesService {
         const variableMatches = matchVariablesRegEx(template);
         for (const match of variableMatches) {
             const variableAndArg = match[1];
-            const parts = variableAndArg.split(':', 2);
-            const variableName = parts[0];
+            // First colon only, as the prompt service does: `{{file:C:\some\path}}`.
+            const separatorIndex = variableAndArg.indexOf(':');
+            const variableName = separatorIndex >= 0 ? variableAndArg.substring(0, separatorIndex) : variableAndArg;
 
             // Exclude capability and selected_* variables (they're meta-variables)
             if (variableName !== 'capability' &&

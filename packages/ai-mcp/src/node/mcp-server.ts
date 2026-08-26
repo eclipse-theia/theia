@@ -15,11 +15,13 @@
 // *****************************************************************************
 import { UnauthorizedError } from '@modelcontextprotocol/sdk/client/auth.js';
 import { OAuthError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { StdioClientTransport, StdioServerParameters } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StreamableHTTPClientTransport, StreamableHTTPClientTransportOptions, StreamableHTTPError } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { isLocalMCPServerDescription, isRemoteMCPServerDescription, MCPServerDescription, MCPServerStatus, ToolInformation } from '../common';
+import {
+    isLocalMCPServerDescription, isRemoteMCPServerDescription, LocalMCPServerDescription, MCPServerDescription, MCPServerStatus, ToolInformation
+} from '../common';
 import { Emitter } from '@theia/core/lib/common/event.js';
 import { nls } from '@theia/core/lib/common/nls';
 import { CallToolResult, CallToolResultSchema, ListResourcesResult, ListRootsRequestSchema, ListRootsResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
@@ -169,22 +171,11 @@ export class MCPServer {
                 this.setStatus(MCPServerStatus.Starting);
                 console.log(
                     `Starting server "${this.description.name}" with command: ${this.description.command} ` +
-                    `and args: ${this.description.args?.join(' ')} and env: ${JSON.stringify(this.description.env)}`
+                    `and args: ${this.description.args?.join(' ')} and env: ${JSON.stringify(this.description.env)} ` +
+                    `and cwd: ${this.description.cwd ?? this.description.pluginRoot}`
                 );
 
-                const sanitizedEnv: Record<string, string> = Object.fromEntries(
-                    Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined)
-                );
-
-                const mergedEnv: Record<string, string> = {
-                    ...sanitizedEnv,
-                    ...(this.description.env || {})
-                };
-                this.transport = new StdioClientTransport({
-                    command: this.description.command,
-                    args: this.description.args,
-                    env: mergedEnv,
-                });
+                this.transport = new StdioClientTransport(this.createStdioParameters(this.description));
             } else if (isRemoteMCPServerDescription(this.description)) {
                 this.setStatus(MCPServerStatus.Connecting);
                 console.log(`Connecting to server "${this.description.name}" via MCP Server Communication with URL: ${this.description.serverUrl}`);
@@ -264,6 +255,40 @@ export class MCPServer {
             // Reset again so the flag never spans attempts.
             this.oauthHandshakeCompletedDuringStart = false;
         }
+    }
+
+    /**
+     * The configured `env` overlays the base environment, then PLUGIN_ROOT and PLUGIN_DATA are set
+     * last, replacing any same-named entries. That order is what the Agent Plugins specification
+     * prescribes, and it is why the two reserved variables cannot just live in `env`.
+     */
+    protected createStdioParameters(description: LocalMCPServerDescription): StdioServerParameters {
+        // The backend's own environment, inherited whole: every hand-configured server already
+        // depends on PATH, HOME and the proxy variables, and the SDK's allow-list default breaks them.
+        // For a downloaded plugin that means LLM provider keys too. The specification lets a client
+        // sanitize the base environment, so this is the place to narrow it, and `protected` so a
+        // product can.
+        const sanitizedEnv: Record<string, string> = Object.fromEntries(
+            Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined)
+        );
+
+        const mergedEnv: Record<string, string> = {
+            ...sanitizedEnv,
+            ...(description.env || {})
+        };
+        if (description.pluginRoot) {
+            mergedEnv.PLUGIN_ROOT = description.pluginRoot;
+        }
+        if (description.pluginData) {
+            mergedEnv.PLUGIN_DATA = description.pluginData;
+        }
+
+        return {
+            command: description.command,
+            args: description.args,
+            env: mergedEnv,
+            cwd: description.cwd ?? description.pluginRoot
+        };
     }
 
     protected async handleStartupError(error: unknown): Promise<void> {

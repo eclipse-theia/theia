@@ -18,6 +18,7 @@ import { nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { AiConfigurationItemStatus } from '../ai-configuration-category';
+import { AiConfigurationOrigin, AiConfigurationOriginBadges } from './ai-configuration-origin-badge';
 
 /**
  * Presentational, DI-free display primitives shared across the AI configuration pages: badges, the
@@ -323,20 +324,28 @@ export interface AiConfigurationItemDetailHeaderProps {
     readonly subtitle?: string;
     /** Status badge shown next to the title. */
     readonly status?: AiConfigurationItemStatus;
-    /** Optional inline content shown right after the title (e.g. an origin link). */
+    /**
+     * Where the item came from, shown right after the title - the same badges the overview list shows,
+     * so provenance does not get a second look on the detail page.
+     */
+    readonly origins?: AiConfigurationOrigin[];
+    /** Optional inline content shown after the title and the origin badges. */
     readonly titleSuffix?: React.ReactNode;
     /** Trailing slot for header actions and toggles (buttons, switches). */
     readonly actions?: React.ReactNode;
 }
 
 /** Header of a collection item's detail page: icon, title, subtitle, status badge and an actions slot. */
-export const AiConfigurationItemDetailHeader: React.FC<AiConfigurationItemDetailHeaderProps> = ({ title, iconClass, subtitle, status, titleSuffix, actions }) => (
+export const AiConfigurationItemDetailHeader: React.FC<AiConfigurationItemDetailHeaderProps> = ({
+    title, iconClass, subtitle, status, origins, titleSuffix, actions
+}) => (
     <div className='ai-configuration-item-detail-header'>
         <div className='ai-configuration-item-detail-header-heading'>
             {iconClass && <span className={`ai-configuration-item-detail-header-icon ${iconClass}`}></span>}
             <div className='ai-configuration-item-detail-header-titles'>
                 <span className='ai-configuration-item-detail-header-title-row'>
                     <span className='ai-configuration-item-detail-header-title'>{title}</span>
+                    <AiConfigurationOriginBadges origins={origins} />
                     {titleSuffix}
                 </span>
                 {subtitle !== undefined && <span className='ai-configuration-item-detail-header-subtitle'>{subtitle}</span>}

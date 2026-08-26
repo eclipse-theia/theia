@@ -669,3 +669,46 @@ describe('CustomAgentDescription', () => {
         });
     });
 });
+
+describe('PromptService variable arguments', () => {
+    let promptService: PromptService;
+
+    beforeEach(() => {
+        const container = new Container();
+        container.bind<PromptService>(PromptService).to(PromptServiceImpl).inSingletonScope();
+
+        const variableService = new DefaultAIVariableService({ getContributions: () => [] });
+        (variableService as unknown as Record<string, unknown>)['logger'] = sinon.createStubInstance(Logger);
+        // A resolver that echoes what it was given, so that the test asserts on the split of the
+        // reference into variable name and argument rather than on any resolver behaviour.
+        const fileVariable = { id: 'file', name: 'file', description: 'Echoes its argument' };
+        variableService.registerResolver(fileVariable, {
+            canResolve: () => 100,
+            resolve: async request => ({ variable: fileVariable, value: `arg=${request.arg}` })
+        });
+        container.bind<AIVariableService>(AIVariableService).toConstantValue(variableService);
+        container.bind<ILogger>(ILogger).toConstantValue(new MockLogger);
+
+        promptService = container.get<PromptService>(PromptService);
+    });
+
+    it('keeps the whole argument of a variable reference whose argument contains further colons', async () => {
+        // Regression test: the reference used to be split with `split(':', 2)`, which truncates, so a
+        // Windows path lost everything from its drive-letter colon onwards.
+        promptService.addBuiltInPromptFragment({ id: 'windows-path', template: 'Read {{file:C:\\some\\path}}' });
+        const prompt = await promptService.getResolvedPromptFragment('windows-path');
+        expect(prompt?.text).to.equal('Read arg=C:\\some\\path');
+    });
+
+    it('keeps a single-colon argument intact', async () => {
+        promptService.addBuiltInPromptFragment({ id: 'simple-arg', template: 'Read {{file:workspace/path/name.ext}}' });
+        const prompt = await promptService.getResolvedPromptFragment('simple-arg');
+        expect(prompt?.text).to.equal('Read arg=workspace/path/name.ext');
+    });
+
+    it('resolves a reference without an argument with an undefined argument', async () => {
+        promptService.addBuiltInPromptFragment({ id: 'no-arg', template: 'Read {{file}}' });
+        const prompt = await promptService.getResolvedPromptFragment('no-arg');
+        expect(prompt?.text).to.equal('Read arg=undefined');
+    });
+});

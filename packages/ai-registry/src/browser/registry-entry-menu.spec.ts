@@ -66,3 +66,36 @@ describe('showEntryMenu', () => {
         expect(rendered!.anchor).to.deep.equal({ x: 40, y: 90 });
     });
 });
+
+describe('RegistryEntryContext.autoUpdateId', () => {
+
+    const ID = 'io.github.example/example-skill';
+
+    it('offers a policy for an artifact installed from the registry', () => {
+        expect(RegistryEntryContext.autoUpdateId({ kind: 'installed-from-registry' }, ID)).to.equal(ID);
+    });
+
+    // The three warning states. A policy set here applies as soon as the artifact is updatable
+    // again; the auto-updater keeps skipping it until then.
+    for (const kind of ['fix-skill', 'fix-config', 'fix-plugin']) {
+        it(`offers a policy for a drifted artifact (${kind}), which the user has to fix first`, () => {
+            expect(RegistryEntryContext.autoUpdateId({ kind }, ID)).to.equal(ID);
+        });
+    }
+
+    it('offers a policy for an artifact whose registry entry has gone missing', () => {
+        expect(RegistryEntryContext.autoUpdateId({ kind: 'installed-link-stale' }, ID)).to.equal(ID);
+    });
+
+    it('offers a policy for a hand-placed artifact that is still to be linked', () => {
+        expect(RegistryEntryContext.autoUpdateId({ kind: 'installed-manually' }, ID)).to.equal(ID);
+    });
+
+    it('withholds a policy before the artifact is installed, where there is nothing to keep updated', () => {
+        expect(RegistryEntryContext.autoUpdateId({ kind: 'not-installed' }, ID)).to.be.undefined;
+    });
+
+    it('withholds a policy for an artifact the registry has never known, which has no id to key on', () => {
+        expect(RegistryEntryContext.autoUpdateId({ kind: 'installed-user-added' }, undefined)).to.be.undefined;
+    });
+});
