@@ -94,6 +94,10 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
                     const { name, value } = variable;
                     documentElement.style.setProperty(name, value);
                     this.toUpdate.push(Disposable.create(() => documentElement.style.removeProperty(name)));
+
+                    const vscodeName = this.colors.toCssVariableName(id, 'vscode');
+                    documentElement.style.setProperty(vscodeName, value);
+                    this.toUpdate.push(Disposable.create(() => documentElement.style.removeProperty(vscodeName)));
                 }
             }
         }

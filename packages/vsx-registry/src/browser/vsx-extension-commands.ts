@@ -73,6 +73,21 @@ export namespace VSXExtensionsCommands {
         label: 'Show Recommended Extensions',
         category: EXTENSIONS_CATEGORY,
     });
+    export const SHOW_LANGUAGE_EXTENSIONS = Command.toLocalizedCommand({
+        id: 'workbench.extensions.action.showLanguageExtensions',
+        label: 'Show Language Extensions',
+        category: EXTENSIONS_CATEGORY,
+    }, 'theia/vsx-registry/showLanguageExtensions');
+    export const SEARCH = Command.toDefaultLocalizedCommand({
+        id: 'workbench.extensions.search',
+        label: 'Search Extensions',
+        category: EXTENSIONS_CATEGORY,
+    });
+    export const SHOW_EXTENSIONS_WITH_IDS = Command.toLocalizedCommand({
+        id: 'workbench.extensions.action.showExtensionsWithIds',
+        label: 'Show Extensions by ID',
+        category: EXTENSIONS_CATEGORY,
+    }, 'theia/vsx-registry/showExtensionsWithIds');
     export const REFRESH = Command.toDefaultLocalizedCommand({
         id: 'vsxExtension.refresh',
         label: 'Refresh',

@@ -39,10 +39,14 @@ after(() => disableJSDOM());
 /** Records the handler registered for each command id so registered predicates can be asserted. */
 class RecordingCommandRegistry {
     readonly handlers = new Map<string, CommandHandler>();
+    readonly aliases = new Map<string, string>();
     registerCommand(command: Command, handler?: CommandHandler): void {
         if (handler) {
             this.handlers.set(command.id, handler);
         }
+    }
+    registerAlias(alias: string, commandId: string): void {
+        this.aliases.set(alias, commandId);
     }
 }
 

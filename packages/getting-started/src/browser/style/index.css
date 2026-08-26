@@ -391,10 +391,30 @@ body {
   outline: var(--theia-border-width) dashed var(--theia-contrastActiveBorder);
 }
 
-.gs-walkthrough-media-image {
+.gs-walkthrough-media-image,
+.gs-walkthrough-media-svg {
   max-width: 100%;
   border-radius: calc(var(--theia-ui-padding) / 2);
   margin-top: var(--theia-ui-padding);
+}
+
+.gs-walkthrough-media-image {
+  max-width: 460px;
+  max-height: 280px;
+  object-fit: contain;
+}
+
+.gs-walkthrough-media-svg svg {
+  width: 100%;
+  max-width: 460px;
+  max-height: 280px;
+  height: auto;
+  display: block;
+}
+
+.gs-walkthrough-media-svg a {
+  cursor: pointer;
+  outline: none;
 }
 
 .gs-walkthrough-media-markdown {
