@@ -19,6 +19,7 @@ import { GENERIC_CAPABILITIES_SKILLS_PROMPT_ID, matchVariablesRegEx, parseCapabi
 import { PREFERENCE_NAME_SKILL_DIRECTORIES } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { SkillService } from '@theia/ai-core/lib/browser/skill-service';
 import { AgentPluginUiBridge, InstalledAgentPluginInfo } from '@theia/ai-core/lib/browser/agent-plugin-ui-bridge';
+import { SkillRegistryUiBridge } from '@theia/ai-core/lib/browser/skill-registry-ui-bridge';
 import { Skill } from '@theia/ai-core/lib/common/skill';
 import { isCustomizedPromptFragment, PromptFragment, PromptService } from '@theia/ai-core/lib/common/prompt-service';
 import { Emitter, Event, ILogger, nls, URI } from '@theia/core';
@@ -96,6 +97,9 @@ export class PromptsAndSkillsConfigurationCategory extends SinglePageCategoryRen
     @inject(AgentPluginUiBridge) @optional()
     protected readonly agentPluginUiBridge?: AgentPluginUiBridge;
 
+    @inject(SkillRegistryUiBridge) @optional()
+    protected readonly skillRegistryUiBridge?: SkillRegistryUiBridge;
+
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
     protected readonly toDispose = new DisposableCollection(this.onDidChangeEmitter);
@@ -139,6 +143,10 @@ export class PromptsAndSkillsConfigurationCategory extends SinglePageCategoryRen
         if (this.agentPluginUiBridge) {
             // The plugin names come from the bridge, so installing one changes this page even when the skills do not.
             this.toDispose.push(this.agentPluginUiBridge.onDidChange(() => this.onDidChangeEmitter.fire()));
+        }
+        if (this.skillRegistryUiBridge) {
+            // Likewise: linking or unlinking a skill folder changes its provenance, not the skill itself.
+            this.toDispose.push(this.skillRegistryUiBridge.onDidChange(() => this.onDidChangeEmitter.fire()));
         }
     }
 
@@ -222,6 +230,7 @@ export class PromptsAndSkillsConfigurationCategory extends SinglePageCategoryRen
         const tools = skill.allowedTools ?? [];
         const metadata = skill.metadata ? Object.entries(skill.metadata) : [];
         const plugin = this.getOwningPlugin(skill);
+        const origins = this.getSkillOrigins(skill);
         const pills: string[] = [];
         if (tools.length > 0) {
             pills.push(nls.localizeByDefault('{0} tools', tools.length));
@@ -231,7 +240,7 @@ export class PromptsAndSkillsConfigurationCategory extends SinglePageCategoryRen
             title: skill.qualifiedName,
             description: skill.description,
             pills,
-            origins: plugin ? [AiConfigurationOrigin.agentPlugin(plugin, () => this.agentPluginUiBridge?.revealPlugin(plugin.pluginId))] : undefined,
+            origins,
             filterText: `${skill.qualifiedName} ${skill.description ?? ''} ${plugin?.name ?? ''}`.toLocaleLowerCase(),
             actions: <CollapsibleRowAction
                 iconClass={codicon('edit')}
@@ -351,6 +360,24 @@ export class PromptsAndSkillsConfigurationCategory extends SinglePageCategoryRen
 
     protected openSkill(skill: Skill): void {
         open(this.openerService, URI.fromFilePath(skill.location));
+    }
+
+    /**
+     * The registry entry a skill was installed from, or the Agent Plugin that contributed it - never
+     * both: the registry installs a skill into a root of its own, a plugin ships it inside the plugin.
+     * Empty for a workspace or configured skill, which is the common case, and always empty without
+     * `@theia/ai-registry`, which binds both bridges.
+     */
+    protected getSkillOrigins(skill: Skill): AiConfigurationOrigin[] | undefined {
+        const plugin = this.getOwningPlugin(skill);
+        if (plugin) {
+            return [AiConfigurationOrigin.agentPlugin(plugin, () => this.agentPluginUiBridge?.revealPlugin(plugin.pluginId))];
+        }
+        const entryId = this.skillRegistryUiBridge?.getRegistryEntryId(skill);
+        if (entryId) {
+            return [AiConfigurationOrigin.registry(entryId, () => this.skillRegistryUiBridge?.revealSkill(entryId))];
+        }
+        return undefined;
     }
 
     /**

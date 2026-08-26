@@ -29,7 +29,6 @@ import { expect } from 'chai';
 import { ContextMenuRenderer, HoverRequest, HoverService } from '@theia/core/lib/browser';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
-import * as React from '@theia/core/shared/react';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { flushSync } from '@theia/core/shared/react-dom';
 import { InstalledPluginInfo, PluginClassificationResult } from '../../common/plugin/plugin-registry-types';

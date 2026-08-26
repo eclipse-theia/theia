@@ -26,6 +26,7 @@ import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar
 import { ExtensionsSourceContribution } from '@theia/vsx-registry/lib/browser/extensions-source-contribution';
 import { MCPRegistryUiBridge } from '@theia/ai-mcp/lib/browser/mcp-registry-ui-bridge';
 import { AgentPluginUiBridge } from '@theia/ai-core/lib/browser/agent-plugin-ui-bridge';
+import { SkillRegistryUiBridge } from '@theia/ai-core/lib/browser/skill-registry-ui-bridge';
 import { SkillDirectoryContribution } from '@theia/ai-core/lib/browser/skill-service';
 import { AIRegistryConfiguration } from '../common/ai-registry-configuration';
 import { AIRegistryPreferencesSchema } from '../common/ai-registry-preferences';
@@ -66,6 +67,7 @@ import { PluginMcpRegistrar, PluginMcpRegistrarImpl } from './plugin/plugin-mcp-
 import { PluginMcpReconciler } from './plugin/plugin-mcp-reconciler';
 import { PluginSkillDirectoryContribution } from './plugin/plugin-skill-directory-contribution';
 import { AgentPluginUiBridgeImpl } from './plugin/agent-plugin-ui-bridge-impl';
+import { SkillRegistryUiBridgeImpl } from './skill/skill-registry-ui-bridge-impl';
 import { InstallPluginUriConfiguration } from './plugin/install-plugin-uri-configuration';
 import { InstallPluginUriHandler } from './plugin/install-plugin-uri-handler';
 import { AIRegistryToolbarContribution } from './ai-registry-toolbar-contribution';
@@ -145,6 +147,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     // Nothing binds the bridge without this package, which is what makes every Agent Plugin
     // affordance disappear from the AI configuration widgets there.
     bind(AgentPluginUiBridge).toService(AgentPluginUiBridgeImpl);
+
+    bind(SkillRegistryUiBridgeImpl).toSelf().inSingletonScope();
+    // As above, for skills this package installs or links directly rather than through a plugin.
+    bind(SkillRegistryUiBridge).toService(SkillRegistryUiBridgeImpl);
 
     bind(InstallPluginUriConfiguration).toSelf().inSingletonScope();
     bind(InstallPluginUriHandler).toSelf().inSingletonScope();

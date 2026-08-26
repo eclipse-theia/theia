@@ -25,6 +25,7 @@ import { Event } from '@theia/core';
 import { PromptFragment } from '@theia/ai-core/lib/common/prompt-service';
 import { Skill } from '@theia/ai-core/lib/common/skill';
 import { AgentPluginUiBridge, InstalledAgentPluginInfo } from '@theia/ai-core/lib/browser/agent-plugin-ui-bridge';
+import { SkillRegistryUiBridge } from '@theia/ai-core/lib/browser/skill-registry-ui-bridge';
 import { AiConfigurationCategoryId } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
 import { CollapsibleRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/collapsible-list';
 import { PromptsAndSkillsConfigurationCategory } from './prompts-and-skills-configuration-category';
@@ -60,6 +61,26 @@ describe('PromptsAndSkillsConfigurationCategory', () => {
             };
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (category as any).agentPluginUiBridge = bridge;
+        }
+        return category;
+    }
+
+    /**
+     * Leaves the bridge unbound when `managed` is omitted. `managed` maps a skill location to the
+     * registry entry it was installed from, which is how the real bridge keys them.
+     */
+    function categoryWithRegistrySkills(
+        skills: Skill[], managed: Record<string, string> | undefined, revealed: string[] = []
+    ): PromptsAndSkillsConfigurationCategory {
+        const category = categoryWith(skills, []);
+        if (managed) {
+            const bridge: SkillRegistryUiBridge = {
+                getRegistryEntryId: forSkill => managed[forSkill.location],
+                revealSkill: skillId => { revealed.push(skillId); },
+                onDidChange: Event.None
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (category as any).skillRegistryUiBridge = bridge;
         }
         return category;
     }
@@ -156,6 +177,50 @@ describe('PromptsAndSkillsConfigurationCategory', () => {
 
         it('labels nothing when no bridge is bound, i.e. without `@theia/ai-registry`', () => {
             expect(skillRow(categoryWithPlugins([contributed], undefined), contributed).origins).to.equal(undefined);
+        });
+    });
+
+    describe('AI registry provenance', () => {
+
+        const installed = skill({ location: '/home/alex/.agents/skills/query-builder/SKILL.md' });
+        const entryId = 'io.github.acme/query-builder';
+
+        it('labels a registry-installed skill with the shared "From registry" badge', () => {
+            const row = skillRow(categoryWithRegistrySkills([installed], { [installed.location]: entryId }), installed);
+            expect(row.origins?.map(origin => origin.label)).to.deep.equal(['From registry']);
+            expect(row.origins![0].tooltip).to.contain(entryId);
+        });
+
+        it('reveals the registry entry when the badge is activated', () => {
+            const revealed: string[] = [];
+            const row = skillRow(categoryWithRegistrySkills([installed], { [installed.location]: entryId }, revealed), installed);
+            row.origins![0].activate!();
+            expect(revealed).to.deep.equal([entryId]);
+        });
+
+        it('labels nothing for a skill in a directory the user controls', () => {
+            const own = skill({ location: '/workspace/.agents/skills/query-builder/SKILL.md' });
+            expect(skillRow(categoryWithRegistrySkills([own], { [installed.location]: entryId }), own).origins).to.equal(undefined);
+        });
+
+        it('labels nothing when no bridge is bound, i.e. without `@theia/ai-registry`', () => {
+            expect(skillRow(categoryWithRegistrySkills([installed], undefined), installed).origins).to.equal(undefined);
+        });
+
+        it('credits the plugin, not the registry, for a skill a plugin contributed', () => {
+            // A plugin ships its skills inside the plugin, so the two origins cannot both apply; were the
+            // registry consulted anyway, a stale name collision would show a skill as coming from both.
+            const bigquery: InstalledPlugin = { pluginId: 'io.example/bq', name: 'BigQuery', qualifier: 'bigquery' };
+            const contributed = skill({ qualifiedName: 'bigquery:query-builder', location: '/plugins/bigquery/skills/query-builder/SKILL.md' });
+            const category = categoryWithPlugins([contributed], [bigquery]);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (category as any).skillRegistryUiBridge = {
+                getRegistryEntryId: () => entryId,
+                revealSkill: () => { },
+                onDidChange: Event.None
+            } satisfies SkillRegistryUiBridge;
+
+            expect(skillRow(category, contributed).origins?.map(origin => origin.label)).to.deep.equal(['via BigQuery']);
         });
     });
 });
