@@ -237,7 +237,7 @@ describe('AI Configuration primitives', () => {
 
     it('AiConfigurationOriginBadge is not focusable when the origin leads nowhere', () => {
         const { container, dispose } = mount(React.createElement(AiConfigurationOriginBadge, {
-            origin: { label: 'via Acme', iconClass: 'codicon-extensions', tooltip: 'Acme' }
+            origin: { label: 'via Acme', iconClass: 'codicon-package', tooltip: 'Acme' }
         }));
         try {
             expect(container.querySelector('button')).to.be.null;
@@ -273,7 +273,7 @@ describe('AI Configuration primitives', () => {
 
         const plugin = AiConfigurationOrigin.agentPlugin({ pluginId: 'io.github.acme/devtools', name: 'Acme Devtools' }, () => { });
         expect(plugin.label).to.equal('via Acme Devtools');
-        expect(plugin.iconClass).to.contain('codicon-extensions');
+        expect(plugin.iconClass).to.contain('codicon-package');
         expect(plugin.tooltip).to.contain('Acme Devtools');
     });
 

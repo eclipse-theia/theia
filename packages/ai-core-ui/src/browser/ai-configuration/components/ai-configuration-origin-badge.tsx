@@ -63,7 +63,9 @@ export namespace AiConfigurationOrigin {
     export function agentPlugin(plugin: InstalledAgentPluginInfo, reveal: () => void): AiConfigurationOrigin {
         return {
             label: nls.localize('theia/ai/core/aiConfiguration/origin/viaAgentPlugin', 'via {0}', plugin.name),
-            iconClass: codicon('extensions'),
+            // `package`, matching the Agent Plugin cards in the Extensions view; `extensions` is the icon
+            // that view's VS Code extension section owns.
+            iconClass: codicon('package'),
             tooltip: nls.localize('theia/ai/core/aiConfiguration/origin/openAgentPlugin', 'Open the Agent Plugin that provides this: {0}', plugin.name),
             activate: reveal
         };
