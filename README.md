@@ -107,6 +107,7 @@ Read below how to engage with Theia community:
   - [Developing](doc/Developing.md)
   - [Testing](doc/Testing.md)
   - [Migration Guide](doc/Migration.md)
+  - [Adopting Browser-Only Mode](ADOPTING.md)
   - [API Integration Testing](doc/api-testing.md)
   - [Coding Guidelines](doc/coding-guidelines.md)
   - [Code Organization](doc/code-organization.md)
