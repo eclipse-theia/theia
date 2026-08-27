@@ -6,11 +6,11 @@
 
 ## 1.76.0 - tbd
 
-- [plugin-ext, terminal] added browser-only support for statically deployed plugins: `@theia/plugin-ext` and `@theia/terminal` contribute `frontendOnly` modules that serve the plugins prepared at build time, keep plugin state in the browser storage, and stub out the terminal [#14776](https://github.com/eclipse-theia/theia/pull/14776)
+- [plugin-ext, terminal] added browser-only support for statically deployed plugins: `@theia/plugin-ext` and `@theia/terminal` contribute `frontendOnly` modules that serve the plugins prepared at build time, keep plugin state in the browser storage, and stub out the terminal [#17966](https://github.com/eclipse-theia/theia/pull/17966)
 
 <a name="breaking_changes_1.76.0">[Breaking Changes:](#breaking_changes_1.76.0)</a>
 
-- [core] the browser-only `EnvVariablesServer` stub now returns `file:///.theia` from `getConfigDirUri()` and `file:///` from `getHomeDirUri()`, instead of an empty string that resolved to the OPFS root. Browser-only application state moves from the OPFS root to `/.theia`, and the UTF-8 encoding override in `CommonFrontendContribution` is scoped to `/.theia` rather than the whole file tree. Consumers that wrap the value in a `URI` see no change, since `new URI('')` already resolved to `file:///`; this only matters for consumers that compare the raw string. Existing deployments are not migrated automatically; see `doc/Migration.md` [#14776](https://github.com/eclipse-theia/theia/pull/14776)
+- [core] the browser-only `EnvVariablesServer` stub now returns `file:///.theia` from `getConfigDirUri()` and `file:///` from `getHomeDirUri()`, instead of an empty string that resolved to the OPFS root. Browser-only application state moves from the OPFS root to `/.theia`, and the UTF-8 encoding override in `CommonFrontendContribution` is scoped to `/.theia` rather than the whole file tree. Consumers that wrap the value in a `URI` see no change, since `new URI('')` already resolved to `file:///`; this only matters for consumers that compare the raw string. Existing deployments are not migrated automatically; see `doc/Migration.md` [#17966](https://github.com/eclipse-theia/theia/pull/17966)
 
 ## 1.75.0 - 8/27/2026
 
