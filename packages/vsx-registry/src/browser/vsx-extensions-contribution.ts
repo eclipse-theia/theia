@@ -157,27 +157,6 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             execute: () => this.showRecommendedExtensions()
         });
 
-        commands.registerCommand(VSXExtensionsCommands.SHOW_LANGUAGE_EXTENSIONS, {
-            execute: () => this.showLanguageExtensions()
-        });
-
-        commands.registerCommand(VSXExtensionsCommands.SEARCH, {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            execute: (query?: any) => this.searchExtensions(query)
-        });
-
-        commands.registerCommand(VSXExtensionsCommands.SHOW_EXTENSIONS_WITH_IDS, {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            execute: (extensionIds: any) => this.showExtensionsWithIds(extensionIds)
-        });
-
-        if (typeof commands.registerAlias === 'function') {
-            commands.registerAlias('workbench.view.extensions', VSXExtensionsCommands.SHOW_INSTALLED.id);
-            commands.registerAlias('workbench.extensions.action.showInstalledExtensions', VSXExtensionsCommands.SHOW_INSTALLED.id);
-            commands.registerAlias('workbench.extensions.action.showRecommendedExtensions', VSXExtensionsCommands.SHOW_RECOMMENDATIONS.id);
-            commands.registerAlias('workbench.extensions.action.listBuiltInExtensions', VSXExtensionsCommands.SHOW_BUILTINS.id);
-        }
-
         commands.registerCommand(VSXExtensionsCommands.REFRESH, {
             execute: () => this.refresh()
         });
@@ -493,34 +472,5 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
     protected async showRecommendedExtensions(): Promise<void> {
         await this.openView({ activate: true });
         this.model.search.query = RECOMMENDED_QUERY;
-    }
-
-    protected async showLanguageExtensions(): Promise<void> {
-        await this.openView({ activate: true });
-        this.model.search.query = '@category:"programming languages"';
-    }
-
-    protected async searchExtensions(query?: string | string[] | { query?: string }): Promise<void> {
-        await this.openView({ activate: true });
-        let q: string | undefined;
-        if (typeof query === 'string') {
-            q = query;
-        } else if (Array.isArray(query) && typeof query[0] === 'string') {
-            q = query[0];
-        } else if (query && typeof query === 'object' && 'query' in query && typeof query.query === 'string') {
-            q = query.query;
-        }
-        if (q !== undefined) {
-            this.model.search.query = q;
-        }
-    }
-
-    protected async showExtensionsWithIds(extensionIds?: string[] | string): Promise<void> {
-        await this.openView({ activate: true });
-        if (extensionIds) {
-            const ids = Array.isArray(extensionIds) ? extensionIds : [extensionIds];
-            const query = ids.map(id => `@id:${id}`).join(' ');
-            this.model.search.query = query;
-        }
     }
 }

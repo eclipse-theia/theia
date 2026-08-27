@@ -398,16 +398,8 @@ body {
   margin-top: var(--theia-ui-padding);
 }
 
-.gs-walkthrough-media-image {
-  max-width: 460px;
-  max-height: 280px;
-  object-fit: contain;
-}
-
 .gs-walkthrough-media-svg svg {
-  width: 100%;
-  max-width: 460px;
-  max-height: 280px;
+  max-width: 100%;
   height: auto;
   display: block;
 }
