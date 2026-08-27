@@ -108,6 +108,9 @@
             "title": "モデルがプロンプトキャッシュをサポートしているかどうかを示します。デフォルトは`true`です。"
           }
         },
+        "customProvider": {
+          "label": "{0} (カスタム)"
+        },
         "models": {
           "description": "使用する公式Anthropicモデル"
         }
@@ -148,6 +151,9 @@
         "clipboardSeparator": "クリップボード",
         "confirmApplySuggestion": "この提案作成以降、ファイル {0} が変更されました。変更を適用してもよろしいですか?",
         "confirmRevertSuggestion": "この提案作成以降、ファイル {0} が変更されました。変更を元に戻すことを確認しますか?",
+        "contextSummaryVariable": {
+          "description": "現在のチャットセッションコンテキスト内のすべての要素をまとめた JSON 形式の要約。各要素の型と識別子が一覧表示されています。"
+        },
         "couldNotFindMatchingLM": "一致する言語モデルが見つかりませんでした。設定を確認してください！",
         "couldNotFindReadyLMforAgent": "エージェント{0}用の既製言語モデルが見つかりませんでした。設定を確認してください！",
         "customAgents": {
@@ -385,7 +391,6 @@
         "tokenUsageWarning": "トークン使用量の警告閾値に達しました。",
         "tokenUsageWarningEnabled": "チャットセッションのトークン使用量が設定された閾値を超えた際に通知を表示するかどうかを制御します。この機能を利用するには、言語モデルプロバイダーがトークン使用量を報告する必要があります。",
         "tokenUsageWarningMessage": "チャットセッションのトークン使用量が、コンテキストウィンドウの{0}%に達しました。制限に達しないよう、このセッションを要約するか、新しいセッションを開始することを検討してください。",
-        "tokenUsageWarningNewSessionAction": "新しいチャットを開始",
         "tokenUsageWarningSummarizeAction": "現在のセッションを要約する",
         "tokenUsageWarningThresholdPercentage": "トークン使用量の警告がトリガーされる、モデルのコンテキストウィンドウ内の割合。この値は、トークン使用量インジケーターの警告/エラーの色帯も決定します。現在は20万トークンのコンテキストウィンドウを想定して計算されていますが、モデルごとの実際のコンテキストサイズが利用可能になり次第、そちらを使用するようになります。",
         "toolcall-part-renderer": {
@@ -443,7 +448,6 @@
         },
         "currentDirectory": "現在のディレクトリ",
         "differentAgentRequestWarning": "前回のチャットリクエストは別のエージェントが対応しました。Claude Codeはそれらの他のメッセージを確認できません。",
-        "edit": "{0} を編集",
         "editAutomatically": "自動編集",
         "editing": "編集",
         "editsCount": "{0} 編集",
@@ -619,9 +623,6 @@
           "description": "現在のカーソル位置以降のコード。コード補完コンテキストでのみ利用可能です。"
         }
       },
-      "configuration": {
-        "selectItem": "項目を選択してください。"
-      },
       "copilot": {
         "auth": {
           "aiConfiguration": "AI 構成",
@@ -667,30 +668,44 @@
         "agentConfiguration": {
           "addCustomAgent": "カスタムエージェントを追加",
           "availableCapabilities": "利用可能な機能",
-          "completionNotificationDescriptionPrefix": "このエージェントがユーザーの対応を必要とする場合(タスクが完了したときや、ユーザーの入力を要求したときなど)の通知方法を選択してください。「デフォルト」では、 ",
+          "completionNotificationIntro": "このエージェントがユーザーの対応を必要とする場合(タスクの完了や入力の要求など)、どのような通知を受け取りたいか。「デフォルト」はグローバル設定を使用します。 ",
           "defaultNotificationDescription": "グローバルAI通知設定を使用します",
           "enableAgent": "エージェントを有効にする",
-          "llmRequirements": "LLM要件",
           "notUsedInPrompt": "プロンプトでは使用されません",
           "notUsedInPromptTooltip": "この変数はエージェントによって宣言されていますが、現在のプロンプトテンプレートでは参照されていません。",
           "notificationSettings": "通知設定",
           "notificationSettingsLink": "AI通知設定",
-          "promptTemplates": "プロンプトテンプレート",
-          "selectAgentMessage": "まずエージェントを選択してください！",
           "showInChat": "チャットで表示",
-          "templateName": "テンプレート",
           "undeclared": "宣言されていない",
           "undeclaredTooltip": "この変数はプロンプトで使用されますが、エージェントによって宣言された説明はありません。",
           "usedAgentSpecificVariables": "使用済みエージェント固有変数",
-          "usedFunctions": "使用された関数",
           "usedGlobalVariables": "使用されたグローバル変数",
-          "variant": "バリアント"
+          "usedTools": "使用したツール"
         },
         "agentsVariable": {
           "description": "システム内で利用可能なエージェントのリストを返します"
         },
         "aiConfiguration": {
-          "label": "AI 設定"
+          "addValue": "値を追加...",
+          "categoryComingSoon": "{0} 設定はまだ利用できません。",
+          "collectionEmpty": "まだ設定する項目はありません。",
+          "contributedByExtensions": "extensions による寄稿",
+          "decrease": "減少",
+          "increase": "増やす",
+          "label": "AI 設定",
+          "models": {
+            "label": "プロバイダーとモデル"
+          },
+          "origin": {
+            "fromRegistry": "レジストリより",
+            "openAgentPlugin": "これを実装しているエージェントプラグインを開いてください:{0}",
+            "openInRegistry": "AIレジストリで開く:{0}",
+            "registryEntry": "AIレジストリエントリ:{0}",
+            "viaAgentPlugin": "出典:{0}"
+          },
+          "scopeBanner": "{0}スコープの編集。",
+          "searchPlaceholder": "AI設定を検索",
+          "selectCategory": "設定を行うカテゴリを選択してください。"
         },
         "blinkTitle": {
           "agentCompleted": "{0} - エージェントが完了しました",
@@ -753,8 +768,10 @@
         },
         "languageModelRenderer": {
           "alias": "[別名] {0}",
-          "languageModel": "言語モデル",
-          "purpose": "目的"
+          "purposeTitle": "目的:{0}",
+          "reasoningInherited": "このエージェントがモデルに求める推論の処理量。設定されていないため、推論のデフォルト設定またはモデルに基づき、「{0}」が適用される。",
+          "reasoningStored": "このエージェントがモデルに求める推論の難易度。ここで設定するか、チャット入力のセレクターから設定します。セレクターで設定すると、同じ設定が反映されます。",
+          "serverTools": "サーバーツール"
         },
         "maxRetries": {
           "mdDescription": "AIプロバイダーへのリクエストが失敗した際の最大再試行回数。値が0の場合、再試行は行われません。",
@@ -762,16 +779,17 @@
         },
         "modelAliasesConfiguration": {
           "agents": "このエイリアスを使用するエージェント",
+          "aliasTypeLabel": "モデルエイリアス",
           "defaultList": "[デフォルトリスト]",
+          "description": "推奨モデルへの名前付き参照。これにより、エージェントは特定のモデルではなく、役割をターゲットに設定できるようになります。",
           "evaluatesTo": "評価すると",
           "label": "モデルエイリアス",
-          "modelNotReadyTooltip": "準備ができていません",
-          "modelReadyTooltip": "準備完了",
           "noAgents": "このエイリアスを使用するエージェントはありません。",
-          "noModelReadyTooltip": "モデルは準備されていません",
+          "noModel": "モデルなし",
           "noResolvedModel": "このエイリアスに対応するモデルは用意されていません。",
+          "notReady": "準備中",
           "priorityList": "優先度リスト",
-          "selectAlias": "モデルエイリアスを選択してください。",
+          "resolvesTo": "{0} に解決されます。",
           "selectedModelId": "選択されたモデル",
           "unavailableModel": "選択したモデルは利用できなくなりました"
         },
@@ -803,39 +821,15 @@
           "description": "ユーザーが操作している製品／アプリケーションの名前"
         },
         "promptFragmentsConfiguration": {
-          "activeCustomizationTitle": "アクティブなカスタマイズ",
-          "createCustomizationTitle": "カスタマイズを作成",
-          "customization": "カスタマイズ",
-          "customizationLabel": "カスタマイズ",
-          "defaultVariantTitle": "デフォルトのバリエーション",
-          "deleteCustomizationTitle": "削除のカスタマイズ",
-          "editTemplateTitle": "編集テンプレート",
-          "headerTitle": "プロンプトフラグメント",
-          "label": "プロンプトフラグメント",
-          "noFragmentsAvailable": "プロンプトの断片は利用できません。",
-          "otherPromptFragmentsHeader": "その他のプロンプトフラグメント",
-          "promptTemplateText": "プロンプトテンプレートテキスト",
-          "promptVariantsHeader": "プロンプトバリアントセット",
-          "removeCustomizationDialogMsg": "プロンプトフラグメント「{1}」の{0}カスタマイズを削除してもよろしいですか?",
-          "removeCustomizationDialogTitle": "カスタマイズを削除",
-          "removeCustomizationWithDescDialogMsg": "プロンプトフラグメント「{1}」({2}) の{0}カスタマイズを削除してもよろしいですか?",
-          "resetAllButton": "すべてリセット",
-          "resetAllCustomizationsDialogMsg": "すべてのプロンプトフラグメントを組み込みバージョンにリセットしてもよろしいですか?これによりすべてのカスタマイズが削除されます。",
-          "resetAllCustomizationsDialogTitle": "すべてのカスタマイズをリセット",
-          "resetAllCustomizationsTitle": "すべてのカスタマイズをリセット",
-          "resetAllPromptFragments": "すべてのプロンプトフラグメントをリセット",
+          "editPromptTemplate": "プロンプトテンプレートの編集",
+          "removePromptTemplate": "プロンプトテンプレートを削除",
+          "removePromptTemplateDialogMsg": "プロンプトテンプレート「{1}」の{0}カスタマイズを削除してもよろしいですか?このテンプレートには組み込みバージョンが存在しないため、完全に削除されてしまいます。",
+          "removePromptTemplateDialogTitle": "プロンプトテンプレートを削除",
+          "removePromptTemplateWithDescDialogMsg": "プロンプトテンプレート「{1}」({2})の{0}カスタマイズを削除してもよろしいですか?このテンプレートには組み込みバージョンが存在しないため、完全に削除されてしまいます。",
+          "resetPromptTemplate": "プロンプトテンプレートのリセット",
           "resetToBuiltInDialogMsg": "プロンプトフラグメント「{0}」を組み込みバージョンにリセットしてもよろしいですか?これによりすべてのカスタマイズが削除されます。",
           "resetToBuiltInDialogTitle": "組み込みにリセット",
-          "resetToBuiltInTitle": "この組み込み設定にリセット",
-          "resetToCustomizationDialogMsg": "プロンプトフラグメント「{0}」を{1}のカスタマイズにリセットしてもよろしいですか?これにより、優先度の高いカスタマイズはすべて削除されます。",
-          "resetToCustomizationDialogTitle": "カスタマイズにリセット",
-          "resetToCustomizationTitle": "このカスタマイズにリセット",
-          "selectedVariantLabel": "選択済み",
-          "selectedVariantTitle": "選択されたバリエーション",
-          "usedByAgentTitle": "エージェント使用先: {0}",
-          "variantSetError": "選択されたバリアントは存在せず、デフォルトも見つかりませんでした。設定を確認してください。",
-          "variantSetWarning": "選択されたバリアントは存在しません。代わりにデフォルトのバリアントが使用されています。",
-          "variantsOfSystemPrompt": "このプロンプトバリエーションセットのバリエーション:"
+          "variantSetError": "選択されたバリアントは存在せず、デフォルトも見つかりませんでした。設定を確認してください。"
         },
         "promptTemplates": {
           "description": "カスタマイズされたプロンプトテンプレートを保存するフォルダ。カスタマイズされていない場合はユーザー設定ディレクトリが使用されます。プロンプトテンプレートのバリエーションを管理するため、バージョン管理下にあるフォルダの使用をご検討ください。"
@@ -899,12 +893,8 @@
         "taskContextSummary": {
           "description": "セッションコンテキスト内に存在するすべてのタスクコンテキスト項目を解決します。"
         },
-        "templateSettings": {
-          "edited": "編集済み",
-          "unavailableVariant": "利用不可"
-        },
         "todayVariable": {
-          "description": "今日の何かをする",
+          "dateDescription": "現在の日付。デフォルトでは人間が読みやすい日付文字列として返されますが、format引数を使用することでISO 8601形式またはUnix秒として返すことも可能です。",
           "format": {
             "description": "日付の形式"
           }
@@ -913,12 +903,18 @@
         "unableToResolveVariable": "変数を解決できません。",
         "variable-contribution": {
           "builtInVariable": "{0} 組み込み変数",
-          "currentAbsoluteFilePath": "現在開いているファイルの絶対パス。",
+          "currentAbsoluteFilePath": "現在開かれているファイルの絶対パス。",
           "currentFileContent": "現在開かれているファイルのプレーンテキスト。これには、コンテンツの出典に関する情報は含まれません。",
-          "currentRelativeDirPath": "現在開いているファイルが含まれるディレクトリのワークスペース相対パス(例:my-project/src)。",
+          "currentRelativeDirPath": "現在開いているファイルが含まれるディレクトリの、ワークスペース相対パス(例:my-project/src)。",
           "currentRelativeFilePath": "現在開いているファイルのワークスペース相対パス(例:my-project/src/index.ts)。",
           "currentSelectedText": "開いているファイル内で現在選択されているプレーンテキスト。これには、コンテンツの出典に関する情報は含まれません。",
-          "dotRelativePath": "現在開いているファイルのワークスペース相対パス('currentRelativeFilePath')への短い参照。"
+          "dotRelativePath": "現在開かれているファイルのワークスペース相対パス(「currentRelativeFilePath」)に関する簡易リファレンス。"
+        },
+        "variantSet": {
+          "templateLabel": "テンプレート",
+          "unavailableVariant": "{0} (利用不可)",
+          "variantCount": "{0} バリエーション",
+          "variantCountSingular": "1つのバリエーション"
         }
       },
       "editor": {
@@ -1000,10 +996,16 @@
       "ide": {
         "agent-description": "[AI設定ビュー]({0})で、有効化、LLM選択、プロンプトテンプレートのカスタマイズ、カスタムエージェント作成を含むAIエージェント設定を構成します。",
         "agentConfiguration": {
+          "agentMode": "Coderのエージェントモード",
+          "behavior": "動作",
           "customAgentLocationQuickPick": {
             "placeholder": "agents/<id>/agent.md ファイルを作成する場所を選択してください",
             "title": "新しいカスタムエージェントの配置場所を選択してください"
           },
+          "defaultChatAgent": "デフォルトのチャットエージェント",
+          "defaultChatAgentNone": "組み込みのデフォルト設定",
+          "defaultChatAgentNoneDescription": "明示的なデフォルト設定はありません。Theiaがデフォルトのチャットエージェントを選択します。",
+          "defaults": "デフォルト設定",
           "genericCapabilitiesSettings": "一般的な機能",
           "genericCapabilityType": {
             "agentDelegation": "エージェントの委任",
@@ -1020,10 +1022,14 @@
             "idTitle": "新しいカスタムエージェント",
             "noLocation": "カスタムエージェントを作成できません:プロンプトテンプレートの保存場所が設定されていません。グローバルまたはワークスペースのプロンプトテンプレートフォルダを設定してから、もう一度お試しください。"
           },
-          "noDescription": "説明はありません",
+          "noAgents": "利用可能なエージェントはありません。",
+          "orchestratorExclude": "オーケストレーターから非表示にされているエージェント",
+          "orchestratorExcludePlaceholder": "エージェント ID を追加...",
           "resetAllCapabilities": "すべての機能をデフォルト値にリセットする",
-          "resetAllDefaults": "すべてをデフォルトにリセット",
-          "selections": "選択項目"
+          "resetAllGenericCapabilities": "すべての汎用機能の選択をリセットする",
+          "resetAllServerTools": "このプロバイダーのすべてのサーバーツールを無効にする",
+          "showCapabilitySnippet": "スニペットを表示",
+          "showToolSettings": "ツールを表示"
         },
         "agentMode": {
           "enabled": {
@@ -1036,6 +1042,15 @@
           "info": "エージェントモードで続行すると、確認内容が保存されます。後で `ai-features.agentMode.enabled` 設定を通じて、この設定を再度無効にすることができます。\n\n編集モードで続行すると、デフォルトモードが編集モードに変更されます。\n\nモードは、モードセレクターまたは AI 設定からいつでも変更できます。",
           "msg": "このエージェントは**エージェントモード**を使用します。自律的な処理を可能にするため、追加の確認なしにワークスペースのファイルに直接書き込むことができます。\n\n変更内容をレビューしたり元に戻したりできるように、バージョン管理システム(例:Git)の使用を推奨します。\n\n下のチャット入力エリアにあるモードセレクターを使用して**編集モード**に切り替えるか、読み取り専用の計画作成には**Architect**エージェントをご利用ください。\n\nこの確認設定はワークスペースごとに保存され、再度表示されることはありません。リセットまたはグローバルに設定するには、設定画面で `ai-features.agentMode.confirmed` を探してください。",
           "waiting": "確認を待っています..."
+        },
+        "agentsConfiguration": {
+          "description": "IDE で利用可能な AI エージェント。エージェントを開くと、プロンプト、モデル、および機能の設定を行うことができます。"
+        },
+        "aiConfiguration": {
+          "breadcrumbRoot": "AIの設定",
+          "manageMenu": "AIの設定",
+          "openButton": "OpenAIの設定",
+          "pageTypeLabel": "ページ"
         },
         "allowAllMode": {
           "stripTooltip": "このセッションでは、AI ツールによる呼び出しは確認なしに実行されます。信頼できる環境でのみ有効にしてください。",
@@ -1132,6 +1147,25 @@
         "exploreAgent": {
           "description": "コードベースから情報を抽出して要約する、コードベース探索アシスタント。         コードベースに何が存在するかに関する事実を報告し、コードの抜粋を提供し、観察されたパターンを説明します。"
         },
+        "generalConfiguration": {
+          "aboutCosts": "費用およびデータ使用量について",
+          "bypassModelTitle": "言語モデルのチェックをスキップ",
+          "configureProvider": "プロバイダーの設定",
+          "costsBody": "AI機能は、ユーザーが設定した言語モデルプロバイダーにリクエストを送信します。プロバイダーや使用状況によっては、これに伴い費用が発生する可能性がありますので、注意深く監視してください。エージェントがアクティブな間は、リクエストが継続的に実行される場合があります。詳細については、[ドキュメント]({0})を参照してください。",
+          "description": "AI 機能を有効または無効にし、IDE 全体でのアシスタントの動作を設定します。",
+          "dontPersist": "永続化しない",
+          "enableAiDescription": "{0}のすべてのAI機能を有効にします。少なくとも1つの言語モデルプロバイダーが設定されている必要があります。",
+          "gateNote": "以下の設定は、「AI機能を有効にする」をオンにすると適用されます。",
+          "hideList": "リストを非表示にする",
+          "homeSessionsTitle": "ホームビューのセッション",
+          "label": "概要",
+          "noProvider": "まだ言語モデルプロバイダーは設定されていません。",
+          "persistedSessionsTitle": "保存されたチャットセッション",
+          "pinAgentTitle": "言及されたエージェントを固定する",
+          "providerReady": "言語モデルプロバイダーの設定が完了し、使用可能な状態になっています。",
+          "sessionStorageTitle": "セッションの保存場所",
+          "unlimited": "無制限"
+        },
         "github": {
           "configureGitHubServer": {
             "canceled": "GitHubサーバーの設定がキャンセルされました。このエージェントを使用するには、GitHub MCPサーバーを設定してください。",
@@ -1158,12 +1192,25 @@
           "description": "ワークスペースのルートに関連付けられたGitHubリポジトリ(例:「eclipse-theia/theia」)"
         },
         "howToGetStarted": "はじめ方",
+        "memoryCapability": {
+          "description": "エージェントがワークスペース向けの永続的なウィキ形式のナレッジベースを維持できるようにします。これにより、今回のセッションおよび今後のセッションでは、一から始めるのではなく、これまでの成果を基に作業を進めることができます。",
+          "name": "メモリ"
+        },
+        "memoryDirectoryVariable": {
+          "description": "エージェントが現在のワークスペース用のメモリを保持しているディレクトリの絶対パス。"
+        },
         "model-selection-description": "各AIエージェントが使用する大規模言語モデル(LLM)を[AI設定ビュー]({0})で選択します。",
+        "modelsConfiguration": {
+          "description": "エージェントが利用可能な言語モデルプロバイダーおよびモデルを設定します。",
+          "modelSettings": "モデル設定",
+          "noProviders": "言語モデルプロバイダーはインストールされていません。",
+          "providers": "プロバイダー"
+        },
         "moreAgentsAvailable": {
           "header": "追加のエージェントが利用可能です"
         },
         "noRecommendedAgents": "推奨されるエージェントは利用できません。",
-        "openSettings": "AI設定を開く",
+        "openAiConfiguration": "OpenAIの設定",
         "orchestrator": {
           "error": {
             "noAgents": "リクエストを処理できるチャットエージェントが利用できません。設定で有効化されているかご確認ください。"
@@ -1204,6 +1251,37 @@
           "description": "コードレビューのワークフロー全体を調整する、AI搭載のPRレビューエージェント。PR情報の取得、コードベースの探索、構造化された分析の実施、diffビューアを用いた発見事項のインタラクティブな説明、およびオプションでGitHub上に保留中のレビューを作成します。"
         },
         "prompt-template-description": "[AI設定ビュー]({0})でAIエージェントのプロンプトバリエーションを選択し、プロンプトテンプレートをカスタマイズします。",
+        "promptSnippetsConfiguration": {
+          "capabilitiesGroupDescription": "有効化された際にエージェントがプロンプトに追加する指示。これらは共有されるため、編集を行うと、それらを使用しているすべてのエージェントに影響します。",
+          "capabilityTypeLabel": "機能",
+          "customized": "カスタマイズ済み",
+          "description": "再利用可能なプロンプトテキスト:ユーザー独自のスニペットに加え、エージェントが取り込む機能スニペットも含まれます。スニペットを編集すると、それを使用するすべてのエージェントに影響します。",
+          "editSnippet": "スニペットを編集",
+          "empty": "プロンプトのスニペットはありません。",
+          "filterPlaceholder": "名前、ID、または説明でプロンプトスニペットをフィルタリングする",
+          "genericCapabilitiesGroup": "一般的な機能",
+          "genericCapabilitiesGroupDescription": "選択した機能をエージェントのプロンプトに組み込むための基本的な手順です。これらは共有されているため、編集を行うと、それらを使用しているすべてのエージェントに影響します。",
+          "genericCapabilityTypeLabel": "一般的な機能",
+          "label": "プロンプトのスニペット",
+          "noMatches": "「{0}」に一致するプロンプトのスニペットはありません。",
+          "removeDialogMsg": "スニペット「{1}」の{0}カスタマイズを削除してもよろしいですか?このスニペットには組み込みバージョンが存在しないため、完全に削除されてしまいます。",
+          "removeDialogTitle": "スニペットを削除",
+          "removeSnippet": "スニペットを削除",
+          "removeWithDescDialogMsg": "スニペット「{1}」({2})の{0}カスタマイズを削除してもよろしいですか? このスニペットには組み込みバージョンがないため、完全に削除されてしまいます。",
+          "resetAll": "すべてのカスタマイズをリセット",
+          "resetAllDialogMsg": "カスタマイズされたすべてのプロンプトフラグメントを、組み込みバージョンにリセットしてもよろしいですか?これには、ここにリストされているスニペットだけでなく、エージェントのプロンプトテンプレートも含まれます。組み込みバージョンが存在しないスニペットは保持されます。",
+          "resetAllDialogTitle": "すべてのカスタマイズをリセット",
+          "resetAllMessage": "一部のプロンプトの断片はカスタマイズされています。リセットを行うと、エージェントのプロンプトテンプレートを含め、それらのすべてが組み込み版に戻ります。組み込み版が存在しないスニペットは保持されます。",
+          "resetDialogMsg": "スニペット「{0}」を組み込み版にリセットしてもよろしいですか?これにより、すべてのカスタマイズが削除されます。",
+          "resetDialogTitle": "スニペットを「組み込み」にリセット",
+          "resetSnippet": "スニペットを標準設定にリセット",
+          "snippetsGroupDescription": "ご自身で管理するプロンプトテキスト。他のプロンプトから {{prompt:id}} で参照されます。",
+          "usedByAgents": "エージェントが使用"
+        },
+        "promptsAndSkillsConfiguration": {
+          "label": "スキルとスラッシュコマンド",
+          "pageSubtitle": "モデルが利用できるスキルと、「/」で呼び出すスラッシュコマンド。スキルを開いて SKILL.md を編集するか、スラッシュコマンドのテンプレートを編集してください。"
+        },
         "requiresApproval": "承認が必要です",
         "restoredSession": "セッションの復元",
         "restrictedModeDetails": "AIチャット、インライン提案、コードアクション、およびプロンプトテンプレートは無効になっています",
@@ -1214,22 +1292,27 @@
           "toolConfirmation": "ツールごとの確認メッセージのオーバーライド:{0}",
           "toolConfirmationGeneric": "ツールごとの確認メッセージのオーバーライド設定"
         },
-        "shellAllowlist": {
-          "placeholder": "例: \"git log\" (正確なコマンド) または \"git log *\" (引数付き)"
-        },
-        "shellDenylist": {
-          "placeholder": "例: \"git push *\" または \"rm -rf /\""
-        },
         "shellExecutionCapability": {
           "description": "エージェントがホストシステム上で任意のシェルコマンドを実行できるようにします。これによりエージェントは、タスクとして利用できないスクリプトの実行を委譲したり、システム情報の照会を行ったり、専用ツールが存在しない操作を実行したりすることが可能になります。",
           "name": "シェル実行"
         },
         "skillsConfiguration": {
-          "noSkills": "利用可能なスキルはありません",
-          "noSlashCommands": "スラッシュコマンドは利用できません",
+          "compatibility": "互換性",
+          "editCommandTemplate": "プロンプトテンプレートの編集",
+          "empty": "スキルやスラッシュコマンドは利用できません。",
+          "filterPlaceholder": "スキルやスラッシュコマンドを名前または説明でフィルタリングする",
+          "frontmatter": "フロントマター",
+          "noAllowedTools": "使用可能なツールは宣言されていません。このスキルは、エージェントがすでに持っている任意のツールを使用できます。",
+          "noMatches": "「{0}」に一致するスキルやスラッシュコマンドはありません。",
+          "noSkillAgents": "現在、スキルを公開しているエージェントは存在しないため、これらのいずれにも到達しません。スキルを利用するには、{{skills}}変数、またはエージェントのプロンプト内にスキル使用機能が含まれている必要があります。",
+          "openSkillFile": "SKILL.md を開く",
+          "skillsGroupDescription": "モデルが選択して従うことができる、ファイルベースの SKILL.md ユニット。これらは {{skills}} 変数およびスキルの使用機能を通じて表示されます。",
           "slashCommand": {
-            "allAgents": "すべてのエージェント"
+            "allAgents": "すべてのエージェント",
+            "allAgentsTooltip": "このコマンドはエージェントを指定しないため、すべてのエージェントで利用可能です。",
+            "availableForAgents": "エージェント向けに利用可能"
           },
+          "slashCommandsGroupDescription": "チャットで「/name」と入力して呼び出すプロンプトの断片。1人以上のエージェントが利用可能です。",
           "slashCommandsSectionHeader": "スラッシュコマンド"
         },
         "toolConfirmationInfo": {
@@ -1249,8 +1332,10 @@
             "label": "確認モード"
           },
           "default": {
-            "label": "デフォルトツール確認モード:"
+            "rowLabel": "デフォルトのツール確認モード"
           },
+          "description": "エージェントが呼び出すことができるツールを選択し、各ツールを実行する前に確認が必要かどうかを指定します。",
+          "filterPlaceholder": "フィルタツール",
           "recommendedDefaults": {
             "apply": "デフォルトのツールを許可する",
             "dialogConfirm": "了解しました、許可します",
@@ -1270,16 +1355,7 @@
             "title": "すべてのツール確認モードをリセット"
           },
           "resetAllTooltip": "すべてのツールをデフォルトにリセット",
-          "shellAllowlist": {
-            "description": "これらのパターンに一致するコマンドは確認なしで自動的に許可されます。ワイルドカードとして * を使用: \"git log\"(完全一致)、「git log *」(任意の引数付き)。ワイルドカードの前にはスペースが必要です。",
-            "empty": "設定されたパターンはありません。すべてのシェルコマンドは確認を必要とします。",
-            "title": "Shell Execute 許可リスト"
-          },
-          "shellDenylist": {
-            "description": "これらのパターンに一致するコマンドは確認なしで自動的に拒否されます。これにより「git push *」や「rm -rf /」のような危険なコマンドをブロックできます。",
-            "empty": "設定されたパターンはありません。シェルコマンドは自動的に拒否されません。",
-            "title": "シェル実行拒否リスト"
-          },
+          "shellExecution": "シェルコマンドの実行",
           "toolOptions": {
             "confirm": {
               "label": "確認"
@@ -1295,7 +1371,21 @@
           "unread": "未読"
         },
         "variableConfiguration": {
-          "selectVariable": "変数を選択してください。",
+          "argCountPlural": "{0} 引数",
+          "argCountSingular": "引数 1 つ",
+          "argEnum": "以下のいずれか:{0}",
+          "contextGroup": "コンテキスト変数",
+          "contextGroupDescription": "プロンプト内で{0}名として参照されるほか、エージェントおよびそのツールが確認できるコンテキストとしてリクエストに添付することも可能です。",
+          "copyVariableName": "変数名をコピー",
+          "filterPlaceholder": "名前または説明で変数をフィルタリングする",
+          "noMatches": "「{0}」に一致する変数はありません。",
+          "noVariables": "利用可能な変数はありません。",
+          "openAgent": "エージェントを開く {0}",
+          "optional": "オプション",
+          "pageSubtitle": "プロンプト内で{0}という名前で参照できる値です。これらはリクエスト時に解決され、挿入されます。",
+          "plainGroup": "単純な変数",
+          "plainGroupDescription": "プロンプト内で「{0}」という名前で参照され、要求時にインラインでテキスト値に解決されます。",
+          "required": "必須",
           "usedByAgents": "エージェントが使用する"
         },
         "waitingForInput": "入力をお待ちしています"
@@ -1407,12 +1497,20 @@
           },
           "registryMetadata": {
             "configHash": {
-              "mdDescription": "このサーバーのインストールに使用されたレジストリ承認のコンテンツハッシュ。",
+              "mdDescription": "このサーバーのインストールに使用されたレジストリ承認、またはそれを提供したエージェントプラグインのコンテンツハッシュ。",
               "title": "レジストリ設定ハッシュ"
             },
+            "installedAt": {
+              "mdDescription": "このサーバーを提供したエージェントプラグインが最後にディスクに書き込まれた日時。これを変更するとサーバーが再起動され、これにより更新が反映されます。作成者:`@theia/ai-registry`。ユーザーによる編集はできません。",
+              "title": "エージェントプラグインのインストール先"
+            },
             "mdDescription": "AIレジストリからインストールされたサーバーの来歴メタデータ。作成者:`@theia/ai-registry`。ユーザーによる編集はできません。",
+            "pluginId": {
+              "mdDescription": "このサーバーの構築に寄与した、インストール済みのエージェントプラグインを識別します。作成者:`@theia/ai-registry`。ユーザーによる編集はできません。",
+              "title": "エージェントプラグインID"
+            },
             "serverId": {
-              "mdDescription": "このサーバーがインストールされたAIレジストリエントリを識別します。",
+              "mdDescription": "このサーバーがインストールされたAIレジストリエントリを識別します。エージェントプラグインによって提供されたサーバーの場合は存在せず、代わりに `pluginId` が設定されます。",
               "title": "レジストリのサーバーID"
             },
             "title": "レジストリのメタデータ",
@@ -1457,6 +1555,9 @@
         }
       },
       "mcpConfiguration": {
+        "addArgument": "引数を追加…",
+        "addKeyValue": "KEY=value…を追加",
+        "addScope": "スコープを追加…",
         "autostart": "自動起動",
         "browseAIRegistry": "AIレジストリを閲覧する",
         "browseAIRegistryTooltip": "「拡張機能」ビューを開いて、AI レジストリエントリを閲覧します",
@@ -1464,8 +1565,9 @@
           "addServer": "ローカル MCP 設定を追加..."
         },
         "copiedAllList": "すべてのツールをクリップボードにコピーしました(全ツールのリスト)",
-        "copiedAllSingle": "すべてのツールをクリップボードにコピーしました(すべてのツールを含む単一のプロンプトフラグメント)",
-        "copiedForPromptTemplate": "プロンプトテンプレート用に全ツールをクリップボードにコピー                                     (全ツールを含む単一のプロンプトフラグメント)",
+        "copiedAllSingle": "すべてのツールをクリップボードにコピーしました(すべてのツールを含む単一のプロンプト断片)",
+        "copiedForPrompt": "{0}をクリップボードにコピーしました(チャットやプロンプトのテンプレート用)",
+        "copiedForPromptTemplate": "プロンプトテンプレート用にすべてのツールをクリップボードにコピーしました(すべてのツールを含む単一のプロンプトフラグメント)",
         "copyAllList": "すべてコピー(全ツール一覧)",
         "copyAllSingle": "チャット用にすべてコピー(全ツールを含む単一プロンプトフラグメント)",
         "copyForPrompt": "コピーツール(チャットまたはプロンプトテンプレート用)",
@@ -1475,8 +1577,6 @@
         "deleteServerDialogMsg": "サーバー「{0}」を削除してもよろしいですか?",
         "deleteServerDialogTitle": "MCPサーバーを削除",
         "deleteServerError": "MCPサーバーの削除に失敗しました: {0}",
-        "editServer": "編集サーバー",
-        "editServerTitle": "MCPサーバーを編集",
         "environmentVariables": "環境変数",
         "form": {
           "argsPlaceholder": "スペース区切り、例:-y @modelcontextprotocol/server-brave-search",
@@ -1509,7 +1609,6 @@
           "serverUrlPlaceholder": "例: https://mcp.example.com",
           "serverUrlRequired": "リモートサーバーにはサーバーURLが必要です"
         },
-        "fromRegistryLink": "レジストリより",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "認証サーバー",
         "oauthClientId": "OAuth クライアント ID",
@@ -1517,11 +1616,15 @@
         "oauthRedirectUrl": "リダイレクト先URL",
         "oauthResource": "OAuthリソース",
         "oauthScopes": "OAuthスコープ",
-        "openInRegistry": "AIレジストリで開く:{0}",
+        "pluginData": "プラグインデータ",
+        "pluginRoot": "プラグインのルート",
         "saveServerError": "MCPサーバー設定の保存に失敗しました: {0}",
         "serverAuthToken": "認証トークン",
         "serverAuthTokenHeader": "認証ヘッダー名",
+        "serverTypeLabel": "MCPサーバー",
         "serverUrl": "サーバーURL",
+        "serversListTitle": "サーバー",
+        "showToolSettings": "ツールを表示",
         "signInServerFailed": "MCPサーバー「{0}」へのサインインに失敗しました。",
         "signInServerNotCompleted": "MCPサーバー「{0}」へのサインインが完了しませんでした。",
         "signInServerSucceeded": "MCPサーバー「{0}」にサインインしました。",
@@ -1530,7 +1633,7 @@
         "signOutServerFailed": "MCPサーバー「{0}」からのサインアウトに失敗しました。",
         "startServerFailed": "MCP サーバー「{0}」の起動に失敗しました。",
         "stopServerFailed": "MCP サーバー「{0}」の停止に失敗しました。",
-        "tools": "ツール: "
+        "typeRemoteOAuth": "リモート(OAuth)"
       },
       "openai": {
         "apiKey": {
@@ -1580,6 +1683,9 @@
           "useResponseApi": {
             "title": "Chat Completion API の代わりに新しい OpenAI Response API を使用してください。カスタムプロバイダーではデフォルトで `false` です。注:ツールが使用される場合、自動的に Chat Completions API にフォールバックします。"
           }
+        },
+        "customProvider": {
+          "label": "{0} (カスタム)"
         },
         "models": {
           "description": "使用する公式OpenAIモデル"
@@ -1683,7 +1789,7 @@
       },
       "tokenUsage": {
         "cachedInputTokens": "キャッシュに書き込まれた入力トークン",
-        "cachedInputTokensTooltip": "「入力トークン」に加えて追跡されます。通常、非キャッシュトークンよりも高価です。",
+        "description": "プロバイダーおよびモデルごとのトークン消費量を検証してください。",
         "failedToGetTokenUsageData": "トークン使用状況データの取得に失敗しました: {0}",
         "inputTokens": "入力トークン",
         "label": "トークン使用例",
@@ -1691,9 +1797,7 @@
         "noData": "トークン使用データはまだ利用できません。",
         "note": "トークンの使用状況はアプリケーション起動時から追跡されますが、永続化されません。",
         "outputTokens": "出力トークン",
-        "readCachedInputTokens": "キャッシュから読み込まれた入力トークン",
-        "readCachedInputTokensTooltip": "「入力トークン」に加えて追跡されます。通常、キャッシュされていない場合よりもはるかに低コストです。通常、レート制限にはカウントされません。",
-        "totalTokensTooltip": "'入力トークン' + '出力トークン'"
+        "readCachedInputTokens": "キャッシュから読み込まれた入力トークン"
       },
       "vercelai": {
         "anthropicApiKey": {
@@ -1736,7 +1840,7 @@
       },
       "workspace": {
         "allowedExternalPaths": {
-          "description": "AIツールが読み取ることができる、ワークスペース外の絶対パスまたはファイルURI(ディレクトリまたはファイル)のリスト。 ユーザーのホームディレクトリを指定するために `~` をサポートします。デフォルトでは空です。オプトインのみ有効です。getFileContent、findFilesByPattern、getWorkspaceFileList、および getWorkspaceDirectoryStructure によって処理されます。ワークスペースが信頼されていない場合、ワークスペーススコープの値は無視されます。許可リストに登録されたディレクトリ内のシンボリックリンクは追跡され、許可リスト外のファイルを指す可能性があります。内容は信頼できるディレクトリのみを追加してください。",
+          "description": "AIツールがアクセス可能な、ワークスペース外の絶対パスまたはファイルURI(ディレクトリまたはファイル)のリスト。ユーザーのホームディレクトリを指定するために `~` を使用できます。デフォルトでは空で、オプトインのみ有効です。 パスを引数として受け取るすべてのツール(ファイルを作成するツールを含む)で有効です。ワークスペースが信頼されていない場合、ワークスペーススコープの値は無視されます。許可リストに登録されたディレクトリ内のシンボリックリンクは追跡され、許可リスト外のファイルを指す可能性があります。内容に信頼できるディレクトリのみを追加してください。",
           "title": "許可される外部パス"
         },
         "coderAgent": {
@@ -1807,6 +1911,9 @@
       "agentInputNeededMessageWithSession": "エージェント「{0}」が、「{1}」であなたの入力を求めています。",
       "agentInputNeededTitle": "エージェント「{0}」からの入力が必要です",
       "aiDisabledInRestrictedMode": "信頼されていないワークスペースでは、AI機能は利用できません。",
+      "openConfiguration": {
+        "description": "AIの設定は「AI設定」ビューに移動しました。このビューを開いて、プロバイダー、モデル、エージェントなどを設定してください。"
+      },
       "preferences": {
         "linuxEnvHint": "Linux では、デスクトップのショートカットからアプリケーションを起動する場合、変数が `~/.profile`(`~/.bashrc` だけでなく)に定義されていることを確認してください。詳細については、[ドキュメント](https://theia-ide.org/docs/user_ai/#setting-api-keys)を参照してください。",
         "title": "AI機能"
@@ -1890,10 +1997,128 @@
     },
     "ai-registry": {
       "action": {
+        "copyId": "IDをコピー",
         "fix": "設定の修正",
         "link": "レジストリへのリンク",
         "unlink": "リンクを解除",
         "updateTooltip": "{0} から {1} への更新"
+      },
+      "autoUpdate": {
+        "ask": "インストール済みのスキル、MCPサーバー、またはエージェントプラグインの更新が利用可能になった際に通知する。",
+        "changeLater": "これらは後で {0} で変更できます。",
+        "configureDefault": "{0} でデフォルト設定を構成します。",
+        "defaultPrompt": "今後、AIレジストリからスキル、MCPサーバー、エージェントプラグインを自動的に更新しますか?",
+        "description": "AIレジストリからインストールされたスキル、MCPサーバー、およびエージェントプラグインのデフォルトの更新動作。更新の確認は、ウィンドウの読み込みごとに1回行われます。個々のアーティファクトについては、「拡張機能」ビューの歯車メニューからこの設定を上書きできます。",
+        "enableDefault": "自動更新を有効にする",
+        "keepAsking": "引き続き質問してください",
+        "mcpAvailable": "MCPサーバー「{0}」の更新プログラムが利用可能です。",
+        "off": "インストール済みのスキル、MCPサーバー、およびエージェントプラグインは決して更新せず、利用可能な更新について通知することも決して行わないでください。",
+        "on": "インストール済みのスキル、MCPサーバー、およびエージェントプラグインを自動的に更新します。",
+        "pluginAvailable": "エージェントプラグイン「{0}」の更新が利用可能です。",
+        "skillAvailable": "スキル「{0}」の更新が利用可能です。",
+        "summary": "{0} AIレジストリの更新が利用可能です。",
+        "updateAll": "すべて更新",
+        "updateFailed": "{0}のAIレジストリ項目を自動更新できませんでした。",
+        "updatedMany": "{0}のAIレジストリ項目を更新しました。"
+      },
+      "autoUpdateOverrides": {
+        "mdDescription": "`#ai-features.registry.autoUpdate#` のアーティファクトごとの上書き設定。キーは `skill:<skillId>`、`mcp:<serverId>`、または `plugin:<pluginId>` です。 エントリは通常、[Extensions] ビューの歯車メニューから管理されます。エントリがないアーティファクトは、デフォルト設定に従います。"
+      },
+      "mcp": {
+        "updated": "MCPサーバー「{0}」を更新しました。"
+      },
+      "plugin": {
+        "action": {
+          "fix": "プラグインの修正",
+          "link": "レジストリへのリンク",
+          "unlink": "リンクを解除"
+        },
+        "diagnostics": {
+          "manySkipped": "{0} スキップされたコンポーネント",
+          "mcpDisabled": "MCPの設定は無視されます",
+          "mcpDisabledAndSkipped": "MCPの設定は無視されます。{0}",
+          "oneSkipped": "コンポーネント「{0}」はスキップされました:{1}"
+        },
+        "dialog": {
+          "contains": "内容",
+          "endorsedBy": "推奨:",
+          "from": "出典:",
+          "install": {
+            "title": "エージェントプラグイン「{0}」をインストールする"
+          },
+          "mcpWarning": "このプラグインのMCPサーバーは、お使いのマシン上で任意のコマンドを実行することができます。この推奨対象はプラグイン全体を対象としており、プラグインに含まれる個々のサーバーが個別に推奨されるわけではありません。サーバーはインストール後に自動的に起動します。",
+          "mismatch": {
+            "actual": "受信",
+            "endorsed": "「{0}」用にダウンロードされたファイルは、{1}が{2}で推奨している内容と一致していません。",
+            "expected": "承認済み",
+            "explanation": "これは、プラグインの作者がコミットしてから最大1日間は発生することが予想されます。これは、レジストリが毎日ソースを再読み込みし、特定のコミットを固定しないためです。また、アーカイブからファイルを除外するリポジトリでは、この状態が恒久的に発生します。これは、改ざんされたソースの状態とも一致します。",
+            "installAnyway": "それでもインストールする",
+            "title": "ソースが変更されました",
+            "unendorsed": "「{0}」用にダウンロードされたファイルは、レジストリが公開しているコンテンツハッシュと一致しません。"
+          },
+          "noEndorsements": "推奨団体なし",
+          "viaTrust": "出典:{0}"
+        },
+        "fixed": "エージェントプラグイン「{0}」を復元しました。",
+        "installUri": {
+          "fetchFailed": "エージェントプラグイン「{0}」をインストールするためにAIレジストリを読み込めませんでした。",
+          "missingId": "インストールリンクに、必須の「id」パラメータが欠けています。",
+          "success": "AIレジストリからエージェントプラグイン「{0}」をインストールしました。",
+          "unknownId": "エージェントプラグイン「{0}」は、AIレジストリにリストされていません。"
+        },
+        "installed": "エージェントプラグイン「{0}」がインストールされました。",
+        "invalidDirectoryName": "無効なプラグインディレクトリ名「{0}」:区切り文字を含まない単一のパスでなければなりません。",
+        "linked": "関連するエージェントプラグイン「{0}」。",
+        "manifestFieldNotString": "「plugin.json」ファイル内の「{0}」フィールドは、文字列でなければなりません。",
+        "manifestInvalidAuthor": "「plugin.json」ファイルの「author」フィールドは、オプションの文字列フィールド「name」、「email」、「url」を持つオブジェクトでなければなりません。",
+        "manifestInvalidKeywords": "「plugin.json」ファイルの「keywords」フィールドは、文字列の配列でなければなりません。",
+        "manifestInvalidName": "プラグイン名「{0}」は無効です。プラグイン名は、小文字の英数字、ハイフン、ピリオドのみで構成され、1～64文字以内でなければなりません。また、先頭と末尾は英数字で始まり、末尾で終わらなければならず、「--」や「..」を含んではなりません。",
+        "manifestNotJson": "「plugin.json」は有効なJSONではありません。",
+        "manifestNotObject": "「plugin.json」には、最上位の JSON オブジェクトが含まれている必要があります。",
+        "manifestRequiredField": "「plugin.json」の「{0}」フィールドは必須であり、空でない文字列でなければなりません。",
+        "manifestUnsupportedVersion": "「plugin.json」は、サポート対象外のAgent Pluginsスキーマ「{0}」を対象としています。",
+        "mcpInvalidDocument": "「mcp.json」には、必須の「$schema」および「mcpServers」フィールドを正確に含む最上位のJSONオブジェクトが含まれている必要があります。",
+        "mcpNotJson": "「mcp.json」は有効なJSONではありません。",
+        "mcpUnsupportedVersion": "「mcp.json」は、サポートされていないエージェントプラグインスキーマ「{0}」を対象としています。",
+        "mcpVersionMismatch": "「mcp.json」はエージェントプラグインのバージョン「{0}」を対象としていますが、「plugin.json」は「{1}」を対象としています。",
+        "nonObjectExtensions": "「plugin.json」の「extensions」フィールドはオブジェクトではないため、これを無視します。",
+        "progress": {
+          "text": "エージェントプラグイン「{0}」:{1}"
+        },
+        "registrationFailed": "エージェントプラグイン「{0}」はインストールされましたが、その MCP サーバーを登録できませんでした:{1}。アンインストールしてから再インストールし、再試行してください。",
+        "serverDuplicateHeader": "ヘッダー名「{0}」が複数回宣言されています。",
+        "serverEmptyField": "サーバー設定フィールド「{0}」は、空にしてはなりません。",
+        "serverFieldNotString": "サーバー設定フィールド「{0}」は、文字列で指定する必要があります。",
+        "serverInvalid": "サーバーの設定が無効です。",
+        "serverInvalidArgs": "「args」フィールドは、文字列の配列でなければなりません。",
+        "serverInvalidCommand": "「command」の値「{0}」は、実行ファイル名のみ、または「./」で始まるプラグイン相対パスでなければなりません。",
+        "serverInvalidCwd": "「cwd」の値「{0}」は、「./」、「${PLUGIN_ROOT}」、または「${PLUGIN_DATA}」で始まる必要があります。",
+        "serverInvalidEnv": "「env」フィールドは、文字列のオブジェクトでなければなりません。",
+        "serverInvalidHeader": "ヘッダー「{0}」は、有効な HTTP ヘッダーフィールドではありません。",
+        "serverInvalidHeaders": "「headers」フィールドは、文字列のオブジェクトでなければなりません。",
+        "serverInvalidUrl": "「url」の値「{0}」は、ユーザー情報を含まない、フラグメントのない絶対的な http または https URL でなければならず、ループバック以外の URL では https を使用する必要があります。",
+        "serverMissingField": "サーバー設定に、必須の「{0}」フィールドが欠けています。",
+        "serverNotObject": "サーバーの設定はJSONオブジェクトではありません。",
+        "serverPathEscapes": "「{0}」の値「{1}」は、「{2}」の外で解決されます。",
+        "serverReservedEnv": "「env」エントリの「{0}」は予約済みであり、プラグインで宣言してはなりません。",
+        "serverUnknownField": "サーバー構成では、「{0}」というフィールドが宣言されていますが、そのトランスポートタイプでは許可されていません。",
+        "serverUnknownType": "サーバー構成では、未知のトランスポートタイプ「{0}」が宣言されています。",
+        "serverUnsupportedTransport": "MCPトランスポート「{0}」はサポートされていません。",
+        "stat": {
+          "oneServer": "1 MCPサーバー",
+          "servers": "{0} MCPサーバー"
+        },
+        "uninstalled": "エージェントプラグイン「{0}」がアンインストールされました。",
+        "unknownManifestField": "不明な「plugin.json」フィールド「{0}」は無視します。",
+        "unlinked": "リンクされていないエージェントプラグイン「{0}」。",
+        "updated": "エージェントプラグイン「{0}」を更新しました。",
+        "warning": {
+          "fix": "このプラグインのファイルは、インストールされたものとは異なります。「プラグインを修正」をクリックして、推奨されるコンテンツを再度ダウンロードしてください。",
+          "linkStale": "このプラグインはレジストリからインストールされましたが、レジストリにはもはやその記録が残っていません。「リンクを解除」をクリックすると、レジストリのリンクを削除してファイルは残すことができます。「アンインストール」をクリックすると、プラグインを削除します。",
+          "manual": "このディレクトリはレジストリからインストールされたものではありません。ファイルを変更することなく、その出所へのリンクを記録しています。",
+          "notInRegistry": "レジストリには存在しません"
+        },
+        "watcherStopped": "Agent Plugins フォルダの変更監視を停止しました。インストール済みのプラグインが自動的に更新されなくなる可能性があります。再開するには、ウィンドウを再読み込みしてください。"
       },
       "skill": {
         "action": {
@@ -2184,7 +2409,6 @@
       "missingConfiguration": "動的構成「{0}: {1}」が存在しないか、適用対象外です",
       "pause": "pause",
       "pauseAll": "すべてを一時停止",
-      "reveal": "表示",
       "step": "ステップ",
       "taskTerminatedBySignal": "タスク '{0}' がシグナル {1} により終了しました。",
       "taskTerminatedForUnknownReason": "タスク「{0}」が不明な理由で終了しました。",
@@ -2295,12 +2519,17 @@
         "openAIChatView": "今すぐAIチャットビューを開いて、始め方をご覧ください！"
       },
       "apiComparator": "{0} API互換性",
+      "markStepUndone": "「元に戻す」",
       "newExtension": "新しい拡張機能の構築",
       "newPlugin": "新しいプラグインの構築",
+      "noWalkthroughs": "操作手順は用意されていません。",
+      "openAiConfiguration": "OpenAIの設定",
+      "resetWalkthroughProgress": "ウォークスルーの進捗をリセット",
       "startup-editor": {
         "welcomePage": "{0}と拡張機能の使い始めを支援するコンテンツを含むウェルカムページを開く。"
       },
-      "telemetry": "データ使用量とテレメトリ"
+      "telemetry": "データ使用量とテレメトリ",
+      "walkthroughLinkFailed": "「{0}」を開くことができませんでした:{1}"
     },
     "keybinding-schema-updater": {
       "deprecation": "代わりに`when`句を使用してください。"
@@ -2570,6 +2799,7 @@
       "amendHeadCommit": "HEAD コミット",
       "amendLastCommit": "最後のコミットを修正する",
       "changeRepository": "リポジトリを変更...",
+      "copyCommitHash": "コミットハッシュをコピー",
       "dirtyDiff": {
         "close": "閉じる 変更 プレビュー表示"
       },
@@ -2580,7 +2810,13 @@
       "noChanges": "変更されたファイルはありません。",
       "noHistory": "ソース管理の履歴はありません。",
       "noHistoryForError": "{0}には履歴がありません",
+      "openCommit": "コミットを開く",
+      "pickHistoryItemRefs": "履歴項目を選択...",
+      "pickHistoryItemRefsPlaceholder": "1つ以上の履歴項目の参照を選択してください",
       "prepositionIn": "および",
+      "refPickerBranches": "ブランチ",
+      "refPickerRemoteBranches": "リモートブランチ",
+      "refPickerTags": "タグ",
       "unamend": "変更不可",
       "unamendCommit": "コミットを修正しない"
     },

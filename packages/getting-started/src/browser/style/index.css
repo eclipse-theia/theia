@@ -251,14 +251,20 @@ body {
 
 /* A selected walkthrough takes over the whole welcome view. */
 .gs-walkthrough-container {
+  /* `.gs-container` sets `height: 100%`, so the padding has to stay inside the box. */
+  box-sizing: border-box;
   padding: calc(var(--theia-ui-padding) * 6);
   overflow: auto;
 }
 
+/*
+ * Sized by its content rather than stretched to the full height: a percentage height resolves against the
+ * scroll container's content box, and its padding would then push the scroll extent past the client height,
+ * leaving a scrollbar even for content that fits.
+ */
 .gs-walkthrough-detail {
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 .gs-walkthrough-detail-header {

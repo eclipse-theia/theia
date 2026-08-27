@@ -88,7 +88,10 @@ describe('parcel-filesystem-watcher', function (): void {
         expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
         await waitForChange(actualUris, changeListeners, expectedUris[2]);
 
-        assert.deepStrictEqual([...actualUris], expectedUris);
+        // Each expected URI already arrived above, so what is left is that nothing else did. macOS may also
+        // report the root, since creating a child modifies it.
+        const unexpectedUris = [...actualUris].filter(uri => !expectedUris.includes(uri) && uri !== root.toString());
+        assert.deepStrictEqual(unexpectedUris, []);
     });
 
     it('Should not receive file changes events from in the workspace by default if unwatched', async function (): Promise<void> {

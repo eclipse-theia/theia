@@ -20,6 +20,7 @@ import {
     BaseWidget,
     codicon,
     CompositeTreeNode,
+    ExtractableWidget,
     Message,
     Panel,
     PanelLayout,
@@ -78,9 +79,12 @@ export namespace TerminalManagerWidgetState {
 }
 
 @injectable()
-export class TerminalManagerWidget extends BaseWidget implements StatefulWidget, ApplicationShell.TrackableWidgetProvider {
+export class TerminalManagerWidget extends BaseWidget implements StatefulWidget, ApplicationShell.TrackableWidgetProvider, ExtractableWidget {
     static ID = 'terminal-manager-widget';
     static LABEL = nls.localize('theia/terminal-manager/label', 'Terminals');
+
+    isExtractable: boolean = true;
+    secondaryWindow: Window | undefined;
 
     protected panel: SplitPanel;
     protected pageAndTreeLayout: SplitLayout | undefined;
@@ -279,6 +283,8 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
 
     protected async confirmClose(): Promise<boolean> {
         const CLOSE = nls.localizeByDefault('Close');
+        // When the widget lives in a secondary window, open the dialog there so it is visible to the user.
+        const dialogOptions = this.secondaryWindow ? { node: this.secondaryWindow.document.createElement('div') } : undefined;
         const dialog = new ConfirmDialog({
             title: nls.localize('theia/terminal-manager/closeDialog/title', 'Do you want to close the terminal manager?'),
             msg: nls.localize(
@@ -287,7 +293,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
             ),
             ok: CLOSE,
             cancel: nls.localizeByDefault('Cancel'),
-        });
+        }, dialogOptions);
         const confirmed = await dialog.open();
         return confirmed === true;
     }
