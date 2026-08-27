@@ -116,7 +116,7 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
                 if (!terminal) {
                     return;
                 }
-                const commandHistory = terminal?.commandHistoryState?.commandHistory;
+                const commandHistory = terminal.commandHistoryState?.commandHistory;
                 const terminalHistoryIndex = commandHistory?.indexOf(terminalBlock) ?? -1;
                 if (terminalHistoryIndex < 0) {
                     return;
