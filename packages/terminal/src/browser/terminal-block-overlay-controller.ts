@@ -18,7 +18,7 @@ import { Disposable, DisposableCollection } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
 import { IMarker, Terminal } from 'xterm';
 import { TerminalBlock, TerminalBlockBoundary, TerminalWidget } from './base/terminal-widget';
-import { inject } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 
 export const TerminalBlockOverlayOptions = Symbol('TerminalBlockOverlayOptions');
 export interface TerminalBlockOverlayOptions {
@@ -39,6 +39,7 @@ export type TerminalBlockOverlayControllerFactory =
 /**
  * Owns the terminal block overlay DOM, marker tracking, and refresh lifecycle.
  */
+@injectable()
 export class TerminalBlockOverlayController implements Disposable {
     protected readonly term: Terminal;
     protected readonly renderBlockMenu: (event: MouseEvent, block: TerminalBlock, term: TerminalWidget) => void;
