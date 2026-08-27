@@ -17,14 +17,14 @@
 import { ContributionProvider, ILogger } from '@theia/core/lib/common';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { TelemetryConsentProvider, isKindAllowedByLevel } from '../common/telemetry-consent-provider';
+import { TelemetryConsentProvider } from '../common/telemetry-consent-provider';
 import { TELEMETRY_FILTERS, TelemetryPreferences } from '../common/telemetry-preferences';
 import {
     TelemetryEvent, TelemetryRpc, createTelemetryEvent, describeTelemetryEventTopic, isValidTelemetryEvent, snapshotTelemetryEvent
 } from '../common/telemetry-protocol';
 import { TelemetryData, TelemetryReportOptions, TelemetryService } from '../common/telemetry-service';
 import { isValidTelemetrySinkId, isValidTelemetryTopicPattern, matchesTelemetryTopic } from '../common/telemetry-topic';
-import { BACKEND_TELEMETRY_SESSION } from '../common/telemetry-types';
+import { BACKEND_TELEMETRY_SESSION, isKindAllowedByLevel } from '../common/telemetry-types';
 import { TelemetrySink } from './telemetry-sink';
 
 const MAX_PENDING_EVENTS = 1_000;

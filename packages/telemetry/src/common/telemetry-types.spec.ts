@@ -14,17 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import type { TelemetryEventKind } from './telemetry-service';
+import { expect } from 'chai';
+import { TelemetryLevel, isKindAllowedByLevel } from './telemetry-types';
 
-/** @experimental */
-export type TelemetryLevel = 'off' | 'crash' | 'error' | 'all';
-
-/** @experimental */
-export function isKindAllowedByLevel(level: TelemetryLevel, kind: TelemetryEventKind): boolean {
-    return level === 'all'
-        || level === 'error' && (kind === 'error' || kind === 'crash')
-        || level === 'crash' && kind === 'crash';
-}
-
-/** @experimental */
-export const BACKEND_TELEMETRY_SESSION = 'backend';
+describe('telemetry types', () => {
+    it('maps telemetry levels to event kinds', () => {
+        const kinds = ['usage', 'error', 'crash'] as const;
+        const levels: TelemetryLevel[] = ['off', 'crash', 'error', 'all'];
+        expect(levels.map(level => kinds.filter(kind => isKindAllowedByLevel(level, kind)))).to.deep.equal([
+            [],
+            ['crash'],
+            ['error', 'crash'],
+            ['usage', 'error', 'crash']
+        ]);
+    });
+});
