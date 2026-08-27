@@ -103,8 +103,9 @@ const STEP_SCHEMA: ToolRequestParameterProperty = {
                 },
                 required: ['text', 'value']
             },
-            description: 'Optional buttons offered to the user for this step. Omit for purely informational steps; '
-                + 'a hardcoded "Next"/"Finish" button is always shown to advance.'
+            description: 'Buttons offered to the user for this step. Must be a real array of objects, never a JSON-encoded string. '
+                + 'Omit it (or pass an empty array) only for purely informational steps: a step without options is never a confirmation, '
+                + 'so never use one to ask for approval. In a multi-step interaction a hardcoded "Next"/"Finish" button is always shown to advance.'
         },
         links: {
             type: 'array',
@@ -144,7 +145,8 @@ const TOOL_PARAMETERS: ToolRequestParameters = {
         interactions: {
             type: 'array',
             items: STEP_SCHEMA,
-            description: 'Ordered list of interaction steps. The user walks through them sequentially and can revisit previous steps.'
+            description: 'Ordered list of interaction steps, as a real JSON array of objects (never a JSON-encoded string). '
+                + 'The user walks through them sequentially and can revisit previous steps.'
         }
     },
     required: ['interactions']
@@ -161,7 +163,10 @@ const TOOL_DESCRIPTION = 'Present an interactive user interaction. Each step has
     + 'The tool returns a JSON string with { "completed": boolean, "steps": [{ "title", "value"?, "comments"?, "skipped"? }] }. '
     + 'If the user cancels mid-interaction, the tool returns whatever has been collected so far with "completed": false. '
     + 'Use this to walk users through a series of pre-determined findings or decisions in a single tool call, '
-    + 'or to surface a single message/diff that should be shown inline in the chat.';
+    + 'or to surface a single message/diff that should be shown inline in the chat. '
+    + 'Arguments are validated strictly: pass nested values as real JSON arrays and objects, never as JSON-encoded strings. '
+    + 'A malformed step or option is rejected with an error naming what to fix, rather than being dropped - '
+    + 'so a step that asks for a decision can never be silently downgraded to an informational one.';
 
 @injectable()
 export class UserInteractionTool implements ToolProvider {
@@ -310,18 +315,14 @@ export class UserInteractionTool implements ToolProvider {
     }
 
     protected async handleInteraction(argString: string, ctx: ToolInvocationContext | undefined): Promise<string> {
-        try {
-            JSON.parse(argString);
-        } catch {
-            return JSON.stringify({ error: 'Invalid arguments' });
-        }
         // Validate via the shared parser so the tool only ever waits for steps that
-        // the renderer would actually render. Otherwise the agent could send a
-        // step the UI filters out, leaving the tool blocked on input forever.
-        const validated = parseUserInteractionArgs(argString);
-        if (!validated || validated.interactions.length === 0) {
-            return JSON.stringify({ error: 'No interactions provided' });
+        // the renderer would actually render, and so that anything the agent got
+        // wrong is reported back to it verbatim instead of being silently dropped.
+        const validation = parseUserInteractionArgs(argString);
+        if (!validation.ok) {
+            return JSON.stringify({ error: validation.error });
         }
+        const validated = validation.args;
 
         const toolCallId = ToolInvocationContext.getToolCallId(ctx);
         if (!toolCallId) {
