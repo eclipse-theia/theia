@@ -22,7 +22,7 @@ import {
 } from '../common/variable-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { SkillService } from './skill-service';
-import { parseSkillFile } from '../common/skill';
+import { parseSkillFile, Skill } from '../common/skill';
 
 export const SKILLS_VARIABLE: AIVariable = {
     id: 'skills',
@@ -39,6 +39,7 @@ export const SKILL_VARIABLE: AIVariable = {
 };
 
 export interface SkillSummary {
+    /** The name the model has to write to address the skill, i.e. {@link Skill.qualifiedName}. */
     name: string;
     description: string;
     location: string;
@@ -80,9 +81,18 @@ export class SkillsVariableContribution implements AIVariableContribution, AIVar
 
         // Handle plural skills variable
         if (request.variable.name === SKILLS_VARIABLE.name) {
-            return this.resolveSkillsVariable(this.skillService.getSkills(), SKILLS_VARIABLE);
+            return this.resolveSkillsVariable(this.skillService.getSkills().map(skill => this.toSkillSummary(skill)), SKILLS_VARIABLE);
         }
         return undefined;
+    }
+
+    /** Named by {@link Skill.qualifiedName}: that is what the model has to write to load it again. */
+    toSkillSummary(skill: Skill): SkillSummary {
+        return {
+            name: skill.qualifiedName,
+            description: skill.description,
+            location: skill.location
+        };
     }
 
     /**

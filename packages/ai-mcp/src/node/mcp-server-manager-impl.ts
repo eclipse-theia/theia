@@ -216,13 +216,22 @@ export class MCPServerManagerImpl implements MCPServerManager {
         return restartedByCaller || (!server.isRunning() && !server.isInFlight());
     }
 
+    /**
+     * The part of a description that decides whether a running server has to be restarted rather than
+     * merely updated in place. Anything that shapes the connection - or, for a local server, the
+     * process - belongs here; anything purely presentational does not.
+     */
     protected connectionDescription(description: MCPServerDescription): object {
         if (isRemoteMCPServerDescription(description)) {
             const { serverUrl, serverAuthToken, serverAuthTokenHeader, headers, oauth } = description;
             return { type: 'remote', serverUrl, serverAuthToken, serverAuthTokenHeader, headers, oauth };
         }
-        const { command, args, env } = description;
-        return { type: 'local', command, args, env };
+        const { command, args, env, cwd, pluginRoot, pluginData } = description;
+        // `cwd`, `pluginRoot` and `pluginData` all reach the spawned process, so changing any of them
+        // needs a new one. `installedAt` is not configuration at all: it is here because replacing a
+        // plugin's root deletes the directory a running child works out of while leaving that child's
+        // own configuration identical.
+        return { type: 'local', command, args, env, cwd, pluginRoot, pluginData, installedAt: description.registryMetadata?.installedAt };
     }
 
     protected async clearOAuthCredentialsIfConnectionScopeChanged(oldDescription: MCPServerDescription, newDescription: MCPServerDescription): Promise<void> {

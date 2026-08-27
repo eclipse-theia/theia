@@ -18,13 +18,10 @@
  * Drop-in replacement for `@theia/monaco-editor-core/esm/vs/nls` that plugs
  * Theia's localization system into every Monaco `localize` / `localize2` call.
  *
- * Webpack resolves the original module to this file via `resolve.alias` (see
- * `webpack-generator.ts`). We import from `nls.messages` directly so the alias
- * does not create a circular reference.
- *
- * The Monaco editor web worker (`editor.worker.js`) is built in a separate
- * webpack config without this alias, so it continues to use the original
- * `nls.js` module and is not affected.
+ * The bundler resolves the original module to this file via the `monacoNlsPlugin` of
+ * `@theia/bundle-plugin`, which the generated esbuild configuration registers for the
+ * browser build (see `bundler-generator.ts`). We import from `nls.messages` directly so
+ * the redirect does not create a circular reference.
  */
 
 // Re-export the message store — imported via a path that is NOT aliased.

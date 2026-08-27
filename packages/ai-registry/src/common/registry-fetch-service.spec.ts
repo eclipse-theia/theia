@@ -19,6 +19,7 @@ import { Container } from '@theia/core/shared/inversify';
 import { BackendRequestService, RequestContext, RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
 import { AIRegistryConfiguration } from './ai-registry-configuration';
 import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from './mcp/mcp-registry-entry-resolver';
+import { PluginRegistryEntryResolver, PluginRegistryEntryResolverImpl } from './plugin/plugin-registry-entry-resolver';
 import { SkillRegistryEntryResolver, SkillRegistryEntryResolverImpl } from './skill/skill-registry-entry-resolver';
 import { RegistryFetchService, RegistryFetchServiceImpl } from './registry-fetch-service';
 import { ILogger } from '@theia/core';
@@ -63,6 +64,20 @@ class TestRegistryFetchService extends RegistryFetchServiceImpl {
     protected override now(): number { return this.currentTime; }
 }
 
+/** Succeeds once and then fails, so that the "a failed refetch keeps the previous state" rule can be asserted. */
+class FailingOnSecondRequestService implements RequestService {
+    public callCount = 0;
+    constructor(private readonly responseBody: string) { }
+    async configure(): Promise<void> { /* no-op */ }
+    async resolveProxy(): Promise<string | undefined> { return undefined; }
+    async request(options: RequestOptions): Promise<RequestContext> {
+        this.callCount += 1;
+        return this.callCount === 1
+            ? { url: options.url, res: { headers: {}, statusCode: 200 }, buffer: new TextEncoder().encode(this.responseBody) }
+            : { url: options.url, res: { headers: {}, statusCode: 503 }, buffer: new Uint8Array() };
+    }
+}
+
 class FakeConfiguration extends AIRegistryConfiguration {
     constructor(private readonly toolName: string, private readonly baseUrl: string) { super(); }
     override getToolName(): string { return this.toolName; }
@@ -100,6 +115,22 @@ function payload(): string {
                 date: '2026-04-01',
                 installConfigs: [{ tool: 'theia-ide', installUrl: 'theia://install-skill?id=io.github.example/example-skill' }]
             }]
+        }],
+        plugins: [{
+            pluginId: 'io.github.example/example-plugin',
+            name: 'Example Plugin',
+            description: 'Example Agent Plugin',
+            version: '1.2.0',
+            source: { url: 'https://github.com/example/example-plugin.git' },
+            contentHash: 'def456def456',
+            containedSkills: [{ name: 'query-builder', description: 'Build SQL.', path: 'skills/query-builder' }],
+            containedMcpServers: [{ name: 'bigquery', transport: 'stdio' }],
+            approvals: [{
+                organizationId: 'theia',
+                date: '2026-04-01',
+                configHash: 'plugin-hash-v1',
+                installConfigs: [{ tool: 'theia-ide', installUrl: 'theia://install-plugin?id=io.github.example/example-plugin' }]
+            }]
         }]
     });
 }
@@ -115,6 +146,8 @@ describe('RegistryFetchService', () => {
         container.bind(MCPRegistryEntryResolver).toService(MCPRegistryEntryResolverImpl);
         container.bind(SkillRegistryEntryResolverImpl).toSelf().inSingletonScope();
         container.bind(SkillRegistryEntryResolver).toService(SkillRegistryEntryResolverImpl);
+        container.bind(PluginRegistryEntryResolverImpl).toSelf().inSingletonScope();
+        container.bind(PluginRegistryEntryResolver).toService(PluginRegistryEntryResolverImpl);
         container.bind(RegistryFetchServiceImpl).toSelf().inSingletonScope();
         container.bind(RegistryFetchService).toService(RegistryFetchServiceImpl);
         return container;
@@ -169,15 +202,72 @@ describe('RegistryFetchService', () => {
         });
     });
 
-    it('shares a single HTTP request between MCP and skill slices', async () => {
+    it('fetches and resolves Agent Plugin entries from the same per-tool JSON', async () => {
+        const request = new FakeRequestService(payload());
+        const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
+        const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
+
+        const plugins = await service.getPluginEntries();
+
+        expect(plugins).to.have.length(1);
+        expect(plugins[0]).to.deep.equal({
+            pluginId: 'io.github.example/example-plugin',
+            name: 'Example Plugin',
+            description: 'Example Agent Plugin',
+            version: '1.2.0',
+            sourceUrl: 'https://github.com/example/example-plugin.git',
+            contentHash: 'def456def456',
+            endorsements: [{ organizationId: 'theia', date: '2026-04-01' }],
+            containedSkills: [{ name: 'query-builder', description: 'Build SQL.', path: 'skills/query-builder' }],
+            containedMcpServers: [{ name: 'bigquery', transport: 'stdio' }]
+        });
+    });
+
+    it('returns an empty plugin slice when the registry response has none', async () => {
+        const request = new FakeRequestService(JSON.stringify({ mcp: [], skills: [] }));
+        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get<RegistryFetchService>(RegistryFetchService);
+
+        expect(await service.getPluginEntries()).to.deep.equal([]);
+    });
+
+    it('shares a single HTTP request between the MCP, skill and plugin slices', async () => {
         const request = new FakeRequestService(payload());
         const config = new FakeConfiguration('theia-ide', 'https://example.test/api/v1/');
         const service = buildContainer(request, config).get<RegistryFetchService>(RegistryFetchService);
 
         await service.getEntries();
         await service.getSkillEntries();
+        await service.getPluginEntries();
 
         expect(request.callCount).to.equal(1);
+    });
+
+    it('re-resolves the plugin slice after a forced refetch', async () => {
+        const request = new FakeRequestService(payload());
+        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get<RegistryFetchService>(RegistryFetchService);
+
+        const first = await service.getPluginEntries();
+        const refreshed = await service.getPluginEntries(true);
+
+        expect(request.callCount).to.equal(2);
+        expect(refreshed).to.not.equal(first);
+        expect(refreshed).to.deep.equal(first);
+    });
+
+    it('leaves the previously cached plugin entries intact when a refetch fails', async () => {
+        const request = new FailingOnSecondRequestService(payload());
+        const service = buildContainer(request, new FakeConfiguration('theia-ide', 'https://example.test/api/v1/')).get<RegistryFetchService>(RegistryFetchService);
+        const plugins = await service.getPluginEntries();
+
+        let caught: Error | undefined;
+        try {
+            await service.getPluginEntries(true);
+        } catch (error) {
+            caught = error as Error;
+        }
+
+        expect(caught?.message).to.match(/HTTP 503/);
+        expect(await service.getPluginEntries()).to.deep.equal(plugins);
     });
 
     it('serves cached entries on a second call without issuing a new request', async () => {

@@ -28,10 +28,10 @@ import {
 import { mergeReasoningSettings } from '@theia/ai-core/lib/browser/frontend-language-model-service';
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
-import { FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
+import { AI_SHOW_SETTINGS_COMMAND, FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
 import { AISettingsService, PromptService } from '@theia/ai-core/lib/common';
 import { CommandService, DisposableCollection, Emitter, InMemoryResources, MessageService, URI, nls, Disposable, ILogger } from '@theia/core';
-import { CommonCommands, ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -483,6 +483,45 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     /** Updates the active chat session's `commonSettings.reasoning`; pass `undefined` to clear. */
+    /**
+     * Re-reads the persisted per-agent reasoning selection and mirrors it into the session, so a change made
+     * outside this widget (the agent detail's Reasoning row, or its reset) shows up in the selector instead of
+     * only taking effect on the next session.
+     */
+    protected async refreshSavedReasoning(agentId: string | undefined): Promise<void> {
+        if (!agentId) {
+            return;
+        }
+        const savedReasoning = (await this.aiSettingsService.getAgentSettings(agentId))?.reasoning;
+        if ((savedReasoning?.level ?? undefined) === (this.savedReasoning?.level ?? undefined)) {
+            return;
+        }
+        this.savedReasoning = savedReasoning ? { ...savedReasoning } : undefined;
+        // Clearing the setting drops the session override too, so the selector falls back to the
+        // preference default or the model's own, matching a freshly opened session.
+        this.applyReasoningToSession(savedReasoning);
+        this.update();
+    }
+
+    /**
+     * Re-reads the persisted server tool selections, which the agent detail can change too. Adopts them into
+     * the live selection only while the user has none of their own pending here, so an external change never
+     * discards edits that are waiting to be saved; the baseline is updated either way, so the "unsaved
+     * changes" state stays measured against what is actually stored.
+     */
+    protected async refreshSavedServerTools(agentId: string | undefined): Promise<void> {
+        if (!agentId) {
+            return;
+        }
+        const saved = (await this.aiSettingsService.getAgentSettings(agentId))?.serverToolSelections;
+        const adoptable = !this.hasServerToolChangesFromSaved();
+        this.savedServerToolSelections = saved ? { ...saved } : undefined;
+        if (adoptable) {
+            this.serverToolSelections = saved ? { ...saved } : {};
+            this.update();
+        }
+    }
+
     protected applyReasoningToSession(reasoning: ReasoningSettings | undefined): void {
         const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
         if (!session) {
@@ -1079,6 +1118,10 @@ export class AIChatInputWidget extends ReactWidget {
         this.toDispose.push(this.aiSettingsService.onDidChange(() => {
             this.updateResolvedDefaultModel();
             this.updateReasoningSupport(this.receivingAgent?.agentId);
+            // The level itself is persisted per agent and also editable outside chat (the agent detail's
+            // Reasoning row), so re-read it rather than only refreshing which levels the model supports.
+            this.refreshSavedReasoning(this.receivingAgent?.agentId);
+            this.refreshSavedServerTools(this.receivingAgent?.agentId);
         }));
         this.loadAvailableModels().then(() => this.update());
         this.updateResolvedDefaultModel();
@@ -1209,7 +1252,7 @@ export class AIChatInputWidget extends ReactWidget {
             percentage
         );
         const summarizeAction = nls.localize('theia/ai/chat-ui/tokenUsageWarningSummarizeAction', 'Summarize Current Session');
-        const newSessionAction = nls.localize('theia/ai/chat-ui/tokenUsageWarningNewSessionAction', 'Start New Chat');
+        const newSessionAction = nls.localizeByDefault('Start New Chat');
         const openSettingsAction = nls.localizeByDefault('Open Settings');
         const selected = await this.messageService.warn(message, summarizeAction, newSessionAction, openSettingsAction);
         if (selected === summarizeAction) {
@@ -1221,8 +1264,11 @@ export class AIChatInputWidget extends ReactWidget {
                 this.logger.error(`Failed to execute '${AI_CHAT_HOME.id}' from token usage warning`, error);
             });
         } else if (selected === openSettingsAction) {
-            this.commandService.executeCommand(CommonCommands.OPEN_PREFERENCES.id, CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE).catch(error => {
-                this.logger.error(`Failed to execute '${CommonCommands.OPEN_PREFERENCES.id}' from token usage warning`, error);
+            // Deep-links to the threshold preference wherever AI settings live: `@theia/ai-ide` routes this
+            // to the AI Configuration view, and the `@theia/ai-core` default opens the Settings UI on it.
+            // Going through the command keeps this working in apps without @theia/ai-ide.
+            this.commandService.executeCommand(AI_SHOW_SETTINGS_COMMAND.id, CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE).catch(error => {
+                this.logger.error(`Failed to execute '${AI_SHOW_SETTINGS_COMMAND.id}' from token usage warning`, error);
             });
         }
     }
@@ -2844,7 +2890,8 @@ const ReasoningSelector: React.FunctionComponent<ReasoningSelectorProps> = React
     return (
         <span onMouseEnter={hoverHandler(hoverService, title)}>
             <SelectComponent
-                className={`theia-ChatInput-ReasoningSelector reasoning-level-${effectiveLevel}${disabled ? ' disabled' : ''}`}
+                // `theia-ReasoningLevelSelector` carries the shared per-level glyphs; the ChatInput class the toolbar sizing.
+                className={`theia-ChatInput-ReasoningSelector theia-ReasoningLevelSelector reasoning-level-${effectiveLevel}${disabled ? ' disabled' : ''}`}
                 options={options}
                 defaultValue={effectiveLevel}
                 onChange={handleChange}

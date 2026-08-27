@@ -358,12 +358,15 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
                 };
             } else {
                 // Create LocalMCPServerDescription by picking only local-specific properties
-                const { command, args, env, autostart, deferLoading } = description;
+                const { command, args, env, cwd, pluginRoot, pluginData, autostart, deferLoading } = description;
                 filteredDescription = {
                     name,
                     command,
                     ...(args && { args }),
                     ...(env && { env }),
+                    ...(cwd && { cwd }),
+                    ...(pluginRoot && { pluginRoot }),
+                    ...(pluginData && { pluginData }),
                     autostart: autostart ?? true,
                     ...(registryMetadata && { registryMetadata }),
                     ...(deferLoading !== undefined && { deferLoading }),

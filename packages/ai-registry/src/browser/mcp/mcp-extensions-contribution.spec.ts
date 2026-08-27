@@ -192,6 +192,32 @@ describe('MCPExtensionsContribution.resolveInstalled', () => {
         expect(entries[0].state).to.deep.equal({ kind: 'installed-link-stale' });
     });
 
+    it('never surfaces a server owned by an installed Agent Plugin: the plugin is the installed artifact, not its components', async () => {
+        const prefs = new FakePreferenceService();
+        await prefs.set(MCP_SERVERS_PREF, {
+            example: {
+                command: 'npx',
+                args: ['-y', 'example-mcp'],
+                registryMetadata: {
+                    serverId: exampleRegistryEntry.serverId,
+                    version: exampleRegistryEntry.version,
+                    configHash: exampleRegistryEntry.configHash
+                }
+            },
+            bigquery: {
+                command: 'node',
+                args: ['server.js'],
+                registryMetadata: { pluginId: 'io.github.acme/bigquery-data-analytics' }
+            }
+        });
+        const fetch = new StubRegistryFetchService([exampleRegistryEntry]);
+        const contribution = buildContainer(prefs, fetch).get(MCPExtensionsContribution);
+
+        const entries = [...await contribution.resolveInstalled()] as MCPInstalledEntry[];
+
+        expect(entries.map(e => e.local.name)).to.deep.equal(['example']);
+    });
+
     it('skips malformed stored entries whose `command` is not a string — mere key presence is not enough', async () => {
         const prefs = new FakePreferenceService();
         await prefs.set(MCP_SERVERS_PREF, {
@@ -286,6 +312,28 @@ describe('MCPExtensionsContribution.resolveSearchResults', () => {
 
         expect(exampleResult, 'registry entry must surface in search results').to.not.be.undefined;
         expect((exampleResult!.element as MCPSearchResultEntry).state).to.deep.equal({ kind: 'installed-link-stale' });
+    });
+
+    it('does not let a plugin-owned server mark a standalone registry entry as installed', async () => {
+        // The plugin's server happens to be stored under the registry entry's local name and with a
+        // matching config. It must not be considered when classifying that entry: it belongs to the
+        // plugin, is a different artifact, and the standalone entry is still installable on its own.
+        const prefs = new FakePreferenceService();
+        await prefs.set(MCP_SERVERS_PREF, {
+            example: {
+                command: 'npx',
+                args: ['-y', 'example-mcp'],
+                registryMetadata: { pluginId: 'io.github.acme/bigquery-data-analytics' }
+            }
+        });
+        const fetch = new StubRegistryFetchService([exampleRegistryEntry]);
+        const contribution = buildContainer(prefs, fetch).get(MCPExtensionsContribution);
+
+        const results = [...await contribution.resolveSearchResults('example', { verifiedOnly: false })];
+        const exampleResult = results.find(r => (r.element as MCPSearchResultEntry).entry.serverId === exampleRegistryEntry.serverId);
+
+        expect(exampleResult, 'registry entry must surface in search results').to.not.be.undefined;
+        expect((exampleResult!.element as MCPSearchResultEntry).state).to.deep.equal({ kind: 'not-installed' });
     });
 
     it('omits unverified entries when verifiedOnly is true and keeps verified ones', async () => {

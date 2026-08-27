@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { Emitter } from '@theia/core/lib/common/event';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { ScmService } from './scm-service';
 import { ScmHistoryItem, ScmHistoryItemRef, ScmHistoryProvider, ScmHistoryOptions } from './scm-provider';
@@ -26,6 +26,9 @@ import { getRefColorIndex } from './scm-history-graph-helpers';
 import { ScmPreferences } from '../common/scm-preferences';
 
 export const PAGE_SIZE = 50;
+
+/** How the changes of an expanded history item are laid out. */
+export type ScmHistoryViewMode = 'list' | 'tree';
 
 export const ScmHistoryGraphModelProvider = Symbol('ScmHistoryGraphModelProvider');
 /**
@@ -63,9 +66,14 @@ export class ScmHistoryGraphModel {
     protected _provider: ScmHistoryProvider | undefined;
     /** Explicitly picked ref ids to filter the graph by; `undefined` = auto (current/remote/base). */
     protected _historyItemRefFilter: string[] | undefined;
+    protected _viewMode: ScmHistoryViewMode = 'list';
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
+
+    protected readonly onDidRequestRevealEmitter = new Emitter<number>();
+    /** Fired with the index of an entry the view should scroll to and select. */
+    readonly onDidRequestReveal: Event<number> = this.onDidRequestRevealEmitter.event;
 
     protected cancelSource = new CancellationTokenSource();
 
@@ -74,6 +82,7 @@ export class ScmHistoryGraphModel {
         this.toDispose.pushAll([
             Disposable.create(() => this.toDisposeOnProviderChange.dispose()),
             this.onDidChangeEmitter,
+            this.onDidRequestRevealEmitter,
             this.scmService.onDidChangeSelectedRepository(() => this.refresh()),
             this.scmPreferences.onPreferenceChanged(e => {
                 if (e.preferenceName === 'scm.graph.pageSize') {
@@ -96,6 +105,23 @@ export class ScmHistoryGraphModel {
     /** The explicitly picked ref ids filtering the graph, or `undefined` in auto mode. */
     get historyItemRefFilter(): readonly string[] | undefined {
         return this._historyItemRefFilter;
+    }
+
+    /** How the changes of an expanded history item are laid out. */
+    get viewMode(): ScmHistoryViewMode {
+        return this._viewMode;
+    }
+
+    /**
+     * Switches how the changes of an expanded history item are laid out. This
+     * only affects rendering, so the loaded history is kept as is.
+     */
+    setViewMode(viewMode: ScmHistoryViewMode): void {
+        if (this._viewMode === viewMode) {
+            return;
+        }
+        this._viewMode = viewMode;
+        this.onDidChangeEmitter.fire();
     }
 
     /**
@@ -198,6 +224,35 @@ export class ScmHistoryGraphModel {
         this._hasMore = false;
 
         this.loadPage();
+    }
+
+    /**
+     * Locates the commit the current history item ref points at, loading
+     * further pages while it is outside the loaded range, and asks the view to
+     * reveal it. Returns its index, or `undefined` when there is no current
+     * history item ref or the commit is not part of the graph (e.g. the ref is
+     * excluded by the filter).
+     */
+    async revealCurrentHistoryItem(): Promise<number | undefined> {
+        let index = this.indexOfCurrentHistoryItem();
+        while (index === undefined && this._hasMore) {
+            const loadedBefore = this._entries.length;
+            await this.loadMore();
+            if (this._entries.length === loadedBefore) {
+                // The page added nothing new; paging further cannot find the item.
+                break;
+            }
+            index = this.indexOfCurrentHistoryItem();
+        }
+        if (index !== undefined) {
+            this.onDidRequestRevealEmitter.fire(index);
+        }
+        return index;
+    }
+
+    protected indexOfCurrentHistoryItem(): number | undefined {
+        const index = this._entries.findIndex(entry => entry.isCurrent);
+        return index === -1 ? undefined : index;
     }
 
     async loadMore(): Promise<void> {

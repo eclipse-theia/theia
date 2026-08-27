@@ -21,6 +21,8 @@ import { VSXExtensionsCommands } from '@theia/vsx-registry/lib/browser/vsx-exten
 import { AUTO_UPDATE_PREF, AutoUpdateMode, RegistryArtifactKind } from '../../common/ai-registry-preferences';
 import { RegistryFetchService } from '../../common/registry-fetch-service';
 import { MCPInstallService } from '../mcp/mcp-install-service';
+import { PluginInstallService } from '../plugin/plugin-install-service';
+import { PluginInstaller } from '../plugin/plugin-installer';
 import { SkillInstallService } from '../skill/skill-install-service';
 import { RegistryAutoUpdatePolicy } from './registry-auto-update-policy';
 
@@ -37,11 +39,11 @@ export interface PendingUpdate {
 }
 
 /**
- * Checks the registry for updates to installed skills and MCP servers and applies or
- * offers them according to the effective {@link RegistryAutoUpdatePolicy}.
+ * Checks the registry for updates to installed skills, MCP servers and Agent Plugins and applies
+ * or offers them according to the effective {@link RegistryAutoUpdatePolicy}.
  *
  * Drifted artifacts are deliberately excluded in every mode: they classify as `fix-skill` /
- * `fix-config` rather than `installed-from-registry`, so they never reach
+ * `fix-config` / `fix-plugin` rather than `installed-from-registry`, so they never reach
  * {@link collectPending} and the user resolves them with Fix in the Extensions view.
  *
  * Updates go through the install services directly rather than the contributions' action
@@ -58,6 +60,12 @@ export class RegistryAutoUpdateService {
 
     @inject(MCPInstallService)
     protected readonly mcpInstallService: MCPInstallService;
+
+    @inject(PluginInstallService)
+    protected readonly pluginInstallService: PluginInstallService;
+
+    @inject(PluginInstaller)
+    protected readonly pluginInstaller: PluginInstaller;
 
     @inject(RegistryAutoUpdatePolicy)
     protected readonly policy: RegistryAutoUpdatePolicy;
@@ -102,10 +110,11 @@ export class RegistryAutoUpdateService {
      * Forces a registry refresh first - the cached response would not surface anything new.
      */
     protected async collectPending(): Promise<PendingUpdate[]> {
-        // One refresh serves both slices: `getEntries(true)` refetches the shared response
-        // and invalidates both caches, so the skill call below resolves against it.
+        // One refresh serves every slice: `getEntries(true)` refetches the shared response and
+        // invalidates all the caches, so the calls below resolve against it.
         const mcpEntries = await this.fetchService.getEntries(true);
         const skillEntries = await this.fetchService.getSkillEntries();
+        const pluginEntries = await this.fetchService.getPluginEntries();
         const pending: PendingUpdate[] = [];
 
         for (const info of await this.skillInstallService.listInstalledSkills()) {
@@ -151,6 +160,33 @@ export class RegistryAutoUpdateService {
                 promptMessage: nls.localize('theia/ai-registry/autoUpdate/mcpAvailable', 'MCP server "{0}" has an update available.', entry.name),
                 successMessage: nls.localize('theia/ai-registry/mcp/updated', 'Updated MCP server "{0}".', entry.name),
                 apply: () => this.mcpInstallService.update(entry)
+            });
+        }
+
+        for (const info of await this.pluginInstallService.listInstalledPlugins()) {
+            const state = this.pluginInstallService.classifyInstalledPlugin(info, pluginEntries);
+            if (state.kind !== 'installed-from-registry' || !state.updateAvailable) {
+                continue;
+            }
+            const entry = pluginEntries.find(candidate => candidate.pluginId === info.pluginId);
+            if (!entry) {
+                continue;
+            }
+            const mode = this.policy.getMode('plugin', entry.pluginId);
+            if (mode === 'off') {
+                continue;
+            }
+            pending.push({
+                kind: 'plugin',
+                label: entry.name,
+                mode,
+                promptMessage: nls.localize('theia/ai-registry/autoUpdate/pluginAvailable', 'Agent Plugin "{0}" has an update available.', entry.name),
+                successMessage: nls.localize('theia/ai-registry/plugin/updated', 'Updated Agent Plugin "{0}".', entry.name),
+                // The same call the Update button makes, so the download is verified against the
+                // endorsed hash and the plugin's MCP servers are re-registered afterwards. A hash
+                // mismatch still opens its dialog: replacing content the registry cannot vouch for
+                // is the user's decision whether or not the update was automatic.
+                apply: () => this.pluginInstaller.install(entry, { replaceExisting: true, confirm: false }).then(() => undefined)
             });
         }
         return pending;
@@ -236,7 +272,7 @@ export class RegistryAutoUpdateService {
         const answer = await this.messageService.info(
             `${nls.localize(
                 'theia/ai-registry/autoUpdate/defaultPrompt',
-                'Update skills and MCP servers from the AI registry automatically from now on?'
+                'Update skills, MCP servers and Agent Plugins from the AI registry automatically from now on?'
             )} ${this.settingsChangeHint()}`,
             enable, keepAsking, never
         );

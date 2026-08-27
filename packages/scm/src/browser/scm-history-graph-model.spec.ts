@@ -404,3 +404,134 @@ describe('ScmHistoryGraphModel - ref colors and current item', () => {
         expect(model.entries.every(e => !e.isCurrent)).to.be.true;
     });
 });
+
+describe('ScmHistoryGraphModel - view mode', () => {
+
+    it('shows the changes of a history item as a list by default', () => {
+        const { model } = createModel(new StubHistoryProvider());
+        expect(model.viewMode).to.equal('list');
+    });
+
+    it('switches the view mode', () => {
+        const { model } = createModel(new StubHistoryProvider());
+        model.setViewMode('tree');
+        expect(model.viewMode).to.equal('tree');
+    });
+
+    it('notifies listeners when the view mode changes', () => {
+        const { model } = createModel(new StubHistoryProvider());
+        let changes = 0;
+        model.onDidChange(() => changes++);
+
+        model.setViewMode('tree');
+
+        expect(changes).to.equal(1);
+    });
+
+    it('does not notify listeners when the view mode is unchanged', () => {
+        const { model } = createModel(new StubHistoryProvider());
+        model.setViewMode('tree');
+        let changes = 0;
+        model.onDidChange(() => changes++);
+
+        model.setViewMode('tree');
+
+        expect(changes).to.equal(0);
+    });
+
+    it('does not reload history when the view mode changes', async () => {
+        const provider = new StubHistoryProvider();
+        provider.pages = [makeItems(1, 10)];
+        const { model, loadPage } = createModel(provider);
+        await loadPage();
+        const requestsBefore = provider.receivedOptions.length;
+
+        model.setViewMode('tree');
+        await nextTick();
+
+        expect(provider.receivedOptions).to.have.length(requestsBefore);
+    });
+});
+
+describe('ScmHistoryGraphModel - revealing the current history item', () => {
+
+    function createProviderAt(revision: string): StubHistoryProvider {
+        const provider = new StubHistoryProvider();
+        provider.currentHistoryItemRef = { id: 'refs/heads/main', name: 'main', revision };
+        return provider;
+    }
+
+    it('requests a reveal of the index of the current history item', async () => {
+        const provider = createProviderAt('c3');
+        provider.pages = [makeItems(1, 10)];
+        const { model, loadPage } = createModel(provider);
+        await loadPage();
+        const revealed: number[] = [];
+        model.onDidRequestReveal(revealedIndex => revealed.push(revealedIndex));
+
+        const index = await model.revealCurrentHistoryItem();
+
+        expect(index).to.equal(2);
+        expect(revealed).to.deep.equal([2]);
+    });
+
+    it('loads further pages until the current history item is found', async () => {
+        const provider = createProviderAt('c55');
+        provider.pages = [makeItems(1, PAGE_SIZE), makeItems(PAGE_SIZE + 1, PAGE_SIZE)];
+        const { model, loadPage } = createModel(provider);
+        await loadPage();
+        expect(model.entries).to.have.length(PAGE_SIZE);
+
+        const index = await model.revealCurrentHistoryItem();
+
+        expect(index).to.equal(54);
+        expect(model.entries).to.have.length(2 * PAGE_SIZE);
+    });
+
+    it('does not request a reveal when the current history item is not in the history', async () => {
+        const provider = createProviderAt('not-loaded');
+        provider.pages = [makeItems(1, 10)];
+        const { model, loadPage } = createModel(provider);
+        await loadPage();
+        const revealed: number[] = [];
+        model.onDidRequestReveal(revealedIndex => revealed.push(revealedIndex));
+
+        const index = await model.revealCurrentHistoryItem();
+
+        expect(index).to.be.undefined;
+        expect(revealed).to.be.empty;
+    });
+
+    it('does not request a reveal when the provider has no current history item ref', async () => {
+        const provider = new StubHistoryProvider();
+        provider.pages = [makeItems(1, 10)];
+        const { model, loadPage } = createModel(provider);
+        await loadPage();
+        const revealed: number[] = [];
+        model.onDidRequestReveal(revealedIndex => revealed.push(revealedIndex));
+
+        const index = await model.revealCurrentHistoryItem();
+
+        expect(index).to.be.undefined;
+        expect(revealed).to.be.empty;
+    });
+
+    it('stops paging when further pages add no new items', async () => {
+        const provider = createProviderAt('never-returned');
+        const page = makeItems(1, PAGE_SIZE);
+        // A provider that keeps returning the same full page: `hasMore` stays true
+        // forever, so only a no-progress guard can end the search.
+        provider.provideHistoryItems = async options => {
+            provider.receivedOptions.push(options);
+            return page;
+        };
+        const { model, loadPage } = createModel(provider);
+        await loadPage();
+        expect(model.hasMore).to.be.true;
+
+        const index = await model.revealCurrentHistoryItem();
+
+        expect(index).to.be.undefined;
+        expect(model.entries).to.have.length(PAGE_SIZE);
+    });
+});
