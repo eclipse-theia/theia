@@ -30,7 +30,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/terminal-manager-frontend-module"
+      "frontend": "lib/browser/terminal-manager-frontend-module",
+      "secondaryWindow": "lib/browser/terminal-manager-frontend-module"
     }
   ],
   "publishConfig": {
