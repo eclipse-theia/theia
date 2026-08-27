@@ -34,6 +34,7 @@ import { loadManifest } from './plugin-manifest-loader';
 import { EnvExtImpl } from '../../../plugin/env';
 import { DebugExtImpl } from '../../../plugin/debug/debug-ext';
 import { LocalizationExtImpl } from '../../../plugin/localization-ext';
+import { TelemetryExtImpl } from '../../../plugin/telemetry-ext';
 import pluginHostModule from './worker-plugin-module';
 import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
 
@@ -162,6 +163,7 @@ const messageRegistryExt = container.get(MessageRegistryExt);
 const clipboardExt = container.get(ClipboardExt);
 const webviewExt = container.get(WebviewsExtImpl);
 const localizationExt = container.get(LocalizationExtImpl);
+const telemetryExt = container.get(TelemetryExtImpl);
 const storageProxy = container.get(KeyValueStorageProxy);
 
 const apiFactory = createAPIFactory(
@@ -175,7 +177,8 @@ const apiFactory = createAPIFactory(
     messageRegistryExt,
     clipboardExt,
     webviewExt,
-    localizationExt
+    localizationExt,
+    telemetryExt
 );
 let defaultApi: typeof theia;
 

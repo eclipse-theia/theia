@@ -4,6 +4,14 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.76.0 - tbd
+
+- [plugin-ext] gated plugin telemetry on the `telemetry.telemetryLevel` preference: `env.isTelemetryEnabled`, `env.onDidChangeTelemetryEnabled` and the loggers returned by `env.createTelemetryLogger` now follow `@theia/telemetry`'s `TelemetryConsentProvider` with the same level semantics as VS Code, instead of being permanently disabled. The level is seeded into the plugin host before any plugin activates, so telemetry logged from an `activate()` is delivered. Contributes to [#17847](https://github.com/eclipse-theia/theia/issues/17847) [#17963](https://github.com/eclipse-theia/theia/pull/17963)
+
+<a name="breaking_changes_1.76.0">[Breaking Changes:](#breaking_changes_1.76.0)</a>
+
+- [plugin-ext] added `@theia/telemetry` as a dependency and made `TelemetryExtImpl` a DI-bound singleton of the plugin host containers, passed to `createAPIFactory` as a new trailing `telemetryExt` argument. `TelemetryExtImpl` now carries a `TelemetryLevel` rather than a boolean: the `isTelemetryEnabled` setter and the `_isTelemetryEnabled` field were replaced by `setLevel(level)` and the `level` getter, and `TelemetryLogger`'s second constructor argument and its `telemetryEnabled` property were replaced by a `TelemetryLevel`-valued `level`. `TelemetryLogger` also takes the level-change `Event` as its third constructor argument and unsubscribes from it on `dispose`. A boolean cannot express level `error`, where errors are collected but usage is not [#17963](https://github.com/eclipse-theia/theia/pull/17963)
+
 ## 1.75.0 - 8/27/2026
 
 - [ai] added `gemini-3.7-flash` to the default models [#17947](https://github.com/eclipse-theia/theia/pull/17947) - Contributed on behalf of STMicroelectronics
