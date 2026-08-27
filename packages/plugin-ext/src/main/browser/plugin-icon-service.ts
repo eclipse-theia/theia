@@ -21,7 +21,8 @@ import { URI } from '@theia/core/shared/vscode-uri';
 import { MonacoIconRegistry } from '@theia/monaco/lib/browser/monaco-icon-registry';
 import * as path from 'path';
 import { IconContribution, DeployedPlugin, IconDefinition } from '../../common/plugin-protocol';
-import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
+import { PLUGINS_BASE_PATH, PLUGINS_SCHEME } from '@theia/plugin-utils/lib/common/constants';
+import { encodePluginAssetPath } from '@theia/plugin-utils/lib/common/plugin-model';
 
 @injectable()
 export class PluginIconService implements Disposable {
@@ -49,7 +50,7 @@ export class PluginIconService implements Disposable {
     }
 
     protected registerFontIcon(contribution: IconContribution, defaultIcon: IconDefinition): void {
-        const location = this.toPluginUrl(contribution.extensionId, getIconRelativePath(URI.parse(defaultIcon.location).path));
+        const location = this.toPluginUrl(contribution.extensionId, this.toPluginRelativePath(URI.parse(defaultIcon.location)));
         const format = getFileExtension(location.path);
         const fontId = getFontId(contribution.extensionId, location.path);
 
@@ -67,9 +68,21 @@ export class PluginIconService implements Disposable {
         this.iconRegistry.registerIcon(contribution.id, { id: defaultIconId }, contribution.description);
     }
 
+    /**
+     * With a backend the font sits in the extracted VSIX, so the path has to be cut at its
+     * `extension` segment. Browser-only emits `hostedPlugin:/<id>/<path>` instead, where everything
+     * past the plugin id already is the path relative to the plugin root.
+     */
+    protected toPluginRelativePath(fontUri: URI): string {
+        if (fontUri.scheme === PLUGINS_SCHEME) {
+            return fontUri.path.split('/').slice(2).join('/');
+        }
+        return getIconRelativePath(fontUri.path);
+    }
+
     protected toPluginUrl(id: string, relativePath: string): URI {
         return URI.from(new Endpoint({
-            path: `${PLUGINS_BASE_PATH}/${this.formatExtensionId(id)}/${encodeURIComponent(relativePath)}`
+            path: `${PLUGINS_BASE_PATH}/${this.formatExtensionId(id)}/${encodePluginAssetPath(relativePath)}`
         }).getRestUrl().toComponents());
     }
 
