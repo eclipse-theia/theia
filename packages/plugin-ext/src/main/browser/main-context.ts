@@ -68,6 +68,7 @@ import { UriMainImpl } from './uri-main';
 import { LoggerMainImpl } from './logger-main';
 import { McpServerDefinitionRegistryMainImpl } from './lm-main';
 import { LanguageModelToolsMainImpl } from './lm-tool-main';
+import { TelemetryMainImpl } from './telemetry-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const loggerMain = new LoggerMainImpl(container);
@@ -215,4 +216,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const languageModelToolsMain = new LanguageModelToolsMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.LM_TOOLS_MAIN, languageModelToolsMain);
+
+    const telemetryMain = new TelemetryMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.TELEMETRY_MAIN, telemetryMain);
 }

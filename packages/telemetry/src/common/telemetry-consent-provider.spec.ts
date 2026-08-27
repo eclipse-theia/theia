@@ -17,24 +17,11 @@
 import { expect } from 'chai';
 import { Emitter } from '@theia/core/lib/common';
 import { Container } from '@theia/core/shared/inversify';
-import {
-    PreferenceTelemetryConsentProvider, TelemetryConsentProvider, isKindAllowedByLevel
-} from './telemetry-consent-provider';
+import { PreferenceTelemetryConsentProvider, TelemetryConsentProvider } from './telemetry-consent-provider';
 import { TELEMETRY_FILTERS, TELEMETRY_LEVEL, TelemetryPreferences } from './telemetry-preferences';
 import { TelemetryLevel } from './telemetry-types';
 
 describe('telemetry consent provider', () => {
-    it('maps telemetry levels to event kinds', () => {
-        const kinds = ['usage', 'error', 'crash'] as const;
-        const levels: TelemetryLevel[] = ['off', 'crash', 'error', 'all'];
-        expect(levels.map(level => kinds.filter(kind => isKindAllowedByLevel(level, kind)))).to.deep.equal([
-            [],
-            ['crash'],
-            ['error', 'crash'],
-            ['usage', 'error', 'crash']
-        ]);
-    });
-
     it('applies and reports preference changes before readiness', () => {
         const changes = new Emitter<never>();
         const ready = new Promise<void>(() => undefined);
