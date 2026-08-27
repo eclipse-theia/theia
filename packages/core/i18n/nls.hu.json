@@ -108,6 +108,9 @@
             "title": "Jelzi, hogy a modell támogatja-e a prompt cache-t. Alapértelmezés szerint `true`."
           }
         },
+        "customProvider": {
+          "label": "{0} (Egyéni)"
+        },
         "models": {
           "description": "Használni kívánt hivatalos Anthropic modellek"
         }
@@ -148,6 +151,9 @@
         "clipboardSeparator": "vágólap",
         "confirmApplySuggestion": "A {0} fájl megváltozott, mióta ez a javaslat készült. Biztosan alkalmazni szeretné a változást?",
         "confirmRevertSuggestion": "A {0} fájl megváltozott, mióta ez a javaslat készült. Biztosan vissza szeretné állítani a változást?",
+        "contextSummaryVariable": {
+          "description": "A jelenlegi csevegési munkamenet kontextusában található minden elem JSON-formátumú összefoglalása, amely felsorolja az egyes elemek típusát és azonosítóit."
+        },
         "couldNotFindMatchingLM": "Nem találtunk megfelelő nyelvi modellt. Kérjük, ellenőrizze a beállításokat!",
         "couldNotFindReadyLMforAgent": "Nem találtunk kész nyelvi modellt az agent {0}hez. Kérjük, ellenőrizze a beállításokat!",
         "customAgents": {
@@ -385,7 +391,6 @@
         "tokenUsageWarning": "Elérte a tokenhasználati figyelmeztető küszöbértéket.",
         "tokenUsageWarningEnabled": "Ezt a beállítást használja, ha értesítést szeretne kapni, amikor egy csevegési munkamenet tokenhasználata átlép egy beállított küszöbértéket. Ehhez szükséges, hogy a nyelvi modell szolgáltatója jelentse a tokenhasználatot.",
         "tokenUsageWarningMessage": "A csevegési munkamenet tokenhasználata elérte a kontextusablak {0} %-át. Fontolja meg a munkamenet összefoglalását vagy egy új munkamenet indítását, hogy elkerülje a korlát elérése.",
-        "tokenUsageWarningNewSessionAction": "Új csevegés indítása",
         "tokenUsageWarningSummarizeAction": "A jelenlegi munkamenet összefoglalása",
         "tokenUsageWarningThresholdPercentage": "A modell kontextusablakának százalékos aránya, amelynél a tokenhasználati figyelmeztetés aktiválódik. Ez az érték határozza meg a tokenhasználati jelző figyelmeztető/hibajelző színsávjait is. Jelenleg egy feltételezett 200k-s kontextusablakhoz viszonyítva határozza meg; amint elérhetővé válik, a modellre vonatkozó tényleges kontextusméretet fogja használni.",
         "toolcall-part-renderer": {
@@ -443,7 +448,6 @@
         },
         "currentDirectory": "aktuális könyvtár",
         "differentAgentRequestWarning": "Az előző csevegési kérést egy másik ügynök kezelte. Claude Code nem látja ezeket a többi üzeneteket.",
-        "edit": "{0} szerkesztése",
         "editAutomatically": "Automatikus szerkesztés",
         "editing": "Szerkesztés",
         "editsCount": "{0} szerkesztések",
@@ -619,9 +623,6 @@
           "description": "A kurzor aktuális pozíciója utáni kód. Csak kódkiegészítési kontextusban érhető el."
         }
       },
-      "configuration": {
-        "selectItem": "Kérjük, válasszon egy elemet."
-      },
       "copilot": {
         "auth": {
           "aiConfiguration": "AI konfiguráció",
@@ -667,30 +668,44 @@
         "agentConfiguration": {
           "addCustomAgent": "Egyéni ügynök hozzáadása",
           "availableCapabilities": "Elérhető funkciók",
-          "completionNotificationDescriptionPrefix": "Válassza ki, hogyan szeretne értesítést kapni, amikor ez az ügynök a figyelmét igényli, azaz befejezi a feladatát, vagy bevitelt kér Öntől. Az „Alapértelmezett” beállítás a ",
+          "completionNotificationIntro": "Hogyan szeretne értesítést kapni, amikor ez az ügynök a figyelmét igényli (befejezi a feladatát vagy bevitelt kér)? Az „Alapértelmezett” beállítás a globális ",
           "defaultNotificationDescription": "A globális AI értesítési beállítást használja.",
           "enableAgent": "Ügynök engedélyezése",
-          "llmRequirements": "LLM követelmények",
           "notUsedInPrompt": "A parancssorban nem használatos.",
           "notUsedInPromptTooltip": "Ezt a változót az ügynök deklarálja, de a jelenlegi prompt sablonban nem hivatkoznak rá.",
           "notificationSettings": "Értesítési beállítások",
           "notificationSettingsLink": "AI értesítési beállítás",
-          "promptTemplates": "Sablonok",
-          "selectAgentMessage": "Kérjük, először válasszon ki egy ügynököt!",
           "showInChat": "Megjelenítés a csevegésben",
-          "templateName": "Sablon",
           "undeclared": "Nem deklarált",
           "undeclaredTooltip": "Ez a változó a parancssorban használatos, de az ügynök nem adott meg hozzá leírást.",
           "usedAgentSpecificVariables": "Használt ügynök-specifikus változók",
-          "usedFunctions": "Használt funkciók",
           "usedGlobalVariables": "Használt globális változók",
-          "variant": "Változat"
+          "usedTools": "Használt eszközök"
         },
         "agentsVariable": {
           "description": "Visszaadja a rendszerben elérhető ügynökök listáját."
         },
         "aiConfiguration": {
-          "label": "AI konfiguráció"
+          "addValue": "Érték hozzáadása...",
+          "categoryComingSoon": "{0} A konfiguráció még nem áll rendelkezésre.",
+          "collectionEmpty": "Még nincs beállítandó elem.",
+          "contributedByExtensions": "Hozzájárult: extensions",
+          "decrease": "Csökkentés",
+          "increase": "Növelés",
+          "label": "AI konfiguráció",
+          "models": {
+            "label": "Szolgáltatók és modellek"
+          },
+          "origin": {
+            "fromRegistry": "A rendszerleíró adatbázisból",
+            "openAgentPlugin": "Nyissa meg az ezt biztosító Agent Plugin-t: {0}",
+            "openInRegistry": "Megnyitás az AI-nyilvántartásban: {0}",
+            "registryEntry": "AI rendszerleíró adatbázis-bejegyzés: {0}",
+            "viaAgentPlugin": "{0} oldalon keresztül"
+          },
+          "scopeBanner": "A „{0}” hatókör szerkesztése.",
+          "searchPlaceholder": "AI-beállítások keresése",
+          "selectCategory": "Válasszon ki egy kategóriát a beállításhoz."
         },
         "blinkTitle": {
           "agentCompleted": "{0} - Ügynök befejezte",
@@ -753,8 +768,10 @@
         },
         "languageModelRenderer": {
           "alias": "[alias] {0}",
-          "languageModel": "Nyelvi modell",
-          "purpose": "Cél"
+          "purposeTitle": "Cél: {0}",
+          "reasoningInherited": "Az a következtetés, amelyet ez az ügynök kér a modelltől. Nincs beállítva, ezért a „{0}” (A modell által javasolt következtetés) érvényes, a következtetés alapértelmezett beállításai vagy a modell alapján.",
+          "reasoningStored": "Az a következtetési feladat, amelyet ez az ügynök a modelltől kér. Itt állítható be, vagy a csevegőbeviteli mező választójával, amely ugyanazt a beállítást írja be.",
+          "serverTools": "Szerveres eszközök"
         },
         "maxRetries": {
           "mdDescription": "Az AI-szolgáltatóhoz intézett kérés sikertelensége esetén megengedett maximális újrakísérletek száma. A 0 érték újrakísérletek nélkülit jelent.",
@@ -762,16 +779,17 @@
         },
         "modelAliasesConfiguration": {
           "agents": "Ezt az álnevet használó ügynökök",
+          "aliasTypeLabel": "Modell-aliasok",
           "defaultList": "[Alapértelmezett lista]",
+          "description": "Egy preferált modellre való név szerinti hivatkozások, így az ügynökök egy szerepkörre is célozhatnak egy konkrét modell helyett.",
           "evaluatesTo": "Értékelése",
           "label": "Modell álnevek",
-          "modelNotReadyTooltip": "Nem kész",
-          "modelReadyTooltip": "Kész",
           "noAgents": "Egyetlen ügynök sem használja ezt az álnevet.",
-          "noModelReadyTooltip": "Nincs kész modell",
+          "noModel": "Nincs modell",
           "noResolvedModel": "Ehhez az aliashoz nincs kész modell.",
+          "notReady": "Még nem kész",
           "priorityList": "Prioritási lista",
-          "selectAlias": "Kérjük, válasszon egy modellnevet.",
+          "resolvesTo": "{0}-re mutat",
           "selectedModelId": "Kiválasztott modell",
           "unavailableModel": "A kiválasztott modell már nem elérhető"
         },
@@ -803,39 +821,15 @@
           "description": "A termék/alkalmazás neve, amellyel a felhasználó dolgozik"
         },
         "promptFragmentsConfiguration": {
-          "activeCustomizationTitle": "Aktív testreszabás",
-          "createCustomizationTitle": "Egyéni beállítások létrehozása",
-          "customization": "testreszabás",
-          "customizationLabel": "Testreszabás",
-          "defaultVariantTitle": "Alapértelmezett változat",
-          "deleteCustomizationTitle": "Törlés Testreszabás",
-          "editTemplateTitle": "Sablon szerkesztése",
-          "headerTitle": "Parancssori töredékek",
-          "label": "Parancssori töredékek",
-          "noFragmentsAvailable": "Nincs elérhető prompt-fragmentum.",
-          "otherPromptFragmentsHeader": "Egyéb prompt-fragmentumok",
-          "promptTemplateText": "Sablon szöveg",
-          "promptVariantsHeader": "Prompt variánsok",
-          "removeCustomizationDialogMsg": "Biztosan el akarja távolítani az {0} testreszabását a „{1}” prompt fragmentumhoz?",
-          "removeCustomizationDialogTitle": "Testreszabás eltávolítása",
-          "removeCustomizationWithDescDialogMsg": "Biztosan el akarja távolítani az {0} testreszabást a „{1}” ({2}) prompt fragmentumhoz?",
-          "resetAllButton": "Minden visszaállítása",
-          "resetAllCustomizationsDialogMsg": "Biztosan vissza szeretné állítani az összes prompt-fragmentumot a beépített verziókra? Ezzel minden testreszabás eltűnik.",
-          "resetAllCustomizationsDialogTitle": "Minden testreszabás visszaállítása",
-          "resetAllCustomizationsTitle": "Az összes testreszabás visszaállítása",
-          "resetAllPromptFragments": "Az összes prompt-fragmentum visszaállítása",
+          "editPromptTemplate": "Sablon szerkesztése",
+          "removePromptTemplate": "A parancssori sablon eltávolítása",
+          "removePromptTemplateDialogMsg": "Biztosan el akarja távolítani a „{0}” parancssori sablon testreszabását („{1}”)? Ennek nincs beépített változata, így teljesen eltűnik.",
+          "removePromptTemplateDialogTitle": "Parancssori sablon eltávolítása",
+          "removePromptTemplateWithDescDialogMsg": "Biztosan el akarja távolítani a „{0}” testreszabást a „{1}” parancssori sablonhoz ({2})? Mivel nincs beépített verziója, ezért teljesen eltűnik.",
+          "resetPromptTemplate": "A parancssori sablon visszaállítása",
           "resetToBuiltInDialogMsg": "Biztosan vissza szeretné állítani a „{0}” prompt fragmentumot a beépített verzióra? Ezzel minden testreszabás törlődik.",
           "resetToBuiltInDialogTitle": "Visszaállítás a beépített értékre",
-          "resetToBuiltInTitle": "Visszaállítás erre a beépített értékre",
-          "resetToCustomizationDialogMsg": "Biztosan vissza szeretné állítani a „{0}” prompt fragmentumot, hogy az {1} testreszabást használja? Ezzel minden magasabb prioritású testreszabás eltávolításra kerül.",
-          "resetToCustomizationDialogTitle": "Visszaállítás a testreszabásra",
-          "resetToCustomizationTitle": "Visszaállítás erre a testreszabásra",
-          "selectedVariantLabel": "Kiválasztott",
-          "selectedVariantTitle": "Kiválasztott változat",
-          "usedByAgentTitle": "Használja az ügynök: {0}",
-          "variantSetError": "A kiválasztott változat nem létezik, és nem található alapértelmezett érték. Kérjük, ellenőrizze a konfigurációját.",
-          "variantSetWarning": "A kiválasztott változat nem létezik. Helyette az alapértelmezett változat használatos.",
-          "variantsOfSystemPrompt": "Ennek a promptváltozat-készletnek a változatai:"
+          "variantSetError": "A kiválasztott változat nem létezik, és nem található alapértelmezett érték. Kérjük, ellenőrizze a konfigurációját."
         },
         "promptTemplates": {
           "description": "Mappa a testreszabott prompt sablonok tárolásához. Ha nincs testreszabva, akkor a felhasználói konfigurációs könyvtár kerül felhasználásra. Kérjük, fontolja meg egy verziókezelés alatt álló mappa használatát a prompt sablonok változatainak kezeléséhez."
@@ -899,12 +893,8 @@
         "taskContextSummary": {
           "description": "Megoldja az összes, a munkamenet kontextusában jelen lévő feladatkontextus-elemet."
         },
-        "templateSettings": {
-          "edited": "szerkesztve",
-          "unavailableVariant": "Nem elérhető"
-        },
         "todayVariable": {
-          "description": "Csinál valamit a mai napra",
+          "dateDescription": "A mai dátum. Alapértelmezés szerint emberi szem számára olvasható dátum karakterláncként jelenik meg, vagy a format argumentummal ISO 8601 vagy Unix másodpercek formátumában is megadható.",
           "format": {
             "description": "A dátum formátuma"
           }
@@ -913,12 +903,18 @@
         "unableToResolveVariable": "A változó nem oldható meg.",
         "variable-contribution": {
           "builtInVariable": "{0} Beépített változó",
-          "currentAbsoluteFilePath": "A jelenleg megnyitott fájl abszolút elérési útja.",
-          "currentFileContent": "A jelenleg megnyitott fájl egyszerű tartalma. Ez nem tartalmazza azt az információt, hogy honnan származik a tartalom.",
+          "currentAbsoluteFilePath": "Az éppen megnyitott fájl abszolút elérési útja.",
+          "currentFileContent": "Az éppen megnyitott fájl egyszerű tartalma. Ez nem tartalmazza azokat az információkat, amelyek a tartalom eredetére vonatkoznak.",
           "currentRelativeDirPath": "A jelenleg megnyitott fájlt tartalmazó könyvtár munkaterülethez viszonyított elérési útja (pl. my-project/src).",
-          "currentRelativeFilePath": "A jelenleg megnyitott fájl munkaterülethez viszonyított elérési útja (pl. my-project/src/index.ts).",
-          "currentSelectedText": "A megnyitott fájlban jelenleg kijelölt egyszerű szöveg. Ez nem tartalmazza a tartalom forrására vonatkozó információkat.",
-          "dotRelativePath": "Rövid hivatkozás a jelenleg megnyitott fájl munkaterülethez viszonyított elérési útjára („currentRelativeFilePath”)."
+          "currentRelativeFilePath": "Az éppen megnyitott fájl munkaterülethez viszonyított elérési útja (pl.: my-project/src/index.ts).",
+          "currentSelectedText": "A megnyitott fájlban jelenleg kijelölt egyszerű szöveg. Ez nem tartalmazza azt az információt, hogy honnan származik a tartalom.",
+          "dotRelativePath": "Rövid hivatkozás az éppen megnyitott fájl munkaterülethez viszonyított elérési útjára („currentRelativeFilePath”)."
+        },
+        "variantSet": {
+          "templateLabel": "Sablon",
+          "unavailableVariant": "{0} (nem elérhető)",
+          "variantCount": "{0} változatok",
+          "variantCountSingular": "1. változat"
         }
       },
       "editor": {
@@ -1000,10 +996,16 @@
       "ide": {
         "agent-description": "Az AI-ügynök beállításainak konfigurálása, beleértve az engedélyezést, az LLM kiválasztását, a prompt sablon testreszabását és az egyéni ügynök létrehozását az [AI konfigurációs nézetben]({0}).",
         "agentConfiguration": {
+          "agentMode": "A Coder ügynökmódja",
+          "behavior": "Viselkedés",
           "customAgentLocationQuickPick": {
             "placeholder": "Válassza ki, hová szeretné létrehozni az agents/<id>/agent.md fájlt",
             "title": "Válassza ki az új egyéni ügynök helyét"
           },
+          "defaultChatAgent": "Alapértelmezett csevegő ügynök",
+          "defaultChatAgentNone": "Beépített alapértelmezett",
+          "defaultChatAgentNoneDescription": "Nincs kifejezett alapértelmezett beállítás; a Theia az alapértelmezett csevegőügynököt választja.",
+          "defaults": "Alapértelmezett beállítások",
           "genericCapabilitiesSettings": "Általános képességek",
           "genericCapabilityType": {
             "agentDelegation": "Ügynökdelegálás",
@@ -1020,10 +1022,14 @@
             "idTitle": "Új egyéni ügynök",
             "noLocation": "Nem lehet egyéni ügynököt létrehozni: nincs beállítva a prompt-templates mappa helye. Állítson be egy globális vagy munkaterületi prompt-templates mappát, majd próbálja meg újra."
           },
-          "noDescription": "Nincs leírás",
+          "noAgents": "Nincsenek elérhető ügynökök.",
+          "orchestratorExclude": "Az orchestrator elől elrejtett ügynökök",
+          "orchestratorExcludePlaceholder": "Ügynök-azonosító hozzáadása...",
           "resetAllCapabilities": "Az összes képesség visszaállítása az alapértelmezett értékekre",
-          "resetAllDefaults": "Minden alapértelmezett értékre visszaállítás",
-          "selections": "Kiválasztások"
+          "resetAllGenericCapabilities": "Az összes általános képességválasztás visszaállítása",
+          "resetAllServerTools": "Kapcsolja ki a szolgáltató összes szervereszközét",
+          "showCapabilitySnippet": "Kódrészlet megjelenítése",
+          "showToolSettings": "Eszköz megjelenítése"
         },
         "agentMode": {
           "enabled": {
@@ -1036,6 +1042,15 @@
           "info": "Az Agent Mode (Ügynök mód) folytatásával a megerősítés mentésre kerül. Ezt később az `ai-features.agentMode.enabled` beállításon keresztül visszavonhatja.\n\nAz Edit Mode (Szerkesztési mód) folytatásával az alapértelmezett mód szerkesztési módra vált.\n\nA módokat bármikor megváltoztathatja a módválasztó segítségével vagy az AI konfigurációban.",
           "msg": "Ez az ügynök **ügynöki módot** használ. Az autonóm folyamat engedélyezéséhez képes további megerősítés nélkül közvetlenül írni a munkaterületi fájlokba.\n\nJavasolt a verziókezelés (pl. Git) használata, hogy áttekintse és visszavonhassa a változtatásokat.\n\nAz alábbi csevegőmezőben található módválasztóval átválthat **szerkesztési módra**, vagy használhatja az **Architect** ügynököt olvasási joggal rendelkező tervezéshez.\n\nEz a megerősítés el lesz mentve ehhez a munkaterülethez, és többé nem jelenik meg. Ha globálisan szeretné visszaállítani vagy konfigurálni, keresse meg a `ai-features.agentMode.confirmed` beállítást a Beállítások között.",
           "waiting": "Várakozás a megerősítésre..."
+        },
+        "agentsConfiguration": {
+          "description": "Az IDE-ben elérhető AI-ügynökök. Nyisson meg egy ügynököt, hogy beállítsa annak utasításait, modelljét és képességeit."
+        },
+        "aiConfiguration": {
+          "breadcrumbRoot": "AI-konfiguráció",
+          "manageMenu": "AI-konfiguráció",
+          "openButton": "Open AI konfiguráció",
+          "pageTypeLabel": "Oldal"
         },
         "allowAllMode": {
           "stripTooltip": "Az AI-eszközök hívásai ebben a munkamenetben megerősítés nélkül futnak. Csak olyan környezetekben engedélyezze őket, amelyekben megbízik.",
@@ -1132,6 +1147,25 @@
         "exploreAgent": {
           "description": "Kódbázis-felfedező asszisztens, amely kivonja és összefoglalja a kódbázisból származó információkat.         Jelentéseket készít a meglévő elemekről, kódrészleteket nyújt, és leírja a megfigyelt mintákat."
         },
+        "generalConfiguration": {
+          "aboutCosts": "A költségekről és az adatforgalomról",
+          "bypassModelTitle": "Nyelvi modell ellenőrzésének kihagyása",
+          "configureProvider": "Szolgáltató konfigurálása",
+          "costsBody": "Az AI-funkciók kéréseket küldenek az Ön által beállított nyelvi modellszolgáltatóknak. A szolgáltatótól és a használattól függően ez költségekkel járhat — ezért figyelje őket szorosan. A kérések folyamatosan futhatnak, amíg az ügynökök aktívak. Részletekért lásd [a dokumentációt]({0}).",
+          "description": "Kapcsolja be vagy ki az AI-funkciókat, és állítsa be, hogy az asszisztens hogyan viselkedjen az IDE-ben.",
+          "dontPersist": "Ne mentse el",
+          "enableAiDescription": "{0} összes AI-funkcióját bekapcsolja. Ehhez legalább egy konfigurált nyelvi modellszolgáltatóra van szükség.",
+          "gateNote": "Az alábbi beállítások akkor lépnek életbe, ha az AI-funkciók engedélyezése be van kapcsolva.",
+          "hideList": "Lista elrejtése",
+          "homeSessionsTitle": "Munkamenetek a kezdőképernyőn",
+          "label": "Általános",
+          "noProvider": "Még nincs beállítva nyelvi modellszolgáltató.",
+          "persistedSessionsTitle": "Tartósan megőrzött csevegési munkamenetek",
+          "pinAgentTitle": "Az említett ügynökök rögzítése",
+          "providerReady": "A nyelvi modell-szolgáltató be van állítva és készen áll a használatra.",
+          "sessionStorageTitle": "A munkamenet tárolási helye",
+          "unlimited": "Korlátlan"
+        },
         "github": {
           "configureGitHubServer": {
             "canceled": "A GitHub szerver konfigurációja törölve. Kérjük, konfigurálja a GitHub MCP szervert az ügynök használatához.",
@@ -1158,12 +1192,25 @@
           "description": "A munkaterület gyökérkönyvtárához tartozó GitHub-repozitóriumok (pl. „eclipse-theia/theia”)"
         },
         "howToGetStarted": "Hogyan kezdjünk hozzá",
+        "memoryCapability": {
+          "description": "Lehetővé teszi az ügynök számára, hogy állandó, wiki-stílusú tudásbázist tartson fenn a munkaterülethez, így ez és a jövőbeli munkamenetek a korábbiakra épülhetnek, ahelyett, hogy a nulláról indulnának.",
+          "name": "Memória"
+        },
+        "memoryDirectoryVariable": {
+          "description": "Az a könyvtár abszolút elérési útja, amelyben az ügynök tárolja az aktuális munkaterülethez tartozó memóriáját."
+        },
         "model-selection-description": "Válassza ki, hogy az egyes AI-ügynökök mely nagy nyelvi modelleket (LLM) használják az [AI konfigurációs nézetben]({0}).",
+        "modelsConfiguration": {
+          "description": "A nyelvi modellszolgáltatók és az ügynökök számára elérhető modellek konfigurálása.",
+          "modelSettings": "Modellbeállítások",
+          "noProviders": "Nincs telepítve nyelvi modellszolgáltató.",
+          "providers": "Szolgáltatók"
+        },
         "moreAgentsAvailable": {
           "header": "További ügynökök állnak rendelkezésre"
         },
         "noRecommendedAgents": "Nincs ajánlott ügynök.",
-        "openSettings": "Nyissa meg az AI beállításokat",
+        "openAiConfiguration": "OpenAI konfiguráció",
         "orchestrator": {
           "error": {
             "noAgents": "Nincs elérhető csevegő ügynök a kérés kezeléséhez. Kérjük, ellenőrizze a konfigurációját, hogy van-e engedélyezve ilyen."
@@ -1204,6 +1251,37 @@
           "description": "Egy AI-alapú PR-felülvizsgálati ügynök, amely a teljes kódfelülvizsgálati munkafolyamatot irányítja: lekérdezi a PR-adatokat, feltérképezi a kódbázist, strukturált elemzést végez, interaktív módon végigvezeti a felhasználót a megállapításokon diff-nézegetők segítségével, és opcionálisan létrehoz egy függőben lévő felülvizsgálatot a GitHubon."
         },
         "prompt-template-description": "Válassza ki a prompt változatokat és testreszabhatja a prompt sablonokat az AI ügynökök számára az [AI konfigurációs nézetben]({0}).",
+        "promptSnippetsConfiguration": {
+          "capabilitiesGroupDescription": "Utasítások, amelyeket egy ügynök a parancssorába illeszt, ha engedélyezve van. Ezek megosztottak, így a szerkesztés minden olyan ügynökre hatással van, amelyik ezeket használja.",
+          "capabilityTypeLabel": "Képesség",
+          "customized": "Testreszabott",
+          "description": "Újrafelhasználható parancssori szöveg: a saját kódrészletei, valamint azok a kódrészletek, amelyeket az ügynökök beolvasnak. A kódrészlet szerkesztése minden olyan ügynökre hatással van, amely azt használja.",
+          "editSnippet": "Kódrészlet szerkesztése",
+          "empty": "Parancssori kódrészletek nem állnak rendelkezésre.",
+          "filterPlaceholder": "A parancssori kódrészletek szűrése név, azonosító vagy leírás alapján",
+          "genericCapabilitiesGroup": "Általános képességek",
+          "genericCapabilitiesGroupDescription": "Alapvető utasítások a kiválasztott funkciók beépítéséhez az ügynök parancssorába. Ezek megosztottak, így a szerkesztés minden olyan ügynökre hatással van, amelyik ezeket használja.",
+          "genericCapabilityTypeLabel": "Általános képesség",
+          "label": "Parancssori szeletek",
+          "noMatches": "Nincs olyan parancssori részlet, amely egyezne a „{0}” kifejezéssel.",
+          "removeDialogMsg": "Biztosan el akarja távolítani a „{0}” testreszabást a „{1}” kódrészlethez? Ennek nincs beépített verziója, így teljesen eltűnik.",
+          "removeDialogTitle": "Kódrészlet eltávolítása",
+          "removeSnippet": "Kódrészlet eltávolítása",
+          "removeWithDescDialogMsg": "Biztosan el akarja távolítani a „{0}” testreszabást a „{1}” kódrészlethez ({2})? Mivel nincs beépített verziója, ezért teljesen eltűnik.",
+          "resetAll": "Az összes testreszabás visszaállítása",
+          "resetAllDialogMsg": "Biztosan vissza szeretné állítani az összes testreszabott parancssori szegmenst a beépített változatra? Ez magában foglalja az ügynökök parancssori sablonjait is, nem csak az itt felsorolt kódrészleteket. Azok a kódrészletek, amelyeknek nincs beépített változata, megmaradnak.",
+          "resetAllDialogTitle": "Az összes testreszabás visszaállítása",
+          "resetAllMessage": "Egyes parancssori szövegrészletek testreszabottak. Az alaphelyzetbe állítás mindegyiket visszaállítja a beépített változatára, beleértve az ügynökök parancssori sablonjait is. Azok a kódrészletek, amelyeknek nincs beépített változata, megmaradnak.",
+          "resetDialogMsg": "Biztosan vissza szeretné állítani a „{0}” kódrészletet a beépített verziójára? Ezzel minden testreszabás eltávolításra kerül.",
+          "resetDialogTitle": "A kódrészlet visszaállítása a beépítettre",
+          "resetSnippet": "A kódrészlet visszaállítása a beépítettre",
+          "snippetsGroupDescription": "Ön által karbantartott parancssori szöveg, amelyre más parancssorok a {{prompt:id}} hivatkozással utalnak.",
+          "usedByAgents": "Az ügynökök használják"
+        },
+        "promptsAndSkillsConfiguration": {
+          "label": "Készségek és perjelparancsok",
+          "pageSubtitle": "A modell által használható funkciók és a / jelöléssel meghívható slash-parancsok. Nyissa meg egy funkciót a SKILL.md fájl szerkesztéséhez, vagy szerkessze egy slash-parancs sablonját."
+        },
         "requiresApproval": "Jóváhagyásra szorul",
         "restoredSession": "Visszaállított munkamenet",
         "restrictedModeDetails": "Az AI-csevegés, a beépített javaslatok, a kódműveletek és a prompt-sablonok le vannak tiltva",
@@ -1214,22 +1292,27 @@
           "toolConfirmation": "Eszközönkénti megerősítési felülírások: {0}",
           "toolConfirmationGeneric": "Eszközönkénti megerősítési felülírások beállítása"
         },
-        "shellAllowlist": {
-          "placeholder": "Például: „git log” (pontosan) vagy „git log *” (argumentumokkal)."
-        },
-        "shellDenylist": {
-          "placeholder": "Például: „git push *” vagy „rm -rf /”."
-        },
         "shellExecutionCapability": {
           "description": "Lehetővé teszi az ügynök számára, hogy tetszőleges shell parancsokat futtasson a gazdaszerveren. Az ügynök ezután delegálhat olyan szkriptek végrehajtását, amelyek nem állnak rendelkezésre feladatokként, lekérdezheti a rendszerinformációkat, és olyan műveleteket hajthat végre, amelyekhez nincs dedikált eszköz.",
           "name": "Shell végrehajtás"
         },
         "skillsConfiguration": {
-          "noSkills": "Nincs elérhető készség",
-          "noSlashCommands": "Nincs elérhető perjelparancs",
+          "compatibility": "Kompatibilitás",
+          "editCommandTemplate": "Sablon szerkesztése",
+          "empty": "Nincsenek elérhető parancsok vagy perjelparancsok.",
+          "filterPlaceholder": "Szűrje a készségeket és a perjelparancsokat név vagy leírás szerint",
+          "frontmatter": "Előszó",
+          "noAllowedTools": "Nincs megadva engedélyezett eszköz. A képesség az ügynök által már rendelkezésre álló bármely eszközt felhasználhatja.",
+          "noMatches": "Nincs olyan készség vagy perjelparancs, amely egyezne a „{0}” kifejezéssel.",
+          "noSkillAgents": "Jelenleg egyetlen ügynök sem jeleníti meg a készségeket, így ezek közül egyik sem érhető el: egy készséghez szükség van a {{skills}} változóra vagy a készséghasználati képességre az ügynök parancssorában.",
+          "openSkillFile": "Nyissa meg a SKILL.md fájlt",
+          "skillsGroupDescription": "A modell által követhető, fájlalapú SKILL.md egységek, amelyek a {{skills}} változón és a készséghasználati képességen keresztül jelennek meg.",
           "slashCommand": {
-            "allAgents": "Minden ügynök"
+            "allAgents": "Minden ügynök",
+            "allAgentsTooltip": "Ez a parancs nem jelöl meg ügynököket, így minden ügynök számára elérhető.",
+            "availableForAgents": "Ügynökök számára elérhető"
           },
+          "slashCommandsGroupDescription": "A csevegésben a /name parancs beírásával meghívható parancssori szövegrészletek, amelyek egy vagy több ügynök számára elérhetők.",
           "slashCommandsSectionHeader": "Slash parancsok"
         },
         "toolConfirmationInfo": {
@@ -1249,8 +1332,10 @@
             "label": "Megerősítési mód"
           },
           "default": {
-            "label": "Alapértelmezett eszköz megerősítési mód:"
+            "rowLabel": "Eszköz megerősítési mód alapértelmezése"
           },
+          "description": "Válassza ki, mely eszközöket hívhatják meg az ügynökök, és hogy az egyes eszközök futtatása előtt szükséges-e megerősítés.",
+          "filterPlaceholder": "Szűrőeszközök",
           "recommendedDefaults": {
             "apply": "Alapértelmezett eszközök engedélyezése",
             "dialogConfirm": "Értem, engedélyezem",
@@ -1270,16 +1355,7 @@
             "title": "Az összes eszköz visszaállításának megerősítési módjai"
           },
           "resetAllTooltip": "Az összes eszköz alapértelmezett értékre állítása",
-          "shellAllowlist": {
-            "description": "Az ezeknek a mintáknak megfelelő parancsok automatikusan, megerősítés nélkül engedélyezésre kerülnek. Használja a * helyettesítő karaktert: „git log” (pontos egyezés), „git log *” (bármilyen argumentummal). A helyettesítő karakter előtt szóköznek kell lennie.",
-            "empty": "Nincs konfigurált minta. Minden shell parancs megerősítést igényel.",
-            "title": "Shell Execute Allowlist"
-          },
-          "shellDenylist": {
-            "description": "Az ezeknek a mintáknak megfelelő parancsok automatikusan, megerősítés nélkül el lesznek utasítva. Használja ezt a funkciót olyan veszélyes parancsok blokkolására, mint a „git push *” vagy az „rm -rf /”.",
-            "empty": "Nincs konfigurált minta. A shell parancsok nem kerülnek automatikusan elutasításra.",
-            "title": "Shell Execute Denylist"
-          },
+          "shellExecution": "Shell-parancsok végrehajtása",
           "toolOptions": {
             "confirm": {
               "label": "Megerősítés"
@@ -1295,7 +1371,21 @@
           "unread": "Olvasatlan"
         },
         "variableConfiguration": {
-          "selectVariable": "Kérjük, válasszon egy változót.",
+          "argCountPlural": "{0} argumentumok",
+          "argCountSingular": "1 argumentum",
+          "argEnum": "Az alábbiak közül az egyik: {0}",
+          "contextGroup": "Kontextusváltozók",
+          "contextGroupDescription": "{0}-névvel hivatkozható egy parancssorban, és csatolható egy kéréshez is kontextusként, amelyet az ügynök és eszközei megvizsgálhatnak.",
+          "copyVariableName": "Változónév másolása",
+          "filterPlaceholder": "A változók szűrése név vagy leírás alapján",
+          "noMatches": "Nincs olyan változó, amely megfelelne a „{0}” kifejezésnek.",
+          "noVariables": "Változók nem állnak rendelkezésre.",
+          "openAgent": "Nyitott ügynök{0}",
+          "optional": "opcionális",
+          "pageSubtitle": "{0}-névvel hivatkozható értékek egy parancssorban. Ezeket a kéréskor értelmezik és beillesztik.",
+          "plainGroup": "Egyszerű változók",
+          "plainGroupDescription": "A parancssorban a „{0}” névvel hivatkoznak rájuk, és kéréskor a szöveges értékre konvertálódnak.",
+          "required": "kötelező",
           "usedByAgents": "Ügynökök által használt"
         },
         "waitingForInput": "Várjuk a bevitelét"
@@ -1407,12 +1497,20 @@
           },
           "registryMetadata": {
             "configHash": {
-              "mdDescription": "A szerver telepítéséhez használt rendszerleíró adatbázis-jóváhagyás tartalmi hash-értéke.",
+              "mdDescription": "A szerver telepítéséhez használt rendszerleíró adatbázis-jóváhagyás, illetve az azt biztosító Agent Plugin tartalmi hash-értéke.",
               "title": "Rendszerleíró adatbázis konfigurációs hash"
             },
+            "installedAt": {
+              "mdDescription": "Az a pillanat, amikor az ezt a szervert létrehozó Agent Plugin utoljára lemezre írt. A módosítás a szerver újraindítását eredményezi, ami a frissítés hatálybalépését jelenti. Írta: `@theia/ai-registry`; a felhasználó nem szerkesztheti.",
+              "title": "Az ügynök-bővítmény telepítési helye:"
+            },
             "mdDescription": "Egy AI-nyilvántartásból telepített szerver származási metaadatai. Írta: `@theia/ai-registry`; a felhasználó nem szerkesztheti.",
+            "pluginId": {
+              "mdDescription": "Meghatározza azt a telepített ügynök-bővítményt, amely ezt a szervert biztosította. Írta: `@theia/ai-registry`; a felhasználó nem szerkesztheti.",
+              "title": "Ügynök-bővítmény azonosítója"
+            },
             "serverId": {
-              "mdDescription": "Meghatározza azt az AI-nyilvántartási bejegyzést, amelyből ezt a szervert telepítették.",
+              "mdDescription": "Meghatározza azt az AI-nyilvántartási bejegyzést, amelyből ez a szerver telepítésre került. Hiányzik az Agent Plugin által biztosított szerverek esetében, amelyek helyette a `pluginId`-t tartalmazzák.",
               "title": "Rendszerleíró adatbázis szerverazonosítója"
             },
             "title": "Rendszerleíró adatbázis metadatok",
@@ -1457,6 +1555,9 @@
         }
       },
       "mcpConfiguration": {
+        "addArgument": "Argumentum hozzáadása…",
+        "addKeyValue": "Adja hozzá a KEY=érték…",
+        "addScope": "Hatály hozzáadása…",
         "autostart": "Automatikus indítás",
         "browseAIRegistry": "Az AI-nyilvántartás böngészése",
         "browseAIRegistryTooltip": "Nyissa meg a Bővítmények nézetet az AI-nyilvántartási bejegyzések böngészéséhez",
@@ -1464,8 +1565,9 @@
           "addServer": "Helyi MCP-konfiguráció hozzáadása..."
         },
         "copiedAllList": "Az összes eszköz másolása a vágólapra (az összes eszköz listája)",
-        "copiedAllSingle": "Az összes eszközt a vágólapra másolta (egyetlen parancssori fragmens az összes eszközzel)",
-        "copiedForPromptTemplate": "Az összes eszközt a vágólapra másolta a prompt sablonhoz (egyetlen prompt fragmentum az összes eszközzel)",
+        "copiedAllSingle": "Az összes eszköz átmásolva a vágólapra (egyetlen parancssori részlet az összes eszközzel)",
+        "copiedForPrompt": "A „{0}” szöveget a vágólapra másolta (csevegéshez vagy parancssori sablonhoz)",
+        "copiedForPromptTemplate": "Az összes eszközt a vágólapra másolta a parancssori sablonhoz (egyetlen parancssori töredék az összes eszközzel)",
         "copyAllList": "Összes másolása (az összes eszköz listája)",
         "copyAllSingle": "Minden másolása csevegéshez (egyetlen prompt fragmentum az összes eszközzel)",
         "copyForPrompt": "Másoló eszköz (csevegéshez vagy parancssori sablonhoz)",
@@ -1475,8 +1577,6 @@
         "deleteServerDialogMsg": "Biztosan törölni szeretné a „{0}” szervert?",
         "deleteServerDialogTitle": "MCP szerver törlése",
         "deleteServerError": "Az MCP-kiszolgáló törlése sikertelen: {0}",
-        "editServer": "Szerver szerkesztése",
-        "editServerTitle": "MCP szerver szerkesztése",
         "environmentVariables": "Környezeti változók",
         "form": {
           "argsPlaceholder": "Szóközzel elválasztva, pl. -y @modelcontextprotocol/server-brave-search",
@@ -1509,7 +1609,6 @@
           "serverUrlPlaceholder": "Például: https://mcp.example.com",
           "serverUrlRequired": "A távoli szerverekhez szerver URL szükséges."
         },
-        "fromRegistryLink": "A rendszerleíró adatbázisból",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "Engedélyezési szerver",
         "oauthClientId": "OAuth kliensazonosító",
@@ -1517,11 +1616,15 @@
         "oauthRedirectUrl": "Átirányítási URL",
         "oauthResource": "OAuth-erőforrás",
         "oauthScopes": "OAuth-hatókörök",
-        "openInRegistry": "Megnyitás az AI-nyilvántartásban: {0}",
+        "pluginData": "Plugin-adatok",
+        "pluginRoot": "A bővítmény gyökérkönyvtára",
         "saveServerError": "Az MCP szerver konfigurációjának mentése sikertelen: {0}",
         "serverAuthToken": "Hitelesítési token",
         "serverAuthTokenHeader": "Auth fejléc neve",
+        "serverTypeLabel": "MCP-kiszolgáló",
         "serverUrl": "Szerver URL",
+        "serversListTitle": "Szerverek",
+        "showToolSettings": "Eszköz megjelenítése",
         "signInServerFailed": "Nem sikerült bejelentkezni az „{0}” MCP-kiszolgálóra.",
         "signInServerNotCompleted": "A bejelentkezés az „{0}” MCP-kiszolgálóra nem sikerült.",
         "signInServerSucceeded": "Bejelentkezett az „{0}” MCP-kiszolgálóra.",
@@ -1530,7 +1633,7 @@
         "signOutServerFailed": "Nem sikerült kijelentkezni az „{0}” MCP-kiszolgálóról.",
         "startServerFailed": "Nem sikerült elindítani az „{0}” MCP-kiszolgálót.",
         "stopServerFailed": "Nem sikerült leállítani az „{0}” MCP-kiszolgálót.",
-        "tools": "Eszközök: "
+        "typeRemoteOAuth": "Távoli (OAuth)"
       },
       "openai": {
         "apiKey": {
@@ -1580,6 +1683,9 @@
           "useResponseApi": {
             "title": "Használja az újabb OpenAI Response API-t a Chat Completion API helyett. Alapértelmezés szerint `false` az egyéni szolgáltatók esetében. Megjegyzés: Eszközök használata esetén automatikusan visszatér a Chat Completions API-hoz."
           }
+        },
+        "customProvider": {
+          "label": "{0} (Egyéni)"
         },
         "models": {
           "description": "Használni kívánt hivatalos OpenAI modellek"
@@ -1683,7 +1789,7 @@
       },
       "tokenUsage": {
         "cachedInputTokens": "A gyorsítótárba írt bemeneti tokenek",
-        "cachedInputTokensTooltip": "Az „Input Tokens” mellett nyomon követett. Általában drágább, mint a nem cache-elt tokenek.",
+        "description": "Ellenőrizze a tokenek felhasználását a szolgáltatók és modellek között.",
         "failedToGetTokenUsageData": "A tokenhasználati adatok lekérésének sikertelensége: {0}",
         "inputTokens": "Bemeneti tokenek",
         "label": "Token használata",
@@ -1691,9 +1797,7 @@
         "noData": "Még nem állnak rendelkezésre tokenhasználati adatok.",
         "note": "A tokenek használatát az alkalmazás indításától kezdve nyomon követik, és nem tárolják.",
         "outputTokens": "Kimeneti tokenek",
-        "readCachedInputTokens": "A gyorsítótárból olvasott bemeneti tokenek",
-        "readCachedInputTokensTooltip": "Az „Input Token” mellett nyomon követett. Általában sokkal olcsóbb, mint a nem gyorsítótárazott. Általában nem számít bele a sebességkorlátozásokba.",
-        "totalTokensTooltip": "„Bemeneti tokenek” + „Kimeneti tokenek”"
+        "readCachedInputTokens": "A gyorsítótárból olvasott bemeneti tokenek"
       },
       "vercelai": {
         "anthropicApiKey": {
@@ -1736,7 +1840,7 @@
       },
       "workspace": {
         "allowedExternalPaths": {
-          "description": "A munkaterületen kívüli abszolút útvonalak vagy fájl-URI-k (könyvtárak vagy fájlok) listája, amelyeket az AI-eszközök olvashatnak. Támogatja a `~` karaktert a felhasználói otthoni könyvtárra való hivatkozáshoz. Alapértelmezés szerint üres; csak opcionális. A getFileContent, findFilesByPattern, getWorkspaceFileList és getWorkspaceDirectoryStructure parancsok támogatják. A munkaterületre vonatkozó értékeket a rendszer figyelmen kívül hagyja, ha a munkaterület nem megbízható. A megengedett könyvtárakban található szimbolikus linkeket a rendszer követi, és azok a megengedett listán kívüli fájlokra is mutathatnak; csak olyan könyvtárakat adjon hozzá, amelyek tartalmát megbízhatónak tartja.",
+          "description": "A munkaterületen kívüli abszolút elérési utak vagy fájl-URI-k (könyvtárak vagy fájlok) listája, amelyekhez az AI-eszközök hozzáférhetnek. Támogatja a `~` karaktert a felhasználói otthoni könyvtárra való hivatkozáshoz. Alapértelmezés szerint üres; csak kifejezett engedélyezés esetén használható. Minden olyan eszköz figyelembe veszi, amely elérési utat fogad el, beleértve a fájlokat író eszközöket is. A munkaterület hatókörébe tartozó értékeket a rendszer figyelmen kívül hagyja, ha a munkaterület nem megbízható. A megengedett listán szereplő könyvtárakban található szimbolikus linkeket a rendszer követi, és azok a megengedett listán kívüli fájlokra is mutathatnak; csak olyan könyvtárakat adjon hozzá, amelyek tartalmát megbízhatónak tartja.",
           "title": "Megengedett külső útvonalak"
         },
         "coderAgent": {
@@ -1807,6 +1911,9 @@
       "agentInputNeededMessageWithSession": "Az „{0}” ügynöknek szüksége van az Ön beviteleire a „{1}” ablakban.",
       "agentInputNeededTitle": "Az „{0}” ügynöknek szüksége van az Ön segítségére",
       "aiDisabledInRestrictedMode": "Az AI funkciók nem érhetők el megbízhatatlan munkaterületeken.",
+      "openConfiguration": {
+        "description": "Az AI-beállítások átkerültek az AI-konfigurációs nézetbe. Nyissa meg azt a szolgáltatók, modellek, ügynökök és egyéb elemek konfigurálásához."
+      },
       "preferences": {
         "linuxEnvHint": "Linux rendszeren győződjön meg arról, hogy a változó a `~/.profile` fájlban van definiálva (nem csak a `~/.bashrc` fájlban), ha az alkalmazást asztali parancsikonról indítja. A részleteket lásd a [dokumentációban](https://theia-ide.org/docs/user_ai/#setting-api-keys).",
         "title": "AI funkciók"
@@ -1890,10 +1997,128 @@
     },
     "ai-registry": {
       "action": {
+        "copyId": "Másolási azonosító",
         "fix": "Konfiguráció javítása",
         "link": "Link a rendszerleíró adatbázishoz",
         "unlink": "Kapcsolat megszüntetése",
         "updateTooltip": "Frissítés a {0} webhelyről a {1} webhelyre"
+      },
+      "autoUpdate": {
+        "ask": "Értesítés, ha frissítés érhető el egy telepített skillhez, MCP-kiszolgálóhoz vagy ügynök-bővítményhez.",
+        "changeLater": "Ezt később a {0} oldalon módosíthatja.",
+        "configureDefault": "Az alapértelmezett beállításokat a „{0}” (Beállítások > Általános > Alapértelmezett) menüpontban lehet konfigurálni.",
+        "defaultPrompt": "A jövőben automatikusan frissítse a készségeket, az MCP-kiszolgálókat és az ügynök-bővítményeket az AI-nyilvántartásból?",
+        "description": "Az AI-nyilvántartásból telepített készségek, MCP-kiszolgálók és ügynök-bővítmények alapértelmezett frissítési viselkedése. A frissítések ellenőrzése ablakbetöltésenként egyszer történik. Az egyes elemek ezt felülírhatják a Bővítmények nézet fogaskerék menüjéből.",
+        "enableDefault": "Az automatikus frissítés engedélyezése",
+        "keepAsking": "Kérdezzen tovább",
+        "mcpAvailable": "Az MCP-kiszolgáló „{0}” frissítése elérhető.",
+        "off": "Soha ne frissítsen telepített készségeket, MCP-kiszolgálókat és ügynök-bővítményeket, és soha ne értesítsen a rendelkezésre álló frissítésekről.",
+        "on": "A telepített készségek, az MCP-kiszolgálók és az ügynök-bővítmények automatikus frissítése.",
+        "pluginAvailable": "Az „{0}” ügynök-bővítményhez elérhető egy frissítés.",
+        "skillAvailable": "A „{0}” készlethez frissítés érhető el.",
+        "summary": "{0} Az AI-nyilvántartás frissítései elérhetők.",
+        "updateAll": "Összes frissítése",
+        "updateFailed": "{0}-es AI rendszerleíró adatbázis-elemek automatikus frissítése nem sikerült.",
+        "updatedMany": "{0}-es AI rendszerleíró adatbázis-elemek frissítése."
+      },
+      "autoUpdateOverrides": {
+        "mdDescription": "Az `#ai-features.registry.autoUpdate#` beállítások artefaktumonkénti felülírásai, `skill:<skillId>`, `mcp:<serverId>` vagy `plugin:<pluginId>` kulcsokkal. A bejegyzéseket általában a Bővítmények nézet fogaskerék-menüjén keresztül lehet kezelni; a bejegyzés nélküli artefaktumok az alapértelmezett beállításokat követik."
+      },
+      "mcp": {
+        "updated": "Frissített MCP-kiszolgáló: „{0}”."
+      },
+      "plugin": {
+        "action": {
+          "fix": "Plugin javítása",
+          "link": "Link a rendszerleíró adatbázishoz",
+          "unlink": "Kapcsolat megszüntetése"
+        },
+        "diagnostics": {
+          "manySkipped": "{0} kihagyott összetevők",
+          "mcpDisabled": "Az MCP-konfigurációt a rendszer figyelmen kívül hagyja",
+          "mcpDisabledAndSkipped": "Az MCP-konfigurációt figyelmen kívül hagyja, {0}",
+          "oneSkipped": "A „{0}” komponens kihagyva: {1}"
+        },
+        "dialog": {
+          "contains": "Tartalom",
+          "endorsedBy": "Jóváhagyta",
+          "from": "Forrás:",
+          "install": {
+            "title": "Telepítse az „{0}” ügynök-bővítményt"
+          },
+          "mcpWarning": "A bővítmény MCP-szerverei tetszőleges parancsokat futtathatnak a számítógépén. A jóváhagyás a bővítmény egészére vonatkozik – a benne található szerverek önmagukban nem részesülnek külön jóváhagyásban. A szerverek a telepítés után automatikusan elindulnak.",
+          "mismatch": {
+            "actual": "fogadva",
+            "endorsed": "A „{0}” számára letöltött fájlok nem egyeznek meg azzal, amit a {1} a {2} oldalon jóváhagyott.",
+            "expected": "jóváhagyott",
+            "explanation": "Ez a bővítmény szerzőinek commitja után legfeljebb egy napig várható, mivel a rendszer naponta újraolvassa a forráskódokat, és nem rögzíti a commitokat, míg egy olyan repository, amely kizárja a fájlokat az archívumából, ezt állandóan előállítja. Ez egy kompromittált forráskód kinézete is.",
+            "installAnyway": "Mindenképpen telepítsd",
+            "title": "A forrás megváltozott",
+            "unendorsed": "A „{0}” számára letöltött fájlok nem egyeznek a nyilvántartás által közzétett tartalmi hash-értékkel."
+          },
+          "noEndorsements": "Nincs támogató szervezet",
+          "viaTrust": "{0} oldalon keresztül"
+        },
+        "fixed": "Visszaállított ügynök-bővítmény: „{0}”.",
+        "installUri": {
+          "fetchFailed": "Nem sikerült betölteni az AI-nyilvántartást az „{0}” ügynök-bővítmény telepítéséhez.",
+          "missingId": "A telepítési linkből hiányzik a szükséges „id” paraméter.",
+          "success": "Az AI-nyilvántartásból telepített „{0}” ügynök-bővítmény.",
+          "unknownId": "Az „{0}” ügynök-bővítmény nem szerepel az AI-nyilvántartásában."
+        },
+        "installed": "Telepített ügynök-bővítmény: „{0}”.",
+        "invalidDirectoryName": "Érvénytelen bővítménykönyvtár-név: „{0}”: a névnek elválasztójelek nélküli, egyetlen elérési útnak kell lennie.",
+        "linked": "Kapcsolódó Agent Plugin: „{0}”.",
+        "manifestFieldNotString": "A „plugin.json” fájl „{0}” mezőjének karakterláncnak kell lennie.",
+        "manifestInvalidAuthor": "A „plugin.json” fájl „author” mezőjének egy objektumnak kell lennie, amely tartalmazza a következő opcionális karakterlánc-mezőket: „name”, „email” és „url”.",
+        "manifestInvalidKeywords": "A „plugin.json” fájl „keywords” mezőjének karakterláncokból álló tömbnek kell lennie.",
+        "manifestInvalidName": "A „{0}” bővítménynév érvénytelen: 1–64 kisbetűs alfanumerikus karakterből, kötőjelekből vagy pontokból kell állnia, alfanumerikus karakterrel kell kezdődnie és végződnie, és nem tartalmazhat „--” vagy „..” karaktereket.",
+        "manifestNotJson": "A „plugin.json” nem érvényes JSON-fájl.",
+        "manifestNotObject": "A „plugin.json” fájlnak tartalmaznia kell egy legfelső szintű JSON-objektumot.",
+        "manifestRequiredField": "A „plugin.json” fájlban a „{0}” mező kitöltése kötelező, és nem lehet üres karakterlánc.",
+        "manifestUnsupportedVersion": "A „plugin.json” fájl a már nem támogatott „{0}” ügynök-bővítmények sémát célozza meg.",
+        "mcpInvalidDocument": "Az „mcp.json” fájlnak tartalmaznia kell egy legfelső szintű JSON-objektumot, amely pontosan a szükséges „$schema” és „mcpServers” mezőket tartalmazza.",
+        "mcpNotJson": "A „mcp.json” nem érvényes JSON.",
+        "mcpUnsupportedVersion": "Az „mcp.json” fájl a nem támogatott „{0}” Agent Plugins sémát célozza meg.",
+        "mcpVersionMismatch": "Az „mcp.json” az Agent Plugins „{0}” verzióját célozza meg, míg a „plugin.json” az „{1}” verziót.",
+        "nonObjectExtensions": "A „plugin.json” fájl „extensions” mezőjét figyelmen kívül hagyjuk, mivel az nem objektum.",
+        "progress": {
+          "text": "„{0}” ügynök-bővítmény: {1}"
+        },
+        "registrationFailed": "Az „{0}” ügynök-bővítmény telepítve van, de MCP-kiszolgálói nem regisztrálhatók: {1}. Távolítsa el, majd telepítse újra, és próbálja meg újra.",
+        "serverDuplicateHeader": "A „{0}” fejlécnév többször is szerepel.",
+        "serverEmptyField": "A „{0}” szerverkonfigurációs mező nem maradhat üres.",
+        "serverFieldNotString": "A „{0}” szerverkonfigurációs mezőnek karakterláncnak kell lennie.",
+        "serverInvalid": "A szerverkonfiguráció érvénytelen.",
+        "serverInvalidArgs": "Az „args” mezőnek karakterláncokból álló tömbnek kell lennie.",
+        "serverInvalidCommand": "A „{0}” parancsértéknek puszta végrehajtható fájlnévnek vagy „./”-vel kezdődő, a bővítményhez viszonyított elérési útnak kell lennie.",
+        "serverInvalidCwd": "A „cwd” értéknek („{0}”) „./”, „${PLUGIN_ROOT}” vagy „${PLUGIN_DATA}” karakterekkel kell kezdődnie.",
+        "serverInvalidEnv": "Az „env” mezőnek karakterláncokból álló objektumnak kell lennie.",
+        "serverInvalidHeader": "A „{0}” fejléc nem érvényes HTTP-fejlécmező.",
+        "serverInvalidHeaders": "A „headers” mezőnek karakterláncokból álló objektumnak kell lennie.",
+        "serverInvalidUrl": "Az „url” értéknek („{0}”) egy abszolút http- vagy https-URL-nek kell lennie, felhasználói adatok és fragmens nélkül, és a nem loopback URL-eknél https-t kell használni.",
+        "serverMissingField": "A szerverkonfigurációból hiányzik a szükséges „{0}” mező.",
+        "serverNotObject": "A szerverkonfiguráció nem JSON-objektum.",
+        "serverPathEscapes": "A „{0}” érték „{1}” a „{2}” kívülre hivatkozik.",
+        "serverReservedEnv": "Az „env” bejegyzés „{0}” értéke fenntartott, ezért azt egyetlen bővítmény sem deklarálhatja.",
+        "serverUnknownField": "A szerverkonfigurációban szerepel a „{0}” mező, amely a szállítási típus szempontjából nem megengedett.",
+        "serverUnknownType": "A szerverkonfigurációban az ismeretlen „{0}” átviteli típus van megadva.",
+        "serverUnsupportedTransport": "Az MCP „{0}” átviteli mód nem támogatott.",
+        "stat": {
+          "oneServer": "1 MCP-kiszolgáló",
+          "servers": "{0} MCP-kiszolgálók"
+        },
+        "uninstalled": "Az „{0}” ügynök-bővítmény eltávolítása.",
+        "unknownManifestField": "Az ismeretlen „plugin.json” mező „{0}” értékének figyelmen kívül hagyása.",
+        "unlinked": "Nem összekapcsolt ügynök-bővítmény „{0}”.",
+        "updated": "Frissített ügynök-bővítmény: „{0}”.",
+        "warning": {
+          "fix": "A bővítmény fájljai eltérnek a telepített verziótól. Kattintson a „Bővítmény javítása” gombra a jóváhagyott tartalom újratöltéséhez.",
+          "linkStale": "Ezt a bővítményt a rendszerleíró adatbázisból telepítették, de a rendszerleíró adatbázis már nem tartalmazza. Kattintson az „Unlink” gombra a rendszerleíró adatbázisban szereplő hivatkozás eltávolításához és a fájlok megtartásához, vagy az „Uninstall” gombra a bővítmény eltávolításához.",
+          "manual": "Ez a könyvtár nem a rendszerleíró adatbázisból lett telepítve. A fájlok módosítása nélkül hivatkozásokat hoz létre arra a helyre, ahonnan származik.",
+          "notInRegistry": "Nem szerepel a rendszerleíró adatbázisban"
+        },
+        "watcherStopped": "Az Agent Plugins mappa változásainak figyelése leállt. A telepített bővítmények már nem frissülnek automatikusan. Az ablak újratöltésével folytathatja a műveletet."
       },
       "skill": {
         "action": {
@@ -2184,7 +2409,6 @@
       "missingConfiguration": "A „{0}: {1}” dinamikus konfiguráció hiányzik vagy nem alkalmazható.",
       "pause": "szünet",
       "pauseAll": "Minden szüneteltetése",
-      "reveal": "Felfedés",
       "step": "lépés",
       "taskTerminatedBySignal": "A „{0}” feladatot a {1} jelzés szakította meg.",
       "taskTerminatedForUnknownReason": "A „{0}” feladat ismeretlen okból leállt.",
@@ -2295,12 +2519,17 @@
         "openAIChatView": "Nyissa meg most az AI Chat View-t, hogy megtudja, hogyan kezdje el!"
       },
       "apiComparator": "{0} API-kompatibilitás",
+      "markStepUndone": "Visszavonás",
       "newExtension": "Új kiterjesztés létrehozása",
       "newPlugin": "Új plugin létrehozása",
+      "noWalkthroughs": "Nincsenek elérhető útmutatók.",
+      "openAiConfiguration": "Open AI konfiguráció",
+      "resetWalkthroughProgress": "A bemutató előrehaladásának visszaállítása",
       "startup-editor": {
         "welcomePage": "Nyissa meg az Üdvözlő oldalt, amelynek tartalma segít az {0} és a kiterjesztések használatának megkezdésében."
       },
-      "telemetry": "Adatfelhasználás és telemetria"
+      "telemetry": "Adatfelhasználás és telemetria",
+      "walkthroughLinkFailed": "Nem sikerült megnyitni a „{0}” fájlt: {1}"
     },
     "keybinding-schema-updater": {
       "deprecation": "Helyette használja a `when` záradékot."
@@ -2570,6 +2799,7 @@
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Utolsó commit módosítása",
       "changeRepository": "Repozitórium módosítása...",
+      "copyCommitHash": "Hash másolása",
       "dirtyDiff": {
         "close": "Bezárás Változtatás Peek View"
       },
@@ -2580,7 +2810,13 @@
       "noChanges": "Nincs módosított fájl.",
       "noHistory": "Nincs elérhető forráskód-kezelési előzmény.",
       "noHistoryForError": "{0} esetében nincs elérhető előzmény.",
+      "openCommit": "Open Commit",
+      "pickHistoryItemRefs": "Válassza a „Előzmények” menüpontot...",
+      "pickHistoryItemRefsPlaceholder": "Válasszon ki egy vagy több előzményelem-hivatkozást",
       "prepositionIn": "és",
+      "refPickerBranches": "ágak",
+      "refPickerRemoteBranches": "távoli ágak",
+      "refPickerTags": "címkék",
       "unamend": "Unamend",
       "unamendCommit": "Módosítás nélküli elküldés"
     },

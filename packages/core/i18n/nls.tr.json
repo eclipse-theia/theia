@@ -108,6 +108,9 @@
             "title": "Modelin komut istemini önbelleğe alıp almadığını gösterir. Varsayılan olarak `true`"
           }
         },
+        "customProvider": {
+          "label": "{0} (Özel)"
+        },
         "models": {
           "description": "Kullanılacak resmi Anthropic modelleri"
         }
@@ -148,6 +151,9 @@
         "clipboardSeparator": "pano",
         "confirmApplySuggestion": "{0} dosyası bu öneri oluşturulduğundan beri değiştirilmiştir. Değişikliği uygulamak istediğinizden emin misiniz?",
         "confirmRevertSuggestion": "{0} dosyası bu öneri oluşturulduğundan beri değiştirilmiştir. Değişikliği geri almak istediğinizden emin misiniz?",
+        "contextSummaryVariable": {
+          "description": "Mevcut sohbet oturumu bağlamındaki her bir öğenin türünü ve tanımlayıcılarını listeleyen bir JSON özeti."
+        },
         "couldNotFindMatchingLM": "Eşleşen bir dil modeli bulunamadı. Lütfen ayarlarınızı kontrol edin!",
         "couldNotFindReadyLMforAgent": "{0} ajanı için hazır bir dil modeli bulunamadı. Lütfen ayarlarınızı kontrol edin!",
         "customAgents": {
@@ -385,7 +391,6 @@
         "tokenUsageWarning": "Token kullanım uyarı eşiğine ulaşıldı.",
         "tokenUsageWarningEnabled": "Bir sohbet oturumunun token kullanımı yapılandırılan eşiği aştığında bir bildirim gösterilip gösterilmeyeceğini kontrol eder. Dil modeli sağlayıcısının token kullanımını bildirmesi gerekir.",
         "tokenUsageWarningMessage": "Sohbet oturumu jetonu kullanımı, bağlam penceresinin %{0}'sine ulaştı. Sınıra ulaşmamak için bu oturumu özetlemeyi veya yeni bir oturum başlatmayı düşünün.",
-        "tokenUsageWarningNewSessionAction": "Yeni Sohbet Başlat",
         "tokenUsageWarningSummarizeAction": "Mevcut Oturumu Özetle",
         "tokenUsageWarningThresholdPercentage": "Token kullanım uyarısının tetiklendiği model bağlam penceresinin yüzdesi. Bu değer aynı zamanda token kullanım göstergesinin uyarı/hata renk şeritlerini de belirler. Şu anda varsayılan 200k bağlam penceresi temel alınarak hesaplanır; kullanılabilir olduğunda model başına gerçek bağlam boyutu kullanılacaktır.",
         "toolcall-part-renderer": {
@@ -443,7 +448,6 @@
         },
         "currentDirectory": "geçerli dizin",
         "differentAgentRequestWarning": "Önceki sohbet isteği başka bir temsilci tarafından ele alınmıştır. Claude Code diğer mesajları görmez.",
-        "edit": "{0} dosyasını düzenle",
         "editAutomatically": "Otomatik olarak düzenle",
         "editing": "Düzenleme",
         "editsCount": "{0} düzenlemeler",
@@ -619,9 +623,6 @@
           "description": "Geçerli imleç konumunun ardından gelen kod. Yalnızca kod tamamlama bağlamında kullanılabilir."
         }
       },
-      "configuration": {
-        "selectItem": "Lütfen bir öğe seçin."
-      },
       "copilot": {
         "auth": {
           "aiConfiguration": "AI Yapılandırması",
@@ -667,30 +668,44 @@
         "agentConfiguration": {
           "addCustomAgent": "Özel Ajan Ekle",
           "availableCapabilities": "Mevcut Yetenekler",
-          "completionNotificationDescriptionPrefix": "Bu ajanın dikkatinizi gerektirdiği durumlarda, yani görevini tamamladığında veya sizden girdi istediğinde nasıl bilgilendirilmek istediğinizi seçin. \"Varsayılan\" seçeneği ",
+          "completionNotificationIntro": "Bu ajanın dikkatinizi gerektirdiği durumlarda (görevini tamamladığında veya girdi talep ettiğinde) nasıl bilgilendirilmek istediğiniz. \"Varsayılan\", genel ",
           "defaultNotificationDescription": "Küresel AI bildirim ayarını kullanır",
           "enableAgent": "Aracıyı Etkinleştir",
-          "llmRequirements": "LLM Gereksinimleri",
           "notUsedInPrompt": "Komut isteminde kullanılmaz.",
           "notUsedInPromptTooltip": "Bu değişken, aracı tarafından bildirilir ancak mevcut komut istemi şablonunda referans gösterilmez.",
           "notificationSettings": "Bildirim Ayarları",
           "notificationSettingsLink": "AI bildirim ayarı",
-          "promptTemplates": "Komut İstemi Şablonları",
-          "selectAgentMessage": "Lütfen önce bir Ajan seçin!",
           "showInChat": "Sohbette göster",
-          "templateName": "Şablon",
           "undeclared": "Bildirilmemiş",
           "undeclaredTooltip": "Bu değişken isteminde kullanılır, ancak aracı tarafından açıklanmış bir açıklaması yoktur.",
           "usedAgentSpecificVariables": "Kullanılan Aracıya Özgü Değişkenler",
-          "usedFunctions": "Kullanılan İşlevler",
           "usedGlobalVariables": "Kullanılan Global Değişkenler",
-          "variant": "Varyant"
+          "usedTools": "Kullanılan Araçlar"
         },
         "agentsVariable": {
           "description": "Sistemde kullanılabilir ajanların listesini döndürür."
         },
         "aiConfiguration": {
-          "label": "AI Yapılandırması"
+          "addValue": "Değer Katın...",
+          "categoryComingSoon": "{0} Yapılandırma henüz kullanıma açık değildir.",
+          "collectionEmpty": "Henüz yapılandırılacak öğe yok.",
+          "contributedByExtensions": "Eklemeler tarafından sağlanmıştır",
+          "decrease": "Azalt",
+          "increase": "Artır",
+          "label": "AI Yapılandırması",
+          "models": {
+            "label": "Sağlayıcılar ve Modeller"
+          },
+          "origin": {
+            "fromRegistry": "Kayıt defterinden",
+            "openAgentPlugin": "Bunu sağlayan Agent Eklentisini açın: {0}",
+            "openInRegistry": "AI kayıt defterinde aç: {0}",
+            "registryEntry": "AI kayıt defteri girdisi: {0}",
+            "viaAgentPlugin": "{0} aracılığıyla"
+          },
+          "scopeBanner": "{0}'ın kapsamını düzenleme.",
+          "searchPlaceholder": "AI ayarlarını ara",
+          "selectCategory": "Yapılandırmak istediğiniz kategoriyi seçin."
         },
         "blinkTitle": {
           "agentCompleted": "{0} - Aracı Tamamlandı",
@@ -753,8 +768,10 @@
         },
         "languageModelRenderer": {
           "alias": "[alias] {0}",
-          "languageModel": "Dil Modeli",
-          "purpose": "Amaç"
+          "purposeTitle": "Amaç: {0}",
+          "reasoningInherited": "Bu ajanın modelden talep ettiği akıl yürütme çabası. Ayarlanmamış olduğundan, akıl yürütme varsayılanları tercihinden veya modelden gelen \"{0}\" (Kullanıcı tarafından belirlenen) geçerlidir.",
+          "reasoningStored": "Bu ajanın modelden istediği mantık çıkarım çabası. Buradan veya sohbet girişindeki seçici aracılığıyla ayarlanabilir; seçici, aynı ayarı yazdırır.",
+          "serverTools": "Sunucu Araçları"
         },
         "maxRetries": {
           "mdDescription": "AI sağlayıcısına yapılan bir istek başarısız olduğunda yeniden deneme girişimlerinin maksimum sayısı. 0 değeri, yeniden deneme yapılmayacağı anlamına gelir.",
@@ -762,16 +779,17 @@
         },
         "modelAliasesConfiguration": {
           "agents": "Bu takma adı kullanan aracılar",
+          "aliasTypeLabel": "Model Takma Adı",
           "defaultList": "[Varsayılan liste]",
+          "description": "Tercih edilen bir modele yapılan adlandırılmış referanslar; böylece ajanlar belirli bir model yerine bir rolü hedefleyebilir.",
           "evaluatesTo": "Değerlendirilir",
           "label": "Model Takma Adları",
-          "modelNotReadyTooltip": "Hazır değil",
-          "modelReadyTooltip": "Hazır",
           "noAgents": "Hiçbir ajan bu takma adı kullanmaz.",
-          "noModelReadyTooltip": "Hazır model yok",
+          "noModel": "Model yok",
           "noResolvedModel": "Bu takma ad için hazır model yok.",
+          "notReady": "Henüz hazır değil",
           "priorityList": "Öncelik Listesi",
-          "selectAlias": "Lütfen bir Model Takma Adı seçin.",
+          "resolvesTo": "{0} adresine yönlendirilir",
           "selectedModelId": "Seçilen Model",
           "unavailableModel": "Seçilen model artık mevcut değildir"
         },
@@ -803,39 +821,15 @@
           "description": "Kullanıcının çalıştığı ürünün/uygulamanın adı"
         },
         "promptFragmentsConfiguration": {
-          "activeCustomizationTitle": "Etkin özelleştirme",
-          "createCustomizationTitle": "Özelleştirme Oluştur",
-          "customization": "özelleştirme",
-          "customizationLabel": "Özelleştirme",
-          "defaultVariantTitle": "Varsayılan varyant",
-          "deleteCustomizationTitle": "Özelleştirmeyi Sil",
-          "editTemplateTitle": "Şablonu düzenle",
-          "headerTitle": "Komut İstemi Parçaları",
-          "label": "Komut İstemi Parçaları",
-          "noFragmentsAvailable": "Kullanılabilir komut istemi parçası yoktur.",
-          "otherPromptFragmentsHeader": "Diğer Komut İstemi Parçaları",
-          "promptTemplateText": "Komut İstemi Şablonu Metni",
-          "promptVariantsHeader": "Komut İstemi Varyant Setleri",
-          "removeCustomizationDialogMsg": "\"{1}\" komut istem parçası için {0} özelleştirmesini kaldırmak istediğinizden emin misiniz?",
-          "removeCustomizationDialogTitle": "Özelleştirmeyi Kaldır",
-          "removeCustomizationWithDescDialogMsg": "\"{1}\" ({2}) komut istemi parçası için {0} özelleştirmesini kaldırmak istediğinizden emin misiniz?",
-          "resetAllButton": "Tümünü Sıfırla",
-          "resetAllCustomizationsDialogMsg": "Tüm komut istemi parçalarını yerleşik sürümlerine sıfırlamak istediğinizden emin misiniz? Bu, tüm özelleştirmeleri kaldıracaktır.",
-          "resetAllCustomizationsDialogTitle": "Tüm Özelleştirmeleri Sıfırla",
-          "resetAllCustomizationsTitle": "Tüm özelleştirmeleri sıfırla",
-          "resetAllPromptFragments": "Tüm komut istem parçalarını sıfırla",
+          "editPromptTemplate": "Komut istemi şablonunu düzenle",
+          "removePromptTemplate": "Komut istemi şablonunu kaldır",
+          "removePromptTemplateDialogMsg": "\"{1}\" komut istemi şablonu için {0} özelleştirmesini silmek istediğinizden emin misiniz? Bu şablonun yerleşik bir sürümü bulunmadığından tamamen silinecektir.",
+          "removePromptTemplateDialogTitle": "Komut İsteği Şablonunu Kaldır",
+          "removePromptTemplateWithDescDialogMsg": "\"{1}\" ({2}) komut istemi şablonu için {0} özelleştirmesini silmek istediğinizden emin misiniz? Bu şablonun yerleşik bir sürümü bulunmadığından tamamen silinecektir.",
+          "resetPromptTemplate": "Komut istemi şablonunu sıfırla",
           "resetToBuiltInDialogMsg": "\"{0}\" komut istemini yerleşik sürümüne sıfırlamak istediğinizden emin misiniz? Bu işlem tüm özelleştirmeleri silecektir.",
           "resetToBuiltInDialogTitle": "Yerleşik olarak sıfırla",
-          "resetToBuiltInTitle": "Bu yerleşik özelliğe sıfırla",
-          "resetToCustomizationDialogMsg": "\"{0}\" komut istemini sıfırlayarak {1} özelleştirmesini kullanmak istediğinizden emin misiniz? Bu işlem, tüm yüksek öncelikli özelleştirmeleri kaldıracaktır.",
-          "resetToCustomizationDialogTitle": "Özelleştirmeye Sıfırla",
-          "resetToCustomizationTitle": "Bu özelleştirmeye sıfırla",
-          "selectedVariantLabel": "Seçili",
-          "selectedVariantTitle": "Seçilen varyant",
-          "usedByAgentTitle": "Ajan tarafından kullanılır: {0}",
-          "variantSetError": "Seçilen varyant mevcut değildir ve varsayılan bir değer bulunamadı. Lütfen yapılandırmanızı kontrol edin.",
-          "variantSetWarning": "Seçilen varyant mevcut değildir. Bunun yerine varsayılan varyant kullanılmaktadır.",
-          "variantsOfSystemPrompt": "Bu komut istemi varyantı setinin varyantları:"
+          "variantSetError": "Seçilen varyant mevcut değildir ve varsayılan bir değer bulunamadı. Lütfen yapılandırmanızı kontrol edin."
         },
         "promptTemplates": {
           "description": "Özelleştirilmiş komut istemi şablonlarını depolamak için kullanılan klasör. Özelleştirilmezse, kullanıcı yapılandırma dizini kullanılır. Komut istemi şablonlarının varyantlarını yönetmek için sürüm kontrolü altında olan bir klasör kullanmayı düşünün."
@@ -899,12 +893,8 @@
         "taskContextSummary": {
           "description": "Oturum bağlamında bulunan tüm görev bağlam öğelerini çözer."
         },
-        "templateSettings": {
-          "edited": "düzenlendi",
-          "unavailableVariant": "Kullanılamıyor"
-        },
         "todayVariable": {
-          "description": "Bugün için bir şeyler yapın",
+          "dateDescription": "Güncel tarih. Varsayılan olarak insan tarafından okunabilir bir tarih dizesi olarak çözümlenir; format argümanı kullanıldığında ise ISO 8601 veya Unix saniyeleri biçimine dönüştürülür.",
           "format": {
             "description": "Tarihin biçimi"
           }
@@ -914,11 +904,17 @@
         "variable-contribution": {
           "builtInVariable": "{0} Yerleşik Değişken",
           "currentAbsoluteFilePath": "Şu anda açık olan dosyanın mutlak yolu.",
-          "currentFileContent": "Şu anda açık olan dosyanın düz içeriği. Bu, içeriğin nereden geldiğine dair bilgileri içermez.",
-          "currentRelativeDirPath": "Şu anda açık olan dosyayı içeren dizinin çalışma alanına göre yolu (ör. my-project/src).",
-          "currentRelativeFilePath": "Şu anda açık olan dosyanın çalışma alanına göre yolu (ör. my-project/src/index.ts).",
-          "currentSelectedText": "Açılan dosyada şu anda seçili olan düz metin. Bu, içeriğin nereden geldiğine dair bilgileri içermez.",
-          "dotRelativePath": "Şu anda açık olan dosyanın çalışma alanına göre yoluna kısa bir başvuru ('currentRelativeFilePath')."
+          "currentFileContent": "Şu anda açık olan dosyanın düz metin içeriği. Bu, içeriğin nereden geldiğine dair bilgileri içermez.",
+          "currentRelativeDirPath": "Şu anda açık olan dosyayı içeren dizinin çalışma alanına göre yolu (örn. my-project/src).",
+          "currentRelativeFilePath": "Şu anda açık olan dosyanın çalışma alanına göre yolu (örn. my-project/src/index.ts).",
+          "currentSelectedText": "Açık dosyada şu anda seçili olan düz metin. Bu, içeriğin nereden geldiğine dair bilgileri içermez.",
+          "dotRelativePath": "Şu anda açık olan dosyanın çalışma alanına göre göreceli yoluna (\"currentRelativeFilePath\") ilişkin kısa açıklama."
+        },
+        "variantSet": {
+          "templateLabel": "Şablon",
+          "unavailableVariant": "{0} (kullanılamıyor)",
+          "variantCount": "{0} varyantlar",
+          "variantCountSingular": "1. varyant"
         }
       },
       "editor": {
@@ -1000,10 +996,16 @@
       "ide": {
         "agent-description": "[AI Yapılandırma Görünümü]({0}) içinde etkinleştirme, LLM seçimi, komut istemi şablonu özelleştirme ve özel ajan oluşturma dahil olmak üzere AI ajan ayarlarını yapılandırın.",
         "agentConfiguration": {
+          "agentMode": "Coder için ajan modu",
+          "behavior": "Davranış",
           "customAgentLocationQuickPick": {
             "placeholder": "agents/<id>/agent.md dosyasının oluşturulacağı konumu seçin",
             "title": "Yeni özel ajanın konumunu seçin"
           },
+          "defaultChatAgent": "Varsayılan Sohbet Temsilcisi",
+          "defaultChatAgentNone": "Yerleşik varsayılan",
+          "defaultChatAgentNoneDescription": "Belirli bir varsayılan ayar yoktur; Theia, varsayılan Sohbet Aracısını seçer.",
+          "defaults": "Varsayılanlar",
           "genericCapabilitiesSettings": "Genel Yetenekler",
           "genericCapabilityType": {
             "agentDelegation": "Aracı Yetki Devri",
@@ -1020,10 +1022,14 @@
             "idTitle": "Yeni özel ajan",
             "noLocation": "Özel bir ajan oluşturulamıyor: komut istemi şablonlarının konumu yapılandırılmamış. Genel veya çalışma alanı komut istemi şablonları klasörünü ayarlayın ve tekrar deneyin."
           },
-          "noDescription": "Açıklama mevcut değil",
+          "noAgents": "Kullanılabilir aracı bulunmamaktadır.",
+          "orchestratorExclude": "Orkestratörden gizlenmiş ajanlar",
+          "orchestratorExcludePlaceholder": "Ajan kimliğini ekle...",
           "resetAllCapabilities": "Tüm özellikleri varsayılan değerlerine sıfırla",
-          "resetAllDefaults": "Tümünü Varsayılanlara Sıfırla",
-          "selections": "Seçimler"
+          "resetAllGenericCapabilities": "Tüm genel yetenek seçimlerini sıfırla",
+          "resetAllServerTools": "Bu sağlayıcının tüm sunucu araçlarını kapatın",
+          "showCapabilitySnippet": "Kod parçacığını göster",
+          "showToolSettings": "Aracı göster"
         },
         "agentMode": {
           "enabled": {
@@ -1036,6 +1042,15 @@
           "info": "Ajan Modu ile devam etmek, onayınızı kaydeder. Bunu daha sonra `ai-features.agentMode.enabled` ayarı aracılığıyla tekrar iptal edebilirsiniz.\n\nDüzenleme Modu ile devam etmek, varsayılan modunuzu Düzenleme Modu olarak değiştirir.\n\nMod seçiciyi kullanarak veya AI Yapılandırması'ndan istediğiniz zaman modları değiştirebilirsiniz.",
           "msg": "Bu ajan **ajans modu** kullanır. Otonom akışı etkinleştirmek için, ek bir onay almadan çalışma alanı dosyalarınıza doğrudan yazabilir.\n\nDeğişiklikleri gözden geçirebilmeniz ve geri alabilmeniz için sürüm kontrolü (ör. Git) kullanmanız önerilir.\n\nAşağıdaki sohbet giriş alanındaki mod seçiciyi kullanarak **Düzenleme Modu**'na geçebilir veya salt okunur planlama için **Architect** ajanını kullanabilirsiniz.\n\nBu onay, bu çalışma alanı için kaydedilir ve bir daha gösterilmez. Bunu sıfırlamak veya genel olarak yapılandırmak için Ayarlar'da `ai-features.agentMode.confirmed` öğesini arayın.",
           "waiting": "Onay bekleniyor..."
+        },
+        "agentsConfiguration": {
+          "description": "IDE'de bulunan AI ajanları. Bir ajanı açarak komut istemlerini, modelini ve yeteneklerini yapılandırabilirsiniz."
+        },
+        "aiConfiguration": {
+          "breadcrumbRoot": "AI Yapılandırması",
+          "manageMenu": "AI Yapılandırması",
+          "openButton": "Open AI Yapılandırması",
+          "pageTypeLabel": "Sayfa"
         },
         "allowAllMode": {
           "stripTooltip": "Bu oturumda AI araç çağrıları onay gerektirmeden çalışır. Yalnızca güvendiğiniz ortamlarda etkinleştirin.",
@@ -1132,6 +1147,25 @@
         "exploreAgent": {
           "description": "Kod tabanından bilgileri ayıklayan ve özetleyen bir kod tabanı keşif asistanı.         Mevcut durumla ilgili bilgileri raporlar, kod alıntıları sunar ve gözlemlenen kalıpları açıklar."
         },
+        "generalConfiguration": {
+          "aboutCosts": "Maliyetler ve veri kullanımı hakkında",
+          "bypassModelTitle": "Dil modeli kontrolünü atla",
+          "configureProvider": "Bir sağlayıcıyı yapılandırın",
+          "costsBody": "AI özellikleri, yapılandırdığınız dil modeli sağlayıcılarına istekler gönderir. Sağlayıcınıza ve kullanımınıza bağlı olarak bu işlemler maliyet doğurabilir — bunları yakından takip edin. Ajanlar aktifken istekler kesintisiz olarak çalışabilir. Ayrıntılar için [belgelere]({0}) bakın.",
+          "description": "AI özelliklerini açın veya kapatın ve asistanın IDE genelinde nasıl davranacağını yapılandırın.",
+          "dontPersist": "Kalıcı hale getirmeyin",
+          "enableAiDescription": "{0}'un tüm AI özelliklerini etkinleştirir. En az bir adet yapılandırılmış dil modeli sağlayıcısı gerektirir.",
+          "gateNote": "Aşağıdaki ayarlar, \"AI özelliklerini etkinleştir\" seçeneği açıldığında yürürlüğe girer.",
+          "hideList": "Listeyi gizle",
+          "homeSessionsTitle": "Ana sayfadaki oturumlar",
+          "label": "Genel",
+          "noProvider": "Henüz herhangi bir dil modeli sağlayıcısı yapılandırılmamıştır.",
+          "persistedSessionsTitle": "Kalıcı sohbet oturumları",
+          "pinAgentTitle": "Bahsedilen aracıları sabitle",
+          "providerReady": "Bir dil modeli sağlayıcısı yapılandırılmış ve kullanıma hazırdır.",
+          "sessionStorageTitle": "Oturum depolama konumu",
+          "unlimited": "Sınırsız"
+        },
         "github": {
           "configureGitHubServer": {
             "canceled": "GitHub sunucu yapılandırması iptal edildi. Bu aracıyı kullanmak için lütfen GitHub MCP sunucusunu yapılandırın.",
@@ -1158,12 +1192,25 @@
           "description": "Çalışma alanı kökleriyle ilişkili GitHub depoları (ör. \"eclipse-theia/theia\")"
         },
         "howToGetStarted": "Başlangıç",
+        "memoryCapability": {
+          "description": "Ajanın çalışma alanı için kalıcı, wiki tarzı bir bilgi tabanı tutmasını sağlar; böylece bu ve gelecek oturumlar sıfırdan başlamak yerine öncekilerin üzerine inşa edilir.",
+          "name": "Bellek"
+        },
+        "memoryDirectoryVariable": {
+          "description": "Aracının geçerli çalışma alanı için belleğini sakladığı dizinin mutlak yolu."
+        },
         "model-selection-description": "[AI Yapılandırma Görünümü]({0}) içinde her bir AI ajanı tarafından hangi Büyük Dil Modellerinin (LLM) kullanılacağını seçin.",
+        "modelsConfiguration": {
+          "description": "Dil modeli sağlayıcılarını ve ajanların kullanabileceği modelleri yapılandırın.",
+          "modelSettings": "Model Ayarları",
+          "noProviders": "Herhangi bir dil modeli sağlayıcısı yüklü değildir.",
+          "providers": "Sağlayıcılar"
+        },
         "moreAgentsAvailable": {
           "header": "Daha fazla ajan mevcuttur"
         },
         "noRecommendedAgents": "Önerilen ajan bulunmamaktadır.",
-        "openSettings": "AI Ayarlarını Aç",
+        "openAiConfiguration": "Open AI Yapılandırması",
         "orchestrator": {
           "error": {
             "noAgents": "İsteği işleyebilecek sohbet ajanı mevcut değil. Lütfen yapılandırmanızda herhangi bir ajanın etkin olup olmadığını kontrol edin."
@@ -1204,6 +1251,37 @@
           "description": "Tam bir kod inceleme iş akışını koordine eden, yapay zeka destekli bir PR inceleme aracısı: PR bilgilerini alır, kod tabanını inceler, yapılandırılmış analizler gerçekleştirir, diff görüntüleyicilerle kullanıcıyı bulgular arasında etkileşimli bir şekilde yönlendirir ve isteğe bağlı olarak GitHub'da bekleyen bir inceleme oluşturur."
         },
         "prompt-template-description": "[AI Yapılandırma Görünümü]({0}) içinde AI ajanları için komut istem varyantlarını seçin ve komut istem şablonlarını özelleştirin.",
+        "promptSnippetsConfiguration": {
+          "capabilitiesGroupDescription": "Etkinleştirildiğinde bir ajanın komut istemine eklediği talimatlar. Bunlar paylaşılır; dolayısıyla yapılan bir düzenleme, bunları kullanan tüm ajanları etkiler.",
+          "capabilityTypeLabel": "Yetenek",
+          "customized": "Özelleştirilmiş",
+          "description": "Yeniden kullanılabilir komut istemi metni: kendi snippet'leriniz ile ajanların çektiği yetenek snippet'leri. Bir snippet'i düzenlemek, onu kullanan tüm ajanları etkiler.",
+          "editSnippet": "Kod parçasını düzenle",
+          "empty": "Komut istemi kod parçacıkları mevcut değildir.",
+          "filterPlaceholder": "Komut istemi kod parçacıklarını ada, kimliğe veya açıklamaya göre filtreleyin",
+          "genericCapabilitiesGroup": "Genel Özellikler",
+          "genericCapabilitiesGroupDescription": "Seçilen özellikleri ajanın komut istemine entegre etmek için temel talimatlar.  Bunlar paylaşılır; dolayısıyla yapılan bir düzenleme, bunları kullanan tüm ajanları etkiler.",
+          "genericCapabilityTypeLabel": "Genel yetenek",
+          "label": "Komut İsteği Parçacıkları",
+          "noMatches": "\"{0}\" ifadesiyle eşleşen komut istemi parçacığı bulunamadı.",
+          "removeDialogMsg": "\"{1}\" snippet'i için {0} özelleştirmesini silmek istediğinizden emin misiniz? Bu snippet'in yerleşik bir sürümü bulunmadığından, tamamen silinecektir.",
+          "removeDialogTitle": "Parça Kaldır",
+          "removeSnippet": "Kod parçasını kaldır",
+          "removeWithDescDialogMsg": "\"{1}\" ({2}) snippet'i için {0} özelleştirmesini silmek istediğinizden emin misiniz? Bu snippet'in yerleşik bir sürümü bulunmadığından, tamamen silinecektir.",
+          "resetAll": "Tüm Özelleştirmeleri Sıfırla",
+          "resetAllDialogMsg": "Her özelleştirilmiş komut istemi parçasını yerleşik sürümüne sıfırlamak istediğinizden emin misiniz? Bu, yalnızca burada listelenen kod parçacıklarını değil, ajanların komut istemi şablonlarını da içerir. Yerleşik sürümü olmayan kod parçacıkları korunur.",
+          "resetAllDialogTitle": "Tüm Özelleştirmeleri Sıfırla",
+          "resetAllMessage": "Bazı komut istemi parçaları özelleştirilmiştir. Sıfırlama işlemi, ajanların komut istemi şablonları da dahil olmak üzere hepsini yerleşik sürümlerine geri döndürür. Yerleşik sürümü olmayan kod parçacıkları korunur.",
+          "resetDialogMsg": "\"{0}\" snippet'ini yerleşik sürümüne sıfırlamak istediğinizden emin misiniz? Bu işlem, tüm özelleştirmeleri kaldıracaktır.",
+          "resetDialogTitle": "Snippet'i Yerleşik Ayarlara Sıfırla",
+          "resetSnippet": "Snippet'i yerleşik ayarlara sıfırla",
+          "snippetsGroupDescription": "Kendiniz bakımını yaptığınız, diğer komut istemlerinden {{prompt:id}} ile referans verilen komut istemi metni.",
+          "usedByAgents": "Ajanlar tarafından kullanılır"
+        },
+        "promptsAndSkillsConfiguration": {
+          "label": "Beceriler ve Eğik Çizgi Komutları",
+          "pageSubtitle": "Modelin kullanabileceği beceriler ve / işaretiyle çalıştırabileceğiniz slash komutları. Bir beceriyi açarak SKILL.md dosyasını düzenleyin veya bir slash komutunun şablonunu düzenleyin."
+        },
         "requiresApproval": "Onayınız gereklidir",
         "restoredSession": "Geri yüklenen oturum",
         "restrictedModeDetails": "AI sohbeti, satır içi öneriler, kod eylemleri ve komut şablonları devre dışıdır",
@@ -1214,22 +1292,27 @@
           "toolConfirmation": "Araç başına onay geçersiz kılmaları: {0}",
           "toolConfirmationGeneric": "Araç başına onay geçersiz kılma ayarları"
         },
-        "shellAllowlist": {
-          "placeholder": "Örneğin, \"git log\" (tam) veya \"git log *\" (argümanlarla)."
-        },
-        "shellDenylist": {
-          "placeholder": "Örneğin, \"git push *\" veya \"rm -rf /\""
-        },
         "shellExecutionCapability": {
           "description": "Ajanın ana sistemde rastgele kabuk komutları çalıştırmasına izin verir. Ajan daha sonra görev olarak kullanılamayan komut dosyalarını yürütmek, sistem bilgilerini sorgulamak ve özel bir aracı olmayan işlemleri gerçekleştirmek için yetki devredebilir.",
           "name": "Kabuk Yürütme"
         },
         "skillsConfiguration": {
-          "noSkills": "Kullanılabilir beceri yok",
-          "noSlashCommands": "Kullanılabilir eğik çizgi komutu yok",
+          "compatibility": "Uyumluluk",
+          "editCommandTemplate": "Komut istemi şablonunu düzenle",
+          "empty": "Herhangi bir beceri veya eğik çizgi komutu mevcut değildir.",
+          "filterPlaceholder": "Becerileri ve eğik çizgi komutlarını ada veya açıklamaya göre filtreleyin",
+          "frontmatter": "Ön Bilgiler",
+          "noAllowedTools": "İzin verilen araç beyan edilmemiştir. Beceri, ajanın halihazırda sahip olduğu herhangi bir aracı kullanabilir.",
+          "noMatches": "\"{0}\" ile eşleşen hiçbir beceri veya slash komutu bulunmamaktadır.",
+          "noSkillAgents": "Şu anda hiçbir ajan beceri bilgisini göstermiyor, dolayısıyla bunlara ulaşılamıyor: bir becerinin, bir ajanın komut isteminde {{skills}} değişkenine veya beceri kullanım yeteneğine ihtiyacı vardır.",
+          "openSkillFile": "SKILL.md dosyasını açın",
+          "skillsGroupDescription": "Modelin takip etmeyi seçebileceği dosya tabanlı SKILL.md birimleri; {{skills}} değişkeni ve beceri kullanım yeteneği aracılığıyla görüntülenir.",
           "slashCommand": {
-            "allAgents": "Tüm ajanlar"
+            "allAgents": "Tüm ajanlar",
+            "allAgentsTooltip": "Bu komut hiçbir ajanı tanımlamadığından, tüm ajanlar tarafından kullanılabilir.",
+            "availableForAgents": "Ajanlar için kullanılabilir"
           },
+          "slashCommandsGroupDescription": "Sohbet penceresinde /name yazarak çağırabileceğiniz ve bir veya daha fazla temsilci tarafından kullanılabilen komut istemi parçaları.",
           "slashCommandsSectionHeader": "Slash Komutları"
         },
         "toolConfirmationInfo": {
@@ -1249,8 +1332,10 @@
             "label": "Onay Modu"
           },
           "default": {
-            "label": "Varsayılan Araç Onay Modu:"
+            "rowLabel": "Varsayılan Araç Onay Modu"
           },
+          "description": "Ajanların hangi araçları çağırabileceğini ve her birinin çalıştırılmadan önce onay gerektirip gerektirmeyeceğini seçin.",
+          "filterPlaceholder": "Filtre araçları",
           "recommendedDefaults": {
             "apply": "Varsayılan Araçlara İzin Ver",
             "dialogConfirm": "Anladım, izin ver",
@@ -1270,16 +1355,7 @@
             "title": "Tüm Araç Onay Modlarını Sıfırla"
           },
           "resetAllTooltip": "Tüm araçları varsayılana sıfırla",
-          "shellAllowlist": {
-            "description": "Bu kalıplara uyan komutlar, onaylanmadan otomatik olarak izin verilir. * karakterini joker karakter olarak kullanın: \"git log\" (tam eşleşme), \"git log *\" (herhangi bir argümanla). Joker karakterin önüne boşluk bırakılmalıdır.",
-            "empty": "Yapılandırılmış desen yoktur. Tüm kabuk komutları onay gerektirecektir.",
-            "title": "Kabuk Yürütme İzin Listesi"
-          },
-          "shellDenylist": {
-            "description": "Bu kalıplara uyan komutlar, onaylanmadan otomatik olarak reddedilecektir. Bunu, \"git push *\" veya \"rm -rf /\" gibi tehlikeli komutları engellemek için kullanın.",
-            "empty": "Yapılandırılmış desen yok. Hiçbir kabuk komutu otomatik olarak reddedilmeyecektir.",
-            "title": "Kabuk Yürütme Reddetme Listesi"
-          },
+          "shellExecution": "Kabuk Komutlarının Yürütülmesi",
           "toolOptions": {
             "confirm": {
               "label": "Onayla"
@@ -1295,7 +1371,21 @@
           "unread": "Okunmamış"
         },
         "variableConfiguration": {
-          "selectVariable": "Lütfen bir Değişken seçin.",
+          "argCountPlural": "{0} argümanlar",
+          "argCountSingular": "1 argüman",
+          "argEnum": "Aşağıdakilerden biri: {0}",
+          "contextGroup": "Bağlam Değişkenleri",
+          "contextGroupDescription": "Komut isteminde {0} adıyla referans verilir ve ayrıca ajanın ve araçlarının inceleyebileceği bir bağlam olarak bir isteğe eklenebilir.",
+          "copyVariableName": "Değişken adını kopyala",
+          "filterPlaceholder": "Değişkenleri ada veya açıklamaya göre filtreleyin",
+          "noMatches": "\"{0}\" ile eşleşen değişken bulunamadı.",
+          "noVariables": "Kullanılabilir değişken yoktur.",
+          "openAgent": "Açık ajan {0}",
+          "optional": "isteğe bağlı",
+          "pageSubtitle": "Komut istemind{0}su ile başvurabileceğiniz değerler. Bunlar, istek anında çözümlenir ve eklenir.",
+          "plainGroup": "Düz Değişkenler",
+          "plainGroupDescription": "Komut isteminde \"{0}\" adıyla referans verilir ve istek anında satır içi olarak bir metin değerine dönüştürülür.",
+          "required": "gerekli",
           "usedByAgents": "Ajanlar tarafından kullanılır."
         },
         "waitingForInput": "Girişinizi bekliyoruz"
@@ -1407,12 +1497,20 @@
           },
           "registryMetadata": {
             "configHash": {
-              "mdDescription": "Bu sunucuyu kurmak için kullanılan kayıt defteri onayının içerik hash'i.",
+              "mdDescription": "Bu sunucuyu kurmak için kullanılan kayıt defteri onayı veya buna katkıda bulunan Ajan Eklentisinin içerik hash'i.",
               "title": "Kayıt Defteri Yapılandırma Hash'i"
             },
+            "installedAt": {
+              "mdDescription": "Bu sunucuyu ekleyen Agent Eklentisi en son ne zaman diske yazıldı. Bu değer değiştirildiğinde sunucu yeniden başlatılır ve bu sayede güncelleme yürürlüğe girer. `@theia/ai-registry` tarafından yazılmıştır; kullanıcı tarafından düzenlenemez.",
+              "title": "Ajan Eklentisi Şu Konuma Yüklendi:"
+            },
             "mdDescription": "Bir AI kayıt defterinden kurulan sunucu için menşe meta verileri. `@theia/ai-registry` tarafından yazılmıştır; kullanıcı tarafından düzenlenemez.",
+            "pluginId": {
+              "mdDescription": "Bu sunucuya katkıda bulunan, yüklü Ajan Eklentisini tanımlar. `@theia/ai-registry` tarafından yazılmıştır; kullanıcı tarafından düzenlenemez.",
+              "title": "Aracı Eklenti Kimliği"
+            },
             "serverId": {
-              "mdDescription": "Bu sunucunun kurulduğu AI kayıt defteri girdisini tanımlar.",
+              "mdDescription": "Bu sunucunun kurulduğu AI kayıt defteri girdisini tanımlar. Bir Ajan Eklentisi tarafından sağlanan sunucularda bu bilgi yoktur; bunun yerine `pluginId` değeri bulunur.",
               "title": "Kayıt Defteri Sunucu Kimliği"
             },
             "title": "Kayıt Defteri Meta Verileri",
@@ -1457,6 +1555,9 @@
         }
       },
       "mcpConfiguration": {
+        "addArgument": "Argüman ekle…",
+        "addKeyValue": "KEY=değer… ekleyin",
+        "addScope": "Kapsam ekle…",
         "autostart": "Otomatik başlatma",
         "browseAIRegistry": "AI kayıt defterine göz at",
         "browseAIRegistryTooltip": "AI kayıt defteri girdilerini incelemek için Uzantılar görünümünü açın",
@@ -1464,8 +1565,9 @@
           "addServer": "Yerel MCP yapılandırması ekle..."
         },
         "copiedAllList": "Tüm araçları panoya kopyalandı (tüm araçların listesi)",
-        "copiedAllSingle": "Tüm araçları panoya kopyaladı (tüm araçları içeren tek komut istemi parçası)",
-        "copiedForPromptTemplate": "Tüm araçları komut istemi şablonu için panoya kopyaladı                                     (tüm araçları içeren tek komut istemi parçası)",
+        "copiedAllSingle": "Tüm araçlar panoya kopyalandı (tüm araçları içeren tek bir komut istemi parçası)",
+        "copiedForPrompt": "{0} adresi panoya kopyalandı (sohbet veya komut istemi şablonu için)",
+        "copiedForPromptTemplate": "Komut istemi şablonu için tüm araçları panoya kopyalandı (tüm araçları içeren tek bir komut istemi parçası)",
         "copyAllList": "Tümünü kopyala (tüm araçların listesi)",
         "copyAllSingle": "Sohbet için tümünü kopyala (tüm araçları içeren tek komut istemi parçası)",
         "copyForPrompt": "Kopyalama aracı (sohbet veya komut istemi şablonu için)",
@@ -1475,8 +1577,6 @@
         "deleteServerDialogMsg": "\"{0}\" sunucusunu silmek istediğinizden emin misiniz?",
         "deleteServerDialogTitle": "MCP Sunucusunu Sil",
         "deleteServerError": "MCP sunucusu silinemedi: {0}",
-        "editServer": "Sunucuyu Düzenle",
-        "editServerTitle": "MCP Sunucusunu Düzenle",
         "environmentVariables": "Ortam Değişkenleri",
         "form": {
           "argsPlaceholder": "Boşlukla ayrılmış, örneğin -y @modelcontextprotocol/server-brave-search",
@@ -1509,7 +1609,6 @@
           "serverUrlPlaceholder": "Örneğin, https://mcp.example.com",
           "serverUrlRequired": "Uzak sunucular için sunucu URL'si gereklidir."
         },
-        "fromRegistryLink": "Kayıt defterinden",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "Yetkilendirme Sunucusu",
         "oauthClientId": "OAuth İstemci Kimliği",
@@ -1517,11 +1616,15 @@
         "oauthRedirectUrl": "Yönlendirme URL'si",
         "oauthResource": "OAuth Kaynağı",
         "oauthScopes": "OAuth Kapsamları",
-        "openInRegistry": "AI kayıt defterinde aç: {0}",
+        "pluginData": "Eklenti Verileri",
+        "pluginRoot": "Eklenti Kök Dizin",
         "saveServerError": "MCP sunucu yapılandırması kaydedilemedi: {0}",
         "serverAuthToken": "Kimlik Doğrulama Jetonu",
         "serverAuthTokenHeader": "Kimlik Doğrulama Başlığı Adı",
+        "serverTypeLabel": "MCP sunucusu",
         "serverUrl": "Sunucu URL'si",
+        "serversListTitle": "Sunucular",
+        "showToolSettings": "Aracı göster",
         "signInServerFailed": "\"{0}\" MCP sunucusuna oturum açılamadı.",
         "signInServerNotCompleted": "\"{0}\" MCP sunucusuna oturum açma işlemi tamamlanmadı.",
         "signInServerSucceeded": "\"{0}\" adlı MCP sunucusuna oturum açıldı.",
@@ -1530,7 +1633,7 @@
         "signOutServerFailed": "\"{0}\" MCP sunucusundan çıkış yapılamadı.",
         "startServerFailed": "\"{0}\" adlı MCP sunucusu başlatılamadı.",
         "stopServerFailed": "\"{0}\" adlı MCP sunucusu durdurulamadı.",
-        "tools": "Araçlar: "
+        "typeRemoteOAuth": "Uzak (OAuth)"
       },
       "openai": {
         "apiKey": {
@@ -1580,6 +1683,9 @@
           "useResponseApi": {
             "title": "Chat Completion API yerine daha yeni OpenAI Response API'yi kullanın. Özel sağlayıcılar için varsayılan olarak `false`. Not: Araçlar kullanıldığında otomatik olarak Chat Completions API'ye geri döner."
           }
+        },
+        "customProvider": {
+          "label": "{0} (Özel)"
         },
         "models": {
           "description": "Kullanılacak resmi OpenAI modelleri"
@@ -1683,7 +1789,7 @@
       },
       "tokenUsage": {
         "cachedInputTokens": "Önbelleğe Yazılan Giriş Belirteçleri",
-        "cachedInputTokensTooltip": "\"Giriş Jetonları\"na ek olarak izlenir. Genellikle önbelleğe alınmamış jetonlardan daha pahalıdır.",
+        "description": "Sağlayıcılar ve modeller genelinde token tüketimini inceleyin.",
         "failedToGetTokenUsageData": "Token kullanım verilerini almada hata oluştu: {0}",
         "inputTokens": "Giriş Belirteçleri",
         "label": "Token Kullanımı",
@@ -1691,9 +1797,7 @@
         "noData": "Henüz token kullanım verisi mevcut değildir.",
         "note": "Token kullanımı, uygulamanın başlangıcından itibaren izlenir ve kalıcı değildir.",
         "outputTokens": "Çıktı Belirteçleri",
-        "readCachedInputTokens": "Önbellekten Okunan Giriş Belirteçleri",
-        "readCachedInputTokensTooltip": "\"Giriş Jetonu\"na ek olarak izlenir. Genellikle önbelleğe alınmamış halinden çok daha ucuzdur. Genellikle oran sınırlarına dahil edilmez.",
-        "totalTokensTooltip": "'Giriş Belirteçleri' + 'Çıkış Belirteçleri'"
+        "readCachedInputTokens": "Önbellekten Okunan Giriş Belirteçleri"
       },
       "vercelai": {
         "anthropicApiKey": {
@@ -1736,7 +1840,7 @@
       },
       "workspace": {
         "allowedExternalPaths": {
-          "description": "AI araçlarının okuyabileceği çalışma alanı dışındaki mutlak yolların veya dosya URI'lerinin (dizinler veya dosyalar) listesi. Kullanıcı ana dizinine atıfta bulunmak için `~` karakterini destekler. Varsayılan olarak boştur; yalnızca isteğe bağlıdır. getFileContent, findFilesByPattern, getWorkspaceFileList ve getWorkspaceDirectoryStructure tarafından desteklenir. Çalışma alanı güvenilir olmadığında, çalışma alanı kapsamındaki değerler yok sayılır. İzin verilen dizinler içindeki sembolik bağlantılar takip edilir ve izin verilen liste dışındaki dosyalara yönlendirebilir; yalnızca içeriğine güvendiğiniz dizinleri ekleyin.",
+          "description": "AI araçlarının erişebileceği çalışma alanı dışındaki mutlak yolların veya dosya URI'lerinin (dizinler veya dosyalar) listesi. Kullanıcı ana dizinine atıfta bulunmak için `~` karakterini destekler. Varsayılan olarak boştur; yalnızca isteğe bağlıdır. Dosya yazan araçlar da dahil olmak üzere, yol alan her araç tarafından kabul edilir. Çalışma alanı güvenilir değilse, çalışma alanı kapsamındaki değerler yok sayılır. İzin verilen dizinler içindeki sembolik bağlantılar takip edilir ve izin verilenler listesi dışındaki dosyalara işaret edebilir; yalnızca içeriğine güvendiğiniz dizinleri ekleyin.",
           "title": "İzin Verilen Harici Yollar"
         },
         "coderAgent": {
@@ -1807,6 +1911,9 @@
       "agentInputNeededMessageWithSession": "\"{0}\" adlı ajan, \"{1}\" adresinde sizin girdilerinize ihtiyaç duymaktadır.",
       "agentInputNeededTitle": "\"{0}\" adlı ajan, sizin görüşlerinize ihtiyaç duyuyor",
       "aiDisabledInRestrictedMode": "Güvenilmeyen çalışma alanlarında AI özellikleri kullanılamaz.",
+      "openConfiguration": {
+        "description": "AI ayarları, AI Yapılandırma görünümüne taşınmıştır. Sağlayıcıları, modelleri, aracıları ve daha fazlasını yapılandırmak için bu görünümü açın."
+      },
       "preferences": {
         "linuxEnvHint": "Linux'ta, uygulamayı masaüstü kısayolundan başlatıyorsanız, değişkenin `~/.profile` dosyasında (sadece `~/.bashrc` dosyasında değil) tanımlandığından emin olun. Ayrıntılar için [belgelere](https://theia-ide.org/docs/user_ai/#setting-api-keys) bakın.",
         "title": "AI Özellikleri"
@@ -1890,10 +1997,128 @@
     },
     "ai-registry": {
       "action": {
+        "copyId": "Kopyala ID",
         "fix": "Yapılandırmayı düzelt",
         "link": "Kayıt defterine bağlantı",
         "unlink": "Bağlantıyı kaldır",
         "updateTooltip": "{0} adresinden {1} adresine güncelleme"
+      },
+      "autoUpdate": {
+        "ask": "Yüklü bir beceri, MCP sunucusu veya Ajan Eklentisi için güncelleme mevcut olduğunda bildirimde bulun.",
+        "changeLater": "Bunu daha sonra {0} dosyasında değiştirebilirsiniz.",
+        "configureDefault": "{0} dosyasında varsayılan ayarları yapılandırın.",
+        "defaultPrompt": "Bundan sonra becerileri, MCP sunucularını ve Aracı Eklentilerini AI kayıt defterinden otomatik olarak güncellemek ister misiniz?",
+        "description": "AI kayıt defterinden yüklenen beceriler, MCP sunucuları ve Aracı Eklentileri için varsayılan güncelleme davranışı. Güncellemeler, pencere her yüklendiğinde bir kez kontrol edilir. Tek tek öğeler, Uzantılar görünümündeki dişli menüsünden bu ayarı geçersiz kılabilir.",
+        "enableDefault": "Otomatik Güncellemeyi Etkinleştir",
+        "keepAsking": "Sormaya Devam Et",
+        "mcpAvailable": "MCP sunucusu \"{0}\" için bir güncelleme mevcuttur.",
+        "off": "Yüklü becerileri, MCP sunucularını ve Ajan Eklentilerini asla güncellemeyin ve mevcut güncellemeler hakkında asla bildirimde bulunmayın.",
+        "on": "Yüklü becerileri, MCP sunucularını ve Ajan Eklentilerini otomatik olarak güncelleyin.",
+        "pluginAvailable": "\"{0}\" adlı ajan eklentisi için bir güncelleme mevcuttur.",
+        "skillAvailable": "\"{0}\" becerisi için bir güncelleme mevcuttur.",
+        "summary": "{0} AI kayıt defteri güncellemeleri mevcuttur.",
+        "updateAll": "Tümünü Güncelle",
+        "updateFailed": "{0}'ın AI kayıt defteri öğeleri otomatik olarak güncellenemedi.",
+        "updatedMany": "{0}'daki AI kayıt defteri öğeleri güncellendi."
+      },
+      "autoUpdateOverrides": {
+        "mdDescription": "`skill:<skillId>`, `mcp:<serverId>` veya `plugin:<pluginId>` anahtarlarıyla `#ai-features.registry.autoUpdate#` öğesinin her bir artefakt için geçersiz kılınması. Girdiler normalde Uzantılar görünümündeki dişli menüsü aracılığıyla yönetilir; girdisi olmayan bir artefakt varsayılan ayarı kullanır."
+      },
+      "mcp": {
+        "updated": "MCP sunucusu \"{0}\" güncellendi."
+      },
+      "plugin": {
+        "action": {
+          "fix": "Eklentiyi Düzelt",
+          "link": "Kayıt defterine bağlantı",
+          "unlink": "Bağlantıyı kaldır"
+        },
+        "diagnostics": {
+          "manySkipped": "{0} atlanan bileşenler",
+          "mcpDisabled": "MCP yapılandırması göz ardı edildi",
+          "mcpDisabledAndSkipped": "MCP yapılandırması yok sayıldı, {0}",
+          "oneSkipped": "\"{0}\" bileşeni atlandı: {1}"
+        },
+        "dialog": {
+          "contains": "İçerik",
+          "endorsedBy": "Onaylayan",
+          "from": "Kaynak:",
+          "install": {
+            "title": "\"{0}\" Aracı Eklentisini Yükleyin"
+          },
+          "mcpWarning": "Bu eklentinin MCP sunucuları, makinenizde istediğiniz komutları çalıştırabilir. Onay, eklentinin tamamını kapsar; içindeki hiçbir sunucu tek başına onaylanmaz. Sunucular, kurulumdan sonra otomatik olarak başlar.",
+          "mismatch": {
+            "actual": "alındı",
+            "endorsed": "\"{0}\" için indirilen dosyalar, {1}'un {2} adresinde onayladığı dosyalarla uyuşmamaktadır.",
+            "expected": "onaylanmış",
+            "explanation": "Bu durum, eklenti yazarlarının commit yapmasından sonra en fazla bir gün boyunca beklenir; çünkü kayıt defteri kaynakları her gün yeniden okur ve hiçbir commit'i sabitlemez; ayrıca, arşivlerinden dosyaları hariç tutan bir depo bunu kalıcı olarak üretir. Bu aynı zamanda, güvenliği ihlal edilmiş bir kaynağın nasıl göründüğüdür.",
+            "installAnyway": "Yine de yükle",
+            "title": "Kaynak değişti",
+            "unendorsed": "\"{0}\" için indirilen dosyalar, kayıt defterinin yayınladığı içerik hash değeriyle eşleşmemektedir."
+          },
+          "noEndorsements": "Destekleyen kuruluş yoktur",
+          "viaTrust": "{0} aracılığıyla"
+        },
+        "fixed": "\"{0}\" adlı Agent Eklentisi geri yüklendi.",
+        "installUri": {
+          "fetchFailed": "\"{0}\" Agent Eklentisini yüklemek için AI kayıt defteri yüklenemedi.",
+          "missingId": "Yükleme bağlantısında gerekli \"id\" parametresi eksik.",
+          "success": "AI kayıt defterinden \"{0}\" adlı Ajan Eklentisi yüklendi.",
+          "unknownId": "\"{0}\" adlı ajan eklentisi, AI kayıt defterinizde listelenmemiştir."
+        },
+        "installed": "Yüklü Ajan Eklentisi \"{0}\".",
+        "invalidDirectoryName": "Geçersiz eklenti dizini adı \"{0}\": ayrıcı içermeyen tek bir yol parçası olmalıdır.",
+        "linked": "Bağlantılı Ajan Eklentisi \"{0}\".",
+        "manifestFieldNotString": "\"plugin.json\" dosyasındaki \"{0}\" alanı bir dize olmalıdır.",
+        "manifestInvalidAuthor": "\"plugin.json\" dosyasındaki \"author\" alanı, isteğe bağlı \"name\", \"email\" ve \"url\" dize alanlarını içeren bir nesne olmalıdır.",
+        "manifestInvalidKeywords": "\"plugin.json\" dosyasındaki \"keywords\" alanı bir dize dizisi olmalıdır.",
+        "manifestInvalidName": "\"{0}\" eklenti adı geçersizdir: 1 ila 64 arasında küçük harf, alfasayısal karakter, tire veya nokta içermeli, alfasayısal bir karakterle başlamalı ve bitmeli ve \"--\" veya \"..\" içermemelidir.",
+        "manifestNotJson": "\"plugin.json\" geçerli bir JSON dosyası değildir.",
+        "manifestNotObject": "\"plugin.json\" dosyası, en üst düzeyde bir JSON nesnesi içermelidir.",
+        "manifestRequiredField": "\"plugin.json\" dosyasındaki \"{0}\" alanı zorunludur ve boş olmayan bir dize olmalıdır.",
+        "manifestUnsupportedVersion": "\"plugin.json\" dosyası, desteklenmeyen Agent Plugins şeması \"{0}\" dosyasını hedeflemektedir.",
+        "mcpInvalidDocument": "\"mcp.json\" dosyası, tam olarak gerekli olan \"$schema\" ve \"mcpServers\" alanlarını içeren bir üst düzey JSON nesnesi içermelidir.",
+        "mcpNotJson": "\"mcp.json\" geçerli bir JSON dosyası değildir.",
+        "mcpUnsupportedVersion": "\"mcp.json\", desteklenmeyen Agent Plugins şeması \"{0}\"yi hedefler.",
+        "mcpVersionMismatch": "\"mcp.json\" dosyası, Agent Plugins sürümü \"{0}\"yi hedeflerken, \"plugin.json\" dosyası ise \"{1}\"yi hedefler.",
+        "nonObjectExtensions": "\"plugin.json\" dosyasındaki \"extensions\" alanı bir nesne olmadığı için göz ardı edilmektedir.",
+        "progress": {
+          "text": "\"{0}\" Ajan Eklentisi: {1}"
+        },
+        "registrationFailed": "\"{0}\" adlı Ajan Eklentisi yüklendi, ancak MCP sunucuları kaydedilemedi: {1}. Yeniden denemek için eklentiyi kaldırıp yeniden yükleyin.",
+        "serverDuplicateHeader": "\"{0}\" başlık adı birden fazla kez tanımlanmıştır.",
+        "serverEmptyField": "\"{0}\" adlı sunucu yapılandırma alanı boş bırakılmamalıdır.",
+        "serverFieldNotString": "\"{0}\" adlı sunucu yapılandırma alanı bir dize olmalıdır.",
+        "serverInvalid": "Sunucu yapılandırması geçersiz.",
+        "serverInvalidArgs": "\"args\" alanı bir dize dizisi olmalıdır.",
+        "serverInvalidCommand": "\"{0}\" komut değeri, yalın bir yürütülebilir dosya adı veya \"./\" ile başlayan eklentiye göreli bir yol olmalıdır.",
+        "serverInvalidCwd": "\"cwd\" değeri \"{0}\", \"./\", \"${PLUGIN_ROOT}\" veya \"${PLUGIN_DATA}\" ile başlamalıdır.",
+        "serverInvalidEnv": "\"env\" alanı, dizelerden oluşan bir nesne olmalıdır.",
+        "serverInvalidHeader": "\"{0}\" başlığı, geçerli bir HTTP başlık alanı değildir.",
+        "serverInvalidHeaders": "\"headers\" alanı, dizelerden oluşan bir nesne olmalıdır.",
+        "serverInvalidUrl": "\"url\" değeri olan \"{0}\", kullanıcı bilgisi ve parça içermeyen mutlak bir http veya https URL'si olmalıdır; döngüsel olmayan bir URL ise https kullanmalıdır.",
+        "serverMissingField": "Sunucu yapılandırmasında gerekli olan \"{0}\" alanı eksik.",
+        "serverNotObject": "Sunucu yapılandırması bir JSON nesnesi değildir.",
+        "serverPathEscapes": "\"{0}\" değerindeki \"{1}\" ifadesi, \"{2}\" adresi dışında çözümlenir.",
+        "serverReservedEnv": "\"env\" girdisi \"{0}\" ayrılmıştır ve bir eklenti tarafından tanımlanmamalıdır.",
+        "serverUnknownField": "Sunucu yapılandırmasında, aktarım türü açısından izin verilmeyen \"{0}\" alanı tanımlanmıştır.",
+        "serverUnknownType": "Sunucu yapılandırması, bilinmeyen \"{0}\" aktarım türünü tanımlamaktadır.",
+        "serverUnsupportedTransport": "\"{0}\" adlı MCP aktarım yöntemi desteklenmemektedir.",
+        "stat": {
+          "oneServer": "1 MCP sunucusu",
+          "servers": "{0} MCP sunucuları"
+        },
+        "uninstalled": "\"{0}\" adlı Ajan Eklentisi kaldırıldı.",
+        "unknownManifestField": "Bilinmeyen \"plugin.json\" alanı \"{0}\" göz ardı ediliyor.",
+        "unlinked": "Bağlantısı kesilmiş Ajan Eklentisi \"{0}\".",
+        "updated": "Güncellenen Ajan Eklentisi \"{0}\".",
+        "warning": {
+          "fix": "Bu eklentinin dosyaları, yüklenen dosyalarla farklılık gösteriyor. Onaylanmış içeriği yeniden indirmek için \"Eklentiyi Düzelt\" seçeneğine tıklayın.",
+          "linkStale": "Bu eklenti kayıt defterinden yüklenmişti, ancak kayıt defterinde artık listelenmiyor. Kayıt defteri bağlantısını kaldırıp dosyaları korumak için Bağlantıyı Kaldır'a, eklentiyi kaldırmak için Kaldır'a tıklayın.",
+          "manual": "Bu dizin kayıt defterinden yüklenmemiştir. Dosyaları değiştirilmeden, kaynağına ilişkin bağlantılar eklenmiştir.",
+          "notInRegistry": "Kayıt defterinde yok"
+        },
+        "watcherStopped": "Agent Plugins klasöründeki değişiklikleri izleme işlemi durduruldu. Yüklü eklentiler artık otomatik olarak yenilenmeyebilir. Devam etmek için pencereyi yeniden yükleyin."
       },
       "skill": {
         "action": {
@@ -2184,7 +2409,6 @@
       "missingConfiguration": "Dinamik yapılandırma \"{0}: {1}\" eksik veya geçerli değil",
       "pause": "ara",
       "pauseAll": "Tümünü Duraklat",
-      "reveal": "Göstermek",
       "step": "adım",
       "taskTerminatedBySignal": "\"{0}\" görevi, {1} sinyaliyle sonlandırıldı.",
       "taskTerminatedForUnknownReason": "\"{0}\" görevi bilinmeyen bir nedenle sonlandırıldı.",
@@ -2295,12 +2519,17 @@
         "openAIChatView": "Başlamak için şimdi AI Sohbet Görünümünü açın!"
       },
       "apiComparator": "{0} API Uyumluluğu",
+      "markStepUndone": "Geri Al",
       "newExtension": "Yeni Bir Uzantı Oluşturma",
       "newPlugin": "Yeni Eklenti Oluşturma",
+      "noWalkthroughs": "Kullanım kılavuzları mevcut değildir.",
+      "openAiConfiguration": "Open AI Yapılandırması",
+      "resetWalkthroughProgress": "Adım Adım Kılavuzun İlerleme Durumunu Sıfırla",
       "startup-editor": {
         "welcomePage": "{0}'ye ve uzantılara başlamak için yardımcı olacak içeriği içeren Hoş Geldiniz sayfasını açın."
       },
-      "telemetry": "Veri Kullanımı ve Telemetri"
+      "telemetry": "Veri Kullanımı ve Telemetri",
+      "walkthroughLinkFailed": "\"{0}\" dosyası açılamadı: {1}"
     },
     "keybinding-schema-updater": {
       "deprecation": "Bunun yerine `when` cümlesini kullanın."
@@ -2570,6 +2799,7 @@
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Son taahhüdü değiştir",
       "changeRepository": "Depoyu Değiştir...",
+      "copyCommitHash": "Kopyalama Taahhüt Hash",
       "dirtyDiff": {
         "close": "Kapat Değiştir Peek Görünümü"
       },
@@ -2580,7 +2810,13 @@
       "noChanges": "Değiştirilen dosya yok.",
       "noHistory": "Kaynak kontrol geçmişi mevcut değildir.",
       "noHistoryForError": "{0} için geçmiş bilgisi mevcut değildir.",
+      "openCommit": "Commit'i Aç",
+      "pickHistoryItemRefs": "Geçmiş Öğesini Seç Referansı...",
+      "pickHistoryItemRefsPlaceholder": "Bir veya daha fazla geçmiş öğesi referansı seçin",
       "prepositionIn": "ve",
+      "refPickerBranches": "dallar",
+      "refPickerRemoteBranches": "uzak dallar",
+      "refPickerTags": "etiketler",
       "unamend": "Değiştirilemez",
       "unamendCommit": "Değiştirilemez taahhüt"
     },
