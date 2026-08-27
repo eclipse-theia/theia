@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { CustomEditorPriority, type GrammarsContribution, type WalkthroughContribution } from '../common/contribution-types';
+import { CustomEditorPriority, type GrammarsContribution, type PluginUiTheme, type WalkthroughContribution } from '../common/contribution-types';
 import { PreferenceScope } from '../common/protocol-shims';
 import {
     deriveDefaultForType,
@@ -316,6 +316,29 @@ describe('normalize-contributions', () => {
                 description: undefined,
                 uiTheme: undefined
             }]);
+        });
+
+        // A `uiTheme` that does not survive normalization falls back to `vs-dark` in the frontend, which
+        // files the theme under the dark ones and resolves its colors through the dark path.
+        it('keeps every ui theme, including hc-light', () => {
+            const ctx = createNormalizeCtx(undefined, undefined);
+            const plugin = manifest({
+                name: 'themes',
+                contributes: {
+                    themes: [
+                        { id: 'light', label: 'Light', uiTheme: 'vs', path: './themes/light.json' },
+                        { id: 'dark', label: 'Dark', uiTheme: 'vs-dark', path: './themes/dark.json' },
+                        { id: 'hc', label: 'HC', uiTheme: 'hc-black', path: './themes/hc.json' },
+                        { id: 'hc-light', label: 'HC Light', uiTheme: 'hc-light', path: './themes/hc-light.json' },
+                        // Manifests are untyped JSON, so an unknown value has to be dropped rather than passed on.
+                        { id: 'bogus', label: 'Bogus', uiTheme: 'nonsense' as PluginUiTheme, path: './themes/bogus.json' }
+                    ]
+                }
+            });
+            ctx.plugin = plugin;
+
+            expect(readThemes(ctx, plugin)?.map(theme => theme.uiTheme))
+                .to.deep.equal(['vs', 'vs-dark', 'hc-black', 'hc-light', undefined]);
         });
 
         it('validates color contributions and reports invalid ids', () => {

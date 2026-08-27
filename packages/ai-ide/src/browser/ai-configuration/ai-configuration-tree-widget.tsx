@@ -451,8 +451,7 @@ export function createAiConfigurationTreeContainer(parent: interfaces.Container)
         props: {
             virtualized: false,
             search: false,
-            leftPadding: 8,
-            expandOnlyOnExpansionToggleClick: true
+            leftPadding: 8
         }
     });
 }
