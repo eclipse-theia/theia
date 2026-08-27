@@ -17,9 +17,11 @@
 import { expect } from 'chai';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { DeployedPlugin, PluginIdentifiers } from '../../common/plugin-protocol';
-import { AbstractHostedPluginSupport, PluginContributions } from './hosted-plugin';
+import { AbstractHostedPluginSupport, PluginContributions, PluginHost } from './hosted-plugin';
 import { Measurement } from '@theia/core/lib/common/performance/measurement';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { PluginManagerStartParams, PluginManagerStartResult } from '../../common/plugin-api-rpc';
+import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -59,13 +61,56 @@ function createNoopMeasurement(): Measurement {
 }
 
 /**
+ * Fake plugin manager standing in for the real RPC proxy to a plugin host.
+ * Lets tests control which plugins `$start` reports as failed and records
+ * `$stop`/`$activateByEvent` calls so callers can be verified.
+ */
+class FakePluginManager {
+    startResult: PluginManagerStartResult = { failed: [] };
+    readonly startCalls: PluginManagerStartParams[] = [];
+    readonly stopCalls: string[] = [];
+    readonly activateByEventCalls: string[] = [];
+
+    async $init(): Promise<void> { }
+
+    async $start(params: PluginManagerStartParams): Promise<PluginManagerStartResult> {
+        this.startCalls.push(params);
+        return this.startResult;
+    }
+
+    async $stop(pluginId?: string): Promise<void> {
+        if (pluginId) {
+            this.stopCalls.push(pluginId);
+        }
+    }
+
+    async $updateStoragePath(_path: string | undefined): Promise<void> { }
+
+    async $activateByEvent(event: string): Promise<void> {
+        this.activateByEventCalls.push(event);
+    }
+
+    async $activatePlugin(_id: string): Promise<void> { }
+}
+
+/**
  * Minimal concrete subclass of AbstractHostedPluginSupport for testing.
  * Overrides all abstract methods with no-ops/stubs.
  */
 class TestHostedPluginSupport extends AbstractHostedPluginSupport<any, any> {
+    /** Plugin manager returned by `obtainManager`; set per test via `setFakeManager`. */
+    protected fakeManager: FakePluginManager | undefined;
+
+    /** Ids of plugins that `handlePluginStarted` was called for, in call order. */
+    readonly startedPluginIds: string[] = [];
+
     constructor() {
         super('test-client');
         (this as unknown as { logger: MockLogger }).logger = new MockLogger();
+        (this as unknown as { pluginPathsService: PluginPathsService }).pluginPathsService = {
+            getHostLogPath: async () => '/test/host.log',
+            getHostStoragePath: async () => undefined
+        };
     }
 
     protected createTheiaReadyPromise(): Promise<unknown> {
@@ -83,8 +128,20 @@ class TestHostedPluginSupport extends AbstractHostedPluginSupport<any, any> {
     protected async obtainManager(
         _host: string, _hostContributions: PluginContributions[],
         _toDisconnect: DisposableCollection
-    ): Promise<undefined> {
-        return undefined;
+    ): Promise<FakePluginManager | undefined> {
+        return this.fakeManager;
+    }
+
+    protected override handlePluginStarted(manager: any, plugin: DeployedPlugin): void {
+        this.startedPluginIds.push(plugin.metadata.model.id);
+    }
+
+    setFakeManager(manager: FakePluginManager): void {
+        this.fakeManager = manager;
+    }
+
+    getContributions(id: string): PluginContributions | undefined {
+        return this.contributions.get(id as PluginIdentifiers.UnversionedId);
     }
 
     protected async getStoragePath(): Promise<string | undefined> {
@@ -115,6 +172,13 @@ class TestHostedPluginSupport extends AbstractHostedPluginSupport<any, any> {
     testLoadContributions(): Map<string, PluginContributions[]> {
         const toDisconnect = new DisposableCollection(Disposable.create(() => { }));
         return this.loadContributions(toDisconnect);
+    }
+
+    /**
+     * Expose the protected startPlugins for testing.
+     */
+    testStartPlugins(contributionsByHost: Map<PluginHost, PluginContributions[]>, toDisconnect: DisposableCollection): Promise<void> {
+        return this.startPlugins(contributionsByHost, toDisconnect);
     }
 
     setWorkspaceTrusted(trusted: boolean): void {
@@ -376,4 +440,78 @@ describe('AbstractHostedPluginSupport - workspace trust filtering', () => {
         });
     });
 
+});
+
+describe('AbstractHostedPluginSupport - start failure handling', () => {
+    let support: TestHostedPluginSupport;
+    let manager: FakePluginManager;
+
+    beforeEach(() => {
+        support = new TestHostedPluginSupport();
+        manager = new FakePluginManager();
+        support.setFakeManager(manager);
+    });
+
+    it('starts a plugin the host did not report as failed and registers its stop disposer', async () => {
+        const succeeding = createMockDeployedPlugin('test.succeeds');
+        support.addPlugin(succeeding);
+        const hostContributions = support.testLoadContributions();
+
+        // `DisposableCollection.disposed` reports true once empty, so an unseeded collection would
+        // already look disposed to `startPlugins` and it would bail out before doing anything.
+        const toDisconnect = new DisposableCollection(Disposable.create(() => { }));
+        await support.testStartPlugins(hostContributions, toDisconnect);
+
+        const contributions = support.getContributions('test.succeeds');
+        expect(contributions?.state).to.equal(PluginContributions.State.STARTED);
+        expect(support.startedPluginIds).to.deep.equal(['test.succeeds']);
+
+        // Disposing the plugin's own PluginContributions - not `toDisconnect` - is what runs the
+        // `$stop` disposer registered in `startPlugins`; `toDisconnect` only detaches it silently.
+        contributions!.dispose();
+        expect(manager.stopCalls).to.deep.equal(['test.succeeds']);
+    });
+
+    it('does not start a plugin the host reports as failed, and registers no stop disposer for it', async () => {
+        const failing = createMockDeployedPlugin('test.fails');
+        support.addPlugin(failing);
+        manager.startResult = { failed: ['test.fails'] };
+        const hostContributions = support.testLoadContributions();
+
+        const toDisconnect = new DisposableCollection(Disposable.create(() => { }));
+        await support.testStartPlugins(hostContributions, toDisconnect);
+
+        expect(support.startedPluginIds).to.deep.equal([]);
+
+        // No `$stop` disposer was ever registered for a failed plugin, so disposing its
+        // contributions must not call `$stop` for it.
+        support.getContributions('test.fails')!.dispose();
+        expect(manager.stopCalls).to.deep.equal([]);
+    });
+
+    it('returns a failed plugin to LOADED (not left at STARTING) so a later load cycle retries it, ' +
+        'while a successful sibling in the same batch is left STARTED', async () => {
+        const succeeding = createMockDeployedPlugin('test.batch-succeeds');
+        const failing = createMockDeployedPlugin('test.batch-fails');
+        support.addPlugin(succeeding);
+        support.addPlugin(failing);
+        manager.startResult = { failed: ['test.batch-fails'] };
+
+        const hostContributions = support.testLoadContributions();
+        const toDisconnect = new DisposableCollection(Disposable.create(() => { }));
+        await support.testStartPlugins(hostContributions, toDisconnect);
+
+        expect(support.getContributions('test.batch-succeeds')?.state).to.equal(PluginContributions.State.STARTED);
+        // This is the regression under test: without the fix the failed plugin stays at
+        // STARTING forever, and `loadContributions` only ever picks up `LOADED` contributions,
+        // so it would never be offered to the host again.
+        expect(support.getContributions('test.batch-fails')?.state).to.equal(PluginContributions.State.LOADED);
+
+        const retryHostContributions = support.simulateLoadCycle();
+        const retriedIds = Array.from(retryHostContributions.values())
+            .flat()
+            .map(contributions => contributions.plugin.metadata.model.id);
+        expect(retriedIds).to.include('test.batch-fails');
+        expect(retriedIds).to.not.include('test.batch-succeeds');
+    });
 });

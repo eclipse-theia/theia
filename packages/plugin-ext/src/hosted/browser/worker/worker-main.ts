@@ -31,6 +31,7 @@ import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry';
 import { WebviewsExtImpl } from '../../../plugin/webviews';
 import { WorkspaceExtImpl } from '../../../plugin/workspace';
 import { loadManifest } from './plugin-manifest-loader';
+import { settleIsolated } from './settle-isolated';
 import { EnvExtImpl } from '../../../plugin/env';
 import { DebugExtImpl } from '../../../plugin/debug/debug-ext';
 import { LocalizationExtImpl } from '../../../plugin/localization-ext';
@@ -86,52 +87,63 @@ pluginManager.setPluginHost({
         async init(rawPluginData: PluginMetadata[]): Promise<[Plugin[], Plugin[]]> {
             const result: Plugin[] = [];
             const foreign: Plugin[] = [];
-            // Process the plugins concurrently, making sure to keep the order.
-            const plugins = await Promise.all<{
-                /** Where to push the plugin: `result` or `foreign` */
-                target: Plugin[],
-                plugin: Plugin
-            }>(rawPluginData.map(async plg => {
-                const pluginModel = plg.model;
-                const pluginLifecycle = plg.lifecycle;
-                if (pluginModel.entryPoint!.frontend) {
-                    let frontendInitPath = pluginLifecycle.frontendInitPath;
-                    if (frontendInitPath) {
-                        initialize(frontendInitPath, plg);
+            // Process the plugins concurrently, making sure to keep the order. Each plugin is
+            // prepared in isolation: one plugin whose manifest can't be loaded (e.g. a 404 on
+            // package.json) must not take every other plugin down with it, so a failure here is
+            // logged and that plugin is skipped rather than rejecting the whole batch.
+            const plugins = await settleIsolated<PluginMetadata, { target: Plugin[]; plugin: Plugin }>(
+                rawPluginData,
+                async plg => {
+                    const pluginModel = plg.model;
+                    const pluginLifecycle = plg.lifecycle;
+                    if (pluginModel.entryPoint!.frontend) {
+                        let frontendInitPath = pluginLifecycle.frontendInitPath;
+                        if (frontendInitPath) {
+                            initialize(frontendInitPath, plg);
+                        } else {
+                            frontendInitPath = '';
+                        }
+                        const rawModel = await loadManifest(pluginModel);
+                        const plugin: Plugin = {
+                            pluginPath: pluginModel.entryPoint.frontend!,
+                            pluginFolder: pluginModel.packagePath,
+                            pluginUri: pluginModel.packageUri,
+                            model: pluginModel,
+                            lifecycle: pluginLifecycle,
+                            rawModel,
+                            isUnderDevelopment: !!plg.isUnderDevelopment
+                        };
+                        const apiImpl = apiFactory(plugin);
+                        pluginsApiImpl.set(plugin.model.id, apiImpl);
+                        pluginsModulesNames.set(plugin.lifecycle.frontendModuleName!, plugin);
+                        return { target: result, plugin };
                     } else {
-                        frontendInitPath = '';
-                    }
-                    const rawModel = await loadManifest(pluginModel);
-                    const plugin: Plugin = {
-                        pluginPath: pluginModel.entryPoint.frontend!,
-                        pluginFolder: pluginModel.packagePath,
-                        pluginUri: pluginModel.packageUri,
-                        model: pluginModel,
-                        lifecycle: pluginLifecycle,
-                        rawModel,
-                        isUnderDevelopment: !!plg.isUnderDevelopment
-                    };
-                    const apiImpl = apiFactory(plugin);
-                    pluginsApiImpl.set(plugin.model.id, apiImpl);
-                    pluginsModulesNames.set(plugin.lifecycle.frontendModuleName!, plugin);
-                    return { target: result, plugin };
-                } else {
-                    return {
-                        target: foreign,
-                        plugin: {
+                        const common = {
                             pluginPath: pluginModel.entryPoint.backend,
                             pluginFolder: pluginModel.packagePath,
                             pluginUri: pluginModel.packageUri,
                             model: pluginModel,
                             lifecycle: pluginLifecycle,
-                            get rawModel(): never {
-                                throw new Error('not supported');
-                            },
                             isUnderDevelopment: !!plg.isUnderDevelopment
-                        }
-                    };
-                }
-            }));
+                        };
+                        const plugin: Plugin = pluginModel.entryPoint.backend
+                            // Runs in another host, so its manifest is that host's problem.
+                            ? {
+                                ...common,
+                                get rawModel(): never {
+                                    throw new Error('not supported');
+                                }
+                            }
+                            // No entry point anywhere, so there is nothing to run - it only contributes
+                            // grammars, themes and the like. It does still turn up in `theia.extensions`,
+                            // where reading `packageJSON` must not throw, so give it a real manifest.
+                            // Only browser-only gets here; with a backend these go to the backend host.
+                            : { ...common, rawModel: await loadManifest(pluginModel) };
+                        return { target: foreign, plugin };
+                    }
+                },
+                (plg, error) => console.error(`WebWorker: Failed to prepare plugin "${getPluginId(plg.model)}", skipping it.`, error)
+            );
             // Collect the ordered plugins and insert them in the target array:
             for (const { target, plugin } of plugins) {
                 target.push(plugin);
