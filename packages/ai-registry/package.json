@@ -1,12 +1,12 @@
 {
   "name": "@theia/ai-registry",
-  "version": "1.74.0",
+  "version": "1.75.0",
   "description": "Theia - AI Registry Integration",
   "dependencies": {
-    "@theia/ai-core": "1.74.0",
-    "@theia/ai-mcp": "1.74.0",
-    "@theia/core": "1.74.0",
-    "@theia/vsx-registry": "1.74.0",
+    "@theia/ai-core": "1.75.0",
+    "@theia/ai-mcp": "1.75.0",
+    "@theia/core": "1.75.0",
+    "@theia/vsx-registry": "1.75.0",
     "filenamify": "^4.3.0",
     "tar-fs": "^3.1.3"
   },
@@ -45,7 +45,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.74.0"
+    "@theia/ext-scripts": "1.75.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
