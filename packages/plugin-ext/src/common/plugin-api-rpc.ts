@@ -266,12 +266,20 @@ export interface PluginManagerStartParams {
     activationEvents: string[]
 }
 
+export interface PluginManagerStartResult {
+    /**
+     * Ids of the plugins that could not be prepared and are therefore not registered in the
+     * plugin host. The frontend must not treat these as started.
+     */
+    failed: string[];
+}
+
 export interface AbstractPluginManagerExt<P extends Record<string, any>> {
     /** initialize the manager, should be called only once */
     $init(params: P): Promise<void>;
 
     /** load and activate plugins */
-    $start(params: PluginManagerStartParams): Promise<void>;
+    $start(params: PluginManagerStartParams): Promise<PluginManagerStartResult>;
 
     /** deactivate the plugin */
     $stop(pluginId: string): Promise<void>;

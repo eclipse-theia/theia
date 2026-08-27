@@ -394,15 +394,26 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
             thenable.push((async () => {
                 try {
                     const activationEvents = [...this.activationEvents];
-                    await manager.$start({ plugins, configStorage, activationEvents });
+                    const result = await manager.$start({ plugins, configStorage, activationEvents });
                     if (toDisconnect.disposed) {
                         return;
                     }
+                    // A plugin host can skip a plugin it failed to prepare; such a plugin is not
+                    // registered there, so it must not be reported as started, activated, or stopped.
+                    // Be defensive about a `$start` implementation that returns nothing.
+                    const failed = new Set(result?.failed ?? []);
                     this.logger.info(`[${this.clientId}] Starting plugins.`);
                     for (const contributions of hostContributions) {
-                        started++;
                         const plugin = contributions.plugin;
                         const id = plugin.metadata.model.id;
+                        if (failed.has(id)) {
+                            // Back to `LOADED` rather than left at `STARTING`, so a later load cycle can retry it -
+                            // `loadContributions` only ever picks up contributions in the `LOADED` state.
+                            contributions.state = PluginContributions.State.LOADED;
+                            this.logger.error(`[${this.clientId}][${id}]: Plugin was not started because the '${host}' host failed to prepare it.`);
+                            continue;
+                        }
+                        started++;
                         contributions.state = PluginContributions.State.STARTED;
                         this.logger.debug(`[${this.clientId}][${id}]: Started plugin.`);
                         toDisconnect.push(contributions.push(Disposable.create(() => {
