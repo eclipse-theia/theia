@@ -51,6 +51,49 @@ import { BrowserOnlyTerminalFrontendContribution } from './browser-only-terminal
 
 disableJSDOM();
 
+/**
+ * `TerminalFrontendContribution` (and hence its browser-only subclass) has many injected
+ * dependencies, most of which are never touched by the browser-only overrides under test here.
+ * Only `@postConstruct() init()` reaches into a handful of them (`shell`, `widgetManager`,
+ * `contextKeyService`, `terminalWatcher`) - those get working fakes, everything else gets an
+ * inert placeholder just to satisfy the injector.
+ */
+function bindTerminalTestDependencies(container: Container, onError: (message: string) => void = () => { /* no-op */ }): void {
+    const inert = <T>(): T => ({} as unknown as T);
+
+    container.bind(ApplicationShell).toConstantValue({
+        activeWidget: undefined,
+        onDidChangeCurrentWidget: Event.None,
+        onDidChangeActiveWidget: Event.None
+    } as unknown as ApplicationShell);
+    container.bind(WidgetManager).toConstantValue({ onDidCreateWidget: Event.None } as unknown as WidgetManager);
+    container.bind(ContextKeyService).toConstantValue({ createKey: () => ({ set: () => { /* no-op */ } }) } as unknown as ContextKeyService);
+    container.bind(TerminalWatcher).toConstantValue({
+        onStoreTerminalEnvVariablesRequested: Event.None,
+        onUpdateTerminalEnvVariablesRequested: Event.None
+    } as unknown as TerminalWatcher);
+    container.bind(MessageService).toConstantValue({
+        error: (message: string) => { onError(message); return Promise.resolve(undefined); }
+    } as unknown as MessageService);
+    container.bind(ILogger).toConstantValue(new MockLogger() as unknown as ILogger);
+    container.bind(ContributionProvider).toConstantValue({ getContributions: () => [] }).whenTargetNamed(TerminalCreationHandler);
+
+    container.bind(ShellTerminalServerProxy).toConstantValue(inert());
+    container.bind(FileService).toConstantValue(inert());
+    container.bind(SelectionService).toConstantValue(inert());
+    container.bind(LabelProvider).toConstantValue(inert());
+    container.bind(WorkspaceService).toConstantValue(inert());
+    container.bind(TerminalProfileService).toConstantValue(inert());
+    container.bind(UserTerminalProfileStore).toConstantValue(inert());
+    container.bind(ContributedTerminalProfileStore).toConstantValue(inert());
+    container.bind(VariableResolverService).toConstantValue(inert());
+    container.bind(StorageService).toConstantValue(inert());
+    container.bind(PreferenceService).toConstantValue(inert());
+    container.bind(TerminalPreferences).toConstantValue(inert());
+    container.bind(TerminalCopyOnSelectionHandler).toConstantValue(inert());
+    container.bind(ClipboardService).toConstantValue(inert());
+}
+
 describe('BrowserOnlyTerminalFrontendContribution', () => {
 
     /** Records every message reported through `MessageService.error`. */
@@ -58,53 +101,13 @@ describe('BrowserOnlyTerminalFrontendContribution', () => {
 
     let contribution: BrowserOnlyTerminalFrontendContribution;
 
-    /**
-     * `TerminalFrontendContribution` (and hence its browser-only subclass) has many injected
-     * dependencies, most of which are never touched by the browser-only overrides under test here.
-     * Only `@postConstruct() init()` reaches into a handful of them (`shell`, `widgetManager`,
-     * `contextKeyService`, `terminalWatcher`) - those get working fakes, everything else gets an
-     * inert placeholder just to satisfy the injector.
-     */
     beforeEach(() => {
         errorMessages = [];
-
-        const inert = <T>(): T => ({} as unknown as T);
 
         const container = new Container();
         container.bind(BrowserOnlyTerminalFrontendContribution).toSelf().inSingletonScope();
         container.bind(TerminalService).toService(BrowserOnlyTerminalFrontendContribution);
-
-        container.bind(ApplicationShell).toConstantValue({
-            activeWidget: undefined,
-            onDidChangeCurrentWidget: Event.None,
-            onDidChangeActiveWidget: Event.None
-        } as unknown as ApplicationShell);
-        container.bind(WidgetManager).toConstantValue({ onDidCreateWidget: Event.None } as unknown as WidgetManager);
-        container.bind(ContextKeyService).toConstantValue({ createKey: () => ({ set: () => { /* no-op */ } }) } as unknown as ContextKeyService);
-        container.bind(TerminalWatcher).toConstantValue({
-            onStoreTerminalEnvVariablesRequested: Event.None,
-            onUpdateTerminalEnvVariablesRequested: Event.None
-        } as unknown as TerminalWatcher);
-        container.bind(MessageService).toConstantValue({
-            error: (message: string) => { errorMessages.push(message); return Promise.resolve(undefined); }
-        } as unknown as MessageService);
-        container.bind(ILogger).toConstantValue(new MockLogger() as unknown as ILogger);
-        container.bind(ContributionProvider).toConstantValue({ getContributions: () => [] }).whenTargetNamed(TerminalCreationHandler);
-
-        container.bind(ShellTerminalServerProxy).toConstantValue(inert());
-        container.bind(FileService).toConstantValue(inert());
-        container.bind(SelectionService).toConstantValue(inert());
-        container.bind(LabelProvider).toConstantValue(inert());
-        container.bind(WorkspaceService).toConstantValue(inert());
-        container.bind(TerminalProfileService).toConstantValue(inert());
-        container.bind(UserTerminalProfileStore).toConstantValue(inert());
-        container.bind(ContributedTerminalProfileStore).toConstantValue(inert());
-        container.bind(VariableResolverService).toConstantValue(inert());
-        container.bind(StorageService).toConstantValue(inert());
-        container.bind(PreferenceService).toConstantValue(inert());
-        container.bind(TerminalPreferences).toConstantValue(inert());
-        container.bind(TerminalCopyOnSelectionHandler).toConstantValue(inert());
-        container.bind(ClipboardService).toConstantValue(inert());
+        bindTerminalTestDependencies(container, message => errorMessages.push(message));
 
         contribution = container.get(BrowserOnlyTerminalFrontendContribution);
     });
@@ -168,36 +171,7 @@ describe('BrowserOnlyTerminalFrontendContribution', () => {
 
         const container = new Container();
         container.load(module);
-
-        container.bind(ApplicationShell).toConstantValue({
-            activeWidget: undefined,
-            onDidChangeCurrentWidget: Event.None,
-            onDidChangeActiveWidget: Event.None
-        } as unknown as ApplicationShell);
-        container.bind(WidgetManager).toConstantValue({ onDidCreateWidget: Event.None } as unknown as WidgetManager);
-        container.bind(ContextKeyService).toConstantValue({ createKey: () => ({ set: () => { /* no-op */ } }) } as unknown as ContextKeyService);
-        container.bind(TerminalWatcher).toConstantValue({
-            onStoreTerminalEnvVariablesRequested: Event.None,
-            onUpdateTerminalEnvVariablesRequested: Event.None
-        } as unknown as TerminalWatcher);
-        container.bind(MessageService).toConstantValue({ error: () => Promise.resolve(undefined) } as unknown as MessageService);
-        container.bind(ILogger).toConstantValue(new MockLogger() as unknown as ILogger);
-        container.bind(ContributionProvider).toConstantValue({ getContributions: () => [] }).whenTargetNamed(TerminalCreationHandler);
-        const inert = <T>(): T => ({} as unknown as T);
-        container.bind(ShellTerminalServerProxy).toConstantValue(inert());
-        container.bind(FileService).toConstantValue(inert());
-        container.bind(SelectionService).toConstantValue(inert());
-        container.bind(LabelProvider).toConstantValue(inert());
-        container.bind(WorkspaceService).toConstantValue(inert());
-        container.bind(TerminalProfileService).toConstantValue(inert());
-        container.bind(UserTerminalProfileStore).toConstantValue(inert());
-        container.bind(ContributedTerminalProfileStore).toConstantValue(inert());
-        container.bind(VariableResolverService).toConstantValue(inert());
-        container.bind(StorageService).toConstantValue(inert());
-        container.bind(PreferenceService).toConstantValue(inert());
-        container.bind(TerminalPreferences).toConstantValue(inert());
-        container.bind(TerminalCopyOnSelectionHandler).toConstantValue(inert());
-        container.bind(ClipboardService).toConstantValue(inert());
+        bindTerminalTestDependencies(container);
 
         // simulates `terminal-frontend-only-module.ts` loading after `terminal-frontend-module.ts`
         container.load(browserOnlyModule);

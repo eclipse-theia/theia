@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource and others.
+// Copyright (C) 2026 robertjndw
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,11 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // ****************************************************************************
 
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+// `FrontendHostedPluginServer` transitively imports `Endpoint` via `@theia/core/lib/browser`,
+// which touches `document` at load time, so JSDOM is enabled before it for that import.
+let disableJSDOM = enableJSDOM();
+
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 import { DeployedPlugin, PluginType } from '../../common';
 import { FrontendHostedPluginServer, PluginLocalOptions } from './frontend-hosted-plugin-server';
+
+disableJSDOM();
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -35,8 +41,7 @@ function plugin(name: string, version = '1.0.0'): DeployedPlugin {
 
 describe('FrontendHostedPluginServer', () => {
 
-    // `fetchDeployedPlugins` resolves the list URL against `document.baseURI`.
-    let disableJSDOM: () => void;
+    // `fetchDeployedPlugins` builds the list URL through `Endpoint`, which reads `self.location`.
     before(() => { disableJSDOM = enableJSDOM(); });
     after(() => disableJSDOM());
 
