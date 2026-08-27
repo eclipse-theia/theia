@@ -16,6 +16,12 @@
 
 export const PLUGINS_BASE_PATH = 'hostedPlugin';
 
+/**
+ * URI scheme for plugin assets that have to go through the `FileService`. Browser-only serves them
+ * over HTTP instead of off a backend's disk.
+ */
+export const PLUGINS_SCHEME = PLUGINS_BASE_PATH;
+
 export const UNPUBLISHED = '<unpublished>';
 
 export const DEFAULT_PLUGINS_DIR = 'plugins';

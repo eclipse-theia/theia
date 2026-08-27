@@ -21,7 +21,7 @@ import * as path from 'path';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { PluginPaths } from './paths/const';
+import { PluginPaths } from '../common/paths/const';
 import { PluginPathsService } from '../common/plugin-paths-protocol';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
 import { PluginStorageKind } from '../../common';

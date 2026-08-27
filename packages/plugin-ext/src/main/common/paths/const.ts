@@ -18,4 +18,11 @@ export namespace PluginPaths {
     export const PLUGINS_LOGS_DIR = 'logs';
     export const PLUGINS_GLOBAL_STORAGE_DIR = 'plugin-storage';
     export const PLUGINS_WORKSPACE_STORAGE_DIR = 'workspace-storage';
+    /**
+     * Default number of per-session plugin log folders to retain. Shared between the backend's
+     * `--plugin-max-session-logs-folders` CLI option and the browser-only frontend, which has no
+     * CLI to read it from. This is the default value used in VSCode, see:
+     * https://github.com/Microsoft/vscode/blob/613447d6b3f458ef7fee227e3876303bf5184580/src/vs/code/electron-browser/sharedProcess/contrib/logsDataCleaner.ts#L32
+     */
+    export const DEFAULT_PLUGIN_MAX_SESSION_LOGS_FOLDERS = 10;
 }

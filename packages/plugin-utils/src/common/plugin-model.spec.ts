@@ -19,6 +19,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import {
+    PLUGINS_SCHEME,
     UNPUBLISHED,
     VSCODE_EXTENSION_ACTIVATE,
     VSCODE_EXTENSION_DEACTIVATE,
@@ -34,8 +35,10 @@ import {
     buildModel,
     buildModelForTheia,
     buildModelForVsCode,
+    encodePluginAssetPath,
     getPluginId,
     pickEngineType,
+    toPluginUri,
     toPluginUrl
 } from './plugin-model';
 import { getPluginRootFileUrl } from '../node/plugin-model';
@@ -71,6 +74,22 @@ describe('plugin-model', () => {
                 .to.equal('hostedPlugin/acme_ext/icons/a.png');
             expect(toPluginUrl({ publisher: 'acme', name: 'ext' }, '../secret.json'))
                 .to.equal('hostedPlugin/acme_ext/secret.json');
+        });
+    });
+
+    describe('encodePluginAssetPath', () => {
+        it('encodes segments but keeps separators', () => {
+            expect(encodePluginAssetPath('/acme_ext/sub dir/a#b?c%d.json'))
+                .to.equal('/acme_ext/sub%20dir/a%23b%3Fc%25d.json');
+        });
+
+        it('round-trips the decoded path of a plugin asset URI', () => {
+            for (const relativePath of ['a#b?c%d.json', 'my icon.png', 'themes/dark+.json', 'sub dir/x[1].woff']) {
+                const uri = toPluginUri({ publisher: 'acme', name: 'ext' }, relativePath);
+                // what `URI.path` hands a consumer back
+                const decoded = decodeURIComponent(uri.substring(`${PLUGINS_SCHEME}:`.length));
+                expect(`${PLUGINS_SCHEME}:${encodePluginAssetPath(decoded)}`).to.equal(uri);
+            }
         });
     });
 
