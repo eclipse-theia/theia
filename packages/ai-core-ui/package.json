@@ -1,11 +1,11 @@
 {
   "name": "@theia/ai-core-ui",
-  "version": "1.74.0",
+  "version": "1.75.0",
   "description": "Theia - AI Core UI",
   "dependencies": {
-    "@theia/core": "1.74.0",
-    "@theia/ai-core": "1.74.0",
-    "@theia/preferences": "1.74.0",
+    "@theia/ai-core": "1.75.0",
+    "@theia/core": "1.75.0",
+    "@theia/preferences": "1.75.0",
     "tslib": "^2.8.1"
   },
   "main": "lib/common",
@@ -43,7 +43,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.74.0"
+    "@theia/ext-scripts": "1.75.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
