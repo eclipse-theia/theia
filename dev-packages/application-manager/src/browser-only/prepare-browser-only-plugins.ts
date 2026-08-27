@@ -34,6 +34,7 @@ import {
     buildModel,
     getPluginId,
     pickEngineType,
+    toPluginUri,
     toPluginUrl
 } from '@theia/plugin-utils/lib/common/plugin-model';
 import { getPluginRootFileUrl } from '@theia/plugin-utils/lib/node/plugin-model';
@@ -47,7 +48,7 @@ import type {
 } from '@theia/plugin-utils/lib/common/contribution-types';
 
 import {
-    PLUGIN_HOST_BACKEND,
+    PLUGIN_HOST_FRONTEND,
     PluginType,
     type DeployedPlugin,
     type PluginEntryPoint,
@@ -172,7 +173,10 @@ async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): 
             plugin: {
                 type: PluginType.System,
                 metadata: {
-                    host: PLUGIN_HOST_BACKEND,
+                    // No backend host in browser-only. `loadContributions` only infers 'frontend' for
+                    // plugins with a frontend entry point, so declarative-only ones would land on a
+                    // host that never answers and hang every RPC to it, saving included.
+                    host: PLUGIN_HOST_FRONTEND,
                     model,
                     lifecycle,
                     outOfSync: false
@@ -278,8 +282,10 @@ async function normalizeManifestForBrowserOnly(manifest: PluginManifest): Promis
     };
     await normalizeContributions({
         plugin: manifest,
+        // `resolveUrl` is for assets the browser loads itself, `resolveUri` for the ones read
+        // through the `FileService` - those need a scheme.
         resolveUrl: relative => toPluginUrl(manifest, relative),
-        resolveUri: (pck, relative) => toPluginUrl(pck, relative),
+        resolveUri: (pck, relative) => toPluginUri(pck, relative),
         readGrammars: async (grammars, pluginPath) => {
             const result = [];
             for (const rawGrammar of grammars) {

@@ -18,6 +18,7 @@ import { isObject } from './utils';
 import type { NormalizedPluginContribution, PluginManifestContribution } from './contribution-types';
 
 export const PLUGIN_HOST_BACKEND = 'main' as const;
+export const PLUGIN_HOST_FRONTEND = 'frontend' as const;
 
 /** Whether a plugin is installed by the system or by a user. */
 export enum PluginType {

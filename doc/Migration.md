@@ -110,6 +110,29 @@ For example, in an `electron-builder` configuration, ensure the `lib/backend/she
 
 The `lib/**/*` glob already covers `lib/backend/shell-integrations/`. If you use a more restrictive `files` pattern, make sure `lib/backend/shell-integrations/**/*` is explicitly included, as `ShellIntegrationInjector` resolves these scripts relative to `__dirname` (i.e. `lib/backend/`).
 
+### v1.76.0
+
+#### Browser-only config directory moved to `/.theia` [#17966](https://github.com/eclipse-theia/theia/pull/17966)
+
+The browser-only `EnvVariablesServer` stub (`packages/core/src/browser-only/frontend-only-application-module.ts`) previously returned an empty string for `getConfigDirUri()`. `new URI('')` resolves to `file:///`, so in browser-only mode the config directory was effectively the root of the OPFS file system, and every consumer wrote its state there, alongside the user's workspace directories. `getConfigDirUri()` now returns `file:///.theia`, matching the backend's default `.theia` configuration folder (the `configurationFolder` property).
+
+As a side effect, `CommonFrontendContribution` registers a UTF-8 encoding override with `parent: new URI(configDirUri)`. Because that parent used to be `file:///`, the override applied to the entire file tree in browser-only mode. It is now correctly scoped to `/.theia`, matching backend behavior.
+
+**End-user-facing:**
+
+- Existing browser-only deployments have their state at the OPFS root. This is not migrated automatically: after upgrading, Theia looks under `/.theia`, finds nothing, and behaves as a fresh install for that state. Affected data:
+  - `settings.json` and `keymaps.json`
+  - untitled workspace files and the recent workspaces list
+  - workspace metadata
+  - AI stores: chat sessions, prompt customizations, skills, sketched tools
+  - plugin global storage
+- Files outside `/.theia` are no longer forced to UTF-8 encoding.
+
+**Adopter-facing:**
+
+- If you need to preserve existing user data, copy the entries listed above from the OPFS root into `/.theia` on first run after upgrading.
+- Do not rely on the old blanket UTF-8 encoding override applying outside the config directory.
+
 ### v1.75.0
 
 #### React 19 and the automatic JSX runtime
