@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import * as DOMPurify from '@theia/core/shared/dompurify';
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { TreeElement, TreeElementNode } from '@theia/core/lib/browser/source-tree';
 import { OpenerService, open, OpenerOptions } from '@theia/core/lib/browser/opener-service';
@@ -149,12 +149,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
 
     protected readonly data: Partial<VSXExtensionData> = {};
 
-    protected registryUri: Promise<string>;
-
-    @postConstruct()
-    protected postConstruct(): void {
-        this.registryUri = this.environment.getRegistryUri();
-    }
+    protected registryUri?: Promise<string>;
 
     get uri(): URI {
         return VSCodeExtensionUri.fromId(this.id);
@@ -470,6 +465,10 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
      * @returns the registry link for the given extension at the path.
      */
     async getRegistryLink(path = ''): Promise<URI> {
+        // Resolved lazily: in browser-only mode there is no backend to answer this, and eagerly
+        // asking for every extension in the list produced a request per extension that was known
+        // to fail. Nothing but this method needs the registry URI.
+        this.registryUri ??= this.environment.getRegistryUri();
         const registryUri = new URI(await this.registryUri);
         if (this.downloadUrl) {
             const downloadUri = new URI(this.downloadUrl);
