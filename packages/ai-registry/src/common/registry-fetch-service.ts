@@ -20,12 +20,15 @@ import { BackendRequestService, RequestContext, RequestService } from '@theia/co
 import { AIRegistryConfiguration } from './ai-registry-configuration';
 import { MCPRegistryEntryResolver } from './mcp/mcp-registry-entry-resolver';
 import { RegistryMCPServer, ResolvedRegistryEntry } from './mcp/mcp-registry-types';
+import { PluginRegistryEntryResolver } from './plugin/plugin-registry-entry-resolver';
+import { RegistryPlugin, ResolvedPluginEntry } from './plugin/plugin-registry-types';
 import { SkillRegistryEntryResolver } from './skill/skill-registry-entry-resolver';
 import { RegistrySkill, ResolvedSkillEntry } from './skill/skill-registry-types';
 
 interface RegistryResponse {
     mcp?: RegistryMCPServer[];
     skills?: RegistrySkill[];
+    plugins?: RegistryPlugin[];
 }
 
 /**
@@ -51,6 +54,8 @@ export interface RegistryFetchService {
     getEntries(forceRefresh?: boolean): Promise<ResolvedRegistryEntry[]>;
     /** Returns the resolved skill registry entries, fetching (and caching) them on first use or when `forceRefresh` is set. */
     getSkillEntries(forceRefresh?: boolean): Promise<ResolvedSkillEntry[]>;
+    /** Returns the resolved Agent Plugin registry entries, fetching (and caching) them on first use or when `forceRefresh` is set. */
+    getPluginEntries(forceRefresh?: boolean): Promise<ResolvedPluginEntry[]>;
 }
 
 @injectable()
@@ -72,9 +77,13 @@ export class RegistryFetchServiceImpl implements RegistryFetchService {
     @inject(SkillRegistryEntryResolver)
     protected readonly skillResolver: SkillRegistryEntryResolver;
 
+    @inject(PluginRegistryEntryResolver)
+    protected readonly pluginResolver: PluginRegistryEntryResolver;
+
     protected cachedResponse: RegistryResponse | undefined;
     protected cachedEntries: ResolvedRegistryEntry[] | undefined;
     protected cachedSkills: ResolvedSkillEntry[] | undefined;
+    protected cachedPlugins: ResolvedPluginEntry[] | undefined;
     /** Shared while a request is in flight so concurrent callers issue a single request. */
     protected pendingResponse: Promise<RegistryResponse> | undefined;
     /** The last failure and when it happened, used to back off from a registry that is unreachable. */
@@ -104,10 +113,20 @@ export class RegistryFetchServiceImpl implements RegistryFetchService {
         return this.cachedSkills;
     }
 
+    async getPluginEntries(forceRefresh: boolean = false): Promise<ResolvedPluginEntry[]> {
+        const data = await this.fetchResponse(forceRefresh);
+        if (!this.cachedPlugins) {
+            this.cachedPlugins = (data.plugins ?? [])
+                .map(plugin => this.pluginResolver.resolve(plugin))
+                .filter((entry): entry is ResolvedPluginEntry => entry !== undefined);
+        }
+        return this.cachedPlugins;
+    }
+
     /**
-     * Fetches and caches the raw registry response. One HTTP request backs both the MCP
-     * and skill slices; the resolved slices are memoized separately and invalidated
-     * whenever the raw response is (re-)fetched.
+     * Fetches and caches the raw registry response. One HTTP request backs the MCP, skill and
+     * plugin slices; the resolved slices are memoized separately and invalidated whenever the
+     * raw response is (re-)fetched.
      */
     protected async fetchResponse(forceRefresh: boolean): Promise<RegistryResponse> {
         if (this.cachedResponse && !forceRefresh) {
@@ -149,6 +168,7 @@ export class RegistryFetchServiceImpl implements RegistryFetchService {
             this.cachedResponse = data;
             this.cachedEntries = undefined;
             this.cachedSkills = undefined;
+            this.cachedPlugins = undefined;
             this.onDidChangeEmitter.fire();
             return data;
         } catch (error) {

@@ -19,7 +19,6 @@ import { injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import { codicon } from '@theia/core/lib/browser';
-import * as React from '@theia/core/shared/react';
 import { ResponseNode } from '../chat-tree-view';
 
 /**

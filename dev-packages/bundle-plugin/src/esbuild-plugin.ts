@@ -17,10 +17,14 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { pathToFileURL } from 'url';
+import { promisify } from 'util';
+import { gzip } from 'zlib';
 import resolvePackagePath = require('resolve-package-path');
 
 import type { Plugin, PluginBuild } from 'esbuild';
 import { EOL } from 'os';
+
+const gzipAsync = promisify(gzip);
 
 function join(...parts: string[]): string {
     return path.join(...parts).replace(/\\/g, '/');
@@ -161,6 +165,79 @@ export function sourceMapPathsPlugin(): Plugin {
                         return source;
                     });
                     await fs.promises.writeFile(mapPath, JSON.stringify(map));
+                }));
+            });
+        }
+    };
+}
+
+/**
+ * Asset types that Theia's `BackendApplication` serves pre-compressed
+ * when a sibling `.gz` file exists next to the requested file.
+ */
+const defaultCompressedExtensions = ['.js', '.map', '.css', '.wasm', '.gif', '.png', '.svg', '.eot', '.ttf', '.woff', '.woff2'];
+
+export interface CompressAssetsPluginOptions {
+    /**
+     * Whether to compress at all. When `false`, the plugin only removes the `.gz` files of a
+     * previous build, so that the backend cannot serve outdated content. Defaults to `true`.
+     */
+    compress?: boolean;
+    /**
+     * Extensions of the files to compress.
+     * Defaults to the asset types Theia's backend serves pre-compressed.
+     */
+    extensions?: string[];
+    /**
+     * A `.gz` file is only emitted if its size is at most this fraction of the original file's size.
+     * Defaults to `0.8`.
+     */
+    minRatio?: number;
+}
+
+/**
+ * Emits a gzipped `<file>.gz` sibling for every compressible asset in the output directory.
+ *
+ * Theia's `BackendApplication` serves such a sibling instead of the original file whenever the
+ * client accepts `gzip`, which saves bandwidth and avoids compressing on every request. Because
+ * the sibling always wins, every asset that is not compressed gets its `.gz` file of a previous
+ * build removed.
+ *
+ * Register this plugin *last*: esbuild runs `onEnd` callbacks in plugin registration order, and
+ * other plugins add or rewrite output files in their own `onEnd` hook (e.g. `sourceMapPathsPlugin`
+ * or asset copying). Compressing before them would emit outdated `.gz` files.
+ */
+export function compressAssetsPlugin(options: CompressAssetsPluginOptions = {}): Plugin {
+    const compress = options.compress ?? true;
+    const extensions = options.extensions ?? defaultCompressedExtensions;
+    const minRatio = options.minRatio ?? 0.8;
+    return {
+        name: 'theia-compress-assets',
+        setup(build: PluginBuild): void {
+            const { outdir } = build.initialOptions;
+            if (!outdir) {
+                return;
+            }
+            build.onEnd(async result => {
+                if (result.errors.length > 0) {
+                    return;
+                }
+                const entries = await fs.promises.readdir(outdir, { recursive: true });
+                await Promise.all(entries.map(async entry => {
+                    if (!extensions.includes(path.extname(entry))) {
+                        return;
+                    }
+                    const filePath = path.join(outdir, entry);
+                    if (compress) {
+                        const contents = await fs.promises.readFile(filePath);
+                        const compressed = await gzipAsync(contents, { level: 9 });
+                        // Compressing an already compressed or tiny asset is not worth a request roundtrip.
+                        if (compressed.length <= contents.length * minRatio) {
+                            await fs.promises.writeFile(filePath + '.gz', compressed);
+                            return;
+                        }
+                    }
+                    await fs.promises.rm(filePath + '.gz', { force: true });
                 }));
             });
         }

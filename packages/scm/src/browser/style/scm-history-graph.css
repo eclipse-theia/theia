@@ -200,6 +200,16 @@
     flex-shrink: 0;
 }
 
+/* Folder rows of the change tree ('View as Tree'). */
+.scm-history-change-twistie {
+    flex-shrink: 0;
+    opacity: 0.8;
+}
+
+.scm-history-change-folder-row .scm-history-change-name {
+    flex: 1;
+}
+
 .scm-history-change-name-container {
     flex: 1;
     display: flex;

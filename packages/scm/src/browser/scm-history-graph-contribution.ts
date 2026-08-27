@@ -25,6 +25,7 @@ import { QuickPickItem, QuickPickSeparator } from '@theia/core/lib/common/quick-
 import { codicon } from '@theia/core/lib/browser/widgets/widget';
 import { ScmHistoryGraphModel, ScmHistoryGraphModelProvider } from './scm-history-graph-model';
 import { ScmService } from './scm-service';
+import { ScmContextKeyService } from './scm-context-key-service';
 import { ScmHistoryItemRef, ScmHistoryProvider } from './scm-provider';
 import { SCM_HISTORY_TITLE_MENU } from './scm-history-graph-widget';
 import { getRefBadgeClass } from './scm-history-graph-helpers';
@@ -42,6 +43,22 @@ export namespace ScmHistoryGraphCommands {
         label: 'Pick History Item Reference...',
         iconClass: codicon('git-branch')
     }, 'theia/scm/pickHistoryItemRefs');
+    export const REVEAL_CURRENT_HISTORY_ITEM = Command.toDefaultLocalizedCommand({
+        id: 'scmHistoryGraph.revealCurrentHistoryItem',
+        category: 'Source Control',
+        label: 'Go to Current History Item',
+        iconClass: codicon('target')
+    });
+    export const SET_LIST_VIEW_MODE = Command.toDefaultLocalizedCommand({
+        id: 'scmHistoryGraph.setListViewMode',
+        category: 'Source Control',
+        label: 'View as List'
+    });
+    export const SET_TREE_VIEW_MODE = Command.toDefaultLocalizedCommand({
+        id: 'scmHistoryGraph.setTreeViewMode',
+        category: 'Source Control',
+        label: 'View as Tree'
+    });
 }
 
 type RefPickItem = QuickPickItem & { refId?: string; auto?: boolean };
@@ -59,6 +76,7 @@ export class ScmHistoryGraphContribution implements CommandContribution, MenuCon
     @inject(ScmHistoryGraphModelProvider) protected readonly modelProvider: ScmHistoryGraphModelProvider;
     @inject(QuickInputService) @optional() protected readonly quickInputService: QuickInputService;
     @inject(ILogger) @named('scm:ScmHistoryGraphContribution') protected readonly logger: ILogger;
+    @inject(ScmContextKeyService) protected readonly scmContextKeys: ScmContextKeyService;
 
     /**
      * The graph model, resolved lazily: instantiating it starts loading
@@ -87,6 +105,25 @@ export class ScmHistoryGraphContribution implements CommandContribution, MenuCon
             isToggled: () => !!this.model.historyItemRefFilter,
             execute: () => this.pickHistoryItemRefs()
         });
+        commands.registerCommand(ScmHistoryGraphCommands.REVEAL_CURRENT_HISTORY_ITEM, {
+            // There is nothing to reveal while the filter excludes the current ref,
+            // mirroring VS Code's precondition for this action.
+            isEnabled: () => !!this.historyProvider && this.scmContextKeys.scmCurrentHistoryItemRefInFilter.get() === true,
+            isVisible: () => !!this.historyProvider,
+            execute: () => this.model.revealCurrentHistoryItem()
+        });
+        commands.registerCommand(ScmHistoryGraphCommands.SET_LIST_VIEW_MODE, {
+            isEnabled: () => !!this.historyProvider,
+            isVisible: () => !!this.historyProvider,
+            isToggled: () => this.model.viewMode === 'list',
+            execute: () => this.model.setViewMode('list')
+        });
+        commands.registerCommand(ScmHistoryGraphCommands.SET_TREE_VIEW_MODE, {
+            isEnabled: () => !!this.historyProvider,
+            isVisible: () => !!this.historyProvider,
+            isToggled: () => this.model.viewMode === 'tree',
+            execute: () => this.model.setViewMode('tree')
+        });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -97,8 +134,22 @@ export class ScmHistoryGraphContribution implements CommandContribution, MenuCon
             order: '100'
         });
         menus.registerMenuAction([...SCM_HISTORY_TITLE_MENU, 'navigation'], {
+            commandId: ScmHistoryGraphCommands.REVEAL_CURRENT_HISTORY_ITEM.id,
+            order: '200'
+        });
+        menus.registerMenuAction([...SCM_HISTORY_TITLE_MENU, 'navigation'], {
             commandId: ScmHistoryGraphCommands.REFRESH.id,
             order: '999'
+        });
+        // Groups other than 'navigation' are rendered in the toolbar's overflow menu,
+        // which is where VS Code places the view mode toggles as well.
+        menus.registerMenuAction([...SCM_HISTORY_TITLE_MENU, '9_viewmode'], {
+            commandId: ScmHistoryGraphCommands.SET_LIST_VIEW_MODE.id,
+            order: '1'
+        });
+        menus.registerMenuAction([...SCM_HISTORY_TITLE_MENU, '9_viewmode'], {
+            commandId: ScmHistoryGraphCommands.SET_TREE_VIEW_MODE.id,
+            order: '2'
         });
     }
 

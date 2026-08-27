@@ -52,7 +52,7 @@ For Windows instructions [click here](#building-on-windows).
 
 ## Prerequisites
 
-- Node.js `>= 22` (Node 24 is the recommended default).
+- Node.js `>= 24` (Node 24 is the recommended default, Node 26 is supported as well).
   - If you are interested in Theia's VS Code Extension support then you should use a Node version at least compatible with the one included in the version of Electron used by [VS Code](https://github.com/microsoft/vscode).
   - On Windows, note that the Node.js version determines the Visual Studio Build Tools version required for native module compilation. See [Building on Windows](#building-on-windows) for details.
 - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
@@ -491,7 +491,7 @@ etc.) by opening `packages/<package name>/coverage/index.html`.
 
 ## Updating dependencies and the lockfile
 
-When you add, remove, or upgrade dependencies, the regenerated `package-lock.json` needs care so that `npm ci` keeps working on every Node version used in CI (currently Node 22 and Node 24). See [Lockfile maintenance](lockfile-maintenance.md) for the required workflow before committing lockfile changes.
+When you add, remove, or upgrade dependencies, the regenerated `package-lock.json` needs care so that `npm ci` keeps working on every Node version used in CI (currently Node 24 and Node 26). See [Lockfile maintenance](lockfile-maintenance.md) for the required workflow before committing lockfile changes.
 
 ## Building on Windows
 

@@ -35,6 +35,10 @@ import { RegistryFetchService } from '../../common/registry-fetch-service';
 import { MCPInstallService, MCPInstallServiceImpl } from '../mcp/mcp-install-service';
 import { SkillInstallService, SkillInstallServiceImpl } from '../skill/skill-install-service';
 import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from './registry-auto-update-policy';
+import { PluginDirectoryNamingImpl } from '../../common/plugin/plugin-directory-naming';
+import { InstalledPluginInfo, ResolvedPluginEntry } from '../../common/plugin/plugin-registry-types';
+import { PluginInstallService, PluginInstallServiceImpl } from '../plugin/plugin-install-service';
+import { PluginInstaller } from '../plugin/plugin-installer';
 import { RegistryAutoUpdateService } from './registry-auto-update-service';
 
 after(() => disableJSDOM());
@@ -65,6 +69,17 @@ const mcpEntry: ResolvedRegistryEntry = {
     mcpRegistryVerified: true
 };
 
+const pluginEntry: ResolvedPluginEntry = {
+    pluginId: 'io.github.example/plugin-a',
+    name: 'Plugin A',
+    description: 'A plugin',
+    sourceUrl: 'https://github.com/example/plugin-a',
+    contentHash: 'hash-v2',
+    endorsements: [{ organizationId: 'example', date: '2026-08-07' }],
+    containedSkills: [],
+    containedMcpServers: []
+};
+
 /** Installed skill whose recorded hash is behind the registry, i.e. an update is available. */
 function outdatedSkill(entry: ResolvedSkillEntry, drifted = false): InstalledSkillInfo {
     return { name: entry.name, skillId: entry.skillId, contentHash: 'hash-v1', drifted };
@@ -80,6 +95,23 @@ function outdatedServer(entry: ResolvedRegistryEntry, drifted = false): MCPServe
     } as MCPServerDescription;
 }
 
+/** Installed plugin whose recorded hash is behind the registry, i.e. an update is available. */
+function outdatedPlugin(entry: ResolvedPluginEntry, drifted = false): InstalledPluginInfo {
+    const directoryName = 'io.github.example_plugin-a';
+    return {
+        directoryName,
+        root: `/home/u/.agents/plugins/${directoryName}`,
+        dataRoot: `/home/u/.agents/plugin-data/${directoryName}`,
+        pluginId: entry.pluginId,
+        contentHash: 'hash-v1',
+        qualifier: 'plugin-a',
+        drifted,
+        skills: [],
+        servers: [],
+        skipped: []
+    };
+}
+
 interface RecordedMessage {
     kind: 'info' | 'warn';
     text: string;
@@ -93,6 +125,8 @@ interface TestOptions {
     mcpEntries?: ResolvedRegistryEntry[];
     installedSkills?: InstalledSkillInfo[];
     installedServers?: MCPServerDescription[];
+    pluginEntries?: ResolvedPluginEntry[];
+    installedPlugins?: InstalledPluginInfo[];
     /** Registry ids whose update should throw. */
     failing?: string[];
     /** Action label the user "clicks" on any notification offering it. */
@@ -155,6 +189,8 @@ function createService(options: TestOptions = {}): { service: TestAutoUpdateServ
     const mcpEntries = options.mcpEntries ?? [mcpEntry];
     const installedSkills = options.installedSkills ?? [];
     const installedServers = options.installedServers ?? [];
+    const pluginEntries = options.pluginEntries ?? [pluginEntry];
+    const installedPlugins = options.installedPlugins ?? [];
     const failing = new Set(options.failing ?? []);
     const policy = createPolicy(options.defaultMode ?? 'ask', options.overrides ?? {}, options.explicitDefault ?? true);
     const service = new TestAutoUpdateService();
@@ -163,6 +199,8 @@ function createService(options: TestOptions = {}): { service: TestAutoUpdateServ
     // pinned end to end; only the I/O around them is faked.
     const realSkillService = new SkillInstallServiceImpl();
     const realMcpService = new MCPInstallServiceImpl();
+    const realPluginService = new PluginInstallServiceImpl();
+    Object.assign(realPluginService, { directoryNaming: new PluginDirectoryNamingImpl() });
 
     const record = async (id: string): Promise<void> => {
         service.attempted.push(id);
@@ -184,7 +222,8 @@ function createService(options: TestOptions = {}): { service: TestAutoUpdateServ
                 }
                 return mcpEntries;
             },
-            getSkillEntries: async () => skillEntries
+            getSkillEntries: async () => skillEntries,
+            getPluginEntries: async () => pluginEntries
         } as unknown as RegistryFetchService,
         skillInstallService: {
             listInstalledSkills: async () => installedSkills,
@@ -196,6 +235,13 @@ function createService(options: TestOptions = {}): { service: TestAutoUpdateServ
             classifyLocalServer: (local: MCPServerDescription, entries: ResolvedRegistryEntry[]) => realMcpService.classifyLocalServer(local, entries),
             update: (entry: ResolvedRegistryEntry) => record(entry.serverId)
         } as unknown as MCPInstallService,
+        pluginInstallService: {
+            listInstalledPlugins: async () => installedPlugins,
+            classifyInstalledPlugin: (info: InstalledPluginInfo, entries: ResolvedPluginEntry[]) => realPluginService.classifyInstalledPlugin(info, entries)
+        } as unknown as PluginInstallService,
+        pluginInstaller: {
+            install: (entry: ResolvedPluginEntry) => record(entry.pluginId).then(() => true)
+        } as unknown as PluginInstaller,
         messageService: {
             info: (text: string, ...actions: string[]) => respond('info', text, actions),
             warn: (text: string, ...actions: string[]) => respond('warn', text, actions)
@@ -279,6 +325,74 @@ describe('RegistryAutoUpdateService', () => {
             const { service } = createService({ defaultMode: 'on', installedServers: [outdatedServer(mcpEntry, true)] });
             await service.check();
             expect(service.attempted).to.be.empty;
+        });
+
+        it('skips a drifted Agent Plugin in on mode', async () => {
+            const { service } = createService({ defaultMode: 'on', installedPlugins: [outdatedPlugin(pluginEntry, true)] });
+            await service.check();
+            expect(service.attempted).to.be.empty;
+        });
+    });
+
+    describe('Agent Plugins', () => {
+
+        it('updates an outdated plugin without asking when the mode is on', async () => {
+            const { service } = createService({ defaultMode: 'on', installedPlugins: [outdatedPlugin(pluginEntry)] });
+            await service.check();
+            expect(service.attempted).to.deep.equal([pluginEntry.pluginId]);
+        });
+
+        it('leaves a plugin alone when the mode is off', async () => {
+            const { service } = createService({ defaultMode: 'off', installedPlugins: [outdatedPlugin(pluginEntry)] });
+            await service.check();
+            expect(service.attempted).to.be.empty;
+            expect(service.messages).to.be.empty;
+        });
+
+        it('applies a per-plugin override over the default', async () => {
+            const { service } = createService({
+                defaultMode: 'off',
+                overrides: { [`plugin:${pluginEntry.pluginId}`]: 'on' },
+                installedPlugins: [outdatedPlugin(pluginEntry)]
+            });
+            await service.check();
+            expect(service.attempted).to.deep.equal([pluginEntry.pluginId]);
+        });
+
+        it('leaves a plugin the registry no longer lists alone', async () => {
+            const { service } = createService({ defaultMode: 'on', pluginEntries: [], installedPlugins: [outdatedPlugin(pluginEntry)] });
+            await service.check();
+            expect(service.attempted).to.be.empty;
+        });
+
+        it('names the plugin in the prompt, so the notification says what is about to change', async () => {
+            const { service } = createService({ defaultMode: 'ask', installedPlugins: [outdatedPlugin(pluginEntry)] });
+            await service.check();
+            expect(service.messages[0].text).to.contain('Agent Plugin "Plugin A" has an update available.');
+        });
+
+        it('batches a plugin together with the other artifact kinds', async () => {
+            const { service } = createService({
+                defaultMode: 'on',
+                installedSkills: [outdatedSkill(skillEntry)],
+                installedServers: [outdatedServer(mcpEntry)],
+                installedPlugins: [outdatedPlugin(pluginEntry)]
+            });
+            await service.check();
+            expect(service.attempted).to.deep.equal([skillEntry.skillId, mcpEntry.serverId, pluginEntry.pluginId]);
+            expect(service.messages.map(message => message.text)).to.deep.equal(['Updated 3 AI registry items.']);
+        });
+
+        it('reports the failure without aborting the rest of the batch', async () => {
+            const { service } = createService({
+                defaultMode: 'on',
+                installedSkills: [outdatedSkill(skillEntry)],
+                installedPlugins: [outdatedPlugin(pluginEntry)],
+                failing: [pluginEntry.pluginId]
+            });
+            await service.check();
+            expect(service.attempted).to.deep.equal([skillEntry.skillId, pluginEntry.pluginId]);
+            expect(service.messages.map(message => message.kind)).to.deep.equal(['info', 'warn']);
         });
     });
 

@@ -186,8 +186,8 @@ interface WalkthroughDescriptionContentProps {
 function WalkthroughDescriptionContent(props: WalkthroughDescriptionContentProps): React.ReactElement {
     // eslint-disable-next-line no-null/no-null
     const containerRef = React.useRef<HTMLDivElement>(null);
-    const renderResultRef = React.useRef<MarkdownRenderResult | undefined>();
-    const disposablesRef = React.useRef<DisposableCollection | undefined>();
+    const renderResultRef = React.useRef<MarkdownRenderResult | undefined>(undefined);
+    const disposablesRef = React.useRef<DisposableCollection | undefined>(undefined);
     const onLinkClickRef = React.useRef(props.onLinkClick);
     onLinkClickRef.current = props.onLinkClick;
 
@@ -314,8 +314,8 @@ function WalkthroughMedia(props: {
 }): React.ReactElement {
     // eslint-disable-next-line no-null/no-null
     const containerRef = React.useRef<HTMLDivElement>(null);
-    const renderResultRef = React.useRef<MarkdownRenderResult | undefined>();
-    const disposablesRef = React.useRef<DisposableCollection | undefined>();
+    const renderResultRef = React.useRef<MarkdownRenderResult | undefined>(undefined);
+    const disposablesRef = React.useRef<DisposableCollection | undefined>(undefined);
     const onLinkClickRef = React.useRef(props.onLinkClick);
     onLinkClickRef.current = props.onLinkClick;
 

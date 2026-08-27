@@ -21,7 +21,7 @@ import * as path from 'path';
 import { PreferenceService } from '@theia/core';
 import { RequestContext, RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
 import { ResolvedSkillEntry } from '../common/skill/skill-registry-types';
-import { computeSkillContentHash } from '../common/skill/skill-content-hash';
+import { computeContentHash } from '../common/content-hash';
 import { SkillInstallBackendServiceImpl } from './skill-install-backend-service';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
@@ -36,7 +36,7 @@ const HELPER_MD = 'helper content';
 function encode(text: string): Uint8Array {
     return new TextEncoder().encode(text);
 }
-const REGISTRY_HASH = computeSkillContentHash([
+const REGISTRY_HASH = computeContentHash([
     { relativePath: 'SKILL.md', content: encode(SKILL_MD) },
     { relativePath: 'helper.md', content: encode(HELPER_MD) }
 ]);
@@ -249,6 +249,42 @@ describe('SkillInstallBackendService', () => {
         // The pre-existing folder content must be preserved untouched.
         expect(await fs.readFile(path.join(target, 'pre-existing.txt'), 'utf8')).to.equal('do not clobber');
         // The staging folder must also be cleaned up by the finally block.
+        const leftovers = (await fs.readdir(root)).filter(name => name.startsWith('.installing-'));
+        expect(leftovers).to.deep.equal([]);
+    });
+
+    it('gives two installs of the same skill in the same millisecond separate staging folders', async () => {
+        // `Date.now()` alone is millisecond-resolution, so a shared staging path was possible and
+        // whichever install finished first deleted it from under the other's rename (ENOENT).
+        const svc = service(githubResponses(SKILL_MD)) as unknown as {
+            writeSkill(entry: ResolvedSkillEntry, files: { relativePath: string; content: Uint8Array }[], replace: boolean): Promise<void>;
+        };
+        const stagingPaths = new Set<string>();
+        const original = fs.rename;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (fs as any).rename = async (from: string, to: string) => {
+            stagingPaths.add(String(from));
+            return original(from, to);
+        };
+        try {
+            const files = [{ relativePath: 'SKILL.md', content: Buffer.from(SKILL_MD) }];
+            await svc.writeSkill(entry, files, false);
+            await fs.rm(path.join(root, 'example-skill'), { recursive: true, force: true });
+            await svc.writeSkill(entry, files, false);
+        } finally {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (fs as any).rename = original;
+        }
+        expect(stagingPaths.size).to.equal(2);
+    });
+
+    it('leaves the installed skill in place when a later install stages under the same path', async () => {
+        // The `finally` used to remove the staging path unconditionally, which after a successful
+        // rename could delete whatever another install had since staged there.
+        const svc = service(githubResponses(SKILL_MD));
+        await svc.install(entry);
+
+        expect(await fs.readFile(path.join(root, 'example-skill', 'SKILL.md'), 'utf8')).to.contain('example-skill');
         const leftovers = (await fs.readdir(root)).filter(name => name.startsWith('.installing-'));
         expect(leftovers).to.deep.equal([]);
     });

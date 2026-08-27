@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { OpenerService } from '@theia/core/lib/browser';
 import { isToolCallContent, ToolCallResult } from '@theia/ai-core';
 import { MarkdownRender } from './markdown-part-renderer';
+import { McpAppFrame } from './mcp-app-frame';
 
 /** Parses a tool call result that may be a JSON string, returning the original value on failure. */
 export function tryParseToolCallResult(result: ToolCallResult): ToolCallResult {
@@ -57,6 +57,11 @@ export function renderToolCallResult(rawResult: ToolCallResult, openerService: O
                     case 'text': {
                         return <div key={`content-${idx}-${content.type}`} className='theia-toolCall-text-result'>
                             <MarkdownRender text={content.text} openerService={openerService} />
+                        </div>;
+                    }
+                    case 'html': {
+                        return <div key={`content-${idx}-${content.type}`} className='theia-toolCall-html-result'>
+                            <McpAppFrame html={content.html} title={content.title} />
                         </div>;
                     }
                     case 'error': {

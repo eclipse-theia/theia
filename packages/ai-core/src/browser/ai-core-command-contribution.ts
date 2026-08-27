@@ -31,7 +31,13 @@ export class AiCoreCommandContribution implements CommandContribution {
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(AI_SHOW_SETTINGS_COMMAND, this.handlerFactory({
-            execute: () => commands.executeCommand(CommonCommands.OPEN_PREFERENCES.id, 'ai-features'),
+            // An explicit AI preference id opens the Settings UI focused on it; anything else (no argument, or
+            // the widget the chat toolbar passes) falls back to the whole AI section. `@theia/ai-ide` overrides
+            // this handler to open the AI Configuration view instead, forwarding the same argument.
+            execute: (target?: unknown) => commands.executeCommand(
+                CommonCommands.OPEN_PREFERENCES.id,
+                typeof target === 'string' && target.trim() ? target : 'ai-features'
+            ),
         }));
     }
 }
