@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource and others.
+// Copyright (C) 2026 robertjndw
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -18,6 +18,7 @@ import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { LIST_JSON, PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
 import { DeployedPlugin, ExtPluginApi, HostedPluginClient, HostedPluginServer, PluginIdentifiers } from '../../common';
 import { Event, RpcConnectionEventEmitter } from '@theia/core';
+import { Endpoint } from '@theia/core/lib/browser';
 import { memoizeAsync } from './async-memoize';
 
 export const PluginLocalOptions = Symbol('PluginLocalOptions');
@@ -50,9 +51,9 @@ export class FrontendHostedPluginServer implements HostedPluginServer, RpcConnec
         this.options ? Promise.resolve(this.options.pluginMetadata) : this.fetchDeployedPlugins());
 
     protected async fetchDeployedPlugins(): Promise<DeployedPlugin[]> {
-        // Resolved against `document.baseURI`, like `HostedPluginFileSystemProvider#toUrl`, so
-        // this keeps working when the application is deployed under a sub-path.
-        const url = new URL(`${PLUGINS_BASE_PATH}/${LIST_JSON}`, document.baseURI).toString();
+        // Built through `Endpoint`, like `PluginIconService#toPluginUrl`, so this keeps working
+        // when the application is deployed under a sub-path.
+        const url = new Endpoint({ path: `${PLUGINS_BASE_PATH}/${LIST_JSON}` }).getRestUrl().toString();
         try {
             const response = await fetch(url);
             if (!response.ok) {

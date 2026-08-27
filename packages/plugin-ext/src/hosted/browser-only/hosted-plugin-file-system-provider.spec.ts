@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource and others.
+// Copyright (C) 2026 robertjndw
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,17 +14,22 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // ****************************************************************************
 
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+// `HostedPluginFileSystemProvider` transitively imports `Endpoint` via `@theia/core/lib/browser`,
+// which touches `document` at load time, so JSDOM is enabled before it for that import.
+let disableJSDOM = enableJSDOM();
+
 import { expect } from 'chai';
 import { URI } from '@theia/core';
-import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 import { FileSystemProviderErrorCode } from '@theia/filesystem/lib/common/files';
 import { PLUGINS_SCHEME } from '@theia/plugin-utils/lib/common/constants';
 import { HostedPluginFileSystemProvider } from './hosted-plugin-file-system-provider';
 
+disableJSDOM();
+
 describe('HostedPluginFileSystemProvider', () => {
 
-    // The provider resolves asset URLs against `document.baseURI`.
-    let disableJSDOM: () => void;
+    // The provider builds asset URLs through `Endpoint`, which reads `self.location`.
     before(() => { disableJSDOM = enableJSDOM(); });
     after(() => disableJSDOM());
 
@@ -159,7 +164,7 @@ describe('HostedPluginFileSystemProvider', () => {
             .that.has.property('code', FileSystemProviderErrorCode.NoPermissions);
     });
 
-    it('resolves the request URL relative to document.baseURI, re-encoding # ? % and spaces while keeping / literal', async () => {
+    it('resolves the request URL through Endpoint, re-encoding # ? % and spaces while keeping / literal', async () => {
         stubFetch(() => new Response(undefined, { status: 200 }));
         const provider = createProvider();
 

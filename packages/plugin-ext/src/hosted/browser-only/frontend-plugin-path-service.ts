@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource and others.
+// Copyright (C) 2026 robertjndw
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -62,9 +62,9 @@ export class FrontendPluginPathService implements PluginPathsService {
     @inject(UntitledWorkspaceService)
     protected readonly untitledWorkspaceService: UntitledWorkspaceService;
 
-    protected configDirUri: Promise<URI> | undefined;
-
     readonly getHostLogPath = memoizeAsync((): Promise<string> => this.resolveHostLogPath());
+
+    protected readonly getConfigDirUri = memoizeAsync((): Promise<URI> => this.envServer.getConfigDirUri().then(uri => new URI(uri)));
 
     protected readonly resolveCachedHostStoragePath = memoizeAsyncByKey(
         ({ workspaceUri, rootUris }: { workspaceUri: string; rootUris: string[] }) => this.resolveHostStoragePath(workspaceUri, rootUris),
@@ -222,9 +222,5 @@ export class FrontendPluginPathService implements PluginPathsService {
     protected async ensureDirectory(uri: URI): Promise<string> {
         await this.fileService.createFolder(uri, { fromUserGesture: false });
         return this.fileService.fsPath(uri);
-    }
-
-    protected getConfigDirUri(): Promise<URI> {
-        return this.configDirUri ??= this.envServer.getConfigDirUri().then(uri => new URI(uri));
     }
 }

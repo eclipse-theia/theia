@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource and others.
+// Copyright (C) 2026 robertjndw
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -16,6 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Disposable, Event, Emitter, URI } from '@theia/core';
+import { Endpoint } from '@theia/core/lib/browser';
 import {
     createFileSystemProviderError, FileChange, FileDeleteOptions, FileOverwriteOptions, FilePermission, FileSystemProvider, FileSystemProviderCapabilities,
     FileSystemProviderErrorCode, FileType, FileWriteOptions, Stat, WatchOptions
@@ -68,13 +69,13 @@ export class HostedPluginFileSystemProvider implements FileSystemProvider {
     }
 
     /**
-     * Maps the URI back to the path the build actually wrote, resolved against `document.baseURI`
-     * so this still works when the application is deployed under a sub-path. `URI.path` is decoded,
-     * so it has to be re-encoded - otherwise a `#` or `?` in an asset name would be read as a
-     * fragment or query by `URL`.
+     * Maps the URI back to the path the build actually wrote, built through `Endpoint` so this
+     * still works when the application is deployed under a sub-path. `URI.path` is decoded, so it
+     * has to be re-encoded - otherwise a `#` or `?` in an asset name would be read as a fragment or
+     * query.
      */
     protected toUrl(resource: URI): string {
-        return new URL(`${PLUGINS_BASE_PATH}${encodePluginAssetPath(resource.path.toString())}`, document.baseURI).toString();
+        return new Endpoint({ path: `${PLUGINS_BASE_PATH}${encodePluginAssetPath(resource.path.toString())}` }).getRestUrl().toString();
     }
 
     protected async fetch(resource: URI, method: 'GET' | 'HEAD'): Promise<Response> {
