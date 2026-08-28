@@ -400,7 +400,9 @@ describe('WalkthroughSection', () => {
         }, 50);
     });
     it('should list at most WALKTHROUGH_LIST_LIMIT walkthroughs and delegate More... to the picker', done => {
-        const walkthroughs = [1, 2, 3, 4, 5].map(i => createMockWalkthrough({ id: `wt${i}`, title: `WT ${i}` }));
+        // One more than fits, so that the assertions hold whatever the limit is.
+        const walkthroughs = Array.from({ length: WALKTHROUGH_LIST_LIMIT + 1 },
+            (_, i) => createMockWalkthrough({ id: `wt${i}`, title: `WT ${i}` }));
         const mockService = createMockWalkthroughService(walkthroughs);
         let showAllCalled = false;
 
@@ -455,6 +457,32 @@ describe('WalkthroughSection', () => {
             assert.deepStrictEqual(titles, ['Pending'], 'Only the unfinished walkthrough should be listed');
             // The completed one is still reachable, so the link has to stay.
             assert.ok(container.querySelector('.gs-walkthrough-more'), 'More link should be offered');
+            done();
+        }, 50);
+    });
+
+    it('should render nothing once every walkthrough is complete', done => {
+        const walkthroughs = [createMockWalkthrough({
+            id: 'done',
+            title: 'Done',
+            steps: [createMockStep({ id: 's1', isComplete: true })]
+        })];
+        const mockService = createMockWalkthroughService(walkthroughs);
+
+        root.render(
+            <WalkthroughSection
+                walkthroughService={mockService as unknown as WalkthroughService}
+                markdownRenderer={mockRenderer}
+                themeService={createMockThemeService()}
+                logger={createMockLogger()}
+                onShowAll={() => { }}
+            />
+        );
+
+        setTimeout(() => {
+            // Not even the heading: the section must not hold on to its place in the welcome page.
+            // eslint-disable-next-line no-null/no-null
+            assert.strictEqual(container.querySelector('.gs-section'), null, 'Should not render the section');
             done();
         }, 50);
     });

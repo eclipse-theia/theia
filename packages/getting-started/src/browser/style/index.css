@@ -53,8 +53,39 @@ body {
   height: 100%;
 }
 
+/*
+ * Centred in a readable measure instead of stretching across the whole view: with the side bars collapsed the
+ * welcome page is as wide as the window, and full-width content drifts apart towards the edges.
+ */
 .gs-content-container {
   padding: 20px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/*
+ * The welcome content below the header: the regular sections on the left, the walkthroughs on the right.
+ * Both columns keep a sensible minimum width and wrap onto each other in a narrow window.
+ */
+.gs-columns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: calc(var(--theia-ui-padding) * 8);
+}
+
+/* Even shares, so that the walkthroughs sit next to the sections rather than pushed against the edge. */
+.gs-main-column,
+.gs-side-column {
+  flex: 1 1 340px;
+  min-width: 0;
+}
+
+/* Without a walkthrough to offer, the column must not hold on to its share of the width. */
+.gs-side-column:empty {
+  display: none;
 }
 
 .gs-content-container a {
@@ -149,13 +180,13 @@ body {
 .gs-walkthrough-cards {
   display: flex;
   flex-direction: column;
-  gap: var(--theia-ui-padding);
-  margin-top: var(--theia-ui-padding);
+  gap: calc(var(--theia-ui-padding) * 2);
+  margin-top: calc(var(--theia-ui-padding) * 2);
   max-width: 640px;
 }
 
 .gs-walkthrough-card {
-  padding: calc(var(--theia-ui-padding) * 1.5) calc(var(--theia-ui-padding) * 2);
+  padding: calc(var(--theia-ui-padding) * 2.5);
   border-radius: calc(var(--theia-ui-padding) / 2);
   cursor: pointer;
   background-color: var(--theia-walkthrough-card-background);
@@ -203,25 +234,31 @@ body {
   object-fit: contain;
 }
 
-/* Kept to a single line so that every card stays the same height. */
+/*
+ * Wraps, but no further than two lines, so that a description is readable in the narrow side column
+ * without any single card growing out of proportion.
+ */
 .gs-walkthrough-card-description {
   color: var(--theia-descriptionForeground);
   font-size: var(--theia-ui-font-size0);
   margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .gs-walkthrough-card-progress {
   display: flex;
   align-items: center;
   gap: var(--theia-ui-padding);
-  margin-top: var(--theia-ui-padding);
+  margin-top: calc(var(--theia-ui-padding) * 2);
 }
 
+/* Uses whatever width the card offers rather than a fixed one, which would leave a gap in a wide card. */
 .gs-walkthrough-progress-bar {
-  flex: 0 1 180px;
+  flex: 1 1 auto;
   height: calc(var(--theia-ui-padding) / 3);
   background-color: var(--theia-walkthrough-progress-background);
   border-radius: calc(var(--theia-ui-padding) / 3);
