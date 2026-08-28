@@ -35,8 +35,8 @@ export interface WalkthroughSectionProps {
     onShowAll?: () => void;
 }
 
-/** How many walkthroughs are listed on the welcome page. */
-export const WALKTHROUGH_LIST_LIMIT = 2;
+/** How many walkthroughs are listed on the welcome page; the rest stay behind `More...`. */
+export const WALKTHROUGH_LIST_LIMIT = 5;
 
 /**
  * Renders the list of contributed walkthroughs, or the currently selected walkthrough.
@@ -77,12 +77,14 @@ export function WalkthroughSection(props: WalkthroughSectionProps): React.ReactE
     }
 
     const walkthroughs = walkthroughService.getWalkthroughs();
-    if (walkthroughs.length === 0) {
+    // A finished walkthrough has nothing left to offer here; it stays reachable through the
+    // `walkthrough.open` command. Once none is pending the section renders nothing at all, so that it does not
+    // hold on to its place in the welcome page for an empty heading.
+    const pending = walkthroughs.filter(walkthrough => walkthrough.steps.some(step => !step.isComplete));
+    if (pending.length === 0) {
         return <React.Fragment />;
     }
 
-    // A finished walkthrough has nothing left to offer here; it stays reachable through `onShowAll`.
-    const pending = walkthroughs.filter(walkthrough => walkthrough.steps.some(step => !step.isComplete));
     const listed = pending.slice(0, WALKTHROUGH_LIST_LIMIT);
     return (
         <div className='gs-section'>
