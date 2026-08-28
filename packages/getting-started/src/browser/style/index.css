@@ -147,33 +147,6 @@ body {
   align-items: center;
 }
 
-.gs-float {
-  float: right;
-  width: 50%;
-  margin-top: 100px;
-}
-
-.gs-container.gs-aifeature-container {
-  border: 1px solid var(--theia-focusBorder);
-  padding: 15px;
-}
-
-.shadow-pulse {
-  animation: shadowPulse 2s infinite ease-in-out;
-}
-
-@keyframes shadowPulse {
-
-  0%,
-  100% {
-    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
-  }
-
-  50% {
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
-  }
-}
-
 /* Walkthrough styles */
 
 /* The cards form a quiet single column: card-like blocks, but without borders. */
@@ -277,6 +250,30 @@ body {
   color: var(--theia-walkthrough-progress-foreground);
   font-size: var(--theia-ui-font-size0);
   white-space: nowrap;
+}
+
+/*
+ * A link that stands alone in its paragraph is an action rather than a reference, so a step can offer it as a
+ * button. Links inside a sentence keep reading as links, which is what the `:only-child` restriction buys.
+ */
+.gs-walkthrough-step-description p > a:only-child {
+  display: inline-block;
+  padding: calc(var(--theia-ui-padding) / 2) calc(var(--theia-ui-padding) * 2);
+  border: var(--theia-border-width) solid var(--theia-button-border);
+  border-radius: calc(var(--theia-ui-padding) / 2);
+  background-color: var(--theia-button-background);
+  color: var(--theia-button-foreground);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.gs-walkthrough-step-description p > a:only-child:hover {
+  background-color: var(--theia-button-hoverBackground);
+  text-decoration: none;
+}
+
+.gs-walkthrough-step-description p > a:only-child:focus {
+  outline: var(--theia-border-width) solid var(--theia-focusBorder);
 }
 
 .gs-walkthrough-more {
