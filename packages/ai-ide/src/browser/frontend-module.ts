@@ -95,7 +95,11 @@ import { ContextFilesVariableContribution } from '../common/context-files-variab
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TemplatePreferenceContribution } from './template-preference-contribution';
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
+import { WalkthroughProvider } from '@theia/getting-started/lib/common/walkthrough-provider';
 import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
+import { AiGettingStartedWalkthroughProvider } from './ai-getting-started-walkthrough';
+import { AiGettingStartedContribution } from './ai-getting-started-contribution';
+import { AiWalkthroughContextKeys } from './ai-walkthrough-context-keys';
 import { ChatSessionsWelcomeMessageProvider } from './chat-sessions-welcome-message-provider';
 import { ChatSessionItemActionContribution, DefaultChatSessionItemActionContribution } from './chat-session-item-action-contribution';
 import { AiAllowAllModeChatBanner } from './ai-allow-all-mode-chat-banner';
@@ -216,6 +220,11 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatAgent).toService(PRReviewAgent);
 
     bind(ChatSessionListService).toSelf().inSingletonScope();
+
+    bind(WalkthroughProvider).to(AiGettingStartedWalkthroughProvider).inSingletonScope();
+    bind(CommandContribution).to(AiGettingStartedContribution).inSingletonScope();
+    bind(AiWalkthroughContextKeys).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(AiWalkthroughContextKeys);
 
     bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider).inSingletonScope();
     bind(ChatWelcomeMessageProvider).to(ChatSessionsWelcomeMessageProvider).inSingletonScope();
