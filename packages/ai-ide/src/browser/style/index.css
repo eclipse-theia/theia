@@ -869,7 +869,7 @@ button.agent-chip:focus-visible {
   padding-top: calc(var(--theia-ui-padding) * 8);
 }
 
-/* Compact greeting used when the home view also shows recent sessions */
+/* Compact greeting of a working chat: the onboarding itself lives in the getting started walkthrough */
 .theia-WelcomeMessage-Compact {
   padding-top: calc(var(--theia-ui-padding) * 2);
 }
@@ -1023,46 +1023,6 @@ button.agent-chip:focus-visible {
 
 .theia-WelcomeMessage-IssuesList li {
   margin-bottom: calc(var(--theia-ui-padding) * 0.25);
-}
-
-.theia-WelcomeMessage-AgentButtons {
-  display: flex;
-  flex-direction: column;
-  gap: var(--theia-ui-padding);
-  margin: calc(var(--theia-ui-padding) * 2) 0;
-}
-
-.theia-WelcomeMessage-AgentButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: calc(var(--theia-ui-padding) * 0.5);
-  padding: calc(var(--theia-ui-padding) * 0.75) calc(var(--theia-ui-padding) * 1.5);
-  background-color: var(--theia-button-background);
-  color: var(--theia-button-foreground);
-  border: 1px solid var(--theia-button-border);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: var(--theia-ui-font-size1);
-  transition: background-color 0.15s;
-}
-
-.theia-WelcomeMessage-AgentButton:hover {
-  background-color: var(--theia-button-hoverBackground);
-}
-
-.theia-WelcomeMessage-AgentButton-Icon {
-  font-size: var(--theia-ui-font-size1);
-}
-
-.theia-WelcomeMessage-AgentButton-Label {
-  font-weight: 500;
-}
-
-.theia-WelcomeMessage-SubNote {
-  font-size: var(--theia-ui-font-size1);
-  color: var(--theia-descriptionForeground);
-  margin-top: calc(var(--theia-ui-padding) * 2);
 }
 
 .theia-WelcomeMessage-Alert {

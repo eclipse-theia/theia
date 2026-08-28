@@ -33,6 +33,8 @@ export class AiConfigurationDetailWidget extends ReactWidget {
 
     /** Frames a pending search highlight waits for its target row to be mounted before it is dropped. */
     static readonly HIGHLIGHT_RETRY_FRAMES = 10;
+    /** Space kept above a row a deep link scrolled to, so that its section header stays visible. */
+    static readonly TARGET_ROW_MARGIN = 24;
 
     @inject(AiConfigurationCategoryRegistry)
     protected readonly registry: AiConfigurationCategoryRegistry;
@@ -201,7 +203,7 @@ export class AiConfigurationDetailWidget extends ReactWidget {
             const element = body.querySelector<HTMLElement>(`[data-ai-config-row-id="${highlight.rowId}"]`);
             if (element) {
                 this.pendingHighlight = undefined;
-                this.centerInBody(body, element);
+                this.revealInBody(body, element);
                 element.classList.add('ai-configuration-row-flash');
                 window.setTimeout(() => element.classList.remove('ai-configuration-row-flash'), 1200);
             } else if (this.pendingHighlightFrames < AiConfigurationDetailWidget.HIGHLIGHT_RETRY_FRAMES) {
@@ -218,20 +220,23 @@ export class AiConfigurationDetailWidget extends ReactWidget {
     }
 
     /**
-     * Vertically centers `element` within `body` by scrolling that container and nothing else.
+     * Scrolls `body`, and nothing else, so that `element` sits at the top of it.
+     *
+     * Top rather than centered: a deep link lands on a page the user has not seen before, and a row in the
+     * middle of it reads as "the page opened somewhere", with the rows above it competing for the attention
+     * the flash is meant to direct. {@link TARGET_ROW_MARGIN} keeps the section header above the row visible.
      *
      * Deliberately not `Element.scrollIntoView`: that scrolls *every* scrollable ancestor to satisfy the
      * requested alignment, and `overflow: hidden` does not prevent programmatic scrolling. When a row cannot
-     * be centered inside the body alone, it therefore nudges the `overflow: hidden` containers above this
-     * widget, which have no scrollbar for the user to scroll back — shifting the whole shell, pushing the menu
+     * be revealed inside the body alone, it therefore nudges the `overflow: hidden` containers above this
+     * widget, which have no scrollbar for the user to scroll back, shifting the whole shell, pushing the menu
      * bar out of view and leaving a gap below the status bar.
      */
-    protected centerInBody(body: HTMLElement, element: HTMLElement): void {
+    protected revealInBody(body: HTMLElement, element: HTMLElement): void {
         const bodyRect = body.getBoundingClientRect();
         const elementRect = element.getBoundingClientRect();
         const current = elementRect.top - bodyRect.top;
-        const centered = (body.clientHeight - elementRect.height) / 2;
         // Assigning `scrollTop` clamps to the scrollable range, so short pages simply do not scroll.
-        body.scrollTop += current - centered;
+        body.scrollTop += current - AiConfigurationDetailWidget.TARGET_ROW_MARGIN;
     }
 }
