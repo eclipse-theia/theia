@@ -21,14 +21,16 @@ import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { PreferenceService } from '@theia/core/lib/common/preferences';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { DeployedPlugin, PluginIdentifiers, PluginMetadata, WalkthroughContribution, WalkthroughStepContribution } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { DeployedPlugin, PluginIdentifiers, PluginMetadata } from '@theia/plugin-ext/lib/common/plugin-protocol';
 
 import { OpenerService, open } from '@theia/core/lib/browser/opener-service';
+import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { URI } from '@theia/core/lib/common/uri';
-import { Walkthrough, WalkthroughStep } from '../common/walkthrough-types';
+import { Walkthrough, WalkthroughDefinition, WalkthroughStep, WalkthroughStepDefinition } from '../common/walkthrough-types';
+import { WalkthroughProvider } from '../common/walkthrough-provider';
 import { GettingStartedPreferences } from '../common/getting-started-preferences';
 import { WalkthroughCommands } from '../common/walkthrough-commands';
 
@@ -77,6 +79,9 @@ export class WalkthroughService implements Disposable {
     @inject(WalkthroughViewEventSource)
     protected readonly viewEventSource: WalkthroughViewEventSource;
 
+    @inject(ContributionProvider) @named(WalkthroughProvider)
+    protected readonly walkthroughProviders: ContributionProvider<WalkthroughProvider>;
+
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
 
@@ -116,11 +121,17 @@ export class WalkthroughService implements Disposable {
         // Plugins are deployed while the progress is still being read. Registering a walkthrough before
         // that would report its completed steps as pending, so every sync waits for the progress.
         this.progressReady = this.loadProgress().then(() => {
-            this.syncWalkthroughsFromPlugins();
+            this.syncWalkthroughs();
             this.establishPluginBaseline();
         });
 
         this.toDispose.push(this.pluginSupport.onDidChangePlugins(() => this.handlePluginsChanged()));
+
+        for (const provider of this.walkthroughProviders.getContributions()) {
+            if (provider.onDidChange) {
+                this.toDispose.push(provider.onDidChange(() => this.handleProvidersChanged()));
+            }
+        }
 
         this.toDispose.push(this.commandRegistry.onDidExecuteCommand(e => {
             this.handleCompletionEvent(`onCommand:${e.commandId}`);
@@ -142,11 +153,16 @@ export class WalkthroughService implements Disposable {
         }));
     }
 
+    protected async handleProvidersChanged(): Promise<void> {
+        await this.progressReady;
+        this.syncWalkthroughs();
+    }
+
     protected async handlePluginsChanged(): Promise<void> {
         await this.progressReady;
         const previousIds = this.knownPluginIds;
         const baselineEstablished = this.pluginBaselineEstablished;
-        this.syncWalkthroughsFromPlugins();
+        this.syncWalkthroughs();
         this.establishPluginBaseline();
         if (!baselineEstablished) {
             // The plugins deployed while the application was starting are not new installations.
@@ -262,9 +278,39 @@ export class WalkthroughService implements Disposable {
         await this.storageService.setData(WALKTHROUGH_PROGRESS_KEY, this.progressState);
     }
 
-    protected syncWalkthroughsFromPlugins(): void {
-        const plugins = this.pluginSupport.plugins;
+    /**
+     * Register the walkthroughs of both sources - plugins and {@link WalkthroughProvider} contributions - and
+     * drop the ones that are gone.
+     *
+     * Both sources are collected before anything is dropped, so that they cannot delete each other's walkthroughs.
+     */
+    protected syncWalkthroughs(): void {
         const seenIds = new Set<string>();
+        this.collectPluginWalkthroughs(seenIds);
+        this.collectProvidedWalkthroughs(seenIds);
+        this.removeUnseenWalkthroughs(seenIds);
+    }
+
+    protected collectProvidedWalkthroughs(seenIds: Set<string>): void {
+        for (const provider of this.walkthroughProviders.getContributions()) {
+            try {
+                for (const definition of provider.getWalkthroughs()) {
+                    if (seenIds.has(definition.id)) {
+                        this.logger.warn(`The walkthrough '${definition.id}' is contributed more than once; only the first contribution is used.`);
+                        continue;
+                    }
+                    seenIds.add(definition.id);
+                    this.registerIfChanged(definition.id, definition, () => this.registerWalkthrough(definition.id, definition));
+                }
+            } catch (error) {
+                // A failing provider must not stop the other walkthroughs, nor reject the sync it runs in.
+                this.logger.error('Could not collect the walkthroughs of a provider.', error);
+            }
+        }
+    }
+
+    protected collectPluginWalkthroughs(seenIds: Set<string>): void {
+        const plugins = this.pluginSupport.plugins;
 
         for (const pluginMeta of plugins) {
             if (pluginMeta.outOfSync) {
@@ -284,15 +330,27 @@ export class WalkthroughService implements Disposable {
             for (const contribution of deployed.contributes.walkthroughs) {
                 const fullId = `${contribution.pluginId}.${contribution.id}`;
                 seenIds.add(fullId);
-                // Re-register when the definition changed, for instance because the plugin was updated.
-                const signature = JSON.stringify(contribution);
-                if (this.contributionSignatures.get(fullId) !== signature) {
-                    this.contributionSignatures.set(fullId, signature);
-                    this.registerWalkthrough(contribution);
-                }
+                this.registerIfChanged(fullId, contribution, () => this.registerWalkthrough(fullId, contribution, contribution.pluginId, contribution.pluginIcon));
             }
         }
+    }
 
+    /**
+     * Register a walkthrough anew whenever its definition changed, for instance because the contributing plugin
+     * was updated. An unchanged definition keeps the walkthrough as it is, progress included.
+     */
+    protected registerIfChanged(id: string, definition: WalkthroughDefinition, register: () => void): void {
+        const signature = JSON.stringify(definition);
+        if (this.contributionSignatures.get(id) !== signature) {
+            this.contributionSignatures.set(id, signature);
+            register();
+        }
+    }
+
+    /**
+     * Drop every walkthrough that none of the sources contributed any more.
+     */
+    protected removeUnseenWalkthroughs(seenIds: Set<string>): void {
         let changed = false;
         for (const id of this.walkthroughs.keys()) {
             if (!seenIds.has(id)) {
@@ -311,24 +369,23 @@ export class WalkthroughService implements Disposable {
         }
     }
 
-    protected registerWalkthrough(contribution: WalkthroughContribution): void {
-        const fullId = `${contribution.pluginId}.${contribution.id}`;
-        const completedSteps = this.progressState.completedSteps[fullId] || [];
+    protected registerWalkthrough(id: string, definition: WalkthroughDefinition, pluginId?: string, pluginIcon?: string): void {
+        const completedSteps = this.progressState.completedSteps[id] || [];
 
-        const steps: WalkthroughStep[] = contribution.steps.map(step => this.toWalkthroughStep(step, completedSteps));
+        const steps: WalkthroughStep[] = definition.steps.map(step => this.toWalkthroughStep(step, completedSteps));
 
         const walkthrough: Walkthrough = {
-            id: fullId,
-            title: contribution.title,
-            description: contribution.description,
+            id,
+            title: definition.title,
+            description: definition.description,
             steps,
-            when: contribution.when,
-            icon: contribution.icon,
-            pluginId: contribution.pluginId,
-            pluginIcon: contribution.pluginIcon
+            when: definition.when,
+            icon: definition.icon,
+            pluginId,
+            pluginIcon
         };
 
-        this.walkthroughs.set(fullId, walkthrough);
+        this.walkthroughs.set(id, walkthrough);
         this.contextKeys = undefined;
         // A context key that is already set has to complete its steps right away; without this, a step keyed on a
         // static context - `onContext:isLinux` for instance - would wait for a change that never comes.
@@ -336,7 +393,7 @@ export class WalkthroughService implements Disposable {
         this.onDidChangeWalkthroughsEmitter.fire();
     }
 
-    protected toWalkthroughStep(step: WalkthroughStepContribution, completedSteps: string[]): WalkthroughStep {
+    protected toWalkthroughStep(step: WalkthroughStepDefinition, completedSteps: string[]): WalkthroughStep {
         return {
             id: step.id,
             title: step.title,

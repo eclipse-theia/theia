@@ -192,41 +192,46 @@ export class GettingStartedWidget extends ReactWidget {
                 }
                 {this.renderHeader()}
                 <hr className='gs-hr' />
-                {this.aiIsIncluded &&
-                    <div className='flex-grid'>
-                        <div className='col'>
-                            {this.renderNews()}
+                {/* Two columns: what the user does with the application on the left, what there is to learn
+                    on the right. The right column collapses below the left one on narrow windows, and
+                    disappears entirely while no walkthrough is available. */}
+                <div className='gs-columns'>
+                    <div className='gs-main-column'>
+                        {this.aiIsIncluded &&
+                            <div className='flex-grid'>
+                                <div className='col'>
+                                    {this.renderNews()}
+                                </div>
+                            </div>
+                        }
+                        <div className='flex-grid'>
+                            <div className='col'>
+                                {this.renderStart()}
+                            </div>
+                        </div>
+                        <div className='flex-grid'>
+                            <div className='col'>
+                                {this.renderRecentWorkspaces()}
+                            </div>
+                        </div>
+                        <div className='flex-grid'>
+                            <div className='col'>
+                                {this.renderSettings()}
+                            </div>
+                        </div>
+                        <div className='flex-grid'>
+                            <div className='col'>
+                                {this.renderHelp()}
+                            </div>
+                        </div>
+                        <div className='flex-grid'>
+                            <div className='col'>
+                                {this.renderVersion()}
+                            </div>
                         </div>
                     </div>
-                }
-                <div className='flex-grid'>
-                    <div className='col'>
-                        {this.renderStart()}
-                    </div>
-                </div>
-                <div className='flex-grid'>
-                    <div className='col'>
-                        {this.renderRecentWorkspaces()}
-                    </div>
-                </div>
-                <div className='flex-grid'>
-                    <div className='col'>
-                        {this.renderSettings()}
-                    </div>
-                </div>
-                <div className='flex-grid'>
-                    <div className='col'>
+                    <div className='gs-side-column'>
                         {this.renderWalkthroughs()}
-                    </div>
-                </div>
-                <div className='flex-grid'>
-                    <div className='col'>
-                        {this.renderHelp()}
-                    </div>
-                </div>
-                <div className='flex-grid'>
-                    <div className='col'>
-                        {this.renderVersion()}
                     </div>
                 </div>
             </div>
