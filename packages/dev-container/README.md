@@ -12,7 +12,7 @@
 
 ## Description
 
-The `@theia/dev-container` extension provides functionality to create, start and connect to development containers similiar to the
+The `@theia/dev-container` extension provides functionality to create, start and connect to development containers similar to the
 [vscode Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
 
 The full devcontainer.json Schema can be found [here](https://containers.dev/implementors/json_reference/).
