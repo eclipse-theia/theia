@@ -33,6 +33,7 @@ import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TextEditorMain } from './text-editor-main';
 import { DisposableCollection, Emitter, URI } from '@theia/core';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
+import { ApplicationShell, NavigatableWidget, Saveable, Widget } from '@theia/core/lib/browser';
 import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 import { TabsMainImpl } from './tabs/tabs-main';
 import { NotebookCellEditorService, NotebookEditorWidgetService } from '@theia/notebook/lib/browser';
@@ -48,6 +49,7 @@ export class EditorsAndDocumentsMain implements Disposable {
 
     private readonly modelService: EditorModelService;
     private readonly editorManager: EditorManager;
+    private readonly shell: ApplicationShell;
     private readonly saveResourceService: SaveableService;
     private readonly encodingRegistry: EncodingRegistry;
 
@@ -69,6 +71,7 @@ export class EditorsAndDocumentsMain implements Disposable {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT);
 
         this.editorManager = container.get(EditorManager);
+        this.shell = container.get(ApplicationShell);
         this.modelService = container.get(EditorModelService);
         this.saveResourceService = container.get(SaveableService);
         this.encodingRegistry = container.get(EncodingRegistry);
@@ -183,22 +186,31 @@ export class EditorsAndDocumentsMain implements Disposable {
     }
 
     async save(uri: URI): Promise<URI | undefined> {
-        const editor = await this.editorManager.getByUri(uri);
-        if (!editor) {
+        const widget = await this.getSaveTarget(uri);
+        if (!widget) {
             return undefined;
         }
-        return this.saveResourceService.save(editor);
+        return this.saveResourceService.save(widget);
     }
 
     async saveAs(uri: URI): Promise<URI | undefined> {
-        const editor = await this.editorManager.getByUri(uri);
-        if (!editor) {
+        const widget = await this.getSaveTarget(uri);
+        if (!widget) {
             return undefined;
         }
-        if (!this.saveResourceService.canSaveAs(editor)) {
+        if (!this.saveResourceService.canSaveAs(widget)) {
             return undefined;
         }
-        return this.saveResourceService.saveAs(editor);
+        return this.saveResourceService.saveAs(widget);
+    }
+
+    /**
+     * Resolve the widget holding `uri`, preferring a text editor. Custom editors and notebooks
+     * are not opened by the `EditorManager`, so they are only reachable through the shell.
+     */
+    protected async getSaveTarget(uri: URI): Promise<Widget | undefined> {
+        return await this.editorManager.getByUri(uri)
+            ?? this.shell.widgets.find(widget => Saveable.get(widget) && NavigatableWidget.getUri(widget)?.isEqual(uri));
     }
 
     saveAll(includeUntitled?: boolean): Promise<boolean> {
