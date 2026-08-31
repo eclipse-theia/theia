@@ -32,9 +32,8 @@ export interface TabBarToolbarItem {
     /**
      * @param contextMatcher evaluates `when` clauses with the values that describe the given widget. Keys
      * scoped to a DOM node keep resolving against the focused element, as no context node is passed here.
-     * Defaults to the ambient context, which describes whichever widget currently holds the focus.
      */
-    isVisible(widget: Widget, contextMatcher?: ContextMatcher): boolean;
+    isVisible(widget: Widget, contextMatcher: ContextMatcher): boolean;
     isEnabled(widget: Widget): boolean;
     isToggled(widget: Widget): boolean;
     render(widget?: Widget): React.ReactNode;
@@ -73,7 +72,7 @@ class AbstractToolbarItemImpl<T extends TabBarToolbarActionBase> {
         return this.action.onDidChange;
     }
 
-    isVisible(widget: Widget, contextMatcher: ContextMatcher = this.contextKeyService): boolean {
+    isVisible(widget: Widget, contextMatcher: ContextMatcher): boolean {
         if (this.action.isVisible) {
             return this.action.isVisible(widget);
         }

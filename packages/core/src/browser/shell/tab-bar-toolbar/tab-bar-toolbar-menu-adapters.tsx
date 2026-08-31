@@ -137,7 +137,7 @@ export class SubmenuAsToolbarItemWrapper extends AbstractToolbarMenuWrapper impl
     executeCommand(widget: Widget, e: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
     }
 
-    isVisible(widget: Widget, contextMatcher: ContextMatcher = this.contextKeyService): boolean {
+    isVisible(widget: Widget, contextMatcher: ContextMatcher): boolean {
         const menuNodeVisible = this.menuNode.isVisible(this.effectiveMenuPath, contextMatcher, widget.node, widget);
         return menuNodeVisible && !MenuModelRegistry.isEmpty(this.menuNode);
     }
@@ -173,7 +173,7 @@ export class CommandMenuAsToolbarItemWrapper extends AbstractToolbarMenuWrapper 
         return this.menuNode.when;
     }
 
-    isVisible(widget: Widget, contextMatcher: ContextMatcher = this.contextKeyService): boolean {
+    isVisible(widget: Widget, contextMatcher: ContextMatcher): boolean {
         return this.menuNode.isVisible(this.effectiveMenuPath, contextMatcher, widget.node, widget);
     }
 
@@ -229,7 +229,7 @@ export class ToolbarActionWrapper extends AbstractToolbarMenuWrapper implements 
         }
     };
 
-    isVisible(widget: Widget, contextMatcher: ContextMatcher = this.contextKeyService): boolean {
+    isVisible(widget: Widget, contextMatcher: ContextMatcher): boolean {
         const menuNode = this.menuNode;
         if (this.toolbarItem.isVisible && !this.toolbarItem.isVisible(widget)) {
             return false;

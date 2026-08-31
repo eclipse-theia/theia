@@ -8,6 +8,10 @@
 
 - [core, plugin-ext] fixed `editor/title` toolbar items being shown and hidden according to the focused widget instead of the tab that owns the toolbar; items are now evaluated against a context describing that widget, which packages can extend through the new `WidgetContextKeyContribution` [#17978](https://github.com/eclipse-theia/theia/pull/17978)
 
+<a name="breaking_changes_1.76.0">[Breaking Changes:](#breaking_changes_1.76.0)</a>
+
+- [core] made the `contextMatcher` parameter of `TabBarToolbarItem.isVisible` mandatory, so that neither a caller nor an override that drops the argument can fall back to the context of the focused widget. Adopters calling `isVisible` themselves have to pass a matcher, and subclasses overriding it have to declare and forward the argument; passing the injected `ContextKeyService` reproduces the previous behavior [#17978](https://github.com/eclipse-theia/theia/pull/17978)
+
 ## 1.75.0 - 8/27/2026
 
 - [ai] added `gemini-3.7-flash` to the default models [#17947](https://github.com/eclipse-theia/theia/pull/17947) - Contributed on behalf of STMicroelectronics
