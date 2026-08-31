@@ -50,6 +50,7 @@ export * from './hover-service';
 export * from './saveable-service';
 export * from './undo-redo-handler';
 export * from './widget-status-bar-service';
+export * from './widget-context-key-contribution';
 export * from './badges';
 export * from './markdown-rendering/markdown-renderer';
 export * from './markdown-rendering/markdown';
