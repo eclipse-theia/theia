@@ -4,6 +4,10 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.76.0 - tbd
+
+- [plugin-ext] fixed `workspace.save` and `workspace.saveAs` silently doing nothing for editors that are not text editors; custom editors and notebooks are not opened by the `EditorManager`, so they are now looked up in the shell as well [#17977](https://github.com/eclipse-theia/theia/pull/17977)
+
 ## 1.75.0 - 8/27/2026
 
 - [ai] added `gemini-3.7-flash` to the default models [#17947](https://github.com/eclipse-theia/theia/pull/17947) - Contributed on behalf of STMicroelectronics
