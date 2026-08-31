@@ -149,8 +149,12 @@ describe('tab-bar-toolbar', () => {
 
             const commandItem = registry.visibleItems(testWidget).find(item => item.id === `${TEST_COMMAND}${TOOLBAR_WRAPPER_ID_SUFFIX}`);
 
+            const otherWidget = new TestToolbarWidget(new URI('file:/a.txt'));
+
             expect(commandItem).to.exist;
+            expect(registry.visibleItems(otherWidget)).to.be.empty;
             testWidget.dispose();
+            otherWidget.dispose();
         });
 
         it('evaluates registered items against the keys contributed for the widget that owns the toolbar', () => {
@@ -160,7 +164,7 @@ describe('tab-bar-toolbar', () => {
             commands.registerCommand({ id: TEST_COMMAND, label: 'Test Command' }, { execute: () => { } });
             const menuRegistry = createMenuRegistry(commands);
             const contribution: WidgetContextKeyContribution = {
-                getContextKeys: widget => [['activeCustomEditorId', widget === testWidget ? 'test.probeEditor' : '']]
+                getContextKeyValues: widget => [['activeCustomEditorId', widget === testWidget ? 'test.probeEditor' : '']]
             };
             const registry = createToolbarRegistry(commands, menuRegistry, new TestContextKeyService(), [contribution]);
             registry.registerItem({ id: 'test-item', command: TEST_COMMAND, when: 'activeCustomEditorId == test.probeEditor' });

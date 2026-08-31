@@ -30,5 +30,5 @@ export interface WidgetContextKeyContribution {
      * describe the given widget. A contribution owning a key should return an explicit "unset" value for the
      * widgets the key does not apply to, so that the ambient value of another widget cannot leak in.
      */
-    getContextKeys(widget: Widget): Iterable<[string, unknown]> | undefined;
+    getContextKeyValues(widget: Widget): Iterable<[string, unknown]> | undefined;
 }
