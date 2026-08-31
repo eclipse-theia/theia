@@ -47,7 +47,9 @@ export class WebviewContextKeys implements WidgetContextKeyContribution {
         this.applicationShell.onDidChangeCurrentWidget(this.handleDidChangeCurrentWidget, this);
     }
 
-    getContextKeys(widget: Widget): Iterable<[string, unknown]> | undefined {
+    getContextKeyValues(widget: Widget): Iterable<[string, unknown]> | undefined {
+        // A view toolbar item may key on the *active* editor, so only the editor-like widgets these keys can
+        // describe get an answer; everything else keeps the ambient value.
         if (!CodeEditorWidgetUtil.is(widget)) {
             return undefined;
         }

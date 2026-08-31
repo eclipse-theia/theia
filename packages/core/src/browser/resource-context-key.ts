@@ -20,7 +20,8 @@ import { ContextKeyService, ContextKey } from './context-key-service';
 import { LanguageService } from './language-service';
 
 /**
- * The context key values describing a resource.
+ * The context key values describing a resource. Each property name is the context key identifier itself, so
+ * the entries can be handed to `ContextKeyService.createOverlay` as they are.
  */
 export interface ResourceContextKeyValues {
     resource?: string;
@@ -90,7 +91,7 @@ export class ResourceContextKey {
             resourceScheme: resourceUri?.scheme,
             resourceFilename: resourceUri?.path.base,
             resourceExtname: resourceUri?.path.ext,
-            resourceLangId: resourceUri && this.getLanguageId(resourceUri),
+            resourceLangId: this.getLanguageId(resourceUri),
             resourceDirName: resourceUri?.path.dir.fsPath(),
             resourcePath: resourceUri?.path.fsPath(),
             resourceSet: Boolean(resourceUri)

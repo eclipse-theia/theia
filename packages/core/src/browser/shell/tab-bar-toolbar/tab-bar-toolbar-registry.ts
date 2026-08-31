@@ -187,14 +187,13 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
      */
     protected contextMatcherFor(widget: Widget): ContextMatcher {
         const overlay = new Map<string, unknown>();
-        const resourceUri = Navigatable.is(widget) ? widget.getResourceUri() : undefined;
-        if (resourceUri) {
-            for (const [key, value] of Object.entries(this.resourceContextKey.toValues(resourceUri))) {
+        if (Navigatable.is(widget)) {
+            for (const [key, value] of Object.entries(this.resourceContextKey.toValues(widget.getResourceUri()))) {
                 overlay.set(key, value);
             }
         }
         for (const contribution of this.contextKeyContributionProvider.getContributions()) {
-            const entries = contribution.getContextKeys(widget);
+            const entries = contribution.getContextKeyValues(widget);
             if (entries) {
                 for (const [key, value] of entries) {
                     overlay.set(key, value);

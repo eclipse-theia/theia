@@ -30,8 +30,9 @@ export interface TabBarToolbarItem {
     id: string;
     when?: string;
     /**
-     * @param contextMatcher evaluates `when` clauses against the given widget. Defaults to the ambient context,
-     * which describes whichever widget currently holds the focus.
+     * @param contextMatcher evaluates `when` clauses with the values that describe the given widget. Keys
+     * scoped to a DOM node keep resolving against the focused element, as no context node is passed here.
+     * Defaults to the ambient context, which describes whichever widget currently holds the focus.
      */
     isVisible(widget: Widget, contextMatcher?: ContextMatcher): boolean;
     isEnabled(widget: Widget): boolean;
