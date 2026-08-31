@@ -19,6 +19,20 @@ import URI from '../common/uri';
 import { ContextKeyService, ContextKey } from './context-key-service';
 import { LanguageService } from './language-service';
 
+/**
+ * The context key values describing a resource.
+ */
+export interface ResourceContextKeyValues {
+    resource?: string;
+    resourceScheme?: string;
+    resourceFilename?: string;
+    resourceExtname?: string;
+    resourceLangId?: string;
+    resourceDirName?: string;
+    resourcePath?: string;
+    resourceSet: boolean;
+}
+
 @injectable()
 export class ResourceContextKey {
 
@@ -54,14 +68,33 @@ export class ResourceContextKey {
     }
 
     set(resourceUri: URI | undefined): void {
-        this.resource.set(resourceUri?.toString());
-        this.resourceSchemeKey.set(resourceUri?.scheme);
-        this.resourceFileName.set(resourceUri?.path.base);
-        this.resourceExtname.set(resourceUri?.path.ext);
-        this.resourceLangId.set(resourceUri && this.getLanguageId(resourceUri));
-        this.resourceDirName.set(resourceUri?.path.dir.fsPath());
-        this.resourcePath.set(resourceUri?.path.fsPath());
-        this.resourceSet.set(Boolean(resourceUri));
+        const values = this.toValues(resourceUri);
+        this.resource.set(values.resource);
+        this.resourceSchemeKey.set(values.resourceScheme);
+        this.resourceFileName.set(values.resourceFilename);
+        this.resourceExtname.set(values.resourceExtname);
+        this.resourceLangId.set(values.resourceLangId);
+        this.resourceDirName.set(values.resourceDirName);
+        this.resourcePath.set(values.resourcePath);
+        this.resourceSet.set(values.resourceSet);
+    }
+
+    /**
+     * The values describing `resourceUri`, without applying them to the context.
+     *
+     * @param resourceUri the resource to describe, or `undefined` to obtain the values of an unset resource.
+     */
+    toValues(resourceUri: URI | undefined): ResourceContextKeyValues {
+        return {
+            resource: resourceUri?.toString(),
+            resourceScheme: resourceUri?.scheme,
+            resourceFilename: resourceUri?.path.base,
+            resourceExtname: resourceUri?.path.ext,
+            resourceLangId: resourceUri && this.getLanguageId(resourceUri),
+            resourceDirName: resourceUri?.path.dir.fsPath(),
+            resourcePath: resourceUri?.path.fsPath(),
+            resourceSet: Boolean(resourceUri)
+        };
     }
 
     protected getLanguageId(uri: URI | undefined): string | undefined {

@@ -70,6 +70,7 @@ import { JsonSchemaStore, JsonSchemaContribution, DefaultJsonSchemaContribution,
 import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
 import { ContextKeyService, ContextKeyServiceDummyImpl } from './context-key-service';
 import { ResourceContextKey } from './resource-context-key';
+import { WidgetContextKeyContribution } from './widget-context-key-contribution';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { MimeService } from './mime-service';
 import { ApplicationShellMouseTracker } from './shell/application-shell-mouse-tracker';
@@ -191,6 +192,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(SplitPositionHandler).toSelf().inSingletonScope();
 
     bindRootContributionProvider(bind, TabBarToolbarContribution);
+    bindRootContributionProvider(bind, WidgetContextKeyContribution);
     bind(TabBarToolbarRegistry).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(TabBarToolbarRegistry);
     bind(TabBarToolbarFactory).toFactory(context => () => {

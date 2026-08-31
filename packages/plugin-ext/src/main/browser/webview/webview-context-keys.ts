@@ -14,14 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ApplicationShell, FocusTracker, Widget } from '@theia/core/lib/browser';
+import { ApplicationShell, FocusTracker, Widget, WidgetContextKeyContribution } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { CustomEditorWidget } from '../custom-editors/custom-editor-widget';
+import { CodeEditorWidgetUtil } from '../menus/vscode-theia-menu-mappings';
 import { WebviewWidget } from './webview';
 
 @injectable()
-export class WebviewContextKeys {
+export class WebviewContextKeys implements WidgetContextKeyContribution {
 
     /**
      * Context key representing the `viewType` of the active `WebviewWidget`, if any.
@@ -44,6 +45,16 @@ export class WebviewContextKeys {
         this.activeWebviewPanelId = this.contextKeyService.createKey('activeWebviewPanelId', '');
         this.activeCustomEditorId = this.contextKeyService.createKey('activeCustomEditorId', '');
         this.applicationShell.onDidChangeCurrentWidget(this.handleDidChangeCurrentWidget, this);
+    }
+
+    getContextKeys(widget: Widget): Iterable<[string, unknown]> | undefined {
+        if (!CodeEditorWidgetUtil.is(widget)) {
+            return undefined;
+        }
+        return [
+            ['activeCustomEditorId', widget instanceof CustomEditorWidget ? widget.viewType : ''],
+            ['activeWebviewPanelId', widget instanceof WebviewWidget ? widget.viewType : '']
+        ];
     }
 
     protected handleDidChangeCurrentWidget(change: FocusTracker.IChangedArgs<Widget>): void {
