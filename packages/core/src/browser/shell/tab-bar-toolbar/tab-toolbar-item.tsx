@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContextKeyService } from '../../context-key-service';
+import { ContextKeyService, ContextMatcher } from '../../context-key-service';
 import { ReactTabBarToolbarAction, RenderedToolbarAction, TabBarToolbarActionBase } from './tab-bar-toolbar-types';
 import { Widget } from '@lumino/widgets';
 import { LabelIcon, LabelParser } from '../../label-parser';
@@ -29,7 +29,11 @@ import { ActionMenuNode, GroupImpl, MenuNode } from '../../../common/menu';
 export interface TabBarToolbarItem {
     id: string;
     when?: string;
-    isVisible(widget: Widget): boolean;
+    /**
+     * @param contextMatcher evaluates `when` clauses against the given widget. Defaults to the ambient context,
+     * which describes whichever widget currently holds the focus.
+     */
+    isVisible(widget: Widget, contextMatcher?: ContextMatcher): boolean;
     isEnabled(widget: Widget): boolean;
     isToggled(widget: Widget): boolean;
     render(widget?: Widget): React.ReactNode;
@@ -68,12 +72,12 @@ class AbstractToolbarItemImpl<T extends TabBarToolbarActionBase> {
         return this.action.onDidChange;
     }
 
-    isVisible(widget: Widget): boolean {
+    isVisible(widget: Widget, contextMatcher: ContextMatcher = this.contextKeyService): boolean {
         if (this.action.isVisible) {
             return this.action.isVisible(widget);
         }
         const actionVisible = !this.action.command || this.commandRegistry.isVisible(this.action.command, widget);
-        const contextMatches = !this.action.when || this.contextKeyService.match(this.action.when);
+        const contextMatches = !this.action.when || contextMatcher.match(this.action.when);
 
         return actionVisible && contextMatches;
     }
