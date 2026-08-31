@@ -18,9 +18,12 @@ import debounce = require('lodash.debounce');
 import { inject, injectable, named } from 'inversify';
 // eslint-disable-next-line max-len
 import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event, MenuModelRegistry, MenuPath, ILogger } from '../../../common';
-import { ContextKeyService } from '../../context-key-service';
+import { ContextKeyService, ContextMatcher } from '../../context-key-service';
 import { FrontendApplicationContribution } from '../../frontend-application-contribution';
 import { Widget } from '../../widgets';
+import { Navigatable } from '../../navigatable-types';
+import { ResourceContextKey } from '../../resource-context-key';
+import { WidgetContextKeyContribution } from '../../widget-context-key-contribution';
 import { ReactTabBarToolbarAction, RenderedToolbarAction } from './tab-bar-toolbar-types';
 import { CommandMenuAsToolbarItemWrapper, SubmenuAsToolbarItemWrapper, ToolbarActionWrapper } from './tab-bar-toolbar-menu-adapters';
 import { KeybindingRegistry } from '../../keybinding';
@@ -65,8 +68,13 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
     @inject(LabelParser) protected readonly labelParser: LabelParser;
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
 
+    @inject(ResourceContextKey) protected readonly resourceContextKey: ResourceContextKey;
+
     @inject(ContributionProvider) @named(TabBarToolbarContribution)
     protected readonly contributionProvider: ContributionProvider<TabBarToolbarContribution>;
+
+    @inject(ContributionProvider) @named(WidgetContextKeyContribution)
+    protected readonly contextKeyContributionProvider: ContributionProvider<WidgetContextKeyContribution>;
 
     @inject(ILogger) @named('core:TabBarToolbarRegistry')
     protected readonly logger: ILogger;
@@ -133,8 +141,9 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
             return [];
         }
         const result: Array<TabBarToolbarItem> = [];
+        const contextMatcher = this.contextMatcherFor(widget);
         for (const item of this.items.values()) {
-            if (item.isVisible(widget)) {
+            if (item.isVisible(widget, contextMatcher)) {
                 result.push(item);
             }
         }
@@ -144,11 +153,11 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
                 const menu = this.menuRegistry.getMenu(delegate.menuPath);
                 if (menu) {
                     for (const child of menu.children) {
-                        if (child.isVisible([...delegate.menuPath, child.id], this.contextKeyService, widget.node, widget)) {
+                        if (child.isVisible([...delegate.menuPath, child.id], contextMatcher, widget.node, widget)) {
                             if (CompoundMenuNode.is(child)) {
                                 for (const grandchild of child.children) {
                                     if (grandchild.isVisible([...delegate.menuPath, child.id, grandchild.id],
-                                        this.contextKeyService, widget.node, widget) && RenderedMenuNode.is(grandchild)) {
+                                        contextMatcher, widget.node, widget) && RenderedMenuNode.is(grandchild)) {
                                         if (CommandMenu.is(grandchild)) {
                                             result.push(new CommandMenuAsToolbarItemWrapper([...delegate.menuPath, child.id, grandchild.id], this.commandRegistry,
                                                 this.menuRegistry, this.contextKeyService, this.contextMenuRenderer, grandchild, child.id));
@@ -169,6 +178,30 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
             }
         }
         return result;
+    }
+
+    /**
+     * A matcher that evaluates `when` clauses against the given widget rather than against whichever widget
+     * currently holds the focus. Keys that describe no aspect of the widget keep their ambient value, and the
+     * context scoped to the widget's DOM node is still consulted for the keys the overlay does not define.
+     */
+    protected contextMatcherFor(widget: Widget): ContextMatcher {
+        const overlay = new Map<string, unknown>();
+        const resourceUri = Navigatable.is(widget) ? widget.getResourceUri() : undefined;
+        if (resourceUri) {
+            for (const [key, value] of Object.entries(this.resourceContextKey.toValues(resourceUri))) {
+                overlay.set(key, value);
+            }
+        }
+        for (const contribution of this.contextKeyContributionProvider.getContributions()) {
+            const entries = contribution.getContextKeys(widget);
+            if (entries) {
+                for (const [key, value] of entries) {
+                    overlay.set(key, value);
+                }
+            }
+        }
+        return overlay.size ? this.contextKeyService.createOverlay(overlay) : this.contextKeyService;
     }
 
     /**
