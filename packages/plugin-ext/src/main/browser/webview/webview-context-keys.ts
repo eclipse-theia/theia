@@ -21,6 +21,9 @@ import { CustomEditorWidget } from '../custom-editors/custom-editor-widget';
 import { CodeEditorWidgetUtil } from '../menus/vscode-theia-menu-mappings';
 import { WebviewWidget } from './webview';
 
+const ACTIVE_WEBVIEW_PANEL_ID = 'activeWebviewPanelId';
+const ACTIVE_CUSTOM_EDITOR_ID = 'activeCustomEditorId';
+
 @injectable()
 export class WebviewContextKeys implements WidgetContextKeyContribution {
 
@@ -42,8 +45,8 @@ export class WebviewContextKeys implements WidgetContextKeyContribution {
 
     @postConstruct()
     protected init(): void {
-        this.activeWebviewPanelId = this.contextKeyService.createKey('activeWebviewPanelId', '');
-        this.activeCustomEditorId = this.contextKeyService.createKey('activeCustomEditorId', '');
+        this.activeWebviewPanelId = this.contextKeyService.createKey(ACTIVE_WEBVIEW_PANEL_ID, '');
+        this.activeCustomEditorId = this.contextKeyService.createKey(ACTIVE_CUSTOM_EDITOR_ID, '');
         this.applicationShell.onDidChangeCurrentWidget(this.handleDidChangeCurrentWidget, this);
     }
 
@@ -54,8 +57,8 @@ export class WebviewContextKeys implements WidgetContextKeyContribution {
             return undefined;
         }
         return [
-            ['activeCustomEditorId', widget instanceof CustomEditorWidget ? widget.viewType : ''],
-            ['activeWebviewPanelId', widget instanceof WebviewWidget ? widget.viewType : '']
+            [ACTIVE_CUSTOM_EDITOR_ID, widget instanceof CustomEditorWidget ? widget.viewType : ''],
+            [ACTIVE_WEBVIEW_PANEL_ID, widget instanceof WebviewWidget ? widget.viewType : '']
         ];
     }
 

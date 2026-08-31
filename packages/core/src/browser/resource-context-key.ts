@@ -54,14 +54,25 @@ export class ResourceContextKey {
 
     @postConstruct()
     protected init(): void {
-        this.resource = this.contextKeyService.createKey<string>('resource', undefined);
-        this.resourceSchemeKey = this.contextKeyService.createKey<string>('resourceScheme', undefined);
-        this.resourceFileName = this.contextKeyService.createKey<string>('resourceFilename', undefined);
-        this.resourceExtname = this.contextKeyService.createKey<string>('resourceExtname', undefined);
-        this.resourceLangId = this.contextKeyService.createKey<string>('resourceLangId', undefined);
-        this.resourceDirName = this.contextKeyService.createKey<string>('resourceDirName', undefined);
-        this.resourcePath = this.contextKeyService.createKey<string>('resourcePath', undefined);
-        this.resourceSet = this.contextKeyService.createKey<boolean>('resourceSet', false);
+        this.resource = this.createResourceKey('resource');
+        this.resourceSchemeKey = this.createResourceKey('resourceScheme');
+        this.resourceFileName = this.createResourceKey('resourceFilename');
+        this.resourceExtname = this.createResourceKey('resourceExtname');
+        this.resourceLangId = this.createResourceKey('resourceLangId');
+        this.resourceDirName = this.createResourceKey('resourceDirName');
+        this.resourcePath = this.createResourceKey('resourcePath');
+        this.resourceSet = this.createResourceKey('resourceSet', false);
+    }
+
+    /**
+     * Constrains the key name to the value properties, whose names are the context key identifiers, so that
+     * the keys this class creates and the ones it describes a resource with cannot drift apart.
+     */
+    protected createResourceKey<K extends keyof ResourceContextKeyValues>(
+        name: K,
+        defaultValue?: NonNullable<ResourceContextKeyValues[K]>
+    ): ContextKey<NonNullable<ResourceContextKeyValues[K]>> {
+        return this.contextKeyService.createKey(name, defaultValue);
     }
 
     get(): string | undefined {
