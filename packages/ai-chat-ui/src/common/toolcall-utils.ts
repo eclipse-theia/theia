@@ -16,21 +16,29 @@
 
 /**
  * Extracts a string field value from potentially incomplete JSON.
- * Tries JSON.parse first, then falls back to regex extraction for streaming scenarios.
+ * Uses JSON.parse for complete JSON, and regex extraction for streaming scenarios.
  */
 export function extractJsonStringField(json: string | undefined, fieldName: string): string | undefined {
     if (!json) {
         return undefined;
     }
-    try {
-        const parsed = JSON.parse(json);
-        if (parsed && typeof parsed === 'object' && fieldName in parsed && typeof parsed[fieldName] === 'string') {
-            return parsed[fieldName];
+    // This is called repeatedly while tool call arguments stream in, where the JSON is truncated:
+    // JSON.parse would scan the whole string only to throw, which gets quadratic as the arguments
+    // grow (noticeable with large payloads such as whole-file writes). An arguments object is only
+    // complete once it ends with '}', so attempt the exact parse just then and use the regex otherwise.
+    const trimmed = json.trim();
+    if (!trimmed.startsWith('{') || trimmed.endsWith('}')) {
+        try {
+            const parsed = JSON.parse(json);
+            if (parsed && typeof parsed === 'object' && fieldName in parsed && typeof parsed[fieldName] === 'string') {
+                return parsed[fieldName];
+            }
+            return undefined;
+        } catch {
+            // fall through to the regex extraction
         }
-    } catch {
-        const regex = new RegExp('"' + fieldName + '"\\s*:\\s*"([^"]*)"?');
-        const match = regex.exec(json);
-        return match?.[1];
     }
-    return undefined;
+    const regex = new RegExp('"' + fieldName + '"\\s*:\\s*"([^"]*)"?');
+    const match = regex.exec(json);
+    return match?.[1];
 }
