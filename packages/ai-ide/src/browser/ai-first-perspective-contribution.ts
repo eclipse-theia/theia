@@ -36,12 +36,15 @@ export class AIFirstPerspectiveContribution implements PerspectiveContribution {
             id: AI_FIRST_PERSPECTIVE_ID,
             label: nls.localize('theia/ai-ide/perspective/aiFirst', 'AI First'),
             viewPlacements: new Map<string, ApplicationShell.Area>([
-                [ChatViewWidget.ID, 'main'],
+                [ChatViewWidget.ID, 'left'],
+                [AISessionsWidget.ID, 'left'],
                 [EXPLORER_VIEW_CONTAINER_ID, 'right'],
-                [SCM_VIEW_CONTAINER_ID, 'right'],
-                [AISessionsWidget.ID, 'left']
+                [SCM_VIEW_CONTAINER_ID, 'right']
             ]),
-            primaryViews: { right: EXPLORER_VIEW_CONTAINER_ID },
+            primaryViews: {
+                left: ChatViewWidget.ID,
+                right: EXPLORER_VIEW_CONTAINER_ID
+            },
             chromeOptions
         });
     }
