@@ -26,6 +26,7 @@ import {
     ToolCall,
     ToolCallExecutor,
     ToolCallResult,
+    ToolInvocationContext,
     ToolRequest,
     ToolRequestParameterProperty,
     ToolRequestParametersProperties,
@@ -223,7 +224,7 @@ export class OllamaModel implements LanguageModel {
                         yield { tool_calls: toolCallsForResponse };
 
                         // Now handle the tool calls
-                        const processedToolCallsForResponse = await that.processToolCalls(toolCallsForResponse, chatRequest);
+                        const processedToolCallsForResponse = await that.processToolCalls(toolCallsForResponse, chatRequest, cancellation);
                         yield { tool_calls: processedToolCallsForResponse };
 
                         // Continue the conversation with tool results
@@ -356,7 +357,7 @@ export class OllamaModel implements LanguageModel {
                 });
 
                 const preparedToolCalls = this.createToolCalls(toolCalls, lastUpdated);
-                await this.processToolCalls(preparedToolCalls, chatRequest);
+                await this.processToolCalls(preparedToolCalls, chatRequest, cancellation);
                 if (cancellation?.isCancellationRequested) {
                     return { text: '' };
                 }
@@ -393,18 +394,19 @@ export class OllamaModel implements LanguageModel {
         return toolCallsForResponse;
     }
 
-    private async processToolCalls(toolCalls: ToolCall[], chatRequest: ExtendedChatRequest): Promise<ToolCall[]> {
+    protected async processToolCalls(toolCalls: ToolCall[], chatRequest: ExtendedChatRequest, cancellation?: CancellationToken): Promise<ToolCall[]> {
         const tools: ToolWithHandler[] = chatRequest.tools ?? [];
         const toolRequests: ToolRequest[] = tools.map(tool => ({
             id: tool.function.name ?? '',
             name: tool.function.name ?? '',
             parameters: { type: 'object', properties: {} },
-            handler: async argString => (await tool.handler(argString)) as ToolCallResult
+            handler: async (argString, ctx) => (await tool.handler(argString, ctx)) as ToolCallResult
         }));
 
         const results = await this.toolCallExecutor.executeToolCalls(
             toolCalls.map(call => ({ id: call.id ?? call.function!.name!, name: call.function!.name!, arguments: call.function!.arguments! })),
-            toolRequests
+            toolRequests,
+            { cancellationToken: cancellation }
         );
 
         // Build the messages and response entries from the input-ordered results so that the
@@ -574,7 +576,7 @@ export class OllamaModel implements LanguageModel {
  * Extended Tool containing a handler
  * @see Tool
  */
-type ToolWithHandler = Tool & { handler: (arg_string: string) => Promise<unknown> };
+type ToolWithHandler = Tool & { handler: (arg_string: string, ctx?: ToolInvocationContext) => Promise<unknown> };
 
 /**
  * Extended chat request with mandatory messages and ToolWithHandler tools

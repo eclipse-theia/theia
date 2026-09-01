@@ -24,7 +24,6 @@ import {
     LanguageModelResponse,
     LanguageModelStatus,
     LanguageModelTextResponse,
-    ToolCallExecutor,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, ILogger } from '@theia/core';
@@ -71,9 +70,6 @@ export class CopilotLanguageModel implements LanguageModel {
 
     @inject(CopilotLanguageModelParams)
     protected readonly params: CopilotLanguageModelParams;
-
-    @inject(ToolCallExecutor)
-    protected readonly toolCallExecutor: ToolCallExecutor;
 
     @inject(ChatCompletionStreamingAsyncIteratorFactory)
     protected readonly chatCompletionStreamFactory: ChatCompletionStreamingAsyncIteratorFactory;
@@ -132,7 +128,6 @@ export class CopilotLanguageModel implements LanguageModel {
                     settings,
                     tools,
                     maxRetries: this.maxRetries,
-                    toolCallExecutor: this.toolCallExecutor,
                     cancellationToken
                 })
             };

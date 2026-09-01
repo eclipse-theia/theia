@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { CancellationTokenSource, ILogger } from '@theia/core';
+import { CancellationError, CancellationTokenSource, ILogger } from '@theia/core';
 import { Container, injectable, interfaces } from '@theia/core/shared/inversify';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -28,6 +28,7 @@ import {
     LanguageModelStreamResponsePart,
     ToolInvocation,
     ToolCallExecutionOptions,
+    ToolCallExecutor,
     ToolCallOutcome,
     ToolCallExecutorImpl,
     ToolRequest,
@@ -57,6 +58,16 @@ function textChunk(content: string): any {
 
 function toolChunk(index: number, id: string, name: string, args: string): any {
     return { choices: [{ delta: { tool_calls: [{ index, id, function: { name, arguments: args } }] } }] };
+}
+
+/** A delta carrying only the tool call's ID, as a provider might stream it before the function name. */
+function toolIdOnlyChunk(index: number, id: string): any {
+    return { choices: [{ delta: { tool_calls: [{ index, id }] } }] };
+}
+
+/** A delta carrying only (a fragment of) the tool call's function name. */
+function toolNameChunk(index: number, name: string): any {
+    return { choices: [{ delta: { tool_calls: [{ index, function: { name } }] } }] };
 }
 
 function usageChunk(inputTokens: number, outputTokens: number): any {
@@ -96,7 +107,11 @@ function withLogger<T>(constructor: interfaces.Newable<T>): T {
     return container.get<T>(constructor);
 }
 
-function makeIterator(openai: FakeOpenAi, overrides: Partial<ChatCompletionToolLoopOptions> = {}): ChatCompletionStreamingAsyncIterator {
+function makeIterator(
+    openai: FakeOpenAi,
+    overrides: Partial<ChatCompletionToolLoopOptions> = {},
+    toolCallExecutor: ToolCallExecutor = withLogger(ToolCallExecutorImpl)
+): ChatCompletionStreamingAsyncIterator {
     const defaultRequest: UserRequest = {
         sessionId: 'session',
         requestId: 'request',
@@ -110,11 +125,11 @@ function makeIterator(openai: FakeOpenAi, overrides: Partial<ChatCompletionToolL
         settings: overrides.settings ?? {},
         tools: overrides.tools ?? [{ type: 'function', function: { name: 'a' } } as any],
         maxRetries: overrides.maxRetries ?? 0,
-        toolCallExecutor: overrides.toolCallExecutor ?? withLogger(ToolCallExecutorImpl),
         cancellationToken: overrides.cancellationToken
     };
     const container = new Container();
     container.bind(ILogger).to(MockLogger);
+    container.bind(ToolCallExecutor).toConstantValue(toolCallExecutor);
     container.bind(ChatCompletionToolLoopOptions).toConstantValue(options);
     container.bind(ChatCompletionStreamingAsyncIterator).toSelf();
     return container.get(ChatCompletionStreamingAsyncIterator);
@@ -129,6 +144,25 @@ async function drain(iterator: AsyncIterableIterator<LanguageModelStreamResponse
 }
 
 const flush = (): Promise<void> => new Promise(resolve => setImmediate(resolve));
+
+/** Like {@link drain}, but resolves with whatever was collected so far plus the error, instead of rejecting. */
+async function collectUntilSettled(
+    iterator: AsyncIterableIterator<LanguageModelStreamResponsePart>
+): Promise<{ parts: LanguageModelStreamResponsePart[]; error?: unknown }> {
+    const parts: LanguageModelStreamResponsePart[] = [];
+    try {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const next = await iterator.next();
+            if (next.done) {
+                return { parts };
+            }
+            parts.push(next.value);
+        }
+    } catch (error) {
+        return { parts, error };
+    }
+}
 
 /** Captures the batches of tool calls passed to the executor, to assert single-turn batching. */
 @injectable()
@@ -179,7 +213,7 @@ describe('ChatCompletionStreamingAsyncIterator', () => {
             new FakeStream([textChunk('done')])
         ]);
 
-        const parts = await drain(makeIterator(openai, { request, toolCallExecutor: executor }));
+        const parts = await drain(makeIterator(openai, { request }, executor));
 
         // Both tool calls were handed to the executor together (single turn => single batch).
         expect(executor.batches).to.have.lengthOf(1);
@@ -212,6 +246,26 @@ describe('ChatCompletionStreamingAsyncIterator', () => {
         expect(open?.function?.name).to.equal('a');
         expect(delta?.function?.arguments).to.equal('{"x":1}');
         expect(finished?.result).to.equal('a-result');
+    });
+
+    it('withholds the open tool-call part until the function name is known, even if the ID streams first', async () => {
+        const request: UserRequest = {
+            sessionId: 'session',
+            requestId: 'request',
+            messages: [{ actor: 'user', type: 'text', text: 'hi' }],
+            tools: [toolRequest('a', async () => 'a-result')]
+        };
+        const openai = fakeOpenAi([
+            new FakeStream([toolIdOnlyChunk(0, 'call-a'), toolNameChunk(0, 'a'), toolChunk(0, 'call-a', '', '{}')]),
+            new FakeStream([textChunk('done')])
+        ]);
+
+        const parts = await drain(makeIterator(openai, { request }));
+        const opens = parts.filter(isToolCallResponsePart).flatMap(p => p.tool_calls).filter(c => c.finished === false);
+
+        // Exactly one "open" part, and it must already carry the (by then complete) name, never an empty one.
+        expect(opens).to.have.lengthOf(1);
+        expect(opens[0].function?.name).to.equal('a');
     });
 
     it('threads the assistant tool_calls and a matching tool message into the next turn', async () => {
@@ -285,5 +339,63 @@ describe('ChatCompletionStreamingAsyncIterator', () => {
         expect((stream.controller.abort as sinon.SinonSpy).called).to.equal(true);
         gate.resolve();
         await drained;
+    });
+
+    it('terminates promptly on cancellation even while an uninterruptible tool handler is still running, and drops its late result', async () => {
+        const handlerStarted = new Deferred<void>();
+        const handlerGate = new Deferred<string>();
+        const request: UserRequest = {
+            sessionId: 'session',
+            requestId: 'request',
+            messages: [{ actor: 'user', type: 'text', text: 'hi' }],
+            tools: [toolRequest('a', async () => { handlerStarted.resolve(); return handlerGate.promise; })]
+        };
+        const openai = fakeOpenAi([new FakeStream([toolChunk(0, 'call-a', 'a', '{}')])]);
+        const source = new CancellationTokenSource();
+        const iterator = makeIterator(openai, { request, cancellationToken: source.token });
+
+        const settled = collectUntilSettled(iterator);
+        // The handler ignores its cancellation token and just keeps running: it is up to the iterator, not the
+        // handler, to stop delivering parts to the consumer.
+        await handlerStarted.promise;
+
+        source.cancel();
+        const { parts, error } = await settled;
+
+        expect(error).to.be.instanceOf(CancellationError);
+        // Cancellation happened while the handler was still running: no finished tool-call part can have been seen.
+        expect(parts.filter(isToolCallResponsePart).flatMap(p => p.tool_calls).some(c => c.finished)).to.equal(false);
+
+        // The handler eventually resolves, but the iterator is done: it must not surface a finished part for it,
+        // only keep rejecting with the same terminal error.
+        handlerGate.resolve('late-result');
+        await flush();
+        const after = await iterator.next().catch(caught => caught);
+        expect(after).to.be.instanceOf(CancellationError);
+    });
+
+    it('never starts collected tool calls when cancellation is observed right after the stream ends', async () => {
+        const handler = sinon.stub().resolves('a-result');
+        const request: UserRequest = {
+            sessionId: 'session',
+            requestId: 'request',
+            messages: [{ actor: 'user', type: 'text', text: 'hi' }],
+            tools: [toolRequest('a', handler)]
+        };
+        const source = new CancellationTokenSource();
+        // Cancel lazily, exactly when the stream is drained of its one chunk: after the stream itself has
+        // finished (so `processStream()` is about to return) but before the iterator moves on to executing the
+        // tool calls it collected from it.
+        function* chunksThenCancel(): Iterator<any> {
+            yield toolChunk(0, 'call-a', 'a', '{}');
+            source.cancel();
+        }
+        const stream = new FakeStream(chunksThenCancel() as unknown as any[]);
+        const openai = fakeOpenAi([stream]);
+
+        const { error } = await collectUntilSettled(makeIterator(openai, { request, cancellationToken: source.token }));
+
+        expect(error).to.be.instanceOf(CancellationError);
+        expect(handler.called).to.equal(false);
     });
 });

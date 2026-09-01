@@ -24,7 +24,6 @@ import {
     UserRequest,
     LanguageModelStatus,
     ReasoningSupport,
-    ToolCallExecutor,
     resolveCompactionTokenThreshold,
     resolveServerSideCompaction,
     ServerToolDescriptor
@@ -142,9 +141,6 @@ export class OpenAiModel implements LanguageModel {
     @inject(OpenAiResponseApiUtils)
     protected readonly responseApiUtils: OpenAiResponseApiUtils;
 
-    @inject(ToolCallExecutor)
-    protected readonly toolCallExecutor: ToolCallExecutor;
-
     @inject(ChatCompletionStreamingAsyncIteratorFactory)
     protected readonly chatCompletionStreamFactory: ChatCompletionStreamingAsyncIteratorFactory;
 
@@ -221,7 +217,6 @@ export class OpenAiModel implements LanguageModel {
                     settings,
                     tools,
                     maxRetries: this.maxRetries,
-                    toolCallExecutor: this.toolCallExecutor,
                     cancellationToken
                 })
             };

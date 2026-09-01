@@ -26,7 +26,6 @@ import {
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, nls, unreachable, ILogger } from '@theia/core';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
@@ -46,6 +45,7 @@ import type { ResponsesModel } from 'openai/resources/shared';
 import { DeveloperMessageSettings } from './openai-language-model';
 import type { OpenAiModelUtils } from './openai-model-utils';
 import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools';
+import { AbstractStreamingResponseIterator } from './streaming-response-iterator';
 
 export const OPENAI_FUNCTION_CALL_REASONING_DATA_KEY = 'openAiFunctionCallReasoning';
 
@@ -393,11 +393,7 @@ export class OpenAiResponseApiUtils {
  * Iterator for handling Response API streaming with tool calls.
  * Based on the pattern from openai-streaming-iterator.ts but adapted for Response API.
  */
-class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModelStreamResponsePart> {
-    protected readonly requestQueue = new Array<Deferred<IteratorResult<LanguageModelStreamResponsePart>>>();
-    protected readonly messageCache = new Array<LanguageModelStreamResponsePart>();
-    protected done = false;
-    protected terminalError: Error | undefined = undefined;
+class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
 
     // Current iteration state
     protected currentInput: ResponseInputItem[];
@@ -426,6 +422,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
         protected readonly isStreaming: boolean,
         protected readonly cancellationToken?: CancellationToken
     ) {
+        super();
         const { instructions, input } = utils.processMessages(request.messages, developerMessageSettings, model);
         this.instructions = instructions;
         this.currentInput = input;
@@ -434,35 +431,6 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
 
         // Start the first iteration
         this.startIteration();
-    }
-
-    [Symbol.asyncIterator](): AsyncIterableIterator<LanguageModelStreamResponsePart> {
-        return this;
-    }
-
-    async next(): Promise<IteratorResult<LanguageModelStreamResponsePart>> {
-        if (this.messageCache.length && this.requestQueue.length) {
-            throw new Error('Assertion error: cache and queue should not both be populated.');
-        }
-
-        // Deliver all the messages we got, even if we've since terminated.
-        if (this.messageCache.length) {
-            return {
-                done: false,
-                value: this.messageCache.shift()!
-            };
-        } else if (this.terminalError) {
-            throw this.terminalError;
-        } else if (this.done) {
-            return {
-                done: true,
-                value: undefined
-            };
-        } else {
-            const deferred = new Deferred<IteratorResult<LanguageModelStreamResponsePart>>();
-            this.requestQueue.push(deferred);
-            return deferred.promise;
-        }
     }
 
     protected async startIteration(): Promise<void> {
@@ -475,7 +443,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                 // Check if we have tool calls that need execution
                 if (this.currentToolCalls.size === 0) {
                     // No tool calls, we're done
-                    this.finalize();
+                    this.dispose();
                     return;
                 }
 
@@ -488,10 +456,10 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             }
 
             // Max iterations reached
-            this.finalize();
+            this.dispose();
         } catch (error) {
             this.terminalError = error instanceof Error ? error : new Error(String(error));
-            this.finalize();
+            this.dispose();
         }
     }
 
@@ -855,33 +823,6 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
         }
 
         this.currentInput = [...this.currentInput, ...this.currentWebSearchReplayItems, assistantMessage, ...functionCalls, ...toolResults];
-    }
-
-    protected handleIncoming(message: LanguageModelStreamResponsePart): void {
-        if (this.messageCache.length && this.requestQueue.length) {
-            throw new Error('Assertion error: cache and queue should not both be populated.');
-        }
-
-        if (this.requestQueue.length) {
-            this.requestQueue.shift()!.resolve({
-                done: false,
-                value: message
-            });
-        } else {
-            this.messageCache.push(message);
-        }
-    }
-
-    protected async finalize(): Promise<void> {
-        this.done = true;
-
-        // Resolve any outstanding requests
-        if (this.terminalError) {
-            this.requestQueue.forEach(request => request.reject(this.terminalError));
-        } else {
-            this.requestQueue.forEach(request => request.resolve({ done: true, value: undefined }));
-        }
-        this.requestQueue.length = 0;
     }
 }
 

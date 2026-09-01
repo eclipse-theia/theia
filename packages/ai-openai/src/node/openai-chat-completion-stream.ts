@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolCallExecutor, ToolCallResult, UserRequest } from '@theia/ai-core';
+import { LanguageModelStreamResponsePart, ToolCallExecutor, ToolCallResult, UserRequest } from '@theia/ai-core';
 import { CancellationError, CancellationToken, ILogger } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
@@ -53,7 +53,6 @@ export interface ChatCompletionToolLoopOptions {
     readonly settings: Record<string, unknown>;
     readonly tools: ChatCompletionTool[];
     readonly maxRetries: number;
-    readonly toolCallExecutor: ToolCallExecutor;
     readonly cancellationToken?: CancellationToken;
 }
 
@@ -75,6 +74,9 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
     @inject(ChatCompletionToolLoopOptions)
     protected readonly options: ChatCompletionToolLoopOptions;
 
+    @inject(ToolCallExecutor)
+    protected readonly toolCallExecutor: ToolCallExecutor;
+
     @inject(ILogger) @named('ai-openai:ChatCompletionStreamingAsyncIterator')
     protected readonly logger: ILogger;
 
@@ -82,7 +84,7 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
     protected init(): void {
         this.messages = [...this.options.messages];
         if (this.options.cancellationToken) {
-            this.toDispose.push(this.options.cancellationToken.onCancellationRequested(() => this.currentStream?.controller.abort()));
+            this.toDispose.push(this.options.cancellationToken.onCancellationRequested(() => this.cancel()));
         }
         this.startIteration();
     }
@@ -91,10 +93,28 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
         return !!this.options.cancellationToken?.isCancellationRequested;
     }
 
+    /**
+     * Aborts the active provider stream and immediately terminates the iterator, so a `next()` call pending on
+     * tool execution (which is only cooperatively cancelled via the token forwarded to handlers) settles promptly
+     * instead of stalling until an uninterruptible handler eventually finishes.
+     */
+    protected cancel(): void {
+        this.currentStream?.controller.abort();
+        if (this.done) {
+            return;
+        }
+        this.terminalError = new CancellationError();
+        this.dispose();
+    }
+
     protected async startIteration(): Promise<void> {
         try {
             while (!this.cancellationRequested) {
                 const { assistantText, toolCalls } = await this.processStream();
+                if (this.cancellationRequested) {
+                    // Cancelled while the stream was wrapping up: don't start executing the collected tool calls.
+                    break;
+                }
                 if (toolCalls.length === 0) {
                     // No tool calls: the conversation is complete.
                     this.dispose();
@@ -102,7 +122,8 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
                 }
                 await this.executeAndAppendToolCalls(assistantText, toolCalls);
             }
-            // Cancelled before the model stopped requesting tools.
+            // Cancelled before the model stopped requesting tools. `cancel()` (via the cancellation listener) has
+            // already disposed the iterator; this is a no-op unless cancellation was observed some other way.
             this.dispose();
         } catch (error) {
             if (this.cancellationRequested) {
@@ -176,8 +197,10 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
         if (toolCallDelta.function?.name) {
             slot.name += toolCallDelta.function.name;
         }
-        // Open the tool call (emit a `finished: false` part) as soon as we know its ID.
-        if (!slot.opened && slot.id) {
+        // Open the tool call (emit a `finished: false` part) once we know both its ID and name. `merge` on the
+        // receiving `ToolCallChatResponseContentImpl` never updates the name afterwards, so opening early with an
+        // empty name would leave the call nameless for good.
+        if (!slot.opened && slot.id && slot.name) {
             slot.opened = true;
             this.handleIncoming({ tool_calls: [{ id: slot.id, finished: false, function: { name: slot.name, arguments: '' } }] });
         }
@@ -189,8 +212,20 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
         }
     }
 
+    /**
+     * Drops parts arriving after the iterator is done (in particular after {@link cancel} disposed it while tool
+     * execution was still in flight), so an uninterruptible handler that finishes late cannot surface a
+     * finished tool-call part - or any other part - as if it were still part of the live turn.
+     */
+    protected override handleIncoming(message: LanguageModelStreamResponsePart): void {
+        if (this.done) {
+            return;
+        }
+        super.handleIncoming(message);
+    }
+
     protected async executeAndAppendToolCalls(assistantText: string, toolCalls: CollectedToolCall[]): Promise<void> {
-        const results = await this.options.toolCallExecutor.executeToolCalls(
+        const results = await this.toolCallExecutor.executeToolCalls(
             toolCalls.map(toolCall => ({ id: toolCall.id, name: toolCall.name, arguments: toolCall.arguments || '{}' })),
             this.options.request.tools,
             { cancellationToken: this.options.cancellationToken }

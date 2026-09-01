@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolCall, ToolCallExecutor, ToolCallExecutorImpl, ToolRequest } from '@theia/ai-core';
+import { ToolCall, ToolCallExecutor, ToolCallExecutorImpl, ToolInvocationContext, ToolRequest } from '@theia/ai-core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Container, injectable } from '@theia/core/shared/inversify';
-import { ILogger } from '@theia/core';
+import { CancellationToken, CancellationTokenSource, ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { OllamaModel, OllamaModelParams } from './node/ollama-language-model';
 import { Tool } from 'ollama';
@@ -71,6 +71,28 @@ describe('ai-ollama package', () => {
         const result = await model.runProcessToolCalls([{ id: '1', function: { name: 'missing', arguments: '{}' } }], chatRequest);
         expect(result[0].result).to.equal('error: Tool not found');
     });
+
+    it('forwards the request cancellation token into the tool invocation context', async () => {
+        const model = createModel();
+        const source = new CancellationTokenSource();
+        let observedToken: CancellationToken | undefined;
+        const chatRequest = {
+            messages: [],
+            tools: [{
+                function: { name: 'a' },
+                handler: async (_argString: string, ctx?: ToolInvocationContext) => {
+                    observedToken = ToolInvocationContext.getCancellationToken(ctx);
+                    return 'a-result';
+                }
+            }]
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
+        const toolCalls: ToolCall[] = [{ id: '1', function: { name: 'a', arguments: '{}' } }];
+
+        await model.runProcessToolCalls(toolCalls, chatRequest, source.token);
+
+        expect(observedToken).to.equal(source.token);
+    });
 });
 
 function createModel(): OllamaModelUnderTest {
@@ -92,14 +114,14 @@ function createModel(): OllamaModelUnderTest {
 
 @injectable()
 class OllamaModelUnderTest extends OllamaModel {
-    override toOllamaTool(tool: ToolRequest): Tool & { handler: (arg_string: string) => Promise<unknown> } {
+    override toOllamaTool(tool: ToolRequest): Tool & { handler: (arg_string: string, ctx?: ToolInvocationContext) => Promise<unknown> } {
         return super.toOllamaTool(tool);
     }
 
-    // Exposes the private processToolCalls for testing concurrent tool execution.
-    runProcessToolCalls(toolCalls: ToolCall[], chatRequest: unknown): Promise<ToolCall[]> {
+    // Exposes the protected processToolCalls for testing concurrent tool execution and cancellation forwarding.
+    runProcessToolCalls(toolCalls: ToolCall[], chatRequest: unknown, cancellation?: CancellationToken): Promise<ToolCall[]> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (this as any).processToolCalls(toolCalls, chatRequest);
+        return this.processToolCalls(toolCalls, chatRequest as any, cancellation);
     }
 }
 function createToolRequest(): ToolRequest {
