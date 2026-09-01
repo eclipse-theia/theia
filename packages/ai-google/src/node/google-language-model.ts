@@ -14,7 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import {
+    formatToolCallContentForModel,
     ImageContent,
+    isToolCallContent,
     LanguageModel,
     LanguageModelMessage,
     LanguageModelRequest,
@@ -31,8 +33,8 @@ import {
     ToolCallExecutor,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken } from '@theia/core';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { CancellationToken, ILogger } from '@theia/core';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import {
     GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality, FunctionResponse, ToolConfig, Tool, UrlContextMetadata, GroundingMetadata
 } from '@google/genai';
@@ -54,6 +56,9 @@ interface ToolCallback {
 function toFunctionResponse(content: ToolCallResult): FunctionResponse['response'] {
     if (content === undefined) {
         return {};
+    }
+    if (isToolCallContent(content)) {
+        return { result: formatToolCallContentForModel(content) };
     }
     if (Array.isArray(content)) {
         return { result: content };
@@ -191,6 +196,9 @@ export class GoogleModel implements LanguageModel {
     @inject(ToolCallExecutor)
     protected readonly toolCallExecutor: ToolCallExecutor;
 
+    @inject(ILogger) @named('ai-google:GoogleModel')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     protected init(): void {
         const params = this.params;
@@ -300,7 +308,7 @@ export class GoogleModel implements LanguageModel {
                                 // MALFORMED_FUNCTION_CALL: The model produced a malformed function call.
                                 // Log warning but continue - there might still be usable text content.
                                 case 'MALFORMED_FUNCTION_CALL':
-                                    console.warn('Gemini returned MALFORMED_FUNCTION_CALL finish reason.', {
+                                    that.logger.warn('Gemini returned MALFORMED_FUNCTION_CALL finish reason.', {
                                         finishReason,
                                         candidate: chunk.candidates?.[0],
                                         content: chunk.candidates?.[0]?.content,
@@ -313,7 +321,7 @@ export class GoogleModel implements LanguageModel {
                                 // e.g. SAFETY, MAX_TOKENS, RECITATION, LANGUAGE, ...
                                 // https://ai.google.dev/api/generate-content#FinishReason
                                 default:
-                                    console.error('Gemini streaming ended with unexpected finish reason:', {
+                                    that.logger.error('Gemini streaming ended with unexpected finish reason:', {
                                         finishReason,
                                         candidate: chunk.candidates?.[0],
                                         content: chunk.candidates?.[0]?.content,
@@ -443,7 +451,7 @@ export class GoogleModel implements LanguageModel {
                         }
                     }
                 } catch (e) {
-                    console.error('Error in Gemini streaming:', e);
+                    that.logger.error('Error in Gemini streaming:', e);
                     throw e;
                 }
             },
@@ -617,14 +625,14 @@ export class GoogleModel implements LanguageModel {
                     }
 
                     const delayMs = retryDelayOnRateLimitError * 1000;
-                    console.warn(`Received 429 (Too Many Requests). Retrying in ${retryDelayOnRateLimitError}s. Attempt ${i + 1} of ${maxRetriesOnErrors}.`);
+                    this.logger.warn(`Received 429 (Too Many Requests). Retrying in ${retryDelayOnRateLimitError}s. Attempt ${i + 1} of ${maxRetriesOnErrors}.`);
                     await wait(delayMs);
                 } else if (retryDelayOnOtherErrors < 0) {
                     // Other errors should not retried because of the setting
                     throw error;
                 } else {
                     const delayMs = retryDelayOnOtherErrors * 1000;
-                    console.warn(`Request failed: ${message}. Retrying in ${retryDelayOnOtherErrors}s. Attempt ${i + 1} of ${maxRetriesOnErrors}.`);
+                    this.logger.warn(`Request failed: ${message}. Retrying in ${retryDelayOnOtherErrors}s. Attempt ${i + 1} of ${maxRetriesOnErrors}.`);
                     await wait(delayMs);
                 }
                 // -> reiterate the loop for the next attempt

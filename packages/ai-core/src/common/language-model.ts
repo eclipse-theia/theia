@@ -42,7 +42,8 @@ export interface ReasoningSupport {
     readonly defaultLevel?: ReasoningLevel;
 }
 
-export type LanguageModelMessage = TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage | ServerToolUseMessage | ImageMessage;
+export type LanguageModelMessage =
+    TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage | ServerToolUseMessage | ImageMessage | CompactionMessage;
 export namespace LanguageModelMessage {
 
     export function isTextMessage(obj: LanguageModelMessage): obj is TextMessage {
@@ -62,6 +63,9 @@ export namespace LanguageModelMessage {
     }
     export function isImageMessage(obj: LanguageModelMessage): obj is ImageMessage {
         return obj.type === 'image';
+    }
+    export function isCompactionMessage(obj: LanguageModelMessage): obj is CompactionMessage {
+        return obj.type === 'compaction';
     }
 }
 export interface TextMessage {
@@ -125,6 +129,17 @@ export interface ImageMessage {
     actor: 'ai' | 'user';
     type: 'image';
     image: ImageContent;
+}
+
+export interface CompactionMessage {
+    actor: 'ai';
+    type: 'compaction';
+    /** Originating provider tag; a backend replays the payload only when this matches its own provider. */
+    provider: string;
+    /** Opaque provider payload to replay. */
+    data: unknown;
+    /** Human-readable summary, when the provider exposes one. */
+    summary?: string;
 }
 
 export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageModelMessage =>
@@ -304,6 +319,69 @@ export namespace ToolRequest {
             (!('required' in obj) || (Array.isArray(obj.required) && obj.required.every(prop => typeof prop === 'string')));
     }
 }
+// Anthropic requires at least 50,000 tokens, so use one conservative minimum for all compaction settings.
+export const SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM = 50_000;
+
+/**
+ * Per-session/per-request server-side compaction settings, carried verbatim from the chat
+ * session's common settings to the request. Kept as an object so further parameters can be
+ * added later.
+ */
+export interface CompactionSettings {
+    /** Explicit enablement for this session; when set it wins over the model's default. `undefined` means "no explicit choice". */
+    enabled?: boolean;
+    /** Input-token threshold for this session; when set it wins over the model's default. `undefined` preserves the provider default. */
+    tokenThreshold?: number;
+}
+
+/** Per-provider override for server-side compaction; combined with the global preference by {@link resolveCompactionDefault}. */
+export type ServerSideCompactionSetting = 'default' | 'enabled' | 'disabled';
+
+/**
+ * Resolves a model's default server-side compaction enablement from the global preference and
+ * the per-provider override. `'enabled'`/`'disabled'` force the result; `'default'` defers to
+ * the global preference. Intended to be called where the preferences are read (the provider's
+ * frontend contribution) and stored on the model.
+ */
+export function resolveCompactionDefault(globalEnabled: boolean, perProviderOverride: ServerSideCompactionSetting): boolean {
+    if (perProviderOverride === 'enabled') {
+        return true;
+    }
+    if (perProviderOverride === 'disabled') {
+        return false;
+    }
+    return globalEnabled;
+}
+
+export function resolveCompactionTokenThresholdDefault(
+    globalThreshold: number | undefined,
+    perProviderThreshold: number | undefined
+): number | undefined {
+    return perProviderThreshold ?? globalThreshold;
+}
+
+export function resolveCompactionTokenThreshold(
+    thresholdByDefault: number | undefined,
+    compaction: CompactionSettings | undefined
+): number | undefined {
+    return compaction?.tokenThreshold ?? thresholdByDefault;
+}
+
+/**
+ * Resolves whether server-side compaction is effective for a request: the model must support it
+ * (capability), then an explicit per-session setting wins, otherwise the model's resolved default applies.
+ */
+export function resolveServerSideCompaction(
+    capability: boolean | undefined,
+    enabledByDefault: boolean,
+    compaction: CompactionSettings | undefined
+): boolean {
+    if (!capability) {
+        return false;
+    }
+    return compaction?.enabled ?? enabledByDefault;
+}
+
 export interface LanguageModelRequest {
     messages: LanguageModelMessage[],
     tools?: ToolRequest[];
@@ -323,6 +401,8 @@ export interface LanguageModelRequest {
     clientSettings?: { keepToolCalls: boolean; keepThinking: boolean };
     /** Provider-agnostic reasoning configuration; providers translate it to their native API. */
     reasoning?: ReasoningSettings;
+    /** Provider-agnostic server-side compaction settings, copied verbatim from the chat session. Resolved against the model's capability and default in the backend. */
+    compaction?: CompactionSettings;
 }
 export interface ResponseFormatJsonSchema {
     type: 'json_schema';
@@ -378,10 +458,12 @@ export interface LanguageModelTextResponse {
 export const isLanguageModelTextResponse = (obj: unknown): obj is LanguageModelTextResponse =>
     !!(obj && typeof obj === 'object' && 'text' in obj && typeof (obj as { text: unknown }).text === 'string');
 
-export type LanguageModelStreamResponsePart = TextResponsePart | ToolCallResponsePart | ServerToolCallResponsePart | ThinkingResponsePart | UsageResponsePart;
+export type LanguageModelStreamResponsePart =
+    TextResponsePart | ToolCallResponsePart | ServerToolCallResponsePart | ThinkingResponsePart | UsageResponsePart | CompactionResponsePart;
 
 export const isLanguageModelStreamResponsePart = (part: unknown): part is LanguageModelStreamResponsePart =>
-    isUsageResponsePart(part) || isTextResponsePart(part) || isThinkingResponsePart(part) || isToolCallResponsePart(part) || isServerToolCallResponsePart(part);
+    isUsageResponsePart(part) || isTextResponsePart(part) || isThinkingResponsePart(part) ||
+    isToolCallResponsePart(part) || isServerToolCallResponsePart(part) || isCompactionResponsePart(part);
 
 export interface UsageResponsePart {
     input_tokens: number;
@@ -432,15 +514,40 @@ export interface ThinkingResponsePart {
 export const isThinkingResponsePart = (part: unknown): part is ThinkingResponsePart =>
     !!(part && typeof part === 'object' && 'thought' in part && typeof part.thought === 'string');
 
+export interface CompactionResponsePart {
+    compaction: {
+        /** Originating provider tag, e.g. 'anthropic' or 'openai-responses'. */
+        provider: string;
+        /** Opaque provider payload (Anthropic compaction block(s) / OpenAI compaction item). Never interpreted outside the originating backend. */
+        data: unknown;
+        /** Human-readable summary, when the provider exposes one. */
+        summary?: string;
+    };
+}
+export const isCompactionResponsePart = (part: unknown): part is CompactionResponsePart =>
+    !!(part && typeof part === 'object' && 'compaction' in part &&
+        typeof (part as CompactionResponsePart).compaction === 'object' &&
+        (part as CompactionResponsePart).compaction &&
+        'provider' in (part as CompactionResponsePart).compaction &&
+        typeof (part as CompactionResponsePart).compaction.provider === 'string');
+
 export interface ToolCallTextResult { type: 'text', text: string; };
 export interface ToolCallImageResult extends Base64ImageContent { type: 'image' };
 export interface ToolCallAudioResult { type: 'audio', data: string; mimeType: string };
+export interface ToolCallHtmlAppResult { type: 'html'; html: string; title?: string };
 export type ToolCallErrorKind = 'tool-not-available';
 export interface ToolCallErrorResult { type: 'error', data: string; errorKind?: ToolCallErrorKind; };
-export type ToolCallContentResult = ToolCallTextResult | ToolCallImageResult | ToolCallAudioResult | ToolCallErrorResult;
+export type ToolCallContentResult = ToolCallTextResult | ToolCallImageResult | ToolCallAudioResult | ToolCallHtmlAppResult | ToolCallErrorResult;
 export interface ToolCallContent {
     content: ToolCallContentResult[];
 }
+
+export const isToolCallHtmlAppResult = (item: unknown): item is ToolCallHtmlAppResult =>
+    !!(item &&
+        typeof item === 'object' &&
+        'type' in item && (item as ToolCallHtmlAppResult).type === 'html' &&
+        'html' in item &&
+        typeof (item as ToolCallHtmlAppResult).html === 'string');
 
 export const isToolCallContent = (result: unknown): result is ToolCallContent =>
     !!(result && typeof result === 'object' && 'content' in result && Array.isArray((result as ToolCallContent).content));
@@ -460,6 +567,26 @@ export const hasToolNotAvailableError = (result: ToolCallResult): boolean =>
 export const createToolCallError = (message: string, errorKind?: ToolCallErrorKind): ToolCallContent => ({
     content: [errorKind ? { type: 'error', data: message, errorKind } : { type: 'error', data: message }]
 });
+
+/**
+ * Serializes a {@link ToolCallResult} to a string suitable for sending back to the model.
+ *
+ * HTML app results are replaced with a compact placeholder so that large bundled HTML
+ * (e.g. Plotly charts) does not blow the model's context window. The full HTML is still
+ * available in the structured result for rendering in the UI (e.g. via McpAppFrame).
+ */
+export function formatToolCallContentForModel(result: ToolCallResult): string {
+    if (isToolCallContent(result)) {
+        return result.content.map(c => {
+            if (c.type === 'text') { return c.text; }
+            if (c.type === 'html') { return `[interactive app displayed to the user${c.title ? ': ' + c.title : ''}]`; }
+            if (c.type === 'error') { return c.data; }
+            return JSON.stringify(c);
+        }).join('\n');
+    }
+    if (typeof result === 'string') { return result; }
+    return JSON.stringify(result);
+}
 
 export type ToolCallResult = undefined | object | string | ToolCallContent;
 export interface ToolCall {
@@ -530,6 +657,8 @@ export interface LanguageModelMetaData {
      * **Note:** If you provide these, you must also provide `vendor` because server tools are vendor-specific.
      */
     readonly serverTools?: ServerToolDescriptor[];
+    /** Whether this model supports provider-native server-side compaction (capability, distinct from whether it is activated). */
+    readonly serverSideCompactionSupport?: boolean;
 }
 
 export namespace LanguageModelMetaData {
@@ -602,8 +731,10 @@ export interface FrontendLanguageModelRegistry extends LanguageModelRegistry {
 
 @injectable()
 export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
-    @inject(ILogger)
-    protected logger: ILogger;
+
+    @inject(ILogger) @named('ai-core:DefaultLanguageModelRegistryImpl')
+    protected readonly logger: ILogger;
+
     @inject(ContributionProvider) @named(LanguageModelProvider)
     protected readonly languageModelContributions: ContributionProvider<LanguageModelProvider>;
 
@@ -634,7 +765,7 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
     addLanguageModels(models: LanguageModel[]): void {
         models.forEach(model => {
             if (this.languageModels.find(lm => lm.id === model.id)) {
-                console.warn(`Tried to add already existing language model with id ${model.id}. The new model will be ignored.`);
+                this.logger.warn(`Tried to add already existing language model with id ${model.id}. The new model will be ignored.`);
                 return;
             }
             this.languageModels.push(model);
@@ -644,7 +775,9 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
 
     async getLanguageModels(): Promise<LanguageModel[]> {
         await this.initialized;
-        return this.languageModels;
+        // Return a fresh array (not the internal, mutated-in-place list) so consumers relying on
+        // reference equality - e.g. React memoization in the chat model selector - detect changes.
+        return [...this.languageModels];
     }
 
     async getLanguageModel(id: string): Promise<LanguageModel | undefined> {
@@ -659,7 +792,7 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
                 this.languageModels.splice(index, 1);
                 this.changeEmitter.fire({ models: this.languageModels });
             } else {
-                console.warn(`Language model with id ${id} was requested to be removed, however it does not exist`);
+                this.logger.warn(`Language model with id ${id} was requested to be removed, however it does not exist`);
             }
         });
     }

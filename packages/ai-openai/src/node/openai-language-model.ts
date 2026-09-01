@@ -24,11 +24,14 @@ import {
     UserRequest,
     LanguageModelStatus,
     ReasoningSupport,
-    ToolCallExecutor
+    ToolCallExecutor,
+    resolveCompactionTokenThreshold,
+    resolveServerSideCompaction,
+    ServerToolDescriptor
 } from '@theia/ai-core';
 import { OpenAiModelUtils } from './openai-model-utils';
-import { CancellationToken } from '@theia/core';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { CancellationToken, ILogger } from '@theia/core';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { OpenAI, AzureOpenAI } from 'openai';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources';
 import { StreamingAsyncIterator } from './openai-streaming-iterator';
@@ -83,6 +86,10 @@ export interface OpenAiModelParams {
     proxy?: string;
     reasoningSupport?: ReasoningSupport;
     maxInputTokens?: number;
+    serverTools?: ServerToolDescriptor[];
+    serverSideCompactionSupport?: boolean;
+    serverSideCompactionEnabledByDefault?: boolean;
+    serverSideCompactionTokenThresholdByDefault?: number;
 }
 
 export const OpenAiModelParams = Symbol('OpenAiModelParams');
@@ -108,6 +115,13 @@ export class OpenAiModel implements LanguageModel {
     proxy?: string;
     reasoningSupport?: ReasoningSupport;
     maxInputTokens?: number;
+    serverTools?: ServerToolDescriptor[];
+    serverSideCompactionSupport: boolean;
+    serverSideCompactionEnabledByDefault: boolean;
+    serverSideCompactionTokenThresholdByDefault?: number;
+
+    /** Provider identifier, used to key per-provider settings (e.g. server tool selections) and the capabilities UI. */
+    readonly vendor = 'openai';
 
     /**
      * The options for the OpenAI runner.
@@ -134,6 +148,9 @@ export class OpenAiModel implements LanguageModel {
     @inject(ChatCompletionStreamingAsyncIteratorFactory)
     protected readonly chatCompletionStreamFactory: ChatCompletionStreamingAsyncIteratorFactory;
 
+    @inject(ILogger) @named('ai-openai:OpenAiModel')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     protected init(): void {
         const params = this.params;
@@ -152,6 +169,10 @@ export class OpenAiModel implements LanguageModel {
         this.proxy = params.proxy;
         this.reasoningSupport = params.reasoningSupport;
         this.maxInputTokens = params.maxInputTokens;
+        this.serverTools = params.serverTools;
+        this.serverSideCompactionSupport = params.serverSideCompactionSupport ?? false;
+        this.serverSideCompactionEnabledByDefault = params.serverSideCompactionEnabledByDefault ?? false;
+        this.serverSideCompactionTokenThresholdByDefault = params.serverSideCompactionTokenThresholdByDefault;
     }
 
     /** Reasoning-level translation lives in {@link openAiReasoningFor}. */
@@ -249,7 +270,7 @@ export class OpenAiModel implements LanguageModel {
         });
         const message = result.choices[0].message;
         if (message.refusal || message.parsed === undefined) {
-            console.error('Error in OpenAI chat completion stream:', JSON.stringify(message));
+            this.logger.error('Error in OpenAI chat completion stream:', JSON.stringify(message));
         }
 
         return {
@@ -292,8 +313,26 @@ export class OpenAiModel implements LanguageModel {
         }
     }
 
+    /**
+     * Augments the Response API settings with the server-side compaction directive when compaction is enabled for the
+     * given request. When disabled, the settings are returned unchanged so the default path is byte-for-byte identical.
+     */
+    protected applyResponseApiCompaction(settings: Record<string, unknown>, request: LanguageModelRequest): Record<string, unknown> {
+        if (resolveServerSideCompaction(this.serverSideCompactionSupport, this.serverSideCompactionEnabledByDefault, request.compaction)) {
+            const tokenThreshold = resolveCompactionTokenThreshold(this.serverSideCompactionTokenThresholdByDefault, request.compaction);
+            return {
+                ...settings,
+                context_management: [{
+                    type: 'compaction',
+                    ...(tokenThreshold !== undefined && { compact_threshold: tokenThreshold })
+                }]
+            };
+        }
+        return settings;
+    }
+
     protected async handleResponseApiRequest(openai: OpenAI, request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
-        const settings = this.getSettings(request, true);
+        const settings = this.applyResponseApiCompaction(this.getSettings(request, true), request);
         const isStreamingRequest = this.enableStreaming && !(typeof settings.stream === 'boolean' && !settings.stream);
 
         try {
@@ -310,9 +349,9 @@ export class OpenAiModel implements LanguageModel {
                 cancellationToken
             );
         } catch (error) {
-            // If Response API fails, fall back to Chat Completions API
-            if (error instanceof Error) {
-                console.warn(`Response API failed for model ${this.id}, falling back to Chat Completions API:`, error.message);
+            // Chat Completions cannot execute Response API server tools.
+            if (error instanceof Error && !request.serverTools?.length) {
+                this.logger.warn(`Response API failed for model ${this.id}, falling back to Chat Completions API:`, error.message);
                 return this.handleChatCompletionsRequest(openai, request, cancellationToken);
             }
             throw error;

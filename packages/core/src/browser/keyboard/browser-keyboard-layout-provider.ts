@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, postConstruct, inject } from 'inversify';
+import { injectable, postConstruct, inject, named } from 'inversify';
 import { isOSX } from '../../common/os';
 import { Emitter, Event } from '../../common/event';
 import { ILogger } from '../../common/logger';
@@ -29,7 +29,7 @@ export type KeyboardLayoutSource = 'navigator.keyboard' | 'user-choice' | 'press
 @injectable()
 export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator {
 
-    @inject(ILogger)
+    @inject(ILogger) @named('core:BrowserKeyboardLayoutProvider')
     protected readonly logger: ILogger;
 
     @inject(LocalStorageService)

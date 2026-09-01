@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContributionProvider, Disposable, Emitter, Event, Prioritizeable } from '@theia/core';
+import { ContributionProvider, Disposable, Emitter, Event, Prioritizeable, ILogger } from '@theia/core';
 import { inject, injectable, interfaces, named } from '@theia/core/shared/inversify';
 import { Preference } from '../../util/preference-types';
 import { PreferenceHeaderRenderer, PreferenceNodeRenderer } from './preference-node-renderer';
@@ -45,6 +45,9 @@ export class DefaultPreferenceNodeRendererCreatorRegistry implements PreferenceN
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
 
+    @inject(ILogger) @named('preferences:DefaultPreferenceNodeRendererCreatorRegistry')
+    protected readonly logger: ILogger;
+
     constructor(
         @inject(ContributionProvider) @named(PreferenceNodeRendererContribution)
         protected readonly contributionProvider: ContributionProvider<PreferenceNodeRendererContribution>
@@ -57,7 +60,7 @@ export class DefaultPreferenceNodeRendererCreatorRegistry implements PreferenceN
 
     registerPreferenceNodeRendererCreator(creator: PreferenceNodeRendererCreator): Disposable {
         if (this._creators.has(creator.id)) {
-            console.warn(`A preference node renderer creator ${creator.id} is already registered.`);
+            this.logger.warn(`A preference node renderer creator ${creator.id} is already registered.`);
             return Disposable.NULL;
         }
         this._creators.set(creator.id, creator);

@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { isFirefox } from './browser';
 import { ClipboardService } from './clipboard-service';
+import { Emitter, Event } from '../common/event';
 import { ILogger } from '../common/logger';
 import { MessageService } from '../common/message-service';
 import { nls } from '../common/nls';
@@ -38,8 +39,11 @@ export class BrowserClipboardService implements ClipboardService {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('core:BrowserClipboardService')
     protected readonly logger: ILogger;
+
+    protected readonly onDidWriteTextEmitter = new Emitter<string>();
+    readonly onDidWriteText: Event<string> = this.onDidWriteTextEmitter.event;
 
     async readText(): Promise<string> {
         let permission;
@@ -82,6 +86,7 @@ export class BrowserClipboardService implements ClipboardService {
             // in FireFox, Clipboard API isn't gated with the permissions
             try {
                 await this.getClipboardAPI().writeText(value);
+                this.onDidWriteTextEmitter.fire(value);
                 return;
             } catch (e2) {
                 this.logger.error('Failed writing to the clipboard.', e2);
@@ -103,7 +108,8 @@ export class BrowserClipboardService implements ClipboardService {
             ));
             return;
         }
-        return this.getClipboardAPI().writeText(value);
+        await this.getClipboardAPI().writeText(value);
+        this.onDidWriteTextEmitter.fire(value);
     }
 
     protected async queryPermission(name: string): Promise<PermissionStatus> {

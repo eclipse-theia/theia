@@ -16,6 +16,7 @@
 
 import {
     ImageContent,
+    formatToolCallContentForModel,
     LanguageModel,
     LanguageModelMessage,
     LanguageModelParsedResponse,
@@ -26,8 +27,8 @@ import {
     ToolCallExecutor,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken } from '@theia/core';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { CancellationToken, ILogger } from '@theia/core';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import OpenAI from 'openai';
 import { ChatCompletionAssistantMessageParam, ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources';
 import { StreamingAsyncIterator } from '@theia/ai-openai/lib/node/openai-streaming-iterator';
@@ -76,6 +77,9 @@ export class CopilotLanguageModel implements LanguageModel {
 
     @inject(ChatCompletionStreamingAsyncIteratorFactory)
     protected readonly chatCompletionStreamFactory: ChatCompletionStreamingAsyncIteratorFactory;
+
+    @inject(ILogger) @named('ai-copilot:CopilotLanguageModel')
+    protected readonly logger: ILogger;
 
     @postConstruct()
     protected init(): void {
@@ -173,7 +177,7 @@ export class CopilotLanguageModel implements LanguageModel {
 
         const message = result.choices[0].message;
         if (message.refusal || message.parsed === undefined) {
-            console.error('Error in Copilot chat completion:', JSON.stringify(message));
+            this.logger.error('Error in Copilot chat completion:', JSON.stringify(message));
         }
 
         return {
@@ -217,7 +221,7 @@ export class CopilotLanguageModel implements LanguageModel {
     }
 
     protected processMessages(messages: LanguageModelMessage[]): ChatCompletionMessageParam[] {
-        const converted = messages.filter(m => m.type !== 'thinking').map(m => this.toOpenAIMessage(m));
+        const converted = messages.filter(m => m.type !== 'thinking' && m.type !== 'compaction').map(m => this.toOpenAIMessage(m));
         return this.mergeConsecutiveAssistantMessages(converted);
     }
 
@@ -275,7 +279,7 @@ export class CopilotLanguageModel implements LanguageModel {
             return {
                 role: 'tool',
                 tool_call_id: message.tool_use_id,
-                content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
+                content: typeof message.content === 'string' ? message.content : formatToolCallContentForModel(message.content)
             };
         }
         if (LanguageModelMessage.isImageMessage(message) && message.actor === 'user') {

@@ -1,0 +1,135 @@
+/********************************************************************************
+ * Copyright (C) 2026 EclipseSource GmbH and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/** Agent-Plugin-specific tweaks layered on top of the shared `.theia-vsx-extension` card. */
+
+.theia-vsx-extension-icon.theia-agent-plugin-extension-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: none;
+}
+
+.theia-vsx-extension-icon.theia-agent-plugin-extension-icon .codicon {
+    /* Match the MCP and skill card icons so all three render at the same visual size. */
+    font-size: calc(var(--theia-vsx-extension-icon-size) * 0.65);
+    color: var(--theia-descriptionForeground);
+}
+
+.theia-agent-plugin-extension-actions {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--theia-ui-padding) / 2);
+    flex-shrink: 0;
+}
+
+.theia-agent-plugin-extension-gear {
+    cursor: pointer;
+}
+
+.theia-agent-plugin-extension-warning {
+    color: var(--theia-editorWarning-foreground, var(--theia-notificationsWarningIcon-foreground));
+    font-size: var(--theia-ui-font-size1);
+}
+
+.theia-agent-plugin-extension-diagnostics,
+.theia-agent-plugin-extension-link-stale-message {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--theia-ui-padding) / 2);
+    font-size: var(--theia-ui-font-size0);
+    color: var(--theia-editorWarning-foreground, var(--theia-notificationsWarningIcon-foreground));
+}
+
+.theia-agent-plugin-extension-diagnostics {
+    /* A long skip reason must not push the action buttons out of the card. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 16em;
+}
+
+.theia-extensions-type-badge--agent-plugin {
+    background-color: var(--theia-inputValidation-infoBackground, var(--theia-badge-background));
+    color: var(--theia-inputValidation-infoForeground, var(--theia-badge-foreground));
+}
+
+/** Install and hash-mismatch dialogs. */
+
+.theia-plugin-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: var(--theia-ui-padding);
+    max-width: 480px;
+}
+
+.theia-plugin-dialog-paragraph {
+    color: var(--theia-foreground);
+}
+
+.theia-plugin-dialog-field {
+    display: flex;
+    gap: var(--theia-ui-padding);
+    align-items: baseline;
+}
+
+.theia-plugin-dialog-field > label {
+    flex: 0 0 8em;
+    color: var(--theia-descriptionForeground);
+}
+
+.theia-plugin-dialog-value {
+    flex: 1 1 auto;
+    word-break: break-word;
+}
+
+.theia-plugin-dialog-hash {
+    flex: 1 1 auto;
+    font-family: var(--theia-code-font-family);
+    word-break: break-all;
+}
+
+.theia-plugin-dialog-section {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.theia-plugin-dialog-section-title {
+    font-weight: bold;
+}
+
+.theia-plugin-dialog-warning {
+    display: flex;
+    gap: var(--theia-ui-padding);
+    padding: var(--theia-ui-padding);
+    align-items: flex-start;
+    border: 1px solid var(--theia-inputValidation-warningBorder, var(--theia-editorWarning-foreground));
+    background-color: var(--theia-inputValidation-warningBackground);
+    color: var(--theia-inputValidation-warningForeground, var(--theia-foreground));
+}
+
+.theia-plugin-dialog-warning .codicon {
+    color: var(--theia-editorWarning-foreground, var(--theia-notificationsWarningIcon-foreground));
+}
+
+/* Diagnostics in the card's hover: reasons a component was skipped read as warnings, not as more
+   description. The hover is built as an element because the markdown renderer escapes HTML. */
+.theia-agent-plugin-hover-warning {
+    color: var(--theia-editorWarning-foreground, var(--theia-notificationsWarningIcon-foreground));
+    white-space: pre-line;
+    margin-top: var(--theia-ui-padding);
+}

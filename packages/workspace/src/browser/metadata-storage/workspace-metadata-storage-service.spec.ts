@@ -33,6 +33,7 @@ import { WorkspaceService } from '../workspace-service';
 import { WorkspaceMetadataStorageServiceImpl, WorkspaceMetadataStoreFactory } from './workspace-metadata-storage-service';
 import { WorkspaceMetadataStoreImpl } from './workspace-metadata-store';
 import * as uuid from '@theia/core/lib/common/uuid';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 disableJSDOM();
 
@@ -44,7 +45,7 @@ describe('WorkspaceMetadataStorageService', () => {
     let fileService: sinon.SinonStubbedInstance<FileService>;
     let workspaceService: WorkspaceService;
     let envVariableServer: sinon.SinonStubbedInstance<EnvVariablesServer>;
-    let logger: sinon.SinonStubbedInstance<ILogger>;
+    let logger: MockLogger;
     let container: Container;
     let generateUuidStub: sinon.SinonStub;
 
@@ -76,18 +77,13 @@ describe('WorkspaceMetadataStorageService', () => {
             getConfigDirUri: sinon.stub().resolves(`file://${configDir}`)
         } as unknown as sinon.SinonStubbedInstance<EnvVariablesServer>;
 
-        logger = {
-            debug: sinon.stub(),
-            info: sinon.stub(),
-            warn: sinon.stub(),
-            error: sinon.stub(),
-        } as unknown as sinon.SinonStubbedInstance<ILogger>;
+        logger = new MockLogger();
 
         // Bind to container
         container.bind(FileService).toConstantValue(fileService as unknown as FileService);
         container.bind(WorkspaceService).toConstantValue(workspaceService);
         container.bind(EnvVariablesServer).toConstantValue(envVariableServer as unknown as EnvVariablesServer);
-        container.bind(ILogger).toConstantValue(logger as unknown as ILogger).whenTargetNamed('WorkspaceMetadataStorage');
+        container.bind(ILogger).toConstantValue(logger);
         container.bind(WorkspaceMetadataStoreImpl).toSelf();
         container.bind(WorkspaceMetadataStoreFactory).toFactory(ctx => () => ctx.container.get(WorkspaceMetadataStoreImpl));
         container.bind(WorkspaceMetadataStorageServiceImpl).toSelf();
@@ -274,6 +270,7 @@ describe('WorkspaceMetadataStorageService', () => {
         });
 
         it('should handle corrupted index file', async () => {
+            const warnSpy = sinon.spy(logger, 'warn');
             generateUuidStub.returns('new-uuid');
             fileService.exists.resolves(true);
             fileService.readFile.resolves({
@@ -284,7 +281,7 @@ describe('WorkspaceMetadataStorageService', () => {
             const store = await service.getOrCreateStore('feature');
 
             expect(store).to.exist;
-            expect(logger.warn.calledOnce).to.be.true;
+            expect(warnSpy.calledOnce).to.be.true;
         });
 
         it('should create metadata root directory when saving index', async () => {

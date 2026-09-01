@@ -259,6 +259,7 @@ export function createMonacoConfigurationService(container: interfaces.Container
             case PreferenceScope.User: return ConfigurationTarget.USER;
             case PreferenceScope.Workspace: return ConfigurationTarget.WORKSPACE;
             case PreferenceScope.Folder: return ConfigurationTarget.WORKSPACE_FOLDER;
+            case PreferenceScope.Session: return ConfigurationTarget.MEMORY;
         }
     };
 

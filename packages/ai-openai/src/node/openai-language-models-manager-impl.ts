@@ -16,10 +16,12 @@
 
 import { LanguageModelRegistry, LanguageModelStatus, ReasoningSupport } from '@theia/ai-core';
 import { getProxyUrl } from '@theia/ai-core/lib/node';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { DeveloperMessageSettings, OpenAiLanguageModelFactory, OpenAiModel } from './openai-language-model';
 import { getOpenAiModelDefaults } from './openai-model-defaults';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common';
+import { ILogger } from '@theia/core';
+import { OPENAI_SERVER_TOOLS } from './openai-server-tools';
 
 interface ResolvedModelMetadata {
     maxInputTokens?: number;
@@ -27,6 +29,7 @@ interface ResolvedModelMetadata {
     developerMessageSettings: DeveloperMessageSettings;
     enableStreaming: boolean;
     supportsStructuredOutput: boolean;
+    serverSideCompactionSupport: boolean;
 }
 
 @injectable()
@@ -34,6 +37,9 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
 
     @inject(OpenAiLanguageModelFactory)
     protected readonly openAiLanguageModelFactory: OpenAiLanguageModelFactory;
+
+    @inject(ILogger) @named('ai-openai:OpenAiLanguageModelsManagerImpl')
+    protected readonly logger: ILogger;
 
     protected _apiKey: string | undefined;
     protected _apiVersion: string | undefined;
@@ -87,10 +93,11 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
 
             const status = this.calculateStatus(modelDescription, apiKeyProvider());
             const metadata = this.resolveMetadata(modelDescription);
+            const serverTools = this.resolveServerTools(modelDescription);
 
             if (model) {
                 if (!(model instanceof OpenAiModel)) {
-                    console.warn(`OpenAI: model ${modelDescription.id} is not an OpenAI model`);
+                    this.logger.warn(`OpenAI: model ${modelDescription.id} is not an OpenAI model`);
                     continue;
                 }
                 await this.languageModelRegistry.patchLanguageModel<OpenAiModel>(modelDescription.id, {
@@ -107,7 +114,11 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                     useResponseApi: modelDescription.useResponseApi ?? false,
                     proxy: proxyUrl,
                     reasoningSupport: metadata.reasoningSupport,
-                    maxInputTokens: metadata.maxInputTokens
+                    maxInputTokens: metadata.maxInputTokens,
+                    serverTools,
+                    serverSideCompactionSupport: metadata.serverSideCompactionSupport,
+                    serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false,
+                    serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -126,11 +137,19 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         useResponseApi: modelDescription.useResponseApi ?? false,
                         proxy: proxyUrl,
                         reasoningSupport: metadata.reasoningSupport,
-                        maxInputTokens: metadata.maxInputTokens
+                        maxInputTokens: metadata.maxInputTokens,
+                        serverTools,
+                        serverSideCompactionSupport: metadata.serverSideCompactionSupport,
+                        serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false,
+                        serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault
                     })
                 ]);
             }
         }
+    }
+
+    protected resolveServerTools(description: OpenAiModelDescription): typeof OPENAI_SERVER_TOOLS | undefined {
+        return description.useResponseApi && !description.url ? OPENAI_SERVER_TOOLS : undefined;
     }
 
     /**
@@ -146,7 +165,9 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
             reasoningSupport: description.reasoningSupport ?? defaults.reasoningSupport,
             developerMessageSettings: description.developerMessageSettings ?? defaults.developerMessageSettings ?? 'developer',
             enableStreaming: description.enableStreaming ?? defaults.supportsStreaming ?? true,
-            supportsStructuredOutput: description.supportsStructuredOutput ?? defaults.supportsStructuredOutput ?? true
+            supportsStructuredOutput: description.supportsStructuredOutput ?? defaults.supportsStructuredOutput ?? true,
+            // Server-side compaction is only available via the Response API.
+            serverSideCompactionSupport: description.useResponseApi ?? false
         };
     }
 

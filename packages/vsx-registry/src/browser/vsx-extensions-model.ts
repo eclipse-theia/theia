@@ -32,6 +32,7 @@ import { VSXAllVersions, VSXExtensionRaw, VSXSearchEntry, VSXSearchOptions, VSXT
 import { OVSXApiFilterProvider } from '@theia/ovsx-client';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { VSXRegistryService } from '../common/vsx-registry-service';
+import { RequestContext, RequestService } from '@theia/core/shared/@theia/request';
 import { HostedPluginServer, PluginIdentifiers, PluginType } from '@theia/plugin-ext';
 import { HostedPluginWatcher } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin-watcher';
 import { ILogger } from '@theia/core';
@@ -65,6 +66,9 @@ export class VSXExtensionsModel {
 
     @inject(VSXRegistryService)
     protected readonly vsxRegistryService: VSXRegistryService;
+
+    @inject(RequestService)
+    protected readonly request: RequestService;
 
     @inject(HostedPluginSupport)
     protected readonly pluginSupport: HostedPluginSupport;
@@ -184,7 +188,12 @@ export class VSXExtensionsModel {
             }
             if (extension.readme === undefined && extension.readmeUrl) {
                 try {
-                    const rawReadme = await this.vsxRegistryService.fetchReadme(extension.readmeUrl);
+                    // A README served by the local plugin host (installed extensions) is same-origin and can be
+                    // fetched directly by the frontend. A remote registry README must go through the backend
+                    // `VSXRegistryService`, which only allows fetching from configured OVSX registry origins.
+                    const rawReadme = extension.localReadmeUrl
+                        ? RequestContext.asText(await this.request.request({ url: extension.localReadmeUrl }))
+                        : await this.vsxRegistryService.fetchReadme(extension.readmeUrl);
                     if (rawReadme) {
                         const readme = this.compileReadme(rawReadme);
                         extension.update({ readme });

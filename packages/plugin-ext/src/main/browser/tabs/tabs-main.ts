@@ -27,6 +27,7 @@ import { DisposableCollection } from '@theia/core';
 import { NotebookEditorWidget } from '@theia/notebook/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MergeEditor } from '@theia/scm/lib/browser/merge-editor/merge-editor';
+import { CustomEditorWidget } from '../custom-editors/custom-editor-widget';
 
 interface TabInfo {
     tab: TabDto;
@@ -181,7 +182,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
         const oldDto = this.tabGroupModel.get(tabBar);
         const groupId = oldDto?.groupId ?? this.groupIdCounter++;
         const tabs = tabBar.titles.map(title => this.createTabDto(title, groupId));
-        const viewColumn = 0; // TODO: Implement correct viewColumn handling
+        const viewColumn = Math.max(0, this.applicationShell.mainAreaTabBars.indexOf(tabBar));
         return {
             groupId,
             tabs,
@@ -225,6 +226,12 @@ export class TabsMainImpl implements TabsMain, Disposable {
                     uri: toUriComponents(widget.editor.uri.toString())
                 };
             }
+        } else if (widget instanceof CustomEditorWidget) {
+            return {
+                kind: TabInputKind.CustomEditorInput,
+                viewType: widget.viewType,
+                uri: toUriComponents(widget.resource.toString())
+            };
         } else if (widget instanceof ViewContainer) {
             return {
                 kind: TabInputKind.WebviewEditorInput,

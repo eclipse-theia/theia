@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { MutableChatResponseModel, ToolCallChatResponseContentImpl } from './chat-model';
+import { MarkdownChatResponseContentImpl, MutableChatResponseModel, ToolCallChatResponseContentImpl } from './chat-model';
 
 describe('MutableChatResponseModel', () => {
     describe('content change propagation', () => {
@@ -36,26 +36,44 @@ describe('MutableChatResponseModel', () => {
             expect(fireCount).to.equal(1);
         });
 
-        it('does not leak content-change listeners when content is repeatedly cleared and re-added', () => {
+        it('should not accumulate duplicate listeners when content is cleared and re-added', () => {
             const response = new MutableChatResponseModel('req-1');
             const toolCall = new ToolCallChatResponseContentImpl('tool-1', 'tool', '{}', false);
             response.response.addContent(toolCall);
 
-            // The stream parser clears and re-adds prior content (e.g. a preceding tool call) on
-            // every streamed text token. Each re-add must not accumulate another forwarding listener.
-            for (let i = 0; i < 50; i++) {
+            // Simulate AbstractStreamParsingChatAgent.addStreamResponse: for every streamed
+            // text token, the whole content is cleared and re-added, tool call included.
+            for (let i = 0; i < 10; i++) {
+                const contentBeforeMarker = response.response.content.slice(0, 1);
                 response.response.clearContent();
-                response.response.addContents([toolCall]);
+                response.response.addContents(contentBeforeMarker);
+                response.response.addContents([new MarkdownChatResponseContentImpl(`token ${i}`)]);
             }
 
             let fireCount = 0;
             response.onDidChange(() => { fireCount++; });
 
-            toolCall.updateResult('partial');
+            toolCall.updateResult('result');
 
-            // A single content change must propagate exactly once regardless of how many times the
-            // content was re-added; otherwise each re-add leaks another listener on the content.
+            // A single tool call change must fire exactly once, no matter how often the
+            // content array was rebuilt during streaming (see #17858).
             expect(fireCount).to.equal(1);
+        });
+
+        it('should stop propagating changes of content that was cleared and not re-added', () => {
+            const response = new MutableChatResponseModel('req-1');
+            const toolCall = new ToolCallChatResponseContentImpl('tool-1', 'tool', '{}', false);
+            response.response.addContent(toolCall);
+            response.response.clearContent();
+
+            let fireCount = 0;
+            response.onDidChange(() => { fireCount++; });
+
+            toolCall.updateResult('result');
+
+            // Content that is no longer part of the response must not trigger response changes
+            // (and with that auto-save) anymore.
+            expect(fireCount).to.equal(0);
         });
     });
 

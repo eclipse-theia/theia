@@ -63,6 +63,7 @@ export class LSToolRenderer implements ChatResponsePartRenderer<ToolCallChatResp
                 workspaceService={this.workspaceService}
                 labelProvider={this.labelProvider}
                 editorManager={this.editorManager}
+                logger={this.logger}
             />;
         } catch (error) {
             this.logger.warn('Failed to parse LS tool input:', error);
@@ -76,7 +77,8 @@ const LSToolComponent: React.FC<{
     workspaceService: WorkspaceService;
     labelProvider: LabelProvider;
     editorManager: EditorManager;
-}> = ({ input, workspaceService, labelProvider, editorManager }) => {
+    logger: ILogger;
+}> = ({ input, workspaceService, labelProvider, editorManager, logger }) => {
     const getDirectoryName = (dirPath: string): string => dirPath.split('/').pop() || dirPath;
     const getWorkspaceRelativePath = async (dirPath: string): Promise<string> => {
         try {
@@ -94,7 +96,7 @@ const LSToolComponent: React.FC<{
             // Note: This might need to be adjusted based on how directories are opened in Theia
             await editorManager.open(uri);
         } catch (error) {
-            console.error('Failed to open directory:', error);
+            logger.error('Failed to open directory:', error);
         }
     };
 

@@ -18,12 +18,12 @@ import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-res
 import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { codicon } from '@theia/core/lib/browser';
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
 import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
-import { nls } from '@theia/core';
+import { nls, ILogger } from '@theia/core';
 
 interface TodoItem {
     id: string;
@@ -77,6 +77,9 @@ class TodoWriteRegistry {
 @injectable()
 export class TodoWriteRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
 
+    @inject(ILogger) @named('ai-claude-code:TodoWriteRenderer')
+    protected readonly logger: ILogger;
+
     canHandle(response: ChatResponseContent): number {
         if (ClaudeCodeToolCallChatResponseContent.is(response) && response.name === 'TodoWrite') {
             return 15; // Higher than default ToolCallPartRenderer (10)
@@ -89,7 +92,7 @@ export class TodoWriteRenderer implements ChatResponsePartRenderer<ToolCallChatR
             const input = JSON.parse(response.arguments || '{}') as TodoWriteInput;
             return <TodoListComponent todos={input.todos || []} sessionId={parentNode.sessionId} />;
         } catch (error) {
-            console.warn('Failed to parse TodoWrite input:', error);
+            this.logger.warn('Failed to parse TodoWrite input:', error);
             return <div className="claude-code-tool todo-list-error">{nls.localize('theia/ai/claude-code/failedToParseTodoListData', 'Failed to parse todo list data')}</div>;
         }
     }

@@ -27,6 +27,8 @@ import {
     LanguageModelTextResponse,
     ReasoningApi,
     ReasoningSupport,
+    resolveCompactionTokenThreshold,
+    resolveServerSideCompaction,
     ServerToolCallResponsePart,
     ServerToolDescriptor,
     ToolCallContent,
@@ -35,13 +37,13 @@ import {
     createToolCallError,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken, isArray } from '@theia/core';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { CancellationToken, ILogger, isArray, nls } from '@theia/core';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlockParam, ToolResultBlockParam } from '@anthropic-ai/sdk/resources';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { anthropicReasoningFor } from './anthropic-reasoning';
-import { ANTHROPIC_WEB_FETCH, ANTHROPIC_WEB_SEARCH } from './anthropic-server-tools';
+import { ANTHROPIC_TOOL_SEARCH, ANTHROPIC_TOOL_SEARCH_NATIVE, ANTHROPIC_WEB_FETCH, ANTHROPIC_WEB_SEARCH } from './anthropic-server-tools';
 
 export const DEFAULT_MAX_TOKENS = 4096;
 
@@ -59,10 +61,41 @@ interface ToolCallback {
     args: string;
 }
 
-const createMessageContent = (message: LanguageModelMessage): MessageParam['content'] => {
-    if (LanguageModelMessage.isTextMessage(message)) {
+/**
+ * Anthropic rejects replayed thinking blocks without content ('each thinking block must contain thinking')
+ * or without a signature. Both can reach us from API-compatible endpoints that omit thinking text or
+ * signature deltas, and from streams cancelled before the signature arrived.
+ */
+const isReplayableThinking = (thinking: string | undefined, signature: string | undefined): boolean =>
+    !!thinking?.trim() && !!signature;
+
+/** The tool loop replays streamed messages raw (bypassing {@link createMessageContent}); drop thinking blocks Anthropic would reject. */
+const dropUnreplayableThinking = (content: Message['content']): Message['content'] =>
+    content.filter(block => {
+        if (block.type === 'thinking' && !isReplayableThinking(block.thinking, block.signature)) {
+            console.debug('Anthropic: dropping thinking block from tool loop replay that cannot be replayed (missing thinking text or signature)');
+            return false;
+        }
+        return true;
+    });
+
+const createMessageContent = (message: LanguageModelMessage, compactionEnabled: boolean): MessageParam['content'] => {
+    if (LanguageModelMessage.isCompactionMessage(message)) {
+        // Only replay our own provider's compaction blocks, and only when the request will use the beta endpoint.
+        // Returning [] for a skipped/foreign/disabled compaction message lets the surrounding real history carry the context.
+        if (compactionEnabled && message.provider === 'anthropic') {
+            const data = message.data as { content: string | null; encrypted_content: string | null };
+            return [{ type: 'compaction', content: data.content, encrypted_content: data.encrypted_content }] as unknown as MessageParam['content'];
+        }
+        return [];
+    } else if (LanguageModelMessage.isTextMessage(message)) {
         return [{ type: 'text', text: message.text }];
     } else if (LanguageModelMessage.isThinkingMessage(message)) {
+        // Returning [] drops an unreplayable thinking block so the surrounding history still replays.
+        if (!isReplayableThinking(message.thinking, message.signature)) {
+            console.debug('Anthropic: dropping thinking block from history that cannot be replayed (missing thinking text or signature)');
+            return [];
+        }
         return [{ signature: message.signature, thinking: message.thinking, type: 'thinking' }];
     } else if (LanguageModelMessage.isToolUseMessage(message)) {
         return [{ id: message.id, input: message.input, name: message.name, type: 'tool_use' }];
@@ -136,11 +169,14 @@ function isNonThinkingParam(
 /**
  * Transforms Theia language model messages to Anthropic API format
  * @param messages Array of LanguageModelRequestMessage to transform
+ * @param addCacheControl whether to add prompt-cache control to the system message
+ * @param compactionEnabled whether the request will use the beta endpoint, so compaction replay blocks may be emitted
  * @returns Object containing transformed messages and optional system message
  */
-function transformToAnthropicParams(
+export function transformToAnthropicParams(
     messages: readonly LanguageModelMessage[],
-    addCacheControl: boolean = true
+    addCacheControl: boolean = true,
+    compactionEnabled: boolean = false
 ): { messages: MessageParam[]; systemMessage?: Anthropic.Messages.TextBlockParam[] } {
     // Extract the system message (if any), as it is a separate parameter in the Anthropic API.
     const systemMessageObj = messages.find(message => message.actor === 'system');
@@ -150,10 +186,15 @@ function transformToAnthropicParams(
 
     const convertedMessages = messages
         .filter(message => message.actor !== 'system')
+        // The deferred-tool search is surfaced to the UI (see stream handling) but is executed by Anthropic
+        // internally; it must not be echoed back as history, so drop it before replay.
+        .filter(message => !(LanguageModelMessage.isServerToolUseMessage(message) && message.name === ANTHROPIC_TOOL_SEARCH))
         .map(message => ({
             role: toAnthropicRole(message),
-            content: createMessageContent(message)
-        }));
+            content: createMessageContent(message, compactionEnabled)
+        }))
+        // Drop messages whose content converted to empty (e.g. a skipped compaction message), so no empty turns are sent.
+        .filter(message => !Array.isArray(message.content) || message.content.length > 0);
 
     return {
         messages: mergeConsecutiveSameRoleMessages(convertedMessages),
@@ -246,6 +287,8 @@ function formatToolCallResult(result: ToolCallResult): ToolResultBlockParam['con
                 return { type: 'text', text: content.text };
             } else if (content.type === 'image') {
                 return { type: 'image', source: { type: 'base64', data: content.base64data, media_type: mimeTypeToMediaType(content.mimeType) } };
+            } else if (content.type === 'html') {
+                return { type: 'text', text: `[interactive app displayed to the user${content.title ? ': ' + content.title : ''}]` };
             } else {
                 return { type: 'text', text: content.data };
             }
@@ -279,6 +322,9 @@ export interface AnthropicModelParams {
     supportsXHighEffort?: boolean;
     maxInputTokens?: number;
     serverTools?: ServerToolDescriptor[];
+    serverSideCompactionSupport?: boolean;
+    serverSideCompactionEnabledByDefault?: boolean;
+    serverSideCompactionTokenThresholdByDefault?: number;
 }
 
 export const AnthropicModelParams = Symbol('AnthropicModelParams');
@@ -333,6 +379,9 @@ export class AnthropicModel implements LanguageModel {
     supportsXHighEffort?: boolean;
     maxInputTokens?: number;
     serverTools?: ServerToolDescriptor[];
+    serverSideCompactionSupport: boolean;
+    serverSideCompactionEnabledByDefault: boolean;
+    serverSideCompactionTokenThresholdByDefault?: number;
 
     /** Provider identifier, used to key per-provider settings (e.g. server tool selections) and the capabilities UI. */
     readonly vendor = 'anthropic';
@@ -342,6 +391,9 @@ export class AnthropicModel implements LanguageModel {
 
     @inject(ToolCallExecutor)
     protected readonly toolCallExecutor: ToolCallExecutor;
+
+    @inject(ILogger) @named('ai-anthropic:AnthropicModel')
+    protected readonly logger: ILogger;
 
     @postConstruct()
     protected init(): void {
@@ -361,6 +413,9 @@ export class AnthropicModel implements LanguageModel {
         this.supportsXHighEffort = params.supportsXHighEffort;
         this.maxInputTokens = params.maxInputTokens;
         this.serverTools = params.serverTools;
+        this.serverSideCompactionSupport = params.serverSideCompactionSupport ?? false;
+        this.serverSideCompactionEnabledByDefault = params.serverSideCompactionEnabledByDefault ?? false;
+        this.serverSideCompactionTokenThresholdByDefault = params.serverSideCompactionTokenThresholdByDefault;
     }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
@@ -368,6 +423,31 @@ export class AnthropicModel implements LanguageModel {
             ...request.settings,
             ...anthropicReasoningFor(request.reasoning?.level, this.reasoningApi, this.supportsXHighEffort)
         };
+    }
+
+    /** Resolves whether this request will route through the Anthropic Beta Messages API for server-side compaction. */
+    protected useServerSideCompaction(request: LanguageModelRequest): boolean {
+        return resolveServerSideCompaction(this.serverSideCompactionSupport, this.serverSideCompactionEnabledByDefault, request.compaction);
+    }
+
+    /**
+     * Augments the base message-create params with the beta flag and context-management edit when server-side compaction
+     * is enabled for the given request. When disabled, the params are returned unchanged so the default (stable) path is byte-for-byte identical.
+     */
+    protected applyCompactionParams<T extends Anthropic.MessageCreateParams>(params: T, request: LanguageModelRequest): T {
+        if (!this.useServerSideCompaction(request)) {
+            return params;
+        }
+        const betaParams = params as T & Anthropic.Beta.Messages.MessageCreateParams;
+        const tokenThreshold = resolveCompactionTokenThreshold(this.serverSideCompactionTokenThresholdByDefault, request.compaction);
+        betaParams.betas = ['compact-2026-01-12'];
+        betaParams.context_management = {
+            edits: [{
+                type: 'compact_20260112',
+                ...(tokenThreshold !== undefined && { trigger: { type: 'input_tokens', value: tokenThreshold } })
+            }]
+        };
+        return betaParams;
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -395,7 +475,8 @@ export class AnthropicModel implements LanguageModel {
         toolMessages?: readonly Anthropic.Messages.MessageParam[]
     ): Promise<LanguageModelStreamResponse> {
         const settings = this.getSettings(request);
-        const { messages, systemMessage } = transformToAnthropicParams(request.messages, this.useCaching);
+        const useCompaction = this.useServerSideCompaction(request);
+        const { messages, systemMessage } = transformToAnthropicParams(request.messages, this.useCaching, useCompaction);
 
         let anthropicMessages = [...messages, ...(toolMessages ?? [])];
 
@@ -405,13 +486,13 @@ export class AnthropicModel implements LanguageModel {
 
         const tools = this.createTools(request);
         if (request.deferredToolIds?.length && tools) {
-            console.debug('Anthropic: converted tools for deferred loading:', tools.map(tool => ({
+            this.logger.debug('Anthropic: converted tools for deferred loading:', tools.map(tool => ({
                 name: 'name' in tool ? tool.name : undefined,
                 type: 'type' in tool ? tool.type : 'custom',
                 defer_loading: 'defer_loading' in tool ? tool.defer_loading : undefined
             })));
         }
-        const params: Anthropic.MessageCreateParams = {
+        const params: Anthropic.MessageCreateParams = this.applyCompactionParams({
             max_tokens: this.maxTokens,
             messages: anthropicMessages,
             tools,
@@ -419,8 +500,14 @@ export class AnthropicModel implements LanguageModel {
             model: this.model,
             ...(systemMessage && { system: systemMessage }),
             ...settings
-        };
-        const stream = anthropic.messages.stream(params, { maxRetries: this.maxRetries });
+        }, request);
+        // The beta message params are a structural superset of the stable ones for the content we build, so the cast at the beta call boundary is safe.
+        // The beta stream is likewise structurally compatible with the stable MessageStream: we narrow compaction events via explicit casts in the
+        // loop below, and casting the stream here keeps the iterator and lifecycle handling identical on both paths.
+        const stream = useCompaction
+            ? anthropic.beta.messages.stream(params as unknown as Anthropic.Beta.Messages.MessageCreateParamsStreaming,
+                { maxRetries: this.maxRetries }) as unknown as ReturnType<Anthropic['messages']['stream']>
+            : anthropic.messages.stream(params, { maxRetries: this.maxRetries });
 
         cancellationToken?.onCancellationRequested(() => {
             stream.abort();
@@ -439,6 +526,8 @@ export class AnthropicModel implements LanguageModel {
                 let currentMessage: Message | undefined = undefined;
                 let currentOutputTokens: number = 0;
                 let usageYielded = false;
+                // Accumulator for a streamed compaction block (beta path only): content + opaque encrypted_content across start + deltas.
+                let compaction: { index: number; content: string | null; encrypted_content: string | null } | undefined;
 
                 try {
                     for await (const event of stream) {
@@ -451,19 +540,22 @@ export class AnthropicModel implements LanguageModel {
                             if (contentBlock.type === 'text') {
                                 yield { content: contentBlock.text };
                             }
+                            // Compaction blocks only occur on the beta path; guard via type narrowing.
+                            if (contentBlock.type === 'compaction') {
+                                const block = contentBlock as Anthropic.Beta.Messages.BetaCompactionBlock;
+                                compaction = { index: event.index, content: block.content, encrypted_content: block.encrypted_content };
+                            }
                             if (contentBlock.type === 'tool_use') {
                                 toolCall = { name: contentBlock.name!, args: '', id: contentBlock.id!, index: event.index };
                                 yield { tool_calls: [{ finished: false, id: toolCall.id, function: { name: toolCall.name, arguments: toolCall.args } }] };
                             }
                             if (contentBlock.type === 'server_tool_use') {
-                                // The deferred-tool search invocation also arrives as `server_tool_use`; it is handled by Anthropic
-                                // internally and must not be surfaced to the UI as a server tool call.
-                                if (contentBlock.name === 'tool_search_tool_bm25') {
-                                    console.debug('Anthropic: received deferred tool stream block:', contentBlock);
-                                } else {
-                                    serverToolCall = { name: contentBlock.name, args: '', id: contentBlock.id, index: event.index };
-                                    yield { server_tool_calls: [{ id: serverToolCall.id, name: serverToolCall.name, arguments: '', finished: false }] };
-                                }
+                                // The deferred-tool search invocation also arrives as `server_tool_use` (native name
+                                // `tool_search_tool_bm25`); surface it under a stable, user-facing name so the UI shows the
+                                // search running. Anthropic executes it on its own infrastructure, like other server tools.
+                                const name = contentBlock.name === ANTHROPIC_TOOL_SEARCH_NATIVE ? ANTHROPIC_TOOL_SEARCH : contentBlock.name;
+                                serverToolCall = { name, args: '', id: contentBlock.id, index: event.index };
+                                yield { server_tool_calls: [{ id: serverToolCall.id, name: serverToolCall.name, arguments: '', finished: false }] };
                             }
                             if (contentBlock.type === 'web_fetch_tool_result') {
                                 // Result blocks are delivered complete (not streamed). Surface them as a finished server tool call.
@@ -484,8 +576,21 @@ export class AnthropicModel implements LanguageModel {
                                 }
                                 yield buildServerToolResultPart(serverToolCalls, contentBlock.tool_use_id, ANTHROPIC_WEB_SEARCH, result, searchContent);
                             }
-                            if ((contentBlock.type as string) === 'tool_search_tool_result') {
-                                console.debug('Anthropic: received deferred tool stream block:', contentBlock);
+                            if (contentBlock.type === 'tool_search_tool_result') {
+                                // Result blocks are delivered complete (not streamed). Finish the search server tool call so
+                                // the UI replaces the spinner with a summary.
+                                const searchContent = contentBlock.content;
+                                let result: ToolCallContent;
+                                if (searchContent.type === 'tool_search_tool_search_result') {
+                                    const found = searchContent.tool_references.length;
+                                    const text = found === 1
+                                        ? nls.localize('theia/ai/anthropic/toolSearch/foundOne', 'Found 1 tool.')
+                                        : nls.localize('theia/ai/anthropic/toolSearch/found', 'Found {0} tools.', found);
+                                    result = { content: [{ type: 'text', text }] };
+                                } else {
+                                    result = createToolCallError(nls.localize('theia/ai/anthropic/toolSearch/failed', 'Tool search failed: {0}', searchContent.error_code));
+                                }
+                                yield buildServerToolResultPart(serverToolCalls, contentBlock.tool_use_id, ANTHROPIC_TOOL_SEARCH, result, searchContent);
                             }
                         } else if (event.type === 'content_block_delta') {
                             const delta = event.delta;
@@ -497,6 +602,11 @@ export class AnthropicModel implements LanguageModel {
                             }
                             if (delta.type === 'text_delta') {
                                 yield { content: delta.text };
+                            }
+                            if (compaction && delta.type === 'compaction_delta') {
+                                const compactionDelta = delta as Anthropic.Beta.Messages.BetaCompactionContentBlockDelta;
+                                compaction.content = compactionDelta.content;
+                                compaction.encrypted_content = compactionDelta.encrypted_content;
                             }
                             if (toolCall && delta.type === 'input_json_delta') {
                                 toolCall.args += delta.partial_json;
@@ -514,6 +624,11 @@ export class AnthropicModel implements LanguageModel {
                             if (serverToolCall && serverToolCall.index === event.index) {
                                 serverToolCalls.push(serverToolCall);
                                 serverToolCall = undefined;
+                            }
+                            if (compaction && compaction.index === event.index) {
+                                const data = { content: compaction.content, encrypted_content: compaction.encrypted_content };
+                                yield { compaction: { provider: 'anthropic', data, summary: compaction.content ?? undefined } };
+                                compaction = undefined;
                             }
                         } else if (event.type === 'message_delta') {
                             currentOutputTokens = event.usage.output_tokens;
@@ -574,7 +689,8 @@ export class AnthropicModel implements LanguageModel {
                         cancellationToken,
                         [
                             ...(toolMessages ?? []),
-                            ...currentMessages.map(m => ({ role: m.role, content: m.content })),
+                            ...currentMessages.map(m => ({ role: m.role, content: dropUnreplayableThinking(m.content) }))
+                                .filter(m => m.content.length > 0),
                             toolResponseMessage
                         ]
                     );
@@ -586,7 +702,7 @@ export class AnthropicModel implements LanguageModel {
         };
 
         stream.on('error', (error: Error) => {
-            console.error('Error in Anthropic streaming:', error);
+            this.logger.error('Error in Anthropic streaming:', error);
         });
 
         return { stream: asyncIterator };
@@ -602,8 +718,8 @@ export class AnthropicModel implements LanguageModel {
         } as Anthropic.Messages.Tool));
         if (deferred.size > 0) {
             tools.push({
-                type: 'tool_search_tool_bm25',
-                name: 'tool_search_tool_bm25'
+                type: ANTHROPIC_TOOL_SEARCH_NATIVE,
+                name: ANTHROPIC_TOOL_SEARCH_NATIVE
             });
         }
         // Cache the client tools as before; server tools are appended afterwards.
@@ -632,18 +748,22 @@ export class AnthropicModel implements LanguageModel {
         request: UserRequest
     ): Promise<LanguageModelTextResponse> {
         const settings = this.getSettings(request);
-        const { messages, systemMessage } = transformToAnthropicParams(request.messages);
+        const useCompaction = this.useServerSideCompaction(request);
+        const { messages, systemMessage } = transformToAnthropicParams(request.messages, true, useCompaction);
 
-        const params: Anthropic.MessageCreateParams = {
+        const params: Anthropic.MessageCreateParams = this.applyCompactionParams({
             max_tokens: this.maxTokens,
             messages,
             model: this.model,
             ...(systemMessage && { system: systemMessage }),
             ...settings,
-        };
+        }, request);
 
         try {
-            const response = await anthropic.messages.create(params);
+            // The beta message params are a structural superset of the stable ones, so the cast at the beta call boundary is safe.
+            const response = useCompaction
+                ? await anthropic.beta.messages.create(params as Anthropic.Beta.Messages.MessageCreateParamsNonStreaming)
+                : await anthropic.messages.create(params);
             const textContent = response.content[0];
 
             const usage = response.usage ? {

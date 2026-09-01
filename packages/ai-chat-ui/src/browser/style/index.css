@@ -46,46 +46,30 @@ div:last-child>.theia-ChatNode {
   font-size: 13px;
   font-weight: 600;
   margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Keep the agent name for as long as possible: badges shrink first, the name only truncates as a
+     last resort (after the badges), and the status never shrinks. */
+  flex-shrink: 1;
 }
 
 .theia-ChatNodeHeader .theia-ChatContentInProgress {
-  color: var(--theia-disabledForeground);
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  /* Always keep the live status visible and anchored to the right, whatever the name/badge length. */
+  margin-left: auto;
+  flex-shrink: 0;
   white-space: nowrap;
+  color: var(--theia-progressBar-background);
 }
 
 .theia-ChatNodeHeader .theia-ChatContentInProgress-Cancel {
   position: absolute;
   z-index: 999;
   right: 20px;
-}
-
-@keyframes dots {
-
-  0%,
-  20% {
-    content: "";
-  }
-
-  40% {
-    content: ".";
-  }
-
-  60% {
-    content: "..";
-  }
-
-  80%,
-  100% {
-    content: "...";
-  }
-}
-
-.theia-ChatNodeHeader .theia-ChatContentInProgress::after {
-  content: "";
-  animation: dots 1s steps(1, end) infinite;
-  display: inline-block;
-  width: 3ch;
-  text-align: left;
 }
 
 .theia-ChatNode .codicon {
@@ -96,11 +80,13 @@ div:last-child>.theia-ChatNode {
   font-weight: 600;
 }
 
-.theia-PromptVariantBadge {
+/* Prompt variant and model badges share a subtle look; only an edited variant is emphasized. */
+.theia-PromptVariantBadge,
+.theia-ModelBadge {
   padding: 0 calc(var(--theia-ui-padding) * 2 / 3);
   font-size: var(--theia-ui-font-size0);
-  color: var(--theia-badge-foreground);
-  background-color: var(--theia-badge-background);
+  color: var(--theia-descriptionForeground);
+  background-color: var(--theia-editor-inactiveSelectionBackground);
   border-radius: calc(var(--theia-ui-padding) * 2 / 3);
   white-space: nowrap;
   user-select: none;
@@ -110,6 +96,17 @@ div:last-child>.theia-ChatNode {
   color: var(--theia-editorWarning-foreground);
   background-color: var(--theia-inputValidation-warningBackground);
   border: 1px solid var(--theia-editorWarning-foreground);
+}
+
+/* In the crowded header the badges may be long; let both ellipsize together (with equal priority),
+   before the agent name and without pushing the live status out. The full text stays available via
+   each badge's hover tooltip. */
+.theia-ChatNodeHeader .theia-PromptVariantBadge,
+.theia-ChatNodeHeader .theia-ModelBadge {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 100;
 }
 
 .theia-ChatNode .theia-ChatNodeToolbar {
@@ -673,10 +670,14 @@ div:last-child>.theia-ChatNode {
 .theia-ChatInputOptions .theia-ChatInputOptions-left {
   order: -1;
   gap: calc(var(--theia-ui-padding) / 3);
+  /* Let the group shrink so the model selector can give way to the right group. */
+  min-width: 0;
 }
 
 .theia-ChatInputOptions .theia-ChatInputOptions-right {
   margin-right: calc(var(--theia-ui-padding) * 4 / 3);
+  /* Keep the token usage and send/stop button fully visible. */
+  flex-shrink: 0;
 }
 
 .theia-ChatInputOptions .option {
@@ -687,6 +688,8 @@ div:last-child>.theia-ChatNode {
   justify-content: space-between;
   align-items: center;
   gap: calc(var(--theia-ui-padding) / 3);
+  /* Keep icon buttons at their natural size so icon and label never overlap. */
+  flex-shrink: 0;
   box-sizing: border-box;
   user-select: none;
   background-repeat: no-repeat;
@@ -735,7 +738,7 @@ div:last-child>.theia-ChatNode {
 }
 
 /* Anchor for the off-level slash overlay drawn via ::after. */
-.theia-ChatInput-ReasoningSelector.theia-select-component {
+.theia-ReasoningLevelSelector.theia-select-component {
   position: relative;
 }
 
@@ -763,12 +766,83 @@ div:last-child>.theia-ChatNode {
   pointer-events: none;
 }
 
-/* Inject a leading lightbulb icon inside the reasoning selector so it shares the dropdown's
-   click area, hover/focus styles, and visual bounds (no DOM gap, single control). Sized to match
-   the toolbar's other codicons (e.g. capabilities wrench) rather than the small chevron.
+/* Wrapper span is the flex item in the options row, so it (not the inner select) carries the shrink
+   behaviour; otherwise the inner nowrap label keeps it at full width. Sizes to content (so "Default"
+   sits snug to the chevron) up to max-width, then shrinks and ellipsizes the label for long names. */
+.theia-ChatInput-ModelSelector-container {
+  display: flex;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 200px;
+}
+
+/* Per-session model selector: shares the compact selector styling. */
+.theia-ChatInput-ModelSelector.theia-select-component {
+  min-width: 0;
+  width: 100%;
+  min-height: unset;
+  overflow: hidden;
+  height: calc(var(--theia-icon-size) + var(--theia-ui-padding) - 1px);
+  padding: 0 calc(var(--theia-ui-padding) * 2 / 3);
+  border: var(--theia-border-width) solid transparent;
+  box-sizing: border-box;
+  background: var(--theia-editor-background);
+  font-family: var(--theia-ui-font-family);
+  font-size: var(--theia-content-font-size);
+  border-radius: calc(var(--theia-ui-padding) * 5 / 6);
+  outline: none;
+}
+
+.theia-ChatInput-ModelSelector .theia-select-component-chevron {
+  font-size: var(--theia-ui-font-size1);
+  margin-left: calc(var(--theia-ui-padding) / 3);
+  /* Keep the arrow visible even when the label is fully ellipsized. */
+  flex-shrink: 0;
+}
+
+.theia-ChatInput-ModelSelector.theia-select-component:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-ChatInput-ModelSelector.theia-select-component:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
+/* Indicate an active per-session model override with accent-colored text rather than a focus-like border. */
+.theia-ChatInput-ModelSelector.session-override .theia-select-component-label {
+  color: var(--theia-textLink-foreground);
+}
+
+/* The shown model is unavailable (a disabled selection): flag it at a glance without opening the
+   dropdown. Keyed off the displayed option, so navigating to a valid model clears it. */
+.theia-ChatInput-ModelSelector.theia-select-component-selection-disabled .theia-select-component-label {
+  color: var(--theia-errorForeground);
+  text-decoration: line-through;
+}
+
+.theia-ChatInput-ModelSelector.disabled {
+  opacity: var(--theia-mod-disabled-opacity);
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Reasoning level glyphs, shared by the chat input's selector and the AI Configuration view's agent
+   detail so a level looks the same wherever it is set. Keyed off `.theia-ReasoningLevelSelector` plus
+   `reasoning-level-<level>`; the chat toolbar's own sizing stays on `.theia-ChatInput-ReasoningSelector`.
+
+   Injected inside the select so the icon shares the dropdown's click area, hover/focus styles, and
+   visual bounds (no DOM gap, single control). Sized to match the toolbar's other codicons.
    The base glyph is the filled lightbulb (\ea61); per-level overrides below swap glyph, opacity
    or color to give a visual cue that scales with the chosen reasoning intensity. */
-.theia-ChatInput-ReasoningSelector.theia-select-component::before {
+.theia-ReasoningLevelSelector.theia-select-component {
+  /* Left inset of the glyph, i.e. the control's own left padding. The off-level slash is centered over the
+     glyph and has no way to read that padding, so each consumer states it here; the default matches the chat
+     toolbar's compact padding. Without this the slash drifts off the bulb in any differently padded host. */
+  --theia-reasoning-glyph-inset: calc(var(--theia-ui-padding) * 2 / 3);
+}
+
+.theia-ReasoningLevelSelector.theia-select-component::before {
   font-family: codicon;
   content: '\ea61';
   /* codicon-lightbulb (filled) — default for low/medium/high */
@@ -780,17 +854,17 @@ div:last-child>.theia-ChatNode {
 }
 
 /* Off: empty bulb glyph + CSS-drawn diagonal slash overlay (mimics MDI's lightbulb-off). */
-.theia-ChatInput-ReasoningSelector.reasoning-level-off::before {
+.theia-ReasoningLevelSelector.reasoning-level-off::before {
   content: '\ec40';
   /* codicon-lightbulb-empty */
   opacity: 0.85;
 }
 
-.theia-ChatInput-ReasoningSelector.reasoning-level-off::after {
+.theia-ReasoningLevelSelector.reasoning-level-off::after {
   content: '';
   position: absolute;
-  /* Center over the ::before icon area: padding-left + half icon width. */
-  left: calc(var(--theia-ui-padding) * 2 / 3 + var(--theia-icon-size) / 2);
+  /* Center over the ::before icon area: the control's left padding + half the icon width. */
+  left: calc(var(--theia-reasoning-glyph-inset) + var(--theia-icon-size) / 2);
   top: 50%;
   width: calc(var(--theia-icon-size) * 0.95);
   height: 1.5px;
@@ -804,29 +878,29 @@ div:last-child>.theia-ChatNode {
 /* Minimal: empty (outline only) bulb at low opacity — "on, but barely".
    Lower opacity than `low` so the brightness order matches the level order:
    the crisper outline at full opacity would otherwise read brighter than a filled bulb at 0.55. */
-.theia-ChatInput-ReasoningSelector.reasoning-level-minimal::before {
+.theia-ReasoningLevelSelector.reasoning-level-minimal::before {
   content: '\ec40';
   /* codicon-lightbulb-empty */
   opacity: 0.5;
 }
 
 /* Low: filled bulb, perceptibly more present than minimal. */
-.theia-ChatInput-ReasoningSelector.reasoning-level-low::before {
+.theia-ReasoningLevelSelector.reasoning-level-low::before {
   opacity: 0.7;
 }
 
 /* Medium: filled bulb, moderately bright. */
-.theia-ChatInput-ReasoningSelector.reasoning-level-medium::before {
+.theia-ReasoningLevelSelector.reasoning-level-medium::before {
   opacity: 0.9;
 }
 
 /* High: filled bulb at full opacity, tinted with the warning foreground (warm/yellow). */
-.theia-ChatInput-ReasoningSelector.reasoning-level-high::before {
+.theia-ReasoningLevelSelector.reasoning-level-high::before {
   color: var(--theia-editorWarning-foreground);
 }
 
 /* Auto: lightbulb-sparkle — "the model decides automatically". */
-.theia-ChatInput-ReasoningSelector.reasoning-level-auto::before {
+.theia-ReasoningLevelSelector.reasoning-level-auto::before {
   content: '\ec1f';
   /* codicon-lightbulb-sparkle */
 }
@@ -1393,13 +1467,21 @@ details.theia-tool-confirmation-args>summary::marker {
   color: var(--theia-disabledForeground);
 }
 
-.session-settings-timeout-container input[type="number"] {
+.session-settings-timeout-container input[type="number"],
+.session-settings-compaction-threshold-container input[type="number"] {
   width: 100px;
   padding: 4px 8px;
   border: 1px solid var(--theia-input-border);
   border-radius: 4px;
   background-color: var(--theia-input-background);
   color: var(--theia-input-foreground);
+}
+
+.session-settings-compaction-threshold-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .session-settings-timeout-container input[type="number"]:disabled {
@@ -1619,6 +1701,76 @@ details.theia-tool-confirmation-args>summary::marker {
   opacity: 1;
   background: var(--theia-button-background, #007acc);
   color: var(--theia-button-foreground, #fff);
+}
+
+.theia-blocked-resource-wrapper {
+  display: inline-flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) / 2);
+  max-width: 100%;
+}
+
+.theia-blocked-resource {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: calc(var(--theia-ui-padding) * 2 / 3) var(--theia-ui-padding);
+  border: var(--theia-border-width) solid var(--theia-input-border, var(--theia-sideBarSectionHeader-border));
+  border-radius: 4px;
+  background-color: var(--theia-editorWidget-background);
+  color: var(--theia-foreground);
+  vertical-align: middle;
+}
+
+.theia-blocked-resource-icon {
+  flex: 0 0 auto;
+  color: var(--theia-editorWarning-foreground);
+}
+
+.theia-blocked-resource-label {
+  min-width: 0;
+}
+
+.theia-blocked-resource-details {
+  min-width: 0;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-blocked-resource-details summary {
+  cursor: pointer;
+}
+
+.theia-blocked-resource-details ul {
+  margin: 2px 0 0 0;
+  padding-left: 16px;
+}
+
+.theia-blocked-resource-details li {
+  word-break: break-all;
+}
+
+.theia-blocked-resource-url {
+
+  color: var(--theia-descriptionForeground);
+  word-break: break-all;
+}
+
+.theia-blocked-resource-allow {
+  flex: 0 0 auto;
+  padding: 2px calc(var(--theia-ui-padding) * 2);
+  border: none;
+  border-radius: 3px;
+  background-color: var(--theia-button-secondaryBackground);
+  color: var(--theia-button-secondaryForeground);
+  cursor: pointer;
+  font-family: var(--theia-ui-font-family);
+  font-size: var(--theia-ui-font-size1);
+}
+
+.theia-blocked-resource-allow:hover {
+  background-color: var(--theia-button-secondaryHoverBackground);
 }
 
 /* Unknown content styles */
@@ -2192,4 +2344,23 @@ details.theia-tool-confirmation-args>summary::marker {
   height: 75%;
   border-radius: 50%;
   background: var(--theia-editor-background);
+}
+
+.theia-ChatCompactionMarker {
+  width: 100%;
+  margin: 6px 0;
+  padding: 4px 8px;
+  border-top: 1px solid var(--theia-editorWidget-border);
+  border-bottom: 1px solid var(--theia-editorWidget-border);
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+}
+
+.theia-ChatCompactionMarker summary {
+  cursor: pointer;
+}
+
+.theia-ChatCompactionMarker-summary {
+  margin-top: 4px;
+  white-space: pre-wrap;
 }

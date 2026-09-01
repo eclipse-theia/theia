@@ -27,9 +27,13 @@ import { MCPBackendContribution } from '@theia/ai-mcp-server/lib/node/mcp-theia-
 import { MCPTestContribution } from './sample-mcp-test-contribution';
 import { SampleBackendPreferencesService, sampleBackendPreferencesServicePath } from '../common/preference-protocol';
 import { SampleBackendPreferencesBackendServiceImpl } from './sample-backend-preferences-service';
+import { TelemetrySink } from '@theia/telemetry/lib/node';
+import { ConsoleTelemetrySink } from './telemetry-sample/console-telemetry-sink';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(SampleBackendPreferencesBackendServiceImpl).toSelf().inSingletonScope();
+    bind(ConsoleTelemetrySink).toSelf().inSingletonScope();
+    bind(TelemetrySink).toService(ConsoleTelemetrySink);
     bind(MCPBackendContribution).to(MCPTestContribution).inSingletonScope();
     bind(SampleBackendPreferencesService).toService(SampleBackendPreferencesBackendServiceImpl);
     bind(ConnectionHandler).toDynamicValue(ctx =>

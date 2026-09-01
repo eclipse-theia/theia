@@ -55,7 +55,7 @@ export class WebsocketEndpoint implements BackendApplicationContribution {
                 this.wsRequestValidator.allowWsUpgrade(req).then(
                     allowed => callback(noError, allowed),
                     error => {
-                        console.error('Error during WebSocket allowRequest validation:', error);
+                        this.logger.error('Error during WebSocket allowRequest validation:', error);
                         callback(error?.message ?? 'Validation error', false);
                     }
                 );

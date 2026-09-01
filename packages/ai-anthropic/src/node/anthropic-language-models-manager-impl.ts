@@ -16,12 +16,13 @@
 
 import { LanguageModelRegistry, LanguageModelStatus, ReasoningApi, ReasoningSupport } from '@theia/ai-core';
 import { createProxyFetch, getProxyUrl } from '@theia/ai-core/lib/node';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { ModelInfo } from '@anthropic-ai/sdk/resources/models';
 import { AnthropicLanguageModelFactory, AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
 import { ANTHROPIC_SERVER_TOOLS } from './anthropic-server-tools';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
+import { ILogger } from '@theia/core';
 
 const ANTHROPIC_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
@@ -34,6 +35,7 @@ interface ResolvedModelMetadata {
     reasoningSupport?: ReasoningSupport;
     reasoningApi?: ReasoningApi;
     supportsXHighEffort?: boolean;
+    serverSideCompactionSupport: boolean;
 }
 
 @injectable()
@@ -50,6 +52,9 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
 
     @inject(AnthropicLanguageModelFactory)
     protected readonly anthropicLanguageModelFactory: AnthropicLanguageModelFactory;
+
+    @inject(ILogger) @named('ai-anthropic:AnthropicLanguageModelsManagerImpl')
+    protected readonly logger: ILogger;
 
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.ANTHROPIC_API_KEY;
@@ -78,7 +83,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
 
         if (model) {
             if (!(model instanceof AnthropicModel)) {
-                console.warn(`Anthropic: model ${modelDescription.id} is not an Anthropic model`);
+                this.logger.warn(`Anthropic: model ${modelDescription.id} is not an Anthropic model`);
                 return;
             }
             await this.languageModelRegistry.patchLanguageModel<AnthropicModel>(modelDescription.id, {
@@ -94,7 +99,10 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 reasoningSupport: metadata.reasoningSupport,
                 reasoningApi: metadata.reasoningApi,
                 supportsXHighEffort: metadata.supportsXHighEffort,
-                maxInputTokens: metadata.maxInputTokens
+                maxInputTokens: metadata.maxInputTokens,
+                serverSideCompactionSupport: metadata.serverSideCompactionSupport,
+                serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false,
+                serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault
             });
         } else {
             this.languageModelRegistry.addLanguageModels([
@@ -113,7 +121,10 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                     reasoningApi: metadata.reasoningApi,
                     supportsXHighEffort: metadata.supportsXHighEffort,
                     maxInputTokens: metadata.maxInputTokens,
-                    serverTools: ANTHROPIC_SERVER_TOOLS
+                    serverTools: ANTHROPIC_SERVER_TOOLS,
+                    serverSideCompactionSupport: metadata.serverSideCompactionSupport,
+                    serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false,
+                    serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault
                 })
             ]);
         }
@@ -132,8 +143,29 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
             maxTokens: info?.max_tokens ?? DEFAULT_MAX_TOKENS,
             reasoningSupport: reasoningApi ? ANTHROPIC_REASONING_SUPPORT : undefined,
             reasoningApi,
-            supportsXHighEffort: this.deriveSupportsXHighEffort(info)
+            supportsXHighEffort: this.deriveSupportsXHighEffort(info),
+            serverSideCompactionSupport: this.deriveServerSideCompactionSupport(description)
         };
+    }
+
+    /**
+     * Server-side compaction (`compact_20260112`) is available on Claude Opus and Sonnet 4.6 and later.
+     * Heuristic over the model id; override to read the capability from the `/v1/models` endpoint or for custom endpoints.
+     */
+    protected deriveServerSideCompactionSupport(description: AnthropicModelDescription): boolean {
+        // The minor segment is optional: dateless major releases omit it (e.g. claude-opus-5, claude-sonnet-5).
+        const match = /(opus|sonnet)-(\d+)(?:-(\d+))?/.exec(description.model);
+        if (!match) {
+            return false;
+        }
+        const major = Number(match[2]);
+        // A 4+ digit "major" is a date-style id (e.g. claude-3-opus-20240229), not a versioned model.
+        if (major >= 1000) {
+            return false;
+        }
+        // A 4+ digit "minor" is a date suffix on a `.0` model id (e.g. claude-sonnet-4-20250514), not a minor version.
+        const minor = Number(match[3]) >= 1000 ? 0 : Number(match[3]);
+        return major > 4 || (major === 4 && minor >= 6);
     }
 
     protected async fetchModelInfo(
@@ -155,7 +187,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
             return await fetchPromise;
         } catch (error) {
             this.modelInfoCache.delete(cacheKey);
-            console.warn(`Anthropic: failed to retrieve model info for '${modelDescription.id}':`,
+            this.logger.warn(`Anthropic: failed to retrieve model info for '${modelDescription.id}':`,
                 error instanceof Error ? error.message : error);
             return undefined;
         }

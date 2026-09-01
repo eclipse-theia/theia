@@ -28,8 +28,7 @@ import { WorkspaceService, WorkspaceMetadataStorageService, WorkspaceMetadataSto
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { PreferenceService } from '@theia/core/lib/common';
 import { StorageService } from '@theia/core/lib/browser';
-import { ILogger } from '@theia/core/lib/common/logger';
-import { URI, Emitter } from '@theia/core';
+import { URI, Emitter, ILogger } from '@theia/core';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { ChatSessionIndex, ChatSessionMetadata } from '../common/chat-session-store';
 import {
@@ -63,12 +62,13 @@ describe('ChatSessionStoreImpl', () => {
     const GLOBAL_CONFIG_DIR = 'file:///__test__/mock-config';
     const DEFAULT_STORAGE_SCOPE: SessionStorageScope = 'workspace';
 
-    function createMockSessionMetadata(id: string, saveDate: number): ChatSessionMetadata {
+    function createMockSessionMetadata(id: string, saveDate: number, rootSessionId?: string): ChatSessionMetadata {
         return {
             sessionId: id,
             title: `Session ${id}`,
             saveDate,
-            location: ChatAgentLocation.Panel
+            location: ChatAgentLocation.Panel,
+            rootSessionId
         };
     }
 
@@ -154,7 +154,7 @@ describe('ChatSessionStoreImpl', () => {
         container.bind(WorkspaceMetadataStorageService).toConstantValue(mockMetadataStorageService as unknown as WorkspaceMetadataStorageService);
         container.bind(StorageService).toConstantValue(mockStorageService);
         container.bind('ChatSessionStore').toConstantValue(mockLogger);
-        container.bind(ILogger).toConstantValue(mockLogger).whenTargetNamed('ChatSessionStore');
+        container.bind(ILogger).toConstantValue(mockLogger);
 
         container.bind(ChatSessionStoreImpl).toSelf().inSingletonScope();
 
@@ -699,6 +699,65 @@ describe('ChatSessionStoreImpl', () => {
 
             // readFile should have been called twice
             expect(mockFileService.readFile.callCount).to.equal(2);
+        });
+    });
+
+    describe('rootSessionId persistence', () => {
+        const mockModel = (id: string) => ({
+            id,
+            isEmpty: () => false,
+            location: ChatAgentLocation.Panel,
+            toSerializable: () => ({
+                location: ChatAgentLocation.Panel,
+                requests: [],
+                responses: [],
+                hierarchy: { rootBranchId: '', branches: {} }
+            })
+        });
+
+        it('should include rootSessionId in the session index when updating', async () => {
+            mockPreferenceService.get.withArgs(PERSISTED_SESSION_LIMIT_PREF, 25).returns(25);
+
+            const sessions = [
+                { model: mockModel('parent-session') as never, title: 'Parent Session', saveDate: 1000, pinnedAgentId: undefined, rootSessionId: undefined },
+                { model: mockModel('child-session') as never, title: 'Child Session', saveDate: 2000, pinnedAgentId: undefined, rootSessionId: 'parent-session' }
+            ] as never[];
+
+            // Setup index file response
+            const index = { 'parent-session': { sessionId: 'parent-session', title: 'Parent Session', saveDate: 1000, location: 'panel' } };
+            mockFileService.readFile.resolves({
+                value: BinaryBuffer.fromString(JSON.stringify(index))
+            } as never);
+
+            // Access protected method via any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (chatSessionStore as any).updateIndex(sessions);
+
+            const savedIndexCall = mockFileService.writeFile.lastCall;
+            const savedIndex = JSON.parse(savedIndexCall.args[1].toString());
+            expect(savedIndex['child-session']).to.not.be.undefined;
+            expect(savedIndex['child-session'].rootSessionId).to.equal('parent-session');
+        });
+
+        it('should handle sessions without rootSessionId', async () => {
+            mockPreferenceService.get.withArgs(PERSISTED_SESSION_LIMIT_PREF, 25).returns(25);
+
+            const sessions = [
+                { model: mockModel('standalone-session') as never, title: 'Standalone Session', saveDate: 1000, pinnedAgentId: undefined, rootSessionId: undefined }
+            ] as never[];
+
+            const index = { 'standalone-session': { sessionId: 'standalone-session', title: 'Standalone Session', saveDate: 1000, location: 'panel' } };
+            mockFileService.readFile.resolves({
+                value: BinaryBuffer.fromString(JSON.stringify(index))
+            } as never);
+
+            // Access protected method via any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (chatSessionStore as any).updateIndex(sessions);
+
+            const savedIndexCall = mockFileService.writeFile.lastCall;
+            const savedIndex = JSON.parse(savedIndexCall.args[1].toString());
+            expect(savedIndex['standalone-session'].rootSessionId).to.be.undefined;
         });
     });
 

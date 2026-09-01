@@ -29,7 +29,8 @@ try { FrontendApplicationConfigProvider.set({}); } catch { /* already set by a s
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { Emitter } from '@theia/core';
+import { Emitter, ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { FuzzySearch } from '@theia/core/lib/common/fuzzy-search';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
@@ -60,8 +61,28 @@ class StubContribution implements ExtensionsSourceContribution {
     }
 }
 
+/** Minimal contribution stub for the section modes (installed / built-in / recommended). */
+class StubSectionContribution implements ExtensionsSourceContribution {
+    readonly onDidChangeEmitter = new Emitter<void>();
+    readonly onDidChange = this.onDidChangeEmitter.event;
+    constructor(
+        readonly type: string,
+        readonly displayName: string,
+        readonly searchToken: string,
+        private readonly installed: () => Promise<Iterable<TreeElement>>,
+        readonly priority = 0
+    ) { }
+    resolveInstalled(): Promise<Iterable<TreeElement>> {
+        return this.installed();
+    }
+}
+
 interface TaggedElement extends TreeElement {
     readonly id: string;
+}
+
+function makeElement(id: string): TaggedElement {
+    return { id, render: () => undefined };
 }
 
 function makeResult(id: string, searchableText: string): SearchResult {
@@ -79,9 +100,10 @@ class StubPreferenceService {
     }
 }
 
-function buildSource(contributions: ExtensionsSourceContribution[], query: string): VSXExtensionsSource {
+function buildSource(contributions: ExtensionsSourceContribution[], query: string, sectionId = VSXExtensionsSourceOptions.SEARCH_RESULT): VSXExtensionsSource {
     const container = new Container();
-    container.bind(VSXExtensionsSourceOptions).toConstantValue({ id: VSXExtensionsSourceOptions.SEARCH_RESULT });
+    container.bind(ILogger).toConstantValue(new MockLogger());
+    container.bind(VSXExtensionsSourceOptions).toConstantValue({ id: sectionId });
     container.bind(VSXExtensionsModel).toConstantValue({
         onDidChange: new Emitter<void>().event
     } as unknown as VSXExtensionsModel);
@@ -166,6 +188,20 @@ describe('VSXExtensionsSource.collectSearchResults', () => {
         expect(elements.map(e => e.id)).to.deep.equal(['mcp-1']);
     });
 
+    it('keeps the hits of the other contributions when one rejects', async () => {
+        const failing = new StubContribution('extension', 'Extensions', '@extensions', []);
+        failing.resolveSearchResults = () => { throw new Error('registry unreachable'); };
+        const working = new StubContribution('mcp-server', 'MCP Servers', '@mcp', [
+            makeResult('mcp-1', 'alpha')
+        ], 100);
+
+        const source = buildSource([failing, working], '');
+
+        const elements = [...(await source.getElements())] as TaggedElement[];
+
+        expect(elements.map(e => e.id)).to.deep.equal(['mcp-1']);
+    });
+
     it('composes @-tokens, including multiple type tokens', async () => {
         const extensions = new StubContribution('extension', 'Extensions', '@extensions', [
             makeResult('ext-1', 'ext alpha')
@@ -182,5 +218,40 @@ describe('VSXExtensionsSource.collectSearchResults', () => {
         const elements = [...(await source.getElements())] as TaggedElement[];
 
         expect(elements.map(e => e.id).sort()).to.deep.equal(['mcp-1', 'skill-1']);
+    });
+});
+
+describe('VSXExtensionsSource section entries', () => {
+
+    it('keeps the entries of the other contributions when one rejects', async () => {
+        const failing = new StubSectionContribution('extension', 'Extensions', '@extensions', () => Promise.reject(new Error('registry unreachable')));
+        const working = new StubSectionContribution('mcp-server', 'MCP Servers', '@mcp', async () => [makeElement('mcp-1')], 100);
+
+        const source = buildSource([failing, working], '', VSXExtensionsSourceOptions.INSTALLED);
+
+        const elements = [...(await source.getElements())] as TaggedElement[];
+
+        expect(elements.map(e => e.id)).to.deep.equal(['mcp-1']);
+    });
+
+    it('resolves the contributions concurrently, in priority order', async () => {
+        let markSecondStarted: () => void = () => { };
+        const secondStarted = new Promise<void>(resolve => { markSecondStarted = resolve; });
+        // The first contribution only completes once the second one has started, so this test times
+        // out if the section resolves its contributions one after the other.
+        const first = new StubSectionContribution('extension', 'Extensions', '@extensions', async () => {
+            await secondStarted;
+            return [makeElement('first')];
+        });
+        const second = new StubSectionContribution('mcp-server', 'MCP Servers', '@mcp', async () => {
+            markSecondStarted();
+            return [makeElement('second')];
+        }, 100);
+
+        const source = buildSource([first, second], '', VSXExtensionsSourceOptions.INSTALLED);
+
+        const elements = [...(await source.getElements())] as TaggedElement[];
+
+        expect(elements.map(e => e.id)).to.deep.equal(['first', 'second']);
     });
 });

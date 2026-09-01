@@ -18,12 +18,13 @@ import * as cookie from 'cookie';
 import * as crypto from 'crypto';
 import * as http from 'http';
 import express = require('express');
-import { inject, injectable } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import { environment } from '../../common/index';
 import { MaybePromise } from '../../common';
 import { BackendApplicationContribution, EarlyExpressMiddleware } from '../backend-application';
 import { WsRequestValidatorContribution } from '../ws-request-validators';
 import { generateUuid } from '../../common/uuid';
+import { ILogger } from '../../common/logger';
 
 export const BrowserConnectionToken = Symbol('BrowserConnectionToken');
 
@@ -33,6 +34,26 @@ export interface BrowserConnectionToken {
     value: string;
 }
 
+export const HttpConnectionValidator = Symbol('HttpConnectionValidator');
+
+/**
+ * Express middleware provider that rejects HTTP requests lacking a valid connection token.
+ *
+ * The connection-token cookie is only *bootstrapped* globally (see
+ * {@link BrowserConnectionTokenBackendContribution}); enforcement is opt-in per route.
+ * Security-sensitive HTTP endpoints (e.g. the filesystem upload/download routes) should
+ * inject this and apply {@link validateRequest} as route middleware. Non-sensitive routes
+ * (the initial HTML page, static assets) must not use it, as they legitimately have no
+ * cookie yet on the very first page load.
+ */
+export interface HttpConnectionValidator {
+    /**
+     * Express middleware that calls `next()` when the request carries a valid connection-token
+     * cookie (or when running in Electron) and responds with `403` otherwise.
+     */
+    validateRequest(req: express.Request, res: express.Response, next: express.NextFunction): void;
+}
+
 /**
  * Validates WebSocket and HTTP requests using a cookie-based connection token.
  *
@@ -40,19 +61,27 @@ export interface BrowserConnectionToken {
  * as a `SameSite=Strict; HttpOnly` cookie on the first page load. Cross-origin pages
  * cannot obtain or send this cookie, so their requests are rejected.
  *
+ * The cookie is *bootstrapped* for every HTTP request (via {@link expressMiddleware}) so that
+ * browsers always receive it, but HTTP requests are only *rejected* on routes that opt in to
+ * enforcement via {@link validateRequest} (see {@link HttpConnectionValidator}). WebSocket
+ * upgrades are always validated (see {@link allowWsUpgrade}).
+ *
  * This complements the origin validator: non-browser callers that omit the Origin
  * header (e.g. Node.js scripts) still cannot reach the backend without the cookie.
  *
  * Skipped in Electron deployments (which use their own `ElectronSecurityToken`).
  */
 @injectable()
-export class BrowserConnectionTokenBackendContribution implements BackendApplicationContribution, WsRequestValidatorContribution {
+export class BrowserConnectionTokenBackendContribution implements BackendApplicationContribution, WsRequestValidatorContribution, HttpConnectionValidator {
 
     @inject(BrowserConnectionToken)
     protected readonly browserConnectionToken: BrowserConnectionToken;
 
     @inject(EarlyExpressMiddleware)
     protected readonly earlyMiddleware: EarlyExpressMiddleware;
+
+    @inject(ILogger) @named('core:BrowserConnectionTokenBackendContribution')
+    protected readonly logger: ILogger;
 
     /**
      * Register the cookie middleware during `initialize()` via `EarlyExpressMiddleware`
@@ -84,6 +113,25 @@ export class BrowserConnectionTokenBackendContribution implements BackendApplica
         return false;
     }
 
+    /**
+     * Reject the request with `403` unless it carries a valid connection-token cookie.
+     * Always allows the request in Electron deployments, consistent with {@link allowWsUpgrade}.
+     */
+    validateRequest(req: express.Request, res: express.Response, next: express.NextFunction): void {
+        if (environment.electron.is()) {
+            next();
+            return;
+        }
+        const token = this.getTokenFromCookie(req);
+        if (token && this.isTokenValid(token)) {
+            next();
+            return;
+        }
+        // No cookie or stale/invalid token: reject. Legitimate browsers always have the cookie
+        // because it is set on the initial page load, and same-origin requests send it automatically.
+        res.sendStatus(403);
+    }
+
     protected expressMiddleware(req: express.Request, res: express.Response, next: express.NextFunction): void {
         const existing = this.getTokenFromCookie(req);
         if (!existing || !this.isTokenValid(existing)) {
@@ -94,6 +142,13 @@ export class BrowserConnectionTokenBackendContribution implements BackendApplica
                 sameSite: 'strict',
                 path: '/'
             });
+            // The static handlers would answer a revalidation of an unchanged page with a 304,
+            // and reverse proxies commonly drop Set-Cookie from 304 replies or answer the
+            // revalidation from their own cache. The browser would then keep the stale token
+            // and every WebSocket handshake would be rejected, with no way to recover short of
+            // a cache-bypassing hard reload. Force a full 200 so the cookie reaches the browser.
+            delete req.headers['if-none-match'];
+            delete req.headers['if-modified-since'];
         }
         next();
     }
@@ -112,7 +167,7 @@ export class BrowserConnectionTokenBackendContribution implements BackendApplica
             const expected = Buffer.from(this.browserConnectionToken.value, 'utf8');
             return received.byteLength === expected.byteLength && crypto.timingSafeEqual(received, expected);
         } catch (error) {
-            console.error(error);
+            this.logger.error(error);
         }
         return false;
     }

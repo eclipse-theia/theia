@@ -20,6 +20,11 @@ import { ServerToolDescriptor } from '@theia/ai-core';
 export const ANTHROPIC_WEB_FETCH = 'web_fetch';
 export const ANTHROPIC_WEB_SEARCH = 'web_search';
 
+/** Native Anthropic name for the deferred-tool search server tool (used when converting tools for the API). */
+export const ANTHROPIC_TOOL_SEARCH_NATIVE = 'tool_search_tool_bm25';
+/** Stable, user-facing name under which the deferred-tool search is surfaced as a server tool call. */
+export const ANTHROPIC_TOOL_SEARCH = 'tool_search';
+
 /**
  * Server tools offered by the Anthropic provider. These are executed by Anthropic's infrastructure
  * (not by Theia) and are attached to each model's metadata so the chat UI can offer them.

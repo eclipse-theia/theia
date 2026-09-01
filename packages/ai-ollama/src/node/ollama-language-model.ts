@@ -27,15 +27,17 @@ import {
     ToolCallExecutor,
     ToolCallResult,
     ToolRequest,
+    ToolRequestParameterProperty,
     ToolRequestParametersProperties,
     ImageContent,
+    formatToolCallContentForModel,
     LanguageModelRequest,
     LanguageModelStatus,
     LanguageModelTextResponse,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken } from '@theia/core';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { CancellationToken, ILogger } from '@theia/core';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall } from 'ollama';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { ollamaThinkParamFor } from './ollama-reasoning';
@@ -80,6 +82,9 @@ export class OllamaModel implements LanguageModel {
 
     @inject(ToolCallExecutor)
     protected readonly toolCallExecutor: ToolCallExecutor;
+
+    @inject(ILogger) @named('ai-ollama:OllamaModel')
+    protected readonly logger: ILogger;
 
     @postConstruct()
     protected init(): void {
@@ -235,7 +240,7 @@ export class OllamaModel implements LanguageModel {
                         }
                     }
                 } catch (error) {
-                    console.error('Error in Ollama streaming:', error.message);
+                    that.logger.error('Error in Ollama streaming:', error.message);
                     throw error;
                 }
             }
@@ -283,8 +288,7 @@ export class OllamaModel implements LanguageModel {
             }
             return result;
         } catch (error) {
-            // TODO use ILogger
-            console.log('Failed to parse structured response from the language model.', error);
+            this.logger.warn('Failed to parse structured response from the language model.', error);
             const result: LanguageModelParsedResponse = {
                 content: response.message.content,
                 parsed: {}
@@ -368,7 +372,7 @@ export class OllamaModel implements LanguageModel {
             }
             return result;
         } catch (error) {
-            console.error('Error in ollama call:', error.message);
+            this.logger.error('Error in ollama call:', error.message);
             throw error;
         }
     }
@@ -436,6 +440,17 @@ export class OllamaModel implements LanguageModel {
     }
 
     protected toOllamaTool(tool: ToolRequest): ToolWithHandler {
+        const resolveType = (prop: ToolRequestParameterProperty): string | undefined => {
+            if (prop.type) {
+                return prop.type;
+            }
+            if (prop.anyOf) {
+                const nonNull = prop.anyOf.find(p => p.type && p.type !== 'null');
+                return nonNull?.type ?? undefined;
+            }
+            return undefined;
+        };
+
         const transform = (props: ToolRequestParametersProperties | undefined) => {
             if (!props) {
                 return undefined;
@@ -443,15 +458,13 @@ export class OllamaModel implements LanguageModel {
 
             const result: Record<string, { type: string, description: string, enum?: string[] }> = {};
             for (const [key, prop] of Object.entries(props)) {
-                const type = prop.type;
+                const type = resolveType(prop);
                 if (type) {
                     const description = typeof prop.description == 'string' ? prop.description : '';
                     result[key] = {
                         type: type,
                         description: description
                     };
-                } else {
-                    // TODO: Should handle anyOf, but this is not supported by the Ollama type yet
                 }
             }
             return result;
@@ -482,13 +495,16 @@ export class OllamaModel implements LanguageModel {
         } else if (LanguageModelMessage.isToolUseMessage(message)) {
             result.tool_calls = [{ function: { name: message.name, arguments: message.input as Record<string, unknown> } }];
         } else if (LanguageModelMessage.isToolResultMessage(message)) {
-            result.content = `Tool call ${message.name} returned: ${message.content}`;
+            result.content = `Tool call ${message.name} returned: ${formatToolCallContentForModel(message.content)}`;
         } else if (LanguageModelMessage.isThinkingMessage(message)) {
             result.thinking = message.thinking;
         } else if (LanguageModelMessage.isImageMessage(message) && ImageContent.isBase64(message.image)) {
             result.images = [message.image.base64data];
+        } else if (LanguageModelMessage.isCompactionMessage(message)) {
+            // Ollama has no server-side compaction; the opaque marker carries no representable content and is dropped.
+            return undefined;
         } else {
-            console.log(`Unknown message type encountered when converting message to Ollama format: ${JSON.stringify(message)}. Ignoring message.`);
+            this.logger.warn(`Unknown message type encountered when converting message to Ollama format: ${JSON.stringify(message)}. Ignoring message.`);
             return undefined;
         }
 
@@ -549,7 +565,7 @@ export class OllamaModel implements LanguageModel {
         if (actor === 'system') {
             return 'system';
         }
-        console.log(`Unknown actor encountered when converting message to Ollama format: ${actor}. Falling back to 'user'.`);
+        this.logger.warn(`Unknown actor encountered when converting message to Ollama format: ${actor}. Falling back to 'user'.`);
         return 'user'; // default fallback
     }
 }

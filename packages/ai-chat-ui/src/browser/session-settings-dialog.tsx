@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { ChatSessionSettings, CommonChatSessionSettings } from '@theia/ai-chat';
+import { SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM } from '@theia/ai-core';
 import { InMemoryResources, URI, nls } from '@theia/core';
 import { AbstractDialog, Message } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
@@ -81,6 +82,91 @@ const ConfirmationTimeoutSection: React.FC<ConfirmationTimeoutSectionProps> = ({
     </div>
 );
 
+type CompactionOverride = boolean | undefined;
+
+interface ServerSideCompactionSectionProps {
+    compactionOverride: CompactionOverride;
+    compactionTokenThreshold: number | undefined;
+    onCompactionOverrideChange: (value: CompactionOverride) => void;
+    onCompactionTokenThresholdChange: (value: number | undefined) => void;
+}
+
+const ServerSideCompactionSection: React.FC<ServerSideCompactionSectionProps> = ({
+    compactionOverride,
+    compactionTokenThreshold,
+    onCompactionOverrideChange,
+    onCompactionTokenThresholdChange
+}) => {
+    const selectValue = compactionOverride === true ? 'enabled' : compactionOverride === false ? 'disabled' : 'default';
+
+    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+        const v = e.target.value;
+        if (v === 'enabled') {
+            onCompactionOverrideChange(true);
+        } else if (v === 'disabled') {
+            onCompactionOverrideChange(false);
+        } else {
+            onCompactionOverrideChange(undefined);
+        }
+    };
+
+    return (
+        <div className="session-settings-server-side-compaction">
+            <div className="session-settings-section-header">
+                {nls.localize('theia/ai/session-settings-dialog/compactionHeader', 'Server-Side Compaction')}
+            </div>
+            <div className="session-settings-section-note">
+                {nls.localize(
+                    'theia/ai/session-settings-dialog/compactionNote',
+                    'Overrides the global and per-provider compaction setting for this session. ' +
+                    'Applies only to providers that support server-side compaction.'
+                )}
+            </div>
+            <div className="session-settings-select-container">
+                <label htmlFor="compaction-override">
+                    {nls.localize('theia/ai/session-settings-dialog/compactionLabel', 'Compaction:')}
+                </label>
+                <select
+                    id="compaction-override"
+                    value={selectValue}
+                    onChange={handleChange}
+                >
+                    <option value="default">
+                        {nls.localizeByDefault('Default')}
+                    </option>
+                    <option value="enabled">
+                        {nls.localizeByDefault('Enabled')}
+                    </option>
+                    <option value="disabled">
+                        {nls.localizeByDefault('Disabled')}
+                    </option>
+                </select>
+            </div>
+            {compactionOverride !== false && (
+                <div className="session-settings-compaction-threshold-container">
+                    <label htmlFor="compaction-token-threshold">
+                        {nls.localize('theia/ai/session-settings-dialog/compactionTokenThreshold', 'Token threshold:')}
+                    </label>
+                    <input
+                        type="number"
+                        id="compaction-token-threshold"
+                        min={SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM}
+                        step={1}
+                        value={compactionTokenThreshold ?? ''}
+                        placeholder={nls.localizeByDefault('Default')}
+                        onChange={e => {
+                            const value = Number(e.target.value);
+                            onCompactionTokenThresholdChange(
+                                Number.isInteger(value) && value >= SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM ? value : undefined
+                            );
+                        }}
+                    />
+                </div>
+            )}
+        </div>
+    );
+};
+
 interface AdvancedSettingsSectionProps {
     sectionHeader: string;
 }
@@ -105,17 +191,25 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ message }) => (
 interface DialogContentProps {
     confirmationTimeoutEnabled: boolean;
     confirmationTimeoutSeconds: number;
+    compactionOverride: CompactionOverride;
+    compactionTokenThreshold: number | undefined;
     errorMessage: string;
     onConfirmationTimeoutEnabledChange: (enabled: boolean) => void;
     onConfirmationTimeoutSecondsChange: (seconds: number) => void;
+    onCompactionOverrideChange: (value: CompactionOverride) => void;
+    onCompactionTokenThresholdChange: (value: number | undefined) => void;
 }
 
 const DialogContent: React.FC<DialogContentProps> = ({
     confirmationTimeoutEnabled,
     confirmationTimeoutSeconds,
+    compactionOverride,
+    compactionTokenThreshold,
     errorMessage,
     onConfirmationTimeoutEnabledChange,
-    onConfirmationTimeoutSecondsChange
+    onConfirmationTimeoutSecondsChange,
+    onCompactionOverrideChange,
+    onCompactionTokenThresholdChange
 }) => (
     <div className="session-settings-container">
         <ConfirmationTimeoutSection
@@ -123,6 +217,12 @@ const DialogContent: React.FC<DialogContentProps> = ({
             timeoutSeconds={confirmationTimeoutSeconds}
             onEnabledChange={onConfirmationTimeoutEnabledChange}
             onTimeoutChange={onConfirmationTimeoutSecondsChange}
+        />
+        <ServerSideCompactionSection
+            compactionOverride={compactionOverride}
+            compactionTokenThreshold={compactionTokenThreshold}
+            onCompactionOverrideChange={onCompactionOverrideChange}
+            onCompactionTokenThresholdChange={onCompactionTokenThresholdChange}
         />
         <AdvancedSettingsSection
             sectionHeader={nls.localize('theia/ai/session-settings-dialog/advancedSettings', 'Advanced Settings (JSON)')}
@@ -140,7 +240,12 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
     protected confirmationTimeoutEnabled: boolean;
     protected confirmationTimeoutSeconds: number;
 
+    protected compactionOverride: boolean | undefined;
+    protected compactionTokenThreshold: number | undefined;
+
     protected preservedReasoning: CommonChatSessionSettings['reasoning'];
+
+    protected preservedModelId: CommonChatSessionSettings['modelId'];
 
     protected contentRoot: Root;
     protected editorContainerNode: HTMLDivElement;
@@ -160,6 +265,13 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
 
         // Reasoning is edited in the chat input; preserve it across this dialog.
         this.preservedReasoning = this.settings.commonSettings?.reasoning;
+
+        // The per-session model override is edited in the chat input; preserve it across this dialog.
+        this.preservedModelId = this.settings.commonSettings?.modelId;
+
+        // Read the per-session compaction override (undefined = use global/per-provider setting).
+        this.compactionOverride = this.settings.commonSettings?.compaction?.enabled;
+        this.compactionTokenThreshold = this.settings.commonSettings?.compaction?.tokenThreshold;
 
         // Extract confirmation timeout settings from commonSettings
         const savedTimeout = this.settings.commonSettings?.confirmationTimeout;
@@ -187,7 +299,7 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
         super.onAfterAttach(msg);
         // flushSync ensures React commits the render synchronously so that
         // attachEditorContainer can query the DOM immediately afterwards.
-        // Without this, React 18 may defer the commit when invoked outside a
+        // Without this, React may defer the commit when invoked outside a
         // browser event handler (e.g. from an Electron IPC callback from an
         // Electron-rendered native menu), causing attachEditorContainer to
         // find no .session-settings-advanced element and the Monaco editor
@@ -214,9 +326,13 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
             <DialogContent
                 confirmationTimeoutEnabled={this.confirmationTimeoutEnabled}
                 confirmationTimeoutSeconds={this.confirmationTimeoutSeconds}
+                compactionOverride={this.compactionOverride}
+                compactionTokenThreshold={this.compactionTokenThreshold}
                 errorMessage={this.errorMessage}
                 onConfirmationTimeoutEnabledChange={this.handleConfirmationTimeoutEnabledChange}
                 onConfirmationTimeoutSecondsChange={this.handleConfirmationTimeoutSecondsChange}
+                onCompactionOverrideChange={this.handleCompactionOverrideChange}
+                onCompactionTokenThresholdChange={this.handleCompactionTokenThresholdChange}
             />
         );
     }
@@ -328,13 +444,36 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
         this.attachEditorContainer();
     };
 
+    protected handleCompactionOverrideChange = (value: boolean | undefined): void => {
+        this.compactionOverride = value;
+        this.updateSettingsFromCommonSettings();
+        this.render();
+        this.attachEditorContainer();
+    };
+
+    protected handleCompactionTokenThresholdChange = (value: number | undefined): void => {
+        this.compactionTokenThreshold = value;
+        this.updateSettingsFromCommonSettings();
+        this.render();
+        this.attachEditorContainer();
+    };
+
     protected updateSettingsFromCommonSettings(): void {
         const commonSettings: CommonChatSessionSettings = {};
         if (this.preservedReasoning) {
             commonSettings.reasoning = this.preservedReasoning;
         }
+        if (this.preservedModelId) {
+            commonSettings.modelId = this.preservedModelId;
+        }
         if (this.confirmationTimeoutEnabled && !isNaN(this.confirmationTimeoutSeconds) && this.confirmationTimeoutSeconds > 0) {
             commonSettings.confirmationTimeout = this.confirmationTimeoutSeconds;
+        }
+        if (this.compactionOverride !== undefined || this.compactionTokenThreshold !== undefined) {
+            commonSettings.compaction = {
+                enabled: this.compactionOverride,
+                tokenThreshold: this.compactionTokenThreshold
+            };
         }
         this.settings.commonSettings = Object.keys(commonSettings).length > 0 ? commonSettings : undefined;
     }

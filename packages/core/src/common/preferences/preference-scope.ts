@@ -23,7 +23,12 @@ export enum PreferenceScope {
     Default,
     User,
     Workspace,
-    Folder
+    Folder,
+    /**
+     * Process-lifetime, in-memory scope used by `--session-preference` CLI overrides.
+     * Has the highest precedence and is never persisted to disk.
+     */
+    Session
 }
 
 export namespace PreferenceScope {

@@ -15,11 +15,12 @@
 // *****************************************************************************
 
 import { LanguageModelRegistry, LanguageModelStatus, ReasoningApi, ReasoningSupport } from '@theia/ai-core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { GoogleGenAI, Model } from '@google/genai';
 import { GoogleLanguageModelFactory, GoogleModel } from './google-language-model';
 import { GOOGLE_SERVER_TOOLS } from './google-server-tools';
 import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
+import { ILogger } from '@theia/core';
 
 export interface GoogleLanguageModelRetrySettings {
     maxRetriesOnErrors: number;
@@ -70,6 +71,9 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
     @inject(GoogleLanguageModelFactory)
     protected readonly googleLanguageModelFactory: GoogleLanguageModelFactory;
 
+    @inject(ILogger) @named('ai-google:GoogleLanguageModelsManagerImpl')
+    protected readonly logger: ILogger;
+
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY;
     }
@@ -103,7 +107,7 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
 
         if (model) {
             if (!(model instanceof GoogleModel)) {
-                console.warn(`Gemini: model ${modelDescription.id} is not a Gemini model`);
+                this.logger.warn(`Gemini: model ${modelDescription.id} is not a Gemini model`);
                 return;
             }
             await this.languageModelRegistry.patchLanguageModel<GoogleModel>(modelDescription.id, {
@@ -160,7 +164,7 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
             return await fetchPromise;
         } catch (error) {
             this.modelInfoCache.delete(cacheKey);
-            console.warn(`Gemini: failed to retrieve model info for '${modelDescription.id}':`,
+            this.logger.warn(`Gemini: failed to retrieve model info for '${modelDescription.id}':`,
                 error instanceof Error ? error.message : error);
             return undefined;
         }

@@ -17,9 +17,8 @@
 
 /* eslint-disable max-len */
 
-const fs = require('fs');
-const path = require('path');
 const { PackageReExports } = require('@theia/re-exports');
+const { findPackageJson, reportingMalformedPackageJson } = require('../util/package-json');
 
 const coreReExports = PackageReExports.FromPackageSync('@theia/core');
 
@@ -35,7 +34,7 @@ module.exports = {
     },
     create(context) {
         const filename = context.getFilename();
-        const packageJson = findPackageJson(filename);
+        const packageJson = reportingMalformedPackageJson(context, () => findPackageJson(filename));
         if (packageJson && dependsOnTheiaCore(packageJson)) {
             // Only show an error regarding the package.json file if this is the first
             // time we detect the error, else it will error for every file of the package:
@@ -91,53 +90,6 @@ function firstTime(key) {
         firstTimeCache.add(key);
         return true;
     }
-}
-
-/**
- * @typedef FoundPackageJson
- * @property {string} __filename
- * @property {{[package: string]: string}} [dependencies]
- */
-
-/**
- * Keep a shortcut to a given package.json file based on previous crawls.
- * @type {Map<string, FoundPackageJson>}
- */
-const findPackageJsonCache = new Map();
-/**
- * @param {string} from file path to start searching from.
- * @returns {FoundPackageJson | undefined}
- */
-function findPackageJson(from) {
-    from = path.resolve(from);
-    let current = fs.statSync(from).isDirectory() ? from : path.dirname(from);
-    // Keep track of all paths tried before eventually finding a package.json file
-    const tried = [current];
-    while (!isRoot(path.parse(from))) {
-        const cached = findPackageJsonCache.get(current);
-        if (cached) {
-            return cached;
-        }
-        const packageJsonPath = path.resolve(current, 'package.json');
-        if (fs.existsSync(packageJsonPath)) {
-            const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, { encoding: 'utf8' }));
-            for (const dir of tried) {
-                findPackageJsonCache.set(dir, packageJson);
-            }
-            packageJson['__filename'] = packageJsonPath;
-            return packageJson;
-        }
-        current = path.dirname(current);
-        tried.push(current);
-    }
-}
-
-/**
- * @param {path.ParsedPath} parsed
- * @returns {boolean}
- */
-function isRoot(parsed) {
-    return parsed.base === '' && parsed.dir === parsed.root;
 }
 
 /**

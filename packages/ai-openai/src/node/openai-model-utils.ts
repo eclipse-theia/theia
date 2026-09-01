@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ImageContent, LanguageModelMessage } from '@theia/ai-core';
+import { formatToolCallContentForModel, ImageContent, LanguageModelMessage } from '@theia/ai-core';
 import { injectable } from '@theia/core/shared/inversify';
 import { ChatCompletionAssistantMessageParam, ChatCompletionMessageParam } from 'openai/resources';
 import { DeveloperMessageSettings } from './openai-language-model';
@@ -71,8 +71,7 @@ export class OpenAiModelUtils {
             return {
                 role: 'tool',
                 tool_call_id: message.tool_use_id,
-                // content only supports text content so we need to stringify any potential data we have, e.g., images
-                content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
+                content: typeof message.content === 'string' ? message.content : formatToolCallContentForModel(message.content)
             };
         }
         if (LanguageModelMessage.isImageMessage(message) && message.actor === 'user') {
@@ -109,10 +108,10 @@ export class OpenAiModelUtils {
         model?: string
     ): ChatCompletionMessageParam[] {
         const processed = this.processSystemMessages(messages, developerMessageSettings);
-        // 'server_tool_use' replay messages can appear when switching providers within a session;
-        // OpenAI has no equivalent, so they are dropped (like 'thinking' messages).
+        // 'server_tool_use' and 'compaction' replay markers can appear when switching providers within a session;
+        // OpenAI Chat Completions has no equivalent, so they are dropped (like 'thinking' messages).
         const converted = processed
-            .filter(m => m.type !== 'thinking' && m.type !== 'server_tool_use')
+            .filter(m => m.type !== 'thinking' && m.type !== 'server_tool_use' && m.type !== 'compaction')
             .map(m => this.toOpenAIMessage(m, developerMessageSettings));
         return this.mergeConsecutiveAssistantMessages(converted);
     }

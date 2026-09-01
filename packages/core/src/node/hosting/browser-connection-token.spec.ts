@@ -16,6 +16,7 @@
 
 import { expect } from 'chai';
 import * as http from 'http';
+import { environment } from '../../common';
 import {
     BrowserConnectionToken,
     BrowserConnectionTokenBackendContribution,
@@ -108,18 +109,23 @@ describe('BrowserConnectionTokenBackendContribution', () => {
         interface MockResponse {
             cookieCalls: CookieCall[];
             nextCalled: boolean;
+            requestHeaders: Record<string, string | undefined>;
         }
 
-        function callMiddleware(cookieValue?: string): MockResponse {
+        function callMiddleware(cookieValue?: string, conditionalHeaders = false): MockResponse {
             const contribution = createContribution();
-            const result: MockResponse = { cookieCalls: [], nextCalled: false };
-
             const req = {
                 headers: {} as Record<string, string | undefined>,
                 socket: { remoteAddress: '127.0.0.1' }
             };
+            const result: MockResponse = { cookieCalls: [], nextCalled: false, requestHeaders: req.headers };
+
             if (cookieValue !== undefined) {
                 req.headers.cookie = `${BROWSER_TOKEN_COOKIE_NAME}=${cookieValue}`;
+            }
+            if (conditionalHeaders) {
+                req.headers['if-none-match'] = 'W/"etag"';
+                req.headers['if-modified-since'] = 'Thu, 01 Jan 2026 00:00:00 GMT';
             }
 
             const res = {
@@ -162,6 +168,119 @@ describe('BrowserConnectionTokenBackendContribution', () => {
             expect(result.nextCalled).to.be.true;
             expect(result.cookieCalls).to.have.length(1);
             expect(result.cookieCalls[0].value).to.equal(token.value);
+        });
+
+        it('should drop conditional request headers when re-issuing the cookie (stale token)', () => {
+            const result = callMiddleware('stale-token-from-old-server', true);
+            expect(result.nextCalled).to.be.true;
+            expect(result.cookieCalls).to.have.length(1);
+            expect(result.requestHeaders['if-none-match']).to.be.undefined;
+            expect(result.requestHeaders['if-modified-since']).to.be.undefined;
+        });
+
+        it('should drop conditional request headers when issuing the cookie (no cookie)', () => {
+            const result = callMiddleware(undefined, true);
+            expect(result.cookieCalls).to.have.length(1);
+            expect(result.requestHeaders['if-none-match']).to.be.undefined;
+            expect(result.requestHeaders['if-modified-since']).to.be.undefined;
+        });
+
+        it('should keep conditional request headers when the cookie is valid', () => {
+            const result = callMiddleware(token.value, true);
+            expect(result.cookieCalls).to.have.length(0);
+            expect(result.requestHeaders['if-none-match']).to.equal('W/"etag"');
+            expect(result.requestHeaders['if-modified-since']).to.equal('Thu, 01 Jan 2026 00:00:00 GMT');
+        });
+    });
+
+    describe('validateRequest (HTTP token enforcement)', () => {
+
+        interface ValidationResult {
+            nextCalled: boolean;
+            sentStatus?: number;
+        }
+
+        function callValidate(cookieValue?: string): ValidationResult {
+            const contribution = createContribution();
+            const result: ValidationResult = { nextCalled: false };
+
+            const req = { headers: {} as Record<string, string | undefined> };
+            if (cookieValue !== undefined) {
+                req.headers.cookie = `${BROWSER_TOKEN_COOKIE_NAME}=${cookieValue}`;
+            }
+
+            const res = {
+                sendStatus: (status: number) => { result.sentStatus = status; }
+            };
+
+            const next = (): void => { result.nextCalled = true; };
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (contribution as any).validateRequest(req, res, next);
+            return result;
+        }
+
+        it('should allow request with valid token cookie', () => {
+            const result = callValidate(token.value);
+            expect(result.nextCalled).to.be.true;
+            expect(result.sentStatus).to.be.undefined;
+        });
+
+        it('should reject request with no cookie', () => {
+            const result = callValidate();
+            expect(result.nextCalled).to.be.false;
+            expect(result.sentStatus).to.equal(403);
+        });
+
+        it('should reject request with invalid token', () => {
+            const result = callValidate('wrong-token');
+            expect(result.nextCalled).to.be.false;
+            expect(result.sentStatus).to.equal(403);
+        });
+
+        it('should reject request with stale token from previous server', () => {
+            const staleToken = createBrowserConnectionToken().value;
+            const result = callValidate(staleToken);
+            expect(result.nextCalled).to.be.false;
+            expect(result.sentStatus).to.equal(403);
+        });
+
+        it('should reject request with empty token', () => {
+            const result = callValidate('');
+            expect(result.nextCalled).to.be.false;
+            expect(result.sentStatus).to.equal(403);
+        });
+    });
+
+    describe('Electron deployment (no-op)', () => {
+
+        let originalIsElectron: () => boolean;
+
+        beforeEach(() => {
+            originalIsElectron = environment.electron.is;
+            environment.electron.is = () => true;
+        });
+
+        afterEach(() => {
+            environment.electron.is = originalIsElectron;
+        });
+
+        it('validateRequest should call next() without a cookie', () => {
+            const contribution = createContribution();
+            let nextCalled = false;
+            let sentStatus: number | undefined;
+            const req = { headers: {} as Record<string, string | undefined> };
+            const res = { sendStatus: (status: number) => { sentStatus = status; } };
+            const next = (): void => { nextCalled = true; };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (contribution as any).validateRequest(req, res, next);
+            expect(nextCalled).to.be.true;
+            expect(sentStatus).to.be.undefined;
+        });
+
+        it('allowWsUpgrade should return true without a cookie', () => {
+            const contribution = createContribution();
+            expect(contribution.allowWsUpgrade(createRequest())).to.be.true;
         });
     });
 });

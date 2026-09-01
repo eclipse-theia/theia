@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatRequestParser.ts
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import { ChatAgentLocation } from './chat-agents';
 import { ChatContext, ChatRequest } from './chat-model';
@@ -37,7 +37,7 @@ import {
     ParsedChatRequestPart,
 } from './parsed-chat-request';
 import {
-    AIVariable, AIVariableService, createAIResolveVariableCache, getAllResolvedAIVariables, parseFunctionReference, ToolInvocationRegistry, ToolRequest
+    AIVariable, AIVariableService, createAIResolveVariableCache, getAllResolvedAIVariables, parseFunctionReference, PromptService, ToolInvocationRegistry, ToolRequest
 } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
 
@@ -47,7 +47,13 @@ const agentReg = /^@([\w_\-\.]+)(?=(\s|$|\b))/i; // An @-agent
 const functionReg = /^~(\??[\w_\-\.]+)(?=(\s|$|\b))/i;
 const functionPromptFormatReg = /^\~\{\s*(.*?)\s*\}/i;
 const variableReg = /^#([\w_\-]+)(?::([\w_\-_\/\\.:]+))?(?=(\s|$|\b))/i; // A #-variable with an optional : arg (#file:workspace/path/name.ext)
-const commandReg = /^\/([\w_\-]+)(?:\s+(.+?))?(?=\s*$)/; // A /-command with optional arguments (/commandname arg1 arg2)
+// A /-command (/commandname) with optional arguments parsed separately. The command name must be
+// terminated by whitespace or the end of the input, so that path segments such as `/home/user` are
+// not mistaken for a command.
+// The colon and the period are in the charset so a qualified skill is invocable as
+// `/<qualifier>:<skill>`; the qualifier comes from a plugin identifier, so it usually has periods.
+const commandReg = /^\/([\w_\-.:]+)(?=\s|$)/;
+const nextCommandReg = /\s+\/([\w_\-.:]+)(?=\s|$)/g;
 
 export const ChatRequestParser = Symbol('ChatRequestParser');
 export interface ChatRequestParser {
@@ -62,11 +68,16 @@ function offsetRange(start: number, endExclusive: number): OffsetRange {
 }
 @injectable()
 export class ChatRequestParserImpl implements ChatRequestParser {
+
+    @inject(PromptService)
+    protected readonly promptService: PromptService;
+
     constructor(
         @inject(ChatAgentService) private readonly agentService: ChatAgentService,
         @inject(AIVariableService) private readonly variableService: AIVariableService,
         @inject(ToolInvocationRegistry) private readonly toolInvocationRegistry: ToolInvocationRegistry,
-        @inject(ILogger) private readonly logger: ILogger
+        @inject(ILogger) @named('ai-chat:ChatRequestParserImpl')
+        protected readonly logger: ILogger
     ) { }
 
     async parseChatRequest(request: ChatRequest, location: ChatAgentLocation, context: ChatContext): Promise<ParsedChatRequest> {
@@ -185,6 +196,7 @@ export class ChatRequestParserImpl implements ChatRequestParser {
                 }
 
                 parts.push(newPart);
+                i = newPart.range.endExclusive - 1;
             }
         }
 
@@ -292,11 +304,57 @@ export class ChatRequestParserImpl implements ChatRequestParser {
             return;
         }
 
-        const [full, commandName, commandArgs] = nextCommandMatch;
-        const commandRange = offsetRange(offset, offset + full.length);
+        const [commandText, commandName] = nextCommandMatch;
+        if (!this.isCommandCandidate(commandName)) {
+            // Not a command we know about, so leave the text alone. Otherwise anything the user
+            // types after a `/word` token, e.g. a Unix path, would be swallowed as command
+            // arguments and silently dropped when the non-existing command fails to resolve.
+            return;
+        }
+        let commandEnd = commandText.length;
+        let commandArgs: string | undefined;
+
+        // Arguments never span multiple lines: a command only consumes the remainder of its own line.
+        const lineBreakOffset = message.indexOf('\n', commandEnd);
+        const lineEnd = lineBreakOffset === -1 ? message.length : lineBreakOffset;
+        const nextCommandOffset = this.findNextCommandOffset(message, commandEnd, lineEnd);
+        const argsEnd = nextCommandOffset ?? lineEnd;
+        const rawArgs = message.slice(commandEnd, argsEnd);
+        const args = rawArgs.trim();
+        if (args) {
+            commandArgs = args;
+            // Advance the consumed range only up to the end of the trimmed argument, not up to the
+            // next command. This keeps the whitespace between the argument and a following command
+            // out of this part's range, so parseParts emits it as a separator text part. Otherwise
+            // the two resolved prompt fragments would run into each other with no space between them.
+            commandEnd = argsEnd - (rawArgs.length - rawArgs.trimEnd().length);
+        }
+
+        const commandRange = offsetRange(offset, offset + commandEnd);
 
         const variableArg = commandArgs ? `${commandName}|${commandArgs}` : commandName;
         return new ParsedChatRequestVariablePart(commandRange, 'prompt', variableArg);
+    }
+
+    private findNextCommandOffset(message: string, startOffset: number, endOffset: number): number | undefined {
+        nextCommandReg.lastIndex = startOffset;
+        let match = nextCommandReg.exec(message);
+        while (match && match.index < endOffset) {
+            if (this.isCommandCandidate(match[1])) {
+                return match.index + match[0].indexOf(chatSubcommandLeader);
+            }
+            match = nextCommandReg.exec(message);
+        }
+        return undefined;
+    }
+
+    /**
+     * Whether a `/name` token should be treated as a command. Only names that actually resolve to a
+     * command or prompt fragment are accepted, which keeps unknown `/word` tokens (e.g. `/tmp`,
+     * `/path/to/file`) as plain text.
+     */
+    protected isCommandCandidate(commandName: string): boolean {
+        return this.promptService.isKnownCommand(commandName);
     }
 
     private tryToParseFunction(message: string, offset: number): ParsedChatRequestFunctionPart | undefined {

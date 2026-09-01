@@ -21,6 +21,8 @@
 
 import {
     AIVariableResolutionRequest,
+    CompactionMessage,
+    CompactionSettings,
     GenericCapabilitySelections,
     LanguageModelMessage,
     ReasoningSettings,
@@ -80,7 +82,9 @@ export type ChatChangeEvent =
     | ChatEditSubmitEvent
     | ChatResponseChangedEvent
     | ChatChangeHierarchyBranchEvent
-    | ChatInteractionNeededEvent;
+    | ChatInteractionNeededEvent
+    | ChatSessionStatusChangedEvent
+    | ChatSettingsChangedEvent;
 
 export interface ChatAddRequestEvent {
     kind: 'addRequest';
@@ -142,12 +146,25 @@ export interface ChatInteractionNeededEvent {
     contentPart: InteractiveContent & ChatResponseContent;
 }
 
+export interface ChatSessionStatusChangedEvent {
+    kind: 'statusChanged';
+    status: ChatSessionStatus;
+}
+
+export interface ChatSettingsChangedEvent {
+    kind: 'settingsChanged';
+    settings: ChatSessionSettings;
+}
+
 export namespace ChatChangeEvent {
     export function isChangeSetEvent(event: ChatChangeEvent): event is ChatUpdateChangeSetEvent {
         return event.kind === 'updateChangeSet';
     }
     export function isInteractionNeededEvent(event: ChatChangeEvent): event is ChatInteractionNeededEvent {
         return event.kind === 'interactionNeeded';
+    }
+    export function isStatusChangedEvent(event: ChatChangeEvent): event is ChatSessionStatusChangedEvent {
+        return event.kind === 'statusChanged';
     }
 }
 
@@ -222,10 +239,18 @@ export interface ChatHierarchyBranchItem<TRequest extends ChatRequestModel = Cha
 }
 
 export interface CommonChatSessionSettings {
+    /**
+     * Language model (or alias) id to use for this session only, overriding the agent's default.
+     * New sessions start without an override and use the agent's configured model. Cleared to
+     * revert to the default.
+     */
+    modelId?: string;
     /** Reasoning configuration for this session; applied to reasoning-capable models. */
     reasoning?: ReasoningSettings;
     /** Per-session tool confirmation timeout in seconds. Overrides the global preference when set. */
     confirmationTimeout?: number;
+    /** Per-session server-side compaction settings; set values win over the per-provider and global settings. */
+    compaction?: CompactionSettings;
 }
 
 export interface ChatSessionSettings {
@@ -243,6 +268,69 @@ export interface ChatSessionSettings {
     [key: string]: unknown;
 }
 
+/**
+ * Aggregated, observable status of a chat session, derived from the state of the session's last request.
+ */
+export type ChatSessionStatus =
+    /** No request is in progress. The last request, if any, completed successfully or was canceled. */
+    | 'idle'
+    /** A request is in progress. */
+    | 'running'
+    /** A tool call requires user confirmation before it can be executed. */
+    | 'awaitingApproval'
+    /** An approved or confirmation-free tool call is still executing. */
+    | 'awaitingToolCall'
+    /** The agent is waiting for user input, e.g. an answer to a structured question. */
+    | 'awaitingInput'
+    /** The last request ended in an error. */
+    | 'failed';
+
+export namespace ChatSessionStatus {
+    /**
+     * Whether a request is in progress in this status, including the states waiting on the user or a tool.
+     */
+    export function isInProgress(status: ChatSessionStatus): boolean {
+        return status !== 'idle' && status !== 'failed';
+    }
+
+    /**
+     * Whether the session is blocked on the user, i.e. a tool approval or another input is required to proceed.
+     */
+    export function requiresUserAction(status: ChatSessionStatus): boolean {
+        return status === 'awaitingApproval' || status === 'awaitingInput';
+    }
+
+    /**
+     * Derives the session status from the state of the given request (usually the session's last request).
+     */
+    export function fromRequest(request: ChatRequestModel | undefined): ChatSessionStatus {
+        if (!request) {
+            return 'idle';
+        }
+        const response = request.response;
+        if (response.isError) {
+            return 'failed';
+        }
+        if (!ChatRequestModel.isInProgress(request)) {
+            return 'idle';
+        }
+        const content = response.response.content;
+        if (content.some(part => ToolCallChatResponseContent.is(part) && part.isAwaitingUserConfirmation)) {
+            return 'awaitingApproval';
+        }
+        // Unresolved non-tool-call interactive parts are structured questions (tool calls are
+        // "unresolved" while merely executing). The waiting-for-input flag additionally covers
+        // inputs without a dedicated content part, e.g. the user-interaction tool's wizard.
+        if (response.isWaitingForInput || content.some(part => !ToolCallChatResponseContent.is(part) && InteractiveContent.is(part) && !part.isResolved)) {
+            return 'awaitingInput';
+        }
+        if (content.some(part => ToolCallChatResponseContent.is(part) && !part.finished)) {
+            return 'awaitingToolCall';
+        }
+        return 'running';
+    }
+}
+
 export interface ChatModel {
     readonly onDidChange: Event<ChatChangeEvent>;
     readonly id: string;
@@ -251,8 +339,15 @@ export interface ChatModel {
     readonly suggestions: readonly ChatSuggestion[];
     readonly settings?: ChatSessionSettings;
     readonly changeSet: ChangeSet;
+    /**
+     * Aggregated status of this session, derived from the state of its last request.
+     * Changes are announced via {@link onDidChange} with a {@link ChatSessionStatusChangedEvent}.
+     */
+    readonly status: ChatSessionStatus;
     /** ID of the root session in the delegation chain. For delegated sessions, this points to the topmost session where task contexts are stored. */
     rootSessionId?: string;
+    /** ID of the immediate parent session that delegated this one. Undefined for top-level sessions. */
+    parentSessionId?: string;
     getRequests(): ChatRequestModel[];
     getBranches(): ChatHierarchyBranch<ChatRequestModel>[];
     isEmpty(): boolean;
@@ -477,6 +572,12 @@ export interface ThinkingContentData {
     signature: string;
 }
 
+export interface CompactionContentData {
+    provider: string;
+    data: unknown;
+    summary?: string;
+}
+
 export interface MarkdownContentData {
     content: string;
 }
@@ -581,6 +682,11 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     confirmed: Promise<boolean>;
     /** Resolves when the tool call requires user confirmation (show Allow/Deny UI). */
     needsUserConfirmation: Promise<void>;
+    /**
+     * Whether the tool call is currently awaiting the user's confirmation decision, i.e.
+     * {@link requestUserConfirmation} was called and the user has neither confirmed nor denied it yet.
+     */
+    readonly isAwaitingUserConfirmation: boolean;
     whenFinished: Promise<void>;
     /**
      * Provider-specific metadata about the tool call that the language model needs back on
@@ -869,6 +975,18 @@ export namespace ThinkingChatResponseContent {
     }
 }
 
+export interface CompactionChatResponseContent extends ChatResponseContent {
+    kind: 'compaction';
+    provider: string;
+    data: unknown;
+    summary?: string;
+}
+export namespace CompactionChatResponseContent {
+    export function is(obj: unknown): obj is CompactionChatResponseContent {
+        return ChatResponseContent.is(obj) && obj.kind === 'compaction';
+    }
+}
+
 export namespace ProgressChatResponseContent {
     export function is(obj: unknown): obj is ProgressChatResponseContent {
         return (
@@ -1008,6 +1126,10 @@ export interface ChatResponseModel {
      * Indicates whether the prompt variant was customized/edited
      */
     readonly isPromptVariantEdited?: boolean;
+    /**
+     * The identifier of the language model that produced this response, if recorded.
+     */
+    readonly languageModel?: string;
     readonly tokenUsage?: ResponseTokenUsage;
     toSerializable(): SerializableChatResponseData;
 }
@@ -1029,7 +1151,9 @@ export class MutableChatModel implements ChatModel, Disposable {
     protected _changeSet: ChatTreeChangeSet;
     protected _settings: ChatSessionSettings;
     protected _location: ChatAgentLocation;
+    protected _status: ChatSessionStatus = 'idle';
     rootSessionId?: string;
+    parentSessionId?: string;
 
     get location(): ChatAgentLocation {
         return this._location;
@@ -1060,7 +1184,14 @@ export class MutableChatModel implements ChatModel, Disposable {
                     branch: event.branch,
                 });
             }),
+            // Re-derive the aggregated session status whenever anything in the model changes.
+            this.onDidChange(event => {
+                if (!ChatChangeEvent.isStatusChangedEvent(event)) {
+                    this.updateStatus();
+                }
+            }),
         ]);
+        this._status = this.computeStatus();
     }
 
     /**
@@ -1095,6 +1226,12 @@ export class MutableChatModel implements ChatModel, Disposable {
                     this._onDidChangeEmitter.fire(event);
                 }
             }, this, this.toDispose);
+        }
+
+        // Restore per-session settings (e.g. the per-session model override) so the chat input can
+        // reflect the previous selection.
+        if (data.settings) {
+            this._settings = data.settings;
         }
 
         // Restore the hierarchy structure with all alternatives
@@ -1138,6 +1275,22 @@ export class MutableChatModel implements ChatModel, Disposable {
         return this._suggestions;
     }
 
+    get status(): ChatSessionStatus {
+        return this._status;
+    }
+
+    protected computeStatus(): ChatSessionStatus {
+        return ChatSessionStatus.fromRequest(this.getRequests().at(-1));
+    }
+
+    protected updateStatus(): void {
+        const status = this.computeStatus();
+        if (status !== this._status) {
+            this._status = status;
+            this._onDidChangeEmitter.fire({ kind: 'statusChanged', status });
+        }
+    }
+
     get context(): ChatContextManager {
         return this._contextManager;
     }
@@ -1148,6 +1301,9 @@ export class MutableChatModel implements ChatModel, Disposable {
 
     setSettings(settings: ChatSessionSettings): void {
         this._settings = settings;
+        // Emit a change so listeners (e.g. session auto-save) persist selector-only or dialog-only
+        // settings updates that are not accompanied by another model change.
+        this._onDidChangeEmitter.fire({ kind: 'settingsChanged', settings });
     }
 
     addChildModel(child: MutableChatModel): Disposable {
@@ -1219,7 +1375,8 @@ export class MutableChatModel implements ChatModel, Disposable {
             location: this.location,
             hierarchy,
             requests: serializedRequests,
-            responses: serializedResponses
+            responses: serializedResponses,
+            settings: this._settings
         };
     }
 
@@ -2242,6 +2399,58 @@ export class ThinkingChatResponseContentImpl implements ThinkingChatResponseCont
     }
 }
 
+export class CompactionChatResponseContentImpl implements CompactionChatResponseContent {
+    readonly kind = 'compaction';
+    protected _provider: string;
+    protected _data: unknown;
+    protected _summary?: string;
+
+    constructor(provider: string, data: unknown, summary?: string) {
+        this._provider = provider;
+        this._data = data;
+        this._summary = summary;
+    }
+
+    get provider(): string {
+        return this._provider;
+    }
+    get data(): unknown {
+        return this._data;
+    }
+    get summary(): string | undefined {
+        return this._summary;
+    }
+
+    asString(): string | undefined {
+        return undefined;
+    }
+
+    asDisplayString(): string | undefined {
+        return this._summary;
+    }
+
+    toLanguageModelMessage(): CompactionMessage {
+        return {
+            actor: 'ai',
+            type: 'compaction',
+            provider: this._provider,
+            data: this._data,
+            summary: this._summary
+        };
+    }
+
+    toSerializable(): SerializableChatResponseContentData<CompactionContentData> {
+        return {
+            kind: 'compaction',
+            data: {
+                provider: this._provider,
+                data: this._data,
+                summary: this._summary
+            }
+        };
+    }
+}
+
 export class MarkdownChatResponseContentImpl implements MarkdownChatResponseContent {
     readonly kind = 'markdownContent';
     protected _content: MarkdownStringImpl = new MarkdownStringImpl();
@@ -2368,6 +2577,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _confirmationTimeout?: number;
     protected _needsUserConfirmation: Promise<void>;
     protected _needsUserConfirmationResolver?: () => void;
+    protected _isAwaitingUserConfirmation = false;
     protected _confirmed: Promise<boolean>;
     protected _confirmationResolver?: (value: boolean) => void;
     protected _confirmationRejecter?: (reason?: unknown) => void;
@@ -2445,6 +2655,10 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return this._needsUserConfirmation;
     }
 
+    get isAwaitingUserConfirmation(): boolean {
+        return this._isAwaitingUserConfirmation && !this.finished;
+    }
+
     get whenFinished(): Promise<void> {
         return this._whenFinished;
     }
@@ -2479,12 +2693,14 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
      * Confirm the tool execution
      */
     confirm(): void {
+        this._isAwaitingUserConfirmation = false;
         if (this._confirmationResolver) {
             this._confirmationResolver(true);
         }
     }
 
     deny(reason?: string): void {
+        this._isAwaitingUserConfirmation = false;
         if (this._confirmationResolver) {
             this._finished = true;
             this._result = { denied: true, reason };
@@ -2494,6 +2710,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     }
 
     requestUserConfirmation(): void {
+        this._isAwaitingUserConfirmation = true;
         if (this._needsUserConfirmationResolver) {
             this._needsUserConfirmationResolver();
             this._needsUserConfirmationResolver = undefined;
@@ -2506,6 +2723,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     }
 
     cancelConfirmation(reason?: unknown): void {
+        this._isAwaitingUserConfirmation = false;
         if (this._confirmationRejecter) {
             this._confirmationRejecter(reason);
         }
@@ -2946,8 +3164,7 @@ class ChatResponseImpl implements ChatResponse {
     protected _content: ChatResponseContent[];
     protected _responseRepresentation: string;
     protected _responseRepresentationForDisplay: string;
-    /** Forwarding listeners on per-content change events, disposed and rebuilt whenever the content is reset. */
-    protected readonly toDisposeOnClearContent = new DisposableCollection();
+    protected readonly contentChangeListeners = new Map<ChatResponseContent, Disposable>();
 
     constructor() {
         this._content = [];
@@ -2958,7 +3175,8 @@ class ChatResponseImpl implements ChatResponse {
     }
 
     clearContent(): void {
-        this.toDisposeOnClearContent.dispose();
+        this.contentChangeListeners.forEach(listener => listener.dispose());
+        this.contentChangeListeners.clear();
         this._content = [];
         this._updateResponseRepresentation();
         this._onDidChangeEmitter.fire();
@@ -2993,10 +3211,12 @@ class ChatResponseImpl implements ChatResponse {
                 this._content.push(nextContent);
                 // Forward content-level change events (e.g. partial-result updates from a
                 // renderer) so auto-save can persist them. Without this, mutations that
-                // don't go through addContent/merge are invisible to listeners. Registered against
-                // toDisposeOnClearContent so the subscription is disposed when the content is cleared,
-                // otherwise re-adding the same content (as the stream parser does on every text token) leaks listeners.
-                nextContent.onDidChange(() => this._onDidChangeEmitter.fire(), undefined, this.toDisposeOnClearContent);
+                // don't go through addContent/merge are invisible to listeners.
+                // The subscription is tracked so that clearContent() can dispose it: the stream
+                // parser clears and re-adds the content per token, which would otherwise stack
+                // up one listener per token on the same content object (#17858).
+                this.contentChangeListeners.get(nextContent)?.dispose();
+                this.contentChangeListeners.set(nextContent, nextContent.onDidChange(() => this._onDidChangeEmitter.fire()));
             }
         } else if (ServerToolCallChatResponseContent.is(nextContent) && nextContent.id !== undefined) {
             // Server tool calls are matched by id (the start and result blocks arrive as separate stream parts).
@@ -3089,6 +3309,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
     protected _cancellationToken: CancellationTokenSource;
     protected _promptVariantId?: string;
     protected _isPromptVariantEdited?: boolean;
+    protected _languageModel?: string;
     protected _tokenUsage?: ResponseTokenUsage;
     protected _tokenUsageEntries: ResponseTokenUsage[] = [];
 
@@ -3134,6 +3355,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
         this._progressMessages = [];
         this._promptVariantId = data.promptVariantId;
         this._isPromptVariantEdited = data.isPromptVariantEdited ?? false;
+        this._languageModel = data.languageModel;
         this._tokenUsage = data.tokenUsage;
 
         if (data.errorMessage) {
@@ -3214,6 +3436,10 @@ export class MutableChatResponseModel implements ChatResponseModel {
         return this._isPromptVariantEdited ?? false;
     }
 
+    get languageModel(): string | undefined {
+        return this._languageModel;
+    }
+
     get tokenUsage(): ResponseTokenUsage | undefined {
         return this._tokenUsage;
     }
@@ -3235,6 +3461,12 @@ export class MutableChatResponseModel implements ChatResponseModel {
     setPromptVariantInfo(variantId: string | undefined, isEdited: boolean): void {
         this._promptVariantId = variantId;
         this._isPromptVariantEdited = isEdited;
+        this._onDidChangeEmitter.fire();
+    }
+
+    /** Records the identifier of the language model that produced this response. */
+    setLanguageModel(languageModel: string | undefined): void {
+        this._languageModel = languageModel;
         this._onDidChangeEmitter.fire();
     }
 
@@ -3315,6 +3547,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
             errorMessage: this.errorObject?.message,
             promptVariantId: this._promptVariantId,
             isPromptVariantEdited: this._isPromptVariantEdited,
+            languageModel: this._languageModel,
             tokenUsage: this._tokenUsage,
             content: this.response.content.map(c => {
                 const serialized = c.toSerializable?.();

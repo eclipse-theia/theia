@@ -140,7 +140,7 @@ export class MCPCommandContribution implements CommandContribution {
                     }
                 } catch (error) {
                     this.messageService.error(nls.localize('theia/ai/mcp/error/signInFailed', 'An error occurred while signing in to the MCP server.'));
-                    console.error('Error while signing in to MCP server:', error);
+                    this.logger.error('Error while signing in to MCP server:', error);
                 }
             }
         }));
@@ -157,7 +157,7 @@ export class MCPCommandContribution implements CommandContribution {
                     }
                 } catch (error) {
                     this.messageService.error(nls.localize('theia/ai/mcp/error/getRedirectUrlFailed', 'An error occurred while determining the MCP OAuth redirect URL.'));
-                    console.error('Error while determining the MCP OAuth redirect URL:', error);
+                    this.logger.error('Error while determining the MCP OAuth redirect URL:', error);
                 }
             }
         }));
@@ -237,7 +237,7 @@ export class MCPCommandContribution implements CommandContribution {
         if (status === MCPServerStatus.Running || status === MCPServerStatus.Connected) {
             const toolNames = tools && tools.length > 0
                 ? tools.map(tool => tool.name).join(',')
-                : nls.localize('theia/ai/mcp/tool/noTools', 'No tools available.');
+                : nls.localizeByDefault('No tools available.');
             this.messageService.info(
                 nls.localize('theia/ai/mcp/info/serverStarted', 'MCP server "{0}" successfully started. Registered tools: {1}', serverName, toolNames)
             );

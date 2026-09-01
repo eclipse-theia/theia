@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { nls, PreferenceContribution, PreferenceSchema } from '@theia/core';
+import { MODEL_PROVIDER_TYPE_DETAIL, ModelProviderTypeDetail } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { interfaces } from '@theia/core/shared/inversify';
 
 export const AI_LLAMAFILE_PREFERENCES_TITLE = nls.localize('theia/ai/llamaFile/prefs/title', 'AI LlamaFile');
@@ -24,6 +25,7 @@ export const aiLlamafilePreferencesSchema: PreferenceSchema = {
     properties: {
         [PREFERENCE_LLAMAFILE]: {
             title: AI_LLAMAFILE_PREFERENCES_TITLE,
+            typeDetails: { [MODEL_PROVIDER_TYPE_DETAIL]: { label: 'Llamafile' } satisfies ModelProviderTypeDetail },
             markdownDescription: nls.localize('theia/ai/llamaFile/prefs/mdDescription', 'This setting allows you to configure and manage LlamaFile models in Theia IDE.\
             \n\
             Each entry requires a user-friendly `name`, the file `uri` pointing to your LlamaFile, and the `port` on which it will run.\

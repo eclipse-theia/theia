@@ -24,6 +24,7 @@ import { IOpenerService, OpenExternalOptions, OpenInternalOptions } from '@theia
 import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handler';
 import { URI } from '@theia/core/lib/common/uri';
 import { MarkdownRenderer, MarkdownRenderOptions, MarkdownRenderResult } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
+import { markMarkdownLinksWired } from '@theia/core/lib/browser/markdown-rendering/markdown-link-handler';
 import { MarkdownRenderOptions as MonacoMarkdownRenderOptions } from '@theia/monaco-editor-core/esm/vs/base/browser/markdownRenderer';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { DisposableStore } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
@@ -39,7 +40,12 @@ export class MonacoMarkdownRenderer implements MarkdownRenderer {
     protected _openerService: OpenerService | undefined;
 
     render(markdown: MarkdownString, options?: MarkdownRenderOptions): MarkdownRenderResult {
-        return this.delegate.render(markdown, this.transformOptions(options));
+        const rendered = this.delegate.render(markdown, this.transformOptions(options));
+        // The delegate activates links through its own opener service, which `interceptOpen`
+        // routes to Theia's. Declaring that keeps callers from wiring a second handler, which
+        // would open every link twice.
+        markMarkdownLinksWired(rendered.element);
+        return rendered;
     }
 
     protected transformOptions(options?: MarkdownRenderOptions): MonacoMarkdownRenderOptions | undefined {

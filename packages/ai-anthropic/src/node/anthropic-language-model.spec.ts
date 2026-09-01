@@ -19,11 +19,12 @@ import { Container, injectable } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import {
-    ANTHROPIC_RESULT_BLOCK_DATA_KEY, AnthropicModel, AnthropicModelParams, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage, mergeConsecutiveSameRoleMessages
+    ANTHROPIC_RESULT_BLOCK_DATA_KEY, AnthropicModel, AnthropicModelParams, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage,
+    mergeConsecutiveSameRoleMessages, transformToAnthropicParams
 } from './anthropic-language-model';
 import {
-    isServerToolCallResponsePart, isUsageResponsePart, LanguageModelRequest, LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport,
-    ToolCallExecutor, ToolCallExecutorImpl, UserRequest
+    CompactionMessage, isServerToolCallResponsePart, isUsageResponsePart, LanguageModelMessage, LanguageModelRequest,
+    LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport, ToolCallExecutor, ToolCallExecutorImpl, UserRequest
 } from '@theia/ai-core';
 import type { Anthropic } from '@anthropic-ai/sdk';
 import type { MessageParam } from '@anthropic-ai/sdk/resources';
@@ -33,7 +34,7 @@ const REASONING_SUPPORT: ReasoningSupport = {
     defaultLevel: 'auto'
 };
 
-/** Test helper that exposes the otherwise protected getSettings()/createTools() methods. */
+/** Test helper that exposes the otherwise protected getSettings(), createTools(), and applyCompactionParams() methods. */
 @injectable()
 class TestableAnthropicModel extends AnthropicModel {
     public callGetSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
@@ -41,6 +42,9 @@ class TestableAnthropicModel extends AnthropicModel {
     }
     public callCreateTools(request: LanguageModelRequest): Anthropic.Messages.ToolUnion[] | undefined {
         return this.createTools(request);
+    }
+    public callApplyCompactionParams<T extends Anthropic.MessageCreateParams>(params: T, request: LanguageModelRequest): T {
+        return this.applyCompactionParams(params, request);
     }
 }
 
@@ -321,6 +325,194 @@ describe('AnthropicModel', () => {
             addCacheControlToLastMessage(originalMessages);
 
             expect(originalMessages[0].content[0]).to.not.have.property('cache_control');
+        });
+    });
+
+    describe('transformToAnthropicParams thinking blocks', () => {
+        function thinkingMessage(thinking: string, signature: string): LanguageModelMessage {
+            return { actor: 'ai', type: 'thinking', thinking, signature };
+        }
+
+        function userText(text: string): LanguageModelMessage {
+            return { actor: 'user', type: 'text', text };
+        }
+
+        function thinkingBlocks(messages: MessageParam[]): Anthropic.Messages.ContentBlockParam[] {
+            return messages.flatMap(message => Array.isArray(message.content) ? message.content : [])
+                .filter(block => block.type === 'thinking');
+        }
+
+        it('drops a thinking block with empty thinking text, which Anthropic rejects on replay', () => {
+            const messages = [userText('do something'), thinkingMessage('', 'signature'), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.be.empty;
+            expect(JSON.stringify(result)).to.contain('do something');
+            expect(JSON.stringify(result)).to.contain('continue');
+        });
+
+        it('drops a thinking block whose thinking text is only whitespace', () => {
+            const messages = [thinkingMessage('  \n', 'signature'), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.be.empty;
+        });
+
+        it('drops a thinking block without a signature', () => {
+            const messages = [thinkingMessage('some reasoning', ''), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.be.empty;
+        });
+
+        it('keeps a signed thinking block that has content', () => {
+            const messages = [thinkingMessage('some reasoning', 'signature'), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.deep.equal([{ type: 'thinking', thinking: 'some reasoning', signature: 'signature' }]);
+        });
+
+        it('logs a debug message when dropping a thinking block', () => {
+            const originalDebug = console.debug;
+            const logged: string[] = [];
+            console.debug = (...args: unknown[]) => { logged.push(args.map(String).join(' ')); };
+            try {
+                transformToAnthropicParams([thinkingMessage('', 'signature'), userText('continue')], false);
+            } finally {
+                console.debug = originalDebug;
+            }
+            expect(logged.some(line => line.includes('thinking'))).to.be.true;
+        });
+    });
+
+    describe('tool loop thinking block replay', () => {
+        /**
+         * Mock client whose first stream() call yields the given events and whose follow-up calls yield none.
+         * All params passed to stream() are captured so the tool loop's follow-up request can be inspected.
+         */
+        function createToolLoopModel(firstCallEvents: object[], capturedParams: Anthropic.MessageCreateParams[]): AnthropicModel {
+            let call = 0;
+            const ModelClass = injectable()(class extends AnthropicModel {
+                protected override initializeAnthropic(): Anthropic {
+                    return {
+                        messages: {
+                            stream: (params: Anthropic.MessageCreateParams) => {
+                                capturedParams.push(params);
+                                const events = call++ === 0 ? firstCallEvents : [];
+                                async function* iterate(): AsyncGenerator<object> {
+                                    for (const event of events) {
+                                        yield event;
+                                    }
+                                }
+                                const iter = iterate();
+                                (iter as unknown as Record<string, unknown>).on = () => { /* no-op */ };
+                                (iter as unknown as Record<string, unknown>).abort = () => { /* no-op */ };
+                                return iter;
+                            }
+                        }
+                    } as unknown as Anthropic;
+                }
+            });
+            return buildModel(ModelClass, {
+                id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' }, enableStreaming: true, useCaching: false,
+                apiKey: () => 'test-key', url: undefined
+            });
+        }
+
+        function toolLoopEvents(thinkingBlock: { type: 'thinking'; thinking: string; signature: string }): object[] {
+            return [
+                // The SDK accumulates streamed content blocks into the message_start message in place, so by the
+                // time the tool loop replays it, its content holds the raw blocks exactly as streamed. The mock
+                // provides that end state up front.
+                {
+                    type: 'message_start',
+                    message: {
+                        role: 'assistant',
+                        content: [thinkingBlock, { type: 'tool_use', id: 'call_1', name: 'myTool', input: {} }],
+                        usage: { input_tokens: 10, output_tokens: 0 }
+                    }
+                },
+                { type: 'content_block_start', index: 0, content_block: thinkingBlock },
+                { type: 'content_block_stop', index: 0 },
+                { type: 'content_block_start', index: 1, content_block: { type: 'tool_use', id: 'call_1', name: 'myTool', input: {} } },
+                { type: 'content_block_delta', index: 1, delta: { type: 'input_json_delta', partial_json: '{}' } },
+                { type: 'content_block_stop', index: 1 },
+                { type: 'message_delta', delta: { stop_reason: 'tool_use' }, usage: { output_tokens: 5 } },
+                { type: 'message_stop' },
+            ];
+        }
+
+        async function runToolLoop(firstCallEvents: object[]): Promise<Anthropic.MessageCreateParams[]> {
+            const capturedParams: Anthropic.MessageCreateParams[] = [];
+            const model = createToolLoopModel(firstCallEvents, capturedParams);
+            const request: UserRequest = {
+                messages: [{ actor: 'user', type: 'text', text: 'do something' }],
+                tools: [{ id: 'myTool', name: 'myTool', parameters: { type: 'object', properties: {} }, handler: async () => 'ok' }],
+                agentId: 'test', sessionId: 'session', requestId: 'req'
+            };
+            const response = await model.request(request);
+            if ('stream' in response) {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                for await (const _part of response.stream) { /* drain */ }
+            }
+            return capturedParams;
+        }
+
+        function contentBlocks(params: Anthropic.MessageCreateParams): Anthropic.Messages.ContentBlockParam[] {
+            return params.messages.flatMap(message => Array.isArray(message.content) ? message.content : []);
+        }
+
+        it('drops an unreplayable thinking block from the tool loop follow-up request', async () => {
+            const params = await runToolLoop(toolLoopEvents({ type: 'thinking', thinking: '', signature: '' }));
+
+            expect(params).to.have.lengthOf(2);
+            const blocks = contentBlocks(params[1]);
+            expect(blocks.some(block => block.type === 'thinking')).to.be.false;
+            // The rest of the streamed assistant turn and the tool result still replay.
+            expect(blocks.some(block => block.type === 'tool_use' && block.id === 'call_1')).to.be.true;
+            expect(blocks.some(block => block.type === 'tool_result' && block.tool_use_id === 'call_1')).to.be.true;
+        });
+
+        it('replays a valid thinking block unchanged in the tool loop follow-up request', async () => {
+            const params = await runToolLoop(toolLoopEvents({ type: 'thinking', thinking: 'some reasoning', signature: 'sig' }));
+
+            expect(params).to.have.lengthOf(2);
+            const thinking = contentBlocks(params[1]).find(block => block.type === 'thinking');
+            expect(thinking).to.deep.equal({ type: 'thinking', thinking: 'some reasoning', signature: 'sig' });
+        });
+
+        it('drops a message left empty after filtering its only (unreplayable) thinking block', async () => {
+            // Two messages in one stream: the first holds only the invalid thinking block, the second the tool_use.
+            // After filtering, the first message has no content and must not be replayed at all.
+            const events = [
+                {
+                    type: 'message_start',
+                    message: { role: 'assistant', content: [{ type: 'thinking', thinking: '', signature: '' }], usage: { input_tokens: 10, output_tokens: 0 } }
+                },
+                { type: 'content_block_start', index: 0, content_block: { type: 'thinking', thinking: '', signature: '' } },
+                { type: 'content_block_stop', index: 0 },
+                { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 1 } },
+                { type: 'message_stop' },
+                {
+                    type: 'message_start',
+                    message: { role: 'assistant', content: [{ type: 'tool_use', id: 'call_1', name: 'myTool', input: {} }], usage: { input_tokens: 10, output_tokens: 0 } }
+                },
+                { type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'call_1', name: 'myTool', input: {} } },
+                { type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: '{}' } },
+                { type: 'content_block_stop', index: 0 },
+                { type: 'message_delta', delta: { stop_reason: 'tool_use' }, usage: { output_tokens: 5 } },
+                { type: 'message_stop' },
+            ];
+
+            const params = await runToolLoop(events);
+
+            expect(params).to.have.lengthOf(2);
+            const emptyMessages = params[1].messages.filter(message => Array.isArray(message.content) && message.content.length === 0);
+            expect(emptyMessages).to.be.empty;
         });
     });
 
@@ -746,6 +938,269 @@ describe('AnthropicModel', () => {
             expect(resultBlock).to.not.be.undefined;
             // The raw block from `data` is reconstructed faithfully (not the rendering summary).
             expect((resultBlock as { content: unknown }).content).to.deep.equal(rawBlock);
+        });
+
+        it('surfaces the deferred tool search as a running then finished server tool call', async () => {
+            const events = [
+                { type: 'message_start', message: { usage: { input_tokens: 10, output_tokens: 0 } } },
+                { type: 'content_block_start', index: 0, content_block: { type: 'server_tool_use', id: 'ts-1', name: 'tool_search_tool_bm25', input: {} } },
+                { type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: '{"query":"file"}' } },
+                { type: 'content_block_stop', index: 0 },
+                {
+                    type: 'content_block_start', index: 1,
+                    content_block: {
+                        type: 'tool_search_tool_result', tool_use_id: 'ts-1',
+                        content: { type: 'tool_search_tool_search_result', tool_references: [{}, {}] }
+                    }
+                },
+                { type: 'content_block_stop', index: 1 },
+                { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 5 } },
+                { type: 'message_stop' },
+            ];
+
+            const ModelClass = injectable()(class extends AnthropicModel {
+                protected override initializeAnthropic(): Anthropic {
+                    return buildMockAnthropicStream(events);
+                }
+            });
+            const model = buildModel(ModelClass, {
+                id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' }, enableStreaming: true, useCaching: false,
+                apiKey: () => 'test-key', url: undefined
+            });
+
+            const parts = await collectParts(model, 'do something requiring a deferred tool');
+            const calls = parts.filter(isServerToolCallResponsePart).flatMap(p => p.server_tool_calls);
+
+            // The native `tool_search_tool_bm25` invocation is surfaced under the stable, user-facing name.
+            const running = calls.find(c => !c.finished && c.name === 'tool_search');
+            expect(running).to.not.be.undefined;
+            expect(running!.id).to.equal('ts-1');
+
+            const finished = calls.find(c => c.finished);
+            expect(finished).to.not.be.undefined;
+            expect(finished!.id).to.equal('ts-1');
+            expect(finished!.name).to.equal('tool_search');
+            expect(finished!.arguments).to.equal('{"query":"file"}');
+            expect(finished!.result).to.deep.equal({ content: [{ type: 'text', text: 'Found 2 tools.' }] });
+        });
+
+        it('drops the deferred tool search server tool use message on replay', async () => {
+            let capturedParams: Anthropic.MessageCreateParams | undefined;
+            const ModelClass = injectable()(class extends AnthropicModel {
+                protected override initializeAnthropic(): Anthropic {
+                    return {
+                        messages: {
+                            stream: (params: Anthropic.MessageCreateParams) => {
+                                capturedParams = params;
+                                async function* iterate(): AsyncGenerator<object> { /* no events */ }
+                                const iter = iterate();
+                                (iter as unknown as Record<string, unknown>).on = () => { /* no-op */ };
+                                (iter as unknown as Record<string, unknown>).abort = () => { /* no-op */ };
+                                return iter;
+                            }
+                        }
+                    } as unknown as Anthropic;
+                }
+            });
+            const model = buildModel(ModelClass, {
+                id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' }, enableStreaming: true, useCaching: false,
+                apiKey: () => 'test-key', url: undefined
+            });
+
+            const request: UserRequest = {
+                messages: [
+                    { actor: 'user', type: 'text', text: 'hi' },
+                    {
+                        actor: 'ai', type: 'server_tool_use', id: 'ts-1', name: 'tool_search',
+                        input: { query: 'file' },
+                        result: { content: [{ type: 'text', text: 'Found 2 tools.' }] }
+                    }
+                ],
+                agentId: 'test', sessionId: 'session', requestId: 'req'
+            };
+            const response = await model.request(request);
+            if ('stream' in response) {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                for await (const _part of response.stream) { /* no-op */ }
+            }
+
+            const allBlocks = (capturedParams?.messages ?? []).flatMap(m => Array.isArray(m.content) ? m.content : []);
+            expect(allBlocks.some(b => b.type === 'server_tool_use')).to.be.false;
+        });
+    });
+
+    describe('server-side compaction', () => {
+
+        function textMessage(text: string, actor: 'user' | 'ai' = 'user'): LanguageModelMessage {
+            return { actor, type: 'text', text, query: text } as unknown as LanguageModelMessage;
+        }
+
+        function compactionMessage(provider: string): CompactionMessage {
+            return {
+                actor: 'ai',
+                type: 'compaction',
+                provider,
+                data: { content: 'summary of earlier turns', encrypted_content: 'opaque-blob' },
+                summary: 'summary of earlier turns'
+            };
+        }
+
+        function findCompactionBlock(messages: Anthropic.Messages.MessageParam[]): { type: string; content: unknown; encrypted_content: unknown } | undefined {
+            for (const message of messages) {
+                if (Array.isArray(message.content)) {
+                    for (const block of message.content) {
+                        if ((block as { type?: string }).type === 'compaction') {
+                            return block as unknown as { type: string; content: unknown; encrypted_content: unknown };
+                        }
+                    }
+                }
+            }
+            return undefined;
+        }
+
+        function createCompactionModel(
+            serverSideCompactionEnabledByDefault: boolean,
+            serverSideCompactionSupport: boolean = true,
+            serverSideCompactionTokenThresholdByDefault?: number
+        ): TestableAnthropicModel {
+            return buildModel(TestableAnthropicModel, {
+                id: 'test-id', model: 'claude-opus-4-6', status: { status: 'ready' }, enableStreaming: true, useCaching: false,
+                apiKey: () => 'test-key', url: undefined, maxTokens: DEFAULT_MAX_TOKENS, maxRetries: 3,
+                serverSideCompactionSupport, serverSideCompactionEnabledByDefault, serverSideCompactionTokenThresholdByDefault
+            });
+        }
+
+        describe('transformToAnthropicParams', () => {
+            it('emits a compaction block for an anthropic compaction message when compaction is enabled, retaining surrounding messages', () => {
+                const messages: LanguageModelMessage[] = [textMessage('first user turn'), compactionMessage('anthropic'), textMessage('second user turn')];
+
+                const { messages: result } = transformToAnthropicParams(messages, false, true);
+
+                const compactionBlock = findCompactionBlock(result);
+                expect(compactionBlock, 'compaction block present').to.not.equal(undefined);
+                expect(compactionBlock!.content).to.equal('summary of earlier turns');
+                expect(compactionBlock!.encrypted_content).to.equal('opaque-blob');
+
+                const flattened = JSON.stringify(result);
+                expect(flattened).to.contain('first user turn');
+                expect(flattened).to.contain('second user turn');
+            });
+
+            it('omits the compaction block when compaction is disabled, retaining surrounding messages', () => {
+                const messages: LanguageModelMessage[] = [textMessage('first user turn'), compactionMessage('anthropic'), textMessage('second user turn')];
+
+                const { messages: result } = transformToAnthropicParams(messages, false, false);
+
+                expect(findCompactionBlock(result), 'no compaction block').to.equal(undefined);
+                const flattened = JSON.stringify(result);
+                expect(flattened).to.contain('first user turn');
+                expect(flattened).to.contain('second user turn');
+            });
+
+            it('skips a foreign-provider compaction message even when compaction is enabled', () => {
+                const messages: LanguageModelMessage[] = [textMessage('first user turn'), compactionMessage('openai-responses'), textMessage('second user turn')];
+
+                const { messages: result } = transformToAnthropicParams(messages, false, true);
+
+                expect(findCompactionBlock(result), 'no compaction block for foreign provider').to.equal(undefined);
+                const flattened = JSON.stringify(result);
+                expect(flattened).to.contain('first user turn');
+                expect(flattened).to.contain('second user turn');
+            });
+        });
+
+        describe('applyCompactionParams', () => {
+            function baseParams(): Anthropic.MessageCreateParams {
+                return { max_tokens: DEFAULT_MAX_TOKENS, model: 'claude-opus-4-6', messages: [] };
+            }
+
+            it('adds the beta flag and context_management when compaction is enabled by default (capable model)', () => {
+                // claude-opus-4-6 is capable; serverSideCompactionEnabledByDefault=true, no session override.
+                const model = createCompactionModel(true);
+                const params = model.callApplyCompactionParams(baseParams(), {
+                    messages: []
+                });
+                const beta = params as Anthropic.MessageCreateParams & Anthropic.Beta.Messages.MessageCreateParams;
+
+                expect(beta.betas).to.deep.equal(['compact-2026-01-12']);
+                expect(beta.context_management).to.deep.equal({ edits: [{ type: 'compact_20260112' }] });
+            });
+
+            it('adds the model default token threshold', () => {
+                const model = createCompactionModel(true, true, 280_000);
+                const params = model.callApplyCompactionParams(baseParams(), { messages: [] });
+                const beta = params as Anthropic.MessageCreateParams & Anthropic.Beta.Messages.MessageCreateParams;
+
+                expect(beta.context_management).to.deep.equal({
+                    edits: [{ type: 'compact_20260112', trigger: { type: 'input_tokens', value: 280_000 } }]
+                });
+            });
+
+            it('uses the session token threshold over the model default', () => {
+                const model = createCompactionModel(true, true, 280_000);
+                const params = model.callApplyCompactionParams(baseParams(), {
+                    messages: [],
+                    compaction: { tokenThreshold: 300_000 }
+                });
+                const beta = params as Anthropic.MessageCreateParams & Anthropic.Beta.Messages.MessageCreateParams;
+
+                expect(beta.context_management).to.deep.equal({
+                    edits: [{ type: 'compact_20260112', trigger: { type: 'input_tokens', value: 300_000 } }]
+                });
+            });
+
+            it('leaves params unchanged when compaction is disabled by default', () => {
+                const model = createCompactionModel(false);
+                const params = model.callApplyCompactionParams(baseParams(), {
+                    messages: []
+                });
+                const beta = params as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+
+                expect(beta.betas).to.equal(undefined);
+                expect(beta.context_management).to.equal(undefined);
+            });
+
+            it('session enables compaction over a false default (capable model)', () => {
+                const model = createCompactionModel(false);
+
+                const enabled = model.callApplyCompactionParams(baseParams(), {
+                    messages: [],
+                    compaction: { enabled: true }
+                }) as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+                expect(enabled.betas).to.deep.equal(['compact-2026-01-12']);
+            });
+
+            it('session disables compaction over a true default', () => {
+                const model = createCompactionModel(true);
+
+                // compaction.enabled=false wins even when serverSideCompactionEnabledByDefault is true
+                const forcedOff = model.callApplyCompactionParams(baseParams(), {
+                    messages: [],
+                    compaction: { enabled: false }
+                }) as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+                expect(forcedOff.betas).to.equal(undefined);
+            });
+
+            it('leaves params unchanged when the model does not support server-side compaction, regardless of activation', () => {
+                const incapableModel = createCompactionModel(true, false);
+                const params = incapableModel.callApplyCompactionParams(baseParams(), {
+                    messages: [],
+                    compaction: { enabled: true }
+                });
+                const beta = params as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+
+                expect(beta.betas).to.equal(undefined);
+                expect(beta.context_management).to.equal(undefined);
+            });
+
+            it('leaves params unchanged when no compaction request settings are provided and default is false', () => {
+                const model = createCompactionModel(false);
+                const params = model.callApplyCompactionParams(baseParams(), { messages: [] });
+                const beta = params as Anthropic.MessageCreateParams & Partial<Anthropic.Beta.Messages.MessageCreateParams>;
+
+                expect(beta.betas).to.equal(undefined);
+                expect(beta.context_management).to.equal(undefined);
+            });
         });
     });
 });

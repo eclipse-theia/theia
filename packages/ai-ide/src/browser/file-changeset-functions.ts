@@ -13,18 +13,18 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { assertChatContext, ChatToolContext } from '@theia/ai-chat';
+import { assertChatContext, ChatToolContext, FileReadTracker } from '@theia/ai-chat';
 import { ChangeSet } from '@theia/ai-chat/lib/common/change-set';
 import { ChangeSetElementArgs, ChangeSetFileElement, ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { ToolInvocationContext, ToolProvider, ToolRequest, ToolRequestParameters, ToolRequestParametersProperties } from '@theia/ai-core';
 import { ContentReplacerV1Impl, Replacement, ContentReplacer } from '@theia/core/lib/common/content-replacer';
 import { ContentReplacerV2Impl } from '@theia/core/lib/common/content-replacer-v2-impl';
 import { URI } from '@theia/core/lib/common/uri';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named, optional } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceFunctionScope } from './workspace-functions';
 
-import { nls } from '@theia/core';
+import { nls, ILogger } from '@theia/core';
 import { extractJsonStringField } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/toolcall-utils';
 import {
     CLEAR_FILE_CHANGES_ID,
@@ -37,12 +37,29 @@ import {
     WRITE_FILE_REPLACEMENTS_SIMPLE_ID
 } from '../common/file-changeset-function-ids';
 
+/**
+ * Description of the `path` parameter shared by all file changeset tools, so that they advertise the
+ * same accepted forms as the read-only workspace tools.
+ */
+const FILE_PATH_PARAMETER_DESCRIPTION = 'Path to the target file. May be workspace-relative ' +
+    '(e.g., "my-project/src/index.ts"), an absolute path, or a `file://` URI. ' +
+    'Absolute / URI forms must point to a location the tools may access, such as a directory listed in the ' +
+    '`ai-features.workspaceFunctions.allowedExternalPaths` preference.';
+
 function createPathShortLabel(args: string, hasMore: boolean): { label: string; hasMore: boolean } | undefined {
     const path = extractJsonStringField(args, 'path');
     if (path) {
         return { label: path, hasMore };
     }
     return undefined;
+}
+
+/**
+ * Whole-file writes from an outdated read would silently discard whatever changed in between. The replacement
+ * tools need no such guard: they re-read and fail when their matched content is gone.
+ */
+function staleFileError(path: string): string {
+    return `File ${path} changed since you last read it. Read it again before overwriting it, so that the changes made in the meantime are not lost.`;
 }
 
 export const FileChangeSetTitleProvider = Symbol('FileChangeSetTitleProvider');
@@ -67,6 +84,10 @@ export class SuggestFileContent implements ToolProvider {
     @inject(FileChangeSetTitleProvider)
     protected readonly fileChangeSetTitleProvider: FileChangeSetTitleProvider;
 
+    /** Optional: the guard is advisory, so containers without a tracker still get a working tool. */
+    @inject(FileReadTracker) @optional()
+    protected readonly fileReadTracker: FileReadTracker | undefined;
+
     getTool(): ToolRequest {
         return {
             id: SuggestFileContent.ID,
@@ -82,8 +103,7 @@ export class SuggestFileContent implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: 'The path to the file within the workspace ' +
-                            '(e.g., "my-project/src/index.ts", "backend/config/settings.json").'
+                        description: FILE_PATH_PARAMETER_DESCRIPTION
                     },
                     content: {
                         type: 'string',
@@ -100,7 +120,15 @@ export class SuggestFileContent implements ToolProvider {
                 }
                 const { path, content } = JSON.parse(args);
                 const chatSessionId = ctx.request.session.id;
-                const uri = await this.workspaceFunctionScope.resolveRelativePath(path);
+                let uri: URI;
+                try {
+                    uri = await this.workspaceFunctionScope.resolveAccessiblePath(path);
+                } catch (error) {
+                    return JSON.stringify({ error: error.message });
+                }
+                if (await this.fileReadTracker?.isStale(chatSessionId, uri)) {
+                    return JSON.stringify({ error: staleFileError(path) });
+                }
                 let type: ChangeSetElementArgs['type'] = 'modify';
                 if (content === '') {
                     type = 'delete';
@@ -143,6 +171,10 @@ export class WriteFileContent implements ToolProvider {
     @inject(FileChangeSetTitleProvider)
     protected readonly fileChangeSetTitleProvider: FileChangeSetTitleProvider;
 
+    /** Optional: the guard is advisory, so containers without a tracker still get a working tool. */
+    @inject(FileReadTracker) @optional()
+    protected readonly fileReadTracker: FileReadTracker | undefined;
+
     getTool(): ToolRequest {
         return {
             id: WriteFileContent.ID,
@@ -158,8 +190,7 @@ export class WriteFileContent implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: 'The path to the file within the workspace ' +
-                            '(e.g., "my-project/src/index.ts", "backend/config/settings.json").'
+                        description: FILE_PATH_PARAMETER_DESCRIPTION
                     },
                     content: {
                         type: 'string',
@@ -176,7 +207,15 @@ export class WriteFileContent implements ToolProvider {
                 }
                 const { path, content } = JSON.parse(args);
                 const chatSessionId = ctx.request.session.id;
-                const uri = await this.workspaceFunctionScope.resolveRelativePath(path);
+                let uri: URI;
+                try {
+                    uri = await this.workspaceFunctionScope.resolveAccessiblePath(path);
+                } catch (error) {
+                    return JSON.stringify({ error: error.message });
+                }
+                if (await this.fileReadTracker?.isStale(chatSessionId, uri)) {
+                    return JSON.stringify({ error: staleFileError(path) });
+                }
                 let type = 'modify';
                 if (content === '') {
                     type = 'delete';
@@ -223,6 +262,9 @@ export class ReplaceContentInFileFunctionHelper {
     @inject(FileChangeSetTitleProvider)
     protected readonly fileChangeSetTitleProvider: FileChangeSetTitleProvider;
 
+    @inject(ILogger) @named('ai-ide:ReplaceContentInFileFunctionHelper')
+    protected readonly logger: ILogger;
+
     private replacer: ContentReplacer;
 
     constructor() {
@@ -256,9 +298,7 @@ export class ReplaceContentInFileFunctionHelper {
             properties: {
                 path: {
                     type: 'string',
-                    description: 'The path to the file within the workspace ' +
-                        '(e.g., "my-project/src/index.ts", "backend/src/main.ts"). ' +
-                        'Must read the file with getFileContent first.'
+                    description: FILE_PATH_PARAMETER_DESCRIPTION + ' Must read the file with getFileContent first.'
                 },
                 replacements: {
                     type: 'array',
@@ -324,7 +364,7 @@ export class ReplaceContentInFileFunctionHelper {
                 return `No changes needed for file ${result.path}. Content already matches the requested state.`;
             }
         } catch (error) {
-            console.debug('Error processing replacements:', error.message);
+            this.logger.debug('Error processing replacements:', error.message);
             return JSON.stringify({ error: error.message });
         }
     }
@@ -350,7 +390,7 @@ export class ReplaceContentInFileFunctionHelper {
                 return `No changes needed for file ${result.path}. Content already matches the requested state.`;
             }
         } catch (error) {
-            console.debug('Error processing replacements:', error.message);
+            this.logger.debug('Error processing replacements:', error.message);
             return JSON.stringify({ error: error.message });
         }
     }
@@ -365,7 +405,7 @@ export class ReplaceContentInFileFunctionHelper {
         }
 
         const { path, replacements, reset } = JSON.parse(toolCallString) as { path: string, replacements: Replacement[], reset?: boolean };
-        const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
+        const fileUri = await this.workspaceFunctionScope.resolveAccessiblePath(path);
 
         let startingContent: string;
         if (reset || !ctx.request.session.changeSet) {
@@ -423,14 +463,14 @@ export class ReplaceContentInFileFunctionHelper {
                 return JSON.stringify({ error: 'Operation cancelled by user' });
             }
 
-            const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
+            const fileUri = await this.workspaceFunctionScope.resolveAccessiblePath(path);
             if (ctx.request.session.changeSet.removeElements(fileUri)) {
                 return `Cleared pending change(s) for file ${path}.`;
             } else {
                 return `No pending changes found for file ${path}.`;
             }
         } catch (error) {
-            console.debug('Error clearing file changes:', error.message);
+            this.logger.debug('Error clearing file changes:', error.message);
             return JSON.stringify({ error: error.message });
         }
     }
@@ -441,7 +481,7 @@ export class ReplaceContentInFileFunctionHelper {
                 return JSON.stringify({ error: 'Operation cancelled by user' });
             }
 
-            const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
+            const fileUri = await this.workspaceFunctionScope.resolveAccessiblePath(path);
 
             if (!ctx.request.session.changeSet) {
                 const originalContent = (await this.fileService.read(fileUri)).value.toString();
@@ -456,7 +496,7 @@ export class ReplaceContentInFileFunctionHelper {
                 return `File ${path} has no pending changes. Original content:\n\n${originalContent}`;
             }
         } catch (error) {
-            console.debug('Error getting proposed file state:', error.message);
+            this.logger.debug('Error getting proposed file state:', error.message);
             return JSON.stringify({ error: error.message });
         }
     }
@@ -584,8 +624,7 @@ export class ClearFileChanges implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: 'The path to the file within the workspace ' +
-                            '(e.g., "my-project/src/index.ts", "backend/src/main.ts").'
+                        description: FILE_PATH_PARAMETER_DESCRIPTION
                     }
                 },
                 required: ['path']
@@ -622,8 +661,7 @@ export class GetProposedFileState implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: 'The path to the file within the workspace ' +
-                            '(e.g., "my-project/src/index.ts", "backend/src/main.ts").'
+                        description: FILE_PATH_PARAMETER_DESCRIPTION
                     }
                 },
                 required: ['path']

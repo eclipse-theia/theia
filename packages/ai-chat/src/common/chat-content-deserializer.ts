@@ -19,6 +19,8 @@ import {
     ChatResponseContent,
     CodeChatResponseContentImpl,
     CommandChatResponseContentImpl,
+    CompactionChatResponseContentImpl,
+    CompactionContentData,
     ErrorChatResponseContentImpl,
     HorizontalLayoutChatResponseContentImpl,
     InformationalChatResponseContentImpl,
@@ -192,7 +194,7 @@ export class ChatContentDeserializerRegistryImpl implements ChatContentDeseriali
     @inject(ContributionProvider) @named(ChatContentDeserializerContribution)
     protected readonly deserializerContributions: ContributionProvider<ChatContentDeserializerContribution>;
 
-    @inject(ILogger) @named('ChatContentDeserializerRegistry')
+    @inject(ILogger) @named('ai-chat:ChatContentDeserializerRegistryImpl')
     protected readonly logger: ILogger;
 
     /**
@@ -247,6 +249,15 @@ export class DefaultChatContentDeserializerContribution implements ChatContentDe
             deserialize: (data: ThinkingContentData) => new ThinkingChatResponseContentImpl(
                 data.content,
                 data.signature
+            )
+        });
+
+        registry.register({
+            kind: 'compaction',
+            deserialize: (data: CompactionContentData) => new CompactionChatResponseContentImpl(
+                data.provider,
+                data.data,
+                data.summary
             )
         });
 

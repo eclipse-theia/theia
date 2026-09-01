@@ -27,6 +27,7 @@ import {
     CapabilityAwareContext,
     GenericCapabilitySelections,
     getTextOfResponse,
+    isCompactionResponsePart,
     isLanguageModelStreamResponsePart,
     isServerToolCallResponsePart,
     isTextResponsePart,
@@ -51,6 +52,7 @@ import {
 } from '@theia/ai-core';
 import {
     Agent,
+    FrontendLanguageModelRegistry,
     isLanguageModelParsedResponse,
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
@@ -60,11 +62,13 @@ import {
 import { ContributionProvider, ILogger, isArray, nls } from '@theia/core';
 import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
+import { FileReadTracker } from './file-read-tracker';
 import {
     ChatModel,
     ChatRequestModel,
     ChatResponseContent,
     CommonChatSessionSettings,
+    CompactionChatResponseContentImpl,
     ErrorChatResponseContentImpl,
     MarkdownChatResponseContentImpl,
     MutableChatRequestModel,
@@ -184,7 +188,10 @@ export function isChatAgent(agent: Agent): agent is ChatAgent {
 @injectable()
 export abstract class AbstractChatAgent implements ChatAgent {
     @inject(LanguageModelRegistry) protected languageModelRegistry: LanguageModelRegistry;
-    @inject(ILogger) protected logger: ILogger;
+
+    @inject(ILogger) @named('ai-chat:AbstractChatAgent')
+    protected readonly logger: ILogger;
+
     @inject(ChatToolRequestService) protected chatToolRequestService: ChatToolRequestService;
     @inject(LanguageModelService) protected languageModelService: LanguageModelService;
     @inject(PromptService) protected promptService: PromptService;
@@ -196,6 +203,8 @@ export abstract class AbstractChatAgent implements ChatAgent {
     protected defaultContentFactory: DefaultResponseContentFactory;
 
     @inject(TokenUsageService) @optional() protected tokenUsageService: TokenUsageService | undefined;
+
+    @inject(FileReadTracker) @optional() protected fileReadTracker: FileReadTracker | undefined;
 
     readonly abstract id: string;
     readonly abstract name: string;
@@ -225,10 +234,12 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
     async invoke(request: MutableChatRequestModel): Promise<void> {
         try {
-            const languageModel = await this.getLanguageModel(this.defaultLanguageModelPurpose);
+            const languageModel = await this.getLanguageModelForRequest(request, this.defaultLanguageModelPurpose);
             if (!languageModel) {
                 throw new Error(nls.localize('theia/ai/chat/couldNotFindMatchingLM', 'Couldn\'t find a matching language model. Please check your setup!'));
             }
+            // Record the model that actually handled this request so the chat thread can show it.
+            request.response.setLanguageModel(languageModel.id);
             const context: ChatSessionContext = {
                 model: request.session,
                 request,
@@ -250,6 +261,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
             }
 
             const messages = await this.getMessages(request.session);
+            await this.appendExternalFileChangeNotice(request, messages);
 
             if (systemMessageDescription) {
                 const systemMsg: LanguageModelMessage = {
@@ -290,6 +302,27 @@ export abstract class AbstractChatAgent implements ChatAgent {
         }
     }
 
+    /**
+     * Tells the agent which files it read were meanwhile changed by somebody else. A trailing user message
+     * rather than the cached system message; providers requiring alternating roles merge same-role runs.
+     */
+    protected async appendExternalFileChangeNotice(request: MutableChatRequestModel, messages: LanguageModelMessage[]): Promise<void> {
+        try {
+            const changedFiles = await this.fileReadTracker?.getChangedFiles(request.session.id);
+            if (changedFiles?.length) {
+                messages.push({
+                    actor: 'user',
+                    type: 'text',
+                    text: `The following files changed since you last read them: ${changedFiles.join(', ')}. ` +
+                        'Read them again before relying on their content or overwriting them.'
+                });
+            }
+        } catch (error) {
+            // Advisory, so failing to determine it must not fail the request.
+            this.logger.warn('Could not determine externally changed files.', error);
+        }
+    }
+
     protected parseContents(text: string, request: MutableChatRequestModel): ChatResponseContent[] {
         return parseContents(
             text,
@@ -300,7 +333,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
     };
 
     protected handleError(request: MutableChatRequestModel, error: Error): void {
-        console.error('Error handling chat interaction:', error);
+        this.logger.error('Error handling chat interaction:', error);
         request.response.response.addContent(new ErrorChatResponseContentImpl(error));
         request.response.error(error);
     }
@@ -311,6 +344,36 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
     protected async getLanguageModel(languageModelPurpose: string): Promise<LanguageModel> {
         return this.selectLanguageModel(this.getLanguageModelSelector(languageModelPurpose));
+    }
+
+    /**
+     * Resolves the language model for a request, honoring a per-session model override
+     * ({@link CommonChatSessionSettings.modelId}) when set and resolvable, and otherwise falling
+     * back to the agent's configured model for the given purpose.
+     */
+    protected async getLanguageModelForRequest(request: MutableChatRequestModel, languageModelPurpose: string): Promise<LanguageModel> {
+        const overrideId = request.session.settings?.commonSettings?.modelId;
+        if (overrideId) {
+            // Resolve the override directly. We must not go through `selectLanguageModel` here, because
+            // that honors the per-agent model configured in the AI settings, which would take
+            // precedence over and thus ignore the session override.
+            const overridden = await this.resolveModelById(overrideId);
+            if (overridden) {
+                return overridden;
+            }
+        }
+        return this.getLanguageModel(languageModelPurpose);
+    }
+
+    /** Resolves a concrete language model (or alias) id to a ready model, or `undefined` if none is ready. */
+    protected async resolveModelById(modelId: string): Promise<LanguageModel | undefined> {
+        const registry = this.languageModelRegistry as LanguageModelRegistry & Partial<FrontendLanguageModelRegistry>;
+        if (typeof registry.getReadyLanguageModel === 'function') {
+            // Frontend registry: resolves aliases and only returns the model if it is ready.
+            return registry.getReadyLanguageModel(modelId);
+        }
+        const model = await registry.getLanguageModel(modelId);
+        return model?.status.status === 'ready' ? model : undefined;
     }
 
     protected async selectLanguageModel(selector: LanguageModelRequirement): Promise<LanguageModel> {
@@ -547,6 +610,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 serverTools: enabledServerTools.length > 0 ? enabledServerTools : undefined,
                 settings,
                 reasoning: commonSettings?.reasoning,
+                compaction: commonSettings?.compaction,
                 agentId: this.id,
                 sessionId: request.session.id,
                 requestId: request.id,
@@ -713,7 +777,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         for await (const token of languageModelResponse.stream) {
             // Skip unknown tokens. For example OpenAI sends empty tokens around tool calls
             if (!isLanguageModelStreamResponsePart(token)) {
-                console.debug(`Unknown token: '${JSON.stringify(token)}'. Skipping`);
+                this.logger.debug(`Unknown token: '${JSON.stringify(token)}'. Skipping`);
                 continue;
             }
             const newContent = this.parse(token, request);
@@ -775,6 +839,13 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         if (isUsageResponsePart(token)) {
             request.response.setTokenUsage(this.mapUsageResponsePart(token));
             return [];
+        }
+        if (isCompactionResponsePart(token)) {
+            return new CompactionChatResponseContentImpl(
+                token.compaction.provider,
+                token.compaction.data,
+                token.compaction.summary
+            );
         }
         return this.defaultContentFactory.create('', request);
     }

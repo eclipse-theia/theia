@@ -28,94 +28,20 @@
   color: var(--theia-descriptionForeground);
 }
 
-/* Server Card */
-.mcp-server-card {
-  border: var(--theia-border-width) solid var(--theia-widget-border);
-  border-radius: 3px;
-  margin-bottom: calc(var(--theia-ui-padding) * 2);
-  background-color: var(--theia-editor-background);
-  overflow: hidden;
-}
-
-/* Server Header */
-.mcp-server-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: calc(var(--theia-ui-padding) * 1.5) calc(var(--theia-ui-padding) * 2);
-  background-color: var(--theia-editorWidget-background);
-  border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
-}
-
-.mcp-server-name {
-  font-weight: 600;
-  font-size: var(--theia-ui-font-size2);
-  color: var(--theia-foreground);
-  display: flex;
-  align-items: center;
-  gap: calc(var(--theia-ui-padding));
-}
-
-.mcp-server-registry-link {
-  display: inline-flex;
-  align-items: center;
-  gap: calc(var(--theia-ui-padding) / 2);
-  background: none;
-  border: none;
-  padding: 0 calc(var(--theia-ui-padding) / 2);
-  font-size: var(--theia-ui-font-size0);
-  font-weight: 400;
-  color: var(--theia-textLink-foreground);
-  cursor: pointer;
-}
-
-.mcp-server-registry-link:hover:not(:disabled) {
-  color: var(--theia-textLink-activeForeground);
-  text-decoration: underline;
-}
-
-.mcp-server-registry-link:disabled {
-  cursor: default;
-  opacity: 0.6;
-}
-
-.mcp-server-registry-link-icon {
-  font-size: var(--theia-ui-font-size1);
-}
-
-.mcp-server-header-controls {
-  display: flex;
-  align-items: center;
-  gap: calc(var(--theia-ui-padding));
-}
-
-.mcp-status-container {
-  display: flex;
+/* Inline-editable server configuration form: give the label column more room than the read-only view and
+   let the control column fill the width, and align each label with the top of its (possibly multi-line) control. */
+.mcp-config-form .mcp-property-row {
+  grid-template-columns: 11em 1fr;
   align-items: center;
 }
 
-/* Status Badge */
-.mcp-status-badge {
-  padding: calc(var(--theia-ui-padding) / 4) calc(var(--theia-ui-padding) / 1.5);
-  border-radius: 3px;
-  font-size: var(--theia-ui-font-size0);
-  font-weight: 600;
-  display: inline-block;
+.mcp-config-form .mcp-field-control {
+  min-width: 0;
 }
 
-.mcp-error-indicator {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background-color: var(--theia-errorBackground);
-  color: var(--theia-errorForeground);
-  font-size: calc(var(--theia-ui-font-size0) * 0.85);
-  font-weight: 600;
-  cursor: pointer;
-  margin-left: calc(var(--theia-ui-padding) / 2);
+/* Read-only value (e.g. the server type) shown inline in an otherwise editable form. */
+.mcp-field-static {
+  color: var(--theia-descriptionForeground);
 }
 
 /* Action Button */
@@ -146,13 +72,6 @@
 }
 
 /* Server Content - Property Rows */
-.mcp-server-content {
-  padding: calc(var(--theia-ui-padding) * 2);
-  display: flex;
-  flex-direction: column;
-  gap: calc(var(--theia-ui-padding));
-}
-
 .mcp-property-row {
   display: grid;
   grid-template-columns: 6em 1fr;
@@ -181,95 +100,8 @@
   border: var(--theia-border-width) solid var(--theia-widget-border);
 }
 
-.mcp-env-entry {
-  margin-bottom: calc(var(--theia-ui-padding) / 4);
-}
-
-.mcp-env-entry:last-child {
-  margin-bottom: 0;
-}
-
-.mcp-autostart-badge {
-  border-radius: 3px;
-  font-weight: 600;
-}
-
-/* Toggle Indicator */
-.mcp-toggle-indicator {
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: calc(var(--theia-ui-padding) / 2);
-}
-
-.mcp-toggle-icon {
-  display: inline-block;
-  transition: transform 0.2s ease;
-  font-size: calc(var(--theia-ui-font-size0) * 0.85);
-}
-
-/* Tools Section */
-.mcp-tools-section {
-  padding: calc(var(--theia-ui-padding) * 2);
-  padding-top: calc(var(--theia-ui-padding) * 1.5);
-  border-top: var(--theia-border-width) solid var(--theia-widget-border);
-  background-color: var(--theia-editor-background);
-}
-
-.mcp-tools-header {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  user-select: none;
-  padding: calc(var(--theia-ui-padding) / 2) 0;
-}
-
-.mcp-tools-header:hover {
-  background-color: var(--theia-list-hoverBackground);
-}
-
-.mcp-tools-label-container {
-  flex-grow: 1;
-}
-
+/* Toolbar of "copy all …" actions above the tools list. */
 .mcp-tools-actions {
-  display: flex;
-  gap: calc(var(--theia-ui-padding) / 2);
-}
-
-.mcp-section-label {
-  font-weight: 600;
-  color: var(--theia-descriptionForeground);
-  font-size: var(--theia-ui-font-size0);
-}
-
-.mcp-tools-list {
-  margin-top: calc(var(--theia-ui-padding));
-  padding: calc(var(--theia-ui-padding));
-  background-color: var(--theia-editorWidget-background);
-  border-radius: 3px;
-  border: var(--theia-border-width) solid var(--theia-widget-border);
-}
-
-.mcp-tool-item {
-  display: flex;
-  align-items: center;
-  padding: calc(var(--theia-ui-padding) / 2) 0;
-  border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
-}
-
-.mcp-tool-item:last-child {
-  border-bottom: none;
-}
-
-.mcp-tool-content {
-  flex-grow: 1;
-  font-size: var(--theia-ui-font-size0);
-}
-
-.mcp-tool-actions {
   display: flex;
   gap: calc(var(--theia-ui-padding) / 2);
 }
@@ -305,10 +137,30 @@
 }
 
 /* Delete Button */
-.mcp-server-header .mcp-action-button.mcp-delete-button {
+.mcp-action-button.mcp-delete-button {
   color: var(--theia-errorForeground);
 }
 
-.mcp-server-header .mcp-action-button.mcp-delete-button:hover {
+.mcp-action-button.mcp-delete-button:hover {
   background-color: var(--theia-errorBackground);
+  /* `errorBackground` is undefined in the high-contrast themes, so the hover needs a ring there instead;
+     `contrastActiveBorder` exists only in those themes. */
+  outline: 1px dotted var(--theia-contrastActiveBorder, transparent);
+  outline-offset: -1px;
+}
+
+/* Agent Plugin paths: displayed, never editable - `@theia/ai-registry` derives them from where the
+   plugin was installed, so the server form shows them without an input. */
+.mcp-property-readonly {
+  color: var(--theia-descriptionForeground);
+  word-break: break-all;
+}
+
+.mcp-property-variable {
+  margin-left: calc(var(--theia-ui-padding) / 2);
+  padding: 0 4px;
+  border: 1px solid var(--theia-panel-border);
+  border-radius: 3px;
+  font-size: calc(var(--theia-ui-font-size0) * 0.9);
+  color: var(--theia-descriptionForeground);
 }

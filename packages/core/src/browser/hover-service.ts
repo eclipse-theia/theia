@@ -157,6 +157,12 @@ export class HoverService {
         // resetting the position prevents that
         host.style.left = '0px';
         host.style.top = '0px';
+        // Keep the host hidden while it is parked at (0,0) for measurement. A visible popover there
+        // would, for a target in the upper-left of the viewport (e.g. a view docked in the left panel),
+        // flash over the target for one frame. That steals the pointer from the target, whose mouse-leave
+        // handler then cancels the hover, and the cycle repeats: the tooltip flickers and never settles.
+        // `visibility: hidden` still lays the host out (so it can be measured) but is not hit-tested.
+        host.style.visibility = 'hidden';
         document.body.append(host);
         if (!host.matches(':popover-open')) {
             host.showPopover();
@@ -184,6 +190,10 @@ export class HoverService {
 
         await animationFrame(); // Allow the browser to size the host
         const updatedPosition = this.setHostPosition(target, host, position);
+        // Reveal the host only once it sits at its final position, so it never overlaps the target while
+        // parked at (0,0). Dropping the declaration rather than assigning a value hands `visibility` back
+        // to the stylesheet, which is where it comes from for every hover but the one being measured.
+        host.style.removeProperty('visibility');
 
         this.disposeOnHide.push({
             dispose: () => {
@@ -280,5 +290,8 @@ export class HoverService {
         }
         this.hoverHost.remove();
         this.hoverHost.replaceChildren();
+        // The host is reused across hovers; drop the transient hidden state set during measurement so a
+        // hover cancelled before it was revealed does not leave the next one invisible.
+        this.hoverHost.style.removeProperty('visibility');
     }
 }

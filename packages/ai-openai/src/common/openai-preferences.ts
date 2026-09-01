@@ -14,18 +14,24 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
+import {
+    AI_CORE_PREFERENCES_TITLE, MODEL_PROVIDER_TYPE_DETAIL, ModelProviderTypeDetail, PREFERENCE_NAME_SERVER_SIDE_COMPACTION
+} from '@theia/ai-core/lib/common/ai-core-preferences';
+import { SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM } from '@theia/ai-core/lib/common/language-model';
 import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.openAiOfficial.openAiApiKey';
 export const MODELS_PREF = 'ai-features.openAiOfficial.officialOpenAiModels';
 export const USE_RESPONSE_API_PREF = 'ai-features.openAiOfficial.useResponseApi';
+export const SERVER_SIDE_COMPACTION_PREF = 'ai-features.openAiOfficial.serverSideCompaction';
+export const SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF = 'ai-features.openAiOfficial.serverSideCompactionTokenThreshold';
 export const CUSTOM_ENDPOINTS_PREF = 'ai-features.openAiCustom.customOpenAiModels';
 
 export const OpenAiPreferencesSchema: PreferenceSchema = {
     properties: {
         [API_KEY_PREF]: {
             type: 'string',
+            typeDetails: { [MODEL_PROVIDER_TYPE_DETAIL]: { label: 'OpenAI' } satisfies ModelProviderTypeDetail },
             markdownDescription: nls.localize('theia/ai/openai/apiKey/mdDescription',
                 'Enter an API Key of your official OpenAI Account. **Please note:** By using this preference the Open AI API key will be stored in clear text \
 on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
@@ -36,12 +42,11 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             description: nls.localize('theia/ai/openai/models/description', 'Official OpenAI models to use'),
             title: AI_CORE_PREFERENCES_TITLE,
             default: [
+                'gpt-5.6-sol',
+                'gpt-5.6-terra',
+                'gpt-5.6-luna',
                 'gpt-5.5',
-                'gpt-5.5-pro',
-                'gpt-5.4',
-                'gpt-5.4-pro',
-                'gpt-5.4-mini',
-                'gpt-5.4-nano'
+                'gpt-5.5-pro'
             ],
             items: {
                 type: 'string'
@@ -52,15 +57,38 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             default: false,
             title: AI_CORE_PREFERENCES_TITLE,
             markdownDescription: nls.localize('theia/ai/openai/useResponseApi/mdDescription',
-                'Use the newer OpenAI Response API instead of the Chat Completion API for official OpenAI models.\
-\
-This setting only applies to official OpenAI models - custom providers must configure this individually.\
-\
-Note that for the response API, tool call definitions must satisfy Open AI\'s [strict schema definition](https://platform.openai.com/docs/guides/function-calling#strict-mode).\
-Best effort is made to convert non-conformant schemas, but errors are still possible.')
+                'Use the newer OpenAI Response API instead of the Chat Completion API for official OpenAI models. ' +
+                'This setting only applies to official OpenAI models - custom providers must configure this individually.')
+        },
+        [SERVER_SIDE_COMPACTION_PREF]: {
+            type: 'string',
+            enum: ['default', 'enabled', 'disabled'],
+            enumDescriptions: [
+                nls.localize('theia/ai/openai/compaction/default', 'Follow the global chat server-side compaction setting.'),
+                nls.localize('theia/ai/openai/compaction/enabled', 'Always request server-side compaction for official OpenAI models.'),
+                nls.localize('theia/ai/openai/compaction/disabled', 'Never request server-side compaction for official OpenAI models.')
+            ],
+            default: 'default',
+            markdownDescription: nls.localize('theia/ai/openai/compaction/description',
+                'Override provider-native server-side compaction for official OpenAI models. This applies to the OpenAI Response API only; ' +
+                'the Chat Completions API ignores it. "default" follows the global chat setting ({0}). When effectively ' +
+                'enabled, the Response API is asked to summarize older turns once the conversation grows past the provider\'s threshold.',
+                `\`#${PREFERENCE_NAME_SERVER_SIDE_COMPACTION}#\``),
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF]: {
+            type: 'integer',
+            minimum: SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM,
+            markdownDescription: nls.localize('theia/ai/openai/compactionTokenThreshold/description',
+                'Override the global input-token threshold for server-side compaction for official OpenAI models. When unset, the global setting or provider default applies. ' +
+                'If set, the value must be at least 50,000 tokens.'),
+            title: AI_CORE_PREFERENCES_TITLE,
         },
         [CUSTOM_ENDPOINTS_PREF]: {
             type: 'array',
+            typeDetails: {
+                [MODEL_PROVIDER_TYPE_DETAIL]: { label: nls.localize('theia/ai/openai/customProvider/label', '{0} (Custom)', 'OpenAI') } satisfies ModelProviderTypeDetail
+            },
             title: AI_CORE_PREFERENCES_TITLE,
             markdownDescription: nls.localize('theia/ai/openai/customEndpoints/mdDescription',
                 'Integrate custom models compatible with the OpenAI API, for example via `vllm`. The required attributes are `model` and `url`.\

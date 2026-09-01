@@ -1669,7 +1669,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
         try {
             const fileContent = await this.fileService.read(customAgentYamlUri, { encoding: 'utf-8' });
-            const doc = load(fileContent.value);
+            const doc = this.parseCustomAgentsYaml(fileContent.value);
 
             if (!Array.isArray(doc) || !doc.every(entry => CustomAgentDescription.is(entry))) {
                 this.logger.debug(`Invalid customAgents.yml file content in ${directoryURI.toString()}`);
@@ -1737,6 +1737,47 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
     }
 
     /**
+     * Parse a `customAgents.yml` document, preserving newlines in folded-block-scalar prompts.
+     *
+     * `js-yaml` folds the single newlines of a folded scalar (`>` / `>-`) into spaces, which merges
+     * a markdown heading (`## Task`) into the paragraph below it. Markdown is newline-sensitive, so
+     * we re-interpret folded `prompt:` scalars as literal (`|`) before parsing. Only the block-scalar
+     * header is rewritten; quoted, plain and already-literal values are left untouched.
+     *
+     * Known limitation: prompts stored as a plain or quoted multi-line scalar (rare) still fold.
+     */
+    protected parseCustomAgentsYaml(content: string): unknown {
+        return load(this.unfoldPromptBlockScalars(content));
+    }
+
+    /**
+     * Rewrite a folded `prompt:` block-scalar header (`>`, `>-`, `>+`, `>2-`, ...) to its literal
+     * equivalent (`|`...). The lookahead ensures only a block-scalar header is matched (indentation
+     * and chomping indicators plus an optional trailing comment), so plain/quoted prompt values and
+     * any `>` inside the prompt body are never touched.
+     */
+    protected unfoldPromptBlockScalars(content: string): string {
+        return content.replace(/^([ \t]*prompt:[ \t]*)>(?=[-+0-9]*[ \t]*(?:#.*)?$)/mg, '$1|');
+    }
+
+    /**
+     * Returns `true` if migration would write anything: a scope still holds a legacy
+     * `customAgents.yml`, or a previously migrated scope has `agent.md` files that can be corrected
+     * (see {@link computeScopeCorrections}). Read-only; used to decide whether to prompt the user.
+     */
+    async hasPendingCustomAgentMigration(): Promise<boolean> {
+        for (const scope of await this.getCustomAgentScopes()) {
+            if (await this.fileService.exists(scope.resolve('customAgents.yml'))) {
+                return true;
+            }
+            if ((await this.computeScopeCorrections(scope)).length > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Auto-migrate every legacy `customAgents.yml` reachable from the configured scopes to the new
      * `agents/<id>/agent.md` layout. The original content is never deleted:
      * - on full success the YAML is renamed to `customAgents.yml.bak`, replacing any previous backup;
@@ -1769,7 +1810,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 reports.push(report);
             }
         }
-        if (reports.some(r => r.migrated > 0)) {
+        if (reports.some(r => r.migrated > 0 || r.corrected > 0)) {
             this.onDidChangeCustomAgentsEmitter.fire();
         }
         return reports;
@@ -1777,116 +1818,193 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
     protected async migrateSingleScope(scopeDir: URI): Promise<MigrationReport | undefined> {
         const yamlURI = scopeDir.resolve('customAgents.yml');
-        if (!(await this.fileService.exists(yamlURI))) {
-            return undefined;
-        }
-        this.logger.info(`Migrating custom agents from ${yamlURI.toString()}`);
-        let entries: CustomAgentDescription[];
-        try {
-            const fileContent = await this.fileService.read(yamlURI, { encoding: 'utf-8' });
-            const doc = load(fileContent.value);
-            if (!Array.isArray(doc) || !doc.every(CustomAgentDescription.is)) {
-                this.logger.warn(`Skipping migration of ${yamlURI.toString()}: file content is not a valid CustomAgentDescription[]`);
-                return { scope: scopeDir, yamlURI, migrated: 0, alreadyPresent: 0, failed: 0, yamlBackedUp: false, promptOverridesMigrated: 0 };
-            }
-            entries = doc;
-        } catch (e) {
-            this.logger.warn(`Skipping migration of ${yamlURI.toString()}: ${e.message}`);
-            return { scope: scopeDir, yamlURI, migrated: 0, alreadyPresent: 0, failed: 0, yamlBackedUp: false, promptOverridesMigrated: 0 };
-        }
+        const backupURI = scopeDir.resolve('customAgents.yml.bak');
+        const yamlExists = await this.fileService.exists(yamlURI);
 
         let migrated = 0;
         let alreadyPresent = 0;
         let failed = 0;
         let promptOverridesMigrated = 0;
+        let yamlBackedUp = false;
 
-        // A previous failed migration may have created `agents/<id>/` directories without an
-        // `agent.md` inside. Remove those empty placeholders so this run can recreate them cleanly.
-        await this.cleanupEmptyAgentFolders(scopeDir);
+        const emptyReport = (): MigrationReport => ({
+            scope: scopeDir, yamlURI, migrated: 0, alreadyPresent: 0, failed: 0,
+            yamlBackedUp: false, promptOverridesMigrated: 0, corrected: 0
+        });
 
-        // Snapshot scope-root template files once so we can match per agent without re-listing.
-        const scopeRootTemplateFiles = await this.listScopeRootPromptTemplates(scopeDir);
+        if (yamlExists) {
+            this.logger.info(`Migrating custom agents from ${yamlURI.toString()}`);
+            let entries: CustomAgentDescription[];
+            try {
+                const fileContent = await this.fileService.read(yamlURI, { encoding: 'utf-8' });
+                const doc = this.parseCustomAgentsYaml(fileContent.value);
+                if (!Array.isArray(doc) || !doc.every(CustomAgentDescription.is)) {
+                    this.logger.warn(`Skipping migration of ${yamlURI.toString()}: file content is not a valid CustomAgentDescription[]`);
+                    return emptyReport();
+                }
+                entries = doc;
+            } catch (e) {
+                this.logger.warn(`Skipping migration of ${yamlURI.toString()}: ${e.message}`);
+                return emptyReport();
+            }
 
-        // Prompt-fragment files are matched by agent *name* (the fragment id is `<name>_prompt`)
-        // while folders are keyed by the unique *id*. When two entries share a name, only the first
-        // can own the name-based files, so track seen names and skip the move for the duplicates.
-        const seenNames = new Set<string>();
+            // A previous failed migration may have created `agents/<id>/` directories without an
+            // `agent.md` inside. Remove those empty placeholders so this run can recreate them cleanly.
+            await this.cleanupEmptyAgentFolders(scopeDir);
 
-        for (const entry of entries) {
-            const agentFolderURI = scopeDir.resolve(CUSTOM_AGENTS_DIRECTORY).resolve(entry.id);
-            const targetURI = agentFolderURI.resolve(CUSTOM_AGENT_FILE_NAME);
-            if (await this.fileService.exists(targetURI)) {
-                alreadyPresent++;
+            // Snapshot scope-root template files once so we can match per agent without re-listing.
+            const scopeRootTemplateFiles = await this.listScopeRootPromptTemplates(scopeDir);
+
+            // Prompt-fragment files are matched by agent *name* (the fragment id is `<name>_prompt`)
+            // while folders are keyed by the unique *id*. When two entries share a name, only the first
+            // can own the name-based files, so track seen names and skip the move for the duplicates.
+            const seenNames = new Set<string>();
+
+            for (const entry of entries) {
+                const agentFolderURI = scopeDir.resolve(CUSTOM_AGENTS_DIRECTORY).resolve(entry.id);
+                const targetURI = agentFolderURI.resolve(CUSTOM_AGENT_FILE_NAME);
+                if (await this.fileService.exists(targetURI)) {
+                    alreadyPresent++;
+                } else {
+                    try {
+                        await this.fileService.createFile(
+                            targetURI,
+                            BinaryBuffer.fromString(serializeCustomAgentFile(entry)),
+                            { overwrite: true }
+                        );
+                        migrated++;
+                    } catch (e) {
+                        this.logger.warn(`Failed to migrate agent '${entry.id}' from ${yamlURI.toString()}: ${e?.message ?? e}`, e);
+                        failed++;
+                        continue;
+                    }
+                }
+
+                if (seenNames.has(entry.name)) {
+                    this.logger.warn(
+                        `Multiple custom agents in ${yamlURI.toString()} share the name '${entry.name}'; ` +
+                        'prompt fragment files were migrated to the first matching agent only.'
+                    );
+                    continue;
+                }
+                seenNames.add(entry.name);
+
+                // Move any scope-root .prompttemplate files that look like they belong to this agent
+                // (filename stem starts with `<name>_prompt`, followed by EOF or a separator).
+                // They become variants under `<scope>/agents/<id>/`.
+                for (const file of scopeRootTemplateFiles) {
+                    if (!matchesAgentPromptPrefix(file.stem, entry.name)) {
+                        continue;
+                    }
+                    const destURI = agentFolderURI.resolve(file.uri.path.base);
+                    if (await this.fileService.exists(destURI)) {
+                        continue;
+                    }
+                    try {
+                        await this.fileService.move(file.uri, destURI);
+                        promptOverridesMigrated++;
+                    } catch (e) {
+                        this.logger.warn(`Failed to move prompt fragment ${file.uri.toString()} into ${destURI.toString()}: ${e?.message ?? e}`);
+                    }
+                }
+            }
+
+            if (failed === 0) {
+                try {
+                    await this.fileService.move(yamlURI, backupURI, { overwrite: true });
+                    yamlBackedUp = true;
+                } catch (e) {
+                    this.logger.warn(`Migrated ${migrated} agents but failed to back up ${yamlURI.toString()}: ${e.message}`);
+                }
             } else {
                 try {
-                    await this.fileService.createFile(
-                        targetURI,
-                        BinaryBuffer.fromString(serializeCustomAgentFile(entry)),
-                        { overwrite: true }
-                    );
-                    migrated++;
+                    if (!(await this.fileService.exists(backupURI))) {
+                        await this.fileService.move(yamlURI, backupURI);
+                        yamlBackedUp = true;
+                    }
                 } catch (e) {
-                    this.logger.warn(`Failed to migrate agent '${entry.id}' from ${yamlURI.toString()}: ${e?.message ?? e}`, e);
-                    failed++;
-                    continue;
-                }
-            }
-
-            if (seenNames.has(entry.name)) {
-                this.logger.warn(
-                    `Multiple custom agents in ${yamlURI.toString()} share the name '${entry.name}'; ` +
-                    'prompt fragment files were migrated to the first matching agent only.'
-                );
-                continue;
-            }
-            seenNames.add(entry.name);
-
-            // Move any scope-root .prompttemplate files that look like they belong to this agent
-            // (filename stem starts with `<name>_prompt`, followed by EOF or a separator).
-            // They become variants under `<scope>/agents/<id>/`.
-            for (const file of scopeRootTemplateFiles) {
-                if (!matchesAgentPromptPrefix(file.stem, entry.name)) {
-                    continue;
-                }
-                const destURI = agentFolderURI.resolve(file.uri.path.base);
-                if (await this.fileService.exists(destURI)) {
-                    continue;
-                }
-                try {
-                    await this.fileService.move(file.uri, destURI);
-                    promptOverridesMigrated++;
-                } catch (e) {
-                    this.logger.warn(`Failed to move prompt fragment ${file.uri.toString()} into ${destURI.toString()}: ${e?.message ?? e}`);
+                    this.logger.warn(`Failed to back up ${yamlURI.toString()} to ${backupURI.toString()}: ${e.message}`);
                 }
             }
         }
 
-        let yamlBackedUp = false;
-        const backupURI = scopeDir.resolve('customAgents.yml.bak');
-        if (failed === 0) {
+        // Correct any `agent.md` left with merged headings by an earlier (v1.73.0) migration. Anything
+        // just migrated above is already correct, so only stale files from a previous run are rewritten.
+        let corrected = 0;
+        for (const { uri, content } of await this.computeScopeCorrections(scopeDir)) {
             try {
-                await this.fileService.move(yamlURI, backupURI, { overwrite: true });
-                yamlBackedUp = true;
+                await this.fileService.createFile(uri, BinaryBuffer.fromString(content), { overwrite: true });
+                corrected++;
             } catch (e) {
-                this.logger.warn(`Migrated ${migrated} agents but failed to back up ${yamlURI.toString()}: ${e.message}`);
+                this.logger.warn(`Failed to correct migrated agent file ${uri.toString()}: ${e?.message ?? e}`);
             }
-        } else {
-            try {
-                if (!(await this.fileService.exists(backupURI))) {
-                    await this.fileService.move(yamlURI, backupURI);
-                    yamlBackedUp = true;
-                }
-            } catch (e) {
-                this.logger.warn(`Failed to back up ${yamlURI.toString()} to ${backupURI.toString()}: ${e.message}`);
-            }
+        }
+
+        if (!yamlExists && corrected === 0) {
+            return undefined; // nothing to migrate and nothing to correct in this scope
         }
 
         this.logger.info(
-            `Migration done for ${yamlURI.toString()}: ` +
-            `migrated=${migrated}, alreadyPresent=${alreadyPresent}, failed=${failed}, ` +
-            `yamlBackedUp=${yamlBackedUp}, promptOverridesMigrated=${promptOverridesMigrated}`
+            `Migration done for ${scopeDir.toString()}: migrated=${migrated}, alreadyPresent=${alreadyPresent}, ` +
+            `failed=${failed}, yamlBackedUp=${yamlBackedUp}, promptOverridesMigrated=${promptOverridesMigrated}, corrected=${corrected}`
         );
-        return { scope: scopeDir, yamlURI, migrated, alreadyPresent, failed, yamlBackedUp, promptOverridesMigrated };
+        return { scope: scopeDir, yamlURI, migrated, alreadyPresent, failed, yamlBackedUp, promptOverridesMigrated, corrected };
+    }
+
+    /**
+     * Compute the `agent.md` rewrites needed to recover headings folded by an earlier (v1.73.0)
+     * migration. The backup (`customAgents.yml.bak`) is the source that migration used: parsing it
+     * the old (folded) way reproduces the exact bytes it wrote, and parsing it the new (literal) way
+     * produces the corrected content. Only files still byte-identical to the buggy output are eligible,
+     * so files the user edited (and already-correct files) are left untouched. Read-only; used both to
+     * detect pending work and to perform the rewrite.
+     */
+    protected async computeScopeCorrections(scopeDir: URI): Promise<Array<{ uri: URI; content: string }>> {
+        const backupURI = scopeDir.resolve('customAgents.yml.bak');
+        if (!(await this.fileService.exists(backupURI))) {
+            return [];
+        }
+        let oldEntries: unknown;
+        let newEntries: unknown;
+        try {
+            const raw = (await this.fileService.read(backupURI, { encoding: 'utf-8' })).value;
+            oldEntries = load(raw);                       // reproduces the folded (buggy) output
+            newEntries = this.parseCustomAgentsYaml(raw); // produces the heading-preserving fix
+        } catch {
+            return [];
+        }
+        if (!Array.isArray(oldEntries) || !oldEntries.every(CustomAgentDescription.is)
+            || !Array.isArray(newEntries) || !newEntries.every(CustomAgentDescription.is)) {
+            return [];
+        }
+        const fixedById = new Map((newEntries as CustomAgentDescription[]).map(e => [e.id, e] as const));
+        const corrections: Array<{ uri: URI; content: string }> = [];
+        for (const oldEntry of oldEntries as CustomAgentDescription[]) {
+            const fixed = fixedById.get(oldEntry.id);
+            if (!fixed) {
+                continue;
+            }
+            const buggyContent = serializeCustomAgentFile(oldEntry);
+            const fixedContent = serializeCustomAgentFile(fixed);
+            if (buggyContent === fixedContent) {
+                continue; // prompt had no folded headings to recover
+            }
+            const agentMdURI = scopeDir.resolve(CUSTOM_AGENTS_DIRECTORY).resolve(oldEntry.id).resolve(CUSTOM_AGENT_FILE_NAME);
+            if (!(await this.fileService.exists(agentMdURI))) {
+                continue;
+            }
+            let current: string;
+            try {
+                current = (await this.fileService.read(agentMdURI, { encoding: 'utf-8' })).value;
+            } catch {
+                continue;
+            }
+            // Only rewrite files untouched since migration; current bytes still matching the buggy output.
+            if (current === buggyContent) {
+                corrections.push({ uri: agentMdURI, content: fixedContent });
+            }
+        }
+        return corrections;
     }
 
     /**
@@ -1923,6 +2041,8 @@ export interface MigrationReport {
     yamlBackedUp: boolean;
     /** Number of scope-root prompt customization files (`<name>_prompt.prompttemplate`) folded into agent.md and deleted. */
     promptOverridesMigrated: number;
+    /** Number of already-migrated `agent.md` files rewritten to recover folded headings. */
+    corrected: number;
 }
 
 /**
