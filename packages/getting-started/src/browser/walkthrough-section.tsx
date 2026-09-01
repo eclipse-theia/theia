@@ -97,11 +97,9 @@ export function WalkthroughSection(
         return <React.Fragment />;
     }
 
-    // A finished walkthrough has nothing left to offer here; it stays reachable through `onShowAll`.
-    const pending = walkthroughs.filter(walkthrough =>
-        walkthrough.steps.some(step => !step.isComplete),
-    );
-    const listed = pending.slice(0, WALKTHROUGH_LIST_LIMIT);
+    // VS Code keeps completed walkthroughs in the index so their progress remains visible and users can revisit them.
+    // https://github.com/microsoft/vscode/blob/1.134.0/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.ts#L1220-L1250
+    const listed = walkthroughs.slice(0, WALKTHROUGH_LIST_LIMIT);
     return (
         <div className='gs-section'>
             <h3 className='gs-section-header'>

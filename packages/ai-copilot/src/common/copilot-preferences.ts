@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { AI_CORE_PREFERENCES_TITLE, MODEL_PROVIDER_TYPE_DETAIL, ModelProviderTypeDetail } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { nls, PreferenceSchema } from '@theia/core';
 
 export const COPILOT_ENABLED_PREF = 'ai-features.copilot.enabled';
@@ -25,6 +25,7 @@ export const CopilotPreferencesSchema: PreferenceSchema = {
     properties: {
         [COPILOT_ENABLED_PREF]: {
             type: 'boolean',
+            typeDetails: { [MODEL_PROVIDER_TYPE_DETAIL]: { label: 'GitHub Copilot' } satisfies ModelProviderTypeDetail },
             markdownDescription: nls.localize('theia/ai/copilot/enabled/mdDescription',
                 'Enable the GitHub Copilot provider. When enabled, a status bar entry '
                 + 'appears for authentication and available models are discovered from your Copilot subscription.'),

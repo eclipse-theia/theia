@@ -1,6 +1,6 @@
 {
   "name": "@theia/bundle-plugin",
-  "version": "1.74.0",
+  "version": "1.75.0",
   "description": "Contains bundler plugins for Theia.",
   "publishConfig": {
     "access": "public"
@@ -31,8 +31,7 @@
   "dependencies": {
     "detect-libc": "^2.1.2",
     "resolve-package-path": "^4.0.3",
-    "tslib": "^2.8.1",
-    "webpack": "^5.109.2"
+    "tslib": "^2.8.1"
   },
   "gitHead": "21358137e41342742707f660b8e222f940a27652"
 }

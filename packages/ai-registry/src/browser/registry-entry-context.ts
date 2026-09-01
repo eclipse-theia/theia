@@ -33,12 +33,33 @@ export interface RegistryEntryContext {
     readonly artifactKind: RegistryArtifactKind;
     /** The "Copy ID" payload: the registry identifier, or the local name for an unlinked artifact. */
     readonly copyableId: string | undefined;
-    /** The override key, set only while the artifact is installed and linked to a registry entry. */
+    /** The override key. See {@link RegistryEntryContext.autoUpdateId} for when there is one. */
     readonly autoUpdateId: string | undefined;
 }
 
 export namespace RegistryEntryContext {
     export function is(arg: unknown): arg is RegistryEntryContext {
         return !!arg && typeof arg === 'object' && 'artifactKind' in arg && 'autoUpdateId' in arg;
+    }
+
+    /**
+     * The override key for an entry in the given classification state, or `undefined` when a policy
+     * would have nothing to key on.
+     *
+     * Offered for every installed artifact with a registry identity, including the ones showing a
+     * warning: a drifted artifact, one that is still to be linked, and one whose registry entry has
+     * gone missing all keep their policy, so the choice the user makes now is already in place once
+     * the artifact becomes updatable again. The auto-updater still skips them until then - it only
+     * ever acts on `installed-from-registry`.
+     *
+     * Withheld for an artifact that is not installed, where there is nothing yet to keep updated,
+     * and for one the registry has never known, which has no id to key an override by.
+     *
+     * Typed against the bare `kind` because the three artifact families spell their fix state
+     * differently (`fix-skill`, `fix-config`, `fix-plugin`) while sharing every state that matters
+     * here - the same reason the gear menu itself is kind-agnostic.
+     */
+    export function autoUpdateId(state: { kind: string }, id: string | undefined): string | undefined {
+        return state.kind === 'not-installed' ? undefined : id;
     }
 }

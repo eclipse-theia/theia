@@ -20,7 +20,8 @@ import PerfectScrollbarConstructor from 'perfect-scrollbar';
 // The browser bundle provides the esm default; Mocha loads the package's cjs export.
 const PerfectScrollbar = PerfectScrollbarConstructor ?? require('perfect-scrollbar') as typeof PerfectScrollbarConstructor;
 
-export function useWalkthroughStepsScrollbar(ref: React.RefObject<HTMLDivElement>): () => void {
+// eslint-disable-next-line no-null/no-null
+export function useWalkthroughStepsScrollbar(ref: React.RefObject<HTMLDivElement | null>): () => void {
     const updateTopShadow = React.useCallback(() => {
         const element = ref.current;
         element?.classList.toggle('gs-walkthrough-steps-scrolled', element.scrollTop > 0);

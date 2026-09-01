@@ -15,12 +15,11 @@
 // *****************************************************************************
 
 import * as assert from 'assert';
-import * as React from 'react';
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 
 let disableJSDOM = enableJSDOM();
 
-import { createRoot, Root } from 'react-dom/client';
+import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { Emitter } from '@theia/core/lib/common/event';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { ThemeService } from '@theia/core/lib/browser/theming';
@@ -430,7 +429,7 @@ describe('WalkthroughSection', () => {
         }, 50);
     });
 
-    it('should not list a walkthrough whose steps are all complete', done => {
+    it('should list a walkthrough whose steps are all complete', done => {
         const walkthroughs = [
             createMockWalkthrough({ id: 'pending', title: 'Pending' }),
             createMockWalkthrough({
@@ -453,9 +452,8 @@ describe('WalkthroughSection', () => {
 
         setTimeout(() => {
             const titles = Array.from(container.querySelectorAll('.gs-walkthrough-card-title')).map(e => e.textContent);
-            assert.deepStrictEqual(titles, ['Pending'], 'Only the unfinished walkthrough should be listed');
-            // The completed one is still reachable, so the link has to stay.
-            assert.ok(container.querySelector('.gs-walkthrough-more'), 'More link should be offered');
+            assert.deepStrictEqual(titles, ['Pending', 'Done']);
+            assert.ok(!container.querySelector('.gs-walkthrough-more'), 'All walkthroughs are listed');
             done();
         }, 50);
     });

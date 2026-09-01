@@ -178,6 +178,10 @@ export class PreferenceTreeModel extends TreeModelImpl {
         if (!this.schemaProvider.isValidInScope(prefID, this._currentScope)) {
             return false;
         }
+        // Hidden preferences (e.g. AI preferences moved to the AI Configuration view) must not surface in search.
+        if (node.preference.data.hidden) {
+            return false;
+        }
         if (!this._isFiltered) {
             return true;
         }

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { MarkdownRenderer, MarkdownRenderOptions } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
-import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+import { enableJSDOM, enableReactActEnvironment } from '@theia/core/lib/browser/test/jsdom';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
@@ -35,7 +35,8 @@ import {
     resolveWalkthroughImageSource,
 } from './walkthrough-media-utils';
 
-let disableJSDOM = enableJSDOM();
+let disableJSDOM: () => void;
+let disableReactActEnvironment: () => void;
 
 const logger = new MockLogger();
 const themeService = {
@@ -47,15 +48,21 @@ describe('WalkthroughMedia', () => {
     let container: HTMLElement;
     let root: Root;
 
-    before(() => (disableJSDOM = enableJSDOM()));
-    after(() => disableJSDOM());
+    before(() => {
+        disableJSDOM = enableJSDOM();
+        disableReactActEnvironment = enableReactActEnvironment();
+    });
+    after(() => {
+        disableReactActEnvironment();
+        disableJSDOM();
+    });
     beforeEach(() => {
         container = document.createElement('div');
         document.body.append(container);
         root = createRoot(container);
     });
     afterEach(() => {
-        root.unmount();
+        React.act(() => root.unmount());
         container.remove();
         sinon.restore();
     });
@@ -89,43 +96,47 @@ describe('WalkthroughMedia', () => {
         assert.ok(!isSafeWalkthroughLink('javascript:alert(1)'));
     });
 
-    it('renders the image component and hides it after an image error', done => {
-        root.render(<WalkthroughImageMedia image='image.png' alt='Example' themeService={themeService} />);
-        setTimeout(() => {
-            const image = container.querySelector('img');
-            assert.strictEqual(image?.alt, 'Example');
+    it('renders the image component and hides it after an image error', async () => {
+        await React.act(async () => {
+            root.render(<WalkthroughImageMedia image='image.png' alt='Example' themeService={themeService} />);
+        });
+        const image = container.querySelector('img');
+        assert.strictEqual(image?.alt, 'Example');
+        await React.act(async () => {
             image?.dispatchEvent(new image.ownerDocument.defaultView!.Event('error', { bubbles: true }));
-            setTimeout(() => {
-                assert.ok(!container.querySelector('img'));
-                done();
-            }, 0);
-        }, 0);
+        });
+        assert.ok(!container.querySelector('img'));
     });
 
     it('does not render a media wrapper when a step has no media', done => {
-        root.render(
-            <WalkthroughMedia
-                step={{ id: 'step', title: 'Step', description: '', isComplete: false }}
-                markdownRenderer={{} as never}
-                logger={logger}
-                themeService={themeService}
-            />,
-        );
+        React.act(() => {
+            root.render(
+                <WalkthroughMedia
+                    step={{ id: 'step', title: 'Step', description: '', isComplete: false }}
+                    markdownRenderer={{} as never}
+                    logger={logger}
+                    themeService={themeService}
+                />,
+            );
+        });
         setTimeout(() => {
             assert.strictEqual(container.children.length, 0);
             done();
         }, 0);
     });
 
-    it('uses Monaco’s tokenizing renderer for fenced Markdown code blocks', done => {
+    it("uses Monaco's tokenizing renderer for fenced Markdown code blocks", async () => {
         const render = sinon.stub().returns({ element: document.createElement('div'), dispose: () => undefined });
-        sinon.stub(globalThis, 'fetch').resolves({ ok: true, text: async () => '```typescript\nconst answer = 42;\n```' } as Response);
-        root.render(<WalkthroughMarkdownMedia src='media.md' markdownRenderer={{ render } as unknown as MarkdownRenderer} logger={logger} />);
-        setTimeout(() => {
-            const options = render.firstCall.args[1] as MarkdownRenderOptions;
-            assert.strictEqual(options.codeBlockRenderer, renderWalkthroughCodeBlock);
-            done();
-        }, 0);
+        let resolveFetch: (response: Response) => void;
+        sinon.stub(globalThis, 'fetch').returns(new Promise<Response>(resolve => resolveFetch = resolve));
+        await React.act(async () => {
+            root.render(<WalkthroughMarkdownMedia src='media.md' markdownRenderer={{ render } as unknown as MarkdownRenderer} logger={logger} />);
+        });
+        await React.act(async () => {
+            resolveFetch!({ ok: true, text: async () => '```typescript\nconst answer = 42;\n```' } as Response);
+        });
+        const options = render.firstCall.args[1] as MarkdownRenderOptions;
+        assert.strictEqual(options.codeBlockRenderer, renderWalkthroughCodeBlock);
     });
 
 });

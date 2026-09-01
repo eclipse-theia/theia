@@ -16,14 +16,15 @@
 
 import * as assert from 'assert';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
-import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+import { enableJSDOM, enableReactActEnvironment } from '@theia/core/lib/browser/test/jsdom';
 import * as React from '@theia/core/shared/react';
 import { createRoot, Root } from 'react-dom/client';
 import * as sinon from 'sinon';
 import { WalkthroughStep } from '../common/walkthrough-types';
 import { WalkthroughStepItem } from './walkthrough-step-item';
 
-let disableJSDOM = enableJSDOM();
+let disableJSDOM: () => void;
+let disableReactActEnvironment: () => void;
 
 describe('WalkthroughStepItem', () => {
     let container: HTMLElement;
@@ -35,29 +36,37 @@ describe('WalkthroughStepItem', () => {
         isComplete: false,
     };
 
-    before(() => (disableJSDOM = enableJSDOM()));
-    after(() => disableJSDOM());
+    before(() => {
+        disableJSDOM = enableJSDOM();
+        disableReactActEnvironment = enableReactActEnvironment();
+    });
+    after(() => {
+        disableReactActEnvironment();
+        disableJSDOM();
+    });
     beforeEach(() => {
         container = document.createElement('div');
         document.body.append(container);
         root = createRoot(container);
     });
     afterEach(() => {
-        root.unmount();
+        React.act(() => root.unmount());
         container.remove();
         sinon.restore();
     });
 
     function render(isSelected: boolean, onSelect = sinon.spy()): sinon.SinonSpy {
-        root.render(
-            <WalkthroughStepItem
-                step={step}
-                isSelected={isSelected}
-                onSelect={onSelect}
-                onCompletionToggle={() => undefined}
-                markdownRenderer={{ render: () => ({ element: document.createElement('div'), dispose: () => undefined }) } as MarkdownRenderer}
-            />,
-        );
+        React.act(() => {
+            root.render(
+                <WalkthroughStepItem
+                    step={step}
+                    isSelected={isSelected}
+                    onSelect={onSelect}
+                    onCompletionToggle={() => undefined}
+                    markdownRenderer={{ render: () => ({ element: document.createElement('div'), dispose: () => undefined }) } as MarkdownRenderer}
+                />,
+            );
+        });
         return onSelect;
     }
 
@@ -109,15 +118,17 @@ describe('WalkthroughStepItem', () => {
 
     it('exposes the completion state as a checkbox and the selected step as current', done => {
         const completedStep = { ...step, isComplete: true };
-        root.render(
-            <WalkthroughStepItem
-                step={completedStep}
-                isSelected={true}
-                onSelect={() => undefined}
-                onCompletionToggle={() => undefined}
-                markdownRenderer={{ render: () => ({ element: document.createElement('div'), dispose: () => undefined }) } as MarkdownRenderer}
-            />,
-        );
+        React.act(() => {
+            root.render(
+                <WalkthroughStepItem
+                    step={completedStep}
+                    isSelected={true}
+                    onSelect={() => undefined}
+                    onCompletionToggle={() => undefined}
+                    markdownRenderer={{ render: () => ({ element: document.createElement('div'), dispose: () => undefined }) } as MarkdownRenderer}
+                />,
+            );
+        });
         setTimeout(() => {
             const completion = container.querySelector('.gs-walkthrough-step-icon');
             const item = container.querySelector('.gs-walkthrough-step');
@@ -131,15 +142,17 @@ describe('WalkthroughStepItem', () => {
     it('selects and toggles completion from the keyboard', done => {
         const onSelect = sinon.spy();
         const onCompletionToggle = sinon.spy();
-        root.render(
-            <WalkthroughStepItem
-                step={step}
-                isSelected={false}
-                onSelect={onSelect}
-                onCompletionToggle={onCompletionToggle}
-                markdownRenderer={{ render: () => ({ element: document.createElement('div'), dispose: () => undefined }) } as MarkdownRenderer}
-            />,
-        );
+        React.act(() => {
+            root.render(
+                <WalkthroughStepItem
+                    step={step}
+                    isSelected={false}
+                    onSelect={onSelect}
+                    onCompletionToggle={onCompletionToggle}
+                    markdownRenderer={{ render: () => ({ element: document.createElement('div'), dispose: () => undefined }) } as MarkdownRenderer}
+                />,
+            );
+        });
         setTimeout(() => {
             const view = container.ownerDocument.defaultView!;
             const select = container.querySelector('.gs-walkthrough-step-select') as HTMLButtonElement;

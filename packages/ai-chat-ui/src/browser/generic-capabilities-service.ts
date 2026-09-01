@@ -143,8 +143,8 @@ export class GenericCapabilitiesServiceImpl implements GenericCapabilitiesServic
         }
 
         return this.skillService.getSkills().map(skill => ({
-            id: skill.name,
-            name: skill.name,
+            id: skill.qualifiedName,
+            name: skill.qualifiedName,
             description: skill.description
         }));
     }

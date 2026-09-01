@@ -159,6 +159,88 @@ export interface HidDeviceData {
     readonly collections: [];
 }
 
+export type EditorGroupNavigationDirection = 'left' | 'right' | 'up' | 'down';
+
+export interface EditorGroupNavigationRect {
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+    width: number;
+    height: number;
+}
+
+type EditorGroupNavigationScore = [
+    orthogonalRank: number,
+    orthogonalGap: number,
+    primaryDistance: number,
+    orthogonalCenterDistance: number,
+    orthogonalStart: number
+];
+
+function isInDirection(source: EditorGroupNavigationRect, candidate: EditorGroupNavigationRect, direction: EditorGroupNavigationDirection): boolean {
+    const sourceCenter = rectCenter(source);
+    const candidateCenter = rectCenter(candidate);
+    switch (direction) {
+        case 'left':
+            return candidateCenter.x < sourceCenter.x;
+        case 'right':
+            return candidateCenter.x > sourceCenter.x;
+        case 'up':
+            return candidateCenter.y < sourceCenter.y;
+        case 'down':
+            return candidateCenter.y > sourceCenter.y;
+    }
+}
+
+function score(source: EditorGroupNavigationRect, candidate: EditorGroupNavigationRect, direction: EditorGroupNavigationDirection): EditorGroupNavigationScore {
+    const horizontal = direction === 'left' || direction === 'right';
+    const sourceCenter = rectCenter(source);
+    const candidateCenter = rectCenter(candidate);
+    const orthogonalOverlap = horizontal
+        ? intervalOverlap(source.top, source.bottom, candidate.top, candidate.bottom)
+        : intervalOverlap(source.left, source.right, candidate.left, candidate.right);
+    return [
+        orthogonalOverlap > 0 ? 0 : 1,
+        Math.max(0, -orthogonalOverlap),
+        directionalDistance(source, candidate, direction),
+        horizontal ? Math.abs(sourceCenter.y - candidateCenter.y) : Math.abs(sourceCenter.x - candidateCenter.x),
+        horizontal ? candidate.top : candidate.left
+    ];
+}
+
+function compareScore(left: EditorGroupNavigationScore, right: EditorGroupNavigationScore): number {
+    return left[0] - right[0]
+        || left[1] - right[1]
+        || left[2] - right[2]
+        || left[3] - right[3]
+        || left[4] - right[4];
+}
+
+function directionalDistance(source: EditorGroupNavigationRect, candidate: EditorGroupNavigationRect, direction: EditorGroupNavigationDirection): number {
+    switch (direction) {
+        case 'left':
+            return Math.max(0, source.left - candidate.right);
+        case 'right':
+            return Math.max(0, candidate.left - source.right);
+        case 'up':
+            return Math.max(0, source.top - candidate.bottom);
+        case 'down':
+            return Math.max(0, candidate.top - source.bottom);
+    }
+}
+
+function rectCenter(rect: EditorGroupNavigationRect): { x: number, y: number } {
+    return {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2
+    };
+}
+
+function intervalOverlap(start: number, end: number, candidateStart: number, candidateEnd: number): number {
+    return Math.min(end, candidateEnd) - Math.max(start, candidateStart);
+}
+
 @injectable()
 export class PluginVscodeCommandsContribution implements CommandContribution {
     @inject(CommandService)
@@ -252,6 +334,105 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         }
 
         return false;
+    }
+
+    protected navigateEditorGroup(direction: EditorGroupNavigationDirection): boolean {
+        const current = this.currentMainAreaTabBar();
+        const currentRect = current && this.getEditorGroupRect(current);
+        if (!current || current.titles.length === 0 || !currentRect) {
+            return false;
+        }
+
+        const candidates: TabBar<Widget>[] = [];
+        const candidateRects: EditorGroupNavigationRect[] = [];
+        for (const tabBar of this.shell.mainAreaTabBars) {
+            if (tabBar === current || tabBar.titles.length === 0) {
+                continue;
+            }
+            const candidateRect = this.getEditorGroupRect(tabBar);
+            if (candidateRect) {
+                candidates.push(tabBar);
+                candidateRects.push(candidateRect);
+            }
+        }
+        const index = this.findClosestEditorGroup(currentRect, candidateRects, direction);
+        return index === -1 ? false : this.activateEditorGroup(candidates[index]);
+    }
+
+    protected findClosestEditorGroup(source: EditorGroupNavigationRect, candidates: ReadonlyArray<EditorGroupNavigationRect>, direction: EditorGroupNavigationDirection): number {
+        let bestIndex = -1;
+        let bestScore: EditorGroupNavigationScore | undefined;
+        for (let index = 0; index < candidates.length; index++) {
+            const candidate = candidates[index];
+            if (!isInDirection(source, candidate, direction)) {
+                continue;
+            }
+            const candidateScore = score(source, candidate, direction);
+            if (!bestScore || compareScore(candidateScore, bestScore) < 0) {
+                bestIndex = index;
+                bestScore = candidateScore;
+            }
+        }
+        return bestIndex;
+    }
+
+    protected navigateEditorGroups(): boolean {
+        const current = this.currentMainAreaTabBar();
+        const tabBars = this.shell.mainAreaTabBars.filter(tabBar => tabBar.titles.length > 0);
+        if (!current || tabBars.length < 2) {
+            return false;
+        }
+        const currentIndex = tabBars.indexOf(current);
+        if (currentIndex === -1) {
+            return false;
+        }
+        const target = tabBars[(currentIndex + 1) % tabBars.length];
+        return this.activateEditorGroup(target);
+    }
+
+    protected currentMainAreaTabBar(): TabBar<Widget> | undefined {
+        const mainAreaTabBars = this.shell.mainAreaTabBars;
+        const currentTabBar = this.shell.currentTabBar;
+        if (currentTabBar && mainAreaTabBars.includes(currentTabBar)) {
+            return currentTabBar;
+        }
+        const currentEditor = this.editorManager.currentEditor || this.editorManager.activeEditor;
+        if (currentEditor) {
+            const tabBar = this.shell.getTabBarFor(currentEditor);
+            if (tabBar && mainAreaTabBars.includes(tabBar)) {
+                return tabBar;
+            }
+        }
+        return undefined;
+    }
+
+    protected getEditorGroupRect(tabBar: TabBar<Widget>): EditorGroupNavigationRect | undefined {
+        const title = tabBar.currentTitle || tabBar.titles[0];
+        const rects = [
+            tabBar.node.getBoundingClientRect(),
+            title?.owner.node.getBoundingClientRect()
+        ].filter((rect): rect is DOMRect => !!rect && rect.width > 0 && rect.height > 0);
+        if (rects.length === 0) {
+            return undefined;
+        }
+        const left = Math.min(...rects.map(rect => rect.left));
+        const right = Math.max(...rects.map(rect => rect.right));
+        const top = Math.min(...rects.map(rect => rect.top));
+        const bottom = Math.max(...rects.map(rect => rect.bottom));
+        return { left, right, top, bottom, width: right - left, height: bottom - top };
+    }
+
+    protected activateEditorGroup(tabBar: TabBar<Widget>): boolean {
+        let title = tabBar.currentTitle;
+        if (!title && tabBar.titles.length > 0) {
+            tabBar.currentIndex = 0;
+            title = tabBar.currentTitle;
+        }
+        if (!title) {
+            return false;
+        }
+        this.shell.activateWidget(title.owner.id);
+        return true;
     }
 
     registerCommands(commands: CommandRegistry): void {
@@ -572,6 +753,41 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         });
         commands.registerCommand({ id: 'workbench.action.previousEditor' }, {
             execute: () => this.shell.activatePreviousTab()
+        });
+        commands.registerCommand({
+            id: 'workbench.action.navigateLeft',
+            label: nls.localizeByDefault('Navigate to the View on the Left'),
+            category: nls.localizeByDefault('View')
+        }, {
+            execute: () => this.navigateEditorGroup('left')
+        });
+        commands.registerCommand({
+            id: 'workbench.action.navigateRight',
+            label: nls.localizeByDefault('Navigate to the View on the Right'),
+            category: nls.localizeByDefault('View')
+        }, {
+            execute: () => this.navigateEditorGroup('right')
+        });
+        commands.registerCommand({
+            id: 'workbench.action.navigateUp',
+            label: nls.localizeByDefault('Navigate to the View Above'),
+            category: nls.localizeByDefault('View')
+        }, {
+            execute: () => this.navigateEditorGroup('up')
+        });
+        commands.registerCommand({
+            id: 'workbench.action.navigateDown',
+            label: nls.localizeByDefault('Navigate to the View Below'),
+            category: nls.localizeByDefault('View')
+        }, {
+            execute: () => this.navigateEditorGroup('down')
+        });
+        commands.registerCommand({
+            id: 'workbench.action.navigateEditorGroups',
+            label: nls.localizeByDefault('Navigate Between Editor Groups'),
+            category: nls.localizeByDefault('View')
+        }, {
+            execute: () => this.navigateEditorGroups()
         });
         commands.registerCommand({ id: 'workbench.action.navigateBack' }, {
             execute: () => commands.executeCommand(EditorCommands.GO_BACK.id)

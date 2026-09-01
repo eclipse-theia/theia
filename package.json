@@ -3,7 +3,7 @@
   "name": "@theia/monorepo",
   "version": "0.0.0",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "overrides": {
     "@typescript-eslint/eslint-plugin-tslint": {
@@ -57,7 +57,7 @@
     "minimatch": "^10.2.6",
     "mkdirp": "^0.5.6",
     "node-abi": "^4.33.0",
-    "node-gyp": "^11.5.0",
+    "node-gyp": "^13.0.1",
     "nyc": "^18.0.0",
     "puppeteer": "25.1.0",
     "puppeteer-core": "25.1.0",

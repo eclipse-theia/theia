@@ -20,7 +20,7 @@ import { nls, PreferenceSchema, PreferenceScope } from '@theia/core';
 export const AUTO_UPDATE_PREF = 'ai-features.registry.autoUpdate';
 export const AUTO_UPDATE_OVERRIDES_PREF = 'ai-features.registry.autoUpdateOverrides';
 
-/** How registry-managed artifacts (skills, MCP servers) react to a newer registry entry. */
+/** How registry-managed artifacts (skills, MCP servers, Agent Plugins) react to a newer registry entry. */
 export type AutoUpdateMode = 'off' | 'ask' | 'on';
 
 export const AUTO_UPDATE_MODES: readonly AutoUpdateMode[] = ['off', 'ask', 'on'];
@@ -32,7 +32,7 @@ export namespace AutoUpdateMode {
 }
 
 /** Artifact families the registry can auto-update. Namespaces the override keys. */
-export type RegistryArtifactKind = 'skill' | 'mcp';
+export type RegistryArtifactKind = 'skill' | 'mcp' | 'plugin';
 
 /**
  * Both preferences are `User`-scoped on purpose: a workspace-settable policy would let a cloned
@@ -47,13 +47,14 @@ export const AIRegistryPreferencesSchema: PreferenceSchema = {
             default: 'ask',
             scope: PreferenceScope.User,
             enumDescriptions: [
-                nls.localize('theia/ai-registry/autoUpdate/off', 'Never update installed skills and MCP servers, and never notify about available updates.'),
-                nls.localize('theia/ai-registry/autoUpdate/ask', 'Notify when an update is available for an installed skill or MCP server.'),
-                nls.localize('theia/ai-registry/autoUpdate/on', 'Update installed skills and MCP servers automatically.')
+                nls.localize('theia/ai-registry/autoUpdate/off',
+                    'Never update installed skills, MCP servers and Agent Plugins, and never notify about available updates.'),
+                nls.localize('theia/ai-registry/autoUpdate/ask', 'Notify when an update is available for an installed skill, MCP server or Agent Plugin.'),
+                nls.localize('theia/ai-registry/autoUpdate/on', 'Update installed skills, MCP servers and Agent Plugins automatically.')
             ],
             description: nls.localize('theia/ai-registry/autoUpdate/description',
-                'Default update behavior for skills and MCP servers installed from the AI registry. Updates are checked once per window load. \
-Individual skills and MCP servers can override this from the gear menu in the Extensions view.'),
+                'Default update behavior for skills, MCP servers and Agent Plugins installed from the AI registry. Updates are checked once per \
+window load. Individual artifacts can override this from the gear menu in the Extensions view.'),
             title: AI_CORE_PREFERENCES_TITLE
         },
         [AUTO_UPDATE_OVERRIDES_PREF]: {
@@ -65,8 +66,9 @@ Individual skills and MCP servers can override this from the gear menu in the Ex
                 enum: [...AUTO_UPDATE_MODES]
             },
             markdownDescription: nls.localize('theia/ai-registry/autoUpdateOverrides/mdDescription',
-                'Per-artifact overrides of `#ai-features.registry.autoUpdate#`, keyed by `skill:<skillId>` or `mcp:<serverId>`. \
-Entries are normally maintained through the gear menu in the Extensions view; an artifact without an entry follows the default.'),
+                'Per-artifact overrides of `#ai-features.registry.autoUpdate#`, keyed by `skill:<skillId>`, `mcp:<serverId>` or \
+`plugin:<pluginId>`. Entries are normally maintained through the gear menu in the Extensions view; an artifact without an entry follows \
+the default.'),
             title: AI_CORE_PREFERENCES_TITLE
         }
     }

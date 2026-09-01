@@ -17,6 +17,7 @@
 import '../../src/browser/style/index.css';
 import '../../src/browser/style/tool-call-rendering.css';
 import '../../src/browser/style/mermaid-rendering.css';
+import '../../src/browser/style/mcp-app-frame.css';
 import { bindRootContributionProvider, CommandContribution, MenuContribution } from '@theia/core';
 import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, KeybindingContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';

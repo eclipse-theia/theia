@@ -15,9 +15,9 @@
  ********************************************************************************/
 
 /* Import base configuration styles */
+@import "./ai-configuration-shell.css";
 @import "./ai-configuration-base.css";
 @import "./ai-configuration-list-detail.css";
-@import "./ai-configuration-cards.css";
 @import "./ai-configuration-table.css";
 @import "./ai-configuration-hierarchical.css";
 
@@ -79,62 +79,6 @@
   flex-direction: column;
   gap: calc(var(--theia-ui-padding) / 2);
   margin-bottom: calc(var(--theia-ui-padding) * 2);
-}
-
-.ai-templates-table {
-  width: 100%;
-  border-collapse: collapse;
-  border: var(--theia-border-width) solid var(--theia-widget-border);
-  border-radius: 3px;
-}
-
-.ai-templates-table thead th {
-  text-align: left;
-  padding: var(--theia-ui-padding);
-  background-color: var(--theia-editorWidget-background);
-  color: var(--theia-descriptionForeground);
-  font-weight: 600;
-  border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
-}
-
-.ai-templates-table tbody td {
-  padding: var(--theia-ui-padding);
-  border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
-}
-
-.ai-templates-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.template-name-cell {
-  font-weight: 500;
-}
-
-.template-variant-cell {
-  width: 200px;
-}
-
-.template-actions-cell,
-.ai-templates-table thead th.template-actions-header {
-  width: 100px;
-  text-align: right;
-}
-
-.template-action-icon-button {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: calc(var(--theia-ui-padding) / 2);
-  color: var(--theia-icon-foreground);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 3px;
-  transition: background-color 0.2s;
-}
-
-.template-action-icon-button:hover {
-  background-color: var(--theia-list-hoverBackground);
 }
 
 .template-renderer {
@@ -235,58 +179,6 @@
   font-weight: normal;
 }
 
-/* Toggle switch */
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 36px;
-  height: 20px;
-}
-
-.toggle-switch input[type="checkbox"] {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--theia-radio-inactiveHoverBackground);
-  transition: 0.2s;
-  border-radius: 20px;
-  border: var(--theia-border-width) solid var(--theia-widget-border);
-}
-
-.toggle-slider:before {
-  position: absolute;
-  content: "";
-  height: 14px;
-  width: 14px;
-  left: calc(var(--theia-ui-padding) / 3);
-  bottom: calc(var(--theia-ui-padding) / 3);
-  background-color: var(--theia-icon-foreground);
-  transition: 0.2s;
-  border-radius: 50%;
-}
-
-.toggle-switch input:checked+.toggle-slider {
-  background-color: var(--theia-button-background);
-}
-
-.toggle-switch input:checked+.toggle-slider:before {
-  transform: translateX(16px);
-  background-color: var(--theia-button-foreground);
-}
-
-.toggle-switch:hover .toggle-slider {
-  opacity: 0.9;
-}
-
 /* Agent status indicator in tree */
 .agent-status-indicator {
   font-size: var(--theia-ui-font-size3);
@@ -340,10 +232,6 @@
   word-break: break-word;
 }
 
-.ai-configuration-select {
-  max-width: 400px;
-}
-
 .ai-configuration-value-row-value.ai-alias-evaluates-to-unresolved {
   color: var(--theia-descriptionForeground);
 }
@@ -370,6 +258,41 @@
   margin: calc(var(--theia-ui-padding) * 3) 0 calc(var(--theia-ui-padding) * 1.5) 0;
   padding: 0;
   color: var(--theia-foreground);
+}
+
+/* Collapsible read-only subsection (e.g. the "Used …" reference lists): a clickable subcategory header
+   with a leading chevron and a trailing item count. */
+.ai-collapsible-subsection-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ai-collapsible-subsection-header:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: 2px;
+}
+
+/* The chevron hangs in the left margin so the title text lines up with the non-collapsible sibling
+   subcategory titles instead of looking indented under the section above. */
+.ai-collapsible-subsection-chevron {
+  position: absolute;
+  left: -1.25em;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--theia-descriptionForeground);
+}
+
+.ai-collapsible-subsection-count {
+  font-size: var(--theia-ui-font-size0);
+  font-weight: normal;
+  color: var(--theia-badge-foreground);
+  background: var(--theia-badge-background);
+  border-radius: 10px;
+  padding: 0 calc(var(--theia-ui-padding) / 1.5);
 }
 
 /* Detail pane content sections */
@@ -404,6 +327,22 @@
   border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
 }
 
+/* Warning under an agent-detail subsection title (e.g. server tools being auto-approved), matching the
+   wording and icon of the chat input's capabilities popup. */
+.ai-agent-section-warning {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 1.5);
+  margin: 0 0 var(--theia-ui-padding);
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+}
+
+.ai-agent-section-warning .codicon-warning {
+  flex: none;
+  color: var(--theia-editorWarning-foreground);
+}
+
 /* Agent-specific variables already have per-item borders, remove the list-level ones */
 .variable-references:has(.ai-agent-specific-variable-item) {
   border-top: none;
@@ -419,37 +358,124 @@
   padding: calc(var(--theia-ui-padding) / 2);
 }
 
-/* Variable agent list */
-.variable-agent-list {
-  list-style: none;
+/* Agent chips are interactive buttons: reset the native button chrome and add a visible focus ring. */
+button.agent-chip {
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button.agent-chip:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: 1px;
+}
+
+/* Visually hidden but available to assistive tech (used for the copy confirmation live region). */
+.ai-variable-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
   padding: 0;
-  margin: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* A muted label followed by the read-only id in a bordered code chip (never the old error-red style). */
+.ai-variable-id-row {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+}
+
+.ai-variable-id-label {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+}
+
+.ai-variable-id-value {
+  font-family: var(--theia-editor-font-family, monospace);
+  color: var(--theia-foreground);
+  background-color: var(--theia-editor-background);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  border-radius: 4px;
+  padding: 0 6px;
+}
+
+/* Shared layout for the "Arguments" and "Used by agents" sections of an expanded row. */
+.ai-variable-section {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  background-color: var(--theia-widget-border);
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.ai-variable-section-label {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+  font-weight: 600;
+}
+
+.ai-variable-section-note {
+  color: var(--theia-descriptionForeground);
+}
+
+/* A bordered, rounded list of arguments with 1px dividers between rows (no table/zebra look). */
+.ai-variable-args-container {
   border: var(--theia-border-width) solid var(--theia-widget-border);
-  border-radius: 3px;
+  border-radius: 6px;
   overflow: hidden;
 }
 
-.variable-agent-item {
+.ai-variable-arg-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: calc(var(--theia-ui-padding) / 1.5) var(--theia-ui-padding);
-  background-color: var(--theia-editor-background);
-  cursor: pointer;
-  transition: background-color 0.1s;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--theia-ui-padding);
+  padding: calc(var(--theia-ui-padding) * 0.75) var(--theia-ui-padding);
 }
 
-.variable-agent-item:hover {
-  background-color: var(--theia-list-hoverBackground);
+.ai-variable-arg-row+.ai-variable-arg-row {
+  border-top: var(--theia-border-width) solid var(--theia-widget-border);
 }
 
-.variable-agent-item i {
+/* Fixed-width name column so descriptions line up across rows. */
+.ai-variable-arg-name {
+  flex: none;
+  min-width: 130px;
+  font-family: var(--theia-editor-font-family, monospace);
+  color: var(--theia-textPreformat-foreground);
+}
+
+/* Small outlined pill; "optional" vs "required" shown explicitly instead of relying on an absent marker. */
+.ai-variable-arg-badge {
+  flex: none;
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  border-radius: 999px;
+  padding: 0 6px;
+  font-size: 0.85em;
   color: var(--theia-descriptionForeground);
-  opacity: 0.7;
+}
+
+/* Grows to fill the row and wraps under the name on narrow widths instead of overflowing. */
+.ai-variable-arg-description {
+  flex: 1 1 200px;
+  min-width: 0;
+  color: var(--theia-descriptionForeground);
+}
+
+.ai-variable-arg-enum {
+  display: block;
+  margin-top: calc(var(--theia-ui-padding) / 2);
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+}
+
+.ai-variable-agent-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .agent-tag {
@@ -664,32 +690,6 @@
   font-style: italic;
 }
 
-.prompt-variant-warning {
-  color: var(--theia-warningForeground);
-  background: var(--theia-warningBackground);
-  border-left: 4px solid var(--theia-warningBorder);
-  padding: 6px 12px;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: 3px;
-  font-size: 0.95em;
-}
-
-.prompt-variant-error {
-  color: var(--theia-errorForeground);
-  background: var(--theia-errorBackground);
-  border-left: 4px solid var(--theia-errorBorder);
-  padding: 6px 12px;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: 3px;
-  font-size: 0.95em;
-}
-
 /* Template content collapsable styles */
 .template-content-container {
   padding: 10px;
@@ -736,18 +736,20 @@
   gap: 6px;
 }
 
+/* Canonical navigable agent chip: a blue badge (button colours) with a leading agent icon. Every "used by
+   agents / agents using this …" surface (Skills, Slash Commands, Variables, Model Aliases) uses this single
+   style so agent links look identical everywhere. */
 .agent-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: calc(var(--theia-ui-padding) / 2);
   background-color: var(--theia-button-background);
-  color: var(--theia-editor-background);
-  gap: 6px;
-  padding: 6px 8px;
-  border-radius: 10px;
-  font-size: 12px;
+  color: var(--theia-button-foreground);
+  padding: calc(var(--theia-ui-padding) / 3) calc(var(--theia-ui-padding) / 1.5);
+  border-radius: 1em;
+  font-size: var(--theia-ui-font-size0);
   font-weight: 500;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   white-space: nowrap;
 }
 
@@ -1470,47 +1472,6 @@
  * AI Tools Configuration Widget Styles
  * Only touch styles in this section for the tools configuration widget
  */
-.ai-tools-configuration-header {
-  display: flex;
-  align-items: center;
-  gap: var(--theia-ui-padding);
-  margin-bottom: calc(var(--theia-ui-padding) * 2);
-  padding: var(--theia-ui-padding);
-  background-color: var(--theia-editor-background);
-  border: var(--theia-border-width) solid var(--theia-widget-border);
-  border-radius: 3px;
-}
-
-.ai-tools-recommended-defaults-banner {
-  display: flex;
-  align-items: center;
-  gap: calc(var(--theia-ui-padding) * 2);
-  margin-bottom: calc(var(--theia-ui-padding) * 2);
-  padding: calc(var(--theia-ui-padding) * 1.5);
-  background-color: var(--theia-editorInfo-background, var(--theia-editor-background));
-  border: var(--theia-border-width) solid var(--theia-editorInfo-border, var(--theia-widget-border));
-  border-radius: 3px;
-}
-
-.ai-tools-recommended-defaults-text {
-  flex: 1;
-  line-height: var(--theia-content-line-height);
-}
-
-.ai-tools-configuration-default-section {
-  margin-bottom: calc(var(--theia-ui-padding) * 2);
-}
-
-.ai-tools-configuration-default-label {
-  font-weight: bold;
-  margin-bottom: var(--theia-ui-padding);
-}
-
-.ai-tools-configuration-default-select {
-  font-size: 14px;
-  padding: var(--theia-ui-padding);
-}
-
 .ai-tools-configuration-tools-label {
   font-weight: bold;
   margin-bottom: var(--theia-ui-padding);
@@ -1629,6 +1590,15 @@
 .ai-alias-evaluates-to-unresolved {
   margin-left: var(--theia-ui-padding);
   color: var(--theia-descriptionForeground);
+}
+
+/* "Evaluates to <model>" note shown under an alias-backed language-model setting row. */
+.ai-lm-evaluates-to {
+  margin-top: calc(var(--theia-ui-padding) / 2);
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+  display: flex;
+  gap: calc(var(--theia-ui-padding) / 2);
 }
 
 .ai-alias-detail-agents {
@@ -1772,29 +1742,21 @@
   margin-right: calc(var(--theia-ui-padding) / 2);
 }
 
-.ai-variable-name-cell {
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.ai-variable-description-cell {
-  color: var(--theia-descriptionForeground);
-}
-
 .ai-configuration-warning-text {
   color: var(--theia-editorWarning-foreground);
 }
 
-/* Capability modified indicator - matches settings view style */
-.ai-templates-table tr.capability-modified {
-  border-left: 2px solid var(--theia-settings-modifiedItemIndicator);
+/* Agent-detail subsection header: the title, with any section-wide action (its reset) pushed to the
+   trailing edge of the same line rather than sitting in a prominent row of its own above the list. */
+.ai-agent-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
 }
 
-/* Reset all capabilities button container */
-.capability-reset-all-container {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: calc(var(--theia-ui-padding) * 1.5);
+/* Pushed to the trailing edge of the title line; the button itself is the shared icon-action style. */
+.ai-agent-section-header .ai-agent-section-header-action {
+  margin-left: auto;
 }
 
 .ai-agent-description {
@@ -1862,61 +1824,6 @@
 .todo-tool-empty {
   color: var(--theia-descriptionForeground);
   font-style: italic;
-}
-
-/* Shell Command Permission List Section */
-.ai-shell-permission-list-section {
-  margin-top: calc(var(--theia-ui-padding) * 3);
-  padding-top: calc(var(--theia-ui-padding) * 2);
-  border-top: var(--theia-border-width) solid var(--theia-widget-border);
-}
-
-.ai-shell-permission-list-description {
-  color: var(--theia-descriptionForeground);
-  margin-bottom: var(--theia-ui-padding);
-}
-
-.ai-shell-permission-list-input-row {
-  display: flex;
-  gap: var(--theia-ui-padding);
-  margin-bottom: var(--theia-ui-padding);
-}
-
-.ai-shell-permission-list-input-row .theia-input {
-  flex: 1;
-}
-
-.ai-shell-permission-list-patterns {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.ai-shell-permission-list-pattern-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: calc(var(--theia-ui-padding) / 2) var(--theia-ui-padding);
-  background-color: var(--theia-editor-background);
-  border: var(--theia-border-width) solid var(--theia-widget-border);
-  border-radius: 3px;
-  margin-bottom: calc(var(--theia-ui-padding) / 2);
-}
-
-.ai-shell-permission-list-pattern-item code {
-  font-family: var(--theia-code-font-family);
-  font-size: var(--theia-code-font-size);
-}
-
-.ai-shell-permission-list-empty {
-  color: var(--theia-descriptionForeground);
-  font-style: italic;
-}
-
-.ai-shell-permission-list-error {
-  color: var(--theia-errorForeground);
-  margin-top: calc(var(--theia-ui-padding) / 2);
-  margin-bottom: var(--theia-ui-padding);
 }
 
 /* User Interaction Tool Renderer Styles */
@@ -2315,5 +2222,42 @@
 
 .theia-ai-allow-all-mode-strip-dismiss:focus {
   outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
+/* ===== AI Configuration breadcrumb popup ===== */
+.theia-ai-configuration-breadcrumb-popup {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  min-width: 180px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.theia-ai-configuration-breadcrumb-popup-item {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) * 0.75);
+  padding: 4px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.theia-ai-configuration-breadcrumb-popup-item:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.theia-ai-configuration-breadcrumb-popup-item.selected {
+  background-color: var(--theia-list-activeSelectionBackground);
+  color: var(--theia-list-activeSelectionForeground);
+}
+
+/* High contrast: neither `list.hoverBackground` nor `list.activeSelectionBackground` is defined there, so
+   both states above would be indistinguishable from an unselected entry. `contrastActiveBorder` exists only
+   in the high-contrast themes, hence the ring appears there alone. */
+.theia-ai-configuration-breadcrumb-popup-item:hover,
+.theia-ai-configuration-breadcrumb-popup-item.selected {
+  outline: 1px dotted var(--theia-contrastActiveBorder, transparent);
   outline-offset: -1px;
 }
