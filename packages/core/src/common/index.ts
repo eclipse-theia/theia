@@ -25,6 +25,7 @@ export * from './disposable';
 export * from './event';
 export * from './inversify-utils';
 export * from './listener';
+export * from './linked-text';
 export * from './logger';
 export * from './logger-sanitizer';
 export * from './lsp-types';

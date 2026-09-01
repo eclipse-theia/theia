@@ -232,7 +232,7 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
         colors.register(
             {
                 id: 'walkthrough.stepTitle.foreground',
-                defaults: { dark: 'foreground', light: 'foreground', hcDark: 'foreground', hcLight: 'foreground' },
+                defaults: { dark: '#ffffff', light: '#000000', hcDark: undefined, hcLight: undefined },
                 description: 'Foreground color of walkthrough step titles.'
             },
             {

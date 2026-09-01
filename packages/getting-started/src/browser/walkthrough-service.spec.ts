@@ -136,7 +136,8 @@ describe('WalkthroughService', () => {
             get plugins(): { model: { id: string; publisher: string; name: string }, outOfSync?: boolean }[] { return mockPlugins; },
             getPlugin: (id: string) => mockDeployedPlugins.get(id),
             get disabledByTrust(): ReadonlySet<string> { return mockDisabledByTrust; },
-            onDidChangePlugins: onDidChangePluginsEmitter.event
+            onDidChangePlugins: onDidChangePluginsEmitter.event,
+            activatePlugin: () => Promise.resolve(),
         };
     });
 
@@ -1144,6 +1145,19 @@ describe('WalkthroughService', () => {
                     }
                 ]
             }));
+        });
+
+        it('activates the selected walkthrough before opening its link', async () => {
+            const activatedPlugins: string[] = [];
+            (service as any).pluginSupport.activatePlugin = async (id: string) => activatedPlugins.push(id);
+            service.selectWalkthrough('test.publisher.test-plugin.test-walkthrough');
+
+            await service.handleLinkClick('https://example.com');
+
+            expect(activatedPlugins).to.deep.equal([
+                'test.publisher.test-plugin',
+                'test.publisher.test-plugin',
+            ]);
         });
 
         it('should complete step and open link when handleLinkClick is called with matching URL', async () => {
