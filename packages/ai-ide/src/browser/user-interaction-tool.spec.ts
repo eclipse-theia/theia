@@ -134,6 +134,100 @@ describe('UserInteractionTool', () => {
         expect(JSON.parse(result as string).error).to.equal('No tool call ID available');
     });
 
+    describe('chat context surfacing', () => {
+        interface MockChatCtx {
+            ctx: object;
+            response: {
+                response: { content: object[] };
+                fireInteractionNeeded: sinon.SinonSpy;
+                waitForInput: sinon.SinonSpy;
+                stopWaitingForInput: sinon.SinonSpy;
+            };
+            contentPart: {
+                kind: string;
+                id: string;
+                requestUserInput: sinon.SinonSpy;
+                userInputHandled: sinon.SinonSpy;
+            };
+        }
+
+        // Mimics the shape of ChatToolContext with a mock response model, so we can
+        // assert the tool announces its pending interaction (issue #17952: interactions
+        // inside delegated sessions were never surfaced because the tool never fired
+        // interactionNeeded).
+        const createChatCtx = (toolCallId: string, withContentPart = true): MockChatCtx => {
+            const contentPart = {
+                kind: 'toolCall',
+                id: toolCallId,
+                requestUserInput: sinon.spy(),
+                userInputHandled: sinon.spy()
+            };
+            const response = {
+                response: { content: withContentPart ? [contentPart] : [] },
+                fireInteractionNeeded: sinon.spy(),
+                waitForInput: sinon.spy(),
+                stopWaitingForInput: sinon.spy()
+            };
+            return { ctx: { toolCallId, request: {}, response }, response, contentPart };
+        };
+
+        it('should fire interactionNeeded with the tool call content part while waiting', async () => {
+            const handler = tool.getTool().handler;
+            const { ctx, response, contentPart } = createChatCtx('call-fire');
+
+            const handlerPromise = handler(singleStepArgs(), ctx);
+
+            expect(response.fireInteractionNeeded.calledOnce).to.be.true;
+            expect(response.fireInteractionNeeded.firstCall.args[0]).to.equal(contentPart);
+            expect(response.waitForInput.calledOnce).to.be.true;
+
+            tool.completeInteraction('call-fire', { completed: true, steps: [{ title: 'Choose', value: 'a' }] });
+            await handlerPromise;
+        });
+
+        it('should mark the content part as awaiting user input while blocked and clear it afterwards', async () => {
+            const handler = tool.getTool().handler;
+            const { ctx, contentPart } = createChatCtx('call-mark');
+
+            const handlerPromise = handler(singleStepArgs(), ctx);
+
+            expect(contentPart.requestUserInput.calledOnce).to.be.true;
+            expect(contentPart.userInputHandled.called).to.be.false;
+
+            tool.completeInteraction('call-mark', { completed: true, steps: [{ title: 'Choose', value: 'a' }] });
+            await handlerPromise;
+
+            expect(contentPart.userInputHandled.calledOnce).to.be.true;
+        });
+
+        it('should not fire interactionNeeded when no matching tool call content exists', async () => {
+            const handler = tool.getTool().handler;
+            const { ctx, response } = createChatCtx('call-missing', false);
+
+            const handlerPromise = handler(singleStepArgs(), ctx);
+
+            expect(response.fireInteractionNeeded.called).to.be.false;
+            // Waiting state must still be surfaced even without a content part.
+            expect(response.waitForInput.calledOnce).to.be.true;
+
+            tool.completeInteraction('call-missing', { completed: true, steps: [{ title: 'Choose', value: 'a' }] });
+            await handlerPromise;
+        });
+
+        it('should not fire interactionNeeded for informational single-step interactions', async () => {
+            const handler = tool.getTool().handler;
+            const { ctx, response } = createChatCtx('call-info');
+
+            const result = parseResult(await handler(
+                JSON.stringify({ interactions: [{ title: 'FYI', message: 'Just info' }] }), ctx
+            ));
+
+            expect(result.completed).to.be.true;
+            expect(response.fireInteractionNeeded.called).to.be.false;
+            expect(response.waitForInput.called).to.be.false;
+        });
+    });
+
     it('should resolve the handler with the result passed to completeInteraction', async () => {
         const handler = tool.getTool().handler;
         const handlerPromise = handler(singleStepArgs(), { toolCallId: 'call-1' });

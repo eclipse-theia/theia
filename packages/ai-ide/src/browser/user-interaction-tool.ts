@@ -16,7 +16,7 @@
 
 import { ToolProvider, ToolRequest, ToolRequestParameterProperty, ToolRequestParameters } from '@theia/ai-core';
 import { ToolInvocationContext } from '@theia/ai-core/lib/common/language-model';
-import { ChatToolContext } from '@theia/ai-chat';
+import { ChatToolContext, ToolCallChatResponseContent } from '@theia/ai-chat';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -353,12 +353,27 @@ export class UserInteractionTool implements ToolProvider {
 
         // Mark the response as waiting for input while the interaction is pending, so it is
         // surfaced consistently with agent questions and tool confirmations (e.g. in the
-        // session overview and notifications).
+        // session overview and notifications). Announce the interaction via
+        // interactionNeeded so UIs that track pending interactions (e.g. the collapsed
+        // delegation summary) surface it like tool confirmations (#17952).
         const response = ChatToolContext.is(ctx) ? ctx.response : undefined;
-        response?.waitForInput();
+        let contentPart: ToolCallChatResponseContent | undefined;
+        if (response) {
+            contentPart = response.response.content.findLast(
+                (part): part is ToolCallChatResponseContent => ToolCallChatResponseContent.is(part) && part.id === toolCallId
+            );
+            if (contentPart) {
+                contentPart.requestUserInput();
+                response.fireInteractionNeeded(contentPart);
+            } else {
+                this.logger.warn(`No tool call content found for '${toolCallId}'; the pending interaction cannot be announced to interaction trackers.`);
+            }
+            response.waitForInput();
+        }
         try {
             return await pending.deferred.promise;
         } finally {
+            contentPart?.userInputHandled();
             response?.stopWaitingForInput();
             cancellationListener?.dispose();
             this.pendingInteractions.delete(toolCallId);

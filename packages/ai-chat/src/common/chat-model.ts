@@ -502,6 +502,13 @@ export interface InteractiveContent {
     readonly isResolved: boolean;
     /** Resolves when the interaction is resolved. Used for cleanup in delegation chains. */
     readonly whenResolved: Promise<void>;
+    /**
+     * Whether the interaction currently requires user action. Unlike {@link isResolved},
+     * this reflects the momentary state: e.g. a tool call whose confirmation was granted
+     * is not yet resolved (the tool is still executing) but no longer awaits interaction.
+     * When `undefined`, consumers should fall back to `!isResolved`.
+     */
+    readonly isAwaitingInteraction?: boolean;
 }
 
 export namespace InteractiveContent {
@@ -706,6 +713,16 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     cancelConfirmation(reason?: unknown): void;
     /** Signal that this tool call needs user confirmation. Resolves the needsUserConfirmation promise. */
     requestUserConfirmation(): void;
+    /**
+     * Whether the tool execution is currently blocked waiting for user input provided
+     * through the tool's own UI (e.g. an interactive wizard). Cleared when the tool
+     * call finishes or {@link userInputHandled} is called.
+     */
+    readonly isAwaitingUserInput: boolean;
+    /** Signal that the tool execution is blocked waiting for user input. */
+    requestUserInput(): void;
+    /** Signal that the tool execution is no longer waiting for user input. */
+    userInputHandled(): void;
     /**
      * Update the tool call's result without marking it finished. Use this to persist
      * intermediate state for long-running tools (e.g. the user-interaction wizard) so
@@ -1073,6 +1090,13 @@ export interface ChatResponseModel {
      * The content part that needs interaction is provided as the event payload.
      */
     readonly onInteractionNeeded: Event<InteractiveContent & ChatResponseContent>;
+    /**
+     * Content parts announced via {@link onInteractionNeeded} that currently await user
+     * interaction (see {@link InteractiveContent.isAwaitingInteraction}). Lets late
+     * subscribers (e.g. a remounted delegation renderer) rebuild pending interaction
+     * state instead of relying solely on the push event.
+     */
+    readonly pendingInteractions: ReadonlyArray<InteractiveContent & ChatResponseContent>;
     /**
      * The unique identifier of the response model
      */
@@ -2578,6 +2602,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _needsUserConfirmation: Promise<void>;
     protected _needsUserConfirmationResolver?: () => void;
     protected _isAwaitingUserConfirmation = false;
+    protected _isAwaitingUserInput = false;
     protected _confirmed: Promise<boolean>;
     protected _confirmationResolver?: (value: boolean) => void;
     protected _confirmationRejecter?: (reason?: unknown) => void;
@@ -2659,6 +2684,14 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return this._isAwaitingUserConfirmation && !this.finished;
     }
 
+    get isAwaitingUserInput(): boolean {
+        return this._isAwaitingUserInput && !this.finished;
+    }
+
+    get isAwaitingInteraction(): boolean {
+        return this.isAwaitingUserConfirmation || this.isAwaitingUserInput;
+    }
+
     get whenFinished(): Promise<void> {
         return this._whenFinished;
     }
@@ -2715,6 +2748,14 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             this._needsUserConfirmationResolver();
             this._needsUserConfirmationResolver = undefined;
         }
+    }
+
+    requestUserInput(): void {
+        this._isAwaitingUserInput = true;
+    }
+
+    userInputHandled(): void {
+        this._isAwaitingUserInput = false;
     }
 
     updateResult(result: ToolCallResult): void {
@@ -3104,6 +3145,12 @@ export class QuestionResponseContentImpl implements QuestionResponseContent, Int
         return this.selectedOption !== undefined;
     }
 
+    get isAwaitingInteraction(): boolean {
+        // A skipped question resolves with an empty selection: isResolved stays false,
+        // but the question no longer awaits interaction.
+        return !this.isReadOnly && this._selectedOptions === undefined;
+    }
+
     set selectedOption(option: { text: string; value?: string } | undefined) {
         this._selectedOptions = option ? [option] : undefined;
         this._resolvedResolver?.();
@@ -3292,6 +3339,8 @@ export class MutableChatResponseModel implements ChatResponseModel {
     protected readonly _onInteractionNeededEmitter = new Emitter<InteractiveContent & ChatResponseContent>();
     readonly onInteractionNeeded: Event<InteractiveContent & ChatResponseContent> = this._onInteractionNeededEmitter.event;
 
+    protected _pendingInteractions: (InteractiveContent & ChatResponseContent)[] = [];
+
     data = {};
 
     protected _id: string;
@@ -3474,16 +3523,22 @@ export class MutableChatResponseModel implements ChatResponseModel {
         this._agentId = agentId;
     }
 
+    /** Reset all pending-input state; the response no longer accepts user interaction. */
+    protected resetPendingInput(): void {
+        this._waitingForInputCount = 0;
+        this._pendingInteractions = [];
+    }
+
     complete(): void {
         this._isComplete = true;
-        this._waitingForInputCount = 0;
+        this.resetPendingInput();
         this._onDidChangeEmitter.fire();
     }
 
     cancel(): void {
         this._cancellationToken.cancel();
         this._isComplete = true;
-        this._waitingForInputCount = 0;
+        this.resetPendingInput();
 
         // Ensure any pending tool confirmations are canceled when the chat is canceled
         try {
@@ -3516,7 +3571,20 @@ export class MutableChatResponseModel implements ChatResponseModel {
         this._onDidChangeEmitter.fire();
     }
 
+    get pendingInteractions(): ReadonlyArray<InteractiveContent & ChatResponseContent> {
+        // Filter by the momentary awaiting state so consumers never see interactions
+        // whose actionable phase has passed (e.g. a confirmed tool call that is still
+        // executing and therefore not yet resolved).
+        return this._pendingInteractions.filter(part => part.isAwaitingInteraction ?? !part.isResolved);
+    }
+
     fireInteractionNeeded(contentPart: InteractiveContent & ChatResponseContent): void {
+        if (!this._isComplete && !contentPart.isResolved && !this._pendingInteractions.includes(contentPart)) {
+            this._pendingInteractions = [...this._pendingInteractions, contentPart];
+            contentPart.whenResolved.then(() => {
+                this._pendingInteractions = this._pendingInteractions.filter(part => part !== contentPart);
+            });
+        }
         this._onInteractionNeededEmitter.fire(contentPart);
     }
 
@@ -3526,7 +3594,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
 
     error(error: Error): void {
         this._isComplete = true;
-        this._waitingForInputCount = 0;
+        this.resetPendingInput();
         this._isError = true;
         this._errorObject = error;
         this._onDidChangeEmitter.fire();
