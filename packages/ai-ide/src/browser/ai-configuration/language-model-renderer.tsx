@@ -60,7 +60,7 @@ const ModelSelect: React.FC<{
     }, [onSelect, purpose]);
     return <SelectComponent
         id={id}
-        className='ai-config-select ai-configuration-value-row-value'
+        className='ai-config-select'
         options={options}
         defaultValue={value}
         onChange={handleChange}
@@ -120,7 +120,7 @@ export const ReasoningRow: React.FC<{
                 reasoningLevelLabel(inheritedLevel))}
         modified={savedLevel !== undefined}
         below={<SelectComponent
-            className={`ai-config-select ai-configuration-value-row-value theia-ReasoningLevelSelector reasoning-level-${effectiveLevel}`}
+            className={`ai-config-select theia-ReasoningLevelSelector reasoning-level-${effectiveLevel}`}
             options={options}
             defaultValue={effectiveLevel}
             onChange={handleChange}
