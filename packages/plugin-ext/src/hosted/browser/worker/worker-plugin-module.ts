@@ -36,6 +36,7 @@ import { WorkerEnvExtImpl } from './worker-env-ext';
 import { DebugExtImpl } from '../../../plugin/debug/debug-ext';
 import { LocalizationExtImpl } from '../../../plugin/localization-ext';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
+import { TelemetryExtImpl } from '../../../plugin/telemetry-ext';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
@@ -79,4 +80,5 @@ export default new ContainerModule(bind => {
     bind(WebviewsExtImpl).toSelf().inSingletonScope();
     bind(TerminalServiceExtImpl).toSelf().inSingletonScope();
     bind(MinimalTerminalServiceExt).toService(TerminalServiceExtImpl);
+    bind(TelemetryExtImpl).toSelf().inSingletonScope();
 });

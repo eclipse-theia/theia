@@ -325,7 +325,8 @@ export function createAPIFactory(
     messageRegistryExt: MessageRegistryExt,
     clipboard: ClipboardExt,
     webviewExt: WebviewsExtImpl,
-    localizationExt: LocalizationExtImpl
+    localizationExt: LocalizationExtImpl,
+    telemetryExt: TelemetryExtImpl
 ): PluginAPIFactory {
 
     const authenticationExt = rpc.set(MAIN_RPC_CONTEXT.AUTHENTICATION_EXT, new AuthenticationExtImpl(rpc));
@@ -359,12 +360,12 @@ export function createAPIFactory(
     const tabsExt = rpc.set(MAIN_RPC_CONTEXT.TABS_EXT, new TabsExtImpl(rpc));
     const customEditorExt = rpc.set(MAIN_RPC_CONTEXT.CUSTOM_EDITORS_EXT, new CustomEditorsExtImpl(rpc, documents, webviewExt));
     const webviewViewsExt = rpc.set(MAIN_RPC_CONTEXT.WEBVIEW_VIEWS_EXT, new WebviewViewsExtImpl(rpc, webviewExt));
-    const telemetryExt = rpc.set(MAIN_RPC_CONTEXT.TELEMETRY_EXT, new TelemetryExtImpl());
     const testingExt = rpc.set(MAIN_RPC_CONTEXT.TESTING_EXT, new TestingExtImpl(rpc, commandRegistry));
     const uriExt = rpc.set(MAIN_RPC_CONTEXT.URI_EXT, new UriExtImpl(rpc));
     const lmExt = rpc.set(MAIN_RPC_CONTEXT.MCP_SERVER_DEFINITION_REGISTRY_EXT, new LmExtImpl(rpc));
     const lmToolExt = rpc.set(MAIN_RPC_CONTEXT.LM_TOOLS_EXT, new LanguageModelToolsExtImpl(rpc));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
+    rpc.set(MAIN_RPC_CONTEXT.TELEMETRY_EXT, telemetryExt);
 
     const commandLogger = new PluginLogger(rpc, 'commands-plugin');
 
