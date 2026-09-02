@@ -265,7 +265,7 @@ function renderMedia(
         return <WalkthroughMedia src={media.markdown} markdownRenderer={markdownRenderer} logger={logger} onLinkClick={onLinkClick} />;
     }
     if ('svg' in media) {
-        return <WalkthroughMediaSvg src={media.svg} altText={media.altText || ''} logger={logger} onLinkClick={onLinkClick} />;
+        return <WalkthroughMediaSvg src={media.svg} altText={media.altText || undefined} logger={logger} onLinkClick={onLinkClick} />;
     }
     if ('image' in media) {
         return <WalkthroughMediaImage src={media.image} altText={media.altText || ''} themeService={themeService} />;
@@ -352,7 +352,8 @@ function WalkthroughMediaSvg(props: {
     altText?: string;
     logger: ILogger;
     onLinkClick?: (url: string) => void;
-}): React.ReactElement {
+}): React.ReactElement | undefined {
+    const [content, setContent] = React.useState<string | undefined>();
     // eslint-disable-next-line no-null/no-null
     const containerRef = React.useRef<HTMLDivElement>(null);
     const onLinkClickRef = React.useRef(props.onLinkClick);
@@ -363,36 +364,40 @@ function WalkthroughMediaSvg(props: {
         fetch(PluginSharedStyle.toExternalIconUrl(props.src))
             .then(response => (!cancelled && response.ok ? response.text() : ''))
             .then(text => {
-                if (!cancelled && containerRef.current && text) {
+                if (cancelled) {
+                    return;
+                }
+                if (text) {
                     const sanitized = DOMPurify.sanitize(text, {
                         USE_PROFILES: { svg: true, svgFilters: true },
                         ADD_TAGS: ['use', 'a'],
                         ADD_ATTR: ['xlink:href', 'href', 'target'],
                         ALLOW_UNKNOWN_PROTOCOLS: true
                     });
-                    containerRef.current.innerHTML = sanitized;
+                    setContent(sanitized || undefined);
+                } else {
+                    setContent(undefined);
                 }
             })
-            .catch(error => props.logger.warn(`Could not load the walkthrough media '${props.src}'.`, error));
+            .catch(error => {
+                if (!cancelled) {
+                    setContent(undefined);
+                    props.logger.warn(`Could not load the walkthrough media '${props.src}'.`, error);
+                }
+            });
 
         return () => {
             cancelled = true;
-            if (containerRef.current) {
-                containerRef.current.innerHTML = '';
-            }
         };
     }, [props.src, props.logger]);
 
     const handleClick = React.useCallback((event: React.MouseEvent) => {
         const target = event.target as Element | null;
         const anchor = target?.closest('a');
-        if (!anchor) {
+        if (!anchor || !containerRef.current?.contains(anchor)) {
             return;
         }
-        const href = anchor.getAttribute('href')
-            || anchor.getAttribute('xlink:href')
-            || anchor.getAttributeNS('http://www.w3.org/1999/xlink', 'href')
-            || (anchor as Element as { href?: { baseVal?: string } }).href?.baseVal;
+        const href = anchor.getAttribute('href') || anchor.getAttribute('xlink:href');
         if (href) {
             event.preventDefault();
             event.stopPropagation();
@@ -400,13 +405,19 @@ function WalkthroughMediaSvg(props: {
         }
     }, []);
 
+    if (!content) {
+        return undefined;
+    }
+
     return (
         <div
             className='gs-walkthrough-media-svg'
             ref={containerRef}
             role='img'
-            aria-label={props.altText}
+            aria-label={props.altText || undefined}
             onClick={handleClick}
+            // eslint-disable-next-line react/no-danger
+            dangerouslySetInnerHTML={{ __html: content }}
         />
     );
 }

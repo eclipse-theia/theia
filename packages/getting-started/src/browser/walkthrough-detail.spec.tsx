@@ -442,6 +442,75 @@ describe('WalkthroughDetail', () => {
         }, 50);
     });
 
+    it('should omit aria-label on SVG media when altText is not provided', done => {
+        const originalFetch = global.fetch;
+        const svgContent = '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" /></svg>';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (global as any).fetch = () => Promise.resolve({ ok: true, text: () => Promise.resolve(svgContent) });
+
+        const selectedStep = createMockStep({
+            id: 's1',
+            media: { svg: '/path/to/graphic.svg' }
+        });
+        const walkthrough = createMockWalkthrough({ steps: [selectedStep] });
+
+        root.render(
+            <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
+                walkthrough={walkthrough}
+                onStepSelect={() => { }}
+                onBack={() => { }}
+                selectedStep={selectedStep}
+                markdownRenderer={mockRenderer}
+            />
+        );
+
+        setTimeout(() => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (global as any).fetch = originalFetch;
+            const svgContainer = container.querySelector('.gs-walkthrough-media-svg') as HTMLElement;
+            assert.ok(svgContainer, 'SVG container element should exist');
+            assert.strictEqual(svgContainer.getAttribute('role'), 'img');
+            assert.strictEqual(svgContainer.hasAttribute('aria-label'), false, 'aria-label attribute should be omitted');
+            done();
+        }, 50);
+    });
+
+    it('should render nothing when SVG media fetch fails', done => {
+        const originalFetch = global.fetch;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (global as any).fetch = () => Promise.resolve({ ok: false, text: () => Promise.resolve('') });
+
+        const selectedStep = createMockStep({
+            id: 's1',
+            media: { svg: '/path/to/missing.svg' }
+        });
+        const walkthrough = createMockWalkthrough({ steps: [selectedStep] });
+
+        root.render(
+            <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
+                walkthrough={walkthrough}
+                onStepSelect={() => { }}
+                onBack={() => { }}
+                selectedStep={selectedStep}
+                markdownRenderer={mockRenderer}
+            />
+        );
+
+        setTimeout(() => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (global as any).fetch = originalFetch;
+            const svgContainer = container.querySelector('.gs-walkthrough-media-svg');
+            assert.ok(!svgContainer, 'No SVG container should be rendered on failure');
+            const roleImg = container.querySelector('[role="img"]');
+            assert.ok(!roleImg, 'No empty role=img should be left behind on failure');
+            done();
+        }, 50);
+    });
+
     it('should turn single newlines in a description into Markdown hard breaks', done => {
         const renderedMarkdown: string[] = [];
         const recordingRenderer: MarkdownRenderer = {
