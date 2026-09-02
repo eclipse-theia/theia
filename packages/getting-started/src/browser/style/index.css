@@ -203,14 +203,11 @@ body {
   object-fit: contain;
 }
 
-/* Kept to a single line so that every card stays the same height. */
 .gs-walkthrough-card-description {
   color: var(--theia-descriptionForeground);
   font-size: var(--theia-ui-font-size0);
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
+  margin: 4px 0 8px;
 }
 
 .gs-walkthrough-card-progress {
@@ -251,20 +248,15 @@ body {
 
 /* A selected walkthrough takes over the whole welcome view. */
 .gs-walkthrough-container {
-  /* `.gs-container` sets `height: 100%`, so the padding has to stay inside the box. */
-  box-sizing: border-box;
   padding: calc(var(--theia-ui-padding) * 6);
   overflow: auto;
 }
 
-/*
- * Sized by its content rather than stretched to the full height: a percentage height resolves against the
- * scroll container's content box, and its padding would then push the scroll extent past the client height,
- * leaving a scrollbar even for content that fits.
- */
 .gs-walkthrough-detail {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  user-select: none;
 }
 
 .gs-walkthrough-detail-header {
@@ -355,18 +347,23 @@ body {
   color: var(--theia-walkthrough-stepCompleted-foreground);
 }
 
-.gs-walkthrough-step-item .gs-walkthrough-step-icon:hover {
-  color: var(--theia-focusBorder);
-}
-
 .gs-walkthrough-step-icon {
   font-size: var(--theia-ui-font-size2);
   cursor: pointer;
 }
 
 .gs-walkthrough-step-title {
-  color: var(--theia-walkthrough-stepTitle-foreground);
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.gs-walkthrough-step:not(.selected) .gs-walkthrough-step-title {
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: inherit;
 }
 
 .gs-walkthrough-step-content {
@@ -426,4 +423,337 @@ body {
   background: var(--theia-textCodeBlock-background);
   padding: 0 calc(var(--theia-ui-padding) / 2);
   border-radius: calc(var(--theia-ui-padding) / 3);
+}
+
+/* Native VS Code walkthrough detail layout. */
+.gs-walkthrough-container {
+  box-sizing: border-box;
+  container-name: theia-walkthroughs;
+  container-type: inline-size;
+  display: flex;
+  height: 100%;
+  margin: 0 auto;
+  max-width: 1000px;
+  overflow: hidden;
+  padding: 24px;
+}
+
+.gs-walkthrough-detail {
+  min-height: 0;
+}
+
+.gs-walkthrough-detail-header {
+  flex: 0 0 auto;
+  margin-bottom: 12px;
+}
+
+.gs-walkthrough-back-link {
+  font-weight: normal;
+  margin-bottom: 8px;
+}
+
+.gs-walkthrough-category {
+  display: flex;
+  margin-bottom: 24px;
+}
+
+.gs-walkthrough-category-title {
+  font-size: 26px;
+  font-weight: normal;
+  margin: 0 0 16px;
+}
+
+.gs-walkthrough-category-description {
+  color: var(--theia-descriptionForeground);
+  font-size: 16px;
+}
+
+.gs-walkthrough-detail-body {
+  align-items: stretch;
+  flex: 1 1 0;
+  flex-wrap: nowrap;
+  gap: 16px;
+}
+
+.gs-walkthrough-detail-left {
+  display: flex;
+  flex: 0 1 40%;
+  flex-direction: column;
+  max-width: 400px;
+  min-height: 0;
+  min-width: 220px;
+}
+
+.gs-walkthrough-steps-container {
+  display: flex;
+  flex: 1 1 0;
+  min-height: 0;
+  position: relative;
+}
+
+.gs-walkthrough-steps {
+  flex: 1 1 0;
+  gap: 0;
+  height: 100%;
+  min-height: 0;
+  position: relative;
+}
+
+.gs-walkthrough-steps > .ps__rail-y {
+  left: unset !important;
+  position: absolute;
+  right: 0 !important;
+}
+
+.gs-walkthrough-scroll-shadow {
+  display: none;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
+.gs-walkthrough-scroll-shadow.top {
+  height: 3px;
+  left: 3px;
+  top: 0;
+  width: 100%;
+}
+
+.gs-walkthrough-steps.gs-walkthrough-steps-scrolled + .gs-walkthrough-scroll-shadow.top {
+  box-shadow: var(--theia-scrollbar-shadow) 0 6px 6px -6px inset;
+  display: block;
+}
+
+.gs-walkthrough-step {
+  border-radius: 6px;
+  flex: 0 0 auto;
+  margin: 1px 0;
+  overflow: hidden;
+}
+
+.gs-walkthrough-step:focus {
+  outline: none;
+}
+
+.gs-walkthrough-step-item {
+  align-items: center;
+  border: 0;
+  border-radius: 4px;
+  cursor: default;
+  display: flex;
+  gap: 8px;
+  padding: 16px;
+}
+
+.gs-walkthrough-step.selected {
+  background-color: var(
+    --theia-welcomePage-tileBackground,
+    var(--theia-editorWidget-background)
+  );
+  border: var(--theia-border-width) solid
+    var(--theia-welcomePage-tileBorder, var(--theia-panel-border));
+  padding: 16px;
+}
+
+.gs-walkthrough-step.selected .gs-walkthrough-step-item {
+  background-color: transparent;
+  padding: 0;
+}
+
+.gs-walkthrough-step.selected .gs-walkthrough-step-title {
+  color: var(--theia-walkthrough-stepTitle-foreground, var(--theia-foreground));
+}
+
+.gs-walkthrough-step:not(.selected) .gs-walkthrough-step-item {
+  align-items: center;
+  color: var(--theia-descriptionForeground);
+}
+
+.gs-walkthrough-step:not(.selected) .gs-walkthrough-step-select {
+  align-items: center;
+  display: flex;
+}
+
+.gs-walkthrough-step-icon,
+.gs-walkthrough-step-select {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0;
+}
+
+.gs-walkthrough-step-icon {
+  cursor: pointer;
+}
+
+.gs-walkthrough-step-select {
+  cursor: default;
+  flex: 1;
+  text-align: left;
+}
+
+.gs-walkthrough-step.completed .gs-walkthrough-step-icon,
+.gs-walkthrough-step.selected:not(.completed) .gs-walkthrough-step-icon {
+  color: var(--theia-textLink-foreground);
+}
+
+.gs-walkthrough-step-content {
+  border: 0;
+  flex: none;
+  padding: 16px 0 0 24px;
+}
+
+.gs-walkthrough-step-media {
+  align-items: center;
+  display: flex;
+  flex: 1 1 0;
+  justify-content: center;
+  min-height: 0;
+  overflow: auto;
+}
+
+.gs-walkthrough-media-image,
+.gs-walkthrough-media-svg {
+  border: 0;
+  border-radius: 4px;
+  margin: 0;
+  max-height: 100%;
+  max-width: 100%;
+}
+
+.gs-walkthrough-media-svg {
+  height: 100%;
+  width: 100%;
+}
+
+.gs-walkthrough-media-markdown {
+  align-self: stretch;
+  box-sizing: border-box;
+  line-height: 22px;
+  margin-top: 8px;
+  max-width: 882px;
+  padding: 5px 20px;
+  width: 100%;
+}
+
+/* Adapted from VS Code's walkthrough Markdown webview styles:
+ * https://github.com/microsoft/vscode/blob/1.134.0/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedDetailsRenderer.ts#L50-L125
+ * https://github.com/microsoft/vscode/blob/1.134.0/src/vs/workbench/contrib/markdown/browser/markdownDocumentRenderer.ts#L18-L92
+ */
+.gs-walkthrough-media-markdown h1 {
+  border-bottom: var(--theia-border-width) solid var(--theia-panel-border);
+  font-size: 19.5px;
+  font-weight: normal;
+  line-height: 1.2;
+  padding-bottom: 0.3em;
+}
+
+.gs-walkthrough-media-markdown img {
+  display: block;
+  height: auto;
+  max-height: 100%;
+  max-width: 100%;
+}
+
+.gs-walkthrough-media-markdown a,
+.gs-walkthrough-step-description a {
+  color: var(--theia-textLink-foreground);
+  text-decoration: none;
+}
+
+.gs-walkthrough-media-markdown a:hover,
+.gs-walkthrough-step-description a:hover {
+  text-decoration: underline;
+}
+
+.gs-walkthrough-media-markdown pre {
+  background: var(--theia-textCodeBlock-background);
+  border-radius: 3px;
+  font-family: var(--theia-code-font-family);
+  font-size: var(--theia-code-font-size);
+  margin: 1em 0;
+  overflow: auto;
+  padding: 8px;
+}
+
+.gs-walkthrough-media-markdown [data-code] {
+  background: transparent;
+  border-radius: 3px;
+  margin: 1em 0;
+  overflow: auto;
+  padding: 16px;
+}
+
+.gs-walkthrough-media-markdown pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.gs-walkthrough-step-description .codicon.icon-inline {
+  font-size: var(--theia-ui-font-size1);
+  vertical-align: text-bottom;
+}
+
+.gs-walkthrough-step-description .monaco-keybinding-key {
+  align-items: center;
+  background-color: var(--theia-keybindingLabel-background);
+  border: solid 1px var(--theia-keybindingLabel-border);
+  border-bottom-color: var(--theia-keybindingLabel-bottomBorder);
+  border-radius: 3px;
+  box-shadow: inset 0 -1px 0 var(--theia-widget-shadow);
+  color: var(--theia-keybindingLabel-foreground);
+  display: inline-flex;
+  font-family: var(--theia-ui-font-family);
+  font-size: inherit;
+  justify-content: center;
+  margin: 0 2px;
+  padding: 1px 4px;
+}
+
+.gs-walkthrough-done-container {
+  display: flex;
+  flex: 0 0 auto;
+  padding: 16px;
+}
+
+.gs-walkthrough-mark-done {
+  align-items: center;
+  color: var(--theia-textLink-foreground);
+  cursor: pointer;
+  display: inline-flex;
+  gap: 4px;
+  text-decoration: none;
+}
+
+.gs-walkthrough-mark-done > .codicon-check-all {
+  color: var(--theia-foreground);
+}
+
+.gs-walkthrough-mark-done:hover > .codicon-check-all {
+  color: var(--theia-textLink-foreground);
+}
+
+.gs-walkthrough-command-button {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  justify-content: center;
+  margin: 4px 0;
+  min-width: unset;
+  text-align: center;
+}
+
+@container theia-walkthroughs (max-width: 600px) {
+  .gs-walkthrough-detail-body {
+    overflow: hidden;
+  }
+
+  .gs-walkthrough-detail-left {
+    flex: 1 1 0;
+    max-width: none;
+    min-width: 0;
+  }
+  .gs-walkthrough-step-media {
+    display: none;
+  }
 }

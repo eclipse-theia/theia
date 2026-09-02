@@ -44,6 +44,7 @@ export interface WalkthroughPluginSupport {
     /** The plugins that are not loaded because the workspace is not trusted. */
     readonly disabledByTrust: ReadonlySet<string>;
     readonly onDidChangePlugins: Event<void>;
+    activatePlugin(id: string): Promise<void>;
 }
 
 const WALKTHROUGH_PROGRESS_KEY = 'walkthrough-progress';
@@ -476,6 +477,9 @@ export class WalkthroughService implements Disposable {
         this.selectedWalkthroughId = walkthrough.id;
         this.selectedStepId = this.getFirstPendingStep(walkthrough)?.id;
         this.onDidChangeSelectionEmitter.fire();
+        this.activateWalkthrough(walkthrough).catch(error =>
+            this.logger.warn(`Could not activate the walkthrough '${walkthrough.id}'.`, error),
+        );
     }
 
     /**
@@ -514,6 +518,11 @@ export class WalkthroughService implements Disposable {
         return walkthroughId.replace('#', '.');
     }
 
+    /** Activates the plugin that contributes the walkthrough. */
+    protected async activateWalkthrough(walkthrough: Walkthrough): Promise<void> {
+        await this.pluginSupport.activatePlugin(walkthrough.pluginId);
+    }
+
     /**
      * Handle a link click from a walkthrough step description.
      * Fires the `onLink:{url}` completion event and opens the link.
@@ -522,8 +531,11 @@ export class WalkthroughService implements Disposable {
      * reject unhandled, so the failure is reported to the user instead.
      */
     async handleLinkClick(url: string): Promise<void> {
-        this.handleCompletionEvent(`onLink:${url}`);
         try {
+            if (this.selectedWalkthrough) {
+                await this.activateWalkthrough(this.selectedWalkthrough);
+            }
+            this.handleCompletionEvent(`onLink:${url}`);
             await open(this.openerService, new URI(this.normalizeLinkUrl(url)));
         } catch (error) {
             const reason = error instanceof Error ? error.message : String(error);

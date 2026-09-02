@@ -170,6 +170,12 @@ export class GettingStartedWidget extends ReactWidget {
 
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
+        const walkthroughStep = this.node.querySelector<HTMLElement>('.gs-walkthrough-step.selected')
+            ?? this.node.querySelector<HTMLElement>('.gs-walkthrough-step');
+        if (walkthroughStep) {
+            walkthroughStep.focus();
+            return;
+        }
         const elArr = this.node.getElementsByTagName('a');
         if (elArr && elArr.length > 0) {
             (elArr[0] as HTMLElement).focus();

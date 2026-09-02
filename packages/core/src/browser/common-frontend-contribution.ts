@@ -1304,6 +1304,13 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         colors.register(
             // Base Colors should be aligned with https://code.visualstudio.com/api/references/theme-color#base-colors
             // if not yet contributed by Monaco, check runtime css variables to learn
+            // Based on VS Code's scrollbar color:
+            // https://github.com/microsoft/vscode/blob/1.134.0/src/vs/platform/theme/common/colors/miscColors.ts#L52-L54
+            {
+                id: 'scrollbar.shadow',
+                defaults: { dark: '#000000', light: '#DDDDDD', hcDark: undefined, hcLight: undefined },
+                description: nls.localizeByDefault('Scrollbar shadow to indicate that the view is scrolled.')
+            },
             { id: 'selection.background', defaults: { dark: '#217daf', light: '#c0dbf1' }, description: 'Overall border color for focused elements. This color is only used if not overridden by a component.' },
             { id: 'icon.foreground', defaults: { dark: '#C5C5C5', light: '#424242', hcDark: '#FFFFFF', hcLight: '#292929' }, description: 'The default color for icons in the workbench.' },
             { id: 'sash.hoverBorder', defaults: { dark: Color.transparent('focusBorder', 0.99), light: Color.transparent('focusBorder', 0.99), hcDark: 'focusBorder', hcLight: 'focusBorder' }, description: 'The hover border color for draggable sashes.' },

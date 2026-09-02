@@ -24,7 +24,8 @@
 import React = require('react');
 import { inject, injectable } from 'inversify';
 import { URI as CodeUri } from 'vscode-uri';
-import { CommandRegistry, DisposableCollection } from '../../common';
+import { CommandRegistry, DisposableCollection, LinkedTextNode, parseLinkedText } from '../../common';
+import type { ILink } from '../../common/linked-text';
 import URI from '../../common/uri';
 import { ContextKeyService } from '../context-key-service';
 import { LabelIcon, LabelParser } from '../label-parser';
@@ -47,13 +48,8 @@ export interface IItem {
     visible: boolean;
 }
 
-export interface ILink {
-    readonly label: string;
-    readonly href: string;
-    readonly title?: string;
-}
-
-type LinkedTextItem = string | ILink;
+/** @deprecated Use {@link ILink} from `@theia/core/lib/common/linked-text`. */
+export type { ILink } from '../../common/linked-text';
 
 @injectable()
 export class TreeViewWelcomeWidget extends TreeWidget {
@@ -149,7 +145,7 @@ export class TreeViewWelcomeWidget extends TreeWidget {
         const items = this.visibleItems.sort((a, b) => a.order - b.order);
 
         const enablementKeys: Set<string>[] = [];
-        // the plugin-view-registry will push the changes when there is a change in the `when` prop  which controls the visibility
+        // the plugin-view-registry will push the changes when there is a change in the `when` prop which controls the visibility
         // this listener is to update the enablement of the components in the view welcome
         this.toDisposeBeforeUpdateViewWelcomeNodes.push(
             this.contextService.onDidChange(event => {
@@ -188,7 +184,7 @@ export class TreeViewWelcomeWidget extends TreeWidget {
                         )
                     );
                 } else {
-                    const renderNode = (item: LinkedTextItem, index: number) => typeof item == 'string'
+                    const renderNode = (item: LinkedTextNode, index: number) => typeof item == 'string'
                         ? this.renderTextNode(item, index)
                         : this.renderLinkNode(item, index, enablement);
 
@@ -265,33 +261,7 @@ export class TreeViewWelcomeWidget extends TreeWidget {
         }
     };
 
-    protected parseLinkedText(text: string): LinkedTextItem[] {
-        const result: LinkedTextItem[] = [];
-
-        const linkRegex = /\[([^\]]+)\]\(((?:https?:\/\/|command:|file:)[^\)\s]+)(?: (["'])(.+?)(\3))?\)/gi;
-        let index = 0;
-        let match: RegExpExecArray | null;
-
-        while (match = linkRegex.exec(text)) {
-            if (match.index - index > 0) {
-                result.push(text.substring(index, match.index));
-            }
-
-            const [, label, href, , title] = match;
-
-            if (title) {
-                result.push({ label, href, title });
-            } else {
-                result.push({ label, href });
-            }
-
-            index = match.index + match[0].length;
-        }
-
-        if (index < text.length) {
-            result.push(text.substring(index));
-        }
-
-        return result;
+    protected parseLinkedText(text: string): LinkedTextNode[] {
+        return parseLinkedText(text).nodes;
     }
 }

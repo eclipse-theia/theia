@@ -17,14 +17,17 @@
 import { codicon } from '@theia/core/lib/browser';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { ThemeService } from '@theia/core/lib/browser/theming';
-import { ILogger } from '@theia/core/lib/common/logger';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { ILogger } from '@theia/core/lib/common/logger';
 import { nls } from '@theia/core/lib/common/nls';
 import * as React from '@theia/core/shared/react';
 import { Walkthrough } from '../common/walkthrough-types';
-import { WalkthroughService } from './walkthrough-service';
 import { WalkthroughCard } from './walkthrough-card';
 import { WalkthroughDetail } from './walkthrough-detail';
+import { WalkthroughService } from './walkthrough-service';
+
+const walkthroughsLabel = nls.localizeByDefault('Walkthroughs');
+const moreLabel = nls.localizeByDefault('More...');
 
 export interface WalkthroughSectionProps {
     walkthroughService: WalkthroughService;
@@ -44,14 +47,19 @@ export const WALKTHROUGH_LIST_LIMIT = 2;
  * The selection is owned by the {@link WalkthroughService} rather than by this component, so that the
  * welcome view can give the selected walkthrough the whole view instead of a single section.
  */
-export function WalkthroughSection(props: WalkthroughSectionProps): React.ReactElement {
+export function WalkthroughSection(
+    props: WalkthroughSectionProps,
+): React.ReactElement {
     const { walkthroughService } = props;
-    const [, forceUpdate] = React.useReducer((version: number) => version + 1, 0);
+    const [, forceUpdate] = React.useReducer(
+        (version: number) => version + 1,
+        0,
+    );
 
     React.useEffect(() => {
         const toDispose = new DisposableCollection(
             walkthroughService.onDidChangeWalkthroughs(() => forceUpdate()),
-            walkthroughService.onDidChangeSelection(() => forceUpdate())
+            walkthroughService.onDidChangeSelection(() => forceUpdate()),
         );
         return () => toDispose.dispose();
     }, [walkthroughService]);
@@ -66,9 +74,17 @@ export function WalkthroughSection(props: WalkthroughSectionProps): React.ReactE
                 selectedStep={walkthroughService.selectedStep}
                 markdownRenderer={props.markdownRenderer}
                 onLinkClick={url => walkthroughService.handleLinkClick(url)}
-                onToggleStepDone={step => step.isComplete
-                    ? walkthroughService.markStepIncomplete(selectedWalkthrough.id, step.id)
-                    : walkthroughService.markStepComplete(selectedWalkthrough.id, step.id)}
+                onToggleStepDone={step =>
+                    step.isComplete
+                        ? walkthroughService.markStepIncomplete(
+                            selectedWalkthrough.id,
+                            step.id,
+                        )
+                        : walkthroughService.markStepComplete(
+                            selectedWalkthrough.id,
+                            step.id,
+                        )
+                }
                 onMarkAllStepsDone={() => walkthroughService.markAllStepsComplete(selectedWalkthrough.id)}
                 themeService={props.themeService}
                 logger={props.logger}
@@ -81,21 +97,23 @@ export function WalkthroughSection(props: WalkthroughSectionProps): React.ReactE
         return <React.Fragment />;
     }
 
-    // A finished walkthrough has nothing left to offer here; it stays reachable through `onShowAll`.
-    const pending = walkthroughs.filter(walkthrough => walkthrough.steps.some(step => !step.isComplete));
-    const listed = pending.slice(0, WALKTHROUGH_LIST_LIMIT);
+    // VS Code keeps completed walkthroughs in the index so their progress remains visible and users can revisit them.
+    // https://github.com/microsoft/vscode/blob/1.134.0/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.ts#L1220-L1250
+    const listed = walkthroughs.slice(0, WALKTHROUGH_LIST_LIMIT);
     return (
         <div className='gs-section'>
             <h3 className='gs-section-header'>
                 <i className={codicon('compass')}></i>
-                {nls.localizeByDefault('Walkthroughs')}
+                {walkthroughsLabel}
             </h3>
             <div className='gs-walkthrough-cards'>
                 {listed.map(walkthrough => (
                     <WalkthroughCard
                         key={walkthrough.id}
                         walkthrough={walkthrough}
-                        onSelect={(selected: Walkthrough) => walkthroughService.selectWalkthrough(selected.id)}
+                        onSelect={(selected: Walkthrough) =>
+                            walkthroughService.selectWalkthrough(selected.id)
+                        }
                     />
                 ))}
             </div>
@@ -111,7 +129,7 @@ export function WalkthroughSection(props: WalkthroughSectionProps): React.ReactE
                         }
                     }}
                 >
-                    {nls.localizeByDefault('More...')}
+                    {moreLabel}
                 </a>
             )}
         </div>

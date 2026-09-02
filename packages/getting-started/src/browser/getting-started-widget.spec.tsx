@@ -85,4 +85,21 @@ describe('GettingStartedWidget', () => {
             assert.strictEqual(widget.title.label, GettingStartedWidget.LABEL);
         });
     });
+
+    it('focuses the selected walkthrough step when activated', () => {
+        const widget = createWidget(createWalkthrough('Get Started with Python'));
+        const step = document.createElement('div');
+        step.className = 'gs-walkthrough-step selected';
+        step.tabIndex = -1;
+        widget.node.append(step);
+        document.body.append(widget.node);
+
+        try {
+            (widget as any).onActivateRequest({});
+
+            assert.strictEqual(document.activeElement, step);
+        } finally {
+            widget.node.remove();
+        }
+    });
 });

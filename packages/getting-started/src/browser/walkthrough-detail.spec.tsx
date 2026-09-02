@@ -24,7 +24,9 @@ import { MarkdownRenderer, MarkdownRenderOptions } from '@theia/core/lib/browser
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { ILogger } from '@theia/core/lib/common/logger';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { ThemeType } from '@theia/core/lib/common/theme';
+import * as sinon from 'sinon';
 import { Walkthrough, WalkthroughStep } from '../common/walkthrough-types';
 import { WalkthroughDetail } from './walkthrough-detail';
 
@@ -71,7 +73,7 @@ function createMockThemeService(themeType: ThemeType = 'dark'): ThemeService {
 }
 
 function createMockLogger(): ILogger {
-    return { warn: () => { }, error: () => { }, info: () => { }, debug: () => { } } as unknown as ILogger;
+    return new MockLogger();
 }
 
 describe('WalkthroughDetail', () => {
@@ -92,6 +94,7 @@ describe('WalkthroughDetail', () => {
     afterEach(() => {
         root.unmount();
         document.body.removeChild(container);
+        sinon.restore();
     });
 
     it('should render walkthrough title and back button', done => {
@@ -104,6 +107,8 @@ describe('WalkthroughDetail', () => {
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
+                onToggleStepDone={() => undefined}
+                onMarkAllStepsDone={() => undefined}
                 markdownRenderer={mockRenderer}
             />
         );
@@ -115,8 +120,7 @@ describe('WalkthroughDetail', () => {
 
             const backLink = container.querySelector('.gs-walkthrough-back-link');
             assert.ok(backLink, 'Back link should exist');
-            // The label is a separate element so that it, and not the arrow icon, can carry the hover underline.
-            assert.ok(backLink?.querySelector('.gs-walkthrough-back-label'), 'Back label should be its own element');
+            assert.ok(backLink?.textContent?.includes('Back'), 'Back link should have a label');
             done();
         }, 50);
     });
@@ -137,12 +141,14 @@ describe('WalkthroughDetail', () => {
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
+                onToggleStepDone={() => undefined}
+                onMarkAllStepsDone={() => undefined}
                 markdownRenderer={mockRenderer}
             />
         );
 
         setTimeout(() => {
-            const stepItems = container.querySelectorAll('.gs-walkthrough-step-item');
+            const stepItems = container.querySelectorAll('.gs-walkthrough-step');
             assert.strictEqual(stepItems.length, 3, 'Should render 3 step items');
 
             const stepTitles = container.querySelectorAll('.gs-walkthrough-step-title');
@@ -170,13 +176,15 @@ describe('WalkthroughDetail', () => {
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
+                onToggleStepDone={() => undefined}
+                onMarkAllStepsDone={() => undefined}
                 selectedStep={selectedStep}
                 markdownRenderer={mockRenderer}
             />
         );
 
         setTimeout(() => {
-            const stepItems = container.querySelectorAll('.gs-walkthrough-step-item');
+            const stepItems = container.querySelectorAll('.gs-walkthrough-step');
             assert.ok(!stepItems[0].classList.contains('selected'), 'First step should not be selected');
             assert.ok(stepItems[1].classList.contains('selected'), 'Second step should be selected');
             assert.ok(!stepItems[2].classList.contains('selected'), 'Third step should not be selected');
@@ -195,6 +203,8 @@ describe('WalkthroughDetail', () => {
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { backCalled = true; }}
+                onToggleStepDone={() => undefined}
+                onMarkAllStepsDone={() => undefined}
                 markdownRenderer={mockRenderer}
             />
         );
@@ -226,6 +236,8 @@ describe('WalkthroughDetail', () => {
                 walkthrough={walkthrough}
                 onStepSelect={step => { selectedStep = step; }}
                 onBack={() => { }}
+                onToggleStepDone={() => undefined}
+                onMarkAllStepsDone={() => undefined}
                 markdownRenderer={mockRenderer}
             />
         );
@@ -257,6 +269,8 @@ describe('WalkthroughDetail', () => {
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
+                onToggleStepDone={() => undefined}
+                onMarkAllStepsDone={() => undefined}
                 selectedStep={selectedStep}
                 markdownRenderer={mockRenderer}
             />
@@ -266,9 +280,9 @@ describe('WalkthroughDetail', () => {
             const stepContent = container.querySelector('.gs-walkthrough-step-content');
             assert.ok(stepContent, 'Step content section should exist');
 
-            const stepDetail = container.querySelector('.gs-walkthrough-step-detail');
-            assert.ok(stepDetail, 'Step detail should exist');
-            assert.ok(stepDetail?.textContent?.includes('Content Step'), 'Should show step title');
+            const stepTitle = stepContent?.parentElement?.querySelector('.gs-walkthrough-step-title');
+            assert.ok(stepTitle, 'Step title should exist');
+            assert.ok(stepTitle?.textContent?.includes('Content Step'), 'Should show step title');
 
             const descriptionContainer = container.querySelector('.gs-walkthrough-step-description');
             assert.ok(descriptionContainer, 'Description container should exist');
@@ -287,6 +301,8 @@ describe('WalkthroughDetail', () => {
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
+                onToggleStepDone={() => undefined}
+                onMarkAllStepsDone={() => undefined}
                 markdownRenderer={mockRenderer}
             />
         );
@@ -314,12 +330,14 @@ describe('WalkthroughDetail', () => {
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
+                onToggleStepDone={() => undefined}
+                onMarkAllStepsDone={() => undefined}
                 markdownRenderer={mockRenderer}
             />
         );
 
         setTimeout(() => {
-            const stepItems = container.querySelectorAll('.gs-walkthrough-step-item');
+            const stepItems = container.querySelectorAll('.gs-walkthrough-step');
             assert.ok(stepItems[0].classList.contains('completed'), 'Completed step should have completed class');
             assert.ok(!stepItems[1].classList.contains('completed'), 'Incomplete step should not have completed class');
 
@@ -344,6 +362,8 @@ describe('WalkthroughDetail', () => {
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
+                onToggleStepDone={() => undefined}
+                onMarkAllStepsDone={() => undefined}
                 selectedStep={selectedStep}
                 markdownRenderer={mockRenderer}
             />
@@ -359,6 +379,7 @@ describe('WalkthroughDetail', () => {
     });
 
     it('should render SVG media for selected step', done => {
+        sinon.stub(globalThis, 'fetch').resolves({ ok: true, text: async () => '<svg />' } as Response);
         const selectedStep = createMockStep({
             id: 's1',
             media: { svg: '/path/to/graphic.svg' }
@@ -372,53 +393,21 @@ describe('WalkthroughDetail', () => {
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
+                onToggleStepDone={() => undefined}
+                onMarkAllStepsDone={() => undefined}
                 selectedStep={selectedStep}
                 markdownRenderer={mockRenderer}
             />
         );
 
         setTimeout(() => {
-            const img = container.querySelector('.gs-walkthrough-media-image') as HTMLImageElement;
-            assert.ok(img, 'SVG image element should exist');
-            assert.strictEqual(img.getAttribute('src'), '/path/to/graphic.svg', 'SVG src should be set');
+            const iframe = container.querySelector('.gs-walkthrough-media-svg') as HTMLIFrameElement;
+            assert.ok(iframe, 'SVG iframe should exist');
+            assert.ok(iframe.srcdoc.includes('<svg />'), 'SVG source should be embedded in the iframe document');
             done();
         }, 50);
     });
 
-    it('should turn single newlines in a description into Markdown hard breaks', done => {
-        const renderedMarkdown: string[] = [];
-        const recordingRenderer: MarkdownRenderer = {
-            render: (markdown: { value: string }) => {
-                renderedMarkdown.push(markdown.value);
-                return { element: document.createElement('div'), dispose: () => { } };
-            }
-        };
-        const selectedStep = createMockStep({
-            id: 's1',
-            description: 'First line\nSecond line\n\nNew paragraph'
-        });
-        const walkthrough = createMockWalkthrough({ steps: [selectedStep] });
-
-        root.render(
-            <WalkthroughDetail
-                logger={createMockLogger()}
-                themeService={createMockThemeService()}
-                walkthrough={walkthrough}
-                onStepSelect={() => { }}
-                onBack={() => { }}
-                selectedStep={selectedStep}
-                markdownRenderer={recordingRenderer}
-            />
-        );
-
-        setTimeout(() => {
-            const description = renderedMarkdown.find(value => value.includes('First line'));
-            assert.ok(description, 'The description should have been rendered');
-            assert.ok(description?.includes('First line  \nSecond line'), 'A single newline should become a hard break');
-            assert.ok(description?.includes('Second line\n\nNew paragraph'), 'A blank line should stay a paragraph break');
-            done();
-        }, 50);
-    });
     it('should mark a step done when its step icon is clicked, without selecting the step', done => {
         const step = createMockStep({ id: 's1', isComplete: false });
         const walkthrough = createMockWalkthrough({ steps: [step] });
@@ -434,6 +423,7 @@ describe('WalkthroughDetail', () => {
                 onBack={() => { }}
                 markdownRenderer={mockRenderer}
                 onToggleStepDone={s => { markedStep = s; }}
+                onMarkAllStepsDone={() => undefined}
             />
         );
 
@@ -464,12 +454,13 @@ describe('WalkthroughDetail', () => {
                 onBack={() => { }}
                 markdownRenderer={mockRenderer}
                 onToggleStepDone={s => { toggledStep = s; }}
+                onMarkAllStepsDone={() => undefined}
             />
         );
 
         setTimeout(() => {
             const icon = container.querySelector('.gs-walkthrough-step-icon') as HTMLElement;
-            assert.strictEqual(icon.getAttribute('aria-checked'), 'true', 'A completed step should read as checked');
+            assert.ok(icon.classList.contains('codicon-pass-filled'), 'A completed step should have the completed icon');
             icon.click();
 
             setTimeout(() => {
@@ -493,15 +484,15 @@ describe('WalkthroughDetail', () => {
                 onStepSelect={() => { }}
                 onBack={() => { }}
                 markdownRenderer={mockRenderer}
+                onToggleStepDone={() => undefined}
                 onMarkAllStepsDone={() => { markedAll = true; }}
             />
         );
 
         setTimeout(() => {
-            const button = container.querySelector('.gs-walkthrough-mark-all-done') as HTMLButtonElement;
-            assert.ok(button, 'Mark All Done button should exist');
+            const button = container.querySelector('.gs-walkthrough-mark-done') as HTMLElement;
+            assert.ok(button, 'Mark Done action should exist');
             assert.ok(button.closest('.gs-walkthrough-steps'), 'It should sit with the step list');
-            assert.ok(!button.disabled, 'It should be enabled while steps are pending');
             button.click();
 
             setTimeout(() => {
@@ -511,7 +502,7 @@ describe('WalkthroughDetail', () => {
         }, 50);
     });
 
-    it('should disable Mark All Done once every step is complete', done => {
+    it('should keep Mark Done available once every step is complete', done => {
         const walkthrough = createMockWalkthrough({
             steps: [createMockStep({ id: 's1', isComplete: true }), createMockStep({ id: 's2', isComplete: true })]
         });
@@ -524,19 +515,19 @@ describe('WalkthroughDetail', () => {
                 onStepSelect={() => { }}
                 onBack={() => { }}
                 markdownRenderer={mockRenderer}
-                onMarkAllStepsDone={() => { }}
+                onToggleStepDone={() => undefined}
+                onMarkAllStepsDone={() => undefined}
             />
         );
 
         setTimeout(() => {
-            const button = container.querySelector('.gs-walkthrough-mark-all-done') as HTMLButtonElement;
-            assert.ok(button, 'Mark All Done button should exist');
-            assert.ok(button.disabled, 'It should be disabled when nothing is left to complete');
+            const button = container.querySelector('.gs-walkthrough-mark-done');
+            assert.ok(button, 'Mark Done action should exist');
             done();
         }, 50);
     });
 
-    it('should keep `command:` links as plain inline links', done => {
+    it('should render a one-link `command:` description as an action button', done => {
         const selectedStep = createMockStep({ id: 's1', description: '[Do it](command:my.command)' });
         const walkthrough = createMockWalkthrough({ steps: [selectedStep] });
         const linkRenderer: MarkdownRenderer = {
@@ -557,15 +548,17 @@ describe('WalkthroughDetail', () => {
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
+                onToggleStepDone={() => undefined}
+                onMarkAllStepsDone={() => undefined}
                 selectedStep={selectedStep}
                 markdownRenderer={linkRenderer}
             />
         );
 
         setTimeout(() => {
-            const anchor = container.querySelector('.gs-walkthrough-step-description a') as HTMLElement;
-            assert.ok(anchor, 'The command link should be rendered');
-            assert.ok(!anchor.classList.contains('theia-button'), 'A command link should not be styled as a button');
+            const button = container.querySelector('.gs-walkthrough-step-description .gs-walkthrough-command-button') as HTMLElement;
+            assert.ok(button, 'The command link should be rendered as an action button');
+            assert.ok(button.classList.contains('theia-button'), 'A one-link description should use Theia button styling');
             done();
         }, 50);
     });
@@ -592,6 +585,8 @@ describe('WalkthroughDetail', () => {
                 walkthrough={walkthrough}
                 onStepSelect={() => { }}
                 onBack={() => { }}
+                onToggleStepDone={() => undefined}
+                onMarkAllStepsDone={() => undefined}
                 selectedStep={selectedStep}
                 markdownRenderer={mockRenderer}
             />
@@ -619,8 +614,8 @@ describe('WalkthroughDetail', () => {
                 onBack={() => { }}
                 selectedStep={selectedStep}
                 markdownRenderer={mockRenderer}
-                onToggleStepDone={() => { }}
-                onMarkAllStepsDone={() => { }}
+                onToggleStepDone={() => undefined}
+                onMarkAllStepsDone={() => undefined}
             />
         );
 
@@ -634,9 +629,7 @@ describe('WalkthroughDetail', () => {
         }, 50);
     });
     it('should render markdown media as trusted and with an action handler, so that its links work', done => {
-        const originalFetch = global.fetch;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (global as any).fetch = () => Promise.resolve({ ok: true, text: () => Promise.resolve('[Run](command:my.command)') });
+        sinon.stub(globalThis, 'fetch').resolves({ ok: true, text: async () => '[Run](command:my.command)' } as Response);
 
         const captured: { value: string, isTrusted?: boolean, options?: MarkdownRenderOptions }[] = [];
         const recordingRenderer: MarkdownRenderer = {
@@ -657,13 +650,13 @@ describe('WalkthroughDetail', () => {
                 onBack={() => { }}
                 selectedStep={selectedStep}
                 markdownRenderer={recordingRenderer}
+                onToggleStepDone={() => undefined}
+                onMarkAllStepsDone={() => undefined}
                 onLinkClick={() => { }}
             />
         );
 
         setTimeout(() => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (global as any).fetch = originalFetch;
             const media = captured.find(entry => entry.value.includes('command:my.command'));
             assert.ok(media, 'The media content should have been rendered');
             assert.strictEqual(media?.isTrusted, true, 'Media has to be trusted, otherwise command links are stripped');
