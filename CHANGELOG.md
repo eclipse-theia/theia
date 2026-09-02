@@ -4,6 +4,14 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.76.0 - tbd
+
+- [core, filesystem, plugin-ext] fixed file decorations being dropped by large change events: change events are batched, and events exceeding the plugin-ext cap arrive as a flush that is re-fetched on demand [#17766](https://github.com/eclipse-theia/theia/pull/17766) - Contributed on behalf of K2view
+
+<a name="breaking_changes_1.76.0">[Breaking Changes:](#breaking_changes_1.76.0)</a>
+
+- [core] widened `DecorationsProvider.onDidChange` to `Event<URI[] | undefined>`, where `undefined` is a flush signalling that all decorations may have changed. `DecorationsService.onDidChangeDecorations` now fires batched payloads that never list removals: an empty map means an unspecified set changed, and clients must re-query the decorations they display on every event [#17766](https://github.com/eclipse-theia/theia/pull/17766)
+
 ## 1.75.0 - 8/27/2026
 
 - [ai] added `gemini-3.7-flash` to the default models [#17947](https://github.com/eclipse-theia/theia/pull/17947) - Contributed on behalf of STMicroelectronics
