@@ -777,6 +777,36 @@
   -webkit-box-orient: vertical;
 }
 
+/* Expanding lifts the clamp and nothing else: the box formatting, font and (inherited) line height stay
+   exactly as they are while collapsed, so the two lines already on screen do not shift when the rest of the
+   text appears below them. */
+.ai-configuration-item-row-description.expanded {
+  -webkit-line-clamp: unset;
+}
+
+/* Rendered only for a description that is actually clamped, so it reads as a link continuing the truncated
+   text rather than as another of the row's controls. A button does not inherit the surrounding font, so it
+   would otherwise render in the browser's default one. */
+.ai-configuration-item-row-description-toggle {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--theia-textLink-foreground);
+  font: inherit;
+  font-size: var(--theia-ui-font-size1);
+  cursor: pointer;
+}
+
+.ai-configuration-item-row-description-toggle:hover {
+  text-decoration: underline;
+}
+
+.ai-configuration-item-row-description-toggle:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: 1px;
+}
+
 .ai-configuration-item-row-trailing {
   display: flex;
   align-items: center;

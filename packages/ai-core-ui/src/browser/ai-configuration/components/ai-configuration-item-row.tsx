@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { AiConfigurationItemStatus } from '../ai-configuration-category';
@@ -68,6 +69,59 @@ export interface AiConfigurationItemRowProps {
 }
 
 /**
+ * A row's description, clamped to two lines so a long list stays scannable, with a toggle that reveals the
+ * rest in place. Without it the remainder of a long description (a tool's, in particular, often runs to
+ * several sentences) was simply unreachable; showing every description in full instead made the Tools page
+ * far too long to scroll.
+ *
+ * The toggle appears only once the text is measured as actually clamped, since that depends on the rendered
+ * width; measuring is skipped while expanded, where the clamp is lifted and nothing overflows.
+ */
+const AiConfigurationItemRowDescription: React.FC<{ description: string }> = ({ description }) => {
+    const [expanded, setExpanded] = React.useState(false);
+    const [clamped, setClamped] = React.useState(false);
+    // eslint-disable-next-line no-null/no-null
+    const descriptionRef = React.useRef<HTMLSpanElement>(null);
+
+    React.useLayoutEffect(() => {
+        const element = descriptionRef.current;
+        if (!element || expanded) {
+            return;
+        }
+        // Sub-pixel line heights make an unclamped element report a slightly larger scroll height.
+        const measure = () => setClamped(element.scrollHeight - element.clientHeight > 1);
+        measure();
+        // Narrowing the view can clamp a description that fit before, so re-measure on width changes.
+        // Guarded because JSDOM, which the component specs render into, has no `ResizeObserver`.
+        if (typeof ResizeObserver === 'undefined') {
+            return;
+        }
+        const observer = new ResizeObserver(measure);
+        observer.observe(element);
+        return () => observer.disconnect();
+    }, [description, expanded]);
+
+    const onToggle = (event: React.MouseEvent): void => {
+        // A navigable row would otherwise also handle the click and open its own detail.
+        event.stopPropagation();
+        setExpanded(previous => !previous);
+    };
+
+    return <>
+        <span
+            ref={descriptionRef}
+            className={`ai-configuration-item-row-description${expanded ? ' expanded' : ''}`}
+        >{description}</span>
+        {clamped && <button
+            type='button'
+            className='ai-configuration-item-row-description-toggle'
+            aria-expanded={expanded}
+            onClick={onToggle}
+        >{expanded ? nls.localizeByDefault('Show Less') : nls.localizeByDefault('Show More')}</button>}
+    </>;
+};
+
+/**
  * Overview row for a collection item: an icon, a label with an optional description, and a right-hand slot
  * for a status badge / stats / an inline control. When {@link AiConfigurationItemRowProps.onSelect} is given
  * the whole row is a single navigable control (click or Enter/Space) that opens the item's detail page,
@@ -116,7 +170,7 @@ export const AiConfigurationItemRow: React.FC<AiConfigurationItemRowProps> = ({
                 </span>}
                 <AiConfigurationOriginBadges origins={origins} />
             </div>
-            {description && <span className='ai-configuration-item-row-description'>{description}</span>}
+            {description && <AiConfigurationItemRowDescription description={description} />}
         </div>
         <div className='ai-configuration-item-row-trailing'>
             {status && <AiConfigurationStatusBadge status={status} />}
