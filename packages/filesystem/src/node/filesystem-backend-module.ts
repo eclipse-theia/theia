@@ -19,7 +19,7 @@ import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { ConnectionHandler, RpcConnectionHandler, ILogger } from '@theia/core/lib/common';
 import { FileSystemWatcherServer, FileSystemWatcherService } from '../common/filesystem-watcher-protocol';
 import { FileSystemWatcherServerClient } from './filesystem-watcher-client';
-import { ParcelFileSystemWatcherService, ParcelFileSystemWatcherServerOptions } from './parcel-watcher/parcel-filesystem-service';
+import { FileSystemWatcherServiceImpl, ParcelFileSystemWatcherServerOptions } from './parcel-watcher/parcel-filesystem-service';
 import { NodeFileUploadService } from './upload/node-file-upload-service';
 import { ParcelWatcherOptions } from './parcel-watcher/parcel-options';
 import { DiskFileSystemProvider } from './disk-file-system-provider';
@@ -38,11 +38,11 @@ export const WATCHER_VERBOSE = process.argv.includes('--watcher-verbose');
 
 export const FileSystemWatcherServiceProcessOptions = Symbol('FileSystemWatcherServiceProcessOptions');
 /**
- * Options to control the way the `ParcelFileSystemWatcherService` process is spawned.
+ * Options to control the way the `FileSystemWatcherServiceImpl` process is spawned.
  */
 export interface FileSystemWatcherServiceProcessOptions {
     /**
-     * Path to the script that will run the `ParcelFileSystemWatcherService` in a new process.
+     * Path to the script that will run the `FileSystemWatcherServiceImpl` in a new process.
      */
     entryPoint: string;
 }
@@ -102,7 +102,7 @@ export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
 export function createParcelFileSystemWatcherService(ctx: interfaces.Context): FileSystemWatcherService {
     const options = ctx.container.get<ParcelFileSystemWatcherServerOptions>(ParcelFileSystemWatcherServerOptions);
     const dispatcher = ctx.container.get<FileSystemWatcherServiceDispatcher>(FileSystemWatcherServiceDispatcher);
-    const server = new ParcelFileSystemWatcherService(options);
+    const server = new FileSystemWatcherServiceImpl(options);
     server.setClient(dispatcher);
     return server;
 }
