@@ -119,13 +119,57 @@ describe('UserInteractionTool', () => {
     it('should return error when no interactions are provided', async () => {
         const handler = tool.getTool().handler;
         const result = await handler(JSON.stringify({ interactions: [] }), { toolCallId: 'x' });
-        expect(JSON.parse(result as string).error).to.equal('No interactions provided');
+        expect(JSON.parse(result as string).error).to.match(/at least one step/);
     });
 
     it('should return error when arguments are invalid JSON', async () => {
         const handler = tool.getTool().handler;
         const result = await handler('not-json', { toolCallId: 'x' });
-        expect(JSON.parse(result as string).error).to.equal('Invalid arguments');
+        expect(JSON.parse(result as string).error).to.match(/valid JSON/i);
+    });
+
+    it('should reject a single step whose options are malformed instead of auto-completing it', async () => {
+        const handler = tool.getTool().handler;
+        const args = JSON.stringify({
+            interactions: [{
+                title: 'Apply fix?',
+                message: 'Should I apply this change?',
+                options: '[{"text":"Yes","value":"yes"}]'
+            }]
+        });
+        const result = JSON.parse(await handler(args, { toolCallId: 'malformed-options' }) as string);
+        expect(result.error).to.match(/step 1: "options" must be an array/i);
+        expect(result.completed).to.be.undefined;
+    });
+
+    it('should reject a single step with a partially malformed options array instead of silently dropping the bad option', async () => {
+        const handler = tool.getTool().handler;
+        const args = JSON.stringify({
+            interactions: [{
+                title: 'Apply fix?',
+                message: 'Should I apply this change?',
+                options: [{ text: 'Approve', value: 'approve' }, { text: 'Reject', value: 'reject' }, { label: 'Defer', value: 'defer' }]
+            }]
+        });
+        const result = JSON.parse(await handler(args, { toolCallId: 'partial-options' }) as string);
+        expect(result.error).to.match(/step 1, option 3: "text" and "value" are required strings/i);
+        expect(result.completed).to.be.undefined;
+    });
+
+    it('should reject a JSON-encoded interactions string with an actionable message', async () => {
+        const handler = tool.getTool().handler;
+        const args = JSON.stringify({ interactions: '[{"title":"T","message":"M"}]' });
+        const result = JSON.parse(await handler(args, { toolCallId: 'encoded-interactions' }) as string);
+        expect(result.error).to.match(/"interactions" must be an array of step objects, received string/);
+        expect(result.error).to.match(/do not JSON-encode nested values/i);
+    });
+
+    it('should auto-complete a single step that genuinely has no options', async () => {
+        const handler = tool.getTool().handler;
+        const args = JSON.stringify({ interactions: [{ title: 'FYI', message: 'Heads up' }] });
+        const result = parseResult(await handler(args, { toolCallId: 'informational' }));
+        expect(result.completed).to.be.true;
+        expect(result.steps).to.deep.equal([{ title: 'FYI' }]);
     });
 
     it('should return error when no tool call ID is available', async () => {

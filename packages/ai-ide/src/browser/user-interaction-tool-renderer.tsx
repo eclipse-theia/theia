@@ -554,7 +554,8 @@ export class UserInteractionToolRenderer implements ChatResponsePartRenderer<Too
     }
 
     render(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
-        const args = parseUserInteractionArgs(response.arguments);
+        const validation = parseUserInteractionArgs(response.arguments);
+        const args = validation.ok ? validation.args : undefined;
 
         if (!args || !response.id) {
             // The tool already returned a result but the args don't validate: this
