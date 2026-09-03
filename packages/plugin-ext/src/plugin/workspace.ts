@@ -30,6 +30,7 @@ import {
     WorkspaceMain,
     PLUGIN_RPC_CONTEXT as Ext,
     MainMessageType,
+    Plugin
 } from '../common/plugin-api-rpc';
 import { Path } from '@theia/core/lib/common/path';
 import { RPCProtocol } from '../common/rpc-protocol';
@@ -454,7 +455,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
         // Trigger on main side
         this.proxy.$updateWorkspaceFolders(start, deleteCount, ...rootsToAdd).then(undefined, error =>
-            this.messageService.showMessage(MainMessageType.Error, `Failed to update workspace folders: ${error}`)
+            this.messageService.showMessage({} as Plugin, MainMessageType.Error, `Failed to update workspace folders: ${error}`)
         );
 
         return true;
