@@ -434,6 +434,9 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
 
     protected toggleModeListeners = new DisposableCollection();
 
+    protected menuWidget?: MenuBarWidget;
+    protected logoWidget?: Widget;
+
     constructor(
         @inject(BrowserMainMenuFactory) protected readonly factory: BrowserMainMenuFactory
     ) { }
@@ -451,6 +454,8 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
         shell.addWidget(logo, { area: 'top' });
         const menu = this.factory.createMenuBar();
         shell.addWidget(menu, { area: 'top' });
+        this.menuWidget = menu;
+        this.logoWidget = logo;
         if (environment.electron.is()) {
             this.preferenceService.ready.then(() => {
                 this.updateElectronMenuToggleMode(menu, logo);
@@ -488,12 +493,27 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
     protected updateElectronMenuToggleMode(menu: MenuBarWidget, logo: Widget): void {
         this.toggleModeListeners.dispose();
         const pref = this.preferenceService.get<string>('window.menuBarVisibility', 'classic');
+        this.applyElectronMenuBarVisibility(menu, logo, pref);
+        if (pref === 'toggle') {
+            this.toggleModeListeners = this.installAltKeyToggle(menu, () => this.getElectronToggleTargets(menu, logo));
+        }
+    }
+
+    /**
+     * Establishes the resting visibility of the menu bar widgets in Electron, i.e. the state
+     * a clean Alt press toggles away from in 'toggle' mode.
+     */
+    protected applyElectronMenuBarVisibility(menu: MenuBarWidget, logo: Widget, pref: string): void {
         const shouldHide = ['compact', 'hidden', 'toggle'].includes(pref);
         menu.setHidden(shouldHide);
         logo.setHidden(shouldHide);
-        if (pref === 'toggle') {
-            this.toggleModeListeners = this.installAltKeyToggle(menu, [menu, logo]);
-        }
+    }
+
+    /**
+     * The widgets a clean Alt press shows and hides in 'toggle' mode in Electron.
+     */
+    protected getElectronToggleTargets(menu: MenuBarWidget, logo: Widget): Widget[] {
+        return [menu, logo];
     }
 
     /**
@@ -505,7 +525,7 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
         this.toggleModeListeners.dispose();
         const pref = this.preferenceService.get<string>('window.menuBarVisibility', 'classic');
         if (pref === 'toggle') {
-            this.toggleModeListeners = this.installAltKeyToggle(menu, [this.shell.topPanel]);
+            this.toggleModeListeners = this.installAltKeyToggle(menu, () => [this.shell.topPanel]);
         }
     }
 
@@ -516,23 +536,25 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
      * or clicking outside hides them.
      *
      * @param menu the menu bar widget to focus when shown
-     * @param toggleTargets the widgets to show/hide on Alt toggle
+     * @param toggleTargets supplies the widgets to show/hide on Alt toggle. It is consulted on
+     * each gesture, because the targets can depend on state that changes while the listener is
+     * installed, e.g. whether the window is in full screen.
      */
-    protected installAltKeyToggle(menu: MenuBarWidget, toggleTargets: Widget[]): DisposableCollection {
+    protected installAltKeyToggle(menu: MenuBarWidget, toggleTargets: () => Widget[]): DisposableCollection {
         const disposables = new DisposableCollection();
         let altKeyPressed = false;
         let lastKeyWasAlt = false;
 
-        const isHidden = (): boolean => toggleTargets.some(w => w.isHidden);
+        const isHidden = (): boolean => toggleTargets().some(w => w.isHidden);
 
         const hide = (): void => {
-            for (const w of toggleTargets) {
+            for (const w of toggleTargets()) {
                 w.setHidden(true);
             }
         };
 
         const show = (): void => {
-            for (const w of toggleTargets) {
+            for (const w of toggleTargets()) {
                 w.setHidden(false);
             }
         };
@@ -550,18 +572,24 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
         };
 
         const onKeyUp = (e: KeyboardEvent): void => {
-            if (e.key === 'Alt' && altKeyPressed && lastKeyWasAlt) {
-                altKeyPressed = false;
-                if (isHidden()) {
-                    show();
-                    menu.activeIndex = 0;
-                    menu.node.focus();
-                } else {
-                    hide();
-                }
+            if (e.key !== 'Alt') {
+                return;
             }
-            if (e.key === 'Alt') {
-                altKeyPressed = false;
+            const wasCleanAltPress = altKeyPressed && lastKeyWasAlt;
+            altKeyPressed = false;
+            lastKeyWasAlt = false;
+            if (!wasCleanAltPress) {
+                return;
+            }
+            // Keep the browser from acting on the solitary Alt press itself: Firefox, for
+            // instance, focuses its own menu bar, which would then toggle along with ours.
+            e.preventDefault();
+            if (isHidden()) {
+                show();
+                menu.activeIndex = 0;
+                menu.node.focus();
+            } else {
+                hide();
             }
         };
 
