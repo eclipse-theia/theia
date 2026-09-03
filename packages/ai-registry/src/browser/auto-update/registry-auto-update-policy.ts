@@ -67,7 +67,7 @@ export class RegistryAutoUpdatePolicyImpl implements RegistryAutoUpdatePolicy {
     }
 
     getDefault(): AutoUpdateMode {
-        const value = this.preferenceService.get<string>(AUTO_UPDATE_PREF, 'ask');
+        const value = this.preferenceService.get(AUTO_UPDATE_PREF, 'ask');
         return AutoUpdateMode.is(value) ? value : 'ask';
     }
 
