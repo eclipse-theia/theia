@@ -1,0 +1,55 @@
+name: Copilot SDK Mirror Check
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version of @github/copilot-sdk to check against'
+        required: false
+        default: 'latest'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'packages/ai-copilot/src/node/copilot-sdk-types.ts'
+      - 'scripts/copilot-sdk-mirror/**'
+      - '.github/workflows/copilot-sdk-mirror.yml'
+  schedule:
+    - cron: '0 5 * * 1' # Runs every Monday at 5am
+
+jobs:
+  mirror-check:
+    name: Copilot SDK Mirror Check
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04]
+        node: ['24.x']
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Use Node.js ${{ matrix.node }}
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: ${{ matrix.node }}
+          registry-url: 'https://registry.npmjs.org'
+
+      # `@theia/ai-copilot` mirrors the part of the Copilot SDK API it uses instead of depending on the
+      # package, which would pull the proprietary CLI binary into the tree. Only TypeScript is needed to
+      # compare the two; the check installs the SDK itself, into a temporary directory.
+      - name: Install TypeScript
+        shell: bash
+        run: npm install --no-save --no-package-lock typescript@~5.9.3
+
+      - name: Check the mirrored types
+        shell: bash
+        run: node scripts/copilot-sdk-mirror/run.js "${{ inputs.version || 'latest' }}"
