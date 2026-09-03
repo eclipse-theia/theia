@@ -23,7 +23,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 import { WorkspaceFilePreferenceProviderFactory, WorkspaceFilePreferenceProvider } from './workspace-file-preference-provider';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Emitter, Event, PreferenceProvider, PreferenceProviderDataChanges, PreferenceProviderProvider, PreferenceScope } from '@theia/core';
-import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
+import { JSONObject, JSONValue } from '@theia/core/shared/@lumino/coreutils';
 
 @injectable()
 export class WorkspacePreferenceProvider implements PreferenceProvider {
@@ -120,20 +120,19 @@ export class WorkspacePreferenceProvider implements PreferenceProvider {
         });
     }
 
-    get<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri()): T | undefined {
+    get<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri(), overrideIdentifier?: string): T | undefined {
         const delegate = this.delegate;
-        return delegate ? delegate.get<T>(preferenceName, resourceUri) : undefined;
+        return delegate ? delegate.get<T>(preferenceName, resourceUri, overrideIdentifier) : undefined;
     }
 
-    resolve<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri()): { value?: T, configUri?: URI } {
+    resolve<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri(), overrideIdentifier?: string): { value?: T, configUri?: URI } {
         const delegate = this.delegate;
-        return delegate ? delegate.resolve<T>(preferenceName, resourceUri) : {};
+        return delegate ? delegate.resolve<T>(preferenceName, resourceUri, overrideIdentifier) : {};
     }
-
-    async setPreference(preferenceName: string, value: any, resourceUri: string | undefined = this.ensureResourceUri()): Promise<boolean> {
+    async setPreference(preferenceName: string, value: JSONValue, resourceUri: string | undefined = this.ensureResourceUri(), overrideIdentifier?: string): Promise<boolean> {
         const delegate = this.delegate;
         if (delegate) {
-            return delegate.setPreference(preferenceName, value, resourceUri);
+            return delegate.setPreference(preferenceName, value, resourceUri, overrideIdentifier);
         }
         return false;
     }

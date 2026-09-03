@@ -107,6 +107,6 @@ export class CopilotCommandContribution implements CommandContribution, Disposab
     }
 
     protected isCopilotEnabled(): boolean {
-        return this.preferenceService.get<boolean>(COPILOT_ENABLED_PREF, true);
+        return this.preferenceService.get(COPILOT_ENABLED_PREF, true);
     }
 }

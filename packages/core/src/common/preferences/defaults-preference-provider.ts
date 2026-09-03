@@ -15,7 +15,7 @@
 
 import { JSONObject, JSONValue } from '@lumino/coreutils';
 import { PreferenceScope } from './preference-scope';
-import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult } from './preference-provider';
+import { PreferenceProvider, PreferenceProviderDataChange, PreferenceResolveResult } from './preference-provider';
 import { inject, injectable, postConstruct } from 'inversify';
 import { PreferenceSchemaService } from './preference-schema';
 import { Deferred } from '../promise-util';
@@ -39,48 +39,35 @@ export class DefaultsPreferenceProvider extends PreferenceProviderBase implement
     @postConstruct()
     init(): void {
         this.toDispose.push(this.preferenceSchemaService.onDidChangeDefaultValue(e => {
-            const changes: PreferenceProviderDataChanges = {};
-            if (e.overrideIdentifier) {
-                changes[e.key] = this.changeFor(e.key, e.overrideIdentifier, e.oldValue, e.newValue);
-            } else {
-                changes[e.key] = this.changeFor(e.key, undefined, e.oldValue, e.newValue);
-                for (const override of e.otherAffectedOverrides) {
-                    const change = this.changeFor(e.key, override, e.oldValue, e.newValue);
-                    changes[change.preferenceName] = change;
-                }
-            }
-            this.emitPreferencesChangedEvent(changes);
+            this.emitPreferencesChangedEvent([this.changeFor(e.key, e.overrideIdentifier, e.oldValue, e.newValue)]);
         }));
         this._ready.resolve();
     }
 
     protected changeFor(key: string, overrideIdentifier: string | undefined, oldValue: JSONValue | undefined, newValue: JSONValue | undefined): PreferenceProviderDataChange {
-        const preferenceName = overrideIdentifier ? this.preferenceOverrideService.overridePreferenceName({ preferenceName: key, overrideIdentifier }) : key;
-
         return {
-            preferenceName: preferenceName,
+            preferenceName: key,
             newValue: newValue,
             oldValue: oldValue,
-            scope: PreferenceScope.Default
+            scope: PreferenceScope.Default,
+            overrideIdentifier: overrideIdentifier
         };
     }
 
     canHandleScope(scope: PreferenceScope): boolean {
         return scope === PreferenceScope.Default;
     }
-    get<T>(preferenceName: string, resourceUri?: string): T | undefined {
-        const overrideInfo = this.preferenceOverrideService.overriddenPreferenceName(preferenceName);
-        return this.preferenceSchemaService.getDefaultValue(overrideInfo?.preferenceName ?? preferenceName, overrideInfo?.overrideIdentifier) as T;
+    get<T>(preferenceName: string, resourceUri?: string, overrideIdentifier?: string): T | undefined {
+        return this.preferenceSchemaService.getDefaultValue(preferenceName, overrideIdentifier) as T;
     }
 
     setPreference(key: string, value: JSONValue, resourceUri?: string): Promise<boolean> {
         return Promise.resolve(false);
     }
 
-    resolve<T>(preferenceName: string, resourceUri?: string): PreferenceResolveResult<T> {
-        const overrideInfo = this.preferenceOverrideService.overriddenPreferenceName(preferenceName);
+    resolve<T>(preferenceName: string, resourceUri?: string, overrideIdentifier?: string): PreferenceResolveResult<T> {
         return {
-            value: this.preferenceSchemaService.inspectDefaultValue(overrideInfo?.preferenceName ?? preferenceName, overrideInfo?.overrideIdentifier) as T,
+            value: this.preferenceSchemaService.inspectDefaultValue(preferenceName, overrideIdentifier) as T,
             configUri: undefined
         };
     }

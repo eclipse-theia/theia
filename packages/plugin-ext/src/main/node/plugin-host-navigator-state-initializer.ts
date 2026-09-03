@@ -37,10 +37,10 @@ export class PluginHostNavigatorStateInitializer implements BackendApplicationCo
     protected readonly state: PluginHostNavigatorState;
 
     onStart(): void {
-        this.state.supportNodeGlobalNavigator = this.preferences.get<boolean>(SUPPORT_NODE_GLOBAL_NAVIGATOR_PREF, false);
+        this.state.supportNodeGlobalNavigator = this.preferences.get(SUPPORT_NODE_GLOBAL_NAVIGATOR_PREF, false);
         this.preferences.onPreferenceChanged(e => {
             if (e.preferenceName === SUPPORT_NODE_GLOBAL_NAVIGATOR_PREF) {
-                this.state.supportNodeGlobalNavigator = this.preferences.get<boolean>(SUPPORT_NODE_GLOBAL_NAVIGATOR_PREF, false);
+                this.state.supportNodeGlobalNavigator = this.preferences.get(SUPPORT_NODE_GLOBAL_NAVIGATOR_PREF, false);
             }
         });
     }

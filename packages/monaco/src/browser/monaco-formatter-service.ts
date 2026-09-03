@@ -224,7 +224,7 @@ export class MonacoFormatterService implements FormatterService {
 
     getDefaultFormatter(languageId: string, resourceUri: string): string | undefined {
         const preferenceName = this.getFormatterPreferenceName(languageId);
-        return this.preferenceService.get<string>(preferenceName, undefined, resourceUri);
+        return this.preferenceService.get<string>(preferenceName, { resource: resourceUri });
     }
 
     getConfiguredScope(editor: TextEditor): PreferenceScope | undefined {
