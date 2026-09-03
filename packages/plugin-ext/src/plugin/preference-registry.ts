@@ -332,15 +332,11 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
         return Object.freeze({
             affectsConfiguration: (section: string, scope?: theia.ConfigurationScope): boolean => {
                 const { resource, overrideIdentifier } = this.parseConfigurationAccessOptions(scope);
-                const sectionWithLanguage = overrideIdentifier ? `[${overrideIdentifier}].${section}` : section;
                 return eventData.some(change => {
                     const matchesUri = !resource || !change.scope || (resource.toString() + '/').startsWith(change.scope.endsWith('/') ? change.scope : change.scope + '/');
-                    const sliceIndex = overrideIdentifier ? 0 : (this.OVERRIDE_KEY_TEST.exec(change.preferenceName)?.[0].length ?? 0);
-                    const changedPreferenceName = sliceIndex ? change.preferenceName.slice(sliceIndex) : change.preferenceName;
-                    return matchesUri && (
-                        sectionWithLanguage === changedPreferenceName
-                        || sectionWithLanguage.startsWith(`${changedPreferenceName}.`)
-                        || changedPreferenceName.startsWith(`${sectionWithLanguage}.`));
+                    const matchesSection = change.preferenceName.startsWith(section) || section.startsWith(change.preferenceName);
+                    const matchesOverride = !overrideIdentifier || change.affectedOverrides.includes(overrideIdentifier);
+                    return matchesUri && matchesSection && matchesOverride;
                 });
             }
         });

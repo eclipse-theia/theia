@@ -206,8 +206,8 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         const prefNames = new Set([...Object.keys(oldPrefs), ...Object.keys(newPrefs)]);
         const prefChanges: PreferenceProviderDataChange[] = [];
         const uri = this.getUri();
-        let overrideIdentifier: string | undefined;
         for (const prefName of prefNames.values()) {
+            let overrideIdentifier: string | undefined;
             let realName = prefName;
             const index = prefName.indexOf('.');
             if (index !== -1) {
@@ -242,19 +242,6 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     }
 
     protected reset(): void {
-        const preferences = this.preferences;
-        this.preferences = {};
-        const changes: PreferenceProviderDataChange[] = [];
-        for (const prefName of Object.keys(preferences)) {
-            const value = preferences[prefName];
-            if (value !== undefined) {
-                changes.push({
-                    preferenceName: prefName, newValue: undefined, oldValue: value, scope: this.getScope(), domain: this.getDomain()
-                });
-            }
-        }
-        if (changes.length > 0) {
-            this.emitPreferencesChangedEvent(changes);
-        }
+        this.handlePreferenceChanges({});
     }
 }

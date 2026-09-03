@@ -474,7 +474,7 @@ describe('Preference Service', () => {
             schema.registerOverrideIdentifier('json');
 
             assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
-            assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
+            assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize', undefined, 'json'));
         });
 
         it('inspect #1', async () => {
@@ -530,10 +530,7 @@ describe('Preference Service', () => {
             const { preferences, schema } = await prepareServices();
 
             const events: PreferenceChange[] = [];
-            preferences.onPreferenceChanged(event => {
-                console.log('event', event);
-                return events.push(event);
-            });
+            preferences.onPreferenceChanged(event => events.push(event));
 
             schema.registerOverrideIdentifier('json');
             await preferences.set('editor.tabSize', 2, PreferenceScope.User, undefined, 'json');
@@ -580,15 +577,15 @@ describe('Preference Service', () => {
             const { preferences, schema } = await prepareServices();
 
             schema.registerOverrideIdentifier('json');
-            preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
+            preferences.set('editor.tabSize', 2, PreferenceScope.User, undefined, 'json');
             await preferences.set('editor.tabSize', 3, PreferenceScope.User);
 
             const events: PreferenceChange[] = [];
             preferences.onPreferenceChanged(event => events.push(event));
 
-            await preferences.set('[json].editor.tabSize', undefined, PreferenceScope.User);
+            await preferences.set('editor.tabSize', undefined, PreferenceScope.User, undefined, 'json');
 
-            assert.deepStrictEqual(['[json].editor.tabSize'], events.map(e => e.preferenceName));
+            assert.deepStrictEqual(['editor.tabSize'], events.map(e => e.preferenceName));
         });
 
         it('defaultOverrides [go].editor.formatOnSave', async () => {

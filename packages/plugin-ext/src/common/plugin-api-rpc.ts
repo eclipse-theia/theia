@@ -1577,6 +1577,7 @@ export interface PreferenceChangeExt {
      * The URI the folder affected, or undefined if User scope.
      */
     scope?: string;
+    affectedOverrides: readonly string[];
 }
 
 export interface TerminalOptionsExt {
