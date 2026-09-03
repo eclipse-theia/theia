@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Container, ContainerModule } from '@theia/core/shared/inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import {
@@ -24,27 +24,26 @@ import {
     COPILOT_AUTH_SERVICE_PATH,
     CopilotAuthServiceClient
 } from '../common';
-import { CopilotOAuthConfig, DEFAULT_COPILOT_OAUTH_CONFIG } from '../common/copilot-oauth-config';
 import { CopilotLanguageModelsManagerImpl } from './copilot-language-models-manager-impl';
-import { CopilotLanguageModel, CopilotLanguageModelFactory, CopilotLanguageModelParams } from './copilot-language-model';
+import { CopilotSdkClientProvider } from './copilot-sdk-client-provider';
+import { CopilotSdkLoader } from './copilot-sdk-loader';
+import { CopilotCliAuthProvider } from './copilot-cli-auth-provider';
+import { CopilotCliLocator } from './copilot-cli-locator';
+import { CopilotCredentialStore } from './copilot-credential-store';
 import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
 
 const copilotConnectionModule = ConnectionContainerModule.create(({ bind }) => {
+    bind(CopilotCliLocator).toSelf().inSingletonScope();
+    bind(CopilotSdkLoader).toSelf().inSingletonScope();
+    bind(CopilotCredentialStore).toSelf().inSingletonScope();
+    bind(CopilotSdkClientProvider).toSelf().inSingletonScope();
+    bind(CopilotCliAuthProvider).toSelf().inSingletonScope();
+
     bind(CopilotAuthServiceImpl).toSelf().inSingletonScope();
     bind(CopilotAuthService).toService(CopilotAuthServiceImpl);
 
     bind(CopilotLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(CopilotLanguageModelsManager).toService(CopilotLanguageModelsManagerImpl);
-
-    bind(CopilotLanguageModel).toSelf().inTransientScope();
-    bind(CopilotLanguageModelFactory).toFactory<CopilotLanguageModel, [CopilotLanguageModelParams]>(
-        ({ container }) => params => {
-            const child = new Container();
-            child.parent = container;
-            child.bind(CopilotLanguageModelParams).toConstantValue(params);
-            return child.get(CopilotLanguageModel);
-        }
-    );
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler<CopilotAuthServiceClient>(
@@ -66,6 +65,5 @@ const copilotConnectionModule = ConnectionContainerModule.create(({ bind }) => {
 });
 
 export default new ContainerModule(bind => {
-    bind(CopilotOAuthConfig).toConstantValue(DEFAULT_COPILOT_OAUTH_CONFIG);
     bind(ConnectionContainerModule).toConstantValue(copilotConnectionModule);
 });

@@ -358,7 +358,95 @@ describe('WalkthroughDetail', () => {
         }, 50);
     });
 
-    it('should render SVG media for selected step', done => {
+    it('should render SVG media inline for selected step', done => {
+        const originalFetch = global.fetch;
+        const svgContent = '<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="var(--vscode-foreground)" /></svg>';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (global as any).fetch = (url: string) => {
+            assert.ok(url.includes('graphic.svg'));
+            return Promise.resolve({ ok: true, text: () => Promise.resolve(svgContent) });
+        };
+
+        const selectedStep = createMockStep({
+            id: 's1',
+            media: { svg: '/path/to/graphic.svg', altText: 'SVG Graphic' }
+        });
+        const walkthrough = createMockWalkthrough({ steps: [selectedStep] });
+
+        root.render(
+            <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
+                walkthrough={walkthrough}
+                onStepSelect={() => { }}
+                onBack={() => { }}
+                selectedStep={selectedStep}
+                markdownRenderer={mockRenderer}
+            />
+        );
+
+        setTimeout(() => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (global as any).fetch = originalFetch;
+            const svgContainer = container.querySelector('.gs-walkthrough-media-svg') as HTMLElement;
+            assert.ok(svgContainer, 'SVG container element should exist');
+            assert.strictEqual(svgContainer.getAttribute('role'), 'img', 'Role should be img');
+            assert.strictEqual(svgContainer.getAttribute('aria-label'), 'SVG Graphic', 'aria-label should be set');
+            const svgElement = svgContainer.querySelector('svg');
+            assert.ok(svgElement, 'Inline SVG element should exist');
+            assert.strictEqual(svgElement?.getAttribute('viewBox'), '0 0 100 100');
+            const rectElement = svgContainer.querySelector('rect');
+            assert.strictEqual(rectElement?.getAttribute('fill'), 'var(--vscode-foreground)');
+            done();
+        }, 50);
+    });
+
+    it('should handle command links clicked inside rendered SVG media', done => {
+        const originalFetch = global.fetch;
+        const svgContent = '<svg><a xlink:href="command:my.extension.command"><circle cx="50" cy="50" r="40" /></a></svg>';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (global as any).fetch = () => Promise.resolve({ ok: true, text: () => Promise.resolve(svgContent) });
+
+        let clickedUrl = '';
+        const selectedStep = createMockStep({
+            id: 's1',
+            media: { svg: 'sample.svg' }
+        });
+        const walkthrough = createMockWalkthrough({ steps: [selectedStep] });
+
+        root.render(
+            <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
+                walkthrough={walkthrough}
+                onStepSelect={() => { }}
+                onBack={() => { }}
+                selectedStep={selectedStep}
+                markdownRenderer={mockRenderer}
+                onLinkClick={url => { clickedUrl = url; }}
+            />
+        );
+
+        setTimeout(() => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (global as any).fetch = originalFetch;
+            const circle = container.querySelector('.gs-walkthrough-media-svg circle') as HTMLElement;
+            assert.ok(circle, 'SVG circle should exist');
+            circle.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+            setTimeout(() => {
+                assert.strictEqual(clickedUrl, 'command:my.extension.command', 'Link click should route command URI');
+                done();
+            }, 50);
+        }, 50);
+    });
+
+    it('should omit aria-label on SVG media when altText is not provided', done => {
+        const originalFetch = global.fetch;
+        const svgContent = '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" /></svg>';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (global as any).fetch = () => Promise.resolve({ ok: true, text: () => Promise.resolve(svgContent) });
+
         const selectedStep = createMockStep({
             id: 's1',
             media: { svg: '/path/to/graphic.svg' }
@@ -378,10 +466,112 @@ describe('WalkthroughDetail', () => {
         );
 
         setTimeout(() => {
-            const img = container.querySelector('.gs-walkthrough-media-image') as HTMLImageElement;
-            assert.ok(img, 'SVG image element should exist');
-            assert.strictEqual(img.getAttribute('src'), '/path/to/graphic.svg', 'SVG src should be set');
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (global as any).fetch = originalFetch;
+            const svgContainer = container.querySelector('.gs-walkthrough-media-svg') as HTMLElement;
+            assert.ok(svgContainer, 'SVG container element should exist');
+            assert.strictEqual(svgContainer.getAttribute('role'), 'img');
+            assert.strictEqual(svgContainer.hasAttribute('aria-label'), false, 'aria-label attribute should be omitted');
             done();
+        }, 50);
+    });
+
+    it('should render nothing when SVG media fetch fails', done => {
+        const originalFetch = global.fetch;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (global as any).fetch = () => Promise.resolve({ ok: false, text: () => Promise.resolve('') });
+
+        const selectedStep = createMockStep({
+            id: 's1',
+            media: { svg: '/path/to/missing.svg' }
+        });
+        const walkthrough = createMockWalkthrough({ steps: [selectedStep] });
+
+        root.render(
+            <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
+                walkthrough={walkthrough}
+                onStepSelect={() => { }}
+                onBack={() => { }}
+                selectedStep={selectedStep}
+                markdownRenderer={mockRenderer}
+            />
+        );
+
+        setTimeout(() => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (global as any).fetch = originalFetch;
+            const svgContainer = container.querySelector('.gs-walkthrough-media-svg');
+            assert.ok(!svgContainer, 'No SVG container should be rendered on failure');
+            const roleImg = container.querySelector('[role="img"]');
+            assert.ok(!roleImg, 'No empty role=img should be left behind on failure');
+            done();
+        }, 50);
+    });
+
+    it('should clear previous SVG media when switching to another SVG step while loading', done => {
+        const originalFetch = global.fetch;
+        let resolveSecondFetch: (value: { ok: boolean; text: () => Promise<string> }) => void;
+        const secondFetchPromise = new Promise<{ ok: boolean; text: () => Promise<string> }>(resolve => {
+            resolveSecondFetch = resolve;
+        });
+
+        const firstSvg = '<svg id="first"><circle cx="10" cy="10" r="10" /></svg>';
+        const secondSvg = '<svg id="second"><circle cx="20" cy="20" r="20" /></svg>';
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (global as any).fetch = (url: string) => {
+            if (url.includes('first.svg')) {
+                return Promise.resolve({ ok: true, text: () => Promise.resolve(firstSvg) });
+            }
+            return secondFetchPromise;
+        };
+
+        const step1 = createMockStep({ id: 's1', media: { svg: 'first.svg' } });
+        const step2 = createMockStep({ id: 's2', media: { svg: 'second.svg' } });
+        const walkthrough = createMockWalkthrough({ steps: [step1, step2] });
+
+        root.render(
+            <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
+                walkthrough={walkthrough}
+                onStepSelect={() => { }}
+                onBack={() => { }}
+                selectedStep={step1}
+                markdownRenderer={mockRenderer}
+            />
+        );
+
+        setTimeout(() => {
+            assert.ok(container.querySelector('#first'), 'First SVG should be rendered');
+
+            root.render(
+                <WalkthroughDetail
+                    logger={createMockLogger()}
+                    themeService={createMockThemeService()}
+                    walkthrough={walkthrough}
+                    onStepSelect={() => { }}
+                    onBack={() => { }}
+                    selectedStep={step2}
+                    markdownRenderer={mockRenderer}
+                />
+            );
+
+            setTimeout(() => {
+                assert.ok(!container.querySelector('#first'), 'First SVG should be cleared immediately upon step switch');
+                assert.ok(!container.querySelector('.gs-walkthrough-media-svg'), 'No SVG container should be visible while loading');
+
+                resolveSecondFetch({ ok: true, text: () => Promise.resolve(secondSvg) });
+
+                setTimeout(() => {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (global as any).fetch = originalFetch;
+                    assert.ok(container.querySelector('#second'), 'Second SVG should be rendered after fetch resolves');
+                    done();
+                }, 50);
+            }, 50);
         }, 50);
     });
 

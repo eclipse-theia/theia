@@ -70,7 +70,13 @@ export class SketchedToolServiceImpl implements SketchedToolService, FrontendApp
         this.toDispose.push(this.onDidChangeSketchedToolsEmitter);
     }
 
-    async onStart(): Promise<void> {
+    onStart(): void {
+        // Defer resolving the config dir and reading sketchedTools.yml from disk so it
+        // doesn't block the frontend startup sequence. Tools still register once loaded.
+        this.doStart().catch(error => this.logger.error('Error starting SketchedToolServiceImpl', error));
+    }
+
+    protected async doStart(): Promise<void> {
         this.fileUri = await this.resolveFileUri();
         await this.loadFromDisk();
         this.watchFile();

@@ -203,6 +203,64 @@ describe('AI Configuration primitives', () => {
         host.remove();
     });
 
+    /**
+     * JSDOM lays nothing out, so every element reports a zero height and a description would never measure as
+     * clamped. Fakes the two heights the row compares, which is exactly the browser's "the text does not fit"
+     * signal, and restores them afterwards.
+     */
+    function withClampedText(scrollHeight: number, run: () => void): void {
+        // Both live on `Element.prototype`, which is where JSDOM defines them.
+        const prototype = document.defaultView!.Element.prototype;
+        const original = {
+            scrollHeight: Object.getOwnPropertyDescriptor(prototype, 'scrollHeight')!,
+            clientHeight: Object.getOwnPropertyDescriptor(prototype, 'clientHeight')!
+        };
+        Object.defineProperty(prototype, 'scrollHeight', { configurable: true, get: () => scrollHeight });
+        Object.defineProperty(prototype, 'clientHeight', { configurable: true, get: () => 40 });
+        try {
+            run();
+        } finally {
+            Object.defineProperty(prototype, 'scrollHeight', original.scrollHeight);
+            Object.defineProperty(prototype, 'clientHeight', original.clientHeight);
+        }
+    }
+
+    it('AiConfigurationItemRow expands a description that does not fit, and leaves a fitting one alone', () => {
+        // A tool description running past the two-line clamp is otherwise unreadable in the list.
+        withClampedText(120, () => {
+            let rowOpened = 0;
+            const { container, dispose } = mount(React.createElement(AiConfigurationItemRow, {
+                label: 'writeFileReplacements',
+                description: 'Replace text in a file. The old text must be unique in the file.',
+                onSelect: () => { rowOpened++; }
+            }));
+            try {
+                const description = container.querySelector('.ai-configuration-item-row-description') as HTMLElement;
+                expect(description.classList.contains('expanded')).to.equal(false);
+                const toggle = container.querySelector('.ai-configuration-item-row-description-toggle') as HTMLButtonElement;
+                expect(Boolean(toggle)).to.equal(true);
+                expect(toggle.getAttribute('aria-expanded')).to.equal('false');
+
+                flushSync(() => toggle.click());
+                expect(description.classList.contains('expanded')).to.equal(true);
+                expect(container.querySelector('.ai-configuration-item-row-description-toggle')!.getAttribute('aria-expanded')).to.equal('true');
+                // Reading the description must not also open the row's detail page.
+                expect(rowOpened).to.equal(0);
+            } finally {
+                dispose();
+            }
+        });
+        // Nothing hidden, so no toggle to offer.
+        withClampedText(40, () => {
+            const { container, dispose } = mount(React.createElement(AiConfigurationItemRow, { label: 'readFile', description: 'Read a file.' }));
+            try {
+                expect(Boolean(container.querySelector('.ai-configuration-item-row-description-toggle'))).to.equal(false);
+            } finally {
+                dispose();
+            }
+        });
+    });
+
     it('AiConfigurationEmptyState renders the message and an optional action', async () => {
         const tree = await AiConfigurationEmptyState({ message: 'Nothing here', action: React.createElement('button', {}, 'Add') });
         expect(textOf(tree)).to.include('Nothing here').and.to.include('Add');
