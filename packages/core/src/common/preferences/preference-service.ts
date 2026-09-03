@@ -84,11 +84,11 @@ export class PreferenceChangeImpl implements PreferenceChange {
     }
 
     // TODO add tests
-    affects(resourceUri?: string, overideIdentifier?: string): boolean {
+    affects(resourceUri?: string, overrideIdentifier?: string): boolean {
         const resourcePath = resourceUri && new URI(resourceUri).path;
         const domain = this.change.domain;
         const affectsResource = !resourcePath || !domain || domain.some(uri => new URI(uri).path.relativity(resourcePath) >= 0);
-        const affectsOverride = !overideIdentifier || this.affectedOverrides.includes(overideIdentifier);
+        const affectsOverride = !overrideIdentifier || this.affectedOverrides.includes(overrideIdentifier);
         return affectsResource && affectsOverride;
     }
 }

@@ -204,10 +204,11 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
 
     const getValue: PreferenceRetrieval<any>['get'] = (arg, defaultValue, resourceUri) => {
         const preferenceName = typeof arg === 'object' ? arg.preferenceName : arg;
-        const override = opts.overrideIdentifier || (typeof arg === 'object' ? arg.overrideIdentifier : undefined);
+        const override = opts.overrideIdentifier ?? (typeof arg === 'object' ? arg.overrideIdentifier : undefined);
+        const resource = resourceUri ?? opts.resourceUri;
         return preferences.get(preferenceName as string, {
             fallback: defaultValue,
-            resource: resourceUri,
+            resource,
             override,
         });
     };
