@@ -154,7 +154,7 @@ export class ChatSessionListService implements UnreadStateProvider {
     }
 
     isPersistenceEnabled(): boolean {
-        const limit = this.preferenceService.get<number>(PERSISTED_SESSION_LIMIT_PREF, 25);
+        const limit = this.preferenceService.get(PERSISTED_SESSION_LIMIT_PREF, {fallback: 25});
         return limit !== 0;
     }
 
