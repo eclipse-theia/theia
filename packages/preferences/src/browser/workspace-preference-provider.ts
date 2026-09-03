@@ -120,19 +120,19 @@ export class WorkspacePreferenceProvider implements PreferenceProvider {
         });
     }
 
-    get<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri()): T | undefined {
+    get<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri(), overrideIdentifier?: string): T | undefined {
         const delegate = this.delegate;
-        return delegate ? delegate.get<T>(preferenceName, resourceUri) : undefined;
+        return delegate ? delegate.get<T>(preferenceName, resourceUri, overrideIdentifier) : undefined;
     }
 
     resolve<T>(preferenceName: string, resourceUri: string | undefined = this.ensureResourceUri(), overrideIdentifier?: string): { value?: T, configUri?: URI } {
         const delegate = this.delegate;
         return delegate ? delegate.resolve<T>(preferenceName, resourceUri, overrideIdentifier) : {};
     }
-    async setPreference(preferenceName: string, value: JSONValue, resourceUri: string | undefined = this.ensureResourceUri(), overideIdentifier?: string): Promise<boolean> {
+    async setPreference(preferenceName: string, value: JSONValue, resourceUri: string | undefined = this.ensureResourceUri(), overrideIdentifier?: string): Promise<boolean> {
         const delegate = this.delegate;
         if (delegate) {
-            return delegate.setPreference(preferenceName, value, resourceUri, overideIdentifier);
+            return delegate.setPreference(preferenceName, value, resourceUri, overrideIdentifier);
         }
         return false;
     }
