@@ -28,6 +28,12 @@ export interface RemoteSetupOptions {
     connection: RemoteConnection;
     report: RemoteStatusReport;
     nodeDownloadTemplate?: string;
+    /**
+     * Additional CLI arguments to append when starting the remote backend, after the arguments
+     * contributed by {@link RemoteCliContribution}s. Used to carry per-window options (e.g.
+     * `--session-preference`) that the shared local backend cannot provide.
+     */
+    additionalArgs?: string[];
 }
 
 export interface RemoteSetupResult {
@@ -60,7 +66,8 @@ export class RemoteSetupService {
         const {
             connection,
             report,
-            nodeDownloadTemplate
+            nodeDownloadTemplate,
+            additionalArgs
         } = options;
         report('Identifying remote system...');
         // 1. Identify remote platform
@@ -93,7 +100,7 @@ export class RemoteSetupService {
         }
         // 5. start remote backend
         report('Starting application on remote...');
-        const port = await this.startApplication(connection, platform, applicationDirectory, remoteNodeDirectory);
+        const port = await this.startApplication(connection, platform, applicationDirectory, remoteNodeDirectory, additionalArgs);
         connection.remotePort = port;
         return {
             applicationDirectory: libDir,
@@ -101,7 +108,9 @@ export class RemoteSetupService {
         };
     }
 
-    protected async startApplication(connection: RemoteConnection, platform: RemotePlatform, remotePath: string, nodeDir: string): Promise<number> {
+    protected async startApplication(
+        connection: RemoteConnection, platform: RemotePlatform, remotePath: string, nodeDir: string, additionalArgs: string[] = []
+    ): Promise<number> {
         const nodeExecutable = this.scriptService.joinPath(platform, nodeDir, ...(platform.os === OS.Type.Windows ? ['node.exe'] : ['bin', 'node']));
         const mainJsFile = this.scriptService.joinPath(platform, remotePath, 'lib', 'backend', 'main.js');
         const localAddressRegex = /listening on http:\/\/0.0.0.0:(\d+)/;
@@ -120,6 +129,9 @@ export class RemoteSetupService {
                 args.push(...await cli.enhanceArgs(remoteContext));
             }
         }
+        // Per-window arguments (e.g. session preferences forwarded to a second-instance window)
+        // are appended last so they take precedence over the shared backend's contributions.
+        args.push(...additionalArgs);
         // Change to the remote application path and start a node process with the copied main.js file
         // This way, our current working directory is set as expected
         const result = await connection.execPartial(`${prefix}cd "${remotePath}";${nodeExecutable}`,
