@@ -226,7 +226,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
 
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        this.focusInputField();
+        window.requestAnimationFrame(() => this.focusInputField());
     }
 
     /**
