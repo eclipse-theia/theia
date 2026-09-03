@@ -110,7 +110,11 @@ describe('Preferences', function () {
     beforeEach(async function () {
         const prefs = await getPreferences();
         for (const key of [tabSize, fontSize, override, [override, tabSize], [override, fontSize]]) {
-            shouldBeUndefined(prefs, ...key);
+            if (Array.isArray(key)) {
+                shouldBeUndefined(prefs, ...key);
+            } else {
+                shouldBeUndefined(prefs, key);
+            }
         }
     });
 

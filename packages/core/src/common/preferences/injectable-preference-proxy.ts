@@ -260,10 +260,11 @@ export class InjectablePreferenceProxy<T extends Record<string, JSONValue>> impl
         resourceUri?: string
     ): T[K] {
         const preferenceName = typeof arg === 'object' ? arg.preferenceName : arg;
-        const override = this.overrideIdentifier || (typeof arg === 'object' ? arg.overrideIdentifier : undefined);
+        const override = this.overrideIdentifier ?? (typeof arg === 'object' ? arg.overrideIdentifier : undefined);
+        const resource = resourceUri ?? this.resourceUri;
         return this.preferences.get(preferenceName as string, {
             fallback: defaultValue,
-            resource: resourceUri || this.resourceUri,
+            resource,
             override,
         }) as T[K];
     }

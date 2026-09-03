@@ -26,7 +26,6 @@ import {
     PreferenceRegistryExt,
     PreferenceRegistryMain,
     PreferenceData,
-    PreferenceChangeExt,
 } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { ConfigurationTarget } from '../../plugin/types-impl';
@@ -80,10 +79,10 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain, Dispo
 
             const roots = workspaceService.tryGetRoots();
             const data = getPreferences(preferenceProviderProvider, roots);
-            const eventData = Object.values(changes).map<PreferenceChangeExt>(({ scope, domain, preferenceName }) => {
+            const eventData = Object.values(changes).map(({ scope, domain, preferenceName, affectedOverrides}) => {
                 const extScope = scope === PreferenceScope.User ? undefined : domain?.[0];
                 const newValue = this.preferenceService.get(preferenceName);
-                return { preferenceName, newValue, scope: extScope };
+                return { preferenceName, newValue, scope: extScope, affectedOverrides };
             });
             this.proxy.$acceptConfigurationChanged(data, eventData);
         }));
