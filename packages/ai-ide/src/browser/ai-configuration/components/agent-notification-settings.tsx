@@ -21,14 +21,19 @@ import {
     NOTIFICATION_TYPE_DESCRIPTIONS,
 } from '@theia/ai-core/lib/common';
 import { nls } from '@theia/core';
-import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
-import * as React from '@theia/core/shared/react';
+import { SelectOption } from '@theia/core/lib/browser/widgets/select-component';
+import { AiEnumSelect } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-controls';
+import { AiConfigurationSettingRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-setting-row';
+import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
 
 export interface AgentNotificationSettingsProps {
     agentId: string;
     currentNotificationType?: NotificationType;
     onNotificationTypeChange: (agentId: string, notificationType: NotificationType | undefined) => Promise<void>;
+    /** Opens the global AI notification setting (linked from the description). */
     onOpenNotificationSettings: () => void;
+    /** Backs the row's gear menu (its "Reset Setting" resets this agent's override). */
+    settingsRowService: AiSettingsRowService;
 }
 
 const DEFAULT_VALUE = 'default';
@@ -47,37 +52,37 @@ const NOTIFICATION_SELECT_OPTIONS: SelectOption[] = [
     })),
 ];
 
-export const AgentNotificationSettings = ({ agentId, currentNotificationType, onNotificationTypeChange, onOpenNotificationSettings }: AgentNotificationSettingsProps) => {
-    const handleChange = (option: SelectOption, _index: number): void => {
-        const notificationType = option.value === DEFAULT_VALUE ? undefined : option.value as NotificationType;
+/** The agent's completion-notification setting, rendered as a normal setting row whose gear menu resets the override. */
+export const AgentNotificationSettings = ({
+    agentId, currentNotificationType, onNotificationTypeChange, onOpenNotificationSettings, settingsRowService
+}: AgentNotificationSettingsProps) => {
+    const handleChange = (value: string): void => {
+        const notificationType = value === DEFAULT_VALUE ? undefined : value as NotificationType;
         onNotificationTypeChange(agentId, notificationType);
     };
-
-    return (
-        <div className="ai-llm-requirement-item">
-            <div className="ai-configuration-value-row">
-                <label className="ai-configuration-value-row-label">
-                    {nls.localizeByDefault('Notifications')}:
-                </label>
-                <SelectComponent
-                    className="ai-configuration-select"
-                    options={NOTIFICATION_SELECT_OPTIONS}
-                    defaultValue={currentNotificationType ?? DEFAULT_VALUE}
-                    onChange={handleChange}
-                />
-            </div>
-            <NotificationDescription onOpenNotificationSettings={onOpenNotificationSettings} />
-        </div>
-    );
-};
-
-const NotificationDescription = ({ onOpenNotificationSettings }: { onOpenNotificationSettings: () => void }): React.ReactElement => {
-    const linkText = nls.localize('theia/ai/core/agentConfiguration/notificationSettingsLink', 'AI notification setting');
-    return (
-        <div className="ai-configuration-description">
-            {nls.localize('theia/ai/core/agentConfiguration/completionNotificationDescriptionPrefix',
-                'Select how you want to be notified when this agent needs your attention, i.e. it completes its task or requests your input. "Default" uses the ')}
-            <a href="#" onClick={e => { e.preventDefault(); onOpenNotificationSettings(); }}>{linkText}</a>.
-        </div>
-    );
+    const isOverridden = currentNotificationType !== undefined;
+    return <AiConfigurationSettingRow
+        title={nls.localizeByDefault('Notifications')}
+        description={<>
+            {/* Own key: the shipped `completionNotificationDescriptionPrefix` is translated with the older,
+                longer wording, and a translation wins over a changed default. */}
+            {nls.localize('theia/ai/core/agentConfiguration/completionNotificationIntro',
+                'How you want to be notified when this agent needs your attention (it completes its task or requests input). "Default" uses the global ')}
+            <a href='#' onClick={event => { event.preventDefault(); onOpenNotificationSettings(); }}>
+                {nls.localize('theia/ai/core/agentConfiguration/notificationSettingsLink', 'AI notification setting')}
+            </a>.
+        </>}
+        modified={isOverridden}
+        below={<AiEnumSelect
+            ariaLabel={nls.localizeByDefault('Notifications')}
+            options={NOTIFICATION_SELECT_OPTIONS.map(option => ({
+                value: String(option.value ?? ''),
+                label: option.label ?? String(option.value ?? ''),
+                title: option.description
+            }))}
+            value={currentNotificationType ?? DEFAULT_VALUE}
+            onCommit={handleChange}
+        />}
+        onOpenMenu={gear => settingsRowService.openResetMenu(gear, () => onNotificationTypeChange(agentId, undefined))}
+    />;
 };

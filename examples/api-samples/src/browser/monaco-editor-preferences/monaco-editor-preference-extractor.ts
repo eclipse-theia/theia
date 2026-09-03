@@ -24,8 +24,8 @@
  */
 import { ConfigurationScope, Extensions, IConfigurationRegistry } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationRegistry';
 import { Registry } from '@theia/monaco-editor-core/esm/vs/platform/registry/common/platform';
-import { CommandContribution, CommandRegistry, MaybeArray, MessageService, nls, PreferenceScope } from '@theia/core';
-import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
+import { CommandContribution, CommandRegistry, MaybeArray, MessageService, nls, PreferenceScope, ILogger } from '@theia/core';
+import { inject, injectable, interfaces, named } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PreferenceValidationService } from '@theia/core/lib/browser';
@@ -91,6 +91,9 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
     @inject(PreferenceValidationService) protected readonly preferenceValidationService: PreferenceValidationService;
     @inject(MonacoEditorProvider) protected readonly monacoEditorProvider: MonacoEditorProvider;
 
+    @inject(ILogger) @named('api-samples:MonacoEditorPreferenceSchemaExtractor')
+    protected readonly logger: ILogger;
+
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand({ id: 'check-for-unvalidated-editor-preferences', label: 'Check for unvalidated editor preferences in Monaco', category: 'API Samples' }, {
             execute: () => {
@@ -101,7 +104,7 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
                         this.monacoEditorProvider['preferencePrefixes'], firstRootUri.toString(), 'typescript'
                     ));
                     const unvalidatedKeys = allEditorPreferenceKeys.filter(key => !validatedEditorPreferences.has(key));
-                    console.log('Unvalidated keys are:', unvalidatedKeys);
+                    this.logger.info('Unvalidated keys are:', unvalidatedKeys);
                 }
             }
         });

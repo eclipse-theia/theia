@@ -204,7 +204,7 @@ export class ClaudeCodeChatAgent implements ChatAgent {
     @inject(TokenUsageService)
     protected readonly tokenUsageService: TokenUsageService;
 
-    @inject(ILogger) @named('claude-code')
+    @inject(ILogger) @named('ai-claude-code:ClaudeCodeChatAgent')
     protected readonly logger: ILogger;
 
     async invoke(request: MutableChatRequestModel, chatAgentService?: ChatAgentService): Promise<void> {

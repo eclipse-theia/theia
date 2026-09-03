@@ -1154,7 +1154,7 @@ export interface ScmHistoryItemDto {
     authorIcon?: UriComponents | { light: UriComponents; dark: UriComponents } | ThemeIcon;
     displayId?: string;
     timestamp?: number;
-    tooltip?: string | MarkdownString;
+    tooltip?: string | MarkdownString | MarkdownString[];
     statistics?: ScmHistoryItemStatisticsDto;
     references?: ScmHistoryItemRefDto[];
 }

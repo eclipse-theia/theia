@@ -18,9 +18,14 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { BackendRequestAllowedContribution } from '@theia/core/lib/node';
 import { AIRegistryConfiguration } from '../common/ai-registry-configuration';
+import { AgentPluginManifestReader } from '../common/plugin/agent-plugin-manifest';
+import { PluginDirectoryNaming, PluginDirectoryNamingImpl } from '../common/plugin/plugin-directory-naming';
+import { PluginInstallBackendService, PluginInstallBackendServicePath, PluginInstallClient } from '../common/plugin/plugin-install-protocol';
 import { SkillInstallBackendService, SkillInstallBackendServicePath, SkillInstallClient } from '../common/skill/skill-install-protocol';
 import { SkillRegistryPreferencesSchema } from '../common/skill/skill-registry-preferences';
 import { AIRegistryRequestAllowedContribution } from './ai-registry-request-allowed-contribution';
+import { GitHubTarballSource, GitHubTarballSourceImpl } from './github-tarball-source';
+import { PluginInstallBackendServiceImpl } from './plugin-install-backend-service';
 import { SkillInstallBackendServiceImpl } from './skill-install-backend-service';
 
 export default new ContainerModule(bind => {
@@ -34,6 +39,24 @@ export default new ContainerModule(bind => {
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler<SkillInstallClient>(SkillInstallBackendServicePath, client => {
             const server = ctx.container.get<SkillInstallBackendServiceImpl>(SkillInstallBackendService);
+            server.setClient(client);
+            client.onDidCloseConnection(() => server.disconnectClient(client));
+            return server;
+        })
+    ).inSingletonScope();
+
+    bind(AgentPluginManifestReader).toSelf().inSingletonScope();
+    // Shared with the frontend, so that the directory a plugin may be adopted under is the same one an
+    // install would have created.
+    bind(PluginDirectoryNamingImpl).toSelf().inSingletonScope();
+    bind(PluginDirectoryNaming).toService(PluginDirectoryNamingImpl);
+    bind(GitHubTarballSourceImpl).toSelf().inSingletonScope();
+    bind(GitHubTarballSource).toService(GitHubTarballSourceImpl);
+    bind(PluginInstallBackendServiceImpl).toSelf().inSingletonScope();
+    bind(PluginInstallBackendService).toService(PluginInstallBackendServiceImpl);
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new RpcConnectionHandler<PluginInstallClient>(PluginInstallBackendServicePath, client => {
+            const server = ctx.container.get<PluginInstallBackendServiceImpl>(PluginInstallBackendService);
             server.setClient(client);
             client.onDidCloseConnection(() => server.disconnectClient(client));
             return server;

@@ -14,16 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ScmHistoryItemRef, ScmHistoryItemChange } from './scm-provider';
+import { ScmHistoryItemRef, ScmHistoryItemChange, ScmHistoryProvider } from './scm-provider';
 
 /**
- * Returns the CSS color variable for the given lane index.
+ * Returns the CSS color variable for the given color index.
  * Uses Theia's `--theia-scmGraph-*` variables, mirroring the VS Code
  * scm graph color scheme:
- *   lane 0 (current ref)  → historyItemRefColor
- *   lane 1 (remote ref)   → historyItemRemoteRefColor
- *   lane 2 (base ref)     → historyItemBaseRefColor
- *   lane 3–7              → foreground1–5
+ *   0 (current ref)  → historyItemRefColor
+ *   1 (remote ref)   → historyItemRemoteRefColor
+ *   2 (base ref)     → historyItemBaseRefColor
+ *   3–7 (default rotation) → foreground1–5
  */
 export function laneColor(index: number): string {
     switch (index % 8) {
@@ -81,6 +81,180 @@ export function getRepoRelativePath(uri: string, rootUri: string | undefined): s
         return fullPath.slice(rootPrefix.length);
     }
     return fullPath;
+}
+
+export interface ChangeTreeRowBase {
+    /** Repo-relative path of the row; the expansion key for folders. */
+    readonly path: string;
+    /** Nesting level, used for indentation. */
+    readonly depth: number;
+}
+
+export interface ChangeTreeFolderRow extends ChangeTreeRowBase {
+    readonly type: 'folder';
+    /** Segments rendered for this row; a compacted chain shows `browser/model`. */
+    readonly label: string;
+}
+
+export interface ChangeTreeFileRow extends ChangeTreeRowBase {
+    readonly type: 'file';
+    readonly change: ScmHistoryItemChange;
+    /** Position of the change in the list it came from, so row keys stay stable. */
+    readonly index: number;
+}
+
+export type ChangeTreeRow = ChangeTreeFolderRow | ChangeTreeFileRow;
+
+interface ChangeTreeFolder {
+    readonly folders: Map<string, ChangeTreeFolder>;
+    readonly files: { change: ScmHistoryItemChange; index: number; name: string }[];
+}
+
+/**
+ * Arranges history item changes into the rows of a file tree: folders before
+ * files, each sorted by name, with single-child folder chains compacted into
+ * one row (`src/browser`) the way VS Code's SCM tree renders them. Folders
+ * listed in `collapsedFolders` (by their full path) hide their descendants.
+ */
+export function buildChangeTreeRows(
+    changes: readonly ScmHistoryItemChange[],
+    rootUri: string | undefined,
+    collapsedFolders: ReadonlySet<string>
+): ChangeTreeRow[] {
+    const root: ChangeTreeFolder = { folders: new Map(), files: [] };
+    changes.forEach((change, index) => {
+        const relativePath = getRepoRelativePath(change.modifiedUri ?? change.originalUri ?? change.uri, rootUri);
+        const segments = relativePath.split('/').filter(segment => segment.length > 0);
+        const name = segments.pop() ?? relativePath;
+        let folder = root;
+        for (const segment of segments) {
+            let child = folder.folders.get(segment);
+            if (!child) {
+                child = { folders: new Map(), files: [] };
+                folder.folders.set(segment, child);
+            }
+            folder = child;
+        }
+        folder.files.push({ change, index, name });
+    });
+
+    const rows: ChangeTreeRow[] = [];
+    collectChangeTreeRows(root, '', '', 0, collapsedFolders, rows);
+    return rows;
+}
+
+function collectChangeTreeRows(
+    folder: ChangeTreeFolder,
+    path: string,
+    label: string,
+    depth: number,
+    collapsedFolders: ReadonlySet<string>,
+    rows: ChangeTreeRow[]
+): void {
+    for (const name of [...folder.folders.keys()].sort(compareNames)) {
+        let child = folder.folders.get(name)!;
+        let childPath = path ? `${path}/${name}` : name;
+        let childLabel = label ? `${label}/${name}` : name;
+        // Compact a chain of folders that each hold nothing but one folder.
+        while (child.files.length === 0 && child.folders.size === 1) {
+            const [onlyName, onlyChild] = [...child.folders][0];
+            child = onlyChild;
+            childPath = `${childPath}/${onlyName}`;
+            childLabel = `${childLabel}/${onlyName}`;
+        }
+        rows.push({ type: 'folder', path: childPath, label: childLabel, depth });
+        if (!collapsedFolders.has(childPath)) {
+            collectChangeTreeRows(child, childPath, '', depth + 1, collapsedFolders, rows);
+        }
+    }
+    for (const file of [...folder.files].sort((left, right) => compareNames(left.name, right.name))) {
+        rows.push({
+            type: 'file',
+            path: path ? `${path}/${file.name}` : file.name,
+            depth,
+            change: file.change,
+            index: file.index
+        });
+    }
+}
+
+function compareNames(left: string, right: string): number {
+    return left.localeCompare(right);
+}
+
+/**
+ * Returns the ref-based color index of the given ref (0 = current ref,
+ * 1 = remote ref, 2 = base ref), or `undefined` when the ref is none of
+ * the provider's current history item refs. Mirrors VS Code's scm graph
+ * color map.
+ */
+export function getRefColorIndex(ref: ScmHistoryItemRef, provider: ScmHistoryProvider | undefined): number | undefined {
+    if (!provider) {
+        return undefined;
+    }
+    if (ref.id === provider.currentHistoryItemRef?.id) {
+        return 0;
+    }
+    if (ref.id === provider.currentHistoryItemRemoteRef?.id) {
+        return 1;
+    }
+    if (ref.id === provider.currentHistoryItemBaseRef?.id) {
+        return 2;
+    }
+    return undefined;
+}
+
+/**
+ * Filters which refs get badges in the graph, following VS Code's
+ * `scm.graph.badges` setting: `'all'` shows every ref, `'filter'` shows only
+ * the refs used as the graph's filter — the explicitly picked ref ids, or,
+ * without an explicit filter (auto mode), the current, remote, and base refs.
+ * Without provider information all refs are kept.
+ */
+export function filterRefsForBadges(
+    refs: readonly ScmHistoryItemRef[],
+    provider: ScmHistoryProvider | undefined,
+    badges: 'all' | 'filter',
+    filter?: readonly string[]
+): readonly ScmHistoryItemRef[] {
+    if (badges === 'all') {
+        return refs;
+    }
+    if (filter) {
+        return refs.filter(ref => filter.includes(ref.id));
+    }
+    if (!provider) {
+        return refs;
+    }
+    return refs.filter(ref => getRefColorIndex(ref, provider) !== undefined);
+}
+
+export interface RefBadgePresentation {
+    /** Icon class for the badge icon, e.g. 'codicon-git-branch'. */
+    iconClass: string;
+    /** Ref-based color index (0-2), or `undefined` to use the row color. */
+    colorIndex?: number;
+}
+
+/**
+ * Resolves how a ref badge is presented: the provider-supplied codicon icon
+ * when available (VS Code renders `ref.icon` unconditionally), otherwise a
+ * category fallback with the `target` icon marking the current ref; plus the
+ * ref-based color index.
+ */
+export function getRefBadgePresentation(ref: ScmHistoryItemRef, provider: ScmHistoryProvider | undefined): RefBadgePresentation {
+    const colorIndex = getRefColorIndex(ref, provider);
+    let iconClass: string;
+    if (ref.icon && ref.icon.startsWith('codicon ')) {
+        iconClass = ref.icon.substring('codicon '.length);
+    } else if (isTagRef(ref)) {
+        iconClass = 'codicon-tag';
+    } else if (isRemoteRef(ref)) {
+        iconClass = 'codicon-cloud';
+    } else {
+        iconClass = colorIndex === 0 ? 'codicon-target' : 'codicon-git-branch';
+    }
+    return { iconClass, colorIndex };
 }
 
 export function getRefBadgeClass(ref: ScmHistoryItemRef): string {

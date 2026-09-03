@@ -18,10 +18,14 @@ import path = require('path');
 import * as fs from 'fs';
 import { GeneralShellType, guessShellTypeFromExecutable } from '../common/shell-type';
 import { ShellProcess, ShellProcessOptions } from './shell-process';
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class ShellIntegrationInjector {
+
+    @inject(ILogger) @named('terminal:ShellIntegrationInjector')
+    protected readonly logger: ILogger;
 
     protected readonly INTEGRATION_ROOT_DIR = 'shell-integrations';
 
@@ -74,7 +78,7 @@ export class ShellIntegrationInjector {
     protected getShellIntegrationPath(relativePath: string): string | undefined {
         const fullPath = path.join(__dirname, this.INTEGRATION_ROOT_DIR, relativePath);
         if (!fs.existsSync(fullPath)) {
-            console.warn(`Shell integration file not found (application may not be bundled correctly): ${fullPath}`);
+            this.logger.warn(`Shell integration file not found (application may not be bundled correctly): ${fullPath}`);
             return undefined;
         }
         return fullPath;

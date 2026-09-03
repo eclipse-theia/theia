@@ -16,10 +16,14 @@
 
 import { CustomAgentPromptVariant, LanguageModelRequirement } from '@theia/ai-core';
 import { AbstractStreamParsingChatAgent } from './chat-agents';
-import { injectable } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 
 @injectable()
 export class CustomChatAgent extends AbstractStreamParsingChatAgent {
+    @inject(ILogger) @named('ai-chat:CustomChatAgent')
+    protected override readonly logger: ILogger;
+
     id: string = 'CustomChatAgent';
     name: string = 'CustomChatAgent';
     languageModelRequirements: LanguageModelRequirement[] = [{ purpose: 'chat' }];

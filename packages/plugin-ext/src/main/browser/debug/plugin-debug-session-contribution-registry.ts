@@ -18,6 +18,7 @@ import { DebugSessionContributionRegistry, DebugSessionContribution } from '@the
 import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { Disposable } from '@theia/core/lib/common/disposable';
+import { ILogger } from '@theia/core';
 
 /**
  * Debug session contribution registrator.
@@ -47,6 +48,9 @@ export class PluginDebugSessionContributionRegistry implements DebugSessionContr
     @inject(ContributionProvider) @named(DebugSessionContribution)
     protected readonly contributions: ContributionProvider<DebugSessionContribution>;
 
+    @inject(ILogger) @named('plugin-ext:PluginDebugSessionContributionRegistry')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     protected init(): void {
         for (const contrib of this.contributions.getContributions()) {
@@ -62,7 +66,7 @@ export class PluginDebugSessionContributionRegistry implements DebugSessionContr
         const { debugType } = contrib;
 
         if (this.contribs.has(debugType)) {
-            console.warn(`Debug session contribution already registered for ${debugType}`);
+            this.logger.warn(`Debug session contribution already registered for ${debugType}`);
             return Disposable.NULL;
         }
 

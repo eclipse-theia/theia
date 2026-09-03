@@ -196,7 +196,7 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
     @inject(QuickInputService) @optional()
     protected readonly quickInputService: QuickInputService | undefined;
 
-    @inject(ILogger) @named('core:PerspectiveService')
+    @inject(ILogger) @named('core:PerspectiveServiceImpl')
     protected readonly logger: ILogger;
 
     @inject(WidgetAreaResolver)

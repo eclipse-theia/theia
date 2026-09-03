@@ -69,7 +69,8 @@ export class RawProcess extends Process {
     constructor( // eslint-disable-next-line @typescript-eslint/indent
         @inject(RawProcessOptions) options: RawProcessOptions | RawForkOptions,
         @inject(ProcessManager) processManager: ProcessManager,
-        @inject(ILogger) @named('process') logger: ILogger
+        @inject(ILogger) @named('process:RawProcess')
+        protected override readonly logger: ILogger
     ) {
         super(processManager, logger, ProcessType.Raw, options);
         const executable = this.isForkOptions(options) ? options.modulePath : options.command;

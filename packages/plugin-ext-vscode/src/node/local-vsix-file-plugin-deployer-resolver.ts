@@ -15,12 +15,13 @@
 // *****************************************************************************
 
 import * as path from 'path';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { PluginDeployerResolverContext, PluginIdentifiers } from '@theia/plugin-ext';
 import { LocalPluginDeployerResolver } from '@theia/plugin-ext/lib/main/node/resolvers/local-plugin-deployer-resolver';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
 import { isVSCodePluginFile } from './plugin-vscode-file-handler';
 import { existsInDeploymentDir, unpackToDeploymentDir, extractExtensionIdentityFromVsix } from './plugin-vscode-utils';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerResolver {
@@ -28,6 +29,9 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
     static FILE_EXTENSION = '.vsix';
 
     @inject(PluginVSCodeEnvironment) protected readonly environment: PluginVSCodeEnvironment;
+
+    @inject(ILogger) @named('plugin-ext-vscode:LocalVSIXFilePluginDeployerResolver')
+    protected override readonly logger: ILogger;
 
     protected get supportedScheme(): string {
         return LocalVSIXFilePluginDeployerResolver.LOCAL_FILE;
@@ -47,10 +51,10 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
             // Fallback to filename-based ID if package.json cannot be read
             // This maintains backward compatibility for edge cases
             const fallbackId = path.basename(localPath, LocalVSIXFilePluginDeployerResolver.FILE_EXTENSION);
-            console.warn(`[${pluginResolverContext.getOriginId()}]: Could not read extension identity from VSIX, falling back to filename: ${fallbackId}`);
+            this.logger.warn(`[${pluginResolverContext.getOriginId()}]: Could not read extension identity from VSIX, falling back to filename: ${fallbackId}`);
 
             if (await existsInDeploymentDir(this.environment, fallbackId)) {
-                console.log(`[${pluginResolverContext.getOriginId()}]: Target dir already exists in plugin deployment dir`);
+                this.logger.info(`[${pluginResolverContext.getOriginId()}]: Target dir already exists in plugin deployment dir`);
                 return;
             }
 

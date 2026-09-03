@@ -75,8 +75,10 @@ export class WorkspaceSearchProvider implements ToolProvider {
                     },
                     subDirectoryPath: {
                         type: 'string',
-                        description: 'Optional subdirectory path to limit search scope ' +
+                        description: 'Optional directory to limit the search scope ' +
                             '(e.g., "frontend/src", "backend/packages/core/src/browser"). ' +
+                            'May also be an absolute path or `file://` URI of a directory the AI tools may access, ' +
+                            'such as one listed in the `ai-features.workspaceFunctions.allowedExternalPaths` preference. ' +
                             'If not specified, searches the entire workspace.'
                     }
                 },
@@ -96,12 +98,7 @@ export class WorkspaceSearchProvider implements ToolProvider {
             return Array.from(rootMapping.values()).map(uri => uri.toString());
         }
 
-        const subDirUri = await this.workspaceScope.resolveRelativePath(subDirectoryPath);
-        const containingRoot = this.workspaceScope.getContainingRoot(subDirUri);
-        if (!containingRoot) {
-            throw new Error(`Subdirectory '${subDirectoryPath}' is not within any workspace root`);
-        }
-        this.workspaceScope.ensureWithinWorkspace(subDirUri, containingRoot);
+        const subDirUri = await this.workspaceScope.resolveAccessiblePath(subDirectoryPath);
 
         try {
             const stat = await this.fileService.resolve(subDirUri);

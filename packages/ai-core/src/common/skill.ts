@@ -87,6 +87,32 @@ export namespace SkillDescription {
 export interface Skill extends SkillDescription {
     /** Absolute file path to the SKILL.md file */
     location: string;
+    /**
+     * What the runtime and the model address this skill by: `name` for a built-in root,
+     * `<qualifier>:<name>` for a contributed one. Unlike `name` this is unique across all discovered
+     * skills, which is why it keys the registry.
+     */
+    qualifiedName: string;
+}
+
+export namespace Skill {
+    /**
+     * Never changes what is written in `SKILL.md` - the frontmatter `name` must still equal the
+     * skill's directory name; qualification is layered on top.
+     */
+    export function qualifyName(name: string, qualifier?: string): string {
+        return qualifier ? `${qualifier}:${name}` : name;
+    }
+
+    /**
+     * The qualifier of {@link Skill.qualifiedName}, or `undefined` for a skill from a built-in root.
+     * Unambiguous because neither part can contain a colon: a skill name is validated as lowercase
+     * kebab-case, and a qualifier has to be a single path segment.
+     */
+    export function qualifierOf(skill: Skill): string | undefined {
+        const separatorIndex = skill.qualifiedName.indexOf(':');
+        return separatorIndex < 0 ? undefined : skill.qualifiedName.substring(0, separatorIndex);
+    }
 }
 
 /**
@@ -144,10 +170,8 @@ export function parseSkillFile(content: string): { metadata: SkillDescription | 
     return { metadata, content: body };
 }
 
-/**
- * Provenance tier of a skill directory, used to dispatch tier-specific processing.
- */
-export type SkillDirectoryTier = 'workspace' | 'configured' | 'default';
+/** Provenance tier of a skill directory, used to dispatch tier-specific processing. */
+export type SkillDirectoryTier = 'workspace' | 'configured' | 'default' | 'plugin';
 
 /**
  * A skill directory paired with the tier it originates from.
@@ -157,32 +181,43 @@ export interface SkillDirectoryEntry {
     path: string;
     /** Tier the directory belongs to */
     tier: SkillDirectoryTier;
+    /**
+     * Prefixes the names of skills beneath this root, as `<qualifier>:<name>`. Skills are addressed
+     * by one global name, so two artifacts shipping the same skill name could not otherwise coexist -
+     * and renaming the directory instead would change the artifact's content hash. Must be a single
+     * path segment, so that it can be told from the skill name it is joined to.
+     */
+    qualifier?: string;
 }
 
 /**
- * Combines skill directories with proper priority ordering and provenance.
- * Workspace directories have highest priority, followed by configured directories, then defaults.
+ * Combines skill directories with proper priority ordering and provenance: workspace, then
+ * configured, then defaults, then installed artifacts - so a directory the user controls always wins.
  * First occurrence of a path wins on duplicates; later occurrences (regardless of tier) are dropped.
  */
 export function combineSkillDirectories(
     workspaceSkillsDirs: string[],
     configuredDirectories: string[],
-    defaultSkillsDirs: string[]
+    defaultSkillsDirs: string[],
+    pluginSkillsDirs: SkillDirectoryEntry[] = []
 ): SkillDirectoryEntry[] {
     const seen = new Set<string>();
     const result: SkillDirectoryEntry[] = [];
-    const tiers: Array<{ dirs: string[]; tier: SkillDirectoryTier }> = [
-        { dirs: workspaceSkillsDirs, tier: 'workspace' },
-        { dirs: configuredDirectories, tier: 'configured' },
-        { dirs: defaultSkillsDirs, tier: 'default' }
+    const candidates: SkillDirectoryEntry[] = [
+        ...toSkillDirectoryEntries(workspaceSkillsDirs, 'workspace'),
+        ...toSkillDirectoryEntries(configuredDirectories, 'configured'),
+        ...toSkillDirectoryEntries(defaultSkillsDirs, 'default'),
+        ...pluginSkillsDirs
     ];
-    for (const { dirs, tier } of tiers) {
-        for (const dir of dirs) {
-            if (!seen.has(dir)) {
-                seen.add(dir);
-                result.push({ path: dir, tier });
-            }
+    for (const candidate of candidates) {
+        if (!seen.has(candidate.path)) {
+            seen.add(candidate.path);
+            result.push(candidate);
         }
     }
     return result;
+}
+
+function toSkillDirectoryEntries(dirs: string[], tier: SkillDirectoryTier): SkillDirectoryEntry[] {
+    return dirs.map(dir => ({ path: dir, tier }));
 }

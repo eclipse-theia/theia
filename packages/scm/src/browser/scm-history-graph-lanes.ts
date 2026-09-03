@@ -47,8 +47,14 @@ export interface GraphEdge {
 export interface GraphRow {
     /** Lane index where the commit node is rendered. */
     readonly lane: number;
-    /** Color index for the commit node dot. */
+    /** Color index for the commit node dot and the lane segment below it. */
     readonly color: number;
+    /**
+     * Color index for the lane segment above the commit node. Differs from
+     * `color` when this commit's ref color overrides the color inherited from
+     * the chain above (e.g. the current branch tip below remote-only commits).
+     */
+    readonly topColor: number;
     /** Edges crossing or originating on this row. */
     readonly edges: readonly GraphEdge[];
     /**
@@ -71,10 +77,28 @@ export interface GraphRow {
 interface MutableGraphRow {
     lane: number;
     color: number;
+    topColor: number;
     edges: GraphEdge[];
     hasContinuation: boolean;
     hasTopLine: boolean;
 }
+
+export interface GraphCommitInput {
+    id: string;
+    parentIds?: readonly string[];
+    /**
+     * Ref-based color index resolved from the commit's references
+     * (0 = current ref, 1 = remote ref, 2 = base ref). When set, it colors
+     * this row and propagates down the first-parent chain, mirroring
+     * VS Code's scm graph color map.
+     */
+    colorIndex?: number;
+}
+
+/** First color index of the default rotation (`scmGraph.foreground1`). */
+const DEFAULT_COLOR_FIRST = 3;
+/** Number of default rotation colors (`scmGraph.foreground1-5`). */
+const DEFAULT_COLOR_COUNT = 5;
 
 /**
  * Compute graph rows for an ordered list of commits (topological order,
@@ -84,13 +108,21 @@ interface MutableGraphRow {
  * @returns One `GraphRow` per commit in the same order.
  */
 export function computeGraphRows(
-    commits: ReadonlyArray<{ id: string; parentIds?: readonly string[] }>
+    commits: ReadonlyArray<GraphCommitInput>
 ): GraphRow[] {
     // lanes[i] = id of commit that "owns" lane i (i.e. we are waiting for this
     // commit to appear in the list so we can close the lane).
     const lanes: (string | undefined)[] = [];
-    // laneColors[i] = the color index permanently assigned to lane i
+    // laneColors[i] = the color index currently assigned to lane i
     const laneColors: (number | undefined)[] = [];
+
+    // Default lane colors rotate through foreground1-5, like VS Code's
+    // color registry; indices 0-2 are reserved for ref-based colors.
+    let rotation = -1;
+    const nextDefaultColor = (): number => {
+        rotation = (rotation + 1) % DEFAULT_COLOR_COUNT;
+        return DEFAULT_COLOR_FIRST + rotation;
+    };
 
     const rows: MutableGraphRow[] = [];
 
@@ -106,10 +138,15 @@ export function computeGraphRows(
             // Not yet tracked → open a new lane
             myLane = firstFreeLane(lanes);
             lanes[myLane] = commit.id;
-            laneColors[myLane] = myLane % 8;
+            laneColors[myLane] = commit.colorIndex ?? nextDefaultColor();
         }
 
-        const myColor = laneColors[myLane] ?? myLane % 8;
+        // The segment above the commit keeps the color inherited from the
+        // chain above; the commit's own ref color (if any) takes over from
+        // this row downward.
+        const topColor = laneColors[myLane] ?? DEFAULT_COLOR_FIRST;
+        const myColor = commit.colorIndex ?? topColor;
+        laneColors[myLane] = myColor;
 
         // Collect any duplicate lane occupants: other lanes that were kept
         // alive pointing at this same commit (sibling branch tips whose lane
@@ -120,7 +157,7 @@ export function computeGraphRows(
         if (hasTopLine) {
             for (let li = 0; li < lanes.length; li++) {
                 if (lanes[li] === commit.id && li !== myLane) {
-                    duplicateLanes.push({ lane: li, color: laneColors[li] ?? li % 8 });
+                    duplicateLanes.push({ lane: li, color: laneColors[li] ?? DEFAULT_COLOR_FIRST });
                     lanes[li] = undefined;
                     laneColors[li] = undefined;
                 }
@@ -170,7 +207,7 @@ export function computeGraphRows(
                     // Additional parents get new lanes — branch-out
                     const newLane = firstFreeLane(lanes);
                     lanes[newLane] = pid;
-                    laneColors[newLane] = newLane % 8;
+                    laneColors[newLane] = nextDefaultColor();
                     parentLanes.push(newLane);
                     parentIsExisting.push(false);
                 }
@@ -206,7 +243,7 @@ export function computeGraphRows(
             if (!occupant || occupant === commit.id) {
                 continue;
             }
-            const color = laneColors[li] ?? li % 8;
+            const color = laneColors[li] ?? DEFAULT_COLOR_FIRST;
             edges.push({ fromLane: li, toLane: li, color, type: 'pass-through' });
         }
 
@@ -225,11 +262,11 @@ export function computeGraphRows(
             if (isExisting) {
                 // Merge-in: an existing lane at the top of the row curves into
                 // the commit position at mid-row.
-                const color = laneColors[toLane] ?? toLane % 8;
+                const color = laneColors[toLane] ?? DEFAULT_COLOR_FIRST;
                 edges.push({ fromLane: toLane, toLane: myLane, color, type: 'merge-in' });
             } else {
                 // Branch-out: the commit spawns a new lane below mid-row.
-                const color = laneColors[toLane] ?? toLane % 8;
+                const color = laneColors[toLane] ?? DEFAULT_COLOR_FIRST;
                 edges.push({ fromLane: myLane, toLane, color, type: 'branch-out' });
             }
         }
@@ -245,7 +282,7 @@ export function computeGraphRows(
         // at the parent) so it persists as a pass-through to the parent row.
         const hasContinuation = parentIds.length > 0 && (parentLanes[0] === myLane || lanes[myLane] === parentIds[0]);
 
-        rows.push({ lane: myLane, color: myColor, edges, hasContinuation, hasTopLine });
+        rows.push({ lane: myLane, color: myColor, topColor, edges, hasContinuation, hasTopLine });
     }
 
     return rows;

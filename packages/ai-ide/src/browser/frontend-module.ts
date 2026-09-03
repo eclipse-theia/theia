@@ -23,6 +23,7 @@ import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
 import { SummarizeSessionCommandContribution } from './summarize-session-command-contribution';
 import {
+    AccessibleRootContribution,
     FileContentFunction,
     FileDiagnosticProvider,
     FindFilesByPattern,
@@ -31,6 +32,7 @@ import {
     WorkspaceFunctionScope
 } from './workspace-functions';
 import { WorkspaceSearchProvider } from './workspace-search-provider';
+import { MemoryDirectoryVariableContribution } from './memory-directory-variable-contribution';
 import {
     FrontendApplicationContribution,
     WidgetFactory,
@@ -67,13 +69,29 @@ import { AppTesterChatAgent } from './app-tester-chat-agent';
 import { GitHubChatAgent } from './github-chat-agent';
 import { CommandChatAgent } from '../common/command-chat-agents';
 import { ListChatContext, ResolveChatContext, AddFileToChatContext } from './context-functions';
-import { AIAgentConfigurationWidget } from './ai-configuration/agent-configuration-widget';
+import { AgentsConfigurationCategory } from './ai-configuration/categories/agents-configuration-category';
+import { GeneralConfigurationCategory } from './ai-configuration/categories/general-configuration-category';
+import { ModelsConfigurationCategory } from './ai-configuration/categories/models-configuration-category';
+import { ModelAliasesConfigurationCategory } from './ai-configuration/categories/model-aliases-configuration-category';
+import { VariablesConfigurationCategory } from './ai-configuration/categories/variables-configuration-category';
+import { TokenUsageConfigurationCategory } from './ai-configuration/categories/token-usage-configuration-category';
+import { ToolsConfigurationCategory } from './ai-configuration/categories/tools-configuration-category';
+import { PromptsAndSkillsConfigurationCategory } from './ai-configuration/categories/prompts-and-skills-configuration-category';
+import { PromptSnippetsConfigurationCategory } from './ai-configuration/categories/prompt-snippets-configuration-category';
+import { AiConfigurationOpenPreferenceRenderer, AiConfigurationOpenPreferenceRendererContribution } from './ai-configuration/ai-configuration-open-preference-renderer';
+import { PreferenceNodeRendererContribution } from '@theia/preferences/lib/browser/views/components/preference-node-renderer-creator';
+import { AiConfigurationBreadcrumbsContribution } from './ai-configuration/ai-configuration-breadcrumbs-contribution';
+import { BreadcrumbsContribution } from '@theia/core/lib/browser/breadcrumbs/breadcrumbs-constants';
+import { AiConfigurationLabelProviderContribution } from './ai-configuration/ai-configuration-label-provider-contribution';
+import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
+import { AiConfigurationCategory } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
 import { AIConfigurationSelectionService } from './ai-configuration/ai-configuration-service';
-import { AIAgentConfigurationViewContribution } from './ai-configuration/ai-configuration-view-contribution';
+import { AIConfigurationViewContribution } from './ai-configuration/ai-configuration-view-contribution';
 import { AIConfigurationContainerWidget } from './ai-configuration/ai-configuration-widget';
-import { AIVariableConfigurationWidget } from './ai-configuration/variable-configuration-widget';
+import { AiConfigurationDetailWidget } from './ai-configuration/ai-configuration-detail-widget';
+import { AiConfigurationTreeWidget, createAiConfigurationTreeContainer } from './ai-configuration/ai-configuration-tree-widget';
+import { AiConfigurationSearchWidget } from './ai-configuration/ai-configuration-search-widget';
 import { ContextFilesVariableContribution } from '../common/context-files-variable';
-import { AIToolsConfigurationWidget } from './ai-configuration/tools-configuration-widget';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TemplatePreferenceContribution } from './template-preference-contribution';
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
@@ -83,19 +101,15 @@ import { ChatSessionItemActionContribution, DefaultChatSessionItemActionContribu
 import { AiAllowAllModeChatBanner } from './ai-allow-all-mode-chat-banner';
 import { ChatBannerProvider } from '@theia/ai-chat-ui/lib/browser/chat-banner-provider';
 import { DefaultChatAgentRecommendationService } from './default-chat-agent-recommendation-service';
-import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-configuration-widget';
-import { AISkillsConfigurationWidget } from './ai-configuration/skills-configuration-widget';
 import { TaskContextSummaryVariableContribution } from './task-background-summary-variable';
 import { GitHubRepoVariableContribution } from './github-repo-variable-contribution';
 import { TaskContextFileStorageService } from './task-context-file-storage-service';
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { bindRootContributionProvider, CommandContribution, PreferenceContribution } from '@theia/core';
-import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-fragments-configuration-widget';
 import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
 import { GitHubRepoService, githubRepoServicePath } from '../common/github-repo-protocol';
 import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions';
 import { GetSkillFileContent } from './skill-file-functions';
-import { ModelAliasesConfigurationWidget } from './ai-configuration/model-aliases-configuration-widget';
 import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
@@ -121,6 +135,8 @@ import { AddressGhReviewCommandContribution } from './address-pr-review-command-
 import { AppTesterCapabilityContribution } from './apptester-capability-contribution';
 import { GitHubCapabilityContribution } from './github-capability-contribution';
 import { ShellExecutionCapabilityContribution } from './shell-execution-capability-contribution';
+import { MemoryCapabilityContribution } from './memory-capability-contribution';
+import { OpenEditorsHintContribution } from './open-editors-hint-contribution';
 import { AgentModeConfirmationService, AgentModeConfirmationServiceImpl } from './agent-mode-confirmation-service';
 import { ExploreAgent } from './explore-agent';
 import { CodeReviewerAgent } from './code-reviewer-agent';
@@ -218,6 +234,11 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
     bindToolProvider(WorkspaceSearchProvider, bind);
 
+    bindRootContributionProvider(bind, AccessibleRootContribution);
+    bind(MemoryDirectoryVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(MemoryDirectoryVariableContribution);
+    bind(AccessibleRootContribution).toService(MemoryDirectoryVariableContribution);
+
     bindToolProvider(SuggestFileContent, bind);
     bindToolProvider(WriteFileContent, bind);
     bindToolProvider(TaskListProvider, bind);
@@ -235,6 +256,14 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(ListChatContext, bind);
     bindToolProvider(ResolveChatContext, bind);
     bind(AIConfigurationSelectionService).toSelf().inSingletonScope();
+    // The container widget owns these children and disposes them when the view is closed. They must
+    // therefore be transient: a reopened container gets fresh children instead of injecting the
+    // already-disposed singletons from the previous instance (which rendered an empty view and logged
+    // "node does not belong to this tree" errors on layout restore).
+    bind(AiConfigurationSearchWidget).toSelf();
+    bind(AiConfigurationDetailWidget).toSelf();
+    bind(AiConfigurationTreeWidget)
+        .toDynamicValue(({ container }) => createAiConfigurationTreeContainer(container).get(AiConfigurationTreeWidget));
     bind(AIConfigurationContainerWidget).toSelf();
     bind(WidgetFactory)
         .toDynamicValue(ctx => ({
@@ -248,32 +277,46 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(IsBrowserRunningProvider, bind);
     bindToolProvider(QueryDomProvider, bind);
 
-    bindViewContribution(bind, AIAgentConfigurationViewContribution);
-    bind(TabBarToolbarContribution).toService(AIAgentConfigurationViewContribution);
+    bindViewContribution(bind, AIConfigurationViewContribution);
+    bind(TabBarToolbarContribution).toService(AIConfigurationViewContribution);
 
-    bind(AIVariableConfigurationWidget).toSelf();
-    bind(WidgetFactory)
-        .toDynamicValue(ctx => ({
-            id: AIVariableConfigurationWidget.ID,
-            createWidget: () => ctx.container.get(AIVariableConfigurationWidget)
-        }))
-        .inSingletonScope();
+    bind(AgentsConfigurationCategory).toSelf().inSingletonScope();
+    bind(AiConfigurationCategory).toService(AgentsConfigurationCategory);
 
-    bind(AIAgentConfigurationWidget).toSelf();
-    bind(WidgetFactory)
-        .toDynamicValue(ctx => ({
-            id: AIAgentConfigurationWidget.ID,
-            createWidget: () => ctx.container.get(AIAgentConfigurationWidget)
-        }))
-        .inSingletonScope();
+    bind(GeneralConfigurationCategory).toSelf().inSingletonScope();
+    bind(AiConfigurationCategory).toService(GeneralConfigurationCategory);
 
-    bind(ModelAliasesConfigurationWidget).toSelf();
-    bind(WidgetFactory)
-        .toDynamicValue(ctx => ({
-            id: ModelAliasesConfigurationWidget.ID,
-            createWidget: () => ctx.container.get(ModelAliasesConfigurationWidget)
-        }))
-        .inSingletonScope();
+    bind(ModelsConfigurationCategory).toSelf().inSingletonScope();
+    bind(AiConfigurationCategory).toService(ModelsConfigurationCategory);
+
+    bind(ModelAliasesConfigurationCategory).toSelf().inSingletonScope();
+    bind(AiConfigurationCategory).toService(ModelAliasesConfigurationCategory);
+
+    bind(VariablesConfigurationCategory).toSelf().inSingletonScope();
+    bind(AiConfigurationCategory).toService(VariablesConfigurationCategory);
+
+    bind(TokenUsageConfigurationCategory).toSelf().inSingletonScope();
+    bind(AiConfigurationCategory).toService(TokenUsageConfigurationCategory);
+
+    bind(ToolsConfigurationCategory).toSelf().inSingletonScope();
+    bind(AiConfigurationCategory).toService(ToolsConfigurationCategory);
+
+    bind(PromptsAndSkillsConfigurationCategory).toSelf().inSingletonScope();
+    bind(AiConfigurationCategory).toService(PromptsAndSkillsConfigurationCategory);
+
+    bind(PromptSnippetsConfigurationCategory).toSelf().inSingletonScope();
+    bind(AiConfigurationCategory).toService(PromptSnippetsConfigurationCategory);
+
+    // Renders the Settings-UI "AI Features" placeholder as a button that opens the AI Configuration view (#316).
+    bind(AiConfigurationOpenPreferenceRenderer).toSelf();
+    bind(PreferenceNodeRendererContribution).to(AiConfigurationOpenPreferenceRendererContribution).inSingletonScope();
+
+    // Real Theia breadcrumbs for the AI Configuration view.
+    bind(AiConfigurationBreadcrumbsContribution).toSelf().inSingletonScope();
+    bind(BreadcrumbsContribution).toService(AiConfigurationBreadcrumbsContribution);
+    // Give the view's resource URI a readable name (window title, breadcrumbs) instead of "/".
+    bind(AiConfigurationLabelProviderContribution).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(AiConfigurationLabelProviderContribution);
 
     bindToolProvider(SimpleSuggestFileReplacements, bind);
     bindToolProvider(SimpleWriteFileReplacements, bind);
@@ -281,36 +324,11 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(GetProposedFileState, bind);
     bindToolProvider(AddFileToChatContext, bind);
 
-    bind(AIToolsConfigurationWidget).toSelf();
-    bind(WidgetFactory)
-        .toDynamicValue(ctx => ({
-            id: AIToolsConfigurationWidget.ID,
-            createWidget: () => ctx.container.get(AIToolsConfigurationWidget)
-        }))
-        .inSingletonScope();
-
-    bind(AISkillsConfigurationWidget).toSelf();
-    bind(WidgetFactory)
-        .toDynamicValue(ctx => ({
-            id: AISkillsConfigurationWidget.ID,
-            createWidget: () => ctx.container.get(AISkillsConfigurationWidget)
-        }))
-        .inSingletonScope();
-
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
 
     bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
 
     bind(FrontendApplicationContribution).to(TemplatePreferenceContribution);
-
-    // Register the token usage configuration widget
-    bind(AITokenUsageConfigurationWidget).toSelf();
-    bind(WidgetFactory)
-        .toDynamicValue(ctx => ({
-            id: AITokenUsageConfigurationWidget.ID,
-            createWidget: () => ctx.container.get(AITokenUsageConfigurationWidget)
-        }))
-        .inSingletonScope();
 
     bind(TaskContextSummaryVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(TaskContextSummaryVariableContribution);
@@ -326,13 +344,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     rebind(TaskContextStorageService).toService(TaskContextFileStorageService);
 
     bind(CommandContribution).to(SummarizeSessionCommandContribution);
-    bind(AIPromptFragmentsConfigurationWidget).toSelf();
-    bind(WidgetFactory)
-        .toDynamicValue(ctx => ({
-            id: AIPromptFragmentsConfigurationWidget.ID,
-            createWidget: () => ctx.container.get(AIPromptFragmentsConfigurationWidget)
-        }))
-        .inSingletonScope();
 
     bindToolProvider(SuggestTerminalCommand, bind);
 
@@ -357,6 +368,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).to(AppTesterCapabilityContribution);
     bind(FrontendApplicationContribution).to(GitHubCapabilityContribution);
     bind(FrontendApplicationContribution).to(ShellExecutionCapabilityContribution);
+    bind(FrontendApplicationContribution).to(MemoryCapabilityContribution);
+    bind(FrontendApplicationContribution).to(OpenEditorsHintContribution);
 
     bind(FrontendApplicationContribution).to(CodeReviewCapabilityContribution);
     bind(FrontendApplicationContribution).to(PRReviewCapabilityContribution);

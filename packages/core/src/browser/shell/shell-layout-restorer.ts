@@ -154,7 +154,8 @@ export class ShellLayoutRestorer implements CommandContribution {
 
     constructor(
         @inject(WidgetManager) protected widgetManager: WidgetManager,
-        @inject(ILogger) protected logger: ILogger,
+        @inject(ILogger) @named('core:ShellLayoutRestorer')
+        protected readonly logger: ILogger,
         @inject(StorageService) protected storageService: StorageService) { }
 
     registerCommands(commands: CommandRegistry): void {
@@ -374,18 +375,18 @@ export class ShellLayoutRestorer implements CommandContribution {
         }
         if (layoutVersion !== applicationShellLayoutVersion) {
             if (layoutVersion < applicationShellLayoutVersion) {
-                console.warn(`Layout version ${layoutVersion} is behind current layout version ${applicationShellLayoutVersion}, trying to migrate...`);
+                this.logger.warn(`Layout version ${layoutVersion} is behind current layout version ${applicationShellLayoutVersion}, trying to migrate...`);
             } else {
-                console.warn(`Layout version ${layoutVersion} is ahead current layout version ${applicationShellLayoutVersion}, trying to load anyway...`);
+                this.logger.warn(`Layout version ${layoutVersion} is ahead current layout version ${applicationShellLayoutVersion}, trying to load anyway...`);
             }
-            console.info(`Please use '${RESET_LAYOUT.label}' command if the layout looks bogus.`);
+            this.logger.info(`Please use '${RESET_LAYOUT.label}' command if the layout looks bogus.`);
         }
 
         const migrations = this.migrations.getContributions()
             .filter(m => m.layoutVersion > layoutVersion && m.layoutVersion <= applicationShellLayoutVersion)
             .sort((m, m2) => m.layoutVersion - m2.layoutVersion);
         if (migrations.length) {
-            console.info(`Found ${migrations.length} migrations from layout version ${layoutVersion} to version ${applicationShellLayoutVersion}, migrating...`);
+            this.logger.info(`Found ${migrations.length} migrations from layout version ${layoutVersion} to version ${applicationShellLayoutVersion}, migrating...`);
         }
 
         const context = { layout, layoutVersion, migrations };

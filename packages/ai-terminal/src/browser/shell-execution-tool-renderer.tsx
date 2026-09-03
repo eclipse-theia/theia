@@ -26,7 +26,7 @@ import { CommandRegistry, nls } from '@theia/core/lib/common';
 import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { GroupImpl } from '@theia/core/lib/browser/menu/composite-menu-node';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { ShellExecutionTool } from './shell-execution-tool';
@@ -38,6 +38,7 @@ import {
 } from '../common/shell-execution-server';
 import { parseShellExecutionInput, ShellExecutionInput } from '../common/shell-execution-input-parser';
 import { generateCommandPatterns, flattenSuggestions, PatternSuggestion } from '../common/shell-command-patterns';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
@@ -63,6 +64,9 @@ export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<Tool
     @inject(CommandRegistry)
     protected commandRegistry: CommandRegistry;
 
+    @inject(ILogger) @named('ai-terminal:ShellExecutionToolRenderer')
+    protected readonly logger: ILogger;
+
     canHandle(response: ChatResponseContent): number {
         if (ToolCallChatResponseContent.is(response) && response.name === SHELL_EXECUTION_FUNCTION_ID) {
             return 20;
@@ -79,9 +83,9 @@ export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<Tool
             if (patterns && patterns.length > 0) {
                 try {
                     this.shellCommandPermissionService.addAllowlistPatterns(...patterns)
-                        .catch(err => console.warn('Failed to add allowlist patterns:', err));
+                        .catch(err => this.logger.warn('Failed to add allowlist patterns:', err));
                 } catch (err) {
-                    console.warn('Failed to add allowlist patterns:', err);
+                    this.logger.warn('Failed to add allowlist patterns:', err);
                 }
             }
             response.confirm();
@@ -90,9 +94,9 @@ export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<Tool
             if (options?.patterns && options.patterns.length > 0) {
                 try {
                     this.shellCommandPermissionService.addDenylistPatterns(...options.patterns)
-                        .catch(err => console.warn('Failed to add denylist patterns:', err));
+                        .catch(err => this.logger.warn('Failed to add denylist patterns:', err));
                 } catch (err) {
-                    console.warn('Failed to add denylist patterns:', err);
+                    this.logger.warn('Failed to add denylist patterns:', err);
                 }
             }
             response.deny(options?.reason);
@@ -143,6 +147,7 @@ export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<Tool
                 contextMenuRenderer={this.contextMenuRenderer}
                 shellCommandPermissionService={this.shellCommandPermissionService}
                 commandRegistry={this.commandRegistry}
+                logger={this.logger}
             />
         );
     }
@@ -161,6 +166,7 @@ interface ShellExecutionToolComponentProps {
     contextMenuRenderer: ContextMenuRenderer;
     shellCommandPermissionService: ShellCommandPermissionService;
     commandRegistry: CommandRegistry;
+    logger: ILogger;
 }
 
 const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = ({
@@ -175,7 +181,8 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
     requestCanceled,
     contextMenuRenderer,
     shellCommandPermissionService,
-    commandRegistry
+    commandRegistry,
+    logger
 }) => {
     const { confirmationState } = useToolConfirmationState(response, confirmationMode);
     const [toolFinished, setToolFinished] = React.useState(response.finished);
@@ -205,34 +212,34 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
         try {
             await shellExecutionTool.cancelExecution(response.id);
         } catch (err) {
-            console.debug('Failed to cancel shell execution:', err);
+            logger.debug('Failed to cancel shell execution:', err);
         }
         // Don't reset isCanceling - stay in canceling state until tool finishes
-    }, [response.id, shellExecutionTool, isCanceling]);
+    }, [response.id, shellExecutionTool, isCanceling, logger]);
 
     const handleAllow = React.useCallback((patterns?: string[]) => {
         if (patterns && patterns.length > 0) {
             try {
                 shellCommandPermissionService.addAllowlistPatterns(...patterns)
-                    .catch(err => console.warn('Failed to add allowlist patterns:', err));
+                    .catch(err => logger.warn('Failed to add allowlist patterns:', err));
             } catch (err) {
-                console.warn('Failed to add allowlist patterns:', err);
+                logger.warn('Failed to add allowlist patterns:', err);
             }
         }
         response.confirm();
-    }, [response, shellCommandPermissionService]);
+    }, [response, shellCommandPermissionService, logger]);
 
     const handleDeny = React.useCallback((options?: { patterns?: string[]; reason?: string }) => {
         if (options?.patterns && options.patterns.length > 0) {
             try {
                 shellCommandPermissionService.addDenylistPatterns(...options.patterns)
-                    .catch(err => console.warn('Failed to add denylist patterns:', err));
+                    .catch(err => logger.warn('Failed to add denylist patterns:', err));
             } catch (err) {
-                console.warn('Failed to add denylist patterns:', err);
+                logger.warn('Failed to add denylist patterns:', err);
             }
         }
         response.deny(options?.reason);
-    }, [response, shellCommandPermissionService]);
+    }, [response, shellCommandPermissionService, logger]);
 
     const handleAllowAllForever = React.useCallback(() => {
         toolConfirmationManager.setConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, toolRequest);
@@ -267,7 +274,7 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
                 result = parsed;
             }
         } catch (err) {
-            console.debug('Failed to parse shell execution result:', err);
+            logger.debug('Failed to parse shell execution result:', err);
         }
         if (!result && !canceledResult) {
             if (typeof response.result === 'string') {

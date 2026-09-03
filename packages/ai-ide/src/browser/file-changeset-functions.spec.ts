@@ -20,7 +20,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { CancellationTokenSource } from '@theia/core';
+import { CancellationTokenSource, PreferenceService, ILogger } from '@theia/core';
 import {
     SuggestFileContent,
     WriteFileContent,
@@ -35,13 +35,18 @@ import {
     DefaultFileChangeSetTitleProvider,
     ReplaceContentInFileFunctionHelperV2
 } from './file-changeset-functions';
-import { ChatToolContext, MutableChatRequestModel, MutableChatResponseModel, MutableChatModel } from '@theia/ai-chat';
+import { ChatToolContext, FileReadTracker, MutableChatRequestModel, MutableChatResponseModel, MutableChatModel } from '@theia/ai-chat';
 import { ChangeSet, ChangeSetElement } from '@theia/ai-chat/lib/common/change-set';
 import { Container } from '@theia/core/shared/inversify';
-import { WorkspaceFunctionScope } from './workspace-functions';
+import { AccessibleRootContribution, WorkspaceFunctionScope } from './workspace-functions';
+import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
+import { AiConfigurationService } from '@theia/ai-core';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { ChangeSetFileElementFactory, ChangeSetFileElement } from '@theia/ai-chat/lib/browser/change-set-file-element';
+import { ChangeSetElementArgs, ChangeSetFileElementFactory, ChangeSetFileElement } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { URI } from '@theia/core/lib/common/uri';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 disableJSDOM();
 
@@ -86,7 +91,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
 
         // Mock dependencies
         const mockWorkspaceScope = {
-            resolveRelativePath: () => new URI('file:///workspace/test.txt')
+            resolveAccessiblePath: async () => new URI('file:///workspace/test.txt')
         } as unknown as WorkspaceFunctionScope;
 
         const mockFileService = {
@@ -104,6 +109,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
 
         // Register mocks in the container
         container.bind(WorkspaceFunctionScope).toConstantValue(mockWorkspaceScope);
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(ChangeSetFileElementFactory).toConstantValue(mockFileChangeFactory);
         container.bind(FileChangeSetTitleProvider).to(DefaultFileChangeSetTitleProvider).inSingletonScope();
@@ -263,5 +269,152 @@ describe('File Changeset Functions Cancellation Tests', () => {
         const suggestFileReplacements = container.get(SuggestFileReplacements);
         expect(SuggestFileReplacements.ID).to.equal('suggestFileReplacements');
         expect(suggestFileReplacements.getTool().id).to.equal('suggestFileReplacements');
+    });
+
+    describe('stale file guard', () => {
+        /** Stands in for the tracker: the file counts as changed until the agent reads it again. */
+        function bindTracker(): FileReadTracker & { stale: boolean } {
+            const tracker: FileReadTracker & { stale: boolean } = {
+                stale: true,
+                recordRead: async () => { tracker.stale = false; },
+                isStale: async () => tracker.stale,
+                getChangedFiles: async () => []
+            };
+            container.bind(FileReadTracker).toConstantValue(tracker);
+            return tracker;
+        }
+
+        it('WriteFileContent refuses to overwrite a file that changed since it was read', async () => {
+            bindTracker();
+            const handler = container.get(WriteFileContent).getTool().handler;
+
+            const result = await handler(JSON.stringify({ path: 'test.txt', content: 'new content' }), mockCtx);
+
+            const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
+            expect(jsonResponse.error).to.match(/changed since you last read it/);
+        });
+
+        it('SuggestFileContent refuses to propose overwriting a file that changed since it was read', async () => {
+            bindTracker();
+            const handler = container.get(SuggestFileContent).getTool().handler;
+
+            const result = await handler(JSON.stringify({ path: 'test.txt', content: 'new content' }), mockCtx);
+
+            const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
+            expect(jsonResponse.error).to.match(/changed since you last read it/);
+        });
+
+        it('WriteFileContent writes once the agent has read the file again', async () => {
+            const tracker = bindTracker();
+            const handler = container.get(WriteFileContent).getTool().handler;
+            await handler(JSON.stringify({ path: 'test.txt', content: 'new content' }), mockCtx);
+
+            await tracker.recordRead(mockCtx.request.session.id, new URI('file:///workspace/test.txt'));
+
+            const result = await handler(JSON.stringify({ path: 'test.txt', content: 'new content' }), mockCtx);
+            expect(result).to.equal('Successfully wrote content to file test.txt.');
+        });
+    });
+});
+
+describe('File Changeset Functions access control', () => {
+    let container: Container;
+    let ctx: ChatToolContext;
+    let written: Array<{ uri: URI; content: string }>;
+    let contributedRoots: URI[];
+
+    before(() => { disableJSDOM = enableJSDOM(); });
+    after(() => { disableJSDOM(); });
+
+    beforeEach(() => {
+        written = [];
+        contributedRoots = [];
+
+        const changeSet: Partial<ChangeSet> = {
+            addElements: () => true,
+            setTitle: () => { },
+            removeElements: () => true,
+            getElementByURI: () => undefined
+        };
+        ctx = {
+            request: {
+                id: 'request-id',
+                session: { id: 'session-id', changeSet: changeSet as ChangeSet } as MutableChatModel
+            } as MutableChatRequestModel,
+            response: {} as MutableChatResponseModel
+        };
+
+        container = new Container();
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
+        container.bind(WorkspaceService).toConstantValue({
+            roots: [{ resource: new URI('file:///workspace') }],
+            tryGetRoots: () => [{ resource: new URI('file:///workspace') }],
+            onWorkspaceChanged: () => ({ dispose: () => { } })
+        } as unknown as WorkspaceService);
+        container.bind(FileService).toConstantValue({
+            exists: async () => true,
+            read: async () => ({ value: { toString: () => 'old content' } }),
+            watch: () => ({ dispose: () => { } }),
+            onDidFilesChange: () => ({ dispose: () => { } })
+        } as unknown as FileService);
+        container.bind(PreferenceService).toConstantValue({ get: <T>(_path: string, defaultValue: T) => defaultValue });
+        container.bind(AiConfigurationService).toConstantValue({
+            get: <T>(_name: string, fallback?: T) => fallback,
+            ready: Promise.resolve(),
+            onDidChangeTrust: () => ({ dispose: () => { } })
+        } as unknown as AiConfigurationService);
+        container.bind(EnvVariablesServer).toConstantValue({
+            getHomeDirUri: async () => 'file:///home/test',
+            getConfigDirUri: async () => 'file:///home/test/.theia'
+        } as unknown as EnvVariablesServer);
+        bindRootContributionProvider(container, AccessibleRootContribution);
+        container.bind(AccessibleRootContribution).toConstantValue({ getRoots: async () => contributedRoots });
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(ChangeSetFileElementFactory).toConstantValue((args: ChangeSetElementArgs) => ({
+            uri: args.uri,
+            apply: async () => {
+                written.push({ uri: args.uri, content: args.targetState ?? '' });
+            }
+        } as ChangeSetFileElement));
+        container.bind(FileChangeSetTitleProvider).to(DefaultFileChangeSetTitleProvider).inSingletonScope();
+        container.bind(ReplaceContentInFileFunctionHelperV2).toSelf();
+        container.bind(WriteFileContent).toSelf();
+        container.bind(WriteFileReplacements).toSelf();
+    });
+
+    const writeContent = (path: string) =>
+        container.get(WriteFileContent).getTool().handler(JSON.stringify({ path, content: 'new content' }), ctx) as Promise<string>;
+    const writeReplacements = (path: string) =>
+        container.get(WriteFileReplacements).getTool().handler(
+            JSON.stringify({ path, replacements: [{ oldContent: 'old content', newContent: 'new content' }] }), ctx
+        ) as Promise<string>;
+
+    it('refuses to write through a .. traversal instead of escaping the workspace', async () => {
+        expect(JSON.parse(await writeContent('../../etc/passwd')).error).to.include('Invalid path');
+        expect(JSON.parse(await writeReplacements('../../etc/passwd')).error).to.include('Invalid path');
+        expect(written).to.be.empty;
+    });
+
+    it('refuses to write to an absolute path outside the workspace', async () => {
+        expect(JSON.parse(await writeContent('/etc/passwd')).error).to.include('not allowed');
+        expect(JSON.parse(await writeReplacements('/etc/passwd')).error).to.include('not allowed');
+        expect(written).to.be.empty;
+    });
+
+    it('refuses to write to the user home directory', async () => {
+        expect(JSON.parse(await writeContent('~/.ssh/authorized_keys')).error).to.include('not allowed');
+        expect(written).to.be.empty;
+    });
+
+    it('writes inside the workspace', async () => {
+        expect(await writeContent('src/index.ts')).to.include('Successfully');
+        expect(written.map(w => w.uri.toString())).to.deep.equal(['file:///workspace/src/index.ts']);
+    });
+
+    it('writes to a contributed root such as the memory directory', async () => {
+        contributedRoots = [new URI('file:///home/test/.theia/workspace-metadata/uuid/memory')];
+        const result = await writeContent('/home/test/.theia/workspace-metadata/uuid/memory/wiki/index.md');
+        expect(result).to.include('Successfully');
+        expect(written.map(w => w.uri.toString())).to.deep.equal(['file:///home/test/.theia/workspace-metadata/uuid/memory/wiki/index.md']);
     });
 });

@@ -36,11 +36,11 @@ import {
 } from './file-changeset-function-ids';
 import { GET_TASK_CONTEXT_FUNCTION_ID } from './task-context-function-ids';
 import { ArchitectAgentId, ExploreAgentId } from './agent-ids';
+import { OPEN_EDITORS_HINT_FRAGMENT_ID } from './open-editors-hint-fragment-id';
 
 export const CODER_SYSTEM_PROMPT_ID = 'coder-system';
 
 export const CODER_EDIT_TEMPLATE_ID = 'coder-system-edit';
-export const CODER_EDIT_NEXT_TEMPLATE_ID = 'coder-system-edit-next';
 export const CODER_AGENT_MODE_TEMPLATE_ID = 'coder-system-agent-mode';
 export const CODER_AGENT_MODE_NEXT_TEMPLATE_ID = 'coder-system-agent-mode-next';
 
@@ -259,6 +259,8 @@ Always retrieve relevant files using ~{${FILE_CONTENT_FUNCTION_ID}} to understan
 ## Project Info
 {{prompt:project-info}}
 
+{{prompt:${OPEN_EDITORS_HINT_FRAGMENT_ID}}}
+
 {{${TASK_CONTEXT_SUMMARY_VARIABLE_ID}}}
 
 # Final Instruction
@@ -459,6 +461,8 @@ When review feedback is recorded in the task context (REVISE verdict): evaluate 
 
 {{capability:apptester default off}}
 
+{{capability:memory default off}}
+
 ## Final Review
 
 Confirm: works as intended, tests pass, code quality OK, no security issues. Then yield.
@@ -544,6 +548,8 @@ Always retrieve relevant files using ~{${FILE_CONTENT_FUNCTION_ID}} to understan
 
 ## Project Info
 {{prompt:project-info}}
+
+{{prompt:${OPEN_EDITORS_HINT_FRAGMENT_ID}}}
 
 {{${TASK_CONTEXT_SUMMARY_VARIABLE_ID}}}
 
@@ -635,6 +641,8 @@ You have previously proposed changes for the following files. Some suggestions m
 
 {{prompt:project-info}}
 
+{{prompt:${OPEN_EDITORS_HINT_FRAGMENT_ID}}}
+
 {{${TASK_CONTEXT_SUMMARY_VARIABLE_ID}}}
 
 ## Final Instruction
@@ -649,13 +657,5 @@ export function getCoderPromptTemplateEdit(): BasePromptFragment {
     return {
         id: CODER_EDIT_TEMPLATE_ID,
         template: getCoderEditPromptTemplate()
-    };
-}
-// Currently, the next template is identical to the regular edit prompt
-export function getCoderPromptTemplateEditNext(): BasePromptFragment {
-    return {
-        id: CODER_EDIT_NEXT_TEMPLATE_ID,
-        template: getCoderEditPromptTemplate(),
-        ...({ variantOf: CODER_EDIT_TEMPLATE_ID })
     };
 }

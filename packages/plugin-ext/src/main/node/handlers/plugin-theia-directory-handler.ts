@@ -17,8 +17,8 @@
 import * as path from 'path';
 import * as filenamify from 'filenamify';
 import * as fs from '@theia/core/shared/fs-extra';
-import type { URI } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { URI, ILogger } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileUri } from '@theia/core/lib/node';
 import {
@@ -34,6 +34,9 @@ export abstract class AbstractPluginDirectoryHandler implements PluginDeployerDi
 
     @inject(PluginCliContribution) protected readonly pluginCli: PluginCliContribution;
 
+    @inject(ILogger) @named('plugin-ext:AbstractPluginDirectoryHandler')
+    protected readonly logger: ILogger;
+
     constructor() {
         this.deploymentDirectory = new Deferred();
         getTempDirPathAsync('theia-copied')
@@ -42,7 +45,7 @@ export abstract class AbstractPluginDirectoryHandler implements PluginDeployerDi
 
     async accept(resolvedPlugin: PluginDeployerEntry): Promise<boolean> {
 
-        console.debug(`Plugin directory handler: accepting plugin with path ${resolvedPlugin.path()}`);
+        this.logger.debug(`Plugin directory handler: accepting plugin with path ${resolvedPlugin.path()}`);
 
         // handle only directories
         if (await resolvedPlugin.isFile()) {
@@ -89,9 +92,9 @@ export abstract class AbstractPluginDirectoryHandler implements PluginDeployerDi
             const targetDir = await this.getExtensionDir(context);
             try {
                 if (await fs.pathExists(targetDir) || !entry.path().startsWith(origin)) {
-                    console.log(`[${id}]: already copied.`);
+                    this.logger.info(`[${id}]: already copied.`);
                 } else {
-                    console.log(`[${id}]: copying to "${targetDir}"`);
+                    this.logger.info(`[${id}]: copying to "${targetDir}"`);
                     const deploymentDirectory = await this.deploymentDirectory.promise;
                     await fs.mkdirp(FileUri.fsPath(deploymentDirectory));
                     await context.copy(origin, targetDir);
@@ -101,7 +104,7 @@ export abstract class AbstractPluginDirectoryHandler implements PluginDeployerDi
                     }
                 }
             } catch (e) {
-                console.warn(`[${id}]: Error when copying.`, e);
+                this.logger.warn(`[${id}]: Error when copying.`, e);
                 entry.updatePath(pathToRestore);
             }
         }

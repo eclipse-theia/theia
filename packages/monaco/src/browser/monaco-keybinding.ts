@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { KeybindingContribution, KeybindingRegistry, KeybindingScope, KeyCode } from '@theia/core/lib/browser';
 import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
-import { CommandRegistry, DisposableCollection, environment, isOSX } from '@theia/core';
+import { CommandRegistry, DisposableCollection, environment, isOSX, ILogger } from '@theia/core';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 import { KeybindingsRegistry } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybindingsRegistry';
 import { StandaloneKeybindingService, StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
@@ -36,6 +36,9 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
     @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry;
     @inject(CommandRegistry) protected readonly theiaCommandRegistry: CommandRegistry;
     @inject(MonacoContextKeyService) protected readonly contextKeyService: MonacoContextKeyService;
+
+    @inject(ILogger) @named('monaco:MonacoKeybindingContribution')
+    protected readonly logger: ILogger;
 
     @postConstruct()
     protected init(): void {
@@ -84,7 +87,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
     protected toMonacoKeybindingNumber(codes: KeyCode[]): number {
         const [firstPart, secondPart] = codes;
         if (codes.length > 2) {
-            console.warn('Key chords should not consist of more than two parts; got ', codes);
+            this.logger.warn('Key chords should not consist of more than two parts; got ', codes);
         }
         const encodedFirstPart = this.toSingleMonacoKeybindingNumber(firstPart);
         const encodedSecondPart = secondPart ? this.toSingleMonacoKeybindingNumber(secondPart) << 16 : 0;

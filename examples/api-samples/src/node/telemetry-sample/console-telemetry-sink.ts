@@ -26,7 +26,7 @@ export class ConsoleTelemetrySink implements TelemetrySink {
     readonly interests: readonly string[] = ['sample/telemetry/*'];
     readonly scope: 'local' | 'remote' = 'remote';
 
-    @inject(ILogger) @named('api-samples')
+    @inject(ILogger) @named('api-samples:ConsoleTelemetrySink')
     protected readonly logger: ILogger;
 
     handle(event: TelemetryEvent): void {

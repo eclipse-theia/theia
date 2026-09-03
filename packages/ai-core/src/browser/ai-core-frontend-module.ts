@@ -14,13 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { bindRootContributionProvider, CommandContribution, CommandHandler, ResourceResolver } from '@theia/core';
+import { bindRootContributionProvider, CommandContribution, CommandHandler, PreferenceContribution, ResourceResolver } from '@theia/core';
 import {
     RemoteConnectionProvider,
     ServiceConnectionProvider,
 } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { DefaultLanguageModelAliasRegistry } from './frontend-language-model-alias-registry';
+import { HideAiPreferencesContribution, aiConfigurationOpenPlaceholderSchema } from './hide-ai-preferences-contribution';
 import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
 import { AiConfigurationServiceImpl } from './ai-configuration-service-impl';
 import { LanguageModelAliasRegistry } from '../common/language-model-alias';
@@ -73,7 +74,7 @@ import { AIActivationService, AIActivationServiceImpl } from './ai-activation-se
 import { AgentService, AgentServiceImpl } from '../common/agent-service';
 import { AICommandHandlerFactory } from './ai-command-handler-factory';
 import { AISettingsService } from '../common/settings-service';
-import { DefaultSkillService, SkillService } from './skill-service';
+import { DefaultSkillService, SkillDirectoryContribution, SkillService } from './skill-service';
 import { SkillPromptCoordinator } from './skill-prompt-coordinator';
 import { AiCoreCommandContribution } from './ai-core-command-contribution';
 import { PromptVariableContribution } from './prompt-variable-contribution';
@@ -138,6 +139,9 @@ export default new ContainerModule(bind => {
 
     bind(SkillPromptCoordinator).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(SkillPromptCoordinator);
+
+    bindRootContributionProvider(bind, SkillDirectoryContribution);
+
     bindRootContributionProvider(bind, AIVariableContribution);
     bind(DefaultFrontendVariableService).toSelf().inSingletonScope();
     bind(FrontendVariableService).toService(DefaultFrontendVariableService);
@@ -197,6 +201,11 @@ export default new ContainerModule(bind => {
 
     bind(DefaultLanguageModelAliasRegistry).toSelf().inSingletonScope();
     bind(LanguageModelAliasRegistry).toService(DefaultLanguageModelAliasRegistry);
+
+    // Hide all AI preferences from the Settings UI; they are managed in the AI Configuration view (#316).
+    bind(PreferenceContribution).to(HideAiPreferencesContribution).inSingletonScope();
+    // ...and leave a single placeholder entry there that links to the AI Configuration view.
+    bind(PreferenceContribution).toConstantValue({ schema: aiConfigurationOpenPlaceholderSchema });
 
     // Internal implementation detail of AiConfigurationService; consumers inject AiConfigurationService.
     bind(TrustAwarePreferenceReader).toSelf().inSingletonScope();

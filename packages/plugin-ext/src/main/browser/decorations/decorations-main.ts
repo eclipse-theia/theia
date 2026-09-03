@@ -92,7 +92,7 @@ class DecorationRequestsQueue {
 export class DecorationsMainImpl implements DecorationsMain, Disposable {
 
     private readonly proxy: DecorationsExt;
-    private readonly providers = new Map<number, [Emitter<URI[]>, Disposable]>();
+    private readonly providers = new Map<number, [Emitter<URI[] | undefined>, Disposable]>();
     private readonly decorationsService: DecorationsService;
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
@@ -106,7 +106,7 @@ export class DecorationsMainImpl implements DecorationsMain, Disposable {
     }
 
     async $registerDecorationProvider(handle: number): Promise<void> {
-        const emitter = new Emitter<URI[]>();
+        const emitter = new Emitter<URI[] | undefined>();
         const queue = new DecorationRequestsQueue(this.proxy, handle);
         const registration = this.decorationsService.registerDecorationsProvider({
             onDidChange: emitter.event,
@@ -128,11 +128,11 @@ export class DecorationsMainImpl implements DecorationsMain, Disposable {
         this.providers.set(handle, [emitter, registration]);
     }
 
-    $onDidChange(handle: number, resources: UriComponents[]): void {
+    $onDidChange(handle: number, resources: UriComponents[] | null): void {
         const providerSet = this.providers.get(handle);
         if (providerSet) {
             const [emitter] = providerSet;
-            emitter.fire(resources && resources.map(r => new URI(VSCodeURI.revive(r).toString())));
+            emitter.fire(resources ? resources.map(r => new URI(VSCodeURI.revive(r).toString())) : undefined);
         }
     }
 

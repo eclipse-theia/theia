@@ -26,9 +26,9 @@ import {
     ToolRequest,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken, nls, unreachable } from '@theia/core';
+import { CancellationToken, nls, unreachable, ILogger } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 import type {
@@ -80,6 +80,9 @@ interface ToolCall {
  */
 @injectable()
 export class OpenAiResponseApiUtils {
+
+    @inject(ILogger) @named('ai-openai:OpenAiResponseApiUtils')
+    protected readonly logger: ILogger;
 
     /**
      * Handles Response API requests with proper tool calling cycles.
@@ -149,6 +152,7 @@ export class OpenAiResponseApiUtils {
             runnerOptions,
             modelId,
             this,
+            this.logger,
             isStreaming,
             cancellationToken
         );
@@ -181,7 +185,7 @@ export class OpenAiResponseApiUtils {
         if (converted.length === 0) {
             return undefined;
         }
-        console.debug(`Converted ${(tools ?? []).length} tools for Response API:`, converted.map(t => t.type === 'function' ? t.name : t.type));
+        this.logger.debug(`Converted ${(tools ?? []).length} tools for Response API:`, converted.map(t => t.type === 'function' ? t.name : t.type));
         return converted;
     }
 
@@ -189,6 +193,9 @@ export class OpenAiResponseApiUtils {
         stream: AsyncIterable<ResponseStreamEvent>,
         cancellationToken?: CancellationToken
     ): AsyncIterable<LanguageModelStreamResponsePart> {
+
+        const logger = this.logger;
+
         return {
             async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
                 let lastUsage: { input_tokens: number; output_tokens: number } | undefined;
@@ -228,7 +235,7 @@ export class OpenAiResponseApiUtils {
                                 };
                             }
                         } else if (event.type === 'error') {
-                            console.error('Response API error:', event.message);
+                            logger.error('Response API error:', event.message);
                             throw new Error(`Response API error: ${event.message}`);
                         }
                     }
@@ -412,6 +419,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
         protected readonly runnerOptions: RunnerOptions,
         protected readonly modelId: string,
         protected readonly utils: OpenAiResponseApiUtils,
+        protected readonly logger: ILogger,
         protected readonly isStreaming: boolean,
         protected readonly cancellationToken?: CancellationToken
     ) {
@@ -457,7 +465,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
     protected async startIteration(): Promise<void> {
         try {
             while (this.iteration < this.maxIterations && !this.cancellationToken?.isCancellationRequested) {
-                console.debug(`Starting Response API iteration ${this.iteration} with ${this.currentInput.length} input messages`);
+                this.logger.debug(`Starting Response API iteration ${this.iteration} with ${this.currentInput.length} input messages`);
 
                 await this.processStream();
 
@@ -621,14 +629,14 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                 break;
 
             case 'error':
-                console.error('Response API error:', event.message);
+                this.logger.error('Response API error:', event.message);
                 throw new Error(`Response API error: ${event.message}`);
         }
     }
 
     protected handleFunctionCallAdded(functionCall: ResponseFunctionToolCall): void {
         if (functionCall.id && functionCall.call_id) {
-            console.debug(`Function call added: ${functionCall.name} with id ${functionCall.id} and call_id ${functionCall.call_id}`);
+            this.logger.debug(`Function call added: ${functionCall.name} with id ${functionCall.id} and call_id ${functionCall.call_id}`);
 
             const toolCall = this.createToolCall(functionCall, functionCall.id);
             toolCall.reasoningItems = this.pendingReasoningItems.splice(0);
@@ -770,7 +778,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
     }
 
     protected handleFunctionCallDone(functionCall: ResponseFunctionToolCall): void {
-        if (!functionCall.id) { console.warn('Unexpected absence of ID for call ID', functionCall.call_id); return; }
+        if (!functionCall.id) { this.logger.warn('Unexpected absence of ID for call ID', functionCall.call_id); return; }
         const toolCall = this.currentToolCalls.get(functionCall.id);
         if (toolCall && !toolCall.call_id && functionCall.call_id) {
             toolCall.call_id = functionCall.call_id;
@@ -792,7 +800,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                     // Yield the tool call completion
                     this.handleFunctionCall(toolCall, true, result);
                 } catch (error) {
-                    console.error(`Error executing tool ${toolCall.name}:`, error);
+                    this.logger.error(`Error executing tool ${toolCall.name}:`, error);
                     toolCall.error = error instanceof Error ? error : new Error(String(error));
 
                     // Yield the tool call error
@@ -800,7 +808,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
 
                 }
             } else {
-                console.warn(`Tool ${toolCall.name} not found in request tools`);
+                this.logger.warn(`Tool ${toolCall.name} not found in request tools`);
                 toolCall.error = new Error(`Tool ${toolCall.name} not found`);
 
                 // Yield the tool call error

@@ -568,9 +568,32 @@ See: <https://github.com/eclipse-theia/theia/issues/10877#issuecomment-110700022
 
 ## React
 
+<a name="no-react-import-for-jsx"></a>
+
+* [1.](#no-react-import-for-jsx) Do not import React just to write JSX. All Theia packages are compiled with React's automatic JSX runtime, so the compiler emits the runtime import itself. Only import React where `React.*` types or APIs are used, and always from the shared re-export so that a single React instance is used.
+
+```tsx
+// bad - the import is unused, `noUnusedLocals` will report it
+import * as React from '@theia/core/shared/react';
+
+export const Hint = () => <div className='hint' />;
+
+// good - no import needed for plain JSX
+export const Hint = () => <div className='hint' />;
+
+// good - React is imported because `React.ReactNode` is used
+import * as React from '@theia/core/shared/react';
+
+export class MyWidget extends ReactWidget {
+  render(): React.ReactNode {
+    return <div className='hint' />;
+  }
+}
+```
+
 <a name="no-bind-fn-in-event-handlers"></a>
 
-* [1.](#no-bind-fn-in-event-handlers) Do not bind functions in event handlers.
+* [2.](#no-bind-fn-in-event-handlers) Do not bind functions in event handlers.
   * Extract a React component if you want to pass state to an event handler function.
 
 > Why? Because doing so creates a new instance of the event handler function on each render and breaks React element caching leading to re-rendering and bad performance.

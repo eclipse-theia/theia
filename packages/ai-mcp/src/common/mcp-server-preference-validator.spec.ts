@@ -161,6 +161,22 @@ describe('MCPServersPreference validator', () => {
             // eslint-disable-next-line no-null/no-null
             expect(reasonFor({ command: 'node', oauth: null })).to.be.undefined;
         });
+
+        it('flags a non-string cwd', () => {
+            expect(reasonFor({ command: 'node', cwd: 42 })).to.contain('"cwd" must be a string');
+        });
+
+        it('flags a non-string pluginRoot', () => {
+            expect(reasonFor({ command: 'node', pluginRoot: 42 })).to.contain('"pluginRoot" must be a string');
+        });
+
+        it('flags a non-string pluginData', () => {
+            expect(reasonFor({ command: 'node', pluginData: 42 })).to.contain('"pluginData" must be a string');
+        });
+
+        it('flags a registryMetadata block that identifies neither a registry server nor an Agent Plugin', () => {
+            expect(reasonFor({ command: 'node', registryMetadata: { version: '1.0.0' } })).to.contain('registryMetadata');
+        });
     });
 
     describe('filterValidValues', () => {
@@ -214,6 +230,57 @@ describe('MCPServersPreference validator', () => {
 
         it('rejects a non-object value', () => {
             expect(MCPServersPreference.isValue('not-an-object')).to.be.false;
+        });
+
+        it('accepts a local entry carrying cwd, pluginRoot and pluginData', () => {
+            expect(MCPServersPreference.isValue({
+                command: './bin/validator',
+                cwd: '/home/alex/.agents/plugins/devtools',
+                pluginRoot: '/home/alex/.agents/plugins/devtools',
+                pluginData: '/home/alex/.agents/plugins/data/devtools'
+            })).to.be.true;
+        });
+
+        it('accepts an entry whose registryMetadata carries a pluginId and no serverId', () => {
+            expect(MCPServersPreference.isValue({
+                command: 'npx',
+                registryMetadata: { pluginId: 'io.github.acme/devtools', version: '1.0.0' }
+            })).to.be.true;
+        });
+
+        it('still accepts an entry whose registryMetadata carries only a serverId', () => {
+            expect(MCPServersPreference.isValue({
+                command: 'npx',
+                registryMetadata: { serverId: 'io.github.acme/brave-search', configHash: 'abc' }
+            })).to.be.true;
+        });
+
+        it('rejects a registryMetadata block with neither serverId nor pluginId', () => {
+            expect(MCPServersPreference.isValue({ command: 'npx', registryMetadata: { version: '1.0.0' } })).to.be.false;
+        });
+
+        it('rejects a registryMetadata block whose pluginId is not a string', () => {
+            expect(MCPServersPreference.isValue({ command: 'npx', registryMetadata: { pluginId: 42 } })).to.be.false;
+        });
+
+        it('rejects a plugin-provided entry that also declares a serverUrl, keeping the local/remote discriminator intact', () => {
+            expect(MCPServersPreference.isValue({
+                command: 'npx',
+                serverUrl: 'https://mcp.example.com/mcp',
+                registryMetadata: { pluginId: 'io.github.acme/devtools' }
+            })).to.be.false;
+        });
+
+        it('rejects a plugin-provided local entry that declares oauth', () => {
+            expect(MCPServersPreference.isValue({
+                command: 'npx',
+                oauth: {},
+                registryMetadata: { pluginId: 'io.github.acme/devtools' }
+            })).to.be.false;
+        });
+
+        it('rejects a local entry whose pluginRoot is not a string', () => {
+            expect(MCPServersPreference.isValue({ command: 'npx', pluginRoot: 42 })).to.be.false;
         });
     });
 });

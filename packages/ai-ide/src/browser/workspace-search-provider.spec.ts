@@ -62,8 +62,7 @@ describe('Workspace Search Provider Cancellation Tests', () => {
         const mockWorkspaceScope = {
             getRootMapping: () => new Map([['workspace', new URI('file:///workspace')]]),
             getContainingRoot: () => new URI('file:///workspace'),
-            ensureWithinWorkspace: () => { },
-            resolveRelativePath: (path: string) => new URI(`file:///workspace/${path}`)
+            resolveAccessiblePath: async (path: string) => new URI(`file:///workspace/${path}`)
         } as unknown as WorkspaceFunctionScope;
 
         const mockPreferenceService = {

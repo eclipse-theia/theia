@@ -19,13 +19,14 @@ import * as path from 'path';
 const vhost = require('vhost');
 import * as express from '@theia/core/shared/express';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { WebviewExternalEndpoint } from '../common/webview-protocol';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { WsRequestValidatorContribution } from '@theia/core/lib/node/ws-request-validators';
 import { MaybePromise } from '@theia/core/lib/common';
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { BackendRemoteService } from '@theia/core/lib/node/remote/backend-remote-service';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class PluginApiContribution implements BackendApplicationContribution, WsRequestValidatorContribution {
@@ -40,10 +41,13 @@ export class PluginApiContribution implements BackendApplicationContribution, Ws
     @inject(BackendRemoteService)
     protected readonly remoteService: BackendRemoteService;
 
+    @inject(ILogger) @named('plugin-ext:PluginApiContribution')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     protected init(): void {
         const webviewExternalEndpoint = this.webviewExternalEndpoint();
-        console.log(`Configuring to accept webviews on '${webviewExternalEndpoint}' hostname.`);
+        this.logger.info(`Configuring to accept webviews on '${webviewExternalEndpoint}' hostname.`);
         this.webviewExternalEndpointRegExp = new RegExp(webviewExternalEndpoint, 'i');
     }
 
