@@ -99,7 +99,8 @@ describe('PreferenceRegistryExtImpl:', () => {
         });
 
         it('Reports true of supersection if subsection changes', () => {
-            const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent']([{ newValue: 'foo', preferenceName: 'whole-section.subsection.item', affectedOverrides: [] }]);
+            const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent']
+                ([{ newValue: 'foo', preferenceName: 'whole-section.subsection.item', affectedOverrides: [] }]);
             expect(affectsChecker.affectsConfiguration('whole-section')).to.be.true;
         });
 
@@ -112,7 +113,8 @@ describe('PreferenceRegistryExtImpl:', () => {
         });
 
         it('Does not report true if a different subsection changes:', () => {
-            const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent']([{ newValue: 'bar', preferenceName: 'whole-section.subsection.itemA', affectedOverrides: [] }]);
+            const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent']
+                ([{ newValue: 'bar', preferenceName: 'whole-section.subsection.itemA', affectedOverrides: [] }]);
             expect(affectsChecker.affectsConfiguration('whole-section.subsection.itemB')).to.be.false;
         });
 
