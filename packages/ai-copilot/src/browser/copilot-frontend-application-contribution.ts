@@ -117,7 +117,7 @@ export class CopilotFrontendApplicationContribution implements FrontendApplicati
      * none is configured.
      */
     protected async updateExecutablePath(): Promise<void> {
-        const executablePath = this.preferenceService.get<string>(COPILOT_EXECUTABLE_PATH_PREF, '').trim();
+        const executablePath = this.preferenceService.get(COPILOT_EXECUTABLE_PATH_PREF, '').trim();
         await this.authService.setExecutablePath(executablePath || undefined);
     }
 
