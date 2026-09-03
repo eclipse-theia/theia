@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { expect } from 'chai';
-import { OpenAiModelUtils } from './openai-language-model';
+import { OpenAiModelUtils } from './openai-model-utils';
 import { LanguageModelMessage } from '@theia/ai-core';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 
@@ -260,6 +260,28 @@ describe('OpenAiModelUtils - processMessages', () => {
                 { role: 'user', content: 'user msg' },
                 { role: 'assistant', content: 'ai msg' }
             ]);
+        });
+    });
+
+    describe('compaction messages', () => {
+        it('drops a CompactionMessage without throwing', () => {
+            const messages: LanguageModelMessage[] = [
+                { actor: 'user', type: 'text', text: 'hello' },
+                { actor: 'ai', type: 'compaction', provider: 'openai-responses', data: { id: 'c1', encrypted_content: 'enc' } },
+                { actor: 'ai', type: 'text', text: 'world' }
+            ];
+
+            let result: ReturnType<OpenAiModelUtils['processMessages']> | undefined;
+            expect(() => { result = utils.processMessages(messages, 'developer'); }).to.not.throw();
+
+            // The compaction marker must not appear in the output
+            const hasCompaction = result?.some(m => 'content' in m && typeof m.content === 'string' && m.content.includes('enc'));
+            expect(hasCompaction).to.equal(false);
+
+            // The surrounding real messages must still be present
+            const texts = result?.map(m => typeof m.content === 'string' ? m.content : '').join(' ');
+            expect(texts).to.contain('hello');
+            expect(texts).to.contain('world');
         });
     });
 });

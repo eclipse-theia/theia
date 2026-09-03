@@ -15,21 +15,39 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import { Container, injectable } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { ToolCallExecutor, ToolCallExecutorImpl } from '@theia/ai-core';
 import { Message } from 'ollama';
-import { OllamaModel } from './ollama-language-model';
+import { OllamaModel, OllamaModelParams } from './ollama-language-model';
 
+@injectable()
 class TestableOllamaModel extends OllamaModel {
-    constructor() {
-        super('test-id', 'test-model', { status: 'ready' }, () => 'http://localhost:11434');
-    }
-
     public callMergeConsecutiveAssistantMessages(messages: Message[]): Message[] {
         return this.mergeConsecutiveAssistantMessages(messages);
     }
 }
 
+function createModel(): TestableOllamaModel {
+    const parent = new Container();
+    parent.bind(ToolCallExecutor).to(ToolCallExecutorImpl);
+    parent.bind(ILogger).to(MockLogger);
+    parent.bind(TestableOllamaModel).toSelf().inTransientScope();
+
+    const child = new Container();
+    child.parent = parent;
+    child.bind(OllamaModelParams).toConstantValue({
+        id: 'test-id',
+        model: 'test-model',
+        status: { status: 'ready' },
+        host: () => 'http://localhost:11434'
+    });
+    return child.get(TestableOllamaModel);
+}
+
 describe('OllamaModel - mergeConsecutiveAssistantMessages', () => {
-    const model = new TestableOllamaModel();
+    const model = createModel();
 
     it('should merge an assistant text message followed by an assistant tool_use into a single message', () => {
         const messages: Message[] = [

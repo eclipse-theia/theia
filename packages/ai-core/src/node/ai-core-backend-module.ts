@@ -40,7 +40,9 @@ import {
     LanguageModelRegistryClient,
     TokenUsageService,
     TokenUsageServiceClient,
-    TOKEN_USAGE_SERVICE_PATH
+    TOKEN_USAGE_SERVICE_PATH,
+    ToolCallExecutor,
+    ToolCallExecutorImpl
 } from '../common';
 import { BackendLanguageModelRegistryImpl } from './backend-language-model-registry';
 import { TokenUsageServiceImpl } from './token-usage-service-impl';
@@ -112,5 +114,7 @@ const aiCoreConnectionModule = ConnectionContainerModule.create(({ bind, bindBac
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: AgentSettingsPreferenceSchema });
     bindAICorePreferences(bind);
+    bind(ToolCallExecutorImpl).toSelf().inSingletonScope();
+    bind(ToolCallExecutor).toService(ToolCallExecutorImpl);
     bind(ConnectionContainerModule).toConstantValue(aiCoreConnectionModule);
 });

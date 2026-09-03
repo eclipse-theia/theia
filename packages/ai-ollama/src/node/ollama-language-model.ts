@@ -24,6 +24,9 @@ import {
     ReasoningSettings,
     ReasoningSupport,
     ToolCall,
+    ToolCallExecutor,
+    ToolCallResult,
+    ToolInvocationContext,
     ToolRequest,
     ToolRequestParameterProperty,
     ToolRequestParametersProperties,
@@ -34,13 +37,29 @@ import {
     LanguageModelTextResponse,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken } from '@theia/core';
+import { CancellationToken, ILogger } from '@theia/core';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall } from 'ollama';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { ollamaThinkParamFor } from './ollama-reasoning';
 
 export const OllamaModelIdentifier = Symbol('OllamaModelIdentifier');
 
+export interface OllamaModelParams {
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    host: () => string | undefined;
+    proxy?: string;
+    reasoningSupport?: ReasoningSupport;
+}
+
+export const OllamaModelParams = Symbol('OllamaModelParams');
+
+export const OllamaLanguageModelFactory = Symbol('OllamaLanguageModelFactory');
+export type OllamaLanguageModelFactory = (params: OllamaModelParams) => OllamaModel;
+
+@injectable()
 export class OllamaModel implements LanguageModel {
 
     protected readonly DEFAULT_REQUEST_SETTINGS: Partial<Omit<ChatRequest, 'stream' | 'model'>> = {
@@ -52,19 +71,32 @@ export class OllamaModel implements LanguageModel {
     readonly providerId = 'ollama';
     readonly vendor: string = 'Ollama';
 
-    /**
-     * @param id the unique id for this language model. It will be used to identify the model in the UI.
-     * @param model the unique model name as used in the Ollama environment.
-     * @param hostProvider a function to provide the host URL for the Ollama server.
-     */
-    constructor(
-        public readonly id: string,
-        protected readonly model: string,
-        public status: LanguageModelStatus,
-        protected host: () => string | undefined,
-        public proxy?: string,
-        public reasoningSupport?: ReasoningSupport
-    ) { }
+    id: string;
+    protected model: string;
+    status: LanguageModelStatus;
+    protected host: () => string | undefined;
+    proxy?: string;
+    reasoningSupport?: ReasoningSupport;
+
+    @inject(OllamaModelParams)
+    protected readonly params: OllamaModelParams;
+
+    @inject(ToolCallExecutor)
+    protected readonly toolCallExecutor: ToolCallExecutor;
+
+    @inject(ILogger) @named('ai-ollama:OllamaModel')
+    protected readonly logger: ILogger;
+
+    @postConstruct()
+    protected init(): void {
+        const params = this.params;
+        this.id = params.id;
+        this.model = params.model;
+        this.status = params.status;
+        this.host = params.host;
+        this.proxy = params.proxy;
+        this.reasoningSupport = params.reasoningSupport;
+    }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const settings = this.getSettings(request);
@@ -192,7 +224,7 @@ export class OllamaModel implements LanguageModel {
                         yield { tool_calls: toolCallsForResponse };
 
                         // Now handle the tool calls
-                        const processedToolCallsForResponse = await that.processToolCalls(toolCallsForResponse, chatRequest);
+                        const processedToolCallsForResponse = await that.processToolCalls(toolCallsForResponse, chatRequest, cancellation);
                         yield { tool_calls: processedToolCallsForResponse };
 
                         // Continue the conversation with tool results
@@ -209,7 +241,7 @@ export class OllamaModel implements LanguageModel {
                         }
                     }
                 } catch (error) {
-                    console.error('Error in Ollama streaming:', error.message);
+                    that.logger.error('Error in Ollama streaming:', error.message);
                     throw error;
                 }
             }
@@ -257,8 +289,7 @@ export class OllamaModel implements LanguageModel {
             }
             return result;
         } catch (error) {
-            // TODO use ILogger
-            console.log('Failed to parse structured response from the language model.', error);
+            this.logger.warn('Failed to parse structured response from the language model.', error);
             const result: LanguageModelParsedResponse = {
                 content: response.message.content,
                 parsed: {}
@@ -326,7 +357,7 @@ export class OllamaModel implements LanguageModel {
                 });
 
                 const preparedToolCalls = this.createToolCalls(toolCalls, lastUpdated);
-                await this.processToolCalls(preparedToolCalls, chatRequest);
+                await this.processToolCalls(preparedToolCalls, chatRequest, cancellation);
                 if (cancellation?.isCancellationRequested) {
                     return { text: '' };
                 }
@@ -342,7 +373,7 @@ export class OllamaModel implements LanguageModel {
             }
             return result;
         } catch (error) {
-            console.error('Error in ollama call:', error.message);
+            this.logger.error('Error in ollama call:', error.message);
             throw error;
         }
     }
@@ -363,20 +394,29 @@ export class OllamaModel implements LanguageModel {
         return toolCallsForResponse;
     }
 
-    private async processToolCalls(toolCalls: ToolCall[], chatRequest: ExtendedChatRequest): Promise<ToolCall[]> {
+    protected async processToolCalls(toolCalls: ToolCall[], chatRequest: ExtendedChatRequest, cancellation?: CancellationToken): Promise<ToolCall[]> {
         const tools: ToolWithHandler[] = chatRequest.tools ?? [];
+        const toolRequests: ToolRequest[] = tools.map(tool => ({
+            id: tool.function.name ?? '',
+            name: tool.function.name ?? '',
+            parameters: { type: 'object', properties: {} },
+            handler: async (argString, ctx) => (await tool.handler(argString, ctx)) as ToolCallResult
+        }));
+
+        const results = await this.toolCallExecutor.executeToolCalls(
+            toolCalls.map(call => ({ id: call.id ?? call.function!.name!, name: call.function!.name!, arguments: call.function!.arguments! })),
+            toolRequests,
+            { cancellationToken: cancellation }
+        );
+
+        // Build the messages and response entries from the input-ordered results so that the
+        // next turn sees a deterministic ordering.
         const toolCallsForResponse: ToolCall[] = [];
-
-        for (const call of toolCalls) {
-            const functionToCall = tools.find(tool => tool.function.name === call.function!.name);
-            let funcResult: string;
-
-            if (functionToCall) {
-                const rawResult = await functionToCall.handler(call.function!.arguments!);
-                funcResult = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult);
-            } else {
-                funcResult = 'error: Tool not found';
-            }
+        toolCalls.forEach((call, index) => {
+            const outcome = results[index];
+            const funcResult = outcome.notFound
+                ? 'error: Tool not found'
+                : typeof outcome.result === 'string' ? outcome.result : JSON.stringify(outcome.result);
 
             chatRequest.messages.push({
                 role: 'tool',
@@ -389,7 +429,7 @@ export class OllamaModel implements LanguageModel {
                 result: String(funcResult),
                 finished: true
             });
-        }
+        });
         return toolCallsForResponse;
     }
 
@@ -466,7 +506,7 @@ export class OllamaModel implements LanguageModel {
             // Ollama has no server-side compaction; the opaque marker carries no representable content and is dropped.
             return undefined;
         } else {
-            console.log(`Unknown message type encountered when converting message to Ollama format: ${JSON.stringify(message)}. Ignoring message.`);
+            this.logger.warn(`Unknown message type encountered when converting message to Ollama format: ${JSON.stringify(message)}. Ignoring message.`);
             return undefined;
         }
 
@@ -527,7 +567,7 @@ export class OllamaModel implements LanguageModel {
         if (actor === 'system') {
             return 'system';
         }
-        console.log(`Unknown actor encountered when converting message to Ollama format: ${actor}. Falling back to 'user'.`);
+        this.logger.warn(`Unknown actor encountered when converting message to Ollama format: ${actor}. Falling back to 'user'.`);
         return 'user'; // default fallback
     }
 }
@@ -536,7 +576,7 @@ export class OllamaModel implements LanguageModel {
  * Extended Tool containing a handler
  * @see Tool
  */
-type ToolWithHandler = Tool & { handler: (arg_string: string) => Promise<unknown> };
+type ToolWithHandler = Tool & { handler: (arg_string: string, ctx?: ToolInvocationContext) => Promise<unknown> };
 
 /**
  * Extended chat request with mandatory messages and ToolWithHandler tools

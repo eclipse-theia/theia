@@ -17,8 +17,7 @@
 import { LanguageModelRegistry, LanguageModelStatus, ReasoningSupport } from '@theia/ai-core';
 import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { DeveloperMessageSettings, OpenAiModel, OpenAiModelUtils } from './openai-language-model';
-import { OpenAiResponseApiUtils } from './openai-response-api-utils';
+import { DeveloperMessageSettings, OpenAiLanguageModelFactory, OpenAiModel } from './openai-language-model';
 import { getOpenAiModelDefaults } from './openai-model-defaults';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common';
 import { ILogger } from '@theia/core';
@@ -36,11 +35,8 @@ interface ResolvedModelMetadata {
 @injectable()
 export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsManager {
 
-    @inject(OpenAiModelUtils)
-    protected readonly openAiModelUtils: OpenAiModelUtils;
-
-    @inject(OpenAiResponseApiUtils)
-    protected readonly responseApiUtils: OpenAiResponseApiUtils;
+    @inject(OpenAiLanguageModelFactory)
+    protected readonly openAiLanguageModelFactory: OpenAiLanguageModelFactory;
 
     @inject(ILogger) @named('ai-openai:OpenAiLanguageModelsManagerImpl')
     protected readonly logger: ILogger;
@@ -126,29 +122,27 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
-                    new OpenAiModel(
-                        modelDescription.id,
-                        modelDescription.model,
+                    this.openAiLanguageModelFactory({
+                        id: modelDescription.id,
+                        model: modelDescription.model,
                         status,
-                        metadata.enableStreaming,
-                        apiKeyProvider,
-                        apiVersionProvider,
-                        metadata.supportsStructuredOutput,
-                        modelDescription.url,
-                        modelDescription.deployment,
-                        this.openAiModelUtils,
-                        this.responseApiUtils,
-                        metadata.developerMessageSettings,
-                        modelDescription.maxRetries,
-                        modelDescription.useResponseApi ?? false,
-                        proxyUrl,
-                        metadata.reasoningSupport,
-                        metadata.maxInputTokens,
+                        enableStreaming: metadata.enableStreaming,
+                        apiKey: apiKeyProvider,
+                        apiVersion: apiVersionProvider,
+                        supportsStructuredOutput: metadata.supportsStructuredOutput,
+                        url: modelDescription.url,
+                        deployment: modelDescription.deployment,
+                        developerMessageSettings: metadata.developerMessageSettings,
+                        maxRetries: modelDescription.maxRetries,
+                        useResponseApi: modelDescription.useResponseApi ?? false,
+                        proxy: proxyUrl,
+                        reasoningSupport: metadata.reasoningSupport,
+                        maxInputTokens: metadata.maxInputTokens,
                         serverTools,
-                        metadata.serverSideCompactionSupport,
-                        modelDescription.serverSideCompactionEnabledByDefault ?? false,
-                        modelDescription.serverSideCompactionTokenThresholdByDefault
-                    )
+                        serverSideCompactionSupport: metadata.serverSideCompactionSupport,
+                        serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false,
+                        serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault
+                    })
                 ]);
             }
         }
