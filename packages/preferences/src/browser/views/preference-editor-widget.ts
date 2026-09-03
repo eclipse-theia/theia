@@ -21,7 +21,6 @@ import * as deepEqual from 'fast-deep-equal';
 import {
     CompositeTreeNode,
     SelectableTreeNode,
-    StatefulWidget,
     TopDownTreeIterator,
     ExpandableTreeNode,
 } from '@theia/core/lib/browser';
@@ -37,12 +36,8 @@ import { PreferencesScopeTabBar } from './preference-scope-tabbar-widget';
 import { PreferenceNodeRendererCreatorRegistry } from './components/preference-node-renderer-creator';
 import { COMMONLY_USED_SECTION_PREFIX } from '../util/preference-layout';
 
-export interface PreferencesEditorState {
-    firstVisibleChildID: string,
-}
-
 @injectable()
-export class PreferencesEditorWidget extends BaseWidget implements StatefulWidget {
+export class PreferencesEditorWidget extends BaseWidget {
     static readonly ID = 'settings.editor';
     static readonly LABEL = nls.localizeByDefault('Settings Editor');
 
@@ -161,7 +156,12 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     }
 
     protected getScrollTarget(source: PreferenceFilterChangeSource): string | undefined {
-        if (source !== PreferenceFilterChangeSource.Search && source !== PreferenceFilterChangeSource.Category) {
+        if (source === PreferenceFilterChangeSource.Category) {
+            // A newly selected category always opens at its top. Scrolling back to the last focused
+            // control would re-select its (previous) category in the tree and desync tree and editor.
+            return undefined;
+        }
+        if (source !== PreferenceFilterChangeSource.Search) {
             return this.firstVisibleChildID;
         }
         if (!this.model.isFiltered && this.lastFocusedRendererNodeId && this.isRendererInViewport(this.lastFocusedRendererNodeId)) {
@@ -285,13 +285,14 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
      */
     protected isOutsideSelectedCategory(node: Preference.TreeNode): boolean {
         const categoryId = this.model.categoryFilterId;
-        if (!categoryId) {
+        if (!categoryId || node.id === categoryId) {
             return false;
         }
-        if (node.id === categoryId || this.model.isDescendantOfCategory(node, categoryId)) {
+        const category = this.model.getNode(categoryId);
+        if (!CompositeTreeNode.is(category) || CompositeTreeNode.isAncestor(category, node)) {
             return false;
         }
-        return !this.model.isCompositeAncestorOfCategory(node, categoryId);
+        return !(CompositeTreeNode.is(node) && CompositeTreeNode.isAncestor(node, category));
     }
 
     /**
@@ -318,25 +319,45 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     protected pinCategoryHeaders(): void {
         requestAnimationFrame(() => {
             const categoryId = this.model.categoryFilterId;
-            let cumulativeTop = 0;
+            const stackedHeaders = categoryId ? this.getStackedHeaderRenderers(categoryId) : [];
+            // Read all heights before writing any styles, so that the layout is computed only once.
+            const heights = stackedHeaders.map(renderer => renderer.node.offsetHeight);
+            const stackedTops = new Map<string, number>();
+            let stackHeight = 0;
+            stackedHeaders.forEach((renderer, index) => {
+                stackedTops.set(renderer.nodeId, stackHeight);
+                stackHeight += heights[index];
+            });
             for (const [, renderer] of this.allRenderers()) {
-                const node = this.model.getNode(renderer.nodeId);
-                if (!CompositeTreeNode.is(node)) {
+                if (!CompositeTreeNode.is(this.model.getNode(renderer.nodeId))) {
                     continue;
                 }
                 const wrapper = renderer.node;
                 if (categoryId && renderer.visible) {
                     wrapper.classList.add('theia-settings-pinned-category-header');
-                    wrapper.style.top = `${cumulativeTop}px`;
-                    if (node.id === categoryId || this.model.isCompositeAncestorOfCategory(node, categoryId)) {
-                        cumulativeTop += wrapper.offsetHeight;
-                    }
+                    wrapper.style.top = `${stackedTops.get(renderer.nodeId) ?? stackHeight}px`;
                 } else {
                     wrapper.classList.remove('theia-settings-pinned-category-header');
                     wrapper.style.top = '';
                 }
             }
         });
+    }
+
+    /**
+     * @returns the visible header renderers of the selected category and its ancestors,
+     * outermost first, i.e. in document order.
+     */
+    protected getStackedHeaderRenderers(categoryId: string): GeneralPreferenceNodeRenderer[] {
+        const renderers: GeneralPreferenceNodeRenderer[] = [];
+        for (let node = this.model.getNode(categoryId); node && Preference.TreeNode.is(node); node = node.parent) {
+            const { id, collection } = this.analyzeIDAndGetRendererGroup(node.id);
+            const renderer = collection.get(id);
+            if (renderer?.visible) {
+                renderers.unshift(renderer);
+            }
+        }
+        return renderers;
     }
 
     protected resetScroll(nodeIDToScrollTo?: string): void {
@@ -386,7 +407,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         const { scrollTop } = this.scrollContainer;
         for (const [, renderer] of this.allRenderers()) {
             const { offsetTop, offsetHeight, offsetParent } = renderer.node;
-            // Skip hidden renderers (display:none) — they report offsetTop/offsetHeight 0
+            // Skip hidden renderers (display:none): they report offsetTop/offsetHeight 0
             // and would otherwise match scrollTop===0, hijacking the selection back to
             // the first hidden category.
             if (!offsetParent) {
@@ -472,18 +493,5 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
 
     protected override getScrollContainer(): HTMLElement {
         return this.scrollContainer;
-    }
-
-    storeState(): PreferencesEditorState {
-        return {
-            firstVisibleChildID: this.firstVisibleChildID,
-        };
-    }
-
-    restoreState(oldState: PreferencesEditorState): void {
-        // The stored scroll target is deliberately not restored: the editor always opens on
-        // the default 'Commonly Used' category, so a scroll target from a previous session
-        // would be hidden by the category filter, and restoring it would only cause the tree
-        // selection to get out of sync with the shown page.
     }
 }

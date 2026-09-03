@@ -228,10 +228,12 @@ export class TheiaPreferenceView extends TheiaView {
         await viewElement?.waitForSelector(this.getPreferenceSelector(preferenceId), { timeout: this.customTimeout });
     }
 
-    private getPreferenceSelector(preferenceId: string): string {
-        // ':visible' filters out hidden duplicates, e.g. the copy of a preference in the
-        // 'Commonly Used' section, which is hidden while a search filter is active.
-        return `li[data-pref-id="${preferenceId}"]:visible`;
+    /**
+     * @param visibleOnly filters out hidden rows, e.g. the copy of a preference in the
+     * 'Commonly Used' section, which is hidden while a search filter is active.
+     */
+    private getPreferenceSelector(preferenceId: string, visibleOnly: boolean = true): string {
+        return `li[data-pref-id="${preferenceId}"]${visibleOnly ? ':visible' : ''}`;
     }
 
     private getPreferenceEditorSelector(preferenceId: string, elementType: string): string {
@@ -262,10 +264,14 @@ export class TheiaPreferenceView extends TheiaView {
     async waitForUnmodified(preferenceId: string): Promise<void> {
         await this.activate();
         const viewElement = await this.viewElement();
-        await viewElement?.waitForSelector(`${this.getPreferenceGutterSelector(preferenceId)}${this.modificationIndicator}`, { state: 'detached', timeout: this.customTimeout });
+        // Match hidden rows too: a row hidden by the category filter must not satisfy the
+        // 'detached' wait while its modification indicator is still present.
+        await viewElement?.waitForSelector(
+            `${this.getPreferenceGutterSelector(preferenceId, false)}${this.modificationIndicator}`, { state: 'detached', timeout: this.customTimeout }
+        );
     }
 
-    private getPreferenceGutterSelector(preferenceId: string): string {
-        return `${this.getPreferenceSelector(preferenceId)} .pref-context-gutter`;
+    private getPreferenceGutterSelector(preferenceId: string, visibleOnly: boolean = true): string {
+        return `${this.getPreferenceSelector(preferenceId, visibleOnly)} .pref-context-gutter`;
     }
 }

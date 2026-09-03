@@ -34,6 +34,9 @@ import { Preference } from './util/preference-types';
 import { Event } from '@theia/core/lib/common';
 import { COMMONLY_USED_SECTION_PREFIX } from './util/preference-layout';
 
+/** Node id of the 'Commonly Used' group, see `PreferenceTreeGenerator`. */
+const COMMONLY_USED_NODE_ID = `${COMMONLY_USED_SECTION_PREFIX}@${COMMONLY_USED_SECTION_PREFIX}`;
+
 export interface PreferenceTreeNodeProps extends NodeProps {
     visibleChildren: number;
     isExpansible?: boolean;
@@ -129,6 +132,7 @@ export class PreferenceTreeModel extends TreeModelImpl {
             this.scopeTracker.onScopeChanged(scopeDetails => {
                 this._currentScope = scopeDetails.scope;
                 this.updateFilteredRows(PreferenceFilterChangeSource.Scope);
+                this.ensureSelectedCategoryHasVisibleSettings();
             }),
             this.filterInput.onFilterChanged(newSearchTerm => {
                 this.lastSearchedTags = Array.from(newSearchTerm.matchAll(/@tag:([^\s]+)/g)).map(match => match[0].slice(5));
@@ -172,6 +176,7 @@ export class PreferenceTreeModel extends TreeModelImpl {
         }
         this.updateFilteredRows(PreferenceFilterChangeSource.Schema);
         this.restoreSelectionInNewTree();
+        this.ensureSelectedCategoryHasVisibleSettings();
         this.applyInitialSelection();
     }
 
@@ -221,17 +226,33 @@ export class PreferenceTreeModel extends TreeModelImpl {
      * @returns `true` if the category was found and selected.
      */
     protected selectDefaultCategory(): boolean {
-        if (!CompositeTreeNode.is(this.root)) {
-            return false;
-        }
-        const commonlyUsed = this.root.children.find(
-            child => Preference.TreeNode.is(child) && child.id.startsWith(COMMONLY_USED_SECTION_PREFIX),
-        );
+        const commonlyUsed = this.getNode(COMMONLY_USED_NODE_ID);
         if (commonlyUsed && SelectableTreeNode.is(commonlyUsed)) {
             this.selectNode(commonlyUsed);
             return true;
         }
         return false;
+    }
+
+    /**
+     * Falls back to the default category when the selected category has no settings left to
+     * show, e.g. after switching to a scope in which none of its settings are valid. Otherwise
+     * the editor would show an empty page for a category the tree no longer lists. Clears the
+     * selection instead if the default category has no settings to show either.
+     */
+    protected ensureSelectedCategoryHasVisibleSettings(): void {
+        if (!this._categoryFilterId || this.hasVisibleSettings(this._categoryFilterId)) {
+            return;
+        }
+        if (this.hasVisibleSettings(COMMONLY_USED_NODE_ID)) {
+            this.selectDefaultCategory();
+        } else {
+            this.clearSelection();
+        }
+    }
+
+    protected hasVisibleSettings(categoryId: string): boolean {
+        return !!this._currentRows.get(categoryId)?.visibleChildren;
     }
 
     protected updateRows(): void {
@@ -356,35 +377,6 @@ export class PreferenceTreeModel extends TreeModelImpl {
     getNodeFromPreferenceId(id: string): Preference.TreeNode | undefined {
         const node = this.getNode(this.treeGenerator.getNodeId(id));
         return node && Preference.TreeNode.is(node) ? node : undefined;
-    }
-
-    /**
-     * @returns `true` if any ancestor of `node` has id `categoryId`. The check is
-     * **strict** — `node === category` returns `false`. Callers that should treat the
-     * selected category itself as "inside" must check `node.id === categoryId` first.
-     */
-    isDescendantOfCategory(node: TreeNode, categoryId: string): boolean {
-        let current: TreeNode | undefined = node.parent;
-        while (current) {
-            if (current.id === categoryId) {
-                return true;
-            }
-            current = current.parent;
-        }
-        return false;
-    }
-
-    /**
-     * @returns `true` if `node` is a strict composite ancestor of the category with id
-     * `categoryId` — i.e. the category itself sits somewhere in `node`'s subtree.
-     * Used to keep parent category headers visible above the selected category.
-     */
-    isCompositeAncestorOfCategory(node: TreeNode, categoryId: string): boolean {
-        if (!CompositeTreeNode.is(node) || node.id === categoryId) {
-            return false;
-        }
-        const category = this.getNode(categoryId);
-        return !!category && this.isDescendantOfCategory(category, node.id);
     }
 
     /**

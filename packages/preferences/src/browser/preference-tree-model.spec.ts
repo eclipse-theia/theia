@@ -24,7 +24,7 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { Emitter, ILogger, PreferenceSchemaService, PreferenceService } from '@theia/core';
+import { Emitter, ILogger, PreferenceSchemaService, PreferenceScope, PreferenceService } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { CompositeTreeNode, createTreeContainer, LabelProvider } from '@theia/core/lib/browser';
 import { PreferenceTreeModel } from './preference-tree-model';
@@ -48,6 +48,8 @@ describe('PreferenceTreeModel', () => {
 
     let searchbarEmitter: Emitter<string>;
     let schemaEmitter: Emitter<CompositeTreeNode>;
+    let scopeEmitter: Emitter<Preference.SelectedScopeDetails>;
+    let isValidInScope: (preferenceId: string, scope: number) => boolean;
 
     function createComposite(group: string, id: string, parent: CompositeTreeNode, depth: number, expandable: boolean): Preference.CompositeTreeNode {
         const node: Preference.CompositeTreeNode = {
@@ -110,6 +112,8 @@ describe('PreferenceTreeModel', () => {
         const parent = new Container();
         searchbarEmitter = new Emitter<string>();
         schemaEmitter = new Emitter<CompositeTreeNode>();
+        scopeEmitter = new Emitter<Preference.SelectedScopeDetails>();
+        isValidInScope = () => true;
         parent.bind(ILogger).to(MockLogger).inSingletonScope();
         parent.bind(LabelProvider).toConstantValue({
             getName: () => '',
@@ -118,7 +122,7 @@ describe('PreferenceTreeModel', () => {
         } as any);
         parent.bind(PreferenceSchemaService).toConstantValue({
             getSchemaProperties: () => new Map(),
-            isValidInScope: () => true,
+            isValidInScope: (preferenceId: string, scope: number) => isValidInScope(preferenceId, scope),
         } as any);
         parent.bind(PreferenceService).toConstantValue({
             ready: Promise.resolve(),
@@ -133,7 +137,7 @@ describe('PreferenceTreeModel', () => {
             getNodeId: () => '',
         } as any);
         parent.bind(PreferencesScopeTabBar).toConstantValue({
-            onScopeChanged: new Emitter().event,
+            onScopeChanged: scopeEmitter.event,
             currentScope: Preference.DEFAULT_SCOPE,
         } as any);
         const child = createTreeContainer(parent, { model: PreferenceTreeModel });
@@ -209,6 +213,66 @@ describe('PreferenceTreeModel', () => {
             schemaEmitter.fire(newFixture.root);
             expect(model.selectedNodes[0]).to.equal(model.getNode(newFixture.commonlyUsed!.id));
             expect(model.categoryFilterId).to.equal(newFixture.commonlyUsed!.id);
+        });
+
+        it('falls back to the default category when the selected category has no settings left after a schema change', async () => {
+            const fixture = createFixture();
+            const model = await createModel(fixture);
+            model.selectNode(fixture.extensions);
+            const rebuilt = createFixture();
+            rebuilt.extensions.children = [];
+            schemaEmitter.fire(rebuilt.root);
+            expect(model.selectedNodes[0]?.id).to.equal(rebuilt.commonlyUsed!.id);
+            expect(model.categoryFilterId).to.equal(rebuilt.commonlyUsed!.id);
+        });
+
+        it('selects the Commonly Used category by its exact id', async () => {
+            const fixture = createFixture(false);
+            // A group whose id merely starts with the Commonly Used prefix must not be mistaken for it.
+            const lookalikeGroup = `${COMMONLY_USED_SECTION_PREFIX}-lookalike`;
+            const lookalike = createComposite(lookalikeGroup, lookalikeGroup, fixture.root, 0, true);
+            createLeaf(lookalikeGroup, 'lookalike.setting', lookalike, 1);
+            fixture.commonlyUsed = createComposite(COMMONLY_USED_SECTION_PREFIX, COMMONLY_USED_SECTION_PREFIX, fixture.root, 0, true);
+            createLeaf(COMMONLY_USED_SECTION_PREFIX, 'files.autoSave', fixture.commonlyUsed, 1);
+            const model = await createModel(fixture);
+            expect(model.selectedNodes[0]?.id).to.equal(fixture.commonlyUsed.id);
+            expect(model.categoryFilterId).to.equal(fixture.commonlyUsed.id);
+        });
+    });
+
+    describe('scope change', () => {
+
+        function fireScopeChange(scope: number): void {
+            scopeEmitter.fire({ scope, uri: undefined, activeScopeIsFolder: false });
+        }
+
+        it('keeps the selected category when it still has settings in the new scope', async () => {
+            const fixture = createFixture();
+            const model = await createModel(fixture);
+            model.selectNode(fixture.extensions);
+            fireScopeChange(PreferenceScope.Workspace);
+            expect(model.selectedNodes[0]?.id).to.equal(fixture.extensions.id);
+            expect(model.categoryFilterId).to.equal(fixture.extensions.id);
+        });
+
+        it('falls back to the default category when the selected category has no settings in the new scope', async () => {
+            const fixture = createFixture();
+            const model = await createModel(fixture);
+            model.selectNode(fixture.extensions);
+            isValidInScope = (preferenceId, scope) => scope !== PreferenceScope.Workspace || !preferenceId.startsWith('extensions.');
+            fireScopeChange(PreferenceScope.Workspace);
+            expect(model.selectedNodes[0]?.id).to.equal(fixture.commonlyUsed!.id);
+            expect(model.categoryFilterId).to.equal(fixture.commonlyUsed!.id);
+        });
+
+        it('clears the selection when neither the selected nor the default category has settings in the new scope', async () => {
+            const fixture = createFixture();
+            const model = await createModel(fixture);
+            model.selectNode(fixture.extensions);
+            isValidInScope = (preferenceId, scope) => scope !== PreferenceScope.Workspace || preferenceId.startsWith('editor.');
+            fireScopeChange(PreferenceScope.Workspace);
+            expect(model.selectedNodes).to.have.lengthOf(0);
+            expect(model.categoryFilterId).to.be.undefined;
         });
     });
 
