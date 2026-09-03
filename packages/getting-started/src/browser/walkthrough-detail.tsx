@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import * as DOMPurify from '@theia/core/shared/dompurify';
 import { codicon } from '@theia/core/lib/browser';
 import { MarkdownRenderer, MarkdownRenderOptions, MarkdownRenderResult } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { ThemeService } from '@theia/core/lib/browser/theming';
@@ -264,7 +265,7 @@ function renderMedia(
         return <WalkthroughMedia src={media.markdown} markdownRenderer={markdownRenderer} logger={logger} onLinkClick={onLinkClick} />;
     }
     if ('svg' in media) {
-        return <WalkthroughMediaImage src={media.svg} altText={media.altText || ''} themeService={themeService} />;
+        return <WalkthroughMediaSvg src={media.svg} altText={media.altText || undefined} logger={logger} onLinkClick={onLinkClick} />;
     }
     if ('image' in media) {
         return <WalkthroughMediaImage src={media.image} altText={media.altText || ''} themeService={themeService} />;
@@ -345,3 +346,80 @@ function WalkthroughMedia(props: {
 
     return <div className='gs-walkthrough-media-markdown' ref={containerRef} />;
 }
+
+function WalkthroughMediaSvg(props: {
+    src: string;
+    altText?: string;
+    logger: ILogger;
+    onLinkClick?: (url: string) => void;
+}): React.ReactElement | undefined {
+    const [content, setContent] = React.useState<string | undefined>();
+    // eslint-disable-next-line no-null/no-null
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    const onLinkClickRef = React.useRef(props.onLinkClick);
+    onLinkClickRef.current = props.onLinkClick;
+
+    React.useEffect(() => {
+        let cancelled = false;
+        setContent(undefined);
+        fetch(PluginSharedStyle.toExternalIconUrl(props.src))
+            .then(response => (!cancelled && response.ok ? response.text() : ''))
+            .then(text => {
+                if (cancelled) {
+                    return;
+                }
+                if (text) {
+                    const sanitized = DOMPurify.sanitize(text, {
+                        USE_PROFILES: { svg: true, svgFilters: true },
+                        ADD_TAGS: ['use', 'a'],
+                        ADD_ATTR: ['xlink:href', 'href', 'target'],
+                        ALLOW_UNKNOWN_PROTOCOLS: true
+                    });
+                    setContent(sanitized || undefined);
+                } else {
+                    setContent(undefined);
+                }
+            })
+            .catch(error => {
+                if (!cancelled) {
+                    setContent(undefined);
+                    props.logger.warn(`Could not load the walkthrough media '${props.src}'.`, error);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [props.src, props.logger]);
+
+    const handleClick = React.useCallback((event: React.MouseEvent) => {
+        const target = event.target as Element | null;
+        const anchor = target?.closest('a');
+        if (!anchor || !containerRef.current?.contains(anchor)) {
+            return;
+        }
+        const href = anchor.getAttribute('href') || anchor.getAttribute('xlink:href');
+        if (href) {
+            event.preventDefault();
+            event.stopPropagation();
+            onLinkClickRef.current?.(href);
+        }
+    }, []);
+
+    if (!content) {
+        return undefined;
+    }
+
+    return (
+        <div
+            className='gs-walkthrough-media-svg'
+            ref={containerRef}
+            role='img'
+            aria-label={props.altText || undefined}
+            onClick={handleClick}
+            // eslint-disable-next-line react/no-danger
+            dangerouslySetInnerHTML={{ __html: content }}
+        />
+    );
+}
+
