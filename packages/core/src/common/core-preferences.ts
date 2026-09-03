@@ -96,9 +96,7 @@ export const corePreferenceSchema: PreferenceSchema = {
             markdownEnumDescriptions: [
                 nls.localizeByDefault('Menu is displayed at the top of the window and only hidden in full screen mode.'),
                 nls.localizeByDefault('Menu is always visible at the top of the window even in full screen mode.'),
-                environment.electron.is()
-                    ? nls.localizeByDefault('Menu is hidden but can be displayed at the top of the window by executing the `Focus Application Menu` command.')
-                    : nls.localizeByDefault('Menu is hidden but can be displayed at the top of the window via the Alt key.'),
+                nls.localizeByDefault('Menu is hidden but can be displayed at the top of the window via the Alt key.'),
                 nls.localizeByDefault('Menu is always hidden.'),
                 environment.electron.is()
                     // we do not support the window.menuStyle setting yet, so we do not use the default string in this case yet
