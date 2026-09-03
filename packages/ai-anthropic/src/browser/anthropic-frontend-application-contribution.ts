@@ -158,8 +158,8 @@ export class AnthropicFrontendApplicationContribution extends DiscoveringProvide
         const globalCompaction = this.preferenceService.get(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
         const compactionOverride = <ServerSideCompactionSetting>this.preferenceService.get(SERVER_SIDE_COMPACTION_PREF, 'default');
         const serverSideCompactionEnabledByDefault = resolveCompactionDefault(globalCompaction, compactionOverride);
-        const globalThreshold = this.preferenceService.get<number>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD, undefined);
-        const providerThreshold = this.preferenceService.get<number>(SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF, undefined);
+        const globalThreshold = this.preferenceService.get(PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD, {fallback: undefined});
+        const providerThreshold = this.preferenceService.get(SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF, {fallback: undefined});
         const serverSideCompactionTokenThresholdByDefault = resolveCompactionTokenThresholdDefault(globalThreshold, providerThreshold);
         return preferences.reduce((acc, pref) => {
             if (!pref.model || !pref.url || typeof pref.model !== 'string' || typeof pref.url !== 'string') {
