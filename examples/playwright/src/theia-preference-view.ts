@@ -79,6 +79,7 @@ export class TheiaPreferenceView extends TheiaView {
     public customTimeout?: number;
     protected modificationIndicator = '.theia-mod-item-modified';
     protected searchInput = '.settings-search-input';
+    protected categoryTree = '.preferences-tree-widget';
     protected optionSelectLabel = '.theia-select-component-label';
     protected optionSelectDropdown = '.theia-select-component-dropdown';
     protected optionSelectDropdownValue = '.theia-select-component-option-value';
@@ -114,6 +115,45 @@ export class TheiaPreferenceView extends TheiaView {
         await this.activate();
         const scopeTab = await this.page.waitForSelector(this.getScopeSelector(scope));
         await scopeTab.click();
+    }
+
+    /**
+     * Clears the search box, so that the complete settings tree is shown again and the
+     * settings editor returns to the default category.
+     */
+    async clearSearch(): Promise<void> {
+        await this.activate();
+        const viewElement = await this.viewElement();
+        const input = await viewElement?.waitForSelector(this.searchInput, { timeout: this.customTimeout });
+        await input?.fill('');
+    }
+
+    /**
+     * Selects a category in the settings tree by following the given path of labels,
+     * e.g. `'Text Editor', 'Files'`. The settings editor is narrowed to the selected category.
+     * An active search is cleared first, as it prunes the tree and adds result counts to the labels.
+     */
+    async selectCategory(...labelPath: string[]): Promise<void> {
+        await this.clearSearch();
+        const viewElement = await this.viewElement();
+        for (const label of labelPath) {
+            const node = await viewElement?.waitForSelector(this.getCategoryNodeSelector(label), { timeout: this.customTimeout });
+            await node?.click();
+        }
+    }
+
+    /**
+     * @returns the label of the category currently selected in the settings tree, or `undefined` if none is selected.
+     */
+    async getSelectedCategory(): Promise<string | undefined> {
+        await this.activate();
+        const viewElement = await this.viewElement();
+        const label = await viewElement?.$(`${this.categoryTree} .theia-TreeNode.theia-mod-selected .theia-TreeNodeSegmentGrow`);
+        return (await label?.textContent())?.trim();
+    }
+
+    protected getCategoryNodeSelector(label: string): string {
+        return `${this.categoryTree} .theia-TreeNode:has(.theia-TreeNodeSegmentGrow:text-is("${label}"))`;
     }
 
     async getBooleanPreferenceByPath(sectionTitle: string, name: string): Promise<boolean> {

@@ -17,7 +17,7 @@
 import { expect, test } from '@playwright/test';
 import { TheiaApp } from '../theia-app';
 import { TheiaAppLoader } from '../theia-app-loader';
-import { DefaultPreferences, PreferenceIds, TheiaPreferenceView } from '../theia-preference-view';
+import { DefaultPreferences, PreferenceIds, TheiaPreferenceScope, TheiaPreferenceView } from '../theia-preference-view';
 
 test.describe('Preference View', () => {
 
@@ -118,5 +118,15 @@ test.describe('Preference View', () => {
         } finally {
             preferences.customTimeout = undefined;
         }
+    });
+
+    test('should keep the selected sub-category when switching the scope', async () => {
+        const preferences = await app.openPreferences(TheiaPreferenceView);
+        await preferences.openPreferenceScope(TheiaPreferenceScope.User);
+        await preferences.selectCategory('Text Editor', 'Files');
+        expect(await preferences.getSelectedCategory()).toBe('Files');
+
+        await preferences.openPreferenceScope(TheiaPreferenceScope.Workspace);
+        expect(await preferences.getSelectedCategory()).toBe('Files');
     });
 });

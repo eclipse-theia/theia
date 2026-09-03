@@ -319,7 +319,7 @@ export class PreferencesEditorWidget extends BaseWidget {
     protected pinCategoryHeaders(): void {
         requestAnimationFrame(() => {
             const categoryId = this.model.categoryFilterId;
-            const stackedHeaders = categoryId ? this.getStackedHeaderRenderers(categoryId) : [];
+            const stackedHeaders = this.getStackedHeaderRenderers();
             // Read all heights before writing any styles, so that the layout is computed only once.
             const heights = stackedHeaders.map(renderer => renderer.node.offsetHeight);
             const stackedTops = new Map<string, number>();
@@ -346,10 +346,14 @@ export class PreferencesEditorWidget extends BaseWidget {
 
     /**
      * @returns the visible header renderers of the selected category and its ancestors,
-     * outermost first, i.e. in document order.
+     * outermost first, i.e. in document order. Empty if no category filter is active.
      */
-    protected getStackedHeaderRenderers(categoryId: string): GeneralPreferenceNodeRenderer[] {
+    protected getStackedHeaderRenderers(): GeneralPreferenceNodeRenderer[] {
         const renderers: GeneralPreferenceNodeRenderer[] = [];
+        const categoryId = this.model.categoryFilterId;
+        if (!categoryId) {
+            return renderers;
+        }
         for (let node = this.model.getNode(categoryId); node && Preference.TreeNode.is(node); node = node.parent) {
             const { id, collection } = this.analyzeIDAndGetRendererGroup(node.id);
             const renderer = collection.get(id);
@@ -358,6 +362,14 @@ export class PreferencesEditorWidget extends BaseWidget {
             }
         }
         return renderers;
+    }
+
+    /**
+     * @returns the total height of the pinned header stack, i.e. the space at the top of the
+     * scroll container that is covered by the headers of the selected category and its ancestors.
+     */
+    protected getStackedHeaderHeight(stackedHeaders: GeneralPreferenceNodeRenderer[] = this.getStackedHeaderRenderers()): number {
+        return stackedHeaders.reduce((height, renderer) => height + renderer.node.offsetHeight, 0);
     }
 
     protected resetScroll(nodeIDToScrollTo?: string): void {
@@ -380,7 +392,8 @@ export class PreferencesEditorWidget extends BaseWidget {
                 const { id, collection } = this.analyzeIDAndGetRendererGroup(nodeIDToScrollTo);
                 const renderer = collection.get(id);
                 if (renderer?.visible) {
-                    this.scrollContainer.scrollTo(0, renderer.node.offsetTop);
+                    // Place the target right below the pinned category headers, not behind them.
+                    this.scrollContainer.scrollTo(0, renderer.node.offsetTop - this.getStackedHeaderHeight());
                     return;
                 }
             }
@@ -404,16 +417,21 @@ export class PreferencesEditorWidget extends BaseWidget {
     onScroll = throttle(this.doOnScroll.bind(this), 50);
 
     protected findFirstVisibleChildID(): string | undefined {
-        const { scrollTop } = this.scrollContainer;
+        // The pinned headers of the selected category and its ancestors always sit at the top of
+        // the scroll container. Skip them and look for the first row right below the stack,
+        // otherwise the outermost ancestor would always be reported and the tree selection would
+        // jump from the selected sub-category to its parent.
+        const stackedHeaders = this.getStackedHeaderRenderers();
+        const stackBottom = this.scrollContainer.scrollTop + this.getStackedHeaderHeight(stackedHeaders);
         for (const [, renderer] of this.allRenderers()) {
             const { offsetTop, offsetHeight, offsetParent } = renderer.node;
             // Skip hidden renderers (display:none): they report offsetTop/offsetHeight 0
             // and would otherwise match scrollTop===0, hijacking the selection back to
             // the first hidden category.
-            if (!offsetParent) {
+            if (!offsetParent || stackedHeaders.includes(renderer)) {
                 continue;
             }
-            if (Math.abs(offsetTop - scrollTop) <= offsetHeight / 2) {
+            if (Math.abs(offsetTop - stackBottom) <= offsetHeight / 2) {
                 return renderer.nodeId;
             }
         }
