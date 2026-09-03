@@ -117,6 +117,8 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             - specify `reasoningSupport` to opt in to the chat reasoning selector. Provide an object with\
             `supportedLevels` (e.g. `["off", "low", "medium", "high", "auto"]`) and an optional `defaultLevel`.\
             \n\
+            - specify `headers` to send additional HTTP headers with every request to the endpoint, e.g. headers required by a gateway in front of the API.\
+            \n\
             Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.'),
             default: [],
             items: {
@@ -191,6 +193,12 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
                                 enum: ['off', 'minimal', 'low', 'medium', 'high', 'auto']
                             }
                         }
+                    },
+                    headers: {
+                        type: 'object',
+                        additionalProperties: { type: 'string' },
+                        title: nls.localize('theia/ai/openai/customEndpoints/headers/title',
+                            'Additional HTTP headers sent with every request to the endpoint'),
                     }
                 }
             }
