@@ -511,6 +511,71 @@ describe('WalkthroughDetail', () => {
         }, 50);
     });
 
+    it('should clear previous SVG media when switching to another SVG step while loading', done => {
+        const originalFetch = global.fetch;
+        let resolveSecondFetch: (value: { ok: boolean; text: () => Promise<string> }) => void;
+        const secondFetchPromise = new Promise<{ ok: boolean; text: () => Promise<string> }>(resolve => {
+            resolveSecondFetch = resolve;
+        });
+
+        const firstSvg = '<svg id="first"><circle cx="10" cy="10" r="10" /></svg>';
+        const secondSvg = '<svg id="second"><circle cx="20" cy="20" r="20" /></svg>';
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (global as any).fetch = (url: string) => {
+            if (url.includes('first.svg')) {
+                return Promise.resolve({ ok: true, text: () => Promise.resolve(firstSvg) });
+            }
+            return secondFetchPromise;
+        };
+
+        const step1 = createMockStep({ id: 's1', media: { svg: 'first.svg' } });
+        const step2 = createMockStep({ id: 's2', media: { svg: 'second.svg' } });
+        const walkthrough = createMockWalkthrough({ steps: [step1, step2] });
+
+        root.render(
+            <WalkthroughDetail
+                logger={createMockLogger()}
+                themeService={createMockThemeService()}
+                walkthrough={walkthrough}
+                onStepSelect={() => { }}
+                onBack={() => { }}
+                selectedStep={step1}
+                markdownRenderer={mockRenderer}
+            />
+        );
+
+        setTimeout(() => {
+            assert.ok(container.querySelector('#first'), 'First SVG should be rendered');
+
+            root.render(
+                <WalkthroughDetail
+                    logger={createMockLogger()}
+                    themeService={createMockThemeService()}
+                    walkthrough={walkthrough}
+                    onStepSelect={() => { }}
+                    onBack={() => { }}
+                    selectedStep={step2}
+                    markdownRenderer={mockRenderer}
+                />
+            );
+
+            setTimeout(() => {
+                assert.ok(!container.querySelector('#first'), 'First SVG should be cleared immediately upon step switch');
+                assert.ok(!container.querySelector('.gs-walkthrough-media-svg'), 'No SVG container should be visible while loading');
+
+                resolveSecondFetch({ ok: true, text: () => Promise.resolve(secondSvg) });
+
+                setTimeout(() => {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (global as any).fetch = originalFetch;
+                    assert.ok(container.querySelector('#second'), 'Second SVG should be rendered after fetch resolves');
+                    done();
+                }, 50);
+            }, 50);
+        }, 50);
+    });
+
     it('should turn single newlines in a description into Markdown hard breaks', done => {
         const renderedMarkdown: string[] = [];
         const recordingRenderer: MarkdownRenderer = {

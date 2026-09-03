@@ -361,6 +361,7 @@ function WalkthroughMediaSvg(props: {
 
     React.useEffect(() => {
         let cancelled = false;
+        setContent(undefined);
         fetch(PluginSharedStyle.toExternalIconUrl(props.src))
             .then(response => (!cancelled && response.ok ? response.text() : ''))
             .then(text => {
