@@ -59,7 +59,7 @@ export interface PreferenceChange {
      * Tests wether the given resource is affected by the preference change.
      * @param resourceUri the uri of the resource to test.
      */
-    affects(resourceUri?: string, overideIdentifier?: string): boolean;
+    affects(resourceUri?: string, overrideIdentifier?: string): boolean;
     readonly affectedOverrides: readonly string[];
 }
 
@@ -77,10 +77,6 @@ export class PreferenceChangeImpl implements PreferenceChange {
     }
     get domain(): string[] | undefined {
         return this.change.domain;
-    }
-
-    get overrideIdentifier(): string | undefined {
-        return this.change.overrideIdentifier;
     }
 
     // TODO add tests
@@ -429,7 +425,7 @@ export class PreferenceServiceImpl implements PreferenceService {
             throw new Error('Unable to write to Folder Settings because no resource is provided.');
         }
         const provider = this.getProvider(resolvedScope);
-        if (provider && await provider.setPreference(preferenceName, value, resourceUri)) {
+        if (provider && await provider.setPreference(preferenceName, value, resourceUri, overrideIdentifier)) {
             await this.evictSessionOverride(preferenceName, resolvedScope);
             return;
         }
