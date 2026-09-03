@@ -553,6 +553,15 @@ export class UserInteractionToolRenderer implements ChatResponsePartRenderer<Too
         return -1;
     }
 
+    /**
+     * The regular rendering of this tool already is the interactive UI, so reuse it
+     * where only the pending interaction should be shown (e.g. on the collapsed
+     * summary of a delegated session, see #17952).
+     */
+    renderConfirmation(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
+        return this.render(response, parentNode);
+    }
+
     render(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
         const args = parseUserInteractionArgs(response.arguments);
 
