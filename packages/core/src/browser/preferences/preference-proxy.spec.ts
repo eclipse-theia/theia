@@ -43,6 +43,7 @@ import { PreferenceProvider } from '../../common/preferences/preference-provider
 import { PreferenceSchema, PreferenceSchemaService } from '../../common/preferences/preference-schema';
 import { PreferenceService, PreferenceServiceImpl } from '../../common/preferences';
 import { waitForEvent } from '../../common/promise-util';
+import * as sinon from 'sinon';
 let testContainer: Container;
 
 function createTestContainer(): Container {
@@ -378,6 +379,68 @@ describe('Preference Proxy', () => {
                 });
                 assert.strictEqual(proxy['foo.bar.x'], true);
                 assert.strictEqual(proxy['foo.bar.y'], false);
+            });
+
+            it('get() resourceUri: call parameter overrides instance default', async () => {
+                const folderA = 'file:///folderA';
+                const folderB = 'file:///folderB';
+                const { proxy, promisedSchema } = getProxy({
+                    scope: PreferenceScope.Folder,
+                    properties: {
+                        'my.pref': {
+                            type: 'string',
+                            default: 'default'
+                        }
+                    }
+                }, { resourceUri: folderA });
+                if (promisedSchema) {
+                    await promisedSchema;
+                }
+                const getStub = sinon.stub(prefService, 'get').callsFake((preferenceName, optionsOrFallback) => {
+                    const resource = typeof optionsOrFallback === 'object' ? optionsOrFallback.resource : undefined;
+                    if (resource === folderB) {
+                        return 'value-b';
+                    }
+                    if (resource === folderA) {
+                        return 'value-a';
+                    }
+                    return undefined;
+                });
+                try {
+                    expect(proxy.get('my.pref', undefined, folderB)).to.equal('value-b');
+                    expect(proxy.get('my.pref')).to.equal('value-a');
+                } finally {
+                    getStub.restore();
+                }
+            });
+
+            it('get() overrideIdentifier: instance binding overrides call parameter', async () => {
+                prefSchema.registerOverrideIdentifier('json');
+                prefSchema.registerOverrideIdentifier('typescript');
+                const schema: PreferenceSchema = {
+                    scope: PreferenceScope.User,
+                    properties: {
+                        'my.pref': {
+                            type: 'string',
+                            default: 'foo',
+                            overridable: true,
+                        }
+                    }
+                };
+                await getProvider(PreferenceScope.User).setPreference('my.pref', 'json-value', undefined, 'json');
+                await getProvider(PreferenceScope.User).setPreference('my.pref', 'typescript-value', undefined, 'typescript');
+
+                const { proxy: scopedProxy, promisedSchema: scopedSchema } = getProxy(schema, { overrideIdentifier: 'json' });
+                if (scopedSchema) {
+                    await scopedSchema;
+                }
+                expect(scopedProxy.get({ preferenceName: 'my.pref', overrideIdentifier: 'typescript' })).to.equal('json-value');
+
+                const { proxy: globalProxy, promisedSchema: globalSchema } = getProxy(schema);
+                if (globalSchema) {
+                    await globalSchema;
+                }
+                expect(globalProxy.get({ preferenceName: 'my.pref', overrideIdentifier: 'typescript' })).to.equal('typescript-value');
             });
         });
     }

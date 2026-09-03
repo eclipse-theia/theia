@@ -94,12 +94,12 @@ describe('PreferenceRegistryExtImpl:', () => {
     describe('toConfigurationChangeEvent', () => {
         // E.g. deletion of a `tasks.json`.
         it('Handles deletion of a section', () => {
-            const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent']([{ newValue: undefined, preferenceName: 'whole-section' }]);
+            const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent']([{ newValue: undefined, preferenceName: 'whole-section', affectedOverrides: [] }]);
             expect(affectsChecker.affectsConfiguration('whole-section')).to.be.true;
         });
 
         it('Reports true of supersection if subsection changes', () => {
-            const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent']([{ newValue: 'foo', preferenceName: 'whole-section.subsection.item' }]);
+            const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent']([{ newValue: 'foo', preferenceName: 'whole-section.subsection.item', affectedOverrides: [] }]);
             expect(affectsChecker.affectsConfiguration('whole-section')).to.be.true;
         });
 
@@ -107,86 +107,86 @@ describe('PreferenceRegistryExtImpl:', () => {
         // This is true in practice in all cases except `extensions` (i.e. extensions.json) and extensions.ignoreRecommendations etc.
         // Given that, if a super-section changes (e.g. through deletion), all subsections will also be affected.
         it('Reports true of a subsection if a supersection changes', () => {
-            const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent']([{ newValue: 'bar', preferenceName: 'whole-section' }]);
+            const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent']([{ newValue: 'bar', preferenceName: 'whole-section', affectedOverrides: [] }]);
             expect(affectsChecker.affectsConfiguration('whole-section.subsection')).to.be.true;
         });
 
         it('Does not report true if a different subsection changes:', () => {
-            const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent']([{ newValue: 'bar', preferenceName: 'whole-section.subsection.itemA' }]);
+            const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent']([{ newValue: 'bar', preferenceName: 'whole-section.subsection.itemA', affectedOverrides: [] }]);
             expect(affectsChecker.affectsConfiguration('whole-section.subsection.itemB')).to.be.false;
         });
 
         it('Reports that any URI is affected if change has no URI', () => {
-            const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent']([{ newValue: 'bar', preferenceName: 'whole-section' }]);
+            const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent']([{ newValue: 'bar', preferenceName: 'whole-section', affectedOverrides: [] }]);
             expect(affectsChecker.affectsConfiguration('whole-section.subsection', URI.parse('/wherever'))).to.be.true;
         });
 
         it('Reports true if no URI is provided to check', () => {
             const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent'](
-                [{ newValue: 'bar', preferenceName: 'whole-section', scope: 'file:///very/specific/path' }]
+                [{ newValue: 'bar', preferenceName: 'whole-section', scope: 'file:///very/specific/path', affectedOverrides: [] }]
             );
             expect(affectsChecker.affectsConfiguration('whole-section.subsection')).to.be.true;
         });
 
         it('Reports false if the URIs dont match.', () => {
             const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent'](
-                [{ newValue: 'bar', preferenceName: 'whole-section', scope: 'file:///very/specific/path' }]
+                [{ newValue: 'bar', preferenceName: 'whole-section', scope: 'file:///very/specific/path', affectedOverrides: [] }]
             );
             expect(affectsChecker.affectsConfiguration('whole-section.subsection', URI.parse('/other/specific/path'))).to.be.false;
         });
 
         it('Reports true if the URIs do match', () => {
             const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent'](
-                [{ newValue: 'bar', preferenceName: 'whole-section', scope: 'file:///very/specific/path' }]
+                [{ newValue: 'bar', preferenceName: 'whole-section', scope: 'file:///very/specific/path', affectedOverrides: [] }]
             );
             expect(affectsChecker.affectsConfiguration('whole-section.subsection', URI.parse('/very/specific/path'))).to.be.true;
         });
 
         it('Reports true if the checked URI is a child of the affected path', () => {
             const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent'](
-                [{ newValue: 'bar', preferenceName: 'whole-section', scope: 'file:///very/specific/path' }]
+                [{ newValue: 'bar', preferenceName: 'whole-section', scope: 'file:///very/specific/path', affectedOverrides: [] }]
             );
             expect(affectsChecker.affectsConfiguration('whole-section.subsection', URI.parse('/very/specific/path/and/its/child'))).to.be.true;
         });
 
         it('Reports false if the checked URI starts with the affected path but not at a directory break', () => {
             const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent'](
-                [{ newValue: 'bar', preferenceName: 'whole-section', scope: 'file:///very/specific/path' }]
+                [{ newValue: 'bar', preferenceName: 'whole-section', scope: 'file:///very/specific/path', affectedOverrides: [] }]
             );
             expect(affectsChecker.affectsConfiguration('whole-section.subsection', URI.parse('/very/specific/path-or-not/and/its/child'))).to.be.false;
         });
 
-        it('Extracts language override and returns false if change does not include language', () => {
+        it('Returns false if languageId is not in affectedOverrides', () => {
             const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent'](
-                [{ newValue: 'bar', preferenceName: 'whole-section', scope: 'file:///very/specific/path' }]
+                [{ newValue: 'bar', preferenceName: 'whole-section', scope: 'file:///very/specific/path', affectedOverrides: [] }]
             );
             expect(affectsChecker.affectsConfiguration('whole-section.subsection', { languageId: 'typescript' })).to.be.false;
         });
 
-        it('Extracts language override and returns true if change does include language', () => {
+        it('Returns true if languageId is in affectedOverrides', () => {
             const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent'](
-                [{ newValue: 'bar', preferenceName: '[typescript].whole-section', scope: 'file:///very/specific/path' }]
+                [{ newValue: 'bar', preferenceName: 'whole-section', scope: 'file:///very/specific/path', affectedOverrides: ['typescript'] }]
             );
             expect(affectsChecker.affectsConfiguration('whole-section.subsection', { languageId: 'typescript' })).to.be.true;
         });
 
-        it("Extracts language override and URI and returns false if the URI doesn't match", () => {
+        it("Returns false if languageId is in affectedOverrides but the URI doesn't match", () => {
             const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent'](
-                [{ newValue: 'bar', preferenceName: '[typescript].whole-section', scope: 'file:///very/specific/path' }]
+                [{ newValue: 'bar', preferenceName: 'whole-section', scope: 'file:///very/specific/path', affectedOverrides: ['typescript'] }]
             );
             expect(affectsChecker.affectsConfiguration('whole-section.subsection', { languageId: 'typescript', uri: URI.parse('/other/specific/path') })).to.be.false;
         });
 
-        it('Extracts language override and URI and returns true if both match', () => {
+        it('Returns true if languageId is in affectedOverrides and the URI matches', () => {
             const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent'](
-                [{ newValue: 'bar', preferenceName: '[typescript].whole-section', scope: 'file:///very/specific/path' }]
+                [{ newValue: 'bar', preferenceName: 'whole-section', scope: 'file:///very/specific/path', affectedOverrides: ['typescript'] }]
             );
             expect(affectsChecker.affectsConfiguration('whole-section.subsection', { languageId: 'typescript', uri: URI.parse('/very/specific/path') })).to.be.true;
         });
 
         it('Reports true if no language override is provided and a language overridden preference changes', () => {
             const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent'](
-                [{ newValue: 'bar', preferenceName: '[typescript].whole-section.subitem', scope: 'file:///somewhat-specific-path' }]
+                [{ newValue: 'bar', preferenceName: 'whole-section.subitem', scope: 'file:///somewhat-specific-path', affectedOverrides: ['typescript'] }]
             );
             expect(affectsChecker.affectsConfiguration('whole-section.subitem')).to.be.true;
         });
