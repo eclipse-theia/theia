@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelMessage } from '@theia/ai-core';
-import type { ModelInfo, SystemMessageConfig } from './copilot-sdk-types';
+import { ImageContent, LanguageModelMessage } from '@theia/ai-core';
+import type { BlobMessageAttachment, ModelInfo, SystemMessageConfig } from './copilot-sdk-types';
 
 /**
  * Recognizes an id that names a dated release of another model, such as
@@ -64,6 +64,8 @@ export interface SdkPrompt {
     systemText: string;
     /** The user-facing prompt body derived from the non-system messages. */
     prompt: string;
+    /** Base64-encoded images pulled out of the user's messages, sent alongside the prompt. */
+    attachments?: BlobMessageAttachment[];
 }
 
 function roleLabel(message: LanguageModelMessage): string {
@@ -75,6 +77,17 @@ function roleLabel(message: LanguageModelMessage): string {
         default:
             return 'User';
     }
+}
+
+/**
+ * Whether a message is a user image the SDK can be sent as a blob attachment.
+ *
+ * URL images are not covered: the SDK's attachments carry inline data, not a remote reference,
+ * and fetching the URL on the backend to inline it would add a server-side-request-forgery
+ * surface for what is, today, not a use case Theia exercises.
+ */
+function isAttachableImageMessage(message: LanguageModelMessage): message is LanguageModelMessage & { image: { base64data: string, mimeType: string } } {
+    return LanguageModelMessage.isImageMessage(message) && message.actor === 'user' && ImageContent.isBase64(message.image);
 }
 
 function messageToText(message: LanguageModelMessage): string {
@@ -91,6 +104,7 @@ function messageToText(message: LanguageModelMessage): string {
         return `[tool result: ${content}]`;
     }
     if (LanguageModelMessage.isImageMessage(message)) {
+        // Reached for URL images and non-user image messages; base64 user images are attachments instead, see buildSdkPrompt.
         return '[image omitted]';
     }
     return '';
@@ -105,16 +119,23 @@ function messageToText(message: LanguageModelMessage): string {
  * see {@link buildSdkSystemMessage}. A lone user turn is forwarded verbatim;
  * richer histories are rendered as a role-labelled transcript.
  *
- * This is a lossy mapping by design, see the limitations documented in the package
- * README, and is intended for single-turn requests.
+ * Base64 user images are pulled out of the history and sent as blob attachments instead of
+ * being flattened into the prompt text, see {@link isAttachableImageMessage}. This is otherwise
+ * a lossy mapping by design, see the limitations documented in the package README, and is
+ * intended for single-turn requests.
  */
 export function buildSdkPrompt(messages: LanguageModelMessage[]): SdkPrompt {
     const systemParts: string[] = [];
     const conversation: LanguageModelMessage[] = [];
+    const attachments: BlobMessageAttachment[] = [];
     for (const message of messages) {
         if (message.actor === 'system' && LanguageModelMessage.isTextMessage(message)) {
             systemParts.push(message.text);
-        } else if (message.type !== 'thinking') {
+        } else if (message.type === 'thinking') {
+            continue;
+        } else if (isAttachableImageMessage(message)) {
+            attachments.push({ type: 'blob', data: message.image.base64data, mimeType: message.image.mimeType });
+        } else {
             conversation.push(message);
         }
     }
@@ -131,7 +152,7 @@ export function buildSdkPrompt(messages: LanguageModelMessage[]): SdkPrompt {
             .trim();
     }
 
-    return { systemText, prompt };
+    return { systemText, prompt, attachments: attachments.length > 0 ? attachments : undefined };
 }
 
 /**

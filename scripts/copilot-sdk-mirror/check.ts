@@ -38,6 +38,7 @@ declare function value<T>(): T;
 export const options: Sdk.CopilotClientOptions = value<Mirror.CopilotClientOptions>();
 export const sessionConfig: Sdk.SessionConfig = value<Mirror.SessionConfig>();
 export const tool: Sdk.Tool = value<Mirror.Tool>();
+export const messageOptions: Sdk.MessageOptions = value<Mirror.MessageOptions>();
 export const systemMessage: Sdk.SystemMessageConfig = value<Mirror.SystemMessageConfig>();
 export const permissionHandler: Sdk.PermissionHandler = value<Mirror.PermissionHandler>();
 export const connection: Sdk.RuntimeConnection = value<Mirror.StdioRuntimeConnection>();
