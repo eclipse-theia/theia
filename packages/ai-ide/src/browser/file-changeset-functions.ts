@@ -24,7 +24,7 @@ import { inject, injectable, named, optional } from '@theia/core/shared/inversif
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceFunctionScope } from './workspace-functions';
 
-import { nls, ILogger } from '@theia/core';
+import { nls, ILogger, PreferenceService } from '@theia/core';
 import { extractJsonStringField } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/toolcall-utils';
 import {
     CLEAR_FILE_CHANGES_ID,
@@ -36,6 +36,7 @@ import {
     SUGGEST_FILE_REPLACEMENTS_SIMPLE_ID,
     WRITE_FILE_REPLACEMENTS_SIMPLE_ID
 } from '../common/file-changeset-function-ids';
+import { WRITE_CONTENT_MAX_SIZE_KB_PREF } from '../common/workspace-preferences';
 
 /**
  * Description of the `path` parameter shared by all file changeset tools, so that they advertise the
@@ -60,6 +61,16 @@ function createPathShortLabel(args: string, hasMore: boolean): { label: string; 
  */
 function staleFileError(path: string): string {
     return `File ${path} changed since you last read it. Read it again before overwriting it, so that the changes made in the meantime are not lost.`;
+}
+
+/**
+ * Whole-file writes require the model to re-emit the entire content as tool arguments, so their cost grows
+ * with file size; mirror the read-side limit and steer oversized writes to the replacement-based tools.
+ */
+function writeContentSizeError(sizeKB: number, maxSizeKB: number, replacementsToolId: string): string {
+    return `The provided content is ${sizeKB}KB, but the maximum write size is ${maxSizeKB}KB ` +
+        `(preference "${WRITE_CONTENT_MAX_SIZE_KB_PREF}"). Use ${replacementsToolId} for targeted edits, ` +
+        'or avoid embedding large data in the file and reference it by path instead.';
 }
 
 export const FileChangeSetTitleProvider = Symbol('FileChangeSetTitleProvider');
@@ -88,6 +99,9 @@ export class SuggestFileContent implements ToolProvider {
     @inject(FileReadTracker) @optional()
     protected readonly fileReadTracker: FileReadTracker | undefined;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     getTool(): ToolRequest {
         return {
             id: SuggestFileContent.ID,
@@ -97,7 +111,8 @@ export class SuggestFileContent implements ToolProvider {
              If the new content is empty, the file will be deleted. To move a file, delete it and re-create it at the new location.
              The proposed changes will be applied when the user accepts. If called again for the same file, previously proposed changes will be overridden.
              Use this for creating new files or when you need to rewrite an entire file.
-             For targeted edits to existing files, prefer suggestFileReplacements instead - it's more efficient and shows clearer diffs.`,
+             For targeted edits to existing files, prefer suggestFileReplacements instead - it's more efficient and shows clearer diffs.
+             Content exceeding the configured maximum write size is rejected.`,
             parameters: {
                 type: 'object',
                 properties: {
@@ -119,6 +134,11 @@ export class SuggestFileContent implements ToolProvider {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
                 const { path, content } = JSON.parse(args);
+                const maxWriteSizeKB = this.preferenceService.get<number>(WRITE_CONTENT_MAX_SIZE_KB_PREF, 256);
+                const contentSizeKB = Math.round(Buffer.byteLength(content, 'utf8') / 1024);
+                if (contentSizeKB > maxWriteSizeKB) {
+                    return JSON.stringify({ error: writeContentSizeError(contentSizeKB, maxWriteSizeKB, SUGGEST_FILE_REPLACEMENTS_ID) });
+                }
                 const chatSessionId = ctx.request.session.id;
                 let uri: URI;
                 try {
@@ -175,6 +195,9 @@ export class WriteFileContent implements ToolProvider {
     @inject(FileReadTracker) @optional()
     protected readonly fileReadTracker: FileReadTracker | undefined;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     getTool(): ToolRequest {
         return {
             id: WriteFileContent.ID,
@@ -184,6 +207,7 @@ export class WriteFileContent implements ToolProvider {
              If the new content is empty, the file will be deleted. To move a file, delete it and re-create it at the new location.
              Use this for creating new files or complete file rewrites in agent mode.
              For targeted edits, prefer writeFileReplacements - it's more efficient and less error-prone.
+             Content exceeding the configured maximum write size is rejected.
              CAUTION: Changes are applied immediately and cannot be undone through the chat interface.`,
             parameters: {
                 type: 'object',
@@ -206,6 +230,11 @@ export class WriteFileContent implements ToolProvider {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
                 const { path, content } = JSON.parse(args);
+                const maxWriteSizeKB = this.preferenceService.get<number>(WRITE_CONTENT_MAX_SIZE_KB_PREF, 256);
+                const contentSizeKB = Math.round(Buffer.byteLength(content, 'utf8') / 1024);
+                if (contentSizeKB > maxWriteSizeKB) {
+                    return JSON.stringify({ error: writeContentSizeError(contentSizeKB, maxWriteSizeKB, WRITE_FILE_REPLACEMENTS_ID) });
+                }
                 const chatSessionId = ctx.request.session.id;
                 let uri: URI;
                 try {

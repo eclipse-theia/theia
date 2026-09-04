@@ -24,6 +24,7 @@ export const PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF = 'ai-features.promptTem
 export const PROMPT_TEMPLATE_WORKSPACE_FILES_PREF = 'ai-features.promptTemplates.WorkspaceTemplateFiles';
 export const TASK_CONTEXT_STORAGE_DIRECTORY_PREF = 'ai-features.promptTemplates.taskContextStorageDirectory';
 export const FILE_CONTENT_MAX_SIZE_KB_PREF = 'ai-features.workspaceFunctions.fileContentMaxSizeKB';
+export const WRITE_CONTENT_MAX_SIZE_KB_PREF = 'ai-features.workspaceFunctions.writeContentMaxSizeKB';
 export const ALLOWED_EXTERNAL_PATHS_PREF = 'ai-features.workspaceFunctions.allowedExternalPaths';
 
 const CONFLICT_RESOLUTION_DESCRIPTION = 'When templates with the same ID (filename) exist in multiple locations, conflicts are resolved by priority: specific template files \
@@ -101,6 +102,15 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
                 'Maximum size in kilobytes of the content returned by the getFileContent tool. ' +
                 'When reading a full file (no offset/limit), files exceeding this limit return an error. ' +
                 'When using offset and limit, only the requested range is checked against this limit.'),
+            default: 256,
+            minimum: 1
+        },
+        [WRITE_CONTENT_MAX_SIZE_KB_PREF]: {
+            type: 'number',
+            title: nls.localize('theia/ai/workspace/writeContentMaxSizeKB/title', 'Write Content Max Size (KB)'),
+            description: nls.localize('theia/ai/workspace/writeContentMaxSizeKB/description',
+                'Maximum size in kilobytes of the content accepted by the whole-file write tools (writeFileContent and suggestFileContent). ' +
+                'Larger writes are rejected with a hint to use the replacement-based tools instead.'),
             default: 256,
             minimum: 1
         },
