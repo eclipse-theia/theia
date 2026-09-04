@@ -7,6 +7,7 @@
 ## 1.76.0 - tbd
 
 - [core, filesystem, plugin-ext] fixed file decorations being dropped by large change events: change events are batched, and events exceeding the plugin-ext cap arrive as a flush that is re-fetched on demand [#17766](https://github.com/eclipse-theia/theia/pull/17766) - Contributed on behalf of K2view
+- [plugin-ext] fixed `setTextDocumentLanguage` silently doing nothing for notebook cells: a cell URI now changes the language on the cell model, which is the value the execution service filters kernels on and the serializer writes back [#17990](https://github.com/eclipse-theia/theia/pull/17990)
 
 <a name="breaking_changes_1.76.0">[Breaking Changes:](#breaking_changes_1.76.0)</a>
 
