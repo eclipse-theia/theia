@@ -19,7 +19,9 @@ import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { GettingStartedWidget } from './getting-started-widget';
 import { WidgetFactory, FrontendApplicationContribution, bindViewContribution, noopWidgetStatusBarContribution, WidgetStatusBarContribution } from '@theia/core/lib/browser';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
+import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { bindGettingStartedPreferences } from '../common/getting-started-preferences';
+import { WalkthroughProvider } from '../common/walkthrough-provider';
 import { WalkthroughPluginSupport, WalkthroughService, WalkthroughViewEventSource } from './walkthrough-service';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin';
 import { PluginViewRegistry } from '@theia/plugin-ext/lib/main/browser/view/plugin-view-registry';
@@ -35,6 +37,7 @@ export default new ContainerModule((bind: interfaces.Bind) => {
         id: GettingStartedWidget.ID,
         createWidget: () => context.container.get<GettingStartedWidget>(GettingStartedWidget),
     })).inSingletonScope();
+    bindRootContributionProvider(bind, WalkthroughProvider);
     bind(WalkthroughService).toSelf().inSingletonScope();
     bind(WalkthroughPluginSupport).toService(HostedPluginSupport);
     bind(WalkthroughViewEventSource).toService(PluginViewRegistry);

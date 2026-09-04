@@ -16,24 +16,39 @@
 
 import { WalkthroughStepMedia } from '@theia/plugin-ext/lib/common/plugin-protocol';
 
-export interface WalkthroughStep {
+/**
+ * A step as it is contributed, before the service tracks its completion.
+ */
+export interface WalkthroughStepDefinition {
     id: string;
     title: string;
     description: string;
     media?: WalkthroughStepMedia;
     completionEvents?: string[];
     when?: string;
-    isComplete: boolean;
 }
 
-export interface Walkthrough {
+/**
+ * A walkthrough as it is contributed, either by a plugin or by a `WalkthroughProvider`.
+ */
+export interface WalkthroughDefinition {
     id: string;
     title: string;
     description: string;
-    steps: WalkthroughStep[];
+    steps: WalkthroughStepDefinition[];
     when?: string;
+    /** Name of the codicon shown on the card and in the detail header, without the `codicon-` prefix. */
     icon?: string;
-    pluginId: string;
+}
+
+export interface WalkthroughStep extends WalkthroughStepDefinition {
+    isComplete: boolean;
+}
+
+export interface Walkthrough extends WalkthroughDefinition {
+    steps: WalkthroughStep[];
+    /** Id of the contributing plugin, or `undefined` for a walkthrough contributed by a Theia extension. */
+    pluginId?: string;
     /** Icon of the contributing extension, as a backend relative path. */
     pluginIcon?: string;
 }
