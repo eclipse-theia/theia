@@ -80,6 +80,7 @@ export class TheiaPreferenceView extends TheiaView {
     protected modificationIndicator = '.theia-mod-item-modified';
     protected searchInput = '.settings-search-input';
     protected categoryTree = '.preferences-tree-widget';
+    protected editorScrollContainer = '.settings-main-scroll-container';
     protected optionSelectLabel = '.theia-select-component-label';
     protected optionSelectDropdown = '.theia-select-component-dropdown';
     protected optionSelectDropdownValue = '.theia-select-component-option-value';
@@ -150,6 +151,17 @@ export class TheiaPreferenceView extends TheiaView {
         const viewElement = await this.viewElement();
         const label = await viewElement?.$(`${this.categoryTree} .theia-TreeNode.theia-mod-selected .theia-TreeNodeSegmentGrow`);
         return (await label?.textContent())?.trim();
+    }
+
+    /**
+     * Scrolls the settings editor by the given number of pixels. Scrolling syncs the tree
+     * selection to the section shown at the top of the editor.
+     */
+    async scrollEditorBy(deltaY: number): Promise<void> {
+        await this.activate();
+        const viewElement = await this.viewElement();
+        const container = await viewElement?.waitForSelector(this.editorScrollContainer, { timeout: this.customTimeout });
+        await container?.evaluate((element, delta) => { element.scrollTop += delta; }, deltaY);
     }
 
     protected getCategoryNodeSelector(label: string): string {

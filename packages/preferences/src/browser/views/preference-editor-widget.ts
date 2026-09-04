@@ -143,7 +143,10 @@ export class PreferencesEditorWidget extends BaseWidget {
             unreachable(e.source, 'Not all PreferenceFilterChangeSource enum variants handled.');
         }
 
-        if (scrollTarget) {
+        // Only sync the tree to a row that is still shown. A row hidden by the change, e.g. because
+        // it is not valid in the new scope or lies outside the selected category, must not pull the
+        // tree selection away from the page that is shown.
+        if (scrollTarget && this.isRendererVisible(scrollTarget)) {
             this.showInTree(scrollTarget);
         }
         this.resetScroll(scrollTarget);
@@ -168,6 +171,11 @@ export class PreferencesEditorWidget extends BaseWidget {
             return this.lastFocusedRendererNodeId;
         }
         return undefined;
+    }
+
+    protected isRendererVisible(nodeId: string): boolean {
+        const { id, collection } = this.analyzeIDAndGetRendererGroup(nodeId);
+        return !!collection.get(id)?.visible;
     }
 
     protected isRendererInViewport(nodeId: string): boolean {

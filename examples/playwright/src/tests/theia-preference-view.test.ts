@@ -129,4 +129,22 @@ test.describe('Preference View', () => {
         await preferences.openPreferenceScope(TheiaPreferenceScope.Workspace);
         expect(await preferences.getSelectedCategory()).toBe('Files');
     });
+
+    test('should keep the fallback category selected when switching back to a scope where the previous category exists', async () => {
+        const preferences = await app.openPreferences(TheiaPreferenceView);
+        await preferences.openPreferenceScope(TheiaPreferenceScope.User);
+        // Scroll first: selecting a category then scrolls back to the top, which records the
+        // section at the top of the new page as the row to keep in view on scope changes.
+        await preferences.selectCategory('Commonly Used');
+        await preferences.scrollEditorBy(300);
+        // Workspace trust settings are not available in the Workspace scope.
+        await preferences.selectCategory('Security', 'Workspace');
+        expect(await preferences.getSelectedCategory()).toBe('Workspace');
+
+        await preferences.openPreferenceScope(TheiaPreferenceScope.Workspace);
+        expect(await preferences.getSelectedCategory()).toBe('Commonly Used');
+
+        await preferences.openPreferenceScope(TheiaPreferenceScope.User);
+        expect(await preferences.getSelectedCategory()).toBe('Commonly Used');
+    });
 });
