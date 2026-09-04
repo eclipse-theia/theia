@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { Message } from 'ollama';
+import { Message, Ollama } from 'ollama';
 import { OllamaModel } from './ollama-language-model';
 
 class TestableOllamaModel extends OllamaModel {
@@ -26,6 +26,15 @@ class TestableOllamaModel extends OllamaModel {
     public callMergeConsecutiveAssistantMessages(messages: Message[]): Message[] {
         return this.mergeConsecutiveAssistantMessages(messages);
     }
+
+    public callHandleStreamingRequest(ollama: Ollama, messages: Message[]) {
+        return this.handleStreamingRequest(ollama, {
+            model: 'test-model',
+            messages,
+            stream: true
+        });
+    }
+
 }
 
 describe('OllamaModel - mergeConsecutiveAssistantMessages', () => {
@@ -121,3 +130,44 @@ describe('OllamaModel - mergeConsecutiveAssistantMessages', () => {
         expect(result).to.deep.equal(messages);
     });
 });
+
+describe('OllamaModel - handleStreamingRequest', () => {
+
+    it('should accept tool_calls as a valid done reason', async () => {
+        const model = new TestableOllamaModel();
+
+        const responseStream = {
+            async *[Symbol.asyncIterator]() {
+                yield {
+                    created_at: new Date(),
+                    done: true,
+                    done_reason: 'tool_calls',
+                    message: {
+                        role: 'assistant',
+                        content: ''
+                    }
+                };
+            },
+            abort: () => undefined
+        };
+
+        const ollama = {
+            show: async () => ({ capabilities: [] }),
+            chat: async () => responseStream
+        } as unknown as Ollama;
+
+        const response = await model.callHandleStreamingRequest(ollama, [
+            { role: 'user', content: 'use a tool' }
+        ]);
+
+        const parts = [];
+
+        for await (const part of response.stream) {
+            parts.push(part);
+        }
+
+        expect(parts).to.deep.equal([]);
+    });
+
+});
+
