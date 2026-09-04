@@ -120,6 +120,44 @@ describe('copilot-sdk-mappers - buildSdkPrompt', () => {
             'User: run it\n\nAssistant: [tool call: foo {"x":1}]\n\nUser: [tool result: done]'
         );
     });
+
+    it('turns a base64 user image into a blob attachment and drops it from the prompt text', () => {
+        const messages: LanguageModelMessage[] = [
+            { actor: 'user', type: 'text', text: 'what is this?' },
+            { actor: 'user', type: 'image', image: { base64data: 'aGk=', mimeType: 'image/png' } }
+        ];
+        const result = buildSdkPrompt(messages);
+        expect(result.prompt).to.equal('what is this?');
+        expect(result.attachments).to.deep.equal([{ type: 'blob', data: 'aGk=', mimeType: 'image/png' }]);
+    });
+
+    it('collects multiple base64 images in message order', () => {
+        const messages: LanguageModelMessage[] = [
+            { actor: 'user', type: 'image', image: { base64data: 'AAA=', mimeType: 'image/png' } },
+            { actor: 'user', type: 'image', image: { base64data: 'BBB=', mimeType: 'image/jpeg' } }
+        ];
+        const result = buildSdkPrompt(messages);
+        expect(result.attachments).to.deep.equal([
+            { type: 'blob', data: 'AAA=', mimeType: 'image/png' },
+            { type: 'blob', data: 'BBB=', mimeType: 'image/jpeg' }
+        ]);
+    });
+
+    it('leaves attachments undefined when there are no images', () => {
+        const result = buildSdkPrompt([{ actor: 'user', type: 'text', text: 'hi' }]);
+        expect(result.attachments).to.be.undefined;
+    });
+
+    it('does not attach a URL image and renders it as an omitted placeholder instead', () => {
+        const messages: LanguageModelMessage[] = [
+            { actor: 'user', type: 'text', text: 'look' },
+            { actor: 'user', type: 'image', image: { url: 'https://example.com/a.png' } }
+        ];
+        const result = buildSdkPrompt(messages);
+        expect(result.attachments).to.be.undefined;
+        expect(result.prompt).to.equal('User: look\n\nUser: [image omitted]'
+        );
+    });
 });
 
 describe('copilot-sdk-mappers - buildSdkSystemMessage', () => {

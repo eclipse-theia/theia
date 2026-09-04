@@ -49,9 +49,10 @@ class TestableCopilotSdkLanguageModel extends CopilotSdkLanguageModel {
      * Runs a request against a session that reports itself idle as soon as it was sent to, and
      * reports what the session was configured with, what it was sent, and what was discarded.
      */
-    async captureTurn(request: UserRequest): Promise<{ config: Record<string, unknown>, prompt?: string, deleted?: string }> {
+    async captureTurn(request: UserRequest): Promise<{ config: Record<string, unknown>, prompt?: string, attachments?: unknown[], deleted?: string }> {
         let config: Record<string, unknown> = {};
         let prompt: string | undefined;
+        let attachments: unknown[] | undefined;
         let deleted: string | undefined;
         const listeners = new Map<string, (event: unknown) => void>();
         const session = {
@@ -60,8 +61,9 @@ class TestableCopilotSdkLanguageModel extends CopilotSdkLanguageModel {
                 listeners.set(event, handler);
                 return () => listeners.delete(event);
             },
-            send: async (message: { prompt: string }) => {
+            send: async (message: { prompt: string, attachments?: unknown[] }) => {
                 prompt = message.prompt;
+                attachments = message.attachments;
                 listeners.get('session.idle')?.({});
             },
             abort: async () => { },
@@ -81,7 +83,7 @@ class TestableCopilotSdkLanguageModel extends CopilotSdkLanguageModel {
         for await (const part of response.stream) {
             expect(part).to.exist;
         }
-        return { config, prompt, deleted };
+        return { config, prompt, attachments, deleted };
     }
 }
 
@@ -256,6 +258,18 @@ describe('CopilotSdkLanguageModel - turn', () => {
     it('should delete the session it created, which the CLI would otherwise keep', async () => {
         const { deleted } = await model.captureTurn(request);
         expect(deleted).to.equal('test-session');
+    });
+
+    it('should send a base64 image of the request as a blob attachment', async () => {
+        const requestWithImage = {
+            messages: [
+                { actor: 'user', type: 'text', text: 'what is this?' },
+                { actor: 'user', type: 'image', image: { base64data: 'aGk=', mimeType: 'image/png' } }
+            ]
+        } as unknown as UserRequest;
+        const { prompt, attachments } = await model.captureTurn(requestWithImage);
+        expect(prompt).to.equal('what is this?');
+        expect(attachments).to.deep.equal([{ type: 'blob', data: 'aGk=', mimeType: 'image/png' }]);
     });
 });
 
