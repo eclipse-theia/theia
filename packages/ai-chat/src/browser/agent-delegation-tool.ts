@@ -139,13 +139,15 @@ export class AgentDelegationTool implements ToolProvider {
                 if (!existingSession) {
                     const errorMsg = `Delegation session '${sessionId}' not found. It may have been deleted. ` +
                         'Send the request again without sessionId to start a fresh session — the agent will not have any prior context.';
-                    this.logger.error(errorMsg);
+                    // warn, not error: a stale session id is expected in a normal agentic loop (e.g. the user deleted the session)
+                    this.logger.warn(errorMsg);
                     return errorMsg;
                 }
                 if (ChatSessionStatus.isInProgress(existingSession.model.status)) {
                     const errorMsg = `Delegation session '${sessionId}' is still processing a previous request. ` +
                         'Wait for its result before sending a follow-up, or omit sessionId to start a fresh session.';
-                    this.logger.error(errorMsg);
+                    // warn, not error: expected when the caller issues parallel requests against the same session
+                    this.logger.warn(errorMsg);
                     return errorMsg;
                 }
                 if (existingSession.pinnedAgent && existingSession.pinnedAgent.id !== agentId) {
