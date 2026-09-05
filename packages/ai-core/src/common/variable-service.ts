@@ -42,6 +42,13 @@ export interface AIVariable {
     isContextVariable?: boolean;
     /** optional arguments for resolving the variable into a value */
     args?: AIVariableDescription[];
+    /**
+     * Set when the value reflects transient UI state that can change between chat turns without any action
+     * directed at the chat (active editor, selection, open tabs). Resolving such a variable into a system prompt
+     * changes the prompt on every turn and defeats provider prompt caching; agents should deliver it per turn
+     * instead (see `AbstractChatAgent.turnPromptId` in `@theia/ai-chat`).
+     */
+    isVolatile?: boolean;
 }
 
 export namespace AIVariable {
@@ -87,6 +94,27 @@ export namespace ResolvedAIVariable {
             'value' in arg &&
             typeof (arg as { variable: unknown }).variable === 'object' &&
             typeof (arg as { value: unknown }).value === 'string';
+    }
+
+    /**
+     * Returns the distinct volatile variables (see {@link AIVariable.isVolatile}) among the given resolved
+     * variables, including their recursively resolved dependencies.
+     */
+    export function findVolatile(variables: readonly ResolvedAIVariable[] | undefined): AIVariable[] {
+        const found = new Map<string, AIVariable>();
+        const seen = new Set<ResolvedAIVariable>();
+        const visit = (resolved: ResolvedAIVariable): void => {
+            if (seen.has(resolved)) {
+                return;
+            }
+            seen.add(resolved);
+            if (resolved.variable.isVolatile) {
+                found.set(resolved.variable.name, resolved.variable);
+            }
+            resolved.allResolvedDependencies?.forEach(visit);
+        };
+        variables?.forEach(visit);
+        return Array.from(found.values());
     }
 }
 

@@ -430,6 +430,13 @@ export interface ChatRequestModel {
     readonly context: ChatContext;
     readonly agentId?: string;
     readonly data?: { [key: string]: unknown };
+    /**
+     * Resolved per-turn prompt text (for example the current editor state) that the handling agent sent to the
+     * language model together with this request's message. It is replayed verbatim with the message on later
+     * turns so that the history sent to the model stays stable (see `AbstractChatAgent.turnPromptId`).
+     * `undefined` when the agent declares no turn prompt.
+     */
+    readonly turnPrompt?: string;
     toSerializable(): SerializableChatRequestData;
 }
 
@@ -1911,6 +1918,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
     protected _context: ChatContext;
     protected _agentId?: string;
     protected _data: { [key: string]: unknown };
+    protected _turnPrompt?: string;
     protected _isEditing = false;
     protected _message: ParsedChatRequest;
 
@@ -1979,6 +1987,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
             serverToolSelections: reqData.serverToolSelections
         };
         this._agentId = reqData.agentId;
+        this._turnPrompt = reqData.turnPrompt;
         this._data = {};
         this._context = { variables: [] };
 
@@ -2187,6 +2196,15 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         return this._agentId;
     }
 
+    get turnPrompt(): string | undefined {
+        return this._turnPrompt;
+    }
+
+    /** Records the per-turn prompt text sent with this request, see {@link ChatRequestModel.turnPrompt}. */
+    setTurnPrompt(text: string | undefined): void {
+        this._turnPrompt = text;
+    }
+
     cancelEdit(): void {
         if (this.isEditing) {
             this._isEditing = false;
@@ -2227,7 +2245,8 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
             parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined,
             capabilityOverrides: this.request.capabilityOverrides,
             genericCapabilitySelections: this.request.genericCapabilitySelections,
-            serverToolSelections: this.request.serverToolSelections
+            serverToolSelections: this.request.serverToolSelections,
+            turnPrompt: this._turnPrompt
         };
     }
 

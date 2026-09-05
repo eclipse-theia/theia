@@ -43,6 +43,7 @@ import {
     LanguageModelService,
     LanguageModelStreamResponse,
     PromptService,
+    ResolvedAIVariable,
     ResolvedPromptFragment,
     PromptVariantSet,
     ServerToolCall,
@@ -104,6 +105,8 @@ export interface SystemMessageDescription {
     promptVariantId?: string;
     /** Whether the prompt variant is customized */
     isPromptVariantCustomized?: boolean;
+    /** The variables that were resolved while building the text (used to detect volatile ones). */
+    variables?: ResolvedAIVariable[];
 }
 export namespace SystemMessageDescription {
     export function fromResolvedPromptFragment(
@@ -116,7 +119,8 @@ export namespace SystemMessageDescription {
             functionDescriptions: resolvedPrompt.functionDescriptions,
             deferredFunctionIds: resolvedPrompt.deferredFunctionIds,
             promptVariantId,
-            isPromptVariantCustomized
+            isPromptVariantCustomized,
+            variables: resolvedPrompt.variables
         };
     }
 }
@@ -219,6 +223,18 @@ export abstract class AbstractChatAgent implements ChatAgent {
     functions: string[] = [];
     protected readonly abstract defaultLanguageModelPurpose: string;
     protected systemPromptId: string | undefined = undefined;
+    /**
+     * Optional id of a prompt fragment that is resolved on every request and appended to the user's message text
+     * instead of the system prompt. Use it for volatile state such as open editors or the current selection: the
+     * system prompt stays byte-stable across turns (so provider prompt caches keep hitting) while the model still
+     * receives the state as of each message. The resolved text is stored on the request
+     * ({@link ChatRequestModel.turnPrompt}) and replayed verbatim on later turns.
+     */
+    protected turnPromptId: string | undefined = undefined;
+    /** Prompt ids already warned about, so a chatty session logs the volatile-variable warning once. */
+    protected readonly volatileSystemPromptsWarned = new Set<string>();
+    /** Turn prompt ids already warned about, so a chatty session logs the missing-turn-prompt warning once. */
+    protected readonly missingTurnPromptsWarned = new Set<string>();
     protected additionalToolRequests: ToolRequest[] = [];
     protected contentMatchers: ResponseContentMatcher[] = [];
 
@@ -253,12 +269,19 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 systemMessageDescription = await this.appendGenericCapabilities(systemMessageDescription, context);
             }
 
+            if (systemMessageDescription) {
+                this.warnAboutVolatileSystemPromptVariables(systemMessageDescription);
+            }
+
             if (systemMessageDescription?.promptVariantId) {
                 request.response.setPromptVariantInfo(
                     systemMessageDescription.promptVariantId,
                     systemMessageDescription.isPromptVariantCustomized ?? false
                 );
             }
+
+            const turnPrompt = await this.resolveTurnPrompt(context);
+            request.setTurnPrompt(turnPrompt?.text);
 
             const messages = await this.getMessages(request.session);
             await this.appendExternalFileChangeNotice(request, messages);
@@ -274,14 +297,17 @@ export abstract class AbstractChatAgent implements ChatAgent {
             }
 
             const systemMessageToolRequests = systemMessageDescription?.functionDescriptions?.values();
+            const turnPromptToolRequests = turnPrompt?.functionDescriptions?.values();
             const tools = [
                 ...this.chatToolRequestService.getChatToolRequests(request),
                 ...this.chatToolRequestService.toChatToolRequests(systemMessageToolRequests ? Array.from(systemMessageToolRequests) : [], request),
+                ...this.chatToolRequestService.toChatToolRequests(turnPromptToolRequests ? Array.from(turnPromptToolRequests) : [], request),
                 ...this.chatToolRequestService.toChatToolRequests(this.additionalToolRequests, request)
             ];
             const deferredSet = new Set<string>();
             request.message.deferredToolIds?.forEach(id => deferredSet.add(id));
             systemMessageDescription?.deferredFunctionIds?.forEach(id => deferredSet.add(id));
+            turnPrompt?.deferredFunctionIds?.forEach(id => deferredSet.add(id));
             const deferredToolIds = deferredSet.size > 0 ? Array.from(deferredSet) : undefined;
             const languageModelResponse = await this.sendLlmRequest(
                 request,
@@ -400,6 +426,55 @@ export abstract class AbstractChatAgent implements ChatAgent {
     }
 
     /**
+     * Resolves {@link turnPromptId} with the same context as the system prompt. Returns `undefined` when no turn
+     * prompt is declared or it resolves to empty text. Subclasses that compute the per-turn state in code override this.
+     *
+     * When {@link turnPromptId} is set but no prompt fragment with that id exists, logs a warning once per agent
+     * and fragment id (via {@link missingTurnPromptsWarned}) so a typo or a removed fragment is not silently dropped.
+     * Resolving to blank text stays silent: an empty turn prompt is a legitimate outcome (e.g. no editors open).
+     */
+    protected async resolveTurnPrompt(context: AIVariableContext): Promise<ResolvedPromptFragment | undefined> {
+        if (this.turnPromptId === undefined) {
+            return undefined;
+        }
+        const resolved = await this.promptService.getResolvedPromptFragment(this.turnPromptId, undefined, context);
+        if (!resolved) {
+            if (!this.missingTurnPromptsWarned.has(this.turnPromptId)) {
+                this.missingTurnPromptsWarned.add(this.turnPromptId);
+                this.logger.warn(
+                    `Agent '${this.id}' declares turn prompt '${this.turnPromptId}', but no prompt fragment with that id exists; no turn prompt is sent.`
+                );
+            }
+            return undefined;
+        }
+        return resolved.text.trim().length > 0 ? resolved : undefined;
+    }
+
+    /**
+     * Logs a warning (once per agent and prompt variant, falling back to {@link systemPromptId} when the
+     * description carries no variant id) when the resolved system prompt contains variables marked
+     * {@link AIVariable.isVolatile}: their value changes between turns, which invalidates the provider's cached
+     * prompt prefix on every request. The framework cannot prevent adopters from doing this in customized
+     * templates, so it flags it and points at {@link turnPromptId}.
+     */
+    protected warnAboutVolatileSystemPromptVariables(description: SystemMessageDescription): void {
+        const volatile = ResolvedAIVariable.findVolatile(description.variables);
+        if (volatile.length === 0) {
+            return;
+        }
+        const promptId = description.promptVariantId ?? this.systemPromptId ?? '';
+        if (this.volatileSystemPromptsWarned.has(promptId)) {
+            return;
+        }
+        this.volatileSystemPromptsWarned.add(promptId);
+        this.logger.warn(
+            `The system prompt of agent '${this.id}' (variant '${promptId || 'unknown'}') resolves the volatile variable(s) ` +
+            `${volatile.map(v => v.name).join(', ')}. Their values change between turns and defeat prompt caching for the whole conversation. ` +
+            'Deliver them per turn instead (AbstractChatAgent.turnPromptId, or `turnPrompt` in agent.md).'
+        );
+    }
+
+    /**
      * Appends resolved generic capability prompt fragments to the system message.
      * Only includes fragments for capability types that have selections.
      */
@@ -429,6 +504,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
         const resolvedTexts: string[] = [];
         let combinedFunctions = systemMessage.functionDescriptions;
         const combinedDeferred = new Set<string>(systemMessage.deferredFunctionIds ?? []);
+        let combinedVariables = systemMessage.variables;
 
         for (const resolvedFragment of resolvedResults) {
             if (resolvedFragment && resolvedFragment.text.trim()) {
@@ -449,6 +525,11 @@ export abstract class AbstractChatAgent implements ChatAgent {
                         combinedDeferred.add(id);
                     }
                 }
+                // Merge resolved variables, so a volatile variable resolved by a capability fragment is still
+                // detected by warnAboutVolatileSystemPromptVariables.
+                if (resolvedFragment.variables && resolvedFragment.variables.length > 0) {
+                    combinedVariables = [...(combinedVariables ?? []), ...resolvedFragment.variables];
+                }
             }
         }
 
@@ -462,7 +543,8 @@ export abstract class AbstractChatAgent implements ChatAgent {
             ...systemMessage,
             text: combinedText,
             functionDescriptions: combinedFunctions,
-            deferredFunctionIds: combinedDeferred.size > 0 ? combinedDeferred : undefined
+            deferredFunctionIds: combinedDeferred.size > 0 ? combinedDeferred : undefined,
+            variables: combinedVariables
         };
     }
 
@@ -471,7 +553,10 @@ export abstract class AbstractChatAgent implements ChatAgent {
     ): Promise<LanguageModelMessage[]> {
         const requestMessages = model.getRequests().flatMap(request => {
             const messages: LanguageModelMessage[] = [];
-            const text = request.message.parts.map(part => part.promptText).join('');
+            // The turn prompt shares the user's text message so that every provider sees a single user turn.
+            const text = [request.message.parts.map(part => part.promptText).join(''), request.turnPrompt]
+                .filter((part): part is string => !!part)
+                .join('\n\n');
             if (text.length > 0) {
                 messages.push({
                     actor: 'user',
