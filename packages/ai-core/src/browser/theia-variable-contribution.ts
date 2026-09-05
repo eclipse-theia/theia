@@ -26,6 +26,8 @@ import { AIVariableContribution, AIVariableResolver, AIVariableService, AIVariab
 interface VariableMapping {
     name?: string;
     description?: string;
+    /** See {@link AIVariable.isVolatile}. */
+    isVolatile?: boolean;
 }
 
 /**
@@ -52,42 +54,48 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
             {
                 name: 'currentAbsoluteFilePath',
                 description: nls.localize('theia/ai/core/variable-contribution/currentAbsoluteFilePath',
-                    'The absolute path of the currently opened file.')
+                    'The absolute path of the currently opened file.'),
+                isVolatile: true
             }
         ]],
         ['selectedText', [
             {
                 description: nls.localize('theia/ai/core/variable-contribution/currentSelectedText',
-                    'The plain text that is currently selected in the opened file. This excludes the information where the content is coming from.')
+                    'The plain text that is currently selected in the opened file. This excludes the information where the content is coming from.'),
+                isVolatile: true
             }
         ]],
         ['currentText', [
             {
                 name: 'currentFileContent',
                 description: nls.localize('theia/ai/core/variable-contribution/currentFileContent',
-                    'The plain content of the currently opened file. This excludes the information where the content is coming from.')
+                    'The plain content of the currently opened file. This excludes the information where the content is coming from.'),
+                isVolatile: true
             }
         ]],
         ['relativeFile', [
             {
                 name: 'currentRelativeFilePath',
                 description: nls.localize('theia/ai/core/variable-contribution/currentRelativeFilePath',
-                    'The workspace-relative path of the currently opened file (e.g., my-project/src/index.ts).')
+                    'The workspace-relative path of the currently opened file (e.g., my-project/src/index.ts).'),
+                isVolatile: true
             },
             {
                 name: '_f',
                 description: nls.localize('theia/ai/core/variable-contribution/dotRelativePath',
-                    'Short reference to the workspace-relative path of the currently opened file (\'currentRelativeFilePath\').')
+                    'Short reference to the workspace-relative path of the currently opened file (\'currentRelativeFilePath\').'),
+                isVolatile: true
             }
         ]],
         ['relativeFileDirname', [
             {
                 name: 'currentRelativeDirPath',
                 description: nls.localize('theia/ai/core/variable-contribution/currentRelativeDirPath',
-                    'The workspace-relative path of the directory containing the currently opened file (e.g., my-project/src).')
+                    'The workspace-relative path of the directory containing the currently opened file (e.g., my-project/src).'),
+                isVolatile: true
             }
         ]],
-        ['lineNumber', [{}]],
+        ['lineNumber', [{ isVolatile: true }]],
         ['workspaceFolder', [{}]]
     ]);
 
@@ -118,7 +126,8 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
                     service.registerResolver({
                         id,
                         name: newName,
-                        description: newDescription
+                        description: newDescription,
+                        isVolatile: mapping.isVolatile
                     }, this);
                 });
             });

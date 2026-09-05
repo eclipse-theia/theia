@@ -25,5 +25,6 @@ export type CustomAgentFactory = (
     prompt: string,
     defaultLLM: string,
     showInChat?: boolean,
-    promptVariants?: CustomAgentPromptVariant[]
+    promptVariants?: CustomAgentPromptVariant[],
+    turnPrompt?: string
 ) => CustomChatAgent;

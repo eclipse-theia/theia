@@ -26,12 +26,14 @@ export const OPEN_EDITORS_VARIABLE: AIVariable = {
     description: nls.localize('theia/ai/core/openEditorsVariable/description',
         'A comma-separated list of all currently open files as workspace-relative paths (e.g., my-project/src/index.ts).'),
     name: 'openEditors',
+    isVolatile: true,
 };
 
 export const OPEN_EDITORS_SHORT_VARIABLE: AIVariable = {
     id: 'openEditorsShort',
     description: nls.localize('theia/ai/core/openEditorsShortVariable/description', 'Short reference to all currently open files (relative paths, comma-separated)'),
     name: '_ff',
+    isVolatile: true,
 };
 
 @injectable()

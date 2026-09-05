@@ -34,6 +34,7 @@ import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { AI_CHAT_HOME, ChatCommands } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
 import { AgentModeConfirmationService } from './agent-mode-confirmation-service';
+import { OPEN_EDITORS_HINT_FRAGMENT_ID } from '../common/open-editors-hint-fragment-id';
 
 export const CoderAgentId = 'Coder';
 
@@ -80,6 +81,7 @@ export class CoderAgent extends AbstractModeAwareChatAgent {
         variants: [getCoderPromptTemplateEdit(), getCoderAgentModeNextPromptTemplate()]
     }];
     protected override systemPromptId: string | undefined = CODER_SYSTEM_PROMPT_ID;
+    protected override turnPromptId: string | undefined = OPEN_EDITORS_HINT_FRAGMENT_ID;
 
     private useSettingsDefaultMode = false;
 

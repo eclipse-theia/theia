@@ -19,6 +19,16 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { PromptService } from '@theia/ai-core/lib/common';
 import { OPEN_EDITORS_HINT_FRAGMENT_ID } from '../common/open-editors-hint-fragment-id';
 
+/**
+ * Per-turn hint listing the currently open editors. Agents send it inside the user turn (see
+ * `AbstractChatAgent.turnPromptId`), not in the system prompt, so the system prompt stays cacheable.
+ */
+export const OPEN_EDITORS_HINT_TEMPLATE = `## Open Editors
+The following files are open in the user's editor as of this message. This is contextual information only \
+— they may or may not be relevant to the request. Do not assume they are related unless the user refers to them.
+
+{{openEditors}}`;
+
 @injectable()
 export class OpenEditorsHintContribution implements FrontendApplicationContribution {
 
@@ -26,13 +36,6 @@ export class OpenEditorsHintContribution implements FrontendApplicationContribut
     protected readonly promptService: PromptService;
 
     onStart(): void {
-        this.promptService.addBuiltInPromptFragment({
-            id: OPEN_EDITORS_HINT_FRAGMENT_ID,
-            template: `## Open Editors
-The following files are currently open in the user's editor. This is provided as contextual information only \
-— these files may or may not be relevant to the current request. Do not assume they are related unless the user explicitly refers to them.
-
-{{openEditors}}`
-        });
+        this.promptService.addBuiltInPromptFragment({ id: OPEN_EDITORS_HINT_FRAGMENT_ID, template: OPEN_EDITORS_HINT_TEMPLATE });
     }
 }

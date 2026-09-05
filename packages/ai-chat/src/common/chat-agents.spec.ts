@@ -18,10 +18,12 @@ import 'reflect-metadata';
 
 import { expect } from 'chai';
 import {
+    CapabilityAwareContext, GENERIC_CAPABILITIES_FUNCTIONS_PROMPT_ID,
     LanguageModel, LanguageModelMessage, LanguageModelRegistry, LanguageModelRequirement, LanguageModelResponse,
-    LanguageModelSelector, LanguageModelService, LanguageModelStreamResponsePart, ServerToolDescriptor, UserRequest
+    LanguageModelSelector, LanguageModelService, LanguageModelStreamResponsePart, PromptService, ResolvedAIVariable, ResolvedPromptFragment, ServerToolDescriptor, UserRequest
 } from '@theia/ai-core';
-import { AbstractChatAgent, AbstractStreamParsingChatAgent, ChatAgentLocation } from './chat-agents';
+import { AbstractChatAgent, AbstractStreamParsingChatAgent, ChatAgentLocation, ChatSessionContext, SystemMessageDescription } from './chat-agents';
+import { CustomChatAgent } from './custom-chat-agent';
 import {
     ChatResponseContent,
     CompactionChatResponseContent,
@@ -34,8 +36,16 @@ import {
 } from './chat-model';
 import { ParsedChatRequest, ParsedChatRequestTextPart } from './parsed-chat-request';
 import { FileReadTracker } from './file-read-tracker';
-import { ILogger } from '@theia/core';
+import { ILogger, Loggable } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+
+class RecordingLogger extends MockLogger {
+    readonly warnings: string[] = [];
+    override warn(arg: string | Loggable, ...params: unknown[]): Promise<void> {
+        this.warnings.push(String(arg));
+        return Promise.resolve();
+    }
+}
 
 class TestChatAgent extends AbstractChatAgent {
     readonly id = 'test-agent';
@@ -70,6 +80,36 @@ class TestChatAgent extends AbstractChatAgent {
 
     public setFileReadTracker(tracker: FileReadTracker): void {
         this.fileReadTracker = tracker;
+    }
+
+    public setTurnPromptId(id: string | undefined): void {
+        this.turnPromptId = id;
+    }
+
+    public setSystemPromptId(id: string | undefined): void {
+        this.systemPromptId = id;
+    }
+
+    public setPromptService(service: PromptService): void {
+        this.promptService = service;
+    }
+
+    public exposeResolveTurnPrompt(context: ChatSessionContext): Promise<ResolvedPromptFragment | undefined> {
+        return this.resolveTurnPrompt(context);
+    }
+
+    public useRecordingLogger(): RecordingLogger {
+        const logger = new RecordingLogger();
+        this.logger = logger;
+        return logger;
+    }
+
+    public exposeWarnAboutVolatileSystemPromptVariables(description: SystemMessageDescription): void {
+        this.warnAboutVolatileSystemPromptVariables(description);
+    }
+
+    public exposeAppendGenericCapabilities(systemMessage: SystemMessageDescription, context: CapabilityAwareContext): Promise<SystemMessageDescription> {
+        return this.appendGenericCapabilities(systemMessage, context);
     }
 
 }
@@ -151,6 +191,107 @@ describe('AbstractChatAgent.getMessages', () => {
             .filter(m => m.actor === 'ai');
         expect(aiTextMessages).to.have.lengthOf(1);
         expect(aiTextMessages[0].text).to.equal('Partial reply before cancel');
+    });
+});
+
+describe('AbstractChatAgent turn prompt', () => {
+
+    function summarize(messages: LanguageModelMessage[]): string[] {
+        return messages.map(message => message.type === 'text' ? `${message.actor}:${message.text}` : message.type);
+    }
+
+    it('appends a stored turn prompt to the user text of its request, in the same user message, for every request', async () => {
+        const agent = new TestChatAgent();
+        const model = new MutableChatModel(ChatAgentLocation.Panel);
+        const first = model.addRequest(createParsedRequest('First'));
+        first.setTurnPrompt('editors: a.ts');
+        first.response.response.addContent(new TextChatResponseContentImpl('Reply 1'));
+        first.response.complete();
+        const second = model.addRequest(createParsedRequest('Second'));
+        second.response.response.addContent(new TextChatResponseContentImpl('Reply 2'));
+        second.response.complete();
+        const third = model.addRequest(createParsedRequest('Third'));
+        third.setTurnPrompt('editors: b.ts');
+
+        const messages = await agent.exposeGetMessages(model);
+
+        expect(summarize(messages)).to.deep.equal([
+            'user:First\n\neditors: a.ts', 'ai:Reply 1',
+            'user:Second', 'ai:Reply 2',
+            'user:Third\n\neditors: b.ts'
+        ]);
+    });
+
+    it('sends the turn prompt alone when the request has no text', async () => {
+        const agent = new TestChatAgent();
+        const model = new MutableChatModel(ChatAgentLocation.Panel);
+        model.addRequest(createParsedRequest('')).setTurnPrompt('editors: c.ts');
+
+        const messages = await agent.exposeGetMessages(model);
+
+        expect(summarize(messages)).to.deep.equal(['user:editors: c.ts']);
+    });
+
+    it('resolves the declared turn prompt fragment with the session context', async () => {
+        const agent = new TestChatAgent();
+        agent.setTurnPromptId('my-turn-prompt');
+        const calls: unknown[][] = [];
+        agent.setPromptService({
+            getResolvedPromptFragment: async (id: string, args: unknown, ctx: unknown) => {
+                calls.push([id, args, ctx]);
+                return { id, text: 'current state' };
+            }
+        } as unknown as PromptService);
+        const context: ChatSessionContext = { model: new MutableChatModel(ChatAgentLocation.Panel) };
+
+        const resolved = await agent.exposeResolveTurnPrompt(context);
+
+        expect(resolved?.text).to.equal('current state');
+        expect(calls).to.deep.equal([['my-turn-prompt', undefined, context]]);
+    });
+
+    it('resolves nothing when no turn prompt is declared', async () => {
+        const agent = new TestChatAgent();
+        agent.setPromptService({
+            getResolvedPromptFragment: async () => { throw new Error('must not be called'); }
+        } as unknown as PromptService);
+
+        const resolved = await agent.exposeResolveTurnPrompt({ model: new MutableChatModel(ChatAgentLocation.Panel) });
+
+        expect(resolved).to.equal(undefined);
+    });
+
+    it('warns once when the declared turn prompt id names no existing fragment, naming the agent and the fragment id', async () => {
+        const agent = new TestChatAgent();
+        const logger = agent.useRecordingLogger();
+        agent.setTurnPromptId('no-such-fragment');
+        agent.setPromptService({
+            getResolvedPromptFragment: async () => undefined
+        } as unknown as PromptService);
+        const context: ChatSessionContext = { model: new MutableChatModel(ChatAgentLocation.Panel) };
+
+        const first = await agent.exposeResolveTurnPrompt(context);
+        const second = await agent.exposeResolveTurnPrompt(context);
+
+        expect(first).to.equal(undefined);
+        expect(second).to.equal(undefined);
+        expect(logger.warnings).to.have.lengthOf(1);
+        expect(logger.warnings[0]).to.contain('test-agent').and.to.contain('no-such-fragment');
+    });
+
+    it('a custom agent exposes the turn prompt id through its setter', async () => {
+        const agent = new CustomChatAgent();
+        agent.turnPrompt = 'open-editors-hint';
+        const calls: string[] = [];
+        (agent as unknown as { promptService: PromptService }).promptService = {
+            getResolvedPromptFragment: async (id: string) => { calls.push(id); return { id, text: 'state' }; }
+        } as unknown as PromptService;
+
+        const resolved = await (agent as unknown as { resolveTurnPrompt(c: ChatSessionContext): Promise<ResolvedPromptFragment | undefined> })
+            .resolveTurnPrompt({ model: new MutableChatModel(ChatAgentLocation.Panel) });
+
+        expect(resolved?.text).to.equal('state');
+        expect(calls).to.deep.equal(['open-editors-hint']);
     });
 });
 
@@ -362,5 +503,93 @@ describe('AbstractChatAgent.appendExternalFileChangeNotice', () => {
         await agent.exposeAppendExternalFileChangeNotice(createRequest(), messages);
 
         expect(messages).to.be.empty;
+    });
+});
+
+describe('AbstractChatAgent.appendGenericCapabilities', () => {
+    it('merges the resolved capability fragments\' variables into the returned description', async () => {
+        const agent = new TestChatAgent();
+        const editors: ResolvedAIVariable = { variable: { id: 'openEditors', name: 'openEditors', description: '', isVolatile: true }, value: '"a.ts"' };
+        agent.setPromptService({
+            getResolvedPromptFragment: async (id: string) => id === GENERIC_CAPABILITIES_FUNCTIONS_PROMPT_ID
+                ? { id, text: 'functions text', variables: [editors] }
+                : undefined
+        } as unknown as PromptService);
+        const systemMessage: SystemMessageDescription = { text: 'base', variables: [] };
+        const context: CapabilityAwareContext = { genericCapabilitySelections: { functions: ['foo'] } };
+
+        const result = await agent.exposeAppendGenericCapabilities(systemMessage, context);
+
+        expect(result.text).to.equal('base\n\nfunctions text');
+        expect(result.variables).to.deep.equal([editors]);
+    });
+
+    it('returns the description unchanged when there are no selections', async () => {
+        const agent = new TestChatAgent();
+        const systemMessage: SystemMessageDescription = { text: 'base', variables: [] };
+
+        const result = await agent.exposeAppendGenericCapabilities(systemMessage, {});
+
+        expect(result).to.equal(systemMessage);
+    });
+});
+
+describe('AbstractChatAgent volatile system prompt warning', () => {
+    const editors: ResolvedAIVariable = { variable: { id: 'openEditors', name: 'openEditors', description: '', isVolatile: true }, value: '"a.ts"' };
+    const stable: ResolvedAIVariable = { variable: { id: 'productName', name: 'productName', description: '' }, value: 'Theia' };
+
+    it('warns once per agent and prompt variant, naming the variables', () => {
+        const agent = new TestChatAgent();
+        const logger = agent.useRecordingLogger();
+        const description: SystemMessageDescription = { text: '...', promptVariantId: 'coder-system-agent-mode', variables: [stable, editors] };
+
+        agent.exposeWarnAboutVolatileSystemPromptVariables(description);
+        agent.exposeWarnAboutVolatileSystemPromptVariables(description);
+
+        expect(logger.warnings).to.have.lengthOf(1);
+        expect(logger.warnings[0]).to.contain('test-agent').and.to.contain('coder-system-agent-mode').and.to.contain('openEditors').and.to.contain('turnPromptId');
+    });
+
+    it('warns again for a different prompt variant', () => {
+        const agent = new TestChatAgent();
+        const logger = agent.useRecordingLogger();
+
+        agent.exposeWarnAboutVolatileSystemPromptVariables({ text: '', promptVariantId: 'variant-a', variables: [editors] });
+        agent.exposeWarnAboutVolatileSystemPromptVariables({ text: '', promptVariantId: 'variant-b', variables: [editors] });
+
+        expect(logger.warnings).to.have.lengthOf(2);
+    });
+
+    it('falls back to systemPromptId when there is no prompt variant, and warns again for a different systemPromptId', () => {
+        const agent = new TestChatAgent();
+        const logger = agent.useRecordingLogger();
+        agent.setSystemPromptId('coder-system');
+
+        agent.exposeWarnAboutVolatileSystemPromptVariables({ text: '', variables: [editors] });
+        agent.exposeWarnAboutVolatileSystemPromptVariables({ text: '', variables: [editors] });
+
+        expect(logger.warnings).to.have.lengthOf(1);
+        expect(logger.warnings[0]).to.contain('test-agent').and.to.contain('coder-system').and.to.contain('openEditors');
+
+        agent.setSystemPromptId('other-system');
+        agent.exposeWarnAboutVolatileSystemPromptVariables({ text: '', variables: [editors] });
+
+        expect(logger.warnings).to.have.lengthOf(2);
+        expect(logger.warnings[1]).to.contain('other-system');
+    });
+
+    it('stays silent without volatile variables', () => {
+        const agent = new TestChatAgent();
+        const logger = agent.useRecordingLogger();
+
+        agent.exposeWarnAboutVolatileSystemPromptVariables({ text: '', promptVariantId: 'variant-a', variables: [stable] });
+        agent.exposeWarnAboutVolatileSystemPromptVariables({ text: '', promptVariantId: 'variant-a' });
+
+        expect(logger.warnings).to.be.empty;
+    });
+
+    it('fromResolvedPromptFragment carries the resolved variables', () => {
+        const description = SystemMessageDescription.fromResolvedPromptFragment({ id: 'x', text: 'y', variables: [editors] }, 'x', false);
+        expect(description.variables).to.deep.equal([editors]);
     });
 });

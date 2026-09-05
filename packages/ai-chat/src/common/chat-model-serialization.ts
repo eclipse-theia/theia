@@ -119,6 +119,8 @@ export interface SerializableChatRequestData {
      * Server tool selections for this request, keyed by model vendor.
      */
     serverToolSelections?: Record<string, string[]>;
+    /** Per-turn prompt text sent with this request, see `ChatRequestModel.turnPrompt`. */
+    turnPrompt?: string;
 }
 
 export interface SerializableChatResponseContentData<T = unknown> {
