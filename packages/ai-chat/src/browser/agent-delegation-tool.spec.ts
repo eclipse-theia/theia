@@ -43,11 +43,22 @@ disableJSDOM();
 
 // --- Factory ---
 
-function makeAgentDelegationTool(chatAgentService: ChatAgentService, chatService: ChatService): AgentDelegationTool {
+interface StubLogger {
+    error: sinon.SinonStub;
+    warn: sinon.SinonStub;
+    info: sinon.SinonStub;
+    debug: sinon.SinonStub;
+}
+
+function makeStubLogger(): StubLogger {
+    return { error: sinon.stub(), warn: sinon.stub(), info: sinon.stub(), debug: sinon.stub() };
+}
+
+function makeAgentDelegationTool(chatAgentService: ChatAgentService, chatService: ChatService, logger: StubLogger = makeStubLogger()): AgentDelegationTool {
     const tool = new AgentDelegationTool();
     Object.defineProperty(tool, 'getChatAgentService', { value: () => chatAgentService });
     Object.defineProperty(tool, 'getChatService', { value: () => chatService });
-    Object.defineProperty(tool, 'logger', { value: { error: sinon.stub(), warn: sinon.stub(), info: sinon.stub(), debug: sinon.stub() } });
+    Object.defineProperty(tool, 'logger', { value: logger });
     return tool;
 }
 
@@ -300,6 +311,7 @@ describe('AgentDelegationTool', () => {
         let existingSession: ReturnType<typeof makeExistingSession>;
         let chatService: ChatService;
         let tool: AgentDelegationTool;
+        let logger: StubLogger;
         let ctx: ReturnType<typeof makeChatContext>;
 
         beforeEach(() => {
@@ -309,7 +321,8 @@ describe('AgentDelegationTool', () => {
             const agentService = makeChatAgentService();
             chatService = makeChatService(newSession);
             (chatService.getSession as sinon.SinonStub).withArgs('existing-session-id').returns(existingSession);
-            tool = makeAgentDelegationTool(agentService, chatService);
+            logger = makeStubLogger();
+            tool = makeAgentDelegationTool(agentService, chatService, logger);
             ctx = makeChatContext();
         });
 
@@ -366,6 +379,8 @@ describe('AgentDelegationTool', () => {
             expect(result).to.include('not found');
             expect((chatService.sendRequest as sinon.SinonStub).called).to.be.false;
             expect((chatService.createSession as sinon.SinonStub).called).to.be.false;
+            expect(logger.warn.calledOnce).to.be.true;
+            expect(logger.error.called).to.be.false;
         });
 
         it('returns an error when the resumed session is still processing a request', async () => {
@@ -376,6 +391,8 @@ describe('AgentDelegationTool', () => {
 
             expect(result).to.include('still processing');
             expect((chatService.sendRequest as sinon.SinonStub).called).to.be.false;
+            expect(logger.warn.calledOnce).to.be.true;
+            expect(logger.error.called).to.be.false;
         });
 
         it('returns an error when agentId does not match the pinned agent of the session', async () => {
@@ -386,6 +403,8 @@ describe('AgentDelegationTool', () => {
 
             expect(result).to.include("belongs to agent 'other-agent'");
             expect((chatService.sendRequest as sinon.SinonStub).called).to.be.false;
+            expect(logger.error.calledOnce).to.be.true;
+            expect(logger.warn.called).to.be.false;
         });
     });
 
