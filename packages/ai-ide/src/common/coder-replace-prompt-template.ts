@@ -10,7 +10,6 @@
 // *****************************************************************************
 
 import { AGENT_DELEGATION_FUNCTION_ID, BasePromptFragment } from '@theia/ai-core/lib/common';
-import { CHANGE_SET_SUMMARY_VARIABLE_ID } from '@theia/ai-chat';
 import {
     GET_WORKSPACE_FILE_LIST_FUNCTION_ID,
     FILE_CONTENT_FUNCTION_ID,
@@ -24,7 +23,7 @@ import {
     STOP_LAUNCH_CONFIGURATION_FUNCTION_ID
 } from './workspace-functions';
 import { TODO_WRITE_FUNCTION_ID } from './todo-tool';
-import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from './context-variables';
+import { TASK_CONTEXT_SUMMARY_VARIABLE_ID } from './context-variables';
 import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
 import {
     SUGGEST_FILE_CONTENT_ID,
@@ -246,14 +245,6 @@ Do NOT ask for confirmation on:
 (a fenced \`mermaid\` code block, rendered in the chat). Chat space is limited, so avoid large or overly complex diagrams.
 
 # Context
-
-## Provided Files
-The following files have been provided for additional context. Some may be referred to by the user (e.g., "this file" or "the attachment"). \
-Always retrieve relevant files using ~{${FILE_CONTENT_FUNCTION_ID}} to understand your task.
-{{${CONTEXT_FILES_VARIABLE_ID}}}
-
-## Previously Changed Files
-{{changeSetSummary}}
 
 ## Project Info
 {{prompt:project-info}}
@@ -535,14 +526,6 @@ Search for files only when a change is requested.
 
 # Context
 
-## Provided Files
-The following files have been provided for additional context. Some may be referred to by the user (e.g., "this file" or "the attachment").
-Always retrieve relevant files using ~{${FILE_CONTENT_FUNCTION_ID}} to understand your task.
-{{${CONTEXT_FILES_VARIABLE_ID}}}
-
-## Previously Changed Files
-{{${CHANGE_SET_SUMMARY_VARIABLE_ID}}}
-
 ## Project Info
 {{prompt:project-info}}
 
@@ -623,16 +606,6 @@ Be aware this function operates on the workspace. If the user has not accepted a
 
 When a diagram clarifies an architectural concept or how something is implemented, include a Mermaid diagram (a fenced \`mermaid\` code block) in your response. \
 It is rendered directly in the chat. Keep diagrams small and focused. The chat has limited space, so prefer a few simple diagrams over a single large, complex one.
-
-## Additional Context
-
-The following files have been provided for additional context. Some of them may also be referred to by the user (e.g. "this file" or "the attachment"). \
-Always look at the relevant files to understand your task using the function ~{${FILE_CONTENT_FUNCTION_ID}}
-{{${CONTEXT_FILES_VARIABLE_ID}}}
-
-## Previously Proposed Changes
-You have previously proposed changes for the following files. Some suggestions may have been accepted by the user, while others may still be pending.
-{{${CHANGE_SET_SUMMARY_VARIABLE_ID}}}
 
 {{prompt:project-info}}
 

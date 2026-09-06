@@ -43,10 +43,10 @@ export interface AIVariable {
     /** optional arguments for resolving the variable into a value */
     args?: AIVariableDescription[];
     /**
-     * Set when the value reflects transient UI state that can change between chat turns without any action
-     * directed at the chat (active editor, selection, open tabs). Resolving such a variable into a system prompt
-     * changes the prompt on every turn and defeats provider prompt caching; agents should deliver it per turn
-     * instead (see `AbstractChatAgent.turnPromptId` in `@theia/ai-chat`).
+     * Set when the value can change from one chat turn to the next: transient UI state (active editor, selection,
+     * open tabs) as well as chat context that evolves with the conversation (attached files, the change set).
+     * Resolving such a variable into a system prompt changes the prompt on every turn and defeats provider prompt
+     * caching; agents should deliver it per turn instead (see `AbstractChatAgent.turnPromptId` in `@theia/ai-chat`).
      */
     isVolatile?: boolean;
 }

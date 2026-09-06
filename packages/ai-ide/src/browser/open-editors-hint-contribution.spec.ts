@@ -25,13 +25,17 @@ import { universalTemplate, universalTemplateVariant } from '../common/universal
 import { UniversalChatAgent } from '../common/universal-chat-agent';
 import { architectSystemVariants } from './architect-prompt-template';
 import { OPEN_EDITORS_HINT_TEMPLATE } from './open-editors-hint-contribution';
+import { ARCHITECT_TURN_PROMPT_TEMPLATE, CODER_TURN_PROMPT_TEMPLATE } from './turn-prompt-contribution';
+import { ARCHITECT_TURN_PROMPT_ID, CODER_TURN_PROMPT_ID } from '../common/turn-prompt-fragment-ids';
 import { CoderAgent } from './coder-agent';
 import { ArchitectAgent } from './architect-agent';
 
 // Constructed here, while jsdom is still enabled: their field initializers read
 // FrontendApplicationConfigProvider.get(), which needs `window`. Their init() is @postConstruct
 // and is not run outside of DI, so this is safe without a full container.
-const agentsWithOpenEditorsHintTurnPrompt = [new CoderAgent(), new ArchitectAgent(), new UniversalChatAgent()];
+const coder = new CoderAgent();
+const architect = new ArchitectAgent();
+const universal = new UniversalChatAgent();
 
 disableJSDOM();
 
@@ -55,9 +59,12 @@ describe('open-editors-hint', () => {
         expect(OPEN_EDITORS_HINT_TEMPLATE).to.contain('{{openEditors}}');
     });
 
-    it('is declared as the turn prompt of Coder, Architect and Universal, so it is sent per turn instead', () => {
-        for (const agent of agentsWithOpenEditorsHintTurnPrompt) {
-            expect((agent as unknown as { turnPromptId?: string }).turnPromptId, agent.id).to.equal(OPEN_EDITORS_HINT_FRAGMENT_ID);
-        }
+    it('is sent per turn: Universal declares it as its turn prompt, Coder and Architect include it in theirs', () => {
+        const turnPromptIdOf = (agent: object): string | undefined => (agent as { turnPromptId?: string }).turnPromptId;
+        expect(turnPromptIdOf(universal)).to.equal(OPEN_EDITORS_HINT_FRAGMENT_ID);
+        expect(turnPromptIdOf(coder)).to.equal(CODER_TURN_PROMPT_ID);
+        expect(CODER_TURN_PROMPT_TEMPLATE).to.contain(include);
+        expect(turnPromptIdOf(architect)).to.equal(ARCHITECT_TURN_PROMPT_ID);
+        expect(ARCHITECT_TURN_PROMPT_TEMPLATE).to.contain(include);
     });
 });

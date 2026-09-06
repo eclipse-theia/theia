@@ -24,6 +24,7 @@ export const CONTEXT_FILES_VARIABLE: AIVariable = {
     id: CONTEXT_FILES_VARIABLE_ID,
     description: nls.localize('theia/ai/core/contextSummaryVariable/description', 'Describes files in the context for a given session.'),
     name: CONTEXT_FILES_VARIABLE_ID,
+    isVolatile: true
 };
 
 /** Value of {@link CONTEXT_FILES_VARIABLE} when no file is attached, so prompts render an explicit marker instead of an empty list. */

@@ -137,6 +137,7 @@ import { GitHubCapabilityContribution } from './github-capability-contribution';
 import { ShellExecutionCapabilityContribution } from './shell-execution-capability-contribution';
 import { MemoryCapabilityContribution } from './memory-capability-contribution';
 import { OpenEditorsHintContribution } from './open-editors-hint-contribution';
+import { TurnPromptContribution } from './turn-prompt-contribution';
 import { AgentModeConfirmationService, AgentModeConfirmationServiceImpl } from './agent-mode-confirmation-service';
 import { ExploreAgent } from './explore-agent';
 import { CodeReviewerAgent } from './code-reviewer-agent';
@@ -370,6 +371,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).to(ShellExecutionCapabilityContribution);
     bind(FrontendApplicationContribution).to(MemoryCapabilityContribution);
     bind(FrontendApplicationContribution).to(OpenEditorsHintContribution);
+    bind(FrontendApplicationContribution).to(TurnPromptContribution);
 
     bind(FrontendApplicationContribution).to(CodeReviewCapabilityContribution);
     bind(FrontendApplicationContribution).to(PRReviewCapabilityContribution);

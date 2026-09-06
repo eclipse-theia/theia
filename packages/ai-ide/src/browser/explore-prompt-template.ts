@@ -114,8 +114,6 @@ For each file, include ONLY what is needed for the task:
 
 # Context
 
-{{contextFiles}}
-
 {{prompt:project-info}}
 `
 };
