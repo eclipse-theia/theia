@@ -26,6 +26,9 @@ export const CONTEXT_FILES_VARIABLE: AIVariable = {
     name: CONTEXT_FILES_VARIABLE_ID,
 };
 
+/** Value of {@link CONTEXT_FILES_VARIABLE} when no file is attached, so prompts render an explicit marker instead of an empty list. */
+export const NO_CONTEXT_FILES_VALUE = 'none';
+
 @injectable()
 export class ContextFilesVariableContribution implements AIVariableContribution, AIVariableResolver {
     registerVariables(service: AIVariableService): void {
@@ -40,10 +43,11 @@ export class ContextFilesVariableContribution implements AIVariableContribution,
         if (!ChatSessionContext.is(context) || request.variable.name !== CONTEXT_FILES_VARIABLE.name) { return undefined; }
         const variables = ChatSessionContext.getVariables(context);
 
+        const files = variables.filter(variable => variable.variable.name === 'file' && !!variable.arg)
+            .map(variable => `- ${variable.arg}`);
         return {
             variable: CONTEXT_FILES_VARIABLE,
-            value: variables.filter(variable => variable.variable.name === 'file' && !!variable.arg)
-                .map(variable => `- ${variable.arg}`).join('\n')
+            value: files.length > 0 ? files.join('\n') : NO_CONTEXT_FILES_VALUE
         };
     }
 }

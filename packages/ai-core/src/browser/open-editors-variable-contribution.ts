@@ -36,6 +36,9 @@ export const OPEN_EDITORS_SHORT_VARIABLE: AIVariable = {
     isVolatile: true,
 };
 
+/** Value of the open-editors variables when no editor is open, so prompts render an explicit marker instead of an empty list. */
+export const NO_OPEN_EDITORS_VALUE = 'none';
+
 @injectable()
 export class OpenEditorsVariableContribution implements AIVariableContribution, AIVariableResolver {
 
@@ -62,7 +65,7 @@ export class OpenEditorsVariableContribution implements AIVariableContribution, 
         const openFiles = this.getAllOpenFilesRelative();
         return {
             variable: request.variable,
-            value: openFiles
+            value: openFiles.length > 0 ? openFiles : NO_OPEN_EDITORS_VALUE
         };
     }
 

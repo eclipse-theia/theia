@@ -157,7 +157,14 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
     }
 
     async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
-        const resolved = await this.variableResolverService.resolve(this.toTheiaVariable(request), context);
-        return resolved ? { value: resolved, variable: request.variable } : undefined;
+        const theiaVariable = this.toTheiaVariable(request);
+        const resolved = await this.variableResolverService.resolve(theiaVariable, context);
+        if (!resolved) {
+            return undefined;
+        }
+        // The variable resolver leaves a `${...}` reference verbatim when the Theia variable has no value in this
+        // context (e.g. `${relativeFile}` without an active editor). Resolve to an empty value instead of leaking
+        // the reference into the prompt.
+        return { value: resolved === theiaVariable ? '' : resolved, variable: request.variable };
     }
 }
