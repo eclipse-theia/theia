@@ -200,7 +200,7 @@ describe('AbstractChatAgent turn prompt', () => {
         return messages.map(message => message.type === 'text' ? `${message.actor}:${message.text}` : message.type);
     }
 
-    it('appends a stored turn prompt to the user text of its request, in the same user message, for every request', async () => {
+    it('prepends a stored turn prompt to the user text of its request, in the same user message, for every request', async () => {
         const agent = new TestChatAgent();
         const model = new MutableChatModel(ChatAgentLocation.Panel);
         const first = model.addRequest(createParsedRequest('First'));
@@ -216,9 +216,9 @@ describe('AbstractChatAgent turn prompt', () => {
         const messages = await agent.exposeGetMessages(model);
 
         expect(summarize(messages)).to.deep.equal([
-            'user:First\n\neditors: a.ts', 'ai:Reply 1',
+            'user:editors: a.ts\n\nFirst', 'ai:Reply 1',
             'user:Second', 'ai:Reply 2',
-            'user:Third\n\neditors: b.ts'
+            'user:editors: b.ts\n\nThird'
         ]);
     });
 

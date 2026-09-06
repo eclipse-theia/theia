@@ -224,7 +224,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
     protected readonly abstract defaultLanguageModelPurpose: string;
     protected systemPromptId: string | undefined = undefined;
     /**
-     * Optional id of a prompt fragment that is resolved on every request and appended to the user's message text
+     * Optional id of a prompt fragment that is resolved on every request and prepended to the user's message text
      * instead of the system prompt. Use it for volatile state such as open editors or the current selection: the
      * system prompt stays byte-stable across turns (so provider prompt caches keep hitting) while the model still
      * receives the state as of each message. The resolved text is stored on the request
@@ -554,7 +554,9 @@ export abstract class AbstractChatAgent implements ChatAgent {
         const requestMessages = model.getRequests().flatMap(request => {
             const messages: LanguageModelMessage[] = [];
             // The turn prompt shares the user's text message so that every provider sees a single user turn.
-            const text = [request.message.parts.map(part => part.promptText).join(''), request.turnPrompt]
+            // The turn prompt frames the request, and the user's own words stay the last thing the model reads
+            // (the Claude Code agent places its <ide-context> block the same way).
+            const text = [request.turnPrompt, request.message.parts.map(part => part.promptText).join('')]
                 .filter((part): part is string => !!part)
                 .join('\n\n');
             if (text.length > 0) {
