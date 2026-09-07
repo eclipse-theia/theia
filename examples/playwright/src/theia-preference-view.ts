@@ -78,6 +78,9 @@ export enum TheiaPreferenceScope {
 export class TheiaPreferenceView extends TheiaView {
     public customTimeout?: number;
     protected modificationIndicator = '.theia-mod-item-modified';
+    protected searchInput = '.settings-search-input';
+    protected categoryTree = '.preferences-tree-widget';
+    protected editorScrollContainer = '.settings-main-scroll-container';
     protected optionSelectLabel = '.theia-select-component-label';
     protected optionSelectDropdown = '.theia-select-component-dropdown';
     protected optionSelectDropdownValue = '.theia-select-component-option-value';
@@ -113,6 +116,56 @@ export class TheiaPreferenceView extends TheiaView {
         await this.activate();
         const scopeTab = await this.page.waitForSelector(this.getScopeSelector(scope));
         await scopeTab.click();
+    }
+
+    /**
+     * Clears the search box, so that the complete settings tree is shown again and the
+     * settings editor returns to the default category.
+     */
+    async clearSearch(): Promise<void> {
+        await this.activate();
+        const viewElement = await this.viewElement();
+        const input = await viewElement?.waitForSelector(this.searchInput, { timeout: this.customTimeout });
+        await input?.fill('');
+    }
+
+    /**
+     * Selects a category in the settings tree by following the given path of labels,
+     * e.g. `'Text Editor', 'Files'`. The settings editor is narrowed to the selected category.
+     * An active search is cleared first, as it prunes the tree and adds result counts to the labels.
+     */
+    async selectCategory(...labelPath: string[]): Promise<void> {
+        await this.clearSearch();
+        const viewElement = await this.viewElement();
+        for (const label of labelPath) {
+            const node = await viewElement?.waitForSelector(this.getCategoryNodeSelector(label), { timeout: this.customTimeout });
+            await node?.click();
+        }
+    }
+
+    /**
+     * @returns the label of the category currently selected in the settings tree, or `undefined` if none is selected.
+     */
+    async getSelectedCategory(): Promise<string | undefined> {
+        await this.activate();
+        const viewElement = await this.viewElement();
+        const label = await viewElement?.$(`${this.categoryTree} .theia-TreeNode.theia-mod-selected .theia-TreeNodeSegmentGrow`);
+        return (await label?.textContent())?.trim();
+    }
+
+    /**
+     * Scrolls the settings editor by the given number of pixels. Scrolling syncs the tree
+     * selection to the section shown at the top of the editor.
+     */
+    async scrollEditorBy(deltaY: number): Promise<void> {
+        await this.activate();
+        const viewElement = await this.viewElement();
+        const container = await viewElement?.waitForSelector(this.editorScrollContainer, { timeout: this.customTimeout });
+        await container?.evaluate((element, delta) => { element.scrollTop += delta; }, deltaY);
+    }
+
+    protected getCategoryNodeSelector(label: string): string {
+        return `${this.categoryTree} .theia-TreeNode:has(.theia-TreeNodeSegmentGrow:text-is("${label}"))`;
     }
 
     async getBooleanPreferenceByPath(sectionTitle: string, name: string): Promise<boolean> {
@@ -203,6 +256,7 @@ export class TheiaPreferenceView extends TheiaView {
     }
 
     private async findPreferenceEditorById(preferenceId: string, elementType: string = 'input'): Promise<ElementHandle<SVGElement | HTMLElement>> {
+        await this.ensurePreferenceVisible(preferenceId);
         const viewElement = await this.viewElement();
         const element = await viewElement?.waitForSelector(this.getPreferenceEditorSelector(preferenceId, elementType), { timeout: this.customTimeout });
         if (!element) {
@@ -211,8 +265,27 @@ export class TheiaPreferenceView extends TheiaView {
         return element;
     }
 
-    private getPreferenceSelector(preferenceId: string): string {
-        return `li[data-pref-id="${preferenceId}"]`;
+    /**
+     * Preferences outside the currently selected category are hidden in the settings editor.
+     * If the preference is not visible, search for its id, which clears the category filter
+     * and reveals the preference.
+     */
+    protected async ensurePreferenceVisible(preferenceId: string): Promise<void> {
+        const viewElement = await this.viewElement();
+        if (await viewElement?.$(this.getPreferenceSelector(preferenceId))) {
+            return;
+        }
+        const input = await viewElement?.waitForSelector(this.searchInput, { timeout: this.customTimeout });
+        await input?.fill(preferenceId);
+        await viewElement?.waitForSelector(this.getPreferenceSelector(preferenceId), { timeout: this.customTimeout });
+    }
+
+    /**
+     * @param visibleOnly filters out hidden rows, e.g. the copy of a preference in the
+     * 'Commonly Used' section, which is hidden while a search filter is active.
+     */
+    private getPreferenceSelector(preferenceId: string, visibleOnly: boolean = true): string {
+        return `li[data-pref-id="${preferenceId}"]${visibleOnly ? ':visible' : ''}`;
     }
 
     private getPreferenceEditorSelector(preferenceId: string, elementType: string): string {
@@ -243,10 +316,14 @@ export class TheiaPreferenceView extends TheiaView {
     async waitForUnmodified(preferenceId: string): Promise<void> {
         await this.activate();
         const viewElement = await this.viewElement();
-        await viewElement?.waitForSelector(`${this.getPreferenceGutterSelector(preferenceId)}${this.modificationIndicator}`, { state: 'detached', timeout: this.customTimeout });
+        // Match hidden rows too: a row hidden by the category filter must not satisfy the
+        // 'detached' wait while its modification indicator is still present.
+        await viewElement?.waitForSelector(
+            `${this.getPreferenceGutterSelector(preferenceId, false)}${this.modificationIndicator}`, { state: 'detached', timeout: this.customTimeout }
+        );
     }
 
-    private getPreferenceGutterSelector(preferenceId: string): string {
-        return `${this.getPreferenceSelector(preferenceId)} .pref-context-gutter`;
+    private getPreferenceGutterSelector(preferenceId: string, visibleOnly: boolean = true): string {
+        return `${this.getPreferenceSelector(preferenceId, visibleOnly)} .pref-context-gutter`;
     }
 }
