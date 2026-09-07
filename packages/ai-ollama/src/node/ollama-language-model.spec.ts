@@ -27,7 +27,7 @@ class TestableOllamaModel extends OllamaModel {
         return this.mergeConsecutiveAssistantMessages(messages);
     }
 
-    public callHandleStreamingRequest(ollama: Ollama, messages: Message[]) {
+    public callHandleStreamingRequest(ollama: Ollama, messages: Message[]): ReturnType<OllamaModel['handleStreamingRequest']> {
         return this.handleStreamingRequest(ollama, {
             model: 'test-model',
             messages,
@@ -137,7 +137,12 @@ describe('OllamaModel - handleStreamingRequest', () => {
         const model = new TestableOllamaModel();
 
         const responseStream = {
-            async *[Symbol.asyncIterator]() {
+            async *[Symbol.asyncIterator](): AsyncGenerator<{
+            created_at: Date;
+            done: boolean;
+            done_reason: string;
+            message: { role: string; content: string };
+            }> {
                 yield {
                     created_at: new Date(),
                     done: true,
