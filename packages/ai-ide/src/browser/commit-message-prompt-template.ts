@@ -51,7 +51,7 @@ Return ONLY the commit message text. Nothing else.
 
 export const commitMessageUserPrompt: BasePromptFragment = {
     id: COMMIT_MESSAGE_USER_PROMPT_ID,
-    template: `Generate a commit message for the following {{scope}} changes.
+    template: `Generate a commit message for the following staged changes.
 
 \`\`\`diff
 {{changes}}

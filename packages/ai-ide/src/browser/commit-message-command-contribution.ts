@@ -17,9 +17,10 @@
 import { CommandContribution, CommandRegistry } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AgentService } from '@theia/ai-core/lib/common';
+import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { COMMIT_MESSAGE_AGENT_ID } from './commit-message-agent';
-import { CommitMessageCommands, CommitMessageScope } from './commit-message-commands';
+import { CommitMessageCommands } from './commit-message-commands';
 import { CommitMessageRunner } from './commit-message-runner';
 
 @injectable()
@@ -34,23 +35,22 @@ export class CommitMessageCommandContribution implements CommandContribution {
     @inject(AgentService)
     protected readonly agentService: AgentService;
 
+    @inject(AICommandHandlerFactory)
+    protected readonly commandHandlerFactory: AICommandHandlerFactory;
+
     registerCommands(registry: CommandRegistry): void {
-        registry.registerCommand(CommitMessageCommands.GENERATE_FROM_STAGED, {
-            execute: () => this.execute('staged'),
+        registry.registerCommand(CommitMessageCommands.GENERATE_FROM_STAGED, this.commandHandlerFactory({
+            execute: () => this.execute(),
             isEnabled: () => this.isEnabled()
-        });
-        registry.registerCommand(CommitMessageCommands.GENERATE_FROM_ALL, {
-            execute: () => this.execute('all'),
-            isEnabled: () => this.isEnabled()
-        });
+        }));
     }
 
-    protected execute(scope: CommitMessageScope): void | Promise<void> {
-        if (this.runner.isRunning(scope)) {
-            this.runner.cancel(scope);
+    protected execute(): void | Promise<void> {
+        if (this.runner.isRunning()) {
+            this.runner.cancel();
             return;
         }
-        return this.runner.run(scope);
+        return this.runner.run();
     }
 
     protected isEnabled(): boolean {

@@ -14,32 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { generateUuid } from '@theia/core';
-import { ToolInvocationContext, ToolProvider, ToolRequest, ToolRequestParameters } from '@theia/ai-core';
-import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import {
-    ShellExecutionResult,
-    ShellExecutionServer,
-    combineAndTruncate
-} from '../common/shell-execution-server';
+import { injectable } from '@theia/core/shared/inversify';
+import { ToolInvocationContext, ToolRequest, ToolRequestParameters } from '@theia/ai-core';
+import { AbstractShellExecutionTool } from './abstract-shell-execution-tool';
+import { OutputTruncationOptions, ShellExecutionCanceledResult, ShellExecutionToolResult } from '../common/shell-execution-server';
 
 /** `providerName` reported by tools that derive from {@link PredefinedShellTool}. */
 export const PREDEFINED_SHELL_TOOL_PROVIDER = 'ai-predefined-shell';
-
-export interface PredefinedShellToolResult {
-    success: boolean;
-    exitCode: number | undefined;
-    output: string;
-    error?: string;
-    duration: number;
-}
-
-export interface PredefinedShellToolCanceledResult {
-    canceled: true;
-    output?: string;
-    duration?: number;
-}
 
 /**
  * Base class for tools that execute a fixed, hardcoded shell command. A subclass declares its
@@ -53,13 +34,7 @@ export interface PredefinedShellToolCanceledResult {
  * arbitrary commands.
  */
 @injectable()
-export abstract class PredefinedShellTool implements ToolProvider {
-
-    @inject(ShellExecutionServer)
-    protected readonly shellServer: ShellExecutionServer;
-
-    @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+export abstract class PredefinedShellTool extends AbstractShellExecutionTool {
 
     /** The unique identifier of this tool. Must not be `shellExecute`. */
     abstract readonly id: string;
@@ -72,33 +47,29 @@ export abstract class PredefinedShellTool implements ToolProvider {
     /** Timeout for the underlying shell execution, in milliseconds. */
     protected readonly timeout: number = 30_000;
 
+    /** Output truncation budget. `undefined` keeps the `shellExecute` defaults (first/last 50 lines). */
+    protected readonly truncation: OutputTruncationOptions | undefined = undefined;
+
     /** Build the exact shell command to execute from the parsed arguments. */
     protected abstract buildCommand(args: Record<string, unknown>): string;
 
-    protected formatResult(result: ShellExecutionResult): PredefinedShellToolResult {
-        return {
-            success: result.success,
-            exitCode: result.exitCode,
-            output: combineAndTruncate(result.stdout, result.stderr),
-            error: result.error,
-            duration: result.duration
-        };
-    }
+    /**
+     * Resolves the working directory for the shell command. Deliberately abstract: the cwd
+     * materially affects most predefined commands (anything talking to a specific repository,
+     * build script, or per-folder tool), and silently defaulting to an arbitrary workspace root
+     * produces results that look plausible but describe the wrong folder.
+     *
+     * Subclasses that genuinely do not care about the cwd can return
+     * {@link firstWorkspaceRoot} or `undefined`.
+     */
+    protected abstract resolveWorkspaceRoot(): string | undefined;
 
     /**
-     * Resolves the working directory for the shell command. The default returns the **first**
-     * workspace root, which is rarely the right answer:
-     *
-     * - In a multi-root workspace, the first root is arbitrary; the user-selected target
-     *   (e.g. SCM repository, currently focused editor) is almost always more accurate.
-     * - When no workspace is open the default returns `undefined`, so the command runs in the
-     *   backend process' inherited cwd.
-     *
-     * Subclasses **must** override this method whenever the cwd materially affects the command
-     * (anything talking to a specific repository, build script, or per-folder tool). The default
-     * is only safe for commands that produce the same output regardless of cwd.
+     * The **first** workspace root, or `undefined` when no workspace is open. Only a sensible
+     * `resolveWorkspaceRoot` implementation for commands that produce the same output regardless
+     * of cwd — in a multi-root workspace the first root is arbitrary.
      */
-    protected resolveWorkspaceRoot(): string | undefined {
+    protected firstWorkspaceRoot(): string | undefined {
         return this.workspaceService.getWorkspaceRootUri(undefined)?.path.fsPath();
     }
 
@@ -113,38 +84,15 @@ export abstract class PredefinedShellTool implements ToolProvider {
         };
     }
 
-    protected async execute(
-        argString: string,
-        ctx?: ToolInvocationContext
-    ): Promise<PredefinedShellToolResult | PredefinedShellToolCanceledResult> {
+    protected async execute(argString: string, ctx?: ToolInvocationContext): Promise<ShellExecutionToolResult | ShellExecutionCanceledResult> {
         const args: Record<string, unknown> = argString ? JSON.parse(argString) : {};
-        const command = this.buildCommand(args);
-        const cwd = this.resolveWorkspaceRoot();
-
-        const executionId = generateUuid();
-        const cancellationListener = ctx?.cancellationToken?.onCancellationRequested(() => {
-            this.shellServer.cancel(executionId);
+        return this.runShellCommand({
+            command: this.buildCommand(args),
+            cwd: this.resolveWorkspaceRoot(),
+            timeout: this.timeout,
+            toolCallId: ctx?.toolCallId,
+            cancellationToken: ctx?.cancellationToken,
+            truncation: this.truncation
         });
-
-        try {
-            const result = await this.shellServer.execute({
-                command,
-                cwd,
-                timeout: this.timeout,
-                executionId
-            });
-
-            if (result.canceled) {
-                return {
-                    canceled: true,
-                    output: combineAndTruncate(result.stdout, result.stderr) || undefined,
-                    duration: result.duration
-                };
-            }
-
-            return this.formatResult(result);
-        } finally {
-            cancellationListener?.dispose();
-        }
     }
 }
