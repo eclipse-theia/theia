@@ -18,12 +18,12 @@
     position: relative;
 }
 
-/* Reserve space on the right of the SCM input so user text does not run under the icons.
+/* Reserve space on the right of the SCM input so user text does not run under the icon.
    Selecting by descendant `textarea` instead of `#theia-scm-input-message` decouples this
    rule from the SCM widget's element id (`ScmCommitWidget.Styles.INPUT_MESSAGE`), which
    would otherwise silently break this layout if it ever gets renamed upstream. */
 .theia-ai-commit-message-input-wrapper textarea {
-    padding-right: 56px;
+    padding-right: 30px;
 }
 
 .theia-ai-commit-message-overlay {
@@ -31,9 +31,8 @@
     top: 4px;
     right: 6px;
     display: inline-flex;
-    gap: 2px;
     pointer-events: auto;
-    /* Stay above the textarea so the buttons remain clickable. */
+    /* Stay above the textarea so the button remains clickable. */
     z-index: 1;
 }
 

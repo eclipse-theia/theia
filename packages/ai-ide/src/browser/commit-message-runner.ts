@@ -15,30 +15,19 @@
 // *****************************************************************************
 
 import { Emitter, Event, ILogger, MessageService, nls } from '@theia/core';
+import { ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { CommitMessageAgent } from './commit-message-agent';
-import { CommitMessageScope } from './commit-message-commands';
 import { GetGitChangesTool } from './git-changes-tool';
 
 /**
- * Tracks an in-flight commit-message generation for a given scope. `cts` is fired by
- * {@link CommitMessageRunner.cancel} so a click on the spinning button cancels the run
- * even while we are still in the pre-request phase (resolving the repository, fetching the
- * diff, awaiting the overwrite confirmation). Once the LLM request is under way, the same
- * token cancels it via {@link CommitMessageAgent.generateCommitMessage}.
- */
-interface RunningSlot {
-    readonly cts: CancellationTokenSource;
-}
-
-/**
- * Drives the {@link CommitMessageAgent}: fetches the git diff for the requested scope, asks the
- * agent to turn it into a commit message and writes the result into the SCM commit-message input
- * of the currently selected repository. The agent is a plain (non-chat) agent, so there is no
- * chat session, no tool-confirmation prompt and no chat-model bookkeeping here.
+ * Drives the {@link CommitMessageAgent}: fetches the staged git diff, asks the agent to turn it
+ * into a commit message and writes the result into the SCM commit-message input of the currently
+ * selected repository. The agent is a plain (non-chat) agent, so there is no chat session, no
+ * tool-confirmation prompt and no chat-model bookkeeping here.
  */
 @injectable()
 export class CommitMessageRunner {
@@ -55,49 +44,55 @@ export class CommitMessageRunner {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('ai-ide:CommitMessageRunner')
     protected readonly logger: ILogger;
 
-    protected readonly running = new Map<CommitMessageScope, RunningSlot>();
+    /**
+     * Cancellation source of the in-flight generation, or `undefined` when idle. It is fired by
+     * {@link cancel} so a click on the spinning button cancels the run even while we are still in
+     * the pre-request phase (resolving the repository, fetching the diff, awaiting the overwrite
+     * confirmation). Once the LLM request is under way, the same token cancels it via
+     * {@link CommitMessageAgent.generateCommitMessage}.
+     */
+    protected current: CancellationTokenSource | undefined;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
 
-    isRunning(scope: CommitMessageScope): boolean {
-        return this.running.has(scope);
+    isRunning(): boolean {
+        return !!this.current;
     }
 
-    cancel(scope: CommitMessageScope): void {
-        this.running.get(scope)?.cts.cancel();
+    cancel(): void {
+        this.current?.cancel();
     }
 
-    async run(scope: CommitMessageScope): Promise<void> {
-        // Only one generation may run at a time: the two scopes share `repository.input.value`,
-        // so allowing both (e.g. from the command palette, which bypasses the widget's button
-        // disabling) would let them race on the input.
-        if (this.running.size > 0) {
+    async run(): Promise<void> {
+        if (this.current) {
             return;
         }
-        const slot: RunningSlot = { cts: new CancellationTokenSource() };
-        this.running.set(scope, slot);
+        const cts = new CancellationTokenSource();
+        this.current = cts;
         this.onDidChangeEmitter.fire();
 
         try {
             const repository = this.scmService.selectedRepository;
             if (!repository) {
-                await this.messageService.warn(
+                // Deliberately not awaited: a dismissed toast never resolves, which would leave
+                // the button spinning forever.
+                this.messageService.warn(
                     nls.localize('theia/ai-ide/commit-message/no-repository', 'No source-control repository is selected.')
                 );
                 return;
             }
 
-            const changes = await this.gitChangesTool.getChanges(scope === 'staged', slot.cts.token);
-            if (slot.cts.token.isCancellationRequested) {
+            const changes = await this.gitChangesTool.getChanges(cts.token);
+            if (cts.token.isCancellationRequested) {
                 return;
             }
             if (!changes.trim()) {
-                await this.messageService.warn(
-                    nls.localize('theia/ai-ide/commit-message/no-changes', 'There are no changes to generate a commit message from.')
+                this.messageService.warn(
+                    nls.localize('theia/ai-ide/commit-message/no-changes', 'There are no staged changes to generate a commit message from.')
                 );
                 return;
             }
@@ -105,12 +100,12 @@ export class CommitMessageRunner {
             if (!(await this.confirmOverwrite(repository))) {
                 return;
             }
-            if (slot.cts.token.isCancellationRequested) {
+            if (cts.token.isCancellationRequested) {
                 return;
             }
 
-            const message = await this.commitMessageAgent.generateCommitMessage(changes, scope, slot.cts.token);
-            if (slot.cts.token.isCancellationRequested) {
+            const message = await this.commitMessageAgent.generateCommitMessage(changes, cts.token);
+            if (cts.token.isCancellationRequested) {
                 return;
             }
             if (!message) {
@@ -123,15 +118,15 @@ export class CommitMessageRunner {
             repository.input.value = message;
             repository.input.focus();
         } catch (error) {
-            if (slot.cts.token.isCancellationRequested) {
+            if (cts.token.isCancellationRequested) {
                 return;
             }
             this.logger.error('Failed to run commit-message agent', error);
             this.notifyFailure(error instanceof Error ? error.message : String(error));
         } finally {
-            this.running.delete(scope);
+            this.current = undefined;
             this.onDidChangeEmitter.fire();
-            slot.cts.dispose();
+            cts.dispose();
         }
     }
 
@@ -147,19 +142,17 @@ export class CommitMessageRunner {
 
     /** Returns `true` if the operation should proceed. */
     protected async confirmOverwrite(repository: ScmRepository): Promise<boolean> {
-        if (!repository.input.value || !repository.input.value.trim()) {
+        if (!repository.input.value.trim()) {
             return true;
         }
-        const replace = nls.localizeByDefault('Replace');
-        const cancel = nls.localizeByDefault('Cancel');
-        const choice = await this.messageService.warn(
-            nls.localize(
+        return !!await new ConfirmDialog({
+            title: nls.localize('theia/ai-ide/commit-message/replace-title', 'Replace Commit Message'),
+            msg: nls.localize(
                 'theia/ai-ide/commit-message/replace-prompt',
-                'The commit message field is not empty. Replace it?'
+                'The commit message field is not empty. Replace its content with the generated message?'
             ),
-            replace,
-            cancel
-        );
-        return choice === replace;
+            ok: nls.localizeByDefault('Replace'),
+            cancel: Dialog.CANCEL
+        }).open();
     }
 }

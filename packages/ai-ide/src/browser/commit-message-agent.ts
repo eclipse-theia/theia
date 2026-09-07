@@ -26,7 +26,6 @@ import {
 import { generateUuid, nls } from '@theia/core';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { CommitMessageScope } from './commit-message-commands';
 import { commitMessagePrompts, COMMIT_MESSAGE_SYSTEM_PROMPT_ID, COMMIT_MESSAGE_USER_PROMPT_ID } from './commit-message-prompt-template';
 
 export const COMMIT_MESSAGE_AGENT_ID = 'Commit Message';
@@ -38,8 +37,8 @@ export class CommitMessageAgent implements Agent {
     name = COMMIT_MESSAGE_AGENT_ID;
 
     description = nls.localize('theia/ai-ide/commitMessageAgent/description',
-        'Generates git commit messages from staged or all current changes in the workspace repository. ' +
-        'Invoked from the SCM commit-message input via the AI sparkle buttons.');
+        'Generates git commit messages from the staged changes in the workspace repository. ' +
+        'Invoked from the SCM commit-message input via the AI sparkle button.');
 
     variables = [];
     functions = [];
@@ -55,12 +54,10 @@ export class CommitMessageAgent implements Agent {
         {
             name: 'changes',
             usedInPrompt: true,
-            description: nls.localize('theia/ai-ide/commitMessageAgent/vars/changes/description', 'The unified git diff the commit message is generated from.')
-        },
-        {
-            name: 'scope',
-            usedInPrompt: true,
-            description: nls.localize('theia/ai-ide/commitMessageAgent/vars/scope/description', 'Describes which changes the diff covers (e.g. "staged" or "current").')
+            description: nls.localize(
+                'theia/ai-ide/commitMessageAgent/vars/changes/description',
+                'The unified git diff of the staged changes the commit message is generated from.'
+            )
         }
     ];
 
@@ -78,7 +75,7 @@ export class CommitMessageAgent implements Agent {
      *
      * @throws if no language model is available or the prompts cannot be resolved.
      */
-    async generateCommitMessage(changes: string, scope: CommitMessageScope, cancellationToken?: CancellationToken): Promise<string> {
+    async generateCommitMessage(changes: string, cancellationToken?: CancellationToken): Promise<string> {
         const lm = await this.languageModelRegistry.selectLanguageModel({
             agent: this.id,
             ...this.languageModelRequirements[0]
@@ -87,7 +84,7 @@ export class CommitMessageAgent implements Agent {
             throw new Error('No language model available for the Commit Message agent.');
         }
 
-        const parameters = { changes, scope: scope === 'staged' ? 'staged' : 'current' };
+        const parameters = { changes };
         const systemMessage = await this.promptService.getResolvedPromptFragment(COMMIT_MESSAGE_SYSTEM_PROMPT_ID, parameters).then(p => p?.text);
         const userMessage = await this.promptService.getResolvedPromptFragment(COMMIT_MESSAGE_USER_PROMPT_ID, parameters).then(p => p?.text);
         if (!systemMessage || !userMessage) {

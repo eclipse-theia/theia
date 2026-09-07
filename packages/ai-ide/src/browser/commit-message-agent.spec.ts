@@ -54,7 +54,7 @@ describe('CommitMessageAgent', () => {
     });
 
     it('resolves both prompts, sends the request and returns the trimmed message', async () => {
-        const result = await agent.generateCommitMessage('the diff', 'staged');
+        const result = await agent.generateCommitMessage('the diff');
 
         expect(result).to.equal('feat: add thing');
         expect(promptService.getResolvedPromptFragment.calledWith(COMMIT_MESSAGE_SYSTEM_PROMPT_ID)).to.be.true;
@@ -62,16 +62,16 @@ describe('CommitMessageAgent', () => {
         expect(languageModelService.sendRequest.calledOnce).to.be.true;
     });
 
-    it('injects the diff and a human-readable scope into the prompt parameters', async () => {
-        await agent.generateCommitMessage('the diff', 'all');
+    it('injects the diff into the prompt parameters', async () => {
+        await agent.generateCommitMessage('the diff');
 
         const [, params] = promptService.getResolvedPromptFragment.firstCall.args;
-        expect(params).to.deep.equal({ changes: 'the diff', scope: 'current' });
+        expect(params).to.deep.equal({ changes: 'the diff' });
     });
 
     it('sends a system and a user message tagged with the agent id and the cancellation token', async () => {
         const token = { isCancellationRequested: false } as unknown as UserRequest['cancellationToken'];
-        await agent.generateCommitMessage('the diff', 'staged', token);
+        await agent.generateCommitMessage('the diff', token);
 
         const request = languageModelService.sendRequest.firstCall.args[1] as UserRequest;
         expect(request.agentId).to.equal(agent.id);
@@ -82,7 +82,7 @@ describe('CommitMessageAgent', () => {
     it('throws when no language model is available', async () => {
         registry.selectLanguageModel.resolves(undefined);
 
-        const error = await agent.generateCommitMessage('the diff', 'staged').then(() => undefined, e => e);
+        const error = await agent.generateCommitMessage('the diff').then(() => undefined, e => e);
         expect(error).to.be.instanceOf(Error);
         expect((error as Error).message).to.match(/No language model/);
     });
@@ -90,7 +90,7 @@ describe('CommitMessageAgent', () => {
     it('throws when the prompts cannot be resolved', async () => {
         promptService.getResolvedPromptFragment.resolves(undefined);
 
-        const error = await agent.generateCommitMessage('the diff', 'staged').then(() => undefined, e => e);
+        const error = await agent.generateCommitMessage('the diff').then(() => undefined, e => e);
         expect(error).to.be.instanceOf(Error);
         expect((error as Error).message).to.match(/prompt service/);
     });

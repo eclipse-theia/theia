@@ -23,6 +23,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
 import { ILogger, MessageService } from '@theia/core';
+import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmInput } from '@theia/scm/lib/browser/scm-input';
 import { CommitMessageAgent } from './commit-message-agent';
@@ -46,6 +47,7 @@ describe('CommitMessageRunner', () => {
     let logger: { error: sinon.SinonStub; warn: sinon.SinonStub; info: sinon.SinonStub; debug: sinon.SinonStub; trace: sinon.SinonStub };
     let repository: MockRepository;
     let focusSpy: sinon.SinonSpy;
+    let confirmDialogOpen: sinon.SinonStub;
 
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -77,6 +79,9 @@ describe('CommitMessageRunner', () => {
             debug: sinon.stub(),
             trace: sinon.stub()
         };
+        // The overwrite prompt is a modal `ConfirmDialog`, not a toast, so it is stubbed at the
+        // prototype instead of via `MessageService`.
+        confirmDialogOpen = sinon.stub(ConfirmDialog.prototype, 'open').resolves(true);
 
         container.bind(CommitMessageAgent).toConstantValue(agent as unknown as CommitMessageAgent);
         container.bind(GetGitChangesTool).toConstantValue(gitChangesTool as unknown as GetGitChangesTool);
@@ -91,35 +96,39 @@ describe('CommitMessageRunner', () => {
     afterEach(() => sinon.restore());
 
     it('writes the generated message into the SCM input and focuses it on success', async () => {
-        await runner.run('staged');
+        await runner.run();
 
-        expect(gitChangesTool.getChanges.calledOnceWith(true)).to.be.true;
+        expect(gitChangesTool.getChanges.calledOnce).to.be.true;
         expect(agent.generateCommitMessage.calledOnce).to.be.true;
         expect(repository.input.value).to.equal('feat: add new thing');
         expect(focusSpy.calledOnce).to.be.true;
         expect(messageService.error.called).to.be.false;
     });
 
-    it('passes stagedOnly=false to the git changes tool for the "all" scope', async () => {
-        await runner.run('all');
-
-        expect(gitChangesTool.getChanges.calledOnceWith(false)).to.be.true;
-    });
-
     it('warns and does not invoke the agent when no repository is selected', async () => {
         scmService.selectedRepository = undefined;
 
-        await runner.run('staged');
+        await runner.run();
 
         expect(messageService.warn.calledOnce).to.be.true;
         expect(gitChangesTool.getChanges.called).to.be.false;
         expect(agent.generateCommitMessage.called).to.be.false;
     });
 
-    it('warns and does not invoke the agent when there are no changes', async () => {
+    it('does not await notifications, so a dismissed toast cannot leave the run hanging', async () => {
+        scmService.selectedRepository = undefined;
+        // A toast the user never interacts with never settles; awaiting it would hang `run`.
+        messageService.warn.returns(new Promise<undefined>(() => { /* never settles */ }));
+
+        await runner.run();
+
+        expect(runner.isRunning()).to.be.false;
+    });
+
+    it('warns and does not invoke the agent when there are no staged changes', async () => {
         gitChangesTool.getChanges.resolves('   \n  ');
 
-        await runner.run('all');
+        await runner.run();
 
         expect(messageService.warn.calledOnce).to.be.true;
         expect(agent.generateCommitMessage.called).to.be.false;
@@ -129,27 +138,42 @@ describe('CommitMessageRunner', () => {
     it('skips the overwrite prompt when the commit field is empty', async () => {
         repository.input.value = '';
 
-        await runner.run('all');
+        await runner.run();
 
-        expect(messageService.warn.called).to.be.false;
+        expect(confirmDialogOpen.called).to.be.false;
         expect(repository.input.value).to.equal('feat: add new thing');
     });
 
-    it('asks for confirmation and overwrites when the field already has text and the user accepts', async () => {
+    it('asks for confirmation in a modal dialog and overwrites when the user accepts', async () => {
         repository.input.value = 'existing text';
-        messageService.warn.resolves('Replace');
 
-        await runner.run('staged');
+        await runner.run();
 
-        expect(messageService.warn.calledOnce).to.be.true;
+        expect(confirmDialogOpen.calledOnce).to.be.true;
         expect(repository.input.value).to.equal('feat: add new thing');
     });
 
     it('aborts without invoking the agent when the user cancels the overwrite prompt', async () => {
         repository.input.value = 'existing text';
-        messageService.warn.resolves('Cancel');
+        confirmDialogOpen.resolves(undefined);
 
-        await runner.run('staged');
+        await runner.run();
+
+        expect(agent.generateCommitMessage.called).to.be.false;
+        expect(repository.input.value).to.equal('existing text');
+    });
+
+    it('does not invoke the agent when the run is canceled while the overwrite prompt is open', async () => {
+        repository.input.value = 'existing text';
+        let confirm: (replace: boolean) => void = () => { /* set below */ };
+        confirmDialogOpen.callsFake(() => new Promise<boolean>(resolve => { confirm = resolve; }));
+
+        const runPromise = runner.run();
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        runner.cancel();
+        confirm(true);
+        await runPromise;
 
         expect(agent.generateCommitMessage.called).to.be.false;
         expect(repository.input.value).to.equal('existing text');
@@ -158,17 +182,27 @@ describe('CommitMessageRunner', () => {
     it('shows an error notification when the agent fails', async () => {
         agent.generateCommitMessage.rejects(new Error('boom'));
 
-        await runner.run('staged');
+        await runner.run();
 
         expect(messageService.error.calledOnce).to.be.true;
         expect(messageService.error.firstCall.args[0]).to.contain('boom');
         expect(repository.input.value).to.equal('');
     });
 
+    it('shows an error notification when reading the staged changes fails', async () => {
+        gitChangesTool.getChanges.rejects(new Error('fatal: not a git repository'));
+
+        await runner.run();
+
+        expect(messageService.error.calledOnce).to.be.true;
+        expect(messageService.error.firstCall.args[0]).to.contain('fatal: not a git repository');
+        expect(agent.generateCommitMessage.called).to.be.false;
+    });
+
     it('warns when the model returns an empty message', async () => {
         agent.generateCommitMessage.resolves('');
 
-        await runner.run('all');
+        await runner.run();
 
         expect(messageService.warn.calledOnce).to.be.true;
         expect(repository.input.value).to.equal('');
@@ -178,34 +212,32 @@ describe('CommitMessageRunner', () => {
         let resolveGeneration: (message: string) => void = () => { /* set below */ };
         agent.generateCommitMessage.callsFake(() => new Promise<string>(resolve => { resolveGeneration = resolve; }));
 
-        const runPromise = runner.run('staged');
+        const runPromise = runner.run();
         await new Promise(resolve => setTimeout(resolve, 0));
-        expect(runner.isRunning('staged')).to.be.true;
+        expect(runner.isRunning()).to.be.true;
 
-        runner.cancel('staged');
+        runner.cancel();
         resolveGeneration('feat: ignored');
         await runPromise;
 
         expect(repository.input.value).to.equal('');
         expect(messageService.error.called).to.be.false;
-        expect(runner.isRunning('staged')).to.be.false;
+        expect(runner.isRunning()).to.be.false;
     });
 
-    it('runs only one scope at a time, ignoring a second scope while one is in flight', async () => {
+    it('ignores a second run while one is still in flight', async () => {
         let resolveChanges: (diff: string) => void = () => { /* set below */ };
         gitChangesTool.getChanges.callsFake(() => new Promise<string>(resolve => { resolveChanges = resolve; }));
 
-        const stagedRun = runner.run('staged');
+        const firstRun = runner.run();
         await new Promise(resolve => setTimeout(resolve, 0));
-        expect(runner.isRunning('staged')).to.be.true;
+        expect(runner.isRunning()).to.be.true;
 
-        // The second scope must be ignored while the first run is still in flight.
-        await runner.run('all');
+        await runner.run();
         expect(gitChangesTool.getChanges.calledOnce).to.be.true;
-        expect(runner.isRunning('all')).to.be.false;
 
         resolveChanges('diff --git a b');
-        await stagedRun;
-        expect(runner.isRunning('staged')).to.be.false;
+        await firstRun;
+        expect(runner.isRunning()).to.be.false;
     });
 });

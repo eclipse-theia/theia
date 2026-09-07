@@ -15,47 +15,21 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { ToolProvider, ToolRequest, AutoActionResult } from '@theia/ai-core';
+import { ToolRequest, AutoActionResult } from '@theia/ai-core';
 import { ShellCommandPermissionService } from './shell-command-permission-service';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { AbstractShellExecutionTool } from './abstract-shell-execution-tool';
 import {
     SHELL_EXECUTION_FUNCTION_ID,
-    ShellExecutionServer,
     ShellExecutionToolResult,
-    ShellExecutionCanceledResult,
-    combineAndTruncate
+    ShellExecutionCanceledResult
 } from '../common/shell-execution-server';
-import { CancellationToken, generateUuid, Path } from '@theia/core';
+import { CancellationToken, Path } from '@theia/core';
 
 @injectable()
-export class ShellExecutionTool implements ToolProvider {
-
-    @inject(ShellExecutionServer)
-    protected readonly shellServer: ShellExecutionServer;
-
-    @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+export class ShellExecutionTool extends AbstractShellExecutionTool {
 
     @inject(ShellCommandPermissionService)
     protected readonly shellCommandPermissionService: ShellCommandPermissionService;
-
-    protected readonly runningExecutions = new Map<string, string>();
-
-    async cancelExecution(toolCallId: string): Promise<boolean> {
-        const executionId = this.runningExecutions.get(toolCallId);
-        if (executionId) {
-            const canceled = await this.shellServer.cancel(executionId);
-            if (canceled) {
-                this.runningExecutions.delete(toolCallId);
-            }
-            return canceled;
-        }
-        return false;
-    }
-
-    isExecutionRunning(toolCallId: string): boolean {
-        return this.runningExecutions.has(toolCallId);
-    }
 
     getTool(): ToolRequest {
         return {
@@ -171,56 +145,13 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
             timeout?: number;
         } = JSON.parse(argString);
 
-        const resolvedCwd = this.resolveCwd(args.cwd);
-
-        // Generate execution ID and get tool call ID from context
-        const executionId = generateUuid();
-        const toolCallId = this.extractToolCallId(ctx);
-        const cancellationToken = this.extractCancellationToken(ctx);
-
-        // Track this execution
-        if (toolCallId) {
-            this.runningExecutions.set(toolCallId, executionId);
-        }
-
-        const cancellationListener = cancellationToken?.onCancellationRequested(() => {
-            this.shellServer.cancel(executionId);
+        return this.runShellCommand({
+            command: args.command,
+            cwd: this.resolveCwd(args.cwd),
+            timeout: args.timeout,
+            toolCallId: this.extractToolCallId(ctx),
+            cancellationToken: this.extractCancellationToken(ctx)
         });
-
-        try {
-            const result = await this.shellServer.execute({
-                command: args.command,
-                cwd: resolvedCwd,
-                timeout: args.timeout,
-                executionId,
-            });
-
-            if (result.canceled) {
-                return {
-                    canceled: true,
-                    output: this.combineAndTruncate(result.stdout, result.stderr) || undefined,
-                    duration: result.duration,
-                };
-            }
-
-            // Combine stdout and stderr, apply truncation
-            const combinedOutput = this.combineAndTruncate(result.stdout, result.stderr);
-
-            return {
-                success: result.success,
-                exitCode: result.exitCode,
-                output: combinedOutput,
-                error: result.error,
-                duration: result.duration,
-                cwd: result.resolvedCwd,
-            };
-        } finally {
-            // Clean up
-            cancellationListener?.dispose();
-            if (toolCallId) {
-                this.runningExecutions.delete(toolCallId);
-            }
-        }
     }
 
     /**
@@ -287,9 +218,5 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
             }
         }
         return undefined;
-    }
-
-    protected combineAndTruncate(stdout: string, stderr: string): string {
-        return combineAndTruncate(stdout, stderr);
     }
 }

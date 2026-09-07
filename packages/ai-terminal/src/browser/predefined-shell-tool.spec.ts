@@ -38,6 +38,10 @@ class TestPredefinedShellTool extends PredefinedShellTool {
         const upper = args.upper === true;
         return upper ? 'echo HELLO' : 'echo hello';
     }
+
+    protected resolveWorkspaceRoot(): string | undefined {
+        return this.firstWorkspaceRoot();
+    }
 }
 
 function createResult(overrides: Partial<ShellExecutionResult> = {}): ShellExecutionResult {
@@ -160,5 +164,53 @@ describe('PredefinedShellTool', () => {
 
         expect(shellServer.cancel.calledOnce).to.be.true;
         expect(shellServer.cancel.firstCall.args[0]).to.equal(capturedExecutionId);
+    });
+
+    it('tracks the execution by tool call id so it can be cancelled by id', async () => {
+        let capturedExecutionId: string | undefined;
+        let release: (() => void) | undefined;
+        shellServer.execute.callsFake(async (req: ShellExecutionRequest) => {
+            capturedExecutionId = req.executionId;
+            return new Promise<ShellExecutionResult>(resolve => {
+                release = () => resolve(createResult());
+            });
+        });
+
+        const handlerPromise = tool.getTool().handler('{}', { toolCallId: 'tc-1' });
+        expect(tool.isExecutionRunning('tc-1')).to.be.true;
+
+        expect(await tool.cancelExecution('tc-1')).to.be.true;
+        expect(shellServer.cancel.firstCall.args[0]).to.equal(capturedExecutionId);
+
+        release!();
+        await handlerPromise;
+        expect(tool.isExecutionRunning('tc-1')).to.be.false;
+    });
+
+    it('applies the default truncation budget, keeping only the first and last 50 lines', async () => {
+        const stdout = Array.from({ length: 500 }, (_unused, index) => `line ${index}`).join('\n');
+        shellServer.execute.resolves(createResult({ stdout }));
+
+        const result = await tool.getTool().handler('{}') as { output: string };
+
+        expect(result.output).to.contain('line 0');
+        expect(result.output).to.contain('line 499');
+        expect(result.output).to.not.contain('line 250');
+        expect(result.output).to.contain('400 lines omitted');
+    });
+
+    it('honours a raised truncation budget declared by the subclass', async () => {
+        class GenerousTool extends TestPredefinedShellTool {
+            protected override readonly truncation = { headLines: 400, tailLines: 100 };
+        }
+        container.bind(GenerousTool).toSelf();
+        const generous = container.get(GenerousTool);
+        const stdout = Array.from({ length: 500 }, (_unused, index) => `line ${index}`).join('\n');
+        shellServer.execute.resolves(createResult({ stdout }));
+
+        const result = await generous.getTool().handler('{}') as { output: string };
+
+        expect(result.output).to.contain('line 250');
+        expect(result.output).to.not.contain('lines omitted');
     });
 });
