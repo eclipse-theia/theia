@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { CommandService, ILogger, MessageService, nls } from '@theia/core';
-import { CommonCommands } from '@theia/core/lib/browser/common-commands';
+import { AI_SHOW_SETTINGS_COMMAND } from '@theia/ai-core/lib/browser';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { VSXExtensionsCommands } from '@theia/vsx-registry/lib/browser/vsx-extension-commands';
 import { AUTO_UPDATE_PREF, AutoUpdateMode, RegistryArtifactKind } from '../../common/ai-registry-preferences';
@@ -305,9 +305,15 @@ export class RegistryAutoUpdateService {
      * Markdown link opening the default preference. Notification messages are rendered as
      * inline markdown and their links are opened through the `OpenerService`, where core's
      * `CommandOpenHandler` picks up the `command:` scheme.
+     *
+     * Routed through {@link AI_SHOW_SETTINGS_COMMAND} rather than `preferences:open`, because
+     * `ai-features.*` preferences are hidden from the Settings UI once the AI Configuration view
+     * covers them; a `preferences:open` link would open Settings filtered on a preference that has
+     * no row there. The command lands on the AI Configuration view where `@theia/ai-ide` is
+     * present and falls back to the Settings UI where it is not.
      */
     protected settingsLink(): string {
         const args = encodeURIComponent(JSON.stringify([AUTO_UPDATE_PREF]));
-        return `[${nls.localizeByDefault('Settings')}](command:${CommonCommands.OPEN_PREFERENCES.id}?${args})`;
+        return `[${nls.localize('theia/ai-registry/autoUpdate/aiSettings', 'AI Settings')}](command:${AI_SHOW_SETTINGS_COMMAND.id}?${args})`;
     }
 }

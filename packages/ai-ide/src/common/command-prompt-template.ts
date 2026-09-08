@@ -51,7 +51,7 @@ when the user want to pass arguments to the command.
 {
     "type": "theia-command",
     "commandId": "preferences:open",
-    "arguments": ["ai-features"]
+    "arguments": ["editor.fontSize"]
 }
 \`\`\`
 
