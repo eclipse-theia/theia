@@ -172,7 +172,7 @@ export class OllamaModel implements LanguageModel {
                             if (chunk.prompt_eval_count !== undefined && chunk.eval_count !== undefined) {
                                 yield { input_tokens: chunk.prompt_eval_count, output_tokens: chunk.eval_count };
                             }
-                            if (chunk.done_reason && chunk.done_reason !== 'stop') {
+                            if (chunk.done_reason && chunk.done_reason !== 'stop' && chunk.done_reason !== 'tool_calls') {
                                 throw new Error('Ollama stopped unexpectedly. Reason: ' + chunk.done_reason);
                             }
                         }
@@ -311,7 +311,7 @@ export class OllamaModel implements LanguageModel {
                     lastUpdated = chunk.created_at;
                     inputTokenCount = chunk.prompt_eval_count;
                     outputTokenCount = chunk.eval_count;
-                    if (chunk.done_reason && chunk.done_reason !== 'stop') {
+                    if (chunk.done_reason && chunk.done_reason !== 'stop' && chunk.done_reason !== 'tool_calls') {
                         throw new Error('Ollama stopped unexpectedly. Reason: ' + chunk.done_reason);
                     }
                 }
