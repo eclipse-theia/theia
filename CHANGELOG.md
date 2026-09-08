@@ -7,6 +7,7 @@
 ## 1.76.0 - tbd
 
 - [core, filesystem, plugin-ext] fixed file decorations being dropped by large change events: change events are batched, and events exceeding the plugin-ext cap arrive as a flush that is re-fetched on demand [#17766](https://github.com/eclipse-theia/theia/pull/17766) - Contributed on behalf of K2view
+- [preview] removed the `@theia/preview` extension code entirely (deprecated and unpublished since v1.73.0) [#18001](https://github.com/eclipse-theia/theia/pull/18001)
 
 <a name="breaking_changes_1.76.0">[Breaking Changes:](#breaking_changes_1.76.0)</a>
 
