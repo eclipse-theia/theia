@@ -57,8 +57,10 @@ export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOpt
         getInitialState: () => new TokenizerState(INITIAL),
         tokenizeEncoded(line: string, state: TokenizerState): monaco.languages.IEncodedLineTokens {
             if (options.lineLimit !== undefined && line.length > options.lineLimit) {
-                // Skip tokenizing the line if it exceeds the line limit.
-                return { endState: state.stateStack, tokens: new Uint32Array() };
+                // Skip tokenizing the line if it exceeds the line limit. The state must be
+                // handed back as-is: `state.stateStack` is the raw `vscode-textmate` stack, and
+                // Monaco passes whatever is returned here straight into the next line.
+                return { endState: state, tokens: new Uint32Array() };
             }
             const result = grammar.tokenizeLine2(line, state.stateStack, 500);
             return {
@@ -68,8 +70,8 @@ export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOpt
         },
         tokenize(line: string, state: TokenizerState): monaco.languages.ILineTokens {
             if (options.lineLimit !== undefined && line.length > options.lineLimit) {
-                // Skip tokenizing the line if it exceeds the line limit.
-                return { endState: state.stateStack, tokens: [] };
+                // Skip tokenizing the line if it exceeds the line limit. See `tokenizeEncoded`.
+                return { endState: state, tokens: [] };
             }
             const result = grammar.tokenizeLine(line, state.stateStack, 500);
             return {
