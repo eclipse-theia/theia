@@ -30,6 +30,7 @@ import {
     ReasoningSupport,
     ServerToolCall,
     ServerToolDescriptor,
+    TokenUsageParams,
     ToolCallResult,
     ToolInvocationContext,
     UserRequest
@@ -246,6 +247,7 @@ export class GoogleModel implements LanguageModel {
                 let latestUrlContextMetadata: UrlContextMetadata | undefined;
                 let latestGroundingMetadata: GroundingMetadata | undefined;
                 try {
+                    let tokenUsage: TokenUsageParams | undefined = undefined;
                     for await (const chunk of stream) {
                         if (cancellationToken?.isCancellationRequested) {
                             break;
@@ -345,14 +347,23 @@ export class GoogleModel implements LanguageModel {
                             yield { content: chunk.text };
                         }
 
-                        // Report token usage if available
+                        // Remember the token usage as Gemini's metadata is cumulative
                         if (chunk.usageMetadata) {
                             const promptTokens = chunk.usageMetadata.promptTokenCount;
                             const completionTokens = chunk.usageMetadata.candidatesTokenCount;
                             if (promptTokens !== undefined && completionTokens !== undefined) {
-                                yield { input_tokens: promptTokens, output_tokens: completionTokens };
+                                tokenUsage = {
+                                    inputTokens: promptTokens,
+                                    outputTokens: completionTokens,
+                                    requestId: request.requestId
+                                };
                             }
                         }
+                    }
+
+                    // Report token usage if available
+                    if (tokenUsage !== undefined && that.id) {
+                        yield { input_tokens: tokenUsage.inputTokens, output_tokens: tokenUsage.outputTokens };
                     }
 
                     // Surface any server tools (url_context / google_search) that the provider executed.
