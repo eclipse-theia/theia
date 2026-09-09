@@ -306,7 +306,9 @@ export class FileDownloadServiceImpl implements FileDownloadService {
                     }
 
                     cleanup();
-                    entry.end();
+                    // `tar-stream` types `end` via `streamx`, which declares the data argument as required.
+                    // Passing `undefined` is equivalent to a bare `end()` call.
+                    entry.end(undefined);
                     resolve();
                 };
 
@@ -364,7 +366,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
                     type: 'directory',
                 });
 
-                entry.end();
+                entry.end(undefined);
             } catch (error) {
                 this.logger.error(
                     `Failed to add directory ${dirPath}:`,
