@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
+import { mayBeCompleteJson } from '../../common/toolcall-utils';
 
 export { extractJsonStringField } from '../../common/toolcall-utils';
 
@@ -167,6 +168,10 @@ export function formatArgsForTooltip(args: string): MarkdownStringImpl {
 export function condenseArguments(args: string): string | undefined {
     if (!args || !args.trim() || args.trim() === '{}') {
         return undefined;
+    }
+    if (!mayBeCompleteJson(args)) {
+        // still streaming: parsing could only fail, so show the raw text right away
+        return truncateString(args, MAX_CONDENSED_LENGTH);
     }
     let parsed: unknown;
     try {
