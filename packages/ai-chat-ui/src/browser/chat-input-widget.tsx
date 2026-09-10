@@ -29,7 +29,7 @@ import { mergeReasoningSettings } from '@theia/ai-core/lib/browser/frontend-lang
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { AI_SHOW_SETTINGS_COMMAND, AIActivationService, FavoriteModelsService, FrontendVariableService } from '@theia/ai-core/lib/browser';
-import { AISettingsService, groupModelsByProvider, PromptService } from '@theia/ai-core/lib/common';
+import { AISettingsService, groupModelsByProvider, LanguageModelAliasRegistry, PromptService } from '@theia/ai-core/lib/common';
 import { CommandService, DisposableCollection, Emitter, InMemoryResources, MessageService, URI, nls, Disposable, ILogger } from '@theia/core';
 import { ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
@@ -191,6 +191,9 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(FavoriteModelsService)
     protected readonly favoriteModels: FavoriteModelsService;
+
+    @inject(LanguageModelAliasRegistry)
+    protected readonly aliasRegistry: LanguageModelAliasRegistry;
 
     @inject(PreferenceService) @optional()
     protected readonly preferenceService: PreferenceService | undefined;
@@ -1146,6 +1149,13 @@ export class AIChatInputWidget extends ReactWidget {
             }
         }));
         this.toDispose.push(this.favoriteModels.onDidChange(() => this.update()));
+        // An agent's default is usually an alias, so editing which model the alias points at changes what
+        // "Default" resolves to and with it the model-dependent state. The registry's own change event
+        // does not cover this: the models it holds are the same ones, only the alias moved.
+        this.toDispose.push(this.aliasRegistry.onDidChange(() => {
+            this.updateResolvedDefaultModel();
+            this.updateReasoningSupport(this.receivingAgent?.agentId);
+        }));
         // When the agent's model is changed in the AI configuration, refresh the selector's resolved
         // default and the model-dependent state (reasoning support, context size, server tools, vendor).
         this.toDispose.push(this.aiSettingsService.onDidChange(() => {
