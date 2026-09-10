@@ -19,6 +19,13 @@ The AI Configuration view (`@theia/ai-ide`) has been reworked from a tabbed dock
 - **Adding custom categories:** adopters that added their own AI configuration tabs should now register an `AiConfigurationCategory` (bind it to the `AiConfigurationCategory` service identifier). Set `contributed: true` to have it grouped under "Contributed by extensions". See `examples/api-samples` (`SampleChatToolbarConfigurationCategory`) for a minimal end-to-end example.
 - **Selection:** category/item navigation now routes through `AiConfigurationSelectionModel` (`@theia/ai-core-ui`). `AIConfigurationSelectionService` (`@theia/ai-ide`) is retained for the agent/alias domain events it still carries.
 - **Stable entry points:** the command ids `aiConfiguration:open` (`OPEN_AI_CONFIG_VIEW`) and `aiConfiguration:openTools` (`OPEN_AI_CONFIG_VIEW_TOOLS`) and the chat-view toolbar button are unchanged. `OPEN_AI_CONFIG_VIEW(tabId)` still accepts the legacy per-tab widget ids and maps them onto the corresponding category ids.
+_Electron launch-argument forwarding APIs_:
+
+Forwarding a second launch's CLI arguments to the new window added a few APIs that adopters implementing the affected extension points need to be aware of:
+
+- `TheiaCoreAPI` (the Electron preload API, `@theia/core/lib/electron-common/electron-api`) gained a `redeemLaunchArgs(): Promise<string[] | undefined>` member. Adopters with a custom preload or a test double that implements/stubs `TheiaCoreAPI` must provide it.
+- `ElectronMainApplicationContribution` gained an optional `claimsWindow?(argv: string[]): MaybePromise<boolean>` hook. A contribution returning `true` opens an empty window for that launch and flags it via the `windowClaimed` query parameter (`WINDOW_CLAIMED_PARAM`), so the responsible frontend contribution can show a placeholder until the window reloads. `@theia/dev-container` uses this to claim `--attach-container` launches, from a new `electronMain` entry point (`lib/electron-main/dev-container-electron-main-module`) that adopters assembling their extension list manually must include.
+- New replaceable service `WindowLaunchArgs` (interface + symbol, `@theia/core/lib/browser/window/window-launch-args`) and new contribution point `RemoteCliArgsContribution` (`@theia/core/lib/common/remote-cli-args-contribution`) provide the redeemed per-window arguments and let extensions contribute extra CLI arguments to a remote backend.
 
 _ESBuild_:
 

@@ -16,10 +16,15 @@
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
+import { AttachContainerArgs, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { AbstractRemoteRegistryContribution } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
-import { ILogger, MessageService, nls } from '@theia/core';
+import { ILogger, nls } from '@theia/core';
+import { WINDOW_CLAIMED_PARAM, LaunchArgv } from '@theia/core/lib/common/window';
+import { WindowLaunchArgs } from '@theia/core/lib/browser/window/window-launch-args';
 import { RemotePreferences } from '@theia/remote/lib/electron-common/remote-preferences';
+import { ContainerOutputProvider } from './container-output-provider';
+import { DevContainerAttachScreen } from './dev-container-attach-screen';
+import { RemoteCliArgsCollector } from '@theia/remote/lib/electron-browser/remote-cli-args-collector';
 
 @injectable()
 export class DevContainerStartupContribution extends AbstractRemoteRegistryContribution implements FrontendApplicationContribution {
@@ -30,29 +35,72 @@ export class DevContainerStartupContribution extends AbstractRemoteRegistryContr
     @inject(ILogger) @named('dev-container:DevContainerStartupContribution')
     protected readonly logger: ILogger;
 
-    @inject(MessageService)
-    protected readonly messageService: MessageService;
-
     @inject(RemotePreferences)
     protected readonly remotePreferences: RemotePreferences;
+
+    @inject(RemoteCliArgsCollector)
+    protected readonly remoteCliArgsCollector: RemoteCliArgsCollector;
+
+    @inject(ContainerOutputProvider)
+    protected readonly containerOutputProvider: ContainerOutputProvider;
+
+    @inject(DevContainerAttachScreen)
+    protected readonly attachScreen: DevContainerAttachScreen;
+
+    @inject(WindowLaunchArgs)
+    protected readonly launchArgs: WindowLaunchArgs;
 
     registerRemoteCommands(): void {
         // no commands to register — this contribution only handles startup
     }
 
     onStart(): void {
+        // For a CLI-driven attach the window is opened empty and reloads into the container once the
+        // attach completes. Show the "attaching" screen from the first paint so the user never
+        // interacts with the transient local window, before the (possibly RPC-bound) container id is
+        // even resolved.
+        if (this.isAttachPending()) {
+            this.attachScreen.showAttaching();
+        }
         this.handleStartupAttach();
     }
 
     protected async handleStartupAttach(): Promise<void> {
+        let args: AttachContainerArgs | undefined;
         try {
-            const args = await this.connectionProvider.getAttachContainerArgs();
-            if (!args) {
-                return;
+            args = await this.resolveAttachArgs();
+        } catch (e) {
+            // A rejection here (e.g. failing to redeem the launch args or reach the backend) must not
+            // escape as an unhandled rejection and leave the attach screen stuck on "Preparing to attach".
+            this.logger.error('CLI: Failed to resolve attach arguments during startup:', e);
+            const message = e instanceof Error ? e.message : String(e);
+            if (this.isAttachPending()) {
+                this.attachScreen.reportError(message, {
+                    retry: () => this.handleStartupAttach(),
+                    close: () => this.attachScreen.dispose()
+                });
+            } else {
+                this.attachScreen.dispose();
             }
+            return;
+        }
+        if (!args) {
+            // Not attaching after all (e.g. a second-instance window without --attach-container):
+            // make sure a preliminary screen is not left up.
+            this.attachScreen.dispose();
+            return;
+        }
+        await this.runStartupAttach(args);
+    }
 
-            const { containerId, scanForDevJson } = args;
+    protected async runStartupAttach(args: AttachContainerArgs): Promise<void> {
+        const { containerId, scanForDevJson } = args;
+        this.attachScreen.showAttaching(containerId);
+        // Surface the backend's live status messages (RemoteStatusReport) on the attach screen.
+        const statusSubscription = this.containerOutputProvider.onDidReportStatus(message => this.attachScreen.reportStage(message));
+        try {
             this.logger.info(`CLI: --attach-container ${containerId}, initiating attach from frontend...`);
+            this.attachScreen.reportStage(nls.localize('theia/remote/dev-container/attachScreen/locating', 'Locating container {0}…', containerId));
 
             const containers = await this.connectionProvider.listRunningContainers();
             // Match by ID prefix (either direction — user may pass a short prefix or a full 64-char ID
@@ -64,13 +112,11 @@ export class DevContainerStartupContribution extends AbstractRemoteRegistryContr
             const target = matches[0];
 
             if (!target) {
-                const msg = nls.localize('theia/remote/dev-container/cliContainerNotFound',
-                    'Container "{0}" not found or not running.', containerId);
-                this.logger.error(`CLI: ${msg}`);
-                this.messageService.error(msg);
-                return;
+                throw new Error(nls.localize('theia/remote/dev-container/cliContainerNotFound',
+                    'Container "{0}" not found or not running.', containerId));
             }
 
+            this.attachScreen.reportStage(nls.localize('theia/remote/dev-container/attachScreen/preparingWorkspace', 'Preparing workspace…'));
             const candidates = await this.connectionProvider.getWorkspaceCandidates(target.id);
             const workspacePath = candidates.length > 0 ? candidates[0].path : '/';
 
@@ -78,22 +124,53 @@ export class DevContainerStartupContribution extends AbstractRemoteRegistryContr
                 ? await this.connectionProvider.scanForDevContainerConfig(target.id, workspacePath)
                 : undefined;
 
+            this.attachScreen.reportStage(nls.localize('theia/remote/dev-container/attachScreen/starting', 'Starting the application inside the container…'));
             const result = await this.connectionProvider.attachToContainer({
                 containerId: target.id,
                 workspacePath,
                 devcontainerFile,
                 nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate'],
+                additionalArgs: await this.remoteCliArgsCollector.collect(),
             });
 
             this.logger.info(`CLI: startup attach ready, proxy on port ${result.port}, workspace: ${result.workspacePath}`);
+            // Reloads the window into the container; the attach screen is torn down by the navigation.
             this.openRemote(result.port, false, result.workspacePath);
         } catch (e) {
             this.logger.error('CLI: Failed to attach to container during startup:', e);
-            this.messageService.error(nls.localize(
-                'theia/remote/dev-container/cliAttachError',
-                'Failed to attach to container: {0}',
-                e instanceof Error ? e.message : String(e)
-            ));
+            const message = e instanceof Error ? e.message : String(e);
+            this.attachScreen.reportError(message, {
+                retry: () => this.runStartupAttach(args),
+                close: () => this.attachScreen.dispose()
+            });
+        } finally {
+            statusSubscription.dispose();
         }
     }
+
+    /** Whether this window was claimed for a CLI-driven attach (see {@link WINDOW_CLAIMED_PARAM}). */
+    protected isAttachPending(): boolean {
+        return new URLSearchParams(location.search).get(WINDOW_CLAIMED_PARAM) !== null; // eslint-disable-line no-null/no-null
+    }
+
+    /**
+     * Resolves the container to attach to on startup.
+     *
+     * A forwarded (second-instance) launch carries its CLI arguments, redeemed here from the trusted
+     * main process. For such windows those arguments are the only source, because the shared backend
+     * still reflects the original cold-start launch and cannot distinguish between windows. A
+     * cold-start window has no forwarded arguments and reads them from the backend instead.
+     */
+    protected async resolveAttachArgs(): Promise<AttachContainerArgs | undefined> {
+        const forwarded = await this.launchArgs.getLaunchArgs();
+        if (forwarded !== undefined) {
+            const containerId = LaunchArgv.getValue(forwarded, 'attach-container');
+            if (!containerId) {
+                return undefined;
+            }
+            return { containerId, scanForDevJson: !LaunchArgv.isNegated(forwarded, 'dev-json') };
+        }
+        return this.connectionProvider.getAttachContainerArgs();
+    }
+
 }

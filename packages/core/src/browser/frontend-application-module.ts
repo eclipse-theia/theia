@@ -37,7 +37,8 @@ import {
     InMemoryTextResourceResolver,
     UntitledResourceResolver,
     MenuPath,
-    PreferenceService
+    PreferenceService,
+    RemoteCliArgsContribution
 } from '../common';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding';
 import { FrontendApplication } from './frontend-application';
@@ -173,6 +174,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(FrontendApplicationStateService).toSelf().inSingletonScope();
     bind(DefaultFrontendApplicationContribution).toSelf();
     bindRootContributionProvider(bind, FrontendApplicationContribution);
+    bindRootContributionProvider(bind, RemoteCliArgsContribution);
 
     bind(ApplicationShellOptions).toConstantValue({});
     bind(ApplicationShell).toSelf().inSingletonScope();
