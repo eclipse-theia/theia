@@ -14,89 +14,93 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ReasoningSupport, resolveCompactionDefault, resolveCompactionTokenThresholdDefault, ServerSideCompactionSetting } from '@theia/ai-core';
+import { DiscoveringProviderContribution, ModelDiscoveryMessages } from '@theia/ai-core/lib/browser';
+import { DiscoveredModel } from '@theia/ai-core/lib/common';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription, OPENAI_PROVIDER_ID } from '../common';
 import {
-    API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF, USE_RESPONSE_API_PREF
+    ALLOW_ENV_API_KEY_PREF, API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODEL_OVERRIDES_PREF, SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF,
+    USE_RESPONSE_API_PREF
 } from '../common/openai-preferences';
 import {
-    AICorePreferences, PREFERENCE_NAME_MAX_RETRIES, PREFERENCE_NAME_SERVER_SIDE_COMPACTION, PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD
+    AICorePreferences, PREFERENCE_NAME_MAX_RETRIES, PREFERENCE_NAME_SERVER_SIDE_COMPACTION,
+    PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD
 } from '@theia/ai-core/lib/common/ai-core-preferences';
-import { PreferenceService } from '@theia/core';
+import { nls, PreferenceChange } from '@theia/core';
+
+/** Provider node id (matches the `ai-features.openAiOfficial.*` configuration segment). */
+const OPENAI_OFFICIAL_PROVIDER_ID = 'openAiOfficial';
 
 @injectable()
-export class OpenAiFrontendApplicationContribution implements FrontendApplicationContribution {
-
-    @inject(PreferenceService)
-    protected preferenceService: PreferenceService;
+export class OpenAiFrontendApplicationContribution extends DiscoveringProviderContribution<OpenAiModelDescription> {
 
     @inject(OpenAiLanguageModelsManager)
-    protected manager: OpenAiLanguageModelsManager;
+    protected readonly manager: OpenAiLanguageModelsManager;
 
     @inject(AICorePreferences)
     protected aiCorePreferences: AICorePreferences;
 
-    protected prevModels: string[] = [];
+    protected readonly providerId = OPENAI_OFFICIAL_PROVIDER_ID;
+    protected readonly providerLabel = 'OpenAI';
+    protected readonly modelOverridesPreference = MODEL_OVERRIDES_PREF;
+    protected readonly allowEnvironmentApiKeyPreference = ALLOW_ENV_API_KEY_PREF;
+
+    /** The registered ids carry the `openai/` prefix, while the provider node is `openAiOfficial`. */
+    protected override get modelIdPrefix(): string {
+        return OPENAI_PROVIDER_ID;
+    }
+
     protected prevCustomModels: Partial<OpenAiModelDescription>[] = [];
 
-    onStart(): void {
-        this.preferenceService.ready.then(() => {
-            const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
-            this.manager.setApiKey(apiKey);
+    protected get discoveryMessages(): ModelDiscoveryMessages {
+        return {
+            noCredentials: nls.localize('theia/ai/openai/discovery/noKey', 'No OpenAI API key set. Add a key to discover models.'),
+            consentRequired: nls.localize('theia/ai/openai/discovery/consentRequired',
+                'An OpenAI API key was found in the environment. Confirm its use to discover models.'),
+            consentPrompt: nls.localize('theia/ai/openai/discovery/consentPrompt',
+                'An OpenAI API key was found in the environment (OPENAI_API_KEY). Allow Theia to use it to discover and call OpenAI models?'),
+            useEnvironmentKey: nls.localize('theia/ai/openai/discovery/useEnvKey', 'Use key'),
+            overridden: nls.localize('theia/ai/openai/discovery/overridden',
+                'The model list is configured manually. Clear the model overrides to discover the models from the provider again.'),
+            cached: error => nls.localize('theia/ai/openai/discovery/cached', 'Showing cached models; last refresh failed: {0}', error)
+        };
+    }
 
-            const proxyUri = this.preferenceService.get<string>('http.proxy', undefined);
-            this.manager.setProxyUrl(proxyUri);
+    protected override initializeProvider(): void {
+        this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
+        this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
 
-            const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
-            this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenAIModelDescription(modelId)));
-            this.prevModels = [...models];
+        const customModels = this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+        this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
+        this.prevCustomModels = [...customModels];
 
-            const customModels = this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
-            this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
-            this.prevCustomModels = [...customModels];
-
-            this.preferenceService.onPreferenceChanged(event => {
-                if (event.preferenceName === API_KEY_PREF) {
-                    this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
-                    this.updateAllModels();
-                } else if (event.preferenceName === MODELS_PREF) {
-                    this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
-                } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
-                    this.handleCustomModelChanges(this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
-                } else if (event.preferenceName === USE_RESPONSE_API_PREF) {
-                    this.updateAllModels();
-                } else if (event.preferenceName === SERVER_SIDE_COMPACTION_PREF) {
-                    this.updateAllModels();
-                } else if (event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION ||
-                    event.preferenceName === SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF ||
-                    event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD) {
-                    this.updateAllModels();
-                } else if (event.preferenceName === 'http.proxy') {
-                    this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
-                    this.updateAllModels();
-                }
-            });
-
-            this.aiCorePreferences.onPreferenceChanged(event => {
-                if (event.preferenceName === PREFERENCE_NAME_MAX_RETRIES) {
-                    this.updateAllModels();
-                }
-            });
+        this.aiCorePreferences.onPreferenceChanged(event => {
+            if (event.preferenceName === PREFERENCE_NAME_MAX_RETRIES) {
+                this.updateDiscoveredModels();
+            }
         });
     }
 
-    protected handleModelChanges(newModels: string[]): void {
-        const oldModels = new Set(this.prevModels);
-        const updatedModels = new Set(newModels);
-
-        const modelsToRemove = [...oldModels].filter(model => !updatedModels.has(model));
-        const modelsToAdd = [...updatedModels].filter(model => !oldModels.has(model));
-
-        this.manager.removeLanguageModels(...modelsToRemove.map(model => `openai/${model}`));
-        this.manager.createOrUpdateLanguageModels(...modelsToAdd.map(modelId => this.createOpenAIModelDescription(modelId)));
-        this.prevModels = newModels;
+    protected override handlePreferenceChange(event: PreferenceChange): void {
+        if (event.preferenceName === API_KEY_PREF) {
+            this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
+            this.discoverAndRegisterModels();
+        } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
+            this.handleCustomModelChanges(this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
+        } else if (event.preferenceName === USE_RESPONSE_API_PREF ||
+            event.preferenceName === SERVER_SIDE_COMPACTION_PREF ||
+            event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION ||
+            event.preferenceName === SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF ||
+            event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD) {
+            this.updateDiscoveredModels();
+        } else if (event.preferenceName === 'http.proxy') {
+            this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
+            // A model keeps the proxy it was registered with, so the custom endpoints have to be
+            // re-registered as well: discovery only covers the models it registers itself.
+            this.updateCustomModels();
+            this.discoverAndRegisterModels();
+        }
     }
 
     protected handleCustomModelChanges(newCustomModels: Partial<OpenAiModelDescription>[]): void {
@@ -125,16 +129,20 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
         this.prevCustomModels = [...newCustomModels];
     }
 
-    protected updateAllModels(): void {
-        const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
-        this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenAIModelDescription(modelId)));
+    protected override updateDiscoveredModels(): void {
+        super.updateDiscoveredModels();
+        this.updateCustomModels();
+    }
 
+    /** Re-applies the model descriptions of the configured custom endpoints. */
+    protected updateCustomModels(): void {
         const customModels = this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
     }
 
     /** Per-model capabilities are resolved by the backend from the model id; see `openai-model-defaults.ts`. */
-    protected createOpenAIModelDescription(modelId: string): OpenAiModelDescription {
+    protected createModelDescription(model: DiscoveredModel): OpenAiModelDescription {
+        const modelId = model.id;
         const id = `${OPENAI_PROVIDER_ID}/${modelId}`;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
         const useResponseApi = this.preferenceService.get<boolean>(USE_RESPONSE_API_PREF, false);
@@ -152,7 +160,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             maxRetries: maxRetries,
             useResponseApi: useResponseApi,
             serverSideCompactionEnabledByDefault,
-            serverSideCompactionTokenThresholdByDefault
+            serverSideCompactionTokenThresholdByDefault,
+            released: model.released
         };
     }
 

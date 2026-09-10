@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ReasoningSupport } from '@theia/ai-core';
+import { ApiKeySource, ModelDiscoveryResult, ReasoningSupport } from '@theia/ai-core';
 
 export const OPENAI_LANGUAGE_MODELS_MANAGER_PATH = '/services/open-ai/language-model-manager';
 export const OpenAiLanguageModelsManager = Symbol('OpenAiLanguageModelsManager');
@@ -54,12 +54,29 @@ export interface OpenAiModelDescription {
     serverSideCompactionEnabledByDefault?: boolean;
     /** Resolved default input-token threshold for server-side compaction. `undefined` preserves the provider default. */
     serverSideCompactionTokenThresholdByDefault?: number;
+    /** Release date (ms since epoch) reported by discovery, surfaced as {@link LanguageModelMetaData.released}. */
+    released?: number;
 }
 export interface OpenAiLanguageModelsManager {
     apiKey: string | undefined;
     setApiKey(key: string | undefined): void;
+    /**
+     * Allows or refuses the use of an API key found in the environment. Refused by default: an
+     * environment key is only used once the user has confirmed it, and setting this back to `false`
+     * stops it being used immediately, wherever it would have been used.
+     */
+    setAllowEnvironmentApiKey(allowed: boolean): void;
     setApiVersion(version: string | undefined): void;
     setProxyUrl(proxyUrl: string | undefined): void;
     createOrUpdateLanguageModels(...models: OpenAiModelDescription[]): Promise<void>;
-    removeLanguageModels(...modelIds: string[]): void
+    removeLanguageModels(...modelIds: string[]): void;
+    /**
+     * Fetches the ids of the text-chat models OpenAI currently offers from its `/v1/models` endpoint,
+     * retrying transient connection failures and caching a snapshot for offline use. The endpoint
+     * exposes no capability metadata, so non-chat models are filtered out heuristically. Returns an
+     * empty result when no key is configured; falls back to the cached snapshot on failure.
+     */
+    fetchAvailableModels(): Promise<ModelDiscoveryResult>;
+    /** Reports where the effective API key comes from (preference, environment, or none). */
+    getApiKeySource(): Promise<ApiKeySource>;
 }

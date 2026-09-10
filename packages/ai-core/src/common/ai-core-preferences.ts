@@ -39,6 +39,15 @@ export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai-core/preferences
 export const MODEL_PROVIDER_TYPE_DETAIL = 'aiModelProvider';
 
 /**
+ * Key under a preference's schema `typeDetails` marking a preference that the AI Configuration view
+ * edits through a dedicated control of its own, so it should not also appear as a raw settings row.
+ * The value stays a plain preference, editable in `settings.json` like any other; it is only the
+ * duplicate, less legible editor that is left out. Declare it as
+ * `typeDetails: { [DEDICATED_EDITOR_TYPE_DETAIL]: true }`.
+ */
+export const DEDICATED_EDITOR_TYPE_DETAIL = 'aiDedicatedEditor';
+
+/**
  * Shape a language-model provider stores under a preference's `typeDetails[MODEL_PROVIDER_TYPE_DETAIL]`
  * to describe its `ai-features.<provider>.*` block to the AI Configuration view's Models page. Declared
  * on any one preference of the block, e.g. `typeDetails: { [MODEL_PROVIDER_TYPE_DETAIL]: { label: 'Anthropic' } }`.
@@ -51,6 +60,7 @@ export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.promptTemplates.pro
 export const PREFERENCE_NAME_REQUEST_SETTINGS = 'ai-features.modelSettings.requestSettings';
 export const PREFERENCE_NAME_REASONING = 'ai-features.reasoning.defaults';
 export const PREFERENCE_NAME_MAX_RETRIES = 'ai-features.modelSettings.maxRetries';
+export const PREFERENCE_NAME_FAVORITE_MODELS = 'ai-features.modelSettings.favoriteModels';
 export const PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE = 'ai-features.notifications.default';
 export const PREFERENCE_NAME_SKILL_DIRECTORIES = 'ai-features.skills.skillDirectories';
 export const PREFERENCE_NAME_SERVER_SIDE_COMPACTION = 'ai-features.chat.serverSideCompaction';
@@ -169,6 +179,21 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
             minimum: 0,
             default: 3
         },
+        [PREFERENCE_NAME_FAVORITE_MODELS]: {
+            title: nls.localize('theia/ai/core/favoriteModels/title', 'Favorite Models'),
+            markdownDescription: nls.localize('theia/ai/core/favoriteModels/mdDescription',
+                'Models the AI chat input\'s model picker shows, as fully qualified ids (e.g. `anthropic/claude-opus-5`). '
+                + 'The newest models of each provider are always shown and need not be listed here; this is for keeping an older '
+                + 'or release-pinned model at hand. Check a model on its provider\'s page in the AI Configuration view to add it.'),
+            type: 'array',
+            // The provider pages check models one by one; a second, raw editor for the same ids would
+            // invite typos and disagree with what the checks say.
+            typeDetails: { [DEDICATED_EDITOR_TYPE_DETAIL]: true },
+            items: {
+                type: 'string'
+            },
+            default: []
+        },
         [PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE]: {
             title: nls.localize('theia/ai/core/defaultNotification/title', 'Default Notification Type'),
             markdownDescription: nls.localize('theia/ai/core/defaultNotification/mdDescription',
@@ -276,6 +301,7 @@ export interface AICoreConfiguration {
     [PREFERENCE_NAME_REQUEST_SETTINGS]: Array<RequestSetting> | undefined;
     [PREFERENCE_NAME_REASONING]: Array<ReasoningPreferenceEntry> | undefined;
     [PREFERENCE_NAME_MAX_RETRIES]: number | undefined;
+    [PREFERENCE_NAME_FAVORITE_MODELS]: string[] | undefined;
     [PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE]: NotificationType | undefined;
     [PREFERENCE_NAME_SKILL_DIRECTORIES]: string[] | undefined;
     [PREFERENCE_NAME_SERVER_SIDE_COMPACTION]: boolean | undefined;

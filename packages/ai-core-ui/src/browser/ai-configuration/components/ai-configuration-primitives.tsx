@@ -186,10 +186,14 @@ export interface AiConfigurationCalloutProps {
  * A page-level offer: one line of explanation next to one action ("allow the default tools", "reset every
  * customization"). Rendered as a box above the page content rather than a bare button on the filter line,
  * so the consequence is stated where the action is.
+ *
+ * The message is not always ours — a provider's failure ends up here — so it is clamped to three lines
+ * and repeated as a tooltip, and the action keeps its place however long the message runs.
  */
 export const AiConfigurationCallout: React.FC<AiConfigurationCalloutProps> = ({ message, action }) =>
     <div className='ai-configuration-callout'>
-        <span className='ai-configuration-callout-text'>{message}</span>
+        {/* Clamped to three lines, so the message is repeated on hover for the cases that outgrow them. */}
+        <span className='ai-configuration-callout-text' title={message}>{message}</span>
         {action}
     </div>;
 
@@ -304,17 +308,33 @@ export const AiMarkdownDescription: React.FC<AiMarkdownDescriptionProps> = ({ re
     return <div className={className ?? 'ai-settings-row-description'} ref={host}></div>;
 };
 
+/** A sticky on/off narrowing of the filtered list, offered inside the filter box next to the clear button. */
+export interface AiConfigurationFilterToggle {
+    /** `codicon(...)` class of the glyph; it carries the whole meaning, so pick one that does. */
+    readonly iconClass: string;
+    /** Hover text and accessible name, stating what the list is narrowed to. */
+    readonly title: string;
+    readonly active: boolean;
+    readonly onToggle: () => void;
+}
+
 export interface AiConfigurationFilterInputProps {
     readonly value: string;
     readonly onChange: (value: string) => void;
     readonly placeholder?: string;
+    /**
+     * Narrowings that apply on top of the typed text, e.g. "only the models the pickers offer". They
+     * live inside the box because they filter the same list the text does, and a control that sits
+     * elsewhere would not read as part of filtering.
+     */
+    readonly toggles?: readonly AiConfigurationFilterToggle[];
 }
 
 /**
  * In-list filter input: a controlled text field (the owning widget holds the value) with a leading filter
- * icon, a trailing clear button, and Escape-to-clear — mirroring the view's search input.
+ * icon, trailing toggles and a clear button, and Escape-to-clear — mirroring the view's search input.
  */
-export const AiConfigurationFilterInput: React.FC<AiConfigurationFilterInputProps> = ({ value, onChange, placeholder }) => {
+export const AiConfigurationFilterInput: React.FC<AiConfigurationFilterInputProps> = ({ value, onChange, placeholder, toggles }) => {
     const onKeyDown = React.useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Escape' && value.length > 0) {
             event.preventDefault();
@@ -322,7 +342,8 @@ export const AiConfigurationFilterInput: React.FC<AiConfigurationFilterInputProp
         }
     }, [value, onChange]);
     const clearLabel = nls.localizeByDefault('Clear');
-    return <div className='ai-configuration-filter-input'>
+    const actionCount = (toggles?.length ?? 0) + (value.length > 0 ? 1 : 0);
+    return <div className={`ai-configuration-filter-input${actionCount > 1 ? ' with-toggles' : ''}`}>
         <span className={`ai-configuration-filter-input-icon ${codicon('filter')}`}></span>
         <input
             className='theia-input'
@@ -333,13 +354,24 @@ export const AiConfigurationFilterInput: React.FC<AiConfigurationFilterInputProp
             onChange={e => onChange(e.target.value)}
             onKeyDown={onKeyDown}
         />
-        {value.length > 0 && <button
-            type='button'
-            className={`ai-configuration-filter-input-clear ${codicon('close')}`}
-            title={clearLabel}
-            aria-label={clearLabel}
-            onClick={() => onChange('')}
-        ></button>}
+        <span className='ai-configuration-filter-input-actions'>
+            {toggles?.map(toggle => <button
+                key={toggle.iconClass}
+                type='button'
+                className={`ai-configuration-filter-input-action ${toggle.iconClass}${toggle.active ? ' active' : ''}`}
+                title={toggle.title}
+                aria-label={toggle.title}
+                aria-pressed={toggle.active}
+                onClick={toggle.onToggle}
+            ></button>)}
+            {value.length > 0 && <button
+                type='button'
+                className={`ai-configuration-filter-input-action ${codicon('close')}`}
+                title={clearLabel}
+                aria-label={clearLabel}
+                onClick={() => onChange('')}
+            ></button>}
+        </span>
     </div>;
 };
 

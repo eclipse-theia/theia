@@ -119,7 +119,8 @@ export class OpenAiModel implements LanguageModel {
         public serverTools?: ServerToolDescriptor[],
         public serverSideCompactionSupport: boolean = false,
         public serverSideCompactionEnabledByDefault: boolean = false,
-        public serverSideCompactionTokenThresholdByDefault?: number
+        public serverSideCompactionTokenThresholdByDefault?: number,
+        public released?: number
     ) { }
 
     /** Reasoning-level translation lives in {@link openAiReasoningFor}. */

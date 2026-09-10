@@ -14,88 +14,96 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
 import {
-    API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF
+    ALLOW_ENV_API_KEY_PREF, API_KEY_PREF, MODEL_OVERRIDES_PREF, CUSTOM_ENDPOINTS_PREF, SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF
 } from '../common/anthropic-preferences';
 import {
-    AICorePreferences, PREFERENCE_NAME_MAX_RETRIES, PREFERENCE_NAME_SERVER_SIDE_COMPACTION, PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD
+    AICorePreferences, PREFERENCE_NAME_MAX_RETRIES, PREFERENCE_NAME_SERVER_SIDE_COMPACTION,
+    PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD
 } from '@theia/ai-core/lib/common/ai-core-preferences';
-import { PreferenceService } from '@theia/core';
+import { nls, PreferenceChange } from '@theia/core';
 import { resolveCompactionDefault, resolveCompactionTokenThresholdDefault, ServerSideCompactionSetting } from '@theia/ai-core';
+import { DiscoveringProviderContribution, ModelDiscoveryMessages } from '@theia/ai-core/lib/browser';
+import { DiscoveredModel } from '@theia/ai-core/lib/common';
 
 const ANTHROPIC_PROVIDER_ID = 'anthropic';
 
 @injectable()
-export class AnthropicFrontendApplicationContribution implements FrontendApplicationContribution {
-
-    @inject(PreferenceService)
-    protected preferenceService: PreferenceService;
+export class AnthropicFrontendApplicationContribution extends DiscoveringProviderContribution<AnthropicModelDescription> {
 
     @inject(AnthropicLanguageModelsManager)
-    protected manager: AnthropicLanguageModelsManager;
+    protected readonly manager: AnthropicLanguageModelsManager;
 
     @inject(AICorePreferences)
     protected aiCorePreferences: AICorePreferences;
 
-    protected prevModels: string[] = [];
+    protected readonly providerId = ANTHROPIC_PROVIDER_ID;
+    protected readonly providerLabel = 'Anthropic';
+    protected readonly modelOverridesPreference = MODEL_OVERRIDES_PREF;
+    protected readonly allowEnvironmentApiKeyPreference = ALLOW_ENV_API_KEY_PREF;
+
     protected prevCustomModels: Partial<AnthropicModelDescription>[] = [];
 
-    onStart(): void {
-        this.preferenceService.ready.then(() => {
-            const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
-            this.manager.setApiKey(apiKey);
+    protected get discoveryMessages(): ModelDiscoveryMessages {
+        return {
+            noCredentials: nls.localize('theia/ai/anthropic/discovery/noKey', 'No Anthropic API key set. Add a key to discover models.'),
+            consentRequired: nls.localize('theia/ai/anthropic/discovery/consentRequired',
+                'An Anthropic API key was found in the environment. Confirm its use to discover models.'),
+            consentPrompt: nls.localize('theia/ai/anthropic/discovery/consentPrompt',
+                'An Anthropic API key was found in the environment (ANTHROPIC_API_KEY). Allow Theia to use it to discover and call Anthropic models?'),
+            useEnvironmentKey: nls.localize('theia/ai/anthropic/discovery/useEnvKey', 'Use key'),
+            overridden: nls.localize('theia/ai/anthropic/discovery/overridden',
+                'The model list is configured manually. Clear the model overrides to discover the models from the provider again.'),
+            cached: error => nls.localize('theia/ai/anthropic/discovery/cached', 'Showing cached models; last refresh failed: {0}', error)
+        };
+    }
 
-            const proxyUri = this.preferenceService.get<string>('http.proxy', undefined);
-            this.manager.setProxyUrl(proxyUri);
+    protected override initializeProvider(): void {
+        this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
+        this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
 
-            const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
-            this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId)));
-            this.prevModels = [...models];
+        const customModels = this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+        this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
+        this.prevCustomModels = [...customModels];
 
-            const customModels = this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
-            this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
-            this.prevCustomModels = [...customModels];
-
-            this.preferenceService.onPreferenceChanged(event => {
-                if (event.preferenceName === API_KEY_PREF) {
-                    this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
-                    this.updateAllModels();
-                } else if (event.preferenceName === MODELS_PREF) {
-                    this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
-                } else if (event.preferenceName === 'http.proxy') {
-                    this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
-                    this.updateAllModels();
-                } else if (event.preferenceName === SERVER_SIDE_COMPACTION_PREF ||
-                    event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION ||
-                    event.preferenceName === SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF ||
-                    event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD) {
-                    this.updateAllModels();
-                } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
-                    this.handleCustomModelChanges(this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
-                }
-            });
-
-            this.aiCorePreferences.onPreferenceChanged(event => {
-                if (event.preferenceName === PREFERENCE_NAME_MAX_RETRIES) {
-                    this.updateAllModels();
-                }
-            });
+        this.aiCorePreferences.onPreferenceChanged(event => {
+            if (event.preferenceName === PREFERENCE_NAME_MAX_RETRIES) {
+                this.updateDiscoveredModels();
+            }
         });
     }
 
-    protected handleModelChanges(newModels: string[]): void {
-        const oldModels = new Set(this.prevModels);
-        const updatedModels = new Set(newModels);
+    protected override handlePreferenceChange(event: PreferenceChange): void {
+        if (event.preferenceName === API_KEY_PREF) {
+            this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
+            this.discoverAndRegisterModels();
+        } else if (event.preferenceName === 'http.proxy') {
+            this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
+            // A model keeps the proxy it was registered with, so the custom endpoints have to be
+            // re-registered as well: discovery only covers the models it registers itself.
+            this.updateCustomModels();
+            this.discoverAndRegisterModels();
+        } else if (event.preferenceName === SERVER_SIDE_COMPACTION_PREF ||
+            event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION ||
+            event.preferenceName === SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF ||
+            event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD) {
+            this.updateDiscoveredModels();
+        } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
+            this.handleCustomModelChanges(this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []));
+        }
+    }
 
-        const modelsToRemove = [...oldModels].filter(model => !updatedModels.has(model));
-        const modelsToAdd = [...updatedModels].filter(model => !oldModels.has(model));
+    protected override updateDiscoveredModels(): void {
+        super.updateDiscoveredModels();
+        this.updateCustomModels();
+    }
 
-        this.manager.removeLanguageModels(...modelsToRemove.map(model => `${ANTHROPIC_PROVIDER_ID}/${model}`));
-        this.manager.createOrUpdateLanguageModels(...modelsToAdd.map(modelId => this.createAnthropicModelDescription(modelId)));
-        this.prevModels = newModels;
+    /** Re-applies the model descriptions of the configured custom endpoints. */
+    protected updateCustomModels(): void {
+        const customModels = this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+        this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
     }
 
     protected handleCustomModelChanges(newCustomModels: Partial<AnthropicModelDescription>[]): void {
@@ -120,17 +128,9 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
         this.prevCustomModels = [...newCustomModels];
     }
 
-    protected updateAllModels(): void {
-        const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
-        this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId)));
-
-        const customModels = this.preferenceService.get<Partial<AnthropicModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
-        this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
-    }
-
     /** Per-model details are resolved by the backend from the Anthropic /v1/models endpoint. */
-    protected createAnthropicModelDescription(modelId: string): AnthropicModelDescription {
-        const id = `${ANTHROPIC_PROVIDER_ID}/${modelId}`;
+    protected createModelDescription(model: DiscoveredModel): AnthropicModelDescription {
+        const id = `${ANTHROPIC_PROVIDER_ID}/${model.id}`;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
         const globalCompaction = this.preferenceService.get<boolean>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
         const compactionOverride = this.preferenceService.get<ServerSideCompactionSetting>(SERVER_SIDE_COMPACTION_PREF, 'default');
@@ -141,13 +141,14 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
 
         return {
             id: id,
-            model: modelId,
+            model: model.id,
             apiKey: true,
             enableStreaming: true,
             useCaching: true,
             maxRetries: maxRetries,
             serverSideCompactionEnabledByDefault,
-            serverSideCompactionTokenThresholdByDefault
+            serverSideCompactionTokenThresholdByDefault,
+            released: model.released
         };
     }
 

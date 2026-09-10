@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ReasoningApi, ReasoningSupport } from '@theia/ai-core';
+import { ApiKeySource, ModelDiscoveryResult, ReasoningApi, ReasoningSupport } from '@theia/ai-core';
 
 export const GOOGLE_LANGUAGE_MODELS_MANAGER_PATH = '/services/google/language-model-manager';
 export const GoogleLanguageModelsManager = Symbol('GoogleLanguageModelsManager');
@@ -52,9 +52,23 @@ export interface GoogleModelDescription {
 export interface GoogleLanguageModelsManager {
     apiKey: string | undefined;
     setApiKey(key: string | undefined): void;
+    /**
+     * Allows or refuses the use of an API key found in the environment. Refused by default: an
+     * environment key is only used once the user has confirmed it, and setting this back to `false`
+     * stops it being used immediately, wherever it would have been used.
+     */
+    setAllowEnvironmentApiKey(allowed: boolean): void;
     setMaxRetriesOnErrors(maxRetries: number): void;
     setRetryDelayOnRateLimitError(retryDelay: number): void;
     setRetryDelayOnOtherErrors(retryDelay: number): void;
     createOrUpdateLanguageModels(...models: GoogleModelDescription[]): Promise<void>;
-    removeLanguageModels(...modelIds: string[]): void
+    removeLanguageModels(...modelIds: string[]): void;
+    /**
+     * Fetches the ids of the Gemini models that currently support content generation from the
+     * `/v1beta/models` endpoint, retrying transient failures and caching a snapshot for offline use.
+     * Returns an empty result when no key is configured; falls back to the cached snapshot on failure.
+     */
+    fetchAvailableModels(): Promise<ModelDiscoveryResult>;
+    /** Reports where the effective API key comes from (preference, environment, or none). */
+    getApiKeySource(): Promise<ApiKeySource>;
 }

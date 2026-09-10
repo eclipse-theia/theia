@@ -21,7 +21,8 @@ import { SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM } from '@theia/ai-core/l
 import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.openAiOfficial.openAiApiKey';
-export const MODELS_PREF = 'ai-features.openAiOfficial.officialOpenAiModels';
+export const ALLOW_ENV_API_KEY_PREF = 'ai-features.openAiOfficial.allowEnvironmentApiKey';
+export const MODEL_OVERRIDES_PREF = 'ai-features.openAiOfficial.modelOverrides';
 export const USE_RESPONSE_API_PREF = 'ai-features.openAiOfficial.useResponseApi';
 export const SERVER_SIDE_COMPACTION_PREF = 'ai-features.openAiOfficial.serverSideCompaction';
 export const SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF = 'ai-features.openAiOfficial.serverSideCompactionTokenThreshold';
@@ -37,20 +38,24 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
 on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
             title: AI_CORE_PREFERENCES_TITLE,
         },
-        [MODELS_PREF]: {
+        [MODEL_OVERRIDES_PREF]: {
             type: 'array',
-            description: nls.localize('theia/ai/openai/models/description', 'Official OpenAI models to use'),
-            title: AI_CORE_PREFERENCES_TITLE,
-            default: [
-                'gpt-5.6-sol',
-                'gpt-5.6-terra',
-                'gpt-5.6-luna',
-                'gpt-5.5',
-                'gpt-5.5-pro'
-            ],
+            default: [],
             items: {
                 type: 'string'
-            }
+            },
+            title: AI_CORE_PREFERENCES_TITLE,
+            markdownDescription: nls.localize('theia/ai/openai/modelOverrides/description',
+                'Override the models discovered from OpenAI. When empty (default), the available models are discovered from the provider. '
+                + 'Set explicit model ids to use exactly those instead; discovery is then not used at all.')
+        },
+        [ALLOW_ENV_API_KEY_PREF]: {
+            type: 'boolean',
+            default: false,
+            title: AI_CORE_PREFERENCES_TITLE,
+            markdownDescription: nls.localize('theia/ai/openai/allowEnvApiKey/description',
+                'Allow Theia to use an OpenAI API key found in the environment (`OPENAI_API_KEY`). '
+                + 'You are asked to confirm this once before the key is used; set it back to `false` to revoke consent.'),
         },
         [USE_RESPONSE_API_PREF]: {
             type: 'boolean',

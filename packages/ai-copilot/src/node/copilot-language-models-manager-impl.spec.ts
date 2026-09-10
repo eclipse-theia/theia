@@ -104,7 +104,9 @@ describe('CopilotLanguageModelsManagerImpl - status', () => {
 
     it('should report models as unavailable when they cannot be listed, rather than as ready', async () => {
         manager.listFailure = new Error('not authorized to use this Copilot feature');
-        expect(await manager.fetchAvailableModelIds()).to.be.empty;
+        const result = await manager.fetchAvailableModels();
+        expect(result.models).to.be.empty;
+        expect(result.error).to.contain('not authorized');
         const status = await manager.callCalculateStatus();
         expect(status.status).to.equal('unavailable');
         expect(status.message).to.contain('not authorized');
@@ -113,7 +115,7 @@ describe('CopilotLanguageModelsManagerImpl - status', () => {
     it('should reflect a failed listing in the models that are already registered', async () => {
         await manager.createOrUpdateLanguageModels({ id: 'copilot/gpt-5', model: 'gpt-5', maxRetries: 3 });
         manager.listFailure = new Error('socket hang up');
-        await manager.fetchAvailableModelIds();
+        await manager.fetchAvailableModels();
         expect(manager.registry.patches.map(patch => patch.id)).to.deep.equal(['copilot/gpt-5']);
         expect(manager.registry.models[0].status).to.deep.include({ status: 'unavailable' });
     });
@@ -121,10 +123,42 @@ describe('CopilotLanguageModelsManagerImpl - status', () => {
     it('should report ready again once the models can be listed', async () => {
         await manager.createOrUpdateLanguageModels({ id: 'copilot/gpt-5', model: 'gpt-5', maxRetries: 3 });
         manager.listFailure = new Error('socket hang up');
-        await manager.fetchAvailableModelIds();
+        await manager.fetchAvailableModels();
         manager.listFailure = undefined;
-        expect(await manager.fetchAvailableModelIds()).to.deep.equal(['gpt-5']);
+        expect((await manager.fetchAvailableModels()).models).to.deep.equal([{ id: 'gpt-5', featured: true }]);
         expect(manager.registry.models[0].status).to.deep.equal({ status: 'ready' });
+    });
+
+    it('nominates one model of each major vendor plus auto, so no vendor crowds out the others', async () => {
+        manager.modelIds = ['auto', 'gpt-5', 'gpt-4.1', 'claude-sonnet-4.5', 'claude-haiku-4', 'gemini-2.5-pro', 'gpt-5-2026-04-17'];
+        const featured = (await manager.fetchAvailableModels()).models.filter(model => model.featured).map(model => model.id);
+        expect(featured).to.have.members(['auto', 'gpt-5', 'claude-sonnet-4.5', 'gemini-2.5-pro']);
+    });
+
+    it('counts the reasoning models as OpenAI, rather than as a vendor of their own', async () => {
+        manager.modelIds = ['gpt-4.1', 'o5-preview'];
+        const featured = (await manager.fetchAvailableModels()).models.filter(model => model.featured).map(model => model.id);
+        // One OpenAI model, the highest-versioned of the two, not one per id prefix.
+        expect(featured).to.deep.equal(['o5-preview']);
+    });
+
+    it('nominates nothing for the vendors beyond the three, which stay selectable but not preselected', async () => {
+        manager.modelIds = ['claude-sonnet-4.5', 'grok-code-fast-1', 'mistral-large', 'llama-4-maverick'];
+        const result = await manager.fetchAvailableModels();
+        expect(result.models.map(model => model.id)).to.have.lengthOf(4);
+        expect(result.models.filter(model => model.featured).map(model => model.id)).to.deep.equal(['claude-sonnet-4.5']);
+    });
+
+    it('recognises a vendor-qualified id, in case the CLI reports them that way', async () => {
+        manager.modelIds = ['google/gemini-2.5-pro', 'anthropic/claude-sonnet-4.5'];
+        const featured = (await manager.fetchAvailableModels()).models.filter(model => model.featured).map(model => model.id);
+        expect(featured).to.have.members(['google/gemini-2.5-pro', 'anthropic/claude-sonnet-4.5']);
+    });
+
+    it('never nominates a release-pinned id, whose undated form is nominated instead', async () => {
+        manager.modelIds = ['gpt-5', 'gpt-5-2026-04-17'];
+        const featured = (await manager.fetchAvailableModels()).models.filter(model => model.featured).map(model => model.id);
+        expect(featured).to.deep.equal(['gpt-5']);
     });
 
     it('should update an existing model instead of registering it twice', async () => {

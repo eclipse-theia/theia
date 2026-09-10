@@ -308,6 +308,12 @@ export interface AiEnumOption {
     /** Optional native tooltip, e.g. to surface an option's secondary description. */
     readonly title?: string;
     readonly disabled?: boolean;
+    /**
+     * Renders the entry as a rule between two groups of options rather than as a selectable one, for
+     * lists long enough to need dividing (e.g. the language models of each provider). The rule carries
+     * no text, so {@link value} and {@link label} are ignored.
+     */
+    readonly separator?: boolean;
 }
 
 /**
@@ -330,7 +336,8 @@ export const AiEnumSelect: React.FC<{
         value: option.value,
         label: option.label,
         description: option.title,
-        disabled: option.disabled
+        disabled: option.disabled,
+        separator: option.separator
     })), [options]);
     const handleChange = React.useCallback((option: SelectOption): void => {
         // SelectComponent has no whole-control `disabled`; guard the commit so a disabled select never writes.

@@ -14,13 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, LanguageModelStatus, ReasoningApi, ReasoningSupport } from '@theia/ai-core';
+import {
+    ApiKeySource, DiscoveredModel, DiscoveredModels, LanguageModelRegistry, LanguageModelStatus, ModelDiscoveryResult, ReasoningApi, ReasoningSupport
+} from '@theia/ai-core';
+import { ModelDiscoveryFetcher } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { GoogleGenAI, Model } from '@google/genai';
 import { GoogleModel } from './google-language-model';
 import { GOOGLE_SERVER_TOOLS } from './google-server-tools';
 import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
 import { ILogger } from '@theia/core';
+
+const GOOGLE_SNAPSHOT_FILE = 'google-models.json';
 
 export interface GoogleLanguageModelRetrySettings {
     maxRetriesOnErrors: number;
@@ -56,6 +61,12 @@ interface ResolvedModelMetadata {
 @injectable()
 export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsManager {
     protected _apiKey: string | undefined;
+    /**
+     * Whether a key found in the environment may be used. Withheld until the user confirms it, so the
+     * gate sits on the key itself: every path that reaches for one — discovery, a custom endpoint, a
+     * manually configured model — is covered, and revoking the consent takes effect at once.
+     */
+    protected _allowEnvironmentApiKey = false;
     protected retrySettings: GoogleLanguageModelRetrySettings = {
         maxRetriesOnErrors: 3,
         retryDelayOnRateLimitError: 60,
@@ -71,8 +82,73 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
     @inject(ILogger) @named('ai-google:GoogleLanguageModelsManagerImpl')
     protected readonly logger: ILogger;
 
+    @inject(ModelDiscoveryFetcher)
+    protected readonly discoveryFetcher: ModelDiscoveryFetcher;
+
     get apiKey(): string | undefined {
-        return this._apiKey ?? process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY;
+        return this._apiKey ?? (this._allowEnvironmentApiKey ? process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY : undefined);
+    }
+
+    async getApiKeySource(): Promise<ApiKeySource> {
+        if (this._apiKey) {
+            return 'preference';
+        }
+        if (process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY) {
+            return 'environment';
+        }
+        return 'none';
+    }
+
+    async fetchAvailableModels(): Promise<ModelDiscoveryResult> {
+        const apiKey = this.apiKey;
+        if (!apiKey) {
+            return { models: [], fromCache: false };
+        }
+        return this.discoveryFetcher.fetch({
+            snapshotFile: GOOGLE_SNAPSHOT_FILE,
+            providerLabel: 'Google',
+            listModels: async () => this.toDiscoveredModels(await this.listModels(apiKey)),
+            isRetryable: error => this.isRetryableError(error)
+        });
+    }
+
+    /**
+     * Maps the endpoint's entries onto {@link DiscoveredModel}s. Gemini ids carry no release date
+     * today, so collapsing dated variants is a no-op here; it is applied all the same, so a provider
+     * that starts pinning releases does not quietly multiply the list.
+     */
+    protected toDiscoveredModels(models: Model[]): DiscoveredModel[] {
+        const byId = new Map<string, DiscoveredModel>();
+        for (const model of models) {
+            // Only models usable for chat/content generation; older SDKs may omit the field.
+            if (model.supportedActions && !model.supportedActions.includes('generateContent')) {
+                continue;
+            }
+            const id = (model.name ?? '').replace(/^models\//, '');
+            if (id.length > 0 && !byId.has(id)) {
+                byId.set(id, { id, label: model.displayName, description: model.description });
+            }
+        }
+        return DiscoveredModels.withUndatedAliases([...byId.values()]);
+    }
+
+    /**
+     * Retry transient network errors; auth/quota errors fail fast. The SDK reports them as plain
+     * errors, so there is nothing to match on but the message.
+     */
+    protected isRetryableError(error: unknown): boolean {
+        const message = (error instanceof Error ? `${error.name} ${error.message}` : String(error)).toLowerCase();
+        return /econn|etimedout|enotfound|network|fetch failed|socket|timeout|aborted/.test(message);
+    }
+
+    /** Iterates the (auto-paginated) `/v1beta/models` endpoint. Overridable for testing. */
+    protected async listModels(apiKey: string): Promise<Model[]> {
+        const genAI = new GoogleGenAI({ apiKey, vertexai: false });
+        const models: Model[] = [];
+        for await (const model of await genAI.models.list()) {
+            models.push(model);
+        }
+        return models;
     }
 
     protected calculateStatus(effectiveApiKey: string | undefined): LanguageModelStatus {
@@ -182,6 +258,10 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
 
     removeLanguageModels(...modelIds: string[]): void {
         this.languageModelRegistry.removeLanguageModels(modelIds);
+    }
+
+    setAllowEnvironmentApiKey(allowed: boolean): void {
+        this._allowEnvironmentApiKey = allowed;
     }
 
     setApiKey(apiKey: string | undefined): void {
