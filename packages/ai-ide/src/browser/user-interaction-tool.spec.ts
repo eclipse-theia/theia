@@ -172,6 +172,22 @@ describe('UserInteractionTool', () => {
         expect(result.steps).to.deep.equal([{ title: 'FYI' }]);
     });
 
+    describe('checkAutoAction', () => {
+
+        it('should auto-deny malformed arguments so the model receives the validation error', () => {
+            const args = JSON.stringify({
+                interactions: [{ title: 'Apply fix?', message: 'Confirm?', options: '[{"text":"Yes","value":"yes"}]' }]
+            });
+            const autoAction = tool.getTool().checkAutoAction!(args);
+            expect(autoAction?.action).to.equal('deny');
+            expect(autoAction?.reason).to.match(/step 1: "options" must be an array/i);
+        });
+
+        it('should not auto-deny well-formed arguments, leaving confirmation to the user', () => {
+            expect(tool.getTool().checkAutoAction!(singleStepArgs())).to.be.undefined;
+        });
+    });
+
     it('should return error when no tool call ID is available', async () => {
         const handler = tool.getTool().handler;
         const result = await handler(singleStepArgs(), undefined);

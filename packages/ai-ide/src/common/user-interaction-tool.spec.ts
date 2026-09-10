@@ -45,6 +45,20 @@ describe('parseUserInteractionArgs', () => {
             expect(expectRejected(JSON.stringify({ foo: 'bar' }))).to.match(/"interactions" must be an array of step objects/);
         });
 
+        it('should reject a JSON-encoded argument blob and name the received type', () => {
+            const error = expectRejected(JSON.stringify('{"interactions":[{"title":"T","message":"M"}]}'));
+            expect(error).to.match(/arguments must be an object with an "interactions" array, received string/i);
+            expect(error).to.match(/do not JSON-encode nested values/i);
+        });
+
+        it('should reject a top-level array', () => {
+            expect(expectRejected('[]')).to.match(/arguments must be an object with an "interactions" array, received array/i);
+        });
+
+        it('should reject top-level null', () => {
+            expect(expectRejected('null')).to.match(/arguments must be an object with an "interactions" array, received null/i);
+        });
+
         it('should reject a JSON-encoded interactions string and name the received type', () => {
             const error = expectRejected(JSON.stringify({ interactions: '[{"title":"T","message":"M"}]' }));
             expect(error).to.match(/"interactions" must be an array of step objects, received string/);
@@ -87,11 +101,27 @@ describe('parseUserInteractionArgs', () => {
             expect(error).to.match(/step 1, option 2: "text" and "value" are required strings/i);
         });
 
-        it('should reject plain string options', () => {
+        it('should reject options given as an object rather than an array', () => {
+            const error = expectRejected(JSON.stringify({
+                interactions: [{ title: 'T', message: 'M', options: { text: 'Yes', value: 'yes' } }]
+            }));
+            expect(error).to.match(/step 1: "options" must be an array of \{text, value\} objects, received object/i);
+        });
+
+        it('should reject plain string options and name the received type', () => {
             const error = expectRejected(JSON.stringify({
                 interactions: [{ title: 'T', message: 'M', options: ['Yes', 'No'] }]
             }));
-            expect(error).to.match(/step 1, option 1: "text" and "value" are required strings/i);
+            expect(error).to.match(/step 1, option 1: "text" and "value" are required strings, received string/i);
+            expect(error).to.match(/do not JSON-encode nested values/i);
+        });
+
+        it('should reject a JSON-encoded links string', () => {
+            const error = expectRejected(JSON.stringify({
+                interactions: [{ title: 'T', message: 'M', links: '[{"ref":"a.ts"}]' }]
+            }));
+            expect(error).to.match(/step 1: "links" must be an array of link objects, received string/i);
+            expect(error).to.match(/do not JSON-encode nested values/i);
         });
 
         it('should report the offending option position within the offending step', () => {
@@ -206,7 +236,7 @@ describe('parseUserInteractionArgs', () => {
             ]);
         });
 
-        it('should reject step links with empty path in object ref', () => {
+        it('should drop a link whose object ref has an empty path', () => {
             const args = expectAccepted(JSON.stringify({
                 interactions: [{
                     title: 'T', message: 'M',
@@ -258,34 +288,39 @@ describe('parseUserInteractionInput', () => {
     });
 
     it('should fall back to regex-based title extraction for incomplete JSON', () => {
-        const partial = '{"interactions":[{"title":"Streaming ti';
-        expect(parseUserInteractionInput(partial)).to.deep.equal({ title: 'Streaming ti', stepCount: 0 });
+        const input = '{"interactions": [{"title": "Streaming Title", "message": "incom';
+        expect(parseUserInteractionInput(input).title).to.equal('Streaming Title');
+    });
+
+    it('should extract a partial title from JSON truncated mid-title', () => {
+        const input = '{"interactions":[{"title":"Streaming ti';
+        expect(parseUserInteractionInput(input)).to.deep.equal({ title: 'Streaming ti', stepCount: 0 });
     });
 
     it('should return empty title from incomplete JSON without title field', () => {
-        const partial = '{"interactions":[{"mes';
-        expect(parseUserInteractionInput(partial)).to.deep.equal({ title: '', stepCount: 0 });
+        const input = '{"interactions": [{"message": "no title here';
+        expect(parseUserInteractionInput(input).title).to.equal('');
     });
 });
 
 describe('buildDiffLabel', () => {
     it('formats two empty refs', () => {
-        expect(buildDiffLabel({ empty: true, label: 'before' }, { empty: true, label: 'after' }))
-            .to.equal('before ⟷ after');
+        expect(buildDiffLabel({ empty: true, label: 'New' }, { empty: true, label: 'Deleted' }))
+            .to.equal('New ⟷ Deleted');
     });
 
     it('formats empty left vs path with gitRef', () => {
-        expect(buildDiffLabel({ empty: true, label: 'new file' }, { path: 'src/a.ts', gitRef: 'abcdef1234567' }))
-            .to.equal('src/a.ts (new file ⟷ abcdef1)');
+        expect(buildDiffLabel({ empty: true, label: 'New' }, { path: 'src/x.ts', gitRef: 'abcdef0123' }))
+            .to.equal('src/x.ts (New ⟷ abcdef0)');
     });
 
     it('formats path with gitRef vs working copy of same path', () => {
-        expect(buildDiffLabel({ path: 'src/a.ts', gitRef: 'abcdef1234567' }, { path: 'src/a.ts' }))
-            .to.equal('src/a.ts (abcdef1 ⟷ Working Copy)');
+        expect(buildDiffLabel({ path: 'src/x.ts', gitRef: 'abcdef0123' }, { path: 'src/x.ts' }))
+            .to.equal('src/x.ts (abcdef0 ⟷ Working Copy)');
     });
 
     it('formats two different paths', () => {
-        expect(buildDiffLabel({ path: 'src/a.ts' }, { path: 'src/b.ts' }))
-            .to.equal('src/a.ts ⟷ src/b.ts');
+        expect(buildDiffLabel({ path: 'src/old.ts' }, { path: 'src/new.ts' }))
+            .to.equal('src/old.ts ⟷ src/new.ts');
     });
 });

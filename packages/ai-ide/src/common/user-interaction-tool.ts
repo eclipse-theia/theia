@@ -161,8 +161,10 @@ export function parseUserInteractionResult(raw: unknown): UserInteractionResult 
  * Validation is strict for anything that determines whether — and how — the user is asked
  * (`interactions`, each step, and each option), because silently discarding those turns a
  * decision step into an auto-completed informational one and skips the confirmation gate.
- * It stays lenient for `links`, which are decoration: an unresolvable link should not
- * discard the surrounding findings.
+ * Individual `links` stay lenient, because they are decoration: an unresolvable link should
+ * not discard the surrounding findings. The `links` container itself is still strict, since a
+ * JSON-encoded list drops every link at once and leaves the step without the content it is
+ * about — the same failure as a JSON-encoded `options` list, not an unresolvable entry.
  */
 export type UserInteractionValidation =
     | { ok: true, args: UserInteractionArgs }
@@ -242,11 +244,15 @@ function parseStep(raw: unknown, position: number): StepValidation {
         return options;
     }
     let links: UserInteractionLink[] | undefined;
-    if (Array.isArray(obj.links)) {
-        const filtered = obj.links
+    // eslint-disable-next-line no-null/no-null
+    const rawLinks = obj.links === null ? undefined : obj.links;
+    if (Array.isArray(rawLinks)) {
+        const filtered = rawLinks
             .map(normalizeUserInteractionLink)
             .filter((link: UserInteractionLink | undefined): link is UserInteractionLink => link !== undefined);
         links = filtered.length > 0 ? filtered : undefined;
+    } else if (rawLinks !== undefined) {
+        return { ok: false, error: `Step ${position}: "links" must be an array of link objects, received ${describeReceived(rawLinks)}` };
     } else {
         const link = normalizeUserInteractionLink(obj.link);
         if (link) {
@@ -283,12 +289,12 @@ function parseOptions(raw: unknown, stepPosition: number): OptionsValidation {
     const options: UserInteractionOption[] = [];
     for (let index = 0; index < raw.length; index++) {
         const candidate = raw[index];
-        if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
-            return { ok: false, error: `Step ${stepPosition}, option ${index + 1}: "text" and "value" are required strings.` };
-        }
-        const obj = candidate as Record<string, unknown>;
-        if (typeof obj.text !== 'string' || typeof obj.value !== 'string') {
-            return { ok: false, error: `Step ${stepPosition}, option ${index + 1}: "text" and "value" are required strings.` };
+        const obj = candidate as Record<string, unknown> | undefined;
+        if (!obj || typeof obj !== 'object' || Array.isArray(obj) || typeof obj.text !== 'string' || typeof obj.value !== 'string') {
+            return {
+                ok: false,
+                error: `Step ${stepPosition}, option ${index + 1}: "text" and "value" are required strings, received ${describeReceived(candidate)}`
+            };
         }
         const option: UserInteractionOption = { text: obj.text, value: obj.value };
         if (typeof obj.description === 'string') {

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ToolProvider, ToolRequest, ToolRequestParameterProperty, ToolRequestParameters } from '@theia/ai-core';
-import { ToolInvocationContext } from '@theia/ai-core/lib/common/language-model';
+import { AutoActionResult, ToolInvocationContext } from '@theia/ai-core/lib/common/language-model';
 import { ChatToolContext } from '@theia/ai-chat';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { open, OpenerService } from '@theia/core/lib/browser';
@@ -103,7 +103,7 @@ const STEP_SCHEMA: ToolRequestParameterProperty = {
                 },
                 required: ['text', 'value']
             },
-            description: 'Buttons offered to the user for this step. Must be a real array of objects, never a JSON-encoded string. '
+            description: 'Buttons offered to the user for this step. '
                 + 'Omit it (or pass an empty array) only for purely informational steps: a step without options is never a confirmation, '
                 + 'so never use one to ask for approval. In a multi-step interaction a hardcoded "Next"/"Finish" button is always shown to advance.'
         },
@@ -145,8 +145,7 @@ const TOOL_PARAMETERS: ToolRequestParameters = {
         interactions: {
             type: 'array',
             items: STEP_SCHEMA,
-            description: 'Ordered list of interaction steps, as a real JSON array of objects (never a JSON-encoded string). '
-                + 'The user walks through them sequentially and can revisit previous steps.'
+            description: 'Ordered list of interaction steps. The user walks through them sequentially and can revisit previous steps.'
         }
     },
     required: ['interactions']
@@ -164,9 +163,7 @@ const TOOL_DESCRIPTION = 'Present an interactive user interaction. Each step has
     + 'If the user cancels mid-interaction, the tool returns whatever has been collected so far with "completed": false. '
     + 'Use this to walk users through a series of pre-determined findings or decisions in a single tool call, '
     + 'or to surface a single message/diff that should be shown inline in the chat. '
-    + 'Arguments are validated strictly: pass nested values as real JSON arrays and objects, never as JSON-encoded strings. '
-    + 'A malformed step or option is rejected with an error naming what to fix, rather than being dropped - '
-    + 'so a step that asks for a decision can never be silently downgraded to an informational one.';
+    + 'Pass nested values as real JSON arrays and objects, never as JSON-encoded strings.';
 
 @injectable()
 export class UserInteractionTool implements ToolProvider {
@@ -199,8 +196,20 @@ export class UserInteractionTool implements ToolProvider {
             providerName: 'ai-ide',
             description: TOOL_DESCRIPTION,
             parameters: TOOL_PARAMETERS,
-            handler: (argString: string, ctx) => this.handleInteraction(argString, ctx)
+            handler: (argString: string, ctx) => this.handleInteraction(argString, ctx),
+            checkAutoAction: (argString: string) => this.checkArguments(argString)
         };
+    }
+
+    /**
+     * Auto-deny invocations whose arguments do not validate, handing the validation error back to
+     * the model. Without this the confirmation flow would stall: the renderer refuses to mount the
+     * interaction (and with it the Allow/Deny buttons) for arguments it cannot render, so a
+     * confirmation that nobody can give would be awaited indefinitely.
+     */
+    protected checkArguments(argString: string): AutoActionResult | undefined {
+        const validation = parseUserInteractionArgs(argString);
+        return validation.ok ? undefined : { action: 'deny', reason: validation.error };
     }
 
     /**
