@@ -129,6 +129,126 @@ describe('MCPRegistryEntryResolver.resolve', () => {
         expect(resolved?.config).to.deep.equal({ command: 'new-cmd' });
     });
 
+    it('falls back to an older approval when the most recent one has no usable install config', () => {
+        const raw: RegistryMCPServer = {
+            serverId: 'io.github.example/example-mcp',
+            name: 'Example',
+            description: 'Example MCP server',
+            mcpRegistryVerified: true,
+            approvals: [
+                {
+                    organizationId: 'older-org',
+                    date: '2025-01-01',
+                    version: '^0.5.0',
+                    installConfigs: [{
+                        tool: 'theia-ide',
+                        config: { servers: { example: { command: 'old-cmd' } } }
+                    }]
+                },
+                {
+                    organizationId: 'newer-org',
+                    date: '2026-04-01',
+                    version: '^1.0.0',
+                    installConfigs: []
+                }
+            ]
+        };
+
+        const resolved = resolver.resolve(raw);
+        expect(resolved?.version).to.equal('^0.5.0');
+        expect(resolved?.config).to.deep.equal({ command: 'old-cmd' });
+    });
+
+    it('resolves via the approval that has an install config when approvals share the same date', () => {
+        const raw: RegistryMCPServer = {
+            serverId: 'com.eclipsesource/review-guard',
+            name: 'Review Guard',
+            description: 'Self-published with no config, approved via trust with one',
+            mcpRegistryVerified: true,
+            approvals: [
+                {
+                    organizationId: 'eclipsesource',
+                    date: '2026-04-01',
+                    version: '^1.0.0',
+                    installConfigs: []
+                },
+                {
+                    organizationId: 'theia',
+                    date: '2026-04-01',
+                    version: '^1.0.0',
+                    configHash: 'hash-v1',
+                    installConfigs: [{
+                        tool: 'theia-ide',
+                        config: { servers: { 'review-guard': { command: 'npx', args: ['-y', 'review-guard'] } } }
+                    }]
+                }
+            ]
+        };
+
+        const resolved = resolver.resolve(raw);
+        expect(resolved?.localName).to.equal('review-guard');
+        expect(resolved?.config).to.deep.equal({ command: 'npx', args: ['-y', 'review-guard'] });
+        expect(resolved?.configHash).to.equal('hash-v1');
+    });
+
+    it('breaks a date tie between two usable approvals by organizationId, independent of array order', () => {
+        const approvals = [
+            {
+                organizationId: 'theia',
+                date: '2026-04-01',
+                installConfigs: [{ tool: 'theia-ide', config: { servers: { example: { command: 'theia-cmd' } } } }]
+            },
+            {
+                organizationId: 'eclipsesource',
+                date: '2026-04-01',
+                installConfigs: [{ tool: 'theia-ide', config: { servers: { example: { command: 'eclipsesource-cmd' } } } }]
+            }
+        ];
+        const raw: RegistryMCPServer = {
+            serverId: 'io.github.example/tied',
+            name: 'Tied',
+            description: 'Two usable approvals with the same date',
+            mcpRegistryVerified: true,
+            approvals
+        };
+
+        expect(resolver.resolve(raw)?.config).to.deep.equal({ command: 'eclipsesource-cmd' });
+        expect(resolver.resolve({ ...raw, approvals: [...approvals].reverse() })?.config).to.deep.equal({ command: 'eclipsesource-cmd' });
+    });
+
+    it('skips install configs without servers in favour of a usable one within the same approval', () => {
+        const raw: RegistryMCPServer = {
+            serverId: 'io.github.example/partial',
+            name: 'Partial',
+            description: 'Approval mixing an empty and a usable install config',
+            mcpRegistryVerified: true,
+            approvals: [{
+                organizationId: 'theia',
+                date: '2026-04-01',
+                installConfigs: [
+                    { tool: 'theia-ide', config: { servers: {} } },
+                    { tool: 'theia-ide', config: { servers: { example: { command: 'usable-cmd' } } } }
+                ]
+            }]
+        };
+
+        expect(resolver.resolve(raw)?.config).to.deep.equal({ command: 'usable-cmd' });
+    });
+
+    it('returns undefined when no approval has a usable install config', () => {
+        const raw: RegistryMCPServer = {
+            serverId: 'io.github.example/all-empty',
+            name: 'All Empty',
+            description: 'No approval carries an install config',
+            mcpRegistryVerified: true,
+            approvals: [
+                { organizationId: 'first-org', date: '2026-04-01', installConfigs: [] },
+                { organizationId: 'second-org', date: '2026-04-01', installConfigs: [{ tool: 'theia-ide' }] }
+            ]
+        };
+        expect(resolver.resolve(raw)).to.be.undefined;
+    });
+
     it('returns undefined when the server has no approvals', () => {
         const raw: RegistryMCPServer = {
             serverId: 'io.github.example/orphan',
@@ -140,7 +260,7 @@ describe('MCPRegistryEntryResolver.resolve', () => {
         expect(resolver.resolve(raw)).to.be.undefined;
     });
 
-    it('returns undefined when the picked approval has no usable install config', () => {
+    it('returns undefined when the only approval has no usable install config', () => {
         const raw: RegistryMCPServer = {
             serverId: 'io.github.example/empty',
             name: 'Empty',

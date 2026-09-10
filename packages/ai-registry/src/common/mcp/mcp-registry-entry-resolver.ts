@@ -16,7 +16,7 @@
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { AIRegistryConfiguration } from '../ai-registry-configuration';
-import { RegistryMCPServer, ResolvedRegistryEntry } from './mcp-registry-types';
+import { RegistryApproval, RegistryInstallConfig, RegistryMCPServer, ResolvedRegistryEntry } from './mcp-registry-types';
 import { ILogger } from '@theia/core';
 
 export const MCPRegistryEntryResolver = Symbol('MCPRegistryEntryResolver');
@@ -35,18 +35,18 @@ export class MCPRegistryEntryResolverImpl implements MCPRegistryEntryResolver {
     protected readonly logger: ILogger;
 
     resolve(raw: RegistryMCPServer): ResolvedRegistryEntry | undefined {
-        const approval = [...raw.approvals].sort((a, b) => b.date.localeCompare(a.date))[0];
-        if (!approval) {
+        // Only approvals that actually carry a usable install config are candidates: picking by
+        // date first would drop the entry whenever the winning approval has an empty
+        // `installConfigs` while another - often a trust-derived one, which copies its date - has one.
+        const candidates = raw.approvals
+            .map(candidateApproval => ({ approval: candidateApproval, installConfig: this.selectInstallConfig(candidateApproval) }))
+            .filter((entry): entry is { approval: RegistryApproval, installConfig: RegistryInstallConfig } => entry.installConfig !== undefined);
+        const candidate = this.sortCandidates(candidates)[0];
+        if (!candidate) {
             return undefined;
         }
-        // Per-tool endpoints should already pre-filter install configs, but a registry
-        // may still emit several. Pick the one tagged for our configured tool name
-        // (or untagged, which we treat as "applies to all tools"); fall back to the
-        // first config so a registry that hasn't tagged its entries still works.
-        const toolName = this.configuration.getToolName();
-        const installConfig = approval.installConfigs.find(c => !c.tool || c.tool === toolName || toolName === 'all')
-            ?? approval.installConfigs[0];
-        const servers = installConfig?.config?.servers ?? {};
+        const { approval, installConfig } = candidate;
+        const servers = installConfig.config?.servers ?? {};
         const serverKeys = Object.keys(servers);
         if (serverKeys.length === 0) {
             return undefined;
@@ -68,5 +68,22 @@ export class MCPRegistryEntryResolverImpl implements MCPRegistryEntryResolver {
             ...(approval.configHash !== undefined && { configHash: approval.configHash }),
             mcpRegistryVerified: raw.mcpRegistryVerified
         };
+    }
+
+    /**
+     * The install config of `approval` to use, or `undefined` when it has none with any server.
+     * Prefers the config tagged for our configured tool name (untagged applies to all tools),
+     * falling back to any other usable one so an untagged registry still works.
+     */
+    protected selectInstallConfig(approval: RegistryApproval): RegistryInstallConfig | undefined {
+        const toolName = this.configuration.getToolName();
+        const usable = approval.installConfigs.filter(c => Object.keys(c.config?.servers ?? {}).length > 0);
+        return usable.find(c => !c.tool || c.tool === toolName || toolName === 'all') ?? usable[0];
+    }
+
+    /** Most recent first, `organizationId` ascending on ties, so the pick is a total order. */
+    protected sortCandidates<T extends { approval: RegistryApproval }>(candidates: T[]): T[] {
+        return [...candidates].sort((a, b) =>
+            b.approval.date.localeCompare(a.approval.date) || a.approval.organizationId.localeCompare(b.approval.organizationId));
     }
 }
