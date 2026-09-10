@@ -144,6 +144,37 @@ export const AiConfigurationSection: React.FC<AiConfigurationSectionProps> = ({
     </div>;
 };
 
+export interface AiConfigurationIconButtonProps {
+    /** `codicon(...)` class of the glyph. */
+    readonly iconClass: string;
+    /** Hover text and accessible name; an icon-only control has no other label. */
+    readonly title: string;
+    readonly disabled?: boolean;
+    /** Spins the glyph, e.g. while the action it triggered is still running. */
+    readonly busy?: boolean;
+    /** Additional class, e.g. to position the button within its container. */
+    readonly className?: string;
+    readonly onClick: () => void;
+}
+
+/**
+ * A borderless icon-only action, for actions that sit next to what they act on (a section title, a
+ * row) where a labeled button would dominate the line it is on. The label lives in the tooltip and
+ * the accessible name, so the action is still nameable without being read out loud visually.
+ */
+export const AiConfigurationIconButton: React.FC<AiConfigurationIconButtonProps> = ({ iconClass, title, disabled, busy, className, onClick }) => (
+    <button
+        type='button'
+        className={`ai-configuration-icon-button${className ? ' ' + className : ''}`}
+        title={title}
+        aria-label={title}
+        disabled={disabled}
+        onClick={onClick}
+    >
+        <span className={`${iconClass}${busy ? ' codicon-modifier-spin' : ''}`} aria-hidden={true}></span>
+    </button>
+);
+
 export interface AiConfigurationCalloutProps {
     /** What the action does and what it affects; the action is only safe to press once this is read. */
     readonly message: string;
@@ -191,11 +222,9 @@ export const AiConfigurationValueRow: React.FC<AiConfigurationValueRowProps> = (
             rather than at the trailing edge of however wide the surrounding row happens to be. */}
         <span className='ai-configuration-value-row-field'>
             <code className='ai-configuration-value-row-value'>{value}</code>
-            {onCopy && <button
-                type='button'
-                className='ai-configuration-value-row-copy'
+            {onCopy && <AiConfigurationIconButton
+                iconClass={codicon(copied ? 'check' : 'copy')}
                 title={copyLabel}
-                aria-label={copyLabel}
                 onClick={() => {
                     onCopy(value);
                     setCopied(true);
@@ -204,9 +233,7 @@ export const AiConfigurationValueRow: React.FC<AiConfigurationValueRowProps> = (
                     }
                     timeout.current = setTimeout(() => setCopied(false), 1500);
                 }}
-            >
-                <span aria-hidden='true' className={codicon(copied ? 'check' : 'copy')}></span>
-            </button>}
+            />}
         </span>
         {/* Always present so assistive tech announces the change rather than a new element. */}
         <span className='ai-configuration-visually-hidden' aria-live='polite'>{copied ? nls.localizeByDefault('Copied') : ''}</span>
