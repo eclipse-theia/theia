@@ -125,7 +125,8 @@ It is used for the sign-in, and remembered with the credentials so that requests
   - The conversation is flattened into one prompt. A single user turn is forwarded as it is, a longer history is rendered as a
     role-labelled transcript. The system prompt of the Theia agent is not part of that, it becomes the system message of the
     session and takes the place of the agent instructions the CLI would use.
-  - Images in a request are dropped and only noted as omitted.
+  - Images in a request are sent as inline attachments when they are base64-encoded; images given as a URL are dropped
+    and only noted as omitted, because the SDK's attachments carry inline data rather than a remote reference.
   - Tool calls and tool results of the history are rendered as text rather than as the structured entries they were.
 
 ## Additional Information

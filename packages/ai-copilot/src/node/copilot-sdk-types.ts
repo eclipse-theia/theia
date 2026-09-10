@@ -191,8 +191,22 @@ export interface CopilotSessionEvents {
 export type CopilotSessionEventType = keyof CopilotSessionEvents;
 
 // ============================================================================
-// Session, from `dist/session.d.ts`
+// Session, from `dist/session.d.ts` and `dist/types.d.ts`
 // ============================================================================
+
+/** The one attachment kind this integration produces: an inline image, from `MessageOptions['attachments']`. */
+export interface BlobMessageAttachment {
+    type: 'blob';
+    data: string;
+    mimeType: string;
+    displayName?: string;
+}
+
+/** The options this integration passes to {@link CopilotSession.send}. */
+export interface MessageOptions {
+    prompt: string;
+    attachments?: BlobMessageAttachment[];
+}
 
 /** A conversation with the runtime, upstream a class with resume, fork and sharing on top. */
 export interface CopilotSession {
@@ -202,7 +216,7 @@ export interface CopilotSession {
      */
     on<K extends CopilotSessionEventType>(eventType: K, handler: (event: CopilotSessionEvents[K]) => void): () => void;
     /** Sends a turn and resolves with the id of the message it created. */
-    send(options: { prompt: string }): Promise<string>;
+    send(options: MessageOptions): Promise<string>;
     /** Stops the turn in flight. */
     abort(): Promise<void>;
     /** Releases the session in memory, leaving what it persisted in place. */
