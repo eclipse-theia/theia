@@ -21,7 +21,7 @@ import * as fs from '@theia/core/shared/fs-extra';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
 import { Options } from '@theia/core/shared/@parcel/watcher';
-import { ParcelFileSystemWatcherService } from './parcel-filesystem-service';
+import { FileSystemWatcherServiceImpl } from './parcel-filesystem-service';
 
 // We require the *same* module object that the production code imports from, so that
 // stubbing its `subscribe` export is observed by `ParcelWatcher`. The `@theia/core/shared`
@@ -49,7 +49,7 @@ describe('parcel-filesystem-watcher exclude handling', function (): void {
     this.timeout(20000);
 
     let root: URI;
-    let service: ParcelFileSystemWatcherService;
+    let service: FileSystemWatcherServiceImpl;
     let subscribeStub: sinon.SinonStub;
     let capturedOptions: Options[];
 
@@ -65,7 +65,7 @@ describe('parcel-filesystem-watcher exclude handling', function (): void {
                 capturedOptions.push(opts);
                 return { unsubscribe: async () => undefined };
             });
-        service = new ParcelFileSystemWatcherService({ verbose: false });
+        service = new FileSystemWatcherServiceImpl({ verbose: false });
     });
 
     afterEach(() => {

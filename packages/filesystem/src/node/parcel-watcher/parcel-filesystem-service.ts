@@ -25,6 +25,7 @@ import { FileChangeCollection } from '../file-change-collection';
 import { Deferred, timeout } from '@theia/core/lib/common/promise-util';
 import { subscribe, Options, AsyncSubscription, Event } from '@theia/core/shared/@parcel/watcher';
 import { isOSX, isWindows } from '@theia/core';
+import { NodeDirectoryWatcher } from '../nodejs-watcher/node-directory-watcher';
 
 export interface ParcelWatcherOptions {
     /** Compiled exclude patterns, used to filter events after they arrive. */
@@ -207,6 +208,10 @@ export class ParcelWatcher {
      */
     isInUse(): boolean {
         return this.refsPerClient.size > 0;
+    }
+
+    get isDisposed(): boolean {
+        return this.disposed;
     }
 
     /**
@@ -408,23 +413,34 @@ export class ParcelWatcher {
     }
 }
 
+export type WatcherInstance = ParcelWatcher | NodeDirectoryWatcher;
+
+export type ResolvedWatchOptions = Required<WatchOptions>;
+
 /**
  * Each time a client makes a watchRequest, we generate a unique watcherId for it.
  *
  * This watcherId will map to this handle type which keeps track of the clientId that made the request.
  */
-export interface PacelWatcherHandle {
+export interface WatcherHandle {
     clientId: number;
-    watcher: ParcelWatcher;
+    watcher: WatcherInstance;
 }
 
-export class ParcelFileSystemWatcherService implements FileSystemWatcherService {
+/** @deprecated since 1.75.0 - use `WatcherHandle`. */
+export type PacelWatcherHandle = WatcherHandle;
+
+/**
+ * Routes each request to a watcher honoring its `recursive` option: `@parcel/watcher` when recursive, a
+ * shared `fs.watch` on a single directory level when not.
+ */
+export class FileSystemWatcherServiceImpl implements FileSystemWatcherService {
 
     protected client: FileSystemWatcherServiceClient | undefined;
 
     protected watcherId = 0;
-    protected readonly watchers = new Map<string, ParcelWatcher>();
-    protected readonly watcherHandles = new Map<number, PacelWatcherHandle>();
+    protected readonly watchers = new Map<string, WatcherInstance>();
+    protected readonly watcherHandles = new Map<number, WatcherHandle>();
 
     protected readonly options: ParcelFileSystemWatcherServerOptions;
 
@@ -457,29 +473,75 @@ export class ParcelFileSystemWatcherService implements FileSystemWatcherService 
      */
     async watchFileChanges(clientId: number, uri: string, options?: WatchOptions): Promise<number> {
         const resolvedOptions = this.resolveWatchOptions(options);
-        const watcherKey = this.getWatcherKey(uri, resolvedOptions);
-        let watcher = this.watchers.get(watcherKey);
-        if (watcher === undefined) {
-            const fsPath = FileUri.fsPath(uri);
-            watcher = this.createWatcher(clientId, fsPath, resolvedOptions);
-            watcher.whenDisposed.then(() => this.watchers.delete(watcherKey));
-            this.watchers.set(watcherKey, watcher);
-        } else {
-            watcher.addRef(clientId);
-        }
         const watcherId = this.watcherId++;
+        const watcher = resolvedOptions.recursive
+            ? this.watchRecursively(clientId, uri, resolvedOptions)
+            : await this.watchDirectory(clientId, watcherId, uri, resolvedOptions);
         this.watcherHandles.set(watcherId, { clientId, watcher });
         watcher.whenDisposed.then(() => this.watcherHandles.delete(watcherId));
         return watcherId;
     }
 
+    protected watchRecursively(clientId: number, uri: string, options: ResolvedWatchOptions): ParcelWatcher {
+        const watcherKey = this.getWatcherKey(uri, options);
+        const existing = this.getLiveWatcher<ParcelWatcher>(watcherKey);
+        if (existing) {
+            existing.addRef(clientId);
+            return existing;
+        }
+        return this.registerWatcher(watcherKey, this.createWatcher(clientId, FileUri.fsPath(uri), options));
+    }
+
+    /** Non-recursive requests resolving to the same directory share one watcher, file or directory alike. */
+    protected async watchDirectory(clientId: number, watcherId: number, uri: string, options: ResolvedWatchOptions): Promise<NodeDirectoryWatcher> {
+        const fsPath = FileUri.fsPath(uri);
+        const { directory, fileName } = await NodeDirectoryWatcher.resolveTarget(fsPath);
+        const watcherKey = this.getDirectoryWatcherKey(directory);
+        // Nothing is awaited below, so concurrent requests for one directory cannot both create a watcher.
+        const watcher = this.getLiveWatcher<NodeDirectoryWatcher>(watcherKey)
+            ?? this.registerWatcher(watcherKey, this.createDirectoryWatcher(directory));
+        watcher.addRequest(watcherId, { clientId, path: fsPath, fileName, ignored: this.compileExcludes(options.ignored) });
+        return watcher;
+    }
+
     protected createWatcher(clientId: number, fsPath: string, options: WatchOptions): ParcelWatcher {
         const watcherOptions: ParcelWatcherOptions = {
-            ignored: options.ignored
-                .map(pattern => new Minimatch(pattern, { dot: true })),
+            ignored: this.compileExcludes(options.ignored),
             ignorePatterns: options.ignored,
         };
         return new ParcelWatcher(clientId, fsPath, watcherOptions, this.options, this.maybeClient);
+    }
+
+    protected createDirectoryWatcher(directory: string): NodeDirectoryWatcher {
+        return new NodeDirectoryWatcher(directory, this.options, this.maybeClient);
+    }
+
+    protected compileExcludes(ignored: string[]): Minimatch[] {
+        return ignored.map(pattern => new Minimatch(pattern, { dot: true }));
+    }
+
+    protected registerWatcher<T extends WatcherInstance>(watcherKey: string, watcher: T): T {
+        this.watchers.set(watcherKey, watcher);
+        watcher.whenDisposed.then(() => {
+            if (this.watchers.get(watcherKey) === watcher) {
+                this.watchers.delete(watcherKey);
+            }
+        });
+        return watcher;
+    }
+
+    /**
+     * The watcher under `watcherKey`, if it is still usable: a watcher marks itself disposed synchronously but
+     * is removed from the map by a promise callback, so a request arriving in between would otherwise attach
+     * to one that is already tearing down. Keys are namespaced per kind, so the key implies the kind.
+     */
+    protected getLiveWatcher<T extends WatcherInstance>(watcherKey: string): T | undefined {
+        const watcher = this.watchers.get(watcherKey);
+        if (watcher?.isDisposed) {
+            this.watchers.delete(watcherKey);
+            return undefined;
+        }
+        return watcher as T | undefined;
     }
 
     async unwatchFileChanges(watcherId: number): Promise<void> {
@@ -488,7 +550,11 @@ export class ParcelFileSystemWatcherService implements FileSystemWatcherService 
             console.warn(`tried to de-allocate a disposed watcher: watcherId=${watcherId}`);
         } else {
             this.watcherHandles.delete(watcherId);
-            handle.watcher.removeRef(handle.clientId);
+            if (handle.watcher instanceof NodeDirectoryWatcher) {
+                handle.watcher.removeRequest(watcherId);
+            } else {
+                handle.watcher.removeRef(handle.clientId);
+            }
         }
     }
 
@@ -497,18 +563,25 @@ export class ParcelFileSystemWatcherService implements FileSystemWatcherService 
      */
     protected getWatcherKey(uri: string, options: WatchOptions): string {
         return [
+            'recursive',
             uri,
             options.ignored.slice(0).sort().join()  // use a **sorted copy** of `ignored` as part of the key
         ].join();
     }
 
     /**
-     * Return fully qualified options.
+     * Excludes are not part of the key: a single directory level has nothing to prune, so they apply per
+     * request and requests with different excludes still share one handle.
      */
-    protected resolveWatchOptions(options?: WatchOptions): WatchOptions {
+    protected getDirectoryWatcherKey(directory: string): string {
+        return `nonRecursive,${isWindows || isOSX ? directory.toLowerCase() : directory}`;
+    }
+
+    /** Return fully qualified options. Watchers created before `recursive` existed were always recursive. */
+    protected resolveWatchOptions(options?: WatchOptions): ResolvedWatchOptions {
         return {
-            ignored: [],
-            ...options,
+            ignored: options?.ignored ?? [],
+            recursive: options?.recursive ?? true
         };
     }
 
@@ -523,3 +596,8 @@ export class ParcelFileSystemWatcherService implements FileSystemWatcherService 
         // Singletons shouldn't be disposed...
     }
 }
+
+/** @deprecated since 1.75.0 - use `FileSystemWatcherServiceImpl`, which also serves non-recursive requests. */
+export const ParcelFileSystemWatcherService = FileSystemWatcherServiceImpl;
+/** @deprecated since 1.75.0 - use `FileSystemWatcherServiceImpl`, which also serves non-recursive requests. */
+export type ParcelFileSystemWatcherService = FileSystemWatcherServiceImpl;
