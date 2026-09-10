@@ -65,7 +65,7 @@ import { NotebookKernelsMainImpl } from './notebooks/notebook-kernels-main';
 import { NotebooksAndEditorsMain } from './notebooks/notebook-documents-and-editors-main';
 import { TestingMainImpl } from './test-main';
 import { UriMainImpl } from './uri-main';
-import { LoggerMainImpl } from './logger-main';
+import { LoggerMainImpl } from '../common/logger-main';
 import { McpServerDefinitionRegistryMainImpl } from './lm-main';
 import { LanguageModelToolsMainImpl } from './lm-tool-main';
 

@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { LoggerMain, LogLevel } from '../../common';
+import { LoggerMain, LogLevel } from '../../common/plugin-api-rpc';
 import { ILogger } from '@theia/core';
 
 export class LoggerMainImpl implements LoggerMain {
