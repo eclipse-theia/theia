@@ -1142,27 +1142,34 @@
   gap: calc(var(--theia-ui-padding) / 2);
 }
 
-.ai-variant-action-button {
+/* Borderless icon-only action: a section's refresh, a row's edit/reset/copy. */
+.ai-configuration-icon-button {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   border: none;
-  background: none;
+  background: transparent;
   color: var(--theia-icon-foreground);
+  border-radius: 3px;
   cursor: pointer;
-  border-radius: 4px;
 }
 
-.ai-variant-action-button:hover {
+.ai-configuration-icon-button:hover:not(:disabled) {
   color: var(--theia-foreground);
-  background: var(--theia-list-hoverBackground);
+  background-color: var(--theia-list-hoverBackground);
 }
 
-.ai-variant-action-button:focus-visible {
+.ai-configuration-icon-button:focus-visible {
   outline: 1px solid var(--theia-focusBorder);
+}
+
+.ai-configuration-icon-button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 /* A page-level offer: an explanatory line plus one action. */
@@ -1214,31 +1221,6 @@
   border-radius: 4px;
   padding: 0 6px;
   overflow-wrap: break-word;
-}
-
-.ai-configuration-value-row-copy {
-  flex: 0 0 auto;
-  width: 22px;
-  height: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--theia-icon-foreground);
-  border-radius: 3px;
-  cursor: pointer;
-}
-
-.ai-configuration-value-row-copy:hover {
-  background-color: var(--theia-list-hoverBackground);
-  outline: 1px dotted var(--theia-contrastActiveBorder, transparent);
-  outline-offset: -1px;
-}
-
-.ai-configuration-value-row-copy:focus-visible {
-  outline: 1px solid var(--theia-focusBorder);
 }
 
 /* Available to assistive tech only. */
@@ -1432,7 +1414,7 @@
 .ai-config-stepper-button:hover:not(:disabled),
 .ai-config-array .preference-array-element:hover,
 .ai-config-array .preference-array-element-btn:hover,
-.ai-variant-action-button:hover,
+.ai-configuration-icon-button:hover:not(:disabled),
 .ai-config-collapsible-row-header:hover,
 .ai-config-collapsible-row-action:hover {
   outline: 1px dotted var(--theia-contrastActiveBorder, transparent);

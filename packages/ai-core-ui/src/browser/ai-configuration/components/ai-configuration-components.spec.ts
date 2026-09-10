@@ -568,7 +568,7 @@ describe('VariantSetCard', () => {
         const originalOpen = ConfirmDialog.prototype.open;
         ConfirmDialog.prototype.open = async () => true;
         try {
-            const remove = container.querySelector<HTMLButtonElement>('.ai-variant-action-button:last-of-type');
+            const remove = container.querySelector<HTMLButtonElement>('.ai-configuration-icon-button:last-of-type');
             remove!.click();
             // Let the confirmation and both service calls settle.
             await new Promise(resolve => setTimeout(resolve, 0));
