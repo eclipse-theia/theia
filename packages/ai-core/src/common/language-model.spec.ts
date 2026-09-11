@@ -263,6 +263,8 @@ describe('compaction contract', () => {
     });
     it('resolves custom model headers, ignoring non-string and non-object values', () => {
         expect(resolveCustomModelHeaders({ 'X-Audit-User': 'theia' })).to.deep.equal({ 'X-Audit-User': 'theia' });
+        // keys are sorted, so reordering the entries in the preference is not a change
+        expect(Object.keys(resolveCustomModelHeaders({ 'X-B': '2', 'X-A': '1' })!)).to.deep.equal(['X-A', 'X-B']);
         // entries with a non-string value are dropped, the remaining ones are kept
         expect(resolveCustomModelHeaders({ 'X-Audit-User': 'theia', 'X-Count': 5 })).to.deep.equal({ 'X-Audit-User': 'theia' });
         // nothing usable -> undefined, so the default request headers stay untouched
