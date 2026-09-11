@@ -35,6 +35,8 @@ export interface OpenAiModelDescription {
     deployment?: string;
     /** Maximum number of retry attempts when a request fails. Default is 3. */
     maxRetries: number;
+    /** Additional HTTP headers sent with every request to the endpoint, e.g. headers required by a gateway in front of the API. */
+    headers?: Record<string, string>;
     /** Use the newer OpenAI Response API instead of the Chat Completion API. Default is `false`. */
     useResponseApi?: boolean;
     /** Indicate whether the streaming API shall be used. Defaults from the model id when unset. */

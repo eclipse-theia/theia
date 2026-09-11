@@ -24,7 +24,7 @@ import {
     AICorePreferences, PREFERENCE_NAME_MAX_RETRIES, PREFERENCE_NAME_SERVER_SIDE_COMPACTION, PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD
 } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { PreferenceService } from '@theia/core';
-import { resolveCompactionDefault, resolveCompactionTokenThresholdDefault, ServerSideCompactionSetting } from '@theia/ai-core';
+import { resolveCompactionDefault, resolveCompactionTokenThresholdDefault, resolveCustomModelHeaders, ServerSideCompactionSetting } from '@theia/ai-core';
 
 const ANTHROPIC_PROVIDER_ID = 'anthropic';
 
@@ -113,7 +113,8 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                 model.useCaching === newModel.useCaching &&
                 model.serverSideCompactionEnabledByDefault === newModel.serverSideCompactionEnabledByDefault &&
                 model.serverSideCompactionTokenThresholdByDefault === newModel.serverSideCompactionTokenThresholdByDefault &&
-                model.enableStreaming === newModel.enableStreaming));
+                model.enableStreaming === newModel.enableStreaming &&
+                JSON.stringify(model.headers) === JSON.stringify(newModel.headers)));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
         this.manager.createOrUpdateLanguageModels(...modelsToAddOrUpdate);
@@ -173,6 +174,7 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                     enableStreaming: pref.enableStreaming ?? true,
                     useCaching: pref.useCaching ?? true,
                     maxRetries: pref.maxRetries ?? maxRetries,
+                    headers: resolveCustomModelHeaders(pref.headers),
                     serverSideCompactionEnabledByDefault,
                     serverSideCompactionTokenThresholdByDefault
                 }

@@ -16,7 +16,9 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ReasoningSupport, resolveCompactionDefault, resolveCompactionTokenThresholdDefault, ServerSideCompactionSetting } from '@theia/ai-core';
+import {
+    ReasoningSupport, resolveCompactionDefault, resolveCompactionTokenThresholdDefault, resolveCustomModelHeaders, ServerSideCompactionSetting
+} from '@theia/ai-core';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription, OPENAI_PROVIDER_ID } from '../common';
 import {
     API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF, USE_RESPONSE_API_PREF
@@ -118,7 +120,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 model.useResponseApi === newModel.useResponseApi &&
                 model.serverSideCompactionEnabledByDefault === newModel.serverSideCompactionEnabledByDefault &&
                 model.serverSideCompactionTokenThresholdByDefault === newModel.serverSideCompactionTokenThresholdByDefault &&
-                reasoningSupportEquals(model.reasoningSupport, newModel.reasoningSupport)));
+                reasoningSupportEquals(model.reasoningSupport, newModel.reasoningSupport) &&
+                JSON.stringify(model.headers) === JSON.stringify(newModel.headers)));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
         this.manager.createOrUpdateLanguageModels(...modelsToAddOrUpdate);
@@ -184,6 +187,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     enableStreaming: pref.enableStreaming,
                     maxRetries: pref.maxRetries ?? maxRetries,
                     useResponseApi: pref.useResponseApi ?? false,
+                    headers: resolveCustomModelHeaders(pref.headers),
                     reasoningSupport: isReasoningSupport(pref.reasoningSupport) ? pref.reasoningSupport : undefined,
                     serverSideCompactionEnabledByDefault,
                     serverSideCompactionTokenThresholdByDefault
