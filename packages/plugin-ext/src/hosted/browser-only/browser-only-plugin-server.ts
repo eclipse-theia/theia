@@ -13,10 +13,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Mutex } from 'async-mutex';
 import { ILogger } from '@theia/core';
-import { StorageService } from '@theia/core/lib/browser/storage-service';
+import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
 import { PluginDeployOptions, PluginIdentifiers, PluginServer, PluginStorageKind, PluginType } from '../../common';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
 import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
@@ -32,7 +33,7 @@ const LOCK_NAME_PREFIX = 'theia:plugin-storage:';
  * of failing, so callers like the plugin view still have something to render.
  *
  * The plugin key-value storage backing `ExtensionContext.globalState` and
- * `ExtensionContext.workspaceState` lives in the browser storage of the current host.
+ * `ExtensionContext.workspaceState` lives in the browser's local storage.
  */
 @injectable()
 export class BrowserOnlyPluginServer implements PluginServer {
@@ -40,7 +41,11 @@ export class BrowserOnlyPluginServer implements PluginServer {
     @inject(ILogger) @named('plugin-ext:BrowserOnlyPluginServer')
     protected readonly logger: ILogger;
 
-    @inject(StorageService)
+    // `@theia/workspace` rebinds `StorageService` to `WorkspaceStorageService`, which prefixes every
+    // key with the current workspace URI. That would scope `GLOBAL_STORAGE_KEY` per workspace too,
+    // so `LocalStorageService` is injected directly instead - the workspace store key already
+    // encodes the workspace via `PluginPathsService.getHostStoragePath`.
+    @inject(LocalStorageService)
     protected readonly storageService: StorageService;
 
     @inject(PluginPathsService)

@@ -18,7 +18,7 @@ import { expect } from 'chai';
 import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Container } from '@theia/core/shared/inversify';
-import { StorageService } from '@theia/core/lib/browser/storage-service';
+import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
 import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
 import { BrowserOnlyPluginServer } from './browser-only-plugin-server';
 import { installFakeLockManager as installNavigatorLocks } from './test/navigator-locks-test-util';
@@ -33,6 +33,23 @@ class InMemoryStorageService implements StorageService {
     async getData<T>(key: string, defaultValue?: T): Promise<T | undefined> {
         const stored = this.data.get(key);
         return stored === undefined ? defaultValue : JSON.parse(stored);
+    }
+}
+
+/**
+ * Stands for `@theia/workspace`'s `WorkspaceStorageService`, to which `@theia/workspace` rebinds
+ * the plain `StorageService` symbol, prefixing every key with the current workspace.
+ */
+class PrefixingStorageService implements StorageService {
+
+    constructor(private readonly delegate: InMemoryStorageService, private readonly prefix: string) { }
+
+    setData<T>(key: string, data: T): Promise<void> {
+        return this.delegate.setData(`${this.prefix}:${key}`, data);
+    }
+
+    getData<T>(key: string, defaultValue?: T): Promise<T | undefined> {
+        return this.delegate.getData(`${this.prefix}:${key}`, defaultValue);
     }
 }
 
@@ -73,7 +90,7 @@ describe('BrowserOnlyPluginServer', () => {
         const container = new Container();
         container.bind(BrowserOnlyPluginServer).toSelf().inSingletonScope();
         container.bind(ILogger).to(MockLogger);
-        container.bind(StorageService).toConstantValue(storageService);
+        container.bind<StorageService>(LocalStorageService).toConstantValue(storageService);
         container.bind(PluginPathsService).toConstantValue(pluginPathsService);
         return container.get(BrowserOnlyPluginServer);
     }
@@ -87,6 +104,24 @@ describe('BrowserOnlyPluginServer', () => {
 
         // a fresh server stands for the next session, reading from the same browser storage
         expect(await createServer().getStorageValue('my.plugin', undefined)).to.deep.equal({ count: 1 });
+    });
+
+    it('keeps global state independent of a workspace-scoped StorageService binding', async () => {
+        const container = new Container();
+        container.bind(BrowserOnlyPluginServer).toSelf().inSingletonScope();
+        container.bind(ILogger).to(MockLogger);
+        container.bind<StorageService>(LocalStorageService).toConstantValue(storageService);
+        // simulates `@theia/workspace` rebinding the plain `StorageService` symbol; `BrowserOnlyPluginServer`
+        // must ignore it and inject `LocalStorageService` directly, or global state would end up
+        // scoped per workspace too
+        container.bind(StorageService).toConstantValue(new PrefixingStorageService(storageService, 'file:///a'));
+        container.bind(PluginPathsService).toConstantValue(pluginPathsService);
+        const server = container.get(BrowserOnlyPluginServer);
+
+        await server.setStorageValue('my.plugin', { count: 1 }, undefined);
+
+        expect(storageService.data.has('plugin-storage:global')).to.be.true;
+        expect(storageService.data.has('file:///a:plugin-storage:global')).to.be.false;
     });
 
     it('keeps workspace state per workspace', async () => {
