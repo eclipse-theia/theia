@@ -115,4 +115,21 @@ describe('extractJsonStringField', () => {
             expect(result).to.equal('echo \\');
         });
     });
+
+    describe('parse/regex boundary', () => {
+        it('should unescape via JSON.parse when complete JSON has trailing whitespace', () => {
+            const result = extractJsonStringField('{"cmd": "echo \\"hello\\""}\n', 'cmd');
+            expect(result).to.equal('echo "hello"');
+        });
+
+        it('should extract via regex when JSON ends with a brace but is still incomplete', () => {
+            const result = extractJsonStringField('{"path": "src/index.ts", "meta": {"x": "y"}', 'path');
+            expect(result).to.equal('src/index.ts');
+        });
+
+        it('should return undefined for a complete array without the field', () => {
+            const result = extractJsonStringField('[{"path": "src/index.ts"}]', 'other');
+            expect(result).to.be.undefined;
+        });
+    });
 });
