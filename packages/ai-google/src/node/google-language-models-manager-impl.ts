@@ -125,11 +125,35 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
                 continue;
             }
             const id = (model.name ?? '').replace(/^models\//, '');
-            if (id.length > 0 && !byId.has(id)) {
+            if (id.length > 0 && this.isChatModelId(id) && !byId.has(id)) {
                 byId.set(id, { id, label: model.displayName, description: model.description });
             }
         }
         return DiscoveredModels.withUndatedAliases([...byId.values()]);
+    }
+
+    /**
+     * Heuristic for the Gemini chat models among the entries that are left once {@link toDiscoveredModels}
+     * has dropped what cannot generate content at all. Two things remain to be excluded, and both
+     * report `generateContent` like a chat model: a model that generates something other than text
+     * (an image, speech), and one that answers through an agentic API of its own (deep research,
+     * computer use, robotics). Everything outside the `gemini-*` family goes too — Gemma, LearnLM —
+     * since being able to generate content does not make a model one of the models this provider is
+     * about. Anything this misses can be configured as a custom endpoint.
+     *
+     * The Live API models need no term of their own: they report `bidiGenerateContent`, so the
+     * capability check has already left them out.
+     *
+     * Without a release date to go by, the ranking that decides which models the chat input offers
+     * falls back to the numbers in the id, and those only mean a version within this family: a
+     * parameter count (`gemma-3-27b-it`) or an experiment date would otherwise read as the newest
+     * model there is.
+     */
+    protected isChatModelId(id: string): boolean {
+        if (!/^gemini-/.test(id)) {
+            return false;
+        }
+        return !/(image|tts|deep-research|computer-use|robotics)/.test(id);
     }
 
     /**

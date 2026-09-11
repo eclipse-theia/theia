@@ -255,6 +255,33 @@ describe('GoogleLanguageModelsManagerImpl - fetchAvailableModels', () => {
         expect(manager.snapshot).to.deep.equal(result.models);
     });
 
+    it('keeps the Gemini chat models and drops what the endpoint otherwise carries', async () => {
+        manager.stubbedModels = [
+            listedModel('models/gemini-flash-latest'),
+            listedModel('models/gemini-3.8-flash'),
+            listedModel('models/gemini-3.1-pro-preview'),
+            // Chat-capable, but not a model of this family: its parameter count would read as a version.
+            listedModel('models/gemma-3-27b-it'),
+            listedModel('models/learnlm-2.0-experimental'),
+            // Gemini, and reported as generating content, but not chat: they answer through an API of
+            // their own, or they generate something other than text.
+            listedModel('models/gemini-3.5-pro-deep-research'),
+            listedModel('models/gemini-2.5-flash-preview-tts'),
+            listedModel('models/gemini-2.5-flash-image'),
+            listedModel('models/gemini-2.5-computer-use-preview'),
+            // The Live API and embedding models need no id term: they report what they can do.
+            listedModel('models/gemini-2.5-flash-live', ['bidiGenerateContent']),
+            listedModel('models/gemini-embedding-001', ['embedContent']),
+            listedModel('models/imagen-4.0-generate-001')
+        ];
+        const result = await manager.fetchAvailableModels();
+        expect(result.models.map(model => model.id)).to.deep.equal([
+            'gemini-flash-latest',
+            'gemini-3.8-flash',
+            'gemini-3.1-pro-preview'
+        ]);
+    });
+
     it('retries transient network errors and then succeeds', async () => {
         manager.stubbedModels = [listedModel('models/gemini-3-pro')];
         manager.failTimes = 2;

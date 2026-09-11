@@ -22,6 +22,9 @@ import { CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER
 /** The id under which Copilot offers its own model selection; always worth showing. */
 const COPILOT_AUTO_MODEL_ID = 'auto';
 
+/** How many models Copilot nominates, matching what the other providers feature. */
+const NOMINATED_MODEL_COUNT = 5;
+
 /**
  * The vendors one Copilot model each is nominated for, recognised by the prefix of the model id.
  * Deliberately the three whose models the other providers of this application offer directly: those
@@ -162,21 +165,22 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
     }
 
     /**
-     * Nominates the models the chat input should show without the user asking. Copilot serves models of
-     * several vendors under one provider, so ranking them against each other by the numbers in their
-     * ids would show several models of whichever vendor counts highest and none of the others. One
-     * model of each major vendor is nominated instead — the highest-versioned of each — plus `auto`,
-     * which lets Copilot itself choose and is the entry most users want first.
+     * Nominates the models the chat input should show without the user asking, up to
+     * {@link NOMINATED_MODEL_COUNT}. Copilot serves models of several vendors under one provider, so
+     * ranking them against each other by the numbers in their ids would show several models of
+     * whichever vendor counts highest and none of the others. The list is therefore filled vendor by
+     * vendor: `auto` first, which lets Copilot itself choose and is the entry most users want, then the
+     * newest model of each major vendor, then the next of each in turn until the list is full.
      *
      * Everything else Copilot carries is left to be chosen deliberately: the list is meant to be the
      * handful of models one switches between while chatting, not a survey of the catalogue.
      *
-     * Release-pinned ids are left out too: the undated id of the same model is nominated, and pinning
-     * a release is the deliberate choice the check on its row makes.
+     * Release-pinned ids are left out: the undated id of the same model is nominated, and pinning a
+     * release is the deliberate choice the check on its row makes.
      */
     protected selectFeaturedModelIds(modelIds: string[]): Set<string> {
         const featured = new Set<string>();
-        const byVendor = new Map<string, string>();
+        const byVendor = new Map<string, string[]>();
         for (const id of modelIds) {
             if (id === COPILOT_AUTO_MODEL_ID) {
                 featured.add(id);
@@ -189,12 +193,21 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
             if (!vendor) {
                 continue;
             }
-            const incumbent = byVendor.get(vendor);
-            if (!incumbent || DiscoveredModels.compareByVersion(id, incumbent) < 0) {
-                byVendor.set(vendor, id);
+            byVendor.set(vendor, [...byVendor.get(vendor) ?? [], id]);
+        }
+        // Newest first within each vendor, the vendors themselves in the order they are named.
+        const ranked = NOMINATED_VENDORS.map(({ vendor }) =>
+            [...byVendor.get(vendor) ?? []].sort((left, right) => DiscoveredModels.compareByVersion(left, right)));
+        for (let rank = 0; featured.size < NOMINATED_MODEL_COUNT && ranked.some(ids => ids.length > rank); rank++) {
+            for (const ids of ranked) {
+                if (featured.size >= NOMINATED_MODEL_COUNT) {
+                    break;
+                }
+                if (ids[rank] !== undefined) {
+                    featured.add(ids[rank]);
+                }
             }
         }
-        byVendor.forEach(id => featured.add(id));
         return featured;
     }
 

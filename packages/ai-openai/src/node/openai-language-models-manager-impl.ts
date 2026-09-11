@@ -123,8 +123,9 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
     /**
      * Heuristic for the text-chat models among everything `/v1/models` reports: the `gpt-*`,
      * `chatgpt-*` and `o1`/`o3`/`o4`-style families, minus the variants that speak a different API
-     * than chat completions — audio, realtime, transcription, speech, image, embeddings, moderation,
-     * the search and computer-use tool endpoints, and the legacy `-instruct` completion models.
+     * than chat completions: audio, realtime, live, transcription, speech, image, embeddings,
+     * moderation, the search and computer-use tool endpoints, and the legacy `-instruct` completion
+     * models.
      *
      * The terms match anywhere in the id, so a family that carries one in a longer word goes with it
      * (`o3-deep-research`, which speaks the responses API and not this one). Anything this drops or
@@ -134,7 +135,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
         if (!/^(gpt|chatgpt|o\d)/.test(id)) {
             return false;
         }
-        return !/(audio|realtime|transcribe|tts|image|embedding|moderation|search|computer-use|-instruct)/.test(id);
+        return !/(audio|realtime|-live|transcribe|tts|image|embedding|moderation|search|computer-use|-instruct)/.test(id);
     }
 
     /** Iterates the (auto-paginated) `/v1/models` endpoint. Overridable for testing. */

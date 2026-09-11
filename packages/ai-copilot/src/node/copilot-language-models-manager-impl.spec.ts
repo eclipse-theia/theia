@@ -59,6 +59,10 @@ class TestableCopilotLanguageModelsManagerImpl extends CopilotLanguageModelsMana
     listFailure: Error | undefined;
     modelIds: string[] = ['gpt-5'];
 
+    callVendorOf(id: string): string | undefined {
+        return this.vendorOf(id);
+    }
+
     constructor(readonly registry: FakeRegistry) {
         super();
         Object.assign(this, {
@@ -129,17 +133,30 @@ describe('CopilotLanguageModelsManagerImpl - status', () => {
         expect(manager.registry.models[0].status).to.deep.equal({ status: 'ready' });
     });
 
-    it('nominates one model of each major vendor plus auto, so no vendor crowds out the others', async () => {
+    it('nominates auto and one model of each major vendor before a second of any', async () => {
         manager.modelIds = ['auto', 'gpt-5', 'gpt-4.1', 'claude-sonnet-4.5', 'claude-haiku-4', 'gemini-2.5-pro', 'gpt-5-2026-04-17'];
         const featured = (await manager.fetchAvailableModels()).models.filter(model => model.featured).map(model => model.id);
-        expect(featured).to.have.members(['auto', 'gpt-5', 'claude-sonnet-4.5', 'gemini-2.5-pro']);
+        // Five in total: auto, the newest of each vendor, then the next of the first vendor with one left.
+        expect(featured).to.have.members(['auto', 'gpt-5', 'claude-sonnet-4.5', 'gemini-2.5-pro', 'claude-haiku-4']);
     });
 
-    it('counts the reasoning models as OpenAI, rather than as a vendor of their own', async () => {
-        manager.modelIds = ['gpt-4.1', 'o5-preview'];
+    it('fills the list to five even when the CLI offers no auto', async () => {
+        manager.modelIds = ['gpt-5', 'gpt-4.1', 'claude-sonnet-4.5', 'claude-haiku-4', 'gemini-3-pro', 'gemini-2.5-pro'];
         const featured = (await manager.fetchAvailableModels()).models.filter(model => model.featured).map(model => model.id);
-        // One OpenAI model, the highest-versioned of the two, not one per id prefix.
-        expect(featured).to.deep.equal(['o5-preview']);
+        expect(featured).to.have.members(['gpt-5', 'claude-sonnet-4.5', 'gemini-3-pro', 'gpt-4.1', 'claude-haiku-4']);
+    });
+
+    it('nominates no more than the five, however much one vendor offers', async () => {
+        manager.modelIds = ['gpt-5', 'gpt-5-mini', 'gpt-4.1', 'gpt-4o', 'o5-preview', 'chatgpt-5-latest'];
+        const featured = (await manager.fetchAvailableModels()).models.filter(model => model.featured).map(model => model.id);
+        expect(featured).to.have.lengthOf(5);
+    });
+
+    it('counts the reasoning models as OpenAI, rather than as a vendor of their own', () => {
+        expect(manager.callVendorOf('o5-preview')).to.equal('openai');
+        expect(manager.callVendorOf('gpt-4.1')).to.equal('openai');
+        expect(manager.callVendorOf('claude-sonnet-4.5')).to.equal('anthropic');
+        expect(manager.callVendorOf('grok-code-fast-1')).to.equal(undefined);
     });
 
     it('nominates nothing for the vendors beyond the three, which stay selectable but not preselected', async () => {

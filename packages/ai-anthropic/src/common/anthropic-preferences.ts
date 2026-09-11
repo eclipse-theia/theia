@@ -37,6 +37,14 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
             on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
             title: AI_CORE_PREFERENCES_TITLE,
         },
+        [ALLOW_ENV_API_KEY_PREF]: {
+            type: 'boolean',
+            default: false,
+            title: AI_CORE_PREFERENCES_TITLE,
+            markdownDescription: nls.localize('theia/ai/anthropic/allowEnvApiKey/description',
+                'Allow Theia to use an Anthropic API key found in the environment (`ANTHROPIC_API_KEY`). '
+                + 'You are asked to confirm this once before the key is used; set it back to `false` to revoke consent.'),
+        },
         [MODEL_OVERRIDES_PREF]: {
             type: 'array',
             default: [],
@@ -47,14 +55,6 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
             markdownDescription: nls.localize('theia/ai/anthropic/modelOverrides/description',
                 'Override the models discovered from Anthropic. When empty (default), the available models are discovered from the provider. '
                 + 'Set explicit model ids to use exactly those instead; discovery is then not used at all.')
-        },
-        [ALLOW_ENV_API_KEY_PREF]: {
-            type: 'boolean',
-            default: false,
-            title: AI_CORE_PREFERENCES_TITLE,
-            markdownDescription: nls.localize('theia/ai/anthropic/allowEnvApiKey/description',
-                'Allow Theia to use an Anthropic API key found in the environment (`ANTHROPIC_API_KEY`). '
-                + 'You are asked to confirm this once before the key is used; set it back to `false` to revoke consent.'),
         },
         [SERVER_SIDE_COMPACTION_PREF]: {
             type: 'string',

@@ -61,6 +61,7 @@ export const PREFERENCE_NAME_REQUEST_SETTINGS = 'ai-features.modelSettings.reque
 export const PREFERENCE_NAME_REASONING = 'ai-features.reasoning.defaults';
 export const PREFERENCE_NAME_MAX_RETRIES = 'ai-features.modelSettings.maxRetries';
 export const PREFERENCE_NAME_FAVORITE_MODELS = 'ai-features.modelSettings.favoriteModels';
+export const PREFERENCE_NAME_HIDDEN_MODELS = 'ai-features.modelSettings.hiddenModels';
 export const PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE = 'ai-features.notifications.default';
 export const PREFERENCE_NAME_SKILL_DIRECTORIES = 'ai-features.skills.skillDirectories';
 export const PREFERENCE_NAME_SERVER_SIDE_COMPACTION = 'ai-features.chat.serverSideCompaction';
@@ -182,12 +183,25 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
         [PREFERENCE_NAME_FAVORITE_MODELS]: {
             title: nls.localize('theia/ai/core/favoriteModels/title', 'Favorite Models'),
             markdownDescription: nls.localize('theia/ai/core/favoriteModels/mdDescription',
-                'Models the AI chat input\'s model picker shows, as fully qualified ids (e.g. `anthropic/claude-opus-5`). '
-                + 'The newest models of each provider are always shown and need not be listed here; this is for keeping an older '
-                + 'or release-pinned model at hand. Check a model on its provider\'s page in the AI Configuration view to add it.'),
+                'Models the AI chat input\'s model picker shows in addition to the newest ones of each provider, as fully qualified ids '
+                + '(e.g. `anthropic/claude-opus-5`). This is for keeping an older or release-pinned model at hand. Check a model on its '
+                + 'provider\'s page in the AI Configuration view to add it.'),
             type: 'array',
             // The provider pages check models one by one; a second, raw editor for the same ids would
             // invite typos and disagree with what the checks say.
+            typeDetails: { [DEDICATED_EDITOR_TYPE_DETAIL]: true },
+            items: {
+                type: 'string'
+            },
+            default: []
+        },
+        [PREFERENCE_NAME_HIDDEN_MODELS]: {
+            title: nls.localizeByDefault('Hidden Models'),
+            markdownDescription: nls.localize('theia/ai/core/hiddenModels/mdDescription',
+                'Models the AI chat input\'s model picker does not show even though it would by default, as fully qualified ids '
+                + '(e.g. `google/gemini-flash-lite-latest`). Only the models shown without being listed as a favorite end up here, '
+                + 'i.e. the newest ones of a provider. Uncheck a model on its provider\'s page in the AI Configuration view to add it.'),
+            type: 'array',
             typeDetails: { [DEDICATED_EDITOR_TYPE_DETAIL]: true },
             items: {
                 type: 'string'

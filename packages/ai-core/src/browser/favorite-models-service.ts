@@ -16,8 +16,7 @@
 
 import { Emitter, Event, PreferenceScope, PreferenceService } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { PREFERENCE_NAME_FAVORITE_MODELS } from '../common/ai-core-preferences';
-import { LanguageModelAliasRegistry } from '../common/language-model-alias';
+import { PREFERENCE_NAME_FAVORITE_MODELS, PREFERENCE_NAME_HIDDEN_MODELS } from '../common/ai-core-preferences';
 import { DiscoveredModel, ModelDiscoveryStatus } from '../common/model-discovery-status';
 import { DiscoveredModels } from '../common/model-discovery-util';
 import { ModelDiscoveryStatusService } from './model-discovery-status-service';
@@ -49,7 +48,11 @@ export interface DerivedFavorites {
  * undated ids of its provider — so `claude-opus-5` is featured while `claude-opus-5-20260401` is
  * not. Because the featured set is derived from each discovery rather than stored, a model released
  * tomorrow is offered the day it appears, and the user cannot end up pinned to a stale line-up.
- * Featured models cannot be unmarked for the same reason: they are the floor the picker stands on.
+ *
+ * Both directions are the user's to override, and only the override is stored: a model offered by
+ * default is taken out of the picker by an entry in {@link PREFERENCE_NAME_HIDDEN_MODELS}, any other
+ * model is put into it by an entry in {@link PREFERENCE_NAME_FAVORITE_MODELS}. A model nobody touched
+ * appears in neither.
  *
  * Models of a provider that does not participate in discovery — one whose models are configured by
  * hand, or a custom endpoint — are all favorites: listing them *was* the user's choice.
@@ -63,14 +66,11 @@ export class FavoriteModelsService {
     @inject(ModelDiscoveryStatusService)
     protected readonly discoveryStatus: ModelDiscoveryStatusService;
 
-    @inject(LanguageModelAliasRegistry)
-    protected readonly aliasRegistry: LanguageModelAliasRegistry;
-
     protected readonly onDidChangeEmitter = new Emitter<void>();
     /** Fired when the marked models or the featured set change. */
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
 
-    /** Memoized {@link getDerived}, dropped whenever discovery or the aliases change. */
+    /** Memoized {@link getDerived}, dropped whenever a discovery reports something new. */
     protected derived: DerivedFavorites | undefined;
 
     @postConstruct()
@@ -80,13 +80,8 @@ export class FavoriteModelsService {
             this.pruneFavorites(status);
             this.onDidChangeEmitter.fire();
         });
-        // An alias points at the models the application considers current, so what it names is featured.
-        this.aliasRegistry.onDidChange(() => {
-            this.derived = undefined;
-            this.onDidChangeEmitter.fire();
-        });
         this.preferenceService.onPreferenceChanged(event => {
-            if (event.preferenceName === PREFERENCE_NAME_FAVORITE_MODELS) {
+            if (event.preferenceName === PREFERENCE_NAME_FAVORITE_MODELS || event.preferenceName === PREFERENCE_NAME_HIDDEN_MODELS) {
                 this.onDidChangeEmitter.fire();
             }
         });
@@ -94,12 +89,20 @@ export class FavoriteModelsService {
 
     /** Whether the chat input's model picker offers this model, be it featured, marked or hand-configured. */
     isFavorite(modelId: string): boolean {
-        // Nothing was discovered for this model's provider, so its models are there because someone put
-        // them there - a manually configured provider, or a custom endpoint. That is choice enough.
-        if (!this.participatesInDiscovery(modelId)) {
-            return true;
+        if (this.getHidden().includes(modelId)) {
+            return false;
         }
-        return this.isFeatured(modelId) || this.getFavorites().includes(modelId);
+        return this.isOfferedByDefault(modelId) || this.getFavorites().includes(modelId);
+    }
+
+    /**
+     * Whether the picker would offer this model without the user marking it: one of the newest of a
+     * provider that discovers, or any model of a provider that does not. Nothing was discovered for
+     * the latter, so its models are there because someone put them there - a manually configured
+     * provider, or a custom endpoint. That is choice enough.
+     */
+    protected isOfferedByDefault(modelId: string): boolean {
+        return !this.participatesInDiscovery(modelId) || this.isFeatured(modelId);
     }
 
     /** Whether the model's provider reports a discovery status, i.e. whether featuring applies to it at all. */
@@ -119,24 +122,71 @@ export class FavoriteModelsService {
         return this.getFeatured().has(modelId);
     }
 
-    /** The ids the user marked explicitly, featured models excluded. */
+    /** The ids the user marked explicitly, the ones offered by default excluded. */
     getFavorites(): string[] {
         return this.preferenceService.get<string[]>(PREFERENCE_NAME_FAVORITE_MODELS, []);
     }
 
+    /** The ids the user took out of the picker, which would otherwise be offered by default. */
+    getHidden(): string[] {
+        return this.preferenceService.get<string[]>(PREFERENCE_NAME_HIDDEN_MODELS, []);
+    }
+
     /**
-     * Marks or unmarks a model. A featured model is offered regardless, so marking it would have no
-     * effect and unmarking it is refused rather than silently ignored.
+     * Whether the user decided anything about this provider's models, i.e. whether resetting it to the
+     * models it offers by default would change what the picker shows.
+     *
+     * @param modelIdPrefix prefix of the provider's registered model ids, e.g. `openai`
+     */
+    hasOverrides(modelIdPrefix: string): boolean {
+        return [...this.getFavorites(), ...this.getHidden()].some(id => id.startsWith(`${modelIdPrefix}/`));
+    }
+
+    /**
+     * Drops what the user decided about one provider's models, so the picker shows the models that
+     * provider offers by default again. The other providers are left alone.
+     *
+     * @param modelIdPrefix prefix of the provider's registered model ids, e.g. `openai`
+     */
+    async resetToDefaults(modelIdPrefix: string): Promise<void> {
+        for (const preferenceName of [PREFERENCE_NAME_FAVORITE_MODELS, PREFERENCE_NAME_HIDDEN_MODELS]) {
+            const ids = this.preferenceService.get<string[]>(preferenceName, []);
+            const kept = ids.filter(id => !id.startsWith(`${modelIdPrefix}/`));
+            if (kept.length !== ids.length) {
+                await this.write(preferenceName, kept);
+            }
+        }
+    }
+
+    /**
+     * Puts a model into the picker or takes it out of it, whichever the current state calls for. Only
+     * the deviation from the default is stored: a model offered by default is taken out by an entry in
+     * the hidden list, and any other by dropping its entry from the favorites (or adding one).
      */
     async toggleFavorite(modelId: string): Promise<void> {
-        if (this.isFeatured(modelId)) {
+        const favorites = this.getFavorites();
+        const hidden = this.getHidden();
+        if (this.isFavorite(modelId)) {
+            if (favorites.includes(modelId)) {
+                await this.write(PREFERENCE_NAME_FAVORITE_MODELS, favorites.filter(id => id !== modelId));
+            }
+            if (this.isOfferedByDefault(modelId)) {
+                await this.write(PREFERENCE_NAME_HIDDEN_MODELS, [...hidden, modelId]);
+            }
             return;
         }
-        const favorites = this.getFavorites();
-        const next = favorites.includes(modelId)
-            ? favorites.filter(id => id !== modelId)
-            : [...favorites, modelId];
-        await this.preferenceService.set(PREFERENCE_NAME_FAVORITE_MODELS, next, PreferenceScope.User);
+        if (hidden.includes(modelId)) {
+            await this.write(PREFERENCE_NAME_HIDDEN_MODELS, hidden.filter(id => id !== modelId));
+        }
+        // A model that was hidden while it was featured and has since fallen out of the featured set
+        // needs a mark of its own, or removing the entry would not bring it back.
+        if (!this.isOfferedByDefault(modelId)) {
+            await this.write(PREFERENCE_NAME_FAVORITE_MODELS, [...favorites, modelId]);
+        }
+    }
+
+    protected async write(preferenceName: string, ids: string[]): Promise<void> {
+        await this.preferenceService.set(preferenceName, ids, PreferenceScope.User);
     }
 
     /** The featured ids across all providers that participate in discovery, fully qualified. */
@@ -170,13 +220,17 @@ export class FavoriteModelsService {
      * of its undated ids. A release-pinned id is never featured — the undated form of the same model
      * already is, and pinning a release is the deliberate choice the switch on its row makes.
      *
-     * They are ranked by what evidence there is, in that order:
+     * They are ranked by what the provider reports about them, in that order:
      *
-     * 1. named by a built-in model alias, which is where the application states which models it
-     *    considers current, and is the only signal a provider that reports nothing else leaves;
-     * 2. most recently released, where the provider reports release dates (Anthropic, OpenAI);
-     * 3. highest version in the id, which is what is left for Gemini and the Copilot CLI — the naming
-     *    of those models carries their generation (`gemini-3.7-flash` over `gemini-2.5-pro`).
+     * 1. most recently released, where the provider reports release dates (Anthropic, OpenAI);
+     * 2. a `-latest` pointer the provider maintains at the current model of a family, which only
+     *    decides where there are no dates: a provider that reports them dates its pointers as well;
+     * 3. highest version in the id, which is what is left for Gemini — the naming of those models
+     *    carries their generation (`gemini-3.7-flash` over `gemini-2.5-pro`).
+     *
+     * What the model aliases name has no say in this: an alias is a curated list of its own, pointing
+     * at the model a purpose should use, which is a different question from which models are worth
+     * offering in the picker.
      *
      * An explicitly configured list (`modelOverrides`) is featured in full: the user named it. So is a
      * provider's own nomination ({@link DiscoveredModel.featured}), which a provider makes when the
@@ -189,17 +243,14 @@ export class FavoriteModelsService {
         if (status.state === 'overridden') {
             return [...discovered];
         }
-        const prefix = status.modelIdPrefix ?? status.providerId;
-        const aliased = this.getAliasedModelIds();
         const nominated = discovered.filter(model => model.featured);
         if (nominated.length > 0) {
-            const aliasedToo = discovered.filter(model => !model.featured && aliased.has(`${prefix}/${model.id}`));
-            return [...nominated, ...aliasedToo];
+            return nominated;
         }
         return discovered
             .filter(model => DiscoveredModels.undatedId(model.id) === undefined)
             .map((model, index) => ({ model, index }))
-            .sort((left, right) => this.compareFeatured(left, right, prefix, aliased))
+            .sort((left, right) => this.compareFeatured(left, right))
             .slice(0, FEATURED_MODEL_COUNT)
             .map(entry => entry.model);
     }
@@ -207,38 +258,27 @@ export class FavoriteModelsService {
     /** Orders two candidates of the same provider; `index` preserves the reported order as the last resort. */
     protected compareFeatured(
         left: { model: DiscoveredModel; index: number },
-        right: { model: DiscoveredModel; index: number },
-        prefix: string,
-        aliased: ReadonlySet<string>
+        right: { model: DiscoveredModel; index: number }
     ): number {
-        const byAlias = Number(aliased.has(`${prefix}/${right.model.id}`)) - Number(aliased.has(`${prefix}/${left.model.id}`));
-        if (byAlias !== 0) {
-            return byAlias;
-        }
         const byRelease = (right.model.released ?? 0) - (left.model.released ?? 0);
         if (byRelease !== 0) {
             return byRelease;
+        }
+        // Only where a provider reports no dates: a pointer at its current model of a family is as
+        // current as a model gets, and it carries no version, so it would otherwise sort behind every
+        // id that does. Where there are dates, the pointer carries one too and has been ordered by it.
+        const byPointer = Number(DiscoveredModels.isLatestPointer(right.model.id)) - Number(DiscoveredModels.isLatestPointer(left.model.id));
+        if (byPointer !== 0) {
+            return byPointer;
         }
         const byVersion = DiscoveredModels.compareByVersion(left.model.id, right.model.id);
         return byVersion !== 0 ? byVersion : left.index - right.index;
     }
 
-    /** Every model id a built-in or user-edited alias points at, fully qualified. */
-    protected getAliasedModelIds(): ReadonlySet<string> {
-        const ids = new Set<string>();
-        for (const alias of this.aliasRegistry.getAliases()) {
-            alias.defaultModelIds.forEach(id => ids.add(id));
-            if (alias.selectedModelId) {
-                ids.add(alias.selectedModelId);
-            }
-        }
-        return ids;
-    }
-
     /**
-     * Drops the marked ids of a provider that a successful discovery no longer offers, so that the
-     * list does not accumulate models that no longer exist. Only a live discovery prunes: a cached
-     * result, a failure or a missing credential says nothing about what the provider offers.
+     * Drops the marked and hidden ids of a provider that a successful discovery no longer offers, so
+     * that neither list accumulates models that no longer exist. Only a live discovery prunes: a
+     * cached result, a failure or a missing credential says nothing about what the provider offers.
      */
     protected pruneFavorites(status: ModelDiscoveryStatus): void {
         if (status.state !== 'ready' || status.fromCache || !status.discovered) {
@@ -246,10 +286,12 @@ export class FavoriteModelsService {
         }
         const prefix = status.modelIdPrefix ?? status.providerId;
         const offered = new Set(status.discovered.map(model => `${prefix}/${model.id}`));
-        const favorites = this.getFavorites();
-        const kept = favorites.filter(id => !id.startsWith(`${prefix}/`) || offered.has(id));
-        if (kept.length !== favorites.length) {
-            this.preferenceService.set(PREFERENCE_NAME_FAVORITE_MODELS, kept, PreferenceScope.User);
+        for (const preferenceName of [PREFERENCE_NAME_FAVORITE_MODELS, PREFERENCE_NAME_HIDDEN_MODELS]) {
+            const ids = this.preferenceService.get<string[]>(preferenceName, []);
+            const kept = ids.filter(id => !id.startsWith(`${prefix}/`) || offered.has(id));
+            if (kept.length !== ids.length) {
+                this.write(preferenceName, kept);
+            }
         }
     }
 }

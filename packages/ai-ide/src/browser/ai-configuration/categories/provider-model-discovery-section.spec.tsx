@@ -50,15 +50,19 @@ describe('ProviderModelDiscoverySection', () => {
     before(() => disableJSDOM = enableJSDOM());
     after(() => disableJSDOM());
 
-    /** Stands in for the service: featured = the ids given, marked = the rest of `favorite`. */
-    function favoritesStub(featured: string[] = [], marked: string[] = []): FavoriteModelsService {
+    /** Stands in for the service: featured = the ids given, marked = the rest of `favorite`, hidden = taken out again. */
+    function favoritesStub(featured: string[] = [], marked: string[] = [], hidden: string[] = []): FavoriteModelsService {
         const emitter = new Emitter<void>();
         const toggled: string[] = [];
-        const stub: Partial<FavoriteModelsService> & { toggled: string[] } = {
+        const reset: string[] = [];
+        const stub: Partial<FavoriteModelsService> & { toggled: string[]; reset: string[] } = {
             toggled,
+            reset,
+            hasOverrides: () => marked.length > 0 || hidden.length > 0,
+            resetToDefaults: async (prefix: string) => { reset.push(prefix); },
             onDidChange: emitter.event,
             isFeatured: (id: string) => featured.includes(id),
-            isFavorite: (id: string) => featured.includes(id) || marked.includes(id),
+            isFavorite: (id: string) => !hidden.includes(id) && (featured.includes(id) || marked.includes(id)),
             getFavorites: () => marked,
             toggleFavorite: async (id: string) => { toggled.push(id); }
         };
@@ -82,6 +86,11 @@ describe('ProviderModelDiscoverySection', () => {
             onAction: (action: ModelDiscoveryAction) => actions.push(action)
         })));
         return { container, dispose: () => { flushSync(() => root.unmount()); container.remove(); } };
+    }
+
+    /** The section header's own buttons, refresh first and reset after it. */
+    function sectionActions(container: HTMLElement): HTMLButtonElement[] {
+        return [...container.querySelectorAll<HTMLButtonElement>('.ai-configuration-section-title-actions .ai-configuration-icon-button')];
     }
 
     function labels(container: HTMLElement): string[] {
@@ -119,6 +128,104 @@ describe('ProviderModelDiscoverySection', () => {
         } finally {
             dispose();
         }
+    });
+
+    describe('what the chat input shows', () => {
+
+        /** Ten models, so the section also offers the filter box. */
+        function manyModels(): LanguageModel[] {
+            return ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'].map(name => model(`anthropic/claude-${name}`));
+        }
+
+        function badges(container: HTMLElement): string[][] {
+            return [...container.querySelectorAll('.ai-configuration-item-row')]
+                .map(row => [...row.querySelectorAll('.ai-configuration-kind-badge-label')].map(badge => badge.textContent ?? ''));
+        }
+
+        it('lifts the provider\'s current models to the top of the list', () => {
+            const favorites = favoritesStub(['anthropic/claude-c', 'anthropic/claude-h']);
+            const { container, dispose } = mount(manyModels(), status(), favorites);
+            try {
+                expect(labels(container).slice(0, 2)).to.deep.equal(['claude-c', 'claude-h']);
+                // The rest keeps the order it had.
+                expect(labels(container).slice(2, 4)).to.deep.equal(['claude-a', 'claude-b']);
+            } finally {
+                dispose();
+            }
+        });
+
+        it('badges them as the default, whether they are checked or not', () => {
+            // `claude-c` is one of the newest and unchecked all the same, `claude-h` is the user's own pick.
+            const favorites = favoritesStub(['anthropic/claude-c'], ['anthropic/claude-h'], ['anthropic/claude-c']);
+            const { container, dispose } = mount(manyModels(), status(), favorites);
+            try {
+                expect(labels(container)[0]).to.equal('claude-c');
+                expect(badges(container)[0]).to.deep.equal(['Default']);
+                // The badge says where a model stands, not whether it is shown: it survives unchecking.
+                const shown = container.querySelectorAll<HTMLButtonElement>('.ai-configuration-item-row-trailing .ai-configuration-icon-button')[0];
+                expect(shown.querySelector('.codicon-circle-large')).to.not.equal(null); // eslint-disable-line no-null/no-null
+            } finally {
+                dispose();
+            }
+        });
+
+        it('badges nothing on a model the provider does not count among its current ones', () => {
+            const favorites = favoritesStub([], ['anthropic/claude-h']);
+            const { container, dispose } = mount(manyModels(), status(), favorites);
+            try {
+                expect(badges(container).every(row => row.length === 0)).to.equal(true);
+            } finally {
+                dispose();
+            }
+        });
+
+        it('explains on the badge what a default is, and on the check only what it does', () => {
+            const favorites = favoritesStub(['anthropic/claude-c']);
+            const { container, dispose } = mount(manyModels(), status(), favorites);
+            try {
+                expect(container.querySelector('.ai-configuration-kind-badge')?.getAttribute('title'))
+                    .to.contain('newest models of this provider');
+                const shown = container.querySelectorAll<HTMLButtonElement>('.ai-configuration-item-row-trailing .ai-configuration-icon-button')[0];
+                expect(shown.title).to.equal('Hide this model from the AI chat input\'s model picker');
+            } finally {
+                dispose();
+            }
+        });
+
+        it('offers a reset once the user decided something, and nothing to reset before', () => {
+            const untouched = favoritesStub(['anthropic/claude-c']);
+            const first = mount(manyModels(), status(), untouched);
+            try {
+                const reset = sectionActions(first.container)[1];
+                expect(reset.disabled).to.equal(true);
+                expect(reset.title).to.equal('Already at the defaults');
+            } finally {
+                first.dispose();
+            }
+
+            const touched = favoritesStub(['anthropic/claude-c'], ['anthropic/claude-h']);
+            const second = mount(manyModels(), status({ providerId: 'openAiOfficial', modelIdPrefix: 'openai' }), touched);
+            try {
+                const reset = sectionActions(second.container)[1];
+                expect(reset.disabled).to.equal(false);
+                flushSync(() => reset.click());
+                // Only this provider is reset, under the prefix its models are registered with.
+                expect((touched as unknown as { reset: string[] }).reset).to.deep.equal(['openai']);
+            } finally {
+                second.dispose();
+            }
+        });
+
+        it('reports how much of the list the chat input shows', () => {
+            const favorites = favoritesStub(['anthropic/claude-c'], ['anthropic/claude-h']);
+            const { container, dispose } = mount(manyModels(), status(), favorites);
+            try {
+                expect(container.querySelector('.ai-configuration-section-subtitle')?.textContent)
+                    .to.equal('2 of 10 shown in the AI chat input\'s model picker');
+            } finally {
+                dispose();
+            }
+        });
     });
 
     it('heads every row with the id and puts the reported name beneath it', () => {
@@ -229,16 +336,17 @@ describe('ProviderModelDiscoverySection', () => {
         }
     });
 
-    it('checks a featured model and does not let it be unchecked', () => {
+    it('checks a featured model and lets it be hidden again', () => {
         const favorites = favoritesStub(['anthropic/claude-opus-5']);
         const { container, dispose } = mount([model('anthropic/claude-opus-5')], status(), favorites);
         try {
             const shown = container.querySelector<HTMLButtonElement>('.ai-configuration-item-row-trailing .ai-configuration-icon-button')!;
             expect(shown.querySelector('.codicon-pass')).to.not.equal(null); // eslint-disable-line no-null/no-null
-            expect(shown.disabled).to.equal(true);
-            // The tooltip carries the locked state and the scope, so it has to name both.
-            expect(shown.title).to.contain('Always shown');
-            expect(shown.title).to.contain('AI chat input');
+            expect(shown.disabled).to.equal(false);
+            // The check says what it does; what a default is belongs to the badge on the row.
+            expect(shown.title).to.equal('Hide this model from the AI chat input\'s model picker');
+            flushSync(() => shown.click());
+            expect((favorites as unknown as { toggled: string[] }).toggled).to.deep.equal(['anthropic/claude-opus-5']);
         } finally {
             dispose();
         }
@@ -308,7 +416,7 @@ describe('ProviderModelDiscoverySection', () => {
     it('disables the refresh while there is no credential to fetch with, and says why', () => {
         const { container, dispose } = mount([], status({ state: 'no-credentials', message: 'No Anthropic API key set.' }));
         try {
-            const refresh = container.querySelector<HTMLButtonElement>('.ai-configuration-section-title-actions .ai-configuration-icon-button')!;
+            const refresh = sectionActions(container)[0];
             expect(refresh.disabled).to.equal(true);
             expect(refresh.title).to.equal('No Anthropic API key set.');
         } finally {

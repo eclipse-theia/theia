@@ -22,6 +22,13 @@ import { AiConfigurationKindBadge, AiConfigurationStatusBadge } from './ai-confi
 import { AiConfigurationOrigin, AiConfigurationOriginBadges } from './ai-configuration-origin-badge';
 import { AiSettingGearButton } from './ai-configuration-setting-row';
 
+/** A classifying label on an item row, with a tooltip of its own where the label alone is too short to explain itself. */
+export interface AiConfigurationRowTag {
+    readonly label: string;
+    /** Hover text; defaults to {@link label}. */
+    readonly title?: string;
+}
+
 export interface AiConfigurationItemRowProps {
     readonly label: string;
     /**
@@ -35,7 +42,7 @@ export interface AiConfigurationItemRowProps {
     readonly iconClass?: string;
     readonly description?: string;
     /** Short badges shown after the label, for what the item *is*. Use {@link origins} for where it came from. */
-    readonly tags?: string[];
+    readonly tags?: ReadonlyArray<string | AiConfigurationRowTag>;
     /** Where the item came from, shown after the tags as {@link AiConfigurationOriginBadge}s. */
     readonly origins?: AiConfigurationOrigin[];
     /** Status badge shown on the right (e.g. an alias' resolved model). */
@@ -166,7 +173,9 @@ export const AiConfigurationItemRow: React.FC<AiConfigurationItemRowProps> = ({
                     >{label}</button>
                     : <span className={`ai-configuration-item-row-label${monospaceLabel ? ' mono' : ''}`}>{label}</span>}
                 {tags && tags.length > 0 && <span className='ai-configuration-item-row-tags'>
-                    {tags.map(tag => <AiConfigurationKindBadge key={tag} label={tag} variant='outline' />)}
+                    {tags.map(tag => typeof tag === 'string'
+                        ? <AiConfigurationKindBadge key={tag} label={tag} variant='outline' />
+                        : <AiConfigurationKindBadge key={tag.label} label={tag.label} title={tag.title} variant='outline' />)}
                 </span>}
                 <AiConfigurationOriginBadges origins={origins} />
             </div>

@@ -119,6 +119,8 @@ describe('OpenAiLanguageModelsManagerImpl - fetchAvailableModels', () => {
             { id: 'whisper-1' },
             { id: 'computer-use-preview' },
             { id: 'gpt-4o-search-preview' },
+            // Multimodal, so it speaks the realtime/live API rather than chat completions.
+            { id: 'gpt-live-1' },
             // Caught by the same `search` term, and rightly so: it speaks the responses API, not this one.
             { id: 'o3-deep-research' },
             { id: 'gpt-3.5-turbo-instruct' },

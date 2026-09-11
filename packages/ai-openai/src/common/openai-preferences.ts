@@ -38,6 +38,14 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
 on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
             title: AI_CORE_PREFERENCES_TITLE,
         },
+        [ALLOW_ENV_API_KEY_PREF]: {
+            type: 'boolean',
+            default: false,
+            title: AI_CORE_PREFERENCES_TITLE,
+            markdownDescription: nls.localize('theia/ai/openai/allowEnvApiKey/description',
+                'Allow Theia to use an OpenAI API key found in the environment (`OPENAI_API_KEY`). '
+                + 'You are asked to confirm this once before the key is used; set it back to `false` to revoke consent.'),
+        },
         [MODEL_OVERRIDES_PREF]: {
             type: 'array',
             default: [],
@@ -48,14 +56,6 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             markdownDescription: nls.localize('theia/ai/openai/modelOverrides/description',
                 'Override the models discovered from OpenAI. When empty (default), the available models are discovered from the provider. '
                 + 'Set explicit model ids to use exactly those instead; discovery is then not used at all.')
-        },
-        [ALLOW_ENV_API_KEY_PREF]: {
-            type: 'boolean',
-            default: false,
-            title: AI_CORE_PREFERENCES_TITLE,
-            markdownDescription: nls.localize('theia/ai/openai/allowEnvApiKey/description',
-                'Allow Theia to use an OpenAI API key found in the environment (`OPENAI_API_KEY`). '
-                + 'You are asked to confirm this once before the key is used; set it back to `false` to revoke consent.'),
         },
         [USE_RESPONSE_API_PREF]: {
             type: 'boolean',

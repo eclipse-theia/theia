@@ -65,6 +65,8 @@ export const ProviderModelDiscoverySection: React.FC<ProviderModelDiscoverySecti
         return () => listener.dispose();
     }, [favorites]);
     const fetching = status.state === 'fetching';
+    const modelIdPrefix = status.modelIdPrefix ?? status.providerId;
+    const overridden = favorites.hasOverrides(modelIdPrefix);
     // Without a credential there is nothing to ask the provider; refreshing would only report the same
     // state back. The setting or the sign-in above the list is what moves this on.
     const refreshable = status.state !== 'no-credentials' && status.state !== 'awaiting-consent';
@@ -74,7 +76,12 @@ export const ProviderModelDiscoverySection: React.FC<ProviderModelDiscoverySecti
         .slice()
         .sort(compareModelsByRecency)
         // `favoritesRevision` is not read here: it is what re-runs this when a star or the featured set changes.
-        .map(model => describeModel(model, status.discovered, favorites)), [models, status.discovered, favorites, favoritesRevision]);
+        .map(model => describeModel(model, status.discovered, favorites))
+        // The provider's current line-up first, newest first within each part. A list this long is read
+        // from the top, and the models the picker starts with are what it is usually opened for. The sort
+        // is stable, so it only lifts them past the older ones without disturbing the order.
+        .sort((left, right) => Number(right.featured) - Number(left.featured)),
+    [models, status.discovered, favorites, favoritesRevision]);
     const matches = React.useMemo(
         () => rows.filter(row => (!favoritesOnly || row.favorite) && matchesFilter(row, filter)),
         [rows, filter, favoritesOnly]
@@ -91,7 +98,7 @@ export const ProviderModelDiscoverySection: React.FC<ProviderModelDiscoverySecti
     return <AiConfigurationSection
         title={nls.localize('theia/ai/ide/modelsConfiguration/discovery', 'Model Discovery')}
         count={rows.length > 0 ? rows.length : undefined}
-        subtitle={sectionSubtitle(status, rows.length)}
+        subtitle={sectionSubtitle(status, rows.length, rows.filter(row => row.favorite).length)}
         actions={<>
             <AiConfigurationStatusBadge status={discoveryStatusBadge(status)} />
             <AiConfigurationIconButton
@@ -102,6 +109,14 @@ export const ProviderModelDiscoverySection: React.FC<ProviderModelDiscoverySecti
                 busy={fetching}
                 disabled={fetching || !refreshable}
                 onClick={onRefresh}
+            />
+            <AiConfigurationIconButton
+                iconClass={codicon('discard')}
+                title={overridden
+                    ? nls.localize('theia/ai/ide/modelsConfiguration/resetShown', 'Reset to defaults')
+                    : nls.localize('theia/ai/ide/modelsConfiguration/resetShownUnavailable', 'Already at the defaults')}
+                disabled={!overridden}
+                onClick={() => favorites.resetToDefaults(modelIdPrefix)}
             />
         </>}
     >
@@ -125,12 +140,14 @@ export const ProviderModelDiscoverySection: React.FC<ProviderModelDiscoverySecti
  * the checks are about the chat input alone. An agent's model and a model alias are picked from every
  * discovered model, on their own pages.
  */
-function sectionSubtitle(status: ModelDiscoveryStatus, rowCount: number): string | undefined {
+function sectionSubtitle(status: ModelDiscoveryStatus, rowCount: number, shownCount: number): string | undefined {
     if (status.state === 'overridden') {
         return status.message;
     }
+    // The ratio is the overview a list this long cannot give by itself, and it says what the checks mean.
     return rowCount > 0
-        ? nls.localize('theia/ai/ide/modelsConfiguration/checkedExplanation', 'Checked models appear in the AI chat input\'s model picker')
+        ? nls.localize('theia/ai/ide/modelsConfiguration/shownExplanation',
+            '{0} of {1} shown in the AI chat input\'s model picker', shownCount, rowCount)
         : undefined;
 }
 
@@ -218,49 +235,58 @@ const DiscoveryBody: React.FC<DiscoveryBodyProps> = ({ status, rows, matches, fi
                 />}
                 {matches.length === 0
                     ? <AiConfigurationEmptyState message={nls.localizeByDefault('No results found')} />
-                    : matches.map(row => <AiConfigurationItemRow
-                        key={row.id}
-                        // The id is the heading on every row, whatever the provider reports: it is what
-                        // agents, aliases and settings reference, and OpenAI reports nothing else, so
-                        // heading it with the name where there is one would give each provider a
-                        // differently shaped list.
-                        label={row.id}
-                        description={modelRowDescription(row)}
-                        // Every model in this list is ready as long as the provider has a key, which it has
-                        // whenever the list is shown at all. Only the exception is worth a badge.
-                        status={row.ready ? undefined : notReadyBadge(row)}
-                        trailing={<>
-                            {/* Names the order the list is in, which is otherwise a claim the user cannot check. */}
-                            {row.released !== undefined && <span className='ai-configuration-item-row-detail'>
-                                {nls.localize('theia/ai/ide/modelsConfiguration/released', 'released {0}',
-                                    formatDistanceToNow(row.released, { addSuffix: true }))}
-                            </span>}
-                            <ShowInChatButton row={row} favorites={favorites} />
-                        </>}
-                    />)}
+                    : <ModelRows rows={matches} favorites={favorites} />}
             </>}
     </>;
 };
+
+const ModelRows: React.FC<{ rows: ModelRow[]; favorites: FavoriteModelsService }> = ({ rows, favorites }) => <>
+    {rows.map(row => <AiConfigurationItemRow
+        key={row.id}
+        // The id is the heading on every row, whatever the provider reports: it is what agents, aliases
+        // and settings reference, and OpenAI reports nothing else, so heading it with the name where
+        // there is one would give each provider a differently shaped list.
+        label={row.id}
+        // Kept on the row whether the model is checked or not: it says that this is one of the
+        // provider's current models, which is why the picker starts with it and stays true after
+        // someone unchecks it.
+        tags={row.featured
+            ? [{
+                label: nls.localizeByDefault('Default'),
+                title: nls.localize('theia/ai/ide/modelsConfiguration/defaultModel',
+                    'One of the newest models of this provider, which the AI chat input\'s model picker shows unless it is hidden here')
+            }]
+            : undefined}
+        description={modelRowDescription(row)}
+        // Every model in this list is ready as long as the provider has a key, which it has whenever the
+        // list is shown at all. Only the exception is worth a badge.
+        status={row.ready ? undefined : notReadyBadge(row)}
+        trailing={<>
+            {/* Names the order the list is in, which is otherwise a claim the user cannot check. */}
+            {row.released !== undefined && <span className='ai-configuration-item-row-detail'>
+                {nls.localize('theia/ai/ide/modelsConfiguration/released', 'released {0}',
+                    formatDistanceToNow(row.released, { addSuffix: true }))}
+            </span>}
+            <ShowInChatButton row={row} favorites={favorites} />
+        </>}
+    />)}
+</>;
 
 /**
  * Whether the AI chat input's model picker shows this model: a checked circle when it does, an empty
  * one when it does not. Nothing else is affected — an agent's model and a model alias are picked from
  * every discovered model, on their own pages.
  *
- * A featured model is checked and cannot be unchecked: the newest models of a provider are always
- * shown, so that a model released tomorrow is not missed by whoever set their list today.
+ * What a model released tomorrow is shown by is the `Default` badge on its row, not a check made
+ * here; unchecking one of those is what says otherwise, and that is all that is stored.
  */
 const ShowInChatButton: React.FC<{ row: ModelRow; favorites: FavoriteModelsService }> = ({ row, favorites }) => {
-    const title = row.featured
-        ? nls.localize('theia/ai/ide/modelsConfiguration/featuredModel',
-            'Always shown in the AI chat input\'s model picker, being one of the newest models of this provider')
-        : row.favorite
-            ? nls.localize('theia/ai/ide/modelsConfiguration/hideModel', 'Hide this model from the AI chat input\'s model picker')
-            : nls.localize('theia/ai/ide/modelsConfiguration/showModel', 'Show this model in the AI chat input\'s model picker');
+    const title = row.favorite
+        ? nls.localize('theia/ai/ide/modelsConfiguration/hideModel', 'Hide this model from the AI chat input\'s model picker')
+        : nls.localize('theia/ai/ide/modelsConfiguration/showModel', 'Show this model in the AI chat input\'s model picker');
     return <AiConfigurationIconButton
         iconClass={codicon(row.favorite ? 'pass' : 'circle-large')}
         title={title}
-        disabled={row.featured}
         onClick={() => favorites.toggleFavorite(row.qualifiedId)}
     />;
 };

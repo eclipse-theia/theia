@@ -1098,6 +1098,8 @@
   white-space: nowrap;
   background-color: var(--theia-badge-background);
   color: var(--theia-badge-foreground);
+  /* An annotation on the row, not text to select: an I-beam over it only invites a drag. */
+  cursor: default;
 }
 
 .ai-configuration-kind-badge-outline {

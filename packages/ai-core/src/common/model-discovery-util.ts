@@ -71,6 +71,15 @@ export namespace DiscoveredModels {
     }
 
     /**
+     * Whether the id is a pointer a provider maintains at the current model of a family, e.g.
+     * `gemini-flash-latest`. Such an id carries no version to compare, and does not need one: it
+     * resolves to whatever is newest by definition.
+     */
+    export function isLatestPointer(id: string): boolean {
+        return id.endsWith('-latest');
+    }
+
+    /**
      * The version numbers in a model id, e.g. `gemini-3.7-flash` → `[3, 7]` and `claude-sonnet-4-5`
      * → `[4, 5]`. A heuristic, and only meaningful between the models of one provider — and one
      * vendor at that: it says nothing about `gpt-5` against `claude-sonnet-4.5`.
