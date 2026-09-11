@@ -44,7 +44,7 @@ describe('TelemetryExtImpl', () => {
 
         it(`derives the enablement states from telemetry level '${level}'`, () => {
             const telemetry = new TelemetryExtImpl();
-            telemetry.$setTelemetryLevel(level);
+            telemetry.$onDidChangeTelemetryLevel(level);
             const logger = telemetry.createTelemetryLogger(sender);
 
             expect(telemetry.level).to.equal(level);
@@ -56,7 +56,7 @@ describe('TelemetryExtImpl', () => {
         it(`applies telemetry level '${level}' to loggers created before the level arrived`, () => {
             const telemetry = new TelemetryExtImpl();
             const logger = telemetry.createTelemetryLogger(sender);
-            telemetry.$setTelemetryLevel(level);
+            telemetry.$onDidChangeTelemetryLevel(level);
 
             expect(logger.isUsageEnabled).to.equal(expected.isUsageEnabled);
             expect(logger.isErrorsEnabled).to.equal(expected.isErrorsEnabled);
@@ -68,10 +68,10 @@ describe('TelemetryExtImpl', () => {
         const fired: boolean[] = [];
         telemetry.onDidChangeTelemetryEnabled(enabled => fired.push(enabled));
 
-        telemetry.$setTelemetryLevel('crash');
-        telemetry.$setTelemetryLevel('error');
-        telemetry.$setTelemetryLevel('all');
-        telemetry.$setTelemetryLevel('off');
+        telemetry.$onDidChangeTelemetryLevel('crash');
+        telemetry.$onDidChangeTelemetryLevel('error');
+        telemetry.$onDidChangeTelemetryLevel('all');
+        telemetry.$onDidChangeTelemetryLevel('off');
 
         expect(fired).to.deep.equal([true, false]);
     });
@@ -82,16 +82,16 @@ describe('TelemetryExtImpl', () => {
         let changes = 0;
         logger.onDidChangeEnableStates(() => changes++);
 
-        telemetry.$setTelemetryLevel('crash'); // off -> crash: both stay false
+        telemetry.$onDidChangeTelemetryLevel('crash'); // off -> crash: both stay false
         expect(changes).to.equal(0);
 
-        telemetry.$setTelemetryLevel('error'); // errors become enabled
+        telemetry.$onDidChangeTelemetryLevel('error'); // errors become enabled
         expect(changes).to.equal(1);
 
-        telemetry.$setTelemetryLevel('all'); // usage becomes enabled
+        telemetry.$onDidChangeTelemetryLevel('all'); // usage becomes enabled
         expect(changes).to.equal(2);
 
-        telemetry.$setTelemetryLevel('off');
+        telemetry.$onDidChangeTelemetryLevel('off');
         expect(changes).to.equal(3);
     });
 
@@ -102,10 +102,27 @@ describe('TelemetryExtImpl', () => {
         logger.onDidChangeEnableStates(() => changes++);
 
         logger.dispose();
-        telemetry.$setTelemetryLevel('all');
-
+        telemetry.$onDidChangeTelemetryLevel('all');
         expect(logger.isUsageEnabled).to.equal(false);
+
+        logger.isUsageEnabled = true;
         expect(changes).to.equal(0);
+    });
+
+    it('logs rather than propagates a sender that fails to flush on disposal', async () => {
+        const telemetry = new TelemetryExtImpl();
+        const logged: unknown[] = [];
+        const consoleError = console.error;
+        console.error = (...args: unknown[]) => { logged.push(args); };
+        try {
+            telemetry.createTelemetryLogger({ ...sender, flush: () => { throw new Error('boom'); } }).dispose();
+            telemetry.createTelemetryLogger({ ...sender, flush: () => Promise.reject(new Error('boom')) }).dispose();
+            await new Promise(resolve => setTimeout(resolve, 0));
+        } finally {
+            console.error = consoleError;
+        }
+
+        expect(logged).to.have.lengthOf(2);
     });
 
     it('ignores a repeated telemetry level', () => {
@@ -114,8 +131,8 @@ describe('TelemetryExtImpl', () => {
         let changes = 0;
         logger.onDidChangeEnableStates(() => changes++);
 
-        telemetry.$setTelemetryLevel('all');
-        telemetry.$setTelemetryLevel('all');
+        telemetry.$onDidChangeTelemetryLevel('all');
+        telemetry.$onDidChangeTelemetryLevel('all');
 
         expect(changes).to.equal(1);
     });
@@ -143,7 +160,7 @@ describe('TelemetryLogger', () => {
 
     it('delivers errors but suppresses usage at telemetry level \'error\'', () => {
         const telemetry = new TelemetryExtImpl();
-        telemetry.$setTelemetryLevel('error');
+        telemetry.$onDidChangeTelemetryLevel('error');
         const sender = createSender();
         const logger = telemetry.createTelemetryLogger(sender);
 
@@ -157,7 +174,7 @@ describe('TelemetryLogger', () => {
 
     it('suppresses usage that a plugin re-enables while the telemetry level forbids it', () => {
         const telemetry = new TelemetryExtImpl();
-        telemetry.$setTelemetryLevel('off');
+        telemetry.$onDidChangeTelemetryLevel('off');
         const sender = createSender();
         const logger = telemetry.createTelemetryLogger(sender);
 
@@ -171,7 +188,7 @@ describe('TelemetryLogger', () => {
 
     it('refuses to let a plugin assign the telemetry level of its logger', () => {
         const telemetry = new TelemetryExtImpl();
-        telemetry.$setTelemetryLevel('off');
+        telemetry.$onDidChangeTelemetryLevel('off');
         const sender = createSender();
         const logger = telemetry.createTelemetryLogger(sender);
 

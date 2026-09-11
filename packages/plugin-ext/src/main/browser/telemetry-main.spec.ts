@@ -42,7 +42,7 @@ describe('TelemetryMainImpl', () => {
         rpc = {
             getProxy<T>(_proxyId: unknown): T {
                 return {
-                    $setTelemetryLevel: (next: TelemetryLevel) => { pushed.push(next); }
+                    $onDidChangeTelemetryLevel: (next: TelemetryLevel) => { pushed.push(next); }
                 } as unknown as T;
             },
             set: <T, R extends T>(_identifier: unknown, instance: R) => instance,

@@ -25,7 +25,6 @@ import { TelemetryTrustedValue, TelemetryLoggerOptions } from './types-impl';
 /**
  * Holds the telemetry level the user consented to and hands it to the loggers plugins create.
  *
- * @since 1.76.0
  * @experimental
  */
 @injectable()
@@ -41,7 +40,7 @@ export class TelemetryExtImpl implements TelemetryExt {
         return this.currentLevel;
     }
 
-    $setTelemetryLevel(level: TelemetryLevel): void {
+    $onDidChangeTelemetryLevel(level: TelemetryLevel): void {
         this.setLevel(level);
     }
 
@@ -157,9 +156,15 @@ export class TelemetryLogger {
 
     dispose(): void {
         this.levelSubscription.dispose();
+        this.onDidChangeEnableStatesEmitter.dispose();
         const sender = this.sender;
         this.sender = undefined;
-        sender?.flush?.();
+        const reportFlushFailure = (error: unknown): void => console.error('Failed to flush the telemetry sender.', error);
+        try {
+            Promise.resolve(sender?.flush?.()).catch(reportFlushFailure);
+        } catch (error) {
+            reportFlushFailure(error);
+        }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

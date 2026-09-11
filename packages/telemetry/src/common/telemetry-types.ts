@@ -14,7 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import type { TelemetryEventKind } from './telemetry-service';
+/** @experimental */
+export type TelemetryEventKind = 'usage' | 'error' | 'crash';
+
+/** @experimental */
+export function isTelemetryEventKind(value: unknown): value is TelemetryEventKind {
+    return value === 'usage' || value === 'error' || value === 'crash';
+}
 
 /** @experimental */
 export type TelemetryLevel = 'off' | 'crash' | 'error' | 'all';
