@@ -81,7 +81,9 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
 }) => {
     const steps = args.interactions;
     const stepCount = steps.length;
-    const [currentStep, setCurrentStep] = React.useState(0);
+    // Resume at the step another mount of this interaction left off at (e.g. the collapsed
+    // delegation summary vs. the expanded details render independent components).
+    const [currentStep, setCurrentStep] = React.useState(() => tool.getCurrentStep(toolCallId) ?? 0);
     // The tool's result (partial or final) is the single source of truth for step states.
     const [stepStates, setStepStates] = React.useState<StepState[]>(() => {
         if (result) {
@@ -121,6 +123,13 @@ const UserInteractionComponent: React.FC<UserInteractionComponentProps> = ({
             }
         }
     }, [currentStep, activeStep, isFinal, tool]);
+
+    // Keep the tool informed of the current step so that a later mount resumes here.
+    React.useEffect(() => {
+        if (!isFinal) {
+            tool.recordCurrentStep(toolCallId, currentStep);
+        }
+    }, [currentStep, isFinal, tool, toolCallId]);
 
     const buildResult = React.useCallback((completed: boolean, states: StepState[]): UserInteractionResult => ({
         completed,
@@ -551,6 +560,15 @@ export class UserInteractionToolRenderer implements ChatResponsePartRenderer<Too
             return 20;
         }
         return -1;
+    }
+
+    /**
+     * The regular rendering of this tool already is the interactive UI, so reuse it
+     * where only the pending interaction should be shown (e.g. on the collapsed
+     * summary of a delegated session, see #17952).
+     */
+    renderConfirmation(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
+        return this.render(response, parentNode);
     }
 
     render(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {

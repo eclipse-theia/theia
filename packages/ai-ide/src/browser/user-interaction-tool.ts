@@ -16,7 +16,7 @@
 
 import { ToolProvider, ToolRequest, ToolRequestParameterProperty, ToolRequestParameters } from '@theia/ai-core';
 import { ToolInvocationContext } from '@theia/ai-core/lib/common/language-model';
-import { ChatToolContext } from '@theia/ai-chat';
+import { ChatToolContext, ToolCallChatResponseContent } from '@theia/ai-chat';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -51,6 +51,13 @@ interface PendingInteraction {
      * is canceled. If absent (no renderer mounted) the tool resolves with all steps skipped.
      */
     latestPartial?: UserInteractionResult;
+    /**
+     * Step the user is currently viewing, pushed by the renderer via
+     * {@link UserInteractionTool.recordCurrentStep}. Lets another mount of the same
+     * interaction (e.g. the collapsed delegation summary and the expanded details)
+     * resume at that step instead of restarting at the first one.
+     */
+    currentStep?: number;
 }
 
 // Schemas are module-level constants so they are built once at load time
@@ -220,6 +227,25 @@ export class UserInteractionTool implements ToolProvider {
         pending.latestPartial = partial;
     }
 
+    /**
+     * Remember the step the user is currently viewing so another mount of the same
+     * interaction resumes there. Calls for an unknown or already-resolved interaction
+     * are silently ignored.
+     */
+    recordCurrentStep(toolCallId: string, step: number): void {
+        const pending = this.pendingInteractions.get(toolCallId);
+        if (!pending || pending.resolved) {
+            return;
+        }
+        pending.currentStep = step;
+    }
+
+    /** The step last recorded via {@link recordCurrentStep}, or undefined if nothing is pending. */
+    getCurrentStep(toolCallId: string): number | undefined {
+        const pending = this.pendingInteractions.get(toolCallId);
+        return pending && !pending.resolved ? pending.currentStep : undefined;
+    }
+
     protected resolveInteraction(toolCallId: string, result: UserInteractionResult): void {
         const pending = this.pendingInteractions.get(toolCallId);
         if (!pending || pending.resolved) {
@@ -353,12 +379,27 @@ export class UserInteractionTool implements ToolProvider {
 
         // Mark the response as waiting for input while the interaction is pending, so it is
         // surfaced consistently with agent questions and tool confirmations (e.g. in the
-        // session overview and notifications).
+        // session overview and notifications). Announce the interaction via
+        // interactionNeeded so UIs that track pending interactions (e.g. the collapsed
+        // delegation summary) surface it like tool confirmations (#17952).
         const response = ChatToolContext.is(ctx) ? ctx.response : undefined;
-        response?.waitForInput();
+        let contentPart: ToolCallChatResponseContent | undefined;
+        if (response) {
+            contentPart = response.response.content.findLast(
+                (part): part is ToolCallChatResponseContent => ToolCallChatResponseContent.is(part) && part.id === toolCallId
+            );
+            if (contentPart) {
+                contentPart.requestUserInput();
+                response.fireInteractionNeeded(contentPart);
+            } else {
+                this.logger.warn(`No tool call content found for '${toolCallId}'; the pending interaction cannot be announced to interaction trackers.`);
+            }
+            response.waitForInput();
+        }
         try {
             return await pending.deferred.promise;
         } finally {
+            contentPart?.userInputHandled();
             response?.stopWaitingForInput();
             cancellationListener?.dispose();
             this.pendingInteractions.delete(toolCallId);

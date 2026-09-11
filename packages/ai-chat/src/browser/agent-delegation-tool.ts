@@ -100,6 +100,7 @@ export class AgentDelegationTool implements ToolProvider {
             return 'Operation cancelled by user';
         }
 
+        let childModelDisposable: Disposable | undefined;
         try {
             const args = JSON.parse(arg_string);
             const { agentId, prompt, taskContextId } = args;
@@ -122,7 +123,6 @@ export class AgentDelegationTool implements ToolProvider {
             }
 
             let newSession;
-            let childModelDisposable: Disposable | undefined;
             try {
                 const chatService = this.getChatService();
 
@@ -226,9 +226,6 @@ export class AgentDelegationTool implements ToolProvider {
                         .filter((text): text is string => text !== undefined && text !== '')
                         .join('\n\n');
 
-                    // Clean up the parent-child link after completion (event bubbling is no longer needed)
-                    childModelDisposable?.dispose();
-
                     // Return the raw text to the top-level Agent, as a tool result
                     return stringResult;
                 } catch (completionError) {
@@ -252,6 +249,11 @@ export class AgentDelegationTool implements ToolProvider {
             return JSON.stringify({
                 error: `Failed to parse arguments or delegate to agent: ${error instanceof Error ? error.message : 'Unknown error'}`,
             });
+        } finally {
+            // Clean up the parent-child link on every exit path: a leaked bubbling
+            // listener would keep forwarding child interactions into the parent
+            // response after the delegation ended (e.g. on errors or cancellation).
+            childModelDisposable?.dispose();
         }
     }
 
@@ -273,6 +275,15 @@ export class AgentDelegationTool implements ToolProvider {
             if (ChatChangeEvent.isInteractionNeededEvent(event)) {
                 parentResponse.fireInteractionNeeded(event.contentPart);
                 event.contentPart.whenResolved.then(() => parentResponse.notifyChanged());
+                // A tool call's confirmation settles long before the call resolves (the
+                // tool may run for minutes after being confirmed); notify the parent at
+                // settle time so its UI re-derives pending interactions immediately.
+                if (ToolCallChatResponseContent.is(event.contentPart)) {
+                    event.contentPart.confirmed.then(
+                        () => parentResponse.notifyChanged(),
+                        () => parentResponse.notifyChanged()
+                    );
+                }
             }
         });
 
