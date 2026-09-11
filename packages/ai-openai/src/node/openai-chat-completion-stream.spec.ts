@@ -22,6 +22,7 @@ import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import {
     createToolCallError,
+    ExecutableTool,
     isTextResponsePart,
     isToolCallResponsePart,
     isUsageResponsePart,
@@ -76,19 +77,31 @@ function usageChunk(inputTokens: number, outputTokens: number): any {
 
 interface FakeOpenAi {
     readonly calls: any[];
+    /** The abort signals passed to `create`, in call order. */
+    readonly signals: (AbortSignal | undefined)[];
     readonly chat: { completions: { create: (body: any, options?: any) => Promise<FakeStream> } };
 }
 
-/** Returns the queued streams in order; records the request bodies passed to `create`. */
-function fakeOpenAi(streams: FakeStream[]): FakeOpenAi {
+/**
+ * Returns the queued streams in order; records the request bodies and abort signals passed to `create`.
+ * Like the OpenAI SDK, an abort of the request signal is forwarded to the controller of the stream that
+ * the request produces. `createGate`, if given, holds `create` pending, to model a request in flight.
+ */
+function fakeOpenAi(streams: FakeStream[], createGate?: Promise<void>): FakeOpenAi {
     const calls: any[] = [];
+    const signals: (AbortSignal | undefined)[] = [];
     return {
         calls,
+        signals,
         chat: {
             completions: {
-                create: async (body: any) => {
+                create: async (body: any, options?: any) => {
                     calls.push(body);
-                    return streams.shift()!;
+                    signals.push(options?.signal);
+                    const stream = streams.shift()!;
+                    options?.signal?.addEventListener('abort', () => stream.controller.abort(), { once: true });
+                    await createGate;
+                    return stream;
                 }
             }
         }
@@ -170,7 +183,7 @@ class RecordingExecutor extends ToolCallExecutorImpl {
     readonly batches: ToolInvocation[][] = [];
     override executeToolCalls(
         toolCalls: readonly ToolInvocation[],
-        tools: readonly ToolRequest[] | undefined,
+        tools: readonly ExecutableTool[] | undefined,
         options?: ToolCallExecutionOptions
     ): Promise<ToolCallOutcome[]> {
         this.batches.push([...toolCalls]);
@@ -339,6 +352,50 @@ describe('ChatCompletionStreamingAsyncIterator', () => {
         expect((stream.controller.abort as sinon.SinonSpy).called).to.equal(true);
         gate.resolve();
         await drained;
+    });
+
+    it('aborts a request that is still in flight when cancelled before the stream arrives', async () => {
+        const gate = new Deferred<void>();
+        const openai = fakeOpenAi([new FakeStream([textChunk('unused')])], gate.promise);
+        const source = new CancellationTokenSource();
+
+        const settled = collectUntilSettled(makeIterator(openai, { cancellationToken: source.token }));
+        await flush(); // allow create() to be called; it stays pending on the gate
+        source.cancel();
+
+        // Without a signal on the request there would be nothing to abort yet: no stream exists at this point.
+        expect(openai.signals[0]?.aborted).to.equal(true);
+        const { parts, error } = await settled;
+        expect(error).to.be.instanceOf(CancellationError);
+        expect(parts).to.deep.equal([]);
+        gate.resolve();
+        await flush();
+    });
+
+    it('stops the tool loop and aborts the request when the consumer abandons the iteration', async () => {
+        const handler = sinon.stub().resolves('a-result');
+        const request: UserRequest = {
+            sessionId: 'session',
+            requestId: 'request',
+            messages: [{ actor: 'user', type: 'text', text: 'hi' }],
+            tools: [toolRequest('a', handler)]
+        };
+        const openai = fakeOpenAi([
+            new FakeStream([textChunk('partial'), toolChunk(0, 'call-a', 'a', '{}')]),
+            new FakeStream([textChunk('never requested')])
+        ]);
+
+        const iterator = makeIterator(openai, { request });
+        for await (const part of iterator) {
+            expect(isTextResponsePart(part)).to.equal(true);
+            break; // abandoning the iteration calls `return()`
+        }
+        await flush();
+
+        expect(openai.signals[0]?.aborted).to.equal(true);
+        // Neither the collected tool call nor a follow-up turn may be started for a consumer that is gone.
+        expect(handler.called).to.equal(false);
+        expect(openai.calls).to.have.lengthOf(1);
     });
 
     it('terminates promptly on cancellation even while an uninterruptible tool handler is still running, and drops its late result', async () => {

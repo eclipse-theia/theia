@@ -28,7 +28,6 @@ import {
 import { CancellationToken, nls, unreachable, ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
-import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 import type {
     FunctionTool,
     Tool,
@@ -82,7 +81,7 @@ interface ToolCall {
 export class OpenAiResponseApiUtils {
 
     @inject(ToolCallExecutor)
-    toolCallExecutor: ToolCallExecutor;
+    protected readonly toolCallExecutor: ToolCallExecutor;
 
     @inject(ILogger) @named('ai-openai:OpenAiResponseApiUtils')
     protected readonly logger: ILogger;
@@ -98,7 +97,6 @@ export class OpenAiResponseApiUtils {
         model: string,
         modelUtils: OpenAiModelUtils,
         developerMessageSettings: DeveloperMessageSettings,
-        runnerOptions: RunnerOptions,
         modelId: string,
         isStreaming: boolean,
         cancellationToken?: CancellationToken
@@ -152,9 +150,9 @@ export class OpenAiResponseApiUtils {
             model,
             modelUtils,
             developerMessageSettings,
-            runnerOptions,
             modelId,
             this,
+            this.toolCallExecutor,
             this.logger,
             isStreaming,
             cancellationToken
@@ -401,7 +399,6 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
     // Id under which the current deferred-tool search is surfaced, so the running and finished parts merge in the UI.
     protected toolSearchCallId: string | undefined;
     protected iteration = 0;
-    protected readonly maxIterations: number;
     protected readonly tools: Tool[] | undefined;
     protected readonly instructions?: string;
     protected currentResponseText = '';
@@ -415,9 +412,9 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
         protected readonly model: string,
         protected readonly modelUtils: OpenAiModelUtils,
         protected readonly developerMessageSettings: DeveloperMessageSettings,
-        protected readonly runnerOptions: RunnerOptions,
         protected readonly modelId: string,
         protected readonly utils: OpenAiResponseApiUtils,
+        protected readonly toolCallExecutor: ToolCallExecutor,
         protected readonly logger: ILogger,
         protected readonly isStreaming: boolean,
         protected readonly cancellationToken?: CancellationToken
@@ -427,7 +424,6 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
         this.instructions = instructions;
         this.currentInput = input;
         this.tools = utils.convertToolsForResponseApi(request.tools, request.deferredToolIds, request.serverTools);
-        this.maxIterations = runnerOptions.maxChatCompletions || 100;
 
         // Start the first iteration
         this.startIteration();
@@ -435,7 +431,7 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
 
     protected async startIteration(): Promise<void> {
         try {
-            while (this.iteration < this.maxIterations && !this.cancellationToken?.isCancellationRequested) {
+            while (!this.done && !this.cancellationToken?.isCancellationRequested) {
                 this.logger.debug(`Starting Response API iteration ${this.iteration} with ${this.currentInput.length} input messages`);
 
                 await this.processStream();
@@ -455,7 +451,7 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
                 this.iteration++;
             }
 
-            // Max iterations reached
+            // Cancelled, or abandoned by the consumer.
             this.dispose();
         } catch (error) {
             this.terminalError = error instanceof Error ? error : new Error(String(error));
@@ -480,7 +476,7 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
             });
 
             for await (const event of stream) {
-                if (this.cancellationToken?.isCancellationRequested) {
+                if (this.done || this.cancellationToken?.isCancellationRequested) {
                     break;
                 }
                 await this.handleStreamEvent(event);
@@ -759,7 +755,7 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
     protected async executeToolCalls(): Promise<void> {
         const pending = [...this.currentToolCalls].filter(([, toolCall]) => !toolCall.executed);
 
-        await this.utils.toolCallExecutor.executeToolCalls(
+        await this.toolCallExecutor.executeToolCalls(
             pending.map(([itemId, toolCall]) => ({ id: itemId, name: toolCall.name, arguments: toolCall.arguments })),
             this.request.tools,
             {

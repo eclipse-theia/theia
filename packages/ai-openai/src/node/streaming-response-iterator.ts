@@ -56,6 +56,17 @@ export abstract class AbstractStreamingResponseIterator implements AsyncIterable
         }
     }
 
+    /**
+     * Terminates the iteration when the consumer abandons it, be it by breaking out of a `for await` loop or
+     * by that loop exiting with an error. Without this, the producer would keep requesting completions,
+     * executing tool calls and buffering parts that nobody will ever read.
+     */
+    return(): Promise<IterResult> {
+        this.dispose();
+        this.messageCache.length = 0;
+        return Promise.resolve({ done: true, value: undefined });
+    }
+
     protected handleIncoming(message: LanguageModelStreamResponsePart): void {
         if (this.messageCache.length && this.requestQueue.length) {
             throw new Error('Assertion error: cache and queue should not both be populated.');

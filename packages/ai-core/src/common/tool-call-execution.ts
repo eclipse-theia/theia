@@ -37,6 +37,14 @@ export interface ToolInvocation {
 }
 
 /**
+ * A tool reduced to what executing a call against it requires: the name that a {@link ToolInvocation}
+ * is matched against and the handler to invoke. A language model that has already converted the
+ * request's tools into its provider's own representation can recover just these two from that
+ * representation instead of reconstructing a whole {@link ToolRequest}.
+ */
+export type ExecutableTool = Pick<ToolRequest, 'name' | 'handler'>;
+
+/**
  * The normalized outcome of executing one tool call. Returned in the same order as the
  * input array, regardless of the order in which the calls actually completed.
  */
@@ -93,12 +101,13 @@ export interface ToolCallExecutor {
      * Executes all `toolCalls` concurrently and returns their outcomes in input order.
      *
      * @param toolCalls the tool calls collected for this turn (id + name + raw args)
-     * @param tools the tools available for this request (typically `request.tools`)
+     * @param tools the tools available for this request (typically `request.tools`), reduced to the
+     * {@link ExecutableTool} shape
      * @param options optional per-call hook and cancellation token
      */
     executeToolCalls(
         toolCalls: readonly ToolInvocation[],
-        tools: readonly ToolRequest[] | undefined,
+        tools: readonly ExecutableTool[] | undefined,
         options?: ToolCallExecutionOptions
     ): Promise<ToolCallOutcome[]>;
 }
@@ -113,7 +122,7 @@ export class ToolCallExecutorImpl implements ToolCallExecutor {
 
     async executeToolCalls(
         toolCalls: readonly ToolInvocation[],
-        tools: readonly ToolRequest[] | undefined,
+        tools: readonly ExecutableTool[] | undefined,
         options: ToolCallExecutionOptions = {}
     ): Promise<ToolCallOutcome[]> {
         return Promise.all(toolCalls.map(toolCall => this.executeToolCall(toolCall, tools, options)));
@@ -121,7 +130,7 @@ export class ToolCallExecutorImpl implements ToolCallExecutor {
 
     protected async executeToolCall(
         toolCall: ToolInvocation,
-        tools: readonly ToolRequest[] | undefined,
+        tools: readonly ExecutableTool[] | undefined,
         options: ToolCallExecutionOptions
     ): Promise<ToolCallOutcome> {
         const { id, name, arguments: args } = toolCall;

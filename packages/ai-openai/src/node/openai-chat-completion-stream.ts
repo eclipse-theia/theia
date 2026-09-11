@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { LanguageModelStreamResponsePart, ToolCallExecutor, ToolCallResult, UserRequest } from '@theia/ai-core';
-import { CancellationError, CancellationToken, ILogger } from '@theia/core';
+import { CancellationError, CancellationToken, Disposable, ILogger } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
 import { AbstractStreamingResponseIterator } from './streaming-response-iterator';
@@ -28,7 +28,7 @@ import {
 } from 'openai/resources';
 
 /** A chat completion stream as returned by `chat.completions.create({ stream: true })`. */
-type ChatCompletionChunkStream = AsyncIterable<ChatCompletionChunk> & { controller: AbortController };
+type ChatCompletionChunkStream = AsyncIterable<ChatCompletionChunk>;
 
 /** Accumulator for a single tool call streamed across multiple chunk deltas (keyed by `index`). */
 interface CollectedToolCall {
@@ -69,7 +69,13 @@ export interface ChatCompletionToolLoopOptions {
 export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingResponseIterator {
 
     protected messages: ChatCompletionMessageParam[];
-    protected currentStream?: ChatCompletionChunkStream;
+
+    /**
+     * Aborts the provider request. Its signal is handed to every `create()` call, so that it covers the
+     * request while it is still in flight just as well as the chunk stream that it eventually yields.
+     * The OpenAI SDK forwards the abort to the stream's own controller.
+     */
+    protected readonly abortController = new AbortController();
 
     @inject(ChatCompletionToolLoopOptions)
     protected readonly options: ChatCompletionToolLoopOptions;
@@ -83,6 +89,9 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
     @postConstruct()
     protected init(): void {
         this.messages = [...this.options.messages];
+        // Abort the provider request whenever the iterator terminates, including when the consumer
+        // abandons it (`return()`), so that we never leave a request running for nobody.
+        this.toDispose.push(Disposable.create(() => this.abortController.abort()));
         if (this.options.cancellationToken) {
             this.toDispose.push(this.options.cancellationToken.onCancellationRequested(() => this.cancel()));
         }
@@ -99,8 +108,8 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
      * instead of stalling until an uninterruptible handler eventually finishes.
      */
     protected cancel(): void {
-        this.currentStream?.controller.abort();
         if (this.done) {
+            // Already terminated: `dispose()` has aborted the request.
             return;
         }
         this.terminalError = new CancellationError();
@@ -109,10 +118,11 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
 
     protected async startIteration(): Promise<void> {
         try {
-            while (!this.cancellationRequested) {
+            while (!this.done && !this.cancellationRequested) {
                 const { assistantText, toolCalls } = await this.processStream();
-                if (this.cancellationRequested) {
-                    // Cancelled while the stream was wrapping up: don't start executing the collected tool calls.
+                if (this.done || this.cancellationRequested) {
+                    // Cancelled or abandoned while the stream was wrapping up: don't start executing the
+                    // collected tool calls.
                     break;
                 }
                 if (toolCalls.length === 0) {
@@ -122,16 +132,19 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
                 }
                 await this.executeAndAppendToolCalls(assistantText, toolCalls);
             }
-            // Cancelled before the model stopped requesting tools. `cancel()` (via the cancellation listener) has
-            // already disposed the iterator; this is a no-op unless cancellation was observed some other way.
+            // Cancelled or abandoned before the model stopped requesting tools. `cancel()` (via the cancellation
+            // listener) or `return()` has already disposed the iterator; this is a no-op unless cancellation was
+            // observed some other way.
             this.dispose();
         } catch (error) {
             if (this.cancellationRequested) {
                 this.terminalError = new CancellationError();
-            } else {
+            } else if (!this.done) {
                 this.logger.error('Error in OpenAI chat completion stream:', error);
                 this.terminalError = error instanceof Error ? error : new Error(String(error));
             }
+            // Otherwise the iterator was already terminated and the error is just the fall-out of the
+            // abort that `dispose()` triggered, so there is nobody left to report it to.
             this.dispose();
         }
     }
@@ -149,11 +162,13 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
             tool_choice: 'auto',
             ...this.options.settings
         } as ChatCompletionCreateParamsStreaming;
-        const stream = await this.options.openai.chat.completions.create(body, { maxRetries: this.options.maxRetries }) as unknown as ChatCompletionChunkStream;
-        this.currentStream = stream;
+        const stream = await this.options.openai.chat.completions.create(body, {
+            maxRetries: this.options.maxRetries,
+            signal: this.abortController.signal
+        }) as unknown as ChatCompletionChunkStream;
 
         for await (const chunk of stream) {
-            if (this.cancellationRequested) {
+            if (this.done || this.cancellationRequested) {
                 break;
             }
             if (chunk.usage) {

@@ -37,7 +37,6 @@ import { StreamingAsyncIterator } from './openai-streaming-iterator';
 import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream';
 import { OPENAI_PROVIDER_ID } from '../common';
 import type { FinalRequestOptions } from 'openai/internal/request-options';
-import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { openAiReasoningFor } from './openai-reasoning';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
@@ -121,16 +120,6 @@ export class OpenAiModel implements LanguageModel {
 
     /** Provider identifier, used to key per-provider settings (e.g. server tool selections) and the capabilities UI. */
     readonly vendor = 'openai';
-
-    /**
-     * The options for the OpenAI runner.
-     */
-    protected runnerOptions: RunnerOptions = {
-        // The maximum number of chat completions to return in a single request.
-        // Each function call counts as a chat completion.
-        // To support use cases with many function calls (e.g. @Coder), we set this to a high value.
-        maxChatCompletions: 100,
-    };
 
     @inject(OpenAiModelParams)
     protected readonly params: OpenAiModelParams;
@@ -338,7 +327,6 @@ export class OpenAiModel implements LanguageModel {
                 this.model,
                 this.openAiModelUtils,
                 this.developerMessageSettings,
-                this.runnerOptions,
                 this.id,
                 isStreamingRequest,
                 cancellationToken

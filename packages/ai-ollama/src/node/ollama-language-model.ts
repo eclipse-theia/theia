@@ -23,6 +23,7 @@ import {
     LanguageModelStreamResponsePart,
     ReasoningSettings,
     ReasoningSupport,
+    ExecutableTool,
     ToolCall,
     ToolCallExecutor,
     ToolCallResult,
@@ -396,16 +397,15 @@ export class OllamaModel implements LanguageModel {
 
     protected async processToolCalls(toolCalls: ToolCall[], chatRequest: ExtendedChatRequest, cancellation?: CancellationToken): Promise<ToolCall[]> {
         const tools: ToolWithHandler[] = chatRequest.tools ?? [];
-        const toolRequests: ToolRequest[] = tools.map(tool => ({
-            id: tool.function.name ?? '',
+        // The tools have already been converted for Ollama, so only the `ExecutableTool` shape is recovered here.
+        const executableTools: ExecutableTool[] = tools.map(tool => ({
             name: tool.function.name ?? '',
-            parameters: { type: 'object', properties: {} },
-            handler: async (argString, ctx) => (await tool.handler(argString, ctx)) as ToolCallResult
+            handler: async (argString: string, ctx?: ToolInvocationContext) => (await tool.handler(argString, ctx)) as ToolCallResult
         }));
 
         const results = await this.toolCallExecutor.executeToolCalls(
             toolCalls.map(call => ({ id: call.id ?? call.function!.name!, name: call.function!.name!, arguments: call.function!.arguments! })),
-            toolRequests,
+            executableTools,
             { cancellationToken: cancellation }
         );
 
