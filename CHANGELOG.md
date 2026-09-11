@@ -11,6 +11,7 @@
 <a name="breaking_changes_1.76.0">[Breaking Changes:](#breaking_changes_1.76.0)</a>
 
 - [core] the browser-only `EnvVariablesServer` stub now returns `file:///.theia` from `getConfigDirUri()` and `file:///` from `getHomeDirUri()`, instead of an empty string that resolved to the OPFS root. Browser-only application state moves from the OPFS root to `/.theia`, and the UTF-8 encoding override in `CommonFrontendContribution` is scoped to `/.theia` rather than the whole file tree. Consumers that wrap the value in a `URI` see no change, since `new URI('')` already resolved to `file:///`; this only matters for consumers that compare the raw string. Existing deployments are not migrated automatically; see `doc/Migration.md` [#17966](https://github.com/eclipse-theia/theia/pull/17966)
+- [plugin-ext] moved `PluginPaths` from `lib/main/node/paths/const` to `lib/main/common/paths/const` so the browser-only frontend can share it. The old module still re-exports it but is deprecated [#17966](https://github.com/eclipse-theia/theia/pull/17966)
 
 ## 1.75.0 - 8/27/2026
 
