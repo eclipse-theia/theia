@@ -16,6 +16,8 @@
 
 import { expect } from 'chai';
 import {
+    ChatResponseContent,
+    InteractiveContent,
     MarkdownChatResponseContentImpl,
     MutableChatRequestModel,
     MutableChatResponseModel,
@@ -320,6 +322,29 @@ describe('MutableChatResponseModel', () => {
             expect(response.pendingInteractions).to.deep.equal([toolCall]);
 
             toolCall.userInputHandled();
+            expect(response.pendingInteractions).to.have.lengthOf(0);
+        });
+
+        it('should stop tracking a content part whose whenResolved rejects', async () => {
+            const response = new MutableChatResponseModel('req-1');
+            let reject!: (reason?: unknown) => void;
+            const whenResolved = new Promise<void>((_, rej) => { reject = rej; });
+            const contentPart = {
+                kind: 'markdown',
+                interactionId: 'rejecting',
+                isResolved: false,
+                isAwaitingInteraction: true,
+                whenResolved
+            } as unknown as InteractiveContent & ChatResponseContent;
+
+            response.fireInteractionNeeded(contentPart);
+            expect(response.pendingInteractions).to.deep.equal([contentPart]);
+
+            // Custom InteractiveContent implementations may reject whenResolved; the model
+            // must still stop tracking the part and must not raise an unhandled rejection.
+            reject(new Error('interaction aborted'));
+            await whenResolved.catch(() => { /* expected rejection */ });
+
             expect(response.pendingInteractions).to.have.lengthOf(0);
         });
     });

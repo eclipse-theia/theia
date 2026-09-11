@@ -228,6 +228,51 @@ describe('UserInteractionTool', () => {
         });
     });
 
+    describe('current step across renderer mounts', () => {
+        // The wizard can be mounted twice for one interaction (collapsed delegation summary
+        // and expanded details). The tool keeps the current step so a new mount resumes
+        // where the previous one left off instead of restarting at step 0.
+        const multiStepArgs = (): string => JSON.stringify({
+            interactions: [
+                { title: 'One', message: 'first' },
+                { title: 'Two', message: 'second', options: [{ text: 'OK', value: 'ok' }] },
+                { title: 'Three', message: 'third' }
+            ]
+        });
+        const completedResult = (): UserInteractionResult => ({
+            completed: true,
+            steps: [{ title: 'One' }, { title: 'Two', value: 'ok' }, { title: 'Three' }]
+        });
+
+        it('should return undefined when no interaction is pending', () => {
+            expect(tool.getCurrentStep('unknown')).to.be.undefined;
+        });
+
+        it('should remember the recorded step while the interaction is pending', async () => {
+            const handler = tool.getTool().handler;
+            const handlerPromise = handler(multiStepArgs(), { toolCallId: 'call-step' });
+
+            tool.recordCurrentStep('call-step', 2);
+            expect(tool.getCurrentStep('call-step')).to.equal(2);
+
+            tool.completeInteraction('call-step', completedResult());
+            await handlerPromise;
+        });
+
+        it('should forget the step once the interaction resolved', async () => {
+            const handler = tool.getTool().handler;
+            const handlerPromise = handler(multiStepArgs(), { toolCallId: 'call-step-done' });
+            tool.recordCurrentStep('call-step-done', 1);
+
+            tool.completeInteraction('call-step-done', completedResult());
+            await handlerPromise;
+
+            expect(tool.getCurrentStep('call-step-done')).to.be.undefined;
+            tool.recordCurrentStep('call-step-done', 2);
+            expect(tool.getCurrentStep('call-step-done')).to.be.undefined;
+        });
+    });
+
     it('should resolve the handler with the result passed to completeInteraction', async () => {
         const handler = tool.getTool().handler;
         const handlerPromise = handler(singleStepArgs(), { toolCallId: 'call-1' });

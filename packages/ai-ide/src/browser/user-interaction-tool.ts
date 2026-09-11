@@ -51,6 +51,13 @@ interface PendingInteraction {
      * is canceled. If absent (no renderer mounted) the tool resolves with all steps skipped.
      */
     latestPartial?: UserInteractionResult;
+    /**
+     * Step the user is currently viewing, pushed by the renderer via
+     * {@link UserInteractionTool.recordCurrentStep}. Lets another mount of the same
+     * interaction (e.g. the collapsed delegation summary and the expanded details)
+     * resume at that step instead of restarting at the first one.
+     */
+    currentStep?: number;
 }
 
 // Schemas are module-level constants so they are built once at load time
@@ -218,6 +225,25 @@ export class UserInteractionTool implements ToolProvider {
             return;
         }
         pending.latestPartial = partial;
+    }
+
+    /**
+     * Remember the step the user is currently viewing so another mount of the same
+     * interaction resumes there. Calls for an unknown or already-resolved interaction
+     * are silently ignored.
+     */
+    recordCurrentStep(toolCallId: string, step: number): void {
+        const pending = this.pendingInteractions.get(toolCallId);
+        if (!pending || pending.resolved) {
+            return;
+        }
+        pending.currentStep = step;
+    }
+
+    /** The step last recorded via {@link recordCurrentStep}, or undefined if nothing is pending. */
+    getCurrentStep(toolCallId: string): number | undefined {
+        const pending = this.pendingInteractions.get(toolCallId);
+        return pending && !pending.resolved ? pending.currentStep : undefined;
     }
 
     protected resolveInteraction(toolCallId: string, result: UserInteractionResult): void {

@@ -3581,9 +3581,12 @@ export class MutableChatResponseModel implements ChatResponseModel {
     fireInteractionNeeded(contentPart: InteractiveContent & ChatResponseContent): void {
         if (!this._isComplete && !contentPart.isResolved && !this._pendingInteractions.includes(contentPart)) {
             this._pendingInteractions = [...this._pendingInteractions, contentPart];
-            contentPart.whenResolved.then(() => {
+            // Stop tracking on settlement either way: custom InteractiveContent implementations
+            // may reject whenResolved, and the rejection must not escape the model unhandled.
+            const stopTracking = (): void => {
                 this._pendingInteractions = this._pendingInteractions.filter(part => part !== contentPart);
-            });
+            };
+            contentPart.whenResolved.then(stopTracking, stopTracking);
         }
         this._onInteractionNeededEmitter.fire(contentPart);
     }
