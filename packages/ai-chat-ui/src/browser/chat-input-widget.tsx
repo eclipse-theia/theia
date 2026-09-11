@@ -39,15 +39,15 @@ import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional, postConstruct, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { IMouseEvent, Range } from '@theia/monaco-editor-core';
+import { IMouseEvent, IPosition } from '@theia/monaco-editor-core';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service';
 import { ChatInputAgentSuggestions } from './chat-input-agent-suggestions';
+import { computeRevealScrollDelta } from './chat-input-scroll-util';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
 import { ContextVariablePicker } from './context-variable-picker';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
-import { IModelDeltaDecoration } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 import { SuggestController } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggestController';
 import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-history';
@@ -2074,37 +2074,26 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 props.contextMenuCallback(e.event)
             );
 
-            const updateLineCounts = () => {
-                // We need the line numbers to allow scrolling by using the keyboard
-                const model = editor.getControl().getModel()!;
-                const lineCount = model.getLineCount();
-                const decorations: IModelDeltaDecoration[] = [];
-
-                for (let lineNumber = 1; lineNumber <= lineCount; lineNumber++) {
-                    decorations.push({
-                        range: new Range(lineNumber, 1, lineNumber, 1),
-                        options: {
-                            description: `line-number-${lineNumber}`,
-                            isWholeLine: false,
-                            className: `line-number-${lineNumber}`,
-                        }
-                    });
+            // The editor is laid out at its full content height and the surrounding container
+            // scrolls, so Monaco cannot reveal the cursor itself. Scroll the container to the
+            // visual row of the cursor; for wrapped lines this differs from the start of the model line.
+            const revealCursor = (position: IPosition) => {
+                const container = editorContainerRef.current;
+                const control = editor.getControl();
+                const editorNode = control.getDomNode();
+                if (!container || !editorNode) {
+                    return;
                 }
-
-                const lineNumbers = model.getAllDecorations().filter(predicate => predicate.options.description?.startsWith('line-number-'));
-                editor.getControl().removeDecorations(lineNumbers.map(d => d.id));
-                editor.getControl().createDecorationsCollection(decorations);
+                const rowTop = editorNode.getBoundingClientRect().top - container.getBoundingClientRect().top
+                    + control.getTopForPosition(position.lineNumber, position.column);
+                const rowBottom = rowTop + control.getOption(EditorOption.lineHeight);
+                const delta = computeRevealScrollDelta(rowTop, rowBottom, container.clientHeight);
+                if (delta !== 0) {
+                    container.scrollTop += delta;
+                }
             };
 
-            editor.getControl().getModel()?.onDidChangeContent(() => {
-                updateLineCounts();
-            });
-
-            editor.getControl().onDidChangeCursorPosition(e => {
-                const lineNumber = e.position.lineNumber;
-                const line = editor.getControl().getDomNode()?.querySelector(`.line-number-${lineNumber}`);
-                line?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
-            });
+            editor.getControl().onDidChangeCursorPosition(e => revealCursor(e.position));
 
             editorRef.current = editor;
             props.setEditorRef(editor);
@@ -2112,8 +2101,6 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             if (props.initialValue) {
                 setValue(props.initialValue);
             }
-
-            updateLineCounts();
         };
         createInputElement();
 
