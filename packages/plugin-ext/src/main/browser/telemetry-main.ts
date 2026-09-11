@@ -27,7 +27,6 @@ import { RPCProtocol } from '../../common/rpc-protocol';
  * `TelemetryMain` declares no `$` methods; the instance is registered with the RPC protocol so that the consent
  * subscription is disposed along with the channel.
  *
- * @since 1.76.0
  * @experimental
  */
 export class TelemetryMainImpl implements TelemetryMain, Disposable {
@@ -38,7 +37,7 @@ export class TelemetryMainImpl implements TelemetryMain, Disposable {
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TELEMETRY_EXT);
         const consentProvider = container.get<TelemetryConsentProvider>(TelemetryConsentProvider);
-        this.toDispose.push(consentProvider.onDidChangeTelemetryLevel(level => this.proxy.$setTelemetryLevel(level)));
+        this.toDispose.push(consentProvider.onDidChangeTelemetryLevel(level => this.proxy.$onDidChangeTelemetryLevel(level)));
     }
 
     dispose(): void {

@@ -262,7 +262,6 @@ export interface PluginManagerInitializeParams {
     /**
      * The telemetry level the plugin host starts with. Defaults to `off` when absent.
      *
-     * @since 1.76.0
      * @experimental
      */
     telemetryLevel?: TelemetryLevel
@@ -2374,10 +2373,9 @@ export interface TelemetryExt {
      * Applies the telemetry level the user consented to. Only changes are sent this way;
      * the initial level arrives with `PluginManagerInitializeParams`.
      *
-     * @since 1.76.0
      * @experimental
      */
-    $setTelemetryLevel(level: TelemetryLevel): void;
+    $onDidChangeTelemetryLevel(level: TelemetryLevel): void;
 }
 
 // endregion

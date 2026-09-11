@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 STMicroelectronics and others.
+// Copyright (C) 2026 JuliaHub, Inc. and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,9 +15,14 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { TelemetryLevel, isKindAllowedByLevel } from './telemetry-types';
+import { TelemetryLevel, isKindAllowedByLevel, isTelemetryEventKind } from './telemetry-types';
 
 describe('telemetry types', () => {
+    it('validates telemetry event kinds', () => {
+        expect(['usage', 'error', 'crash'].every(isTelemetryEventKind)).to.be.true;
+        expect(isTelemetryEventKind('invalid')).to.be.false;
+    });
+
     it('maps telemetry levels to event kinds', () => {
         const kinds = ['usage', 'error', 'crash'] as const;
         const levels: TelemetryLevel[] = ['off', 'crash', 'error', 'all'];

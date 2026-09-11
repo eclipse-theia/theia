@@ -15,10 +15,9 @@
 // *****************************************************************************
 
 import { isObject } from '@theia/core/lib/common/types';
-import {
-    TelemetryData, TelemetryEventKind, TelemetryReportOptions, TelemetryValue, isTelemetryData, isTelemetryEventKind, snapshotTelemetryData
-} from './telemetry-service';
+import { TelemetryData, TelemetryReportOptions, TelemetryValue, isTelemetryData, snapshotTelemetryData } from './telemetry-service';
 import { isValidTelemetryTopic } from './telemetry-topic';
+import { TelemetryEventKind, isTelemetryEventKind } from './telemetry-types';
 
 /** @experimental */
 export interface TelemetryEvent<T extends object = Record<string, TelemetryValue>> {
