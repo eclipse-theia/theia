@@ -36,7 +36,7 @@ export class AgentModeConfirmationServiceImpl implements AgentModeConfirmationSe
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
 
     isAcknowledged(): boolean {
-        return !!this.preferenceService.get<boolean>(PREFERENCE_NAME_AGENT_MODE_ENABLED, false);
+        return !!this.preferenceService.get(PREFERENCE_NAME_AGENT_MODE_ENABLED, false);
     }
 
     async requestConfirmation(request: MutableChatRequestModel): Promise<boolean> {

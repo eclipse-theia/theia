@@ -42,7 +42,7 @@ export function bindChatNodeToolbarActionContribution(bind: interfaces.Bind): vo
             getToolbarActions: (args: RequestNode | ResponseNode) => {
                 // Gated by a contributed setting (surfaced in the AI Configuration view): when disabled, the
                 // sample action is not rendered on response nodes.
-                if (isResponseNode(args) && preferences.get<boolean>(SAMPLE_CHAT_NODE_TOOLBAR_ENABLED_PREF, true)) {
+                if (isResponseNode(args) && preferences.get(SAMPLE_CHAT_NODE_TOOLBAR_ENABLED_PREF, true)) {
                     return [{
                         commandId: 'sample-command',
                         icon: 'codicon codicon-feedback',

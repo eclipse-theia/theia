@@ -144,7 +144,7 @@ describe('Workspace Functions Cancellation Tests', () => {
         } as unknown as FileService;
 
         const mockPreferenceService = {
-            get: <T>(_path: string, defaultValue: T) => defaultValue
+            get: <T>(_path: string, options?: { fallback?: T }) => options?.fallback
         };
 
         const mockMonacoWorkspace = {
@@ -286,7 +286,7 @@ describe('FileContentFunction.getArgumentsShortLabel', () => {
         } as unknown as FileService;
 
         const mockPreferenceService = {
-            get: <T>(_path: string, defaultValue: T) => defaultValue
+            get: <T>(_path: string, options?: { fallback?: T }) => options?.fallback
         };
 
         const mockMonacoWorkspace = {
@@ -347,7 +347,7 @@ describe('FileContentFunction handler', () => {
     let mockRead: () => Promise<unknown>;
     let mockReadStream: () => Promise<unknown>;
     let mockMonacoWorkspace: MonacoWorkspace;
-    let mockPreferenceService: { get: <T>(path: string, defaultValue: T) => T };
+    let mockPreferenceService: { get: <T>(path: string, optionsOrFallback?: { fallback?: T } | T) => T | undefined };
 
     const makeMockStream = (content: string) => {
         const handlers: Record<string, Function> = {};
@@ -405,7 +405,16 @@ describe('FileContentFunction handler', () => {
         } as unknown as FileService;
 
         mockPreferenceService = {
-            get: <T>(_path: string, defaultValue: T) => defaultValue
+            get: <T>(_path: string, optionsOrFallback?: { fallback?: T } | T) => {
+                if (optionsOrFallback === undefined) {
+                    return undefined;
+                }
+                // eslint-disable-next-line no-null/no-null
+                if (typeof optionsOrFallback === 'object' && optionsOrFallback !== null && !Array.isArray(optionsOrFallback) && 'fallback' in optionsOrFallback) {
+                    return (optionsOrFallback as { fallback?: T }).fallback;
+                }
+                return optionsOrFallback as T;
+            }
         };
 
         mockMonacoWorkspace = {
@@ -616,7 +625,7 @@ describe('FileContentFunction handler', () => {
 
     it('uses custom preference value for size limit', async () => {
         // Set a very small limit of 1 KB
-        mockPreferenceService.get = <T>(_path: string, _defaultValue: T) => 1 as unknown as T;
+        mockPreferenceService.get = <T>(_path: string, _optionsOrFallback?: { fallback?: T } | T) => 1 as unknown as T;
 
         const content = 'x'.repeat(2 * 1024); // 2 KB
         mockRead = async () => ({ value: content });
@@ -775,7 +784,7 @@ describe('FindFilesByPattern.getArgumentsShortLabel', () => {
         } as unknown as FileService;
 
         const mockPreferenceService = {
-            get: <T>(_path: string, defaultValue: T) => defaultValue
+            get: <T>(_path: string, options?: { fallback?: T }) => options?.fallback
         };
 
         container.bind(ILogger).to(MockLogger);
