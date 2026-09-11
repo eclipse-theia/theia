@@ -12,17 +12,17 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
-// ****************************************************************************
+// *****************************************************************************
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
-// `FrontendHostedPluginServer` transitively imports `Endpoint` via `@theia/core/lib/browser`,
+// `BrowserOnlyHostedPluginServer` transitively imports `Endpoint` via `@theia/core/lib/browser`,
 // which touches `document` at load time, so JSDOM is enabled before it for that import.
 let disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { DeployedPlugin, PluginType } from '../../common';
-import { FrontendHostedPluginServer, PluginLocalOptions } from './frontend-hosted-plugin-server';
+import { BrowserOnlyHostedPluginServer, BrowserOnlyPluginOptions } from './browser-only-hosted-plugin-server';
 
 disableJSDOM();
 
@@ -39,7 +39,7 @@ function plugin(name: string, version = '1.0.0'): DeployedPlugin {
     } as DeployedPlugin;
 }
 
-describe('FrontendHostedPluginServer', () => {
+describe('BrowserOnlyHostedPluginServer', () => {
 
     // `fetchDeployedPlugins` builds the list URL through `Endpoint`, which reads `self.location`.
     before(() => { disableJSDOM = enableJSDOM(); });
@@ -56,13 +56,13 @@ describe('FrontendHostedPluginServer', () => {
         }) as typeof globalThis.fetch;
     }
 
-    function createServer(options?: PluginLocalOptions): FrontendHostedPluginServer {
+    function createServer(options?: BrowserOnlyPluginOptions): BrowserOnlyHostedPluginServer {
         const container = new Container();
-        container.bind(FrontendHostedPluginServer).toSelf().inSingletonScope();
+        container.bind(BrowserOnlyHostedPluginServer).toSelf().inSingletonScope();
         if (options) {
-            container.bind(PluginLocalOptions).toConstantValue(options);
+            container.bind(BrowserOnlyPluginOptions).toConstantValue(options);
         }
-        return container.get(FrontendHostedPluginServer);
+        return container.get(BrowserOnlyHostedPluginServer);
     }
 
     afterEach(() => {

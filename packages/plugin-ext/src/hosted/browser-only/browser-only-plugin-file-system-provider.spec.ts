@@ -12,10 +12,10 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
-// ****************************************************************************
+// *****************************************************************************
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
-// `HostedPluginFileSystemProvider` transitively imports `Endpoint` via `@theia/core/lib/browser`,
+// `BrowserOnlyPluginFileSystemProvider` transitively imports `Endpoint` via `@theia/core/lib/browser`,
 // which touches `document` at load time, so JSDOM is enabled before it for that import.
 let disableJSDOM = enableJSDOM();
 
@@ -23,11 +23,11 @@ import { expect } from 'chai';
 import { URI } from '@theia/core';
 import { FileSystemProviderErrorCode } from '@theia/filesystem/lib/common/files';
 import { PLUGINS_SCHEME } from '@theia/plugin-utils/lib/common/constants';
-import { HostedPluginFileSystemProvider } from './hosted-plugin-file-system-provider';
+import { BrowserOnlyPluginFileSystemProvider } from './browser-only-plugin-file-system-provider';
 
 disableJSDOM();
 
-describe('HostedPluginFileSystemProvider', () => {
+describe('BrowserOnlyPluginFileSystemProvider', () => {
 
     // The provider builds asset URLs through `Endpoint`, which reads `self.location`.
     before(() => { disableJSDOM = enableJSDOM(); });
@@ -60,8 +60,8 @@ describe('HostedPluginFileSystemProvider', () => {
         return new URI(`${PLUGINS_SCHEME}:/`).resolve(path);
     }
 
-    function createProvider(): HostedPluginFileSystemProvider {
-        return new HostedPluginFileSystemProvider();
+    function createProvider(): BrowserOnlyPluginFileSystemProvider {
+        return new BrowserOnlyPluginFileSystemProvider();
     }
 
     it('rejects a resource whose scheme is not the plugin asset scheme', async () => {

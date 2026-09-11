@@ -12,7 +12,7 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
-// ****************************************************************************
+// *****************************************************************************
 
 import { expect } from 'chai';
 import { ILogger } from '@theia/core';
@@ -20,7 +20,7 @@ import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Container } from '@theia/core/shared/inversify';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
-import { FrontendPluginServer } from './frontend-plugin-server';
+import { BrowserOnlyPluginServer } from './browser-only-plugin-server';
 import { installFakeLockManager as installNavigatorLocks } from './test/navigator-locks-test-util';
 
 class InMemoryStorageService implements StorageService {
@@ -65,17 +65,17 @@ function installFakeLockManager(): () => void {
     return installNavigatorLocks(new FakeLockManager());
 }
 
-describe('FrontendPluginServer', () => {
+describe('BrowserOnlyPluginServer', () => {
 
     let storageService: InMemoryStorageService;
 
-    function createServer(): FrontendPluginServer {
+    function createServer(): BrowserOnlyPluginServer {
         const container = new Container();
-        container.bind(FrontendPluginServer).toSelf().inSingletonScope();
+        container.bind(BrowserOnlyPluginServer).toSelf().inSingletonScope();
         container.bind(ILogger).to(MockLogger);
         container.bind(StorageService).toConstantValue(storageService);
         container.bind(PluginPathsService).toConstantValue(pluginPathsService);
-        return container.get(FrontendPluginServer);
+        return container.get(BrowserOnlyPluginServer);
     }
 
     beforeEach(() => {

@@ -12,7 +12,7 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
-// ****************************************************************************
+// *****************************************************************************
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core';
@@ -48,9 +48,9 @@ const SESSION_LOCK_PREFIX = 'theia:plugin-log-session:';
  * directory, which lives on the same (browser-local) file system as the workspace.
  */
 @injectable()
-export class FrontendPluginPathService implements PluginPathsService {
+export class BrowserOnlyPluginPathsService implements PluginPathsService {
 
-    @inject(ILogger) @named('plugin-ext:FrontendPluginPathService')
+    @inject(ILogger) @named('plugin-ext:BrowserOnlyPluginPathsService')
     protected readonly logger: ILogger;
 
     @inject(EnvVariablesServer)
@@ -178,7 +178,7 @@ export class FrontendPluginPathService implements PluginPathsService {
         }
         const stillOpen = await this.queryOpenSessions();
         if (!stillOpen) {
-            FrontendPluginPathService.missingLocksWarning.warn(this.logger, 'Web Locks API unavailable: cannot tell a still-open tab\'s log folder from a '
+            BrowserOnlyPluginPathsService.missingLocksWarning.warn(this.logger, 'Web Locks API unavailable: cannot tell a still-open tab\'s log folder from a '
                 + 'completed session; pruning old plugin log folders by count alone.');
         }
         await Promise.all(prunable
