@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2026 Safi Seid-Ahmad, K2view and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,17 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CustomAgentPromptVariant } from '@theia/ai-core';
-import { CustomChatAgent } from '../common';
-
-export const CustomAgentFactory = Symbol('CustomAgentFactory');
-export type CustomAgentFactory = (
-    id: string,
-    name: string,
-    description: string,
-    prompt: string,
-    defaultLLM: string,
-    showInChat?: boolean,
-    promptVariants?: CustomAgentPromptVariant[],
-    turnPrompt?: string
-) => CustomChatAgent;
+/**
+ * Id of the per-turn fragment listing the files the user attached to the chat. Agents send it inside the user turn
+ * (see `AbstractChatAgent.turnPromptId`) so that attaching or removing a file does not rewrite the system prompt.
+ */
+export const CONTEXT_FILES_HINT_FRAGMENT_ID = 'context-files-hint';
+/** Id of Coder's turn prompt: open editors, attached files and the change set summary. */
+export const CODER_TURN_PROMPT_ID = 'coder-turn-prompt';
+/** Id of Architect's turn prompt: open editors and attached files. */
+export const ARCHITECT_TURN_PROMPT_ID = 'architect-turn-prompt';

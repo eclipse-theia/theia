@@ -19,6 +19,7 @@ import { LanguageModelRequirement } from '@theia/ai-core/lib/common';
 import { ILogger, nls } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { PR_REVIEW_SYSTEM_PROMPT_ID, prReviewSystemPrompt } from './pr-review-prompt-template';
+import { CONTEXT_FILES_HINT_FRAGMENT_ID } from '../../common/turn-prompt-fragment-ids';
 
 export const PRReviewAgentId = 'pr-reviewer';
 
@@ -41,5 +42,6 @@ export class PRReviewAgent extends AbstractStreamParsingChatAgent {
     override iconClass: string = 'codicon codicon-git-pull-request-go-to-changes';
     override prompts = [{ id: PR_REVIEW_SYSTEM_PROMPT_ID, defaultVariant: prReviewSystemPrompt, variants: [] }];
     protected override systemPromptId: string = PR_REVIEW_SYSTEM_PROMPT_ID;
+    protected override turnPromptId: string | undefined = CONTEXT_FILES_HINT_FRAGMENT_ID;
     override tags: string[] = [...this.tags, 'Alpha'];
 }

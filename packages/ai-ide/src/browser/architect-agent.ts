@@ -27,6 +27,7 @@ import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands';
 import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
 import { ArchitectAgentId } from '../common/agent-ids';
+import { ARCHITECT_TURN_PROMPT_ID } from '../common/turn-prompt-fragment-ids';
 
 export { ArchitectAgentId };
 
@@ -70,6 +71,7 @@ export class ArchitectAgent extends AbstractModeAwareChatAgent {
 
     override prompts = [architectSystemVariants];
     protected override systemPromptId: string | undefined = architectSystemVariants.id;
+    protected override turnPromptId: string | undefined = ARCHITECT_TURN_PROMPT_ID;
 
     override async invoke(request: MutableChatRequestModel): Promise<void> {
         await super.invoke(request);

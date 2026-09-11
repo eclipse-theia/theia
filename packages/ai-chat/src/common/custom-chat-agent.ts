@@ -35,6 +35,11 @@ export class CustomChatAgent extends AbstractStreamParsingChatAgent {
         this.prompts.push({ id: this.systemPromptId, defaultVariant: { id: `${this.name}_prompt`, template: prompt } });
     }
 
+    /** Id of the fragment sent with every user turn, see `AbstractChatAgent.turnPromptId`. */
+    set turnPrompt(fragmentId: string | undefined) {
+        this.turnPromptId = fragmentId;
+    }
+
     /**
      * Replace the variants of this agent's prompt set with the given list. Must be called
      * AFTER {@link prompt} has been set, since it mutates the most recently pushed prompt set.

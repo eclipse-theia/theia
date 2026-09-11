@@ -712,3 +712,19 @@ describe('PromptService variable arguments', () => {
         expect(prompt?.text).to.equal('Read arg=undefined');
     });
 });
+
+describe('CustomAgentDescription turnPrompt', () => {
+    const base = { id: 'foo', name: 'Foo', description: 'd', prompt: 'p', defaultLLM: 'default/universal' };
+
+    it('accepts an absent or string turnPrompt and rejects other types', () => {
+        expect(CustomAgentDescription.is(base)).to.equal(true);
+        expect(CustomAgentDescription.is({ ...base, turnPrompt: 'open-editors-hint' })).to.equal(true);
+        expect(CustomAgentDescription.is({ ...base, turnPrompt: 42 })).to.equal(false);
+    });
+
+    it('takes turnPrompt into account for equality', () => {
+        expect(CustomAgentDescription.equals({ ...base, turnPrompt: 'a' }, { ...base, turnPrompt: 'a' })).to.equal(true);
+        expect(CustomAgentDescription.equals({ ...base, turnPrompt: 'a' }, { ...base, turnPrompt: 'b' })).to.equal(false);
+        expect(CustomAgentDescription.equals({ ...base, turnPrompt: 'a' }, base)).to.equal(false);
+    });
+});
