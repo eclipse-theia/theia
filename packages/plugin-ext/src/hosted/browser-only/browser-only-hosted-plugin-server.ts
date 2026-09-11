@@ -19,7 +19,6 @@ import { LIST_JSON, PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/con
 import { DeployedPlugin, ExtPluginApi, HostedPluginClient, HostedPluginServer, PluginIdentifiers } from '../../common';
 import { Event, RpcConnectionEventEmitter } from '@theia/core';
 import { Endpoint } from '@theia/core/lib/browser';
-import { memoizeAsync } from './async-memoize';
 
 export const BrowserOnlyPluginOptions = Symbol('BrowserOnlyPluginOptions');
 /**
@@ -46,9 +45,12 @@ export class BrowserOnlyHostedPluginServer implements HostedPluginServer, RpcCon
 
     protected client: HostedPluginClient | undefined;
 
+    protected plugins: Promise<DeployedPlugin[]> | undefined;
+
     /** The statically deployed plugins, from {@link BrowserOnlyPluginOptions} if bound, otherwise from the list the build wrote. */
-    protected readonly getPlugins = memoizeAsync((): Promise<DeployedPlugin[]> =>
-        this.options ? Promise.resolve(this.options.pluginMetadata) : this.fetchDeployedPlugins());
+    protected getPlugins(): Promise<DeployedPlugin[]> {
+        return this.plugins ??= this.options ? Promise.resolve(this.options.pluginMetadata) : this.fetchDeployedPlugins();
+    }
 
     protected async fetchDeployedPlugins(): Promise<DeployedPlugin[]> {
         // Built through `Endpoint`, like `PluginIconService#toPluginUrl`, so this keeps working
