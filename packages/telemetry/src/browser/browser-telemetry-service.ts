@@ -17,11 +17,12 @@
 import { FrontendIdProvider } from '@theia/core/lib/browser/messaging/frontend-id-provider';
 import { ILogger } from '@theia/core/lib/common';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { TelemetryConsentProvider, isKindAllowedByLevel } from '../common/telemetry-consent-provider';
+import { TelemetryConsentProvider } from '../common/telemetry-consent-provider';
 import {
     TelemetryRpc, createTelemetryEvent, describeTelemetryTopic, isValidTelemetryEvent, snapshotTelemetryEvent
 } from '../common/telemetry-protocol';
 import { TelemetryData, TelemetryReportOptions, TelemetryService } from '../common/telemetry-service';
+import { isKindAllowedByLevel } from '../common/telemetry-types';
 import { matchesTelemetryTopic } from '../common/telemetry-topic';
 
 @injectable()
