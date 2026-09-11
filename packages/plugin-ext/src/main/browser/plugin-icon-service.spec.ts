@@ -22,6 +22,7 @@ let disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
 import { URI } from '@theia/core/shared/vscode-uri';
+import { PLUGINS_SCHEME } from '@theia/plugin-utils/lib/common/constants';
 import { PluginIconService } from './plugin-icon-service';
 
 disableJSDOM();
@@ -49,27 +50,27 @@ describe('PluginIconService', () => {
 
     describe('toPluginRelativePath', () => {
 
-        it('drops the plugin id segment of a hostedPlugin URI and keeps the rest verbatim', () => {
-            const uri = URI.parse('hostedPlugin:/acme_ext/dist/font.woff');
+        it('drops the plugin id segment of a plugin asset URI and keeps the rest verbatim', () => {
+            const uri = URI.parse(`${PLUGINS_SCHEME}:/acme_ext/dist/font.woff`);
             expect(service.callToPluginRelativePath(uri)).to.equal('dist/font.woff');
         });
 
-        it('resolves a deeply nested path under a hostedPlugin URI', () => {
-            const uri = URI.parse('hostedPlugin:/acme_ext/a/b/c/d/font.woff');
+        it('resolves a deeply nested path under a plugin asset URI', () => {
+            const uri = URI.parse(`${PLUGINS_SCHEME}:/acme_ext/a/b/c/d/font.woff`);
             expect(service.callToPluginRelativePath(uri)).to.equal('a/b/c/d/font.woff');
         });
 
-        it('resolves a single-segment path under a hostedPlugin URI', () => {
-            const uri = URI.parse('hostedPlugin:/acme_ext/font.woff');
+        it('resolves a single-segment path under a plugin asset URI', () => {
+            const uri = URI.parse(`${PLUGINS_SCHEME}:/acme_ext/font.woff`);
             expect(service.callToPluginRelativePath(uri)).to.equal('font.woff');
         });
 
-        it('decodes characters that were percent-encoded in a hostedPlugin URI', () => {
-            const uri = URI.parse('hostedPlugin:/acme_ext/dist/my%20font%23file.woff');
+        it('decodes characters that were percent-encoded in a plugin asset URI', () => {
+            const uri = URI.parse(`${PLUGINS_SCHEME}:/acme_ext/dist/my%20font%23file.woff`);
             expect(service.callToPluginRelativePath(uri)).to.equal('dist/my font#file.woff');
         });
 
-        it('falls back to cutting a backend (non-hostedPlugin) path at its `extension` segment', () => {
+        it('falls back to cutting a backend (non-plugin-asset) path at its `extension` segment', () => {
             const uri = URI.parse('file:///plugins/acme.ext-1.0.0/extension/dist/font.woff');
             expect(service.callToPluginRelativePath(uri)).to.equal('dist/font.woff');
         });

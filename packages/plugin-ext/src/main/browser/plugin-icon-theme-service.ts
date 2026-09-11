@@ -25,7 +25,7 @@ import * as jsoncparser from 'jsonc-parser';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { IconThemeService, IconTheme, IconThemeDefinition } from '@theia/core/lib/browser/icon-theme-service';
 import { IconThemeContribution, DeployedPlugin, UiTheme, getPluginId } from '../../common/plugin-protocol';
-import { PLUGINS_BASE_PATH, PLUGINS_SCHEME } from '@theia/plugin-utils/lib/common/constants';
+import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
 import { encodePluginAssetPath } from '@theia/plugin-utils/lib/common/plugin-model';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -147,19 +147,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
     protected init(): void {
         Object.assign(this, this.definition);
         this.locationUri = new URI(this.uri).parent;
-        this.packageRootUri = this.toPackageRootUri();
-    }
-
-    /**
-     * Browser-only builds address plugin assets as `hostedPlugin:/<id>/...` while their `packageUri`
-     * stays the static `hostedPlugin/<id>/` path, which would never line up with those URIs. Rebuild
-     * the root in the same shape so the icon paths below stay relative to it.
-     */
-    protected toPackageRootUri(): URI {
-        if (this.locationUri.scheme === PLUGINS_SCHEME) {
-            return new URI(`${PLUGINS_SCHEME}:/${this.pluginId}/`);
-        }
-        return new URI(this.packageUri);
+        this.packageRootUri = new URI(this.packageUri);
     }
 
     dispose(): void {

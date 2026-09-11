@@ -217,12 +217,12 @@ describe('plugin-model', () => {
             const model = buildModelForTheia(manifest({
                 name: 'Sample',
                 publisher: 'Acme',
-                packageUri: 'hostedPlugin/acme_Sample/'
+                packageUri: `${PLUGINS_SCHEME}:/acme_Sample/`
             }));
             expect(model.id).to.equal('acme.sample');
             expect(model.engine).to.deep.equal({ type: 'theiaPlugin', version: '*' });
             expect(model.displayName).to.equal('Test Extension');
-            expect(model.packageUri).to.equal('hostedPlugin/acme_Sample/');
+            expect(model.packageUri).to.equal(`${PLUGINS_SCHEME}:/acme_Sample/`);
         });
 
         it('builds vscode model with icon url and web entry point', () => {

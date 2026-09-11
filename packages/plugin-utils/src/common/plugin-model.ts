@@ -84,7 +84,7 @@ export function toPluginUrl(pck: PluginIdentifierSource, relativePath: string): 
 }
 
 /**
- * Like {@link toPluginUrl}, but as a `hostedPlugin:` URI for the assets read through the
+ * Like {@link toPluginUrl}, but as a `PLUGINS_SCHEME` URI for the assets read through the
  * `FileService` (color themes, icon themes, icon fonts). A bare relative path has no scheme for it
  * to resolve.
  */

@@ -70,8 +70,8 @@ export class PluginIconService implements Disposable {
 
     /**
      * With a backend the font sits in the extracted VSIX, so the path has to be cut at its
-     * `extension` segment. Browser-only emits `hostedPlugin:/<id>/<path>` instead, where everything
-     * past the plugin id already is the path relative to the plugin root.
+     * `extension` segment. Browser-only emits `<PLUGINS_SCHEME>:/<id>/<path>` instead, where
+     * everything past the plugin id already is the path relative to the plugin root.
      */
     protected toPluginRelativePath(fontUri: URI): string {
         if (fontUri.scheme === PLUGINS_SCHEME) {
