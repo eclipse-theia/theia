@@ -28,8 +28,8 @@ import {
 import { mergeReasoningSettings } from '@theia/ai-core/lib/browser/frontend-language-model-service';
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
-import { AI_SHOW_SETTINGS_COMMAND, FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
-import { AISettingsService, PromptService } from '@theia/ai-core/lib/common';
+import { AI_SHOW_SETTINGS_COMMAND, AIActivationService, FavoriteModelsService, FrontendVariableService } from '@theia/ai-core/lib/browser';
+import { AISettingsService, groupModelsByProvider, LanguageModelAliasRegistry, PromptService } from '@theia/ai-core/lib/common';
 import { CommandService, DisposableCollection, Emitter, InMemoryResources, MessageService, URI, nls, Disposable, ILogger } from '@theia/core';
 import { ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
@@ -83,6 +83,13 @@ type Cancel = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSet = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSetElement = (requestModel: ChatRequestModel, index: number) => void;
 type OpenContextElement = (request: AIVariableResolutionRequest) => unknown;
+
+/**
+ * Id of the Models category of the AI Configuration view (`AiConfigurationCategoryId.MODELS`), used to
+ * open it from the model selector. Not imported: that id is declared in `@theia/ai-core-ui`, which this
+ * package does not depend on.
+ */
+const AI_CONFIGURATION_MODELS_CATEGORY_ID = 'models';
 
 export const AIChatInputConfiguration = Symbol('AIChatInputConfiguration');
 export interface AIChatInputConfiguration {
@@ -181,6 +188,12 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(FrontendLanguageModelRegistry)
     protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
+
+    @inject(FavoriteModelsService)
+    protected readonly favoriteModels: FavoriteModelsService;
+
+    @inject(LanguageModelAliasRegistry)
+    protected readonly aliasRegistry: LanguageModelAliasRegistry;
 
     @inject(PreferenceService) @optional()
     protected readonly preferenceService: PreferenceService | undefined;
@@ -586,6 +599,17 @@ export class AIChatInputWidget extends ReactWidget {
         return session?.model.settings?.commonSettings?.modelId;
     }
 
+    /**
+     * Opens the Models page of the AI Configuration view, which is where the models this list shows are
+     * chosen. The target is the id of that view's Models category (`AiConfigurationCategoryId.MODELS`),
+     * passed as a string because this package does not depend on the package that declares it.
+     */
+    protected openModelConfiguration = (): void => {
+        this.commandService.executeCommand(AI_SHOW_SETTINGS_COMMAND.id, AI_CONFIGURATION_MODELS_CATEGORY_ID).catch(error => {
+            this.logger.error(`Failed to execute '${AI_SHOW_SETTINGS_COMMAND.id}' from the model selector`, error);
+        });
+    };
+
     /** Sets (or clears, with `undefined`) the per-session model override for the active session. */
     protected handleSessionModelChange = (modelId: string | undefined): void => {
         const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
@@ -609,16 +633,27 @@ export class AIChatInputWidget extends ReactWidget {
         this.update();
     };
 
+    /**
+     * The models the selector offers: the favorites, i.e. the newest models of each provider plus
+     * whatever the user starred, and the session's own model even when it is neither. Discovery
+     * registers every release a provider offers, which is a list far too long to pick from here; the
+     * provider's page in the AI Configuration view is where the rest can be browsed and starred.
+     */
+    protected getSelectableModels(currentModelId: string | undefined): LanguageModel[] {
+        return this.availableModels.filter(model => this.favoriteModels.isFavorite(model.id) || model.id === currentModelId);
+    }
+
     /** Builds the props for the per-session model selector. */
     protected getModelSelectorProps(): ModelSelectorWidgetProps {
         const currentModelId = this.getSessionModelOverride();
         const defaultLabel = this.resolvedDefaultLabel
             ?? nls.localize('theia/ai/chat-ui/agentDefaultModel', 'agent default');
         return {
-            models: this.availableModels,
+            models: this.getSelectableModels(currentModelId),
             currentModelId,
             defaultLabel,
             onModelChange: this.handleSessionModelChange,
+            onConfigure: this.openModelConfiguration,
         };
     }
 
@@ -1112,6 +1147,14 @@ export class AIChatInputWidget extends ReactWidget {
             if (this.receivingAgent) {
                 this.updateReasoningSupport(this.receivingAgent.agentId);
             }
+        }));
+        this.toDispose.push(this.favoriteModels.onDidChange(() => this.update()));
+        // An agent's default is usually an alias, so editing which model the alias points at changes what
+        // "Default" resolves to and with it the model-dependent state. The registry's own change event
+        // does not cover this: the models it holds are the same ones, only the alias moved.
+        this.toDispose.push(this.aliasRegistry.onDidChange(() => {
+            this.updateResolvedDefaultModel();
+            this.updateReasoningSupport(this.receivingAgent?.agentId);
         }));
         // When the agent's model is changed in the AI configuration, refresh the selector's resolved
         // default and the model-dependent state (reasoning support, context size, server tools, vendor).
@@ -1849,6 +1892,8 @@ interface ModelSelectorWidgetProps {
     defaultLabel: string;
     /** Set the session override (or clear it with `undefined`). */
     onModelChange: (modelId: string | undefined) => void;
+    /** Opens the page that decides which models this list shows. */
+    onConfigure: () => void;
 }
 
 interface ChatInputProperties {
@@ -2609,6 +2654,7 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
                         currentModelId={modelSelectorProps.currentModelId}
                         defaultLabel={modelSelectorProps.defaultLabel}
                         onModelChange={modelSelectorProps.onModelChange}
+                        onConfigure={modelSelectorProps.onConfigure}
                         disabled={!isEnabled}
                         hoverService={hoverService}
                     />
@@ -2777,6 +2823,8 @@ interface ChatModelSelectorProps {
     currentModelId?: string;
     defaultLabel: string;
     onModelChange: (modelId: string | undefined) => void;
+    /** Opens the page that decides which models this list shows. */
+    onConfigure: () => void;
     disabled?: boolean;
     hoverService: HoverService;
 }
@@ -2784,33 +2832,51 @@ interface ChatModelSelectorProps {
 /**
  * Per-session model selector. The first option ("Default") reverts to the agent's configured
  * model that new sessions use; picking any other model overrides it for the current session only.
+ *
+ * It lists the models marked for it rather than every model a provider offers, and ends with the way
+ * to change that, so a list this short is not mistaken for all there is.
  */
 const ChatModelSelector: React.FunctionComponent<ChatModelSelectorProps> = React.memo(({
-    models, currentModelId, defaultLabel, onModelChange, disabled, hoverService
+    models, currentModelId, defaultLabel, onModelChange, onConfigure, disabled, hoverService
 }) => {
     // Sentinel value for the "use the agent default" option (SelectComponent needs a non-empty value).
     const defaultValueId = '__default__';
+    // …and for the entry that opens the configuration instead of selecting anything.
+    const configureValueId = '__configure__';
+    // Picking the configure entry leaves the model as it was, but the select has already taken it as its
+    // selection; remounting it puts the session's own model back in the field.
+    const [selectorGeneration, setSelectorGeneration] = React.useState(0);
     const isOverridden = !!currentModelId;
     // The override points at a model that is no longer ready/available. Guard on a loaded model list so
     // the override is not flagged as unavailable during the initial (still empty) load.
     const isUnavailable = isOverridden && models.length > 0
         && !models.some(model => model.id === currentModelId && model.status.status === 'ready');
     const options: SelectOption[] = React.useMemo(() => {
-        const readyModels = models.filter(model => model.status.status === 'ready')
-            // Stable, predictable order: the registry adds models as their async metadata resolves.
-            .sort((left, right) => left.id.localeCompare(right.id));
         const opts: SelectOption[] = [
             {
                 value: defaultValueId,
                 label: nls.localizeByDefault('Default'),
                 detail: defaultLabel
-            },
-            ...readyModels.map(model => ({
+            }
+        ];
+        // A rule between the providers, their models newest first: the models of one provider belong
+        // together, and the registry adds them in whatever order their metadata resolves. Models whose
+        // provider reports no release date fall back to alphabetical.
+        groupModelsByProvider(models.filter(model => model.status.status === 'ready')).forEach(({ models: providerModels }) => {
+            opts.push({ separator: true });
+            opts.push(...providerModels.map(model => ({
                 value: model.id,
                 label: model.id,
                 detail: model.name && model.name !== model.id ? model.name : undefined
-            }))
-        ];
+            })));
+        });
+        // The list is deliberately short — it holds the models marked for it, not every model a provider
+        // offers — so it says where the rest are rather than leaving the absence to be puzzled over.
+        opts.push({ separator: true });
+        opts.push({
+            value: configureValueId,
+            label: nls.localize('theia/ai/chat-ui/manageModels', 'Manage models…')
+        });
         // Keep the active override visible even if its model is no longer ready/available, so the
         // selector reflects the stored modelId instead of silently falling back to "Default". Once we
         // know it is unavailable, show it as a disabled (struck-through) entry that cannot be reselected.
@@ -2826,8 +2892,15 @@ const ChatModelSelector: React.FunctionComponent<ChatModelSelectorProps> = React
     }, [models, defaultLabel, currentModelId, isUnavailable]);
 
     const handleChange = React.useCallback(
-        (option: SelectOption) => onModelChange(!option.value || option.value === defaultValueId ? undefined : option.value),
-        [onModelChange]
+        (option: SelectOption) => {
+            if (option.value === configureValueId) {
+                setSelectorGeneration(generation => generation + 1);
+                onConfigure();
+                return;
+            }
+            onModelChange(!option.value || option.value === defaultValueId ? undefined : option.value);
+        },
+        [onModelChange, onConfigure]
     );
 
     const title = isUnavailable
@@ -2839,6 +2912,7 @@ const ChatModelSelector: React.FunctionComponent<ChatModelSelectorProps> = React
     return (
         <span className='theia-ChatInput-ModelSelector-container' onMouseEnter={hoverHandler(hoverService, title)}>
             <SelectComponent
+                key={selectorGeneration}
                 className={`theia-ChatInput-ModelSelector${isOverridden ? ' session-override' : ''}${disabled ? ' disabled' : ''}`}
                 options={options}
                 defaultValue={currentModelId ?? defaultValueId}

@@ -30,10 +30,10 @@ import * as React from '@theia/core/shared/react';
 import { flushSync } from '@theia/core/shared/react-dom';
 import { createRoot } from '@theia/core/shared/react-dom/client';
 import { AiConfigurationItemRow } from './ai-configuration-item-row';
-import { AiConfigurationEmptyState, AiConfigurationItemDetailHeader, AiConfigurationSection } from './ai-configuration-primitives';
+import { AiConfigurationCallout, AiConfigurationEmptyState, AiConfigurationItemDetailHeader, AiConfigurationSection } from './ai-configuration-primitives';
 import { AiConfigurationOrigin, AiConfigurationOriginBadge, AiConfigurationOriginBadges } from './ai-configuration-origin-badge';
 import { AiConfigurationSettingRow } from './ai-configuration-setting-row';
-import { AiArrayInput, AiNumberStepper } from './ai-configuration-controls';
+import { AiArrayInput, AiEnumSelect, AiNumberStepper } from './ai-configuration-controls';
 import { ConfirmDialog } from '@theia/core/lib/browser';
 import { PromptCustomizationDialogs } from './prompt-customization-dialogs';
 import { VariantSetCard } from './variant-set-card';
@@ -113,6 +113,39 @@ describe('AI Configuration primitives', () => {
         flushSync(() => root.render(element));
         return { container, dispose: () => { flushSync(() => root.unmount()); container.remove(); } };
     }
+
+    it('AiConfigurationCallout keeps a long message inside the box and repeats it on hover', () => {
+        // A provider's failure ends up here verbatim, keys and URLs included, with nothing to wrap at.
+        const message = '401 Incorrect API key provided: sk-proj-' + 'x'.repeat(120) + '. See https://platform.openai.com/account/api-keys.';
+        const { container, dispose } = mount(React.createElement(AiConfigurationCallout, {
+            message,
+            action: React.createElement('button', {}, 'Retry')
+        }));
+        try {
+            const text = container.querySelector<HTMLElement>('.ai-configuration-callout-text')!;
+            expect(text.title).to.equal(message);
+            // The action stays a sibling of the text rather than being pushed out of the row.
+            expect(container.querySelector('.ai-configuration-callout button')?.textContent).to.equal('Retry');
+        } finally {
+            dispose();
+        }
+    });
+
+    it('AiEnumSelect passes a separator on as one, not as a selectable option', () => {
+        // A separator that loses its flag on the way to SelectComponent becomes a selectable entry with
+        // no label, and picking it commits the empty value. The field skipping it is what says it did not.
+        const { container, dispose } = mount(React.createElement(AiEnumSelect, {
+            value: undefined,
+            options: [{ value: '', label: '', separator: true }, { value: 'a', label: 'A' }],
+            ariaLabel: 'Model',
+            onCommit: () => { }
+        }));
+        try {
+            expect(container.querySelector('.theia-select-component-label')?.textContent).to.equal('A');
+        } finally {
+            dispose();
+        }
+    });
 
     it('AiConfigurationSection renders its title and children', () => {
         const { container, dispose } = mount(React.createElement(AiConfigurationSection,
@@ -568,7 +601,7 @@ describe('VariantSetCard', () => {
         const originalOpen = ConfirmDialog.prototype.open;
         ConfirmDialog.prototype.open = async () => true;
         try {
-            const remove = container.querySelector<HTMLButtonElement>('.ai-variant-action-button:last-of-type');
+            const remove = container.querySelector<HTMLButtonElement>('.ai-configuration-icon-button:last-of-type');
             remove!.click();
             // Let the confirmation and both service calls settle.
             await new Promise(resolve => setTimeout(resolve, 0));

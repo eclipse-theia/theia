@@ -14,13 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, LanguageModelStatus, ReasoningApi, ReasoningSupport } from '@theia/ai-core';
+import {
+    ApiKeySource, DiscoveredModel, DiscoveredModels, LanguageModelRegistry, LanguageModelStatus, ModelDiscoveryResult, ReasoningApi, ReasoningSupport
+} from '@theia/ai-core';
+import { ModelDiscoveryFetcher } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { GoogleGenAI, Model } from '@google/genai';
-import { GoogleModel } from './google-language-model';
+import { Model } from '@google/genai';
+import { createGoogleClient, GoogleModel } from './google-language-model';
 import { GOOGLE_SERVER_TOOLS } from './google-server-tools';
 import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
 import { ILogger } from '@theia/core';
+
+const GOOGLE_SNAPSHOT_FILE = 'google-models.json';
 
 export interface GoogleLanguageModelRetrySettings {
     maxRetriesOnErrors: number;
@@ -56,6 +61,12 @@ interface ResolvedModelMetadata {
 @injectable()
 export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsManager {
     protected _apiKey: string | undefined;
+    /**
+     * Whether a key found in the environment may be used. Withheld until the user confirms it, so the
+     * gate sits on the key itself: every path that reaches for one — discovery, a custom endpoint, a
+     * manually configured model — is covered, and revoking the consent takes effect at once.
+     */
+    protected _allowEnvironmentApiKey = false;
     protected retrySettings: GoogleLanguageModelRetrySettings = {
         maxRetriesOnErrors: 3,
         retryDelayOnRateLimitError: 60,
@@ -71,8 +82,97 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
     @inject(ILogger) @named('ai-google:GoogleLanguageModelsManagerImpl')
     protected readonly logger: ILogger;
 
+    @inject(ModelDiscoveryFetcher)
+    protected readonly discoveryFetcher: ModelDiscoveryFetcher;
+
     get apiKey(): string | undefined {
-        return this._apiKey ?? process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY;
+        return this._apiKey ?? (this._allowEnvironmentApiKey ? process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY : undefined);
+    }
+
+    async getApiKeySource(): Promise<ApiKeySource> {
+        if (this._apiKey) {
+            return 'preference';
+        }
+        if (process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY) {
+            return 'environment';
+        }
+        return 'none';
+    }
+
+    async fetchAvailableModels(): Promise<ModelDiscoveryResult> {
+        const apiKey = this.apiKey;
+        if (!apiKey) {
+            return { models: [], fromCache: false };
+        }
+        return this.discoveryFetcher.fetch({
+            snapshotFile: GOOGLE_SNAPSHOT_FILE,
+            providerLabel: 'Google',
+            listModels: async () => this.toDiscoveredModels(await this.listModels(apiKey)),
+            isRetryable: error => this.isRetryableError(error)
+        });
+    }
+
+    /**
+     * Maps the endpoint's entries onto {@link DiscoveredModel}s. Gemini ids carry no release date
+     * today, so collapsing dated variants is a no-op here; it is applied all the same, so a provider
+     * that starts pinning releases does not quietly multiply the list.
+     */
+    protected toDiscoveredModels(models: Model[]): DiscoveredModel[] {
+        const byId = new Map<string, DiscoveredModel>();
+        for (const model of models) {
+            // Only models usable for chat/content generation; older SDKs may omit the field.
+            if (model.supportedActions && !model.supportedActions.includes('generateContent')) {
+                continue;
+            }
+            const id = (model.name ?? '').replace(/^models\//, '');
+            if (id.length > 0 && this.isChatModelId(id) && !byId.has(id)) {
+                byId.set(id, { id, label: model.displayName, description: model.description });
+            }
+        }
+        return DiscoveredModels.withUndatedAliases([...byId.values()]);
+    }
+
+    /**
+     * Heuristic for the Gemini chat models among the entries that are left once {@link toDiscoveredModels}
+     * has dropped what cannot generate content at all. Two things remain to be excluded, and both
+     * report `generateContent` like a chat model: a model that generates something other than text
+     * (an image, speech), and one that answers through an agentic API of its own (deep research,
+     * computer use, robotics). Everything outside the `gemini-*` family goes too — Gemma, LearnLM —
+     * since being able to generate content does not make a model one of the models this provider is
+     * about. Anything this misses can be configured as a custom endpoint.
+     *
+     * The Live API models need no term of their own: they report `bidiGenerateContent`, so the
+     * capability check has already left them out.
+     *
+     * Without a release date to go by, the ranking that decides which models the chat input offers
+     * falls back to the numbers in the id, and those only mean a version within this family: a
+     * parameter count (`gemma-3-27b-it`) or an experiment date would otherwise read as the newest
+     * model there is.
+     */
+    protected isChatModelId(id: string): boolean {
+        if (!/^gemini-/.test(id)) {
+            return false;
+        }
+        return !/(image|tts|deep-research|computer-use|robotics)/.test(id);
+    }
+
+    /**
+     * Retry transient network errors; auth/quota errors fail fast. The SDK reports them as plain
+     * errors, so there is nothing to match on but the message.
+     */
+    protected isRetryableError(error: unknown): boolean {
+        const message = (error instanceof Error ? `${error.name} ${error.message}` : String(error)).toLowerCase();
+        return /econn|etimedout|enotfound|network|fetch failed|socket|timeout|aborted/.test(message);
+    }
+
+    /** Iterates the (auto-paginated) `/v1beta/models` endpoint. Overridable for testing. */
+    protected async listModels(apiKey: string): Promise<Model[]> {
+        const genAI = createGoogleClient({ apiKey });
+        const models: Model[] = [];
+        for await (const model of await genAI.models.list()) {
+            models.push(model);
+        }
+        return models;
     }
 
     protected calculateStatus(effectiveApiKey: string | undefined): LanguageModelStatus {
@@ -168,7 +268,7 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
     }
 
     protected retrieveModelInfo(modelDescription: GoogleModelDescription, apiKey: string): Promise<Model> {
-        const genAI = new GoogleGenAI({ apiKey, vertexai: false });
+        const genAI = createGoogleClient({ apiKey });
         return genAI.models.get({ model: modelDescription.model });
     }
 
@@ -182,6 +282,10 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
 
     removeLanguageModels(...modelIds: string[]): void {
         this.languageModelRegistry.removeLanguageModels(modelIds);
+    }
+
+    setAllowEnvironmentApiKey(allowed: boolean): void {
+        this._allowEnvironmentApiKey = allowed;
     }
 
     setApiKey(apiKey: string | undefined): void {

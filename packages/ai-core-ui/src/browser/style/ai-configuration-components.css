@@ -815,6 +815,13 @@
   flex-shrink: 0;
 }
 
+/* Secondary fact in a row's trailing slot, e.g. a model's release date. */
+.ai-configuration-item-row-detail {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+  white-space: nowrap;
+}
+
 .ai-configuration-item-row-chevron {
   color: var(--theia-descriptionForeground);
 }
@@ -888,6 +895,11 @@
   align-items: center;
 }
 
+.ai-configuration-filter-input.with-toggles .theia-input {
+  /* A second trailing control needs its own room, or the text slides under it. */
+  padding-right: 44px;
+}
+
 .ai-configuration-filter-input-icon {
   position: absolute;
   left: 6px;
@@ -903,9 +915,15 @@
   border: 1px solid var(--theia-dropdown-border);
 }
 
-.ai-configuration-filter-input-clear {
+.ai-configuration-filter-input-actions {
   position: absolute;
   right: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ai-configuration-filter-input-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -919,12 +937,19 @@
   cursor: pointer;
 }
 
-.ai-configuration-filter-input-clear:hover {
+.ai-configuration-filter-input-action:hover {
   color: var(--theia-foreground);
   background: var(--theia-list-hoverBackground);
 }
 
-.ai-configuration-filter-input-clear:focus-visible {
+/* An engaged narrowing has to look engaged: it keeps filtering the list after the click. */
+.ai-configuration-filter-input-action.active {
+  color: var(--theia-inputOption-activeForeground, var(--theia-foreground));
+  background: var(--theia-inputOption-activeBackground, var(--theia-list-activeSelectionBackground));
+  outline: 1px solid var(--theia-inputOption-activeBorder, transparent);
+}
+
+.ai-configuration-filter-input-action:focus-visible {
   outline: 1px solid var(--theia-focusBorder);
 }
 
@@ -937,6 +962,8 @@
   padding: calc(var(--theia-ui-padding) * 3);
   color: var(--theia-descriptionForeground);
   text-align: center;
+  /* Same reason as the callout: a message can carry a key or a URL with nothing to wrap at. */
+  overflow-wrap: anywhere;
 }
 
 .ai-configuration-empty-state-icon {
@@ -1071,6 +1098,8 @@
   white-space: nowrap;
   background-color: var(--theia-badge-background);
   color: var(--theia-badge-foreground);
+  /* An annotation on the row, not text to select: an I-beam over it only invites a drag. */
+  cursor: default;
 }
 
 .ai-configuration-kind-badge-outline {
@@ -1142,27 +1171,34 @@
   gap: calc(var(--theia-ui-padding) / 2);
 }
 
-.ai-variant-action-button {
+/* Borderless icon-only action: a section's refresh, a row's edit/reset/copy. */
+.ai-configuration-icon-button {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   border: none;
-  background: none;
+  background: transparent;
   color: var(--theia-icon-foreground);
+  border-radius: 3px;
   cursor: pointer;
-  border-radius: 4px;
 }
 
-.ai-variant-action-button:hover {
+.ai-configuration-icon-button:hover:not(:disabled) {
   color: var(--theia-foreground);
-  background: var(--theia-list-hoverBackground);
+  background-color: var(--theia-list-hoverBackground);
 }
 
-.ai-variant-action-button:focus-visible {
+.ai-configuration-icon-button:focus-visible {
   outline: 1px solid var(--theia-focusBorder);
+}
+
+.ai-configuration-icon-button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 /* A page-level offer: an explanatory line plus one action. */
@@ -1178,8 +1214,23 @@
 }
 
 .ai-configuration-callout-text {
-  flex: 1;
+  /* `min-width: 0` lets the text shrink below its content width, and `anywhere` breaks the tokens that
+     make that necessary: a provider's failure carries API keys and URLs, which have nothing to wrap at.
+     Without both, a long message pushes the action out of the box. */
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  /* Three lines of a provider's error are as much as this row should grow; the rest is on hover. */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
   line-height: var(--theia-content-line-height);
+}
+
+/* The action keeps its size whatever the message does. */
+.ai-configuration-callout > :not(.ai-configuration-callout-text) {
+  flex: 0 0 auto;
 }
 
 /* A read-only value with its label and copy button (ids, paths, frontmatter entries). */
@@ -1214,31 +1265,6 @@
   border-radius: 4px;
   padding: 0 6px;
   overflow-wrap: break-word;
-}
-
-.ai-configuration-value-row-copy {
-  flex: 0 0 auto;
-  width: 22px;
-  height: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--theia-icon-foreground);
-  border-radius: 3px;
-  cursor: pointer;
-}
-
-.ai-configuration-value-row-copy:hover {
-  background-color: var(--theia-list-hoverBackground);
-  outline: 1px dotted var(--theia-contrastActiveBorder, transparent);
-  outline-offset: -1px;
-}
-
-.ai-configuration-value-row-copy:focus-visible {
-  outline: 1px solid var(--theia-focusBorder);
 }
 
 /* Available to assistive tech only. */
@@ -1428,11 +1454,11 @@
 .ai-settings-row:hover,
 .ai-settings-row-gear:hover,
 .ai-configuration-item-row.navigable:hover,
-.ai-configuration-filter-input-clear:hover,
+.ai-configuration-filter-input-action:hover,
 .ai-config-stepper-button:hover:not(:disabled),
 .ai-config-array .preference-array-element:hover,
 .ai-config-array .preference-array-element-btn:hover,
-.ai-variant-action-button:hover,
+.ai-configuration-icon-button:hover:not(:disabled),
 .ai-config-collapsible-row-header:hover,
 .ai-config-collapsible-row-action:hover {
   outline: 1px dotted var(--theia-contrastActiveBorder, transparent);

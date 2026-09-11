@@ -650,6 +650,11 @@ export interface LanguageModelMetaData {
     readonly family?: string;
     readonly maxInputTokens?: number;
     readonly maxOutputTokens?: number;
+    /**
+     * Release date (ms since epoch) as reported by the provider, where it reports one. Lets the model
+     * lists offer the newest models first instead of ordering them by name.
+     */
+    readonly released?: number;
     readonly status: LanguageModelStatus;
     readonly reasoningSupport?: ReasoningSupport;
     /**

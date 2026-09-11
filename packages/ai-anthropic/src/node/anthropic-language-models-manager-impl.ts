@@ -14,15 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, LanguageModelStatus, ReasoningApi, ReasoningSupport } from '@theia/ai-core';
-import { createProxyFetch, getProxyUrl } from '@theia/ai-core/lib/node';
+import {
+    ApiKeySource, DiscoveredModel, DiscoveredModels, LanguageModelRegistry, LanguageModelStatus, ModelDiscoveryResult, ReasoningApi, ReasoningSupport
+} from '@theia/ai-core';
+import { getProxyUrl, ModelDiscoveryFetcher } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { Anthropic } from '@anthropic-ai/sdk';
+import { APIConnectionError } from '@anthropic-ai/sdk';
 import type { ModelInfo } from '@anthropic-ai/sdk/resources/models';
-import { AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
+import { AnthropicModel, createAnthropicClient, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
 import { ANTHROPIC_SERVER_TOOLS } from './anthropic-server-tools';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
 import { ILogger } from '@theia/core';
+
+const ANTHROPIC_DEFAULT_BASE_URL = 'https://api.anthropic.com';
+const ANTHROPIC_SNAPSHOT_FILE = 'anthropic-models.json';
 
 const ANTHROPIC_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
@@ -42,6 +47,12 @@ interface ResolvedModelMetadata {
 export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageModelsManager {
 
     protected _apiKey: string | undefined;
+    /**
+     * Whether a key found in the environment may be used. Withheld until the user confirms it, so the
+     * gate sits on the key itself: every path that reaches for one — discovery, a custom endpoint, a
+     * manually configured model — is covered, and revoking the consent takes effect at once.
+     */
+    protected _allowEnvironmentApiKey = false;
     protected _proxyUrl: string | undefined;
     // Cached `/v1/models` lookups keyed by `${baseURL}::${model}`. Successful lookups are kept for the process lifetime;
     // failed lookups are evicted so the next call retries.
@@ -53,12 +64,69 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
     @inject(ILogger) @named('ai-anthropic:AnthropicLanguageModelsManagerImpl')
     protected readonly logger: ILogger;
 
+    @inject(ModelDiscoveryFetcher)
+    protected readonly discoveryFetcher: ModelDiscoveryFetcher;
+
     get apiKey(): string | undefined {
-        return this._apiKey ?? process.env.ANTHROPIC_API_KEY;
+        return this._apiKey ?? (this._allowEnvironmentApiKey ? process.env.ANTHROPIC_API_KEY : undefined);
     }
 
     async createOrUpdateLanguageModels(...modelDescriptions: AnthropicModelDescription[]): Promise<void> {
         await Promise.all(modelDescriptions.map(description => this.createOrUpdateLanguageModel(description)));
+    }
+
+    async getApiKeySource(): Promise<ApiKeySource> {
+        if (this._apiKey) {
+            return 'preference';
+        }
+        if (process.env.ANTHROPIC_API_KEY) {
+            return 'environment';
+        }
+        return 'none';
+    }
+
+    async fetchAvailableModels(): Promise<ModelDiscoveryResult> {
+        const apiKey = this.apiKey;
+        if (!apiKey) {
+            return { models: [], fromCache: false };
+        }
+        const proxyUrl = getProxyUrl(ANTHROPIC_DEFAULT_BASE_URL, this._proxyUrl);
+        return this.discoveryFetcher.fetch({
+            snapshotFile: ANTHROPIC_SNAPSHOT_FILE,
+            providerLabel: 'Anthropic',
+            listModels: async () => this.toDiscoveredModels(await this.listModels(apiKey, proxyUrl)),
+            // Retry only transient connection errors; auth/HTTP errors fail fast.
+            isRetryable: error => error instanceof APIConnectionError
+        });
+    }
+
+    /**
+     * Maps the endpoint's entries onto {@link DiscoveredModel}s, deduplicating defensively and adding
+     * the undated alias of every release-pinned id. The endpoint lists the newest models first, an
+     * order worth preserving for anything that registers them in sequence.
+     */
+    protected toDiscoveredModels(models: ModelInfo[]): DiscoveredModel[] {
+        const byId = new Map<string, DiscoveredModel>();
+        for (const model of models) {
+            if (!byId.has(model.id)) {
+                byId.set(model.id, {
+                    id: model.id,
+                    label: model.display_name,
+                    released: model.created_at ? Date.parse(model.created_at) || undefined : undefined
+                });
+            }
+        }
+        return DiscoveredModels.withUndatedAliases([...byId.values()]);
+    }
+
+    /** Iterates the (auto-paginated) `/v1/models` endpoint. Overridable for testing. */
+    protected async listModels(apiKey: string, proxyUrl: string | undefined): Promise<ModelInfo[]> {
+        const anthropic = createAnthropicClient({ apiKey, proxyUrl });
+        const models: ModelInfo[] = [];
+        for await (const model of anthropic.models.list()) {
+            models.push(model);
+        }
+        return models;
     }
 
     protected async createOrUpdateLanguageModel(modelDescription: AnthropicModelDescription): Promise<void> {
@@ -121,7 +189,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                     ANTHROPIC_SERVER_TOOLS,
                     metadata.serverSideCompactionSupport,
                     modelDescription.serverSideCompactionEnabledByDefault ?? false,
-                    modelDescription.serverSideCompactionTokenThresholdByDefault
+                    modelDescription.serverSideCompactionTokenThresholdByDefault,
+                    modelDescription.released
                 )
             ]);
         }
@@ -195,11 +264,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
         apiKey: string,
         proxyUrl: string | undefined
     ): Promise<ModelInfo> {
-        const anthropic = new Anthropic({
-            apiKey,
-            baseURL: modelDescription.url,
-            fetch: createProxyFetch(proxyUrl)
-        });
+        const anthropic = createAnthropicClient({ apiKey, baseURL: modelDescription.url, proxyUrl });
         return anthropic.models.retrieve(modelDescription.model);
     }
 
@@ -225,6 +290,10 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
 
     removeLanguageModels(...modelIds: string[]): void {
         this.languageModelRegistry.removeLanguageModels(modelIds);
+    }
+
+    setAllowEnvironmentApiKey(allowed: boolean): void {
+        this._allowEnvironmentApiKey = allowed;
     }
 
     setApiKey(apiKey: string | undefined): void {
