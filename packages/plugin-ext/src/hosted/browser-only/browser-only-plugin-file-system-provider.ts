@@ -12,7 +12,7 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
-// ****************************************************************************
+// *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Disposable, Event, Emitter, URI } from '@theia/core';
@@ -33,7 +33,7 @@ import { encodePluginAssetPath } from '@theia/plugin-utils/lib/common/plugin-mod
  * fonts.
  */
 @injectable()
-export class HostedPluginFileSystemProvider implements FileSystemProvider {
+export class BrowserOnlyPluginFileSystemProvider implements FileSystemProvider {
 
     readonly capabilities = FileSystemProviderCapabilities.Readonly | FileSystemProviderCapabilities.FileReadWrite | FileSystemProviderCapabilities.PathCaseSensitive;
     readonly onDidChangeCapabilities = Event.None;
@@ -118,10 +118,10 @@ export class HostedPluginFileSystemProvider implements FileSystemProvider {
 }
 
 @injectable()
-export class HostedPluginFileServiceContribution implements FileServiceContribution {
+export class BrowserOnlyPluginFileServiceContribution implements FileServiceContribution {
 
-    @inject(HostedPluginFileSystemProvider)
-    protected readonly provider: HostedPluginFileSystemProvider;
+    @inject(BrowserOnlyPluginFileSystemProvider)
+    protected readonly provider: BrowserOnlyPluginFileSystemProvider;
 
     registerFileSystemProviders(service: FileService): void {
         service.registerProvider(PLUGINS_SCHEME, this.provider);

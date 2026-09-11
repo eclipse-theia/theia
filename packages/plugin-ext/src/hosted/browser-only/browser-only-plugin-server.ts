@@ -12,7 +12,7 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
-// ****************************************************************************
+// *****************************************************************************
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Mutex } from 'async-mutex';
 import { ILogger } from '@theia/core';
@@ -35,9 +35,9 @@ const LOCK_NAME_PREFIX = 'theia:plugin-storage:';
  * `ExtensionContext.workspaceState` lives in the browser storage of the current host.
  */
 @injectable()
-export class FrontendPluginServer implements PluginServer {
+export class BrowserOnlyPluginServer implements PluginServer {
 
-    @inject(ILogger) @named('plugin-ext:FrontendPluginServer')
+    @inject(ILogger) @named('plugin-ext:BrowserOnlyPluginServer')
     protected readonly logger: ILogger;
 
     @inject(StorageService)
@@ -49,7 +49,7 @@ export class FrontendPluginServer implements PluginServer {
     /**
      * Fallback for {@link withStoreLock} when the Web Locks API is unavailable. `static`, not
      * `protected readonly`, so it's shared by every instance in this JS realm - otherwise two
-     * `FrontendPluginServer`s in the same realm (e.g. two plugin hosts sharing one page) wouldn't
+     * `BrowserOnlyPluginServer`s in the same realm (e.g. two plugin hosts sharing one page) wouldn't
      * serialize against each other either.
      */
     protected static readonly localLocks = new Map<string, Mutex>();
@@ -129,8 +129,8 @@ export class FrontendPluginServer implements PluginServer {
         // no Web Locks API (insecure context, older browser): fall back to serializing writes
         // within this JS realm. A write from another tab, which doesn't share this realm, can
         // still race and get lost.
-        FrontendPluginServer.missingLocksWarning.warn(this.logger, 'Web Locks API unavailable: plugin storage updates from different tabs may race.');
-        const queue = FrontendPluginServer.localLocks;
+        BrowserOnlyPluginServer.missingLocksWarning.warn(this.logger, 'Web Locks API unavailable: plugin storage updates from different tabs may race.');
+        const queue = BrowserOnlyPluginServer.localLocks;
         let mutex = queue.get(storeKey);
         if (!mutex) {
             mutex = new Mutex();

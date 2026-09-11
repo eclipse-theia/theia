@@ -12,7 +12,7 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
-// ****************************************************************************
+// *****************************************************************************
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 // `FileService` transitively imports browser modules that touch `document` at load time.
@@ -28,7 +28,7 @@ import { Container } from '@theia/core/shared/inversify';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { UntitledWorkspaceService, WorkspaceFileService } from '@theia/workspace/lib/common';
-import { FrontendPluginPathService } from './frontend-plugin-path-service';
+import { BrowserOnlyPluginPathsService } from './browser-only-plugin-paths-service';
 import { installFakeLockManager } from './test/navigator-locks-test-util';
 
 disableJSDOM();
@@ -117,15 +117,15 @@ function flushMicrotasks(): Promise<void> {
     return new Promise(resolve => setImmediate(resolve));
 }
 
-describe('FrontendPluginPathService', () => {
+describe('BrowserOnlyPluginPathsService', () => {
 
     let fileService: FakeFileService;
-    let service: FrontendPluginPathService;
+    let service: BrowserOnlyPluginPathsService;
 
     /** A service backed by the same {@link fileService}, standing for another browser tab. */
-    function createService(): FrontendPluginPathService {
+    function createService(): BrowserOnlyPluginPathsService {
         const container = new Container();
-        container.bind(FrontendPluginPathService).toSelf().inSingletonScope();
+        container.bind(BrowserOnlyPluginPathsService).toSelf().inSingletonScope();
         container.bind(ILogger).to(MockLogger);
         container.bind(FileService).toConstantValue(fileService as any);
         container.bind(WorkspaceFileService).toSelf().inSingletonScope();
@@ -133,7 +133,7 @@ describe('FrontendPluginPathService', () => {
         container.bind(EnvVariablesServer).toConstantValue({
             getConfigDirUri: async () => 'file:///.theia'
         } as EnvVariablesServer);
-        return container.get(FrontendPluginPathService);
+        return container.get(BrowserOnlyPluginPathsService);
     }
 
     /** A fake session folder name for the `session`th day of December 2025, e.g. `20251203T000000-...`. */

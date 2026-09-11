@@ -12,7 +12,7 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
-// ****************************************************************************
+// *****************************************************************************
 
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { LIST_JSON, PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
@@ -21,14 +21,14 @@ import { Event, RpcConnectionEventEmitter } from '@theia/core';
 import { Endpoint } from '@theia/core/lib/browser';
 import { memoizeAsync } from './async-memoize';
 
-export const PluginLocalOptions = Symbol('PluginLocalOptions');
+export const BrowserOnlyPluginOptions = Symbol('BrowserOnlyPluginOptions');
 /**
  * Optional override for the statically deployed plugins of a browser-only application. By
  * default we use whatever the build prepared, i.e. `lib/frontend/hostedPlugin/list.json`. Bind
  * this to supply the metadata by hand instead, e.g. if the plugins are hosted somewhere the
  * build can't see.
  */
-export interface PluginLocalOptions {
+export interface BrowserOnlyPluginOptions {
     pluginMetadata: DeployedPlugin[];
 }
 
@@ -37,16 +37,16 @@ export interface PluginLocalOptions {
  * browser-only application, so nothing can be deployed or undeployed at runtime.
  */
 @injectable()
-export class FrontendHostedPluginServer implements HostedPluginServer, RpcConnectionEventEmitter {
+export class BrowserOnlyHostedPluginServer implements HostedPluginServer, RpcConnectionEventEmitter {
     readonly onDidOpenConnection: Event<void> = Event.None;
     readonly onDidCloseConnection: Event<void> = Event.None;
 
-    @inject(PluginLocalOptions) @optional()
-    protected readonly options?: PluginLocalOptions;
+    @inject(BrowserOnlyPluginOptions) @optional()
+    protected readonly options?: BrowserOnlyPluginOptions;
 
     protected client: HostedPluginClient | undefined;
 
-    /** The statically deployed plugins, from {@link PluginLocalOptions} if bound, otherwise from the list the build wrote. */
+    /** The statically deployed plugins, from {@link BrowserOnlyPluginOptions} if bound, otherwise from the list the build wrote. */
     protected readonly getPlugins = memoizeAsync((): Promise<DeployedPlugin[]> =>
         this.options ? Promise.resolve(this.options.pluginMetadata) : this.fetchDeployedPlugins());
 

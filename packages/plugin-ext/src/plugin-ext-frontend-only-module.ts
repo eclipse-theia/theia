@@ -16,19 +16,19 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { HostedPluginServer, PluginServer } from './common/plugin-protocol';
-import { FrontendHostedPluginServer } from './hosted/browser-only/frontend-hosted-plugin-server';
+import { BrowserOnlyHostedPluginServer } from './hosted/browser-only/browser-only-hosted-plugin-server';
 import { PluginPathsService } from './main/common/plugin-paths-protocol';
-import { FrontendPluginPathService } from './hosted/browser-only/frontend-plugin-path-service';
-import { FrontendPluginServer } from './hosted/browser-only/frontend-plugin-server';
-import { HostedPluginFileServiceContribution, HostedPluginFileSystemProvider } from './hosted/browser-only/hosted-plugin-file-system-provider';
+import { BrowserOnlyPluginPathsService } from './hosted/browser-only/browser-only-plugin-paths-service';
+import { BrowserOnlyPluginServer } from './hosted/browser-only/browser-only-plugin-server';
+import { BrowserOnlyPluginFileServiceContribution, BrowserOnlyPluginFileSystemProvider } from './hosted/browser-only/browser-only-plugin-file-system-provider';
 import { FileServiceContribution } from '@theia/filesystem/lib/browser/file-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
-    rebind(HostedPluginServer).to(FrontendHostedPluginServer).inSingletonScope();
-    rebind(PluginServer).to(FrontendPluginServer).inSingletonScope();
-    rebind(PluginPathsService).to(FrontendPluginPathService).inSingletonScope();
+    rebind(HostedPluginServer).to(BrowserOnlyHostedPluginServer).inSingletonScope();
+    rebind(PluginServer).to(BrowserOnlyPluginServer).inSingletonScope();
+    rebind(PluginPathsService).to(BrowserOnlyPluginPathsService).inSingletonScope();
 
-    bind(HostedPluginFileSystemProvider).toSelf().inSingletonScope();
-    bind(HostedPluginFileServiceContribution).toSelf().inSingletonScope();
-    bind(FileServiceContribution).toService(HostedPluginFileServiceContribution);
+    bind(BrowserOnlyPluginFileSystemProvider).toSelf().inSingletonScope();
+    bind(BrowserOnlyPluginFileServiceContribution).toSelf().inSingletonScope();
+    bind(FileServiceContribution).toService(BrowserOnlyPluginFileServiceContribution);
 });
