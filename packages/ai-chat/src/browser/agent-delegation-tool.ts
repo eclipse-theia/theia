@@ -26,6 +26,8 @@ import {
     ChatResponseContent,
     ChatService,
     ChatServiceFactory,
+    ChatSession,
+    ChatSessionStatus,
     ChatToolContext,
     MutableChatModel,
     MutableChatRequestModel,
@@ -60,6 +62,9 @@ export class AgentDelegationTool implements ToolProvider {
                 'remember that each sub-agent operates solely within its specialized capabilities and tools and does not have access to previous conversation context ' +
                 ' or external systems. Therefore, it is crucial to provide all necessary context and detailed information directly within your request to ensure accurate ' +
                 'and effective task completion. ' +
+                'Each result ends with a "[delegation sessionId: <id>]" line. To send a follow-up request to the same agent with its previous conversation retained ' +
+                '(e.g. to request fixes after reviewing its result), pass that id as sessionId. Prefer resuming for follow-ups on the same task; ' +
+                'start a fresh session (omit sessionId) for unrelated tasks, as a resumed session grows with every round. ' +
                 'You may optionally pass a taskContextId to make a specific task context (e.g. a plan) available to the delegated agent via its system prompt.',
             parameters: {
                 type: 'object',
@@ -77,6 +82,11 @@ export class AgentDelegationTool implements ToolProvider {
                     taskContextId: {
                         type: 'string',
                         description: 'Optional task context ID to make available to the delegated agent. The agent will see the task context in its system prompt.',
+                    },
+                    sessionId: {
+                        type: 'string',
+                        description: 'Optional ID of a previous delegation session to continue, as reported in the "[delegation sessionId: <id>]" line of an earlier result. ' +
+                            'The delegated agent keeps its previous conversation context. The agentId must match the original delegation.',
                     },
                 },
                 required: ['agentId', 'prompt'],
@@ -102,7 +112,7 @@ export class AgentDelegationTool implements ToolProvider {
 
         try {
             const args = JSON.parse(arg_string);
-            const { agentId, prompt, taskContextId } = args;
+            const { agentId, prompt, taskContextId, sessionId } = args;
 
             if (!agentId || !prompt) {
                 const errorMsg = 'Both agentId and prompt parameters are required.';
@@ -121,50 +131,90 @@ export class AgentDelegationTool implements ToolProvider {
                 return errorMsg;
             }
 
-            let newSession;
+            let session: ChatSession;
             let childModelDisposable: Disposable | undefined;
-            try {
+            if (sessionId) {
                 const chatService = this.getChatService();
+                const existingSession = chatService.getSession(sessionId);
+                if (!existingSession) {
+                    const errorMsg = `Delegation session '${sessionId}' not found. It may have been deleted. ` +
+                        'Send the request again without sessionId to start a fresh session — the agent will not have any prior context.';
+                    // warn, not error: a stale session id is expected in a normal agentic loop (e.g. the user deleted the session)
+                    this.logger.warn(errorMsg);
+                    return errorMsg;
+                }
+                if (ChatSessionStatus.isInProgress(existingSession.model.status)) {
+                    const errorMsg = `Delegation session '${sessionId}' is still processing a previous request. ` +
+                        'Wait for its result before sending a follow-up, or omit sessionId to start a fresh session.';
+                    // warn, not error: expected when the caller issues parallel requests against the same session
+                    this.logger.warn(errorMsg);
+                    return errorMsg;
+                }
+                if (existingSession.pinnedAgent && existingSession.pinnedAgent.id !== agentId) {
+                    const errorMsg = `Delegation session '${sessionId}' belongs to agent '${existingSession.pinnedAgent.id}', not '${agentId}'. ` +
+                        'Pass the matching agentId, or omit sessionId to start a fresh session.';
+                    this.logger.error(errorMsg);
+                    return errorMsg;
+                }
 
-                // Store the current active session to restore it after delegation
-                const currentActiveSession = chatService.getActiveSession();
-
-                newSession = chatService.createSession(
-                    undefined,
-                    { focus: false },
-                    agent
-                );
-
-                // Set root session ID to enable task context sharing across delegation chains
-                // Root is either the current root (for nested delegation) or current session (for first-level delegation)
-                const rootId = ctx.rootSessionId || ctx.request.session.id;
-                newSession.rootSessionId = rootId;
-                newSession.model.rootSessionId = rootId;
-
-                // Track the immediate parent (the delegating session) so the UI can render the full
-                // delegation hierarchy, not just a flat list under the root.
-                const parentId = ctx.request.session.id;
-                newSession.parentSessionId = parentId;
-                newSession.model.parentSessionId = parentId;
-
+                // Deliberately keep rootSessionId/parentSessionId as set at creation time; a resumed
+                // session stays attached to its original delegation hierarchy.
                 if (taskContextId) {
-                    newSession.model.context.addVariables({
+                    existingSession.model.context.addVariables({
                         variable: TASK_CONTEXT_VARIABLE,
                         arg: taskContextId
                     });
                 }
 
-                // Immediately restore the original active session to avoid confusing the user
-                if (currentActiveSession) {
-                    chatService.setActiveSession(currentActiveSession.id, { focus: false });
-                }
+                session = existingSession;
+                // Re-establish bubbling for this request; the previous disposable was disposed when the
+                // original delegation completed, and the parent request/response are new objects now.
+                childModelDisposable = this.setupChildSessionBubbling(existingSession.model as MutableChatModel, ctx.request.session, ctx.response);
+            } else {
+                try {
+                    const chatService = this.getChatService();
 
-                // Setup bubbling of child session events to parent session
-                childModelDisposable = this.setupChildSessionBubbling(newSession.model as MutableChatModel, ctx.request.session, ctx.response);
-            } catch (sessionError) {
-                const errorMsg = `Failed to create chat session for agent '${agentId}': ${sessionError instanceof Error ? sessionError.message : sessionError}`;
-                this.logger.error(errorMsg, sessionError);
-                return errorMsg;
+                    // Store the current active session to restore it after delegation
+                    const currentActiveSession = chatService.getActiveSession();
+
+                    const newSession = chatService.createSession(
+                        undefined,
+                        { focus: false },
+                        agent
+                    );
+
+                    // Set root session ID to enable task context sharing across delegation chains
+                    // Root is either the current root (for nested delegation) or current session (for first-level delegation)
+                    const rootId = ctx.rootSessionId || ctx.request.session.id;
+                    newSession.rootSessionId = rootId;
+                    newSession.model.rootSessionId = rootId;
+
+                    // Track the immediate parent (the delegating session) so the UI can render the full
+                    // delegation hierarchy, not just a flat list under the root.
+                    const parentId = ctx.request.session.id;
+                    newSession.parentSessionId = parentId;
+                    newSession.model.parentSessionId = parentId;
+
+                    if (taskContextId) {
+                        newSession.model.context.addVariables({
+                            variable: TASK_CONTEXT_VARIABLE,
+                            arg: taskContextId
+                        });
+                    }
+
+                    // Immediately restore the original active session to avoid confusing the user
+                    if (currentActiveSession) {
+                        chatService.setActiveSession(currentActiveSession.id, { focus: false });
+                    }
+
+                    // Setup bubbling of child session events to parent session
+                    childModelDisposable = this.setupChildSessionBubbling(newSession.model as MutableChatModel, ctx.request.session, ctx.response);
+                    session = newSession;
+                } catch (sessionError) {
+                    const errorMsg = `Failed to create chat session for agent '${agentId}': ${sessionError instanceof Error ? sessionError.message : sessionError}`;
+                    this.logger.error(errorMsg, sessionError);
+                    return errorMsg;
+                }
             }
 
             // Send the request
@@ -180,7 +230,7 @@ export class AgentDelegationTool implements ToolProvider {
 
                 const chatService = this.getChatService();
                 response = await chatService.sendRequest(
-                    newSession.id,
+                    session.id,
                     chatRequest
                 );
 
@@ -210,7 +260,7 @@ export class AgentDelegationTool implements ToolProvider {
                     const chatService = this.getChatService();
                     const toolCallId = ctx.toolCallId;
                     const sessionEventListener = chatService.onSessionEvent(event => {
-                        if (event.type === 'deleted' && event.sessionId === newSession.id) {
+                        if (event.type === 'deleted' && event.sessionId === session.id) {
                             this.pendingDelegations.delete(toolCallId);
                             sessionEventListener.dispose();
                         }
@@ -229,8 +279,10 @@ export class AgentDelegationTool implements ToolProvider {
                     // Clean up the parent-child link after completion (event bubbling is no longer needed)
                     childModelDisposable?.dispose();
 
-                    // Return the raw text to the top-level Agent, as a tool result
-                    return stringResult;
+                    // Return the raw text to the top-level Agent, as a tool result. The session id
+                    // allows the caller to send follow-up requests into the same session.
+                    const sessionIdSuffix = `[delegation sessionId: ${session.id}]`;
+                    return stringResult ? `${stringResult}\n\n${sessionIdSuffix}` : sessionIdSuffix;
                 } catch (completionError) {
                     if (
                         completionError instanceof Error &&
