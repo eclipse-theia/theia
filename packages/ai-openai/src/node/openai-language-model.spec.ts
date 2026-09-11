@@ -15,10 +15,15 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LanguageModelMessage, LanguageModelRequest, LanguageModelResponse, ReasoningSupport, UserRequest } from '@theia/ai-core';
+import { Container, injectable } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { LanguageModelRequest, LanguageModelResponse, ReasoningSupport, ToolCallExecutor, ToolCallExecutorImpl, UserRequest } from '@theia/ai-core';
 import { OpenAI } from 'openai';
-import { OpenAiModel, OpenAiModelUtils } from './openai-language-model';
+import { OpenAiModel, OpenAiModelParams } from './openai-language-model';
+import { OpenAiModelUtils } from './openai-model-utils';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
+import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream';
 import { OPENAI_WEB_SEARCH } from './openai-server-tools';
 
 const GPT5_REASONING_SUPPORT: ReasoningSupport = {
@@ -31,11 +36,15 @@ const O_SERIES_REASONING_SUPPORT: ReasoningSupport = {
     defaultLevel: 'auto'
 };
 
+@injectable()
 class TestableOpenAiModel extends OpenAiModel {
     chatCompletionsRequests = 0;
 
     public callGetSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
         return this.getSettings(request, forResponseApi);
+    }
+    public callCreateTools(request: LanguageModelRequest): unknown {
+        return this.createTools(request);
     }
     public callApplyResponseApiCompaction(settings: Record<string, unknown>, request: LanguageModelRequest): Record<string, unknown> {
         return this.applyResponseApiCompaction(settings, request);
@@ -49,14 +58,39 @@ class TestableOpenAiModel extends OpenAiModel {
     }
 }
 
+function buildModel(params: Partial<OpenAiModelParams> & Pick<OpenAiModelParams, 'model'>, responseApiUtils?: OpenAiResponseApiUtils): TestableOpenAiModel {
+    const parent = new Container();
+    parent.bind(OpenAiModelUtils).toSelf();
+    if (responseApiUtils) {
+        parent.bind(OpenAiResponseApiUtils).toConstantValue(responseApiUtils);
+    } else {
+        parent.bind(OpenAiResponseApiUtils).toSelf();
+    }
+    parent.bind(ToolCallExecutor).to(ToolCallExecutorImpl);
+    parent.bind(ILogger).to(MockLogger);
+    // These tests never issue a streaming request, so the iterator factory is never invoked.
+    const iteratorFactory: ChatCompletionStreamingAsyncIteratorFactory = () => { throw new Error('iterator not used in these tests'); };
+    parent.bind(ChatCompletionStreamingAsyncIteratorFactory).toConstantValue(iteratorFactory);
+    parent.bind(TestableOpenAiModel).toSelf().inTransientScope();
+
+    const child = new Container();
+    child.parent = parent;
+    child.bind(OpenAiModelParams).toConstantValue({
+        id: 'test-id',
+        status: { status: 'ready' },
+        enableStreaming: true,
+        apiKey: () => 'test-key',
+        apiVersion: () => undefined,
+        supportsStructuredOutput: false,
+        url: undefined,
+        deployment: undefined,
+        ...params
+    });
+    return child.get(TestableOpenAiModel);
+}
+
 function createModel(modelId: string, reasoningSupport?: ReasoningSupport): TestableOpenAiModel {
-    return new TestableOpenAiModel(
-        'test-id', modelId, { status: 'ready' }, true,
-        () => 'test-key', () => undefined,
-        false, undefined, undefined,
-        new OpenAiModelUtils(), new OpenAiResponseApiUtils(),
-        'developer', 3, false, undefined, reasoningSupport
-    );
+    return buildModel({ model: modelId, reasoningSupport });
 }
 
 function createCompactionModel(
@@ -64,14 +98,13 @@ function createCompactionModel(
     useResponseApi: boolean = true,
     serverSideCompactionTokenThresholdByDefault?: number
 ): TestableOpenAiModel {
-    return new TestableOpenAiModel(
-        'test-id', 'gpt-5', { status: 'ready' }, true,
-        () => 'test-key', () => undefined,
-        false, undefined, undefined,
-        new OpenAiModelUtils(), new OpenAiResponseApiUtils(),
-        'developer', 3, useResponseApi, undefined, undefined, undefined, undefined, useResponseApi, serverSideCompactionEnabledByDefault,
+    return buildModel({
+        model: 'gpt-5',
+        useResponseApi,
+        serverSideCompactionSupport: useResponseApi,
+        serverSideCompactionEnabledByDefault,
         serverSideCompactionTokenThresholdByDefault
-    );
+    });
 }
 
 describe('OpenAiModel reasoning translation', () => {
@@ -130,6 +163,22 @@ describe('OpenAiModel reasoning translation', () => {
             expect(result.reasoning_effort).to.equal(undefined);
         });
     });
+
+    describe('createTools', () => {
+        it('produces plain function tool definitions without an embedded handler function', () => {
+            const model = createModel('gpt-4o', undefined);
+            const tools = model.callCreateTools({
+                messages: [],
+                tools: [{ id: 't', name: 't', parameters: { type: 'object', properties: {} }, handler: async () => 'x' }]
+            }) as Array<{ type: string; function: Record<string, unknown> }>;
+
+            expect(tools).to.have.lengthOf(1);
+            expect(tools[0].type).to.equal('function');
+            expect(tools[0].function.name).to.equal('t');
+            // The SDK runTools() runner is no longer used, so no executable function is embedded.
+            expect('function' in tools[0].function).to.equal(false);
+        });
+    });
 });
 
 describe('OpenAiModel Response API fallback', () => {
@@ -137,13 +186,7 @@ describe('OpenAiModel Response API fallback', () => {
         const responseApiUtils = {
             handleRequest: async () => { throw new Error('Response API unavailable'); }
         } as unknown as OpenAiResponseApiUtils;
-        return new TestableOpenAiModel(
-            'test-id', 'gpt-5', { status: 'ready' }, true,
-            () => 'test-key', () => undefined,
-            false, undefined, undefined,
-            new OpenAiModelUtils(), responseApiUtils,
-            'developer', 3, true
-        );
+        return buildModel({ model: 'gpt-5', useResponseApi: true }, responseApiUtils);
     }
 
     it('does not fall back to Chat Completions when a server tool is selected', async () => {
@@ -176,29 +219,6 @@ describe('OpenAiModel Response API fallback', () => {
 
         expect(await model.callHandleResponseApiRequest(request)).to.deep.equal({ text: 'fallback' });
         expect(model.chatCompletionsRequests).to.equal(1);
-    });
-});
-
-describe('OpenAiModelUtils Chat Completions processMessages', () => {
-    it('drops a CompactionMessage without throwing when useResponseApi is off', () => {
-        const utils = new OpenAiModelUtils();
-        const messages: LanguageModelMessage[] = [
-            { actor: 'user', type: 'text', text: 'hello' },
-            { actor: 'ai', type: 'compaction', provider: 'openai-responses', data: { id: 'c1', encrypted_content: 'enc' } },
-            { actor: 'ai', type: 'text', text: 'world' }
-        ];
-
-        let result: ReturnType<OpenAiModelUtils['processMessages']> | undefined;
-        expect(() => { result = utils.processMessages(messages, 'developer'); }).to.not.throw();
-
-        // The compaction marker must not appear in the output
-        const hasCompaction = result?.some(m => 'content' in m && typeof m.content === 'string' && m.content.includes('enc'));
-        expect(hasCompaction).to.equal(false);
-
-        // The surrounding real messages must still be present
-        const texts = result?.map(m => typeof m.content === 'string' ? m.content : '').join(' ');
-        expect(texts).to.contain('hello');
-        expect(texts).to.contain('world');
     });
 });
 

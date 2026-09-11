@@ -22,6 +22,7 @@ export * from './language-model-delegate';
 export * from './language-model-util';
 export * from './language-model';
 export * from './language-model-alias';
+export * from './tool-call-execution';
 export * from './prompt-service';
 export * from './prompt-service-util';
 export * from './proxy-util';

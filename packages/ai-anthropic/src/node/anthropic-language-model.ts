@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import {
-    createToolCallError,
     ImageContent,
     ImageMimeType,
     LanguageModel,
@@ -34,10 +33,12 @@ import {
     ServerToolDescriptor,
     ToolCallContent,
     ToolCallResult,
-    ToolInvocationContext,
+    ToolCallExecutor,
+    createToolCallError,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken, isArray, nls } from '@theia/core';
+import { CancellationToken, ILogger, isArray, nls } from '@theia/core';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlockParam, ToolResultBlockParam } from '@anthropic-ai/sdk/resources';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
@@ -305,6 +306,32 @@ function formatToolCallResult(result: ToolCallResult): ToolResultBlockParam['con
     return result;
 }
 
+export interface AnthropicModelParams {
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    useCaching: boolean;
+    apiKey: () => string | undefined;
+    url: string | undefined;
+    maxTokens?: number;
+    maxRetries?: number;
+    proxy?: string;
+    reasoningSupport?: ReasoningSupport;
+    reasoningApi?: ReasoningApi;
+    supportsXHighEffort?: boolean;
+    maxInputTokens?: number;
+    serverTools?: ServerToolDescriptor[];
+    serverSideCompactionSupport?: boolean;
+    serverSideCompactionEnabledByDefault?: boolean;
+    serverSideCompactionTokenThresholdByDefault?: number;
+}
+
+export const AnthropicModelParams = Symbol('AnthropicModelParams');
+
+export const AnthropicLanguageModelFactory = Symbol('AnthropicLanguageModelFactory');
+export type AnthropicLanguageModelFactory = (params: AnthropicModelParams) => AnthropicModel;
+
 /**
  * Builds a finished server tool call stream part from a provider result block. The raw block is stored on
  * `data` for faithful replay, while `result` holds a compact, human-readable summary for rendering (the raw
@@ -334,31 +361,62 @@ function buildServerToolResultPart(
  * Implements the Anthropic language model integration for Theia. Reasoning-level
  * translation lives in {@link anthropicReasoningFor}.
  */
+@injectable()
 export class AnthropicModel implements LanguageModel {
+
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    useCaching: boolean;
+    apiKey: () => string | undefined;
+    url: string | undefined;
+    maxTokens: number;
+    maxRetries: number;
+    proxy?: string;
+    reasoningSupport?: ReasoningSupport;
+    reasoningApi?: ReasoningApi;
+    supportsXHighEffort?: boolean;
+    maxInputTokens?: number;
+    serverTools?: ServerToolDescriptor[];
+    serverSideCompactionSupport: boolean;
+    serverSideCompactionEnabledByDefault: boolean;
+    serverSideCompactionTokenThresholdByDefault?: number;
 
     /** Provider identifier, used to key per-provider settings (e.g. server tool selections) and the capabilities UI. */
     readonly vendor = 'anthropic';
 
-    constructor(
-        public readonly id: string,
-        public model: string,
-        public status: LanguageModelStatus,
-        public enableStreaming: boolean,
-        public useCaching: boolean,
-        public apiKey: () => string | undefined,
-        public url: string | undefined,
-        public maxTokens: number = DEFAULT_MAX_TOKENS,
-        public maxRetries: number = 3,
-        public proxy?: string,
-        public reasoningSupport?: ReasoningSupport,
-        public reasoningApi?: ReasoningApi,
-        public supportsXHighEffort?: boolean,
-        public maxInputTokens?: number,
-        public serverTools?: ServerToolDescriptor[],
-        public serverSideCompactionSupport: boolean = false,
-        public serverSideCompactionEnabledByDefault: boolean = false,
-        public serverSideCompactionTokenThresholdByDefault?: number
-    ) { }
+    @inject(AnthropicModelParams)
+    protected readonly params: AnthropicModelParams;
+
+    @inject(ToolCallExecutor)
+    protected readonly toolCallExecutor: ToolCallExecutor;
+
+    @inject(ILogger) @named('ai-anthropic:AnthropicModel')
+    protected readonly logger: ILogger;
+
+    @postConstruct()
+    protected init(): void {
+        const params = this.params;
+        this.id = params.id;
+        this.model = params.model;
+        this.status = params.status;
+        this.enableStreaming = params.enableStreaming;
+        this.useCaching = params.useCaching;
+        this.apiKey = params.apiKey;
+        this.url = params.url;
+        this.maxTokens = params.maxTokens ?? DEFAULT_MAX_TOKENS;
+        this.maxRetries = params.maxRetries ?? 3;
+        this.proxy = params.proxy;
+        this.reasoningSupport = params.reasoningSupport;
+        this.reasoningApi = params.reasoningApi;
+        this.supportsXHighEffort = params.supportsXHighEffort;
+        this.maxInputTokens = params.maxInputTokens;
+        this.serverTools = params.serverTools;
+        this.serverSideCompactionSupport = params.serverSideCompactionSupport ?? false;
+        this.serverSideCompactionEnabledByDefault = params.serverSideCompactionEnabledByDefault ?? false;
+        this.serverSideCompactionTokenThresholdByDefault = params.serverSideCompactionTokenThresholdByDefault;
+    }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return {
@@ -428,7 +486,7 @@ export class AnthropicModel implements LanguageModel {
 
         const tools = this.createTools(request);
         if (request.deferredToolIds?.length && tools) {
-            console.debug('Anthropic: converted tools for deferred loading:', tools.map(tool => ({
+            this.logger.debug('Anthropic: converted tools for deferred loading:', tools.map(tool => ({
                 name: 'name' in tool ? tool.name : undefined,
                 type: 'type' in tool ? tool.type : 'custom',
                 defer_loading: 'defer_loading' in tool ? tool.defer_loading : undefined
@@ -608,16 +666,11 @@ export class AnthropicModel implements LanguageModel {
                     }
                 }
                 if (toolCalls.length > 0) {
-                    const toolResult = await Promise.all(toolCalls.map(async tc => {
-                        const tool = request.tools?.find(t => t.name === tc.name);
-                        const argsObject = tc.args.length === 0 ? '{}' : tc.args;
-                        const handlerResult = tool
-                            ? await tool.handler(argsObject, ToolInvocationContext.create(tc.id))
-                            : createToolCallError(`Tool '${tc.name}' not found in the available tools for this request.`, 'tool-not-available');
-
-                        return { name: tc.name, result: handlerResult, id: tc.id, arguments: argsObject };
-
-                    }));
+                    const toolResult = await that.toolCallExecutor.executeToolCalls(
+                        toolCalls.map(tc => ({ id: tc.id, name: tc.name, arguments: tc.args.length === 0 ? '{}' : tc.args })),
+                        request.tools,
+                        { cancellationToken }
+                    );
 
                     const calls = toolResult.map(tr => ({ finished: true, id: tr.id, result: tr.result, function: { name: tr.name, arguments: tr.arguments } }));
                     yield { tool_calls: calls };
@@ -649,7 +702,7 @@ export class AnthropicModel implements LanguageModel {
         };
 
         stream.on('error', (error: Error) => {
-            console.error('Error in Anthropic streaming:', error);
+            this.logger.error('Error in Anthropic streaming:', error);
         });
 
         return { stream: asyncIterator };

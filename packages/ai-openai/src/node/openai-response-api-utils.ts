@@ -15,22 +15,19 @@
 // *****************************************************************************
 
 import {
-    createToolCallError,
     ImageContent,
     LanguageModelMessage,
     LanguageModelResponse,
     LanguageModelStreamResponsePart,
     TextMessage,
+    ToolCallExecutor,
     ToolCallResult,
-    ToolInvocationContext,
     ToolRequest,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, nls, unreachable, ILogger } from '@theia/core';
-import { Deferred } from '@theia/core/lib/common/promise-util';
-import { injectable, inject, named } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
-import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 import type {
     FunctionTool,
     Tool,
@@ -44,8 +41,10 @@ import type {
     ResponseToolSearchOutputItem
 } from 'openai/resources/responses/responses';
 import type { ResponsesModel } from 'openai/resources/shared';
-import { DeveloperMessageSettings, OpenAiModelUtils } from './openai-language-model';
+import { DeveloperMessageSettings } from './openai-language-model';
+import type { OpenAiModelUtils } from './openai-model-utils';
 import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools';
+import { AbstractStreamingResponseIterator } from './streaming-response-iterator';
 
 export const OPENAI_FUNCTION_CALL_REASONING_DATA_KEY = 'openAiFunctionCallReasoning';
 
@@ -81,6 +80,9 @@ interface ToolCall {
 @injectable()
 export class OpenAiResponseApiUtils {
 
+    @inject(ToolCallExecutor)
+    protected readonly toolCallExecutor: ToolCallExecutor;
+
     @inject(ILogger) @named('ai-openai:OpenAiResponseApiUtils')
     protected readonly logger: ILogger;
 
@@ -95,7 +97,6 @@ export class OpenAiResponseApiUtils {
         model: string,
         modelUtils: OpenAiModelUtils,
         developerMessageSettings: DeveloperMessageSettings,
-        runnerOptions: RunnerOptions,
         modelId: string,
         isStreaming: boolean,
         cancellationToken?: CancellationToken
@@ -149,9 +150,9 @@ export class OpenAiResponseApiUtils {
             model,
             modelUtils,
             developerMessageSettings,
-            runnerOptions,
             modelId,
             this,
+            this.toolCallExecutor,
             this.logger,
             isStreaming,
             cancellationToken
@@ -390,11 +391,7 @@ export class OpenAiResponseApiUtils {
  * Iterator for handling Response API streaming with tool calls.
  * Based on the pattern from openai-streaming-iterator.ts but adapted for Response API.
  */
-class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModelStreamResponsePart> {
-    protected readonly requestQueue = new Array<Deferred<IteratorResult<LanguageModelStreamResponsePart>>>();
-    protected readonly messageCache = new Array<LanguageModelStreamResponsePart>();
-    protected done = false;
-    protected terminalError: Error | undefined = undefined;
+class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
 
     // Current iteration state
     protected currentInput: ResponseInputItem[];
@@ -402,7 +399,6 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
     // Id under which the current deferred-tool search is surfaced, so the running and finished parts merge in the UI.
     protected toolSearchCallId: string | undefined;
     protected iteration = 0;
-    protected readonly maxIterations: number;
     protected readonly tools: Tool[] | undefined;
     protected readonly instructions?: string;
     protected currentResponseText = '';
@@ -416,55 +412,26 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
         protected readonly model: string,
         protected readonly modelUtils: OpenAiModelUtils,
         protected readonly developerMessageSettings: DeveloperMessageSettings,
-        protected readonly runnerOptions: RunnerOptions,
         protected readonly modelId: string,
         protected readonly utils: OpenAiResponseApiUtils,
+        protected readonly toolCallExecutor: ToolCallExecutor,
         protected readonly logger: ILogger,
         protected readonly isStreaming: boolean,
         protected readonly cancellationToken?: CancellationToken
     ) {
+        super();
         const { instructions, input } = utils.processMessages(request.messages, developerMessageSettings, model);
         this.instructions = instructions;
         this.currentInput = input;
         this.tools = utils.convertToolsForResponseApi(request.tools, request.deferredToolIds, request.serverTools);
-        this.maxIterations = runnerOptions.maxChatCompletions || 100;
 
         // Start the first iteration
         this.startIteration();
     }
 
-    [Symbol.asyncIterator](): AsyncIterableIterator<LanguageModelStreamResponsePart> {
-        return this;
-    }
-
-    async next(): Promise<IteratorResult<LanguageModelStreamResponsePart>> {
-        if (this.messageCache.length && this.requestQueue.length) {
-            throw new Error('Assertion error: cache and queue should not both be populated.');
-        }
-
-        // Deliver all the messages we got, even if we've since terminated.
-        if (this.messageCache.length) {
-            return {
-                done: false,
-                value: this.messageCache.shift()!
-            };
-        } else if (this.terminalError) {
-            throw this.terminalError;
-        } else if (this.done) {
-            return {
-                done: true,
-                value: undefined
-            };
-        } else {
-            const deferred = new Deferred<IteratorResult<LanguageModelStreamResponsePart>>();
-            this.requestQueue.push(deferred);
-            return deferred.promise;
-        }
-    }
-
     protected async startIteration(): Promise<void> {
         try {
-            while (this.iteration < this.maxIterations && !this.cancellationToken?.isCancellationRequested) {
+            while (!this.done && !this.cancellationToken?.isCancellationRequested) {
                 this.logger.debug(`Starting Response API iteration ${this.iteration} with ${this.currentInput.length} input messages`);
 
                 await this.processStream();
@@ -472,7 +439,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                 // Check if we have tool calls that need execution
                 if (this.currentToolCalls.size === 0) {
                     // No tool calls, we're done
-                    this.finalize();
+                    this.dispose();
                     return;
                 }
 
@@ -484,11 +451,11 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                 this.iteration++;
             }
 
-            // Max iterations reached
-            this.finalize();
+            // Cancelled, or abandoned by the consumer.
+            this.dispose();
         } catch (error) {
             this.terminalError = error instanceof Error ? error : new Error(String(error));
-            this.finalize();
+            this.dispose();
         }
     }
 
@@ -509,7 +476,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             });
 
             for await (const event of stream) {
-                if (this.cancellationToken?.isCancellationRequested) {
+                if (this.done || this.cancellationToken?.isCancellationRequested) {
                     break;
                 }
                 await this.handleStreamEvent(event);
@@ -786,41 +753,30 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
     }
 
     protected async executeToolCalls(): Promise<void> {
-        for (const [itemId, toolCall] of this.currentToolCalls) {
-            if (toolCall.executed) {
-                continue;
-            }
+        const pending = [...this.currentToolCalls].filter(([, toolCall]) => !toolCall.executed);
 
-            const tool = this.request.tools?.find(t => t.name === toolCall.name);
-            if (tool) {
-                try {
-                    const result = await tool.handler(toolCall.arguments, ToolInvocationContext.create(itemId));
-                    toolCall.result = result;
+        await this.toolCallExecutor.executeToolCalls(
+            pending.map(([itemId, toolCall]) => ({ id: itemId, name: toolCall.name, arguments: toolCall.arguments })),
+            this.request.tools,
+            {
+                cancellationToken: this.cancellationToken,
+                onResult: outcome => {
+                    const toolCall = this.currentToolCalls.get(outcome.id)!;
+                    if (outcome.notFound) {
+                        toolCall.error = new Error(`Tool ${toolCall.name} not found`);
+                    } else if (outcome.error) {
+                        toolCall.error = outcome.error;
+                    } else {
+                        toolCall.result = outcome.result;
+                    }
 
-                    // Yield the tool call completion
-                    this.handleFunctionCall(toolCall, true, result);
-                } catch (error) {
-                    this.logger.error(`Error executing tool ${toolCall.name}:`, error);
-                    toolCall.error = error instanceof Error ? error : new Error(String(error));
+                    // Yield the tool call completion (success result, or the error content)
+                    this.handleFunctionCall(toolCall, true, outcome.result);
 
-                    // Yield the tool call error
-                    this.handleFunctionCall(toolCall, true, createToolCallError(error instanceof Error ? error.message : String(error)));
-
+                    toolCall.executed = true;
                 }
-            } else {
-                this.logger.warn(`Tool ${toolCall.name} not found in request tools`);
-                toolCall.error = new Error(`Tool ${toolCall.name} not found`);
-
-                // Yield the tool call error
-                this.handleFunctionCall(
-                    toolCall,
-                    true,
-                    createToolCallError(`Tool '${toolCall.name}' not found in the available tools for this request.`, 'tool-not-available')
-                );
             }
-
-            toolCall.executed = true;
-        }
+        );
     }
 
     protected prepareNextIteration(): void {
@@ -863,33 +819,6 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
         }
 
         this.currentInput = [...this.currentInput, ...this.currentWebSearchReplayItems, assistantMessage, ...functionCalls, ...toolResults];
-    }
-
-    protected handleIncoming(message: LanguageModelStreamResponsePart): void {
-        if (this.messageCache.length && this.requestQueue.length) {
-            throw new Error('Assertion error: cache and queue should not both be populated.');
-        }
-
-        if (this.requestQueue.length) {
-            this.requestQueue.shift()!.resolve({
-                done: false,
-                value: message
-            });
-        } else {
-            this.messageCache.push(message);
-        }
-    }
-
-    protected async finalize(): Promise<void> {
-        this.done = true;
-
-        // Resolve any outstanding requests
-        if (this.terminalError) {
-            this.requestQueue.forEach(request => request.reject(this.terminalError));
-        } else {
-            this.requestQueue.forEach(request => request.resolve({ done: true, value: undefined }));
-        }
-        this.requestQueue.length = 0;
     }
 }
 
