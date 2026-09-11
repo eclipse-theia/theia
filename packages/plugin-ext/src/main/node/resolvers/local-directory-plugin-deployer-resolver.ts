@@ -30,8 +30,12 @@ export class LocalDirectoryPluginDeployerResolver extends LocalPluginDeployerRes
 
     protected async resolveFromLocalPath(pluginResolverContext: PluginDeployerResolverContext, localPath: string): Promise<void> {
         const files = await fs.readdir(localPath);
-        files.forEach(file =>
-            pluginResolverContext.addPlugin(file, path.resolve(localPath, file))
-        );
+        files.forEach(file => {
+            if (file.startsWith('.')) {
+                // Not a plugin, e.g. the `.DS_Store` the macOS Finder drops into any folder it displays.
+                return;
+            }
+            pluginResolverContext.addPlugin(file, path.resolve(localPath, file));
+        });
     }
 }
