@@ -418,15 +418,24 @@ export class OllamaModel implements LanguageModel {
                 return undefined;
             }
 
-            const result: Record<string, { type: string, description: string, enum?: string[] }> = {};
+            const result: Record<string, { type: string, description: string, enum?: unknown, items?: unknown, properties?: unknown, required?: unknown }> = {};
             for (const [key, prop] of Object.entries(props)) {
                 const type = resolveType(prop);
                 if (type) {
                     const description = typeof prop.description == 'string' ? prop.description : '';
-                    result[key] = {
-                        type: type,
-                        description: description
-                    };
+                    result[key] = { type: type, description: description };
+                    if (prop.enum !== undefined) {
+                        result[key].enum = prop.enum;
+                    }
+                    if (prop.items !== undefined) {
+                        result[key].items = prop.items;
+                    }
+                    if (prop.properties !== undefined) {
+                        result[key].properties = transform(prop.properties as ToolRequestParametersProperties);
+                    }
+                    if (prop.required !== undefined) {
+                        result[key].required = prop.required;
+                    }
                 }
             }
             return result;
@@ -439,7 +448,7 @@ export class OllamaModel implements LanguageModel {
                 parameters: {
                     type: tool.parameters?.type ?? 'object',
                     required: tool.parameters?.required ?? [],
-                    properties: transform(tool.parameters?.properties) ?? {}
+                    properties: (transform(tool.parameters?.properties) ?? {}) as Record<string, { type?: string; items?: unknown; description?: string; enum?: unknown[] }>
                 },
             },
             handler: tool.handler
