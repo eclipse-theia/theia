@@ -17,11 +17,11 @@
 import {
     ApiKeySource, DiscoveredModel, DiscoveredModels, LanguageModelRegistry, LanguageModelStatus, ModelDiscoveryResult, ReasoningApi, ReasoningSupport
 } from '@theia/ai-core';
-import { createProxyFetch, getProxyUrl, ModelDiscoveryFetcher } from '@theia/ai-core/lib/node';
+import { getProxyUrl, ModelDiscoveryFetcher } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { Anthropic, APIConnectionError } from '@anthropic-ai/sdk';
+import { APIConnectionError } from '@anthropic-ai/sdk';
 import type { ModelInfo } from '@anthropic-ai/sdk/resources/models';
-import { AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
+import { AnthropicModel, createAnthropicClient, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
 import { ANTHROPIC_SERVER_TOOLS } from './anthropic-server-tools';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
 import { ILogger } from '@theia/core';
@@ -121,10 +121,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
 
     /** Iterates the (auto-paginated) `/v1/models` endpoint. Overridable for testing. */
     protected async listModels(apiKey: string, proxyUrl: string | undefined): Promise<ModelInfo[]> {
-        const anthropic = new Anthropic({
-            apiKey,
-            fetch: createProxyFetch(proxyUrl)
-        });
+        const anthropic = createAnthropicClient({ apiKey, proxyUrl });
         const models: ModelInfo[] = [];
         for await (const model of anthropic.models.list()) {
             models.push(model);
@@ -267,11 +264,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
         apiKey: string,
         proxyUrl: string | undefined
     ): Promise<ModelInfo> {
-        const anthropic = new Anthropic({
-            apiKey,
-            baseURL: modelDescription.url,
-            fetch: createProxyFetch(proxyUrl)
-        });
+        const anthropic = createAnthropicClient({ apiKey, baseURL: modelDescription.url, proxyUrl });
         return anthropic.models.retrieve(modelDescription.model);
     }
 

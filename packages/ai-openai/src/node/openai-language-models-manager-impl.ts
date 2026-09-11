@@ -17,10 +17,10 @@
 import {
     ApiKeySource, DiscoveredModel, DiscoveredModels, LanguageModelRegistry, LanguageModelStatus, ModelDiscoveryResult, ReasoningSupport
 } from '@theia/ai-core';
-import { createProxyFetch, getProxyUrl, ModelDiscoveryFetcher } from '@theia/ai-core/lib/node';
+import { getProxyUrl, ModelDiscoveryFetcher } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { OpenAI, APIConnectionError } from 'openai';
-import { DeveloperMessageSettings, OpenAiModel, OpenAiModelUtils } from './openai-language-model';
+import { APIConnectionError } from 'openai';
+import { createOpenAiClient, DeveloperMessageSettings, OpenAiModel, OpenAiModelUtils } from './openai-language-model';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { getOpenAiModelDefaults } from './openai-model-defaults';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common';
@@ -140,7 +140,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
 
     /** Iterates the (auto-paginated) `/v1/models` endpoint. Overridable for testing. */
     protected async listModels(apiKey: string, proxyUrl: string | undefined): Promise<ListedOpenAiModel[]> {
-        const openai = new OpenAI({ apiKey, fetch: createProxyFetch(proxyUrl) });
+        const openai = createOpenAiClient({ apiKey, proxyUrl });
         const models: ListedOpenAiModel[] = [];
         for await (const model of openai.models.list()) {
             models.push(model);

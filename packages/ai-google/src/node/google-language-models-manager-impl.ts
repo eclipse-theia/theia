@@ -19,8 +19,8 @@ import {
 } from '@theia/ai-core';
 import { ModelDiscoveryFetcher } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { GoogleGenAI, Model } from '@google/genai';
-import { GoogleModel } from './google-language-model';
+import { Model } from '@google/genai';
+import { createGoogleClient, GoogleModel } from './google-language-model';
 import { GOOGLE_SERVER_TOOLS } from './google-server-tools';
 import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
 import { ILogger } from '@theia/core';
@@ -167,7 +167,7 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
 
     /** Iterates the (auto-paginated) `/v1beta/models` endpoint. Overridable for testing. */
     protected async listModels(apiKey: string): Promise<Model[]> {
-        const genAI = new GoogleGenAI({ apiKey, vertexai: false });
+        const genAI = createGoogleClient({ apiKey });
         const models: Model[] = [];
         for await (const model of await genAI.models.list()) {
             models.push(model);
@@ -268,7 +268,7 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
     }
 
     protected retrieveModelInfo(modelDescription: GoogleModelDescription, apiKey: string): Promise<Model> {
-        const genAI = new GoogleGenAI({ apiKey, vertexai: false });
+        const genAI = createGoogleClient({ apiKey });
         return genAI.models.get({ model: modelDescription.model });
     }
 
