@@ -27,14 +27,15 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
+import { PLUGINS_SCHEME } from '@theia/plugin-utils/lib/common/constants';
 import { PluginIconTheme } from './plugin-icon-theme-service';
 
 disableJSDOM();
 
 /**
- * Widens `protected` members to `public`/settable so the tests can drive `toPackageRootUri` and
- * `toCSSUrl` without going through `@postConstruct` and the full Inversify container - none of the
- * injected services (`FileService`, `LabelProvider`, etc.) are touched by either method.
+ * Widens `protected` members to `public`/settable so the tests can drive `toCSSUrl` without going
+ * through `@postConstruct` and the full Inversify container - none of the injected services
+ * (`FileService`, `LabelProvider`, etc.) are touched by it.
  */
 class TestablePluginIconTheme extends PluginIconTheme {
 
@@ -43,11 +44,7 @@ class TestablePluginIconTheme extends PluginIconTheme {
         this.pluginId = state.pluginId;
         this.packageUri = state.packageUri;
         this.locationUri = new URI(state.uri).parent;
-        this.packageRootUri = this.toPackageRootUri();
-    }
-
-    callToPackageRootUri(): URI {
-        return this.toPackageRootUri();
+        this.packageRootUri = new URI(state.packageUri);
     }
 
     callToCSSUrl(iconPath: string | undefined): string | undefined {
@@ -59,63 +56,29 @@ describe('PluginIconTheme', () => {
     before(() => disableJSDOM = enableJSDOM());
     after(() => disableJSDOM());
 
-    describe('toPackageRootUri', () => {
-
-        it('rebuilds the root as `hostedPlugin:/<id>/` when the icon theme is addressed via a hostedPlugin URI', () => {
-            const theme = new TestablePluginIconTheme();
-            theme.setState({
-                uri: 'hostedPlugin:/acme_ext/themes/my-icon-theme.json',
-                pluginId: 'acme_ext',
-                packageUri: 'hostedPlugin/acme_ext/'
-            });
-            expect(theme.callToPackageRootUri().toString()).to.equal('hostedPlugin:/acme_ext/');
-        });
-
-        it('passes the packageUri through unchanged for a backend (file-scheme) icon theme', () => {
-            const theme = new TestablePluginIconTheme();
-            theme.setState({
-                uri: 'file:///plugins/acme.ext-1.0.0/extension/themes/my-icon-theme.json',
-                pluginId: 'acme_ext',
-                packageUri: 'file:///plugins/acme.ext-1.0.0/extension/'
-            });
-            expect(theme.callToPackageRootUri().toString()).to.equal('file:///plugins/acme.ext-1.0.0/extension/');
-        });
-
-        it('would leave icon paths unresolvable if the hostedPlugin root were derived from packageUri directly', () => {
-            // Documents the bug `toPackageRootUri` fixes: `packageUri` for a browser-only plugin is the
-            // static `hostedPlugin/<id>/` path (no scheme), which parses as a `file:` URI and can never
-            // share a root with the `hostedPlugin:` icon URIs, so `Path#relative` returns `undefined`.
-            const naiveRoot = new URI('hostedPlugin/acme_ext/');
-            const locationUri = new URI('hostedPlugin:/acme_ext/themes/my-icon-theme.json').parent;
-            const iconUri = locationUri.resolve('icons/file.svg');
-            expect(naiveRoot.path.relative(iconUri.path.normalize())).to.be.undefined;
-        });
-
-    });
-
     describe('toCSSUrl', () => {
 
-        it('resolves an icon path relative to a hostedPlugin package root into a static plugin asset URL', () => {
+        it('resolves an icon path relative to a browser-only plugin package root into a static plugin asset URL', () => {
             const theme = new TestablePluginIconTheme();
             theme.setState({
-                uri: 'hostedPlugin:/acme_ext/themes/my-icon-theme.json',
+                uri: `${PLUGINS_SCHEME}:/acme_ext/themes/my-icon-theme.json`,
                 pluginId: 'acme_ext',
-                packageUri: 'hostedPlugin/acme_ext/'
+                packageUri: `${PLUGINS_SCHEME}:/acme_ext/`
             });
             expect(theme.callToCSSUrl('icons/file.svg')).to.equal("url('http://localhost/hostedPlugin/acme_ext/themes/icons/file.svg')");
         });
 
-        it('resolves `..` segments in a hostedPlugin icon path back within the plugin root', () => {
+        it('resolves `..` segments in a browser-only icon path back within the plugin root', () => {
             const theme = new TestablePluginIconTheme();
             theme.setState({
-                uri: 'hostedPlugin:/acme_ext/themes/my-icon-theme.json',
+                uri: `${PLUGINS_SCHEME}:/acme_ext/themes/my-icon-theme.json`,
                 pluginId: 'acme_ext',
-                packageUri: 'hostedPlugin/acme_ext/'
+                packageUri: `${PLUGINS_SCHEME}:/acme_ext/`
             });
             expect(theme.callToCSSUrl('../shared/icons/other.svg')).to.equal("url('http://localhost/hostedPlugin/acme_ext/shared/icons/other.svg')");
         });
 
-        it('still resolves icon paths for a backend (file-scheme) icon theme, unaffected by the hostedPlugin fix', () => {
+        it('still resolves icon paths for a backend (file-scheme) icon theme', () => {
             const theme = new TestablePluginIconTheme();
             theme.setState({
                 uri: 'file:///plugins/acme.ext-1.0.0/extension/themes/my-icon-theme.json',
@@ -128,9 +91,9 @@ describe('PluginIconTheme', () => {
         it('returns undefined for an empty icon path', () => {
             const theme = new TestablePluginIconTheme();
             theme.setState({
-                uri: 'hostedPlugin:/acme_ext/themes/my-icon-theme.json',
+                uri: `${PLUGINS_SCHEME}:/acme_ext/themes/my-icon-theme.json`,
                 pluginId: 'acme_ext',
-                packageUri: 'hostedPlugin/acme_ext/'
+                packageUri: `${PLUGINS_SCHEME}:/acme_ext/`
             });
             expect(theme.callToCSSUrl(undefined)).to.be.undefined;
         });
