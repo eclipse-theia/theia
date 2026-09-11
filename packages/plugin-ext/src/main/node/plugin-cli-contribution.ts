@@ -27,9 +27,6 @@ export class PluginCliContribution implements CliContribution {
     static PLUGIN_MAX_SESSION_LOGS_FOLDERS = 'plugin-max-session-logs-folders';
     static UNCOMPRESSED_PLUGINS_IN_PLACE = 'uncompressed-plugins-in-place';
     /**
-     * This is the default value used in VSCode, see:
-     * - https://github.com/Microsoft/vscode/blob/613447d6b3f458ef7fee227e3876303bf5184580/src/vs/code/electron-browser/sharedProcess/contrib/logsDataCleaner.ts#L32
-     *
      * Shared with the browser-only frontend (which has no CLI to read this option from) via
      * {@link PluginPaths.DEFAULT_PLUGIN_MAX_SESSION_LOGS_FOLDERS}, so the two defaults cannot drift apart.
      */
