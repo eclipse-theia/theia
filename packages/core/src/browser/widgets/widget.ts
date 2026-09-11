@@ -156,6 +156,12 @@ export class BaseWidget extends Widget implements PreviewableWidget {
     }
 
     protected override onBeforeDetach(msg: Message): void {
+        // If the focused element is inside this widget, explicitly blur it
+        // before the DOM node is destroyed so the browser doesn't force a focus reset.
+        if (this.node.contains(document.activeElement)) {
+            (document.activeElement as HTMLElement).blur();
+        }
+
         this.toDisposeOnDetach.dispose();
         super.onBeforeDetach(msg);
     }
