@@ -24,7 +24,7 @@ import {
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, ILogger } from '@theia/core';
-import type { CopilotClient, CopilotSession, PermissionHandler, Tool } from './copilot-sdk-types';
+import type { BlobMessageAttachment, CopilotClient, CopilotSession, PermissionHandler, Tool } from './copilot-sdk-types';
 import { buildSdkPrompt, buildSdkSystemMessage } from './copilot-sdk-mappers';
 
 /**
@@ -155,7 +155,7 @@ export class CopilotSdkLanguageModel implements LanguageModel {
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const client = await this.clientProvider();
-        const { systemText, prompt } = buildSdkPrompt(request.messages);
+        const { systemText, prompt, attachments } = buildSdkPrompt(request.messages);
         const sink = new CopilotStreamSink();
 
         const tools = this.createTools(request.tools ?? [], sink);
@@ -177,7 +177,7 @@ export class CopilotSdkLanguageModel implements LanguageModel {
             onPermissionRequest: approveTheiaTools
         });
 
-        return { stream: this.streamResponse(client, session, prompt, sink, cancellationToken) };
+        return { stream: this.streamResponse(client, session, prompt, attachments, sink, cancellationToken) };
     }
 
     /**
@@ -235,6 +235,7 @@ export class CopilotSdkLanguageModel implements LanguageModel {
         client: CopilotClient,
         session: CopilotSession,
         prompt: string,
+        attachments: BlobMessageAttachment[] | undefined,
         sink: CopilotStreamSink,
         cancellationToken?: CancellationToken
     ): AsyncIterable<LanguageModelStreamResponsePart> {
@@ -292,7 +293,7 @@ export class CopilotSdkLanguageModel implements LanguageModel {
             } else {
                 // Deliberately not awaited: the turn only completes after the tool loop has run, and
                 // its parts have to be yielded while that happens.
-                session.send({ prompt }).catch(error => sink.finish(error));
+                session.send({ prompt, attachments }).catch(error => sink.finish(error));
             }
             yield* sink.drain();
             if (inputTokens !== undefined || outputTokens !== undefined) {

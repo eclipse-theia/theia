@@ -172,6 +172,15 @@ the runtime is configured without the ambient behaviour of the CLI: only the too
 instructions and skills found on the host, the memory and session stores, host git operations and plugins are off, since
 Theia drives the conversation itself.
 
+#### Removal of deprecated @theia/preview extension from Theia codebase [#18001](https://github.com/eclipse-theia/theia/pull/18001)
+
+The `@theia/preview` extension has been completely removed from the Theia codebase.
+This extension was deprecated and stopped being published in v1.73.0.
+
+If your application still depends on `@theia/preview`, migrate to the built-in VS Code Markdown extension (`vscode.markdown-language-features`), which provides the same feature set and is actively maintained. Remove any references to `@theia/preview` from your application's dependencies and ensure the VS Code Markdown extension is included in your application, either through the builtin extension pack or by explicitly adding it to your plugins configuration.
+
+Gone with the extension are the `preview.openByDefault` preference, the `preview:open` and `preview.open.source` commands, and the `PreviewUri`, `PreviewHandler`, `PreviewHandlerProvider`, `PreviewWidget`, `PreviewContribution`, `PreviewCommands`, `MarkdownPreviewHandler` and `PreviewLinkNormalizer` API. The VS Code Markdown extension contributes `markdown.showPreview`, `markdown.showPreviewToSide` and the `markdown.preview.*` preferences in their place.
+
 ### v1.75.0
 
 #### React 19 and the automatic JSX runtime

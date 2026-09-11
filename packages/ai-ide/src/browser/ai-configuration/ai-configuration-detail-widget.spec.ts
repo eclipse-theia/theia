@@ -97,7 +97,7 @@ describe('AiConfigurationDetailWidget dispatch', () => {
 });
 
 /**
- * Pins the scrolling arithmetic of {@link AiConfigurationDetailWidget#centerInBody} and, more importantly,
+ * Pins the scrolling arithmetic of {@link AiConfigurationDetailWidget#revealInBody} and, more importantly,
  * that it writes only the scroll container.
  *
  * The predecessor was `element.scrollIntoView({ block: 'center' })`, which also scrolls every scrollable
@@ -106,7 +106,7 @@ describe('AiConfigurationDetailWidget dispatch', () => {
  * `clientHeight` are stubbed; it also does not implement `scrollIntoView`, so reverting to it fails every
  * assertion here (verified by patching the method back).
  */
-describe('AiConfigurationDetailWidget centerInBody', () => {
+describe('AiConfigurationDetailWidget revealInBody', () => {
 
     before(() => disableJSDOM = enableJSDOM());
     after(() => disableJSDOM());
@@ -135,30 +135,30 @@ describe('AiConfigurationDetailWidget centerInBody', () => {
         return { ancestor, body, element };
     }
 
-    it('scrolls the container so the row is vertically centred', () => {
+    it('scrolls the container so the row sits at its top', () => {
         const { body, element } = hierarchy(500);
-        // Row sits 400px below the body's top; centring it in a 400px viewport puts it at (400 - 40) / 2 = 180.
-        widget.centerInBody(body, element);
-        expect(body.scrollTop).to.equal(220);
+        // Row sits 400px below the body's top, less the margin kept above it.
+        widget.revealInBody(body, element);
+        expect(body.scrollTop).to.equal(400 - AiConfigurationDetailWidget.TARGET_ROW_MARGIN);
     });
 
-    it('leaves the scroll position alone when the row is already centred', () => {
-        const { body, element } = hierarchy(280);
-        widget.centerInBody(body, element);
+    it('leaves the scroll position alone when the row is already at the top', () => {
+        const { body, element } = hierarchy(100 + AiConfigurationDetailWidget.TARGET_ROW_MARGIN);
+        widget.revealInBody(body, element);
         expect(body.scrollTop).to.equal(0);
     });
 
-    it('scrolls back up for a row above the centre', () => {
+    it('scrolls back up for a row above the current position', () => {
         const { body, element } = hierarchy(120);
-        // 20px below the body's top, so it has to scroll up by 160 to reach the centre.
+        // 20px below the body's top, so it has to scroll up to put the row at the margin.
         body.scrollTop = 300;
-        widget.centerInBody(body, element);
-        expect(body.scrollTop).to.equal(140);
+        widget.revealInBody(body, element);
+        expect(body.scrollTop).to.equal(300 + 20 - AiConfigurationDetailWidget.TARGET_ROW_MARGIN);
     });
 
     it('never scrolls an ancestor of the container', () => {
         const { ancestor, body, element } = hierarchy(500);
-        widget.centerInBody(body, element);
+        widget.revealInBody(body, element);
         expect(body.scrollTop, 'the container itself should have scrolled').to.not.equal(0);
         expect(ancestor.scrollTop, 'scrolling an ancestor shifts the whole shell').to.equal(0);
     });

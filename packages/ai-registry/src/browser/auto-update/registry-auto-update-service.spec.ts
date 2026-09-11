@@ -27,6 +27,7 @@ try {
 
 import { expect } from 'chai';
 import { ILogger, MessageService, PreferenceService } from '@theia/core';
+import { AI_SHOW_SETTINGS_COMMAND } from '@theia/ai-core/lib/browser/ai-core-command-contribution';
 import { MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { AUTO_UPDATE_OVERRIDES_PREF, AUTO_UPDATE_PREF, AutoUpdateMode } from '../../common/ai-registry-preferences';
 import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
@@ -455,6 +456,27 @@ describe('RegistryAutoUpdateService', () => {
             await service.check();
             expect(service.attempted).to.be.empty;
             expect(policy.getMode('skill', skillEntry.skillId)).to.equal('ask');
+        });
+    });
+
+    describe('settings link', () => {
+
+        /** Exposes the real link builder, which {@link TestAutoUpdateService} replaces with a placeholder. */
+        class LinkAutoUpdateService extends RegistryAutoUpdateService {
+            link(): string {
+                return this.settingsLink();
+            }
+        }
+
+        it('targets the AI settings command, since AI preferences have no row in the Settings UI', () => {
+            const link = new LinkAutoUpdateService().link();
+            expect(link).to.contain(`command:${AI_SHOW_SETTINGS_COMMAND.id}`);
+            expect(link).to.not.contain('preferences:open');
+        });
+
+        it('deep-links to the auto-update preference', () => {
+            const link = new LinkAutoUpdateService().link();
+            expect(link).to.contain(encodeURIComponent(JSON.stringify([AUTO_UPDATE_PREF])));
         });
     });
 
