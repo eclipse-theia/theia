@@ -494,8 +494,13 @@ const MalformedInteraction: React.FC<{ message: string }> = ({ message }) => (
     </div>
 );
 
-interface ToolErrorResult { error: string }
-function parseToolErrorResult(raw: unknown): ToolErrorResult | undefined {
+/**
+ * Extract the message to show for a tool result that the renderer cannot turn into an interaction.
+ * Covers both shapes the tool can produce for malformed arguments: the `{ error }` result of the
+ * handler, and the `{ denied: true, reason }` result of the auto-deny in `checkAutoAction`, which
+ * is what a validation failure produces before the handler ever runs.
+ */
+function extractErrorMessage(raw: unknown): string | undefined {
     let candidate: unknown = raw;
     if (typeof raw === 'string') {
         try {
@@ -504,8 +509,15 @@ function parseToolErrorResult(raw: unknown): ToolErrorResult | undefined {
             return undefined;
         }
     }
-    if (candidate && typeof candidate === 'object' && typeof (candidate as { error?: unknown }).error === 'string') {
-        return candidate as ToolErrorResult;
+    if (!candidate || typeof candidate !== 'object') {
+        return undefined;
+    }
+    const error = (candidate as { error?: unknown }).error;
+    if (typeof error === 'string') {
+        return error;
+    }
+    if (ToolCallChatResponseContent.isDenialResult(candidate) && typeof candidate.reason === 'string') {
+        return candidate.reason;
     }
     return undefined;
 }
@@ -554,7 +566,8 @@ export class UserInteractionToolRenderer implements ChatResponsePartRenderer<Too
     }
 
     render(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
-        const args = parseUserInteractionArgs(response.arguments);
+        const validation = parseUserInteractionArgs(response.arguments);
+        const args = validation.ok ? validation.args : undefined;
 
         if (!args || !response.id) {
             // The tool already returned a result but the args don't validate: this
@@ -562,8 +575,7 @@ export class UserInteractionToolRenderer implements ChatResponsePartRenderer<Too
             // rejected, or arguments that fail shared parsing). Show an error state
             // instead of a perpetual loading spinner.
             if (response.result !== undefined) {
-                const error = parseToolErrorResult(response.result);
-                const message = error?.error
+                const message = extractErrorMessage(response.result)
                     ?? nls.localize('theia/ai-ide/userInteractionMalformedFallback', 'The arguments could not be parsed.');
                 return <MalformedInteraction message={message} />;
             }

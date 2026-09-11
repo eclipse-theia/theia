@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ToolProvider, ToolRequest, ToolRequestParameterProperty, ToolRequestParameters } from '@theia/ai-core';
-import { ToolInvocationContext } from '@theia/ai-core/lib/common/language-model';
+import { AutoActionResult, ToolInvocationContext } from '@theia/ai-core/lib/common/language-model';
 import { ChatToolContext } from '@theia/ai-chat';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { open, OpenerService } from '@theia/core/lib/browser';
@@ -103,8 +103,9 @@ const STEP_SCHEMA: ToolRequestParameterProperty = {
                 },
                 required: ['text', 'value']
             },
-            description: 'Optional buttons offered to the user for this step. Omit for purely informational steps; '
-                + 'a hardcoded "Next"/"Finish" button is always shown to advance.'
+            description: 'Buttons offered to the user for this step. '
+                + 'Omit it (or pass an empty array) only for purely informational steps: a step without options is never a confirmation, '
+                + 'so never use one to ask for approval. In a multi-step interaction a hardcoded "Next"/"Finish" button is always shown to advance.'
         },
         links: {
             type: 'array',
@@ -161,7 +162,8 @@ const TOOL_DESCRIPTION = 'Present an interactive user interaction. Each step has
     + 'The tool returns a JSON string with { "completed": boolean, "steps": [{ "title", "value"?, "comments"?, "skipped"? }] }. '
     + 'If the user cancels mid-interaction, the tool returns whatever has been collected so far with "completed": false. '
     + 'Use this to walk users through a series of pre-determined findings or decisions in a single tool call, '
-    + 'or to surface a single message/diff that should be shown inline in the chat.';
+    + 'or to surface a single message/diff that should be shown inline in the chat. '
+    + 'Pass nested values as real JSON arrays and objects, never as JSON-encoded strings.';
 
 @injectable()
 export class UserInteractionTool implements ToolProvider {
@@ -194,8 +196,20 @@ export class UserInteractionTool implements ToolProvider {
             providerName: 'ai-ide',
             description: TOOL_DESCRIPTION,
             parameters: TOOL_PARAMETERS,
-            handler: (argString: string, ctx) => this.handleInteraction(argString, ctx)
+            handler: (argString: string, ctx) => this.handleInteraction(argString, ctx),
+            checkAutoAction: (argString: string) => this.checkArguments(argString)
         };
+    }
+
+    /**
+     * Auto-deny invocations whose arguments do not validate, handing the validation error back to
+     * the model. Without this the confirmation flow would stall: the renderer refuses to mount the
+     * interaction (and with it the Allow/Deny buttons) for arguments it cannot render, so a
+     * confirmation that nobody can give would be awaited indefinitely.
+     */
+    protected checkArguments(argString: string): AutoActionResult | undefined {
+        const validation = parseUserInteractionArgs(argString);
+        return validation.ok ? undefined : { action: 'deny', reason: validation.error };
     }
 
     /**
@@ -310,18 +324,14 @@ export class UserInteractionTool implements ToolProvider {
     }
 
     protected async handleInteraction(argString: string, ctx: ToolInvocationContext | undefined): Promise<string> {
-        try {
-            JSON.parse(argString);
-        } catch {
-            return JSON.stringify({ error: 'Invalid arguments' });
-        }
         // Validate via the shared parser so the tool only ever waits for steps that
-        // the renderer would actually render. Otherwise the agent could send a
-        // step the UI filters out, leaving the tool blocked on input forever.
-        const validated = parseUserInteractionArgs(argString);
-        if (!validated || validated.interactions.length === 0) {
-            return JSON.stringify({ error: 'No interactions provided' });
+        // the renderer would actually render, and so that anything the agent got
+        // wrong is reported back to it verbatim instead of being silently dropped.
+        const validation = parseUserInteractionArgs(argString);
+        if (!validation.ok) {
+            return JSON.stringify({ error: validation.error });
         }
+        const validated = validation.args;
 
         const toolCallId = ToolInvocationContext.getToolCallId(ctx);
         if (!toolCallId) {
