@@ -38,7 +38,7 @@
     "@theia/workspace": "1.75.0",
     "date-fns": "^4.4.0",
     "ignore": "^6.0.2",
-    "js-yaml": "^4.3.1",
+    "js-yaml": "^4.3.2",
     "minimatch": "^10.2.6",
     "puppeteer-core": "^25.1.0",
     "simple-git": "^3.36.0"

@@ -61,7 +61,7 @@
     "@types/decompress": "^4.2.7",
     "@types/express-http-proxy": "^1.6.7",
     "@types/glob": "^8.1.0",
-    "@types/ssh2": "^1.15.5",
+    "@types/ssh2": "^1.15.6",
     "@types/ssh2-sftp-client": "^9.0.6"
   },
   "nyc": {

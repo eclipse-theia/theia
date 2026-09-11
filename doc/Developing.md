@@ -491,7 +491,7 @@ etc.) by opening `packages/<package name>/coverage/index.html`.
 
 ## Updating dependencies and the lockfile
 
-When you add, remove, or upgrade dependencies, the regenerated `package-lock.json` needs care so that `npm ci` keeps working on every Node version used in CI (currently Node 24 and Node 26). See [Lockfile maintenance](lockfile-maintenance.md) for the required workflow before committing lockfile changes.
+When you add, remove, or upgrade dependencies, run `node scripts/verify-lockfile-platforms.js` before committing the regenerated `package-lock.json`. It checks that the lockfile still describes every platform CI builds on and that the `allowScripts` allowlist is in sync. See [Lockfile maintenance](lockfile-maintenance.md).
 
 ## Building on Windows
 
