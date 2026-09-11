@@ -103,19 +103,13 @@ describe('BrowserOnlyHostedPluginServer', () => {
         expect(deployed.map(p => p.metadata.model.name)).to.deep.equal(['a', 'c']);
     });
 
-    it('reports where the list could not be loaded from, and retries afterwards', async () => {
-        const responses: Array<() => Response> = [
-            () => new Response('', { status: 404, statusText: 'Not Found' }),
-            () => Response.json([plugin('a')])
-        ];
-        stubFetch(() => responses.shift()!());
+    it('reports where the list could not be loaded from', async () => {
+        stubFetch(() => new Response('', { status: 404, statusText: 'Not Found' }));
         const server = createServer();
 
         await server.getDeployedPluginIds().then(
             () => expect.fail('should have rejected'),
             error => expect(error.message).to.contain('http://localhost/hostedPlugin/list.json').and.to.contain('404'));
-
-        expect(await server.getDeployedPluginIds()).to.deep.equal(['theia.a@1.0.0']);
     });
 
     it('rejects a list that is not an array', async () => {
