@@ -14,8 +14,75 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { deepClone, deepFreeze } from '@theia/core/lib/common/objects';
+import { isObject } from '@theia/core/lib/common/types';
+
 /** @experimental */
 export type TelemetryLevel = 'off' | 'crash' | 'error' | 'all';
 
 /** @experimental */
 export const BACKEND_TELEMETRY_SESSION = 'backend';
+
+/** @experimental */
+export type TelemetryPrimitive = string | number | boolean;
+/** @experimental */
+export type TelemetryValue = TelemetryPrimitive | readonly string[] | readonly number[] | readonly boolean[];
+
+/** @experimental */
+export type TelemetryData<T extends object> = {
+    [K in keyof T]: T[K] extends TelemetryValue ? T[K] : never;
+};
+
+function isTelemetryPrimitive(value: unknown): value is TelemetryPrimitive {
+    return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
+}
+
+function isTelemetryArray(value: unknown): value is readonly TelemetryPrimitive[] {
+    if (!Array.isArray(value)) {
+        return false;
+    }
+    if (value.length === 0) {
+        return true;
+    }
+    if (!Object.prototype.hasOwnProperty.call(value, 0) || !isTelemetryPrimitive(value[0])) {
+        return false;
+    }
+    const elementType = typeof value[0];
+    for (let index = 1; index < value.length; index++) {
+        if (!Object.prototype.hasOwnProperty.call(value, index) || !isTelemetryPrimitive(value[index]) || typeof value[index] !== elementType) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function isTelemetryValue(value: unknown): value is TelemetryValue {
+    return isTelemetryPrimitive(value) || isTelemetryArray(value);
+}
+
+/** @experimental */
+export function isTelemetryData(data: unknown): data is Record<string, TelemetryValue> {
+    if (!isObject(data) || Array.isArray(data) || Object.getPrototypeOf(data) !== Object.prototype) {
+        return false;
+    }
+    return Object.values(data).every(isTelemetryValue);
+}
+
+/** @experimental */
+export function snapshotTelemetryData<T extends object>(data: TelemetryData<T> | undefined): TelemetryData<T> | undefined {
+    return data === undefined ? undefined : deepFreeze(deepClone(data));
+}
+
+/** @experimental */
+export type TelemetryEventKind = 'usage' | 'error' | 'crash';
+
+/** @experimental */
+export function isTelemetryEventKind(value: unknown): value is TelemetryEventKind {
+    return value === 'usage' || value === 'error' || value === 'crash';
+}
+
+/** @experimental */
+export interface TelemetryReportOptions {
+    readonly kind?: TelemetryEventKind;
+    readonly attributes?: TelemetryData<Record<string, TelemetryValue>>;
+}
