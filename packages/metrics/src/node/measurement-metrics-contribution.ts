@@ -21,6 +21,7 @@ import { TelemetrySink } from '@theia/telemetry/lib/node';
 import { MetricsContribution } from './metrics-contribution';
 
 const metricsName = 'theia_measurements';
+const metricsHeader = `# HELP ${metricsName} Theia stopwatch measurement results.\n# TYPE ${metricsName} gauge\n`;
 
 @injectable()
 export class MeasurementMetricsBackendContribution implements MetricsContribution, TelemetrySink {
@@ -31,19 +32,18 @@ export class MeasurementMetricsBackendContribution implements MetricsContributio
     @inject(LogLevelCliContribution)
     protected logLevelCli: LogLevelCliContribution;
 
+    /** The accumulated samples. The `HELP`/`TYPE` header is prepended by `getMetrics`. */
     protected metrics = '';
     protected frontendCounters = new Map<string, string>();
 
     startCollecting(): void {
-        if (!this.isEnabled()) {
-            return;
-        }
-        this.metrics += `# HELP ${metricsName} Theia stopwatch measurement results.\n`;
-        this.metrics += `# TYPE ${metricsName} gauge\n`;
+        // Nothing to do: telemetry events are dispatched asynchronously and may be handled before
+        // collection starts, so the header is rendered by `getMetrics` instead. That also keeps it
+        // from being duplicated when collection is started more than once.
     }
 
     getMetrics(): string {
-        return this.metrics;
+        return this.isEnabled() ? metricsHeader + this.metrics : '';
     }
 
     handle(event: TelemetryEvent): void {
