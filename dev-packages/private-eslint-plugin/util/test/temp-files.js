@@ -28,7 +28,10 @@ const path = require('path');
  * @param {{[relativePath: string]: string}} files
  */
 function tempFiles(files) {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'theia-eslint-plugin-'));
+    // The temporary directory is canonicalized because on macOS 'os.tmpdir()' is '/var/folders/...',
+    // a symbolic link to '/private/var/folders/...'. A test comparing paths would otherwise compare
+    // the two spellings of the same file against each other.
+    const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'theia-eslint-plugin-')));
     for (const [relativePath, content] of Object.entries(files)) {
         const file = path.join(root, relativePath);
         fs.mkdirSync(path.dirname(file), { recursive: true });
