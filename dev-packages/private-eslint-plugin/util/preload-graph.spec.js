@@ -154,6 +154,47 @@ describe('preload-graph', () => {
             assert.deepStrictEqual(imports.map(entry => entry.specifier), ['./legacy', 'electron']);
         });
 
+        it('follows an import that the decorator metadata turns into a value', () => {
+            // The repository is compiled with 'emitDecoratorMetadata', which emits these types into
+            // the 'design:type', 'design:paramtypes' and 'design:returntype' of the declaration.
+            const { imports } = analyze('decorator-metadata.ts', `
+                import { Injected } from './injected';
+                import { Property } from './property';
+                import { Argument } from './argument';
+                import { Result } from './result';
+                import { Decorated } from './decorated';
+                @injectable()
+                export class Service {
+                    @inject(Symbol) protected readonly property: Property;
+                    constructor(injected: Injected) { }
+                    @memoize() compute(argument: Argument): Result { return undefined; }
+                    handle(@named('x') decorated: Decorated): void { }
+                }
+            `);
+            assert.deepStrictEqual(imports.map(entry => entry.specifier).sort(),
+                ['./argument', './decorated', './injected', './property', './result']);
+        });
+
+        it('does not follow an import that no decorator metadata covers', () => {
+            const { imports } = analyze('no-decorator-metadata.ts', `
+                import { Constructed } from './constructed';
+                import { Property } from './property';
+                import { Argument } from './argument';
+                import { Local } from './local';
+                export class Undecorated {
+                    protected readonly property: Property;
+                    constructor(constructed: Constructed) { }
+                }
+                @injectable()
+                export class Service {
+                    compute(argument: Argument): void {
+                        const local = (value: Local) => undefined;
+                    }
+                }
+            `);
+            assert.deepStrictEqual(imports, []);
+        });
+
         it('does not follow a require without a literal specifier, nor an import equals of a namespace', () => {
             const { imports } = analyze('indirect-require.ts', `
                 import alias = Namespace.Member;

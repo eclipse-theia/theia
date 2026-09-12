@@ -163,9 +163,11 @@ function childIsModuleLevel(node, key, moduleLevel) {
  * compiler and therefore pull in nothing at runtime.
  * @param {Node} node an import or export declaration with a source.
  * @param {ScopeManager} scopeManager
+ * @param {Set<Node>} metadataTypes the identifiers of the types that 'emitDecoratorMetadata' turns
+ * into values, see `collectMetadataTypes`.
  * @returns {boolean}
  */
-function isRuntimeImport(node, scopeManager) {
+function isRuntimeImport(node, scopeManager, metadataTypes) {
     if (node['importKind'] === 'type' || node['exportKind'] === 'type') {
         return false;
     }
@@ -181,7 +183,70 @@ function isRuntimeImport(node, scopeManager) {
     return scopeManager.getDeclaredVariables(node).some(variable => variable.references.some(reference =>
         // A parser without type-aware scope information reports no 'isValueReference' at all, in
         // which case every reference has to count.
-        reference['isValueReference'] !== false));
+        reference['isValueReference'] !== false || metadataTypes.has(reference.identifier)));
+}
+
+/**
+ * @param {Node} node
+ * @returns {boolean} whether the given declaration carries a decorator.
+ */
+function isDecorated(node) {
+    return node['decorators']?.length > 0;
+}
+
+/**
+ * Collects the identifiers of the types that 'emitDecoratorMetadata', which the whole repository is
+ * compiled with, turns into values: the type of a decorated property, and the parameter and return
+ * types of a decorated member and of the constructor of a decorated class, are emitted into the
+ * 'design:type', 'design:paramtypes' and 'design:returntype' metadata, so the modules declaring them
+ * are required at runtime after all.
+ *
+ * A type that erases to `Object`, an interface for instance, is emitted as `Object` rather than as a
+ * reference, and its import is erased if that is all the import is used for. Telling the two apart
+ * needs the types, which this analysis does not have, so such an import is followed as well. The
+ * remedy for what may then be reported, importing the symbol from the module declaring it rather
+ * than through a barrel, is the right thing either way.
+ * @param {Node} node a class or a member of one.
+ * @param {Set<Node>} metadataTypes the set to collect into.
+ */
+function collectMetadataTypes(node, metadataTypes) {
+    /** @type {Node[]} */
+    const annotations = [];
+    switch (node.type) {
+        case 'PropertyDefinition':
+        case 'TSAbstractPropertyDefinition':
+            if (isDecorated(node)) {
+                annotations.push(node['typeAnnotation']);
+            }
+            break;
+        case 'MethodDefinition':
+        case 'TSAbstractMethodDefinition': {
+            const method = node['value'];
+            if (isDecorated(node) || method?.params?.some(isDecorated)) {
+                annotations.push(...method?.params ?? [], method?.returnType);
+            }
+            break;
+        }
+        case 'ClassDeclaration':
+        case 'ClassExpression':
+            if (isDecorated(node)) {
+                // The parameters of the constructor are the 'design:paramtypes' of the class itself.
+                const constructor = node['body']?.body?.find(member => member.type === 'MethodDefinition' && member.kind === 'constructor');
+                annotations.push(...constructor?.value?.params ?? []);
+            }
+            break;
+    }
+    for (const annotation of annotations) {
+        // A parameter is taken whole, because its own type annotation is the only type in it, while
+        // its decorators are visited by the walk itself and carry values rather than types.
+        if (annotation) {
+            forEachNode(annotation, child => {
+                if (child.type === 'Identifier') {
+                    metadataTypes.add(child);
+                }
+            });
+        }
+    }
 }
 
 /**
@@ -191,21 +256,33 @@ function isRuntimeImport(node, scopeManager) {
  * @returns {SourceAnalysis}
  */
 function analyzeSource(ast, scopeManager) {
-    /** @type {ModuleImport[]} */
+    /** @type {Array<ModuleImport & {declaration?: Node}>} */
     const imports = [];
     /** @type {NlsCall[]} */
     const nlsCalls = [];
+    /** @type {Set<Node>} */
+    const metadataTypes = new Set();
     walk(ast, true, (node, moduleLevel) => {
         switch (node.type) {
             case 'ImportDeclaration':
             case 'ExportNamedDeclaration':
             case 'ExportAllDeclaration': {
                 const source = node['source'];
-                if (source && typeof source.value === 'string' && isRuntimeImport(node, scopeManager)) {
-                    imports.push({ specifier: source.value, node: source });
+                if (source && typeof source.value === 'string') {
+                    // Whether the declaration survives compilation is decided once the whole source
+                    // has been walked, as it depends on the types collected along the way.
+                    imports.push({ specifier: source.value, node: source, declaration: node });
                 }
                 break;
             }
+            case 'ClassDeclaration':
+            case 'ClassExpression':
+            case 'PropertyDefinition':
+            case 'TSAbstractPropertyDefinition':
+            case 'MethodDefinition':
+            case 'TSAbstractMethodDefinition':
+                collectMetadataTypes(node, metadataTypes);
+                break;
             case 'TSImportEqualsDeclaration': {
                 const reference = node['moduleReference'];
                 if (reference?.type === 'TSExternalModuleReference' && typeof reference.expression?.value === 'string') {
@@ -233,7 +310,11 @@ function analyzeSource(ast, scopeManager) {
             }
         }
     });
-    return { imports, nlsCalls };
+    return {
+        imports: imports.filter(({ declaration }) => !declaration || isRuntimeImport(declaration, scopeManager, metadataTypes))
+            .map(({ specifier, node }) => ({ specifier, node })),
+        nlsCalls
+    };
 }
 
 /**
@@ -427,7 +508,4 @@ function findLoadTimeNlsCall(file) {
     return undefined;
 }
 
-module.exports = {
-    analyzeSource, analyzeFile, parseFile, forEachNode, findLoadTimeNlsCall,
-    realPath, resolveModule, resolvePackageSource, resolveSourceFile, resolvePackageDirectory
-};
+module.exports = { analyzeSource, analyzeFile, parseFile, forEachNode, findLoadTimeNlsCall, realPath, resolveModule, resolvePackageSource };

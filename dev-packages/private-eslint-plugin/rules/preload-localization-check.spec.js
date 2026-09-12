@@ -25,7 +25,8 @@ const { tempFiles } = require('../util/test/temp-files');
 
 /**
  * A stand-in for the monorepo, with a package declaring the three kinds of preload entry point and
- * an installed '@theia/core' whose messaging module the frontend loads before the preload phase.
+ * an installed '@theia/core' whose messaging module, one of the modules of 'preload-phase-modules.json',
+ * the frontend loads before the preload phase is over.
  */
 const repo = tempFiles({
     'package.json': '{ "name": "@theia/monorepo" }',
@@ -34,6 +35,8 @@ const repo = tempFiles({
     'node_modules/@theia/core/src/common/index.ts': "export * from './core-preferences';",
     'node_modules/@theia/core/src/common/core-preferences.ts': "export const label = nls.localizeByDefault('Files');",
     'node_modules/@theia/core/src/browser/configured-entry-point.ts': "export * from '../common';",
+    // A module of '@theia/core' that the frontend only loads once the preload phase is over.
+    'node_modules/@theia/core/src/browser/after-the-preload-phase.ts': "export * from '../common';",
     'packages/my-package/package.json': JSON.stringify({
         name: '@theia/my-package',
         theiaExtensions: [
@@ -59,32 +62,6 @@ const repo = tempFiles({
     'packages/other-package/src/browser/localizing.ts': "export const cancel = nls.localizeByDefault('Cancel');"
 });
 after(() => repo.dispose());
-
-/**
- * A second stand-in, this one with the '@theia/application-manager' whose frontend generator emits
- * the modules of the preload phase, so that the rule reads them from there instead of falling back
- * to the modules of the generator of the real monorepo.
- */
-const generatorRepo = tempFiles({
-    'package.json': '{ "name": "@theia/monorepo" }',
-    'node_modules/@theia/application-manager/package.json': '{ "name": "@theia/application-manager" }',
-    'node_modules/@theia/application-manager/src/generator/frontend-generator.ts': [
-        'export class FrontendGenerator {',
-        '    protected compileIndexJs(): string {',
-        '        return `',
-        "require('@theia/core/lib/browser/generated-entry-point');",
-        'await preload(container);',
-        "require('@theia/core/lib/browser/after-the-preload-phase');",
-        '`;',
-        '    }',
-        '}'
-    ].join('\n'),
-    'node_modules/@theia/core/package.json': '{ "name": "@theia/core" }',
-    'node_modules/@theia/core/src/browser/generated-entry-point.ts': '',
-    'node_modules/@theia/core/src/browser/after-the-preload-phase.ts': '',
-    'node_modules/@theia/core/src/browser/localizing.ts': "export const cancel = nls.localizeByDefault('Cancel');"
-});
-after(() => generatorRepo.dispose());
 
 /**
  * A second spelling of the first stand-in, reaching it through a link, which is how a checkout below
@@ -163,12 +140,12 @@ ruleTester.run('preload-localization-check', rule, {
             filename: path.join(path.parse(repo.resolve('.')).root, 'outside', 'module.ts')
         },
         {
-            name: 'a module the frontend generator only loads once the preload phase is over',
+            name: 'a module of @theia/core that is not part of the preload phase',
             code: `
-                import { cancel } from './localizing';
-                console.log(cancel);
+                import { label } from '../common';
+                console.log(label);
             `,
-            filename: generatorRepo.resolve('node_modules/@theia/core/src/browser/after-the-preload-phase.ts')
+            filename: repo.resolve('node_modules/@theia/core/src/browser/after-the-preload-phase.ts')
         }
     ],
     invalid: [
@@ -271,15 +248,6 @@ ruleTester.run('preload-localization-check', rule, {
             }]
         },
         {
-            name: 'a preload entry point read from the frontend generator of the workspace',
-            code: `
-                import { cancel } from './localizing';
-                console.log(cancel);
-            `,
-            filename: generatorRepo.resolve('node_modules/@theia/core/src/browser/generated-entry-point.ts'),
-            errors: [{ messageId: 'importedLoadTimeNls', data: { specifier: './localizing', callee: 'nls.localizeByDefault' } }]
-        },
-        {
             name: 'a preload entry point configured through the options',
             code: `
                 import { label } from '../common';
@@ -291,6 +259,26 @@ ruleTester.run('preload-localization-check', rule, {
                 messageId: 'transitiveLoadTimeNls',
                 data: {
                     specifier: '../common',
+                    callee: 'nls.localizeByDefault',
+                    module: display('node_modules/@theia/core/src/common/core-preferences.ts'),
+                    chain: `${display('node_modules/@theia/core/src/common/index.ts')} -> ${display('node_modules/@theia/core/src/common/core-preferences.ts')}`
+                }
+            }]
+        },
+        {
+            // The option adds to the modules of the preload phase rather than replacing them, which
+            // a configured entry point of its own would not tell apart from the opposite.
+            name: 'a module of the preload phase while the options configure another entry point',
+            code: `
+                import { label } from '../../common';
+                console.log(label);
+            `,
+            options: [{ additionalEntryPoints: ['@theia/core/lib/browser/configured-entry-point'] }],
+            filename: repo.resolve('node_modules/@theia/core/src/browser/messaging/messaging-frontend-module.ts'),
+            errors: [{
+                messageId: 'transitiveLoadTimeNls',
+                data: {
+                    specifier: '../../common',
                     callee: 'nls.localizeByDefault',
                     module: display('node_modules/@theia/core/src/common/core-preferences.ts'),
                     chain: `${display('node_modules/@theia/core/src/common/index.ts')} -> ${display('node_modules/@theia/core/src/common/core-preferences.ts')}`

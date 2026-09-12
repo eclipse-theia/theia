@@ -18,7 +18,7 @@
 
 const path = require('path');
 
-const { preloadPhaseModules } = require('../util/frontend-generator');
+const { modules: preloadPhaseModules } = require('../util/preload-phase-modules.json');
 const { findPackageJson, reportingMalformedPackageJson } = require('../util/package-json');
 const { analyzeSource, findLoadTimeNlsCall, realPath, resolveModule, resolvePackageSource } = require('../util/preload-graph');
 
@@ -35,24 +35,8 @@ const { analyzeSource, findLoadTimeNlsCall, realPath, resolveModule, resolvePack
 const preloadEntryPointKeys = ['preload', 'frontendPreload', 'frontendOnlyPreload'];
 
 /**
- * The modules that the generated frontend 'index.js' requires before the `Preloader` has run, and
- * which are therefore part of the preload phase without being declared as entry points in any
- * package.json. These are normally read from the sources of `FrontendGenerator` in the workspace,
- * so that they follow the generator rather than having to be kept in sync with it by hand. This
- * list is only the fallback for a workspace that does not contain those sources, or whose generator
- * no longer has the shape that `preloadPhaseModules` recognizes.
- */
-const fallbackAdditionalEntryPoints = [
-    '@theia/core/lib/browser/frontend-application-config-provider',
-    '@theia/core/lib/browser/messaging/messaging-frontend-module',
-    '@theia/core/lib/browser-only/messaging/messaging-frontend-only-module',
-    '@theia/core/lib/electron-browser/messaging/electron-messaging-frontend-module',
-    '@theia/core/lib/browser/preload/preloader'
-];
-
-/**
- * The entry points of a package, keyed by the directory of its package.json and the configured
- * additional entry points, as the rule runs for every linted file.
+ * The entry points of a package, keyed by the directory of its package.json and the additional
+ * entry points, as the rule runs for every linted file.
  * @type {Map<string, Set<string>>}
  */
 const entryPointCache = new Map();
@@ -63,7 +47,7 @@ const entryPointCache = new Map();
  * '@theia/core' from having to repeat them, and yields nothing for packages that do not.
  * @param {string} file absolute path of the linted file.
  * @param {string[] | undefined} configuredEntryPoints the additional entry points of the rule
- * options, if any, which replace the ones read from the frontend generator.
+ * options, if any, which come on top of the modules of the preload phase.
  * @returns {Set<string>}
  * @throws {import('../util/package-json').MalformedPackageJsonError} if the package.json of `file`
  * cannot be read or parsed.
@@ -74,9 +58,9 @@ function preloadEntryPoints(file, configuredEntryPoints) {
         return new Set();
     }
     const packageDirectory = path.dirname(packageJson.__filename);
-    const additionalEntryPoints = configuredEntryPoints ?? preloadPhaseModules(packageJson.__filename) ?? fallbackAdditionalEntryPoints;
-    // Keying on the entry points as well means that editing the frontend generator, which yields a
-    // different list, invalidates what was cached for it.
+    const additionalEntryPoints = [...preloadPhaseModules, ...configuredEntryPoints ?? []];
+    // Keying on the entry points as well keeps the options of one run from being answered with what
+    // was cached for another.
     const cacheKey = `${packageDirectory}\0${additionalEntryPoints.join('\0')}`;
     const cached = entryPointCache.get(cacheKey);
     if (cached) {
@@ -121,6 +105,8 @@ module.exports = {
             type: 'object',
             properties: {
                 additionalEntryPoints: {
+                    description: 'Module specifiers of further entry points of the preload phase, checked on top of the ones '
+                        + "declared in 'theiaExtensions' and the modules the generated frontend loads before that phase is over.",
                     type: 'array',
                     items: { type: 'string' }
                 }
