@@ -46,6 +46,24 @@ Code without an `ILogger` binding is exempted through ESLint itself rather than 
 The rule prevents imports using `/src/` rather than `/lib/` as it causes build failures.
 The rule helps developers more easily identify the cause of build errors caused by the incorrect import.
 
+### `preload-localization-check`
+
+The preload phase runs before the localization data has been loaded, so every string that the NLS API yields there is captured in English and stays untranslated for the rest of the session.
+The rule reports modules of that phase which read a localized string while they are being loaded, either directly or through the modules they import.
+"While they are being loaded" means the top level of the module, including namespace bodies, decorators and static fields, but not the body of a function, which only runs once it is called.
+
+The modules of the preload phase are the `preload`, `frontendPreload` and `frontendOnlyPreload` entry points declared in `theiaExtensions`, plus the modules the generated frontend `index.js` requires before it runs the `Preloader`.
+The latter are not written down in the rule: they are read from the sources of `FrontendGenerator` in the workspace, by collecting the modules the `compileIndexJs` method emits a `require` for ahead of the `await preload(container)` that ends the phase.
+The rule therefore follows the generator, including while a developer is working on the generator itself.
+Where those sources are absent, or where the generator no longer has that shape, the rule falls back to a list of the modules the generator emitted when the rule was written.
+The `additionalEntryPoints` option replaces both.
+
+A problem is reported on the entry point, on the import that pulls in the offending module, because that is where it can be fixed: import the required symbols from the module that declares them rather than through a barrel such as `@theia/core/lib/common`.
+Only entry points are analyzed, so a load-time NLS call added deep in the import graph is reported when the entry point is linted, which a run with `--cache` skips until the entry point itself changes.
+CI lints without a cache and therefore always reports it; locally, `npx lerna run lint -- --no-cache` does the same, which is worth running before pushing a change to a module of the preload phase rather than once, as the gap reopens with every such change.
+
+Imports that the TypeScript compiler erases, namely type-only imports and named imports whose bindings are never used as a value, pull in nothing at runtime and are therefore not followed.
+
 #### `runtime-import-check`
 
 The rule prevents imports from folders meant for incompatible runtimes.
