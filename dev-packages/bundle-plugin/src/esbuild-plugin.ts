@@ -336,7 +336,7 @@ class PluginImpl implements Plugin {
             loader: 'js'
         }));
         build.onLoad({ filter: /@vscode[\\\/]ripgrep[\\\/]lib[\\\/]index\.js$/ }, async () => ({
-            contents: 'export const rgPath = require("path").join(__dirname, `./native/rg${process.platform === "win32" ? ".exe" : ""}`);',
+            contents: ripgrepReplacement(),
             loader: 'js'
         }));
         build.onLoad({ filter: /node_modules[/\\]node-pty[/\\]lib[/\\]utils\.js$/ }, async args => {
@@ -404,6 +404,19 @@ class PluginImpl implements Plugin {
             namespace: 'file',
         }));
     }
+}
+
+/**
+ * Replacement module for `@vscode/ripgrep`, pointing `rgPath` to the binary copied by {@link copyRipgrep}.
+ *
+ * In an asar-packaged Electron application, `__dirname` resolves inside `app.asar`. Electron redirects
+ * `require` calls into the archive, but `child_process.spawn` receives the path as-is and fails.
+ * Executables therefore have to be extracted using electron-builder's `asarUnpack`,
+ * and the path needs to point to the `app.asar.unpacked` directory instead.
+ */
+function ripgrepReplacement(): string {
+    return `const path = require("path");
+export const rgPath = path.join(__dirname, \`./native/rg\${process.platform === "win32" ? ".exe" : ""}\`).replace(/\\.asar([\\\\/])/, ".asar.unpacked$1");`;
 }
 
 async function copyRipgrep(outdir: string): Promise<void> {
