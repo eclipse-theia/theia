@@ -334,7 +334,9 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                 const { resource, overrideIdentifier } = this.parseConfigurationAccessOptions(scope);
                 return eventData.some(change => {
                     const matchesUri = !resource || !change.scope || (resource.toString() + '/').startsWith(change.scope.endsWith('/') ? change.scope : change.scope + '/');
-                    const matchesSection = change.preferenceName.startsWith(section) || section.startsWith(change.preferenceName);
+                    const matchesSection = change.preferenceName === section
+                        || change.preferenceName.startsWith(`${section}.`)
+                        || section.startsWith(`${change.preferenceName}.`);
                     const matchesOverride = !overrideIdentifier || change.affectedOverrides.includes(overrideIdentifier);
                     return matchesUri && matchesSection && matchesOverride;
                 });

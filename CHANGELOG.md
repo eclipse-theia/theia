@@ -33,7 +33,8 @@
 - [plugin-ext] removed the `workspaceService` constructor parameter and the `shouldSkipWatch` method from `MainFileSystemEventService`. They implemented a mitigation that dropped non-recursive plugin watches rooted above a workspace root, which is obsolete now that the backend honors `recursive` [#17875](https://github.com/eclipse-theia/theia/pull/17875)
 - [plugin-ext] `PluginDebugAdapterTracker.create` and `DebugExtImpl.createDebugAdapterTracker` now resolve to `undefined` when no factory provides a tracker for the session. Callers must handle `undefined`, and `PluginDebugAdapterSession` now accepts an optional tracker [#18255](https://github.com/eclipse-theia/theia/pull/18255) - Contributed on behalf of CodeSignal
 - [core] reworked the preference API to use explicit override identifiers instead of encoding them into preference names (e.g. `[typescript].editor.tabSize`). Adopters that read, write or listen to language-scoped preferences through `PreferenceService`, `PreferenceProvider` or the change events must migrate to the new signatures [#16046](https://github.com/eclipse-theia/theia/issues/16046). Preference change events for
-"override names" like `[typescript]editor.tabSize` will no longer be sent. Listen for the base name (`editor.tabSize`) and check whether the event `affects` your use case.
+"override names" like `[typescript].editor.tabSize` will no longer be sent. Listen for the base name (`editor.tabSize`) and check whether the event `affects` your use case.
+The typed getters like `getBoolean(...)` in `PreferenceServiceImpl` have been removed in favor of typed overloads of `get(...)` in the `PreferenceService` interface.
 
 ## 1.76.0 - 9/24/2026
 
