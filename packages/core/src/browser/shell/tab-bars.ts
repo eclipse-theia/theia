@@ -31,7 +31,7 @@ import { IconThemeService } from '../icon-theme-service';
 import { BreadcrumbsRenderer, BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { NavigatableWidget } from '../navigatable-types';
 import { Drag } from '@lumino/dragdrop';
-import { LOCKED_CLASS, PINNED_CLASS } from '../widgets/widget';
+import { LOCKED_CLASS, PINNED_CLASS, isPinned } from '../widgets/widget';
 import { CorePreferences } from '../../common/core-preferences';
 import { HoverService } from '../hover-service';
 import { Root, createRoot } from 'react-dom/client';
@@ -726,6 +726,8 @@ export class ScrollableTabBar extends TabBar<Widget> {
     protected isMouseOver = false;
     protected needsRecompute = false;
     protected tabSize = 0;
+    protected pinnedTabWidth = 0;
+    protected _pinnedTabSizingMode: 'normal' | 'shrink' | undefined;
     protected _dynamicTabOptions?: ScrollableTabBar.Options;
     protected contentContainer: HTMLElement;
     protected topRow: HTMLElement;
@@ -764,6 +766,15 @@ export class ScrollableTabBar extends TabBar<Widget> {
 
     get dynamicTabOptions(): ScrollableTabBar.Options | undefined {
         return this._dynamicTabOptions;
+    }
+
+    set pinnedTabSizingMode(mode: 'normal' | 'shrink' | undefined) {
+        this._pinnedTabSizingMode = mode;
+        this.node.classList.remove('theia-pinned-tab-shrink');
+        if (mode === 'shrink') {
+            this.node.classList.add('theia-pinned-tab-shrink');
+        }
+        this.updateTabs();
     }
 
     override dispose(): void {
@@ -835,14 +846,32 @@ export class ScrollableTabBar extends TabBar<Widget> {
                     if (!this.openTabsContainer.classList.contains('lm-mod-hidden')) {
                         availableWidth += this.openTabsContainer.getBoundingClientRect().width;
                     }
-                    if (this.dynamicTabOptions.minimumTabSize * this.titles.length <= availableWidth) {
+                    const pinnedTabSize = this.dynamicTabOptions.pinnedTabSize;
+                    const pinnedCount = pinnedTabSize ? this.titles.filter(t => isPinned(t)).length : 0;
+                    const unpinnedCount = this.titles.length - pinnedCount;
+                    const pinnedWidth = pinnedCount * (pinnedTabSize ?? 0);
+                    const requiredWidth = pinnedWidth + (unpinnedCount > 0
+                        ? this.dynamicTabOptions.minimumTabSize * unpinnedCount : 0);
+                    if (requiredWidth <= availableWidth) {
                         effectiveWidth += this.openTabsContainer.getBoundingClientRect().width;
                         this.openTabsContainer.classList.add('lm-mod-hidden');
                     } else {
                         this.openTabsContainer.classList.remove('lm-mod-hidden');
                     }
-                    this.tabSize = Math.max(Math.min(effectiveWidth / this.titles.length,
-                        this.dynamicTabOptions.defaultTabSize), this.dynamicTabOptions.minimumTabSize);
+                    if (pinnedCount > 0 && pinnedTabSize) {
+                        this.pinnedTabWidth = pinnedTabSize;
+                        if (unpinnedCount > 0) {
+                            const remainingWidth = effectiveWidth - pinnedWidth;
+                            this.tabSize = Math.max(Math.min(remainingWidth / unpinnedCount,
+                                this.dynamicTabOptions.defaultTabSize), this.dynamicTabOptions.minimumTabSize);
+                        } else {
+                            this.tabSize = this.dynamicTabOptions.defaultTabSize;
+                        }
+                    } else {
+                        this.pinnedTabWidth = 0;
+                        this.tabSize = Math.max(Math.min(effectiveWidth / this.titles.length,
+                            this.dynamicTabOptions.defaultTabSize), this.dynamicTabOptions.minimumTabSize);
+                    }
                 }
             }
             this.node.classList.add('dynamic-tabs');
@@ -853,10 +882,13 @@ export class ScrollableTabBar extends TabBar<Widget> {
         for (let i = 0, n = this.titles.length; i < n; ++i) {
             const title = this.titles[i];
             const current = title === this.currentTitle;
-            const zIndex = current ? n : n - i - 1;
+            const pinned = this._pinnedTabSizingMode === 'shrink' && isPinned(title);
+            const zIndex = pinned ? (current ? n + 2 : n + 1) : (current ? n : n - i - 1);
             const renderData: ScrollableRenderData = { title: title, current: current, zIndex: zIndex };
             if (this.dynamicTabOptions && this.orientation === 'horizontal') {
-                renderData.tabWidth = this.tabSize;
+                renderData.tabWidth = this.pinnedTabWidth > 0 && isPinned(title)
+                    ? this.pinnedTabWidth
+                    : this.tabSize;
             }
             content[i] = this.renderer.renderTab(renderData);
         }
@@ -935,6 +967,7 @@ export namespace ScrollableTabBar {
     export interface Options {
         minimumTabSize: number;
         defaultTabSize: number;
+        pinnedTabSize?: number;
     }
     export namespace Styles {
 
