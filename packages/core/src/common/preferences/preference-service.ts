@@ -34,14 +34,21 @@ import { ILogger } from '../logger';
 /**
  * Options for {@link PreferenceService.get()}.
  */
-export interface PreferenceGetOptions<T> {
+
+type AtLeastOneKey<T> = {
+    [K in keyof T]: Pick<T, K> & Partial<Omit<T, K>>
+  }[keyof T];
+
+interface PreferenceGetOptionsRaw<T> {
     /** Value to return when no stored value exists for the preference. */
-    fallback?: T;
+    fallback: T | undefined;
     /** URI of the resource for which to retrieve the preference. */
-    resource?: string;
+    resource: string | undefined;
     /** Language-override identifier (e.g. `'typescript'`). */
-    override?: string;
+    override: string | undefined;
 }
+
+export type PreferenceGetOptions<T> = AtLeastOneKey<PreferenceGetOptionsRaw<T>>;
 
 /**
  * Representation of a preference change. A preference value can be set to `undefined` for a specific scope.
@@ -79,7 +86,6 @@ export class PreferenceChangeImpl implements PreferenceChange {
         return this.change.domain;
     }
 
-    // TODO add tests
     affects(resourceUri?: string, overrideIdentifier?: string): boolean {
         const resourcePath = resourceUri && new URI(resourceUri).path;
         const domain = this.change.domain;
@@ -88,9 +94,7 @@ export class PreferenceChangeImpl implements PreferenceChange {
         return affectsResource && affectsOverride;
     }
 }
-/**
- * A key-value storage for {@link PreferenceChange}s. Used to aggregate multiple simultaneous preference changes.
- */
+
 export type PreferenceChanges = PreferenceChange[];
 
 export const PreferenceService = Symbol('PreferenceService');
@@ -324,19 +328,19 @@ export class PreferenceServiceImpl implements PreferenceService {
     protected getAffectedOverrides(change: PreferenceProviderDataChange): string[] {
         if (change.overrideIdentifier) { // changes to overrides never affect other overrides
             return [change.overrideIdentifier];
-        } else {
-            const affectedOverrides = [];
-            const preference = this.schemaService.getSchemaProperty(change.preferenceName);
-            if (preference && preference.overridable) {
-
-                for (const overrideId of this.schemaService.overrideIdentifiers) {
-                    if (!this.doHas(change.preferenceName, undefined, overrideId)) {
-                        affectedOverrides.push(overrideId);
-                    }
-                }
-            }
-            return affectedOverrides;
         }
+        const preference = this.schemaService.getSchemaProperty(change.preferenceName);
+        // Non-overridable preferences apply in every language context.
+        if (preference && !preference.overridable) {
+            return [...this.schemaService.overrideIdentifiers];
+        }
+        const affectedOverrides: string[] = [];
+        for (const overrideId of this.schemaService.overrideIdentifiers) {
+            if (!this.doHas(change.preferenceName, undefined, overrideId)) {
+                affectedOverrides.push(overrideId);
+            }
+        }
+        return affectedOverrides;
     }
 
     protected reconcilePreferences(changes: PreferenceProviderDataChanges): void {
@@ -387,7 +391,7 @@ export class PreferenceServiceImpl implements PreferenceService {
     }
 
     has(preferenceName: string, resourceUri?: string, overrideIdentifier?: string): boolean {
-        return this.get(preferenceName, { resource: resourceUri, override: overrideIdentifier }) !== undefined;
+        return this.get(preferenceName, { resource: resourceUri, override: overrideIdentifier}) !== undefined;
     }
 
     get(preferenceName: string, defaultValue: string): string;
