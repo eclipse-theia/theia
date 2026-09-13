@@ -296,6 +296,16 @@ export const corePreferenceSchema: PreferenceSchema = {
             minimum: 10,
             description: nls.localize('theia/core/tabDefaultSize', 'Specifies the default size for tabs.')
         },
+        'workbench.editor.pinnedTabSizing': {
+            type: 'string',
+            enum: ['normal', 'shrink'],
+            default: 'normal',
+            markdownDescription: nls.localizeByDefault('Controls the size of pinned editor tabs. Pinned tabs are sorted to the beginning of all opened tabs and typically do not close until unpinned. This value is ignored when {0} is not set to {1}.', '`#workbench.editor.showTabs#`', '`enabled`'),
+            enumDescriptions: [
+                nls.localizeByDefault('A pinned tab inherits the look of non pinned tabs.'),
+                nls.localizeByDefault('A pinned tab shrinks to a compact fixed size showing parts of the editor name.')
+            ]
+        },
         'workbench.editorAssociations': {
             type: 'object',
             markdownDescription: nls.localizeByDefault('Configure [glob patterns](https://aka.ms/vscode-glob-patterns) to editors (for example `"*.hex": "hexEditor.hexedit"`). These have precedence over the default behavior.'),
@@ -337,6 +347,7 @@ export interface CoreConfiguration {
     'workbench.tab.shrinkToFit.enabled': boolean;
     'workbench.tab.shrinkToFit.minimumSize': number;
     'workbench.tab.shrinkToFit.defaultSize': number;
+    'workbench.editor.pinnedTabSizing': 'normal' | 'shrink';
 }
 
 export const CorePreferenceContribution = Symbol('CorePreferenceContribution');
