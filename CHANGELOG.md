@@ -9,7 +9,8 @@
 <a name="breaking_changes_1.77.0">[Breaking Changes:](#breaking_changes_1.77.0)</a>
 
 - [core] reworked the preference API to use explicit override identifiers instead of encoding them into preference names (e.g. `[typescript].editor.tabSize`). Adopters that read, write or listen to language-scoped preferences through `PreferenceService`, `PreferenceProvider` or the change events must migrate to the new signatures [#16046](https://github.com/eclipse-theia/theia/issues/16046). Preference change events for
-"override names" like `[typescript]editor.tabSize` will no longer be sent. Listen for the base name (`editor.tabSize`) and check whether the event `affects` your use case.
+"override names" like `[typescript].editor.tabSize` will no longer be sent. Listen for the base name (`editor.tabSize`) and check whether the event `affects` your use case.
+The typed getters like `getBoolean(...)` in `PreferenceServiceImpl` have been removed in favor of typed overloads of `get(...)` in the `PreferenceService` interface.
 
 ## 1.76.0 - 9/24/2026
 

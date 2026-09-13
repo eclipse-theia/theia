@@ -24,8 +24,15 @@ import type { MCPServerFormData } from './mcp-server-edit-dialog';
 
 class FakePreferenceService {
     private readonly store = new Map<string, unknown>();
-    get<T>(key: string, defaultValue?: T): T | undefined {
-        return (this.store.has(key) ? this.store.get(key) : defaultValue) as T | undefined;
+    get<T>(key: string, optionsOrFallback?: T | { fallback?: T }): T | undefined {
+        if (this.store.has(key)) {
+            return this.store.get(key) as T;
+        }
+        if (optionsOrFallback && typeof optionsOrFallback === 'object' && !Array.isArray(optionsOrFallback)
+            && 'fallback' in (optionsOrFallback as object)) {
+            return (optionsOrFallback as { fallback?: T }).fallback;
+        }
+        return optionsOrFallback as T | undefined;
     }
     async set(key: string, value: unknown): Promise<void> {
         this.store.set(key, value);

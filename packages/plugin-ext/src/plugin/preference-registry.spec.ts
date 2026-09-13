@@ -192,6 +192,15 @@ describe('PreferenceRegistryExtImpl:', () => {
             );
             expect(affectsChecker.affectsConfiguration('whole-section.subitem')).to.be.true;
         });
+
+        it('Does not report true for a prefix that is not a dotted section', () => {
+            const affectsChecker = preferenceRegistryExtImpl['toConfigurationChangeEvent'](
+                [{ newValue: 14, preferenceName: 'editor.fontSize', affectedOverrides: [] }]
+            );
+            expect(affectsChecker.affectsConfiguration('editor.font')).to.be.false;
+            expect(affectsChecker.affectsConfiguration('editor.fontSize')).to.be.true;
+            expect(affectsChecker.affectsConfiguration('editor')).to.be.true;
+        });
     });
 
     describe('Overrides', () => {

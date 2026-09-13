@@ -554,6 +554,48 @@ describe('Preference Service', () => {
             assert.deepStrictEqual([
                 { preferenceName: 'editor.tabSize', affectedOverrides: ['json'] },
             ], events.map(e => ({ preferenceName: e.preferenceName, affectedOverrides: e.affectedOverrides })));
+            assert.strictEqual(events[0].affects(undefined, 'json'), true);
+        });
+
+        it('onPreferenceChanged: base change of overridable pref does not affect overrides with their own value', async () => {
+            const { preferences, schema } = await prepareServices();
+
+            schema.registerOverrideIdentifier('json');
+            schema.registerOverrideIdentifier('javascript');
+            await preferences.set('editor.tabSize', 2, PreferenceScope.User, undefined, 'json');
+
+            const events: PreferenceChange[] = [];
+            preferences.onPreferenceChanged(event => events.push(event));
+            await preferences.set('editor.tabSize', 3, PreferenceScope.User);
+
+            assert.deepStrictEqual(['javascript'], events[0].affectedOverrides);
+            assert.strictEqual(events[0].affects(undefined, 'json'), false);
+            assert.strictEqual(events[0].affects(undefined, 'javascript'), true);
+        });
+
+        it('onPreferenceChanged: base change of non-overridable pref affects all registered overrides', async () => {
+            const { preferences, schema } = await prepareServices({
+                schema: {
+                    scope: PreferenceScope.User,
+                    properties: {
+                        'my.nonOverridable': {
+                            type: 'number',
+                            default: 1
+                        }
+                    }
+                }
+            });
+
+            schema.registerOverrideIdentifier('json');
+            schema.registerOverrideIdentifier('javascript');
+
+            const events: PreferenceChange[] = [];
+            preferences.onPreferenceChanged(event => events.push(event));
+            await preferences.set('my.nonOverridable', 2, PreferenceScope.User);
+
+            assert.deepStrictEqual(['json', 'javascript'], [...events[0].affectedOverrides]);
+            assert.strictEqual(events[0].affects(undefined, 'json'), true);
+            assert.strictEqual(events[0].affects(undefined, 'javascript'), true);
         });
 
         it('onPreferenceChanged #2', async function (): Promise<void> {

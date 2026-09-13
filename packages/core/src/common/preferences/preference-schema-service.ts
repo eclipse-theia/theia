@@ -276,18 +276,9 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
 
     protected changeFor(key: string, overrideIdentifier: string | undefined,
         overrides: Map<string | object, [number, JSONValue][]> | undefined, oldValue: JSONValue | undefined, newValue: JSONValue | undefined): DefaultValueChangedEvent {
-        const affectedOverrides = [];
-        if (!overrideIdentifier) {
-            for (const id of this._overrideIdentifiers) {
-                if (!overrides?.has(id)) {
-                    affectedOverrides.push(id);
-                }
-            }
-        }
         return {
             key,
             overrideIdentifier: overrideIdentifier,
-            otherAffectedOverrides: affectedOverrides,
             oldValue,
             newValue
         };
@@ -305,20 +296,9 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
                     values.splice(index, 1);
                     const newValue = this.getDefaultValue(key, overrideIdentifier);
                     if (!PreferenceUtils.deepEqual(oldValue, newValue)) {
-
-                        const affectedOverrides = [];
-                        if (!overrideIdentifier) {
-                            for (const id of this._overrideIdentifiers) {
-                                if (!overrides.has(id)) {
-                                    affectedOverrides.push(id);
-                                }
-                            }
-                        }
-
                         this.defaultValueChangedEmitter.fire({
                             key,
                             overrideIdentifier,
-                            otherAffectedOverrides: affectedOverrides,
                             oldValue,
                             newValue
                         });
