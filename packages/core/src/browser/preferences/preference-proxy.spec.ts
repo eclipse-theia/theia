@@ -252,6 +252,24 @@ describe('Preference Proxy', () => {
                 expect(changeEventsEmittedByProxy, 'The proxy should not have emitted an event, because the value for TS has been overridden.').to.equal(2);
             });
 
+            it('should forward base changes of non-overridable prefs to a language-scoped proxy', async () => {
+                const { proxy, promisedSchema } = getProxy({
+                    scope: PreferenceScope.User,
+                    properties: {
+                        'my.pref': {
+                            type: 'string',
+                            default: 'foo',
+                        }
+                    }
+                }, { style: 'both', overrideIdentifier: 'typescript' });
+                await promisedSchema;
+                prefSchema.registerOverrideIdentifier('typescript');
+                let changeEventsEmittedByProxy = 0;
+                proxy.onPreferenceChanged(() => changeEventsEmittedByProxy++);
+                await prefService.set('my.pref', 'bar', PreferenceScope.User);
+                expect(changeEventsEmittedByProxy, 'The proxy should have emitted for a non-overridable base change.').to.equal(1);
+            });
+
             it('`affects` should only return `true` if the language overrides match', async () => {
                 const { proxy, promisedSchema } = getProxy({
                     scope: PreferenceScope.User,

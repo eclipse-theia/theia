@@ -93,10 +93,6 @@ export interface DefaultValueChangedEvent {
     key: string;
     /** The override identifier that the default changed for */
     overrideIdentifier?: string;
-    /**
-     * When the default for the base property changes, indicates which override identifiers will be affected
-     */
-    otherAffectedOverrides: string[];
     oldValue: JSONValue | undefined;
     newValue: JSONValue | undefined;
 }
