@@ -40,7 +40,8 @@ export interface TokenizerOption {
 
     /**
      * Maximum line length that will be handled by the TextMate tokenizer. If the length of the actual line exceeds this
-     * limit, the tokenizer terminates and the tokenization of any subsequent lines might be broken.
+     * limit, the line is skipped and tokenization continues from the preceding state. Constructs opened on a skipped
+     * line (e.g. a block comment) are therefore not accounted for.
      *
      * If the `lineLimit` is not defined, it means, there are no line length limits. Otherwise, it must be a positive
      * integer or an error will be thrown.
