@@ -143,9 +143,19 @@ describe('measurement telemetry integration', () => {
 
         contribution.startCollecting();
         contribution.startCollecting();
+        contribution.handle(createEvent(BACKEND_TELEMETRY_SESSION, { ...storedResult }));
 
         const headerLines = contribution.getMetrics().split('\n').filter(line => line.startsWith('#'));
         expect(headerLines).to.have.lengthOf(2);
+    });
+
+    it('renders nothing when no samples were collected', () => {
+        const contribution = new TestMeasurementMetricsBackendContribution();
+        contribution.configure(LogLevel.DEBUG);
+
+        contribution.startCollecting();
+
+        expect(contribution.getMetrics()).to.equal('');
     });
 
     it('does not append telemetry events above DEBUG level', () => {

@@ -32,7 +32,7 @@ export class MeasurementMetricsBackendContribution implements MetricsContributio
     @inject(LogLevelCliContribution)
     protected logLevelCli: LogLevelCliContribution;
 
-    /** The accumulated samples. The `HELP`/`TYPE` header is prepended by `getMetrics`. */
+    /** The accumulated samples. The `HELP`/`TYPE` header is prepended by `getMetrics` if there are any. */
     protected metrics = '';
     protected frontendCounters = new Map<string, string>();
 
@@ -43,7 +43,7 @@ export class MeasurementMetricsBackendContribution implements MetricsContributio
     }
 
     getMetrics(): string {
-        return this.isEnabled() ? metricsHeader + this.metrics : '';
+        return this.metrics ? metricsHeader + this.metrics : '';
     }
 
     handle(event: TelemetryEvent): void {

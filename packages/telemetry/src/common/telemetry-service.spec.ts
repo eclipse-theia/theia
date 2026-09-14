@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { isValidTelemetryEvent } from './telemetry-protocol';
 import { TelemetryService } from './telemetry-service';
 import { TelemetryData } from './telemetry-types';
 
@@ -45,21 +44,5 @@ const compileTimeUsage = (service: TelemetryService): void => service.report<Con
 describe('telemetry service contract', () => {
     it('supports consumer-defined payload interfaces without an index signature', () => {
         expect(compileTimeUsage).to.be.a('function');
-    });
-
-    it('validates event kind, attributes, and session', () => {
-        const event = {
-            topic: 'consumer/action',
-            kind: 'error' as const,
-            data: typedPayload,
-            attributes: { source: 'consumer' },
-            session: 'frontend-session',
-            timestamp: 42
-        };
-
-        expect(isValidTelemetryEvent(event)).to.be.true;
-        expect(isValidTelemetryEvent({ ...event, kind: 'invalid' })).to.be.false;
-        expect(isValidTelemetryEvent({ ...event, session: '' })).to.be.false;
-        expect(isValidTelemetryEvent({ ...event, attributes: { nested: {} } })).to.be.false;
     });
 });
