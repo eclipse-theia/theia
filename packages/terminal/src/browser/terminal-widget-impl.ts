@@ -34,6 +34,7 @@ import {
     TerminalLocation,
     TerminalBuffer,
     TerminalBlock,
+    TerminalBlockBoundary,
     TerminalCommandHistoryState
 } from './base/terminal-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -56,6 +57,7 @@ import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { cleanTerminalTitle, guessShellTypeFromExecutable } from '../common/shell-type';
 import { TerminalCommandHistoryStateFactory } from './terminal-command-history';
+import { TerminalBlockOverlayController, TerminalBlockOverlayControllerFactory } from './terminal-block-overlay-controller';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -167,6 +169,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(MarkdownRendererFactory) protected readonly markdownRendererFactory: MarkdownRendererFactory;
     @inject(TerminalCommandHistoryStateFactory) protected readonly commandHistoryStateFactory: TerminalCommandHistoryStateFactory;
     @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
+    @inject(TerminalBlockOverlayControllerFactory) protected readonly blockOverlayControllerFactory: TerminalBlockOverlayControllerFactory;
 
     protected _markdownRenderer: MarkdownRenderer | undefined;
     protected get markdownRenderer(): MarkdownRenderer {
@@ -208,6 +211,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected readonly toDisposeOnCommandHistory = new DisposableCollection();
     protected outputStartMarker: IMarker | undefined;
     protected promptStartMarker: IMarker | undefined;
+    protected blockOverlayController: TerminalBlockOverlayController | undefined;
 
     private _buffer: TerminalBuffer;
     override get buffer(): TerminalBuffer {
@@ -215,13 +219,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     private _currentTerminalOutput: string[];
-
+    protected enableCommandSeparator: boolean;
+    protected enableCommandBlockActions: boolean;
     private _commandHistoryState?: TerminalCommandHistoryState;
     override get commandHistoryState(): TerminalCommandHistoryState | undefined {
         return this._commandHistoryState;
     }
-
-    protected enableCommandSeparator: boolean;
 
     @postConstruct()
     protected init(): void {
@@ -284,7 +287,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
             this.updateConfig();
-            if (change.preferenceName === 'terminal.integrated.enableCommandHistory') {
+            if (change.preferenceName === 'terminal.integrated.enableCommandBlockActions') {
+                this.updateBlockOverlayController();
+            } else if (['terminal.integrated.enableCommandHistory'].includes(change.preferenceName)) {
                 this.updateCommandHistoryHandlers();
             }
             this.needsResize = true;
@@ -292,6 +297,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }));
         this.updateCommandHistoryConfig();
         this.updateCommandHistoryHandlers();
+        this.updateBlockOverlayController();
 
         this.toDispose.push(this.themeService.onDidChange(() => {
             this.term.options.theme = this.themeService.theme;
@@ -342,6 +348,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.toDisposeOnConnect);
         this.toDispose.push(this.commandSeparatorDecorations);
         this.toDispose.push(this.toDisposeOnCommandHistory);
+        this.toDispose.push(Disposable.create(() => {
+            this.outputStartMarker?.dispose();
+            this.promptStartMarker?.dispose();
+        }));
         this.toDispose.push(this.shellTerminalServer.onDidCloseConnection(() => {
             const disposable = this.shellTerminalServer.onDidOpenConnection(() => {
                 disposable.dispose();
@@ -447,14 +457,16 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.enableCommandSeparator = enabled
             ? this.preferences.get('terminal.integrated.enableCommandSeparator', false)
             : false;
-
+        this.enableCommandBlockActions = enabled
+            ? this.preferences.get('terminal.integrated.enableCommandBlockActions', false)
+            : false;
         if (enabled && !this._commandHistoryState) {
             this._commandHistoryState = this.commandHistoryStateFactory();
-            this.toDispose.push(this._commandHistoryState);
         } else if (!enabled && this._commandHistoryState) {
             this._commandHistoryState.dispose();
             this._commandHistoryState = undefined;
         }
+
     }
 
     /**
@@ -474,6 +486,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDisposeOnCommandHistory.dispose();
         this.resetCommandOutputMarker();
         this.resetCommandMarker();
+        this.updateBlockOverlayController();
+
+        if (this._commandHistoryState && !this._commandHistoryState.currentCommand) {
+            this.promptStartMarker = this.term.registerMarker(0);
+        }
         if (!this._commandHistoryState) {
             return;
         }
@@ -530,7 +547,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         const endMarker = this.term.registerMarker(0);
         const startLine = startMarker?.line ?? -1;
         const endLine = endMarker?.line ?? -1;
-        endMarker.dispose();
 
         let output = '';
         if (startLine >= 0 && endLine >= 0) {
@@ -542,10 +558,20 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             output,
         };
 
+        if (this.enableCommandBlockActions) {
+            this.blockOverlayController?.addBlock(
+                block,
+                this,
+                this.promptStartMarker,
+                endMarker,
+            );
+        }
+
         this.logger.debug('Terminal command result captured:', { command: block.command, output: block.output, outputLength: block.output.length });
         this._commandHistoryState.finishCommand(block);
         this.outputStartMarker = undefined;
         this.promptStartMarker = undefined;
+        endMarker.dispose();
     }
 
     protected connectionClosed = false;
@@ -589,6 +615,42 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.commandSeparatorDecorations.push(marker);
         this.commandSeparatorDecorations.push(deco);
         this.commandSeparatorDecorations.push(renderListener);
+    }
+
+    protected initializeBlockOverlayController(): void {
+        if (this.blockOverlayController || !this.term.element) {
+            return;
+        }
+        this.blockOverlayController = this.blockOverlayControllerFactory({
+            term: this.term,
+            renderBlockMenu: (event, block, term) => {
+                this.contextMenuRenderer.render({
+                    menuPath: TerminalMenus.TERMINAL_BLOCK_ACTIONS,
+                    anchor: event,
+                    args: [block, term],
+                    includeAnchorArg: false,
+                    context: this.node
+                });
+            }
+        });
+        this.blockOverlayController.initialize();
+        // Always register disposal in toDispose so the controller is cleaned up
+        // regardless of which path (open() or updateCommandHistoryHandlers()) created it.
+        this.toDispose.push(Disposable.create(() => {
+            this.blockOverlayController?.dispose();
+            this.blockOverlayController = undefined;
+        }));
+    }
+
+    protected updateBlockOverlayController(): void {
+        if (this.enableCommandBlockActions) {
+            this.initializeBlockOverlayController();
+        }
+        this.blockOverlayController?.setEnabled(this.enableCommandBlockActions);
+    }
+
+    scrollToBlockBoundary(terminalBlock: TerminalBlock, boundary: TerminalBlockBoundary = TerminalBlockBoundary.Top): void {
+        this.blockOverlayController?.scrollToBoundary(terminalBlock, boundary);
     }
 
     protected setIconClass(): void {
@@ -771,6 +833,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     clearOutput(): void {
         this.term.clear();
+        this.blockOverlayController?.clearBlocks();
+        this.resetCommandOutputMarker();
+        this.resetCommandMarker();
+        if (this.commandHistoryState) {
+            this.promptStartMarker = this.term.registerMarker(0);
+        }
     }
 
     selectAll(): void {
@@ -1001,6 +1069,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return;
         }
         this.term.open(this.node);
+        this.updateBlockOverlayController();
 
         interface ViewportType {
             register(d: Disposable): void;
@@ -1134,6 +1203,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.styleElement?.remove();
         this.webglAddon?.dispose();
         this._commandHistoryState?.dispose();
+        this.toDisposeOnCommandHistory.dispose();
         super.dispose();
     }
 
