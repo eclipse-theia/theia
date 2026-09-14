@@ -24,6 +24,7 @@ import { createDisposableListener } from './event-utils';
 import { URI } from '../common/uri';
 import { FileUri } from '../common/file-uri';
 import { TheiaRendererAPI } from './electron-api-main';
+import { LaunchArgsStore } from './launch-args-store';
 
 /**
  * Theia tracks the maximized state of Electron Browser Windows.
@@ -62,6 +63,7 @@ export class TheiaElectronWindow {
     @inject(TheiaBrowserWindowOptions) protected readonly options: TheiaBrowserWindowOptions;
     @inject(WindowApplicationConfig) protected readonly config: WindowApplicationConfig;
     @inject(ElectronMainApplicationGlobals) protected readonly globals: ElectronMainApplicationGlobals;
+    @inject(LaunchArgsStore) protected readonly launchArgsStore: LaunchArgsStore;
 
     protected onDidCloseEmitter = new Emitter<void>();
 
@@ -155,6 +157,13 @@ export class TheiaElectronWindow {
         this.handleStopRequest(async () => {
             this.applicationState = 'init';
             if (newUrl) {
+                // The window is being redirected to a *different* frontend, e.g. into a dev container
+                // after a CLI attach. The forwarded launch arguments belong to the launch that created
+                // this window and have been acted upon by now, so they must not be redeemed again by
+                // the frontend loaded from `newUrl`: that would re-run the attach inside the container
+                // and re-apply the launch's preferences to the remote backend. A plain reload (no
+                // `newUrl`) keeps them, so `Reload Window` still observes the arguments.
+                this.launchArgsStore.delete(this._window.webContents.id);
                 this._window.loadURL(newUrl);
             } else {
                 this._window.reload();
