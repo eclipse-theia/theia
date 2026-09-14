@@ -355,6 +355,15 @@ export class AgentDelegationTool implements ToolProvider {
             if (ChatChangeEvent.isInteractionNeededEvent(event)) {
                 parentResponse.fireInteractionNeeded(event.contentPart);
                 event.contentPart.whenResolved.then(() => parentResponse.notifyChanged());
+                // A tool call's confirmation settles long before the call resolves (the
+                // tool may run for minutes after being confirmed); notify the parent at
+                // settle time so its UI re-derives pending interactions immediately.
+                if (ToolCallChatResponseContent.is(event.contentPart)) {
+                    event.contentPart.confirmed.then(
+                        () => parentResponse.notifyChanged(),
+                        () => parentResponse.notifyChanged()
+                    );
+                }
             }
         });
 
