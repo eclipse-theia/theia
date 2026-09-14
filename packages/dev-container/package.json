@@ -16,7 +16,8 @@
   "theiaExtensions": [
     {
       "frontendElectron": "lib/electron-browser/dev-container-frontend-module",
-      "backendElectron": "lib/electron-node/dev-container-backend-module"
+      "backendElectron": "lib/electron-node/dev-container-backend-module",
+      "electronMain": "lib/electron-main/dev-container-electron-main-module"
     }
   ],
   "keywords": [
