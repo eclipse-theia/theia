@@ -20,6 +20,14 @@ The AI Configuration view (`@theia/ai-ide`) has been reworked from a tabbed dock
 - **Selection:** category/item navigation now routes through `AiConfigurationSelectionModel` (`@theia/ai-core-ui`). `AIConfigurationSelectionService` (`@theia/ai-ide`) is retained for the agent/alias domain events it still carries.
 - **Stable entry points:** the command ids `aiConfiguration:open` (`OPEN_AI_CONFIG_VIEW`) and `aiConfiguration:openTools` (`OPEN_AI_CONFIG_VIEW_TOOLS`) and the chat-view toolbar button are unchanged. `OPEN_AI_CONFIG_VIEW(tabId)` still accepts the legacy per-tab widget ids and maps them onto the corresponding category ids.
 
+_Electron launch-argument forwarding APIs_:
+
+Forwarding a second launch's CLI arguments to the new window added a few APIs that adopters implementing the affected extension points need to be aware of:
+
+- `TheiaCoreAPI.WindowMetadata` (the Electron preload API, `@theia/core/lib/electron-common/electron-api`) gained an optional `launchArgs?: LaunchArguments` member, carrying the parsed CLI options of a forwarded launch. It is filled in synchronously by the preload script over the existing `CHANNEL_WC_METADATA` channel, which now answers with the whole metadata object instead of just the `webContents` id. Adopters with a custom preload must return `{ webcontentId, launchArgs }` from that channel.
+- `ElectronMainApplicationContribution` gained an optional `claimsWindow?(args: LaunchArguments): MaybePromise<boolean>` hook. A contribution returning `true` opens an empty window for that launch instead of restoring the last workspace, since the window is about to be replaced by whatever the contribution attaches to. `@theia/dev-container` uses this to claim `--attach-container` launches, from a new `electronMain` entry point (`lib/electron-main/dev-container-electron-main-module`) that adopters assembling their extension list manually must include.
+- New replaceable service `WindowLaunchArgs` (interface + symbol, `@theia/core/lib/browser/window/window-launch-args`) exposes those options to the frontend synchronously, and the new contribution point `RemoteCliArgsContribution` (`@theia/core/lib/common/remote-cli-args-contribution`) lets extensions contribute extra CLI arguments to a remote backend.
+
 _ESBuild_:
 
 Theia bundles the application (frontend+backend) with [`ESBuild`](https://esbuild.github.io/). The `webpack` bundling option was removed in 1.75.0, see [v1.75.0](#v1750). Deleting `webpack.config.js` generates an `esbuild.mjs` file upon the next build; bundling instructions you added to `webpack.config.js` need to be migrated to the ESBuild based bundler.
