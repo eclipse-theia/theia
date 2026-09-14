@@ -2077,6 +2077,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             // The editor is laid out at its full content height and the surrounding container
             // scrolls, so Monaco cannot reveal the cursor itself. Scroll the container to the
             // visual row of the cursor; for wrapped lines this differs from the start of the model line.
+            // `getTopForPosition` is content-absolute, so subtract the editor's own scroll offset,
+            // which is non-zero while `automaticLayout` has the editor laid out at a clamped height.
             const revealCursor = (position: IPosition) => {
                 const container = editorContainerRef.current;
                 const control = editor.getControl();
@@ -2085,7 +2087,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     return;
                 }
                 const rowTop = editorNode.getBoundingClientRect().top - container.getBoundingClientRect().top
-                    + control.getTopForPosition(position.lineNumber, position.column);
+                    + control.getTopForPosition(position.lineNumber, position.column) - control.getScrollTop();
                 const rowBottom = rowTop + control.getOption(EditorOption.lineHeight);
                 const delta = computeRevealScrollDelta(rowTop, rowBottom, container.clientHeight);
                 if (delta !== 0) {
