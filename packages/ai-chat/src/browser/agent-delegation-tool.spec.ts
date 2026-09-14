@@ -64,10 +64,11 @@ function makeAgentDelegationTool(chatAgentService: ChatAgentService, chatService
 
 // --- Helper factories ---
 
-function makeContextManager(): { addVariables: sinon.SinonStub; getVariables: sinon.SinonStub } {
+function makeContextManager(): { addVariables: sinon.SinonStub; getVariables: sinon.SinonStub; deleteVariables: sinon.SinonStub } {
     return {
         addVariables: sinon.stub(),
-        getVariables: sinon.stub().returns([])
+        getVariables: sinon.stub().returns([]),
+        deleteVariables: sinon.stub()
     };
 }
 
@@ -131,11 +132,12 @@ function makeChatContext(): {
     };
 }
 
+/** A session previously delegated by the calling session (see {@link makeParentSession}). */
 function makeExistingSession(contextManager = makeContextManager()): {
     id: string;
-    pinnedAgent: { id: string; name: string };
+    pinnedAgent: { id: string; name: string } | undefined;
     rootSessionId: string;
-    parentSessionId: string;
+    parentSessionId: string | undefined;
     model: {
         status: string;
         context: ReturnType<typeof makeContextManager>;
@@ -149,14 +151,14 @@ function makeExistingSession(contextManager = makeContextManager()): {
         id: 'existing-session-id',
         pinnedAgent: { id: 'test-agent', name: 'Test Agent' },
         rootSessionId: 'original-root-id',
-        parentSessionId: 'original-parent-id',
+        parentSessionId: 'parent-session-id',
         model: {
             status: 'idle',
             context: contextManager,
             changeSet: makeChangeSet(),
             onDidChange: sinon.stub().returns({ dispose: sinon.stub() }),
             rootSessionId: 'original-root-id',
-            parentSessionId: 'original-parent-id'
+            parentSessionId: 'parent-session-id'
         }
     };
 }
@@ -321,6 +323,7 @@ describe('AgentDelegationTool', () => {
             const agentService = makeChatAgentService();
             chatService = makeChatService(newSession);
             (chatService.getSession as sinon.SinonStub).withArgs('existing-session-id').returns(existingSession);
+            (chatService.getOrRestoreSession as sinon.SinonStub).withArgs('existing-session-id').resolves(existingSession);
             logger = makeStubLogger();
             tool = makeAgentDelegationTool(agentService, chatService, logger);
             ctx = makeChatContext();
@@ -353,9 +356,9 @@ describe('AgentDelegationTool', () => {
             await tool.getTool().handler(argString, ctx);
 
             expect(existingSession.rootSessionId).to.equal('original-root-id');
-            expect(existingSession.parentSessionId).to.equal('original-parent-id');
+            expect(existingSession.parentSessionId).to.equal('parent-session-id');
             expect(existingSession.model.rootSessionId).to.equal('original-root-id');
-            expect(existingSession.model.parentSessionId).to.equal('original-parent-id');
+            expect(existingSession.model.parentSessionId).to.equal('parent-session-id');
         });
 
         it('adds the task context variable to the resumed session when taskContextId is provided', async () => {
@@ -369,6 +372,74 @@ describe('AgentDelegationTool', () => {
             const callArg: AIVariableResolutionRequest = contextManager.addVariables.firstCall.args[0];
             expect(callArg.variable).to.equal(TASK_CONTEXT_VARIABLE);
             expect(callArg.arg).to.equal('follow-up-ctx-id');
+        });
+
+        it('restores a delegation session that is persisted but no longer in memory', async () => {
+            // e.g. after a page reload: the orchestrator history still carries the session id, but only storage has the session
+            (chatService.getSession as sinon.SinonStub).withArgs('existing-session-id').returns(undefined);
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id' });
+
+            const result = await tool.getTool().handler(argString, ctx);
+
+            const sendRequest = chatService.sendRequest as sinon.SinonStub;
+            expect(sendRequest.calledOnce).to.be.true;
+            expect(sendRequest.firstCall.args[0]).to.equal('existing-session-id');
+            expect(result).to.equal('agent response\n\n[delegation sessionId: existing-session-id]');
+        });
+
+        it('replaces a previous task context when a different taskContextId is provided', async () => {
+            contextManager.getVariables.returns([{ variable: TASK_CONTEXT_VARIABLE, arg: 'stale-ctx-id' }]);
+            const argString = JSON.stringify({
+                agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id', taskContextId: 'new-ctx-id'
+            });
+
+            await tool.getTool().handler(argString, ctx);
+
+            expect(contextManager.deleteVariables.calledOnceWithExactly(0)).to.be.true;
+            const callArg: AIVariableResolutionRequest = contextManager.addVariables.firstCall.args[0];
+            expect(callArg.arg).to.equal('new-ctx-id');
+        });
+
+        it('keeps the existing task context when the same taskContextId is provided again', async () => {
+            contextManager.getVariables.returns([{ variable: TASK_CONTEXT_VARIABLE, arg: 'same-ctx-id' }]);
+            const argString = JSON.stringify({
+                agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id', taskContextId: 'same-ctx-id'
+            });
+
+            await tool.getTool().handler(argString, ctx);
+
+            expect(contextManager.deleteVariables.called).to.be.false;
+        });
+
+        it('disposes the event bubbling when the delegated request fails', async () => {
+            (chatService.sendRequest as sinon.SinonStub).rejects(new Error('provider unavailable'));
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id' });
+
+            await tool.getTool().handler(argString, ctx);
+
+            expect(existingSession.model.onDidChange.firstCall.returnValue.dispose.called).to.be.true;
+            expect(existingSession.model.changeSet.onDidChange.firstCall.returnValue.dispose.called).to.be.true;
+        });
+
+        it('returns an error when the session was delegated by a different session', async () => {
+            existingSession.parentSessionId = 'someone-elses-session-id';
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id' });
+
+            const result = await tool.getTool().handler(argString, ctx);
+
+            expect(result).to.include('was not delegated by this session');
+            expect((chatService.sendRequest as sinon.SinonStub).called).to.be.false;
+        });
+
+        it('returns an error when the session is not a delegated session at all', async () => {
+            // e.g. the id of a normal top-level user chat
+            existingSession.parentSessionId = undefined;
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id' });
+
+            const result = await tool.getTool().handler(argString, ctx);
+
+            expect(result).to.include('was not delegated by this session');
+            expect((chatService.sendRequest as sinon.SinonStub).called).to.be.false;
         });
 
         it('returns an error when the sessionId is unknown', async () => {
