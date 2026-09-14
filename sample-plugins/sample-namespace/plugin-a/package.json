@@ -25,7 +25,7 @@
     "@types/vscode": "^1.125.0"
   },
   "scripts": {
-    "build": "vsce package --no-dependencies"
+    "build": "npx @vscode/vsce@3 package --no-dependencies"
   },
   "contributes": {
     "commands": [
