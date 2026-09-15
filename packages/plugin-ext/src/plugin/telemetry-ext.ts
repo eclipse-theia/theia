@@ -14,33 +14,54 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 
 import { Event, Emitter } from '@theia/core/lib/common/event';
+import { Disposable } from '@theia/core/lib/common/disposable';
 import { cloneAndChange } from '@theia/core';
+import { injectable } from '@theia/core/shared/inversify';
+import { TelemetryLevel, isKindAllowedByLevel } from '@theia/telemetry/lib/common/telemetry-types';
+import { TelemetryExt } from '../common/plugin-api-rpc';
 import { mixin } from '../common/types';
 import { TelemetryTrustedValue, TelemetryLoggerOptions } from './types-impl';
 
-export class TelemetryExtImpl {
+/**
+ * Holds the telemetry level the user consented to and hands it to the loggers plugins create.
+ *
+ * @experimental
+ */
+@injectable()
+export class TelemetryExtImpl implements TelemetryExt {
 
-    _isTelemetryEnabled: boolean = false; // telemetry not activated by default
+    protected currentLevel: TelemetryLevel = 'off';
     private readonly onDidChangeTelemetryEnabledEmitter = new Emitter<boolean>();
     readonly onDidChangeTelemetryEnabled: Event<boolean> = this.onDidChangeTelemetryEnabledEmitter.event;
+    private readonly onDidChangeTelemetryLevelEmitter = new Emitter<TelemetryLevel>();
+    protected readonly onDidChangeTelemetryLevel: Event<TelemetryLevel> = this.onDidChangeTelemetryLevelEmitter.event;
 
-    get isTelemetryEnabled(): boolean {
-        return this._isTelemetryEnabled;
+    get level(): TelemetryLevel {
+        return this.currentLevel;
     }
 
-    set isTelemetryEnabled(isTelemetryEnabled: boolean) {
-        if (this._isTelemetryEnabled !== isTelemetryEnabled) {
-            this._isTelemetryEnabled = isTelemetryEnabled;
-            this.onDidChangeTelemetryEnabledEmitter.fire(this._isTelemetryEnabled);
+    $onDidChangeTelemetryLevel(level: TelemetryLevel): void {
+        this.setLevel(level);
+    }
+
+    setLevel(level: TelemetryLevel): void {
+        if (this.currentLevel === level) {
+            return;
+        }
+        const wasTelemetryEnabled = this.isTelemetryEnabled;
+        this.currentLevel = level;
+        this.onDidChangeTelemetryLevelEmitter.fire(level);
+        if (this.isTelemetryEnabled !== wasTelemetryEnabled) {
+            this.onDidChangeTelemetryEnabledEmitter.fire(this.isTelemetryEnabled);
         }
     }
 
+    get isTelemetryEnabled(): boolean {
+        return isKindAllowedByLevel(this.currentLevel, 'usage');
+    }
+
     createTelemetryLogger(sender: TelemetrySender, options?: TelemetryLoggerOptions | undefined): TelemetryLogger {
-        const logger = new TelemetryLogger(sender, this._isTelemetryEnabled, options);
-        this.onDidChangeTelemetryEnabled(isEnabled => {
-            logger.telemetryEnabled = isEnabled;
-        });
-        return logger;
+        return new TelemetryLogger(sender, this.currentLevel, this.onDidChangeTelemetryLevel, options);
     }
 }
 
@@ -49,30 +70,36 @@ export class TelemetryLogger {
     readonly options: TelemetryLoggerOptions | undefined;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     readonly commonProperties: Record<string, any>;
-    private _telemetryEnabled: boolean;
+    private _level: TelemetryLevel;
 
     private readonly onDidChangeEnableStatesEmitter: Emitter<TelemetryLogger> = new Emitter();
     readonly onDidChangeEnableStates: Event<TelemetryLogger> = this.onDidChangeEnableStatesEmitter.event;
     private _isUsageEnabled: boolean;
     private _isErrorsEnabled: boolean;
+    private readonly levelSubscription: Disposable;
 
-    constructor(sender: TelemetrySender, telemetryEnabled: boolean, options?: TelemetryLoggerOptions) {
+    constructor(sender: TelemetrySender, level: TelemetryLevel, onDidChangeTelemetryLevel: Event<TelemetryLevel>, options?: TelemetryLoggerOptions) {
         this.sender = sender;
         this.options = options;
         this.commonProperties = this.getCommonProperties();
-        this._telemetryEnabled = telemetryEnabled;
-        this._isErrorsEnabled = telemetryEnabled;
-        this._isUsageEnabled = telemetryEnabled;
+        this._level = level;
+        this._isErrorsEnabled = isKindAllowedByLevel(level, 'error');
+        this._isUsageEnabled = isKindAllowedByLevel(level, 'usage');
+        this.levelSubscription = onDidChangeTelemetryLevel(next => this.applyLevel(next));
     }
 
-    get telemetryEnabled(): boolean {
-        return this._telemetryEnabled;
+    /**
+     * The telemetry level the user consented to. Must stay read-only: the object handed to a plugin is proxied with a
+     * `get` trap only, so a setter here would let the plugin raise its own gate.
+     */
+    get level(): TelemetryLevel {
+        return this._level;
     }
 
-    set telemetryEnabled(telemetryEnabled: boolean) {
-        if (this._telemetryEnabled !== telemetryEnabled) {
-            this._telemetryEnabled = telemetryEnabled;
-            this.updateEnableStates(telemetryEnabled, telemetryEnabled);
+    private applyLevel(level: TelemetryLevel): void {
+        if (this._level !== level) {
+            this._level = level;
+            this.updateEnableStates(isKindAllowedByLevel(level, 'usage'), isKindAllowedByLevel(level, 'error'));
         }
     }
 
@@ -108,7 +135,7 @@ export class TelemetryLogger {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     logUsage(eventName: string, data?: Record<string, any | TelemetryTrustedValue<any>>): void {
-        if (!this.telemetryEnabled || !this.isUsageEnabled) {
+        if (!isKindAllowedByLevel(this._level, 'usage') || !this.isUsageEnabled) {
             return;
         }
         this.logEvent(eventName, data);
@@ -116,7 +143,7 @@ export class TelemetryLogger {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     logError(eventNameOrException: string | Error, data?: Record<string, any | TelemetryTrustedValue<any>>): void {
-        if (!this.telemetryEnabled || !this.isErrorsEnabled || !this.sender) {
+        if (!isKindAllowedByLevel(this._level, 'error') || !this.isErrorsEnabled || !this.sender) {
             // no sender available or error shall not be sent
             return;
         }
@@ -128,14 +155,17 @@ export class TelemetryLogger {
     }
 
     dispose(): void {
-        if (this.sender?.flush) {
-            let tempSender: TelemetrySender | undefined = this.sender;
-            this.sender = undefined;
-            Promise.resolve(tempSender.flush!()).then(tempSender = undefined);
-        } else {
-            this.sender = undefined;
+        this.levelSubscription.dispose();
+        this.onDidChangeEnableStatesEmitter.dispose();
+        const sender = this.sender;
+        this.sender = undefined;
+        const reportFlushFailure = (error: unknown): void => console.error('Failed to flush the telemetry sender.', error);
+        try {
+            Promise.resolve(sender?.flush?.()).catch(reportFlushFailure);
+        } catch (error) {
+            reportFlushFailure(error);
         }
-    };
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private logEvent(eventName: string, data?: Record<string, any>): void {

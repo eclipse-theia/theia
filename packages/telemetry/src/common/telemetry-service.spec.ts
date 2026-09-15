@@ -17,7 +17,7 @@
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
 import { isValidTelemetryEvent } from './telemetry-protocol';
-import { TelemetryData, TelemetryService, isTelemetryData, isTelemetryEventKind, snapshotTelemetryData } from './telemetry-service';
+import { TelemetryData, TelemetryService, isTelemetryData, snapshotTelemetryData } from './telemetry-service';
 
 interface ConsumerPayload {
     action: string;
@@ -45,10 +45,6 @@ const compileTimeUsage = (service: TelemetryService): void => service.report<Con
 describe('telemetry service contract', () => {
     it('supports consumer-defined payload interfaces without an index signature', () => {
         expect(compileTimeUsage).to.be.a('function');
-    });
-    it('validates telemetry event kinds', () => {
-        expect(['usage', 'error', 'crash'].every(isTelemetryEventKind)).to.be.true;
-        expect(isTelemetryEventKind('invalid')).to.be.false;
     });
 
     it('validates event kind, attributes, and session', () => {
