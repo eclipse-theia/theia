@@ -24,10 +24,15 @@ import { CommitMessageAgent } from './commit-message-agent';
 import { GetGitChangesTool } from './git-changes-tool';
 
 /**
- * Drives the {@link CommitMessageAgent}: fetches the staged git diff, asks the agent to turn it
- * into a commit message and writes the result into the SCM commit-message input of the currently
- * selected repository. The agent is a plain (non-chat) agent, so there is no chat session, no
- * tool-confirmation prompt and no chat-model bookkeeping here.
+ * Drives the {@link CommitMessageAgent}: reads the staged git diff of the selected repository,
+ * asks the agent to turn it into a commit message and writes the result into that repository's
+ * SCM commit-message input.
+ *
+ * The diff is read by calling {@link GetGitChangesTool.getStagedChanges} directly rather than by
+ * letting the model call the tool: the agent is a plain (non-chat) agent with a single, fixed
+ * input, so there is no chat session, no tool-confirmation prompt and no chat-model bookkeeping.
+ * `git diff --cached` also renders staged additions of new files as complete addition diffs, so
+ * untracked files need no separate handling.
  */
 @injectable()
 export class CommitMessageRunner {
@@ -86,7 +91,7 @@ export class CommitMessageRunner {
                 return;
             }
 
-            const changes = await this.gitChangesTool.getChanges(cts.token);
+            const changes = await this.gitChangesTool.getStagedChanges(repository, cts.token);
             if (cts.token.isCancellationRequested) {
                 return;
             }

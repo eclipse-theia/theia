@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { CancellationToken, generateUuid } from '@theia/core';
-import { ToolProvider, ToolRequest } from '@theia/ai-core';
+import { generateUuid } from '@theia/core';
+import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import {
     OutputTruncationOptions,
@@ -33,10 +33,13 @@ export interface ShellCommandExecution {
     cwd?: string;
     /** Timeout in milliseconds. Falls back to the backend default when omitted. */
     timeout?: number;
-    /** Tool call id, used to make the execution cancellable via {@link AbstractShellExecutionTool.cancelExecution}. */
-    toolCallId?: string;
-    /** Cancels the underlying process when fired. */
-    cancellationToken?: CancellationToken;
+    /**
+     * The invocation context, if any. Its tool call id makes the execution cancellable via
+     * {@link AbstractShellExecutionTool.cancelExecution}, and its cancellation token kills the
+     * underlying process when fired. Typed as `unknown` because tool handlers receive the context
+     * untyped; {@link ToolInvocationContext} narrows it.
+     */
+    ctx?: unknown;
     /** Overrides the default output truncation budget. */
     truncation?: OutputTruncationOptions;
 }
@@ -79,7 +82,9 @@ export abstract class AbstractShellExecutionTool implements ToolProvider {
 
     /** Runs `execution` and maps the raw server result onto the tool result shape. */
     protected async runShellCommand(execution: ShellCommandExecution): Promise<ShellExecutionToolResult | ShellExecutionCanceledResult> {
-        const { command, cwd, timeout, toolCallId, cancellationToken, truncation } = execution;
+        const { command, cwd, timeout, ctx, truncation } = execution;
+        const toolCallId = ToolInvocationContext.getToolCallId(ctx);
+        const cancellationToken = ToolInvocationContext.getCancellationToken(ctx);
 
         const executionId = generateUuid();
         if (toolCallId) {

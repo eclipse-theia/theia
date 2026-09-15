@@ -22,7 +22,7 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
-import { ILogger, MessageService } from '@theia/core';
+import { CancellationToken, ILogger, MessageService } from '@theia/core';
 import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmInput } from '@theia/scm/lib/browser/scm-input';
@@ -34,6 +34,7 @@ disableJSDOM();
 
 interface MockRepository {
     input: ScmInput;
+    provider: { rootUri: string };
 }
 
 describe('CommitMessageRunner', () => {
@@ -41,7 +42,7 @@ describe('CommitMessageRunner', () => {
     let container: Container;
     let runner: CommitMessageRunner;
     let agent: { generateCommitMessage: sinon.SinonStub };
-    let gitChangesTool: { getChanges: sinon.SinonStub };
+    let gitChangesTool: { getStagedChanges: sinon.SinonStub };
     let scmService: { selectedRepository: MockRepository | undefined };
     let messageService: { warn: sinon.SinonStub; error: sinon.SinonStub; info: sinon.SinonStub };
     let logger: { error: sinon.SinonStub; warn: sinon.SinonStub; info: sinon.SinonStub; debug: sinon.SinonStub; trace: sinon.SinonStub };
@@ -62,11 +63,11 @@ describe('CommitMessageRunner', () => {
 
         const input = new ScmInput();
         focusSpy = sinon.spy(input, 'focus');
-        repository = { input };
+        repository = { input, provider: { rootUri: 'file:///workspace-root' } };
 
         scmService = { selectedRepository: repository };
         agent = { generateCommitMessage: sinon.stub().resolves('feat: add new thing') };
-        gitChangesTool = { getChanges: sinon.stub().resolves('diff --git a b') };
+        gitChangesTool = { getStagedChanges: sinon.stub().resolves('diff --git a b') };
         messageService = {
             warn: sinon.stub().resolves(undefined),
             error: sinon.stub().resolves(undefined),
@@ -98,7 +99,9 @@ describe('CommitMessageRunner', () => {
     it('writes the generated message into the SCM input and focuses it on success', async () => {
         await runner.run();
 
-        expect(gitChangesTool.getChanges.calledOnce).to.be.true;
+        expect(gitChangesTool.getStagedChanges.calledOnce).to.be.true;
+        // The diff is read for the selected repository, bypassing the model-facing tool call.
+        expect(gitChangesTool.getStagedChanges.firstCall.args[0]).to.equal(repository);
         expect(agent.generateCommitMessage.calledOnce).to.be.true;
         expect(repository.input.value).to.equal('feat: add new thing');
         expect(focusSpy.calledOnce).to.be.true;
@@ -111,7 +114,7 @@ describe('CommitMessageRunner', () => {
         await runner.run();
 
         expect(messageService.warn.calledOnce).to.be.true;
-        expect(gitChangesTool.getChanges.called).to.be.false;
+        expect(gitChangesTool.getStagedChanges.called).to.be.false;
         expect(agent.generateCommitMessage.called).to.be.false;
     });
 
@@ -126,7 +129,7 @@ describe('CommitMessageRunner', () => {
     });
 
     it('warns and does not invoke the agent when there are no staged changes', async () => {
-        gitChangesTool.getChanges.resolves('   \n  ');
+        gitChangesTool.getStagedChanges.resolves('   \n  ');
 
         await runner.run();
 
@@ -190,7 +193,7 @@ describe('CommitMessageRunner', () => {
     });
 
     it('shows an error notification when reading the staged changes fails', async () => {
-        gitChangesTool.getChanges.rejects(new Error('fatal: not a git repository'));
+        gitChangesTool.getStagedChanges.rejects(new Error('fatal: not a git repository'));
 
         await runner.run();
 
@@ -227,17 +230,37 @@ describe('CommitMessageRunner', () => {
 
     it('ignores a second run while one is still in flight', async () => {
         let resolveChanges: (diff: string) => void = () => { /* set below */ };
-        gitChangesTool.getChanges.callsFake(() => new Promise<string>(resolve => { resolveChanges = resolve; }));
+        gitChangesTool.getStagedChanges.callsFake(() => new Promise<string>(resolve => { resolveChanges = resolve; }));
 
         const firstRun = runner.run();
         await new Promise(resolve => setTimeout(resolve, 0));
         expect(runner.isRunning()).to.be.true;
 
         await runner.run();
-        expect(gitChangesTool.getChanges.calledOnce).to.be.true;
+        expect(gitChangesTool.getStagedChanges.calledOnce).to.be.true;
 
         resolveChanges('diff --git a b');
         await firstRun;
+        expect(runner.isRunning()).to.be.false;
+    });
+
+    it('passes its cancellation token down so the git command can be aborted', async () => {
+        let capturedToken: CancellationToken | undefined;
+        // Mirror the tool: a canceled execution resolves with an empty diff.
+        gitChangesTool.getStagedChanges.callsFake((_repository: unknown, token: CancellationToken) => {
+            capturedToken = token;
+            return new Promise<string>(resolve => token.onCancellationRequested(() => resolve('')));
+        });
+
+        const runPromise = runner.run();
+        await new Promise(resolve => setTimeout(resolve, 0));
+        expect(capturedToken?.isCancellationRequested).to.be.false;
+
+        runner.cancel();
+        await runPromise;
+
+        expect(capturedToken?.isCancellationRequested).to.be.true;
+        expect(agent.generateCommitMessage.called).to.be.false;
         expect(runner.isRunning()).to.be.false;
     });
 });

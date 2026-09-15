@@ -23,7 +23,7 @@ import {
     ShellExecutionToolResult,
     ShellExecutionCanceledResult
 } from '../common/shell-execution-server';
-import { CancellationToken, Path } from '@theia/core';
+import { Path } from '@theia/core';
 
 @injectable()
 export class ShellExecutionTool extends AbstractShellExecutionTool {
@@ -149,8 +149,7 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
             command: args.command,
             cwd: this.resolveCwd(args.cwd),
             timeout: args.timeout,
-            toolCallId: this.extractToolCallId(ctx),
-            cancellationToken: this.extractCancellationToken(ctx)
+            ctx
         });
     }
 
@@ -200,23 +199,4 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
         );
     }
 
-    protected extractToolCallId(ctx?: unknown): string | undefined {
-        if (ctx && typeof ctx === 'object' && 'toolCallId' in ctx) {
-            return (ctx as { toolCallId?: string }).toolCallId;
-        }
-        return undefined;
-    }
-
-    protected extractCancellationToken(ctx: unknown): CancellationToken | undefined {
-        if (ctx && typeof ctx === 'object') {
-            // Check for MutableChatRequestModel structure (response.cancellationToken)
-            if ('response' in ctx) {
-                const response = (ctx as { response?: { cancellationToken?: CancellationToken } }).response;
-                if (response?.cancellationToken) {
-                    return response.cancellationToken;
-                }
-            }
-        }
-        return undefined;
-    }
 }

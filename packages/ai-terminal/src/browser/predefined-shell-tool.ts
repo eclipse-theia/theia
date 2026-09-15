@@ -54,15 +54,18 @@ export abstract class PredefinedShellTool extends AbstractShellExecutionTool {
     protected abstract buildCommand(args: Record<string, unknown>): string;
 
     /**
-     * Resolves the working directory for the shell command. Deliberately abstract: the cwd
-     * materially affects most predefined commands (anything talking to a specific repository,
-     * build script, or per-folder tool), and silently defaulting to an arbitrary workspace root
-     * produces results that look plausible but describe the wrong folder.
+     * Resolves the working directory for the shell command, given the same parsed arguments that
+     * {@link buildCommand} receives — a tool may well let the caller pick the folder it runs in.
+     *
+     * Deliberately abstract: the cwd materially affects most predefined commands (anything
+     * talking to a specific repository, build script, or per-folder tool), and silently
+     * defaulting to an arbitrary workspace root produces results that look plausible but describe
+     * the wrong folder.
      *
      * Subclasses that genuinely do not care about the cwd can return
      * {@link firstWorkspaceRoot} or `undefined`.
      */
-    protected abstract resolveWorkspaceRoot(): string | undefined;
+    protected abstract resolveWorkspaceRoot(args: Record<string, unknown>): string | undefined;
 
     /**
      * The **first** workspace root, or `undefined` when no workspace is open. Only a sensible
@@ -88,10 +91,9 @@ export abstract class PredefinedShellTool extends AbstractShellExecutionTool {
         const args: Record<string, unknown> = argString ? JSON.parse(argString) : {};
         return this.runShellCommand({
             command: this.buildCommand(args),
-            cwd: this.resolveWorkspaceRoot(),
+            cwd: this.resolveWorkspaceRoot(args),
             timeout: this.timeout,
-            toolCallId: ctx?.toolCallId,
-            cancellationToken: ctx?.cancellationToken,
+            ctx,
             truncation: this.truncation
         });
     }

@@ -54,6 +54,11 @@ export class CommitMessageCommandContribution implements CommandContribution {
     }
 
     protected isEnabled(): boolean {
+        // While a generation is in flight the command cancels it, which must stay possible even
+        // once the git extension has disabled the commit input for an ongoing commit.
+        if (this.runner.isRunning()) {
+            return true;
+        }
         const repository = this.scmService.selectedRepository;
         return !!repository
             && repository.input.enabled

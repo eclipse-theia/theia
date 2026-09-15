@@ -27,11 +27,11 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ShellExecutionRequest, ShellExecutionResult, ShellExecutionServer } from '@theia/ai-terminal/lib/common/shell-execution-server';
-import { GET_GIT_CHANGES_FUNCTION_ID, GetGitChangesTool } from './git-changes-tool';
+import { GET_GIT_CHANGES_FUNCTION_ID, GetGitChangesTool, GitChangesRepositoryError } from './git-changes-tool';
 
 disableJSDOM();
 
-function createResult(overrides: Partial<ShellExecutionResult> = {}): ShellExecutionResult {
+function shellResult(overrides: Partial<ShellExecutionResult> = {}): ShellExecutionResult {
     return { success: true, exitCode: 0, stdout: 'staged diff', stderr: '', duration: 1, ...overrides };
 }
 
@@ -43,11 +43,16 @@ describe('GetGitChangesTool', () => {
 
     let container: Container;
     let shellServer: { execute: sinon.SinonStub; cancel: sinon.SinonStub };
-    let scmService: { selectedRepository: ScmRepository | undefined };
+    let scmService: { repositories: ScmRepository[]; selectedRepository: ScmRepository | undefined };
+    let workspaceRoots: URI[];
     let tool: GetGitChangesTool;
 
-    function executedCommands(): string[] {
-        return shellServer.execute.getCalls().map(call => (call.args[0] as ShellExecutionRequest).command);
+    const backend = makeRepo('file:///work/backend');
+    const frontend = makeRepo('file:///work/frontend');
+    const nested = makeRepo('file:///work/backend/vendor/lib');
+
+    function cwdOfCall(index = 0): string | undefined {
+        return (shellServer.execute.getCall(index).args[0] as ShellExecutionRequest).cwd?.replace(/\\/g, '/');
     }
 
     before(() => {
@@ -60,40 +65,85 @@ describe('GetGitChangesTool', () => {
 
     beforeEach(() => {
         container = new Container();
-        shellServer = { execute: sinon.stub().resolves(createResult()), cancel: sinon.stub().resolves(true) };
+        shellServer = { execute: sinon.stub().resolves(shellResult()), cancel: sinon.stub().resolves(true) };
+        workspaceRoots = [new URI('file:///work/backend'), new URI('file:///work/frontend')];
+        scmService = { repositories: [backend, frontend, nested], selectedRepository: frontend };
         const workspaceService: Partial<WorkspaceService> = {
-            getWorkspaceRootUri: () => new URI('file:///workspace-root')
+            tryGetRoots: () => workspaceRoots.map(resource => ({ resource } as never))
         };
-        scmService = { selectedRepository: undefined };
         container.bind(ShellExecutionServer).toConstantValue(shellServer as unknown as ShellExecutionServer);
-        container.bind(WorkspaceService).toConstantValue(workspaceService as WorkspaceService);
         container.bind(ScmService).toConstantValue(scmService as unknown as ScmService);
+        container.bind(WorkspaceService).toConstantValue(workspaceService as WorkspaceService);
         container.bind(GetGitChangesTool).toSelf();
         tool = container.get(GetGitChangesTool);
     });
 
-    it('exposes the well-known tool id getGitChanges', () => {
-        expect(tool.getTool().id).to.equal(GET_GIT_CHANGES_FUNCTION_ID);
+    afterEach(() => sinon.restore());
+
+    it('exposes the well-known tool id getGitChanges with a repository parameter', () => {
+        const request = tool.getTool();
+        expect(request.id).to.equal(GET_GIT_CHANGES_FUNCTION_ID);
+        expect((request.parameters.properties.repository as { type: string }).type).to.equal('string');
+        expect(request.parameters.required ?? []).to.not.contain('repository');
     });
 
-    it('runs a single "git diff --cached" for both the tool invocation and getChanges', async () => {
+    it('runs a cross-platform "git diff --cached" with no POSIX-only shell operators', async () => {
         await tool.getTool().handler('{}');
-        expect(await tool.getChanges()).to.equal('staged diff');
-        expect(executedCommands()).to.deep.equal([
-            'git diff --cached --no-color',
-            'git diff --cached --no-color'
-        ]);
+        const command = (shellServer.execute.firstCall.args[0] as ShellExecutionRequest).command;
+        expect(command).to.equal('git diff --cached --no-color');
+        expect(command).to.not.match(/;|\||xargs|sh -c|\/dev\/null/);
     });
 
-    it('uses only cross-platform commands with no POSIX-only shell operators', async () => {
-        await tool.getChanges();
-        for (const command of executedCommands()) {
-            expect(command).to.not.match(/;|\||xargs|sh -c|\/dev\/null/);
-        }
+    it('falls back to the selected repository when no repository argument is given', async () => {
+        await tool.getTool().handler('{}');
+        expect(cwdOfCall()).to.equal('/work/frontend');
+    });
+
+    it('runs in the named repository rather than the selected one', async () => {
+        const result = await tool.getTool().handler(JSON.stringify({ repository: 'backend' })) as { output: string };
+        expect(result.output).to.equal('staged diff');
+        expect(cwdOfCall()).to.equal('/work/backend');
+    });
+
+    it('identifies a repository nested inside a workspace root by its relative path', async () => {
+        await tool.getTool().handler(JSON.stringify({ repository: 'backend/vendor/lib' }));
+        expect(cwdOfCall()).to.equal('/work/backend/vendor/lib');
+    });
+
+    it('labels the argument with the repository for the tool-call summary', () => {
+        const label = tool.getTool().getArgumentsShortLabel!(JSON.stringify({ repository: 'backend' }));
+        expect(label).to.deep.equal({ label: 'backend', hasMore: false });
+    });
+
+    it('accepts an absolute path and ignores separator and case differences', async () => {
+        await tool.getTool().handler(JSON.stringify({ repository: '/work/backend' }));
+        expect(cwdOfCall()).to.equal('/work/backend');
+
+        await tool.getTool().handler(JSON.stringify({ repository: 'BackEnd/' }));
+        expect(cwdOfCall(1)).to.equal('/work/backend');
+    });
+
+    it('reports the known repositories instead of running an unknown one', async () => {
+        const result = await tool.getTool().handler(JSON.stringify({ repository: '../../etc' })) as GitChangesRepositoryError;
+        expect(result.error).to.contain('../../etc');
+        expect(result.availableRepositories).to.deep.equal(['backend', 'frontend', 'backend/vendor/lib']);
+        expect(shellServer.execute.called).to.be.false;
+    });
+
+    it('never derives the working directory from the argument, only from the matched repository', async () => {
+        await tool.getTool().handler(JSON.stringify({ repository: 'backend; rm -rf /' }));
+        expect(shellServer.execute.called).to.be.false;
+    });
+
+    it('asks for a repository when none is named and none is selected', async () => {
+        scmService.selectedRepository = undefined;
+        const result = await tool.getTool().handler('{}') as GitChangesRepositoryError;
+        expect(result.error).to.contain('repository argument');
+        expect(shellServer.execute.called).to.be.false;
     });
 
     it('throws instead of returning the error output when the git command fails', async () => {
-        shellServer.execute.resolves(createResult({
+        shellServer.execute.resolves(shellResult({
             success: false,
             exitCode: 128,
             stdout: '',
@@ -102,7 +152,7 @@ describe('GetGitChangesTool', () => {
 
         let caught: Error | undefined;
         try {
-            await tool.getChanges();
+            await tool.getStagedChanges(backend);
         } catch (error) {
             caught = error as Error;
         }
@@ -110,32 +160,18 @@ describe('GetGitChangesTool', () => {
     });
 
     it('returns an empty diff when the execution was canceled', async () => {
-        shellServer.execute.resolves(createResult({ canceled: true, stdout: 'partial' }));
-        expect(await tool.getChanges()).to.equal('');
+        shellServer.execute.resolves(shellResult({ canceled: true, stdout: 'partial' }));
+        expect(await tool.getStagedChanges(backend)).to.equal('');
     });
 
     it('keeps far more diff lines than the default shellExecute budget', async () => {
         const stdout = Array.from({ length: 600 }, (_unused, index) => `+line ${index}`).join('\n');
-        shellServer.execute.resolves(createResult({ stdout }));
+        shellServer.execute.resolves(shellResult({ stdout }));
 
-        const output = await tool.getChanges();
+        const diff = await tool.getStagedChanges(backend);
 
-        expect(output).to.contain('+line 300');
-        expect(output).to.not.contain('lines omitted');
-    });
-
-    it('runs under the selected SCM repository root when one is selected', async () => {
-        scmService.selectedRepository = makeRepo('file:///workspace-root/subrepo');
-        await tool.getChanges();
-        const arg = shellServer.execute.firstCall.args[0] as ShellExecutionRequest;
-        // URI.fsPath() uses the platform-native separator (backslashes on Windows); normalize for the assertion.
-        expect(arg.cwd?.replace(/\\/g, '/')).to.equal('/workspace-root/subrepo');
-    });
-
-    it('falls back to the workspace root when no repository is selected', async () => {
-        await tool.getChanges();
-        const arg = shellServer.execute.firstCall.args[0] as ShellExecutionRequest;
-        expect(arg.cwd?.replace(/\\/g, '/')).to.equal('/workspace-root');
+        expect(diff).to.contain('+line 300');
+        expect(diff).to.not.contain('lines omitted');
     });
 
     it('does not declare checkAutoAction so confirmation flows through the normal ToolConfirmationManager', () => {

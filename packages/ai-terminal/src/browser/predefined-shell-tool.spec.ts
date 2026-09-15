@@ -39,8 +39,8 @@ class TestPredefinedShellTool extends PredefinedShellTool {
         return upper ? 'echo HELLO' : 'echo hello';
     }
 
-    protected resolveWorkspaceRoot(): string | undefined {
-        return this.firstWorkspaceRoot();
+    protected resolveWorkspaceRoot(args: Record<string, unknown>): string | undefined {
+        return typeof args.cwd === 'string' ? args.cwd : this.firstWorkspaceRoot();
     }
 }
 
@@ -116,6 +116,12 @@ describe('PredefinedShellTool', () => {
         await request.handler(JSON.stringify({ upper: true }));
         const arg = shellServer.execute.firstCall.args[0] as ShellExecutionRequest;
         expect(arg.command).to.equal('echo HELLO');
+    });
+
+    it('forwards the same typed args to resolveWorkspaceRoot, so the cwd can depend on them', async () => {
+        await tool.getTool().handler(JSON.stringify({ cwd: '/elsewhere' }));
+        const arg = shellServer.execute.firstCall.args[0] as ShellExecutionRequest;
+        expect(arg.cwd).to.equal('/elsewhere');
     });
 
     it('handles an empty argument string as an empty args object', async () => {

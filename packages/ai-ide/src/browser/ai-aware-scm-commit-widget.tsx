@@ -28,10 +28,13 @@ import { CommitMessageCommands } from './commit-message-commands';
 import { CommitMessageRunner } from './commit-message-runner';
 
 /**
- * Group id used by the VS Code / Theia git extension for staged resources.
- * TODO: replace with a generic capability on `ScmProvider` (e.g. `groups[i].kind`) so
- * non-git providers with staging support also get a working button.
+ * Source-control provider id of the VS Code / Theia git extension. The generator runs
+ * `git diff --cached`, so it is git-specific by construction and the overlay is only offered
+ * for that provider rather than for any provider that happens to expose a matching group.
  */
+const GIT_PROVIDER_ID = 'git';
+
+/** Resource group the git extension uses for staged resources. */
 const STAGED_GROUP_ID = 'index';
 
 /**
@@ -62,13 +65,16 @@ export class AiAwareScmCommitWidget extends ScmCommitWidget {
         this.toDispose.push(this.commitMessageRunner.onDidChange(() => this.update()));
         this.toDispose.push(this.agentService.onDidChangeAgents(() => this.update()));
         this.toDispose.push(this.aiActivationService.onDidChangeActiveStatus(() => this.update()));
+        // `canRun` carries conditions beyond `isActive` (e.g. workspace trust) and is what the
+        // command's `isEnabled` is gated on, so the button's enabled state has to follow it.
+        this.toDispose.push(this.aiActivationService.onDidChangeCanRun(() => this.update()));
     }
 
     protected override renderInput(input: ScmInput): React.ReactNode {
         const baseInput = super.renderInput(input);
-        // When AI features are globally disabled the widget falls back to the stock SCM input,
-        // so users who never want AI features see no wrapper div, no padding, and no button.
-        if (!input.visible || !this.aiActivationService.isActive) {
+        // The wrapper adds padding to make room for the button, so it must only be rendered when
+        // a button is actually rendered into it. Users with AI off keep the stock SCM input.
+        if (!this.shouldRenderAiButton(input)) {
             return baseInput;
         }
         return <div className='theia-ai-commit-message-input-wrapper'>
@@ -77,15 +83,24 @@ export class AiAwareScmCommitWidget extends ScmCommitWidget {
         </div>;
     }
 
-    protected renderAiOverlay(input: ScmInput): React.ReactNode {
-        // Without staged changes `git diff --cached` is empty, so the button would have nothing
-        // to work with.
-        if (!this.hasStagedChanges(this.scmService.selectedRepository?.provider)) {
-            return undefined;
+    protected shouldRenderAiButton(input: ScmInput): boolean {
+        if (!input.visible || !this.aiActivationService.isActive) {
+            return false;
         }
-        const agentEnabled = this.agentService.isEnabled(COMMIT_MESSAGE_AGENT_ID);
+        // Without staged changes `git diff --cached` is empty, so the button would have nothing to
+        // work with. A running generation keeps it rendered so it stays cancellable even if the
+        // user unstages everything mid-run.
+        return this.commitMessageRunner.isRunning() || this.hasStagedChanges(this.scmService.selectedRepository?.provider);
+    }
+
+    protected renderAiOverlay(input: ScmInput): React.ReactNode {
         const running = this.commitMessageRunner.isRunning();
-        const disabled = (!agentEnabled || !input.enabled) && !running;
+        const agentEnabled = this.agentService.isEnabled(COMMIT_MESSAGE_AGENT_ID);
+        // Mirrors `CommitMessageCommandContribution.isEnabled` as wrapped by
+        // `AICommandHandlerFactory`; a divergence would render an enabled button whose click ends
+        // in a `NO_ACTIVE_HANDLER` error. Cancelling is always allowed, so that the spinner keeps
+        // working while the git extension has the input disabled during a commit.
+        const disabled = !running && (!this.aiActivationService.canRun || !agentEnabled || !input.enabled);
 
         let title: string;
         if (running) {
@@ -117,13 +132,19 @@ export class AiAwareScmCommitWidget extends ScmCommitWidget {
     }
 
     protected onAiButtonClick = () => {
+        // Cancelling never goes through the command: its `isEnabled` requires an enabled commit
+        // input and a runnable AI, either of which may have flipped off since the run started.
+        if (this.commitMessageRunner.isRunning()) {
+            this.commitMessageRunner.cancel();
+            return;
+        }
         this.commandService.executeCommand(CommitMessageCommands.GENERATE_FROM_STAGED.id).catch(error =>
             this.logger.error('Failed to execute AI commit-message command', error)
         );
     };
 
     protected hasStagedChanges(provider: ScmProvider | undefined): boolean {
-        if (!provider) {
+        if (provider?.id !== GIT_PROVIDER_ID) {
             return false;
         }
         const staged = provider.groups.find(group => group.id === STAGED_GROUP_ID);
