@@ -221,8 +221,6 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.chatResponseFocusKey = this.contextKeyService.createKey<boolean>('chatResponseFocus', false);
         this.node.setAttribute('tabindex', '0');
         this.node.setAttribute('aria-label', nls.localize('theia/ai/chat-ui/chatResponses', 'Chat responses'));
-        this.addEventListener(this.node, 'focusin', () => this.chatResponseFocusKey.set(true));
-        this.addEventListener(this.node, 'focusout', () => this.chatResponseFocusKey.set(false));
 
         this.findHighlighter = new ChatFindHighlighter((text, regexp) => this.findMatcher.findInText(text, regexp));
         this.findWidget.fallbackFocusTarget = this.node;
@@ -319,6 +317,11 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
+        // Registered per attach, not in `init()`: `addEventListener` disposes on detach, so listeners registered
+        // once would be lost the first time the view is moved (e.g. to the main area), leaving `chatResponseFocus`
+        // stuck and every keybinding scoped to it dead until the page is reloaded.
+        this.addEventListener(this.node, 'focusin', () => this.chatResponseFocusKey.set(true));
+        this.addEventListener(this.node, 'focusout', () => this.chatResponseFocusKey.set(false));
         // The tree node is a React root, so the find bar is attached as a sibling right before it,
         // the same way the core TreeWidget hosts its SearchBox.
         if (this.findWidget.isAttached) {
@@ -330,6 +333,7 @@ export class ChatViewTreeWidget extends TreeWidget {
     }
 
     protected override onBeforeDetach(msg: Message): void {
+        this.chatResponseFocusKey.set(false);
         if (this.findWidget.isAttached) {
             Widget.detach(this.findWidget);
         }
