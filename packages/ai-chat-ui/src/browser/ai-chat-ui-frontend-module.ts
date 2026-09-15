@@ -54,6 +54,7 @@ import {
 } from './chat-response-renderer/ai-selection-resolver';
 import { QuestionPartRenderer } from './chat-response-renderer/question-part-renderer';
 import { ExternalResourceAllowlistContribution } from './chat-response-renderer/external-resource-allowlist-contribution';
+import { ChatFindContribution } from './chat-find/chat-find-contribution';
 import { ChatFindMatcher } from './chat-find/chat-find-matcher';
 import { createChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
@@ -106,6 +107,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatFocusContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(ChatFocusContribution);
     bind(KeybindingContribution).toService(ChatFocusContribution);
+
+    bind(ChatFindContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(ChatFindContribution);
+    bind(KeybindingContribution).toService(ChatFindContribution);
 
     bind(ChatCapabilitiesServiceImpl).toSelf().inSingletonScope();
     bind(ChatCapabilitiesService).toService(ChatCapabilitiesServiceImpl);
