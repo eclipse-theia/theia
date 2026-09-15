@@ -43,8 +43,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
 
     protected _apiKey: string | undefined;
     protected _proxyUrl: string | undefined;
-    // Cached `/v1/models` lookups keyed by `${baseURL}::${model}`. Successful lookups are kept for the process lifetime;
-    // failed lookups are evicted so the next call retries.
+    // Cached `/v1/models` lookups keyed by `${baseURL}::${model}::${headers}`, so a header change re-fetches through the
+    // new headers. Successful lookups are kept for the process lifetime; failed lookups are evicted so the next call retries.
     protected readonly modelInfoCache = new Map<string, Promise<ModelInfo>>();
 
     @inject(LanguageModelRegistry)
@@ -102,7 +102,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 maxInputTokens: metadata.maxInputTokens,
                 serverSideCompactionSupport: metadata.serverSideCompactionSupport,
                 serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false,
-                serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault
+                serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault,
+                headers: modelDescription.headers
             });
         } else {
             this.languageModelRegistry.addLanguageModels([
@@ -124,7 +125,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                     serverTools: ANTHROPIC_SERVER_TOOLS,
                     serverSideCompactionSupport: metadata.serverSideCompactionSupport,
                     serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false,
-                    serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault
+                    serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault,
+                    headers: modelDescription.headers
                 })
             ]);
         }
@@ -176,7 +178,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
         if (!apiKey) {
             return undefined;
         }
-        const cacheKey = `${modelDescription.url ?? ''}::${modelDescription.model}`;
+        const cacheKey = `${modelDescription.url ?? ''}::${modelDescription.model}::${JSON.stringify(modelDescription.headers ?? {})}`;
         const cached = this.modelInfoCache.get(cacheKey);
         if (cached) {
             return cached;
@@ -201,7 +203,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
         const anthropic = new Anthropic({
             apiKey,
             baseURL: modelDescription.url,
-            fetch: createProxyFetch(proxyUrl)
+            fetch: createProxyFetch(proxyUrl),
+            defaultHeaders: modelDescription.headers
         });
         return anthropic.models.retrieve(modelDescription.model);
     }

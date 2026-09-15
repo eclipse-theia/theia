@@ -319,6 +319,23 @@ export namespace ToolRequest {
             (!('required' in obj) || (Array.isArray(obj.required) && obj.required.every(prop => typeof prop === 'string')));
     }
 }
+
+/**
+ * Resolves the `headers` attribute of a custom model preference entry. Since preferences are
+ * user-authored JSON, entries with a non-string value are dropped. Returns `undefined` when no
+ * usable header remains, so that the default request headers are left untouched. The keys are
+ * sorted, so equal header maps stringify identically regardless of their order in the preference.
+ */
+export function resolveCustomModelHeaders(headers: unknown): Record<string, string> | undefined {
+    if (typeof headers !== 'object' || !headers || Array.isArray(headers)) {
+        return undefined;
+    }
+    const resolved = Object.entries(headers)
+        .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    return resolved.length > 0 ? Object.fromEntries(resolved) : undefined;
+}
+
 // Anthropic requires at least 50,000 tokens, so use one conservative minimum for all compaction settings.
 export const SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM = 50_000;
 

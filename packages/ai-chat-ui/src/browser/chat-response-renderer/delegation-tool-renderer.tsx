@@ -148,11 +148,6 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
     }
 }
 
-interface PendingInteraction {
-    contentPart: InteractiveContent & ChatResponseContent;
-    id: string;
-}
-
 interface DelegatedChatProps {
     invocation?: ChatRequestInvocation;
     agentName: string;
@@ -167,20 +162,18 @@ interface DelegatedChatProps {
 interface DelegatedChatState {
     node?: ResponseNode;
     isOpen: boolean;
-    pendingInteractions: PendingInteraction[];
 }
 
 class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatState> {
     private widget: ReturnType<SubChatWidgetFactory>;
     private toDispose = new DisposableCollection();
-    private trackedInteractionIds = new Set<string>();
+    private unmounted = false;
 
     constructor(props: DelegatedChatProps) {
         super(props);
         this.state = {
             node: undefined,
-            isOpen: false,
-            pendingInteractions: []
+            isOpen: false
         };
         this.widget = props.subChatWidgetFactory();
     }
@@ -198,72 +191,64 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
     private subscribeToInvocation(invocation?: ChatRequestInvocation): void {
         this.toDispose.dispose();
         this.toDispose = new DisposableCollection();
-        this.trackedInteractionIds.clear();
         if (!invocation) {
             return;
         }
 
         invocation.responseCreated.then(chatModel => {
+            // Guard against continuations of a superseded invocation or an unmounted
+            // component: they would show the old model's node and register listeners
+            // into an already-disposed collection (which silently keeps them alive).
+            if (this.unmounted || invocation !== this.props.invocation) {
+                return;
+            }
             const node = mapResponseToNode(chatModel, this.props.parentNode);
             this.setState({ node });
 
-            const changeListener = () => {
-                this.removeResolvedInteractions();
-                this.forceUpdate();
-            };
-            this.toDispose.push(chatModel.onDidChange(changeListener));
-
-            // Subscribe to interactionNeeded for push-based interaction tracking
-            this.toDispose.push(chatModel.onInteractionNeeded(contentPart => {
-                const id = contentPart.interactionId;
-                if (id && !this.trackedInteractionIds.has(id)
-                    && this.findConfirmationRenderer(contentPart)) {
-                    this.trackedInteractionIds.add(id);
-                    this.setState(prevState => ({
-                        pendingInteractions: [
-                            ...prevState.pendingInteractions,
-                            { contentPart, id }
-                        ]
-                    }));
-                }
-            }));
+            this.toDispose.push(chatModel.onDidChange(() => this.forceUpdate()));
+            // Pending interactions are derived from chatModel.pendingInteractions in
+            // render(); interactionNeeded does not imply onDidChange, so re-render
+            // explicitly when a new interaction is announced (#17952).
+            this.toDispose.push(chatModel.onInteractionNeeded(() => this.forceUpdate()));
         }).catch(error => {
             console.error('Failed to create delegated chat response:', error);
         });
 
         invocation.responseCompleted.then(() => {
-            this.forceUpdate();
+            if (!this.unmounted) {
+                this.forceUpdate();
+            }
         }).catch(error => {
             console.error('Error in delegated chat response completion:', error);
-            this.forceUpdate();
+            if (!this.unmounted) {
+                this.forceUpdate();
+            }
         });
     }
 
     override componentWillUnmount(): void {
+        this.unmounted = true;
         this.toDispose.dispose();
-        this.trackedInteractionIds.clear();
     }
 
-    private removeResolvedInteractions(): void {
-        this.setState(prevState => ({
-            pendingInteractions: prevState.pendingInteractions.filter(p => !p.contentPart.isResolved)
-        }));
-    }
-
+    /**
+     * The highest-priority renderer that implements renderConfirmation. Unlike plain
+     * rendering, this must not stop at the overall highest-priority renderer: a
+     * specialized renderer without renderConfirmation (e.g. the delegation renderer
+     * itself for nested delegations) would otherwise silently drop the interaction.
+     */
     private findConfirmationRenderer(contentPart: ChatResponseContent): ChatResponsePartRenderer<ChatResponseContent> | undefined {
-        const renderer = this.props.chatResponsePartRenderers.getContributions().reduce<[number, ChatResponsePartRenderer<ChatResponseContent> | undefined]>(
-            (prev, current) => {
-                const prio = current.canHandle(contentPart);
-                if (prio > prev[0]) {
-                    return [prio, current];
-                }
-                return prev;
-            },
-            [-1, undefined])[1];
-        if (renderer && renderer.renderConfirmation) {
-            return renderer;
-        }
-        return undefined;
+        return this.props.chatResponsePartRenderers.getContributions()
+            .filter(renderer => renderer.renderConfirmation)
+            .reduce<[number, ChatResponsePartRenderer<ChatResponseContent> | undefined]>(
+                (prev, current) => {
+                    const prio = current.canHandle(contentPart);
+                    if (prio > prev[0]) {
+                        return [prio, current];
+                    }
+                    return prev;
+                },
+                [-1, undefined])[1];
     }
 
     private handleToggle = (event: React.SyntheticEvent<HTMLDetailsElement>): void => {
@@ -271,10 +256,43 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
         this.setState({ isOpen: details.open });
     };
 
-    private renderInteractionConfirmation(contentPart: ChatResponseContent, id: string): React.ReactNode {
+    /**
+     * Clicking anywhere inside a <summary> toggles the <details> element by default,
+     * which would collapse/expand the block while the user operates the inline
+     * interaction UI. Suppress the toggle for such clicks — but keep nested
+     * <summary> elements working (e.g. the argument expanders of a confirmation
+     * card), whose own toggle is also the click's default action.
+     */
+    private preventSummaryToggle = (event: React.MouseEvent): void => {
+        const target = event.target instanceof HTMLElement ? event.target : undefined;
+        const closestSummary = target?.closest('summary');
+        if (closestSummary && event.currentTarget.contains(closestSummary)) {
+            return;
+        }
+        event.preventDefault();
+    };
+
+    private renderPendingInteractions(pendingInteractions: ReadonlyArray<InteractiveContent & ChatResponseContent>): React.ReactNode[] {
+        // Key by interactionId so a sibling interaction resolving does not remount the
+        // remaining ones (losing in-progress wizard state); disambiguate the rare
+        // duplicate ids (e.g. two pending questions with identical text) by occurrence.
+        const seenIds = new Map<string, number>();
+        return pendingInteractions.map(contentPart => {
+            const baseKey = contentPart.interactionId ?? 'interaction';
+            const occurrence = seenIds.get(baseKey) ?? 0;
+            seenIds.set(baseKey, occurrence + 1);
+            return this.renderInteractionConfirmation(contentPart, occurrence === 0 ? baseKey : `${baseKey}-${occurrence}`);
+        });
+    }
+
+    private renderInteractionConfirmation(contentPart: InteractiveContent & ChatResponseContent, key: string): React.ReactNode {
         const renderer = this.findConfirmationRenderer(contentPart);
         if (renderer && this.state.node) {
-            return <React.Fragment key={id}>{renderer.renderConfirmation!(contentPart, this.state.node)}</React.Fragment>;
+            return (
+                <React.Fragment key={key}>
+                    {renderer.renderConfirmation!(contentPart, this.state.node)}
+                </React.Fragment>
+            );
         }
         return undefined;
     }
@@ -285,6 +303,12 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
         const isComplete = this.state.node?.response.isComplete ?? false;
         const isCanceled = this.state.node?.response.isCanceled ?? false;
         const isError = this.state.node?.response.isError ?? false;
+        // Derived from the model on every render so pending interactions survive
+        // remounts and never outlive their resolution or the response (#17952). The
+        // list also covers interactions bubbled up from nested delegations, whose
+        // waiting state is not reflected in this response's isWaitingForInput.
+        const pendingInteractions = this.state.node?.response.pendingInteractions ?? [];
+        const isWaitingForInput = (this.state.node?.response.isWaitingForInput ?? false) || pendingInteractions.length > 0;
 
         let statusIcon = '';
         let statusText = '';
@@ -292,12 +316,16 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
             if (isCanceled) {
                 statusIcon = 'codicon-close';
                 statusText = nls.localize('theia/ai/chat-ui/delegation-response-renderer/status/canceled', 'canceled');
+            } else if (isError) {
+                // error() also marks the response complete, so check isError first
+                statusIcon = 'codicon-error';
+                statusText = nls.localizeByDefault('error');
             } else if (isComplete) {
                 statusIcon = 'codicon-check';
                 statusText = nls.localizeByDefault('completed');
-            } else if (isError) {
-                statusIcon = 'codicon-error';
-                statusText = nls.localizeByDefault('error');
+            } else if (isWaitingForInput) {
+                statusIcon = 'codicon-loading';
+                statusText = nls.localize('theia/ai/chat-ui/delegation-response-renderer/status/waitingForInput', 'waiting for input');
             } else {
                 statusIcon = 'codicon-loading';
                 statusText = nls.localize('theia/ai/chat-ui/delegation-response-renderer/status/generating', 'generating...');
@@ -310,7 +338,7 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
             statusText = nls.localize('theia/ai/chat-ui/delegation-response-renderer/status/starting', 'starting...');
         }
 
-        const { isOpen, pendingInteractions } = this.state;
+        const { isOpen } = this.state;
         const showInteractionsInSummary = !isOpen && pendingInteractions.length > 0;
 
         return (
@@ -336,10 +364,8 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
                             <span className={`delegation-toggle-arrow${isOpen ? ' open' : ''}`} />
                         </div>
                         {showInteractionsInSummary && (
-                            <div className='delegation-pending-confirmations'>
-                                {pendingInteractions.map(({ contentPart, id }) =>
-                                    this.renderInteractionConfirmation(contentPart, id)
-                                )}
+                            <div className='delegation-pending-confirmations' onClick={this.preventSummaryToggle}>
+                                {this.renderPendingInteractions(pendingInteractions)}
                             </div>
                         )}
                     </summary>

@@ -7,6 +7,8 @@
 ## 1.76.0 - tbd
 
 - [ai-anthropic, ai-google, ai-ollama, ai-openai] made the provider language models `@injectable`, transient-scoped services created through a rebindable `<provider>LanguageModelFactory`, so adopters can substitute custom implementations [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-anthropic, ai-openai] added support for custom HTTP headers on custom model endpoints [#17907](https://github.com/eclipse-theia/theia/pull/17907) - Contributed on behalf of K2view
+- [ai-chat] added an optional `sessionId` to the agent delegation tool, which continues a previous delegation so the delegated agent keeps its conversation context instead of starting over. Delegation results now end with a `[delegation sessionId: <id>]` line that reports the id to pass back [#17965](https://github.com/eclipse-theia/theia/pull/17965) - Contributed on behalf of K2view
 - [ai-core] ran the tool calls of a model turn concurrently instead of sequentially, including parallel agent delegations, via the new injectable `ToolCallExecutor` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
 - [ai-openai] made the chat-completion tool-call streaming iterator an injectable service, created through the rebindable `ChatCompletionStreamingAsyncIteratorFactory` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
 - [core, filesystem, plugin-ext] fixed file decorations being dropped by large change events: change events are batched, and events exceeding the plugin-ext cap arrive as a flush that is re-fetched on demand [#17766](https://github.com/eclipse-theia/theia/pull/17766) - Contributed on behalf of K2view

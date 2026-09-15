@@ -88,6 +88,7 @@ export interface OpenAiModelParams {
     serverSideCompactionSupport?: boolean;
     serverSideCompactionEnabledByDefault?: boolean;
     serverSideCompactionTokenThresholdByDefault?: number;
+    headers?: Record<string, string>;
 }
 
 export const OpenAiModelParams = Symbol('OpenAiModelParams');
@@ -117,6 +118,7 @@ export class OpenAiModel implements LanguageModel {
     serverSideCompactionSupport: boolean;
     serverSideCompactionEnabledByDefault: boolean;
     serverSideCompactionTokenThresholdByDefault?: number;
+    headers?: Record<string, string>;
 
     /** Provider identifier, used to key per-provider settings (e.g. server tool selections) and the capabilities UI. */
     readonly vendor = 'openai';
@@ -158,6 +160,7 @@ export class OpenAiModel implements LanguageModel {
         this.serverSideCompactionSupport = params.serverSideCompactionSupport ?? false;
         this.serverSideCompactionEnabledByDefault = params.serverSideCompactionEnabledByDefault ?? false;
         this.serverSideCompactionTokenThresholdByDefault = params.serverSideCompactionTokenThresholdByDefault;
+        this.headers = params.headers;
     }
 
     /** Reasoning-level translation lives in {@link openAiReasoningFor}. */
@@ -291,9 +294,11 @@ export class OpenAiModel implements LanguageModel {
         const proxyFetch = createProxyFetch(this.proxy);
 
         if (apiVersion) {
-            return new AzureOpenAI({ apiKey: key, baseURL: this.url, apiVersion: apiVersion, deployment: this.deployment, fetch: proxyFetch });
+            return new AzureOpenAI({
+                apiKey: key, baseURL: this.url, apiVersion: apiVersion, deployment: this.deployment, fetch: proxyFetch, defaultHeaders: this.headers
+            });
         } else {
-            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url, fetch: proxyFetch });
+            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url, fetch: proxyFetch, defaultHeaders: this.headers });
         }
     }
 

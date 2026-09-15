@@ -325,6 +325,7 @@ export interface AnthropicModelParams {
     serverSideCompactionSupport?: boolean;
     serverSideCompactionEnabledByDefault?: boolean;
     serverSideCompactionTokenThresholdByDefault?: number;
+    headers?: Record<string, string>;
 }
 
 export const AnthropicModelParams = Symbol('AnthropicModelParams');
@@ -382,6 +383,7 @@ export class AnthropicModel implements LanguageModel {
     serverSideCompactionSupport: boolean;
     serverSideCompactionEnabledByDefault: boolean;
     serverSideCompactionTokenThresholdByDefault?: number;
+    headers?: Record<string, string>;
 
     /** Provider identifier, used to key per-provider settings (e.g. server tool selections) and the capabilities UI. */
     readonly vendor = 'anthropic';
@@ -416,6 +418,7 @@ export class AnthropicModel implements LanguageModel {
         this.serverSideCompactionSupport = params.serverSideCompactionSupport ?? false;
         this.serverSideCompactionEnabledByDefault = params.serverSideCompactionEnabledByDefault ?? false;
         this.serverSideCompactionTokenThresholdByDefault = params.serverSideCompactionTokenThresholdByDefault;
+        this.headers = params.headers;
     }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
@@ -792,6 +795,6 @@ export class AnthropicModel implements LanguageModel {
         // We need to hand over "some" key, even if a custom url is not key protected as otherwise the Anthropic client will throw an error
         const key = apiKey ?? 'no-key';
 
-        return new Anthropic({ apiKey: key, baseURL: this.url, fetch: createProxyFetch(this.proxy) });
+        return new Anthropic({ apiKey: key, baseURL: this.url, fetch: createProxyFetch(this.proxy), defaultHeaders: this.headers });
     }
 }

@@ -118,7 +118,8 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                     serverTools,
                     serverSideCompactionSupport: metadata.serverSideCompactionSupport,
                     serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false,
-                    serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault
+                    serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault,
+                    headers: modelDescription.headers
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -141,7 +142,8 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         serverTools,
                         serverSideCompactionSupport: metadata.serverSideCompactionSupport,
                         serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false,
-                        serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault
+                        serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault,
+                        headers: modelDescription.headers
                     })
                 ]);
             }
