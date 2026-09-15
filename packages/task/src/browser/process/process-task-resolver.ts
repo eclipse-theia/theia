@@ -18,10 +18,11 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { TaskResolver } from '../task-contribution';
 import { TaskConfiguration } from '../../common/task-protocol';
-import { ProcessTaskConfiguration } from '../../common/process/task-protocol';
+import { CommandProperties, ProcessTaskConfiguration } from '../../common/process/task-protocol';
 import { TaskDefinitionRegistry } from '../task-definition-registry';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { cancelled } from '@theia/core/lib/common/cancellation';
 
 @injectable()
 export class ProcessTaskResolver implements TaskResolver {
@@ -59,25 +60,13 @@ export class ProcessTaskResolver implements TaskResolver {
             }
         }
 
+        const commandProperties = await this.resolveCommandProperties(processTaskConfig, variableResolverOptions);
         const result: ProcessTaskConfiguration = {
             ...processTaskConfig,
-            command: await this.variableResolverService.resolve(processTaskConfig.command, variableResolverOptions),
-            args: processTaskConfig.args ? await this.variableResolverService.resolve(processTaskConfig.args, variableResolverOptions) : undefined,
-            windows: processTaskConfig.windows ? {
-                command: await this.variableResolverService.resolve(processTaskConfig.windows.command, variableResolverOptions),
-                args: processTaskConfig.windows.args ? await this.variableResolverService.resolve(processTaskConfig.windows.args, variableResolverOptions) : undefined,
-                options: processTaskConfig.windows.options
-            } : undefined,
-            osx: processTaskConfig.osx ? {
-                command: await this.variableResolverService.resolve(processTaskConfig.osx.command, variableResolverOptions),
-                args: processTaskConfig.osx.args ? await this.variableResolverService.resolve(processTaskConfig.osx.args, variableResolverOptions) : undefined,
-                options: processTaskConfig.osx.options
-            } : undefined,
-            linux: processTaskConfig.linux ? {
-                command: await this.variableResolverService.resolve(processTaskConfig.linux.command, variableResolverOptions),
-                args: processTaskConfig.linux.args ? await this.variableResolverService.resolve(processTaskConfig.linux.args, variableResolverOptions) : undefined,
-                options: processTaskConfig.linux.options
-            } : undefined,
+            ...commandProperties,
+            windows: await this.resolveCommandProperties(processTaskConfig.windows, variableResolverOptions),
+            osx: await this.resolveCommandProperties(processTaskConfig.osx, variableResolverOptions),
+            linux: await this.resolveCommandProperties(processTaskConfig.linux, variableResolverOptions),
             options: {
                 cwd: await this.variableResolverService.resolve(cwd, variableResolverOptions),
                 env: processTaskConfig.options?.env && await this.variableResolverService.resolve(processTaskConfig.options.env, variableResolverOptions),
@@ -85,5 +74,29 @@ export class ProcessTaskResolver implements TaskResolver {
             }
         };
         return result;
+    }
+
+    protected async resolveCommandProperties(
+        properties: CommandProperties | undefined,
+        variableResolverOptions: { context: URI | undefined; configurationSection: string }
+    ): Promise<CommandProperties | undefined> {
+        if (!properties) {
+            return undefined;
+        }
+        const command = properties.command === undefined
+            ? undefined
+            : await this.variableResolverService.resolve(properties.command, variableResolverOptions);
+        const args = properties.args === undefined
+            ? undefined
+            : await this.variableResolverService.resolve(properties.args, variableResolverOptions);
+        if ((properties.command !== undefined && command === undefined)
+            || (properties.args !== undefined && args === undefined)) {
+            throw cancelled();
+        }
+        return {
+            command,
+            args,
+            options: properties.options
+        };
     }
 }
