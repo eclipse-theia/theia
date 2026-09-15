@@ -38,16 +38,21 @@ import {
     HoverService,
     Key,
     KeyCode,
+    Message,
     NodeProps,
     OpenerService,
     TreeModel,
     TreeNode,
     TreeProps,
     TreeWidget,
+    UnsafeWidgetUtilities,
     Widget,
     type ReactWidget
 } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { ChatFindHighlighter } from '../chat-find/chat-find-highlighter';
+import { ChatFindMatch, ChatFindMatcher } from '../chat-find/chat-find-matcher';
+import { ChatFindWidget } from '../chat-find/chat-find-widget';
 import { nls } from '@theia/core/lib/common/nls';
 import {
     inject,
@@ -150,6 +155,14 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     protected chatResponseFocusKey: ContextKey<boolean>;
 
+    @inject(ChatFindWidget)
+    protected readonly findWidget: ChatFindWidget;
+
+    @inject(ChatFindMatcher)
+    protected readonly findMatcher: ChatFindMatcher;
+
+    protected findHighlighter: ChatFindHighlighter;
+
     protected readonly onDidSubmitEditEmitter = new Emitter<ChatRequest>();
     onDidSubmitEdit = this.onDidSubmitEditEmitter.event;
 
@@ -211,6 +224,15 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.addEventListener(this.node, 'focusin', () => this.chatResponseFocusKey.set(true));
         this.addEventListener(this.node, 'focusout', () => this.chatResponseFocusKey.set(false));
 
+        this.findHighlighter = new ChatFindHighlighter((text, regexp) => this.findMatcher.findInText(text, regexp));
+        this.findWidget.fallbackFocusTarget = this.node;
+        this.toDispose.pushAll([
+            this.findWidget,
+            this.findHighlighter,
+            this.findWidget.onDidChangeState(state => this.findHighlighter.update(this.node, state.regexp, state.matches, state.current)),
+            this.findWidget.onDidRequestReveal(match => this.revealFindMatch(match))
+        ]);
+
         this.toDispose.pushAll([
             this.toDisposeOnChatModelChange,
             this.activationService.onDidChangeCanRun(change => {
@@ -245,7 +267,73 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     public setEnabled(enabled: boolean): void {
         this.isEnabled = enabled;
+        if (!enabled) {
+            this.findWidget.dismiss();
+        }
         this.update();
+    }
+
+    /** Opens the find bar over the response tree (or refocuses it when already open). */
+    showFind(): void {
+        this.findWidget.open();
+    }
+
+    hideFind(): void {
+        this.findWidget.dismiss();
+    }
+
+    get isFindVisible(): boolean {
+        return this.findWidget.isOpen;
+    }
+
+    /** Whether the tracked session has content to search; false while the welcome/session-list screen shows. */
+    get canFind(): boolean {
+        return this.findWidget.canFind;
+    }
+
+    /**
+     * Reveals a match: mounts the owning row via virtuoso when it is not rendered yet, then re-applies the highlights
+     * and scrolls the matched text itself into view (rows can be taller than the viewport).
+     */
+    protected revealFindMatch(match: ChatFindMatch): void {
+        const row = this.rows.get(match.nodeId);
+        if (row === undefined) {
+            return;
+        }
+        const settle = (): void => {
+            this.findHighlighter.refresh();
+            this.findHighlighter.scrollCurrentIntoView(this.node);
+        };
+        const mounted = Array.from(this.node.querySelectorAll<HTMLElement>('[data-node-id]'))
+            .some(candidate => candidate.dataset.nodeId === match.nodeId);
+        if (mounted) {
+            requestAnimationFrame(settle);
+            return;
+        }
+        this.view?.list?.scrollIntoView({
+            index: row.index,
+            align: 'center',
+            done: settle
+        });
+    }
+
+    protected override onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        // The tree node is a React root, so the find bar is attached as a sibling right before it,
+        // the same way the core TreeWidget hosts its SearchBox.
+        if (this.findWidget.isAttached) {
+            Widget.detach(this.findWidget);
+        }
+        if (this.node.parentElement) {
+            UnsafeWidgetUtilities.attach(this.findWidget, this.node.parentElement, this.node);
+        }
+    }
+
+    protected override onBeforeDetach(msg: Message): void {
+        if (this.findWidget.isAttached) {
+            Widget.detach(this.findWidget);
+        }
+        super.onBeforeDetach(msg);
     }
 
     /** Toggles auto-scroll and the scroll-to-bottom button based on whether the viewport includes the bottom of the list. */
@@ -390,6 +478,7 @@ export class ChatViewTreeWidget extends TreeWidget {
     public trackChatModel(chatModel: ChatModel): void {
         this.toDisposeOnChatModelChange.dispose();
         this.recreateModelTree(chatModel);
+        this.findWidget.setChatModel(chatModel);
 
         chatModel.getRequests().forEach(request => {
             if (!request.response.isComplete) {
@@ -478,6 +567,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         return <React.Fragment key={node.id}>
             <div
                 className='theia-ChatNode'
+                data-node-id={node.id}
                 role='article'
                 aria-label={ariaLabel}
                 onContextMenu={e => this.handleContextMenu(node, e)}

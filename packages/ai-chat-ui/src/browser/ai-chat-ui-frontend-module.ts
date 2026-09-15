@@ -54,6 +54,7 @@ import {
 } from './chat-response-renderer/ai-selection-resolver';
 import { QuestionPartRenderer } from './chat-response-renderer/question-part-renderer';
 import { ExternalResourceAllowlistContribution } from './chat-response-renderer/external-resource-allowlist-contribution';
+import { ChatFindMatcher } from './chat-find/chat-find-matcher';
 import { createChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatViewMenuContribution } from './chat-view-contribution';
@@ -144,6 +145,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         createWidget: () => container.get(AIChatInputWidget)
     })).inSingletonScope();
 
+    bind(ChatFindMatcher).toSelf().inSingletonScope();
     bind(ChatViewTreeWidget).toDynamicValue(ctx =>
         createChatViewTreeWidget(ctx.container)
     );
