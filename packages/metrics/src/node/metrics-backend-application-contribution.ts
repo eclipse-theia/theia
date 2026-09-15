@@ -45,7 +45,9 @@ export class MetricsBackendApplicationContribution implements BackendApplication
     }
 
     fetchMetricsFromProviders(): string {
-        return this.metricsProviders.getContributions().reduce((total, contribution) =>
-            total += contribution.getMetrics() + '\n', '');
+        return this.metricsProviders.getContributions().reduce((total, contribution) => {
+            const metrics = contribution.getMetrics();
+            return metrics ? total + metrics + '\n' : total;
+        }, '');
     }
 }
