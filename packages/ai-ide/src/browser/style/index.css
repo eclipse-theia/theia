@@ -2186,12 +2186,15 @@ button.agent-chip:focus-visible {
 }
 
 /* ===== AI Configuration breadcrumb popup ===== */
+/* max-height must not exceed the outer .theia-breadcrumbs-popup's max-height (200px, see
+   core's breadcrumbs.css), which clips via overflow:hidden. A taller value here would push this
+   list's own scrollbar past that clip, making it invisible and unusable. */
 .theia-ai-configuration-breadcrumb-popup {
   list-style: none;
   margin: 0;
   padding: 4px 0;
   min-width: 180px;
-  max-height: 320px;
+  max-height: 200px;
   overflow-y: auto;
 }
 
