@@ -17,8 +17,7 @@
 import { Emitter, Event } from '@theia/core/lib/common';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { TELEMETRY_LEVEL, TelemetryPreferences } from './telemetry-preferences';
-import { TelemetryEventKind } from './telemetry-service';
-import { TelemetryLevel } from './telemetry-types';
+import { TelemetryEventKind, TelemetryLevel } from './telemetry-types';
 
 /** @experimental */
 export const TelemetryConsentProvider = Symbol('TelemetryConsentProvider');
