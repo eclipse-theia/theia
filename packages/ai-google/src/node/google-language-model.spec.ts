@@ -15,14 +15,18 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LanguageModelRequest, ReasoningApi, ReasoningSupport } from '@theia/ai-core';
-import { GoogleModel } from './google-language-model';
+import { Container, injectable } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { LanguageModelRequest, ReasoningApi, ReasoningSupport, ToolCallExecutor, ToolCallExecutorImpl } from '@theia/ai-core';
+import { GoogleModel, GoogleModelParams } from './google-language-model';
 
 const GEMINI_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
     defaultLevel: 'auto'
 };
 
+@injectable()
 class TestableGoogleModel extends GoogleModel {
     public callGetSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return this.getSettings(request);
@@ -30,13 +34,24 @@ class TestableGoogleModel extends GoogleModel {
 }
 
 function createModel(modelId: string, reasoningApi?: ReasoningApi): TestableGoogleModel {
-    return new TestableGoogleModel(
-        'test-id', modelId, { status: 'ready' }, true,
-        () => 'test-key',
-        () => ({ maxRetriesOnErrors: 0, retryDelayOnRateLimitError: -1, retryDelayOnOtherErrors: -1 }),
-        reasoningApi ? GEMINI_REASONING_SUPPORT : undefined,
+    const parent = new Container();
+    parent.bind(ToolCallExecutor).to(ToolCallExecutorImpl);
+    parent.bind(ILogger).to(MockLogger);
+    parent.bind(TestableGoogleModel).toSelf().inTransientScope();
+
+    const child = new Container();
+    child.parent = parent;
+    child.bind(GoogleModelParams).toConstantValue({
+        id: 'test-id',
+        model: modelId,
+        status: { status: 'ready' },
+        enableStreaming: true,
+        apiKey: () => 'test-key',
+        retrySettings: () => ({ maxRetriesOnErrors: 0, retryDelayOnRateLimitError: -1, retryDelayOnOtherErrors: -1 }),
+        reasoningSupport: reasoningApi ? GEMINI_REASONING_SUPPORT : undefined,
         reasoningApi
-    );
+    });
+    return child.get(TestableGoogleModel);
 }
 
 describe('GoogleModel reasoning translation', () => {
