@@ -27,6 +27,7 @@ import {
     resolveCompactionDefault,
     resolveCompactionTokenThreshold,
     resolveCompactionTokenThresholdDefault,
+    resolveCustomModelHeaders,
     resolveServerSideCompaction
 } from './language-model';
 
@@ -259,6 +260,19 @@ describe('compaction contract', () => {
         // explicit per-session setting wins over the model default (which already folds in the per-provider override)
         expect(resolveServerSideCompaction(true, false, { enabled: true })).to.equal(true);
         expect(resolveServerSideCompaction(true, true, { enabled: false })).to.equal(false);
+    });
+    it('resolves custom model headers, ignoring non-string and non-object values', () => {
+        expect(resolveCustomModelHeaders({ 'X-Audit-User': 'theia' })).to.deep.equal({ 'X-Audit-User': 'theia' });
+        // keys are sorted, so reordering the entries in the preference is not a change
+        expect(Object.keys(resolveCustomModelHeaders({ 'X-B': '2', 'X-A': '1' })!)).to.deep.equal(['X-A', 'X-B']);
+        // entries with a non-string value are dropped, the remaining ones are kept
+        expect(resolveCustomModelHeaders({ 'X-Audit-User': 'theia', 'X-Count': 5 })).to.deep.equal({ 'X-Audit-User': 'theia' });
+        // nothing usable -> undefined, so the default request headers stay untouched
+        expect(resolveCustomModelHeaders({ 'X-Count': 5 })).to.equal(undefined);
+        expect(resolveCustomModelHeaders({})).to.equal(undefined);
+        expect(resolveCustomModelHeaders(undefined)).to.equal(undefined);
+        expect(resolveCustomModelHeaders('X-Audit-User: theia')).to.equal(undefined);
+        expect(resolveCustomModelHeaders([['X-Audit-User', 'theia']])).to.equal(undefined);
     });
 });
 
