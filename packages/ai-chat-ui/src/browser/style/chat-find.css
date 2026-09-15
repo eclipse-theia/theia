@@ -1,0 +1,119 @@
+/********************************************************************************
+ * Copyright (C) 2026 Safi Seid-Ahmad, K2view and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/* The widget sits as a zero-height flex item right before the chat tree; the bar overlays the tree's top-right corner. */
+.theia-chat-find-widget {
+  position: relative;
+  flex: 0 0 0;
+  height: 0;
+  overflow: visible;
+  z-index: 10;
+}
+
+.theia-chat-find-bar {
+  position: absolute;
+  top: 4px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 4px;
+  background: var(--theia-editorWidget-background);
+  color: var(--theia-editorWidget-foreground);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  border-radius: 4px;
+  box-shadow: 0 0 8px 2px var(--theia-widget-shadow);
+}
+
+.theia-chat-find-input-box {
+  display: flex;
+  align-items: center;
+  color: var(--theia-input-foreground);
+  background: var(--theia-input-background);
+  border: var(--theia-border-width) solid var(--theia-input-border, transparent);
+  border-radius: 2px;
+}
+
+.theia-chat-find-input-box:focus-within {
+  border-color: var(--theia-focusBorder);
+}
+
+.theia-chat-find-input-box.no-results {
+  border-color: var(--theia-inputValidation-errorBorder);
+}
+
+.theia-chat-find-input-box input {
+  width: 140px;
+  height: 20px;
+  margin: 0 2px;
+  padding: 0 4px;
+  color: inherit;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--theia-ui-font-family);
+  font-size: var(--theia-ui-font-size1);
+}
+
+.theia-chat-find-toggle,
+.theia-chat-find-button {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: var(--theia-border-width) solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.theia-chat-find-toggle:hover,
+.theia-chat-find-button:hover:not(:disabled) {
+  opacity: 1;
+  background: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-chat-find-toggle.enabled {
+  opacity: 1;
+  background: var(--theia-inputOption-activeBackground);
+  border-color: var(--theia-inputOption-activeBorder);
+  color: var(--theia-inputOption-activeForeground);
+}
+
+.theia-chat-find-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.theia-chat-find-count {
+  min-width: 60px;
+  margin: 0 4px;
+  font-size: var(--theia-ui-font-size0);
+  white-space: nowrap;
+}
+
+.theia-chat-find-count.no-results {
+  color: var(--theia-errorForeground);
+}
+
+::highlight(theia-chat-find-match) {
+  background-color: var(--theia-editor-findMatchHighlightBackground);
+}
+
+::highlight(theia-chat-find-current) {
+  background-color: var(--theia-editor-findMatchBackground);
+}
