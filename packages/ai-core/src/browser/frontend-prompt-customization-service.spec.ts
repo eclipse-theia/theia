@@ -534,7 +534,7 @@ describe('DefaultPromptFragmentCustomizationService - customAgents.yml migration
 
     const agents = [
         { id: 'foo', name: 'Foo', description: 'Foo agent', prompt: 'Foo prompt', defaultLLM: 'default/universal' },
-        { id: 'bar', name: 'Bar', description: 'Bar agent', prompt: 'Bar prompt', defaultLLM: 'default/universal' }
+        { id: 'bar', name: 'Bar', description: 'Bar agent', prompt: 'Bar prompt', defaultLLM: 'default/universal', turnPrompt: 'open-editors-hint' }
     ];
 
     let fileService: FakeFileService;
@@ -570,6 +570,10 @@ describe('DefaultPromptFragmentCustomizationService - customAgents.yml migration
         // The yaml is renamed to .bak rather than deleted.
         expect(await fileService.exists(yamlURI)).to.be.false;
         expect(await fileService.exists(backupURI)).to.be.true;
+        // 'bar' declares turnPrompt in the legacy yaml; the migrated agent.md carries it over.
+        expect(fileService.content(agentMd('bar'))).to.contain('turnPrompt: open-editors-hint');
+        // 'foo' declares no turnPrompt, so the migrated agent.md emits no such line.
+        expect(fileService.content(agentMd('foo'))).to.not.contain('turnPrompt');
     });
 
     it('rerun after a successful migration is a no-op', async () => {
@@ -766,8 +770,8 @@ describe('DefaultPromptFragmentCustomizationService - custom agent scopes', () =
     }
 
     const agentMd = (scope: URI, id: string): URI => scope.resolve(CUSTOM_AGENTS_DIRECTORY).resolve(id).resolve(CUSTOM_AGENT_FILE_NAME);
-    const agentFile = (name: string, description: string): string =>
-        `---\nname: ${name}\ndescription: ${description}\ndefaultLLM: default/universal\n---\n${name} prompt`;
+    const agentFile = (name: string, description: string, extraFrontmatter = ''): string =>
+        `---\nname: ${name}\ndescription: ${description}\ndefaultLLM: default/universal\n${extraFrontmatter}---\n${name} prompt`;
 
     let fileService: FakeFileService;
     let service: AgentScopeTestService;
@@ -809,6 +813,24 @@ describe('DefaultPromptFragmentCustomizationService - custom agent scopes', () =
 
         expect(agents).to.have.lengthOf(1);
         expect(agents[0].description).to.equal('agents version');
+    });
+
+    it('reads the optional turnPrompt frontmatter key', async () => {
+        service.setCustomAgentDirs(['/ws/.agents']);
+        fileService.write(agentMd(new URI('file:///ws/.agents'), 'foo'), agentFile('Foo', 'Foo agent', 'turnPrompt: open-editors-hint\n'));
+
+        const agents = await service.getCustomAgents();
+
+        expect(agents[0].turnPrompt).to.equal('open-editors-hint');
+    });
+
+    it('rejects an agent whose turnPrompt is not a string', async () => {
+        service.setCustomAgentDirs(['/ws/.agents']);
+        fileService.write(agentMd(new URI('file:///ws/.agents'), 'foo'), agentFile('Foo', 'Foo agent', 'turnPrompt: [a, b]\n'));
+
+        const agents = await service.getCustomAgents();
+
+        expect(agents).to.be.empty;
     });
 });
 

@@ -186,6 +186,12 @@ export interface CustomAgentDescription {
     showInChat?: boolean;
 
     /**
+     * Optional id of a prompt fragment sent inside every user turn instead of the system prompt (e.g.
+     * `open-editors-hint`). Use it for volatile editor state so the system prompt stays cacheable.
+     */
+    turnPrompt?: string;
+
+    /**
      * Optional additional prompt variants for this agent. Loaded from sibling
      * `.prompttemplate` files in the same `<scope>/agents/<id>/` folder.
      */
@@ -219,6 +225,9 @@ export namespace CustomAgentDescription {
         if ('showInChat' in entry && typeof entry.showInChat !== 'boolean') {
             return false;
         }
+        if ('turnPrompt' in entry && typeof entry.turnPrompt !== 'string') {
+            return false;
+        }
         return true;
     }
 
@@ -232,6 +241,7 @@ export namespace CustomAgentDescription {
             && a.prompt === b.prompt
             && a.defaultLLM === b.defaultLLM
             && a.showInChat === b.showInChat
+            && a.turnPrompt === b.turnPrompt
             && CustomAgentPromptVariant.arrayEquals(a.promptVariants, b.promptVariants);
     }
 }
