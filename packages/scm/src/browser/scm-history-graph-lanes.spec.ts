@@ -37,9 +37,14 @@ describe('computeGraphRows', () => {
             expect(lanes(commits)).to.deep.equal([0, 0, 0]);
         });
 
-        it('colors are all 0', () => {
+        it('colors default to the first rotation color (foreground1 = index 3)', () => {
             const rows = computeGraphRows(commits);
-            expect(rows.map(r => r.color)).to.deep.equal([0, 0, 0]);
+            expect(rows.map(r => r.color)).to.deep.equal([3, 3, 3]);
+        });
+
+        it('topColor equals color when no ref color overrides the lane', () => {
+            const rows = computeGraphRows(commits);
+            rows.forEach(r => expect(r.topColor).to.equal(r.color));
         });
 
         it('first parent same-lane continuation emits no separate edge (handled by commit line)', () => {
@@ -201,9 +206,13 @@ describe('computeGraphRows', () => {
             expect(mergeIn.length).to.equal(0);
         });
 
-        it('lane colors are correct modulo 8', () => {
+        it('lane colors rotate through the default registry (indices 3-7)', () => {
             const rows = computeGraphRows(commits);
-            rows.forEach(r => expect(r.color).to.equal(r.lane % 8));
+            // O and P1 share lane 0 → first rotation color; P2/P3 opened new lanes
+            expect(rows[0].color).to.equal(3);
+            expect(rows[1].color).to.equal(3);
+            expect(rows[2].color).to.not.equal(rows[3].color);
+            rows.forEach(r => expect(r.color).to.be.within(3, 7));
         });
     });
 
@@ -387,25 +396,14 @@ describe('computeGraphRows', () => {
     });
 
     // -------------------------------------------------------------------------
-    // Lane color wraps at 8
+    // Default color rotation (VS Code cycles scmGraph.foreground1-5)
     // -------------------------------------------------------------------------
-    describe('color wrapping', () => {
-        it('lane color is always lane % 8', () => {
-            // 4 parallel chains so we have lanes 0, 1, 2, 3 occupied at once.
-            // Chain structure: X0→X1→X2, Y0→Y1→Y2, etc., interleaved.
-            const commits = [
-                { id: 'X0', parentIds: ['X1'] },
-                { id: 'Y0', parentIds: ['Y1'] },
-                { id: 'Z0', parentIds: ['Z1'] },
-                { id: 'W0', parentIds: ['W1'] },
-                { id: 'X1', parentIds: [] },
-                { id: 'Y1', parentIds: [] },
-                { id: 'Z1', parentIds: [] },
-                { id: 'W1', parentIds: [] },
-            ];
+    describe('default color rotation', () => {
+        it('cycles through indices 3-7 and wraps', () => {
+            // 6 independent tips → 6 lanes; the sixth wraps back to the first color
+            const commits = ['A', 'B', 'C', 'D', 'E', 'F'].map(id => ({ id, parentIds: [id.toLowerCase()] }));
             const rows = computeGraphRows(commits);
-            // Every row's color must equal lane % 8
-            rows.forEach(r => expect(r.color).to.equal(r.lane % 8));
+            expect(rows.map(r => r.color)).to.deep.equal([3, 4, 5, 6, 7, 3]);
         });
 
         it('assigns distinct lanes to 8 simultaneous branches', () => {
@@ -423,10 +421,57 @@ describe('computeGraphRows', () => {
             const rows = computeGraphRows(commits);
             const laneSet = new Set(rows.map(r => r.lane));
             expect(laneSet.size).to.equal(8); // all distinct lanes
-            // Color of lane 7 is 7, lane 0 is 0
-            const lane7 = rows.find(r => r.lane === 7);
-            expect(lane7).to.not.be.undefined;
-            expect(lane7!.color).to.equal(7);
+            // Default colors never use the reserved ref color indices 0-2
+            rows.forEach(r => expect(r.color).to.be.within(3, 7));
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Ref-based colors (VS Code colorMap: current=0, remote=1, base=2)
+    // -------------------------------------------------------------------------
+    describe('ref-based colors', () => {
+        // Remote is one commit ahead: R (origin/main) → L (main = HEAD) → A
+        const behindCommits = [
+            { id: 'R', parentIds: ['L'], colorIndex: 1 },
+            { id: 'L', parentIds: ['A'], colorIndex: 0 },
+            { id: 'A', parentIds: [] },
+        ];
+
+        it('a tip with a color index colors its row', () => {
+            const rows = computeGraphRows(behindCommits);
+            expect(rows[0].color).to.equal(1);
+        });
+
+        it('an overriding commit recolors the chain from its row downward', () => {
+            const rows = computeGraphRows(behindCommits);
+            expect(rows[1].color).to.equal(0);
+            expect(rows[2].color).to.equal(0);
+        });
+
+        it('topColor keeps the inherited color for the segment above an overriding commit', () => {
+            const rows = computeGraphRows(behindCommits);
+            expect(rows[0].topColor).to.equal(1);
+            expect(rows[1].topColor).to.equal(1);
+            expect(rows[2].topColor).to.equal(0);
+        });
+
+        // Diverged: L (main = HEAD) and R (origin/main) both branched off A
+        const divergedCommits = [
+            { id: 'L', parentIds: ['A'], colorIndex: 0 },
+            { id: 'R', parentIds: ['A'], colorIndex: 1 },
+            { id: 'A', parentIds: [] },
+        ];
+
+        it('pass-through edges use the propagated ref color', () => {
+            const rows = computeGraphRows(divergedCommits);
+            const pass = rows[1].edges.find(e => e.type === 'pass-through');
+            expect(pass?.color).to.equal(0);
+        });
+
+        it('merge-in edges from a ref-colored lane keep that color', () => {
+            const rows = computeGraphRows(divergedCommits);
+            const mergeIn = rows[2].edges.find(e => e.type === 'merge-in');
+            expect(mergeIn?.color).to.equal(1);
         });
     });
 

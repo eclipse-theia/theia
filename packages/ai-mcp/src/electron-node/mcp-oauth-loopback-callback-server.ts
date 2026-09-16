@@ -16,11 +16,12 @@
 
 import * as http from 'http';
 import { AddressInfo } from 'net';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { MCP_OAUTH_CALLBACK_PATH } from '../common/mcp-oauth';
 import { MCPOAuthCallbackEndpoint } from '../node/mcp-oauth-callback-endpoint';
 import { MCPOAuthCallbackResponder } from '../node/mcp-oauth-callback-responder';
+import { ILogger } from '@theia/core';
 
 /** RFC 8252 loopback host. `127.0.0.1` (not `localhost`) so the bound address is unambiguous and unreachable off-host. */
 export const MCP_OAUTH_LOOPBACK_HOST = '127.0.0.1';
@@ -52,6 +53,9 @@ export class MCPOAuthLoopbackCallbackServer implements MCPOAuthCallbackEndpoint,
 
     @inject(MCPOAuthCallbackResponder)
     protected readonly responder: MCPOAuthCallbackResponder;
+
+    @inject(ILogger) @named('ai-mcp:MCPOAuthLoopbackCallbackServer')
+    protected readonly logger: ILogger;
 
     protected server: http.Server | undefined;
     protected startPromise: Promise<number> | undefined;
@@ -122,7 +126,7 @@ export class MCPOAuthLoopbackCallbackServer implements MCPOAuthCallbackEndpoint,
             if (Number.isInteger(parsed) && parsed >= 0 && parsed <= 65535) {
                 return parsed;
             }
-            console.warn(`Ignoring invalid ${MCP_OAUTH_CALLBACK_PORT_ENV}="${configured}"; expected an integer in [0, 65535]. `
+            this.logger.warn(`Ignoring invalid ${MCP_OAUTH_CALLBACK_PORT_ENV}="${configured}"; expected an integer in [0, 65535]. `
                 + `Falling back to ${MCP_OAUTH_DEFAULT_ELECTRON_CALLBACK_PORT}.`);
         }
         return MCP_OAUTH_DEFAULT_ELECTRON_CALLBACK_PORT;

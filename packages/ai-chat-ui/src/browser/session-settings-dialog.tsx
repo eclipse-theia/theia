@@ -299,7 +299,7 @@ export class SessionSettingsDialog extends AbstractDialog<ChatSessionSettings> {
         super.onAfterAttach(msg);
         // flushSync ensures React commits the render synchronously so that
         // attachEditorContainer can query the DOM immediately afterwards.
-        // Without this, React 18 may defer the commit when invoked outside a
+        // Without this, React may defer the commit when invoked outside a
         // browser event handler (e.g. from an Electron IPC callback from an
         // Electron-rendered native menu), causing attachEditorContainer to
         // find no .session-settings-advanced element and the Monaco editor

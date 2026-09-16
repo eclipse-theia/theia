@@ -38,7 +38,7 @@ describe('Explorer and Editor - open and close', function () {
     const progressStatusBarItem = container.get(ProgressStatusBarItem);
 
 
-    const fileUri = rootUri.resolve('webpack.config.js');
+    const fileUri = rootUri.resolve('esbuild.mjs');
     const toTearDown = new DisposableCollection();
 
     function pause(ms = 500) {

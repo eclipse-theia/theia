@@ -21,19 +21,13 @@ export const CopilotAuthService = Symbol('CopilotAuthService');
 export const CopilotAuthServiceClient = Symbol('CopilotAuthServiceClient');
 
 /**
- * Response from GitHub's device code endpoint.
+ * The device code flow information reported by the Copilot CLI for the UI to display.
  */
 export interface DeviceCodeResponse {
     /** URL where user should enter the code (e.g., https://github.com/login/device) */
     verification_uri: string;
     /** Code to display to the user (e.g., XXXX-XXXX) */
     user_code: string;
-    /** Device code used for polling */
-    device_code: string;
-    /** Polling interval in seconds */
-    interval: number;
-    /** Expiration time in seconds */
-    expires_in: number;
 }
 
 /**
@@ -46,7 +40,10 @@ export interface CopilotAuthState {
     accountLabel?: string;
     /** GitHub Enterprise URL if using enterprise */
     enterpriseUrl?: string;
-    /** True when credentials were cleared due to a client ID migration */
+    /**
+     * True when the credentials of a previous version were found and discarded, so that the user can
+     * be told why they have to sign in again.
+     */
     migrationRequired?: boolean;
 }
 
@@ -58,40 +55,47 @@ export interface CopilotAuthServiceClient {
 }
 
 /**
- * Service for handling GitHub Copilot OAuth Device Flow authentication.
+ * Service for signing the GitHub Copilot CLI in, which serves all Copilot requests.
+ *
+ * The sign-in is a device code flow that the CLI runs and polls itself. This service starts it and
+ * reports its progress, so that it can be presented like any other device code flow.
  */
 export interface CopilotAuthService {
     /**
-     * Initiates the OAuth Device Flow.
-     * Returns device code information for the UI to display.
-     * @param enterpriseUrl Optional GitHub Enterprise domain
+     * Tells the backend where the Copilot CLI is, as configured by the user.
+     *
+     * The CLI is not shipped with the application and has to be found on the machine hosting the
+     * backend, which cannot read the preferences of the user itself.
+     * @param path Location of the CLI executable, or `undefined` to search for it
      */
-    initiateDeviceFlow(enterpriseUrl?: string): Promise<DeviceCodeResponse>;
+    setExecutablePath(path: string | undefined): Promise<void>;
 
     /**
-     * Polls for the access token after user authorizes.
-     * @param deviceCode The device code from initiateDeviceFlow
-     * @param interval Polling interval in seconds
+     * Starts the sign-in and resolves once the code the user has to enter is known.
      * @param enterpriseUrl Optional GitHub Enterprise domain
-     * @returns true if authentication succeeded, false if expired/denied
      */
-    pollForToken(deviceCode: string, interval: number, enterpriseUrl?: string): Promise<boolean>;
+    startSignIn(enterpriseUrl?: string): Promise<DeviceCodeResponse>;
+
+    /**
+     * Waits for the sign-in started by {@link startSignIn} to complete.
+     * @returns true if the sign-in succeeded, false if it was denied or expired
+     */
+    waitForSignIn(): Promise<boolean>;
+
+    /**
+     * Aborts a sign-in that is still in progress, if any.
+     */
+    cancelSignIn(): Promise<void>;
+
+    /**
+     * Discards the stored credentials of this application.
+     */
+    signOut(): Promise<void>;
 
     /**
      * Get the current authentication state.
      */
     getAuthState(): Promise<CopilotAuthState>;
-
-    /**
-     * Get the access token for API calls.
-     * @returns The access token or undefined if not authenticated
-     */
-    getAccessToken(): Promise<string | undefined>;
-
-    /**
-     * Sign out and clear stored credentials.
-     */
-    signOut(): Promise<void>;
 
     /**
      * Set the client to receive auth state change notifications.

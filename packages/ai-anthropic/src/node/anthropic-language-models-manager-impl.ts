@@ -16,12 +16,13 @@
 
 import { LanguageModelRegistry, LanguageModelStatus, ReasoningApi, ReasoningSupport } from '@theia/ai-core';
 import { createProxyFetch, getProxyUrl } from '@theia/ai-core/lib/node';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { ModelInfo } from '@anthropic-ai/sdk/resources/models';
 import { AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
 import { ANTHROPIC_SERVER_TOOLS } from './anthropic-server-tools';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
+import { ILogger } from '@theia/core';
 
 const ANTHROPIC_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
@@ -42,12 +43,15 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
 
     protected _apiKey: string | undefined;
     protected _proxyUrl: string | undefined;
-    // Cached `/v1/models` lookups keyed by `${baseURL}::${model}`. Successful lookups are kept for the process lifetime;
-    // failed lookups are evicted so the next call retries.
+    // Cached `/v1/models` lookups keyed by `${baseURL}::${model}::${headers}`, so a header change re-fetches through the
+    // new headers. Successful lookups are kept for the process lifetime; failed lookups are evicted so the next call retries.
     protected readonly modelInfoCache = new Map<string, Promise<ModelInfo>>();
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
+
+    @inject(ILogger) @named('ai-anthropic:AnthropicLanguageModelsManagerImpl')
+    protected readonly logger: ILogger;
 
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.ANTHROPIC_API_KEY;
@@ -76,7 +80,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
 
         if (model) {
             if (!(model instanceof AnthropicModel)) {
-                console.warn(`Anthropic: model ${modelDescription.id} is not an Anthropic model`);
+                this.logger.warn(`Anthropic: model ${modelDescription.id} is not an Anthropic model`);
                 return;
             }
             await this.languageModelRegistry.patchLanguageModel<AnthropicModel>(modelDescription.id, {
@@ -95,7 +99,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 maxInputTokens: metadata.maxInputTokens,
                 serverSideCompactionSupport: metadata.serverSideCompactionSupport,
                 serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false,
-                serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault
+                serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault,
+                headers: modelDescription.headers
             });
         } else {
             this.languageModelRegistry.addLanguageModels([
@@ -117,7 +122,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                     ANTHROPIC_SERVER_TOOLS,
                     metadata.serverSideCompactionSupport,
                     modelDescription.serverSideCompactionEnabledByDefault ?? false,
-                    modelDescription.serverSideCompactionTokenThresholdByDefault
+                    modelDescription.serverSideCompactionTokenThresholdByDefault,
+                    modelDescription.headers
                 )
             ]);
         }
@@ -169,7 +175,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
         if (!apiKey) {
             return undefined;
         }
-        const cacheKey = `${modelDescription.url ?? ''}::${modelDescription.model}`;
+        const cacheKey = `${modelDescription.url ?? ''}::${modelDescription.model}::${JSON.stringify(modelDescription.headers ?? {})}`;
         const cached = this.modelInfoCache.get(cacheKey);
         if (cached) {
             return cached;
@@ -180,7 +186,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
             return await fetchPromise;
         } catch (error) {
             this.modelInfoCache.delete(cacheKey);
-            console.warn(`Anthropic: failed to retrieve model info for '${modelDescription.id}':`,
+            this.logger.warn(`Anthropic: failed to retrieve model info for '${modelDescription.id}':`,
                 error instanceof Error ? error.message : error);
             return undefined;
         }
@@ -194,7 +200,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
         const anthropic = new Anthropic({
             apiKey,
             baseURL: modelDescription.url,
-            fetch: createProxyFetch(proxyUrl)
+            fetch: createProxyFetch(proxyUrl),
+            defaultHeaders: modelDescription.headers
         });
         return anthropic.models.retrieve(modelDescription.model);
     }

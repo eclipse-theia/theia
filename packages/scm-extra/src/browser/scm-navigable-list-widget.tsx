@@ -27,6 +27,11 @@ import { ScmFileChangeLabelProvider } from './scm-file-change-label-provider';
 import { ScmFileChangeNode } from './scm-file-change-node';
 
 @injectable()
+/**
+ * @deprecated since 1.75.0 - superseded by the SCM history graph in `@theia/scm`
+ * and the Timeline view in `@theia/timeline`. This package will be removed in a
+ * future release - see https://github.com/eclipse-theia/theia/issues/17457.
+ */
 export abstract class ScmNavigableListWidget<T extends { selected?: boolean }> extends ReactWidget {
 
     protected scmNodes: T[] = [];
@@ -158,6 +163,11 @@ export abstract class ScmNavigableListWidget<T extends { selected?: boolean }> e
     }
 }
 
+/**
+ * @deprecated since 1.75.0 - superseded by the SCM history graph in `@theia/scm`
+ * and the Timeline view in `@theia/timeline`. This package will be removed in a
+ * future release - see https://github.com/eclipse-theia/theia/issues/17457.
+ */
 export namespace ScmItemComponent {
     export interface Props {
         labelProvider: LabelProvider;
@@ -167,6 +177,11 @@ export namespace ScmItemComponent {
         selectNode: (change: ScmFileChangeNode) => void
     }
 }
+/**
+ * @deprecated since 1.75.0 - superseded by the SCM history graph in `@theia/scm`
+ * and the Timeline view in `@theia/timeline`. This package will be removed in a
+ * future release - see https://github.com/eclipse-theia/theia/issues/17457.
+ */
 export class ScmItemComponent extends React.Component<ScmItemComponent.Props> {
 
     override render(): React.JSX.Element {

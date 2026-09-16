@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { ILogger, nls } from '@theia/core';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import {
     AIVariable,
@@ -49,8 +49,8 @@ export class CapabilityVariableContribution implements AIVariableContribution, A
     @inject(PromptService)
     protected readonly promptService: PromptService;
 
-    @inject(ILogger)
-    protected logger: ILogger;
+    @inject(ILogger) @named('ai-core:CapabilityVariableContribution')
+    protected readonly logger: ILogger;
 
     registerVariables(service: AIVariableService): void {
         service.registerResolver(CAPABILITY_VARIABLE, this);

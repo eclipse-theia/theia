@@ -108,6 +108,9 @@
             "title": "Wskazuje, czy model obsługuje buforowanie podpowiedzi. Domyślnie `true`."
           }
         },
+        "customProvider": {
+          "label": "{0} (Niestandardowe)"
+        },
         "models": {
           "description": "Oficjalne modele Anthropic do wykorzystania"
         }
@@ -148,6 +151,9 @@
         "clipboardSeparator": "schowek",
         "confirmApplySuggestion": "Plik {0} uległ zmianie od czasu utworzenia tej sugestii. Czy na pewno chcesz zastosować zmianę?",
         "confirmRevertSuggestion": "Plik {0} uległ zmianie od czasu utworzenia tej sugestii. Czy na pewno chcesz cofnąć zmianę?",
+        "contextSummaryVariable": {
+          "description": "Podsumowanie w formacie JSON wszystkich elementów w kontekście bieżącej sesji czatu, zawierające typ i identyfikatory każdego elementu."
+        },
         "couldNotFindMatchingLM": "Nie znaleziono pasującego modelu językowego. Sprawdź ustawienia!",
         "couldNotFindReadyLMforAgent": "Nie można znaleźć gotowego modelu językowego dla agenta {0}. Sprawdź swoją konfigurację!",
         "customAgents": {
@@ -385,7 +391,6 @@
         "tokenUsageWarning": "Osiągnięto próg ostrzegawczy dotyczący wykorzystania tokenów.",
         "tokenUsageWarningEnabled": "Kontroluje, czy wyświetlane jest powiadomienie, gdy wykorzystanie tokenów w sesji czatu przekroczy skonfigurowany próg. Wymaga, aby dostawca modelu językowego zgłaszał wykorzystanie tokenów.",
         "tokenUsageWarningMessage": "Wykorzystanie tokenów sesji czatu osiągnęło{0}% okna kontekstowego. Rozważ podsumowanie tej sesji lub rozpoczęcie nowej, aby uniknąć przekroczenia limitu.",
-        "tokenUsageWarningNewSessionAction": "Rozpocznij nową rozmowę",
         "tokenUsageWarningSummarizeAction": "Podsumuj bieżącą sesję",
         "tokenUsageWarningThresholdPercentage": "Procent okna kontekstowego modelu, przy którym uruchamia się ostrzeżenie o wykorzystaniu tokenów. Ta wartość określa również pasma kolorów ostrzeżeń/błędów wskaźnika wykorzystania tokenów. Obecnie obliczana jest na podstawie zakładanego okna kontekstowego o wielkości 200 tys.; gdy będzie dostępna rzeczywista wielkość kontekstu dla danego modelu, zostanie ona wykorzystana.",
         "toolcall-part-renderer": {
@@ -443,7 +448,6 @@
         },
         "currentDirectory": "bieżący katalog",
         "differentAgentRequestWarning": "Poprzednia prośba o czat została obsłużona przez innego agenta. Claude Code nie widzi tych innych komunikatów.",
-        "edit": "Edytuj {0}",
         "editAutomatically": "Edytuj automatycznie",
         "editing": "Edycja",
         "editsCount": "{0} edycje",
@@ -619,9 +623,6 @@
           "description": "Kod po bieżącej pozycji kursora. Dostępne tylko w kontekście autouzupełniania kodu."
         }
       },
-      "configuration": {
-        "selectItem": "Wybierz pozycję."
-      },
       "copilot": {
         "auth": {
           "aiConfiguration": "Konfiguracja AI",
@@ -667,30 +668,44 @@
         "agentConfiguration": {
           "addCustomAgent": "Dodaj agenta niestandardowego",
           "availableCapabilities": "Dostępne możliwości",
-          "completionNotificationDescriptionPrefix": "Wybierz sposób, w jaki chcesz otrzymywać powiadomienia, gdy ten agent będzie wymagał Twojej uwagi, tj. gdy zakończy swoje zadanie lub poprosi o Twoje działanie. Opcja „Domyślne” wykorzystuje ",
+          "completionNotificationIntro": "W jaki sposób chcesz otrzymywać powiadomienia, gdy ten agent wymaga Twojej uwagi (po zakończeniu zadania lub gdy prosi o wprowadzenie danych). Opcja „Domyślnie” wykorzystuje globalną ",
           "defaultNotificationDescription": "Korzysta z globalnych ustawień powiadomień AI.",
           "enableAgent": "Włącz agenta",
-          "llmRequirements": "Wymagania LLM",
           "notUsedInPrompt": "Nie używane w monicie",
           "notUsedInPromptTooltip": "Ta zmienna jest deklarowana przez agenta, ale nie jest odwołana w bieżącym szablonie monitu.",
           "notificationSettings": "Ustawienia powiadomień",
           "notificationSettingsLink": "Ustawienia powiadomień AI",
-          "promptTemplates": "Szablony monitów",
-          "selectAgentMessage": "Najpierw wybierz agenta!",
           "showInChat": "Pokaż na czacie",
-          "templateName": "Szablon",
           "undeclared": "Nie zadeklarowane",
           "undeclaredTooltip": "Ta zmienna jest używana w monicie, ale nie ma opisu zadeklarowanego przez agenta.",
           "usedAgentSpecificVariables": "Użyte zmienne specyficzne dla agenta",
-          "usedFunctions": "Użyte funkcje",
           "usedGlobalVariables": "Używane zmienne globalne",
-          "variant": "Wariant"
+          "usedTools": "Wykorzystane narzędzia"
         },
         "agentsVariable": {
           "description": "Zwraca listę agentów dostępnych w systemie."
         },
         "aiConfiguration": {
-          "label": "Konfiguracja AI"
+          "addValue": "Dodaj wartość...",
+          "categoryComingSoon": "{0} Konfiguracja nie jest jeszcze dostępna.",
+          "collectionEmpty": "Nie ma jeszcze żadnych elementów do skonfigurowania.",
+          "contributedByExtensions": "Materiał dostarczony przez twórców rozszerzeń",
+          "decrease": "Zmniejsz",
+          "increase": "Zwiększ",
+          "label": "Konfiguracja AI",
+          "models": {
+            "label": "Dostawcy i modele"
+          },
+          "origin": {
+            "fromRegistry": "Z rejestru",
+            "openAgentPlugin": "Otwórz wtyczkę agenta, która to zapewnia: {0}",
+            "openInRegistry": "Otwórz w rejestrze AI: {0}",
+            "registryEntry": "Wpis w rejestrze AI: {0}",
+            "viaAgentPlugin": "źródło: {0}"
+          },
+          "scopeBanner": "Edytowanie zakresu „{0}”.",
+          "searchPlaceholder": "Wyszukaj ustawienia AI",
+          "selectCategory": "Wybierz kategorię, którą chcesz skonfigurować."
         },
         "blinkTitle": {
           "agentCompleted": "{0} - Zadanie agenta zakończone",
@@ -753,8 +768,10 @@
         },
         "languageModelRenderer": {
           "alias": "[alias] {0}",
-          "languageModel": "Model językowy",
-          "purpose": "Cel"
+          "purposeTitle": "Cel: {0}",
+          "reasoningInherited": "Wysiłek rozumowania, o który ten agent prosi model. Nie ustawiono, więc ma zastosowanie „{0}” (Użyj domyślnych wartości), zgodnie z preferencjami domyślnymi dotyczącymi rozumowania lub ustawieniami modelu.",
+          "reasoningStored": "Wymagany poziom uzasadnienia, o który agent prosi model. Ustawia się to tutaj lub za pomocą selektora w polu wprowadzania czatu, który zapisuje to samo ustawienie.",
+          "serverTools": "Narzędzia serwerowe"
         },
         "maxRetries": {
           "mdDescription": "Maksymalna liczba prób ponowienia operacji w przypadku niepowodzenia żądania skierowanego do dostawcy sztucznej inteligencji. Wartość 0 oznacza brak ponownych prób.",
@@ -762,16 +779,17 @@
         },
         "modelAliasesConfiguration": {
           "agents": "Agenci korzystający z tego aliasu",
+          "aliasTypeLabel": "Aliasy modeli",
           "defaultList": "[Lista domyślna]",
+          "description": "Nazwane odniesienia do preferowanego modelu, dzięki czemu agenci mogą kierować swoje działania do roli zamiast do konkretnego modelu.",
           "evaluatesTo": "Ocenia się jako",
           "label": "Aliasy modeli",
-          "modelNotReadyTooltip": "Nie gotowy",
-          "modelReadyTooltip": "Gotowe",
           "noAgents": "Żaden agent nie używa tego aliasu.",
-          "noModelReadyTooltip": "Brak gotowego modelu",
+          "noModel": "Brak modelu",
           "noResolvedModel": "Brak gotowego modelu dla tego aliasu.",
+          "notReady": "Nie gotowe",
           "priorityList": "Lista priorytetów",
-          "selectAlias": "Wybierz alias modelu.",
+          "resolvesTo": "Odpowiada stronie {0}",
           "selectedModelId": "Wybrany model",
           "unavailableModel": "Wybrany model nie jest już dostępny."
         },
@@ -803,39 +821,15 @@
           "description": "Nazwa produktu/aplikacji, z którą pracuje użytkownik"
         },
         "promptFragmentsConfiguration": {
-          "activeCustomizationTitle": "Aktywna personalizacja",
-          "createCustomizationTitle": "Utwórz dostosowanie",
-          "customization": "dostosowanie",
-          "customizationLabel": "Personalizacja",
-          "defaultVariantTitle": "Wariant domyślny",
-          "deleteCustomizationTitle": "Usuń dostosowania",
-          "editTemplateTitle": "Edytuj szablon",
-          "headerTitle": "Fragmenty monitów",
-          "label": "Fragmenty monitów",
-          "noFragmentsAvailable": "Brak dostępnych fragmentów monitu.",
-          "otherPromptFragmentsHeader": "Inne fragmenty monitów",
-          "promptTemplateText": "Szablon tekstu monitu",
-          "promptVariantsHeader": "Zestawy wariantów monitów",
-          "removeCustomizationDialogMsg": "Czy na pewno chcesz usunąć dostosowanie {0} dla fragmentu monitu „{1}”?",
-          "removeCustomizationDialogTitle": "Usuń dostosowania",
-          "removeCustomizationWithDescDialogMsg": "Czy na pewno chcesz usunąć dostosowanie {0} dla fragmentu monitu „{1}” ({2})?",
-          "resetAllButton": "Resetuj wszystko",
-          "resetAllCustomizationsDialogMsg": "Czy na pewno chcesz zresetować wszystkie fragmenty monitów do ich wbudowanych wersji? Spowoduje to usunięcie wszystkich dostosowań.",
-          "resetAllCustomizationsDialogTitle": "Zresetuj wszystkie dostosowania",
-          "resetAllCustomizationsTitle": "Zresetuj wszystkie dostosowania",
-          "resetAllPromptFragments": "Zresetuj wszystkie fragmenty monitu",
+          "editPromptTemplate": "Edytuj szablon podpowiedzi",
+          "removePromptTemplate": "Usuń szablon monitu",
+          "removePromptTemplateDialogMsg": "Czy na pewno chcesz usunąć dostosowanie „{0}” dla szablonu monitu „{1}”? Nie ma on wbudowanej wersji, więc zostanie całkowicie usunięty.",
+          "removePromptTemplateDialogTitle": "Usuń szablon monitu",
+          "removePromptTemplateWithDescDialogMsg": "Czy na pewno chcesz usunąć dostosowanie {0} dla szablonu podpowiedzi „{1}” ({2})? Nie ma on wbudowanej wersji, więc zostanie całkowicie usunięty.",
+          "resetPromptTemplate": "Zresetuj szablon podpowiedzi",
           "resetToBuiltInDialogMsg": "Czy na pewno chcesz zresetować fragment monitu „{0}” do wersji wbudowanej? Spowoduje to usunięcie wszystkich dostosowań.",
           "resetToBuiltInDialogTitle": "Resetuj do wbudowanego",
-          "resetToBuiltInTitle": "Zresetuj do tej wbudowanej",
-          "resetToCustomizationDialogMsg": "Czy na pewno chcesz zresetować fragment monitu „{0}”, aby używać dostosowania {1}? Spowoduje to usunięcie wszystkich dostosowań o wyższym priorytecie.",
-          "resetToCustomizationDialogTitle": "Resetuj do dostosowania",
-          "resetToCustomizationTitle": "Przywróć te ustawienia",
-          "selectedVariantLabel": "Wybrane",
-          "selectedVariantTitle": "Wybrany wariant",
-          "usedByAgentTitle": "Używane przez agenta: {0}",
-          "variantSetError": "Wybrany wariant nie istnieje i nie można znaleźć wartości domyślnej. Sprawdź swoją konfigurację.",
-          "variantSetWarning": "Wybrany wariant nie istnieje. Zamiast niego używany jest wariant domyślny.",
-          "variantsOfSystemPrompt": "Warianty tego zestawu wariantów monitów:"
+          "variantSetError": "Wybrany wariant nie istnieje i nie można znaleźć wartości domyślnej. Sprawdź swoją konfigurację."
         },
         "promptTemplates": {
           "description": "Folder do przechowywania dostosowanych szablonów monitów. Jeśli nie są one dostosowane, używany jest katalog konfiguracyjny użytkownika. Proszę rozważyć użycie folderu, który jest objęty kontrolą wersji, aby zarządzać wariantami szablonów monitów."
@@ -899,12 +893,8 @@
         "taskContextSummary": {
           "description": "Rozwiązuje wszystkie elementy kontekstu zadania obecne w kontekście sesji."
         },
-        "templateSettings": {
-          "edited": "edytowane",
-          "unavailableVariant": "Niedostępne"
-        },
         "todayVariable": {
-          "description": "Zrób coś na dziś",
+          "dateDescription": "Aktualna data. Domyślnie zwraca ciąg znaków daty w formacie czytelnym dla człowieka, a po podaniu argumentu format – datę w formacie ISO 8601 lub liczbę sekund w systemie Unix.",
           "format": {
             "description": "Format daty"
           }
@@ -914,11 +904,17 @@
         "variable-contribution": {
           "builtInVariable": "{0} Wbudowana zmienna",
           "currentAbsoluteFilePath": "Bezwzględna ścieżka do aktualnie otwartego pliku.",
-          "currentFileContent": "Zwykła treść aktualnie otwartego pliku. Nie obejmuje to informacji o tym, skąd pochodzi treść.",
+          "currentFileContent": "Sama treść aktualnie otwartego pliku. Nie obejmuje to informacji o tym, skąd pochodzi ta treść.",
           "currentRelativeDirPath": "Ścieżka względna względem obszaru roboczego do katalogu zawierającego aktualnie otwarty plik (np. my-project/src).",
           "currentRelativeFilePath": "Ścieżka względna względem obszaru roboczego do aktualnie otwartego pliku (np. my-project/src/index.ts).",
-          "currentSelectedText": "Zwykły tekst, który jest obecnie zaznaczony w otwartym pliku. Nie obejmuje to informacji o tym, skąd pochodzi treść.",
-          "dotRelativePath": "Krótkie odniesienie do ścieżki względnej względem obszaru roboczego aktualnie otwartego pliku („currentRelativeFilePath”)."
+          "currentSelectedText": "Zwykły tekst, który jest obecnie zaznaczony w otwartym pliku. Nie obejmuje to informacji o tym, skąd pochodzi ta treść.",
+          "dotRelativePath": "Krótki odnośnik do ścieżki względnej względem obszaru roboczego aktualnie otwartego pliku („currentRelativeFilePath”)."
+        },
+        "variantSet": {
+          "templateLabel": "Szablon",
+          "unavailableVariant": "{0} (niedostępne)",
+          "variantCount": "{0} warianty",
+          "variantCountSingular": "Wariant 1"
         }
       },
       "editor": {
@@ -1000,10 +996,16 @@
       "ide": {
         "agent-description": "Skonfiguruj ustawienia agenta AI, w tym włączenie, wybór LLM, dostosowanie szablonu monitu i tworzenie niestandardowego agenta w [widoku konfiguracji AI]({0}).",
         "agentConfiguration": {
+          "agentMode": "Tryb agenta dla Coder",
+          "behavior": "Zachowanie",
           "customAgentLocationQuickPick": {
             "placeholder": "Wybierz miejsce, w którym chcesz utworzyć plik agents/<id>/agent.md",
             "title": "Wybierz lokalizację dla nowego agenta niestandardowego"
           },
+          "defaultChatAgent": "Domyślny agent czatu",
+          "defaultChatAgentNone": "Wbudowane domyślne ustawienia",
+          "defaultChatAgentNoneDescription": "Brak wyraźnego ustawienia domyślnego; Theia wybiera domyślnego agenta czatu.",
+          "defaults": "Ustawienia domyślne",
           "genericCapabilitiesSettings": "Ogólne możliwości",
           "genericCapabilityType": {
             "agentDelegation": "Delegowanie agenta",
@@ -1020,10 +1022,14 @@
             "idTitle": "Nowy agent niestandardowy",
             "noLocation": "Nie można utworzyć agenta niestandardowego: nie skonfigurowano lokalizacji szablonów monitów. Ustaw globalny lub roboczy folder szablonów monitów i spróbuj ponownie."
           },
-          "noDescription": "Brak opisu",
+          "noAgents": "Nie ma dostępnych agentów.",
+          "orchestratorExclude": "Agenci ukryci przed orkiestratorem",
+          "orchestratorExcludePlaceholder": "Dodaj identyfikator agenta...",
           "resetAllCapabilities": "Zresetuj wszystkie funkcje do wartości domyślnych",
-          "resetAllDefaults": "Przywróć wszystkie ustawienia domyślne",
-          "selections": "Zaznaczenia"
+          "resetAllGenericCapabilities": "Zresetuj wszystkie wybory dotyczące ogólnych możliwości",
+          "resetAllServerTools": "Wyłącz wszystkie narzędzia serwerowe tego dostawcy",
+          "showCapabilitySnippet": "Pokaż fragment kodu",
+          "showToolSettings": "Pokaż narzędzie"
         },
         "agentMode": {
           "enabled": {
@@ -1036,6 +1042,15 @@
           "info": "Kontynuowanie w trybie agenta powoduje zapisanie potwierdzenia. Możesz to później cofnąć za pomocą ustawienia `ai-features.agentMode.enabled`.\n\nKontynuowanie w trybie edycji powoduje zmianę trybu domyślnego na tryb edycji.\n\nTryby można zmieniać w dowolnym momencie za pomocą selektora trybów lub w konfiguracji AI.",
           "msg": "Ten agent korzysta z **trybu agentycznego**. Aby umożliwić autonomiczny przebieg pracy, może on bezpośrednio zapisywać zmiany w plikach obszaru roboczego bez dodatkowego potwierdzenia.\n\nZaleca się korzystanie z kontroli wersji (np. Git), aby można było przeglądać i cofać zmiany.\n\nMożesz przełączyć się do **trybu edycji** za pomocą selektora trybu w obszarze wprowadzania czatu poniżej lub użyć agenta **Architect** do planowania w trybie tylko do odczytu.\n\nTo potwierdzenie jest zapisywane dla tego obszaru roboczego i nie będzie wyświetlane ponownie. Aby zresetować lub skonfigurować je globalnie, poszukaj `ai-features.agentMode.confirmed` w Ustawieniach.",
           "waiting": "Oczekiwanie na potwierdzenie..."
+        },
+        "agentsConfiguration": {
+          "description": "Agenci AI dostępni w środowisku IDE. Otwórz agenta, aby skonfigurować jego podpowiedzi, model i możliwości."
+        },
+        "aiConfiguration": {
+          "breadcrumbRoot": "Konfiguracja AI",
+          "manageMenu": "Konfiguracja AI",
+          "openButton": "Konfiguracja OpenAI",
+          "pageTypeLabel": "Strona"
         },
         "allowAllMode": {
           "stripTooltip": "W tej sesji wywołania narzędzi AI są uruchamiane bez potwierdzenia. Należy je włączać wyłącznie w zaufanych środowiskach.",
@@ -1132,6 +1147,25 @@
         "exploreAgent": {
           "description": "Asystent do eksploracji kodu źródłowego, który wyodrębnia i syntetyzuje informacje z kodu źródłowego.         Przedstawia fakty dotyczące tego, co istnieje, dostarcza fragmenty kodu i opisuje zaobserwowane wzorce."
         },
+        "generalConfiguration": {
+          "aboutCosts": "Informacje o kosztach i wykorzystaniu danych",
+          "bypassModelTitle": "Pomiń sprawdzanie modelu językowego",
+          "configureProvider": "Skonfiguruj dostawcę",
+          "costsBody": "Funkcje AI wysyłają żądania do skonfigurowanych przez użytkownika dostawców modeli językowych. W zależności od dostawcy i sposobu użytkowania może to wiązać się z kosztami — należy je uważnie monitorować. Żądania mogą być wysyłane w sposób ciągły, gdy agenci są aktywni. Szczegółowe informacje można znaleźć w [dokumentacji]({0}).",
+          "description": "Włączaj lub wyłączaj funkcje sztucznej inteligencji oraz konfiguruj sposób działania asystenta w całym środowisku IDE.",
+          "dontPersist": "Nie przechowuj danych",
+          "enableAiDescription": "Włącza wszystkie funkcje sztucznej inteligencji w aplikacji „{0}”. Wymaga co najmniej jednego skonfigurowanego dostawcy modeli językowych.",
+          "gateNote": "Poniższe ustawienia zaczną obowiązywać po włączeniu opcji „Włącz funkcje AI”.",
+          "hideList": "Ukryj listę",
+          "homeSessionsTitle": "Sesje w widoku głównym",
+          "label": "Ogólne informacje",
+          "noProvider": "Nie skonfigurowano jeszcze żadnego dostawcy modelu językowego.",
+          "persistedSessionsTitle": "Zapisane sesje czatu",
+          "pinAgentTitle": "Przypnij wymienionych agentów",
+          "providerReady": "Dostawca modelu językowego jest skonfigurowany i gotowy do działania.",
+          "sessionStorageTitle": "Lokalizacja przechowywania sesji",
+          "unlimited": "Nieograniczona liczba"
+        },
         "github": {
           "configureGitHubServer": {
             "canceled": "Konfiguracja serwera GitHub została anulowana. Skonfiguruj serwer GitHub MCP, aby korzystać z tego agenta.",
@@ -1158,12 +1192,25 @@
           "description": "Repozytoria GitHub powiązane z katalogami głównymi obszarów roboczych (np. „eclipse-theia/theia”)"
         },
         "howToGetStarted": "Jak zacząć",
+        "memoryCapability": {
+          "description": "Pozwala agentowi na prowadzenie stałej bazy wiedzy w stylu wiki dla obszaru roboczego, dzięki czemu ta i przyszłe sesje opierają się na dotychczasowych osiągnięciach, zamiast zaczynać od zera.",
+          "name": "Pamięć"
+        },
+        "memoryDirectoryVariable": {
+          "description": "Bezwzględna ścieżka do katalogu, w którym agent przechowuje pamięć dla bieżącego obszaru roboczego."
+        },
         "model-selection-description": "Wybierz, które duże modele językowe (LLM) są używane przez każdego agenta AI w [widoku konfiguracji AI]({0}).",
+        "modelsConfiguration": {
+          "description": "Skonfiguruj dostawców modeli językowych oraz modele dostępne dla agentów.",
+          "modelSettings": "Ustawienia modelu",
+          "noProviders": "Nie zainstalowano żadnych dostawców modeli językowych.",
+          "providers": "Dostawcy"
+        },
         "moreAgentsAvailable": {
           "header": "Dostępnych jest więcej agentów."
         },
         "noRecommendedAgents": "Nie ma dostępnych zalecanych agentów.",
-        "openSettings": "Otwórz ustawienia AI",
+        "openAiConfiguration": "Konfiguracja OpenAI",
         "orchestrator": {
           "error": {
             "noAgents": "Brak dostępnego agenta czatu do obsługi żądania. Sprawdź konfigurację, czy któryś z nich jest włączony."
@@ -1204,6 +1251,37 @@
           "description": "Agent do przeglądu PR oparty na sztucznej inteligencji, który koordynuje cały proces przeglądu kodu: pobiera informacje o PR, bada bazę kodu, przeprowadza ustrukturyzowaną analizę, interaktywnie prowadzi użytkownika przez wyniki za pomocą przeglądarek różnic, a opcjonalnie tworzy oczekujący przegląd na GitHubie."
         },
         "prompt-template-description": "Wybierz warianty monitów i dostosuj szablony monitów dla agentów AI w [widoku konfiguracji AI]({0}).",
+        "promptSnippetsConfiguration": {
+          "capabilitiesGroupDescription": "Instrukcje dodawane przez agenta do swojego monitu po włączeniu tej funkcji. Są one współdzielone, więc każda zmiana dotyczy wszystkich agentów, które z nich korzystają.",
+          "capabilityTypeLabel": "Funkcjonalność",
+          "customized": "Dostosowane",
+          "description": "Tekst podpowiedzi wielokrotnego użytku: własne fragmenty kodu oraz fragmenty pobierane przez agentów. Edycja fragmentu kodu ma wpływ na każdego agenta, który z niego korzysta.",
+          "editSnippet": "Edytuj fragment kodu",
+          "empty": "Nie są dostępne żadne fragmenty kodu z monitami.",
+          "filterPlaceholder": "Filtruj fragmenty kodu według nazwy, identyfikatora lub opisu",
+          "genericCapabilitiesGroup": "Ogólne możliwości",
+          "genericCapabilitiesGroupDescription": "Podstawowe instrukcje dotyczące wbudowania wybranych funkcji w wiersz poleceń agenta. Są one wspólne, więc każda zmiana dotyczy wszystkich agentów, które z nich korzystają.",
+          "genericCapabilityTypeLabel": "Ogólna funkcjonalność",
+          "label": "Fragmenty komunikatów",
+          "noMatches": "Nie znaleziono fragmentów kodu pasujących do „{0}”.",
+          "removeDialogMsg": "Czy na pewno chcesz usunąć dostosowanie {0} dla fragmentu kodu „{1}”? Nie ma on wbudowanej wersji, więc zostanie całkowicie usunięty.",
+          "removeDialogTitle": "Usuń fragment kodu",
+          "removeSnippet": "Usuń fragment kodu",
+          "removeWithDescDialogMsg": "Czy na pewno chcesz usunąć dostosowanie {0} dla fragmentu kodu „{1}” ({2})? Nie ma on wbudowanej wersji, więc zostanie całkowicie usunięty.",
+          "resetAll": "Zresetuj wszystkie dostosowania",
+          "resetAllDialogMsg": "Czy na pewno chcesz zresetować wszystkie dostosowane fragmenty monitu do ich wbudowanych wersji? Dotyczy to również szablonów monitów agentów, a nie tylko fragmentów wymienionych tutaj. Fragmenty, które nie mają wbudowanej wersji, zostaną zachowane.",
+          "resetAllDialogTitle": "Zresetuj wszystkie dostosowania",
+          "resetAllMessage": "Niektóre fragmenty monitów są dostosowane. Resetowanie przywraca wszystkie z nich do wersji wbudowanej, w tym szablony monitów agentów. Fragmenty kodu, które nie mają wersji wbudowanej, są zachowywane.",
+          "resetDialogMsg": "Czy na pewno chcesz zresetować fragment kodu „{0}” do wersji wbudowanej? Spowoduje to usunięcie wszystkich dostosowań.",
+          "resetDialogTitle": "Przywróć fragment kodu do ustawień domyślnych",
+          "resetSnippet": "Przywróć fragment kodu do wbudowanego",
+          "snippetsGroupDescription": "Tekst monitu, który samodzielnie utrzymujesz, odwołujący się do innych monitów za pomocą {{prompt:id}}.",
+          "usedByAgents": "Używane przez agentów"
+        },
+        "promptsAndSkillsConfiguration": {
+          "label": "Umiejętności i polecenia ze znakiem ukośnika",
+          "pageSubtitle": "Umiejętności, z których może korzystać model, oraz polecenia ze znakiem ukośnika wywoływane za pomocą symbolu /. Otwórz umiejętność, aby edytować plik SKILL.md, lub edytuj szablon polecenia ze znakiem ukośnika."
+        },
         "requiresApproval": "Wymagana jest Twoja zgoda",
         "restoredSession": "Przywrócona sesja",
         "restrictedModeDetails": "Czat AI, sugestie wbudowane, akcje kodu i szablony monitów są wyłączone",
@@ -1214,22 +1292,27 @@
           "toolConfirmation": "Nadpisywanie potwierdzeń dla poszczególnych narzędzi: {0}",
           "toolConfirmationGeneric": "Zestaw nadpisów potwierdzeń dla poszczególnych narzędzi"
         },
-        "shellAllowlist": {
-          "placeholder": "Np. „git log” (dokładnie) lub „git log *” (z argumentami)"
-        },
-        "shellDenylist": {
-          "placeholder": "Np. „git push *” lub „rm -rf /”."
-        },
         "shellExecutionCapability": {
           "description": "Umożliwia agentowi uruchamianie dowolnych poleceń powłoki w systemie hosta. Agent może następnie delegować wykonywanie skryptów, które nie są dostępne jako zadania, zapytania o informacje systemowe oraz wykonywać operacje, dla których nie istnieje dedykowane narzędzie.",
           "name": "Wykonywanie powłoki"
         },
         "skillsConfiguration": {
-          "noSkills": "Brak dostępnych umiejętności",
-          "noSlashCommands": "Brak dostępnych poleceń ukośnika",
+          "compatibility": "Zgodność",
+          "editCommandTemplate": "Edytuj szablon podpowiedzi",
+          "empty": "Nie są dostępne żadne umiejętności ani polecenia z ukośnikiem.",
+          "filterPlaceholder": "Filtruj umiejętności i polecenia z ukośnikiem według nazwy lub opisu",
+          "frontmatter": "Frontmatter",
+          "noAllowedTools": "Nie zadeklarowano żadnych dozwolonych narzędzi. Umiejętność może korzystać z dowolnego narzędzia, które agent już posiada.",
+          "noMatches": "Nie znaleziono żadnych umiejętności ani poleceń z ukośnikiem pasujących do „{0}”.",
+          "noSkillAgents": "Żaden agent nie ujawnia obecnie umiejętności, więc żadna z nich nie jest dostępna: umiejętność wymaga zmiennej {{skills}} lub możliwości użycia tej umiejętności w monicie agenta.",
+          "openSkillFile": "Otwórz plik SKILL.md",
+          "skillsGroupDescription": "Jednostki SKILL.md oparte na plikach, które model może wybrać do stosowania, udostępniane za pośrednictwem zmiennej {{skills}} oraz funkcji korzystania z umiejętności.",
           "slashCommand": {
-            "allAgents": "Wszyscy agenci"
+            "allAgents": "Wszyscy agenci",
+            "allAgentsTooltip": "To polecenie nie deklaruje żadnych agentów, więc jest dostępne dla każdego agenta.",
+            "availableForAgents": "Dostępne dla agentów"
           },
+          "slashCommandsGroupDescription": "Fragmenty komunikatów wywoływane poprzez wpisanie /name na czacie, dostępne dla jednego lub kilku agentów.",
           "slashCommandsSectionHeader": "Polecenia ukośnika"
         },
         "toolConfirmationInfo": {
@@ -1249,8 +1332,10 @@
             "label": "Tryb potwierdzenia"
           },
           "default": {
-            "label": "Domyślny tryb potwierdzania narzędzi:"
+            "rowLabel": "Domyślny tryb potwierdzania narzędzi"
           },
+          "description": "Wybierz, z których narzędzi mogą korzystać agenci oraz czy każde z nich wymaga potwierdzenia przed uruchomieniem.",
+          "filterPlaceholder": "Narzędzia filtrujące",
           "recommendedDefaults": {
             "apply": "Zezwól na użycie domyślnych narzędzi",
             "dialogConfirm": "Rozumiem, zezwól",
@@ -1270,16 +1355,7 @@
             "title": "Resetuj wszystkie tryby potwierdzania narzędzi"
           },
           "resetAllTooltip": "Zresetuj wszystkie narzędzia do ustawień domyślnych",
-          "shellAllowlist": {
-            "description": "Polecenia pasujące do tych wzorców będą automatycznie akceptowane bez potwierdzenia. Użyj * jako symbolu wieloznacznego: „git log” (dokładne dopasowanie), „git log *” (z dowolnymi argumentami). Symbol wieloznaczny musi być poprzedzony spacją.",
-            "empty": "Nie skonfigurowano żadnych wzorców. Wszystkie polecenia powłoki będą wymagały potwierdzenia.",
-            "title": "Lista dozwolonych poleceń powłoki"
-          },
-          "shellDenylist": {
-            "description": "Polecenia pasujące do tych wzorców będą automatycznie odrzucane bez potwierdzenia. Użyj tej funkcji, aby zablokować niebezpieczne polecenia, takie jak „git push *” lub „rm -rf /”.",
-            "empty": "Nie skonfigurowano żadnych wzorców. Żadne polecenia powłoki nie będą automatycznie odrzucane.",
-            "title": "Lista odmów wykonania powłoki"
-          },
+          "shellExecution": "Wykonywanie poleceń powłoki",
           "toolOptions": {
             "confirm": {
               "label": "Potwierdź"
@@ -1295,7 +1371,21 @@
           "unread": "Nieprzeczytane"
         },
         "variableConfiguration": {
-          "selectVariable": "Wybierz zmienną.",
+          "argCountPlural": "{0} argumenty",
+          "argCountSingular": "1 argument",
+          "argEnum": "Jedna z następujących pozycji: {0}",
+          "contextGroup": "Zmienne kontekstowe",
+          "contextGroupDescription": "Odwołuje się do nazwy „{0}” w monicie i może być również dołączone do żądania jako kontekst, który agent i jego narzędzia mogą sprawdzić.",
+          "copyVariableName": "Skopiuj nazwę zmiennej",
+          "filterPlaceholder": "Filtruj zmienne według nazwy lub opisu",
+          "noMatches": "Nie znaleziono zmiennych pasujących do „{0}”.",
+          "noVariables": "Nie są dostępne żadne zmienne.",
+          "openAgent": "Otwórz zgłoszenie na stronie {0}",
+          "optional": "opcjonalnie",
+          "pageSubtitle": "Wartości, do których można odwołać się za pomocą nazwy „{0}” w wierszu poleceń. Są one rozpoznawane i wstawiane w momencie wysłania żądania.",
+          "plainGroup": "Zmienne zwykłe",
+          "plainGroupDescription": "Odwołania do nazw typu „{0}” w wierszu poleceń są rozpoznawane w czasie rzeczywistym i zamieniane na wartości tekstowe w momencie żądania.",
+          "required": "wymagane",
           "usedByAgents": "Używane przez agentów"
         },
         "waitingForInput": "Oczekiwanie na wprowadzenie danych"
@@ -1407,12 +1497,20 @@
           },
           "registryMetadata": {
             "configHash": {
-              "mdDescription": "Skrót treści zatwierdzenia rejestru użytego do zainstalowania tego serwera.",
+              "mdDescription": "Suma kontrolna zawartości zatwierdzenia rejestru użytego do zainstalowania tego serwera lub wtyczki agenta, która go dostarczyła.",
               "title": "Skrót konfiguracji rejestru"
             },
+            "installedAt": {
+              "mdDescription": "Informacja o tym, kiedy wtyczka agenta, która udostępniła ten serwer, została ostatnio zapisana na dysku. Zmiana tej wartości powoduje ponowne uruchomienie serwera, co sprawia, że aktualizacja zaczyna obowiązywać. Autor: `@theia/ai-registry`; treść nie może być edytowana przez użytkownika.",
+              "title": "Wtyczka agenta zainstalowana w"
+            },
             "mdDescription": "Metadane pochodzenia dla serwera zainstalowanego z rejestru AI. Autor: `@theia/ai-registry`; nie można edytować.",
+            "pluginId": {
+              "mdDescription": "Określa zainstalowaną wtyczkę agenta, która przyczyniła się do utworzenia tego serwera. Autor: `@theia/ai-registry`; nie można edytować.",
+              "title": "Identyfikator wtyczki agenta"
+            },
             "serverId": {
-              "mdDescription": "Określa wpis w rejestrze AI, z którego zainstalowano ten serwer.",
+              "mdDescription": "Określa wpis w rejestrze AI, z którego zainstalowano ten serwer. Brak tego wpisu w przypadku serwera dostarczonego przez wtyczkę agenta, która zamiast tego zawiera `pluginId`.",
               "title": "Identyfikator serwera rejestru"
             },
             "title": "Metadane rejestru",
@@ -1457,6 +1555,9 @@
         }
       },
       "mcpConfiguration": {
+        "addArgument": "Dodaj argument…",
+        "addKeyValue": "Dodaj KEY=wartość…",
+        "addScope": "Dodaj zakres…",
         "autostart": "Autostart",
         "browseAIRegistry": "Przeglądaj rejestr AI",
         "browseAIRegistryTooltip": "Otwórz widok „Rozszerzenia”, aby przeglądać wpisy rejestru AI",
@@ -1464,8 +1565,9 @@
           "addServer": "Dodaj lokalną konfigurację MCP..."
         },
         "copiedAllList": "Skopiowano wszystkie narzędzia do schowka (lista wszystkich narzędzi)",
-        "copiedAllSingle": "Skopiowano wszystkie narzędzia do schowka (pojedynczy fragment monitu ze wszystkimi narzędziami)",
-        "copiedForPromptTemplate": "Skopiowano wszystkie narzędzia do schowka dla szablonu monitu                                     (pojedynczy fragment monitu ze wszystkimi narzędziami)",
+        "copiedAllSingle": "Skopiowano wszystkie narzędzia do schowka (pojedynczy fragment monitu zawierający wszystkie narzędzia)",
+        "copiedForPrompt": "Skopiowano {0} do schowka (do wykorzystania w czacie lub jako szablon polecenia)",
+        "copiedForPromptTemplate": "Skopiowano wszystkie narzędzia do schowka w celu utworzenia szablonu monitu (pojedynczy fragment monitu zawierający wszystkie narzędzia)",
         "copyAllList": "Skopiuj wszystko (lista wszystkich narzędzi)",
         "copyAllSingle": "Skopiuj wszystko do czatu (pojedynczy fragment monitu ze wszystkimi narzędziami)",
         "copyForPrompt": "Narzędzie kopiowania (do czatu lub szablonu monitu)",
@@ -1475,8 +1577,6 @@
         "deleteServerDialogMsg": "Czy na pewno chcesz usunąć serwer „{0}”?",
         "deleteServerDialogTitle": "Usuń serwer MCP",
         "deleteServerError": "Nie udało się usunąć serwera MCP: {0}",
-        "editServer": "Edytuj serwer",
-        "editServerTitle": "Edytuj serwer MCP",
         "environmentVariables": "Zmienne środowiskowe",
         "form": {
           "argsPlaceholder": "Oddzielone spacjami, np. -y @modelcontextprotocol/server-brave-search",
@@ -1509,7 +1609,6 @@
           "serverUrlPlaceholder": "Np. https://mcp.example.com",
           "serverUrlRequired": "Adres URL serwera jest wymagany w przypadku serwerów zdalnych."
         },
-        "fromRegistryLink": "Z rejestru",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "Serwer autoryzacji",
         "oauthClientId": "Identyfikator klienta OAuth",
@@ -1517,11 +1616,15 @@
         "oauthRedirectUrl": "Adres URL przekierowania",
         "oauthResource": "Zasób OAuth",
         "oauthScopes": "Zakresy OAuth",
-        "openInRegistry": "Otwórz w rejestrze AI: {0}",
+        "pluginData": "Dane wtyczki",
+        "pluginRoot": "Katalog główny wtyczek",
         "saveServerError": "Nie udało się zapisać konfiguracji serwera MCP: {0}",
         "serverAuthToken": "Token autoryzacyjny",
         "serverAuthTokenHeader": "Nazwa nagłówka uwierzytelniającego",
+        "serverTypeLabel": "Serwer MCP",
         "serverUrl": "Adres URL serwera",
+        "serversListTitle": "Serwery",
+        "showToolSettings": "Pokaż narzędzie",
         "signInServerFailed": "Nie udało się zalogować do serwera MCP „{0}”.",
         "signInServerNotCompleted": "Logowanie do serwera MCP „{0}” nie zostało zakończone.",
         "signInServerSucceeded": "Zalogowano się do serwera MCP „{0}”.",
@@ -1530,7 +1633,7 @@
         "signOutServerFailed": "Nie udało się wylogować z serwera MCP „{0}”.",
         "startServerFailed": "Nie udało się uruchomić serwera MCP „{0}”.",
         "stopServerFailed": "Nie udało się zatrzymać serwera MCP „{0}”.",
-        "tools": "Narzędzia: "
+        "typeRemoteOAuth": "Zdalny (OAuth)"
       },
       "openai": {
         "apiKey": {
@@ -1580,6 +1683,9 @@
           "useResponseApi": {
             "title": "Zamiast interfejsu API Chat Completion API należy używać nowszego interfejsu API OpenAI Response API. Domyślnie dla dostawców niestandardowych wartość ta wynosi „false”. Uwaga: podczas korzystania z narzędzi nastąpi automatyczne przełączenie na interfejs API Chat Completions API."
           }
+        },
+        "customProvider": {
+          "label": "{0} (Niestandardowe)"
         },
         "models": {
           "description": "Oficjalne modele OpenAI do wykorzystania"
@@ -1683,7 +1789,7 @@
       },
       "tokenUsage": {
         "cachedInputTokens": "Tokeny wejściowe zapisane w pamięci podręcznej",
-        "cachedInputTokensTooltip": "Śledzone dodatkowo do „tokenów wejściowych”. Zazwyczaj droższe niż tokeny niebuforowane.",
+        "description": "Przejrzyj zużycie tokenów w poszczególnych dostawcach i modelach.",
         "failedToGetTokenUsageData": "Nie udało się pobrać danych dotyczących wykorzystania tokenów: {0}",
         "inputTokens": "Tokeny wejściowe",
         "label": "Wykorzystanie tokenów",
@@ -1691,9 +1797,7 @@
         "noData": "Brak dostępnych danych dotyczących wykorzystania tokenów.",
         "note": "Wykorzystanie tokenów jest śledzone od momentu uruchomienia aplikacji i nie jest zapisywane na stałe.",
         "outputTokens": "Tokeny wyjściowe",
-        "readCachedInputTokens": "Tokeny wejściowe odczytywane z pamięci podręcznej",
-        "readCachedInputTokensTooltip": "Śledzone dodatkowo do „tokenu wejściowego”. Zazwyczaj znacznie tańsze niż bez buforowania. Zazwyczaj nie wlicza się do limitów szybkości.",
-        "totalTokensTooltip": "„Token wejściowy” + „Token wyjściowy”"
+        "readCachedInputTokens": "Tokeny wejściowe odczytywane z pamięci podręcznej"
       },
       "vercelai": {
         "anthropicApiKey": {
@@ -1736,7 +1840,7 @@
       },
       "workspace": {
         "allowedExternalPaths": {
-          "description": "Lista ścieżek bezwzględnych lub adresów URI plików (katalogów lub plików) poza obszarem roboczym, które mogą odczytywać narzędzia AI. Obsługuje znak `~` w odniesieniu do katalogu domowego użytkownika. Domyślnie puste; tylko opcja opt-in. Obsługiwane przez getFileContent, findFilesByPattern, getWorkspaceFileList i getWorkspaceDirectoryStructure. Wartości w zakresie obszaru roboczego są ignorowane, gdy obszar roboczy nie jest zaufany. Dostępne są dowiązania symboliczne w katalogach z listy dozwolonych, które mogą wskazywać na pliki poza listą dozwolonych; dodawaj tylko katalogi, których zawartość jest zaufana.",
+          "description": "Lista ścieżek bezwzględnych lub identyfikatorów URI plików (katalogów lub plików) poza obszarem roboczym, do których mogą mieć dostęp narzędzia AI. Obsługuje znak `~` w odniesieniu do katalogu domowego użytkownika. Domyślnie pusta; dostępna tylko po włączeniu. Uwzględniane przez każde narzędzie, które przyjmuje ścieżkę, w tym narzędzia zapisujące pliki. Wartości w zakresie obszaru roboczego są ignorowane, gdy obszar roboczy nie jest zaufany. Dostępne są dowiązania symboliczne w katalogach z listy dozwolonych, które mogą wskazywać na pliki spoza tej listy; należy dodawać wyłącznie katalogi, których zawartość jest zaufana.",
           "title": "Dopuszczalne ścieżki zewnętrzne"
         },
         "coderAgent": {
@@ -1807,6 +1911,9 @@
       "agentInputNeededMessageWithSession": "Agent „{0}” potrzebuje Twojego wkładu w „{1}”.",
       "agentInputNeededTitle": "Agent „{0}” potrzebuje Twojej pomocy",
       "aiDisabledInRestrictedMode": "Funkcje AI nie są dostępne w niezaufanych obszarach roboczych.",
+      "openConfiguration": {
+        "description": "Ustawienia AI zostały przeniesione do widoku „Konfiguracja AI”. Otwórz go, aby skonfigurować dostawców, modele, agentów i inne elementy."
+      },
       "preferences": {
         "linuxEnvHint": "W systemie Linux upewnij się, że zmienna jest zdefiniowana w pliku `~/.profile` (a nie tylko w `~/.bashrc`), jeśli uruchamiasz aplikację za pomocą skrótu na pulpicie. Szczegółowe informacje znajdziesz w [dokumentacji](https://theia-ide.org/docs/user_ai/#setting-api-keys).",
         "title": "Funkcje AI"
@@ -1890,10 +1997,128 @@
     },
     "ai-registry": {
       "action": {
+        "copyId": "Skopiuj identyfikator",
         "fix": "Popraw konfigurację",
         "link": "Link do rejestru",
         "unlink": "Usuń powiązanie",
         "updateTooltip": "Aktualizacja z {0} do {1}"
+      },
+      "autoUpdate": {
+        "ask": "Powiadamiaj o dostępności aktualizacji dla zainstalowanej funkcji, serwera MCP lub wtyczki agenta.",
+        "changeLater": "Można to później zmienić w pliku `{0}`.",
+        "configureDefault": "Domyślne ustawienia można skonfigurować w pliku `{0}`.",
+        "defaultPrompt": "Czy od teraz umiejętności, serwery MCP i wtyczki agenta mają być automatycznie aktualizowane z rejestru AI?",
+        "description": "Domyślne zachowanie dotyczące aktualizacji umiejętności, serwerów MCP i wtyczek agenta zainstalowanych z rejestru AI. Aktualizacje są sprawdzane raz przy każdym uruchomieniu okna. Poszczególne artefakty mogą to zmienić w menu koła zębatego w widoku Rozszerzeń.",
+        "enableDefault": "Włącz automatyczną aktualizację",
+        "keepAsking": "Pytaj dalej",
+        "mcpAvailable": "Dostępna jest aktualizacja serwera MCP „{0}”.",
+        "off": "Nigdy nie aktualizuj zainstalowanych umiejętności, serwerów MCP i wtyczek agenta oraz nigdy nie powiadamiaj o dostępnych aktualizacjach.",
+        "on": "Automatyczna aktualizacja zainstalowanych umiejętności, serwerów MCP i wtyczek agenta.",
+        "pluginAvailable": "Dostępna jest aktualizacja wtyczki agenta „{0}”.",
+        "skillAvailable": "Dostępna jest aktualizacja umiejętności „{0}”.",
+        "summary": "{0} Dostępne są aktualizacje rejestru AI.",
+        "updateAll": "Zaktualizuj wszystko",
+        "updateFailed": "Nie udało się automatycznie zaktualizować elementów rejestru AI programu „{0}”.",
+        "updatedMany": "Zaktualizowano pozycje rejestru AI programu „{0}”."
+      },
+      "autoUpdateOverrides": {
+        "mdDescription": "Nadpisania ustawień `#ai-features.registry.autoUpdate#` dla poszczególnych artefaktów, indeksowane według kluczy `skill:<skillId>`, `mcp:<serverId>` lub `plugin:<pluginId>`. Wpisy są zazwyczaj zarządzane za pomocą menu koła zębatego w widoku Rozszerzenia; artefakt bez wpisu stosuje ustawienia domyślne."
+      },
+      "mcp": {
+        "updated": "Zaktualizowano serwer MCP „{0}”."
+      },
+      "plugin": {
+        "action": {
+          "fix": "Napraw wtyczkę",
+          "link": "Link do rejestru",
+          "unlink": "Usuń powiązanie"
+        },
+        "diagnostics": {
+          "manySkipped": "{0} pominięte elementy",
+          "mcpDisabled": "Konfiguracja MCP została zignorowana",
+          "mcpDisabledAndSkipped": "Konfiguracja MCP została zignorowana, {0}",
+          "oneSkipped": "Pominięto komponent „{0}”: {1}"
+        },
+        "dialog": {
+          "contains": "Zawiera",
+          "endorsedBy": "Zatwierdzone przez",
+          "from": "Źródło:",
+          "install": {
+            "title": "Zainstaluj wtyczkę agenta „{0}”"
+          },
+          "mcpWarning": "Serwery MCP tej wtyczki mogą uruchamiać dowolne polecenia na Twoim komputerze. Zatwierdzenie dotyczy wtyczki jako całości – żaden z zawartych w niej serwerów nie jest zatwierdzany osobno. Serwery uruchamiają się automatycznie po instalacji.",
+          "mismatch": {
+            "actual": "otrzymano",
+            "endorsed": "Pliki pobrane dla „{0}” nie są zgodne z tym, co serwis {1} polecił na stronie {2}.",
+            "expected": "zatwierdzone",
+            "explanation": "Sytuacja ta może utrzymywać się do jednego dnia po zatwierdzeniu zmian przez autorów wtyczki, ponieważ rejestr codziennie ponownie odczytuje źródła i nie przypisuje do nich konkretnych zatwierdzeń, a repozytorium, które wyklucza pliki ze swoich archiwów, generuje je na stałe. Tak właśnie wygląda naruszony kod źródłowy.",
+            "installAnyway": "Zainstaluj mimo to",
+            "title": "Źródło uległo zmianie",
+            "unendorsed": "Pliki pobrane dla „{0}” nie zgadzają się z skrótem zawartości opublikowanym przez rejestr."
+          },
+          "noEndorsements": "Brak organizacji popierającej",
+          "viaTrust": "źródło: {0}"
+        },
+        "fixed": "Przywrócono wtyczkę agenta „{0}”.",
+        "installUri": {
+          "fetchFailed": "Nie udało się załadować rejestru AI w celu zainstalowania wtyczki agenta „{0}”.",
+          "missingId": "W linku instalacyjnym brakuje wymaganego parametru „id”.",
+          "success": "Zainstalowano wtyczkę agenta „{0}” z rejestru AI.",
+          "unknownId": "Wtyczka agenta „{0}” nie figuruje w rejestrze AI."
+        },
+        "installed": "Zainstalowana wtyczka agenta „{0}”.",
+        "invalidDirectoryName": "Nieprawidłowa nazwa katalogu wtyczki „{0}”: musi to być pojedynczy fragment ścieżki bez separatorów.",
+        "linked": "Wtyczka Linked Agent „{0}”.",
+        "manifestFieldNotString": "Pole „{0}” w pliku „plugin.json” musi mieć postać ciągu znaków.",
+        "manifestInvalidAuthor": "Pole „author” w pliku „plugin.json” musi być obiektem zawierającym opcjonalne pola tekstowe „name”, „email” i „url”.",
+        "manifestInvalidKeywords": "Pole „keywords” w pliku „plugin.json” musi być tablicą ciągów znaków.",
+        "manifestInvalidName": "Nazwa wtyczki „{0}” jest nieprawidłowa: musi składać się z 1 do 64 małych liter, znaków alfanumerycznych, myślników lub kropek, musi zaczynać się i kończyć znakiem alfanumerycznym oraz nie może zawierać znaków „--” ani „..”.",
+        "manifestNotJson": "Plik „plugin.json” nie jest poprawnym plikiem JSON.",
+        "manifestNotObject": "Plik „plugin.json” musi zawierać obiekt JSON najwyższego poziomu.",
+        "manifestRequiredField": "Pole „{0}” w pliku „plugin.json” jest wymagane i musi zawierać niepusty ciąg znaków.",
+        "manifestUnsupportedVersion": "Plik „plugin.json” odwołuje się do nieobsługiwanego schematu wtyczek agenta „{0}”.",
+        "mcpInvalidDocument": "Plik „mcp.json” musi zawierać obiekt JSON najwyższego poziomu z dokładnie wymaganymi polami „$schema” i „mcpServers”.",
+        "mcpNotJson": "Plik „mcp.json” nie jest poprawnym plikiem JSON.",
+        "mcpUnsupportedVersion": "Plik „mcp.json” odwołuje się do nieobsługiwanego schematu wtyczek agenta „{0}”.",
+        "mcpVersionMismatch": "Plik „mcp.json” jest przeznaczony dla wersji wtyczek agenta „{0}”, natomiast plik „plugin.json” — dla wersji „{1}”.",
+        "nonObjectExtensions": "Pole „extensions” w pliku „plugin.json” jest pomijane, ponieważ nie jest obiektem.",
+        "progress": {
+          "text": "Wtyczka „{0}”: {1}"
+        },
+        "registrationFailed": "Zainstalowano wtyczkę agenta „{0}”, ale nie udało się zarejestrować jej serwerów MCP: {1}. Odinstaluj i zainstaluj ją ponownie, aby spróbować jeszcze raz.",
+        "serverDuplicateHeader": "Nazwa nagłówka „{0}” została zadeklarowana więcej niż raz.",
+        "serverEmptyField": "Pole konfiguracji serwera „{0}” nie może być puste.",
+        "serverFieldNotString": "Pole konfiguracyjne serwera „{0}” musi być ciągiem znaków.",
+        "serverInvalid": "Konfiguracja serwera jest nieprawidłowa.",
+        "serverInvalidArgs": "Pole „args” musi być tablicą ciągów znaków.",
+        "serverInvalidCommand": "Wartość „{0}” w polu „polecenie” musi być samą nazwą pliku wykonywalnego lub ścieżką względną względem wtyczki, zaczynającą się od „./”.",
+        "serverInvalidCwd": "Wartość „cwd” „{0}” musi zaczynać się od „./”, „${PLUGIN_ROOT}” lub „${PLUGIN_DATA}”.",
+        "serverInvalidEnv": "Pole „env” musi być obiektem zawierającym ciągi znaków.",
+        "serverInvalidHeader": "Nagłówek „{0}” nie jest prawidłowym polem nagłówka HTTP.",
+        "serverInvalidHeaders": "Pole „headers” musi być obiektem zawierającym ciągi znaków.",
+        "serverInvalidUrl": "Wartość „url” „{0}” musi być bezwzględnym adresem URL w formacie http lub https, bez informacji o użytkowniku i bez fragmentu, a adres URL niebędący adresem pętli zwrotnej musi wykorzystywać protokół https.",
+        "serverMissingField": "W konfiguracji serwera brakuje wymaganego pola „{0}”.",
+        "serverNotObject": "Konfiguracja serwera nie jest obiektem JSON.",
+        "serverPathEscapes": "Wartość „{0}” o wartości „{1}” jest rozpoznawana poza adresem „{2}”.",
+        "serverReservedEnv": "Wpis „env” o wartości „{0}” jest zarezerwowany i nie może być deklarowany przez wtyczkę.",
+        "serverUnknownField": "W konfiguracji serwera zadeklarowano pole „{0}”, co jest niedozwolone ze względu na jego typ transportu.",
+        "serverUnknownType": "W konfiguracji serwera zadeklarowano nieznany typ transportu „{0}”.",
+        "serverUnsupportedTransport": "Transport MCP „{0}” nie jest obsługiwany.",
+        "stat": {
+          "oneServer": "1 serwer MCP",
+          "servers": "{0} Serwery MCP"
+        },
+        "uninstalled": "Odinstalowano wtyczkę agenta „{0}”.",
+        "unknownManifestField": "Ignorowanie nieznanego pola „{0}” w pliku „plugin.json”.",
+        "unlinked": "Wtyczka niepowiązanego agenta „{0}”.",
+        "updated": "Zaktualizowano wtyczkę agenta „{0}”.",
+        "warning": {
+          "fix": "Pliki tej wtyczki różnią się od tych, które zostały zainstalowane. Kliknij „Napraw wtyczkę”, aby ponownie pobrać zatwierdzoną zawartość.",
+          "linkStale": "Ta wtyczka została zainstalowana z rejestru, ale nie figuruje już w nim. Kliknij „Usuń powiązanie”, aby usunąć powiązanie z rejestrem i zachować pliki, lub „Odinstaluj”, aby usunąć wtyczkę.",
+          "manual": "Ten katalog nie został zainstalowany z rejestru. Odwołania do rekordów wskazujących jego pochodzenie bez zmiany zawartości plików.",
+          "notInRegistry": "Nie znajduje się w rejestrze"
+        },
+        "watcherStopped": "Przerwano monitorowanie folderu wtyczek agenta pod kątem zmian. Zainstalowane wtyczki mogą już nie być automatycznie odświeżane. Aby wznowić odświeżanie, należy ponownie załadować okno."
       },
       "skill": {
         "action": {
@@ -2184,7 +2409,6 @@
       "missingConfiguration": "Brakuje lub nie ma zastosowania dynamiczna konfiguracja „{0}: {1}”.",
       "pause": "pauza",
       "pauseAll": "Wstrzymaj wszystko",
-      "reveal": "Ujawnij",
       "step": "krok",
       "taskTerminatedBySignal": "Zadanie „{0}” zakończone przez sygnał {1}.",
       "taskTerminatedForUnknownReason": "Zadanie „{0}” zostało zakończone z nieznanych przyczyn.",
@@ -2295,12 +2519,17 @@
         "openAIChatView": "Otwórz teraz widok czatu AI, aby dowiedzieć się, jak zacząć!"
       },
       "apiComparator": "{0} Zgodność API",
+      "markStepUndone": "Oznaczyć jako cofnięte",
       "newExtension": "Tworzenie nowego rozszerzenia",
       "newPlugin": "Tworzenie nowej wtyczki",
+      "noWalkthroughs": "Nie są dostępne żadne instrukcje krok po kroku.",
+      "openAiConfiguration": "Konfiguracja OpenAI",
+      "resetWalkthroughProgress": "Zresetuj postęp w samouczku",
       "startup-editor": {
         "welcomePage": "Otwórz stronę powitalną zawierającą informacje pomocne w rozpoczęciu pracy z programem {0} i rozszerzeniami."
       },
-      "telemetry": "Wykorzystanie danych i telemetria"
+      "telemetry": "Wykorzystanie danych i telemetria",
+      "walkthroughLinkFailed": "Nie udało się otworzyć pliku „{0}”: {1}"
     },
     "keybinding-schema-updater": {
       "deprecation": "Zamiast tego użyj klauzuli „when”."
@@ -2570,6 +2799,7 @@
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Zmodyfikuj ostatnie zatwierdzenie",
       "changeRepository": "Zmień repozytorium...",
+      "copyCommitHash": "Skopiuj skrót commit",
       "dirtyDiff": {
         "close": "Zamknij Zmień Podgląd"
       },
@@ -2580,7 +2810,13 @@
       "noChanges": "Brak zmienionych plików.",
       "noHistory": "Brak historii kontroli wersji.",
       "noHistoryForError": "Nie ma historii dostępnej dla {0}",
+      "openCommit": "Otwórz Commit",
+      "pickHistoryItemRefs": "Wybierz opcję „Odwołanie do elementu historii...”",
+      "pickHistoryItemRefsPlaceholder": "Wybierz jedno lub więcej odniesień do pozycji historii",
       "prepositionIn": "w",
+      "refPickerBranches": "gałęzie",
+      "refPickerRemoteBranches": "gałęzie zdalne",
+      "refPickerTags": "tagi",
       "unamend": "Niezmienny",
       "unamendCommit": "Niezmienione zatwierdzenie"
     },

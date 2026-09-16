@@ -28,9 +28,13 @@ import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdo
  */
 export type ExtensionCardTrust = 'verified' | 'unverified' | 'unknown';
 
-/** Markdown (or plain text) tooltip shown when hovering the card. */
+/** Markdown, plain text or a prepared element as the tooltip shown when hovering the card. */
 export interface ExtensionCardHover {
-    readonly content: string | MarkdownString;
+    /**
+     * An element when the tooltip needs markup the markdown renderer cannot express - the renderer
+     * escapes HTML, so a coloured run of text has to be built as DOM.
+     */
+    readonly content: string | MarkdownString | HTMLElement;
     readonly hoverService: HoverService;
     /** Defaults to `'right'`. */
     readonly position?: HoverPosition;

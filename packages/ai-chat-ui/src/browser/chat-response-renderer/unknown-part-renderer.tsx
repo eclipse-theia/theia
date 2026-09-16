@@ -19,7 +19,6 @@ import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { ChatResponseContent, UnknownChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
-import * as React from '@theia/core/shared/react';
 import { codicon } from '@theia/core/lib/browser';
 
 @injectable()

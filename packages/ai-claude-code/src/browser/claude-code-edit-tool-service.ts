@@ -85,7 +85,7 @@ export class ClaudeCodeEditToolServiceImpl implements ClaudeCodeEditToolService 
     @inject(FileEditBackupService)
     protected readonly backupService: FileEditBackupService;
 
-    @inject(ILogger) @named('claude-code')
+    @inject(ILogger) @named('ai-claude-code:ClaudeCodeEditToolServiceImpl')
     protected readonly logger: ILogger;
 
     private readonly contentReplacer = new ContentReplacerV1Impl();

@@ -33,7 +33,8 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
 
     constructor(
         @inject(ProcessManager) protected readonly processManager: ProcessManager,
-        @inject(ILogger) @named('terminal') protected readonly logger: ILogger
+        @inject(ILogger) @named('terminal:BaseTerminalServer')
+        protected readonly logger: ILogger
     ) {
         processManager.onDelete(id => {
             const toDispose = this.terminalToDispose.get(id);
@@ -119,7 +120,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         if (term && term instanceof TerminalProcess) {
             term.resize(cols, rows);
         } else {
-            console.warn("Couldn't resize terminal " + id + ", because it doesn't exist.");
+            this.logger.warn("Couldn't resize terminal " + id + ", because it doesn't exist.");
         }
     }
 

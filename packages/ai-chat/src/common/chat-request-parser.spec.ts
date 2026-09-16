@@ -27,7 +27,7 @@ import { AgentDelegationTool } from '../browser/agent-delegation-tool';
 
 describe('ChatRequestParserImpl', () => {
     /** Command names the stubbed `PromptService` knows about. Anything else is not a command. */
-    const KNOWN_COMMANDS = ['hello', 'explain', 'compare', 'cmd', 'summarize', 'skill-one', 'skill-two'];
+    const KNOWN_COMMANDS = ['hello', 'explain', 'compare', 'cmd', 'summarize', 'skill-one', 'skill-two', 'bigquery:query-builder', 'io.github.acme_tools:my-skill'];
     /** Prompt fragments that are not marked as commands, but can still be invoked by their id. */
     const KNOWN_FRAGMENT_IDS = ['coder-system'];
 
@@ -708,6 +708,44 @@ describe('ChatRequestParserImpl', () => {
 
                 expect(result.parts.length).to.equal(1);
                 expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('coder-system');
+            });
+
+            it('parses a qualified command name containing a colon as one command', async () => {
+                // A skill supplied by an installed artifact is addressed as `<qualifier>:<skill>`, so
+                // the colon has to be part of the command name rather than terminate it.
+                const text = '/bigquery:query-builder';
+                const result = await parse(text);
+
+                expect(result.parts.length).to.equal(1);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('bigquery:query-builder');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('parses a qualified command name with arguments', async () => {
+                const text = '/bigquery:query-builder count the rows';
+                const result = await parse(text);
+
+                expect(result.parts.length).to.equal(1);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('bigquery:query-builder|count the rows');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('parses a qualified command name whose qualifier contains periods', async () => {
+                // The qualifier is the plugin's directory name, which is derived from its identifier -
+                // `io.github.acme/tools` becomes `io.github.acme_tools`, periods and all. Without them
+                // in the charset the token falls through to the model as plain text, with no error.
+                const text = '/io.github.acme_tools:my-skill';
+                const result = await parse(text);
+
+                expect(result.parts.length).to.equal(1);
+                expect((result.parts[0] as ParsedChatRequestVariablePart).variableArg).to.equal('io.github.acme_tools:my-skill');
+                expectFullCoverage(result.parts, text);
+            });
+
+            it('leaves an unknown colon-separated slash token as plain text', async () => {
+                // Widening the command charset must not turn arbitrary text into a command.
+                await expectPlainText('/unknown:thing');
+                await expectPlainText('/io.github.other_tools:my-skill');
             });
 
             it('keeps trailing whitespace out of the command part', async () => {

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, optional, postConstruct } from 'inversify';
+import { inject, injectable, optional, postConstruct, named } from 'inversify';
 import { ILogger } from '../common/logger';
 import { Event, Emitter } from '../common/event';
 import { DefaultFrontendApplicationContribution } from './frontend-application-contribution';
@@ -82,7 +82,7 @@ export abstract class AbstractConnectionStatusService implements ConnectionStatu
 
     protected connectionStatus: ConnectionStatus = ConnectionStatus.ONLINE;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('core:AbstractConnectionStatusService')
     protected logger: ILogger;
 
     constructor(@inject(ConnectionStatusOptions) @optional() protected readonly options: ConnectionStatusOptions = ConnectionStatusOptions.DEFAULT) { }
@@ -121,6 +121,9 @@ export class FrontendConnectionStatusService extends AbstractConnectionStatusSer
 
     @inject(WebSocketConnectionSource) protected readonly wsConnectionProvider: WebSocketConnectionSource;
     @inject(PingService) protected readonly pingService: PingService;
+
+    @inject(ILogger) @named('core:FrontendConnectionStatusService')
+    protected override readonly logger: ILogger;
 
     @postConstruct()
     protected init(): void {
@@ -177,7 +180,8 @@ export class ApplicationConnectionStatusContribution extends DefaultFrontendAppl
     constructor(
         @inject(ConnectionStatusService) protected readonly connectionStatusService: ConnectionStatusService,
         @inject(StatusBar) protected readonly statusBar: StatusBar,
-        @inject(ILogger) protected readonly logger: ILogger
+        @inject(ILogger) @named('core:ApplicationConnectionStatusContribution')
+        protected readonly logger: ILogger
     ) {
         super();
         this.connectionStatusService.onStatusChange(state => this.onStateChange(state));

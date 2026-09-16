@@ -16,7 +16,7 @@
 
 import { CancellationToken, generateUuid, ILogger, PreferenceService } from '@theia/core';
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { inject, injectable, LazyServiceIdentifier } from '@theia/core/shared/inversify';
+import { inject, injectable, LazyServiceIdentifier, named } from '@theia/core/shared/inversify';
 import {
     OutputChannel,
     OutputChannelManager,
@@ -97,8 +97,8 @@ export class ClaudeCodeFrontendService {
     @inject(OutputChannelManager)
     protected readonly outputChannelManager: OutputChannelManager;
 
-    @inject(ILogger)
-    protected logger: ILogger;
+    @inject(ILogger) @named('ai-claude-code:ClaudeCodeFrontendService')
+    protected readonly logger: ILogger;
 
     protected streams = new Map<string, StreamState>();
 

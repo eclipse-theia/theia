@@ -16,8 +16,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { MenuPath, CommandRegistry, Disposable, DisposableCollection, nls, CommandMenu, AcceleratorSource, ContextExpressionMatcher, environment } from '@theia/core';
+import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
+import { MenuPath, CommandRegistry, Disposable, DisposableCollection, nls, CommandMenu, AcceleratorSource, ContextExpressionMatcher, environment, ILogger } from '@theia/core';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { DeployedPlugin, IconUrl, Menu } from '../../../common';
@@ -47,6 +47,9 @@ export class MenusContributionPointHandler {
 
     @inject(QuickCommandService) @optional()
     private readonly quickCommandService: QuickCommandService;
+
+    @inject(ILogger) @named('plugin-ext:MenusContributionPointHandler')
+    protected readonly logger: ILogger;
 
     private initialized = false;
     private initialize(): void {
@@ -100,7 +103,7 @@ export class MenusContributionPointHandler {
                         const { group, order } = this.parseGroup(item.group);
                         const { submenu, command } = item;
                         if (submenu && command) {
-                            console.warn(
+                            this.logger.warn(
                                 `Menu item ${command} from plugin ${plugin.metadata.model.id} contributed both submenu and command. Only command will be registered.`
                             );
                         }
@@ -111,7 +114,7 @@ export class MenusContributionPointHandler {
 
                                 const cmd = this.commandRegistry.getCommand(command);
                                 if (!cmd) {
-                                    console.debug(`No label for action menu node: No command "${command}" exists.`);
+                                    this.logger.debug(`No label for action menu node: No command "${command}" exists.`);
                                     return;
                                 }
                                 const label = cmd.label || cmd.id;
@@ -159,8 +162,8 @@ export class MenusContributionPointHandler {
                         }
                     }
                 } catch (error) {
-                    console.warn(`Failed to register a menu item for plugin ${plugin.metadata.model.id} contributed to ${contributionPoint}`, item);
-                    console.debug(error);
+                    this.logger.warn(`Failed to register a menu item for plugin ${plugin.metadata.model.id} contributed to ${contributionPoint}`, item);
+                    this.logger.debug(error);
                 }
             }
         }

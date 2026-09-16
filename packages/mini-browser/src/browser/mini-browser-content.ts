@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import * as PDFObject from 'pdfobject';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@lumino/messaging';
 import URI from '@theia/core/lib/common/uri';
-import { ILogger } from '@theia/core/lib/common/logger';
+import { ILogger } from '@theia/core';
 import { Emitter } from '@theia/core/lib/common/event';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
@@ -162,7 +162,7 @@ export type MiniBrowserContentFactory = (props: MiniBrowserProps) => MiniBrowser
 @injectable()
 export class MiniBrowserContent extends BaseWidget {
 
-    @inject(ILogger)
+    @inject(ILogger) @named('mini-browser:MiniBrowserContent')
     protected readonly logger: ILogger;
 
     @inject(WindowService)
@@ -622,7 +622,7 @@ export class MiniBrowserContent extends BaseWidget {
                 clearTimeout(this.frameLoadTimeout);
                 this.hideLoadIndicator();
                 this.showErrorBar(String(e));
-                console.log(e);
+                this.logger.info(e);
             }
         }
     }

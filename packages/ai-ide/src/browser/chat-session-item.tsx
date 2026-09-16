@@ -187,15 +187,13 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
 
     const handleMouseLeave = React.useCallback(() => {
         hoverActiveRef.current = false;
-        hoverService.cancelHover();
-    }, [hoverService]);
+    }, []);
 
     const handleMouseOver = React.useCallback((e: React.MouseEvent) => {
         if ((e.target as Element).closest('.theia-chat-session-item-action')) {
             hoverActiveRef.current = false;
-            hoverService.cancelHover();
         }
-    }, [hoverService]);
+    }, []);
 
     const handleKeyDown = React.useCallback((e: React.KeyboardEvent) => {
         if (isActivationKey(e)) {

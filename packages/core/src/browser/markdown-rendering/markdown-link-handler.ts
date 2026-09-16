@@ -20,12 +20,27 @@ import URI from '../../common/uri';
 import { open, OpenerService } from '../opener-service';
 
 /**
+ * Marks an element whose markdown links are already routed through an {@link OpenerService}.
+ *
+ * Renderers that install their own link handling declare it with {@link markMarkdownLinksWired},
+ * so that {@link wireMarkdownLinkHandler} does not add a second handler and open every link twice.
+ */
+export const MARKDOWN_LINKS_WIRED_ATTRIBUTE = 'data-theia-markdown-links-wired';
+
+/** Declares that the element's markdown links are already routed through an {@link OpenerService}. */
+export function markMarkdownLinksWired(root: HTMLElement): void {
+    root.setAttribute(MARKDOWN_LINKS_WIRED_ATTRIBUTE, 'true');
+}
+
+/**
  * Wires up anchor clicks inside a rendered markdown element so that they are routed
  * through the {@link OpenerService} instead of relying on default browser navigation.
  * Honors {@link MarkdownString.isTrusted} for `command:` URIs.
  *
  * Also sets the `title` attribute on each anchor to its `href` (when no title is set)
  * so users can hover to see the link target.
+ *
+ * Does nothing if the element's links are already wired, see {@link markMarkdownLinksWired}.
  *
  * @returns a {@link Disposable} that removes the click listener.
  */
@@ -34,6 +49,10 @@ export function wireMarkdownLinkHandler(
     source: MarkdownString,
     openerService: OpenerService
 ): Disposable {
+    if (root.hasAttribute(MARKDOWN_LINKS_WIRED_ATTRIBUTE)) {
+        return Disposable.NULL;
+    }
+    markMarkdownLinksWired(root);
     for (const anchor of root.querySelectorAll('a')) {
         const href = anchor.getAttribute('href');
         if (href && !anchor.hasAttribute('title')) {
@@ -57,5 +76,8 @@ export function wireMarkdownLinkHandler(
         }
     };
     root.addEventListener('click', handleClick);
-    return Disposable.create(() => root.removeEventListener('click', handleClick));
+    return Disposable.create(() => {
+        root.removeEventListener('click', handleClick);
+        root.removeAttribute(MARKDOWN_LINKS_WIRED_ATTRIBUTE);
+    });
 }

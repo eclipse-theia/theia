@@ -201,12 +201,29 @@ describe('MCPServerEditor OAuth form handling', () => {
         editor = container.get(MCPServerEditorImpl);
     });
 
+    function localFormData(overrides: Partial<MCPServerFormData>): MCPServerFormData {
+        return { ...remoteFormData({}), name: 'local-server', serverType: 'local', command: 'node', serverUrl: '', ...overrides };
+    }
+
+    it('stores each argument verbatim, so one containing a space stays a single argument', async () => {
+        await editor.save(localFormData({ args: ['--root', '/home/me/My Documents', '--verbose'] }));
+
+        expect(prefs.snapshot<Record<string, { args?: string[] }>>(MCP_SERVERS_PREF)!['local-server'].args)
+            .to.deep.equal(['--root', '/home/me/My Documents', '--verbose']);
+    });
+
+    it('drops blank arguments rather than writing empty strings', async () => {
+        await editor.save(localFormData({ args: ['--root', '   ', ''] }));
+
+        expect(prefs.snapshot<Record<string, { args?: string[] }>>(MCP_SERVERS_PREF)!['local-server'].args).to.deep.equal(['--root']);
+    });
+
     function remoteFormData(overrides: Partial<MCPServerFormData>): MCPServerFormData {
         return {
             name: 'oauth-server',
             serverType: 'remote',
             command: '',
-            args: '',
+            args: [],
             env: '',
             serverUrl: 'https://mcp.example.com/mcp',
             serverAuthToken: '',
@@ -348,6 +365,54 @@ describe('MCPServerEditor OAuth form handling', () => {
             'oauth-server': {
                 command: 'npx',
                 autostart: false,
+                deferLoading: false
+            }
+        });
+    });
+
+    it('preserves the Agent Plugin fields of a local server, which the dialog never edits', async () => {
+        await prefs.set(MCP_SERVERS_PREF, {
+            'oauth-server': {
+                command: 'node',
+                cwd: '/plugins/io.example_bq',
+                pluginRoot: '/plugins/io.example_bq',
+                pluginData: '/plugin-data/io.example_bq',
+                registryMetadata: { pluginId: 'io.example/bq' }
+            }
+        });
+
+        await editor.save(remoteFormData({ serverType: 'local', command: 'node', args: ['server.js'], autostart: true }));
+
+        expect(prefs.snapshot(MCP_SERVERS_PREF)).to.deep.equal({
+            'oauth-server': {
+                command: 'node',
+                args: ['server.js'],
+                cwd: '/plugins/io.example_bq',
+                pluginRoot: '/plugins/io.example_bq',
+                pluginData: '/plugin-data/io.example_bq',
+                autostart: true,
+                deferLoading: false,
+                registryMetadata: { pluginId: 'io.example/bq' }
+            }
+        });
+    });
+
+    it('drops the Agent Plugin fields when a local plugin server is switched to remote', async () => {
+        await prefs.set(MCP_SERVERS_PREF, {
+            'oauth-server': {
+                command: 'node',
+                cwd: '/plugins/io.example_bq',
+                pluginRoot: '/plugins/io.example_bq',
+                pluginData: '/plugin-data/io.example_bq'
+            }
+        });
+
+        await editor.save(remoteFormData({ serverType: 'remote', autostart: true }));
+
+        expect(prefs.snapshot(MCP_SERVERS_PREF)).to.deep.equal({
+            'oauth-server': {
+                serverUrl: 'https://mcp.example.com/mcp',
+                autostart: true,
                 deferLoading: false
             }
         });

@@ -24,11 +24,21 @@ import {
     COPILOT_AUTH_SERVICE_PATH,
     CopilotAuthServiceClient
 } from '../common';
-import { CopilotOAuthConfig, DEFAULT_COPILOT_OAUTH_CONFIG } from '../common/copilot-oauth-config';
 import { CopilotLanguageModelsManagerImpl } from './copilot-language-models-manager-impl';
+import { CopilotSdkClientProvider } from './copilot-sdk-client-provider';
+import { CopilotSdkLoader } from './copilot-sdk-loader';
+import { CopilotCliAuthProvider } from './copilot-cli-auth-provider';
+import { CopilotCliLocator } from './copilot-cli-locator';
+import { CopilotCredentialStore } from './copilot-credential-store';
 import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
 
 const copilotConnectionModule = ConnectionContainerModule.create(({ bind }) => {
+    bind(CopilotCliLocator).toSelf().inSingletonScope();
+    bind(CopilotSdkLoader).toSelf().inSingletonScope();
+    bind(CopilotCredentialStore).toSelf().inSingletonScope();
+    bind(CopilotSdkClientProvider).toSelf().inSingletonScope();
+    bind(CopilotCliAuthProvider).toSelf().inSingletonScope();
+
     bind(CopilotAuthServiceImpl).toSelf().inSingletonScope();
     bind(CopilotAuthService).toService(CopilotAuthServiceImpl);
 
@@ -55,6 +65,5 @@ const copilotConnectionModule = ConnectionContainerModule.create(({ bind }) => {
 });
 
 export default new ContainerModule(bind => {
-    bind(CopilotOAuthConfig).toConstantValue(DEFAULT_COPILOT_OAUTH_CONFIG);
     bind(ConnectionContainerModule).toConstantValue(copilotConnectionModule);
 });

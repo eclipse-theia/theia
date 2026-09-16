@@ -405,9 +405,10 @@ export class ConfirmDialog extends AbstractDialog<boolean> {
     protected confirmed = true;
 
     constructor(
-        @inject(ConfirmDialogProps) protected override readonly props: ConfirmDialogProps
+        @inject(ConfirmDialogProps) protected override readonly props: ConfirmDialogProps,
+        @unmanaged() options?: Widget.IOptions
     ) {
-        super(props);
+        super(props, options);
 
         this.contentNode.appendChild(this.createMessageNode(this.props.msg));
         this.appendCloseButton(props.cancel);

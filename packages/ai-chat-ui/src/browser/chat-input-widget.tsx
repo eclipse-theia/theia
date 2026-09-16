@@ -28,10 +28,10 @@ import {
 import { mergeReasoningSettings } from '@theia/ai-core/lib/browser/frontend-language-model-service';
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
-import { FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
+import { AI_SHOW_SETTINGS_COMMAND, FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
 import { AISettingsService, PromptService } from '@theia/ai-core/lib/common';
 import { CommandService, DisposableCollection, Emitter, InMemoryResources, MessageService, URI, nls, Disposable, ILogger } from '@theia/core';
-import { CommonCommands, ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, HoverService, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -39,15 +39,15 @@ import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional, postConstruct, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { IMouseEvent, Range } from '@theia/monaco-editor-core';
+import { IMouseEvent, IPosition } from '@theia/monaco-editor-core';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service';
 import { ChatInputAgentSuggestions } from './chat-input-agent-suggestions';
+import { computeRevealScrollDelta } from './chat-input-scroll-util';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
 import { ContextVariablePicker } from './context-variable-picker';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
-import { IModelDeltaDecoration } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 import { SuggestController } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggestController';
 import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-history';
@@ -302,7 +302,7 @@ export class AIChatInputWidget extends ReactWidget {
                 });
                 this.savedReasoning = { level };
             } catch (error) {
-                console.error('Failed to persist reasoning selection:', error);
+                this.logger.error('Failed to persist reasoning selection:', error);
             }
         }
 
@@ -383,7 +383,7 @@ export class AIChatInputWidget extends ReactWidget {
                             break;
                         }
                     } catch (error) {
-                        console.warn('Failed to resolve language model for reasoning support:', error);
+                        this.logger.warn('Failed to resolve language model for reasoning support:', error);
                     }
                 }
             }
@@ -483,6 +483,45 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     /** Updates the active chat session's `commonSettings.reasoning`; pass `undefined` to clear. */
+    /**
+     * Re-reads the persisted per-agent reasoning selection and mirrors it into the session, so a change made
+     * outside this widget (the agent detail's Reasoning row, or its reset) shows up in the selector instead of
+     * only taking effect on the next session.
+     */
+    protected async refreshSavedReasoning(agentId: string | undefined): Promise<void> {
+        if (!agentId) {
+            return;
+        }
+        const savedReasoning = (await this.aiSettingsService.getAgentSettings(agentId))?.reasoning;
+        if ((savedReasoning?.level ?? undefined) === (this.savedReasoning?.level ?? undefined)) {
+            return;
+        }
+        this.savedReasoning = savedReasoning ? { ...savedReasoning } : undefined;
+        // Clearing the setting drops the session override too, so the selector falls back to the
+        // preference default or the model's own, matching a freshly opened session.
+        this.applyReasoningToSession(savedReasoning);
+        this.update();
+    }
+
+    /**
+     * Re-reads the persisted server tool selections, which the agent detail can change too. Adopts them into
+     * the live selection only while the user has none of their own pending here, so an external change never
+     * discards edits that are waiting to be saved; the baseline is updated either way, so the "unsaved
+     * changes" state stays measured against what is actually stored.
+     */
+    protected async refreshSavedServerTools(agentId: string | undefined): Promise<void> {
+        if (!agentId) {
+            return;
+        }
+        const saved = (await this.aiSettingsService.getAgentSettings(agentId))?.serverToolSelections;
+        const adoptable = !this.hasServerToolChangesFromSaved();
+        this.savedServerToolSelections = saved ? { ...saved } : undefined;
+        if (adoptable) {
+            this.serverToolSelections = saved ? { ...saved } : {};
+            this.update();
+        }
+    }
+
     protected applyReasoningToSession(reasoning: ReasoningSettings | undefined): void {
         const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
         if (!session) {
@@ -815,7 +854,7 @@ export class AIChatInputWidget extends ReactWidget {
 
             this.update();
         } catch (error) {
-            console.error('Failed to save capability selections to settings:', error);
+            this.logger.error('Failed to save capability selections to settings:', error);
         }
     }
 
@@ -1079,6 +1118,10 @@ export class AIChatInputWidget extends ReactWidget {
         this.toDispose.push(this.aiSettingsService.onDidChange(() => {
             this.updateResolvedDefaultModel();
             this.updateReasoningSupport(this.receivingAgent?.agentId);
+            // The level itself is persisted per agent and also editable outside chat (the agent detail's
+            // Reasoning row), so re-read it rather than only refreshing which levels the model supports.
+            this.refreshSavedReasoning(this.receivingAgent?.agentId);
+            this.refreshSavedServerTools(this.receivingAgent?.agentId);
         }));
         this.loadAvailableModels().then(() => this.update());
         this.updateResolvedDefaultModel();
@@ -1209,20 +1252,23 @@ export class AIChatInputWidget extends ReactWidget {
             percentage
         );
         const summarizeAction = nls.localize('theia/ai/chat-ui/tokenUsageWarningSummarizeAction', 'Summarize Current Session');
-        const newSessionAction = nls.localize('theia/ai/chat-ui/tokenUsageWarningNewSessionAction', 'Start New Chat');
+        const newSessionAction = nls.localizeByDefault('Start New Chat');
         const openSettingsAction = nls.localizeByDefault('Open Settings');
         const selected = await this.messageService.warn(message, summarizeAction, newSessionAction, openSettingsAction);
         if (selected === summarizeAction) {
             this.commandService.executeCommand(ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id).catch(error => {
-                console.error(`Failed to execute '${ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id}' from token usage warning`, error);
+                this.logger.error(`Failed to execute '${ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id}' from token usage warning`, error);
             });
         } else if (selected === newSessionAction) {
             this.commandService.executeCommand(AI_CHAT_HOME.id).catch(error => {
-                console.error(`Failed to execute '${AI_CHAT_HOME.id}' from token usage warning`, error);
+                this.logger.error(`Failed to execute '${AI_CHAT_HOME.id}' from token usage warning`, error);
             });
         } else if (selected === openSettingsAction) {
-            this.commandService.executeCommand(CommonCommands.OPEN_PREFERENCES.id, CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE).catch(error => {
-                console.error(`Failed to execute '${CommonCommands.OPEN_PREFERENCES.id}' from token usage warning`, error);
+            // Deep-links to the threshold preference wherever AI settings live: `@theia/ai-ide` routes this
+            // to the AI Configuration view, and the `@theia/ai-core` default opens the Settings UI on it.
+            // Going through the command keeps this working in apps without @theia/ai-ide.
+            this.commandService.executeCommand(AI_SHOW_SETTINGS_COMMAND.id, CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE).catch(error => {
+                this.logger.error(`Failed to execute '${AI_SHOW_SETTINGS_COMMAND.id}' from token usage warning`, error);
             });
         }
     }
@@ -2028,37 +2074,28 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 props.contextMenuCallback(e.event)
             );
 
-            const updateLineCounts = () => {
-                // We need the line numbers to allow scrolling by using the keyboard
-                const model = editor.getControl().getModel()!;
-                const lineCount = model.getLineCount();
-                const decorations: IModelDeltaDecoration[] = [];
-
-                for (let lineNumber = 1; lineNumber <= lineCount; lineNumber++) {
-                    decorations.push({
-                        range: new Range(lineNumber, 1, lineNumber, 1),
-                        options: {
-                            description: `line-number-${lineNumber}`,
-                            isWholeLine: false,
-                            className: `line-number-${lineNumber}`,
-                        }
-                    });
+            // The editor is laid out at its full content height and the surrounding container
+            // scrolls, so Monaco cannot reveal the cursor itself. Scroll the container to the
+            // visual row of the cursor; for wrapped lines this differs from the start of the model line.
+            // `getTopForPosition` is content-absolute, so subtract the editor's own scroll offset,
+            // which is non-zero while `automaticLayout` has the editor laid out at a clamped height.
+            const revealCursor = (position: IPosition) => {
+                const container = editorContainerRef.current;
+                const control = editor.getControl();
+                const editorNode = control.getDomNode();
+                if (!container || !editorNode) {
+                    return;
                 }
-
-                const lineNumbers = model.getAllDecorations().filter(predicate => predicate.options.description?.startsWith('line-number-'));
-                editor.getControl().removeDecorations(lineNumbers.map(d => d.id));
-                editor.getControl().createDecorationsCollection(decorations);
+                const rowTop = editorNode.getBoundingClientRect().top - container.getBoundingClientRect().top
+                    + control.getTopForPosition(position.lineNumber, position.column) - control.getScrollTop();
+                const rowBottom = rowTop + control.getOption(EditorOption.lineHeight);
+                const delta = computeRevealScrollDelta(rowTop, rowBottom, container.clientHeight);
+                if (delta !== 0) {
+                    container.scrollTop += delta;
+                }
             };
 
-            editor.getControl().getModel()?.onDidChangeContent(() => {
-                updateLineCounts();
-            });
-
-            editor.getControl().onDidChangeCursorPosition(e => {
-                const lineNumber = e.position.lineNumber;
-                const line = editor.getControl().getDomNode()?.querySelector(`.line-number-${lineNumber}`);
-                line?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
-            });
+            editor.getControl().onDidChangeCursorPosition(e => revealCursor(e.position));
 
             editorRef.current = editor;
             props.setEditorRef(editor);
@@ -2066,8 +2103,6 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             if (props.initialValue) {
                 setValue(props.initialValue);
             }
-
-            updateLineCounts();
         };
         createInputElement();
 
@@ -2844,7 +2879,8 @@ const ReasoningSelector: React.FunctionComponent<ReasoningSelectorProps> = React
     return (
         <span onMouseEnter={hoverHandler(hoverService, title)}>
             <SelectComponent
-                className={`theia-ChatInput-ReasoningSelector reasoning-level-${effectiveLevel}${disabled ? ' disabled' : ''}`}
+                // `theia-ReasoningLevelSelector` carries the shared per-level glyphs; the ChatInput class the toolbar sizing.
+                className={`theia-ChatInput-ReasoningSelector theia-ReasoningLevelSelector reasoning-level-${effectiveLevel}${disabled ? ' disabled' : ''}`}
                 options={options}
                 defaultValue={effectiveLevel}
                 onChange={handleChange}

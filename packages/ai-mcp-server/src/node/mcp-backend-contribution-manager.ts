@@ -26,7 +26,7 @@ import { MCPBackendContribution } from './mcp-theia-server';
 @injectable()
 export class MCPBackendContributionManager {
 
-    @inject(ILogger)
+    @inject(ILogger) @named('ai-mcp-server:MCPBackendContributionManager')
     protected readonly logger: ILogger;
 
     @inject(ContributionProvider)

@@ -22,6 +22,9 @@
       "path": "../ai-core"
     },
     {
+      "path": "../ai-core-ui"
+    },
+    {
       "path": "../ai-mcp"
     },
     {
@@ -41,6 +44,9 @@
     },
     {
       "path": "../filesystem"
+    },
+    {
+      "path": "../getting-started"
     },
     {
       "path": "../markers"

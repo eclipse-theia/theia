@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { Emitter, Event } from '../common/event';
 import { Deferred } from '../common/promise-util';
 import { ILogger } from '../common/logger';
@@ -25,7 +25,7 @@ export { FrontendApplicationState };
 @injectable()
 export class FrontendApplicationStateService {
 
-    @inject(ILogger)
+    @inject(ILogger) @named('core:FrontendApplicationStateService')
     protected readonly logger: ILogger;
 
     private _state: FrontendApplicationState = 'init';

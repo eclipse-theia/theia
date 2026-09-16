@@ -72,6 +72,10 @@ export const aiChatPreferences: PreferenceSchema = {
         [SESSION_STORAGE_PREF]: {
             type: 'string',
             enum: ['workspace', 'global'] satisfies SessionStorageScope[],
+            enumItemLabels: [
+                nls.localizeByDefault('Workspace'),
+                nls.localizeByDefault('Global')
+            ],
             enumDescriptions: [
                 nls.localize('theia/ai/chat/sessionStorageScope/workspace',
                     'Store chat sessions in workspace-specific metadata storage. Sessions are associated with the workspace but stored outside the workspace directory.'),

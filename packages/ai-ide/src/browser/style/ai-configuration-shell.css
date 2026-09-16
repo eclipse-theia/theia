@@ -1,0 +1,416 @@
+/********************************************************************************
+ * Copyright (C) 2026 EclipseSource and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.ai-configuration-shell {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--theia-editor-background);
+}
+
+/* Body split */
+.ai-configuration-body {
+  min-height: 0;
+}
+
+/* Tree column: search box + category tree */
+.ai-configuration-tree-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* Floor the tree width so it never collapses to nothing when the view is docked narrow. Lumino's
+     SplitPanel reads this CSS min-width as the child's minimum size. */
+  min-width: 180px;
+  border-right: var(--theia-border-width) solid var(--theia-widget-border);
+  /* Match the Settings UI: no separate panel colour, share the editor background. */
+  background-color: var(--theia-editor-background);
+}
+
+/* Search box + deep-results dropdown */
+.ai-configuration-search {
+  flex: 0 0 auto;
+}
+
+.ai-configuration-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 1.5);
+}
+
+.ai-configuration-search-icon {
+  position: absolute;
+  left: calc(var(--theia-ui-padding) * 1.5 + 6px);
+  color: var(--theia-descriptionForeground);
+  pointer-events: none;
+}
+
+.ai-configuration-search-input {
+  width: 100%;
+  padding-left: 24px;
+  /* Room for the clear button on the right. */
+  padding-right: 24px;
+  /* A visible resting border: `input.border` is undefined in many themes (so `.theia-input` renders no
+     visible border), which made the box hard to spot. Fall back to the widget border, like the Settings UI. */
+  border: var(--theia-border-width) solid var(--theia-input-border, var(--theia-widget-border));
+}
+
+.ai-configuration-search-input:focus {
+  border-color: var(--theia-focusBorder);
+}
+
+/* Clear (x) button inside the search box, shown only while there is a query. */
+.ai-configuration-search-clear {
+  position: absolute;
+  right: calc(var(--theia-ui-padding) * 1.5 + 4px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 3px;
+  color: var(--theia-descriptionForeground);
+  cursor: pointer;
+}
+
+.ai-configuration-search-clear:hover {
+  color: var(--theia-foreground);
+  background: var(--theia-list-hoverBackground);
+}
+
+.ai-configuration-search-clear:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+}
+
+/* Expand/Collapse All controls, directly under the search input. */
+.ai-configuration-tree-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: calc(var(--theia-ui-padding) / 2);
+  padding: 0 calc(var(--theia-ui-padding) * 1.5) calc(var(--theia-ui-padding) / 2);
+}
+
+.ai-configuration-tree-toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--theia-icon-foreground);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+}
+
+.ai-configuration-tree-toolbar-button:hover {
+  background-color: var(--theia-toolbar-hoverBackground, var(--theia-list-hoverBackground));
+}
+
+.ai-configuration-tree-toolbar-button:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+}
+
+.ai-configuration-search-results {
+  position: absolute;
+  top: calc(100% - var(--theia-ui-padding) / 2);
+  left: calc(var(--theia-ui-padding) * 1.5);
+  right: calc(var(--theia-ui-padding) * 1.5);
+  z-index: 900;
+  max-height: 380px;
+  overflow-y: auto;
+  padding: calc(var(--theia-ui-padding) / 2);
+  background-color: var(--theia-editorWidget-background);
+  border: var(--theia-border-width) solid var(--theia-dropdown-border, var(--theia-widget-border));
+  border-radius: 4px;
+  box-shadow: 0 6px 18px var(--theia-widget-shadow);
+}
+
+.ai-configuration-search-result {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  padding: calc(var(--theia-ui-padding) / 2) var(--theia-ui-padding);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.ai-configuration-search-result:hover,
+.ai-configuration-search-result.focused {
+  background-color: var(--theia-list-activeSelectionBackground);
+  color: var(--theia-list-activeSelectionForeground);
+}
+
+.ai-configuration-search-result-type {
+  flex: none;
+  padding: 0 calc(var(--theia-ui-padding) / 2);
+  border: var(--theia-border-width) solid var(--theia-badge-background);
+  border-radius: 8px;
+  font-size: var(--theia-ui-font-size0);
+  color: var(--theia-descriptionForeground);
+  white-space: nowrap;
+}
+
+.ai-configuration-search-result-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-configuration-search-result-label b {
+  color: var(--theia-textLink-foreground);
+  font-weight: 600;
+}
+
+.ai-configuration-search-result-category {
+  margin-left: auto;
+  flex: none;
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+}
+
+.ai-configuration-search-result:hover .ai-configuration-search-result-category,
+.ai-configuration-search-result.focused .ai-configuration-search-result-category {
+  color: inherit;
+}
+
+.ai-configuration-search-empty {
+  padding: var(--theia-ui-padding);
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
+  text-align: center;
+}
+
+/* Category tree */
+.ai-configuration-tree {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  background-color: transparent;
+  /* Keep the tree off the side-bar edge, mirroring the Settings UI gutter. */
+  padding: 0 var(--theia-ui-padding);
+}
+
+/*
+ * Tree icons share the neutral tree foreground. `!important` is required because core's symbol-icon.css
+ * colours `.codicon-symbol-*` (and friends) through a selector that includes a `:not(#id)` clause, giving
+ * it higher specificity than any plain class selector here — without this such icons render tinted. A
+ * fixed 16px box reserves the icon gutter even for nodes without an icon (categories, non-agent items), so
+ * labels stay aligned, and centres the glyph so differently-sized codicons all occupy the same width.
+ */
+.ai-configuration-tree .ai-configuration-tree-node-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+  margin-right: var(--theia-ui-padding);
+  color: var(--theia-icon-foreground) !important;
+}
+
+/* Selected node: the icon tracks the label colour. When the tree is focused the selected label uses the
+   active-selection foreground (e.g. white in the light theme); when selected but not focused it uses the
+   (neutral) inactive-selection foreground. Mirror both so the icon never stays white on an unfocused tree. */
+.ai-configuration-tree .theia-TreeNode.theia-mod-selected .ai-configuration-tree-node-icon {
+  color: var(--theia-list-inactiveSelectionForeground, var(--theia-foreground)) !important;
+}
+
+.ai-configuration-tree.theia-Tree:focus-within .theia-TreeNode.theia-mod-selected .ai-configuration-tree-node-icon {
+  color: var(--theia-list-activeSelectionForeground) !important;
+}
+
+/* Shared trailing slot for a row's decoration: the item state dot and a category's action button occupy the
+   same box, so a dot and a `+` on neighbouring rows are centred on the same vertical line. `flex: none` keeps
+   the slot from being squeezed by a long label, which would otherwise clip the dot to an ellipse. */
+.ai-configuration-tree .ai-configuration-tree-node-decoration {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  /* Zero the native button padding so the action's hover background is a snug square. */
+  padding: 0;
+  margin-left: var(--theia-ui-padding);
+}
+
+/* A category's inline "create item" action (add an agent, add an MCP server). Hidden until the row is
+   hovered or the button itself is focused, so the tree stays quiet while remaining keyboard reachable. */
+.ai-configuration-tree .ai-configuration-tree-node-action {
+  border: none;
+  background: none;
+  color: var(--theia-icon-foreground);
+  cursor: pointer;
+  border-radius: 3px;
+  visibility: hidden;
+}
+
+.ai-configuration-tree .theia-TreeNode:hover .ai-configuration-tree-node-action,
+.ai-configuration-tree .ai-configuration-tree-node-action:focus-visible {
+  visibility: visible;
+}
+
+.ai-configuration-tree .ai-configuration-tree-node-action:hover {
+  background: var(--theia-list-hoverBackground);
+}
+
+.ai-configuration-tree .ai-configuration-tree-node-action:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+}
+
+/* Selected node: the action tracks the label colour, as the node icon does. */
+.ai-configuration-tree .theia-TreeNode.theia-mod-selected .ai-configuration-tree-node-action {
+  color: var(--theia-list-inactiveSelectionForeground, var(--theia-foreground));
+}
+
+.ai-configuration-tree.theia-Tree:focus-within .theia-TreeNode.theia-mod-selected .ai-configuration-tree-node-action {
+  color: var(--theia-list-activeSelectionForeground);
+}
+
+/* "Contributed by extensions" group header: a real section divider (top rule + breathing room + an
+   uppercase caption) rather than a faint floating row. Non-interactive (no hover/selection). */
+.ai-configuration-tree-separator {
+  margin-top: calc(var(--theia-ui-padding) * 1.5);
+  border-top: var(--theia-border-width) solid var(--theia-widget-border);
+  pointer-events: none;
+  height: auto;
+}
+
+.ai-configuration-tree-separator .theia-TreeNodeContent {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: default;
+  padding-top: var(--theia-ui-padding);
+}
+
+/* In-pane category header (icon + name), aligned with the centred page column below it. */
+.ai-configuration-category-header {
+  max-width: 860px;
+  margin: 0 auto calc(var(--theia-ui-padding) * 2);
+}
+
+/* Detail pane */
+.ai-configuration-detail-widget {
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--theia-editor-background);
+}
+
+.ai-configuration-detail-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.ai-configuration-detail-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 2);
+  border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
+  font-size: var(--theia-ui-font-size1);
+}
+
+.ai-configuration-detail-breadcrumb-segment {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.ai-configuration-detail-breadcrumb-icon {
+  color: var(--theia-icon-foreground);
+}
+
+.ai-configuration-detail-breadcrumb-separator {
+  color: var(--theia-descriptionForeground);
+}
+
+.ai-configuration-detail-scope-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 2);
+  background-color: var(--theia-editorInfo-background, var(--theia-editorWidget-background));
+  border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
+}
+
+.ai-configuration-detail-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  /* The larger left padding reserves room for the setting rows' left gutter (gear + modified indicator),
+     which hangs in the margin left of the aligned content, so it is never clipped or jammed against the
+     pane edge. */
+  padding: calc(var(--theia-ui-padding) * 2) calc(var(--theia-ui-padding) * 3) calc(var(--theia-ui-padding) * 2) calc(var(--theia-ui-padding) * 6);
+}
+
+/* In-view cross-reference links (e.g. an agent linking to a model alias) act as buttons. */
+.ai-configuration-detail-body a {
+  cursor: pointer;
+}
+
+.ai-configuration-detail-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: calc(var(--theia-ui-padding) * 2);
+  color: var(--theia-descriptionForeground);
+  font-style: italic;
+  text-align: center;
+}
+
+/* Deep-search / navigation highlight flash.
+   The ring matters as much as the background: a collapsible list row paints its header on top of the row
+   element that carries this animation, so a background-only flash is invisible on exactly the rows a
+   cross-page link (an agent capability pointing at its snippet, say) tends to target. `box-shadow` draws
+   outside that header and does not affect layout, so the flash reads on every row shape. */
+.ai-configuration-row-flash {
+  animation: ai-configuration-flash 1.2s ease-out;
+}
+
+@keyframes ai-configuration-flash {
+  0% {
+    background-color: var(--theia-list-hoverBackground);
+    box-shadow: 0 0 0 2px var(--theia-focusBorder);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 2px transparent;
+  }
+}
+
+/* High contrast: as in `ai-configuration-components.css`, these states only tint a background, and the
+   high-contrast themes define neither `list.hoverBackground` nor `list.activeSelectionBackground`. The ring
+   uses `contrastActiveBorder`, which exists only there, so other themes are untouched. The focused search
+   result is included because keyboard navigation through the results would otherwise leave no trace. */
+.ai-configuration-search-clear:hover,
+.ai-configuration-tree-toolbar-button:hover,
+.ai-configuration-search-result:hover,
+.ai-configuration-search-result.focused,
+.ai-configuration-tree .ai-configuration-tree-node-action:hover {
+  outline: 1px dotted var(--theia-contrastActiveBorder, transparent);
+  outline-offset: -1px;
+}

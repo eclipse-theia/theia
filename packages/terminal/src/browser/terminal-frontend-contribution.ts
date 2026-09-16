@@ -59,7 +59,7 @@ import { Profiles, terminalAnsiColorMap, TerminalPreferences } from '../common/t
 import { ShellTerminalProfile } from './shell-terminal-profile';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { Color } from '@theia/core/lib/common/color';
-import { ContributionProvider } from '@theia/core';
+import { ContributionProvider, ILogger } from '@theia/core';
 import { TerminalCreationHandler } from './terminal-creation-handler';
 
 export namespace TerminalMenus {
@@ -252,6 +252,9 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     @inject(ContributionProvider) @named(TerminalCreationHandler)
     protected readonly terminalCreationHandlers: ContributionProvider<TerminalCreationHandler>;
 
+    @inject(ILogger) @named('terminal:TerminalFrontendContribution')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     protected init(): void {
         this.shell.onDidChangeCurrentWidget(() => this.updateCurrentTerminal());
@@ -341,7 +344,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             // to the bottom panel without expanding it on startup.
             this.shell.addWidget(termWidget, { area: 'bottom' });
         } catch (error) {
-            console.error('Failed to initialize terminal in default layout', error);
+            this.logger.error('Failed to initialize terminal in default layout', error);
         }
     }
 

@@ -60,7 +60,7 @@ export interface ShellSpecificOptions {
 @injectable()
 export class ProcessTaskRunner implements TaskRunner {
 
-    @inject(ILogger) @named('task')
+    @inject(ILogger) @named('task:ProcessTaskRunner')
     protected readonly logger: ILogger;
 
     @inject(RawProcessFactory)

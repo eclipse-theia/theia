@@ -18,12 +18,13 @@ import * as cookie from 'cookie';
 import * as crypto from 'crypto';
 import * as http from 'http';
 import express = require('express');
-import { inject, injectable } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import { environment } from '../../common/index';
 import { MaybePromise } from '../../common';
 import { BackendApplicationContribution, EarlyExpressMiddleware } from '../backend-application';
 import { WsRequestValidatorContribution } from '../ws-request-validators';
 import { generateUuid } from '../../common/uuid';
+import { ILogger } from '../../common/logger';
 
 export const BrowserConnectionToken = Symbol('BrowserConnectionToken');
 
@@ -78,6 +79,9 @@ export class BrowserConnectionTokenBackendContribution implements BackendApplica
 
     @inject(EarlyExpressMiddleware)
     protected readonly earlyMiddleware: EarlyExpressMiddleware;
+
+    @inject(ILogger) @named('core:BrowserConnectionTokenBackendContribution')
+    protected readonly logger: ILogger;
 
     /**
      * Register the cookie middleware during `initialize()` via `EarlyExpressMiddleware`
@@ -138,6 +142,13 @@ export class BrowserConnectionTokenBackendContribution implements BackendApplica
                 sameSite: 'strict',
                 path: '/'
             });
+            // The static handlers would answer a revalidation of an unchanged page with a 304,
+            // and reverse proxies commonly drop Set-Cookie from 304 replies or answer the
+            // revalidation from their own cache. The browser would then keep the stale token
+            // and every WebSocket handshake would be rejected, with no way to recover short of
+            // a cache-bypassing hard reload. Force a full 200 so the cookie reaches the browser.
+            delete req.headers['if-none-match'];
+            delete req.headers['if-modified-since'];
         }
         next();
     }
@@ -156,7 +167,7 @@ export class BrowserConnectionTokenBackendContribution implements BackendApplica
             const expected = Buffer.from(this.browserConnectionToken.value, 'utf8');
             return received.byteLength === expected.byteLength && crypto.timingSafeEqual(received, expected);
         } catch (error) {
-            console.error(error);
+            this.logger.error(error);
         }
         return false;
     }

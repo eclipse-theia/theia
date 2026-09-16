@@ -14,11 +14,14 @@
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 *******************************************************************************/
 
-import { injectable } from 'inversify';
-import { Measurement, MeasurementOptions, Stopwatch } from '../../common';
+import { injectable, inject, named } from 'inversify';
+import { Measurement, MeasurementOptions, Stopwatch, ILogger } from '../../common';
 
 @injectable()
 export class FrontendStopwatch extends Stopwatch {
+
+    @inject(ILogger) @named('core:FrontendStopwatch')
+    protected override readonly logger: ILogger;
 
     constructor() {
         super({
@@ -51,7 +54,7 @@ export class FrontendStopwatch extends Stopwatch {
                 duration = entries[0].duration ?? Number.NaN;
                 startTime = entries[0].startTime ?? Number.NaN;
             } catch (e) {
-                console.warn(e);
+                this.logger.warn(e);
                 duration = Number.NaN;
                 startTime = Number.NaN;
             }

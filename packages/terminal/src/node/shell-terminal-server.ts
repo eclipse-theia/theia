@@ -53,7 +53,8 @@ export class ShellTerminalServer extends BaseTerminalServer implements IShellTer
     constructor(
         @inject(ShellProcessFactory) protected readonly shellFactory: ShellProcessFactory,
         @inject(ProcessManager) processManager: ProcessManager,
-        @inject(ILogger) @named('terminal') logger: ILogger) {
+        @inject(ILogger) @named('terminal:ShellTerminalServer')
+        protected override readonly logger: ILogger) {
         super(processManager, logger);
     }
 

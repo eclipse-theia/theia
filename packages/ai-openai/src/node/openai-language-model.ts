@@ -27,7 +27,8 @@ import {
     ReasoningSupport,
     resolveCompactionTokenThreshold,
     resolveServerSideCompaction,
-    ServerToolDescriptor
+    ServerToolDescriptor,
+    formatToolCallContentForModel
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
@@ -118,7 +119,8 @@ export class OpenAiModel implements LanguageModel {
         public serverTools?: ServerToolDescriptor[],
         public serverSideCompactionSupport: boolean = false,
         public serverSideCompactionEnabledByDefault: boolean = false,
-        public serverSideCompactionTokenThresholdByDefault?: number
+        public serverSideCompactionTokenThresholdByDefault?: number,
+        public headers?: Record<string, string>
     ) { }
 
     /** Reasoning-level translation lives in {@link openAiReasoningFor}. */
@@ -253,9 +255,11 @@ export class OpenAiModel implements LanguageModel {
         const proxyFetch = createProxyFetch(this.proxy);
 
         if (apiVersion) {
-            return new AzureOpenAI({ apiKey: key, baseURL: this.url, apiVersion: apiVersion, deployment: this.deployment, fetch: proxyFetch });
+            return new AzureOpenAI({
+                apiKey: key, baseURL: this.url, apiVersion: apiVersion, deployment: this.deployment, fetch: proxyFetch, defaultHeaders: this.headers
+            });
         } else {
-            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url, fetch: proxyFetch });
+            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url, fetch: proxyFetch, defaultHeaders: this.headers });
         }
     }
 
@@ -360,8 +364,7 @@ export class OpenAiModelUtils {
             return {
                 role: 'tool',
                 tool_call_id: message.tool_use_id,
-                // content only supports text content so we need to stringify any potential data we have, e.g., images
-                content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
+                content: typeof message.content === 'string' ? message.content : formatToolCallContentForModel(message.content)
             };
         }
         if (LanguageModelMessage.isImageMessage(message) && message.actor === 'user') {

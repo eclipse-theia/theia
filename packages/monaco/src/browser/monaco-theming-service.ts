@@ -163,7 +163,7 @@ export class MonacoThemingService {
     protected updateBodyUiTheme(): void {
         this.toUpdateUiTheme.dispose();
         const type = this.themeService.getCurrentTheme().type;
-        const uiTheme: monaco.editor.BuiltinTheme = type === 'hc' ? 'hc-black' : type === 'light' ? 'vs' : 'vs-dark';
+        const uiTheme: monaco.editor.BuiltinTheme = type === 'hc' ? 'hc-black' : type === 'hcLight' ? 'hc-light' : type === 'light' ? 'vs' : 'vs-dark';
         document.body.classList.add(uiTheme);
         this.toUpdateUiTheme.push(Disposable.create(() => document.body.classList.remove(uiTheme)));
     }

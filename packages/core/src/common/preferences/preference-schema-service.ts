@@ -24,6 +24,7 @@ import { PreferenceScope, ValidPreferenceScopes } from './preference-scope';
 import { PreferenceUtils } from './preference-provider';
 import { ContributionProvider } from '../contribution-provider';
 import { Deferred } from '../promise-util';
+import { ILogger } from '../logger';
 
 export const NO_OVERRIDE = {};
 export const OVERRIDE_PROPERTY = '\\[(.*)\\]$';
@@ -78,6 +79,9 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
     @inject(ContributionProvider) @named(PreferenceContribution)
     protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>;
 
+    @inject(ILogger) @named('core:PreferenceSchemaServiceImpl')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     protected init(): void {
         for (const scope of this.validScopes) {
@@ -128,7 +132,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
 
         for (const [key, property] of Object.entries(schema.properties)) {
             if (this.properties.has(key)) {
-                console.warn(`Property with id '${key}' already exists`);
+                this.logger.warn(`Property with id '${key}' already exists`);
                 continue;
             }
             this.pendingDefaultRegistrationWarnings?.delete(key);
@@ -210,14 +214,14 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
             this.setJSONSchemasProperty(key, updatedProperty);
             this.schemaChangedEmitter.fire();
         } else {
-            console.warn(`Trying to update non-existent property ${key}`);
+            this.logger.warn(`Trying to update non-existent property ${key}`);
         }
     }
 
     protected pendingDefaultRegistrationWarnings: Set<string> | undefined = new Set();
     protected logDefaultRegistrationWarnings(): void {
         if (this.pendingDefaultRegistrationWarnings?.size) {
-            console.warn('Default overrides registered for these keys, but preferences not registered', Array.from(this.pendingDefaultRegistrationWarnings));
+            this.logger.warn('Default overrides registered for these keys, but preferences not registered', Array.from(this.pendingDefaultRegistrationWarnings));
         }
         this.pendingDefaultRegistrationWarnings = undefined;
     }
@@ -226,7 +230,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         if (this.pendingDefaultRegistrationWarnings) {
             this.pendingDefaultRegistrationWarnings.add(key);
         } else {
-            console.warn(`Trying to register default override for non-existent preference: ${key}`);
+            this.logger.warn(`Trying to register default override for non-existent preference: ${key}`);
         }
     }
 
@@ -236,7 +240,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         if (!property) {
             this.logDefaultRegistrationWarning(key);
         } else if (!property.overridable && overrideIdentifier) {
-            console.warn(`Trying to register default override for identifier ${overrideIdentifier} for non-overridable preference: ${key}`);
+            this.logger.warn(`Trying to register default override for identifier ${overrideIdentifier} for non-overridable preference: ${key}`);
         }
 
         let overrides = this.defaultOverrides.get(key);

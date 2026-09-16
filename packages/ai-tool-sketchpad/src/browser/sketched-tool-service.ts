@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DisposableCollection, Emitter, Event, nls, URI } from '@theia/core';
+import { DisposableCollection, Emitter, Event, nls, URI, ILogger } from '@theia/core';
 import { FrontendApplicationContribution, QuickInputService } from '@theia/core/lib/browser';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
 import {
@@ -52,6 +52,9 @@ export class SketchedToolServiceImpl implements SketchedToolService, FrontendApp
     @inject(QuickInputService)
     protected readonly quickInputService: QuickInputService;
 
+    @inject(ILogger) @named('ai-tool-sketchpad:SketchedToolServiceImpl')
+    protected readonly logger: ILogger;
+
     protected tools: SketchedToolDefinition[] = [];
     protected fileUri: URI | undefined;
     protected readonly toDispose = new DisposableCollection();
@@ -67,7 +70,13 @@ export class SketchedToolServiceImpl implements SketchedToolService, FrontendApp
         this.toDispose.push(this.onDidChangeSketchedToolsEmitter);
     }
 
-    async onStart(): Promise<void> {
+    onStart(): void {
+        // Defer resolving the config dir and reading sketchedTools.yml from disk so it
+        // doesn't block the frontend startup sequence. Tools still register once loaded.
+        this.doStart().catch(error => this.logger.error('Error starting SketchedToolServiceImpl', error));
+    }
+
+    protected async doStart(): Promise<void> {
         this.fileUri = await this.resolveFileUri();
         await this.loadFromDisk();
         this.watchFile();
@@ -131,17 +140,17 @@ export class SketchedToolServiceImpl implements SketchedToolService, FrontendApp
                 const valid = doc.filter(entry => SketchedToolDefinition.is(entry)) as SketchedToolDefinition[];
                 const skipped = doc.length - valid.length;
                 if (skipped > 0) {
-                    console.debug(`Skipped ${skipped} invalid entr${skipped === 1 ? 'y' : 'ies'} in ${SKETCHED_TOOLS_FILENAME}.`);
+                    this.logger.debug(`Skipped ${skipped} invalid entr${skipped === 1 ? 'y' : 'ies'} in ${SKETCHED_TOOLS_FILENAME}.`);
                 }
                 this.tools = valid.map(SketchedToolDefinition.normalize);
             } else {
-                console.debug(`Invalid ${SKETCHED_TOOLS_FILENAME} content, ignoring.`);
+                this.logger.debug(`Invalid ${SKETCHED_TOOLS_FILENAME} content, ignoring.`);
                 this.tools = [];
             }
             this.registerAllTools();
             this.onDidChangeSketchedToolsEmitter.fire();
         } catch (e) {
-            console.debug(`Error loading ${SKETCHED_TOOLS_FILENAME}: ${e.message}`, e);
+            this.logger.debug(`Error loading ${SKETCHED_TOOLS_FILENAME}: ${e.message}`, e);
         } finally {
             this.loading = false;
         }
@@ -165,7 +174,7 @@ export class SketchedToolServiceImpl implements SketchedToolService, FrontendApp
             }
             this.lastPersistedContent = yamlContent;
         } catch (e) {
-            console.error(`Error persisting ${SKETCHED_TOOLS_FILENAME}: ${e.message}`, e);
+            this.logger.error(`Error persisting ${SKETCHED_TOOLS_FILENAME}: ${e.message}`, e);
         }
     }
 
@@ -191,11 +200,11 @@ export class SketchedToolServiceImpl implements SketchedToolService, FrontendApp
         for (const def of this.tools) {
             const name = def.name.trim();
             if (!SketchedToolDefinition.NAME_PATTERN.test(name)) {
-                console.warn(`Skipping sketched tool "${def.name}": name is empty or contains invalid characters.`);
+                this.logger.warn(`Skipping sketched tool "${def.name}": name is empty or contains invalid characters.`);
                 continue;
             }
             if (registeredNames.has(name)) {
-                console.warn(`Skipping sketched tool "${name}": another tool with the same name is already registered.`);
+                this.logger.warn(`Skipping sketched tool "${name}": another tool with the same name is already registered.`);
                 continue;
             }
             registeredNames.add(name);

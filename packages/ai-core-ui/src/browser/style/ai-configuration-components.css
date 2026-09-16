@@ -1,0 +1,1440 @@
+/********************************************************************************
+ * Copyright (C) 2026 EclipseSource and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/* Detail page frame. Every category body is centered in a bounded column with a consistent
+   look (adopted from the former "AI Features" General/Models page). */
+.ai-configuration-page {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) * 2);
+  /* `width: 100%` (capped by `max-width`) keeps the column pinned to the pane width. Without it the
+     centered, max-width block shrink-wraps to its content inside the scrolling flex detail body, so
+     filtering a list down to a single narrow row would visibly narrow the whole page. */
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding-bottom: calc(var(--theia-ui-padding) * 4);
+}
+
+/* Section */
+.ai-configuration-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--theia-ui-padding);
+}
+
+.ai-configuration-section-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--theia-ui-padding);
+  padding-bottom: calc(var(--theia-ui-padding) / 2);
+  border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
+}
+
+.ai-configuration-section-title-text {
+  font-size: var(--theia-ui-font-size2);
+  font-weight: 600;
+}
+
+/* A foldable section's whole title line is the toggle, so it takes the pointer and a focus ring. No hover
+   tint: the chevron already says it is foldable, and the read-only collapsible subsections of the agent
+   detail behave the same way. */
+.ai-configuration-section-title.foldable {
+  cursor: pointer;
+  user-select: none;
+  border-radius: 3px;
+}
+
+.ai-configuration-section-title.foldable:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: 2px;
+}
+
+.ai-configuration-section-chevron {
+  align-self: center;
+  color: var(--theia-descriptionForeground);
+}
+
+/* Entry count next to the title: a neutral pill, so a folded section still states its size. The border is
+   drawn from `widget.border`, which the high-contrast themes define (and other themes do not), because the
+   badge background is black there and would otherwise merge into the page. */
+.ai-configuration-section-count {
+  align-self: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background-color: var(--theia-badge-background);
+  color: var(--theia-badge-foreground);
+  font-size: var(--theia-ui-font-size0);
+  border: var(--theia-border-width) solid var(--theia-widget-border, transparent);
+}
+
+.ai-configuration-section-subtitle {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+}
+
+/* Right-aligned actions on a section's title line (e.g. the tools "copy all" toolbar). */
+.ai-configuration-section-title-actions {
+  margin-left: auto;
+  align-self: center;
+  display: inline-flex;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.ai-configuration-section-content {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) * 1.5);
+}
+
+/* Settings row: title and description on the left, a control on the right (or full-width below). The
+   left gutter mirrors the Settings UI: a hover-revealed gear on the far left, then the modified indicator
+   line at the content's left edge (gear OUTSIDE the line, to its left), then the content. The left
+   padding reserves that gutter so the gear never shifts the title. */
+.ai-settings-row {
+  position: relative;
+  /* The row box begins at the modified indicator (its left padding is cancelled by an equal negative left
+     margin), so the content lines up with the section title AND the hover background covers only the
+     content — it starts at the indicator and never extends into the gutter. The gear sits further left in
+     the margin (see `.ai-settings-row-actions`), outside the hover background, with only its own hover. */
+  padding: calc(var(--theia-ui-padding) * 1.5) var(--theia-ui-padding) calc(var(--theia-ui-padding) * 1.5) 8px;
+  margin: 2px 0 2px -8px;
+  border-radius: 4px;
+}
+
+.ai-settings-row:hover {
+  background: var(--theia-settings-rowHoverBackground);
+}
+
+/* Modified indicator: a thin vertical line at the row box's left edge (the content's left edge), mirroring
+   the Settings UI's gutter border. The gear sits to the LEFT of this, out in the margin. */
+.ai-settings-row.modified::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: calc(var(--theia-ui-padding) * 1.5);
+  bottom: calc(var(--theia-ui-padding) * 1.5);
+  width: 2px;
+  background: var(--theia-settings-modifiedItemIndicator, var(--theia-editorGutter-modifiedBackground, var(--theia-focusBorder)));
+}
+
+.ai-settings-row-top {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--theia-ui-padding) * 2);
+}
+
+.ai-settings-row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-settings-row-title {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+/* Preference tag badges (e.g. "Experimental"), mirroring the Settings UI's `.preference-tag`. */
+.ai-settings-row-tags {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.ai-settings-row-tag {
+  padding: calc(var(--theia-ui-padding) / 8) calc(var(--theia-ui-padding) / 2);
+  font-size: 0.85em;
+  font-weight: normal;
+  font-style: italic;
+  color: var(--theia-descriptionForeground);
+  background-color: var(--theia-badge-background);
+  border-radius: calc(var(--theia-ui-padding) / 4);
+  border: 1px solid var(--theia-contrastBorder, transparent);
+}
+
+/* Gear affordance on the far left of the gutter, mirroring the Settings UI: it sits OUTSIDE (to the left
+   of) the modified indicator line, ending right at it, and never shifts the title. */
+.ai-settings-row-actions {
+  position: absolute;
+  /* In the margin, left of the row box (and its hover background) and of the modified indicator. */
+  left: -24px;
+  top: calc(var(--theia-ui-padding) * 1.25);
+  display: inline-flex;
+  font-weight: normal;
+}
+
+.ai-settings-row-gear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  /* Zero the default <button> padding so the hover background is a snug 20x20 square, not wider. */
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--theia-descriptionForeground);
+  cursor: pointer;
+  border-radius: 3px;
+  visibility: hidden;
+}
+
+.ai-settings-row:hover .ai-settings-row-gear,
+.ai-settings-row-gear:focus-visible {
+  visibility: visible;
+}
+
+.ai-settings-row-gear:hover {
+  color: var(--theia-foreground);
+  background: var(--theia-list-hoverBackground);
+}
+
+.ai-settings-row-gear:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+}
+
+.ai-settings-row-description {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
+  line-height: 1.5;
+  margin-top: 4px;
+  max-width: 100ch;
+}
+
+.ai-settings-row-description p,
+.ai-settings-row-description ul,
+.ai-settings-row-description ol {
+  margin: 0;
+}
+
+/* Vertical rhythm between adjacent markdown blocks so long, structured descriptions
+   (paragraphs followed by lists) stay scannable instead of collapsing together. */
+.ai-settings-row-description :is(p, ul, ol)+ :is(p, ul, ol) {
+  margin-top: calc(var(--theia-ui-padding) / 1.5);
+}
+
+.ai-settings-row-description ul,
+.ai-settings-row-description ol {
+  padding-left: 1.6em;
+}
+
+.ai-settings-row-description li+li {
+  margin-top: 3px;
+}
+
+/* Keep nested lists snug under their parent item. */
+.ai-settings-row-description li>ul,
+.ai-settings-row-description li>ol {
+  margin-top: 3px;
+}
+
+.ai-settings-row-description a {
+  color: var(--theia-textLink-foreground);
+}
+
+.ai-settings-row-description code {
+  font-family: var(--theia-code-font-family);
+  font-size: var(--theia-ui-font-size0);
+  background: var(--theia-textCodeBlock-background);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+
+.ai-settings-row-control {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+}
+
+.ai-settings-row-below {
+  margin-top: var(--theia-ui-padding);
+}
+
+/* Disabled enum select (SelectComponent has no whole-control disabled prop). */
+.theia-select-component.ai-config-select.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* A settings-styled row that navigates instead of editing a value (kept for non-card lists). */
+.ai-settings-nav-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ai-settings-nav-row:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
+.ai-settings-nav-chevron {
+  align-self: center;
+  color: var(--theia-descriptionForeground);
+}
+
+/* ------------------------------------------------------------------------- *
+ * Unified form controls (shared across every AI configuration page).
+ * A given logical control renders the same everywhere; see
+ * `ai-configuration/components/ai-configuration-controls.tsx`.
+ * ------------------------------------------------------------------------- */
+
+/* Text input */
+.ai-config-input {
+  /* Fill the row up to the same max as the select, so a text input lines up with the select width. */
+  width: 100%;
+  min-width: 240px;
+  max-width: 480px;
+  border: 1px solid var(--theia-dropdown-border);
+}
+
+.ai-config-input-mono {
+  font-family: var(--theia-code-font-family);
+  font-size: var(--theia-ui-font-size1);
+}
+
+/* Wraps the input so a validation message can stack beneath it while the input keeps its own width. */
+.ai-config-input-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) / 2);
+  min-width: 0;
+  width: 100%;
+}
+
+.ai-config-input.error {
+  border-color: var(--theia-inputValidation-errorBorder, var(--theia-errorForeground));
+}
+
+.ai-config-input-error {
+  color: var(--theia-errorForeground);
+  font-size: var(--theia-ui-font-size0);
+}
+
+/* Toggle switch */
+.ai-config-switch {
+  /* `inline-block` so the fixed width/height apply in any context. As a bare <label> it would default to
+     `display: inline` (width/height ignored), which collapsed the absolutely-positioned track to zero in
+     non-flex contexts such as a table cell, leaving only the thumb visible. */
+  display: inline-block;
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.ai-config-switch input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.ai-config-switch-track {
+  position: absolute;
+  inset: 0;
+  /* Off state: a filled neutral pill (clearly visible on light and dark backgrounds); the on state fills
+     with the accent colour (see :checked). The thumb uses the editor background so it always contrasts. */
+  background: var(--theia-descriptionForeground);
+  /* Pill radius so the track is fully round at any height (base and large variants). */
+  border-radius: 999px;
+  transition: background 0.15s;
+  /* The high-contrast themes leave the fill colours below undefined, which left the switch as an (invisible)
+     empty pill. `contrastBorder` exists only in those themes, so this outlines the control there and changes
+     nothing elsewhere. Deliberately an outline and not a border: a border on the track would move the thumb,
+     which is positioned against the track's padding box, off centre. */
+  outline: 1px solid var(--theia-contrastBorder, transparent);
+  outline-offset: -1px;
+}
+
+.ai-config-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  /* Editor background so the knob contrasts both the neutral (off) and accent (on) track on any theme. */
+  background: var(--theia-editor-background);
+  border-radius: 50%;
+  transition: left 0.15s;
+  /* Outlined in high contrast, where the knob and the track can otherwise be the same colour. An outline
+     rather than a border so the knob keeps its exact size and position in every theme. */
+  outline: 1px solid var(--theia-contrastBorder, transparent);
+}
+
+/* `button.background` is undefined in the dark high-contrast theme, which left the checked track unfilled
+   and the switch unreadable; `focusBorder` is defined in every theme, so it stands in there. */
+.ai-config-switch input:checked+.ai-config-switch-track {
+  background: var(--theia-button-background, var(--theia-focusBorder));
+}
+
+.ai-config-switch input:checked+.ai-config-switch-track .ai-config-switch-thumb {
+  left: 18px;
+}
+
+.ai-config-switch input:focus-visible+.ai-config-switch-track {
+  outline: 2px solid var(--theia-focusBorder);
+  outline-offset: 2px;
+}
+
+.ai-config-switch input:disabled {
+  cursor: default;
+}
+
+.ai-config-switch-large {
+  width: 40px;
+  height: 22px;
+}
+
+.ai-config-switch-large .ai-config-switch-thumb {
+  width: 18px;
+  height: 18px;
+}
+
+.ai-config-switch-large input:checked+.ai-config-switch-track .ai-config-switch-thumb {
+  left: 20px;
+}
+
+/* Numeric stepper */
+.ai-config-stepper-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 1.5);
+}
+
+.ai-config-stepper {
+  display: inline-flex;
+  align-items: center;
+  /* Match the standard `.theia-input` box (min-height, border-radius) so the stepper is not taller than
+     the other inputs; only the − / + buttons are extra. */
+  min-height: 28px;
+  border: var(--theia-border-width) solid var(--theia-input-border, var(--theia-widget-border));
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--theia-input-background);
+}
+
+.ai-config-stepper:focus-within {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
+.ai-config-stepper-button {
+  width: 26px;
+  height: 24px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size2);
+}
+
+.ai-config-stepper-button:hover:not(:disabled) {
+  background: var(--theia-list-hoverBackground);
+  color: var(--theia-foreground);
+}
+
+.ai-config-stepper-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ai-config-stepper-input {
+  width: 52px;
+  border: none;
+  text-align: center;
+  font: inherit;
+  padding: 3px 0;
+  outline: none;
+  background: transparent;
+  color: var(--theia-input-foreground);
+}
+
+/* Enum select (the shared SelectComponent). Only constrain the width to line up with the other controls;
+   the padding, border, background and focus ring all come from core's `.theia-select-component`
+   (see core `select-component.css`). Re-declaring them here previously doubled the padding/border and made
+   the control noticeably taller than the standard Theia select. We only raise its `min-height` from core's
+   23px to 28px so it lines up with the text and number inputs, and fill the row width to match the text
+   input. */
+.ai-config-select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 240px;
+  max-width: 480px;
+  min-height: 28px;
+}
+
+/* A reasoning-level select on a configuration page: the shared glyphs (defined with the chat input's
+   selector, which owns the level icons) are inset by this control's own padding, not the chat toolbar's, so
+   the off-level slash stays centered on the bulb. */
+.ai-config-select.theia-ReasoningLevelSelector.theia-select-component {
+  /* `.theia-select-component`'s own `padding: 0 8px` from `@theia/core`, since this control does not
+     override it the way the chat toolbar's compact variant does. */
+  --theia-reasoning-glyph-inset: 8px;
+}
+
+/* Error state, e.g. a prompt variant selection that points at a template which no longer exists: the
+   closed control reads red so the invalid value is obvious without opening the dropdown. */
+.ai-config-select.error {
+  outline-color: var(--theia-inputValidation-errorBorder, var(--theia-errorForeground));
+  border-color: var(--theia-inputValidation-errorBorder, var(--theia-errorForeground));
+  background-color: var(--theia-inputValidation-errorBackground, var(--theia-editor-background));
+}
+
+.ai-config-select.error .theia-select-component-label {
+  color: var(--theia-errorForeground);
+}
+
+/* String-array list editor — mirrors the Settings UI `.preference-array` look (values as removable rows plus
+   an "Add Value…" input) but self-contained here, so it does not depend on the preferences package's
+   `.theia-settings-container`-scoped styles. */
+.ai-config-array {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: 480px;
+}
+
+.ai-config-array .preference-array-element {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: calc(var(--theia-ui-padding) / 2) var(--theia-ui-padding);
+  border-bottom: var(--theia-panel-border) 1px solid;
+}
+
+/* The add-input row below carries its own full border, so the last value must not draw one too:
+   the two would otherwise stack into a visible double line. */
+.ai-config-array .preference-array-element:has(+ .ai-config-array-input-row) {
+  border-bottom: none;
+}
+
+.ai-config-array .preference-array-element:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.ai-config-array .preference-array-element-btn {
+  width: 1.5em;
+  height: 1.5em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* The remove button only appears on row hover, matching the Settings UI. */
+.ai-config-array .preference-array-element .remove-btn {
+  opacity: 0;
+}
+
+.ai-config-array .preference-array-element:hover .remove-btn {
+  opacity: 1;
+}
+
+.ai-config-array .preference-array-element-btn:hover {
+  background-color: var(--theia-list-hoverBackground);
+  cursor: pointer;
+}
+
+.ai-config-array-input-row {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--theia-dropdown-border);
+}
+
+/* Overlap the + button onto the input's reserved right padding, as the Settings UI does. */
+.ai-config-array .codicon.codicon-add {
+  margin-left: calc((var(--theia-icon-size) + 4px) * -1);
+  margin-right: 4px;
+  width: var(--theia-icon-size);
+  height: var(--theia-icon-size);
+}
+
+.ai-config-array .preference-array-input {
+  width: 100%;
+  padding-right: calc(var(--theia-icon-size) + var(--theia-ui-padding));
+}
+
+/* Path input + Browse */
+.ai-config-path-row {
+  display: flex;
+  gap: calc(var(--theia-ui-padding) / 1.5);
+}
+
+.ai-config-edit-in-settings {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  white-space: nowrap;
+}
+
+/* Status dot */
+.ai-configuration-status {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.ai-configuration-status-on {
+  background-color: var(--theia-charts-green);
+}
+
+.ai-configuration-status-off {
+  background-color: var(--theia-descriptionForeground);
+  opacity: 0.5;
+}
+
+.ai-configuration-status-warn {
+  background-color: var(--theia-editorWarning-foreground);
+}
+
+.ai-configuration-status-error {
+  background-color: var(--theia-errorForeground);
+}
+
+/* Status badge (dot + label) */
+.ai-configuration-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  white-space: nowrap;
+}
+
+.ai-configuration-status-badge-label {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+}
+
+/* Overview card grid */
+/* Overview list of a category's children: full-width navigable rows that match the Skills / Variables list
+   entries — each is its own outlined, rounded box on the editor background (not a dark card), highlighting on
+   hover and opening the item. */
+.ai-configuration-item-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) * 1.5);
+}
+
+.ai-configuration-item-row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--theia-ui-padding);
+  /* A touch more padding than the base ui-padding so the rows breathe like the Variables list entries. */
+  padding: calc(var(--theia-ui-padding) * 1.5) calc(var(--theia-ui-padding) * 1.5);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  border-radius: 4px;
+  background-color: var(--theia-editor-background);
+}
+
+/* Modified indicator: a thin vertical bar at the row's left edge, mirroring `.ai-settings-row.modified`
+   and the Settings UI's gutter border. Overlays the left border (rounded to match) so it adds no layout shift. */
+.ai-configuration-item-row.modified::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+  background: var(--theia-settings-modifiedItemIndicator, var(--theia-editorGutter-modifiedBackground, var(--theia-focusBorder)));
+}
+
+/* Gear affordance in the row's left gutter, mirroring `.ai-settings-row-actions`: it sits OUTSIDE the card
+   (to the left of the modified indicator) so it never shifts or indents the row content, and is hidden
+   until the row is hovered/focused. */
+.ai-configuration-item-row-actions {
+  position: absolute;
+  left: -24px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+}
+
+.ai-configuration-item-row:hover .ai-settings-row-gear,
+.ai-configuration-item-row .ai-settings-row-gear:focus-visible {
+  visibility: visible;
+}
+
+/* Clickable affordances apply only to navigable rows (those that open a detail page); rows that only host
+   an inline control (e.g. the Tools confirmation select) are not clickable. */
+.ai-configuration-item-row.navigable {
+  cursor: pointer;
+}
+
+.ai-configuration-item-row.navigable:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.ai-configuration-item-row.navigable:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
+.ai-configuration-item-row-icon {
+  color: var(--theia-icon-foreground);
+  /* Nudge the icon onto the label's baseline row. */
+  margin-top: 2px;
+}
+
+.ai-configuration-item-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* The name line: the label, plus any provenance badges next to it. */
+.ai-configuration-item-row-heading {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  min-width: 0;
+}
+
+.ai-configuration-item-row-tags {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  /* Never squeezed: a long name ellipsizes instead of pushing the badge out of the row. */
+  flex: none;
+}
+
+.ai-configuration-item-row-label {
+  font-weight: 600;
+  /* Allows the ellipsis to kick in inside the flex heading rather than overflowing it. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Label that links elsewhere (e.g. an agent capability pointing at the snippet it pulls in). Styled as a
+   link rather than a button so it does not compete with the row's own control. */
+.ai-configuration-item-row-label.link {
+  /* Reset the native button chrome; the text keeps the label's own weight and truncation. */
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  color: var(--theia-textLink-foreground);
+  cursor: pointer;
+}
+
+.ai-configuration-item-row-label.link:hover {
+  text-decoration: underline;
+}
+
+.ai-configuration-item-row-label.link:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: 1px;
+  border-radius: 2px;
+}
+
+/* Code-style label for identifier rows (e.g. shell command patterns), matching the Variables list names. */
+.ai-configuration-item-row-label.mono {
+  font-family: var(--theia-code-font-family);
+  font-weight: normal;
+}
+
+.ai-configuration-item-row-description {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Expanding lifts the clamp and nothing else: the box formatting, font and (inherited) line height stay
+   exactly as they are while collapsed, so the two lines already on screen do not shift when the rest of the
+   text appears below them. */
+.ai-configuration-item-row-description.expanded {
+  -webkit-line-clamp: unset;
+}
+
+/* Rendered only for a description that is actually clamped, so it reads as a link continuing the truncated
+   text rather than as another of the row's controls. A button does not inherit the surrounding font, so it
+   would otherwise render in the browser's default one. */
+.ai-configuration-item-row-description-toggle {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--theia-textLink-foreground);
+  font: inherit;
+  font-size: var(--theia-ui-font-size1);
+  cursor: pointer;
+}
+
+.ai-configuration-item-row-description-toggle:hover {
+  text-decoration: underline;
+}
+
+.ai-configuration-item-row-description-toggle:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: 1px;
+}
+
+.ai-configuration-item-row-trailing {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.ai-configuration-item-row-chevron {
+  color: var(--theia-descriptionForeground);
+}
+
+/* Item detail header */
+.ai-configuration-item-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--theia-ui-padding);
+  padding-bottom: var(--theia-ui-padding);
+  border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
+}
+
+.ai-configuration-item-detail-header-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+}
+
+.ai-configuration-item-detail-header-icon {
+  color: var(--theia-icon-foreground);
+  /* Detail headers get a clearly larger icon than a body/section icon. */
+  font-size: 22px;
+}
+
+.ai-configuration-item-detail-header-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Keep the status badge on the title's line, right after the title text, instead of floating centered to
+   the far right of the whole title/subtitle block. */
+.ai-configuration-item-detail-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+}
+
+.ai-configuration-item-detail-header-title {
+  font-size: var(--theia-ui-font-size2);
+  font-weight: 600;
+}
+
+.ai-configuration-item-detail-header-subtitle {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+}
+
+.ai-configuration-item-detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+}
+
+/* Add action */
+.ai-configuration-add-action {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.ai-configuration-overview-actions {
+  display: flex;
+}
+
+/* Filter input */
+.ai-configuration-filter-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ai-configuration-filter-input-icon {
+  position: absolute;
+  left: 6px;
+  color: var(--theia-descriptionForeground);
+  pointer-events: none;
+}
+
+.ai-configuration-filter-input .theia-input {
+  width: 100%;
+  padding-left: 24px;
+  /* Reserve room on the right for the clear button so text never slides under it. */
+  padding-right: 24px;
+  border: 1px solid var(--theia-dropdown-border);
+}
+
+.ai-configuration-filter-input-clear {
+  position: absolute;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 3px;
+  color: var(--theia-descriptionForeground);
+  cursor: pointer;
+}
+
+.ai-configuration-filter-input-clear:hover {
+  color: var(--theia-foreground);
+  background: var(--theia-list-hoverBackground);
+}
+
+.ai-configuration-filter-input-clear:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+}
+
+/* Empty state */
+.ai-configuration-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  padding: calc(var(--theia-ui-padding) * 3);
+  color: var(--theia-descriptionForeground);
+  text-align: center;
+}
+
+.ai-configuration-empty-state-icon {
+  font-size: var(--theia-ui-font-size3);
+  opacity: 0.7;
+}
+
+/* ------------------------------------------------------------------------- *
+ * General ("AI Features") page specifics: the hero master-toggle card, the
+ * gating treatment for dependent settings, the provider status line and the
+ * cost/data disclosure. These build on the shared row/section primitives above.
+ * ------------------------------------------------------------------------- */
+
+/* Hero master toggle card */
+.ai-configuration-hero {
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  border-radius: 4px;
+  padding: calc(var(--theia-ui-padding) * 2);
+  background: var(--theia-editorWidget-background);
+}
+
+.ai-configuration-hero .ai-settings-row-top {
+  align-items: center;
+}
+
+.ai-configuration-hero .ai-settings-row-title {
+  font-size: var(--theia-ui-font-size2);
+}
+
+.ai-configuration-status-line {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 1.5);
+  margin-top: var(--theia-ui-padding);
+  font-size: var(--theia-ui-font-size1);
+  color: var(--theia-descriptionForeground);
+}
+
+.ai-configuration-status-line a {
+  color: var(--theia-textLink-foreground);
+  cursor: pointer;
+}
+
+/* Cost/data disclosure */
+.ai-configuration-risks {
+  margin-top: var(--theia-ui-padding);
+  font-size: var(--theia-ui-font-size1);
+  color: var(--theia-descriptionForeground);
+}
+
+.ai-configuration-risks>summary {
+  cursor: pointer;
+  color: var(--theia-textLink-foreground);
+  font-weight: 500;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.ai-configuration-risks>summary::before {
+  content: "\25B8";
+  /* ▸ */
+  font-size: var(--theia-ui-font-size0);
+  transition: transform 0.15s;
+}
+
+.ai-configuration-risks[open]>summary::before {
+  transform: rotate(90deg);
+}
+
+.ai-configuration-risks>summary:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: 2px;
+}
+
+.ai-configuration-risk-body {
+  margin-top: calc(var(--theia-ui-padding) / 1.5);
+  padding: var(--theia-ui-padding);
+  background: var(--theia-inputValidation-warningBackground);
+  border: var(--theia-border-width) solid var(--theia-inputValidation-warningBorder, var(--theia-editorWarning-foreground));
+  border-radius: 4px;
+  color: var(--theia-foreground);
+  max-width: 80ch;
+}
+
+.ai-configuration-risk-body p {
+  margin: 0;
+}
+
+.ai-configuration-risk-body a {
+  color: var(--theia-textLink-foreground);
+}
+
+/* Gating: dependent settings shown but visually/interactively disabled while the master toggle is off. */
+.ai-configuration-gate-note {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 1.5);
+  padding: calc(var(--theia-ui-padding) / 1.5) var(--theia-ui-padding);
+  font-size: var(--theia-ui-font-size1);
+  border-radius: 4px;
+  border-left: 3px solid var(--theia-focusBorder);
+  background: var(--theia-editorWidget-background);
+  color: var(--theia-foreground);
+}
+
+.ai-configuration-sections {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) * 2);
+}
+
+.ai-configuration-sections.ai-configuration-sections-off {
+  opacity: 0.45;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Prompt variant sets (agent detail) + skills / slash commands surfaces.
+   --------------------------------------------------------------------------- */
+
+/* Kind / scope badge (labeled pill) */
+.ai-configuration-kind-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: var(--theia-ui-font-size0);
+  white-space: nowrap;
+  background-color: var(--theia-badge-background);
+  color: var(--theia-badge-foreground);
+}
+
+.ai-configuration-kind-badge-outline {
+  background-color: transparent;
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  color: var(--theia-descriptionForeground);
+}
+
+.ai-configuration-kind-badge-icon {
+  font-size: var(--theia-ui-font-size0);
+}
+
+/* Origin badge: where an entry came from (an AI registry entry, an Agent Plugin). Shaped like the
+   outline kind badge so provenance reads as one kind of annotation wherever it appears - in an overview
+   list, on a detail header, on a collapsible row - and differentiated from a plain tag by its leading
+   icon. `button` resets are explicit: the activatable variant is a real button. */
+.ai-configuration-origin-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.ai-configuration-origin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  margin: 0;
+  padding: 1px 8px;
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  border-radius: 10px;
+  background-color: transparent;
+  color: var(--theia-descriptionForeground);
+  font-family: inherit;
+  font-size: var(--theia-ui-font-size0);
+  white-space: nowrap;
+}
+
+/* Link-coloured only when it leads somewhere, so the colour is the affordance rather than decoration. */
+.ai-configuration-origin-badge.activatable {
+  color: var(--theia-textLink-foreground);
+  cursor: pointer;
+}
+
+.ai-configuration-origin-badge.activatable:hover {
+  color: var(--theia-textLink-activeForeground);
+  border-color: var(--theia-focusBorder);
+}
+
+.ai-configuration-origin-badge.activatable:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: 1px;
+}
+
+.ai-configuration-origin-badge-icon {
+  font-size: var(--theia-ui-font-size0);
+}
+
+/* Horizontal, wrapping row of chips/badges */
+.ai-configuration-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+/* Prompt variant set row: the variant select plus inline edit/reset icon actions in the row's trailing slot. */
+.ai-variant-controls {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.ai-variant-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--theia-icon-foreground);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.ai-variant-action-button:hover {
+  color: var(--theia-foreground);
+  background: var(--theia-list-hoverBackground);
+}
+
+.ai-variant-action-button:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+}
+
+/* A page-level offer: an explanatory line plus one action. */
+.ai-configuration-callout {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) * 2);
+  margin-bottom: calc(var(--theia-ui-padding) * 2);
+  padding: calc(var(--theia-ui-padding) * 1.5);
+  background-color: var(--theia-editorInfo-background, var(--theia-editor-background));
+  border: var(--theia-border-width) solid var(--theia-editorInfo-border, var(--theia-widget-border));
+  border-radius: 3px;
+}
+
+.ai-configuration-callout-text {
+  flex: 1;
+  line-height: var(--theia-content-line-height);
+}
+
+/* A read-only value with its label and copy button (ids, paths, frontmatter entries). */
+.ai-configuration-value-row {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  min-width: 0;
+}
+
+.ai-configuration-value-row-label {
+  flex: 0 0 auto;
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+}
+
+.ai-configuration-value-row-field {
+  flex: 0 1 auto;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  min-width: 0;
+}
+
+.ai-configuration-value-row-value {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-family: var(--theia-editor-font-family, monospace);
+  color: var(--theia-foreground);
+  background-color: var(--theia-editor-background);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  border-radius: 4px;
+  padding: 0 6px;
+  overflow-wrap: break-word;
+}
+
+.ai-configuration-value-row-copy {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--theia-icon-foreground);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.ai-configuration-value-row-copy:hover {
+  background-color: var(--theia-list-hoverBackground);
+  outline: 1px dotted var(--theia-contrastActiveBorder, transparent);
+  outline-offset: -1px;
+}
+
+.ai-configuration-value-row-copy:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+}
+
+/* Available to assistive tech only. */
+.ai-configuration-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Collapsible list (`collapsible-list.tsx`): a filterable list of expandable rows grouped under
+   titled sections, as used by the Variables and the Skills & Slash Commands pages. */
+.ai-config-collapsible-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) * 2);
+}
+
+/* One-line explanation of what distinguishes the group's kind of entry, under the group title. */
+.ai-config-collapsible-group-description {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+}
+
+.ai-config-collapsible-row {
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  border-radius: 6px;
+  background-color: var(--theia-editorWidget-background);
+}
+
+/* The whole header is the disclosure control (role="button"): the chevron, title, header action,
+   description and count pills all sit on one clickable row. */
+.ai-config-collapsible-row-header {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  padding: var(--theia-ui-padding);
+  background-color: var(--theia-editor-background);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.ai-config-collapsible-row-header:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.ai-config-collapsible-row-header:focus-visible {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
+.ai-config-collapsible-row-header.expanded {
+  border-radius: 5px 5px 0 0;
+  border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
+}
+
+.ai-config-collapsible-expansion-icon {
+  color: var(--theia-descriptionForeground);
+  flex: none;
+}
+
+/* Titles are identifiers the user types elsewhere (a variable reference, a `/command`), so they are
+   rendered in the editor font and the link colour rather than as plain prose. */
+.ai-config-collapsible-row-title {
+  font-family: var(--theia-editor-font-family, monospace);
+  color: var(--theia-textLink-foreground);
+  font-weight: 500;
+  white-space: nowrap;
+  flex: none;
+}
+
+.ai-config-collapsible-inline-description {
+  color: var(--theia-descriptionForeground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
+}
+
+/* Holds the inline description's place in the header while the row is expanded (the description moves into
+   the body), so the title and count pills keep their positions and the header height stays constant. */
+.ai-config-collapsible-inline-description-spacer {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Collapsed rows summarise the payload with count pills (e.g. "2 arguments", "3 agents") rather than
+   listing agent names, so the row always stays on a single line regardless of how many agents use it. */
+.ai-config-collapsible-row-meta {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  flex: none;
+}
+
+/* Neutral, fully-rounded pills differentiated by a leading icon (not colour) so they stay legible in
+   every theme and don't rely on hue alone: a parameter glyph for arguments, an agent glyph for agents. */
+.ai-config-collapsible-count-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  /* Use the badge's own foreground for enough contrast against the badge background (the muted
+     descriptionForeground was hard to read on it). */
+  color: var(--theia-badge-foreground);
+  background-color: var(--theia-badge-background);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  border-radius: 999px;
+  padding: 0 8px;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+/* Actions sit at the very trailing edge, after the pills, so every row has them in the same place. */
+.ai-config-collapsible-row-actions {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  flex: none;
+}
+
+/* Dimmed at rest and brought to full strength when the row is hovered or something inside it is
+   focused, so the actions stay discoverable without competing with the row title. */
+.ai-config-collapsible-row-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--theia-icon-foreground);
+  cursor: pointer;
+  padding: calc(var(--theia-ui-padding) / 2);
+  border-radius: 3px;
+  opacity: 0.6;
+  transition: opacity 0.1s, background-color 0.1s;
+}
+
+.ai-config-collapsible-row-header:hover .ai-config-collapsible-row-action,
+.ai-config-collapsible-row-header:focus-within .ai-config-collapsible-row-action {
+  opacity: 1;
+}
+
+.ai-config-collapsible-row-action:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.ai-config-collapsible-row-action:focus-visible {
+  opacity: 1;
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: 1px;
+}
+
+.ai-config-collapsible-row-action:disabled {
+  cursor: default;
+  opacity: 0.3;
+}
+
+/* Body content is indented to align under the row title (past the chevron + gap). */
+.ai-config-collapsible-row-body {
+  padding: var(--theia-ui-padding);
+  padding-left: calc(var(--theia-ui-padding) * 2 + 16px);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) * 1.5);
+  border-radius: 0 0 5px 5px;
+}
+
+/* The full description, shown at the top of the expanded body as a wrapping paragraph (it is truncated to a
+   single line in the collapsed header). Line-height keeps multi-line descriptions comfortably readable. */
+.ai-config-collapsible-full-description {
+  margin: 0;
+  color: var(--theia-descriptionForeground);
+  line-height: 1.5;
+}
+
+/* High contrast: every hover state above communicates through a background colour alone, and the
+   high-contrast themes define neither `list.hoverBackground` nor `button.background`, so those states
+   render as nothing at all. `contrastActiveBorder` is defined *only* in the high-contrast themes — the same
+   colour VS Code uses to mark the hovered/active element — so this ring shows up there and stays invisible
+   everywhere else. Kept in one block so the intent is stated once rather than repeated per rule. */
+.ai-settings-row:hover,
+.ai-settings-row-gear:hover,
+.ai-configuration-item-row.navigable:hover,
+.ai-configuration-filter-input-clear:hover,
+.ai-config-stepper-button:hover:not(:disabled),
+.ai-config-array .preference-array-element:hover,
+.ai-config-array .preference-array-element-btn:hover,
+.ai-variant-action-button:hover,
+.ai-config-collapsible-row-header:hover,
+.ai-config-collapsible-row-action:hover {
+  outline: 1px dotted var(--theia-contrastActiveBorder, transparent);
+  outline-offset: -1px;
+}

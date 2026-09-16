@@ -35,6 +35,7 @@ import { EnvExtImpl } from '../../../plugin/env';
 import { DebugExtImpl } from '../../../plugin/debug/debug-ext';
 import { LocalizationExtImpl } from '../../../plugin/localization-ext';
 import pluginHostModule from './worker-plugin-module';
+import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
@@ -70,7 +71,7 @@ pluginManager.setPluginHost({
                         ctx.frontendModuleName = plugin.lifecycle.frontendModuleName;
                     }
 
-                    ctx.importScripts('./hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
+                    ctx.importScripts(`./${PLUGINS_BASE_PATH}/` + getPluginId(plugin.model) + '/' + plugin.pluginPath);
                 }
             }
 

@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as React from '@theia/core/shared/react';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import * as monaco from '@theia/monaco-editor-core';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
@@ -100,14 +99,14 @@ export class DebugExceptionWidget implements Disposable {
         const exceptionTitle = info.id ?
             nls.localizeByDefault('Exception has occurred: {0}', info.id) :
             nls.localizeByDefault('Exception has occurred.');
-        this.containerNodeRoot.render(<React.Fragment>
+        this.containerNodeRoot.render(<>
             <div className='title' ref={cb}>
                 {exceptionTitle}
                 <span id="exception-close" className={codicon('close', true)} onClick={() => this.hide()} title={nls.localizeByDefault('Close')}></span>
             </div>
             {info.description && <div className='description'>{info.description}</div>}
             {stackTrace && <div className='stack-trace'>{stackTrace}</div>}
-        </React.Fragment>);
+        </>);
     }
 
     protected layout(): void {

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { AI_CORE_PREFERENCES_TITLE, MODEL_PROVIDER_TYPE_DETAIL, ModelProviderTypeDetail } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const CLAUDE_CODE_EXECUTABLE_PATH_PREF = 'ai-features.claudeCode.executablePath';
@@ -24,6 +24,7 @@ export const ClaudeCodePreferencesSchema: PreferenceSchema = {
     properties: {
         [CLAUDE_CODE_EXECUTABLE_PATH_PREF]: {
             type: 'string',
+            typeDetails: { [MODEL_PROVIDER_TYPE_DETAIL]: { label: 'Claude Code' } satisfies ModelProviderTypeDetail },
             markdownDescription: nls.localize('theia/ai/claude-code/executablePath/description',
                 'Path to the Claude Code executable (cli.js) of the `@anthropic-ai/claude-agent-sdk`.' +
                 'If not specified, the system will attempt to resolve the path automatically ' +

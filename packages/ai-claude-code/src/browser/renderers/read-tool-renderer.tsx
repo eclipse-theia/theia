@@ -19,14 +19,14 @@ import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { URI } from '@theia/core/lib/common/uri';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
 import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
-import { nls } from '@theia/core';
+import { nls, ILogger } from '@theia/core';
 
 interface ReadToolInput {
     file_path: string;
@@ -46,6 +46,9 @@ export class ReadToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
 
+    @inject(ILogger) @named('ai-claude-code:ReadToolRenderer')
+    protected readonly logger: ILogger;
+
     canHandle(response: ChatResponseContent): number {
         if (ClaudeCodeToolCallChatResponseContent.is(response) && response.name === 'Read') {
             return 15; // Higher than default ToolCallPartRenderer (10)
@@ -61,9 +64,10 @@ export class ReadToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
                 workspaceService={this.workspaceService}
                 labelProvider={this.labelProvider}
                 editorManager={this.editorManager}
+                logger={this.logger}
             />;
         } catch (error) {
-            console.warn('Failed to parse Read tool input:', error);
+            this.logger.warn('Failed to parse Read tool input:', error);
             return <div className="claude-code-tool error">{nls.localize('theia/ai/claude-code/failedToParseReadToolData', 'Failed to parse Read tool data')}</div>;
         }
     }
@@ -74,7 +78,8 @@ const ReadToolComponent: React.FC<{
     workspaceService: WorkspaceService;
     labelProvider: LabelProvider;
     editorManager: EditorManager;
-}> = ({ input, workspaceService, labelProvider, editorManager }) => {
+    logger: ILogger;
+}> = ({ input, workspaceService, labelProvider, editorManager, logger }) => {
     const getFileName = (filePath: string): string => filePath.split('/').pop() || filePath;
     const getWorkspaceRelativePath = async (filePath: string): Promise<string> => {
         try {
@@ -100,7 +105,7 @@ const ReadToolComponent: React.FC<{
             const uri = new URI(input.file_path);
             await editorManager.open(uri);
         } catch (error) {
-            console.error('Failed to open file:', error);
+            logger.error('Failed to open file:', error);
         }
     };
 

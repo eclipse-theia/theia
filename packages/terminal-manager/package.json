@@ -1,6 +1,6 @@
 {
   "name": "@theia/terminal-manager",
-  "version": "1.74.0",
+  "version": "1.75.0",
   "description": "Theia - Terminal Manager Extension",
   "keywords": [
     "theia-extension"
@@ -24,13 +24,14 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "@theia/core": "1.74.0",
-    "@theia/preferences": "1.74.0",
-    "@theia/terminal": "1.74.0"
+    "@theia/core": "1.75.0",
+    "@theia/preferences": "1.75.0",
+    "@theia/terminal": "1.75.0"
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/terminal-manager-frontend-module"
+      "frontend": "lib/browser/terminal-manager-frontend-module",
+      "secondaryWindow": "lib/browser/terminal-manager-frontend-module"
     }
   ],
   "publishConfig": {

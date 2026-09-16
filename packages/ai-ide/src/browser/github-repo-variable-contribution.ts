@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { MaybePromise, nls } from '@theia/core';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
+import { MaybePromise, nls, ILogger } from '@theia/core';
 import {
     AIVariableContribution,
     AIVariableResolver,
@@ -48,6 +48,9 @@ export class GitHubRepoVariableContribution implements AIVariableContribution, A
 
     @inject(GitHubRepoService)
     protected readonly gitHubRepoService: GitHubRepoService;
+
+    @inject(ILogger) @named('ai-ide:GitHubRepoVariableContribution')
+    protected readonly logger: ILogger;
 
     registerVariables(service: AIVariableService): void {
         service.registerResolver(GITHUB_REPO_NAME_VARIABLE, this);
@@ -115,7 +118,7 @@ export class GitHubRepoVariableContribution implements AIVariableContribution, A
             };
 
         } catch (error) {
-            console.warn('Failed to resolve GitHub repository name:', error);
+            this.logger.warn('Failed to resolve GitHub repository name:', error);
             return { variable: request.variable, value: 'No GitHub repository is currently selected or detected.' };
         }
     }

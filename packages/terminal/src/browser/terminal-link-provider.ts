@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CancellationToken, ContributionProvider, DisposableCollection, disposableTimeout, isOSX } from '@theia/core';
+import { CancellationToken, ContributionProvider, DisposableCollection, disposableTimeout, isOSX, ILogger } from '@theia/core';
 import { PreferenceService } from '@theia/core/lib/common';
 import { inject, injectable, interfaces, named, postConstruct } from '@theia/core/shared/inversify';
 import { IBufferRange, ILink, ILinkDecorations } from 'xterm';
@@ -62,6 +62,9 @@ export class TerminalLinkProviderContribution implements TerminalContribution {
     @inject(XtermLinkFactory)
     protected readonly xtermLinkFactory: XtermLinkFactory;
 
+    @inject(ILogger) @named('terminal:TerminalLinkProviderContribution')
+    protected readonly logger: ILogger;
+
     onCreate(terminalWidget: TerminalWidgetImpl): void {
         terminalWidget.getTerminal().registerLinkProvider({
             provideLinks: (line, provideLinks) => this.provideTerminalLinks(terminalWidget, line, provideLinks)
@@ -82,7 +85,7 @@ export class TerminalLinkProviderContribution implements TerminalContribution {
                 const providedLinks = providerResult.value;
                 xtermLinks.push(...providedLinks.map(link => this.xtermLinkFactory(link, terminal, context)));
             } else {
-                console.warn('Terminal link provider failed to provide links', providerResult.reason);
+                this.logger.warn('Terminal link provider failed to provide links', providerResult.reason);
             }
         }
 

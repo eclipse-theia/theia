@@ -277,7 +277,7 @@ export class PluginContributionHandler {
                         embeddedLanguages: this.convertEmbeddedLanguages(grammar.embeddedLanguages, logWarning),
                         tokenTypes: this.convertTokenTypes(grammar.tokenTypes),
                         balancedBracketSelectors: grammar.balancedBracketScopes ?? ['*'],
-                        unbalancedBracketSelectors: grammar.balancedBracketScopes,
+                        unbalancedBracketSelectors: grammar.unbalancedBracketScopes ?? [],
                     }));
                 }
                 // activate grammars only once everything else is loaded.

@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { Command, nls } from '@theia/core';
+import { Command, Event, nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import { isRequestNode, RequestNode, ResponseNode } from './chat-tree-view';
 import { EditableChatRequestModel } from '@theia/ai-chat';
@@ -63,6 +63,12 @@ export interface ChatNodeToolbarActionContribution {
      * Returns the toolbar actions for the given node.
      */
     getToolbarActions(node: RequestNode | ResponseNode): ChatNodeToolbarAction[];
+    /**
+     * Optional event fired when the contributed actions may have changed (e.g. because a setting that gates
+     * them was toggled). The chat view listens to it and re-renders the node toolbars, so contributions can
+     * update live without waiting for the next response.
+     */
+    onDidChange?: Event<void>;
 }
 
 export namespace ChatNodeToolbarCommands {

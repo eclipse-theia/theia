@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, multiInject, postConstruct, optional } from '@theia/core/shared/inversify';
+import { injectable, inject, multiInject, postConstruct, optional, named } from '@theia/core/shared/inversify';
 import { ILogger, ConnectionErrorHandler } from '@theia/core/lib/common';
 import { HostedPluginClient, PluginModel, ServerPluginRunner } from '../../common/plugin-protocol';
 import { LogPart } from '../../common/types';
@@ -32,7 +32,7 @@ export class HostedPluginSupport {
     private isPluginProcessRunning = false;
     private client: HostedPluginClient;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('plugin-ext:HostedPluginSupport')
     protected readonly logger: ILogger;
 
     @inject(HostedPluginProcess)

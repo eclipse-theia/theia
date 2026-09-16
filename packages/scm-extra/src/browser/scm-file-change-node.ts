@@ -18,23 +18,43 @@ import { ScmCommit } from '@theia/scm/lib/browser/scm-provider';
 import URI from '@theia/core/lib/common/uri';
 import { isObject } from '@theia/core/lib/common';
 
+/**
+ * @deprecated since 1.75.0 - superseded by the SCM history graph in `@theia/scm`
+ * and the Timeline view in `@theia/timeline`. This package will be removed in a
+ * future release - see https://github.com/eclipse-theia/theia/issues/17457.
+ */
 export interface ScmFileChangeNode {
     readonly fileChange: ScmFileChange;
     readonly commitId: string;
     selected?: boolean;
 }
+/**
+ * @deprecated since 1.75.0 - superseded by the SCM history graph in `@theia/scm`
+ * and the Timeline view in `@theia/timeline`. This package will be removed in a
+ * future release - see https://github.com/eclipse-theia/theia/issues/17457.
+ */
 export namespace ScmFileChangeNode {
     export function is(node: unknown): node is ScmFileChangeNode {
         return isObject(node) && 'fileChange' in node && 'commitId' in node;
     }
 }
 
+/**
+ * @deprecated since 1.75.0 - superseded by the SCM history graph in `@theia/scm`
+ * and the Timeline view in `@theia/timeline`. This package will be removed in a
+ * future release - see https://github.com/eclipse-theia/theia/issues/17457.
+ */
 export interface ScmHistoryCommit extends ScmCommit {
     readonly commitDetailUri: URI;
     readonly fileChanges: ScmFileChange[];
     readonly commitDetailOptions: {};
 }
 
+/**
+ * @deprecated since 1.75.0 - superseded by the SCM history graph in `@theia/scm`
+ * and the Timeline view in `@theia/timeline`. This package will be removed in a
+ * future release - see https://github.com/eclipse-theia/theia/issues/17457.
+ */
 export interface ScmFileChange {
     readonly uri: string;
     getCaption(): string;

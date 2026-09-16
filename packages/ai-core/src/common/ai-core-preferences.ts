@@ -28,6 +28,25 @@ import { ReasoningSettings, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM } fro
 import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
 export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai-core/preferences/title', 'AI Features');
+
+/**
+ * Key under a preference's schema `typeDetails` where a language-model provider declares the
+ * human-readable name of its provider block. The AI Configuration view's Models page reads this to
+ * label the provider node (discovered from the `ai-features.<provider>.*` preferences) without
+ * having to hard-code provider names. Declare it on any one preference of the provider's block, e.g.
+ * `typeDetails: { [MODEL_PROVIDER_TYPE_DETAIL]: 'Anthropic' }`.
+ */
+export const MODEL_PROVIDER_TYPE_DETAIL = 'aiModelProvider';
+
+/**
+ * Shape a language-model provider stores under a preference's `typeDetails[MODEL_PROVIDER_TYPE_DETAIL]`
+ * to describe its `ai-features.<provider>.*` block to the AI Configuration view's Models page. Declared
+ * on any one preference of the block, e.g. `typeDetails: { [MODEL_PROVIDER_TYPE_DETAIL]: { label: 'Anthropic' } }`.
+ */
+export interface ModelProviderTypeDetail {
+    /** Human-readable provider name shown as the provider node/card label. */
+    label: string;
+}
 export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.promptTemplates.promptTemplatesFolder';
 export const PREFERENCE_NAME_REQUEST_SETTINGS = 'ai-features.modelSettings.requestSettings';
 export const PREFERENCE_NAME_REASONING = 'ai-features.reasoning.defaults';
