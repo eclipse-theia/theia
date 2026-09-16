@@ -185,7 +185,7 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
      * currently holds the focus. Keys that describe no aspect of the widget keep their ambient value, and the
      * context scoped to the widget's DOM node is still consulted for the keys the overlay does not define.
      */
-    protected contextMatcherFor(widget: Widget): ContextMatcher {
+    contextMatcherFor(widget: Widget): ContextMatcher {
         const overlay = new Map<string, unknown>();
         if (Navigatable.is(widget)) {
             for (const [key, value] of Object.entries(this.resourceContextKey.toValues(widget.getResourceUri()))) {

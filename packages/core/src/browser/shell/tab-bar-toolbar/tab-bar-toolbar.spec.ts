@@ -18,6 +18,7 @@ import { enableJSDOM } from '../../test/jsdom';
 
 let disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
+import { renderToStaticMarkup } from 'react-dom/server';
 import {
     CommandMenu, CommandRegistry, CompoundMenuNode, Group, GroupImpl, MenuAction, MenuModelRegistry, MenuNode, MenuNodeFactory, MutableCompoundMenuNode,
     Submenu, SubmenuImpl, SubMenuLink
@@ -28,6 +29,7 @@ import { Widget } from '../../widgets';
 import URI from '../../../common/uri';
 import { ResourceContextKey } from '../../resource-context-key';
 import { WidgetContextKeyContribution } from '../../widget-context-key-contribution';
+import { TabBarToolbar } from './tab-bar-toolbar';
 import { TOOLBAR_WRAPPER_ID_SUFFIX } from './tab-bar-toolbar-menu-adapters';
 import { TabBarToolbarRegistry } from './tab-bar-toolbar-registry';
 import { TAB_BAR_TOOLBAR_CONTEXT_MENU, TabBarToolbarAction } from './tab-bar-toolbar-types';
@@ -171,6 +173,69 @@ describe('tab-bar-toolbar', () => {
 
             expect(registry.visibleItems(testWidget).map(item => item.id)).to.deep.equal(['test-item']);
             expect(registry.visibleItems(otherWidget)).to.be.empty;
+            testWidget.dispose();
+            otherWidget.dispose();
+        });
+
+        it('renders the submenu chevron against the widget that owns the toolbar', () => {
+            const testWidget = new TestToolbarWidget();
+            const otherWidget = new TestToolbarWidget();
+            const commands = createCommandRegistry();
+            commands.registerCommand({ id: TEST_SUBMENU_COMMAND, label: 'Test Submenu Command' }, { execute: () => { } });
+            const menuRegistry = createMenuRegistry(commands);
+            menuRegistry.registerSubmenu([...TEST_MENU_PATH, 'other', 'test-submenu'], 'Test Submenu');
+            menuRegistry.registerMenuAction([...TEST_MENU_PATH, 'other', 'test-submenu'],
+                { commandId: TEST_SUBMENU_COMMAND, when: 'activeCustomEditorId == test.probeEditor' });
+            const contribution: WidgetContextKeyContribution = {
+                getContextKeyValues: widget => [['activeCustomEditorId', widget === testWidget ? 'test.probeEditor' : '']]
+            };
+            const registry = createToolbarRegistry(commands, menuRegistry, new TestContextKeyService(), [contribution]);
+            registry.registerMenuDelegate(TEST_MENU_PATH, TestToolbarWidget.is);
+            const submenuItem = registry.visibleItems(testWidget).find(item => item.id === `test-submenu${TOOLBAR_WRAPPER_ID_SUFFIX}`);
+
+            expect(submenuItem).to.exist;
+            expect(renderToStaticMarkup(submenuItem!.render(testWidget, registry.contextMatcherFor(testWidget)))).to.contain('chevron');
+            expect(renderToStaticMarkup(submenuItem!.render(testWidget, registry.contextMatcherFor(otherWidget)))).to.not.contain('chevron');
+            testWidget.dispose();
+            otherWidget.dispose();
+        });
+
+        it('opens the More Actions menu against the widget that owns the toolbar', () => {
+            const testWidget = new TestToolbarWidget();
+            const otherWidget = new TestToolbarWidget();
+            const commands = createCommandRegistry();
+            commands.registerCommand({ id: TEST_SUBMENU_COMMAND, label: 'Test Submenu Command' }, { execute: () => { } });
+            const menuRegistry = createMenuRegistry(commands);
+            menuRegistry.registerSubmenu([...TEST_MENU_PATH, 'other', 'test-submenu'], 'Test Submenu');
+            menuRegistry.registerMenuAction([...TEST_MENU_PATH, 'other', 'test-submenu'],
+                { commandId: TEST_SUBMENU_COMMAND, when: 'activeCustomEditorId == test.probeEditor' });
+            const contribution: WidgetContextKeyContribution = {
+                getContextKeyValues: widget => [['activeCustomEditorId', widget === testWidget ? 'test.probeEditor' : '']]
+            };
+            const ambient = new TestContextKeyService();
+            const registry = createToolbarRegistry(commands, menuRegistry, ambient, [contribution]);
+            registry.registerMenuDelegate(TEST_MENU_PATH, TestToolbarWidget.is);
+
+            let rendered: { contextKeyService?: ContextMatcher } | undefined;
+            const toolbar = new TabBarToolbar();
+            Reflect.set(toolbar, 'contextKeyService', ambient);
+            Reflect.set(toolbar, 'toolbarRegistry', registry);
+            Reflect.set(toolbar, 'contextMenuRenderer', {
+                render: (options: { contextKeyService?: ContextMatcher }) => {
+                    rendered = options;
+                    return { dispose: () => { } };
+                }
+            });
+            const setCurrent = Reflect.get(toolbar, 'setCurrent') as (widget: Widget) => void;
+
+            setCurrent.call(toolbar, testWidget);
+            toolbar.renderMoreContextMenu({ x: 0, y: 0 });
+            expect(rendered?.contextKeyService?.match('activeCustomEditorId == test.probeEditor')).to.be.true;
+
+            setCurrent.call(toolbar, otherWidget);
+            toolbar.renderMoreContextMenu({ x: 0, y: 0 });
+            expect(rendered?.contextKeyService?.match('activeCustomEditorId == test.probeEditor')).to.be.false;
+
             testWidget.dispose();
             otherWidget.dispose();
         });

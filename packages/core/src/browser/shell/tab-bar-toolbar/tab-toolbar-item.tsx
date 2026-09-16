@@ -36,7 +36,11 @@ export interface TabBarToolbarItem {
     isVisible(widget: Widget, contextMatcher: ContextMatcher): boolean;
     isEnabled(widget: Widget): boolean;
     isToggled(widget: Widget): boolean;
-    render(widget?: Widget): React.ReactNode;
+    /**
+     * @param contextMatcher evaluates `when` clauses with the values that describe the given widget. Defaults
+     * to the ambient context, for toolbars that render items with no owning widget.
+     */
+    render(widget?: Widget, contextMatcher?: ContextMatcher): React.ReactNode;
     onDidChange?: Event<void>;
     group?: string;
     priority?: number;
