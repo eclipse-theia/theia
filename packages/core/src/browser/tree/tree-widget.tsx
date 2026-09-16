@@ -1559,9 +1559,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return this.labelProvider.getLongName(node);
     }
     protected getDepthPadding(depth: number): number {
-        if (depth === 1) {
-            return this.props.leftPadding;
-        }
         return depth * this.treeIndent;
     }
 }
