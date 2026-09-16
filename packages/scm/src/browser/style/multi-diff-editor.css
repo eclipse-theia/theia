@@ -1,0 +1,106 @@
+/********************************************************************************
+ * Copyright (C) 2026 EclipseSource and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-multi-diff-editor {
+    height: 100%;
+    width: 100%;
+}
+
+/* Override Lumino PanelLayout default absolute positioning to enable document flow. */
+.theia-multi-diff-editor>.multi-diff-editor-entries {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Override Lumino default: children use normal flow instead of absolute positioning.
+ * The inline `height` is set dynamically by DiffEntryWidget.setHeight based on the
+ * embedded editor content (clamped between MIN_ENTRY_HEIGHT and MAX_ENTRY_HEIGHT). */
+.theia-multi-diff-editor .multi-diff-editor-entries>.multi-diff-entry {
+    position: relative;
+    width: 100%;
+    margin-bottom: 4px;
+    border: 1px solid var(--theia-panel-border);
+}
+
+.theia-multi-diff-editor .multi-diff-entry-header {
+    display: flex;
+    align-items: center;
+    padding: 4px 10px;
+    background-color: var(--theia-editorGroupHeader-tabsBackground);
+    border-bottom: 1px solid var(--theia-panel-border);
+    user-select: none;
+    overflow: hidden;
+    cursor: pointer;
+    outline: none;
+}
+
+.theia-multi-diff-editor .multi-diff-entry-header:focus-visible {
+    outline: 1px solid var(--theia-focusBorder);
+    outline-offset: -1px;
+}
+
+.theia-multi-diff-editor .multi-diff-entry-chevron {
+    flex-shrink: 0;
+    margin-right: 4px;
+    color: var(--theia-foreground);
+}
+
+.theia-multi-diff-editor .multi-diff-entry-icon {
+    flex-shrink: 0;
+    margin-right: 6px;
+}
+
+.theia-multi-diff-editor .multi-diff-entry-label {
+    flex-shrink: 0;
+    margin-right: 8px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.theia-multi-diff-editor .multi-diff-entry-description {
+    flex-shrink: 1;
+    color: var(--theia-descriptionForeground);
+    font-size: 0.9em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.theia-multi-diff-editor .multi-diff-entry-loading,
+.theia-multi-diff-editor .multi-diff-entry-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.theia-multi-diff-editor .multi-diff-entry-loading {
+    color: var(--theia-descriptionForeground);
+}
+
+.theia-multi-diff-editor .multi-diff-entry-error {
+    color: var(--theia-errorForeground);
+}
