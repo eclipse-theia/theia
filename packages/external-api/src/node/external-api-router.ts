@@ -250,7 +250,7 @@ export interface ExternalApiRouter extends Disposable {
 @injectable()
 export class ExternalApiRouterImpl implements ExternalApiRouter {
 
-    @inject(ILogger) @named('external-api:ExternalApiRouter')
+    @inject(ILogger) @named('external-api:ExternalApiRouterImpl')
     protected readonly logger: ILogger;
 
     @inject(ExternalApiRouterOptions)

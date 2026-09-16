@@ -85,7 +85,7 @@ export interface ExternalApiEventStream<T = unknown> extends Disposable {
 @injectable()
 export class ExternalApiEventStreamImpl<T = unknown> implements ExternalApiEventStream<T> {
 
-    @inject(ILogger) @named('external-api:ExternalApiEventStream')
+    @inject(ILogger) @named('external-api:ExternalApiEventStreamImpl')
     protected readonly logger: ILogger;
 
     @inject(ExternalApiEventStreamOptions)
