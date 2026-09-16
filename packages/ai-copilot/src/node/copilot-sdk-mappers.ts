@@ -18,24 +18,18 @@ import { Base64ImageContent, ImageContent, ImageMessage, LanguageModelMessage } 
 import type { BlobMessageAttachment, ModelInfo, SystemMessageConfig } from './copilot-sdk-types';
 
 /**
- * Recognizes an id that names a dated release of another model, such as
- * `gpt-4o-2024-11-20` or `claude-sonnet-5-20260514` for `gpt-4o` and `claude-sonnet-5`.
- */
-const DATED_MODEL_ID = /^(.+?)-(\d{4}-\d{2}-\d{2}|\d{8})$/;
-
-/**
  * Selects the model IDs that should be surfaced to Theia from the list returned
  * by `CopilotClient.listModels()`.
  *
  * Models whose policy is explicitly `disabled` are filtered out; `enabled` and
  * `unconfigured` models are kept. Order is preserved and duplicates are removed.
  *
- * The list can name the same model both by its family and by its dated releases. Offering the user
- * several entries that select the same model is noise, so a dated release is dropped when the family
- * it belongs to is offered as well. It is kept when it is the only way to select that model.
+ * The list can name the same model both by its family and by its dated releases, and both are kept:
+ * the family is what the model pickers offer, while a dated release stays selectable for anyone who
+ * wants to pin one. This mirrors the other providers, where discovery reports every release and only
+ * the undated ids are featured.
  */
 export function selectSdkModelIds(models: ModelInfo[]): string[] {
-    const available = new Set(models.filter(model => model.id && model.policy?.state !== 'disabled').map(model => model.id));
     const result: string[] = [];
     const seen = new Set<string>();
     for (const model of models) {
@@ -43,10 +37,6 @@ export function selectSdkModelIds(models: ModelInfo[]): string[] {
             continue;
         }
         if (model.policy && model.policy.state === 'disabled') {
-            continue;
-        }
-        const family = model.id.match(DATED_MODEL_ID)?.[1];
-        if (family && available.has(family)) {
             continue;
         }
         seen.add(model.id);
