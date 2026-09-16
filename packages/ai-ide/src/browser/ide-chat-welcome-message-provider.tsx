@@ -149,7 +149,7 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
     }
 
     protected updateDefaultAgentState(): void {
-        const hasDefaultAgent = !!this.preferenceService.get<string>(DEFAULT_CHAT_AGENT_PREF, '');
+        const hasDefaultAgent = !!this.preferenceService.get(DEFAULT_CHAT_AGENT_PREF, '');
         if (this._hasDefaultAgent !== hasDefaultAgent) {
             this._hasDefaultAgent = hasDefaultAgent;
             this.notifyStateChanged();
