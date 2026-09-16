@@ -19,6 +19,7 @@ import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { isCustomizedPromptFragment, PromptService } from '@theia/ai-core/lib/common/prompt-service';
 import { AiConfigurationItemRow } from './ai-configuration-item-row';
+import { AiConfigurationIconButton } from './ai-configuration-primitives';
 import { AiEnumOption, AiEnumSelect } from './ai-configuration-controls';
 import { AiSettingsRowService } from './ai-settings-row-service';
 import { PromptCustomizationDialogs } from './prompt-customization-dialogs';
@@ -181,20 +182,16 @@ export const VariantSetCard: React.FC<VariantSetCardProps> = ({ agentId, promptV
                 invalid={invalidSelection}
                 onCommit={selectVariant}
             />
-            <button
-                className='ai-variant-action-button'
+            <AiConfigurationIconButton
+                iconClass={codicon('edit')}
                 title={editLabel}
-                aria-label={editLabel}
-                onClick={() => customize(selected)}>
-                <span className={codicon('edit')}></span>
-            </button>
-            {selectedCustomized && <button
-                className='ai-variant-action-button'
+                onClick={() => customize(selected)}
+            />
+            {selectedCustomized && <AiConfigurationIconButton
+                iconClass={codicon(selectedHasBuiltIn ? 'discard' : 'trash')}
                 title={resetLabel}
-                aria-label={resetLabel}
-                onClick={() => selectedHasBuiltIn ? resetVariant(selected) : removeVariant(selected)}>
-                <span className={codicon(selectedHasBuiltIn ? 'discard' : 'trash')}></span>
-            </button>}
+                onClick={() => selectedHasBuiltIn ? resetVariant(selected) : removeVariant(selected)}
+            />}
         </div>}
     />;
 };
