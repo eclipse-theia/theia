@@ -28,6 +28,7 @@ import {
 } from '../common/mcp-server-manager';
 import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
 import { MCPOAuthConfig } from '../common/mcp-oauth';
+import { sanitizeMCPName } from '../common/mcp-utils';
 import type { DialogProps } from '@theia/core/lib/browser/dialogs';
 import type { MCPServerEditDialog, MCPServerFormData } from './mcp-server-edit-dialog';
 
@@ -215,7 +216,7 @@ export class MCPServerEditorImpl implements MCPServerEditor {
      */
     async save(formData: MCPServerFormData): Promise<void> {
         const currentServers = this.preferenceService.get<Record<string, object>>(MCP_SERVERS_PREF, {}) ?? {};
-        const serverName = formData.name.trim();
+        const serverName = sanitizeMCPName(formData.name);
         const existing = (currentServers[serverName] ?? {}) as Record<string, unknown>;
         const serverConfig = formData.serverType === 'local'
             ? this.toLocalConfig(formData)
