@@ -41,12 +41,20 @@ const O_SERIES_REASONING_SUPPORT: ReasoningSupport = {
     defaultLevel: 'auto'
 };
 
+// GPT-6 Astra reasons at every setting: it dropped the `none`/`minimal` efforts of the GPT-5 family.
+// Its `xhigh`/`max` efforts have no representation in ReasoningLevel, so we expose the mappable subset.
+const GPT6_REASONING_SUPPORT: ReasoningSupport = {
+    supportedLevels: ['low', 'medium', 'high', 'auto'],
+    defaultLevel: 'auto'
+};
+
 /**
  * First matching prefix wins, so more specific prefixes must come before broader ones
  * (e.g. `gpt-5.4-mini` before `gpt-5.4`). Snapshots inherit their family value
  * (e.g. `gpt-4o-2024-08-06` matches `gpt-4o`).
  */
 const OPENAI_MODEL_FAMILIES: ReadonlyArray<readonly [prefix: string, defaults: OpenAiModelDefaults]> = [
+    ['gpt-6', { contextWindow: 1_050_000, reasoningSupport: GPT6_REASONING_SUPPORT }],
     ['gpt-5.6', { contextWindow: 1_050_000, reasoningSupport: GPT5_REASONING_SUPPORT }],
     ['gpt-5.5', { contextWindow: 1_050_000, reasoningSupport: GPT5_REASONING_SUPPORT }],
     ['gpt-5.4-mini', { contextWindow: 400_000, reasoningSupport: GPT5_REASONING_SUPPORT }],
