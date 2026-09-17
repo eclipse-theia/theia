@@ -152,11 +152,13 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
     }
 
     getPromptTemplateId(serverName: string): string {
-        return `mcp_${serverName}_tools`;
+        const sanitizedServerName = this.sanitizeMCPName(serverName);
+        return `mcp_${sanitizedServerName}_tools`;
     }
 
     protected unregisterTools(serverName: string): void {
-        this.toolInvocationRegistry.unregisterAllTools(`mcp_${serverName}`);
+        const sanitizedServerName = this.sanitizeMCPName(serverName);
+        this.toolInvocationRegistry.unregisterAllTools(`mcp_${sanitizedServerName}`);
         this.promptService.removePromptFragment(this.getPromptTemplateId(serverName));
     }
 
@@ -215,12 +217,17 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
         return this.mcpServerManager.addOrUpdateServer(description);
     }
 
+    protected sanitizeMCPName(name: string): string {
+        return name.trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+    }
+
     private convertToToolRequest(tool: Awaited<ReturnType<MCPServerManager['getTools']>>['tools'][number], serverName: string): ToolRequest {
-        const id = `mcp_${serverName}_${tool.name}`;
+        const sanitizedServerName = this.sanitizeMCPName(serverName);
+        const id = `mcp_${sanitizedServerName}_${tool.name}`;
         return {
             id: id,
             name: id,
-            providerName: `mcp_${serverName}`,
+            providerName: `mcp_${sanitizedServerName}`,
             parameters: ToolRequest.isToolRequestParameters(tool.inputSchema) ? {
                 type: tool.inputSchema.type,
                 properties: tool.inputSchema.properties,

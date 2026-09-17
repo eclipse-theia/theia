@@ -89,6 +89,61 @@ describe('MCPFrontendServiceImpl', () => {
         };
     });
 
+    describe('sanitizeMCPName', () => {
+        it('sanitizes names containing special characters', () => {
+            expect(service['sanitizeMCPName']('my-server!')).to.equal('my-server_');
+        });
+
+        it('preserves valid names', () => {
+            expect(service['sanitizeMCPName']('my-server')).to.equal('my-server');
+        });
+
+        it('replaces spaces with underscores', () => {
+            expect(service['sanitizeMCPName']('My server')).to.equal('My_server');
+            expect(service['sanitizeMCPName']('My Server Name')).to.equal('My_Server_Name');
+        });
+
+        it('replaces special characters with underscores', () => {
+            expect(service['sanitizeMCPName']('My@Server!')).to.equal('My_Server_');
+            expect(service['sanitizeMCPName']('Server#123')).to.equal('Server_123');
+            expect(service['sanitizeMCPName']('test$%^&*()')).to.equal('test_______');
+        });
+
+        it('preserves alphanumeric characters', () => {
+            expect(service['sanitizeMCPName']('Server123')).to.equal('Server123');
+            expect(service['sanitizeMCPName']('ABC123xyz')).to.equal('ABC123xyz');
+        });
+
+        it('preserves underscores and hyphens', () => {
+            expect(service['sanitizeMCPName']('my_server')).to.equal('my_server');
+            expect(service['sanitizeMCPName']('my-server')).to.equal('my-server');
+            expect(service['sanitizeMCPName']('my_server-name')).to.equal('my_server-name');
+        });
+
+        it('handles mixed cases', () => {
+            expect(service['sanitizeMCPName']('My Server 123!')).to.equal('My_Server_123_');
+            expect(service['sanitizeMCPName']('Test@Server#Name')).to.equal('Test_Server_Name');
+            expect(service['sanitizeMCPName']('My-Server Name_123')).to.equal('My-Server_Name_123');
+        });
+
+        it('handles empty string', () => {
+            expect(service['sanitizeMCPName']('')).to.equal('');
+        });
+
+        it('handles string with only special characters', () => {
+            expect(service['sanitizeMCPName']('!@#$%^&*()')).to.equal('_________');
+        });
+
+        it('handles string with only spaces', () => {
+            expect(service['sanitizeMCPName']('   ')).to.equal('___');
+        });
+
+        it('handles multiple consecutive spaces', () => {
+            expect(service['sanitizeMCPName']('My  Server')).to.equal('My__Server');
+            expect(service['sanitizeMCPName']('My   Server   Name')).to.equal('My___Server___Name');
+        });
+    });
+
     it('starts the server and registers tools', async () => {
         await service.startServer('asana');
 
