@@ -10,6 +10,7 @@
 - [ai-chat] added an optional `sessionId` to the agent delegation tool, which continues a previous delegation so the delegated agent keeps its conversation context instead of starting over. Delegation results now end with a `[delegation sessionId: <id>]` line that reports the id to pass back [#17965](https://github.com/eclipse-theia/theia/pull/17965) - Contributed on behalf of K2view
 - [core, filesystem, plugin-ext] fixed file decorations being dropped by large change events: change events are batched, and events exceeding the plugin-ext cap arrive as a flush that is re-fetched on demand [#17766](https://github.com/eclipse-theia/theia/pull/17766) - Contributed on behalf of K2view
 - [preview] removed the `@theia/preview` extension code entirely (deprecated and unpublished since v1.73.0) [#18001](https://github.com/eclipse-theia/theia/pull/18001)
+- [ai-copilot] fixed visiblity of "I have authorized" button when using the authentication dialog twice
 
 <a name="breaking_changes_1.76.0">[Breaking Changes:](#breaking_changes_1.76.0)</a>
 
