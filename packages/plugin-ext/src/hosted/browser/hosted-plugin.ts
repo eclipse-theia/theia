@@ -249,7 +249,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     }
 
     protected createTheiaReadyPromise(): Promise<unknown> {
-        return Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots]);
+        return Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots, this.telemetryConsentProvider.ready]);
     }
 
     protected override runOperation(operation: () => Promise<void>): Promise<void> {

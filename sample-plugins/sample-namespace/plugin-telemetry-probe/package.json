@@ -1,0 +1,32 @@
+{
+  "private": true,
+  "name": "plugin-telemetry-probe",
+  "version": "1.75.0",
+  "main": "extension.js",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+  "publisher": "sample-namespace",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "engines": {
+    "vscode": "^1.125.0"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "devDependencies": {
+    "@types/vscode": "^1.125.0"
+  },
+  "scripts": {
+    "build": "npx @vscode/vsce@3 package --no-dependencies"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "plugin-telemetry-probe.log",
+        "title": "Telemetry Probe: Log One Usage and One Error Event"
+      }
+    ]
+  }
+}

@@ -37,7 +37,8 @@ describe('TelemetryMainImpl', () => {
         container = new Container();
         container.bind(TelemetryConsentProvider).toConstantValue(<TelemetryConsentProvider>{
             get level(): TelemetryLevel { return level; },
-            onDidChangeTelemetryLevel: levelChanged.event
+            onDidChangeTelemetryLevel: levelChanged.event,
+            ready: Promise.resolve()
         });
         rpc = {
             getProxy<T>(_proxyId: unknown): T {
