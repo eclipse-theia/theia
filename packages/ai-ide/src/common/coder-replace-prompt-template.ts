@@ -9,7 +9,7 @@
 // SPDX-License-Identifier: MIT
 // *****************************************************************************
 
-import { AGENT_DELEGATION_FUNCTION_ID, BasePromptFragment } from '@theia/ai-core/lib/common';
+import { AGENT_DELEGATION_FUNCTION_ID, AGENTS_MD_PROMPT_FRAGMENT_ID, BasePromptFragment } from '@theia/ai-core/lib/common';
 import { CHANGE_SET_SUMMARY_VARIABLE_ID } from '@theia/ai-chat';
 import {
     GET_WORKSPACE_FILE_LIST_FUNCTION_ID,
@@ -256,8 +256,7 @@ Always retrieve relevant files using ~{${FILE_CONTENT_FUNCTION_ID}} to understan
 ## Previously Changed Files
 {{changeSetSummary}}
 
-## Project Info
-{{prompt:project-info}}
+{{prompt:${AGENTS_MD_PROMPT_FRAGMENT_ID}}}
 
 {{prompt:${OPEN_EDITORS_HINT_FRAGMENT_ID}}}
 
@@ -546,8 +545,7 @@ Always retrieve relevant files using ~{${FILE_CONTENT_FUNCTION_ID}} to understan
 ## Previously Changed Files
 {{${CHANGE_SET_SUMMARY_VARIABLE_ID}}}
 
-## Project Info
-{{prompt:project-info}}
+{{prompt:${AGENTS_MD_PROMPT_FRAGMENT_ID}}}
 
 {{prompt:${OPEN_EDITORS_HINT_FRAGMENT_ID}}}
 
@@ -639,7 +637,7 @@ Always look at the relevant files to understand your task using the function ~{$
 You have previously proposed changes for the following files. Some suggestions may have been accepted by the user, while others may still be pending.
 {{${CHANGE_SET_SUMMARY_VARIABLE_ID}}}
 
-{{prompt:project-info}}
+{{prompt:${AGENTS_MD_PROMPT_FRAGMENT_ID}}}
 
 {{prompt:${OPEN_EDITORS_HINT_FRAGMENT_ID}}}
 

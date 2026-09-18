@@ -121,7 +121,7 @@ import { AiConfigurationPreferences } from '../common/ai-configuration-preferenc
 import { WorkspaceRestrictionContribution } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { AIWorkspaceRestrictionContribution } from './ai-workspace-restriction-contribution';
 
-import { ProjectInfoAgent } from './project-info-agent';
+import { AgentsMdAgent } from './agents-md-agent';
 import { CreateSkillAgent } from './create-skill-agent';
 import { SuggestTerminalCommand } from './ai-terminal-functions';
 import { TodoWriteTool } from './todo-tool';
@@ -175,9 +175,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(Agent).toService(CoderAgent);
     bind(ChatAgent).toService(CoderAgent);
 
-    bind(ProjectInfoAgent).toSelf().inSingletonScope();
-    bind(Agent).toService(ProjectInfoAgent);
-    bind(ChatAgent).toService(ProjectInfoAgent);
+    bind(AgentsMdAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(AgentsMdAgent);
+    bind(ChatAgent).toService(AgentsMdAgent);
 
     bind(CreateSkillAgent).toSelf().inSingletonScope();
     bind(Agent).toService(CreateSkillAgent);

@@ -1,13 +1,14 @@
-## Theia Project Information
+# AGENTS.md
 
-This section contains information specific about the Theia Project and code base, which the user is currently working on.
+Project-specific context for AI agents working on the Eclipse Theia code base.
 
-### Architecture overview
+## Architecture overview
 
 Theia has a modular architecture and consists of so-called "Theia extensions", which are technically node packages.
 Most features and generally the source code can be found under "/packages/" which hosts a list of Theia extensions for different sorts of features.
 Theia applications can be used in the browser or (via Electron) on the desktop, but generally have a front end (browser application) and a backend part (node application).
 Therefore, extensions can contribute to the front end and the backend. This is reflected in the folder structure of extensions:
+
 - src/browser: Frontend part of an extensions
 - src/node: Backend part of an extension.
 - src/common: Common/shared components, interfaces and protocol information for front end back end communication
@@ -15,29 +16,31 @@ Therefore, extensions can contribute to the front end and the backend. This is r
 Theia uses dependency injection (via inversify) to wired components. If a class is contributed via dependency injection it needs to be bound in the corresponding frontend or
 backend module (which usually already exists in existing packages)
 
-#### Widgets
+### Widgets
 
 Widgets are views that are visible in the workbench of a Theia-based application.
 
-#### Commands
+### Commands
 
 Commands in Theia are actions that can be executed by users and programmatically. They are registered through the `CommandRegistry` and can be triggered via menus,
 keybindings, or other UI elements such as toolbar items.
 
 Commands are contributed via `CommandContribution`, see for example: packages/ai-chat-ui/src/browser/chat-view-widget-toolbar-contribution.tsx
 
-#### Toolbars
+### Toolbars
 
 Toolbars in Theia are UI components that provide quick access to commonly used commands. They can be added to various parts of the workbench including the main toolbar,
  and custom widget toolbars.
 
 Toolbars are typically contributed through:
+
 - `TabBarToolbarContribution`: For adding toolbar items to tab bars
 - `ToolbarContribution`: For contributing to main application toolbars
+
 ToolbarContributions are located in separate files.
 Browse the following file for an example: packages/ai-chat-ui/src/browser/chat-view-widget-toolbar-contribution.tsx
 
-### Coding Guidelines
+## Coding Guidelines
 
 - Trailing white spaces and empty lines with white spaces are forbidden
 - Use constants for values that never get reassigned
@@ -46,7 +49,7 @@ Browse the following file for an example: packages/ai-chat-ui/src/browser/chat-v
 - Use Theia's Event/Emitter/Disposable for handling event listener patterns
 - For localization, use `nls.localizeByDefault(defaultValue)` when the string exists in VS Code's language packs. ESLint will flag `nls.localize` with a custom key if a matching default string is available. Only use `nls.localize('theia/<package>/<id>', 'text')` for strings that do not exist in VS Code translations.
 
-### Contribution Providers
+## Contribution Providers
 
 When binding a `ContributionProvider`, prefer `bindRootContributionProvider` over `bindContributionProvider`.
 
@@ -55,7 +58,7 @@ When binding a `ContributionProvider`, prefer `bindRootContributionProvider` ove
 
 Both functions are exported from `@theia/core/lib/common/contribution-provider`.
 
-### Test File References
+## Test File References
 
 When writing new tests, refer to the following files to see example tests and ensure consistency in style and methodology within the project:
 
@@ -64,7 +67,7 @@ When writing new tests, refer to the following files to see example tests and en
 
 Tests are located in the same directory as the components under test.
 
-### Compile and Test
+## Compile and Test
 
 Use `npm` (not `yarn`) for all package management and script execution.
 
@@ -74,11 +77,11 @@ done for a final validation. There are usually pre-defined tasks for all these o
 **Important:** Building a package only compiles TypeScript. Before any UI testing, you must also rebuild the browser example application (`examples/browser`),
 which bundles the frontend. Bundling runs via `theia build`, which uses esbuild and the generated `esbuild.mjs` config of the application. Without this step, the running browser app will not include the latest code changes.
 
-### Start Theia
+## Start Theia
 
 To start Theia as a browser app to show something to the user or for UI testing use the launch config "Start Theia Default (Browser backend, no debug)"
 
-#### Building Applications
+### Building Applications
 
 Before running or testing the application UI, you must build the application:
 
@@ -87,7 +90,7 @@ Before running or testing the application UI, you must build the application:
 
 These commands bundle the frontend and must be run after any code changes before launching the application via debug configurations.
 
-### Preferences
+## Preferences
 
 Theia uses a preferences system for user/workspace settings. To add new preferences:
 
@@ -97,7 +100,7 @@ Theia uses a preferences system for user/workspace settings. To add new preferen
 
 **Example:** `packages/workspace/src/common/workspace-trust-preferences.ts`
 
-### Plugin API Extensions
+## Plugin API Extensions
 
 To extend the plugin API (VS Code compatible API):
 
@@ -109,7 +112,7 @@ To extend the plugin API (VS Code compatible API):
 
 Events flow: Main side service → `workspace-main.ts` → RPC → `workspace.ts` → plugin context
 
-#### Proposed APIs
+### Proposed APIs
 
 For APIs that are not yet stable, Theia follows VS Code's proposed API pattern:
 
@@ -119,7 +122,7 @@ For APIs that are not yet stable, Theia follows VS Code's proposed API pattern:
 
 Note: Some VS Code APIs that were previously "proposed" are now stable (e.g., workspace trust). Check VS Code's current API status before creating proposed API files.
 
-### Styling
+## Styling
 
 Theia permits extensive color theming and makes extensive use of CSS variables. Styles are typically located either in an `index.css` file for an entire package or in a
 module-level CSS file.
@@ -128,7 +131,7 @@ module-level CSS file.
 - **Package-level CSS example**: `packages/ai-ide/src/browser/style/index.css`
 - **Module-specific CSS example**: `packages/core/src/browser/style/tabs.css`
 
-### FileService and Filesystem Access (Browser Mode)
+## FileService and Filesystem Access (Browser Mode)
 
 The `FileService` in browser mode communicates with the backend via RPC and has **restricted filesystem access**:
 
@@ -136,6 +139,7 @@ The `FileService` in browser mode communicates with the backend via RPC and has 
 - **Inaccessible paths:** Arbitrary filesystem paths outside these boundaries (e.g., `/tmp/`, `/etc/`)
 
 When implementing browser-side services that need to read files from user-configured directories:
+
 1. Use `FileService` from `@theia/filesystem/lib/browser/file-service`
 2. Convert paths to URIs using `URI.fromFilePath(path)`
 3. Expect `fileService.exists()` to return `false` for paths outside allowed boundaries
