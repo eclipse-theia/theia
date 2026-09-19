@@ -427,7 +427,7 @@ export interface WatcherHandle {
     watcher: WatcherInstance;
 }
 
-/** @deprecated since 1.75.0 - use `WatcherHandle`. */
+/** @deprecated since 1.76.0 - use `WatcherHandle`. */
 export type PacelWatcherHandle = WatcherHandle;
 
 /**
@@ -474,12 +474,23 @@ export class FileSystemWatcherServiceImpl implements FileSystemWatcherService {
     async watchFileChanges(clientId: number, uri: string, options?: WatchOptions): Promise<number> {
         const resolvedOptions = this.resolveWatchOptions(options);
         const watcherId = this.watcherId++;
-        const watcher = resolvedOptions.recursive
-            ? this.watchRecursively(clientId, uri, resolvedOptions)
-            : await this.watchDirectory(clientId, watcherId, uri, resolvedOptions);
-        this.watcherHandles.set(watcherId, { clientId, watcher });
-        watcher.whenDisposed.then(() => this.watcherHandles.delete(watcherId));
+        if (resolvedOptions.recursive) {
+            this.registerHandle(watcherId, clientId, this.watchRecursively(clientId, uri, resolvedOptions));
+        } else {
+            await this.watchDirectory(clientId, watcherId, uri, resolvedOptions);
+        }
         return watcherId;
+    }
+
+    /** Makes a watcher reachable by the `watcherId` its client unwatches with. */
+    protected registerHandle(watcherId: number, clientId: number, watcher: WatcherInstance): void {
+        this.watcherHandles.set(watcherId, { clientId, watcher });
+        watcher.whenDisposed.then(() => {
+            // A watcher that handed its requests on is disposed while the handle already points elsewhere.
+            if (this.watcherHandles.get(watcherId)?.watcher === watcher) {
+                this.watcherHandles.delete(watcherId);
+            }
+        });
     }
 
     protected watchRecursively(clientId: number, uri: string, options: ResolvedWatchOptions): ParcelWatcher {
@@ -493,15 +504,49 @@ export class FileSystemWatcherServiceImpl implements FileSystemWatcherService {
     }
 
     /** Non-recursive requests resolving to the same directory share one watcher, file or directory alike. */
-    protected async watchDirectory(clientId: number, watcherId: number, uri: string, options: ResolvedWatchOptions): Promise<NodeDirectoryWatcher> {
+    protected async watchDirectory(clientId: number, watcherId: number, uri: string, options: ResolvedWatchOptions): Promise<void> {
         const fsPath = FileUri.fsPath(uri);
         const { directory, fileName } = await NodeDirectoryWatcher.resolveTarget(fsPath);
         const watcherKey = this.getDirectoryWatcherKey(directory);
         // Nothing is awaited below, so concurrent requests for one directory cannot both create a watcher.
-        const watcher = this.getLiveWatcher<NodeDirectoryWatcher>(watcherKey)
-            ?? this.registerWatcher(watcherKey, this.createDirectoryWatcher(directory));
+        const existing = this.getLiveWatcher<NodeDirectoryWatcher>(watcherKey);
+        const watcher = existing ?? this.registerWatcher(watcherKey, this.createDirectoryWatcher(directory));
         watcher.addRequest(watcherId, { clientId, path: fsPath, fileName, ignored: this.compileExcludes(options.ignored) });
-        return watcher;
+        // The handle first, so that a re-key arriving right after can still find and move it.
+        this.registerHandle(watcherId, clientId, watcher);
+        if (!existing) {
+            // `directory` is a guess as long as the path does not exist, so follow where the watcher lands.
+            watcher.onDidResolveDirectory(() => this.rekeyDirectoryWatcher(watcher));
+        }
+    }
+
+    /**
+     * Moves a watcher to the key of the directory it resolved to. A watcher already sitting there takes over
+     * the requests, so a target that turns out to be a file leaves no second handle on its parent directory.
+     */
+    protected rekeyDirectoryWatcher(watcher: NodeDirectoryWatcher): void {
+        const watcherKey = this.getDirectoryWatcherKey(watcher.directory);
+        if (watcher.isDisposed || this.watchers.get(watcherKey) === watcher) {
+            return;
+        }
+        for (const [staleKey, registered] of this.watchers) {
+            if (registered === watcher) {
+                this.watchers.delete(staleKey);
+            }
+        }
+        const existing = this.getLiveWatcher<NodeDirectoryWatcher>(watcherKey);
+        if (!existing) {
+            this.registerWatcher(watcherKey, watcher);
+            return;
+        }
+        for (const [movedId, request] of watcher.takeRequests()) {
+            existing.addRequest(movedId, request);
+            const handle = this.watcherHandles.get(movedId);
+            if (handle) {
+                handle.watcher = existing;
+            }
+        }
+        watcher.dispose();
     }
 
     protected createWatcher(clientId: number, fsPath: string, options: WatchOptions): ParcelWatcher {
@@ -597,7 +642,7 @@ export class FileSystemWatcherServiceImpl implements FileSystemWatcherService {
     }
 }
 
-/** @deprecated since 1.75.0 - use `FileSystemWatcherServiceImpl`, which also serves non-recursive requests. */
+/** @deprecated since 1.76.0 - use `FileSystemWatcherServiceImpl`, which also serves non-recursive requests. */
 export const ParcelFileSystemWatcherService = FileSystemWatcherServiceImpl;
-/** @deprecated since 1.75.0 - use `FileSystemWatcherServiceImpl`, which also serves non-recursive requests. */
+/** @deprecated since 1.76.0 - use `FileSystemWatcherServiceImpl`, which also serves non-recursive requests. */
 export type ParcelFileSystemWatcherService = FileSystemWatcherServiceImpl;

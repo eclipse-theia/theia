@@ -580,6 +580,17 @@ describe('node-directory-watcher', function (): void {
             assert.ok(!box.reported(1).includes('added nested/deep.txt'), 'a nested change must not be reported');
         });
 
+        it('reports a child named like the watched directory', async () => {
+            const sameName = path.basename(box.root);
+            await box.watchingForReal(box.root, box.directory());
+
+            box.mkdir(sameName);
+            await box.expectAmong(1, `added ${sameName}`);
+
+            box.remove(sameName);
+            await box.expectAmong(1, `deleted ${sameName}`);
+        });
+
         it('reports an update and a deletion of a direct child', async () => {
             box.write('a.txt');
             await box.watchingForReal(box.root, box.directory());

@@ -17,7 +17,7 @@
 import * as path from 'path';
 import { FSWatcher, promises as fsp, watch } from 'fs';
 import { Minimatch } from 'minimatch';
-import { isOSX, isWindows } from '@theia/core';
+import { Emitter, isOSX, isWindows } from '@theia/core';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { Deferred, timeout } from '@theia/core/lib/common/promise-util';
 import { FileChangeType, FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol';
@@ -97,6 +97,7 @@ export class NodeDirectoryWatcher {
     protected readonly pendingEvents: PendingEvent[] = [];
     protected readonly pendingDeletes = new Map<string, NodeJS.Timeout>();
     protected readonly disposalDeferred = new Deferred<void>();
+    protected readonly directoryResolvedEmitter = new Emitter<void>();
 
     /** Direct children of {@link watchedDirectory}, kept in sync to classify changes and to diff a rescan. */
     protected children = new Set<string>();
@@ -109,6 +110,9 @@ export class NodeDirectoryWatcher {
     protected openFailed = false;
     protected restarting = false;
     protected disposed = false;
+
+    /** Fires when {@link directory} changed, as a target that did not exist yet resolved to a real one. */
+    readonly onDidResolveDirectory = this.directoryResolvedEmitter.event;
 
     /** Resolves once this watcher disposed itself and its resources. Never rejects. */
     readonly whenDisposed = this.disposalDeferred.promise;
@@ -134,8 +138,16 @@ export class NodeDirectoryWatcher {
         return this.disposed;
     }
 
-    isInUse(): boolean {
-        return this.requests.size > 0;
+    /** The directory the handle is on, settled once {@link whenStarted} resolved. */
+    get directory(): string {
+        return this.watchedDirectory;
+    }
+
+    /** Drains the requests, so that they can be moved to the watcher serving their directory. */
+    takeRequests(): Map<number, NodeWatchRequest> {
+        const taken = new Map(this.requests);
+        this.requests.clear();
+        return taken;
     }
 
     addRequest(watcherId: number, request: NodeWatchRequest): void {
@@ -163,6 +175,7 @@ export class NodeDirectoryWatcher {
         clearTimeout(this.disposalTimer);
         this.disposalTimer = undefined;
         this.disposalDeferred.resolve();
+        this.directoryResolvedEmitter.dispose();
         this.debug('DISPOSED');
     }
 
@@ -172,6 +185,7 @@ export class NodeDirectoryWatcher {
             this.options.error(`Refusing to watch "${this.target}": watching a macOS network share is unstable.`);
             return;
         }
+        const previousDirectory = this.watchedDirectory;
         const wasMissing = await this.openWhenAvailable() || missing;
         if (this.disposed) {
             return;
@@ -184,6 +198,9 @@ export class NodeDirectoryWatcher {
         }
         if (previousChildren) {
             this.report(this.diff(previousChildren, this.children));
+        }
+        if (this.watchedDirectory !== previousDirectory) {
+            this.directoryResolvedEmitter.fire();
         }
     }
 
@@ -294,7 +311,7 @@ export class NodeDirectoryWatcher {
             if (!this.disposed) {
                 await task();
             }
-        }, error => this.options.error(`Watcher failed to process changes at "${this.watchedDirectory}":`, error));
+        }).catch(error => this.options.error(`Watcher failed to process changes at "${this.watchedDirectory}":`, error));
     }
 
     protected async processEvents(events: PendingEvent[]): Promise<void> {
@@ -312,7 +329,7 @@ export class NodeDirectoryWatcher {
                 continue;
             } else if (eventType === 'rename') {
                 renamed = true;
-                if (!this.namesWatchedDirectory(fileName)) {
+                if (!await this.namesWatchedDirectory(fileName)) {
                     await this.resolveRename(fileName, changes);
                 }
             } else {
@@ -328,10 +345,13 @@ export class NodeDirectoryWatcher {
 
     /**
      * Whether an event names the watched directory rather than a child. macOS reports it for any change
-     * inside, so only {@link isWatchedDirectoryGone} settles whether it is still there.
+     * inside, so only {@link isWatchedDirectoryGone} settles whether it is still there. A child of that name
+     * is ruled out on disk, because a brand new one is not in {@link children} yet.
      */
-    protected namesWatchedDirectory(fileName: string): boolean {
-        return !this.children.has(fileName) && fileName === this.normalizeFileName(path.basename(this.watchedDirectory));
+    protected async namesWatchedDirectory(fileName: string): Promise<boolean> {
+        return fileName === this.normalizeFileName(path.basename(this.watchedDirectory))
+            && !this.children.has(fileName)
+            && !await this.childExists(fileName);
     }
 
     protected async resolveRename(fileName: string, changes: ResolvedChange[]): Promise<void> {
@@ -427,7 +447,11 @@ export class NodeDirectoryWatcher {
             }
             // Only a comparison of the contents can recover what happened while the watcher was down.
             await this.start(gone, previousChildren);
-        }, restartError => this.options.error(`Watcher failed to restart at "${this.target}":`, restartError));
+        }).catch(restartError => {
+            // Leaving the flag set would block every later restart, including the one that could recover.
+            this.restarting = false;
+            this.options.error(`Watcher failed to restart at "${this.target}":`, restartError);
+        });
     }
 
     /**

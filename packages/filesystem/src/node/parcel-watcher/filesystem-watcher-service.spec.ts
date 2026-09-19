@@ -164,6 +164,36 @@ describe('filesystem-watcher-service', function (): void {
             assert.strictEqual(box.watcherOf(one), box.watcherOf(two));
         });
 
+        it('moves a watcher to the parent once its path turns out to be a file', async () => {
+            const pending = await box.watch(box.files.path('later.txt'), NON_RECURSIVE);
+            box.files.write('later.txt');
+            await (box.watcherOf(pending) as NodeDirectoryWatcher).whenStarted;
+
+            const directory = await box.watch(box.root, NON_RECURSIVE);
+
+            assert.strictEqual(box.allocated.length, 1);
+            assert.strictEqual(box.watcherOf(pending), box.watcherOf(directory));
+        });
+
+        it('merges two watchers whose paths turn out to be files in one directory', async () => {
+            const [one, two] = await Promise.all([
+                box.watch(box.files.path('a.txt'), NON_RECURSIVE),
+                box.watch(box.files.path('b.txt'), NON_RECURSIVE)
+            ]);
+            box.files.write('a.txt');
+            box.files.write('b.txt');
+            await Promise.all([one, two].map(watcherId => (box.watcherOf(watcherId) as NodeDirectoryWatcher).whenStarted));
+
+            assert.strictEqual(box.allocated.length, 1);
+            assert.strictEqual(box.watcherOf(one), box.watcherOf(two));
+
+            // The handles have to follow the merge, or the moved request would never be released.
+            const survivor = box.watcherOf(one) as NodeDirectoryWatcher;
+            await Promise.all([one, two].map(watcherId => box.unwatchFileChanges(watcherId)));
+            await survivor.whenDisposed;
+            assert.strictEqual(box.allocated.length, 0);
+        });
+
         it('does not attach a request to a watcher that is already disposed', async () => {
             const first = await box.watch(box.root, NON_RECURSIVE);
             const disposed = box.watcherOf(first) as NodeDirectoryWatcher;
