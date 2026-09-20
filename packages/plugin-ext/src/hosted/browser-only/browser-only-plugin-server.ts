@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 robertjndw
+// Copyright (C) 2026 Robert Jandow
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -16,12 +16,11 @@
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Mutex } from 'async-mutex';
-import { ILogger } from '@theia/core';
+import { ILogger, nls } from '@theia/core';
 import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
 import { PluginDeployOptions, PluginIdentifiers, PluginServer, PluginStorageKind, PluginType } from '../../common';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
 import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
-import { getWebLocks, requestLock, WarnOnce } from './web-locks';
 
 const GLOBAL_STORAGE_KEY = 'plugin-storage:global';
 const WORKSPACE_STORAGE_KEY_PREFIX = 'plugin-storage:workspace:';
@@ -52,28 +51,29 @@ export class BrowserOnlyPluginServer implements PluginServer {
     protected readonly pluginPathsService: PluginPathsService;
 
     /**
-     * Fallback for {@link withStoreLock} when the Web Locks API is unavailable. `static`, not
-     * `protected readonly`, so it's shared by every instance in this JS realm - otherwise two
-     * `BrowserOnlyPluginServer`s in the same realm (e.g. two plugin hosts sharing one page) wouldn't
-     * serialize against each other either.
+     * Fallback for {@link withStoreLock} when the Web Locks API is unavailable, plus the flag for
+     * its one-time warning. Both `static`, not `protected readonly`, so they're shared by every
+     * instance in this JS realm - otherwise two `BrowserOnlyPluginServer`s in the same realm
+     * (e.g. two plugin hosts sharing one page) wouldn't serialize against each other either, and
+     * each would warn separately.
      */
     protected static readonly localLocks = new Map<string, Mutex>();
-    protected static readonly missingLocksWarning = new WarnOnce();
+    protected static missingLocksWarned = false;
 
     async install(pluginEntry: string, type?: PluginType, options?: PluginDeployOptions): Promise<void> {
-        throw new Error('Installing plugins is not supported in a browser-only application.');
+        throw new Error(nls.localize('theia/plugin-ext/browserOnlyInstallUnsupported', 'Installing plugins is not supported in a browser-only application.'));
     }
 
     async uninstall(pluginId: PluginIdentifiers.VersionedId): Promise<void> {
-        throw new Error('Uninstalling plugins is not supported in a browser-only application.');
+        throw new Error(nls.localize('theia/plugin-ext/browserOnlyUninstallUnsupported', 'Uninstalling plugins is not supported in a browser-only application.'));
     }
 
     async enablePlugin(pluginId: PluginIdentifiers.UnversionedId): Promise<boolean> {
-        throw new Error('Enabling plugins is not supported in a browser-only application.');
+        throw new Error(nls.localize('theia/plugin-ext/browserOnlyEnableUnsupported', 'Enabling plugins is not supported in a browser-only application.'));
     }
 
     async disablePlugin(pluginId: PluginIdentifiers.UnversionedId): Promise<boolean> {
-        throw new Error('Disabling plugins is not supported in a browser-only application.');
+        throw new Error(nls.localize('theia/plugin-ext/browserOnlyDisableUnsupported', 'Disabling plugins is not supported in a browser-only application.'));
     }
 
     async getInstalledPlugins(): Promise<readonly PluginIdentifiers.VersionedId[]> {
@@ -127,14 +127,17 @@ export class BrowserOnlyPluginServer implements PluginServer {
      * concurrent {@link setStorageValue} on this or another tab can't interleave with it.
      */
     protected withStoreLock<T>(storeKey: string, task: () => Promise<T>): Promise<T> {
-        const locks = getWebLocks();
+        const locks = this.getWebLocks();
         if (locks) {
-            return requestLock(locks, `${LOCK_NAME_PREFIX}${storeKey}`, task);
+            return this.requestLock(locks, `${LOCK_NAME_PREFIX}${storeKey}`, task);
         }
         // no Web Locks API (insecure context, older browser): fall back to serializing writes
         // within this JS realm. A write from another tab, which doesn't share this realm, can
         // still race and get lost.
-        BrowserOnlyPluginServer.missingLocksWarning.warn(this.logger, 'Web Locks API unavailable: plugin storage updates from different tabs may race.');
+        if (!BrowserOnlyPluginServer.missingLocksWarned) {
+            BrowserOnlyPluginServer.missingLocksWarned = true;
+            this.logger.warn('Web Locks API unavailable: plugin storage updates from different tabs may race.');
+        }
         const queue = BrowserOnlyPluginServer.localLocks;
         let mutex = queue.get(storeKey);
         if (!mutex) {
@@ -142,6 +145,22 @@ export class BrowserOnlyPluginServer implements PluginServer {
             queue.set(storeKey, mutex);
         }
         return mutex.runExclusive(task);
+    }
+
+    /** The Web Locks API of this browsing context, or `undefined` in an insecure context or an older browser. */
+    protected getWebLocks(): LockManager | undefined {
+        return typeof navigator === 'object' ? navigator.locks : undefined;
+    }
+
+    /**
+     * Requests `name` from `locks` and runs `callback` once granted, same as `LockManager.request()`.
+     *
+     * `LockGrantedCallback` is typed as `(lock: Lock | null) => T`, which doesn't account for an
+     * async or never-settling callback even though the API itself supports and awaits one, hence
+     * the cast. Kept as its own method so a subclass or test can swap the lock implementation.
+     */
+    protected requestLock<T>(locks: LockManager, name: string, callback: () => T | PromiseLike<T>): Promise<T> {
+        return locks.request<T>(name, callback as unknown as LockGrantedCallback<T>);
     }
 
     /**
