@@ -258,6 +258,23 @@ export class ApplicationShell extends Widget {
     private dragState?: WidgetDragState;
     additionalDraggedUris: URI[] | undefined;
 
+    /**
+     * The widgets of the application shell, ordered by most-recently-activated first. Used to
+     * implement most-recent navigation for `activateNextTab` / `activatePreviousTab`.
+     */
+    private recentWidgets: Widget[] = [];
+    /**
+     * Whether a burst of most-recent tab navigation (e.g. Ctrl+Tab held down) is in progress.
+     * While it is, activations do not reorder `recentWidgets`, so repeated presses keep cycling
+     * through the same order. The burst is committed when the navigation keys are released
+     * (see `commitRecencyNavigation`), so the next press toggles back to the previously active tab.
+     */
+    private recencyNavigationActive = false;
+    /** Whether the Control key is currently held down. */
+    private navigationModifierDown = false;
+    /** The tab that the in-progress navigation burst last navigated to. */
+    private lastRecencyNavigationTarget: Widget | undefined;
+
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
@@ -379,6 +396,12 @@ export class ApplicationShell extends Widget {
                 });
             }
         });
+
+        // Maintain the most-recently-activated order of widgets so that tab navigation can
+        // optionally cycle by recency instead of by tab-bar position.
+        this.onDidChangeActiveWidget(args => this.noteWidgetActivated(args.newValue ?? undefined));
+        this.onDidRemoveWidget(widget => this.noteWidgetRemoved(widget));
+
         this.refreshBottomPanelToggleButton();
         this.initializedDeferred.resolve();
     }
@@ -453,6 +476,8 @@ export class ApplicationShell extends Widget {
         document.addEventListener('lm-dragover', this, true);
         document.addEventListener('lm-dragleave', this, true);
         document.addEventListener('lm-drop', this, true);
+        document.addEventListener('keydown', this, true);
+        document.addEventListener('keyup', this, true);
     }
 
     protected override onAfterDetach(msg: Message): void {
@@ -460,6 +485,8 @@ export class ApplicationShell extends Widget {
         document.removeEventListener('lm-dragover', this, true);
         document.removeEventListener('lm-dragleave', this, true);
         document.removeEventListener('lm-drop', this, true);
+        document.removeEventListener('keydown', this, true);
+        document.removeEventListener('keyup', this, true);
     }
 
     handleEvent(event: Event): void {
@@ -476,6 +503,18 @@ export class ApplicationShell extends Widget {
             case 'lm-dragleave':
                 this.onDragLeave(event as Drag.Event);
                 break;
+            case 'keydown':
+            case 'keyup': {
+                const keyboardEvent = event as KeyboardEvent;
+                if (keyboardEvent.key === 'Control') {
+                    this.navigationModifierDown = keyboardEvent.type === 'keydown';
+                    if (keyboardEvent.type === 'keyup') {
+                        // The navigation keys were released: commit the navigation burst.
+                        this.commitRecencyNavigation();
+                    }
+                }
+                break;
+            }
         }
     }
 
@@ -2015,7 +2054,97 @@ export class ApplicationShell extends Widget {
         return 0;
     }
 
+    /**
+     * Whether tab navigation cycles by tab-bar position or by most-recently-activated order.
+     */
+    protected get tabNavigationOrder(): 'position' | 'recency' {
+        return this.corePreferences.get('workbench.editor.navigationOrder') ?? 'position';
+    }
+
+    /**
+     * Record a widget activation in the most-recently-activated order. Activations are ignored
+     * while a most-recent navigation burst is in progress (see `recencyNavigationActive`), so
+     * that repeated Ctrl+Tab presses keep cycling through the same order; the burst is committed
+     * when the navigation keys are released.
+     */
+    protected noteWidgetActivated(widget: Widget | undefined): void {
+        if (!widget || widget.isDisposed || this.recencyNavigationActive) {
+            return;
+        }
+        this.recentWidgets = [widget, ...this.recentWidgets.filter(w => w !== widget)];
+    }
+
+    protected noteWidgetRemoved(widget: Widget): void {
+        this.recentWidgets = this.recentWidgets.filter(w => w !== widget);
+    }
+
+    /**
+     * Commit an in-progress burst of most-recent navigation: the tab it landed on becomes the
+     * most recently used one. Called when the navigation keys (Ctrl) are released, so that the
+     * next press toggles back to the previously active tab instead of continuing down the list.
+     */
+    protected commitRecencyNavigation(): void {
+        if (!this.recencyNavigationActive) {
+            return;
+        }
+        this.recencyNavigationActive = false;
+        this.noteWidgetActivated(this.lastRecencyNavigationTarget ?? this.currentWidget);
+        this.lastRecencyNavigationTarget = undefined;
+    }
+
+    /**
+     * Activate the next or previous tab in the current tab bar, cycling through the tabs in
+     * most-recently-activated order. While the navigation keys are held down, repeated presses
+     * keep cycling through the unchanged recency order; the order is only updated when the keys
+     * are released (`commitRecencyNavigation`).
+     */
+    protected activateTabByRecency(direction: 1 | -1): boolean {
+        const current = this.currentTabBar;
+        if (!current || current.titles.length <= 1) {
+            return false;
+        }
+        if (this.recencyNavigationActive && !this.navigationModifierDown) {
+            // The keys were released without a key-up event reaching us (e.g. focus changed):
+            // commit the previous burst before starting a new one.
+            this.commitRecencyNavigation();
+        }
+        const titles = current.titles.slice();
+        titles.sort((a, b) => {
+            const ai = this.recentWidgets.findIndex(w => w.id === a.owner.id);
+            const bi = this.recentWidgets.findIndex(w => w.id === b.owner.id);
+            if (ai === -1 && bi === -1) {
+                return 0;
+            }
+            if (ai === -1) {
+                return 1;
+            }
+            if (bi === -1) {
+                return -1;
+            }
+            return ai - bi;
+        });
+        const currentWidget = this.currentWidget;
+        const startIndex = currentWidget
+            ? titles.findIndex(t => t.owner.id === currentWidget.id)
+            : 0;
+        if (startIndex === -1) {
+            return false;
+        }
+        this.recencyNavigationActive = true;
+        const nextIndex = (startIndex + direction + titles.length) % titles.length;
+        const nextWidget = titles[nextIndex].owner;
+        this.lastRecencyNavigationTarget = nextWidget;
+        this.activateWidget(nextWidget.id).catch(() => undefined);
+        return true;
+    }
+
     activateNextTab(): boolean {
+        // In recency mode, cycle by most-recently-activated order; if there is nothing to cycle
+        // by recency (e.g. the current widget is not a tab of the current tab bar), fall back
+        // to positional navigation.
+        if (this.tabNavigationOrder === 'recency' && this.activateTabByRecency(1)) {
+            return true;
+        }
         const current = this.currentTabBar;
         if (current) {
             const ci = current.currentIndex;
@@ -2097,6 +2226,10 @@ export class ApplicationShell extends Widget {
     }
 
     activatePreviousTab(): boolean {
+        // Same fallback to positional navigation as in `activateNextTab`.
+        if (this.tabNavigationOrder === 'recency' && this.activateTabByRecency(-1)) {
+            return true;
+        }
         const current = this.currentTabBar;
         if (current) {
             const ci = current.currentIndex;
