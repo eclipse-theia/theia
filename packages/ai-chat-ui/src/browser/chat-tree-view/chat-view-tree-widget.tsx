@@ -64,6 +64,7 @@ import {
 } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
+import { ListRange } from '@theia/core/shared/react-virtuoso';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution.js';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer.js';
@@ -108,6 +109,16 @@ export interface ChatWelcomeMessageProvider {
     readonly onStateChanged?: Event<void>;
     /** Optional priority for rendering order. Higher values render first. Default: 0 */
     readonly priority?: number;
+}
+
+export namespace ChatViewTreeWidget {
+    export interface SessionScrollState {
+        topVisibleRowIndex?: number;
+        scrollTop?: number;
+        atBottom?: boolean;
+        locked?: boolean;
+        temporaryLocked?: boolean;
+    }
 }
 
 @injectable()
@@ -192,7 +203,50 @@ export class ChatViewTreeWidget extends TreeWidget {
      */
     protected _showScrollButton = false;
 
+    protected topVisibleRowIndex = 0;
+    protected restoredTopVisibleRowIndex: number | undefined;
+    protected currentScrollTop: number | undefined;
+    protected restoredScrollTop: number | undefined;
+    protected scrollerElement: HTMLElement | undefined;
+    protected scrollerScrollListener: (() => void) | undefined;
     onScrollLockChange?: (temporaryLocked: boolean) => void;
+
+    getScrollState(): ChatViewTreeWidget.SessionScrollState {
+        const scrollTop = this.scrollerElement ? this.scrollerElement.scrollTop : this.currentScrollTop;
+        return {
+            topVisibleRowIndex: this.topVisibleRowIndex,
+            scrollTop,
+            atBottom: this.atBottom,
+            locked: !this.shouldScrollToEnd && !this.atBottom
+        };
+    }
+
+    restoreScrollState(state: ChatViewTreeWidget.SessionScrollState): void {
+        this.applyScrollState(state);
+        this.update();
+    }
+
+    protected applyScrollState(state?: ChatViewTreeWidget.SessionScrollState): void {
+        const isScrolledAway = state && (state.locked || state.temporaryLocked || !state.atBottom);
+        const hasStoredPosition = state && (state.scrollTop !== undefined || state.topVisibleRowIndex !== undefined);
+        if (state && isScrolledAway && hasStoredPosition) {
+            this.restoredTopVisibleRowIndex = state.topVisibleRowIndex;
+            this.restoredScrollTop = state.scrollTop;
+            this.topVisibleRowIndex = state.topVisibleRowIndex ?? 0;
+            this.currentScrollTop = state.scrollTop;
+            this.atBottom = false;
+            this._showScrollButton = true;
+            this.shouldScrollToEnd = false;
+        } else {
+            this.restoredTopVisibleRowIndex = undefined;
+            this.restoredScrollTop = undefined;
+            this.topVisibleRowIndex = 0;
+            this.currentScrollTop = undefined;
+            this.atBottom = true;
+            this._showScrollButton = false;
+            this.shouldScrollToEnd = !state?.locked;
+        }
+    }
 
     set shouldScrollToEnd(shouldScrollToEnd: boolean) {
         this._shouldScrollToEnd = shouldScrollToEnd;
@@ -252,6 +306,11 @@ export class ChatViewTreeWidget extends TreeWidget {
             }),
             this.onAtBottomStateChange(atBottom => {
                 this.handleAtBottomStateChange(atBottom);
+            }),
+            Disposable.create(() => {
+                if (this.scrollerElement && this.scrollerScrollListener) {
+                    this.scrollerElement.removeEventListener('scroll', this.scrollerScrollListener);
+                }
             })
         ]);
 
@@ -395,6 +454,22 @@ export class ChatViewTreeWidget extends TreeWidget {
         super.onBeforeDetach(msg);
     }
 
+    protected handleScrollerRef = (ref: HTMLElement | Window | null): void => {
+        if (this.scrollerElement && this.scrollerScrollListener) {
+            this.scrollerElement.removeEventListener('scroll', this.scrollerScrollListener);
+        }
+        if (ref instanceof HTMLElement) {
+            this.scrollerElement = ref;
+            this.scrollerScrollListener = () => {
+                this.currentScrollTop = ref.scrollTop;
+            };
+            ref.addEventListener('scroll', this.scrollerScrollListener, { passive: true });
+        } else {
+            this.scrollerElement = undefined;
+            this.scrollerScrollListener = undefined;
+        }
+    };
+
     /** Toggles auto-scroll and the scroll-to-bottom button based on whether the viewport includes the bottom of the list. */
     protected handleAtBottomStateChange(isAtBottom: boolean): void {
         if (isAtBottom !== this.atBottom) {
@@ -402,6 +477,9 @@ export class ChatViewTreeWidget extends TreeWidget {
             if (isAtBottom) {
                 // Arrived at bottom — re-enable auto-scroll and hide the button
                 this._showScrollButton = false;
+                this.restoredTopVisibleRowIndex = undefined;
+                this.restoredScrollTop = undefined;
+                this.currentScrollTop = undefined;
                 this.setTemporaryScrollLock(false);
             } else {
                 // Left the bottom — lock auto-scroll and show the button
@@ -412,11 +490,40 @@ export class ChatViewTreeWidget extends TreeWidget {
         }
     }
 
+    protected handleRangeChanged(range: ListRange): void {
+        this.topVisibleRowIndex = range.startIndex;
+    }
+
     protected setTemporaryScrollLock(enabled: boolean): void {
         // Immediately apply scroll lock changes without delay
         this.onScrollLockChange?.(enabled);
         // Update cached scrollToRow so that outdated values do not cause unwanted scrolling on update()
         this.updateScrollToRow();
+    }
+
+    protected override getViewKey(): React.Key | undefined {
+        return this.chatModelId;
+    }
+
+    protected override createViewProps(rows: TreeWidget.NodeRow[]): TreeWidget.ViewProps {
+        const props = super.createViewProps(rows);
+        const initialTopMostItemIndex = this.getInitialTopMostItemIndex(rows.length);
+        const initialScrollTop = (!this.shouldScrollToEnd && this.restoredScrollTop !== undefined && this.restoredScrollTop > 0)
+            ? this.restoredScrollTop
+            : undefined;
+        return {
+            ...props,
+            scrollerRef: ref => {
+                props.scrollerRef?.(ref);
+                this.handleScrollerRef(ref);
+            },
+            rangeChanged: range => {
+                props.rangeChanged?.(range);
+                this.handleRangeChanged(range);
+            },
+            ...(initialTopMostItemIndex !== undefined ? { initialTopMostItemIndex } : {}),
+            ...(initialScrollTop !== undefined ? { initialScrollTop } : {})
+        };
     }
 
     protected override renderTree(model: TreeModel): React.ReactNode {
@@ -432,6 +539,26 @@ export class ChatViewTreeWidget extends TreeWidget {
             {tree}
             {this.renderScrollToBottomButton()}
         </React.Fragment>;
+    }
+
+    protected getInitialTopMostItemIndex(rowCount: number): number | { index: number; align: 'start' | 'center' | 'end' } | undefined {
+        if (rowCount === 0) {
+            return undefined;
+        }
+        if (!this.shouldScrollToEnd) {
+            if (this.restoredScrollTop !== undefined && this.restoredScrollTop > 0) {
+                return undefined;
+            }
+            const targetRow = this.restoredTopVisibleRowIndex ?? this.topVisibleRowIndex;
+            if (targetRow !== undefined) {
+                const targetIndex = Math.min(Math.max(0, targetRow), rowCount - 1);
+                return { index: targetIndex, align: 'start' };
+            }
+        }
+        if (this.shouldScrollToEnd) {
+            return { index: rowCount - 1, align: 'end' };
+        }
+        return undefined;
     }
 
     /** Shows the scroll to bottom button if not at the bottom (debounced). */
@@ -452,6 +579,9 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.scrollToRow = this.rows.size;
         this.atBottom = true;
         this._showScrollButton = false;
+        this.restoredTopVisibleRowIndex = undefined;
+        this.restoredScrollTop = undefined;
+        this.currentScrollTop = undefined;
         this.setTemporaryScrollLock(false);
         this.update();
     }
@@ -530,14 +660,14 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     protected readonly toDisposeOnChatModelChange = new DisposableCollection();
 
-    /**
-     * Tracks the ChatModel handed over.
-     * Tracking multiple chat models will result in a weird UI
-     */
-    public trackChatModel(chatModel: ChatModel): void {
+    public trackChatModel(chatModel: ChatModel, savedState?: ChatViewTreeWidget.SessionScrollState): void {
         this.toDisposeOnChatModelChange.dispose();
+        this.chatModelId = chatModel.id;
+
+        this.applyScrollState(savedState);
+
         this.recreateModelTree(chatModel);
-        this.findWidget.setChatModel(chatModel);
+        this.findWidget?.setChatModel(chatModel);
 
         chatModel.getRequests().forEach(request => {
             if (!request.response.isComplete) {
