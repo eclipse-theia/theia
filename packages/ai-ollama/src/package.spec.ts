@@ -63,6 +63,66 @@ describe('ai-ollama package', () => {
         expect(tags['items']).to.deep.equal({ type: 'string', description: 'a tag' });
     });
 
+    it('passes enum values through to output', () => {
+        const model = new OllamaModelUnderTest();
+        const tool: ToolRequest = {
+            id: 'test',
+            name: 'test',
+            description: 'test',
+            handler: sinon.stub(),
+            parameters: {
+                type: 'object',
+                properties: {
+                    status: {
+                        type: 'string',
+                        description: 'task status',
+                        enum: ['pending', 'in-progress', 'done']
+                    }
+                }
+            }
+        };
+        const result = model.toOllamaTool(tool);
+        const status = result.function.parameters!.properties!['status'] as Record<string, unknown>;
+        expect(status['enum']).to.deep.equal(['pending', 'in-progress', 'done']);
+    });
+
+    it('passes required and nested properties through array items (todoWrite schema)', () => {
+        const model = new OllamaModelUnderTest();
+        const tool: ToolRequest = {
+            id: 'test',
+            name: 'test',
+            description: 'test',
+            handler: sinon.stub(),
+            parameters: {
+                type: 'object',
+                properties: {
+                    todos: {
+                        type: 'array',
+                        description: 'The updated todo list.',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                id: { type: 'string', description: 'unique id' },
+                                text: { type: 'string', description: 'todo text' },
+                                done: { type: 'boolean', description: 'completion flag' }
+                            },
+                            required: ['id', 'text', 'done']
+                        }
+                    }
+                }
+            }
+        };
+        const result = model.toOllamaTool(tool);
+        const todos = result.function.parameters!.properties!['todos'] as Record<string, unknown>;
+        const items = todos['items'] as Record<string, unknown>;
+        expect(items['required']).to.deep.equal(['id', 'text', 'done']);
+        expect(items['properties']).to.deep.equal({
+            id: { type: 'string', description: 'unique id' },
+            text: { type: 'string', description: 'todo text' },
+            done: { type: 'boolean', description: 'completion flag' }
+        });
+    });
+
     it('resolves anyOf inside array items sub-properties', () => {
         const model = new OllamaModelUnderTest();
         const tool: ToolRequest = {
