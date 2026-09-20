@@ -418,24 +418,20 @@ export class OllamaModel implements LanguageModel {
                 return undefined;
             }
 
-            const result: Record<string, { type: string, description: string, enum?: unknown, items?: unknown, properties?: unknown, required?: unknown }> = {};
+            const result: Record<string, Record<string, unknown>> = {};
             for (const [key, prop] of Object.entries(props)) {
                 const type = resolveType(prop);
                 if (type) {
                     const description = typeof prop.description === 'string' ? prop.description : '';
-                    result[key] = { type: type, description: description };
-                    if (prop.enum !== undefined) {
-                        result[key].enum = prop.enum;
-                    }
-                    if (prop.items !== undefined) {
-                        result[key].items = transformItem(prop.items);
-                    }
-                    if (prop.properties !== undefined) {
-                        result[key].properties = transform(prop.properties as ToolRequestParametersProperties);
-                    }
-                    if (prop.required !== undefined) {
-                        result[key].required = prop.required;
-                    }
+                    const entry: Record<string, unknown> = {
+                        ...prop,
+                        type,
+                        description,
+                        ...(prop.properties !== undefined && { properties: transform(prop.properties as ToolRequestParametersProperties) }),
+                        ...(prop.items !== undefined && { items: transformItem(prop.items) }),
+                    };
+                    delete entry['anyOf'];
+                    result[key] = entry;
                 }
             }
             return result;
@@ -447,29 +443,17 @@ export class OllamaModel implements LanguageModel {
             }
             if (items && typeof items === 'object') {
                 const itemProp = items as ToolRequestParameterProperty;
-                if (!resolveType(itemProp)) {
+                const type = resolveType(itemProp);
+                if (!type) {
                     return undefined;
                 }
-                const itemResult: Record<string, unknown> = {};
-                const resolvedType = resolveType(itemProp);
-                if (resolvedType) {
-                    itemResult['type'] = resolvedType;
-                }
-                if (itemProp.description !== undefined) {
-                    itemResult['description'] = itemProp.description;
-                }
-                if (itemProp.enum !== undefined) {
-                    itemResult['enum'] = itemProp.enum;
-                }
-                if (itemProp.properties !== undefined) {
-                    itemResult['properties'] = transform(itemProp.properties as ToolRequestParametersProperties);
-                }
-                if (itemProp.required !== undefined) {
-                    itemResult['required'] = itemProp.required;
-                }
-                if (itemProp.items !== undefined) {
-                    itemResult['items'] = transformItem(itemProp.items);
-                }
+                const itemResult: Record<string, unknown> = {
+                    ...itemProp,
+                    type,
+                    ...(itemProp.properties !== undefined && { properties: transform(itemProp.properties as ToolRequestParametersProperties) }),
+                    ...(itemProp.items !== undefined && { items: transformItem(itemProp.items) }),
+                };
+                delete itemResult['anyOf'];
                 return itemResult;
             }
             return items;
@@ -482,7 +466,7 @@ export class OllamaModel implements LanguageModel {
                 parameters: {
                     type: tool.parameters?.type ?? 'object',
                     required: tool.parameters?.required ?? [],
-                    properties: (transform(tool.parameters?.properties) ?? {}) as Record<string, { type?: string; items?: unknown; description?: string; enum?: unknown[] }>
+                    properties: transform(tool.parameters?.properties) ?? {}
                 },
             },
             handler: tool.handler
