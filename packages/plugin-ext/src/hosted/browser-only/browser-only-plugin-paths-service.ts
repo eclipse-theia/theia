@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 robertjndw
+// Copyright (C) 2026 Robert Jandow
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -64,11 +64,31 @@ export class BrowserOnlyPluginPathsService implements PluginPathsService {
         return hostLogPath;
     }
 
+    /**
+     * Resolving re-hashes the workspace id and hits {@link FileService.createFolder}, and the plugin
+     * server asks for this on every workspace storage read/write. The roots are part of the key
+     * because an untitled workspace's id is derived from them.
+     */
+    protected readonly hostStoragePaths = new Map<string, Promise<string>>();
+
     async getHostStoragePath(workspaceUri: string | undefined, rootUris: string[]): Promise<string | undefined> {
         if (!workspaceUri) {
             // no workspace, no place to store workspace state - same as the backend
             return undefined;
         }
+        // '\n' cannot appear in a URI, so it is safe as a separator between the workspace URI and its roots
+        const cacheKey = `${workspaceUri}\n${[...rootUris].sort().join('\n')}`;
+        let hostStoragePath = this.hostStoragePaths.get(cacheKey);
+        if (!hostStoragePath) {
+            hostStoragePath = this.resolveHostStoragePath(workspaceUri, rootUris);
+            this.hostStoragePaths.set(cacheKey, hostStoragePath);
+            // a transient failure (e.g. a flaky file system call) shouldn't poison the cache forever
+            hostStoragePath.catch(() => this.hostStoragePaths.delete(cacheKey));
+        }
+        return hostStoragePath;
+    }
+
+    protected async resolveHostStoragePath(workspaceUri: string, rootUris: string[]): Promise<string> {
         const configDirUri = new URI(await this.envServer.getConfigDirUri());
         const workspaceId = await this.buildWorkspaceId(configDirUri, workspaceUri, rootUris);
         return this.ensureDirectory(configDirUri.resolve(PluginPaths.PLUGINS_WORKSPACE_STORAGE_DIR).resolve(workspaceId));

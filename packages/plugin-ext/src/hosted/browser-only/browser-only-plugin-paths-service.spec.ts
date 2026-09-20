@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 robertjndw
+// Copyright (C) 2026 Robert Jandow
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -35,8 +35,11 @@ disableJSDOM();
 /** The directories of the browser local file system, enough of it for the path service. */
 class FakeFileService {
     readonly directories = new Set<string>();
+    /** Lets tests assert that a cached path didn't go through {@link createFolder} again. */
+    createFolderCallCount = 0;
 
     async createFolder(uri: URI): Promise<void> {
+        this.createFolderCallCount++;
         for (let current = uri; !current.path.isRoot; current = current.parent) {
             this.directories.add(current.path.toString());
         }
@@ -171,6 +174,26 @@ describe('BrowserOnlyPluginPathsService', () => {
             const next = await service.getHostStoragePath('file:///.theia/workspaces/Untitled-2.theia-workspace', [...roots].reverse());
 
             expect(one).to.equal(next);
+        });
+
+        it('resolves the storage path only once per workspace', async () => {
+            await service.getHostStoragePath('file:///one', []);
+            const callsAfterFirst = fileService.createFolderCallCount;
+
+            await service.getHostStoragePath('file:///one', []);
+
+            expect(fileService.createFolderCallCount).to.equal(callsAfterFirst);
+        });
+
+        it('resolves a new storage path when the roots of an untitled workspace change', async () => {
+            const workspaceUri = 'file:///.theia/workspaces/Untitled-1.theia-workspace';
+            const first = await service.getHostStoragePath(workspaceUri, ['file:///a']);
+            const callsAfterFirst = fileService.createFolderCallCount;
+
+            const second = await service.getHostStoragePath(workspaceUri, ['file:///a', 'file:///b']);
+
+            expect(second).to.not.equal(first);
+            expect(fileService.createFolderCallCount).to.be.greaterThan(callsAfterFirst);
         });
     });
 });
