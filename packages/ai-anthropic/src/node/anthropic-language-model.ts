@@ -712,8 +712,6 @@ export class AnthropicModel implements LanguageModel {
             const response = useCompaction
                 ? await anthropic.beta.messages.create(params as Anthropic.Beta.Messages.MessageCreateParamsNonStreaming)
                 : await anthropic.messages.create(params);
-            const textContent = response.content[0];
-
             const usage = response.usage ? {
                 input_tokens: response.usage.input_tokens,
                 output_tokens: response.usage.output_tokens,
@@ -721,11 +719,9 @@ export class AnthropicModel implements LanguageModel {
                 cache_read_input_tokens: response.usage.cache_read_input_tokens || undefined,
             } : undefined;
 
-            if (textContent?.type === 'text') {
-                return { text: textContent.text, usage };
-            }
-
-            return { text: '', usage };
+            // Thinking and other non-text blocks precede the answer, so collect every text block rather than reading content[0].
+            const text = response.content.flatMap(block => block.type === 'text' ? [block.text] : []).join('');
+            return { text, usage };
         } catch (error) {
             throw new Error(`Failed to get response from Anthropic API: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
