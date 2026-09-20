@@ -146,8 +146,8 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
     @postConstruct()
     protected init(): void {
         Object.assign(this, this.definition);
-        this.locationUri = new URI(this.uri).parent;
         this.packageRootUri = new URI(this.packageUri);
+        this.locationUri = new URI(this.uri).parent;
     }
 
     dispose(): void {
