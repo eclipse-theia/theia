@@ -99,16 +99,16 @@ describe('OpenAiModel reasoning translation', () => {
         });
     });
 
-    describe('Chat Completions API (o-series)', () => {
+    describe('Chat Completions API', () => {
         it('maps level=medium to reasoning_effort=medium', () => {
             const model = createModel('o3-mini', O_SERIES_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'medium' } }, false);
             expect(result.reasoning_effort).to.equal('medium');
         });
-        it('buckets minimal to low (o-series does not accept minimal)', () => {
-            const model = createModel('o3-mini', O_SERIES_REASONING_SUPPORT);
+        it('passes minimal through (GPT-5 accepts it; models that do not exclude it from their supportedLevels)', () => {
+            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'minimal' } }, false);
-            expect(result.reasoning_effort).to.equal('low');
+            expect(result.reasoning_effort).to.equal('minimal');
         });
         it('omits reasoning_effort for level=off', () => {
             const model = createModel('o3-mini', O_SERIES_REASONING_SUPPORT);
