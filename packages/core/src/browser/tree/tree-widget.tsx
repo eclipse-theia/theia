@@ -531,6 +531,30 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     protected view: TreeWidget.View | undefined;
     /**
+     * Create the view properties for the virtualized tree view.
+     */
+    protected createViewProps(rows: TreeWidget.NodeRow[]): TreeWidget.ViewProps {
+        return {
+            width: this.node.offsetWidth,
+            height: this.node.offsetHeight,
+            rows,
+            renderNodeRow: this.renderNodeRow,
+            scrollToRow: this.scrollToRow,
+            scrollToRowRequestId: this.scrollToRowRequestId,
+            onAtBottomStateChangeEmitter: this.onAtBottomStateChangeEmitter,
+            ...this.props.viewProps
+        };
+    }
+
+    /**
+     * Optional React key for the rendered tree view element, allowing subclasses
+     * to force a remount when the underlying data source changes.
+     */
+    protected getViewKey(): React.Key | undefined {
+        return undefined;
+    }
+
+    /**
      * Render the tree widget.
      * @param model the tree model.
      */
@@ -538,18 +562,12 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (model.root) {
             const rows = Array.from(this.rows.values());
             if (this.props.virtualized === false) {
-                return <this.ScrollingRowRenderer rows={rows} scrollToRowRequestId={this.scrollToRowRequestId} />;
+                return <this.ScrollingRowRenderer key={this.getViewKey()} rows={rows} scrollToRowRequestId={this.scrollToRowRequestId} />;
             }
             return <TreeWidget.View
+                key={this.getViewKey()}
                 ref={view => { this.view = (view || undefined); }}
-                width={this.node.offsetWidth}
-                height={this.node.offsetHeight}
-                rows={rows}
-                renderNodeRow={this.renderNodeRow}
-                scrollToRow={this.scrollToRow}
-                scrollToRowRequestId={this.scrollToRowRequestId}
-                onAtBottomStateChangeEmitter={this.onAtBottomStateChangeEmitter}
-                {...this.props.viewProps}
+                {...this.createViewProps(rows)}
             />;
         }
         // eslint-disable-next-line no-null/no-null
