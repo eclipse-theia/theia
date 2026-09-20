@@ -21,6 +21,7 @@ import {
     LanguageModelResponse,
     LanguageModelStreamResponsePart,
     TextMessage,
+    ThinkingResponsePart,
     ToolCallResult,
     ToolInvocationContext,
     ToolRequest,
@@ -189,12 +190,27 @@ export class OpenAiResponseApiUtils {
         return converted;
     }
 
+    /**
+     * Maps a reasoning-summary stream event to a thinking part. With `reasoning.summary` set, the Responses API streams
+     * one or more `summary_text` parts per reasoning item; parts after the first are separated by a blank line.
+     */
+    reasoningSummaryThought(event: ResponseStreamEvent): ThinkingResponsePart | undefined {
+        if (event.type === 'response.reasoning_summary_part.added') {
+            return event.summary_index > 0 ? { thought: '\n\n', signature: '' } : undefined;
+        }
+        if (event.type === 'response.reasoning_summary_text.delta') {
+            return { thought: event.delta, signature: '' };
+        }
+        return undefined;
+    }
+
     protected createSimpleResponseApiStreamIterator(
         stream: AsyncIterable<ResponseStreamEvent>,
         cancellationToken?: CancellationToken
     ): AsyncIterable<LanguageModelStreamResponsePart> {
 
         const logger = this.logger;
+        const reasoningSummaryThought = (event: ResponseStreamEvent): ThinkingResponsePart | undefined => this.reasoningSummaryThought(event);
 
         return {
             async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
@@ -210,6 +226,11 @@ export class OpenAiResponseApiUtils {
                             yield {
                                 content: event.delta
                             };
+                        } else if (event.type === 'response.reasoning_summary_part.added' || event.type === 'response.reasoning_summary_text.delta') {
+                            const thought = reasoningSummaryThought(event);
+                            if (thought) {
+                                yield thought;
+                            }
                         } else if (event.type === 'response.output_item.done' && event.item?.type === 'compaction') {
                             yield {
                                 compaction: {
@@ -618,6 +639,15 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                     this.pendingReasoningItems = [];
                 }
                 break;
+
+            case 'response.reasoning_summary_part.added':
+            case 'response.reasoning_summary_text.delta': {
+                const thought = this.utils.reasoningSummaryThought(event);
+                if (thought) {
+                    this.handleIncoming(thought);
+                }
+                break;
+            }
 
             case 'response.completed':
                 if (event.response?.usage) {

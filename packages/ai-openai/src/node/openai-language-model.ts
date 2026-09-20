@@ -30,7 +30,7 @@ import {
     ServerToolDescriptor,
     formatToolCallContentForModel
 } from '@theia/ai-core';
-import { CancellationToken } from '@theia/core';
+import { CancellationToken, isObject } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { OpenAI, AzureOpenAI } from 'openai';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
@@ -123,12 +123,19 @@ export class OpenAiModel implements LanguageModel {
         public headers?: Record<string, string>
     ) { }
 
-    /** Reasoning-level translation lives in {@link openAiReasoningFor}. */
+    /**
+     * Reasoning-level translation lives in {@link openAiReasoningFor}. On the Responses API, user-configured `reasoning`
+     * fields from the request settings (e.g. `summary`) are kept; the selected level still decides `effort`.
+     */
     protected getSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
-        return {
-            ...request.settings,
-            ...openAiReasoningFor(request.reasoning?.level, forResponseApi, !!this.reasoningSupport)
-        };
+        const reasoning = openAiReasoningFor(request.reasoning?.level, forResponseApi, !!this.reasoningSupport);
+        const ours = reasoning.reasoning;
+        const theirs = request.settings?.reasoning;
+        if (isObject(ours) && isObject(theirs)) {
+            const effort = (ours as { effort?: string }).effort;
+            return { ...request.settings, reasoning: { ...ours, ...theirs, ...(effort !== undefined && { effort }) } };
+        }
+        return { ...request.settings, ...reasoning };
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {

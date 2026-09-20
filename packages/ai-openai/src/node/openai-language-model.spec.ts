@@ -80,22 +80,34 @@ describe('OpenAiModel reasoning translation', () => {
         it('maps level=minimal to reasoning.effort=minimal', () => {
             const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'minimal' } }, true);
-            expect(result.reasoning).to.deep.equal({ effort: 'minimal' });
+            expect(result.reasoning).to.deep.equal({ effort: 'minimal', summary: 'auto' });
         });
         it('maps level=high to reasoning.effort=high', () => {
             const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'high' } }, true);
-            expect(result.reasoning).to.deep.equal({ effort: 'high' });
+            expect(result.reasoning).to.deep.equal({ effort: 'high', summary: 'auto' });
         });
         it('omits reasoning entirely when level=off', () => {
             const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'off' } }, true);
             expect(result.reasoning).to.equal(undefined);
         });
-        it('omits reasoning when level=auto (provider default applies)', () => {
+        it('requests reasoning summaries for level=auto without constraining effort', () => {
             const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'auto' } }, true);
-            expect(result.reasoning).to.equal(undefined);
+            expect(result.reasoning).to.deep.equal({ summary: 'auto' });
+        });
+        it('keeps user-configured reasoning fields but lets the selected level decide effort', () => {
+            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const result = model.callGetSettings({
+                messages: [], reasoning: { level: 'high' }, settings: { reasoning: { effort: 'low', summary: 'concise' } }
+            }, true);
+            expect(result.reasoning).to.deep.equal({ effort: 'high', summary: 'concise' });
+        });
+        it('keeps a user-configured reasoning.summary for level=auto', () => {
+            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'auto' }, settings: { reasoning: { summary: 'detailed' } } }, true);
+            expect(result.reasoning).to.deep.equal({ summary: 'detailed' });
         });
     });
 

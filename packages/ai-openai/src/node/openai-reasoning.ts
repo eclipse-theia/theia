@@ -21,7 +21,7 @@ import { ReasoningLevel } from '@theia/ai-core';
  * Returns `{}` when reasoning is not requested, unsupported, or disabled — so the caller
  * can spread it unconditionally.
  *
- * @param forResponseApi `true` for the Responses API (`reasoning: { effort }`, supports `minimal`);
+ * @param forResponseApi `true` for the Responses API (`reasoning: { effort, summary }`, supports `minimal`);
  *                        `false` for Chat Completions (`reasoning_effort`, `low`|`medium`|`high` only).
  * @param supportsReasoning `false` for models without reasoning support — returns `{}`.
  */
@@ -40,7 +40,8 @@ export function openAiReasoningFor(
                     level === 'medium' ? 'medium' :
                         level === 'high' ? 'high' :
                             undefined;
-        return responsesEffort ? { reasoning: { effort: responsesEffort } } : {};
+        // Summaries are opt-in on the Responses API: without `summary` the model still reasons, but nothing is streamed to show.
+        return { reasoning: { ...(responsesEffort ? { effort: responsesEffort } : {}), summary: 'auto' } };
     }
     // Chat Completions has no 'minimal' — map it down to 'low'.
     const chatEffort =

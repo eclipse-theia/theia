@@ -16,7 +16,8 @@
 
 import { expect } from 'chai';
 import {
-    CompactionMessage, isCompactionResponsePart, isServerToolCallResponsePart, isUsageResponsePart, LanguageModelMessage, LanguageModelStreamResponsePart, UserRequest
+    CompactionMessage, isCompactionResponsePart, isServerToolCallResponsePart, isTextResponsePart, isThinkingResponsePart, isUsageResponsePart,
+    LanguageModelMessage, LanguageModelResponse, LanguageModelStreamResponsePart, UserRequest
 } from '@theia/ai-core';
 import { OpenAiModelUtils } from './openai-language-model';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
@@ -553,6 +554,88 @@ describe('OpenAiResponseApiUtils', () => {
             name: 'lookup',
             arguments: '{"query":"test"}'
         }]);
+    });
+
+    describe('reasoning summaries', () => {
+        // Two summary parts of one reasoning item, as the Responses API streams them with `reasoning.summary` set.
+        const summaryEvents = [
+            { type: 'response.reasoning_summary_part.added', item_id: 'rs-1', output_index: 0, summary_index: 0, part: { type: 'summary_text', text: '' } },
+            { type: 'response.reasoning_summary_text.delta', item_id: 'rs-1', output_index: 0, summary_index: 0, delta: 'Weighing ' },
+            { type: 'response.reasoning_summary_text.delta', item_id: 'rs-1', output_index: 0, summary_index: 0, delta: 'options' },
+            { type: 'response.reasoning_summary_part.added', item_id: 'rs-1', output_index: 0, summary_index: 1, part: { type: 'summary_text', text: '' } },
+            { type: 'response.reasoning_summary_text.delta', item_id: 'rs-1', output_index: 0, summary_index: 1, delta: 'Deciding' }
+        ];
+
+        async function drain(response: LanguageModelResponse): Promise<LanguageModelStreamResponsePart[]> {
+            const parts: LanguageModelStreamResponsePart[] = [];
+            if ('stream' in response) {
+                for await (const part of response.stream) {
+                    parts.push(part);
+                }
+            }
+            return parts;
+        }
+
+        function thoughts(parts: LanguageModelStreamResponsePart[]): string {
+            return parts.filter(isThinkingResponsePart).map(part => part.thought).join('');
+        }
+
+        it('streams reasoning summaries as thoughts, separating summary parts', async () => {
+            const openai = {
+                responses: {
+                    stream: () => toStream([...summaryEvents, { type: 'response.output_text.delta', delta: 'Answer' }])
+                }
+            };
+            const request: UserRequest = {
+                sessionId: 'session-1',
+                requestId: 'request-1',
+                messages: [{ actor: 'user', type: 'text', text: 'hello' }]
+            };
+
+            const parts = await drain(await utils.handleRequest(
+                openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer',
+                { maxChatCompletions: 3 }, 'openai/gpt-5', true
+            ));
+
+            expect(thoughts(parts)).to.equal('Weighing options\n\nDeciding');
+            expect(parts.filter(isTextResponsePart).map(part => part.content).join('')).to.equal('Answer');
+        });
+
+        it('streams reasoning summaries as thoughts while tool calling', async () => {
+            const streams = [
+                [
+                    ...summaryEvents,
+                    {
+                        type: 'response.output_item.added',
+                        item: { id: 'item-1', call_id: 'call-1', type: 'function_call', name: 'lookup', arguments: '{}' }
+                    }
+                ],
+                [{ type: 'response.output_text.delta', delta: 'done' }]
+            ];
+            const openai = {
+                responses: {
+                    stream: () => toStream(streams.shift() ?? [])
+                }
+            };
+            const request: UserRequest = {
+                sessionId: 'session-1',
+                requestId: 'request-1',
+                messages: [{ actor: 'user', type: 'text', text: 'hello' }],
+                tools: [{
+                    id: 'lookup',
+                    name: 'lookup',
+                    parameters: { type: 'object', properties: {} },
+                    handler: async () => 'result'
+                }]
+            };
+
+            const parts = await drain(await utils.handleRequest(
+                openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer',
+                { maxChatCompletions: 3 }, 'openai/gpt-5', true
+            ));
+
+            expect(thoughts(parts)).to.equal('Weighing options\n\nDeciding');
+        });
     });
 
     describe('processMessages server-side compaction replay', () => {
