@@ -408,7 +408,7 @@ export class OllamaModel implements LanguageModel {
             }
             if (prop.anyOf) {
                 const nonNull = prop.anyOf.find(p => p.type && p.type !== 'null');
-                return nonNull?.type ?? undefined;
+                return nonNull?.type;
             }
             return undefined;
         };
@@ -422,13 +422,13 @@ export class OllamaModel implements LanguageModel {
             for (const [key, prop] of Object.entries(props)) {
                 const type = resolveType(prop);
                 if (type) {
-                    const description = typeof prop.description == 'string' ? prop.description : '';
+                    const description = typeof prop.description === 'string' ? prop.description : '';
                     result[key] = { type: type, description: description };
                     if (prop.enum !== undefined) {
                         result[key].enum = prop.enum;
                     }
                     if (prop.items !== undefined) {
-                        result[key].items = prop.items;
+                        result[key].items = transformItem(prop.items);
                     }
                     if (prop.properties !== undefined) {
                         result[key].properties = transform(prop.properties as ToolRequestParametersProperties);
@@ -439,6 +439,40 @@ export class OllamaModel implements LanguageModel {
                 }
             }
             return result;
+        };
+
+        const transformItem = (items: unknown): unknown => {
+            if (Array.isArray(items)) {
+                return items.map(item => transformItem(item));
+            }
+            if (items && typeof items === 'object') {
+                const itemProp = items as ToolRequestParameterProperty;
+                if (!resolveType(itemProp)) {
+                    return undefined;
+                }
+                const itemResult: Record<string, unknown> = {};
+                const resolvedType = resolveType(itemProp);
+                if (resolvedType) {
+                    itemResult['type'] = resolvedType;
+                }
+                if (itemProp.description !== undefined) {
+                    itemResult['description'] = itemProp.description;
+                }
+                if (itemProp.enum !== undefined) {
+                    itemResult['enum'] = itemProp.enum;
+                }
+                if (itemProp.properties !== undefined) {
+                    itemResult['properties'] = transform(itemProp.properties as ToolRequestParametersProperties);
+                }
+                if (itemProp.required !== undefined) {
+                    itemResult['required'] = itemProp.required;
+                }
+                if (itemProp.items !== undefined) {
+                    itemResult['items'] = transformItem(itemProp.items);
+                }
+                return itemResult;
+            }
+            return items;
         };
         return {
             type: 'function',

@@ -30,8 +30,73 @@ describe('ai-ollama package', () => {
         expect(ollamaTool.function.name).equals('example-tool');
         expect(ollamaTool.function.description).equals('Example Tool');
         expect(ollamaTool.function.parameters?.type).equal('object');
-        expect(ollamaTool.function.parameters?.properties).to.deep.equal(req.parameters.properties);
+        expect(ollamaTool.function.parameters?.properties).to.deep.equal({
+            question: { type: 'string', description: 'What is the best pizza topping?' },
+            optional: { type: 'string', description: 'Optional parameter' }
+        });
         expect(ollamaTool.function.parameters?.required).to.deep.equal(['question']);
+    });
+
+    it('resolves anyOf directly on an items schema', () => {
+        const model = new OllamaModelUnderTest();
+        const tool: ToolRequest = {
+            id: 'test',
+            name: 'test',
+            description: 'test',
+            handler: sinon.stub(),
+            parameters: {
+                type: 'object',
+                properties: {
+                    tags: {
+                        type: 'array',
+                        description: 'list of tags',
+                        items: {
+                            anyOf: [{ type: 'string' }, { type: 'null' }],
+                            description: 'a tag'
+                        }
+                    }
+                }
+            }
+        };
+        const result = model.toOllamaTool(tool);
+        const tags = result.function.parameters!.properties!['tags'] as Record<string, unknown>;
+        expect(tags['items']).to.deep.equal({ type: 'string', description: 'a tag' });
+    });
+
+    it('resolves anyOf inside array items sub-properties', () => {
+        const model = new OllamaModelUnderTest();
+        const tool: ToolRequest = {
+            id: 'test',
+            name: 'test',
+            description: 'test',
+            handler: sinon.stub(),
+            parameters: {
+                type: 'object',
+                properties: {
+                    arr: {
+                        type: 'array',
+                        description: 'list',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                maybe: {
+                                    anyOf: [{ type: 'string' }, { type: 'null' }],
+                                    description: 'nullable field'
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        const result = model.toOllamaTool(tool);
+        const arr = result.function.parameters!.properties!['arr'] as Record<string, unknown>;
+        expect(arr['items']).to.deep.equal({
+            type: 'object',
+            properties: {
+                maybe: { type: 'string', description: 'nullable field' }
+            }
+        });
     });
 });
 
