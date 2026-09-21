@@ -79,10 +79,9 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain, Dispo
 
             const roots = workspaceService.tryGetRoots();
             const data = getPreferences(preferenceProviderProvider, roots);
-            const eventData = Object.values(changes).map(({ scope, domain, preferenceName, affectedOverrides}) => {
+            const eventData = changes.map(({ scope, domain, preferenceName, affectedOverrides}) => {
                 const extScope = scope === PreferenceScope.User ? undefined : domain?.[0];
-                const newValue = this.preferenceService.get(preferenceName);
-                return { preferenceName, newValue, scope: extScope, affectedOverrides };
+                return { preferenceName, scope: extScope, affectedOverrides };
             });
             this.proxy.$acceptConfigurationChanged(data, eventData);
         }));
