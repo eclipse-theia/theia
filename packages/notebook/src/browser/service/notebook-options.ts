@@ -80,7 +80,8 @@ export class NotebookOptionsService {
     @postConstruct()
     protected init(): void {
         this.preferenceService.onPreferencesChanged(async preferenceChanges => {
-            if (notebookOutputOptionsRelevantPreferences.some(p => p in preferenceChanges)) {
+            const preferenceKeys = preferenceChanges.map(p => p.preferenceName);
+            if (notebookOutputOptionsRelevantPreferences.some(p => preferenceKeys.includes(p))) {
                 this.outputOptionsChangedEmitter.fire(this.computeOutputOptions());
             }
         });
