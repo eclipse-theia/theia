@@ -107,10 +107,14 @@ export abstract class PreferenceProviderImpl extends PreferenceProviderBase impl
     resolve<T>(preferenceName: string, resourceUri?: string, overrideIdentifier?: string): PreferenceResolveResult<T> {
         const preferences = this.getPreferences(resourceUri);
         const key = overrideIdentifier ? `[${overrideIdentifier}].${preferenceName}` : preferenceName;
-        return {
-            value: preferences[key] as T,
-            configUri: this.getConfigUri(resourceUri)
-        };
+        const value = preferences[key] as T;
+        if (value !== undefined) {
+            return {
+                value: value,
+                configUri: this.getConfigUri(resourceUri)
+            };
+        }
+        return {};
     }
 
     abstract getPreferences(resourceUri?: string): JSONObject;

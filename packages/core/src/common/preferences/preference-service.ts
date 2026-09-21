@@ -430,7 +430,7 @@ export class PreferenceServiceImpl implements PreferenceService {
         }
         const provider = this.getProvider(resolvedScope);
         if (provider && await provider.setPreference(preferenceName, value, resourceUri, overrideIdentifier)) {
-            await this.evictSessionOverride(preferenceName, resolvedScope);
+            await this.evictSessionOverride(preferenceName, resolvedScope, overrideIdentifier);
             return;
         }
         throw new Error(`Unable to write to ${PreferenceScope[resolvedScope]} Settings.`);
@@ -450,14 +450,14 @@ export class PreferenceServiceImpl implements PreferenceService {
      * Session preferences are global (no per-resource scoping), so `resourceUri` is
      * not threaded through.
      */
-    protected async evictSessionOverride(preferenceName: string, writtenScope: PreferenceScope): Promise<void> {
+    protected async evictSessionOverride(preferenceName: string, writtenScope: PreferenceScope, overrideIdentifier?: string): Promise<void> {
         if (writtenScope === PreferenceScope.Session || writtenScope === PreferenceScope.Default) {
             return;
         }
         const sessionProvider = this.getProvider(PreferenceScope.Session);
-        if (sessionProvider && sessionProvider.get(preferenceName) !== undefined) {
+        if (sessionProvider && sessionProvider.get(preferenceName, undefined, overrideIdentifier) !== undefined) {
             // Passing `undefined` clears the value in the session provider.
-            await sessionProvider.setPreference(preferenceName, undefined as unknown as JSONValue);
+            await sessionProvider.setPreference(preferenceName, undefined as unknown as JSONValue, undefined, overrideIdentifier);
         }
     }
 

@@ -56,7 +56,7 @@ export class JSONCEditor {
     }
 
     getEOL(): string {
-        const eol = this.preferenceService.get('[json].files.eol');
+        const eol = this.preferenceService.get('files.eol', { override: 'json' });
         if (eol && typeof eol === 'string' && eol !== 'auto') {
             return eol;
         }

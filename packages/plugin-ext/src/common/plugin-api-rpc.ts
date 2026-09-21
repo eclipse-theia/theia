@@ -1572,7 +1572,6 @@ export interface PreferenceRegistryMain {
 
 export interface PreferenceChangeExt {
     preferenceName: string,
-    newValue: any,
     /**
      * The URI the folder affected, or undefined if User scope.
      */
