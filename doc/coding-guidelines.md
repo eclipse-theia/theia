@@ -693,6 +693,27 @@ pathString.substring(absolutePathString.length + 1)
 new Path(absolutePathString).relative(pathString)
 ```
 
+## Bundled Resources
+
+<a name="bundled-resource-provider"></a>
+
+* [1.](#bundled-resource-provider) Resolve resources that ship with the application through `BundledResourceProvider` (`@theia/core/lib/node`) before handing their path to a process outside of the application, e.g. a shell, a debug adapter or another tool.
+
+> Why? An Electron application packaged with `asar: true` keeps its resources in an archive. Paths into that archive can only be read through Electron's patched `fs` module, so an external process fails to read them. The provider returns the resource at a location outside of the archive, extracting it if the packaging step did not unpack it.
+
+```ts
+// bad - the path points into `app.asar` in a packaged application
+const scriptPath = path.join(__dirname, 'scripts', 'setup.sh');
+spawn(shell, [scriptPath]);
+
+// good
+const scriptPath = await this.bundledResourceProvider.resolveExternalPath(path.join(__dirname, 'scripts'));
+spawn(shell, [path.join(scriptPath, 'setup.sh')]);
+```
+
+> [!NOTE]
+> Resolve the directory that a script needs rather than the single file, so that files referring to each other stay together.
+
 ## Logging
 
 <a name="use-named-loggers"></a>

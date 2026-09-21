@@ -110,6 +110,18 @@ For example, in an `electron-builder` configuration, ensure the `lib/backend/she
 
 The `lib/**/*` glob already covers `lib/backend/shell-integrations/`. If you use a more restrictive `files` pattern, make sure `lib/backend/shell-integrations/**/*` is explicitly included, as `ShellIntegrationInjector` resolves these scripts relative to `__dirname` (i.e. `lib/backend/`).
 
+Applications packaged with `asar: true` store these scripts inside `app.asar`, which only the application itself can read, so the shells that Theia spawns cannot source them. Since `1.76.0` this is handled by the application: `BundledResourceProvider` (`@theia/core/lib/node`) extracts the scripts from the archive into the configuration directory (`~/.theia/bundled-resources/` by default) on start-up, and cleans up the copies of earlier versions. No packaging change is required.
+
+Extraction can be avoided by unpacking the scripts at packaging time, which the provider prefers over its own copy whenever the unpacked files are complete. With `electron-builder`:
+
+```yaml
+asar: true
+asarUnpack:
+  - "**/lib/backend/shell-integrations/**"
+```
+
+Use `BundledResourceProvider.resolveExternalPath(path)` for any other bundled file that is handed to a process outside of the application, such as a script or a helper executable.
+
 ### v1.76.0
 
 #### GitHub Copilot is served through the Copilot CLI
