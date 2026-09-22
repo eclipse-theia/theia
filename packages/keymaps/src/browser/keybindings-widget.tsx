@@ -48,6 +48,8 @@ export interface KeybindingItem {
         source: RenderableLabel;
     }
     visible?: boolean;
+    /** Lazily computed tooltip; reset whenever items are rebuilt. */
+    tooltip?: string;
 }
 
 export namespace KeybindingItem {
@@ -470,7 +472,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
             <td className='kb-label' title={this.getCommandLabel(command)}>
                 {this.renderMatchedData(item.labels.command)}
             </td>
-            <td title={this.getKeybindingTooltip(keybinding)} className='kb-keybinding monaco-keybinding'>
+            <td title={this.getKeybindingTooltip(item)} className='kb-keybinding monaco-keybinding'>
                 {this.renderKeybinding(item)}
             </td>
             <td className='kb-context' title={this.getContextLabel(keybinding)}>
@@ -657,11 +659,11 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
         return keybinding && keybinding.keybinding;
     }
 
-    protected getKeybindingTooltip(keybinding: ScopedKeybinding | undefined): string | undefined {
-        if (!keybinding) {
+    protected getKeybindingTooltip(item: KeybindingItem): string | undefined {
+        if (!item.keybinding) {
             return undefined;
         }
-        return keybindingTooltip(this.keybindingRegistry, keybinding);
+        return item.tooltip ??= keybindingTooltip(this.keybindingRegistry, item.keybinding);
     }
 
     protected getContextLabel(keybinding: ScopedKeybinding | undefined): string | undefined {

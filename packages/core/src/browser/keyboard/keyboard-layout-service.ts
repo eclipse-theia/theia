@@ -95,7 +95,7 @@ export class KeyboardLayoutService {
      * Resolve an authored keybinding stroke against the active layout.
      * Physical and non-printable strokes, and strokes resolved without an active layout, are returned unchanged. A logical
      * character missing from the active layout is returned with {@link KeyCode.supportedByLayout} set to `false`.
-     * Authored Shift is always absorbed during logical-character resolution, so legacy and `[char:…]` spellings resolve identically.
+     * Authored Shift is absorbed when it produces the character (US-key tokens or shift-layer candidates); otherwise it remains a command modifier.
      */
     resolveKeyCode(inCode: KeyCode): KeyCode {
         if (inCode.physical || !this.currentLayout || inCode.key && !this.isPrintableKey(inCode.key) && !inCode.character) {
@@ -124,7 +124,7 @@ export class KeyboardLayoutService {
             key: candidate.key,
             meta: inCode.meta,
             ctrl: inCode.ctrl,
-            shift: false,
+            shift: inCode.shift && !usCharacter && !layoutModifiersIncludeShift(candidate.layoutModifiers),
             alt: inCode.alt,
             character,
             layoutModifiers: candidate.layoutModifiers,
@@ -142,6 +142,13 @@ export class KeyboardLayoutService {
     }
 
     /**
+     * Whether the platform's AltGraph layer is active: AltGraph on Linux, Option on macOS, and AltGraph or Ctrl+Alt on Windows.
+     */
+    protected isAltGraphActive(input: NormalizedKeyboardInput): boolean {
+        return isOSX ? !!input.altKey : isWindows ? !!input.altGraph || !!(input.ctrlKey && input.altKey) : !!input.altGraph;
+    }
+
+    /**
      * Detect the keyboard-layout modifier layer that produced an input character.
      * `undefined` means either that no layout modifiers were needed or that the input represents a dead key.
      */
@@ -153,13 +160,14 @@ export class KeyboardLayoutService {
         if (!mapping) {
             return undefined;
         }
-        if (input.shiftKey && mapping.withShiftAltGr === input.key && !mapping.withShiftAltGrIsDeadKey) {
+        const altGraphActive = this.isAltGraphActive(input);
+        if (input.shiftKey && altGraphActive && mapping.withShiftAltGr === input.key && !mapping.withShiftAltGrIsDeadKey) {
             return 'shiftAltGraph';
         }
-        if (input.shiftKey && !mapping.withShiftAltGr && mapping.withAltGr === input.key && !mapping.withAltGrIsDeadKey) {
+        if (input.shiftKey && altGraphActive && !mapping.withShiftAltGr && mapping.withAltGr === input.key && !mapping.withAltGrIsDeadKey) {
             return 'shiftAltGraph';
         }
-        if (!input.shiftKey && mapping.withAltGr === input.key && !mapping.withAltGrIsDeadKey) {
+        if (!input.shiftKey && altGraphActive && mapping.withAltGr === input.key && !mapping.withAltGrIsDeadKey) {
             return 'altGraph';
         }
         if (input.shiftKey && mapping.withShift && !mapping.withShiftIsDeadKey
@@ -300,7 +308,7 @@ export class KeyboardLayoutService {
                 shiftKey: input.shiftKey,
                 ctrlKey: input.ctrlKey,
                 altKey: input.altKey,
-                altGraph: input.altGraph
+                altGraph: this.isAltGraphActive(input)
             });
         }
     }

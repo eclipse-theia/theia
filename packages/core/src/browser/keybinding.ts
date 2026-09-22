@@ -299,13 +299,27 @@ export class KeybindingRegistry {
             const resolved = this.corePreferences['keyboard.dispatch'] === 'keyCode'
                 ? sequence
                 : sequence.map(code => this.keyboardLayoutService.resolveKeyCode(code));
-            binding.inactive = resolved.some(code => !code.supportedByLayout);
-            binding.inactiveReason = binding.inactive
-                ? nls.localize('theia/core/keybinding/unavailableCharacter', 'The key is not available on the current keyboard layout.')
-                : undefined;
+            binding.inactiveReason = this.getInactiveReason(resolved, this.corePreferences['keyboard.dispatch']);
+            binding.inactive = binding.inactiveReason !== undefined;
             binding.resolved = resolved;
         }
         return binding.resolved;
+    }
+
+    protected getInactiveReason(sequence: KeyCode[], dispatch: 'code' | 'keyCode'): string | undefined {
+        if (dispatch === 'keyCode' && sequence.some(code => code.character !== undefined && !code.key)) {
+            return nls.localize('theia/core/keybinding/characterRequiresCodeDispatch',
+                'Character keybindings require the "keyboard.dispatch" preference to be set to "code".');
+        }
+        if (sequence.some(code => code.shift && layoutModifiersIncludeAltGraph(code.layoutModifiers)
+            && !layoutModifiersIncludeShift(code.layoutModifiers))) {
+            return nls.localize('theia/core/keybinding/shiftedAltGraphCharacterUnavailable',
+                'The logical character and Shift command modifier cannot be produced together on the current keyboard layout.');
+        }
+        if (sequence.some(code => !code.supportedByLayout)) {
+            return nls.localize('theia/core/keybinding/unavailableCharacter', 'The key is not available on the current keyboard layout.');
+        }
+        return undefined;
     }
 
     /** Return the localized explanation when a binding is inactive on the current layout. */
@@ -981,6 +995,10 @@ export class KeybindingRegistry {
      *
      * Uses a ternary search tree for efficient O(log n) lookup instead of O(n) iteration.
      * The tree is lazily built and invalidated when keybindings change.
+     *
+     * `keySequence` must be a resolved sequence from {@link resolveKeybinding} or a runtime interpretation from
+     * {@link getKeyCodeInterpretations}. Lookup uses {@link KeyCode.dispatchString} identity, so raw
+     * {@link KeySequence.parse} output only matches when parsing and resolution coincide, such as `keyboard.dispatch: 'keyCode'`.
      *
      * When multiple bindings match, bindings that use context keys local to the focused
      * element are given priority over bindings that only use global context keys.

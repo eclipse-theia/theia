@@ -40,6 +40,10 @@ export interface KeyValidationInput {
     shiftKey?: boolean;
     ctrlKey?: boolean;
     altKey?: boolean;
+    /**
+     * Whether the AltGr layer is active for the platform (Linux: AltGraph, macOS: Option, Windows: AltGraph or Ctrl+Alt),
+     * not the raw `AltGraph` modifier state.
+     */
     altGraph?: boolean;
 }
 

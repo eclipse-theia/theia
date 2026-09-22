@@ -664,6 +664,45 @@ describe('keybindings', () => {
         expect(keybindingRegistry.matchKeybinding(keybindingRegistry.resolveKeybinding(binding))?.kind).to.equal('full');
     });
 
+    it('should execute an authored Shift command modifier on a non-US logical character', async () => {
+        testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
+        const binding = { command: TEST_COMMAND_SHADOW.id, keybinding: 'ctrl+shift+ü' };
+        keybindingRegistry.setKeymap(KeybindingScope.USER, [binding]);
+        const execute = sinon.spy();
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
+
+        try {
+            keybindingRegistry.dispatchNormalizedKeyDown({
+                key: 'Ü', code: 'BracketLeft', ctrlKey: true, shiftKey: true
+            }, new EventTarget());
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(execute.calledOnce).to.be.true;
+        } finally {
+            handler.dispose();
+        }
+    });
+
+    it('should mark an unmatchable Shift plus AltGraph character binding inactive', async () => {
+        testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
+        const binding = { command: TEST_COMMAND_SHADOW.id, keybinding: 'ctrl+shift+[char:0x7B]' };
+        keybindingRegistry.setKeymap(KeybindingScope.USER, [binding]);
+        const execute = sinon.spy();
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
+
+        try {
+            expect(keybindingRegistry.getKeybindingInactiveReason(binding)).to.be.a('string');
+            keybindingRegistry.dispatchNormalizedKeyDown({
+                key: '{', code: 'Digit7', ctrlKey: true, shiftKey: true, altGraph: true
+            }, new EventTarget());
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(execute.called).to.be.false;
+        } finally {
+            handler.dispose();
+        }
+    });
+
     it('should route Windows command and layout modifier candidates through the registry', () => {
         const windows = sinon.stub(os, 'isWindows').value(true);
         try {
@@ -900,6 +939,29 @@ describe('keybindings', () => {
 
         expect(keybindingRegistry.matchKeybinding(KeySequence.parse('ctrl+shift+p'))?.runtime.binding.command).to.equal(TEST_COMMAND.id);
         expect(keybindingRegistry.matchKeybinding(KeySequence.parse('shift+/'))?.runtime.binding.command).to.equal(TEST_COMMAND2.id);
+    });
+
+    it('should mark character-only bindings inactive in keyCode dispatch mode', () => {
+        (corePreferences as unknown as Record<string, unknown>)['keyboard.dispatch'] = 'keyCode';
+        const characterOnly = { command: TEST_COMMAND.id, keybinding: 'ctrl+ü' };
+        const positional = { command: TEST_COMMAND2.id, keybinding: 'ctrl+[' };
+        keybindingRegistry.setKeymap(KeybindingScope.USER, [characterOnly, positional]);
+
+        expect(keybindingRegistry.getKeybindingInactiveReason(characterOnly)).to.be.a('string');
+        expect(keybindingRegistry.matchKeybinding(keybindingRegistry.resolveKeybinding(characterOnly))).to.be.undefined;
+        expect(keybindingRegistry.getKeybindingInactiveReason(positional)).to.be.undefined;
+        expect(keybindingRegistry.matchKeybinding(keybindingRegistry.resolveKeybinding(positional))?.kind).to.equal('full');
+    });
+
+    it('should require resolved sequences for logical matching in code dispatch mode', () => {
+        testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/en-US-pc.json'));
+        const binding = { command: TEST_COMMAND.id, keybinding: 'ctrl+shift+a' };
+        keybindingRegistry.setKeymap(KeybindingScope.USER, [binding]);
+
+        expect(KeySequence.parse('ctrl+shift+a')[0].dispatchString()).to.equal('shift+ctrl+a');
+        expect(keybindingRegistry.resolveKeybinding(binding)[0].dispatchString()).to.equal('ctrl+a@shift');
+        expect(keybindingRegistry.matchKeybinding(KeySequence.parse('ctrl+shift+a'))).to.be.undefined;
+        expect(keybindingRegistry.matchKeybinding(keybindingRegistry.resolveKeybinding(binding))?.kind).to.equal('full');
     });
 
     it('should invalidate resolved bindings when keyboard dispatch changes', () => {

@@ -20,7 +20,7 @@ import * as os from '@theia/core/lib/common/os';
 import { Key, KeyCode } from '@theia/core/lib/browser/keyboard/keys';
 import { KeybindingRegistry, ScopedKeybinding } from '@theia/core/lib/browser/keybinding';
 import { keybindingTooltip } from './keybinding-tooltip';
-import { recordedKeybindingStroke } from './keybindings-widget';
+import { KeybindingItem, KeybindingWidget, recordedKeybindingStroke } from './keybindings-widget';
 
 after(() => disableJSDOM());
 
@@ -71,6 +71,38 @@ describe('keybindings widget tooltip', () => {
         chai.expect(keybindingTooltip(registry, binding)).to.equal(
             'Physical realization unavailable\nThe key is not available on the current keyboard layout.'
         );
+    });
+
+    it('memoizes tooltips until keybinding items are rebuilt', () => {
+        const code = new KeyCode({ key: Key.BRACKET_LEFT, ctrl: true, character: '[' });
+        const getShadowingKeybindings = sinon.spy(() => []);
+        const registry = {
+            resolveKeybinding: () => [code],
+            getKeybindingInactiveReason: () => undefined,
+            componentsForKeyCode: () => ['Ctrl', '['],
+            getShadowingKeybindings
+        } as unknown as KeybindingRegistry;
+        const widget = Object.create(KeybindingWidget.prototype) as KeybindingWidget;
+        Object.defineProperty(widget, 'keybindingRegistry', { value: registry });
+        const createItem = (): KeybindingItem => ({
+            command: { id: 'test' },
+            keybinding: binding,
+            labels: {
+                id: { value: 'test' }, command: { value: 'test' }, keybinding: { value: 'ctrl+[' },
+                context: { value: '' }, source: { value: '' }
+            }
+        });
+        const getTooltip = (candidate: KeybindingItem) => (widget as unknown as {
+            getKeybindingTooltip: (item: KeybindingItem) => string | undefined
+        }).getKeybindingTooltip(candidate);
+
+        const item = createItem();
+        chai.expect(getTooltip(item)).to.equal('Ctrl+[');
+        chai.expect(getTooltip(item)).to.equal('Ctrl+[');
+        chai.expect(getShadowingKeybindings.calledOnce).to.be.true;
+
+        chai.expect(getTooltip(createItem())).to.equal('Ctrl+[');
+        chai.expect(getShadowingKeybindings.calledTwice).to.be.true;
     });
 
     it('captures logical characters, physical non-printables, and ignores modifier-only input', () => {

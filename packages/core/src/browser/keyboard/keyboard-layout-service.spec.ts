@@ -279,14 +279,62 @@ describe('keyboard layout service', function (): void {
         chai.expect(resolved.key).to.equal(Key.KEY_A);
     });
 
-    it('absorbs layout Shift identically for legacy and character-token spellings', async () => {
+    it('absorbs authored Shift when it selects a US character or layout shift layer', async () => {
         const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
         const service = await setup(german, 'linux');
         const legacy = service.resolveKeyCode(KeyCode.parse('ctrl+shift+['));
-        const character = service.resolveKeyCode(KeyCode.parse('ctrl+shift+[char:0x7B]'));
         chai.expect(legacy.shift).to.be.false;
-        chai.expect(character.shift).to.be.false;
-        chai.expect(legacy.dispatchString()).to.equal(character.dispatchString());
+        chai.expect(legacy.dispatchString()).to.equal('ctrl+7@altgraph');
+    });
+
+    it('retains authored Shift when it is not consumed by the logical character', async () => {
+        const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const service = await setup(german, 'linux');
+
+        const umlaut = service.resolveKeyCode(KeyCode.parse('ctrl+shift+ü'));
+        chai.expect(umlaut.dispatchString()).to.equal('shift+ctrl+[');
+        chai.expect(umlaut.layoutModifiers).to.equal('none');
+
+        chai.expect(service.resolveKeyCode(KeyCode.parse('shift+[char:0x41]')).dispatchString()).to.equal('a@shift');
+        chai.expect(service.resolveKeyCode(KeyCode.parse('shift+[char:0x61]')).dispatchString()).to.equal('shift+a');
+        chai.expect(service.resolveKeyCode(KeyCode.parse('ctrl+shift+a')).dispatchString()).to.equal('ctrl+a@shift');
+        chai.expect(service.resolveKeyCode(KeyCode.parse('ctrl+shift+[')).dispatchString()).to.equal('ctrl+7@altgraph');
+    });
+
+    it('requires Option for a macOS Shift+AltGraph layer', async () => {
+        const macUS = require('../../../src/common/keyboard/layouts/en-US-mac.json');
+        const service = await setup(macUS, 'mac');
+        chai.expect(service.detectLayoutModifiers({ key: '±', code: 'IntlBackslash', shiftKey: true })).to.equal('shift');
+        chai.expect(service.detectLayoutModifiers({ key: '±', code: 'IntlBackslash', shiftKey: true, altKey: true })).to.equal('shiftAltGraph');
+    });
+
+    it('requires AltGraph for a Linux Shift+AltGraph layer', async () => {
+        const layout: NativeKeyboardLayout = {
+            info: { id: 'same-shift-layers', lang: 'en' },
+            mapping: { KeyA: { value: 'a', withShift: 'A', withAltGr: 'ä', withShiftAltGr: 'A' } }
+        };
+        const service = await setup(layout, 'linux');
+        chai.expect(service.detectLayoutModifiers({ key: 'A', code: 'KeyA', shiftKey: true })).to.equal('shift');
+        chai.expect(service.detectLayoutModifiers({ key: 'A', code: 'KeyA', shiftKey: true, altGraph: true })).to.equal('shiftAltGraph');
+    });
+
+    it('uses Option as macOS AltGraph layer evidence', async () => {
+        const layout: NativeKeyboardLayout = {
+            info: { id: 'altgraph-evidence', lang: 'en' },
+            mapping: { KeyA: { value: 'a', withShift: 'A', withAltGr: 'ä', withShiftAltGr: 'Ä' } }
+        };
+        const service = await setup(layout, 'mac');
+        chai.expect(service.detectLayoutModifiers({ key: 'ä', code: 'KeyA', altKey: true })).to.equal('altGraph');
+        chai.expect(service.detectLayoutModifiers({ key: 'ä', code: 'KeyA' })).to.be.undefined;
+    });
+
+    it('uses emulated Windows AltGraph as platform layer evidence', async () => {
+        const layout: NativeKeyboardLayout = {
+            info: { id: 'altgraph-evidence', lang: 'en' },
+            mapping: { KeyA: { value: 'a', withShift: 'A', withAltGr: 'ä', withShiftAltGr: 'Ä' } }
+        };
+        const service = await setup(layout, 'win');
+        chai.expect(service.detectLayoutModifiers({ key: 'ä', code: 'KeyA', ctrlKey: true, altKey: true })).to.equal('altGraph');
     });
 
     it('constructs Linux layout modifier interpretations only for participating AltGraph', async () => {
@@ -397,19 +445,40 @@ describe('keyboard layout service', function (): void {
             .to.equal('shift');
     });
 
-    it('passes raw normalized layer evidence to the key validator', async () => {
+    it('passes Linux AltGraph evidence to the key validator', async () => {
         let validated: KeyValidationInput | undefined;
         const validator: KeyValidator = { validateKey: validation => validated = validation };
         const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
         const service = await setup(german, 'linux', undefined, validator);
         const input = { key: '[', code: 'Digit8', ctrlKey: true, altGraph: true, shiftKey: false };
-        const interpretation = service.getKeyCodeInterpretations(input, 'code')[0];
 
-        service.validateKeyCode(interpretation, input);
+        service.validateKeyCode(service.getKeyCodeInterpretations(input, 'code')[0], input);
 
-        chai.expect(validated).to.deep.equal({
-            code: 'Digit8', character: '[', shiftKey: false, ctrlKey: true, altKey: undefined, altGraph: true
-        });
+        chai.expect(validated?.altGraph).to.be.true;
+    });
+
+    it('passes macOS Option evidence to the key validator', async () => {
+        let validated: KeyValidationInput | undefined;
+        const validator: KeyValidator = { validateKey: validation => validated = validation };
+        const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const service = await setup(german, 'mac', undefined, validator);
+        const input = { key: '[', code: 'Digit8', altKey: true, shiftKey: false };
+
+        service.validateKeyCode(service.getKeyCodeInterpretations(input, 'code')[0], input);
+
+        chai.expect(validated?.altGraph).to.be.true;
+    });
+
+    it('passes emulated Windows AltGraph evidence to the key validator', async () => {
+        let validated: KeyValidationInput | undefined;
+        const validator: KeyValidator = { validateKey: validation => validated = validation };
+        const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const service = await setup(german, 'win', undefined, validator);
+        const input = { key: '[', code: 'Digit8', ctrlKey: true, altKey: true, shiftKey: false };
+
+        service.validateKeyCode(service.getKeyCodeInterpretations(input, 'code')[0], input);
+
+        chai.expect(validated?.altGraph).to.be.true;
     });
 
     it('does not treat excluded or non-printable keys as layout modifier', async () => {
