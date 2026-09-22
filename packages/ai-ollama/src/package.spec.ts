@@ -123,6 +123,54 @@ describe('ai-ollama package', () => {
         });
     });
 
+    it('passes through a type-less property unchanged', () => {
+        const model = new OllamaModelUnderTest();
+        const tool: ToolRequest = {
+            id: 'test',
+            name: 'test',
+            description: 'test',
+            handler: sinon.stub(),
+            parameters: {
+                type: 'object',
+                properties: {
+                    status: {
+                        enum: ['a', 'b'],
+                        description: 'no explicit type'
+                    }
+                }
+            }
+        };
+        const result = model.toOllamaTool(tool);
+        const status = result.function.parameters!.properties!['status'] as Record<string, unknown>;
+        expect(status['enum']).to.deep.equal(['a', 'b']);
+        expect(status['description']).to.equal('no explicit type');
+    });
+
+    it('resolves anyOf on a top-level property preserving branch content', () => {
+        const model = new OllamaModelUnderTest();
+        const tool: ToolRequest = {
+            id: 'test',
+            name: 'test',
+            description: 'test',
+            handler: sinon.stub(),
+            parameters: {
+                type: 'object',
+                properties: {
+                    tags: {
+                        anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }],
+                        description: 'optional tags'
+                    }
+                }
+            }
+        };
+        const result = model.toOllamaTool(tool);
+        const tags = result.function.parameters!.properties!['tags'] as Record<string, unknown>;
+        expect(tags['type']).to.equal('array');
+        expect(tags['description']).to.equal('optional tags');
+        expect(tags['items']).to.deep.equal({ type: 'string' });
+        expect(tags).to.not.have.property('anyOf');
+    });
+
     it('resolves anyOf inside array items sub-properties', () => {
         const model = new OllamaModelUnderTest();
         const tool: ToolRequest = {
