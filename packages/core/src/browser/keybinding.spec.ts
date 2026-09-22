@@ -548,11 +548,38 @@ describe('keybindings', () => {
         expect(match.firstCall.args[0][0].dispatchString()).to.equal('ctrl+a');
     });
 
+    it('should dispatch a DOM keydown for dispatched commands without executing them twice', async () => {
+        const target = document.createElement('div');
+        document.body.appendChild(target);
+        const captured = sinon.spy();
+        const run = (event: KeyboardEvent) => keybindingRegistry.run(event);
+        document.addEventListener('keydown', captured, true);
+        document.addEventListener('keydown', run, true);
+        const match = sinon.spy(keybindingRegistry, 'matchKeybinding');
+        const execute = sinon.spy();
+        const handler = commandRegistry.registerHandler(TEST_COMMAND.id, { execute });
+
+        try {
+            keybindingRegistry.dispatchCommand(TEST_COMMAND.id, target);
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(captured.calledOnce).to.be.true;
+            expect(captured.firstCall.args[0].ctrlKey).to.be.true;
+            expect(execute.calledOnce).to.be.true;
+            expect(match.calledOnce).to.be.true;
+        } finally {
+            handler.dispose();
+            document.removeEventListener('keydown', captured, true);
+            document.removeEventListener('keydown', run, true);
+            target.remove();
+        }
+    });
+
     it('should preserve authored modifiers when dispatching commands through normalized Windows layout modifier data', async () => {
         const windows = sinon.stub(os, 'isWindows').value(true);
         testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
         const dispatch = sinon.spy(keybindingRegistry, 'dispatchNormalizedKeyDown');
-        const target = new EventTarget();
+        const target = document.createElement('div');
         const cases = [
             { keybinding: 'ctrl+[', ctrlKey: true, altKey: false },
             { keybinding: 'alt+[', ctrlKey: false, altKey: true },

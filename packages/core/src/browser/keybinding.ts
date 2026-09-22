@@ -711,11 +711,15 @@ export class KeybindingRegistry {
         return true;
     }
 
+    /**
+     * Executes the command by dispatching its first keybinding: the resolved key codes are matched directly,
+     * and a DOM keydown marked as already handled is dispatched to the target for other listeners to observe.
+     */
     dispatchCommand(id: string, target?: EventTarget): void {
         const keybindings = this.getKeybindingsForCommand(id);
         if (keybindings.length && !this.isKeybindingInactive(keybindings[0])) {
             for (const keyCode of this.resolveKeybinding(keybindings[0])) {
-                this.dispatchNormalizedKeyDown({
+                const input: NormalizedKeyboardInput = {
                     key: keyCode.character ?? keyCode.key?.code,
                     code: keyCode.key?.code,
                     keyCode: keyCode.key?.keyCode,
@@ -724,7 +728,9 @@ export class KeybindingRegistry {
                     altKey: keyCode.alt,
                     metaKey: keyCode.meta,
                     altGraph: layoutModifiersIncludeAltGraph(keyCode.layoutModifiers)
-                }, target, [keyCode]);
+                };
+                this.dispatchNormalizedKeyDown(input, target, [keyCode]);
+                this.dispatchKeyDown({ ...input, modifierAltGraph: input.altGraph }, target, true);
             }
         }
     }
