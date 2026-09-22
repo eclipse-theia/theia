@@ -16,14 +16,17 @@
 
 import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-agents';
 import { LanguageModelRequirement } from '@theia/ai-core/lib/common';
-import { nls } from '@theia/core';
-import { injectable } from '@theia/core/shared/inversify';
+import { ILogger, nls } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { codeReviewerSystemPrompt, CODE_REVIEWER_SYSTEM_PROMPT_ID } from './code-reviewer-prompt-template';
 
 export const CodeReviewerAgentId = 'code-reviewer';
 
 @injectable()
 export class CodeReviewerAgent extends AbstractStreamParsingChatAgent {
+    @inject(ILogger) @named('ai-ide:CodeReviewerAgent')
+    protected override readonly logger: ILogger;
+
     name = 'Code Reviewer';
     id = CodeReviewerAgentId;
     languageModelRequirements: LanguageModelRequirement[] = [{

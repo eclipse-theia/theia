@@ -15,12 +15,15 @@
 // *****************************************************************************
 
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
-import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
+import { wireMarkdownLinkHandler } from '@theia/core/lib/browser/markdown-rendering/markdown-link-handler';
+import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
+import { OpenerService } from '@theia/core/lib/browser/opener-service';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { codicon } from '@theia/core/lib/browser/widgets/widget';
 import { nls } from '@theia/core/lib/common/nls';
-import { ScmHistoryItemRef } from './scm-provider';
+import { ScmHistoryItem, ScmHistoryItemRef, ScmHistoryProvider } from './scm-provider';
 import { HistoryGraphEntry } from './scm-history-graph-model';
-import { laneColor, getRefBadgeClass, deduplicateRefs, isTagRef, isRemoteRef } from './scm-history-graph-helpers';
+import { laneColor, getRefBadgeClass, getRefBadgePresentation, deduplicateRefs, isTagRef, isRemoteRef } from './scm-history-graph-helpers';
 
 export function formatRelativeTime(ms: number): string {
     const now = Date.now();
@@ -75,6 +78,100 @@ export function createHoverHr(): HTMLElement {
     return document.createElement('hr');
 }
 
+export interface HistoryTooltipActions {
+    /** Invoked when the user clicks the commit hash (mirrors VS Code's "Open Commit" hover command). */
+    openCommit?: () => void;
+    /** Invoked when the user clicks the copy action (mirrors VS Code's "Copy Commit Hash" hover command). */
+    copyCommitHash?: () => void;
+}
+
+/**
+ * Renders the hover content supplied by the history provider, if any.
+ *
+ * Providers own their hover: `vscode.git`, for example, sends the same content as the blame
+ * editor decoration hover, including the author `mailto:` link and the "Open Commit",
+ * "Copy Commit Hash" and remote (e.g. "Open on GitHub") command links. Rendering it verbatim
+ * keeps those actions working without the graph having to know any provider-specific command.
+ *
+ * Each section is rendered and wired separately so that a section only authorizes the commands
+ * declared in its own {@link MarkdownString.isTrusted}. Sections are rendered as given, without
+ * separators of our own: a provider that owns its hover also owns how its sections are delimited,
+ * and `vscode.git` for one already ends them with a horizontal rule.
+ *
+ * @returns the rendered element, or `undefined` if the provider supplied no usable content.
+ */
+export function buildProviderTooltip(
+    tooltip: string | MarkdownString | readonly MarkdownString[],
+    markdownRenderer: MarkdownRenderer,
+    openerService: OpenerService,
+    disposables: DisposableCollection
+): HTMLElement | undefined {
+    const sections = (typeof tooltip === 'string' ? [new MarkdownStringImpl(tooltip)] : Array.isArray(tooltip) ? tooltip : [tooltip as MarkdownString])
+        .filter(section => section.value.trim().length > 0);
+    if (sections.length === 0) {
+        return undefined;
+    }
+
+    const container = document.createElement('div');
+    container.className = 'scm-history-tooltip';
+    for (const section of sections) {
+        const rendered = markdownRenderer.render(section);
+        disposables.push(rendered);
+        disposables.push(wireMarkdownLinkHandler(rendered.element, section, openerService));
+        container.appendChild(rendered.element);
+    }
+    return container;
+}
+
+/**
+ * Appends the author part of the tooltip header: the avatar image (or account
+ * icon) followed by the bold author name, linked via `mailto:` when the email
+ * is known — the same structure as the git blame editor decoration hover.
+ */
+function appendAuthor(container: HTMLElement, item: ScmHistoryItem): void {
+    if (item.authorIcon && (item.authorIcon.startsWith('http://') || item.authorIcon.startsWith('https://'))) {
+        const avatar = document.createElement('img');
+        avatar.className = 'scm-history-tooltip-avatar';
+        avatar.src = item.authorIcon;
+        container.appendChild(avatar);
+    } else {
+        const icon = document.createElement('i');
+        icon.className = codicon('account') + ' icon-inline';
+        container.appendChild(icon);
+    }
+    container.appendChild(document.createTextNode(' '));
+
+    const name = document.createElement('strong');
+    name.textContent = item.author!;
+    if (item.authorEmail) {
+        const link = document.createElement('a');
+        link.href = `mailto:${item.authorEmail}`;
+        link.appendChild(name);
+        container.appendChild(link);
+    } else {
+        container.appendChild(name);
+    }
+}
+
+/** Creates a clickable tooltip action (icon + optional label). */
+function createTooltipAction(title: string, iconName: string, label: string | undefined, onClick: () => void): HTMLElement {
+    const action = document.createElement('a');
+    action.className = 'scm-history-tooltip-action';
+    action.title = title;
+    action.setAttribute('role', 'button');
+    const icon = document.createElement('i');
+    icon.className = codicon(iconName) + ' icon-inline';
+    action.appendChild(icon);
+    if (label) {
+        action.appendChild(document.createTextNode(` ${label}`));
+    }
+    action.onclick = e => {
+        e.preventDefault();
+        onClick();
+    };
+    return action;
+}
+
 /** Creates a ref badge element for the HTML tooltip. */
 export function buildTooltipRefBadge(
     ref: ScmHistoryItemRef,
@@ -100,28 +197,32 @@ export function buildTooltipRefBadge(
     return badge;
 }
 
-export function buildHtmlTooltip(entry: HistoryGraphEntry, markdownRenderer: MarkdownRenderer): HTMLElement {
+export function buildHtmlTooltip(
+    entry: HistoryGraphEntry,
+    markdownRenderer: MarkdownRenderer,
+    provider?: ScmHistoryProvider,
+    actions?: HistoryTooltipActions
+): HTMLElement {
     const { item } = entry;
     const badgeColor = laneColor(entry.graphRow.color);
     const container = document.createElement('div');
     container.className = 'scm-history-tooltip';
 
-    // Header
+    // Header - avatar/account icon, bold author (mailto link), relative + absolute date,
+    // matching the git blame editor decoration hover
     if (item.author || item.timestamp !== undefined) {
         const header = document.createElement('div');
         header.className = 'scm-history-tooltip-header';
-        header.style.fontWeight = 'bold';
-        header.style.marginBottom = '4px';
 
         if (item.author) {
-            appendIconText(header, 'account', item.author);
+            appendAuthor(header, item);
         }
         if (item.timestamp !== undefined) {
             if (item.author) {
-                header.appendChild(document.createTextNode('\u00a0\u00a0'));
+                header.appendChild(document.createTextNode(',\u00a0'));
             }
             const timeSpan = document.createElement('span');
-            appendIconText(timeSpan, 'clock', `${formatRelativeTime(item.timestamp)} (${formatAbsoluteDate(item.timestamp)})`);
+            appendIconText(timeSpan, 'history', `${formatRelativeTime(item.timestamp)} (${formatAbsoluteDate(item.timestamp)})`);
             header.appendChild(timeSpan);
         }
 
@@ -170,8 +271,10 @@ export function buildHtmlTooltip(entry: HistoryGraphEntry, markdownRenderer: Mar
     }
 
     // Refs + hash
+    const shortHash = item.displayId ?? item.id.substring(0, 7);
+    const hasActions = !!(actions?.openCommit || actions?.copyCommitHash);
     const hasRefs = item.references && item.references.length > 0;
-    if (hasRefs || item.displayId) {
+    if (hasRefs || (!hasActions && item.displayId)) {
         container.appendChild(createHoverHr());
 
         const refsRow = document.createElement('div');
@@ -184,29 +287,46 @@ export function buildHtmlTooltip(entry: HistoryGraphEntry, markdownRenderer: Mar
         if (hasRefs) {
             const deduplicated = deduplicateRefs(item.references!);
             for (const { ref, hasBoth } of deduplicated) {
-                const isTag = isTagRef(ref);
-                const isRemote = isRemoteRef(ref);
+                // Current/remote/base refs are colored by role, others by the row's lane color
+                const { iconClass, colorIndex } = getRefBadgePresentation(ref, provider);
+                const bgColor = colorIndex !== undefined ? laneColor(colorIndex) : badgeColor;
 
-                if (isTag) {
-                    refsRow.appendChild(buildTooltipRefBadge(ref, 'codicon-tag', true, badgeColor));
-                } else if (isRemote) {
-                    refsRow.appendChild(buildTooltipRefBadge(ref, 'codicon-cloud', true, badgeColor));
-                } else {
-                    refsRow.appendChild(buildTooltipRefBadge(ref, 'codicon-git-branch', true, badgeColor));
-                    if (hasBoth) {
-                        refsRow.appendChild(buildTooltipRefBadge(ref, 'codicon-cloud', false, badgeColor, 'scm-history-ref-badge-cloud'));
-                    }
+                refsRow.appendChild(buildTooltipRefBadge(ref, iconClass, true, bgColor));
+                if (!isTagRef(ref) && !isRemoteRef(ref) && hasBoth) {
+                    refsRow.appendChild(buildTooltipRefBadge(ref, 'codicon-cloud', false, bgColor, 'scm-history-ref-badge-cloud'));
                 }
             }
         }
 
-        if (item.displayId) {
+        if (!hasActions && item.displayId) {
             const hash = document.createElement('code');
             hash.textContent = item.displayId;
             refsRow.appendChild(hash);
         }
 
         container.appendChild(refsRow);
+    }
+
+    // Actions — commit hash and copy, matching the git blame hover's command links
+    if (hasActions) {
+        container.appendChild(createHoverHr());
+
+        const actionsRow = document.createElement('div');
+        actionsRow.className = 'scm-history-tooltip-actions';
+
+        if (actions?.openCommit) {
+            actionsRow.appendChild(createTooltipAction(
+                nls.localize('theia/scm/openCommit', 'Open Commit'), 'git-commit', shortHash, actions.openCommit));
+        }
+        if (actions?.copyCommitHash) {
+            if (actions.openCommit) {
+                actionsRow.appendChild(document.createTextNode('  '));
+            }
+            actionsRow.appendChild(createTooltipAction(
+                nls.localize('theia/scm/copyCommitHash', 'Copy Commit Hash'), 'copy', undefined, actions.copyCommitHash));
+        }
+
+        container.appendChild(actionsRow);
     }
 
     return container;

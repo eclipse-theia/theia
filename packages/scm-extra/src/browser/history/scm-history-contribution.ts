@@ -27,6 +27,11 @@ import { SCM_HISTORY_ID, SCM_HISTORY_LABEL, ScmHistoryCommands, SCM_HISTORY_TOGG
 export { SCM_HISTORY_ID, SCM_HISTORY_LABEL, ScmHistoryCommands, SCM_HISTORY_TOGGLE_KEYBINDING, ScmHistoryOpenViewArguments };
 
 @injectable()
+/**
+ * @deprecated since 1.75.0 - superseded by the SCM history graph in `@theia/scm`
+ * and the Timeline view in `@theia/timeline`. This package will be removed in a
+ * future release - see https://github.com/eclipse-theia/theia/issues/17457.
+ */
 export class ScmHistoryContribution extends AbstractViewContribution<ScmHistoryWidget> {
 
     @inject(SelectionService)

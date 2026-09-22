@@ -14,11 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { AI_CORE_PREFERENCES_TITLE, MODEL_PROVIDER_TYPE_DETAIL, ModelProviderTypeDetail } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.google.apiKey';
-export const MODELS_PREF = 'ai-features.google.models';
+export const ALLOW_ENV_API_KEY_PREF = 'ai-features.google.allowEnvironmentApiKey';
+export const MODEL_OVERRIDES_PREF = 'ai-features.google.modelOverrides';
 export const MAX_RETRIES = 'ai-features.google.maxRetriesOnErrors';
 export const RETRY_DELAY_RATE_LIMIT = 'ai-features.google.retryDelayOnRateLimitError';
 export const RETRY_DELAY_OTHER_ERRORS = 'ai-features.google.retryDelayOnOtherErrors';
@@ -27,19 +28,30 @@ export const GooglePreferencesSchema: PreferenceSchema = {
     properties: {
         [API_KEY_PREF]: {
             type: 'string',
+            typeDetails: { [MODEL_PROVIDER_TYPE_DETAIL]: { label: 'Google' } satisfies ModelProviderTypeDetail },
             markdownDescription: nls.localize('theia/ai/google/apiKey/description',
                 'Enter an API Key of your official Google AI (Gemini) Account. **Please note:** By using this preference the GOOGLE AI API key will be stored in clear text\
             on the machine running Theia. Use the environment variable `GOOGLE_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
             title: AI_CORE_PREFERENCES_TITLE,
         },
-        [MODELS_PREF]: {
-            type: 'array',
-            description: nls.localize('theia/ai/google/models/description', 'Official Google Gemini models to use'),
+        [ALLOW_ENV_API_KEY_PREF]: {
+            type: 'boolean',
+            default: false,
             title: AI_CORE_PREFERENCES_TITLE,
-            default: ['gemini-3.1-pro-preview', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'],
+            markdownDescription: nls.localize('theia/ai/google/allowEnvApiKey/description',
+                'Allow Theia to use a Google AI (Gemini) API key found in the environment (`GOOGLE_API_KEY` / `GEMINI_API_KEY`). '
+                + 'You are asked to confirm this once before the key is used; set it back to `false` to revoke consent.'),
+        },
+        [MODEL_OVERRIDES_PREF]: {
+            type: 'array',
+            default: [],
             items: {
                 type: 'string'
-            }
+            },
+            title: AI_CORE_PREFERENCES_TITLE,
+            markdownDescription: nls.localize('theia/ai/google/modelOverrides/description',
+                'Override the models discovered from Google Gemini. When empty (default), the available models are discovered from the provider. '
+                + 'Set explicit model ids to use exactly those instead; discovery is then not used at all.')
         },
         [MAX_RETRIES]: {
             type: 'integer',

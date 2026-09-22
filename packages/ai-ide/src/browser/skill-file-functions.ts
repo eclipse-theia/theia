@@ -37,13 +37,15 @@ export class GetSkillFileContent implements ToolProvider {
             id: GetSkillFileContent.ID,
             name: GetSkillFileContent.ID,
             description: 'Returns the content of a skill file by skill name. Use this to read the full instructions of a skill listed in the available_skills. ' +
-                'The skill name must match one of the discovered skills.',
+                'If the returned skill references another available skill by its exact name or with /<skill-name> syntax, load that skill with this same tool ' +
+                'when relevant or requested. ' +
+                'Pass skill names without the leading slash. The skill name must match one of the discovered skills.',
             parameters: {
                 type: 'object',
                 properties: {
                     skillName: {
                         type: 'string',
-                        description: 'The name of the skill to retrieve (e.g., \'pdf-processing\')'
+                        description: 'The exact name of the skill to retrieve, without a leading slash (e.g., \'pdf-processing\')'
                     }
                 },
                 required: ['skillName']

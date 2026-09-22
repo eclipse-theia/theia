@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct, named } from 'inversify';
 import { Emitter } from '../common/event';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { LabelProviderContribution, DidChangeLabelEvent } from './label-provider';
@@ -22,6 +22,7 @@ import { FrontendApplicationConfigProvider } from './frontend-application-config
 import debounce = require('lodash.debounce');
 import { PreferenceSchemaService } from '../common/preferences/preference-schema';
 import { PreferenceService } from '../common/preferences';
+import { ILogger } from '../common';
 
 const ICON_THEME_PREFERENCE_KEY = 'workbench.iconTheme';
 
@@ -100,6 +101,9 @@ export class IconThemeService {
     @inject(PreferenceService) protected readonly preferences: PreferenceService;
     @inject(PreferenceSchemaService) protected readonly schemaProvider: PreferenceSchemaService;
 
+    @inject(ILogger) @named('core:IconThemeService')
+    protected readonly logger: ILogger;
+
     protected readonly onDidChangeCurrentEmitter = new Emitter<string>();
     readonly onDidChangeCurrent = this.onDidChangeCurrentEmitter.event;
 
@@ -124,7 +128,7 @@ export class IconThemeService {
 
     register(iconTheme: IconTheme): Disposable {
         if (this._iconThemes.has(iconTheme.id)) {
-            console.warn(new Error(`Icon theme '${iconTheme.id}' has already been registered, skipping.`));
+            this.logger.warn(new Error(`Icon theme '${iconTheme.id}' has already been registered, skipping.`));
             return Disposable.NULL;
         }
         this._iconThemes.set(iconTheme.id, iconTheme);

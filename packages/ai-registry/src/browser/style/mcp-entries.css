@@ -35,11 +35,9 @@
     flex-shrink: 0;
 }
 
-/* Invisible spacer reserving the same width VSX cards use for their context-menu gear,
-   so MCP and VSX action bars line up across the unified Extensions view. */
-.theia-mcp-extension-gear-placeholder {
-    visibility: hidden;
-    pointer-events: none;
+/* Occupies the same slot VSX cards use for their gear, so the action bars line up. */
+.theia-mcp-extension-gear {
+    cursor: pointer;
 }
 
 .theia-mcp-extension-warning {

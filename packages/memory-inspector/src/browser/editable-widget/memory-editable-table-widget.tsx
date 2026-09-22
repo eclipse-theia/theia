@@ -16,7 +16,7 @@
 
 import { Key, KeyCode } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import Long from 'long';
 import { DebugProtocol } from '@vscode/debugprotocol';
@@ -27,6 +27,7 @@ import { MemoryWidget } from '../memory-widget/memory-widget';
 import { EasilyMappedObject } from '../utils/memory-hover-renderer';
 import { Constants, Interfaces } from '../utils/memory-widget-utils';
 import { nls } from '@theia/core/lib/common/nls';
+import { ILogger } from '@theia/core';
 
 export type EditableMemoryWidget = MemoryWidget<MemoryOptionsWidget, MemoryEditableTableWidget>;
 export namespace EditableMemoryWidget {
@@ -35,6 +36,10 @@ export namespace EditableMemoryWidget {
 
 @injectable()
 export class MemoryEditableTableWidget extends MemoryTableWidget {
+
+    @inject(ILogger) @named('memory-inspector:MemoryEditableTableWidget')
+    protected readonly logger: ILogger;
+
     protected pendingMemoryEdits = new Map<string, string>();
     protected memoryEditsCompleted = new Deferred<void>();
     protected highlightedField: Long = Long.fromInt(-1);
@@ -202,7 +207,7 @@ export class MemoryEditableTableWidget extends MemoryTableWidget {
                 didUpdateMemory = true;
                 this.pendingMemoryEdits.delete(key);
             } catch (e) {
-                console.warn('Problem writing memory with arguments', edit, '\n', e);
+                this.logger.warn('Problem writing memory with arguments', edit, '\n', e);
                 const text = e instanceof Error ? e.message : 'Unknown error';
                 this.showWriteError(key, text);
                 break;

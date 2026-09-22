@@ -41,11 +41,17 @@ export const GettingStartedPreferenceSchema: PreferenceSchema = {
             default: 'welcomePage',
             description: nls.localizeByDefault('Controls which editor is shown at startup, if none are restored from the previous session.')
         },
+        'workbench.welcomePage.walkthroughs.openOnInstall': {
+            type: 'boolean',
+            default: true,
+            description: nls.localizeByDefault("When enabled, an extension's walkthrough will open upon install of the extension.")
+        },
     }
 };
 
 export interface GettingStartedConfiguration {
     'workbench.startupEditor': string;
+    'workbench.welcomePage.walkthroughs.openOnInstall': boolean;
 }
 
 export const GettingStartedPreferenceContribution = Symbol('GettingStartedPreferenceContribution');

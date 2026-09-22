@@ -57,13 +57,13 @@ export const TOOL_CONFIRMATION_PREFERENCE = 'ai-features.chat.toolConfirmation';
 export const DEFAULT_TOOL_CONFIRMATION_PREFERENCE = 'ai-features.chat.defaultToolConfirmation';
 export const TOOL_CONFIRMATION_TIMEOUT_PREFERENCE = 'ai-features.chat.toolConfirmationTimeout';
 
-const TOOL_CONFIRMATION_MODE_VALUES = [
+export const TOOL_CONFIRMATION_MODE_VALUES = [
     ToolConfirmationMode.ALWAYS_ALLOW,
     ToolConfirmationMode.CONFIRM,
     ToolConfirmationMode.DISABLED
 ];
 
-const TOOL_CONFIRMATION_MODE_DESCRIPTIONS = [
+export const TOOL_CONFIRMATION_MODE_DESCRIPTIONS = [
     nls.localize('theia/ai/chat/toolConfirmation/alwaysAllow/description', 'Execute tools automatically without confirmation'),
     nls.localize('theia/ai/chat/toolConfirmation/confirm/description', 'Ask for confirmation before executing tools'),
     nls.localize('theia/ai/chat/toolConfirmation/disabled/description', 'Disable tool execution')

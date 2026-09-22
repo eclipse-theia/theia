@@ -13,8 +13,6 @@ lerna-debug.log
 coverage
 errorShots
 examples/*/src-gen
-examples/*/gen-webpack.config.js
-examples/*/gen-webpack.node.config.js
 examples/*/gen-esbuild.*.mjs
 examples/*/.test
 .browser_modules

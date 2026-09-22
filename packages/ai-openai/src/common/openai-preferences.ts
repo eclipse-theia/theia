@@ -14,12 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AI_CORE_PREFERENCES_TITLE, PREFERENCE_NAME_SERVER_SIDE_COMPACTION } from '@theia/ai-core/lib/common/ai-core-preferences';
+import {
+    AI_CORE_PREFERENCES_TITLE, MODEL_PROVIDER_TYPE_DETAIL, ModelProviderTypeDetail, PREFERENCE_NAME_SERVER_SIDE_COMPACTION
+} from '@theia/ai-core/lib/common/ai-core-preferences';
 import { SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM } from '@theia/ai-core/lib/common/language-model';
 import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.openAiOfficial.openAiApiKey';
-export const MODELS_PREF = 'ai-features.openAiOfficial.officialOpenAiModels';
+export const ALLOW_ENV_API_KEY_PREF = 'ai-features.openAiOfficial.allowEnvironmentApiKey';
+export const MODEL_OVERRIDES_PREF = 'ai-features.openAiOfficial.modelOverrides';
 export const USE_RESPONSE_API_PREF = 'ai-features.openAiOfficial.useResponseApi';
 export const SERVER_SIDE_COMPACTION_PREF = 'ai-features.openAiOfficial.serverSideCompaction';
 export const SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF = 'ai-features.openAiOfficial.serverSideCompactionTokenThreshold';
@@ -29,25 +32,30 @@ export const OpenAiPreferencesSchema: PreferenceSchema = {
     properties: {
         [API_KEY_PREF]: {
             type: 'string',
+            typeDetails: { [MODEL_PROVIDER_TYPE_DETAIL]: { label: 'OpenAI' } satisfies ModelProviderTypeDetail },
             markdownDescription: nls.localize('theia/ai/openai/apiKey/mdDescription',
                 'Enter an API Key of your official OpenAI Account. **Please note:** By using this preference the Open AI API key will be stored in clear text \
 on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
             title: AI_CORE_PREFERENCES_TITLE,
         },
-        [MODELS_PREF]: {
-            type: 'array',
-            description: nls.localize('theia/ai/openai/models/description', 'Official OpenAI models to use'),
+        [ALLOW_ENV_API_KEY_PREF]: {
+            type: 'boolean',
+            default: false,
             title: AI_CORE_PREFERENCES_TITLE,
-            default: [
-                'gpt-5.6-sol',
-                'gpt-5.6-terra',
-                'gpt-5.6-luna',
-                'gpt-5.5',
-                'gpt-5.5-pro'
-            ],
+            markdownDescription: nls.localize('theia/ai/openai/allowEnvApiKey/description',
+                'Allow Theia to use an OpenAI API key found in the environment (`OPENAI_API_KEY`). '
+                + 'You are asked to confirm this once before the key is used; set it back to `false` to revoke consent.'),
+        },
+        [MODEL_OVERRIDES_PREF]: {
+            type: 'array',
+            default: [],
             items: {
                 type: 'string'
-            }
+            },
+            title: AI_CORE_PREFERENCES_TITLE,
+            markdownDescription: nls.localize('theia/ai/openai/modelOverrides/description',
+                'Override the models discovered from OpenAI. When empty (default), the available models are discovered from the provider. '
+                + 'Set explicit model ids to use exactly those instead; discovery is then not used at all.')
         },
         [USE_RESPONSE_API_PREF]: {
             type: 'boolean',
@@ -83,6 +91,9 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
         },
         [CUSTOM_ENDPOINTS_PREF]: {
             type: 'array',
+            typeDetails: {
+                [MODEL_PROVIDER_TYPE_DETAIL]: { label: nls.localize('theia/ai/openai/customProvider/label', '{0} (Custom)', 'OpenAI') } satisfies ModelProviderTypeDetail
+            },
             title: AI_CORE_PREFERENCES_TITLE,
             markdownDescription: nls.localize('theia/ai/openai/customEndpoints/mdDescription',
                 'Integrate custom models compatible with the OpenAI API, for example via `vllm`. The required attributes are `model` and `url`.\
@@ -110,6 +121,8 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             \n\
             - specify `reasoningSupport` to opt in to the chat reasoning selector. Provide an object with\
             `supportedLevels` (e.g. `["off", "low", "medium", "high", "auto"]`) and an optional `defaultLevel`.\
+            \n\
+            - specify `headers` to send additional HTTP headers with every request to the endpoint, e.g. headers required by a gateway in front of the API.\
             \n\
             Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.'),
             default: [],
@@ -185,6 +198,12 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
                                 enum: ['off', 'minimal', 'low', 'medium', 'high', 'auto']
                             }
                         }
+                    },
+                    headers: {
+                        type: 'object',
+                        additionalProperties: { type: 'string' },
+                        title: nls.localize('theia/ai/openai/customEndpoints/headers/title',
+                            'Additional HTTP headers sent with every request to the endpoint'),
                     }
                 }
             }

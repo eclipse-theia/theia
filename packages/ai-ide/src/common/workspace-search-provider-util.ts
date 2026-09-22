@@ -29,7 +29,8 @@ export interface WorkspacePathResolver {
  * Optimizes search results for token efficiency while preserving all information.
  * - Groups matches by file to reduce repetition
  * - Trims leading/trailing whitespace from line text
- * - Uses root-prefixed relative file paths (e.g., "rootName/src/file.ts")
+ * - Uses root-prefixed relative file paths (e.g., "rootName/src/file.ts"), falling back to the absolute
+ *   path for hits outside the workspace roots
  * - Preserves all line numbers and content
  */
 export function optimizeSearchResults(
@@ -41,7 +42,7 @@ export function optimizeSearchResults(
         const relativePath = workspacePathResolver.toWorkspaceRelativePath(fileUri);
 
         return {
-            file: relativePath ?? result.fileUri,
+            file: relativePath ?? fileUri.path.fsPath(),
             matches: result.matches.map(match => {
                 let lineText: string;
                 if (typeof match.lineText === 'string') {

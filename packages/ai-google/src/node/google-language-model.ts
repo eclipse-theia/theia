@@ -15,7 +15,9 @@
 // *****************************************************************************
 import {
     createToolCallError,
+    formatToolCallContentForModel,
     ImageContent,
+    isToolCallContent,
     LanguageModel,
     LanguageModelMessage,
     LanguageModelRequest,
@@ -28,6 +30,7 @@ import {
     ReasoningSupport,
     ServerToolCall,
     ServerToolDescriptor,
+    TokenUsageParams,
     ToolCallResult,
     ToolInvocationContext,
     UserRequest
@@ -54,6 +57,9 @@ interface ToolCallback {
 function toFunctionResponse(content: ToolCallResult): FunctionResponse['response'] {
     if (content === undefined) {
         return {};
+    }
+    if (isToolCallContent(content)) {
+        return { result: formatToolCallContentForModel(content) };
     }
     if (Array.isArray(content)) {
         return { result: content };
@@ -150,6 +156,20 @@ function toGoogleRole(message: LanguageModelMessage): 'user' | 'model' {
  * Implements the Gemini language model integration for Theia. Reasoning-level
  * translation lives in {@link googleReasoningFor}.
  */
+/** Options for {@link createGoogleClient}. */
+export interface GoogleClientOptions {
+    readonly apiKey: string;
+}
+
+/**
+ * The single place a Gemini SDK client is built, so that a chat request, a model lookup and the model
+ * discovery all reach the provider the same way.
+ */
+export function createGoogleClient(options: GoogleClientOptions): GoogleGenAI {
+    // TODO test vertexai
+    return new GoogleGenAI({ apiKey: options.apiKey, vertexai: false });
+}
+
 export class GoogleModel implements LanguageModel {
 
     /** Provider identifier, used to key per-provider settings (e.g. server tool selections) and the capabilities UI. */
@@ -241,6 +261,7 @@ export class GoogleModel implements LanguageModel {
                 let latestUrlContextMetadata: UrlContextMetadata | undefined;
                 let latestGroundingMetadata: GroundingMetadata | undefined;
                 try {
+                    let tokenUsage: TokenUsageParams | undefined = undefined;
                     for await (const chunk of stream) {
                         if (cancellationToken?.isCancellationRequested) {
                             break;
@@ -340,14 +361,23 @@ export class GoogleModel implements LanguageModel {
                             yield { content: chunk.text };
                         }
 
-                        // Report token usage if available
+                        // Remember the token usage as Gemini's metadata is cumulative
                         if (chunk.usageMetadata) {
                             const promptTokens = chunk.usageMetadata.promptTokenCount;
                             const completionTokens = chunk.usageMetadata.candidatesTokenCount;
                             if (promptTokens !== undefined && completionTokens !== undefined) {
-                                yield { input_tokens: promptTokens, output_tokens: completionTokens };
+                                tokenUsage = {
+                                    inputTokens: promptTokens,
+                                    outputTokens: completionTokens,
+                                    requestId: request.requestId
+                                };
                             }
                         }
+                    }
+
+                    // Report token usage if available
+                    if (tokenUsage !== undefined && that.id) {
+                        yield { input_tokens: tokenUsage.inputTokens, output_tokens: tokenUsage.outputTokens };
                     }
 
                     // Surface any server tools (url_context / google_search) that the provider executed.
@@ -564,8 +594,7 @@ export class GoogleModel implements LanguageModel {
             throw new Error('Please provide GOOGLE_API_KEY in preferences or via environment variable');
         }
 
-        // TODO test vertexai
-        return new GoogleGenAI({ apiKey, vertexai: false });
+        return createGoogleClient({ apiKey });
     }
 
     /**

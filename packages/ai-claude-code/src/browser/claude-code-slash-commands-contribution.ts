@@ -66,7 +66,7 @@ export class ClaudeCodeSlashCommandsContribution implements FrontendApplicationC
         }
     ];
 
-    @inject(ILogger) @named('claude-code')
+    @inject(ILogger) @named('ai-claude-code:ClaudeCodeSlashCommandsContribution')
     protected readonly logger: ILogger;
 
     @inject(PromptService)

@@ -46,7 +46,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
     @inject(HostedPluginProcessConfiguration)
     protected configuration: HostedPluginProcessConfiguration;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('plugin-ext:HostedPluginProcess')
     protected readonly logger: ILogger;
 
     @inject(HostedPluginCliContribution)

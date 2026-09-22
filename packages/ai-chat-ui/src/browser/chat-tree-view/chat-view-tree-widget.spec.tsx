@@ -24,7 +24,6 @@ FrontendApplicationConfigProvider.set({});
 import 'reflect-metadata';
 
 import { expect } from 'chai';
-import * as React from '@theia/core/shared/react';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { OpenerService } from '@theia/core/lib/browser';
 import { MarkdownRender } from '../chat-response-renderer/markdown-part-renderer';

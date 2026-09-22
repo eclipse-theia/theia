@@ -14,12 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { DebugScope, DebugVariable } from '@theia/debug/lib/browser/console/debug-console-items';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
 import { hexStrToUnsignedLong } from '../../common/util';
 import { VariableRange } from '../utils/memory-widget-variable-utils';
 import { AbstractMemoryProvider } from './memory-provider';
+import { ILogger } from '@theia/core';
 
 /**
  * @file this file exists to show the customizations possible for specific debug adapters. Within the confines of the DebugAdapterProtocol, different adapters can behave
@@ -35,13 +36,16 @@ import { AbstractMemoryProvider } from './memory-provider';
 @injectable()
 export class CDTGDBMemoryProvider extends AbstractMemoryProvider {
 
+    @inject(ILogger) @named('memory-inspector:CDTGDBMemoryProvider')
+    protected readonly logger: ILogger;
+
     canHandle(session: DebugSession): boolean {
         return session.configuration.type === 'gdb';
     }
 
     override async getLocals(session: DebugSession | undefined): Promise<VariableRange[]> {
         if (session === undefined) {
-            console.warn('No active debug session.');
+            this.logger.warn('No active debug session.');
             return [];
         }
 
@@ -64,14 +68,14 @@ export class CDTGDBMemoryProvider extends AbstractMemoryProvider {
                         expression: addrExp,
                         context: 'watch',
                         frameId: frame.raw.id,
-                    }).catch(e => { console.warn(`Failed to evaluate ${addrExp}. Corresponding variable will be omitted from Memory Inspector display.`, e); });
+                    }).catch(e => { this.logger.warn(`Failed to evaluate ${addrExp}. Corresponding variable will be omitted from Memory Inspector display.`, e); });
                     if (!addrResp) { continue; }
 
                     const sizeResp = await session.sendRequest('evaluate', {
                         expression: sizeExp,
                         context: 'watch',
                         frameId: frame.raw.id,
-                    }).catch(e => { console.warn(`Failed to evaluate ${sizeExp}. Corresponding variable will be omitted from Memory Inspector display.`, e); });
+                    }).catch(e => { this.logger.warn(`Failed to evaluate ${sizeExp}. Corresponding variable will be omitted from Memory Inspector display.`, e); });
                     if (!sizeResp) { continue; }
 
                     // Make sure the address is in the format we expect.

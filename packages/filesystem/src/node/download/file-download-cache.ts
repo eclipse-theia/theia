@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { rimraf } from 'rimraf';
 
@@ -28,7 +28,7 @@ export interface DownloadStorageItem {
 @injectable()
 export class FileDownloadCache {
 
-    @inject(ILogger)
+    @inject(ILogger) @named('filesystem:FileDownloadCache')
     protected readonly logger: ILogger;
     protected readonly downloads = new Map<string, DownloadStorageItem>();
     protected readonly expireTimeInMinutes: number = 1;

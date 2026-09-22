@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { isFirefox } from './browser';
 import { ClipboardService } from './clipboard-service';
 import { Emitter, Event } from '../common/event';
@@ -39,7 +39,7 @@ export class BrowserClipboardService implements ClipboardService {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('core:BrowserClipboardService')
     protected readonly logger: ILogger;
 
     protected readonly onDidWriteTextEmitter = new Emitter<string>();

@@ -62,6 +62,7 @@ import {
 import { ContributionProvider, ILogger, isArray, nls } from '@theia/core';
 import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
+import { FileReadTracker } from './file-read-tracker';
 import {
     ChatModel,
     ChatRequestModel,
@@ -187,7 +188,10 @@ export function isChatAgent(agent: Agent): agent is ChatAgent {
 @injectable()
 export abstract class AbstractChatAgent implements ChatAgent {
     @inject(LanguageModelRegistry) protected languageModelRegistry: LanguageModelRegistry;
-    @inject(ILogger) protected logger: ILogger;
+
+    @inject(ILogger) @named('ai-chat:AbstractChatAgent')
+    protected readonly logger: ILogger;
+
     @inject(ChatToolRequestService) protected chatToolRequestService: ChatToolRequestService;
     @inject(LanguageModelService) protected languageModelService: LanguageModelService;
     @inject(PromptService) protected promptService: PromptService;
@@ -199,6 +203,8 @@ export abstract class AbstractChatAgent implements ChatAgent {
     protected defaultContentFactory: DefaultResponseContentFactory;
 
     @inject(TokenUsageService) @optional() protected tokenUsageService: TokenUsageService | undefined;
+
+    @inject(FileReadTracker) @optional() protected fileReadTracker: FileReadTracker | undefined;
 
     readonly abstract id: string;
     readonly abstract name: string;
@@ -255,6 +261,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
             }
 
             const messages = await this.getMessages(request.session);
+            await this.appendExternalFileChangeNotice(request, messages);
 
             if (systemMessageDescription) {
                 const systemMsg: LanguageModelMessage = {
@@ -295,6 +302,27 @@ export abstract class AbstractChatAgent implements ChatAgent {
         }
     }
 
+    /**
+     * Tells the agent which files it read were meanwhile changed by somebody else. A trailing user message
+     * rather than the cached system message; providers requiring alternating roles merge same-role runs.
+     */
+    protected async appendExternalFileChangeNotice(request: MutableChatRequestModel, messages: LanguageModelMessage[]): Promise<void> {
+        try {
+            const changedFiles = await this.fileReadTracker?.getChangedFiles(request.session.id);
+            if (changedFiles?.length) {
+                messages.push({
+                    actor: 'user',
+                    type: 'text',
+                    text: `The following files changed since you last read them: ${changedFiles.join(', ')}. ` +
+                        'Read them again before relying on their content or overwriting them.'
+                });
+            }
+        } catch (error) {
+            // Advisory, so failing to determine it must not fail the request.
+            this.logger.warn('Could not determine externally changed files.', error);
+        }
+    }
+
     protected parseContents(text: string, request: MutableChatRequestModel): ChatResponseContent[] {
         return parseContents(
             text,
@@ -305,7 +333,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
     };
 
     protected handleError(request: MutableChatRequestModel, error: Error): void {
-        console.error('Error handling chat interaction:', error);
+        this.logger.error('Error handling chat interaction:', error);
         request.response.response.addContent(new ErrorChatResponseContentImpl(error));
         request.response.error(error);
     }
@@ -749,7 +777,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         for await (const token of languageModelResponse.stream) {
             // Skip unknown tokens. For example OpenAI sends empty tokens around tool calls
             if (!isLanguageModelStreamResponsePart(token)) {
-                console.debug(`Unknown token: '${JSON.stringify(token)}'. Skipping`);
+                this.logger.debug(`Unknown token: '${JSON.stringify(token)}'. Skipping`);
                 continue;
             }
             const newContent = this.parse(token, request);

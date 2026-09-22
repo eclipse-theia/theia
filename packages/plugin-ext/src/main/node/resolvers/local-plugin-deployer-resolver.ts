@@ -14,15 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { PluginDeployerResolver, PluginDeployerResolverContext } from '../../../common/plugin-protocol';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
 import { FileUri } from '@theia/core/lib/node';
 import URI from '@theia/core/lib/common/uri';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export abstract class LocalPluginDeployerResolver implements PluginDeployerResolver {
+
+    @inject(ILogger) @named('plugin-ext:LocalPluginDeployerResolver')
+    protected readonly logger: ILogger;
+
     async resolve(pluginResolverContext: PluginDeployerResolverContext): Promise<void> {
         const localPath = await this.resolveLocalPluginPath(pluginResolverContext, this.supportedScheme);
         if (localPath) {
@@ -48,7 +53,7 @@ export abstract class LocalPluginDeployerResolver implements PluginDeployerResol
             fsPath = path.resolve(process.cwd(), fsPath);
         }
         if (!await fs.pathExists(fsPath)) {
-            console.warn(`The local plugin referenced by ${pluginResolverContext.getOriginId()} does not exist.`);
+            this.logger.warn(`The local plugin referenced by ${pluginResolverContext.getOriginId()} does not exist.`);
             return null;
         }
         return fsPath;

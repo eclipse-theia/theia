@@ -19,7 +19,6 @@ import { injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, ThinkingChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
-import * as React from '@theia/core/shared/react';
 
 @injectable()
 export class ThinkingPartRenderer implements ChatResponsePartRenderer<ThinkingChatResponseContent> {

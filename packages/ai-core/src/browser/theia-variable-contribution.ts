@@ -51,40 +51,40 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
         ['file', [
             {
                 name: 'currentAbsoluteFilePath',
-                description: nls.localize('theia/ai/core/variable-contribution/currentAbsoluteFilePath', 'The absolute path of the \
-                currently opened file.')
+                description: nls.localize('theia/ai/core/variable-contribution/currentAbsoluteFilePath',
+                    'The absolute path of the currently opened file.')
             }
         ]],
         ['selectedText', [
             {
-                description: nls.localize('theia/ai/core/variable-contribution/currentSelectedText', 'The plain text that is currently selected in the \
-                opened file. This excludes the information where the content is coming from.')
+                description: nls.localize('theia/ai/core/variable-contribution/currentSelectedText',
+                    'The plain text that is currently selected in the opened file. This excludes the information where the content is coming from.')
             }
         ]],
         ['currentText', [
             {
                 name: 'currentFileContent',
-                description: nls.localize('theia/ai/core/variable-contribution/currentFileContent', 'The plain content of the \
-                currently opened file. This excludes the information where the content is coming from.')
+                description: nls.localize('theia/ai/core/variable-contribution/currentFileContent',
+                    'The plain content of the currently opened file. This excludes the information where the content is coming from.')
             }
         ]],
         ['relativeFile', [
             {
                 name: 'currentRelativeFilePath',
-                description: nls.localize('theia/ai/core/variable-contribution/currentRelativeFilePath', 'The workspace-relative path of the \
-                currently opened file (e.g., my-project/src/index.ts).')
+                description: nls.localize('theia/ai/core/variable-contribution/currentRelativeFilePath',
+                    'The workspace-relative path of the currently opened file (e.g., my-project/src/index.ts).')
             },
             {
                 name: '_f',
-                description: nls.localize('theia/ai/core/variable-contribution/dotRelativePath', 'Short reference to the workspace-relative path of the \
-                currently opened file (\'currentRelativeFilePath\').')
+                description: nls.localize('theia/ai/core/variable-contribution/dotRelativePath',
+                    'Short reference to the workspace-relative path of the currently opened file (\'currentRelativeFilePath\').')
             }
         ]],
         ['relativeFileDirname', [
             {
                 name: 'currentRelativeDirPath',
-                description: nls.localize('theia/ai/core/variable-contribution/currentRelativeDirPath', 'The workspace-relative path of the directory \
-                containing the currently opened file (e.g., my-project/src).')
+                description: nls.localize('theia/ai/core/variable-contribution/currentRelativeDirPath',
+                    'The workspace-relative path of the directory containing the currently opened file (e.g., my-project/src).')
             }
         ]],
         ['lineNumber', [{}]],

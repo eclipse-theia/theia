@@ -26,7 +26,7 @@ import {
 import { LanguageModelService } from '@theia/ai-core/lib/browser';
 import { generateUuid, ILogger, nls } from '@theia/core';
 import { terminalPrompts } from './ai-terminal-prompt-template';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { z } from 'zod';
 
 const Commands = z.object({
@@ -80,7 +80,7 @@ export class AiTerminalAgent implements Agent {
     @inject(PromptService)
     protected promptService: PromptService;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('ai-terminal:AiTerminalAgent')
     protected logger: ILogger;
 
     @inject(LanguageModelService)

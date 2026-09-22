@@ -15,5 +15,13 @@
 // *****************************************************************************
 
 export * from './copilot-auth-service-impl';
-export * from './copilot-language-model';
 export * from './copilot-language-models-manager-impl';
+export * from './copilot-cli-auth-provider';
+export * from './copilot-cli-locator';
+export * from './copilot-credential-store';
+export * from './copilot-runtime-env';
+export * from './copilot-sdk-client-provider';
+export * from './copilot-sdk-loader';
+export * from './copilot-sdk-mappers';
+export * from './copilot-sdk-language-model';
+export * from './copilot-sdk-types';

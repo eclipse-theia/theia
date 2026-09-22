@@ -27,8 +27,8 @@ try {
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { Emitter, MessageService, PreferenceService } from '@theia/core';
-import { HoverService } from '@theia/core/lib/browser';
+import { Emitter, MessageService, PreferenceService, ILogger } from '@theia/core';
+import { ContextMenuRenderer, HoverService } from '@theia/core/lib/browser';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { MCPFrontendService } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { MCPServerEditor, MCPServerEditorImpl, MCPServerEditDialogFactory } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
@@ -37,9 +37,11 @@ import { RegistryFetchService } from '../../common/registry-fetch-service';
 import { RegistrySearchFilter } from '../../common/registry-search-filter';
 import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
 import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from '../../common/mcp/mcp-registry-entry-resolver';
+import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from '../auto-update/registry-auto-update-policy';
 import { MCPInstallService, MCPInstallServiceImpl } from './mcp-install-service';
 import { MCPExtensionsContribution } from './mcp-extensions-contribution';
 import { MCPInstalledEntry, MCPSearchResultEntry } from './mcp-entries';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 after(() => disableJSDOM());
 
@@ -74,6 +76,7 @@ function buildContainer(prefs: FakePreferenceService, fetch: StubRegistryFetchSe
     const container = new Container();
     container.bind(PreferenceService).toConstantValue(prefs);
     container.bind(RegistryFetchService).toConstantValue(fetch as unknown as RegistryFetchService);
+    container.bind(ILogger).to(MockLogger).inSingletonScope();
     container.bind(RegistrySearchFilter).toSelf().inSingletonScope();
     container.bind(MCPRegistryEntryResolverImpl).toSelf().inSingletonScope();
     container.bind(MCPRegistryEntryResolver).toService(MCPRegistryEntryResolverImpl);
@@ -82,6 +85,8 @@ function buildContainer(prefs: FakePreferenceService, fetch: StubRegistryFetchSe
     container.bind(MessageService).toConstantValue({ error: () => undefined } as unknown as MessageService);
     container.bind(MCPFrontendService).toConstantValue({} as unknown as MCPFrontendService);
     container.bind(HoverService).toConstantValue({ requestHover: () => undefined } as unknown as HoverService);
+    // Entries take the renderer to open their gear menu; these tests never click it.
+    container.bind(ContextMenuRenderer).toConstantValue({ render: () => undefined } as unknown as ContextMenuRenderer);
     // The contribution doesn't open dialogs in these tests; bind factories that fail loudly if used.
     container.bind(MCPServerEditDialogFactory).toConstantValue(() => {
         throw new Error('MCPServerEditDialogFactory should not be invoked in these tests');
@@ -91,6 +96,9 @@ function buildContainer(prefs: FakePreferenceService, fetch: StubRegistryFetchSe
     });
     container.bind(MCPServerEditorImpl).toSelf().inSingletonScope();
     container.bind(MCPServerEditor).toService(MCPServerEditorImpl);
+    // The install service clears an artifact's auto-update override when it is uninstalled.
+    container.bind(RegistryAutoUpdatePolicyImpl).toSelf().inSingletonScope();
+    container.bind(RegistryAutoUpdatePolicy).toService(RegistryAutoUpdatePolicyImpl);
     container.bind(MCPInstallServiceImpl).toSelf().inSingletonScope();
     container.bind(MCPInstallService).toService(MCPInstallServiceImpl);
     container.bind(MCPExtensionsContribution).toSelf().inSingletonScope();
@@ -182,6 +190,32 @@ describe('MCPExtensionsContribution.resolveInstalled', () => {
 
         expect(entries).to.have.length(1);
         expect(entries[0].state).to.deep.equal({ kind: 'installed-link-stale' });
+    });
+
+    it('never surfaces a server owned by an installed Agent Plugin: the plugin is the installed artifact, not its components', async () => {
+        const prefs = new FakePreferenceService();
+        await prefs.set(MCP_SERVERS_PREF, {
+            example: {
+                command: 'npx',
+                args: ['-y', 'example-mcp'],
+                registryMetadata: {
+                    serverId: exampleRegistryEntry.serverId,
+                    version: exampleRegistryEntry.version,
+                    configHash: exampleRegistryEntry.configHash
+                }
+            },
+            bigquery: {
+                command: 'node',
+                args: ['server.js'],
+                registryMetadata: { pluginId: 'io.github.acme/bigquery-data-analytics' }
+            }
+        });
+        const fetch = new StubRegistryFetchService([exampleRegistryEntry]);
+        const contribution = buildContainer(prefs, fetch).get(MCPExtensionsContribution);
+
+        const entries = [...await contribution.resolveInstalled()] as MCPInstalledEntry[];
+
+        expect(entries.map(e => e.local.name)).to.deep.equal(['example']);
     });
 
     it('skips malformed stored entries whose `command` is not a string — mere key presence is not enough', async () => {
@@ -278,6 +312,28 @@ describe('MCPExtensionsContribution.resolveSearchResults', () => {
 
         expect(exampleResult, 'registry entry must surface in search results').to.not.be.undefined;
         expect((exampleResult!.element as MCPSearchResultEntry).state).to.deep.equal({ kind: 'installed-link-stale' });
+    });
+
+    it('does not let a plugin-owned server mark a standalone registry entry as installed', async () => {
+        // The plugin's server happens to be stored under the registry entry's local name and with a
+        // matching config. It must not be considered when classifying that entry: it belongs to the
+        // plugin, is a different artifact, and the standalone entry is still installable on its own.
+        const prefs = new FakePreferenceService();
+        await prefs.set(MCP_SERVERS_PREF, {
+            example: {
+                command: 'npx',
+                args: ['-y', 'example-mcp'],
+                registryMetadata: { pluginId: 'io.github.acme/bigquery-data-analytics' }
+            }
+        });
+        const fetch = new StubRegistryFetchService([exampleRegistryEntry]);
+        const contribution = buildContainer(prefs, fetch).get(MCPExtensionsContribution);
+
+        const results = [...await contribution.resolveSearchResults('example', { verifiedOnly: false })];
+        const exampleResult = results.find(r => (r.element as MCPSearchResultEntry).entry.serverId === exampleRegistryEntry.serverId);
+
+        expect(exampleResult, 'registry entry must surface in search results').to.not.be.undefined;
+        expect((exampleResult!.element as MCPSearchResultEntry).state).to.deep.equal({ kind: 'not-installed' });
     });
 
     it('omits unverified entries when verifiedOnly is true and keeps verified ones', async () => {

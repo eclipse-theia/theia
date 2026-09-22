@@ -15,8 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { ContributionProvider } from '@theia/core';
-import { ILogger } from '@theia/core/lib/common/logger';
+import { ContributionProvider, ILogger } from '@theia/core';
 import { Tool, Resource, ResourceContents, Prompt, PromptMessage } from '@modelcontextprotocol/sdk/types';
 import { MCPToolDelegateClient } from '../common/mcp-tool-delegate';
 import { MCPFrontendContribution } from './mcp-frontend-contribution';
@@ -38,7 +37,7 @@ export class MCPToolDelegateClientImpl implements MCPToolDelegateClient {
     @named(MCPFrontendContribution)
     protected readonly contributions: ContributionProvider<MCPFrontendContribution>;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('ai-mcp-server:MCPToolDelegateClientImpl')
     protected readonly logger: ILogger;
 
     private getFrontendContributions(): MCPFrontendContribution[] {

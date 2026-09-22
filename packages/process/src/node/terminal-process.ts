@@ -65,7 +65,8 @@ export class TerminalProcess extends Process {
         @inject(TerminalProcessOptions) protected override readonly options: TerminalProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(MultiRingBuffer) protected readonly ringBuffer: MultiRingBuffer,
-        @inject(ILogger) @named('process') logger: ILogger
+        @inject(ILogger) @named('process:TerminalProcess')
+        protected override readonly logger: ILogger
     ) {
         super(processManager, logger, ProcessType.Terminal, options);
 

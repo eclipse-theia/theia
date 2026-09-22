@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { FileSystemLocking } from '@theia/core/lib/node';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
@@ -25,6 +25,7 @@ import { PluginPaths } from './paths/const';
 import { PluginPathsService } from '../common/plugin-paths-protocol';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
 import { PluginStorageKind } from '../../common';
+import { ILogger } from '@theia/core';
 
 export interface Store {
     fsPath: string
@@ -49,10 +50,13 @@ export class PluginsKeyValueStorage {
     @inject(FileSystemLocking)
     private fsLocking: FileSystemLocking;
 
+    @inject(ILogger) @named('plugin-ext:PluginsKeyValueStorage')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     protected init(): void {
         this.deferredGlobalDataPath.resolve(this.getGlobalDataPath().catch(error => {
-            console.error('Failed to initialize global state path:', error);
+            this.logger.error('Failed to initialize global state path:', error);
             return undefined;
         }));
         process.once('beforeExit', () => this.dispose());
@@ -62,7 +66,7 @@ export class PluginsKeyValueStorage {
     async set(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean> {
         const store = await this.getStore(kind);
         if (!store) {
-            console.warn('Cannot save data: no opened workspace');
+            this.logger.warn('Cannot save data: no opened workspace');
             return false;
         }
         if (value === undefined || Object.keys(value).length === 0) {
@@ -144,7 +148,7 @@ export class PluginsKeyValueStorage {
         try {
             return await fs.readJSON(pathToFile);
         } catch (error) {
-            console.error('Failed to parse data from "', pathToFile, '". Reason:', error);
+            this.logger.error('Failed to parse data from "', pathToFile, '". Reason:', error);
             return {};
         }
     }

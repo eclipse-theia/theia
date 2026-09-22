@@ -28,6 +28,8 @@ import { PreferenceScope } from '../../common/preferences/preference-scope';
 import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
 import { PreferenceProxyOptions, PreferenceProxy, PreferenceChangeEvent, createPreferenceProxy } from '../../common/preferences/preference-proxy';
 import { PreferenceProxyFactory } from '../../common/preferences/injectable-preference-proxy';
+import { ILogger } from '../../common/logger';
+import { MockLogger } from '../../common/test/mock-logger';
 
 disableJSDOM();
 
@@ -47,6 +49,7 @@ function createTestContainer(): Container {
     const result = new Container();
     bindPreferenceService(result.bind.bind(result));
     bindMockPreferenceProviders(result.bind.bind(result), result.unbind.bind(result));
+    result.bind(ILogger).to(MockLogger);
     return result;
 }
 

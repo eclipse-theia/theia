@@ -29,7 +29,7 @@ export class SampleFrontendMCPContribution implements MCPFrontendContribution {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(ILogger) @named('api-samples')
+    @inject(ILogger) @named('api-samples:SampleFrontendMCPContribution')
     protected readonly logger: ILogger;
 
     async getTools(): Promise<Tool[]> {

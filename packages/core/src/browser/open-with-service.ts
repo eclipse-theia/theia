@@ -14,14 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import { Disposable } from '../common/disposable';
 import { nls } from '../common/nls';
 import { MaybePromise } from '../common/types';
 import { URI } from '../common/uri';
 import { QuickInputService, QuickPickItem, QuickPickItemOrSeparator } from './quick-input';
 import { getDefaultHandler } from './opener-service';
-import { PreferenceService, PreferenceScope } from '../common';
+import { PreferenceService, PreferenceScope, ILogger } from '../common';
 
 export interface OpenWithHandler {
     /**
@@ -74,11 +74,14 @@ export class OpenWithService {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(ILogger) @named('core:OpenWithService')
+    protected readonly logger: ILogger;
+
     protected readonly handlers: OpenWithHandler[] = [];
 
     registerHandler(handler: OpenWithHandler): Disposable {
         if (this.handlers.some(h => h.id === handler.id)) {
-            console.warn('Duplicate OpenWithHandler registration: ' + handler.id);
+            this.logger.warn('Duplicate OpenWithHandler registration: ' + handler.id);
             return Disposable.NULL;
         }
         this.handlers.push(handler);

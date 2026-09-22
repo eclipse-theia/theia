@@ -37,7 +37,7 @@ export type BackendPluginHostableFilter = (plugin: DeployedPlugin) => boolean;
  */
 @injectable()
 export class HostedPluginServerImpl implements HostedPluginServer {
-    @inject(ILogger)
+    @inject(ILogger) @named('plugin-ext:HostedPluginServerImpl')
     protected readonly logger: ILogger;
 
     @inject(PluginDeployerHandlerImpl)

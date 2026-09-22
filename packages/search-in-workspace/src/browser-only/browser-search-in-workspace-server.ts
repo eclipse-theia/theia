@@ -44,7 +44,7 @@ const minimatchOpts = {
 
 @injectable()
 export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
-    @inject(ILogger) @named('search-in-workspace')
+    @inject(ILogger) @named('search-in-workspace:BrowserSearchInWorkspaceServer')
     protected readonly logger: ILogger;
 
     @inject(FileService)

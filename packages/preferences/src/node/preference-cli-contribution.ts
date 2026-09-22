@@ -14,14 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { Argv } from '@theia/core/shared/yargs';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { RemoteCliContext, RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-contribution';
 import { CliPreferences } from '../common/cli-preferences';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class PreferenceCliContribution implements CliContribution, CliPreferences, RemoteCliContribution {
+
+    @inject(ILogger) @named('preferences:PreferenceCliContribution')
+    protected readonly logger: ILogger;
 
     protected preferences: [string, unknown][] = [];
     protected sessionPreferences: [string, unknown][] = [];
@@ -51,7 +55,7 @@ export class PreferenceCliContribution implements CliContribution, CliPreference
         for (const entry of entries) {
             const firstEqualIndex = entry.indexOf('=');
             if (firstEqualIndex <= 0) {
-                console.warn(`Ignoring preference CLI argument "${entry}": expected KEY=JSONVALUE.`);
+                this.logger.warn(`Ignoring preference CLI argument "${entry}": expected KEY=JSONVALUE.`);
                 continue;
             }
             let rawValue = entry.substring(firstEqualIndex + 1);
@@ -62,7 +66,7 @@ export class PreferenceCliContribution implements CliContribution, CliPreference
                 target.push([entry.substring(0, firstEqualIndex), JSON.parse(rawValue)]);
             } catch (e) {
                 const reason = e instanceof Error ? e.message : String(e);
-                console.warn(`Ignoring preference CLI argument "${entry}": value is not valid JSON (${reason}).`);
+                this.logger.warn(`Ignoring preference CLI argument "${entry}": value is not valid JSON (${reason}).`);
             }
         }
     }

@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // some code copied and modified from https://github.com/microsoft/vscode/blob/e1f0f8f51390dea5df9096718fb6b647ed5a9534/src/vs/workbench/api/browser/mainThreadWebviewViews.ts
 
-import { inject, interfaces } from '@theia/core/shared/inversify';
+import { inject, interfaces, named } from '@theia/core/shared/inversify';
 import { WebviewViewsMain, MAIN_RPC_CONTEXT, WebviewViewsExt } from '../../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { Disposable, DisposableCollection, ILogger } from '@theia/core';
@@ -44,7 +44,7 @@ export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
     protected readonly pluginViewRegistry: PluginViewRegistry;
     protected readonly badgeService: BadgeService;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('plugin-ext:WebviewViewsMainImpl')
     protected readonly logger: ILogger;
 
     constructor(rpc: RPCProtocol,
@@ -77,9 +77,9 @@ export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
                 if (webviewView.webview.state) {
                     try {
                         state = JSON.parse(webviewView.webview.state);
-                        console.log(state);
+                        this.logger.info(state);
                     } catch (e) {
-                        console.error('Could not load webview state', e, webviewView.webview.state);
+                        this.logger.error('Could not load webview state', e, webviewView.webview.state);
                     }
                 }
                 if (options) {

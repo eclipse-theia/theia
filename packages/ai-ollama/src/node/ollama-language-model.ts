@@ -25,8 +25,10 @@ import {
     ReasoningSupport,
     ToolCall,
     ToolRequest,
+    ToolRequestParameterProperty,
     ToolRequestParametersProperties,
     ImageContent,
+    formatToolCallContentForModel,
     LanguageModelRequest,
     LanguageModelStatus,
     LanguageModelTextResponse,
@@ -170,7 +172,7 @@ export class OllamaModel implements LanguageModel {
                             if (chunk.prompt_eval_count !== undefined && chunk.eval_count !== undefined) {
                                 yield { input_tokens: chunk.prompt_eval_count, output_tokens: chunk.eval_count };
                             }
-                            if (chunk.done_reason && chunk.done_reason !== 'stop') {
+                            if (chunk.done_reason && chunk.done_reason !== 'stop' && chunk.done_reason !== 'tool_calls') {
                                 throw new Error('Ollama stopped unexpectedly. Reason: ' + chunk.done_reason);
                             }
                         }
@@ -309,7 +311,7 @@ export class OllamaModel implements LanguageModel {
                     lastUpdated = chunk.created_at;
                     inputTokenCount = chunk.prompt_eval_count;
                     outputTokenCount = chunk.eval_count;
-                    if (chunk.done_reason && chunk.done_reason !== 'stop') {
+                    if (chunk.done_reason && chunk.done_reason !== 'stop' && chunk.done_reason !== 'tool_calls') {
                         throw new Error('Ollama stopped unexpectedly. Reason: ' + chunk.done_reason);
                     }
                 }
@@ -400,6 +402,17 @@ export class OllamaModel implements LanguageModel {
     }
 
     protected toOllamaTool(tool: ToolRequest): ToolWithHandler {
+        const resolveType = (prop: ToolRequestParameterProperty): string | undefined => {
+            if (prop.type) {
+                return prop.type;
+            }
+            if (prop.anyOf) {
+                const nonNull = prop.anyOf.find(p => p.type && p.type !== 'null');
+                return nonNull?.type ?? undefined;
+            }
+            return undefined;
+        };
+
         const transform = (props: ToolRequestParametersProperties | undefined) => {
             if (!props) {
                 return undefined;
@@ -407,15 +420,13 @@ export class OllamaModel implements LanguageModel {
 
             const result: Record<string, { type: string, description: string, enum?: string[] }> = {};
             for (const [key, prop] of Object.entries(props)) {
-                const type = prop.type;
+                const type = resolveType(prop);
                 if (type) {
                     const description = typeof prop.description == 'string' ? prop.description : '';
                     result[key] = {
                         type: type,
                         description: description
                     };
-                } else {
-                    // TODO: Should handle anyOf, but this is not supported by the Ollama type yet
                 }
             }
             return result;
@@ -446,7 +457,7 @@ export class OllamaModel implements LanguageModel {
         } else if (LanguageModelMessage.isToolUseMessage(message)) {
             result.tool_calls = [{ function: { name: message.name, arguments: message.input as Record<string, unknown> } }];
         } else if (LanguageModelMessage.isToolResultMessage(message)) {
-            result.content = `Tool call ${message.name} returned: ${message.content}`;
+            result.content = `Tool call ${message.name} returned: ${formatToolCallContentForModel(message.content)}`;
         } else if (LanguageModelMessage.isThinkingMessage(message)) {
             result.thinking = message.thinking;
         } else if (LanguageModelMessage.isImageMessage(message) && ImageContent.isBase64(message.image)) {

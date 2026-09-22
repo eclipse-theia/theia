@@ -22,10 +22,11 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { MessageService } from '@theia/core';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
-import { PromptService, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { PromptService, ToolCallContentResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common/mcp-server-manager';
 import type { MCPFrontendServiceImpl } from './mcp-frontend-service';
-const MCPFrontendServiceImplConstructor: new () => MCPFrontendServiceImpl = require('./mcp-frontend-service').MCPFrontendServiceImpl;
+const { MCPFrontendServiceImpl: MCPFrontendServiceImplConstructor, mapCallContent } = require('./mcp-frontend-service') as
+    { MCPFrontendServiceImpl: new () => MCPFrontendServiceImpl, mapCallContent: (callContent: Record<string, unknown>) => ToolCallContentResult };
 
 disableJSDOM();
 
@@ -245,5 +246,57 @@ describe('MCPFrontendServiceImpl', () => {
             expect(await target.signIn('asana')).to.be.false;
             expect(calls).to.deep.equal(['stop:asana', 'start:asana:true']);
         });
+    });
+});
+
+describe('MCPFrontendServiceImpl html content mapping', () => {
+
+    it('maps html content with title', () => {
+        const result = mapCallContent({ type: 'html', html: '<div>App</div>', title: 'My App' });
+        expect(result).to.deep.equal({ type: 'html', html: '<div>App</div>', title: 'My App' });
+    });
+
+    it('maps html content without title', () => {
+        const result = mapCallContent({ type: 'html', html: '<p>Hello</p>' });
+        expect(result).to.deep.equal({ type: 'html', html: '<p>Hello</p>', title: undefined });
+    });
+
+    it('falls back to text for unknown type without html field', () => {
+        const result = mapCallContent({ type: 'unknown', data: 'foo' });
+        expect(result.type).to.equal('text');
+        expect((result as { text: string }).text).to.equal(JSON.stringify({ type: 'unknown', data: 'foo' }));
+    });
+
+    it('still maps text content normally', () => {
+        const result = mapCallContent({ type: 'text', text: 'hello world' });
+        expect(result).to.deep.equal({ type: 'text', text: 'hello world' });
+    });
+
+    it('still maps image content normally', () => {
+        const result = mapCallContent({ type: 'image', data: 'base64data', mimeType: 'image/png' });
+        expect(result).to.deep.equal({ type: 'image', base64data: 'base64data', mimeType: 'image/png' });
+    });
+
+    it('parses JSON text with type=html into an html result', () => {
+        const jsonText = JSON.stringify({ type: 'html', html: '<div>Chart</div>', title: 'My Chart' });
+        const result = mapCallContent({ type: 'text', text: jsonText });
+        expect(result).to.deep.equal({ type: 'html', html: '<div>Chart</div>', title: 'My Chart' });
+    });
+
+    it('does not misclassify plain JSON text without type=html', () => {
+        const jsonText = JSON.stringify({ type: 'data', values: [1, 2, 3] });
+        const result = mapCallContent({ type: 'text', text: jsonText });
+        expect(result).to.deep.equal({ type: 'text', text: jsonText });
+    });
+
+    it('does not misclassify text that starts with { but is not valid JSON', () => {
+        const result = mapCallContent({ type: 'text', text: '{not valid json' });
+        expect(result).to.deep.equal({ type: 'text', text: '{not valid json' });
+    });
+
+    it('maps resource type to stringified text', () => {
+        const result = mapCallContent({ type: 'resource', resource: { uri: 'file:///test', text: 'hello' } });
+        expect(result.type).to.equal('text');
+        expect((result as { text: string }).text).to.equal(JSON.stringify({ uri: 'file:///test', text: 'hello' }));
     });
 });

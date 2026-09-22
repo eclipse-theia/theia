@@ -61,6 +61,10 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
     protected optimalWidth = 0;
     protected optimalHeight = 0;
     protected resizeObserver: ResizeObserver | undefined;
+    /** Window the scroll/wheel/resize listeners are attached to; may differ from the main window in secondary windows. */
+    protected listenersWindow: Window | undefined;
+    /** Perfect-scrollbar ancestors the `ps-scroll-y` listener was attached to. The field may have moved to another window since, so the elements are remembered. */
+    protected psScrollListenerTargets: HTMLElement[] = [];
 
     constructor(props: SelectComponentProps) {
         super(props);
@@ -71,14 +75,28 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             hover: selected
         };
 
-        let list = document.getElementById(SELECT_COMPONENT_CONTAINER);
+        this.dropdownElement = this.resolveDropdownContainer(document);
+    }
+
+    /**
+     * The document that currently hosts this component. Falls back to the main document before
+     * the first render. Widgets can be moved to secondary windows, so this must be re-queried
+     * instead of captured once.
+     */
+    protected getHostDocument(): Document {
+        return this.fieldRef.current?.ownerDocument ?? document;
+    }
+
+    /** Finds or creates the dropdown portal container in the given document. */
+    protected resolveDropdownContainer(hostDocument: Document): HTMLElement {
+        let list = hostDocument.getElementById(SELECT_COMPONENT_CONTAINER);
         if (!list) {
-            list = document.createElement('div');
+            list = hostDocument.createElement('div');
             list.id = SELECT_COMPONENT_CONTAINER;
             list.className = 'theia-select-component-container';
-            document.body.appendChild(list);
+            hostDocument.body.appendChild(list);
         }
-        this.dropdownElement = list;
+        return list;
     }
 
     protected getInitialSelectedIndex(props: SelectComponentProps): number {
@@ -179,12 +197,14 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             // neither triggers the `scroll`, `wheel` nor `blur` event
             if (parent.classList.contains('ps')) {
                 parent.addEventListener('ps-scroll-y', hide);
+                this.psScrollListenerTargets.push(parent);
             }
             parent = parent.parentElement;
         }
 
+        this.listenersWindow = this.getHostDocument().defaultView ?? window;
         for (const [key, listener] of this.mountedListeners.entries()) {
-            window.addEventListener(key, listener);
+            this.listenersWindow.addEventListener(key, listener);
         }
 
         // Catch Lumino sash drags globally - observe the closest lm-Widget panel
@@ -222,18 +242,24 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
     }
 
     override componentWillUnmount(): void {
+        this.detachListeners();
+    }
+
+    protected detachListeners(): void {
         this.resizeObserver?.disconnect();
+        this.resizeObserver = undefined;
         if (this.mountedListeners.size > 0) {
             const eventListener = this.mountedListeners.get('scroll')!;
-            let parent = this.fieldRef.current?.parentElement;
-            while (parent) {
-                parent.removeEventListener('ps-scroll-y', eventListener);
-                parent = parent.parentElement;
+            for (const target of this.psScrollListenerTargets) {
+                target.removeEventListener('ps-scroll-y', eventListener);
             }
             for (const [key, listener] of this.mountedListeners.entries()) {
-                window.removeEventListener(key, listener);
+                (this.listenersWindow ?? window).removeEventListener(key, listener);
             }
+            this.mountedListeners.clear();
         }
+        this.psScrollListenerTargets = [];
+        this.listenersWindow = undefined;
     }
 
     override render(): React.ReactNode {
@@ -345,6 +371,14 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             return;
         }
         if (!this.state.dimensions) {
+            // Re-resolve the portal container and listener window against the document that
+            // currently hosts the field: the widget may have been moved to a secondary window
+            // (or back to the main window) since the last time the dropdown was opened.
+            const hostDocument = this.getHostDocument();
+            this.dropdownElement = this.resolveDropdownContainer(hostDocument);
+            if (this.listenersWindow && this.listenersWindow !== hostDocument.defaultView) {
+                this.detachListeners();
+            }
             const rect = this.fieldRef.current.getBoundingClientRect();
             this.setState({ dimensions: rect });
         } else {
@@ -361,7 +395,8 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             hover: selectedIndex
         });
         // Force releasing focus of the select element to allow closing via escape later on
-        if (releaseFocus && document.activeElement && document.activeElement === this.fieldRef.current) {
+        const hostDocument = this.getHostDocument();
+        if (releaseFocus && hostDocument.activeElement && hostDocument.activeElement === this.fieldRef.current) {
             this.fieldRef.current.blur();
         }
     }
@@ -371,7 +406,9 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             return;
         }
 
-        const shellArea = document.getElementById('theia-app-shell')!.getBoundingClientRect();
+        // Secondary windows have no 'theia-app-shell' element; use the document element as the boundary there.
+        const hostDocument = this.getHostDocument();
+        const shellArea = (hostDocument.getElementById('theia-app-shell') ?? hostDocument.documentElement).getBoundingClientRect();
         const maxWidth = this.alignLeft ? shellArea.width - this.state.dimensions.left : this.state.dimensions.right;
         if (this.mountedListeners.size === 0) {
             // Only attach our listeners once we render our dropdown menu

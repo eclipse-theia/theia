@@ -88,6 +88,8 @@ import { CodeActionTriggerKind } from '../../plugin/types-impl';
 import { IReadonlyVSDataTransfer } from '@theia/monaco-editor-core/esm/vs/base/common/dataTransfer';
 import { FileUploadService } from '@theia/filesystem/lib/common/upload/file-upload';
 import { ILogger } from '@theia/core';
+import { NotebookService } from '@theia/notebook/lib/browser';
+import { CellEditType, CellUri } from '@theia/notebook/lib/common';
 
 @injectable()
 export class LanguagesMainImpl implements LanguagesMain, Disposable {
@@ -110,6 +112,9 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
     @inject(FileUploadService)
     protected readonly fileUploadService: FileUploadService;
 
+    @inject(NotebookService)
+    protected readonly notebookService: NotebookService;
+
     @inject(ILogger) @named('plugin-ext:LanguagesMainImpl')
     protected readonly logger: ILogger;
 
@@ -129,18 +134,35 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         return Promise.resolve(monaco.languages.getLanguages().map(l => l.id));
     }
 
-    $changeLanguage(resource: UriComponents, languageId: string): Promise<void> {
-        const uri = monaco.Uri.revive(resource);
-        const model = monaco.editor.getModel(uri);
-        if (!model) {
-            return Promise.reject(new Error('Invalid uri'));
+    async $changeLanguage(resource: UriComponents, languageId: string): Promise<void> {
+        if (!monaco.languages.getEncodedLanguageId(languageId)) {
+            throw new Error(`Unknown language ID: ${languageId}`);
         }
-        const langId = monaco.languages.getEncodedLanguageId(languageId);
-        if (!langId) {
-            return Promise.reject(new Error(`Unknown language ID: ${languageId}`));
+        const cell = CellUri.parse(URI.fromComponents(resource));
+        if (cell) {
+            this.changeCellLanguage(cell.notebook, cell.handle, languageId);
+            return;
+        }
+        const model = monaco.editor.getModel(monaco.Uri.revive(resource));
+        if (!model) {
+            throw new Error('Invalid uri');
         }
         monaco.editor.setModelLanguage(model, languageId);
-        return Promise.resolve(undefined);
+    }
+
+    /**
+     * The cell model owns a cell's language; kernel selection, serialization, and the cell editor all follow it.
+     */
+    protected changeCellLanguage(notebookUri: URI, handle: number, languageId: string): void {
+        const notebook = this.notebookService.getNotebookEditorModel(notebookUri);
+        if (!notebook) {
+            throw new Error('Invalid uri');
+        }
+        const index = notebook.getCellIndexByHandle(handle);
+        if (index < 0) {
+            throw new Error('Invalid uri');
+        }
+        notebook.applyEdits([{ editType: CellEditType.CellLanguage, index, language: languageId }], true);
     }
 
     protected register(handle: number, service: Disposable): void {

@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { inject, injectable, unmanaged } from 'inversify';
+import { inject, injectable, unmanaged, named } from 'inversify';
 import { ILogger, LogLevel } from '../logger';
 import { MaybePromise } from '../types';
 import { Measurement, MeasurementOptions, MeasurementResult } from './measurement';
@@ -48,7 +48,7 @@ interface LogOptions extends MeasurementOptions {
 @injectable()
 export abstract class Stopwatch {
 
-    @inject(ILogger)
+    @inject(ILogger) @named('core:Stopwatch')
     protected readonly logger: ILogger;
 
     protected _storedMeasurements: MeasurementResult[] = [];

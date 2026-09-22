@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { CustomEditor, DeployedPlugin } from '../../../common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { CustomEditorOpener } from './custom-editor-opener';
-import { Emitter, PreferenceService } from '@theia/core';
+import { Emitter, PreferenceService, ILogger } from '@theia/core';
 import { ApplicationShell, DefaultOpenerService, OpenWithService, WidgetManager } from '@theia/core/lib/browser';
 import { CustomEditorWidget } from './custom-editor-widget';
 
@@ -47,6 +47,9 @@ export class PluginCustomEditorRegistry {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(ILogger) @named('plugin-ext:PluginCustomEditorRegistry')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     protected init(): void {
         this.widgetManager.onDidCreateWidget(({ factoryId, widget }) => {
@@ -67,7 +70,7 @@ export class PluginCustomEditorRegistry {
 
     registerCustomEditor(editor: CustomEditor, plugin: DeployedPlugin): Disposable {
         if (this.editors.has(editor.viewType)) {
-            console.warn('editor with such id already registered: ', JSON.stringify(editor));
+            this.logger.warn('editor with such id already registered: ', JSON.stringify(editor));
             return Disposable.NULL;
         }
         this.editors.set(editor.viewType, editor);

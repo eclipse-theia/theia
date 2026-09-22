@@ -14,80 +14,65 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
-import { API_KEY_PREF, MODELS_PREF, MAX_RETRIES, RETRY_DELAY_OTHER_ERRORS, RETRY_DELAY_RATE_LIMIT } from '../common/google-preferences';
-import { PreferenceService } from '@theia/core';
+import { ALLOW_ENV_API_KEY_PREF, API_KEY_PREF, MODEL_OVERRIDES_PREF, MAX_RETRIES, RETRY_DELAY_OTHER_ERRORS, RETRY_DELAY_RATE_LIMIT } from '../common/google-preferences';
+import { nls, PreferenceChange } from '@theia/core';
+import { DiscoveringProviderContribution, ModelDiscoveryMessages } from '@theia/ai-core/lib/browser';
+import { DiscoveredModel } from '@theia/ai-core/lib/common';
 
 const GOOGLE_PROVIDER_ID = 'google';
 
 @injectable()
-export class GoogleFrontendApplicationContribution implements FrontendApplicationContribution {
-
-    @inject(PreferenceService)
-    protected preferenceService: PreferenceService;
+export class GoogleFrontendApplicationContribution extends DiscoveringProviderContribution<GoogleModelDescription> {
 
     @inject(GoogleLanguageModelsManager)
-    protected manager: GoogleLanguageModelsManager;
+    protected readonly manager: GoogleLanguageModelsManager;
 
-    protected prevModels: string[] = [];
+    protected readonly providerId = GOOGLE_PROVIDER_ID;
+    protected readonly providerLabel = 'Google Gemini';
+    protected readonly modelOverridesPreference = MODEL_OVERRIDES_PREF;
+    protected readonly allowEnvironmentApiKeyPreference = ALLOW_ENV_API_KEY_PREF;
 
-    onStart(): void {
-        this.preferenceService.ready.then(() => {
-            const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
-            this.manager.setApiKey(apiKey);
-
-            this.manager.setMaxRetriesOnErrors(this.preferenceService.get<number>(MAX_RETRIES, 3));
-            this.manager.setRetryDelayOnRateLimitError(this.preferenceService.get<number>(RETRY_DELAY_RATE_LIMIT, 60));
-            this.manager.setRetryDelayOnOtherErrors(this.preferenceService.get<number>(RETRY_DELAY_OTHER_ERRORS, -1));
-
-            const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
-            this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createGeminiModelDescription(modelId)));
-            this.prevModels = [...models];
-
-            this.preferenceService.onPreferenceChanged(event => {
-                if (event.preferenceName === API_KEY_PREF) {
-                    const newApiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
-                    this.manager.setApiKey(newApiKey);
-                    this.handleKeyChange(newApiKey);
-                } else if (event.preferenceName === MAX_RETRIES) {
-                    this.manager.setMaxRetriesOnErrors(this.preferenceService.get<number>(MAX_RETRIES, 3));
-                } else if (event.preferenceName === RETRY_DELAY_RATE_LIMIT) {
-                    this.manager.setRetryDelayOnRateLimitError(this.preferenceService.get<number>(RETRY_DELAY_RATE_LIMIT, 60));
-                } else if (event.preferenceName === RETRY_DELAY_OTHER_ERRORS) {
-                    this.manager.setRetryDelayOnOtherErrors(this.preferenceService.get<number>(RETRY_DELAY_OTHER_ERRORS, -1));
-                } else if (event.preferenceName === MODELS_PREF) {
-                    this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
-                }
-            });
-        });
+    protected get discoveryMessages(): ModelDiscoveryMessages {
+        return {
+            noCredentials: nls.localize('theia/ai/google/discovery/noKey', 'No Google AI API key set. Add a key to discover models.'),
+            consentRequired: nls.localize('theia/ai/google/discovery/consentRequired',
+                'A Google AI API key was found in the environment. Confirm its use to discover models.'),
+            consentPrompt: nls.localize('theia/ai/google/discovery/consentPrompt',
+                'A Google AI API key was found in the environment (GOOGLE_API_KEY / GEMINI_API_KEY). Allow Theia to use it to discover and call Gemini models?'),
+            useEnvironmentKey: nls.localize('theia/ai/google/discovery/useEnvKey', 'Use key'),
+            overridden: nls.localize('theia/ai/google/discovery/overridden',
+                'The model list is configured manually. Clear the model overrides to discover the models from the provider again.'),
+            cached: error => nls.localize('theia/ai/google/discovery/cached', 'Showing cached models; last refresh failed: {0}', error)
+        };
     }
 
-    protected handleKeyChange(newApiKey: string | undefined): void {
-        if (this.prevModels && this.prevModels.length > 0) {
-            this.manager.createOrUpdateLanguageModels(...this.prevModels.map(modelId => this.createGeminiModelDescription(modelId)));
+    protected override initializeProvider(): void {
+        this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
+        this.manager.setMaxRetriesOnErrors(this.preferenceService.get<number>(MAX_RETRIES, 3));
+        this.manager.setRetryDelayOnRateLimitError(this.preferenceService.get<number>(RETRY_DELAY_RATE_LIMIT, 60));
+        this.manager.setRetryDelayOnOtherErrors(this.preferenceService.get<number>(RETRY_DELAY_OTHER_ERRORS, -1));
+    }
+
+    protected override handlePreferenceChange(event: PreferenceChange): void {
+        if (event.preferenceName === API_KEY_PREF) {
+            this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
+            this.discoverAndRegisterModels();
+        } else if (event.preferenceName === MAX_RETRIES) {
+            this.manager.setMaxRetriesOnErrors(this.preferenceService.get<number>(MAX_RETRIES, 3));
+        } else if (event.preferenceName === RETRY_DELAY_RATE_LIMIT) {
+            this.manager.setRetryDelayOnRateLimitError(this.preferenceService.get<number>(RETRY_DELAY_RATE_LIMIT, 60));
+        } else if (event.preferenceName === RETRY_DELAY_OTHER_ERRORS) {
+            this.manager.setRetryDelayOnOtherErrors(this.preferenceService.get<number>(RETRY_DELAY_OTHER_ERRORS, -1));
         }
     }
 
-    protected handleModelChanges(newModels: string[]): void {
-        const oldModels = new Set(this.prevModels);
-        const updatedModels = new Set(newModels);
-
-        const modelsToRemove = [...oldModels].filter(model => !updatedModels.has(model));
-        const modelsToAdd = [...updatedModels].filter(model => !oldModels.has(model));
-
-        this.manager.removeLanguageModels(...modelsToRemove.map(model => `${GOOGLE_PROVIDER_ID}/${model}`));
-        this.manager.createOrUpdateLanguageModels(...modelsToAdd.map(modelId => this.createGeminiModelDescription(modelId)));
-        this.prevModels = newModels;
-    }
-
     /** Reasoning capabilities are resolved by the backend from the Gemini /v1beta/models response. */
-    protected createGeminiModelDescription(modelId: string): GoogleModelDescription {
-        const id = `${GOOGLE_PROVIDER_ID}/${modelId}`;
+    protected createModelDescription(model: DiscoveredModel): GoogleModelDescription {
         return {
-            id: id,
-            model: modelId,
+            id: `${GOOGLE_PROVIDER_ID}/${model.id}`,
+            model: model.id,
             apiKey: true,
             enableStreaming: true
         };

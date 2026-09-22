@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { CliPreferences } from '../common/cli-preferences';
 import { PreferenceService, PreferenceScope } from '@theia/core/lib/common/preferences';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class PreferenceFrontendContribution implements FrontendApplicationContribution {
@@ -26,6 +27,9 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
+
+    @inject(ILogger) @named('preferences:PreferenceFrontendContribution')
+    protected readonly logger: ILogger;
 
     onStart(): void {
         this.applyCliPreferences();
@@ -36,11 +40,11 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
         // can overlap with the preference service initialising its providers.
         const [session, persistent] = await Promise.all([
             this.CliPreferences.getSessionPreferences().catch(e => {
-                console.warn('Failed to fetch --session-preference values:', e);
+                this.logger.warn('Failed to fetch --session-preference values:', e);
                 return [] as [string, unknown][];
             }),
             this.CliPreferences.getPreferences().catch(e => {
-                console.warn('Failed to fetch --set-preference values:', e);
+                this.logger.warn('Failed to fetch --set-preference values:', e);
                 return [] as [string, unknown][];
             })
         ]);
@@ -59,7 +63,7 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
         if (session.length > 0) {
             // Log keys only. Values may carry overrides for security-sensitive prefs
             // (e.g. AI tool auto-approval) and should not leak into screenshots or support bundles.
-            console.info(`Applied ${session.length} --session-preference value(s):`,
+            this.logger.info(`Applied ${session.length} --session-preference value(s):`,
                 session.map(([k]) => k).join(', '));
         }
 
@@ -76,7 +80,7 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
             try {
                 await this.preferenceService.set(key, value, scope);
             } catch (e) {
-                console.warn(`Failed to apply CLI preference "${key}" to ${PreferenceScope[scope]} scope:`, e);
+                this.logger.warn(`Failed to apply CLI preference "${key}" to ${PreferenceScope[scope]} scope:`, e);
             }
         }
     }

@@ -566,7 +566,7 @@ function historyItemToDto(item: theia.SourceControlHistoryItem): ScmHistoryItemD
         authorIcon: item.authorIcon,
         displayId: item.displayId,
         timestamp: item.timestamp,
-        tooltip: item.tooltip,
+        tooltip: Array.isArray(item.tooltip) ? [...item.tooltip] : item.tooltip,
         statistics: item.statistics ? {
             files: item.statistics.files,
             insertions: item.statistics.insertions,

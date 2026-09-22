@@ -139,7 +139,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         const disposeHandler = window.electronTheiaCore.onWindowEvent('focus', () => {
             this.setMenu(app);
         });
-        window.addEventListener('unload', () => disposeHandler.dispose());
+        window.addEventListener('pagehide', () => disposeHandler.dispose());
     }
 
     protected attachMenuBarVisibilityListener(): void {

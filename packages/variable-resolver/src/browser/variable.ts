@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, MaybePromise } from '@theia/core';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
+import { Disposable, DisposableCollection, MaybePromise, ILogger } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { CommandIdVariables } from '../common/variable-types';
 
@@ -66,6 +66,9 @@ export class VariableRegistry implements Disposable {
     protected readonly variables: Map<string, Variable> = new Map();
     protected readonly toDispose = new DisposableCollection();
 
+    @inject(ILogger) @named('variable-resolver:VariableRegistry')
+    protected readonly logger: ILogger;
+
     dispose(): void {
         this.toDispose.dispose();
     }
@@ -76,7 +79,7 @@ export class VariableRegistry implements Disposable {
      */
     registerVariable(variable: Variable): Disposable {
         if (this.variables.has(variable.name)) {
-            console.warn(`A variables with name ${variable.name} is already registered.`);
+            this.logger.warn(`A variables with name ${variable.name} is already registered.`);
             return Disposable.NULL;
         }
         this.variables.set(variable.name, variable);

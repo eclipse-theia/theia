@@ -28,6 +28,8 @@ import { FrontendApplicationConfigProvider } from '../frontend-application-confi
 import { bindMockPreferenceProviders, MockPreferenceProvider } from './test';
 import { PreferenceChangeEvent, createPreferenceProxy } from '../../common/preferences/preference-proxy';
 import { bindPreferenceService } from '../frontend-application-bindings';
+import { ILogger } from '../../common/logger';
+import { MockLogger } from '../../common/test/mock-logger';
 
 disableJSDOM();
 
@@ -43,6 +45,7 @@ function createTestContainer(): Container {
     const result = new Container();
     bindPreferenceService(result.bind.bind(result));
     bindMockPreferenceProviders(result.bind.bind(result), result.unbind.bind(result));
+    result.bind(ILogger).to(MockLogger);
     return result;
 }
 

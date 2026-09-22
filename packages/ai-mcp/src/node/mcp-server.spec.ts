@@ -26,7 +26,8 @@ import { MCPOAuthClientProvider } from './mcp-oauth-client-provider';
 import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-factory';
 import { MCPOAuthAuthorizationRequiredError, MCPOAuthAuthorizationServerError } from './mcp-oauth-errors';
 import { MCPOAuthCancelledError } from './mcp-oauth-callback-service';
-import { MCPServerDescription, MCPServerStatus } from '../common';
+import { StdioServerParameters } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { LocalMCPServerDescription, MCPServerDescription, MCPServerStatus } from '../common';
 
 class TestClient {
     connectCalls = 0;
@@ -150,6 +151,10 @@ class TestMCPServer extends MCPServer {
 
     testSetStatus(status: MCPServerStatus): void {
         this.setStatus(status);
+    }
+
+    testCreateStdioParameters(description: LocalMCPServerDescription): StdioServerParameters {
+        return this.createStdioParameters(description);
     }
 
     protected override createClient(): Client {
@@ -814,5 +819,95 @@ describe('MCPServer OAuth reconnect', () => {
         // getCachedDescription must not surface the stripped runtime fields either.
         const cached = server.getCachedDescription();
         expect(cached.tools).to.be.undefined;
+    });
+});
+
+describe('MCPServer stdio spawn parameters', () => {
+
+    /**
+     * The Agent Plugins specification fixes the order: the client-chosen base environment first, then the
+     * configured `env` overlay, then PLUGIN_ROOT / PLUGIN_DATA over the top of both.
+     */
+    function parametersFor(description: Partial<LocalMCPServerDescription>): StdioServerParameters {
+        return new TestMCPServer().testCreateStdioParameters({ name: 'test', command: 'npx', ...description });
+    }
+
+    it('inherits the ambient environment of the Theia process', () => {
+        const previous = process.env.THEIA_MCP_SPEC_AMBIENT;
+        process.env.THEIA_MCP_SPEC_AMBIENT = 'ambient-value';
+        try {
+            expect(parametersFor({}).env?.THEIA_MCP_SPEC_AMBIENT).to.equal('ambient-value');
+        } finally {
+            if (previous === undefined) {
+                delete process.env.THEIA_MCP_SPEC_AMBIENT;
+            } else {
+                process.env.THEIA_MCP_SPEC_AMBIENT = previous;
+            }
+        }
+    });
+
+    it('overlays a configured env entry on top of a same-named ambient variable', () => {
+        const previous = process.env.THEIA_MCP_SPEC_OVERLAY;
+        process.env.THEIA_MCP_SPEC_OVERLAY = 'ambient-value';
+        try {
+            const parameters = parametersFor({ env: { THEIA_MCP_SPEC_OVERLAY: 'configured-value' } });
+            expect(parameters.env?.THEIA_MCP_SPEC_OVERLAY).to.equal('configured-value');
+        } finally {
+            if (previous === undefined) {
+                delete process.env.THEIA_MCP_SPEC_OVERLAY;
+            } else {
+                process.env.THEIA_MCP_SPEC_OVERLAY = previous;
+            }
+        }
+    });
+
+    it('exports PLUGIN_ROOT and PLUGIN_DATA when the description carries them', () => {
+        const parameters = parametersFor({
+            pluginRoot: '/home/alex/.agents/plugins/devtools',
+            pluginData: '/home/alex/.agents/plugins/data/devtools'
+        });
+
+        expect(parameters.env?.PLUGIN_ROOT).to.equal('/home/alex/.agents/plugins/devtools');
+        expect(parameters.env?.PLUGIN_DATA).to.equal('/home/alex/.agents/plugins/data/devtools');
+    });
+
+    it('lets PLUGIN_ROOT and PLUGIN_DATA win over same-named configured env entries', () => {
+        const parameters = parametersFor({
+            env: { PLUGIN_ROOT: 'hijacked-root', PLUGIN_DATA: 'hijacked-data' },
+            pluginRoot: '/home/alex/.agents/plugins/devtools',
+            pluginData: '/home/alex/.agents/plugins/data/devtools'
+        });
+
+        expect(parameters.env?.PLUGIN_ROOT).to.equal('/home/alex/.agents/plugins/devtools');
+        expect(parameters.env?.PLUGIN_DATA).to.equal('/home/alex/.agents/plugins/data/devtools');
+    });
+
+    it('leaves a configured PLUGIN_ROOT alone when the description declares no plugin root', () => {
+        // Without a plugin root there is no reserved value to impose, so the configured entry stands.
+        expect(parametersFor({ env: { PLUGIN_ROOT: 'configured-root' } }).env?.PLUGIN_ROOT).to.equal('configured-root');
+    });
+
+    it('uses the plugin root as the working directory when no explicit cwd is configured', () => {
+        expect(parametersFor({ pluginRoot: '/home/alex/.agents/plugins/devtools' }).cwd).to.equal('/home/alex/.agents/plugins/devtools');
+    });
+
+    it('prefers an explicit cwd over the plugin root', () => {
+        const parameters = parametersFor({
+            cwd: '/home/alex/.agents/plugins/data/devtools/workdir',
+            pluginRoot: '/home/alex/.agents/plugins/devtools'
+        });
+
+        expect(parameters.cwd).to.equal('/home/alex/.agents/plugins/data/devtools/workdir');
+    });
+
+    it('leaves the working directory undefined when neither cwd nor pluginRoot is set', () => {
+        expect(parametersFor({}).cwd).to.be.undefined;
+    });
+
+    it('passes the command and args through unchanged', () => {
+        const parameters = parametersFor({ command: './bin/validator', args: ['--data', '/tmp/validator'] });
+
+        expect(parameters.command).to.equal('./bin/validator');
+        expect(parameters.args).to.deep.equal(['--data', '/tmp/validator']);
     });
 });

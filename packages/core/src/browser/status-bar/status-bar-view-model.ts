@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from 'inversify';
-import { ArrayUtils, Emitter, Event } from '../../common';
+import { injectable, inject, named } from 'inversify';
+import { ArrayUtils, Emitter, Event, ILogger } from '../../common';
 import { StatusBarAlignment, StatusBarEntry, StatusBarViewEntry, StatusBarViewModelEntry } from './status-bar-types';
 
 interface EntryLocation {
@@ -30,6 +30,10 @@ export class StatusBarViewModel {
     protected rightTree = new Array<StatusBarViewModelEntry>();
     protected containerPointers = new Map<string, StatusBarViewModelEntry[]>();
     protected onDidChangeEmitter = new Emitter<void>();
+
+    @inject(ILogger) @named('core:StatusBarViewModel')
+    protected readonly logger: ILogger;
+
     get onDidChange(): Event<void> {
         return this.onDidChangeEmitter.event;
     }
@@ -53,7 +57,7 @@ export class StatusBarViewModel {
     *getChildren(list: StatusBarViewModelEntry[], alignment: StatusBarAlignment, compact?: boolean): IterableIterator<StatusBarViewEntry> {
         for (const item of list) {
             if (item.leftChildren.length || item.rightChildren.length) {
-                console.warn(`Found embedded entries with affinity to ${item.id}. They will inherit alignment and compactness of parent.`);
+                this.logger.warn(`Found embedded entries with affinity to ${item.id}. They will inherit alignment and compactness of parent.`);
             }
             yield* this.getChildren(item.leftChildren, alignment, item.head.affinity?.compact);
             yield { entry: item.head, id: item.id, alignment, compact: compact || item.head.affinity?.compact };

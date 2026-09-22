@@ -28,6 +28,8 @@
   justify-content: center;
   position: relative;
   border-bottom: 1px solid var(--theia-titleBar-border);
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 #main-toolbar .theia-progress-bar-container {
@@ -174,14 +176,21 @@
   align-items: center;
 }
 
-#toolbar-icon-selector-dialog .dialogContent .icon-selector-options .icon-set-selector-wrapper {
+#toolbar-icon-selector-dialog
+  .dialogContent
+  .icon-selector-options
+  .icon-set-selector-wrapper {
   display: flex;
   align-items: baseline;
   gap: var(--theia-ui-padding);
 }
 
-#toolbar-icon-selector-dialog .dialogContent .icon-selector-options .icon-set-selector-wrapper .theia-select-component {
-  width: 125px
+#toolbar-icon-selector-dialog
+  .dialogContent
+  .icon-selector-options
+  .icon-set-selector-wrapper
+  .theia-select-component {
+  width: 125px;
 }
 
 #toolbar-icon-selector-dialog .dialogControl {

@@ -45,6 +45,7 @@ import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { ExtensionsSourceContribution } from './extensions-source-contribution';
 import debounce = require('@theia/core/shared/lodash.debounce');
+import { ILogger } from '@theia/core';
 
 export namespace VSXCommands {
     export const TOGGLE_EXTENSIONS: Command = {
@@ -68,6 +69,9 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
     @inject(SelectionService) protected readonly selectionService: SelectionService;
     @inject(ContributionProvider) @named(ExtensionsSourceContribution)
     protected readonly extensionsContributions: ContributionProvider<ExtensionsSourceContribution>;
+
+    @inject(ILogger) @named('vsx-registry:VSXExtensionsContribution')
+    protected readonly logger: ILogger;
 
     constructor() {
         super({
@@ -167,7 +171,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         );
         for (const result of failures) {
             if (result.status === 'rejected') {
-                console.warn('Extensions view refresh failed for one contribution:', result.reason);
+                this.logger.warn('Extensions view refresh failed for one contribution:', result.reason);
             }
         }
     }
@@ -298,7 +302,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             } else {
                 this.messageService.error(nls.localize('theia/vsx-registry/failedInstallingVSIX', 'Failed to install {0} from VSIX.', extensionName));
             }
-            console.warn(e);
+            this.logger.warn(e);
         }
     }
 

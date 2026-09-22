@@ -244,8 +244,8 @@ describe('GenericCapabilitiesServiceImpl', () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (service as any).skillService = {
                 getSkills: () => [
-                    { name: 'git-best-practices', description: 'Git tips', location: '/path' },
-                    { name: 'code-review', description: 'Code review', location: '/path2' }
+                    { name: 'git-best-practices', qualifiedName: 'git-best-practices', description: 'Git tips', location: '/path' },
+                    { name: 'code-review', qualifiedName: 'code-review', description: 'Code review', location: '/path2' }
                 ] as Skill[]
             };
 
@@ -254,6 +254,24 @@ describe('GenericCapabilitiesServiceImpl', () => {
             expect(result).to.have.length(2);
             expect(result[0]).to.deep.equal({ id: 'git-best-practices', name: 'git-best-practices', description: 'Git tips' });
             expect(result[1]).to.deep.equal({ id: 'code-review', name: 'code-review', description: 'Code review' });
+        });
+
+        it('identifies a skill owned by a plugin by its qualified name, which is what the user has to type', () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (service as any).skillService = {
+                getSkills: () => [
+                    {
+                        name: 'query-builder',
+                        qualifiedName: 'bigquery:query-builder',
+                        description: 'Build SQL',
+                        location: '/path'
+                    }
+                ] as Skill[]
+            };
+
+            expect(service.getAvailableSkills()).to.deep.equal([
+                { id: 'bigquery:query-builder', name: 'bigquery:query-builder', description: 'Build SQL' }
+            ]);
         });
     });
 });

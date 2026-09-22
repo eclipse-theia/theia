@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { isRemoteMCPServerDescription, MCPServerDescription, MCPServerManager, MCPFrontendNotificationService, RemoteMCPServerDescription } from '../common/mcp-server-manager';
 import { MCPServer } from './mcp-server';
 import { Disposable } from '@theia/core/lib/common/disposable';
@@ -21,11 +21,14 @@ import { CallToolResult, ListResourcesResult, ReadResourceResult } from '@modelc
 import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-factory';
 import { MCPOAuthCredentialStore } from './mcp-oauth-credential-store';
 import { deriveCredentialScope, normalizeOAuthUrl } from './mcp-oauth-keystore';
-import { PreferenceUtils } from '@theia/core';
+import { PreferenceUtils, ILogger } from '@theia/core';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 
 @injectable()
 export class MCPServerManagerImpl implements MCPServerManager {
+
+    @inject(ILogger) @named('ai-mcp:MCPServerManagerImpl')
+    protected readonly logger: ILogger;
 
     protected servers: Map<string, MCPServer> = new Map();
     protected client?: MCPFrontendNotificationService;
@@ -45,7 +48,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
         }
         try {
             await server.stop();
-            console.log(`MCP server "${serverName}" stopped.`);
+            this.logger.info(`MCP server "${serverName}" stopped.`);
         } finally {
             this.notifyClients();
         }
@@ -58,7 +61,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
                 try {
                     await server.stop();
                 } catch (error) {
-                    console.error(`Failed to stop MCP server "${serverName}" during sign-out`, error);
+                    this.logger.error(`Failed to stop MCP server "${serverName}" during sign-out`, error);
                 }
             }
             await this.credentialStore.clear(serverName);
@@ -181,7 +184,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
             try {
                 await server.stop();
             } catch (error) {
-                console.error(`Failed to stop MCP server "${name}" during removal`, error);
+                this.logger.error(`Failed to stop MCP server "${name}" during removal`, error);
             }
             await this.credentialStore.clear(name);
             this.servers.delete(name);
@@ -191,7 +194,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
                 this.serverListeners.delete(name);
             }
         } else {
-            console.warn(`MCP server "${name}" not found.`);
+            this.logger.warn(`MCP server "${name}" not found.`);
         }
         this.notifyClients();
     }
@@ -213,13 +216,22 @@ export class MCPServerManagerImpl implements MCPServerManager {
         return restartedByCaller || (!server.isRunning() && !server.isInFlight());
     }
 
+    /**
+     * The part of a description that decides whether a running server has to be restarted rather than
+     * merely updated in place. Anything that shapes the connection - or, for a local server, the
+     * process - belongs here; anything purely presentational does not.
+     */
     protected connectionDescription(description: MCPServerDescription): object {
         if (isRemoteMCPServerDescription(description)) {
             const { serverUrl, serverAuthToken, serverAuthTokenHeader, headers, oauth } = description;
             return { type: 'remote', serverUrl, serverAuthToken, serverAuthTokenHeader, headers, oauth };
         }
-        const { command, args, env } = description;
-        return { type: 'local', command, args, env };
+        const { command, args, env, cwd, pluginRoot, pluginData } = description;
+        // `cwd`, `pluginRoot` and `pluginData` all reach the spawned process, so changing any of them
+        // needs a new one. `installedAt` is not configuration at all: it is here because replacing a
+        // plugin's root deletes the directory a running child works out of while leaving that child's
+        // own configuration identical.
+        return { type: 'local', command, args, env, cwd, pluginRoot, pluginData, installedAt: description.registryMetadata?.installedAt };
     }
 
     protected async clearOAuthCredentialsIfConnectionScopeChanged(oldDescription: MCPServerDescription, newDescription: MCPServerDescription): Promise<void> {
@@ -283,12 +295,12 @@ export class MCPServerManagerImpl implements MCPServerManager {
 
     disconnectClient(client: MCPFrontendNotificationService): void {
         if (this.client !== undefined && this.client !== client) {
-            console.warn('MCP server manager received disconnectClient for a non-current client; ignoring (one-client-per-container invariant violation).');
+            this.logger.warn('MCP server manager received disconnectClient for a non-current client; ignoring (one-client-per-container invariant violation).');
             return;
         }
         if (this.client === client) {
             this.client = undefined;
-            this.stopServersAfterDisconnect().catch(error => console.error('Failed to stop MCP servers after frontend disconnect', error));
+            this.stopServersAfterDisconnect().catch(error => this.logger.error('Failed to stop MCP servers after frontend disconnect', error));
         }
     }
 
@@ -298,7 +310,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
         results.forEach((result, index) => {
             if (result.status === 'rejected') {
                 const [name] = entries[index];
-                console.error(`Failed to stop MCP server "${name}" after frontend disconnect`, result.reason);
+                this.logger.error(`Failed to stop MCP server "${name}" after frontend disconnect`, result.reason);
             }
         });
     }
@@ -310,7 +322,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
         try {
             this.client.didUpdateMCPServers();
         } catch (error) {
-            console.error('Failed to notify MCP frontend client', error);
+            this.logger.error('Failed to notify MCP frontend client', error);
         }
     }
 

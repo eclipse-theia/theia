@@ -14,12 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+// Import Lumino rules first because some conflict with Theia's styles.
+// This ensures Theia rules with equal specificity take precedence (see GH-17872).
+import '@lumino/widgets/style/index.css';
+import 'perfect-scrollbar/css/perfect-scrollbar.css';
 import '../../src/browser/style/index.css';
 import '../../src/browser/style/materialcolors.css';
-import '@lumino/widgets/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
 import 'file-icons-js/css/style.css';
-import 'perfect-scrollbar/css/perfect-scrollbar.css';
 import '@vscode/codicons/dist/codicon.css';
 
 import { ContainerModule } from 'inversify';

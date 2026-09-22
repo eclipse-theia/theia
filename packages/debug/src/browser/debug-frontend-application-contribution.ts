@@ -271,7 +271,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             { ...DebugCommands.STOP, ...DebugSessionContextCommands.STOP },
             { ...DebugThreadContextCommands.TERMINATE, label: nls.localizeByDefault('Terminate Thread') }
         );
-        registerMenuActions(DebugThreadsWidget.OPEN_MENU, { ...DebugSessionContextCommands.REVEAL, label: nls.localize('theia/debug/reveal', 'Reveal') });
+        registerMenuActions(DebugThreadsWidget.OPEN_MENU, { ...DebugSessionContextCommands.REVEAL, label: nls.localizeByDefault('Reveal') });
 
         registerMenuActions(DebugStackFramesWidget.CONTEXT_MENU,
             DebugCommands.RESTART_FRAME,

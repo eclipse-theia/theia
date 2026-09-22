@@ -19,7 +19,6 @@
 import { EOL } from 'os';
 import { AbstractGenerator, GeneratorOptions } from './abstract-generator';
 import { existsSync, readFileSync } from 'fs';
-import { BundlerGenerator } from './bundler-generator';
 
 export class FrontendGenerator extends AbstractGenerator {
 
@@ -63,12 +62,11 @@ export class FrontendGenerator extends AbstractGenerator {
     }
 
     protected async compileIndexHead(frontendModules: Map<string, string>): Promise<string> {
-        const preferEsbuild = await new BundlerGenerator(this.pck, this.options).preferESBuild();
         return `
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  ${preferEsbuild ? '<link rel="stylesheet" href="./bundle.css">' : ''}
+  <link rel="stylesheet" href="./bundle.css">
   <title>${this.pck.props.frontend.config.applicationName}</title>`;
     }
 

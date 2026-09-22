@@ -69,6 +69,15 @@ describe('ScmContextKeyService', () => {
         scmContextKeyService.scmProviderCount.reset();
         expect(scmContextKeyService.scmProviderCount.get()).to.equal(0);
     });
+
+    it('should initialize scmCurrentHistoryItemRefInFilter to false', () => {
+        expect(scmContextKeyService.scmCurrentHistoryItemRefInFilter.get()).to.equal(false);
+    });
+
+    it('should update scmCurrentHistoryItemRefInFilter when set is called', () => {
+        scmContextKeyService.scmCurrentHistoryItemRefInFilter.set(true);
+        expect(scmContextKeyService.scmCurrentHistoryItemRefInFilter.get()).to.equal(true);
+    });
 });
 
 describe('ScmContribution scm.providerCount wiring', () => {

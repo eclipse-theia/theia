@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, interfaces, postConstruct, inject } from '@theia/core/shared/inversify';
-import { Message, TreeModel, TreeNode } from '@theia/core/lib/browser';
+import { CompositeTreeNode, Message, TreeModel, TreeNode } from '@theia/core/lib/browser';
 import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
 import { VSXExtensionsSource, VSXExtensionsSourceOptions } from './vsx-extensions-source';
 import { nls } from '@theia/core/lib/common/nls';
@@ -75,9 +75,15 @@ export class VSXExtensionsWidget extends SourceTreeWidget implements BadgeWidget
         this.title.label = title;
         this.title.caption = title;
 
-        this.toDispose.push(this.source.onDidChange(async () => {
-            this.badge = await this.resolveCount();
-        }));
+        // The badge is derived from the tree, not from a source change event: the source fires its
+        // initial change while this widget is still being constructed, so a section whose
+        // contributions never change again afterwards - e.g. when the application starts offline and
+        // the registry fetch backing some of them fails without ever firing - would keep an unset
+        // badge. `TreeModel.onChanged` covers both the initial resolution of the root's children
+        // (triggered by assigning `this.source` above) and every later refresh, and counting the
+        // resolved nodes avoids resolving the same elements a second time just to count them.
+        this.toDispose.push(this.model.onChanged(() => this.updateBadge()));
+        this.updateBadge();
     }
 
     get onDidChangeBadge(): Event<void> {
@@ -121,12 +127,19 @@ export class VSXExtensionsWidget extends SourceTreeWidget implements BadgeWidget
         }
     }
 
-    protected async resolveCount(): Promise<number | undefined> {
-        if (this.options.id !== VSXExtensionsSourceOptions.SEARCH_RESULT) {
-            const elements = await this.source?.getElements() || [];
-            return [...elements].length;
+    protected updateBadge(): void {
+        const count = this.resolveCount();
+        if (count !== this.badge) {
+            this.badge = count;
         }
-        return undefined;
+    }
+
+    protected resolveCount(): number | undefined {
+        if (this.options.id === VSXExtensionsSourceOptions.SEARCH_RESULT) {
+            return undefined;
+        }
+        const root = this.model.root;
+        return CompositeTreeNode.is(root) ? root.children.length : undefined;
     }
 
     protected override tapNode(node?: TreeNode): void {

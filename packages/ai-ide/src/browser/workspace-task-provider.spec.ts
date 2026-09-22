@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { CancellationTokenSource, PreferenceService } from '@theia/core';
+import { CancellationTokenSource, PreferenceService, ILogger } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { GLOBAL_SCOPE_TOKEN, TaskListProvider, TaskRunnerProvider, WORKSPACE_SCOPE_TOKEN } from './workspace-task-provider';
 import { AiConfigurationService, ToolInvocationContext } from '@theia/ai-core';
@@ -28,6 +28,7 @@ import { WorkspaceFunctionScope } from './workspace-functions';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 const makeTrustAwareReader = (): AiConfigurationService => ({
     get: <T>(_name: string, fallback?: T) => fallback,
@@ -60,6 +61,7 @@ describe('Workspace Task Provider Cancellation Tests', () => {
 
         // Create a new container for each test
         container = new Container();
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
 
         // Mock dependencies
         mockTaskService = {
@@ -344,6 +346,7 @@ describe('Workspace Task Provider Cancellation Tests', () => {
         } as unknown as TaskService;
 
         const multiRootContainer = new Container();
+        multiRootContainer.bind(ILogger).to(MockLogger).inSingletonScope();
         const multiRootWorkspaceService = {
             tryGetRoots: () => [
                 { resource: new URI('file:///home/user/frontend') },
@@ -391,6 +394,7 @@ describe('Workspace Task Provider Cancellation Tests', () => {
         } as unknown as TaskService;
 
         const multiRootContainer = new Container();
+        multiRootContainer.bind(ILogger).to(MockLogger).inSingletonScope();
         const multiRootWorkspaceService = {
             tryGetRoots: () => [
                 { resource: new URI('file:///home/user/frontend') },

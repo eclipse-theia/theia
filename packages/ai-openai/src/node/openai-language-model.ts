@@ -27,7 +27,8 @@ import {
     ReasoningSupport,
     resolveCompactionTokenThreshold,
     resolveServerSideCompaction,
-    ServerToolDescriptor
+    ServerToolDescriptor,
+    formatToolCallContentForModel
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
@@ -69,6 +70,36 @@ export class MistralFixedOpenAI extends OpenAI {
 export const OpenAiModelIdentifier = Symbol('OpenAiModelIdentifier');
 
 export type DeveloperMessageSettings = 'user' | 'system' | 'developer' | 'mergeWithFollowingUserMessage' | 'skip';
+
+/** Options for {@link createOpenAiClient}. */
+export interface OpenAiClientOptions {
+    /** The key to authenticate with. A custom endpoint may need none. */
+    readonly apiKey: string | undefined;
+    /** Base URL of a custom endpoint; the SDK's own default is used without one. */
+    readonly baseURL?: string;
+    /** Azure API version. Its presence is what selects the Azure client over the plain one. */
+    readonly apiVersion?: string;
+    readonly deployment?: string;
+    readonly proxyUrl?: string;
+    /** Additional HTTP headers sent with every request, e.g. headers required by a gateway in front of the API. */
+    readonly headers?: Record<string, string>;
+}
+
+/**
+ * The single place an OpenAI SDK client is built, so that a chat request and the model discovery
+ * reach the provider the same way: through the configured proxy, with a key the SDK accepts, and
+ * with the Azure client where an API version says so.
+ */
+export function createOpenAiClient(options: OpenAiClientOptions): OpenAI {
+    // The SDK refuses to be constructed without a key, so an endpoint that needs none still gets one.
+    const apiKey = options.apiKey ?? 'no-key';
+    const proxyFetch = createProxyFetch(options.proxyUrl);
+    return options.apiVersion
+        ? new AzureOpenAI({
+            apiKey, baseURL: options.baseURL, apiVersion: options.apiVersion, deployment: options.deployment, fetch: proxyFetch, defaultHeaders: options.headers
+        })
+        : new MistralFixedOpenAI({ apiKey, baseURL: options.baseURL, fetch: proxyFetch, defaultHeaders: options.headers });
+}
 
 export class OpenAiModel implements LanguageModel {
 
@@ -118,7 +149,9 @@ export class OpenAiModel implements LanguageModel {
         public serverTools?: ServerToolDescriptor[],
         public serverSideCompactionSupport: boolean = false,
         public serverSideCompactionEnabledByDefault: boolean = false,
-        public serverSideCompactionTokenThresholdByDefault?: number
+        public serverSideCompactionTokenThresholdByDefault?: number,
+        public headers?: Record<string, string>,
+        public released?: number
     ) { }
 
     /** Reasoning-level translation lives in {@link openAiReasoningFor}. */
@@ -246,17 +279,14 @@ export class OpenAiModel implements LanguageModel {
             throw new Error('Please provide OPENAI_API_KEY in preferences or via environment variable');
         }
 
-        const apiVersion = this.apiVersion();
-        // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
-        const key = apiKey ?? 'no-key';
-
-        const proxyFetch = createProxyFetch(this.proxy);
-
-        if (apiVersion) {
-            return new AzureOpenAI({ apiKey: key, baseURL: this.url, apiVersion: apiVersion, deployment: this.deployment, fetch: proxyFetch });
-        } else {
-            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url, fetch: proxyFetch });
-        }
+        return createOpenAiClient({
+            apiKey,
+            baseURL: this.url,
+            apiVersion: this.apiVersion(),
+            deployment: this.deployment,
+            proxyUrl: this.proxy,
+            headers: this.headers
+        });
     }
 
     /**
@@ -360,8 +390,7 @@ export class OpenAiModelUtils {
             return {
                 role: 'tool',
                 tool_call_id: message.tool_use_id,
-                // content only supports text content so we need to stringify any potential data we have, e.g., images
-                content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
+                content: typeof message.content === 'string' ? message.content : formatToolCallContentForModel(message.content)
             };
         }
         if (LanguageModelMessage.isImageMessage(message) && message.actor === 'user') {

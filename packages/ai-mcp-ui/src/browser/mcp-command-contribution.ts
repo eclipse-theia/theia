@@ -140,7 +140,7 @@ export class MCPCommandContribution implements CommandContribution {
                     }
                 } catch (error) {
                     this.messageService.error(nls.localize('theia/ai/mcp/error/signInFailed', 'An error occurred while signing in to the MCP server.'));
-                    console.error('Error while signing in to MCP server:', error);
+                    this.logger.error('Error while signing in to MCP server:', error);
                 }
             }
         }));
@@ -157,7 +157,7 @@ export class MCPCommandContribution implements CommandContribution {
                     }
                 } catch (error) {
                     this.messageService.error(nls.localize('theia/ai/mcp/error/getRedirectUrlFailed', 'An error occurred while determining the MCP OAuth redirect URL.'));
-                    console.error('Error while determining the MCP OAuth redirect URL:', error);
+                    this.logger.error('Error while determining the MCP OAuth redirect URL:', error);
                 }
             }
         }));

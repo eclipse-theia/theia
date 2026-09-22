@@ -9,11 +9,46 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 
 ### General
 
+_AI Configuration View_:
+
+The AI Configuration view (`@theia/ai-ide`) has been reworked from a tabbed dock panel into a master–detail tree driven by a new public contribution point, `AiConfigurationCategory`.
+
+- **New package dependency edges:** `@theia/ai-ide` and `@theia/ai-mcp` now depend on `@theia/ai-core-ui`, which hosts the contribution point (`AiConfigurationCategory`, `AiConfigurationCategoryRegistry`), the shared selection model (`AiConfigurationSelectionModel`), and the shared page primitives (`AiSettingsRow`, `AiConfigurationSection`, `SinglePageCategoryRenderer`, `CollectionCategoryRenderer`, …). If you consume the AI configuration UI, add `@theia/ai-core-ui` to your dependencies. `@theia/ai-core-ui` itself now depends on `@theia/preferences`, for the Settings UI's "Open settings.json" command (`PreferencesCommands.OPEN_PREFERENCES_JSON_TOOLBAR`) that the setting rows delegate to for complex values.
+- **Removed widgets:** the per-tab widgets and their `WidgetFactory` registrations were removed — `AIAgentConfigurationWidget`, `AIVariableConfigurationWidget`, `ModelAliasesConfigurationWidget`, `AIToolsConfigurationWidget`, `AISkillsConfigurationWidget`, `AITokenUsageConfigurationWidget`, `AIPromptFragmentsConfigurationWidget` (all `@theia/ai-ide`) and `AIMCPConfigurationWidget` (`@theia/ai-mcp`). The dead base classes (`AIConfigurationBaseWidget`, `AICardGridConfigurationWidget`, `AI{List,Table,Hierarchical}ConfigurationWidget`) were removed as well. Each surface now lives in an `AiConfigurationCategory` contribution with a renderer built from the shared primitives.
+- **Removed components and API:** the widget-era building blocks `ConfigurationSection`, `ExpandableSection` and `PromptVariantRenderer` (`template-settings-renderer.tsx`) were removed from `@theia/ai-ide`; use `AiConfigurationSection` and `VariantSetCard` from `@theia/ai-core-ui` instead. The icon-only buttons of the view share one primitive now, `AiConfigurationIconButton`, so the CSS classes `.ai-variant-action-button` and `.ai-configuration-value-row-copy` were replaced by `.ai-configuration-icon-button`. `MCPServerEditor.openEditServer` was dropped from the interface — the MCP server category owns the edit flow now; `openAddServer` and `installFromEntry` are unchanged.
+- **Adding custom categories:** adopters that added their own AI configuration tabs should now register an `AiConfigurationCategory` (bind it to the `AiConfigurationCategory` service identifier). Set `contributed: true` to have it grouped under "Contributed by extensions". See `examples/api-samples` (`SampleChatToolbarConfigurationCategory`) for a minimal end-to-end example.
+- **Selection:** category/item navigation now routes through `AiConfigurationSelectionModel` (`@theia/ai-core-ui`). `AIConfigurationSelectionService` (`@theia/ai-ide`) is retained for the agent/alias domain events it still carries.
+- **Stable entry points:** the command ids `aiConfiguration:open` (`OPEN_AI_CONFIG_VIEW`) and `aiConfiguration:openTools` (`OPEN_AI_CONFIG_VIEW_TOOLS`) and the chat-view toolbar button are unchanged. `OPEN_AI_CONFIG_VIEW(tabId)` still accepts the legacy per-tab widget ids and maps them onto the corresponding category ids.
+
+_Dynamic Model Discovery (Anthropic, Google, OpenAI)_:
+
+`@theia/ai-anthropic`, `@theia/ai-google` and `@theia/ai-openai` now discover the available models dynamically from each provider's models endpoint (`/v1/models`, `/v1beta/models`, `/v1/models`) instead of registering a curated list. As a result the following preferences have been **removed**:
+
+- `ai-features.anthropic.AnthropicModels`
+- `ai-features.google.models`
+- `ai-features.openAiOfficial.officialOpenAiModels`
+
+Models appear automatically once an API key is configured, so there is nothing to migrate for the common case. If you relied on those preferences to pin a specific set of models, note that:
+
+- Models are fetched on startup, on API-key change, and via the manual refresh in the provider's node of the Models configuration category, which also shows the discovery status (fetching / updated / cached / error / no API key / manual) and lists the models with the release date the provider reported. Discoveries are cached to `<configDir>/model-snapshots/<provider>-models.json` and reused when a later fetch fails, so the models stay usable offline.
+- Custom-endpoint preferences (`ai-features.anthropicCustom.customAnthropicModels`, `ai-features.openAiCustom.customOpenAiModels`) are unchanged: they do not necessarily target the official provider, so they keep their manual entries.
+- Anthropic and OpenAI report one entry per release (`claude-opus-5-20260401`, `claude-opus-5-20251120`, …). Every release is registered, plus the undated id (`claude-opus-5`) that the providers accept as an alias for the newest one — the id the built-in model aliases reference and the one that does not change from under a configuration when the provider ships an update. Gemini ids carry no release date, so nothing is added for Google. GitHub Copilot no longer drops a dated release when its family is also offered, for the same reason.
+- What keeps those lists out of the way is that **the AI chat input's model picker shows the favorite models rather than all of them**: up to five automatically featured models per provider, plus the ones checked for the provider in the AI Configuration view (kept in `ai-features.modelSettings.favoriteModels` as fully qualified ids). Nothing else is restricted: an agent's model and a model alias are still picked from every discovered model, grouped per provider on their own pages, and the picker ends with an entry that opens the page where its contents are decided, so a short list is not mistaken for all there is.
+- Featured are the undated ids a provider offers, ranked by release date, then by a `-latest` pointer the provider maintains at the current model of a family, then by the version in the id. The pointer only decides where there are no dates to go by (Gemini): a provider that reports release dates dates its pointers as well. What the model aliases name plays no part in it: an alias is a curated list of its own, naming the model a purpose should use, which is a different question from which models are worth offering in the picker. The set is derived from each discovery rather than stored, so a model released tomorrow is offered the day it appears.
+- Both directions are the user's to override, and only the override is stored: unchecking a model that is shown by default adds it to `ai-features.modelSettings.hiddenModels`, checking any other model adds it to `ai-features.modelSettings.favoriteModels`. A model nobody touched appears in neither list, and a model a successful discovery no longer offers is dropped from both.
+- A `-latest` id, which a provider maintains as a pointer at the current model of a family (`gemini-flash-latest`), ranks ahead of the ids that carry a version, since it resolves to the newest by definition and has no version of its own to compare. A provider that knows better nominates its models outright, through `DiscoveredModel.featured`: GitHub Copilot serves several vendors under one provider, so it fills its five vendor by vendor: `auto`, then the newest model of each of Anthropic, OpenAI and Google, then the next of each in turn, rather than letting a ranking pick five models of whichever vendor numbers its models highest. The rest of what Copilot carries stays registered and selectable, just not preselected.
+- A model that a successful discovery no longer offers is dropped from the favorites, while a cached or failed discovery leaves them alone. The models of a provider that does not participate in discovery (a manually configured one, or a custom endpoint) are all shown, since listing them was the choice already.
+- The model lists — the Model Discovery section, the chat input's model selector, an agent's model dropdown and an alias' model selector — put the most recently released model first, grouped per provider where they span several. The release date comes from the provider (`LanguageModelMetaData.released`, new); Gemini reports none, so Google's models stay in alphabetical order.
+- Built-in model aliases stay code-defined. A `defaultModelId` that discovery does not produce is simply skipped when the alias resolves, as before.
+- OpenAI's endpoint lists every model type without capability metadata, so non-chat models (audio/image/embedding/moderation/computer-use/live/`-instruct`/…) are filtered out heuristically and per-model capabilities still come from the built-in defaults. Google's is filtered the same way, to the `gemini-*` chat models: what it also carries is either not chat (image, speech, embedding), answers through an agentic API of its own (deep research, computer use), or belongs to another family (Gemma, LearnLM). Since Gemini ids carry no release date, the ranking falls back to the numbers in them, and a parameter count like `gemma-3-27b-it` would otherwise read as the newest model there is. It reports no display name either; every model is therefore listed by id, with the name (and, for Google, the description) the provider reports shown beneath it where there is one.
+- The discovered list can be replaced with an explicit one per provider: `ai-features.anthropic.modelOverrides`, `ai-features.google.modelOverrides` and `ai-features.openAiOfficial.modelOverrides`. Empty (the default) means the models are discovered; listing model ids registers exactly those and skips discovery entirely, the same semantics as the existing `ai-features.copilot.modelOverrides`. This is how a catalogue is pinned against provider changes, and how models are named when the list endpoint cannot be reached at all.
+- **Behaviour change:** when a key comes from an environment variable (`ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`/`GEMINI_API_KEY`, `OPENAI_API_KEY`) rather than the preference, it is no longer used automatically. Theia asks for a one-time confirmation first; grant it via the prompt or by setting `ai-features.<provider>.allowEnvironmentApiKey` to `true`.
+- `@theia/ai-copilot` now reports its discovery through the same surface, so its provider page shows what the Copilot CLI returned, whether the list call failed, and which of its models the chat input shows. Signing in is Copilot's equivalent of setting an API key, so a missing sign-in is reported as a missing credential rather than as a failed call — badged "Not signed in" rather than "No API key", with a button that runs the sign-in command and no refresh to press, since nothing can be fetched until it is signed in. A provider whose credential is established by a command names it in `ModelDiscoveryStatus.action`, and one whose credential is not an API key names the badge in `ModelDiscoveryStatus.stateLabel`.
+- Adopters adding their own discovering provider extend `DiscoveringProviderContribution` (`@theia/ai-core/lib/browser`), which runs the discovery: it queues the runs, registers what came back, unregisters what vanished, gates an environment key behind the consent and reports all of it to `ModelDiscoveryStatusService`. A provider supplies its id, its manager, the two preferences it reads, its messages, and how a discovered model becomes a model description; anything else it does (a custom endpoint, a proxy) goes into `initializeProvider` and `handlePreferenceChange`. On the backend, `ModelDiscoveryFetcher` and `ModelSnapshotStore` (`@theia/ai-core/lib/node`) provide a fetch that retries a transient failure and keeps its result as an offline snapshot, and `DiscoveredModels` (`@theia/ai-core/lib/common`) collapses release-pinned ids. `FavoriteModelsService` (`@theia/ai-core/lib/browser`) decides which of the discovered models the chat input offers.
+
 _ESBuild_:
 
-In addition to `webpack`, Theia is now also supporting [`ESBuild`](https://esbuild.github.io/) for bundling the application (frontend+backend). We will soon deprecate and then remove the `webpack` bundling option. Adopters can already use the ESBuild based bundler simply by deleting their `webpack.config.js`, which will automatically generate an `esbuild.mjs` file upon the next build.
-
-In case you have added your own bundling instructions to the `webpack.config.js`, these need to be migrated to the ESBuild based bundler.
+Theia bundles the application (frontend+backend) with [`ESBuild`](https://esbuild.github.io/). The `webpack` bundling option was removed in 1.75.0, see [v1.75.0](#v1750). Deleting `webpack.config.js` generates an `esbuild.mjs` file upon the next build; bundling instructions you added to `webpack.config.js` need to be migrated to the ESBuild based bundler.
 
 Note that as a part of this change, the `@theia/native-webpack-plugin` dependency has been renamed to `@theia/bundle-plugin`.
 
@@ -84,7 +119,7 @@ _Terminal Shell Integration Scripts_:
 
 The `@theia/terminal` package now includes shell integration scripts for Bash and Zsh (`packages/terminal/src/node/shell-integrations/`). These scripts are used at runtime by `ShellIntegrationInjector` to inject shell integration into terminal sessions, enabling features such as command history tracking and command separators.
 
-For **browser** applications, the generated webpack configuration automatically copies these scripts to `lib/backend/shell-integrations/` via `CopyWebpackPlugin`.
+For **browser** applications, the generated bundler configuration automatically copies these scripts to `lib/backend/shell-integrations/`.
 
 For **Electron** applications that use custom packaging (e.g. `electron-builder`, `electron-forge`), you must ensure the `shell-integrations` directory is included in your packaged distribution. The scripts must be accessible relative to the compiled `ShellIntegrationInjector` module at `lib/backend/shell-integrations/`. If these files are missing, terminal shell integration will silently fail to activate.
 
@@ -101,7 +136,7 @@ For example, in an `electron-builder` configuration, ensure the `lib/backend/she
 
 The `lib/**/*` glob already covers `lib/backend/shell-integrations/`. If you use a more restrictive `files` pattern, make sure `lib/backend/shell-integrations/**/*` is explicitly included, as `ShellIntegrationInjector` resolves these scripts relative to `__dirname` (i.e. `lib/backend/`).
 
-### v1.75.0
+### v1.76.0
 
 #### Physical printable-key bindings
 
@@ -123,6 +158,126 @@ Set `"keyboard.dispatch": "keyCode"` to restore positional key-code dispatch glo
 - Update `KeybindingRegistry.matchKeybinding()` consumers from `match.binding` to `match.runtime.binding`; the resolved sequence is available as `match.runtime.sequence`. Subclasses that override chord handling must replace the protected `keySequence` field with `keySequenceCandidates`. Protected keybinding-tree values are runtime records containing the original scoped binding and its resolved sequence, rather than `ScopedKeybinding[]`.
 - Pass an explicit `'logical'` or `'physical'` form to `AcceleratorSource.getAccelerator`. Browser UI uses logical labels, while Electron native menus require physical accelerators.
 
+#### GitHub Copilot is served through the Copilot CLI
+
+`@theia/ai-copilot` no longer talks to the Copilot REST API with a GitHub OAuth token of its own. All requests are served by
+the official GitHub Copilot CLI, which is launched as a background process on the machine running the backend and spoken to
+over the Copilot SDK.
+
+The reason is that GitHub grants access to the Copilot models per OAuth application. The application the previous integration
+used is not entitled for the current lineup, so it only ever saw a small legacy subset of the models regardless of the user's
+subscription. The Copilot CLI is entitled, so routing through it makes the current models available.
+
+The integration is experimental, and its preferences are marked as such in the settings UI: it is under development and its
+API and preferences are subject to change or removal.
+
+**For users:** the Copilot CLI has to be available on the machine running the backend, for example through
+`npm install -g @github/copilot`. It is looked up in the installation of the application, on the `PATH` and in the global `npm`
+directory; the new `ai-features.copilot.executablePath` preference (or the `COPILOT_CLI_PATH` environment variable of the
+backend) points at it when it is installed elsewhere. A packaged application cannot rely on carrying the CLI itself, since it
+is a platform-specific binary that cannot be executed from inside an application archive.
+
+The sign-in of the previous version cannot be carried over, because it belongs to that other OAuth application. It is removed
+from the credential store on first start, and a notification asks for a new sign-in. Nothing else has to be done: the sign-in
+dialog works as before, and it now signs the Copilot CLI in on the user's behalf. Signing out removes the credentials of the
+application again and never touches the system keyring entries of other tools or a sign-in of the GitHub CLI.
+
+**For adopters:** the following API has been removed.
+
+- `CopilotOAuthConfig` and `DEFAULT_COPILOT_OAUTH_CONFIG`. Configuring an own OAuth application no longer has an effect, since
+  the sign-in is performed by the Copilot CLI. Remove any rebinding of the symbol.
+- `CopilotLanguageModel`, `getCopilotApiBaseUrl` and `COPILOT_API_BASE_URL`, together with the REST transport they belonged to.
+  Copilot models are now instances of `CopilotSdkLanguageModel`.
+- `CopilotModelDescription.enableStreaming` and `CopilotModelDescription.supportsStructuredOutput`. Requests always stream, and
+  structured output is not available on this path.
+- `CopilotAuthService.initiateDeviceFlow`, `pollForToken` and `getAccessToken`. The sign-in is now driven with `startSignIn`,
+  `waitForSignIn` and `cancelSignIn`, since the CLI performs and polls the flow itself, and the resulting token is not exposed.
+
+`CopilotAuthService.setExecutablePath` has been added, so that the frontend can hand the configured location of the CLI to the
+backend, which cannot read preferences itself. Adopters implementing the interface from scratch have to provide it; the
+lookup itself is `CopilotCliLocator` and can be rebound.
+
+`@github/copilot-sdk` is deliberately **not** a dependency of this extension, not even a development one. The package depends
+on the CLI, which would put a large proprietary binary into the dependency tree and the lockfile of every application that
+includes `@theia/ai-copilot`, and a packaged application cannot execute it from inside its archive anyway. The CLI carries its
+own copy of the SDK, and `CopilotSdkLoader` loads it from the CLI that is going to serve the requests. An installed
+`@github/copilot-sdk` is used when the CLI does not carry one, so an application that does depend on the package keeps working.
+The part of the SDK API this integration uses is mirrored in `copilot-sdk-types.ts`, which records the SDK version it was taken
+from and how to update it.
+
+Two consequences are worth planning for. The CLI is a prerequisite on the backend host rather than something the application
+ships, so a distribution should either install it or tell its users to. And because the CLI runs on the backend host with one
+process per frontend connection, this integration is not suitable for multi-user backend deployments, where every connected
+frontend would share a single identity.
+
+Three behavioural details for adopters who look closely: the system prompt of a Theia agent is now the system message of the
+Copilot session, replacing the agent instructions the CLI would use, instead of being prepended to the user prompt. The
+runtime is pointed at a Copilot home below Theia's configuration directory, so requests sent from Theia no longer appear among
+the conversations the user started with their own CLI, and the session of a request is deleted once it has been answered. And
+the runtime is configured without the ambient behaviour of the CLI: only the tools of the request are available, and
+instructions and skills found on the host, the memory and session stores, host git operations and plugins are off, since
+Theia drives the conversation itself.
+
+#### Removal of deprecated @theia/preview extension from Theia codebase [#18001](https://github.com/eclipse-theia/theia/pull/18001)
+
+The `@theia/preview` extension has been completely removed from the Theia codebase.
+This extension was deprecated and stopped being published in v1.73.0.
+
+If your application still depends on `@theia/preview`, migrate to the built-in VS Code Markdown extension (`vscode.markdown-language-features`), which provides the same feature set and is actively maintained. Remove any references to `@theia/preview` from your application's dependencies and ensure the VS Code Markdown extension is included in your application, either through the builtin extension pack or by explicitly adding it to your plugins configuration.
+
+Gone with the extension are the `preview.openByDefault` preference, the `preview:open` and `preview.open.source` commands, and the `PreviewUri`, `PreviewHandler`, `PreviewHandlerProvider`, `PreviewWidget`, `PreviewContribution`, `PreviewCommands`, `MarkdownPreviewHandler` and `PreviewLinkNormalizer` API. The VS Code Markdown extension contributes `markdown.showPreview`, `markdown.showPreviewToSide` and the `markdown.preview.*` preferences in their place.
+
+### v1.75.0
+
+#### React 19 and the automatic JSX runtime
+
+Theia now requires `react`/`react-dom` `^19` and React 18 is no longer supported.
+The `@theia/core` peer dependency ranges for `react`, `react-dom`, `@types/react`, and `@types/react-dom` are narrowed to `^19.0.0`, so all four need to be bumped.
+Since v1.74.0 `react`/`react-dom` are peer dependencies instead of direct dependencies of `@theia/core`.
+Thus, depending on your package manager and its settings, you might need to add them as explicit dependencies of your product.
+
+Upgrading React itself is covered by the [React 19 upgrade guide](https://react.dev/blog/2024/04/25/react-19-upgrade-guide).
+The change most likely to affect extension code is that `useRef` no longer has a zero-argument overload, so `React.useRef<T | undefined>()` becomes `React.useRef<T | undefined>(undefined)`.
+
+All Theia packages are now compiled with the automatic JSX runtime:
+
+```json
+"jsx": "react-jsx",
+"jsxImportSource": "@theia/core/shared/react"
+```
+
+`@theia/core/shared/react/jsx-runtime` and `@theia/core/shared/react/jsx-dev-runtime` are new re-exports, so the generated JSX calls still resolve to the single React instance shared by `@theia/core`.
+The only exception is `@theia/core`: it cannot import its own re-export, so `packages/core/tsconfig.json` overrides `jsxImportSource` with `react`, which resolves to the same module.
+
+Adopters do not have to switch, but if you want the same setup in your own extensions:
+
+- set `jsx` and `jsxImportSource` as above in your `tsconfig.json` (if you use `jsx: "react-jsxdev"`, the `jsx-dev-runtime` re-export is used instead)
+- remove `import * as React from '@theia/core/shared/react'` from files that only needed it for JSX. Keep the import wherever `React.*` types or APIs are used (`React.ReactNode`, `React.FC`, `React.MouseEvent`, hooks, …). With `noUnusedLocals` enabled the compiler reports the now-obsolete imports.
+
+#### Removal of the webpack bundler
+
+The `webpack` bundling option has been removed, `theia build` now always bundles with [esbuild](https://esbuild.github.io/). esbuild has been the default bundler since 1.72.0 for applications without a `webpack.config.js`, and 1.74.0 announced the removal of webpack.
+
+Applications that already build with esbuild are unaffected. Applications that still have a `webpack.config.js` get an `esbuild.mjs` generated on their next build; the leftover `webpack.config.js` is ignored and reported with a warning. Port any customization to `esbuild.mjs` and delete the `webpack.config.js`; the generated `gen-webpack.config.js` and `gen-webpack.node.config.js` are removed by `theia clean`.
+
+In detail:
+
+- `theia build` no longer reads `webpack.config.js` and no longer generates `gen-webpack.config.js` / `gen-webpack.node.config.js`.
+- `theia build [webpack-args...]` is now `theia build [bundler-args...]`; arguments are forwarded to the generated `esbuild.mjs` instead of the webpack CLI. `--webpack-help` remains as a deprecated alias of the new `--bundler-help`.
+- `@theia/bundle-plugin` no longer exports `NativeWebpackPlugin` and `MonacoWebpackPlugin` and no longer depends on `webpack`. The esbuild equivalents are `nativeDependenciesPlugin()` and `monacoNlsPlugin()`.
+- `@theia/application-manager/lib/expose-loader` has been removed. Use `exposeModulePlugin()` from `@theia/bundle-plugin` instead, as shown in [`examples/browser/esbuild.mjs`](../examples/browser/esbuild.mjs).
+- `@theia/application-manager` no longer depends on `webpack`, `webpack-cli`, `copy-webpack-plugin`, `compression-webpack-plugin`, `mini-css-extract-plugin`, `css-loader`, `style-loader`, `ignore-loader`, `source-map-loader`, `node-loader`, `string-replace-loader`, `umd-compat-loader`, `path-browserify` and `buffer`, nor on the packages that only the webpack setup pulled in: `babel-loader`, `worker-loader`, `@babel/*`, `source-map` and `source-map-support`. If your own build relies on any of these being installed transitively, declare them in your application's `devDependencies`.
+
+If you cannot migrate yet, stay on Theia 1.74.x or vendor the webpack setup into your own repository. The last generated configurations are in [`bundler-generator.ts`](https://github.com/eclipse-theia/theia/blob/v1.74.1/dev-packages/application-manager/src/generator/bundler-generator.ts) (`compileWebpackConfig` and `compileNodeWebpackConfig`), the plugins in [`webpack-plugin.ts`](https://github.com/eclipse-theia/theia/blob/v1.74.1/dev-packages/bundle-plugin/src/webpack-plugin.ts) and [`monaco-webpack-plugins.ts`](https://github.com/eclipse-theia/theia/blob/v1.74.1/dev-packages/bundle-plugin/src/monaco-webpack-plugins.ts), and the expose loader in [`expose-loader.ts`](https://github.com/eclipse-theia/theia/blob/v1.74.1/dev-packages/application-manager/src/expose-loader.ts). In that case you also have to declare `webpack`, `webpack-cli`, `terser-webpack-plugin` and the loaders listed above yourself.
+
+#### Pre-compressed frontend assets with esbuild
+
+Theia's backend serves a `<file>.gz` sibling instead of the original file whenever one exists and the client accepts `gzip`. This used to be produced by webpack's `CompressionPlugin`; it is now produced by the new `compressAssetsPlugin()` from `@theia/bundle-plugin`, which the generated esbuild browser configuration includes.
+
+The `--static-compression` flag of `theia build` keeps working, but its default changed: compression is only enabled for browser applications built with `--mode production`. Development and watch rebuilds therefore stay fast, and Electron applications, which load the frontend from their local backend over loopback, no longer carry compressed copies in the packaged application. Pass `--static-compression` or `--no-static-compression` to override.
+
+Whenever an asset is not compressed, the plugin removes its `.gz` file of a previous build. A development build therefore cannot leave the assets of an earlier production build behind for the backend to serve.
+
 ### v1.74.0
 
 #### Deprecation of @theia/ai-vercel-ai package
@@ -131,8 +286,8 @@ The `@theia/ai-vercel-ai` package has been marked as deprecated and is no longer
 
 If your application depends on `@theia/ai-vercel-ai`, migrate as follows:
 
-- **OpenAI models**: use `@theia/ai-openai`. Move `ai-features.vercelAi.openaiApiKey` to `ai-features.openAiOfficial.openAiApiKey` and define models in `ai-features.openAiOfficial.officialOpenAiModels`.
-- **Anthropic models**: use `@theia/ai-anthropic`. Move `ai-features.vercelAi.anthropicApiKey` to `ai-features.anthropic.AnthropicApiKey` and define models in `ai-features.anthropic.AnthropicModels`.
+- **OpenAI models**: use `@theia/ai-openai`. Move `ai-features.vercelAi.openaiApiKey` to `ai-features.openAiOfficial.openAiApiKey`; the models themselves are discovered from the provider (see _Dynamic Model Discovery_ above).
+- **Anthropic models**: use `@theia/ai-anthropic`. Move `ai-features.vercelAi.anthropicApiKey` to `ai-features.anthropic.AnthropicApiKey`; the models themselves are discovered from the provider (see _Dynamic Model Discovery_ above).
 - **Custom endpoints** (`ai-features.vercelAi.customModels`): split entries by their `provider` field into the matching provider-specific preference:
   - `provider: 'openai'` → `ai-features.openAiCustom.customOpenAiModels`
   - `provider: 'anthropic'` → `ai-features.anthropicCustom.customAnthropicModels`

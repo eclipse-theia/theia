@@ -35,9 +35,8 @@
     flex-shrink: 0;
 }
 
-.theia-skill-extension-gear-placeholder {
-    visibility: hidden;
-    pointer-events: none;
+.theia-skill-extension-gear {
+    cursor: pointer;
 }
 
 .theia-skill-extension-warning {

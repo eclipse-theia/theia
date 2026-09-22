@@ -108,6 +108,9 @@
             "title": "指示模型是否支援提示詞快取功能。預設值為 `true`"
           }
         },
+        "customProvider": {
+          "label": "{0} (自訂)"
+        },
         "models": {
           "description": "官方採用的Anthropic模型"
         }
@@ -148,6 +151,9 @@
         "clipboardSeparator": "剪貼簿",
         "confirmApplySuggestion": "自本建議建立以來,檔案 {0} 已發生變更。您確定要套用此變更嗎?",
         "confirmRevertSuggestion": "自本建議建立以來,檔案 {0} 已發生變更。您確定要還原此變更嗎?",
+        "contextSummaryVariable": {
+          "description": "當前聊天會話上下文中每個元素的 JSON 摘要,列出各元素的類型與識別碼。"
+        },
         "couldNotFindMatchingLM": "未能找到相符的語言模型。請檢查您的設定！",
         "couldNotFindReadyLMforAgent": "無法為代理程式{0}找到現成的語言模型。請檢查您的設定！",
         "customAgents": {
@@ -385,7 +391,6 @@
         "tokenUsageWarning": "已達到代碼使用警告閾值。",
         "tokenUsageWarningEnabled": "控制當聊天會話的字元使用量超過設定的閾值時,是否顯示通知。此功能需語言模型提供者回報字元使用量。",
         "tokenUsageWarningMessage": "聊天會話的標記使用量已佔上下文視窗的 {0}%。請考慮彙總此會話或開啟新會話,以避免觸及上限。",
-        "tokenUsageWarningNewSessionAction": "開始新聊天",
         "tokenUsageWarningSummarizeAction": "摘要當前工作階段",
         "tokenUsageWarningThresholdPercentage": "觸發詞彙使用警告時,模型上下文視窗所佔的比例。此數值亦決定詞彙使用指標的警告/錯誤色帶。目前以假設的 200k 上下文視窗為基準;一旦取得實際的模型上下文大小,將改用該數值。",
         "toolcall-part-renderer": {
@@ -443,7 +448,6 @@
         },
         "currentDirectory": "當前目錄",
         "differentAgentRequestWarning": "先前對話請求由其他客服人員處理。Claude Code 無法查看該對話內容。",
-        "edit": "編輯 {0}",
         "editAutomatically": "自動編輯",
         "editing": "編輯",
         "editsCount": "{0} 編輯",
@@ -619,9 +623,6 @@
           "description": "當前游標位置之後的程式碼。僅在程式碼完成情境中可用。"
         }
       },
-      "configuration": {
-        "selectItem": "請選擇一項項目。"
-      },
       "copilot": {
         "auth": {
           "aiConfiguration": "AI 設定",
@@ -667,30 +668,44 @@
         "agentConfiguration": {
           "addCustomAgent": "新增自訂代理程式",
           "availableCapabilities": "可用功能",
-          "completionNotificationDescriptionPrefix": "請選擇當此代理程式需要您處理時(例如:完成任務或要求您輸入資料),您希望以何種方式收到通知。「預設」會使用 ",
+          "completionNotificationIntro": "當此代理程式需要您處理(完成任務或要求輸入)時,您希望以何種方式收到通知。「預設」會使用全域 ",
           "defaultNotificationDescription": "使用全域人工智慧通知設定",
           "enableAgent": "啟用代理程式",
-          "llmRequirements": "大型語言模型需求",
           "notUsedInPrompt": "不用於提示",
           "notUsedInPromptTooltip": "此變數由代理程式宣告,但在當前提示模板中未被引用。",
           "notificationSettings": "通知設定",
           "notificationSettingsLink": "AI 通知設定",
-          "promptTemplates": "提示模板",
-          "selectAgentMessage": "請先選擇一個代理程式！",
           "showInChat": "顯示於聊天視窗",
-          "templateName": "範本",
           "undeclared": "未宣告",
           "undeclaredTooltip": "此變數用於提示字元,但代理程式未宣告其描述。",
           "usedAgentSpecificVariables": "使用代理程式專屬變數",
-          "usedFunctions": "使用函數",
           "usedGlobalVariables": "已使用的全域變數",
-          "variant": "變體"
+          "usedTools": "使用的工具"
         },
         "agentsVariable": {
           "description": "返回系統中可用的代理程式清單"
         },
         "aiConfiguration": {
-          "label": "AI 設定"
+          "addValue": "新增值...",
+          "categoryComingSoon": "{0} 目前尚無法進行設定。",
+          "collectionEmpty": "目前尚無可設定的項目。",
+          "contributedByExtensions": "由擴充功能提供",
+          "decrease": "減少",
+          "increase": "增加",
+          "label": "AI 設定",
+          "models": {
+            "label": "提供者與模型"
+          },
+          "origin": {
+            "fromRegistry": "來自登錄檔",
+            "openAgentPlugin": "開啟提供此功能的 Agent 外掛程式:{0}",
+            "openInRegistry": "在 AI 註冊表中開啟:{0}",
+            "registryEntry": "AI 登錄檔項目:{0}",
+            "viaAgentPlugin": "來源:{0}"
+          },
+          "scopeBanner": "編輯{0}的範圍。",
+          "searchPlaceholder": "搜尋 AI 設定",
+          "selectCategory": "請選擇要設定的類別。"
         },
         "blinkTitle": {
           "agentCompleted": "{0} - 代理程式已完成",
@@ -753,8 +768,10 @@
         },
         "languageModelRenderer": {
           "alias": "[別名] {0}",
-          "languageModel": "語言模型",
-          "purpose": "目的"
+          "purposeTitle": "目的:{0}",
+          "reasoningInherited": "此代理要求模型進行的推理工作。由於未設定,因此適用「{0}」,此設定源自推理預設偏好設定或模型本身。",
+          "reasoningStored": "此代理要求模型進行的推理工作量。可在此處設定,或透過聊天輸入的選擇器設定,該選擇器會寫入相同的設定。",
+          "serverTools": "伺服器工具"
         },
         "maxRetries": {
           "mdDescription": "向 AI 供應商發送請求失敗時的最大重試次數。值為 0 表示不進行重試。",
@@ -762,16 +779,17 @@
         },
         "modelAliasesConfiguration": {
           "agents": "使用此別名的代理程式",
+          "aliasTypeLabel": "模型別名",
           "defaultList": "[預設清單]",
+          "description": "採用命名參照方式對應首選模型,以便代理程式能針對特定角色而非特定模型進行操作。",
           "evaluatesTo": "評估為",
           "label": "模型別名",
-          "modelNotReadyTooltip": "尚未準備就緒",
-          "modelReadyTooltip": "準備就緒",
           "noAgents": "沒有任何代理程式使用此別名。",
-          "noModelReadyTooltip": "尚無模型可用",
+          "noModel": "無範本",
           "noResolvedModel": "此別名尚未準備好對應模型。",
+          "notReady": "尚未準備就緒",
           "priorityList": "優先級清單",
-          "selectAlias": "請選擇模型別名。",
+          "resolvesTo": "對應網址為 {0}",
           "selectedModelId": "已選取的模型",
           "unavailableModel": "所選模型已不再提供"
         },
@@ -803,39 +821,15 @@
           "description": "使用者正在使用的產品／應用程式名稱"
         },
         "promptFragmentsConfiguration": {
-          "activeCustomizationTitle": "主動自訂",
-          "createCustomizationTitle": "建立自訂設定",
-          "customization": "自訂",
-          "customizationLabel": "自訂",
-          "defaultVariantTitle": "預設變體",
-          "deleteCustomizationTitle": "刪除自訂設定",
-          "editTemplateTitle": "編輯範本",
-          "headerTitle": "提示片段",
-          "label": "提示片段",
-          "noFragmentsAvailable": "無可用提示片段。",
-          "otherPromptFragmentsHeader": "其他提示片段",
-          "promptTemplateText": "提示模板文字",
-          "promptVariantsHeader": "提示變體集",
-          "removeCustomizationDialogMsg": "您確定要移除提示片段「{1}」的{0}自訂設定嗎?",
-          "removeCustomizationDialogTitle": "移除自訂設定",
-          "removeCustomizationWithDescDialogMsg": "您確定要移除提示片段「{1}」的{0}自訂設定({2})?",
-          "resetAllButton": "重設所有",
-          "resetAllCustomizationsDialogMsg": "您確定要將所有提示片段重置為內建版本嗎?此操作將移除所有自訂設定。",
-          "resetAllCustomizationsDialogTitle": "重設所有自訂設定",
-          "resetAllCustomizationsTitle": "重設所有自訂設定",
-          "resetAllPromptFragments": "重設所有提示片段",
+          "editPromptTemplate": "編輯提示範本",
+          "removePromptTemplate": "移除提示範本",
+          "removePromptTemplateDialogMsg": "您確定要移除提示模板「{1}」的 {0} 自訂設定嗎?由於該模板沒有內建版本,因此將被完全移除。",
+          "removePromptTemplateDialogTitle": "移除提示範本",
+          "removePromptTemplateWithDescDialogMsg": "您確定要移除提示範本「{1}」({2})的{0}自訂設定嗎?此提示範本沒有內建版本,因此將被完全刪除。",
+          "resetPromptTemplate": "重設提示範本",
           "resetToBuiltInDialogMsg": "您確定要將提示片段「{0}」重設為內建版本嗎?此操作將移除所有自訂設定。",
           "resetToBuiltInDialogTitle": "重設為內建設定",
-          "resetToBuiltInTitle": "重置為此內建設定",
-          "resetToCustomizationDialogMsg": "您確定要將提示片段「{0}」重設為使用 {1} 自訂設定嗎?此操作將移除所有優先級較高的自訂設定。",
-          "resetToCustomizationDialogTitle": "重設至自訂設定",
-          "resetToCustomizationTitle": "重設至此自訂設定",
-          "selectedVariantLabel": "已選取",
-          "selectedVariantTitle": "選取的變體",
-          "usedByAgentTitle": "使用代理程式:{0}",
-          "variantSetError": "所選變體不存在且無法找到預設值。請檢查您的設定。",
-          "variantSetWarning": "所選變體不存在。將改用預設變體。",
-          "variantsOfSystemPrompt": "此提示變體集的變體:"
+          "variantSetError": "所選變體不存在且無法找到預設值。請檢查您的設定。"
         },
         "promptTemplates": {
           "description": "用於儲存自訂提示模板的資料夾。若未自訂,則使用使用者設定目錄。請考慮使用受版本控制的資料夾來管理您的提示模板變體。"
@@ -899,12 +893,8 @@
         "taskContextSummary": {
           "description": "解析工作階段上下文中存在的所有任務上下文項目。"
         },
-        "templateSettings": {
-          "edited": "編輯",
-          "unavailableVariant": "不可用"
-        },
         "todayVariable": {
-          "description": "今日要辦的事",
+          "dateDescription": "當前日期。預設會解析為人類可讀的日期字串,或透過 format 參數解析為 ISO 8601 或 Unix 秒數格式。",
           "format": {
             "description": "日期的格式"
           }
@@ -914,11 +904,17 @@
         "variable-contribution": {
           "builtInVariable": "{0} 內建變數",
           "currentAbsoluteFilePath": "目前開啟檔案的絕對路徑。",
-          "currentFileContent": "目前開啟檔案的純文字內容。此處不包含內容來源的相關資訊。",
-          "currentRelativeDirPath": "包含目前開啟檔案之目錄的、以工作區為基準的路徑(例如:my-project/src)。",
-          "currentRelativeFilePath": "目前開啟檔案的工作區相對路徑(例如:my-project/src/index.ts)。",
-          "currentSelectedText": "目前在已開啟檔案中選取的純文字內容。此處不包含內容來源的相關資訊。",
-          "dotRelativePath": "指向目前開啟檔案('currentRelativeFilePath')之工作區相對路徑的簡要參考。"
+          "currentFileContent": "目前開啟檔案的純文字內容。此處不包含內容來源相關的資訊。",
+          "currentRelativeDirPath": "包含目前開啟之檔案的目錄,以工作區為基準的相對路徑(例如:my-project/src)。",
+          "currentRelativeFilePath": "目前開啟檔案的「工作區相對路徑」(例如:my-project/src/index.ts)。",
+          "currentSelectedText": "目前在已開啟檔案中被選取的純文字。此處不包含內容來源的相關資訊。",
+          "dotRelativePath": "關於目前開啟之檔案('currentRelativeFilePath')相對於工作區的路徑之簡要說明。"
+        },
+        "variantSet": {
+          "templateLabel": "範本",
+          "unavailableVariant": "{0} (不可用)",
+          "variantCount": "{0} 變體",
+          "variantCountSingular": "第 1 種變體"
         }
       },
       "editor": {
@@ -1000,10 +996,16 @@
       "ide": {
         "agent-description": "在 [AI 設定檢視窗] ({0}) 中配置 AI 代理設定,包含啟用狀態、大型語言模型選取、提示字串範本自訂,以及自訂代理建立。",
         "agentConfiguration": {
+          "agentMode": "Coder 的代理模式",
+          "behavior": "行為",
           "customAgentLocationQuickPick": {
             "placeholder": "選擇要建立 agents/<id>/agent.md 檔案的位置",
             "title": "選擇新自訂代理程式的位置"
           },
+          "defaultChatAgent": "預設聊天代理",
+          "defaultChatAgentNone": "內建預設值",
+          "defaultChatAgentNoneDescription": "無明確預設值;Theia 會選用預設的 Chat Agent。",
+          "defaults": "預設值",
           "genericCapabilitiesSettings": "通用功能",
           "genericCapabilityType": {
             "agentDelegation": "代理委派",
@@ -1020,10 +1022,14 @@
             "idTitle": "新的自訂代理程式",
             "noLocation": "無法建立自訂代理程式:未設定提示範本的位置。請設定全域或工作區的提示範本資料夾,然後再試一次。"
           },
-          "noDescription": "無可用說明",
+          "noAgents": "目前沒有可用代理程式。",
+          "orchestratorExclude": "對調度器隱藏的代理程式",
+          "orchestratorExcludePlaceholder": "新增代理程式 ID...",
           "resetAllCapabilities": "將所有功能重設為預設值",
-          "resetAllDefaults": "將所有設定重置為預設值",
-          "selections": "選項"
+          "resetAllGenericCapabilities": "重設所有通用功能選項",
+          "resetAllServerTools": "關閉此供應商的所有伺服器工具",
+          "showCapabilitySnippet": "顯示程式碼片段",
+          "showToolSettings": "顯示工具"
         },
         "agentMode": {
           "enabled": {
@@ -1036,6 +1042,15 @@
           "info": "若繼續使用「代理模式」,您的確認設定將被儲存。您稍後可透過 `ai-features.agentMode.enabled` 設定再次撤銷此設定。\n\n若繼續使用「編輯模式」,您的預設模式將變更為「編輯模式」。\n\n您可隨時透過模式選擇器或 AI 設定來變更模式。",
           "msg": "此代理程式採用 **代理模式**。為啟用自主流程,它能夠在無需進一步確認的情況下,直接寫入您的工作區檔案。\n\n建議使用版本控制系統(例如 Git),以便您能檢視並還原變更。\n\n您可以透過下方聊天輸入區的模式選擇器切換至 **編輯模式**,或使用 **Architect** 代理程式進行唯讀規劃。\n\n此確認設定將儲存於此工作區,且不會再次顯示。若要重設或進行全域設定,請在「設定」中搜尋 `ai-features.agentMode.confirmed`。",
           "waiting": "等待確認中..."
+        },
+        "agentsConfiguration": {
+          "description": "此 IDE 中可用的 AI 代理程式。開啟一個代理程式,即可設定其提示、模型及功能。"
+        },
+        "aiConfiguration": {
+          "breadcrumbRoot": "AI 設定",
+          "manageMenu": "AI 設定",
+          "openButton": "OpenAI 設定",
+          "pageTypeLabel": "頁面"
         },
         "allowAllMode": {
           "stripTooltip": "在此工作階段中,AI 工具的呼叫將在無需確認的情況下執行。請僅在您信任的環境中啟用此功能。",
@@ -1132,6 +1147,25 @@
         "exploreAgent": {
           "description": "一款從程式碼庫中提取並提煉資訊的程式碼庫探索助手。         報告現有內容的相關事實、提供程式碼片段,並描述觀察到的模式。"
         },
+        "generalConfiguration": {
+          "aboutCosts": "關於費用與資料用量",
+          "bypassModelTitle": "跳過語言模型檢查",
+          "configureProvider": "設定提供者",
+          "costsBody": "AI 功能會向您所設定的語言模型供應商發送請求。根據您的供應商及使用方式,這可能會產生費用——請密切監控相關費用。當代理程式處於活躍狀態時,請求可能會持續執行。詳情請參閱 [文件]({0})。",
+          "description": "開啟或關閉 AI 功能,並設定助理在整個 IDE 中的運作方式。",
+          "dontPersist": "請勿儲存",
+          "enableAiDescription": "啟用 {0} 的所有 AI 功能。需至少配置一個語言模型提供者。",
+          "gateNote": "啟用「啟用 AI 功能」後,以下設定即會生效。",
+          "hideList": "隱藏清單",
+          "homeSessionsTitle": "主畫面中的工作階段",
+          "label": "概述",
+          "noProvider": "目前尚未設定任何語言模型提供者。",
+          "persistedSessionsTitle": "已儲存的聊天會話",
+          "pinAgentTitle": "固定提及的代理程式",
+          "providerReady": "語言模型提供者已設定完畢並準備就緒。",
+          "sessionStorageTitle": "會話儲存位置",
+          "unlimited": "無限制"
+        },
         "github": {
           "configureGitHubServer": {
             "canceled": "GitHub 伺服器設定已取消。請將 GitHub MCP 伺服器設定為使用此代理程式。",
@@ -1158,12 +1192,25 @@
           "description": "與工作區根目錄相關聯的 GitHub 儲存庫(例如「eclipse-theia/theia」)"
         },
         "howToGetStarted": "如何開始使用",
+        "memoryCapability": {
+          "description": "讓代理程式能為工作區維護一個持久的、維基風格的知識庫,使本次及未來的會話都能建立在先前成果的基礎上,而非從頭開始。",
+          "name": "記憶體"
+        },
+        "memoryDirectoryVariable": {
+          "description": "代理程式用以存放當前工作區記憶體的目錄之絕對路徑。"
+        },
         "model-selection-description": "請於 [AI 設定檢視窗]({0})中選擇各 AI 代理程式所使用的大型語言模型(LLMs)。",
+        "modelsConfiguration": {
+          "description": "設定語言模型提供者以及可供代理程式使用的模型。",
+          "modelSettings": "模型設定",
+          "noProviders": "目前未安裝任何語言模型提供者。",
+          "providers": "供應商"
+        },
         "moreAgentsAvailable": {
           "header": "更多代理程式可供使用"
         },
         "noRecommendedAgents": "目前沒有可用的推薦代理程式。",
-        "openSettings": "開啟 AI 設定",
+        "openAiConfiguration": "OpenAI 設定",
         "orchestrator": {
           "error": {
             "noAgents": "目前無可用聊天機器人處理此請求。請檢查您的設定是否啟用了任何聊天機器人。"
@@ -1204,6 +1251,37 @@
           "description": "一款由人工智慧驅動的 PR 審查代理程式,可統籌完整的程式碼審查工作流程:擷取 PR 資訊、探索程式碼庫、執行結構化分析、透過 diff 檢視器引導使用者互動檢視發現的問題,並可選擇在 GitHub 上建立待審查項目。"
         },
         "prompt-template-description": "在 [AI 設定檢視窗] ({0}) 中選擇提示語變體並自訂 AI 代理的提示語範本。",
+        "promptSnippetsConfiguration": {
+          "capabilitiesGroupDescription": "當啟用時,代理程式會將這些指示新增至其提示字元中。由於這些指示是共享的,因此任何編輯都會影響所有使用它們的代理程式。",
+          "capabilityTypeLabel": "功能",
+          "customized": "已客製化",
+          "description": "可重複使用的提示文字:包含您自己的程式碼片段,以及代理程式所調用的功能片段。編輯程式碼片段會影響所有使用該片段的代理程式。",
+          "editSnippet": "編輯程式片段",
+          "empty": "目前沒有可用的提示片段。",
+          "filterPlaceholder": "可依名稱、ID 或描述篩選提示片段",
+          "genericCapabilitiesGroup": "通用功能",
+          "genericCapabilitiesGroupDescription": "將選定的功能整合至代理程式提示列的基本指示。這些設定為共用設定,因此任何編輯都會影響所有使用這些設定的代理程式。",
+          "genericCapabilityTypeLabel": "通用功能",
+          "label": "提示片段",
+          "noMatches": "沒有任何提示片段與「{0}」相符。",
+          "removeDialogMsg": "您確定要移除 {0} 針對片段「{1}」的自訂設定嗎?由於該片段沒有內建版本,因此將會完全消失。",
+          "removeDialogTitle": "移除程式碼片段",
+          "removeSnippet": "移除程式片段",
+          "removeWithDescDialogMsg": "您確定要移除 {0} 中針對片段「{1}」({2})的自訂設定嗎?該片段沒有內建版本,因此將被完全移除。",
+          "resetAll": "重設所有自訂設定",
+          "resetAllDialogMsg": "您確定要將所有自訂的提示片段重置為其內建版本嗎?這包括代理程式的提示範本,而不僅限於此處列出的片段。沒有內建版本的片段將予以保留。",
+          "resetAllDialogTitle": "重設所有自訂設定",
+          "resetAllMessage": "部分提示片段已進行客製化。重設會將所有此類提示片段(包括代理程式的提示範本)恢復為其內建版本。沒有內建版本的片段則會保留。",
+          "resetDialogMsg": "您確定要將程式碼片段「{0}」重設為其內建版本嗎?此操作將移除所有自訂設定。",
+          "resetDialogTitle": "將程式片段重設為內建",
+          "resetSnippet": "將程式片段重設為內建設定",
+          "snippetsGroupDescription": "此為您自行維護的提示文字,其他提示可透過 {{prompt:id}} 引用此提示。",
+          "usedByAgents": "由代理程式使用"
+        },
+        "promptsAndSkillsConfiguration": {
+          "label": "技能與斜線指令",
+          "pageSubtitle": "模型可使用的技能,以及您可透過 / 符號呼叫的斜線指令。開啟某項技能以編輯其 SKILL.md 檔案,或編輯斜線指令的範本。"
+        },
         "requiresApproval": "需經您核准",
         "restoredSession": "已還原的會話",
         "restrictedModeDetails": "AI 聊天、內嵌建議、程式碼操作及提示範本已停用",
@@ -1214,22 +1292,27 @@
           "toolConfirmation": "各工具的確認設定覆寫:{0}",
           "toolConfirmationGeneric": "設定各工具的確認覆寫選項"
         },
-        "shellAllowlist": {
-          "placeholder": "例如:\"git log\"(精確指令)或 \"git log *\"(帶參數指令)"
-        },
-        "shellDenylist": {
-          "placeholder": "例如:\"git push *\" 或 \"rm -rf /\""
-        },
         "shellExecutionCapability": {
           "description": "允許代理程式在主機系統上執行任意殼層指令。代理程式可藉此委派執行非任務形式的腳本、查詢系統資訊,以及執行無專用工具可處理的操作。",
           "name": "殼層執行"
         },
         "skillsConfiguration": {
-          "noSkills": "無可用技能",
-          "noSlashCommands": "無可用斜線指令",
+          "compatibility": "相容性",
+          "editCommandTemplate": "編輯提示範本",
+          "empty": "目前沒有可用技能或斜線指令。",
+          "filterPlaceholder": "可依名稱或描述篩選技能與斜線指令",
+          "frontmatter": "前置資訊",
+          "noAllowedTools": "未宣告任何允許使用的工具。該技能可使用代理程式現已擁有的任何工具。",
+          "noMatches": "沒有任何技能或斜線指令與「{0}」相符。",
+          "noSkillAgents": "目前沒有任何代理程式會揭露技能,因此這些內容均無法觸及:技能需要 {{skills}} 變數,或代理程式提示中具備技能使用能力。",
+          "openSkillFile": "開啟 SKILL.md",
+          "skillsGroupDescription": "模型可選擇遵循的、基於檔案的 SKILL.md 單元,透過 {{skills}} 變數及技能使用能力呈現。",
           "slashCommand": {
-            "allAgents": "所有代理程式"
+            "allAgents": "所有代理程式",
+            "allAgentsTooltip": "此指令未宣告任何代理程式,因此所有代理程式皆可使用此指令。",
+            "availableForAgents": "適用於代理程式"
           },
+          "slashCommandsGroupDescription": "在聊天視窗中輸入 /name 即可呼叫的提示片段,可供一位或多位客服專員使用。",
           "slashCommandsSectionHeader": "斜線指令"
         },
         "toolConfirmationInfo": {
@@ -1249,8 +1332,10 @@
             "label": "確認模式"
           },
           "default": {
-            "label": "預設工具確認模式:"
+            "rowLabel": "預設工具確認模式"
           },
+          "description": "選擇代理程式可呼叫的工具,並設定是否需在執行每個工具前進行確認。",
+          "filterPlaceholder": "篩選工具",
           "recommendedDefaults": {
             "apply": "允許使用預設工具",
             "dialogConfirm": "我明白了,允許",
@@ -1270,16 +1355,7 @@
             "title": "重置所有工具確認模式"
           },
           "resetAllTooltip": "將所有工具重設為預設值",
-          "shellAllowlist": {
-            "description": "符合以下模式的指令將自動允許執行,無需確認。使用 * 作為萬用字元:\"git log\"(精確匹配),\"git log *\"(接受任何參數)。萬用字元必須置於空格之前。",
-            "empty": "未設定任何模式。所有殼層指令皆需確認。",
-            "title": "Shell 執行允許清單"
-          },
-          "shellDenylist": {
-            "description": "符合這些模式的指令將自動被拒絕,無需確認。請用此功能封鎖危險指令,例如「git push *」或「rm -rf /」。",
-            "empty": "未設定任何模式。所有殼層指令均不會被自動拒絕。",
-            "title": "Shell 執行拒絕清單"
-          },
+          "shellExecution": "Shell 指令執行",
           "toolOptions": {
             "confirm": {
               "label": "確認"
@@ -1295,7 +1371,21 @@
           "unread": "未讀"
         },
         "variableConfiguration": {
-          "selectVariable": "請選擇一個變數。",
+          "argCountPlural": "{0} 參數",
+          "argCountSingular": "1 個參數",
+          "argEnum": "以下其中之一:{0}",
+          "contextGroup": "上下文變數",
+          "contextGroupDescription": "可在提示中以{0}名稱進行引用,亦可作為背景資訊附加至請求中,供代理程式及其工具檢視。",
+          "copyVariableName": "複製變數名稱",
+          "filterPlaceholder": "依名稱或描述篩選變數",
+          "noMatches": "沒有任何變數與「{0}」相符。",
+          "noVariables": "沒有可用變數。",
+          "openAgent": "開啟代理程式 {0}",
+          "optional": "(可選)",
+          "pageSubtitle": "這些是您可在提示字元中以{0}名稱進行參照的值。它們會在請求時被解析並插入。",
+          "plainGroup": "普通變數",
+          "plainGroupDescription": "在提示中以「{0}」名稱進行引用,並於請求時內嵌解析為文字值。",
+          "required": "必填",
           "usedByAgents": "供代理程式使用"
         },
         "waitingForInput": "等待您的輸入"
@@ -1407,12 +1497,20 @@
           },
           "registryMetadata": {
             "configHash": {
-              "mdDescription": "用於安裝此伺服器的登錄檔核准內容雜湊值。",
+              "mdDescription": "用於安裝此伺服器的登錄檔核准內容雜湊值,或提供該核准的 Agent 外掛程式之內容雜湊值。",
               "title": "登錄檔設定雜湊值"
             },
+            "installedAt": {
+              "mdDescription": "此伺服器所使用的 Agent Plugin 最後一次寫入磁碟的時間。變更此設定會重新啟動伺服器,這正是讓更新生效的機制。由 `@theia/ai-registry` 撰寫;使用者無法編輯。",
+              "title": "代理程式外掛程式已安裝於"
+            },
             "mdDescription": "從 AI 註冊表安裝之伺服器的來源元資料。由 `@theia/ai-registry` 撰寫;使用者無法編輯。",
+            "pluginId": {
+              "mdDescription": "標示出提供此伺服器的已安裝 Agent 外掛程式。由 `@theia/ai-registry` 撰寫;使用者無法編輯。",
+              "title": "代理程式外掛程式 ID"
+            },
             "serverId": {
-              "mdDescription": "標示此伺服器所安裝的 AI 登錄檔項目。",
+              "mdDescription": "識別此伺服器所安裝的 AI 登錄檔項目。若伺服器是由代理程式外掛程式所貢獻,則此欄位不存在,取而代之的是 `pluginId`。",
               "title": "登錄檔伺服器識別碼"
             },
             "title": "登錄檔元資料",
@@ -1457,6 +1555,9 @@
         }
       },
       "mcpConfiguration": {
+        "addArgument": "新增參數…",
+        "addKeyValue": "新增 KEY=value…",
+        "addScope": "新增範圍…",
         "autostart": "自動啟動",
         "browseAIRegistry": "瀏覽 AI 登錄檔",
         "browseAIRegistryTooltip": "開啟「擴充功能」視圖以瀏覽 AI 登錄檔項目",
@@ -1464,8 +1565,9 @@
           "addServer": "新增本機 MCP 設定..."
         },
         "copiedAllList": "已將所有工具複製至剪貼簿(完整工具清單)",
-        "copiedAllSingle": "已將所有工具複製至剪貼簿(單一提示片段包含                                     所有工具)",
-        "copiedForPromptTemplate": "將所有工具複製至剪貼簿作為提示模板                                    (單一提示片段含所有工具)",
+        "copiedAllSingle": "已將所有工具複製至剪貼簿(包含所有工具的單一提示片段)",
+        "copiedForPrompt": "已將 {0} 複製到剪貼簿(供聊天或提示模板使用)",
+        "copiedForPromptTemplate": "已將所有工具複製至剪貼簿,供提示字元範本使用(包含所有工具的單一提示片段)",
         "copyAllList": "複製全部(所有工具清單)",
         "copyAllSingle": "複製全部內容至聊天視窗(單一提示片段含所有工具)",
         "copyForPrompt": "複製工具(適用於聊天或提示模板)",
@@ -1475,8 +1577,6 @@
         "deleteServerDialogMsg": "您確定要刪除伺服器「{0}」嗎?",
         "deleteServerDialogTitle": "刪除 MCP 伺服器",
         "deleteServerError": "刪除 MCP 伺服器失敗:{0}",
-        "editServer": "編輯伺服器",
-        "editServerTitle": "編輯 MCP 伺服器",
         "environmentVariables": "環境變數",
         "form": {
           "argsPlaceholder": "以空格分隔,例如:-y @modelcontextprotocol/server-brave-search",
@@ -1509,7 +1609,6 @@
           "serverUrlPlaceholder": "例如:https://mcp.example.com",
           "serverUrlRequired": "遠端伺服器需提供伺服器網址"
         },
-        "fromRegistryLink": "來自登錄檔",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "授權伺服器",
         "oauthClientId": "OAuth 客戶端 ID",
@@ -1517,11 +1616,15 @@
         "oauthRedirectUrl": "重定向網址",
         "oauthResource": "OAuth 資源",
         "oauthScopes": "OAuth 權限範圍",
-        "openInRegistry": "在 AI 註冊表中開啟:{0}",
+        "pluginData": "外掛程式資料",
+        "pluginRoot": "外掛程式根目錄",
         "saveServerError": "儲存 MCP 伺服器設定失敗:{0}",
         "serverAuthToken": "授權憑證",
         "serverAuthTokenHeader": "驗證標頭名稱",
+        "serverTypeLabel": "MCP 伺服器",
         "serverUrl": "伺服器網址",
+        "serversListTitle": "伺服器",
+        "showToolSettings": "顯示工具",
         "signInServerFailed": "無法登入 MCP 伺服器「{0}」。",
         "signInServerNotCompleted": "無法成功登入 MCP 伺服器「{0}」。",
         "signInServerSucceeded": "已登入 MCP 伺服器「{0}」。",
@@ -1530,7 +1633,7 @@
         "signOutServerFailed": "無法從 MCP 伺服器「{0}」登出。",
         "startServerFailed": "無法啟動 MCP 伺服器「{0}」。",
         "stopServerFailed": "無法停止 MCP 伺服器「{0}」。",
-        "tools": "工具: "
+        "typeRemoteOAuth": "遠端 (OAuth)"
       },
       "openai": {
         "apiKey": {
@@ -1580,6 +1683,9 @@
           "useResponseApi": {
             "title": "請改用新版 OpenAI Response API 取代 Chat Completion API。自訂提供者預設值為 `false`。注意:當使用工具時,系統將自動回退至 Chat Completions API。"
           }
+        },
+        "customProvider": {
+          "label": "{0} (自訂)"
         },
         "models": {
           "description": "官方 OpenAI 模型供使用"
@@ -1683,7 +1789,7 @@
       },
       "tokenUsage": {
         "cachedInputTokens": "寫入快取的輸入代幣",
-        "cachedInputTokensTooltip": "此類標籤額外追蹤於「輸入代幣」項目。通常比非快取代幣更昂貴。",
+        "description": "檢視各提供者與模型的代幣消耗情況。",
         "failedToGetTokenUsageData": "無法取得代幣使用資料:{0}",
         "inputTokens": "輸入令牌",
         "label": "代幣使用",
@@ -1691,9 +1797,7 @@
         "noData": "目前尚無可用代幣使用數據。",
         "note": "代幣使用情況自應用程式啟動時起進行追蹤,且不會持久化儲存。",
         "outputTokens": "輸出代幣",
-        "readCachedInputTokens": "從快取讀取輸入代幣",
-        "readCachedInputTokensTooltip": "此項目額外追蹤於「輸入代幣」之下。通常比未快取的處理方式成本低得多,且通常不計入速率限制。",
-        "totalTokensTooltip": "輸入代幣 + 輸出代幣"
+        "readCachedInputTokens": "從快取讀取輸入代幣"
       },
       "vercelai": {
         "anthropicApiKey": {
@@ -1736,7 +1840,7 @@
       },
       "workspace": {
         "allowedExternalPaths": {
-          "description": "AI 工具可能讀取的工作區外部絕對路徑或檔案 URI(目錄或檔案)清單。 支援使用 `~` 指代使用者主目錄。預設為空;僅限主動啟用。此設定將由 getFileContent、findFilesByPattern、getWorkspaceFileList 及 getWorkspaceDirectoryStructure 功能所採用。當工作區未被信任時,工作區範圍內的值將被忽略。白名單目錄內的符號連結會被追蹤,且可能指向白名單外的檔案;請僅新增您信任其內容的目錄。",
+          "description": "AI 工具可能存取的工作區外絕對路徑或檔案 URI(目錄或檔案)清單。支援使用 `~` 指稱使用者家目錄。預設為空;僅限主動啟用。 所有接受路徑參數的工具(包括寫入檔案的工具)均會遵循此設定。當工作區未被視為可信時,工作區範圍內的值將被忽略。白名單目錄內的符號連結會被追蹤,且可能指向白名單外的檔案;請僅新增內容可信的目錄。",
           "title": "允許的外部路徑"
         },
         "coderAgent": {
@@ -1807,6 +1911,9 @@
       "agentInputNeededMessageWithSession": "代理程式「{0}」需要您在「{1}」中輸入資料。",
       "agentInputNeededTitle": "代理程式「{0}」需要您的輸入",
       "aiDisabledInRestrictedMode": "在未受信任的工作區中,無法使用 AI 功能。",
+      "openConfiguration": {
+        "description": "AI 設定已移至「AI 設定」視圖。請開啟該視圖以設定提供者、模型、代理程式等項目。"
+      },
       "preferences": {
         "linuxEnvHint": "在 Linux 系統上,若您是透過桌面捷徑啟動應用程式,請確保該變數已定義在 `~/.profile` 檔案中(而非僅在 `~/.bashrc`)。詳情請參閱 [文件](https://theia-ide.org/docs/user_ai/#setting-api-keys)。",
         "title": "AI 功能"
@@ -1890,10 +1997,128 @@
     },
     "ai-registry": {
       "action": {
+        "copyId": "複製 ID",
         "fix": "修正設定",
         "link": "登錄檔連結",
         "unlink": "解除連結",
         "updateTooltip": "更新自 {0} 至 {1}"
+      },
+      "autoUpdate": {
+        "ask": "當已安裝的技能、MCP 伺服器或 Agent 外掛程式有更新可用時,請發送通知。",
+        "changeLater": "您稍後可在 {0} 中進行修改。",
+        "configureDefault": "請在 {0} 中設定預設值。",
+        "defaultPrompt": "從現在起,是否要自動從 AI 註冊表更新技能、MCP 伺服器及 Agent 外掛程式?",
+        "description": "從 AI 登錄檔安裝的技能、MCP 伺服器及代理程式外掛的預設更新行為。系統會在每個視窗載入時檢查一次更新。使用者可透過「擴充功能」視圖中的齒輪選單,針對個別元件覆寫此設定。",
+        "enableDefault": "啟用自動更新",
+        "keepAsking": "繼續提問",
+        "mcpAvailable": "MCP 伺服器「{0}」有可用更新。",
+        "off": "切勿更新已安裝的技能、MCP 伺服器及代理程式外掛程式,亦切勿通知有可用更新。",
+        "on": "自動更新已安裝的技能、MCP 伺服器及 Agent 外掛程式。",
+        "pluginAvailable": "Agent 外掛程式「{0}」已有更新可用。",
+        "skillAvailable": "技能「{0}」已有更新可用。",
+        "summary": "{0} AI 登錄檔更新現已提供。",
+        "updateAll": "全部更新",
+        "updateFailed": "無法自動更新{0}的人工智慧登錄項目。",
+        "updatedMany": "已更新 {0} 中的 AI 登錄檔項目。"
+      },
+      "autoUpdateOverrides": {
+        "mdDescription": "針對各構建產物的 `#ai-features.registry.autoUpdate#` 覆寫設定,其鍵值為 `skill:<skillId>`、`mcp:<serverId>` 或 `plugin:<pluginId>`。 相關設定通常透過「擴充功能」視窗中的齒輪選單進行管理;若某個元件未設定相關項目,則會遵循預設值。"
+      },
+      "mcp": {
+        "updated": "已更新 MCP 伺服器「{0}」。"
+      },
+      "plugin": {
+        "action": {
+          "fix": "修復外掛程式",
+          "link": "登錄檔連結",
+          "unlink": "解除連結"
+        },
+        "diagnostics": {
+          "manySkipped": "{0} 已跳過的元件",
+          "mcpDisabled": "忽略 MCP 設定",
+          "mcpDisabledAndSkipped": "忽略 MCP 設定,{0}",
+          "oneSkipped": "跳過元件「{0}」:{1}"
+        },
+        "dialog": {
+          "contains": "包含",
+          "endorsedBy": "獲以下機構認可",
+          "from": "來源:",
+          "install": {
+            "title": "安裝 Agent 外掛程式「{0}」"
+          },
+          "mcpWarning": "此外掛程式的 MCP 伺服器可在您的機器上執行任意指令。此認證涵蓋外掛程式整體——其中所包含的任何伺服器均不會單獨獲得認證。伺服器將於安裝完成後自動啟動。",
+          "mismatch": {
+            "actual": "已收到",
+            "endorsed": "針對「{0}」所下載的檔案,與 {1} 在 {2} 上推薦的內容不符。",
+            "expected": "已核可",
+            "explanation": "此狀況在外掛程式作者提交後最多一天內屬正常現象,因為註冊表每天會重新讀取原始碼且不會鎖定任何提交,而將檔案排除在存檔之外的儲存庫會永久產生此狀況。這也是遭入侵的原始碼所呈現的樣貌。",
+            "installAnyway": "仍要安裝",
+            "title": "來源已變更",
+            "unendorsed": "針對「{0}」所下載的檔案,其內容雜湊值與註冊表所公布的內容雜湊值不符。"
+          },
+          "noEndorsements": "無任何背書機構",
+          "viaTrust": "來源:{0}"
+        },
+        "fixed": "已還原「{0}」代理程式外掛程式。",
+        "installUri": {
+          "fetchFailed": "無法載入 AI 登錄檔以安裝「{0}」代理程式外掛。",
+          "missingId": "安裝連結缺少必要的「id」參數。",
+          "success": "已從 AI 註冊表安裝「{0}」代理程式外掛。",
+          "unknownId": "您的 AI 註冊表中未列出「{0}」代理程式外掛程式。"
+        },
+        "installed": "已安裝的 Agent 外掛程式「{0}」。",
+        "invalidDirectoryName": "插件目錄名稱「{0}」無效:必須為不含分隔符的單一路徑片段。",
+        "linked": "關聯的 Agent 外掛程式「{0}」。",
+        "manifestFieldNotString": "「plugin.json」檔案中的「{0}」欄位必須為字串。",
+        "manifestInvalidAuthor": "「plugin.json」檔案中的「author」欄位必須為一個物件,其中包含可選的字串欄位「name」、「email」和「url」。",
+        "manifestInvalidKeywords": "「plugin.json」中的「keywords」欄位必須為字串陣列。",
+        "manifestInvalidName": "外掛程式名稱「{0}」無效:名稱必須由 1 至 64 個小寫英文字母、數字、連字號或句點組成,且必須以英文字母或數字開頭與結尾,並不得包含「--」或「..」。",
+        "manifestNotJson": "「plugin.json」並非有效的 JSON 格式。",
+        "manifestNotObject": "「plugin.json」檔案必須包含一個頂層 JSON 物件。",
+        "manifestRequiredField": "「plugin.json」中的「{0}」欄位為必填項目,且必須為非空字串。",
+        "manifestUnsupportedVersion": "「plugin.json」採用了不受支援的 Agent Plugins 架構「{0}」。",
+        "mcpInvalidDocument": "「mcp.json」檔案必須包含一個頂層 JSON 物件,且該物件必須精確包含所需的「$schema」與「mcpServers」欄位。",
+        "mcpNotJson": "「mcp.json」並非有效的 JSON 格式。",
+        "mcpUnsupportedVersion": "「mcp.json」針對的是不受支援的 Agent Plugins 架構「{0}」。",
+        "mcpVersionMismatch": "「mcp.json」針對的是 Agent Plugins 版本「{0}」,而「plugin.json」則針對「{1}」。",
+        "nonObjectExtensions": "忽略「plugin.json」中的「extensions」欄位,因為它並非物件。",
+        "progress": {
+          "text": "Agent 外掛程式「{0}」:{1}"
+        },
+        "registrationFailed": "已安裝 Agent 外掛程式「{0}」,但無法註冊其 MCP 伺服器:{1}。請先解除安裝,然後重新安裝以再次嘗試。",
+        "serverDuplicateHeader": "標頭名稱「{0}」已被宣告多於一次。",
+        "serverEmptyField": "伺服器設定欄位「{0}」不得為空。",
+        "serverFieldNotString": "伺服器設定欄位「{0}」必須為字串。",
+        "serverInvalid": "伺服器設定無效。",
+        "serverInvalidArgs": "「args」欄位必須為字串陣列。",
+        "serverInvalidCommand": "「{0}」的「command」值必須為純粹的可執行檔名稱,或以「./」開頭的插件相對路徑。",
+        "serverInvalidCwd": "「cwd」的值「{0}」必須以「./」、「${PLUGIN_ROOT}」或「${PLUGIN_DATA}」開頭。",
+        "serverInvalidEnv": "「env」欄位必須是一個由字串組成的物件。",
+        "serverInvalidHeader": "標頭「{0}」並非有效的 HTTP 標頭欄位。",
+        "serverInvalidHeaders": "「headers」欄位必須為字串物件。",
+        "serverInvalidUrl": "「url」的值「{0}」必須是不含使用者資訊且無片段的絕對 http 或 https URL,且非迴路連接埠的 URL 必須使用 https。",
+        "serverMissingField": "伺服器設定中缺少必要的「{0}」欄位。",
+        "serverNotObject": "伺服器設定並非 JSON 物件。",
+        "serverPathEscapes": "「{0}」的值「{1}」在「{2}」之外解析。",
+        "serverReservedEnv": "「env」項目中的「{0}」為保留項目,插件不得自行宣告此項目。",
+        "serverUnknownField": "伺服器設定中宣告了「{0}」這個欄位,但該欄位的傳輸類型不被允許。",
+        "serverUnknownType": "伺服器設定中宣告了未知傳輸類型「{0}」。",
+        "serverUnsupportedTransport": "不支援 MCP 傳輸協定「{0}」。",
+        "stat": {
+          "oneServer": "1 台 MCP 伺服器",
+          "servers": "{0} MCP 伺服器"
+        },
+        "uninstalled": "已解除安裝的代理程式外掛程式「{0}」。",
+        "unknownManifestField": "忽略未知「plugin.json」欄位中的「{0}」。",
+        "unlinked": "已解除連結的 Agent 外掛程式「{0}」。",
+        "updated": "已更新 Agent 外掛程式「{0}」。",
+        "warning": {
+          "fix": "此外掛程式的檔案與已安裝的版本不同。請按一下「修復外掛程式」以重新下載經認證的內容。",
+          "linkStale": "此外掛程式是透過登錄檔安裝的,但登錄檔中已不再列出該外掛程式。請按一下「解除連結」以移除登錄檔連結並保留檔案,或按一下「解除安裝」以移除外掛程式。",
+          "manual": "此目錄並非透過登錄檔安裝。僅建立來源連結,並未變更其檔案。",
+          "notInRegistry": "不在登錄檔中"
+        },
+        "watcherStopped": "已停止監控「Agent Plugins」資料夾的變更。已安裝的外掛程式可能不再自動更新。請重新載入視窗以恢復此功能。"
       },
       "skill": {
         "action": {
@@ -2184,7 +2409,6 @@
       "missingConfiguration": "動態配置「{0}:{1}」遺失或不適用",
       "pause": "暫停",
       "pauseAll": "暫停所有",
-      "reveal": "顯示",
       "step": "步驟",
       "taskTerminatedBySignal": "任務 '{0}' 因訊號 {1} 而終止。",
       "taskTerminatedForUnknownReason": "任務「{0}」因未知原因終止。",
@@ -2295,12 +2519,17 @@
         "openAIChatView": "立即開啟 AI 聊天視窗,學習如何開始！"
       },
       "apiComparator": "{0} API 相容性",
+      "markStepUndone": "標記為「未完成」",
       "newExtension": "建立新擴充功能",
       "newPlugin": "建立新外掛程式",
+      "noWalkthroughs": "目前沒有操作指南。",
+      "openAiConfiguration": "OpenAI 設定",
+      "resetWalkthroughProgress": "重置引導流程進度",
       "startup-editor": {
         "welcomePage": "開啟歡迎頁面,內容旨在協助使用者開始使用{0}及其擴充功能。"
       },
-      "telemetry": "資料使用與遙測"
+      "telemetry": "資料使用與遙測",
+      "walkthroughLinkFailed": "無法開啟「{0}」:{1}"
     },
     "keybinding-schema-updater": {
       "deprecation": "請改用 `when` 子句。"
@@ -2570,6 +2799,7 @@
       "amendHeadCommit": "HEAD 提交",
       "amendLastCommit": "修改最後一次提交",
       "changeRepository": "變更儲存庫...",
+      "copyCommitHash": "複製提交雜湊值",
       "dirtyDiff": {
         "close": "關閉 變更 預覽檢視"
       },
@@ -2580,7 +2810,13 @@
       "noChanges": "沒有修改過的檔案。",
       "noHistory": "無版本控制歷史紀錄。",
       "noHistoryForError": "{0} 目前沒有可用歷史紀錄",
+      "openCommit": "開啟提交",
+      "pickHistoryItemRefs": "選取歷史紀錄項目參考...",
+      "pickHistoryItemRefsPlaceholder": "選取一個或多個歷史紀錄項目參考",
       "prepositionIn": "以及",
+      "refPickerBranches": "分支",
+      "refPickerRemoteBranches": "遠端分支",
+      "refPickerTags": "標籤",
       "unamend": "不修改",
       "unamendCommit": "不修改提交"
     },

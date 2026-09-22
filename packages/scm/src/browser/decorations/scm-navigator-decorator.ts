@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Tree } from '@theia/core/lib/browser/tree/tree';
@@ -35,7 +35,8 @@ export class ScmNavigatorDecorator implements TreeDecorator {
     readonly id = 'theia-scm-decorator';
     private decorationsMap: Map<string, Decoration> | undefined;
 
-    @inject(ILogger) protected readonly logger: ILogger;
+    @inject(ILogger) @named('scm:ScmNavigatorDecorator')
+    protected readonly logger: ILogger;
 
     @inject(ColorRegistry)
     protected readonly colors: ColorRegistry;
