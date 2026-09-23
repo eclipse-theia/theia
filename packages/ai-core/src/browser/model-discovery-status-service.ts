@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Emitter, Event } from '@theia/core';
-import { injectable } from '@theia/core/shared/inversify';
+import { Emitter, Event, ILogger } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ModelDiscoveryStatus } from '../common/model-discovery-status';
 
 /**
@@ -41,6 +41,9 @@ export interface ModelDiscoveryProviderDescriptor {
  */
 @injectable()
 export class ModelDiscoveryStatusService {
+
+    @inject(ILogger) @named('ai-core:ModelDiscoveryStatusService')
+    protected readonly logger: ILogger;
 
     protected readonly descriptors = new Map<string, ModelDiscoveryProviderDescriptor>();
     protected readonly statuses = new Map<string, ModelDiscoveryStatus>();
@@ -95,6 +98,8 @@ export class ModelDiscoveryStatusService {
      * a failure does not keep reading like the state before it (a badge, a sign-in button).
      */
     reportError(providerId: string, error: unknown): void {
+        // A run can also fail on this side of the RPC boundary, where nothing else would record it.
+        this.logger.error(`Model discovery failed for provider '${providerId}':`, error);
         this.updateStatus(providerId, {
             state: 'error',
             stateLabel: undefined,
