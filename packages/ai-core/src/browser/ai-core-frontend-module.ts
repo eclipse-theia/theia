@@ -22,6 +22,8 @@ import {
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { DefaultLanguageModelAliasRegistry } from './frontend-language-model-alias-registry';
 import { HideAiPreferencesContribution, aiConfigurationOpenPlaceholderSchema } from './hide-ai-preferences-contribution';
+import { ModelDiscoveryStatusService } from './model-discovery-status-service';
+import { FavoriteModelsService } from './favorite-models-service';
 import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
 import { AiConfigurationServiceImpl } from './ai-configuration-service-impl';
 import { LanguageModelAliasRegistry } from '../common/language-model-alias';
@@ -206,6 +208,9 @@ export default new ContainerModule(bind => {
     bind(PreferenceContribution).to(HideAiPreferencesContribution).inSingletonScope();
     // ...and leave a single placeholder entry there that links to the AI Configuration view.
     bind(PreferenceContribution).toConstantValue({ schema: aiConfigurationOpenPlaceholderSchema });
+
+    bind(ModelDiscoveryStatusService).toSelf().inSingletonScope();
+    bind(FavoriteModelsService).toSelf().inSingletonScope();
 
     // Internal implementation detail of AiConfigurationService; consumers inject AiConfigurationService.
     bind(TrustAwarePreferenceReader).toSelf().inSingletonScope();

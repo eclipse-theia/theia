@@ -17,9 +17,10 @@
 import { expect } from 'chai';
 import { LanguageModelMessage, LanguageModelRequest, LanguageModelResponse, ReasoningSupport, UserRequest } from '@theia/ai-core';
 import { OpenAI } from 'openai';
-import { OpenAiModel, OpenAiModelUtils } from './openai-language-model';
+import { MistralFixedOpenAI, OpenAiModel, OpenAiModelUtils } from './openai-language-model';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { OPENAI_WEB_SEARCH } from './openai-server-tools';
+import type { FinalRequestOptions } from 'openai/internal/request-options';
 
 const GPT5_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
@@ -111,16 +112,16 @@ describe('OpenAiModel reasoning translation', () => {
         });
     });
 
-    describe('Chat Completions API (o-series)', () => {
+    describe('Chat Completions API', () => {
         it('maps level=medium to reasoning_effort=medium', () => {
             const model = createModel('o3-mini', O_SERIES_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'medium' } }, false);
             expect(result.reasoning_effort).to.equal('medium');
         });
-        it('buckets minimal to low (o-series does not accept minimal)', () => {
-            const model = createModel('o3-mini', O_SERIES_REASONING_SUPPORT);
+        it('passes minimal through (GPT-5 accepts it; models that do not exclude it from their supportedLevels)', () => {
+            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'minimal' } }, false);
-            expect(result.reasoning_effort).to.equal('low');
+            expect(result.reasoning_effort).to.equal('minimal');
         });
         it('omits reasoning_effort for level=off', () => {
             const model = createModel('o3-mini', O_SERIES_REASONING_SUPPORT);
@@ -188,6 +189,47 @@ describe('OpenAiModel Response API fallback', () => {
 
         expect(await model.callHandleResponseApiRequest(request)).to.deep.equal({ text: 'fallback' });
         expect(model.chatCompletionsRequests).to.equal(1);
+    });
+});
+
+class TestableMistralFixedOpenAI extends MistralFixedOpenAI {
+    callPrepareOptions(options: FinalRequestOptions): Promise<void> {
+        return this.prepareOptions(options);
+    }
+}
+
+describe('MistralFixedOpenAI request preparation', () => {
+
+    const client = new TestableMistralFixedOpenAI({ apiKey: 'test-key' });
+
+    it('leaves a request without a body alone', async () => {
+        // `GET /models`, which model discovery issues, carries no body at all.
+        const options = { method: 'get', path: '/models' } as FinalRequestOptions;
+        await client.callPrepareOptions(options);
+        expect(options.body).to.equal(undefined);
+    });
+
+    it('leaves a body without messages alone', async () => {
+        const options = { method: 'post', path: '/embeddings', body: { input: 'hello' } } as FinalRequestOptions;
+        await client.callPrepareOptions(options);
+        expect(options.body).to.deep.equal({ input: 'hello' });
+    });
+
+    it('replaces the null refusal of an assistant tool call with undefined', async () => {
+        const options = {
+            method: 'post',
+            path: '/chat/completions',
+            body: {
+                messages: [
+                    // eslint-disable-next-line no-null/no-null
+                    { role: 'assistant', tool_calls: [{ id: 't1' }], refusal: null, parsed: null }
+                ]
+            }
+        } as FinalRequestOptions;
+        await client.callPrepareOptions(options);
+        const message = (options.body as { messages: Array<Record<string, unknown>> }).messages[0];
+        expect(message.refusal).to.equal(undefined);
+        expect(message.parsed).to.equal(undefined);
     });
 });
 
