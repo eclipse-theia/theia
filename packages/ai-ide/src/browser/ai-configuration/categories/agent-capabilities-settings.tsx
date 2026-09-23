@@ -25,6 +25,7 @@ import { nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { AiConfigurationItemRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-item-row';
+import { AiConfigurationIconButton } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-primitives';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
 import { AiToggleSwitch } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-controls';
 
@@ -44,15 +45,13 @@ const AgentSectionHeader: React.FC<{ title: string; action?: React.ReactNode }> 
  * button, so it reads as a Theia reset affordance. Its tooltip says what the section-wide reset does.
  */
 const ResetAllButton: React.FC<{ title: string; disabled?: boolean; onReset: () => void }> = ({ title, disabled, onReset }) => (
-    <button
-        className='ai-variant-action-button ai-agent-section-header-action'
-        onClick={onReset}
-        disabled={disabled}
+    <AiConfigurationIconButton
+        iconClass={codicon('discard')}
         title={title}
-        aria-label={title}
-    >
-        <span aria-hidden='true' className={codicon('discard')}></span>
-    </button>
+        disabled={disabled}
+        className='ai-agent-section-header-action'
+        onClick={onReset}
+    />
 );
 
 export interface AgentCapabilitiesSettingsProps {

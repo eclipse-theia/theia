@@ -17,7 +17,7 @@
 import { inject, injectable, postConstruct } from 'inversify';
 import * as React from 'react';
 import { buttonKeyboardProps, isActivationKey } from '../../keyboard/keyboard-utils';
-import { ContextKeyService } from '../../context-key-service';
+import { ContextKeyService, ContextMatcher } from '../../context-key-service';
 import { CommandRegistry, Disposable, DisposableCollection, nls } from '../../../common';
 import { Anchor, ContextMenuAccess, ContextMenuRenderer } from '../../context-menu-renderer';
 import { LabelParser } from '../../label-parser';
@@ -48,6 +48,7 @@ export function toAnchor(event: React.MouseEvent): Anchor {
 export class TabBarToolbar extends ReactWidget {
 
     protected current: Widget | undefined;
+    protected contextMatcher: ContextMatcher;
     protected inline = new Map<string, TabBarToolbarItem>();
     protected more = new Map<string, TabBarToolbarItem>();
 
@@ -73,6 +74,7 @@ export class TabBarToolbar extends ReactWidget {
 
     @postConstruct()
     protected init(): void {
+        this.contextMatcher = this.contextKeyService;
         this.toDispose.pushAll([
             this.keybindings.onKeybindingsChanged(() => this.maybeUpdate()),
             this.contextKeyService.onDidChange(e => {
@@ -129,6 +131,7 @@ export class TabBarToolbar extends ReactWidget {
         this.toDisposeOnSetCurrent.dispose();
         this.toDispose.push(this.toDisposeOnSetCurrent);
         this.current = current;
+        this.contextMatcher = current ? this.toolbarRegistry.contextMatcherFor(current) : this.contextKeyService;
         if (current) {
             const resetCurrent = () => {
                 this.setCurrent(undefined);
@@ -145,7 +148,7 @@ export class TabBarToolbar extends ReactWidget {
         this.keybindingContextKeys.clear();
         return <React.Fragment>
             {this.renderMore()}
-            {[...this.inline.values()].map(item => item.render(this.current))}
+            {[...this.inline.values()].map(item => item.render(this.current, this.contextMatcher))}
         </React.Fragment>;
     }
 
@@ -199,7 +202,7 @@ export class TabBarToolbar extends ReactWidget {
             args: [this.current],
             anchor,
             context: this.current?.node || this.node,
-            contextKeyService: this.contextKeyService,
+            contextKeyService: this.contextMatcher,
             includeAnchorArg: false,
             onHide: () => toDisposeOnHide.dispose()
         });
