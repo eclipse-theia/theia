@@ -70,10 +70,10 @@ export class ExternalApiFrontendContribution implements FrontendApplicationContr
 
     protected pushConfig(): void {
         this.configService.updateConfig({
-            delivery: this.preferenceService.get<ExternalApiDelivery>(EXTERNAL_API_DELIVERY_PREF, 'off'),
-            port: this.preferenceService.get<number>(EXTERNAL_API_PORT_PREF, 0),
-            hostname: this.preferenceService.get<string>(EXTERNAL_API_HOSTNAME_PREF, EXTERNAL_API_DEFAULT_HOSTNAME),
-            token: this.preferenceService.get<string>(EXTERNAL_API_TOKEN_PREF, '') || undefined
+            delivery: <ExternalApiDelivery>this.preferenceService.get(EXTERNAL_API_DELIVERY_PREF, 'off'),
+            port: this.preferenceService.get(EXTERNAL_API_PORT_PREF, 0),
+            hostname: this.preferenceService.get(EXTERNAL_API_HOSTNAME_PREF, EXTERNAL_API_DEFAULT_HOSTNAME),
+            token: this.preferenceService.get(EXTERNAL_API_TOKEN_PREF, '') || undefined
         }).catch(error => this.logger.error('Failed to push the external API configuration to the backend.', error));
     }
 }
