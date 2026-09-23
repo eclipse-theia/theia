@@ -20,6 +20,11 @@ import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
 import { LocalPluginDeployerResolver } from './local-plugin-deployer-resolver';
 
+/**
+ * Lower-case names of files a file manager leaves behind, which are never plugins.
+ */
+const IGNORED_FILE_NAMES = new Set(['thumbs.db', 'desktop.ini']);
+
 @injectable()
 export class LocalDirectoryPluginDeployerResolver extends LocalPluginDeployerResolver {
     static LOCAL_DIR = 'local-dir';
@@ -30,12 +35,16 @@ export class LocalDirectoryPluginDeployerResolver extends LocalPluginDeployerRes
 
     protected async resolveFromLocalPath(pluginResolverContext: PluginDeployerResolverContext, localPath: string): Promise<void> {
         const files = await fs.readdir(localPath);
-        files.forEach(file => {
-            if (file.startsWith('.')) {
-                // Not a plugin, e.g. the `.DS_Store` the macOS Finder drops into any folder it displays.
-                return;
-            }
-            pluginResolverContext.addPlugin(file, path.resolve(localPath, file));
-        });
+        files.filter(file => !this.isIgnored(file)).forEach(file =>
+            pluginResolverContext.addPlugin(file, path.resolve(localPath, file))
+        );
+    }
+
+    /**
+     * Whether a directory entry should be skipped instead of being deployed as a plugin.
+     * Covers dotfiles such as the macOS `.DS_Store` and the Windows `Thumbs.db` and `desktop.ini`.
+     */
+    protected isIgnored(file: string): boolean {
+        return file.startsWith('.') || IGNORED_FILE_NAMES.has(file.toLowerCase());
     }
 }
