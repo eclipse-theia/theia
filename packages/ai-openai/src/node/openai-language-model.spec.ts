@@ -17,9 +17,10 @@
 import { expect } from 'chai';
 import { LanguageModelMessage, LanguageModelRequest, LanguageModelResponse, ReasoningSupport, UserRequest } from '@theia/ai-core';
 import { OpenAI } from 'openai';
-import { OpenAiModel, OpenAiModelUtils } from './openai-language-model';
+import { MistralFixedOpenAI, OpenAiModel, OpenAiModelUtils } from './openai-language-model';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { OPENAI_WEB_SEARCH } from './openai-server-tools';
+import type { FinalRequestOptions } from 'openai/internal/request-options';
 
 const GPT5_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
@@ -176,6 +177,47 @@ describe('OpenAiModel Response API fallback', () => {
 
         expect(await model.callHandleResponseApiRequest(request)).to.deep.equal({ text: 'fallback' });
         expect(model.chatCompletionsRequests).to.equal(1);
+    });
+});
+
+class TestableMistralFixedOpenAI extends MistralFixedOpenAI {
+    callPrepareOptions(options: FinalRequestOptions): Promise<void> {
+        return this.prepareOptions(options);
+    }
+}
+
+describe('MistralFixedOpenAI request preparation', () => {
+
+    const client = new TestableMistralFixedOpenAI({ apiKey: 'test-key' });
+
+    it('leaves a request without a body alone', async () => {
+        // `GET /models`, which model discovery issues, carries no body at all.
+        const options = { method: 'get', path: '/models' } as FinalRequestOptions;
+        await client.callPrepareOptions(options);
+        expect(options.body).to.equal(undefined);
+    });
+
+    it('leaves a body without messages alone', async () => {
+        const options = { method: 'post', path: '/embeddings', body: { input: 'hello' } } as FinalRequestOptions;
+        await client.callPrepareOptions(options);
+        expect(options.body).to.deep.equal({ input: 'hello' });
+    });
+
+    it('replaces the null refusal of an assistant tool call with undefined', async () => {
+        const options = {
+            method: 'post',
+            path: '/chat/completions',
+            body: {
+                messages: [
+                    // eslint-disable-next-line no-null/no-null
+                    { role: 'assistant', tool_calls: [{ id: 't1' }], refusal: null, parsed: null }
+                ]
+            }
+        } as FinalRequestOptions;
+        await client.callPrepareOptions(options);
+        const message = (options.body as { messages: Array<Record<string, unknown>> }).messages[0];
+        expect(message.refusal).to.equal(undefined);
+        expect(message.parsed).to.equal(undefined);
     });
 });
 

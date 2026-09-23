@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { DialogProps, DialogError } from '@theia/core/lib/browser/dialogs';
+import { DialogProps, DialogError, Dialog } from '@theia/core/lib/browser/dialogs';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
@@ -68,22 +68,19 @@ export class CopilotAuthDialog extends ReactDialog<boolean> {
     protected init(): void {
         this.titleNode.textContent = this.props.title;
         this.appendAcceptButton(nls.localize('theia/ai/copilot/auth/authorize', 'I have authorized'));
-        this.appendCloseButton(nls.localizeByDefault('Cancel'));
+        this.appendCloseButton(Dialog.CANCEL);
     }
 
     protected updateButtonStates(): void {
         const isPolling = this.state === 'polling';
         const isSuccess = this.state === 'success';
+        // Singleton dialog: button state survives close, so reset it on every render.
         if (this.acceptButton) {
             this.acceptButton.disabled = isPolling || isSuccess;
-            if (isSuccess) {
-                this.acceptButton.style.display = 'none';
-            }
+            this.acceptButton.style.display = isSuccess ? 'none' : '';
         }
         if (this.closeButton) {
-            if (isSuccess) {
-                this.closeButton.textContent = nls.localizeByDefault('Close');
-            }
+            this.closeButton.textContent = isSuccess ? nls.localizeByDefault('Close') : Dialog.CANCEL;
         }
     }
 
@@ -105,6 +102,9 @@ export class CopilotAuthDialog extends ReactDialog<boolean> {
     protected async initiateFlow(): Promise<void> {
         try {
             this.state = 'loading';
+            this.deviceCodeResponse = undefined;
+            this.errorMessage = undefined;
+            this.copied = false;
             this.update();
 
             this.deviceCodeResponse = await this.authService.startSignIn(this.props.enterpriseUrl);

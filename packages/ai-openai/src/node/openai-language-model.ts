@@ -46,9 +46,11 @@ import { createProxyFetch } from '@theia/ai-core/lib/node';
 
 export class MistralFixedOpenAI extends OpenAI {
     protected override async prepareOptions(options: FinalRequestOptions): Promise<void> {
-        const messages = (options.body as { messages: Array<ChatCompletionMessageParam> }).messages;
+        // Every request the client issues passes through here, including the body-less `GET /models`
+        // that model discovery runs, so the body cannot be assumed to exist, let alone to carry messages.
+        const messages = (options.body as { messages?: Array<ChatCompletionMessageParam> } | undefined)?.messages;
         if (Array.isArray(messages)) {
-            (options.body as { messages: Array<ChatCompletionMessageParam> }).messages.forEach(m => {
+            messages.forEach(m => {
                 if (m.role === 'assistant' && m.tool_calls) {
                     // Mistral OpenAI Endpoint expects refusal to be undefined and not null for optional properties
                     // eslint-disable-next-line no-null/no-null

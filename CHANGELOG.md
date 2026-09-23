@@ -9,6 +9,7 @@
 - [core, filesystem, plugin-ext] fixed file decorations being dropped by large change events: change events are batched, and events exceeding the plugin-ext cap arrive as a flush that is re-fetched on demand [#17766](https://github.com/eclipse-theia/theia/pull/17766) - Contributed on behalf of K2view
 - [core, plugin-ext] fixed tab bar toolbar items being evaluated against whichever widget holds the focus rather than the tab that owns the toolbar, so an `editor/title` item could show on a tab whose resource does not match its `when` clause and go missing from the tab that does. The submenu chevron, its popup and the `More Actions...` menu now resolve the same keys as the visibility check [#17978](https://github.com/eclipse-theia/theia/pull/17978)
 - [preview] removed the `@theia/preview` extension code entirely (deprecated and unpublished since v1.73.0) [#18001](https://github.com/eclipse-theia/theia/pull/18001)
+- [ai-copilot] fixed visiblity of "I have authorized" button when using the authentication dialog twice
 
 <a name="breaking_changes_1.76.0">[Breaking Changes:](#breaking_changes_1.76.0)</a>
 
