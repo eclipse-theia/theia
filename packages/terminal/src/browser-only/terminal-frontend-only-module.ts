@@ -19,9 +19,5 @@ import { BrowserOnlyTerminalFrontendContribution } from './browser-only-terminal
 import { TerminalFrontendContribution } from '../browser/terminal-frontend-contribution';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
-    // `TerminalService`, `FrontendApplicationContribution`, `CommandContribution` and the other
-    // contribution points bound in `terminal-frontend-module.ts` are all resolved via
-    // `toService(TerminalFrontendContribution)`, so rebinding the contribution itself is what
-    // makes every one of those paths go through the browser-only implementation.
     rebind(TerminalFrontendContribution).to(BrowserOnlyTerminalFrontendContribution).inSingletonScope();
 });
