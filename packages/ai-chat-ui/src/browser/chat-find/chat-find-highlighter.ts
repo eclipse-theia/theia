@@ -174,14 +174,14 @@ export class ChatFindHighlighter implements Disposable {
         const target = this.currentTarget;
         if (target?.kind === 'code') {
             const control = target.editor.getControl();
-            const element = control.getDomNode();
+            const editorNode = control.getDomNode();
             // The editor is sized to its content, so this only scrolls long lines horizontally.
             control.revealRangeInCenterIfOutsideViewport(target.range);
             const position = control.getScrolledVisiblePosition(target.range.getStartPosition());
-            if (!element?.isConnected || !position) {
+            if (!editorNode?.isConnected || !position) {
                 return undefined;
             }
-            return { element, top: element.getBoundingClientRect().top + position.top, height: position.height };
+            return { element: editorNode, top: editorNode.getBoundingClientRect().top + position.top, height: position.height };
         }
         const container = target?.range.startContainer;
         const element = container instanceof Element ? container : container?.parentElement;
