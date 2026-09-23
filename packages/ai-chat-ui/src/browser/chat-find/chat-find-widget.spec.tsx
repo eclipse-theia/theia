@@ -212,7 +212,7 @@ describe('ChatFindWidget', () => {
         expect(widget.isOpen).to.be.false;
     });
 
-    it('keeps query and options but resets the position when the model changes', () => {
+    it('closes on a session switch, keeping query and options for the next open', () => {
         const { model: a } = fakeModel([fakeRequest('r1', 'k k', 'k')]);
         const { model: b } = fakeModel([fakeRequest('r9', 'K', 'k')]);
         widget.setChatModel(a);
@@ -221,7 +221,41 @@ describe('ChatFindWidget', () => {
         widget.next();
         widget.next();
         widget.setChatModel(b);
+        expect(widget.isOpen).to.be.false;
+        expect(widget.visible).to.be.false;
+        expect(states[states.length - 1].matches).to.deep.equal([]);
+        widget.open();
         expect(widget.state.matches).to.have.length(2);
         expect(widget.currentMatch).to.deep.include({ nodeId: 'r9', occurrence: 0 });
+    });
+
+    it('does not move focus when it closes on a session switch', () => {
+        const before = document.createElement('button');
+        const picked = document.createElement('button');
+        document.body.append(before, picked);
+        const { model: a } = fakeModel([fakeRequest('r1', 'k', 'k')]);
+        widget.setChatModel(a);
+        before.focus();
+        widget.open();
+        picked.focus(); // e.g. the entry the user clicked in the session history
+        widget.setChatModel(fakeModel([fakeRequest('r2', 'k', 'k')]).model);
+        expect(document.activeElement).to.equal(picked);
+        before.remove();
+        picked.remove();
+    });
+
+    it('stays open when the same session is tracked again', () => {
+        const { model } = fakeModel([fakeRequest('r1', 'k', 'k')]);
+        widget.setChatModel(model);
+        widget.open();
+        widget.setChatModel(model);
+        expect(widget.isOpen).to.be.true;
+    });
+
+    it('resets the context key when disposed while open', () => {
+        widget.setChatModel(fakeModel([fakeRequest('r1', 'k', 'k')]).model);
+        widget.open();
+        widget.dispose();
+        expect(widget.visible).to.be.false;
     });
 });

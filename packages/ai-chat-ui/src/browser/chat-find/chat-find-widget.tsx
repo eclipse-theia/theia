@@ -87,6 +87,7 @@ export class ChatFindWidget extends ReactWidget {
             clearTimeout(this.recomputeTimeout);
             this.recomputeTimeout = undefined;
         }
+        this.hideBar();
         super.dispose();
     }
 
@@ -110,8 +111,15 @@ export class ChatFindWidget extends ReactWidget {
         return this.chatModel !== undefined && !this.chatModel.isEmpty();
     }
 
-    /** Track a chat model; query and options are kept, the position resets. */
+    /**
+     * Track a chat model; query and options are kept, the position resets. Like the find widget of an editor, the bar
+     * belongs to one session: it closes when another session is tracked, and `Ctrl+F` brings the query back.
+     */
     setChatModel(model: ChatModel | undefined): void {
+        if (model !== this.chatModel) {
+            // Not `dismiss()`: the user just picked another session, so focus must stay where it is.
+            this.hideBar();
+        }
         this.toDisposeOnModelChange.dispose();
         this.chatModel = model;
         this.currentIndex = -1;
@@ -137,16 +145,25 @@ export class ChatFindWidget extends ReactWidget {
         this.focusInput();
     }
 
+    /** Closes the bar and returns focus to where it was before the bar opened. */
     dismiss(): void {
         if (!this.isOpen) {
             return;
         }
+        const target = this.previouslyFocused?.isConnected ? this.previouslyFocused : this.fallbackFocusTarget;
+        this.hideBar();
+        target?.focus();
+    }
+
+    /** Closes the bar and clears the highlights without touching focus. */
+    protected hideBar(): void {
+        if (this.isDisposed || !this.isOpen) {
+            return;
+        }
         this.hide();
         this.visibleKey.set(false);
-        this.onDidChangeStateEmitter.fire({ regexp: undefined, matches: [], current: undefined });
-        const target = this.previouslyFocused?.isConnected ? this.previouslyFocused : this.fallbackFocusTarget;
         this.previouslyFocused = undefined;
-        target?.focus();
+        this.onDidChangeStateEmitter.fire({ regexp: undefined, matches: [], current: undefined });
     }
 
     setQuery(query: string): void {
