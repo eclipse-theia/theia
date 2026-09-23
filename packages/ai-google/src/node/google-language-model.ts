@@ -563,10 +563,11 @@ export class GoogleModel implements LanguageModel {
 
         try {
             let responseText = '';
-            // For non streaming requests we are always only interested in text parts
+            // For non streaming requests we are always only interested in text parts; thought summaries
+            // (parts flagged `thought`, present when includeThoughts is set) are not part of the answer.
             if (model.candidates?.[0]?.content?.parts) {
                 for (const part of model.candidates[0].content.parts) {
-                    if (part.text) {
+                    if (part.text && !part.thought) {
                         responseText += part.text;
                     }
                 }
