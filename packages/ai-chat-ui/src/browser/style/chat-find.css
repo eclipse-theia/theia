@@ -23,13 +23,19 @@
   z-index: 10;
 }
 
+/* Input, toggles and buttons use the core `theia-input` and `action-label` styles; this only lays them out. */
 .theia-chat-find-bar {
   position: absolute;
   top: 4px;
   right: 20px;
+  max-width: calc(100% - 28px);
+  box-sizing: border-box;
   display: flex;
+  /* In a narrow view, the count and buttons wrap below the input rather than squeezing it. */
+  flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   padding: 2px 4px;
   background: var(--theia-editorWidget-background);
   color: var(--theia-editorWidget-foreground);
@@ -40,10 +46,11 @@
 
 .theia-chat-find-input-box {
   display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
   align-items: center;
-  color: var(--theia-input-foreground);
   background: var(--theia-input-background);
-  border: var(--theia-border-width) solid var(--theia-input-border, transparent);
+  border: var(--theia-border-width) solid var(--theia-input-border, var(--theia-input-background));
   border-radius: 2px;
 }
 
@@ -55,55 +62,33 @@
   border-color: var(--theia-inputValidation-errorBorder);
 }
 
-.theia-chat-find-input-box input {
+.theia-chat-find-input-box .theia-input {
   width: 140px;
-  height: 20px;
-  margin: 0 2px;
-  padding: 0 4px;
-  color: inherit;
-  background: transparent;
+  min-width: 0;
+  flex: 1 1 auto;
+  min-height: unset;
+  padding: 1px 4px;
   border: none;
   outline: none;
-  font-family: var(--theia-ui-font-family);
-  font-size: var(--theia-ui-font-size1);
 }
 
-.theia-chat-find-toggle,
-.theia-chat-find-button {
-  width: 20px;
-  height: 20px;
-  padding: 0;
+.theia-chat-find-option {
+  flex: none;
   border: var(--theia-border-width) solid transparent;
-  border-radius: 3px;
-  background: transparent;
+  background: none;
   color: inherit;
-  opacity: 0.8;
-  cursor: pointer;
 }
 
-.theia-chat-find-toggle:hover,
-.theia-chat-find-button:hover:not(:disabled) {
-  opacity: 1;
-  background: var(--theia-toolbar-hoverBackground);
-}
-
-.theia-chat-find-toggle.enabled {
-  opacity: 1;
-  background: var(--theia-inputOption-activeBackground);
-  border-color: var(--theia-inputOption-activeBorder);
+.theia-chat-find-option.enabled {
   color: var(--theia-inputOption-activeForeground);
-}
-
-.theia-chat-find-button:disabled {
-  opacity: 0.4;
-  cursor: default;
+  border-color: var(--theia-inputOption-activeBorder);
+  background-color: var(--theia-inputOption-activeBackground);
 }
 
 .theia-chat-find-count {
-  min-width: 60px;
   margin: 0 4px;
-  font-size: var(--theia-ui-font-size0);
   white-space: nowrap;
+  font-size: var(--theia-ui-font-size0);
 }
 
 .theia-chat-find-count.no-results {

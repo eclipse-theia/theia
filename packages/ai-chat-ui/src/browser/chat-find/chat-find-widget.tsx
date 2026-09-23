@@ -16,7 +16,7 @@
 
 import { ChatChangeEvent, ChatModel, ChatRequestModel } from '@theia/ai-chat/lib/common';
 import { DisposableCollection, Emitter, Event } from '@theia/core';
-import { codicon, ReactWidget } from '@theia/core/lib/browser';
+import { codicon, DISABLED_CLASS, ReactWidget } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
@@ -356,6 +356,7 @@ export class ChatFindWidget extends ReactWidget {
                 <input
                     ref={this.setInput}
                     type='text'
+                    className='theia-input'
                     spellCheck={false}
                     defaultValue={this.query}
                     placeholder={nls.localizeByDefault('Find')}
@@ -369,26 +370,9 @@ export class ChatFindWidget extends ReactWidget {
                 {this.renderToggle('useRegex', 'regex', nls.localizeByDefault('Use Regular Expression'))}
             </div>
             <span className={`theia-chat-find-count${noResults ? ' no-results' : ''}`} aria-live='polite'>{label}</span>
-            <button
-                className={'theia-chat-find-button ' + codicon('arrow-up')}
-                title={nls.localizeByDefault('Previous Match')}
-                aria-label={nls.localizeByDefault('Previous Match')}
-                disabled={count === 0}
-                onClick={this.handlePreviousClick}
-            />
-            <button
-                className={'theia-chat-find-button ' + codicon('arrow-down')}
-                title={nls.localizeByDefault('Next Match')}
-                aria-label={nls.localizeByDefault('Next Match')}
-                disabled={count === 0}
-                onClick={this.handleNextClick}
-            />
-            <button
-                className={'theia-chat-find-button ' + codicon('close')}
-                title={nls.localizeByDefault('Close')}
-                aria-label={nls.localizeByDefault('Close')}
-                onClick={this.handleCloseClick}
-            />
+            {this.renderButton('arrow-up', nls.localizeByDefault('Previous Match'), count > 0, this.handlePreviousClick)}
+            {this.renderButton('arrow-down', nls.localizeByDefault('Next Match'), count > 0, this.handleNextClick)}
+            {this.renderButton('close', nls.localizeByDefault('Close'), true, this.handleCloseClick)}
         </div>;
     }
 
@@ -397,11 +381,21 @@ export class ChatFindWidget extends ReactWidget {
         return <button
             key={option}
             data-option={option}
-            className={`theia-chat-find-toggle ${codicon(icon)}${enabled ? ' enabled' : ''}`}
+            className={`theia-chat-find-option ${codicon(icon, true)}${enabled ? ' enabled' : ''}`}
             title={title}
             aria-label={title}
             aria-pressed={enabled}
             onClick={this.handleToggleClick}
+        />;
+    }
+
+    protected renderButton(icon: string, title: string, enabled: boolean, onClick: () => void): React.ReactNode {
+        return <button
+            className={`theia-chat-find-option ${codicon(icon, true)}${enabled ? '' : ' ' + DISABLED_CLASS}`}
+            title={title}
+            aria-label={title}
+            disabled={!enabled}
+            onClick={onClick}
         />;
     }
 }
