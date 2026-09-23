@@ -161,6 +161,11 @@ describe('nativeDependenciesPlugin', () => {
             expect(await resolveRgPath('linux', '/opt/app/resources/app.asar.unpacked/lib/backend'))
                 .to.equal('/opt/app/resources/app.asar.unpacked/lib/backend/native/rg');
         });
+
+        it('only rewrites the `app.asar` archive, not other `.asar` segments in the path', async () => {
+            expect(await resolveRgPath('linux', '/opt/x.asar/resources/app.asar/lib/backend'))
+                .to.equal('/opt/x.asar/resources/app.asar.unpacked/lib/backend/native/rg');
+        });
     });
 });
 

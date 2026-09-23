@@ -110,6 +110,17 @@ For example, in an `electron-builder` configuration, ensure the `lib/backend/she
 
 The `lib/**/*` glob already covers `lib/backend/shell-integrations/`. If you use a more restrictive `files` pattern, make sure `lib/backend/shell-integrations/**/*` is explicitly included, as `ShellIntegrationInjector` resolves these scripts relative to `__dirname` (i.e. `lib/backend/`).
 
+_Ripgrep in asar-packaged Electron applications_:
+
+`child_process.spawn` cannot execute a binary inside an asar archive. When the backend bundle runs from `app.asar`, `@theia/bundle-plugin` therefore resolves the ripgrep binary copied to `lib/backend/native/` from `app.asar.unpacked` instead. The binary is only there if your packaging extracts it, for example with `electron-builder`:
+
+```yaml
+asarUnpack:
+  - "**/lib/backend/native/**"
+```
+
+If you worked around this by overriding the `@vscode/ripgrep` replacement in your own esbuild configuration, that override is no longer needed.
+
 ### v1.76.0
 
 #### GitHub Copilot is served through the Copilot CLI

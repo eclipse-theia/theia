@@ -413,10 +413,11 @@ class PluginImpl implements Plugin {
  * `require` calls into the archive, but `child_process.spawn` receives the path as-is and fails.
  * Executables therefore have to be extracted using electron-builder's `asarUnpack`,
  * and the path needs to point to the `app.asar.unpacked` directory instead.
+ * Only the `app.asar` segment is rewritten, which is the name electron-builder and electron-forge give the archive.
  */
 function ripgrepReplacement(): string {
     return `const path = require("path");
-export const rgPath = path.join(__dirname, \`./native/rg\${process.platform === "win32" ? ".exe" : ""}\`).replace(/\\.asar([\\\\/])/, ".asar.unpacked$1");`;
+export const rgPath = path.join(__dirname, \`./native/rg\${process.platform === "win32" ? ".exe" : ""}\`).replace(/([\\\\/])app\\.asar(?=[\\\\/])/, "$1app.asar.unpacked");`;
 }
 
 async function copyRipgrep(outdir: string): Promise<void> {
