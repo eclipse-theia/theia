@@ -21,6 +21,7 @@ import {
 } from '@theia/ai-core';
 import { OpenAiModelUtils } from './openai-language-model';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { OpenAI } from 'openai';
 import { OPENAI_FUNCTION_CALL_REASONING_DATA_KEY, OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools';
 
@@ -635,6 +636,105 @@ describe('OpenAiResponseApiUtils', () => {
             ));
 
             expect(thoughts(parts)).to.equal('Weighing options\n\nDeciding');
+        });
+
+        describe('unverified organizations', () => {
+            const summarySettings = { reasoning: { effort: 'medium', summary: 'auto' } };
+            const request: UserRequest = {
+                sessionId: 'session-1',
+                requestId: 'request-1',
+                messages: [{ actor: 'user', type: 'text', text: 'hello' }]
+            };
+
+            function badRequest(param: string): Error {
+                const message = `400 Your organization must be verified to generate reasoning summaries (param: ${param})`;
+                return new OpenAI.BadRequestError(400, { message, param }, message, new Headers());
+            }
+
+            async function* rejectingStream(error: Error): AsyncIterable<unknown> {
+                throw error;
+            }
+
+            function summaryOf(params: { reasoning?: { summary?: string } }): string | undefined {
+                return params.reasoning?.summary;
+            }
+
+            it('retries a stream without the summary and omits it for later requests', async () => {
+                const sent: { reasoning?: { effort?: string; summary?: string } }[] = [];
+                const openai = {
+                    responses: {
+                        stream: (params: { reasoning?: { summary?: string } }) => {
+                            sent.push(params);
+                            return summaryOf(params)
+                                ? rejectingStream(badRequest('reasoning.summary'))
+                                : toStream([{ type: 'response.output_text.delta', delta: 'Answer' }]);
+                        }
+                    }
+                };
+                const send = async () => drain(await utils.handleRequest(
+                    openai as never, request, summarySettings, 'gpt-5', new OpenAiModelUtils(), 'developer',
+                    { maxChatCompletions: 3 }, 'openai/gpt-5', true
+                ));
+
+                const parts = await send();
+                await send();
+
+                expect(parts.filter(isTextResponsePart).map(part => part.content).join('')).to.equal('Answer');
+                expect(sent.map(summaryOf)).to.deep.equal(['auto', undefined, undefined]);
+                expect(sent[1].reasoning?.effort).to.equal('medium');
+            });
+
+            it('retries a non-streaming tool-calling request without the summary', async () => {
+                const sent: { reasoning?: { summary?: string } }[] = [];
+                const openai = {
+                    responses: {
+                        create: async (params: { reasoning?: { summary?: string } }) => {
+                            sent.push(params);
+                            if (summaryOf(params)) {
+                                throw badRequest('reasoning.summary');
+                            }
+                            return { output_text: 'done', output: [] };
+                        }
+                    }
+                };
+                const toolRequest: UserRequest = {
+                    ...request,
+                    tools: [{ id: 'lookup', name: 'lookup', parameters: { type: 'object', properties: {} }, handler: async () => 'result' }]
+                };
+
+                const parts = await drain(await utils.handleRequest(
+                    openai as never, toolRequest, summarySettings, 'gpt-5', new OpenAiModelUtils(), 'developer',
+                    { maxChatCompletions: 3 }, 'openai/gpt-5', false
+                ));
+
+                expect(parts.filter(isTextResponsePart).map(part => part.content).join('')).to.equal('done');
+                expect(sent.map(summaryOf)).to.deep.equal(['auto', undefined]);
+            });
+
+            it('does not retry other bad requests', async () => {
+                let calls = 0;
+                const openai = {
+                    responses: {
+                        create: async () => {
+                            calls++;
+                            throw badRequest('reasoning.effort');
+                        }
+                    }
+                };
+
+                let error: unknown;
+                try {
+                    await utils.handleRequest(
+                        openai as never, request, summarySettings, 'gpt-5', new OpenAiModelUtils(), 'developer',
+                        { maxChatCompletions: 3 }, 'openai/gpt-5', false
+                    );
+                } catch (e) {
+                    error = e;
+                }
+
+                expect(error).to.be.instanceOf(OpenAI.BadRequestError);
+                expect(calls).to.equal(1);
+            });
         });
     });
 
