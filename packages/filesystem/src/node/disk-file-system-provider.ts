@@ -835,7 +835,8 @@ export class DiskFileSystemProvider implements Disposable,
         };
         watcherService.watchFileChanges(resource.toString(), {
             // Convert from `files.WatchOptions` to internal `watcher-protocol.WatchOptions`:
-            ignored: opts.excludes
+            ignored: opts.excludes,
+            recursive: opts.recursive
         }).then(watcherId => {
             if (handle.disposed) {
                 watcherService.unwatchFileChanges(watcherId);
