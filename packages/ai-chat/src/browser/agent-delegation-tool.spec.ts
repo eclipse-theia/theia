@@ -479,6 +479,41 @@ describe('AgentDelegationTool', () => {
         });
     });
 
+    describe('cancelDelegation()', () => {
+        it('ignores unknown tool calls', () => {
+            const chatService = makeChatService(makeNewSession());
+            const tool = makeAgentDelegationTool(makeChatAgentService(), chatService);
+
+            tool.cancelDelegation('unknown');
+
+            expect((chatService.cancelRequest as sinon.SinonStub).called).to.be.false;
+        });
+
+        it('cancels the delegated request once its model is available', async () => {
+            const chatService = makeChatService(makeNewSession());
+            let completeResponse: (value: unknown) => void = () => { };
+            const responseCompleted = new Promise(resolve => { completeResponse = resolve; });
+            (chatService.sendRequest as sinon.SinonStub).resolves({
+                requestCompleted: Promise.resolve({ id: 'request-id', session: { id: 'new-session-id' } }),
+                responseCompleted
+            });
+            (chatService.onSessionEvent as sinon.SinonStub).returns({ dispose: sinon.stub() });
+            const tool = makeAgentDelegationTool(makeChatAgentService(), chatService);
+            const ctx = { ...makeChatContext(), toolCallId: 'tool-call-id' };
+            const result = tool.getTool().handler(JSON.stringify({ agentId: 'test-agent', prompt: 'work' }), ctx);
+            await Promise.resolve();
+            await Promise.resolve();
+
+            tool.cancelDelegation('tool-call-id');
+            await Promise.resolve();
+
+            expect((chatService.cancelRequest as sinon.SinonStub).calledOnceWithExactly('new-session-id', 'request-id')).to.be.true;
+            completeResponse({ isCanceled: true });
+            expect(await result).to.equal("Delegation to agent 'test-agent' was cancelled by the user.");
+            expect((chatService.deleteSession as sinon.SinonStub).called).to.be.false;
+        });
+    });
+
     describe('delegateToAgent() — session persistence', () => {
         it('does not delete the delegated session after completion', async () => {
             const newSession = makeNewSession();

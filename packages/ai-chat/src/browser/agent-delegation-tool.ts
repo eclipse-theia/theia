@@ -106,6 +106,15 @@ export class AgentDelegationTool implements ToolProvider {
         return this.pendingDelegations.get(toolCallId);
     }
 
+    cancelDelegation(toolCallId: string): void {
+        const delegation = this.pendingDelegations.get(toolCallId);
+        if (delegation) {
+            delegation.invocation.requestCompleted.then(request =>
+                this.getChatService().cancelRequest(request.session.id, request.id)
+            ).catch(error => this.logger.error('Failed to cancel delegation', error));
+        }
+    }
+
     private async delegateToAgent(
         arg_string: string,
         ctx: ChatToolContext
@@ -284,6 +293,9 @@ export class AgentDelegationTool implements ToolProvider {
                     try {
                         // Wait for completion to return the final result as tool output
                         const result = await response.responseCompleted;
+                        if (result.isCanceled) {
+                            return `Delegation to agent '${agentId}' was cancelled by the user.`;
+                        }
                         const filteredContent = result.response.content.filter(c => !ThinkingChatResponseContent.is(c) && !ToolCallChatResponseContent.is(c));
                         const stringResult = filteredContent
                             .map(c => ChatResponseContent.hasAsString(c) ? c.asString() : undefined)

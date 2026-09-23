@@ -130,6 +130,8 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
                 keybindingHints: this.getKeybindingHints(),
                 markdownRenderer: this.markdownRenderer
             }}
+            toolCallId={response.id}
+            agentDelegationTool={this.agentDelegationTool}
         />;
     }
 
@@ -157,6 +159,8 @@ interface DelegatedChatProps {
     subChatWidgetFactory: SubChatWidgetFactory;
     contextMenuRenderer: ContextMenuRenderer;
     chatResponsePartRenderers: ContributionProvider<ChatResponsePartRenderer<ChatResponseContent>>;
+    toolCallId?: string;
+    agentDelegationTool: AgentDelegationTool;
 }
 
 interface DelegatedChatState {
@@ -362,6 +366,19 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
                                 <span className='delegation-status-text'>{statusText}</span>
                             </span>
                             <span className={`delegation-toggle-arrow${isOpen ? ' open' : ''}`} />
+                            {hasNode && !isComplete && !isCanceled && !isError && !!this.props.toolCallId && (
+                                <button
+                                    className='delegation-cancel-button'
+                                    onClick={e => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        this.props.agentDelegationTool.cancelDelegation(this.props.toolCallId!);
+                                    }}
+                                    title={nls.localize('theia/ai/chat-ui/delegation-response-renderer/cancel', 'Cancel delegation')}
+                                >
+                                    <span className='codicon codicon-debug-stop' />
+                                </button>
+                            )}
                         </div>
                         {showInteractionsInSummary && (
                             <div className='delegation-pending-confirmations' onClick={this.preventSummaryToggle}>
