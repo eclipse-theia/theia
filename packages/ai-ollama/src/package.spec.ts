@@ -206,6 +206,63 @@ describe('ai-ollama package', () => {
             }
         });
     });
+
+    it('passes through a type-less item schema unchanged', () => {
+        const model = new OllamaModelUnderTest();
+        const tool: ToolRequest = {
+            id: 'test',
+            name: 'test',
+            description: 'test',
+            handler: sinon.stub(),
+            parameters: {
+                type: 'object',
+                properties: {
+                    tags: {
+                        type: 'array',
+                        description: 'list of tags',
+                        items: {
+                            enum: ['a', 'b']
+                        }
+                    }
+                }
+            }
+        };
+        const result = model.toOllamaTool(tool);
+        const tags = result.function.parameters!.properties!['tags'] as Record<string, unknown>;
+        expect(tags['items']).to.deep.equal({ enum: ['a', 'b'] });
+    });
+
+    it('resolves anyOf on items schema preserving branch content', () => {
+        const model = new OllamaModelUnderTest();
+        const tool: ToolRequest = {
+            id: 'test',
+            name: 'test',
+            description: 'test',
+            handler: sinon.stub(),
+            parameters: {
+                type: 'object',
+                properties: {
+                    records: {
+                        type: 'array',
+                        description: 'list of records',
+                        items: {
+                            anyOf: [
+                                { type: 'object', properties: { id: { type: 'string', description: 'unique id' } }, required: ['id'] },
+                                { type: 'null' }
+                            ]
+                        }
+                    }
+                }
+            }
+        };
+        const result = model.toOllamaTool(tool);
+        const records = result.function.parameters!.properties!['records'] as Record<string, unknown>;
+        const items = records['items'] as Record<string, unknown>;
+        expect(items['type']).to.equal('object');
+        expect(items['properties']).to.deep.equal({ id: { type: 'string', description: 'unique id' } });
+        expect(items['required']).to.deep.equal(['id']);
+        expect(items).to.not.have.property('anyOf');
+    });
 });
 
 class OllamaModelUnderTest extends OllamaModel {
