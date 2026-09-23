@@ -20,7 +20,7 @@ import * as temp from 'temp';
 import * as fs from '@theia/core/shared/fs-extra';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
-import { ParcelFileSystemWatcherService } from './parcel-filesystem-service';
+import { FileSystemWatcherServiceImpl } from './parcel-filesystem-service';
 
 // We require the *same* module object that the production code imports from, so that
 // stubbing its `subscribe` export is observed by `ParcelWatcher`. The `@theia/core/shared`
@@ -46,7 +46,7 @@ describe('parcel-filesystem-watcher transient ENOENT handling', function (): voi
     this.timeout(20000);
 
     let root: URI;
-    let service: ParcelFileSystemWatcherService;
+    let service: FileSystemWatcherServiceImpl;
     let subscribeStub: sinon.SinonStub | undefined;
     let consoleErrorStub: sinon.SinonStub;
     let onError: sinon.SinonStub;
@@ -57,7 +57,7 @@ describe('parcel-filesystem-watcher transient ENOENT handling', function (): voi
         // start() now logs the underlying error to stderr on failure; silence it
         // so the test output stays readable.
         consoleErrorStub = sinon.stub(console, 'error');
-        service = new ParcelFileSystemWatcherService({ verbose: false });
+        service = new FileSystemWatcherServiceImpl({ verbose: false });
         onError = sinon.stub();
         service.setClient({
             onDidFilesChanged: () => undefined,
