@@ -76,12 +76,22 @@ export class ShellIntegrationInjector {
     }
 
     protected getShellIntegrationPath(relativePath: string): string | undefined {
-        const fullPath = path.join(__dirname, this.INTEGRATION_ROOT_DIR, relativePath);
+        const fullPath = this.toUnpackedAsarPath(path.join(__dirname, this.INTEGRATION_ROOT_DIR, relativePath));
         if (!fs.existsSync(fullPath)) {
             this.logger.warn(`Shell integration file not found (application may not be bundled correctly): ${fullPath}`);
             return undefined;
         }
         return fullPath;
+    }
+
+    /**
+     * In an asar-packaged Electron application, `__dirname` resolves inside `app.asar`.
+     * The shell cannot read files from the archive, so the integration scripts have to be extracted
+     * using electron-builder's `asarUnpack` and referenced from the `app.asar.unpacked` directory.
+     * Only the `app.asar` segment is rewritten, which is the name electron-builder and electron-forge give the archive.
+     */
+    protected toUnpackedAsarPath(filePath: string): string {
+        return filePath.replace(/([\\/])app\.asar(?=[\\/])/, '$1app.asar.unpacked');
     }
 
     protected stripLoginFlag(args: string | string[] | undefined): string[] | undefined {
