@@ -79,11 +79,16 @@ export class WatcherHost {
         return stat && { dev: stat.dev, ino: stat.ino, birthtimeMs: stat.birthtimeMs };
     }
 
-    /** Exact-case lookup. `stat` accepts a differing case, making a `foo.txt` to `Foo.txt` rename an update. */
-    async childExists(directory: string, fileName: string): Promise<boolean> {
-        return this.caseInsensitiveFileNames
-            ? (await this.readChildren(directory)).has(fileName)
-            : this.exists(path.resolve(directory, fileName));
+    /**
+     * Exact-case lookup of children, for several names at one moment. `stat` accepts a differing case, making
+     * a `foo.txt` to `Foo.txt` rename an update, so where names ignore case the directory is read, once.
+     */
+    childLookup(directory: string): (fileName: string) => Promise<boolean> {
+        if (!this.caseInsensitiveFileNames) {
+            return fileName => this.exists(path.resolve(directory, fileName));
+        }
+        let children: Promise<Set<string>> | undefined;
+        return async fileName => (await (children ??= this.readChildren(directory))).has(fileName);
     }
 
     exists(fsPath: string): Promise<boolean> {
