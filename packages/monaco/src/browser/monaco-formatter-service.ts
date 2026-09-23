@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Emitter, Event, PreferenceInspection, PreferenceLanguageOverrideService, PreferenceScope, PreferenceService } from '@theia/core';
+import { Emitter, Event, PreferenceInspection, PreferenceScope, PreferenceService } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FormatterInfo, FormatterService, FormatterSettingScope, FormatterStatus } from '@theia/editor/lib/browser/editor-formatter-service';
 import { TextEditor } from '@theia/editor/lib/browser';
@@ -52,9 +52,6 @@ export class MonacoFormatterService implements FormatterService {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
-    @inject(PreferenceLanguageOverrideService)
-    protected readonly preferenceSchema: PreferenceLanguageOverrideService;
-
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
@@ -74,25 +71,17 @@ export class MonacoFormatterService implements FormatterService {
         });
 
         this.preferenceService.onPreferenceChanged(change => {
-            if (change.preferenceName.includes(PREFERENCE_NAME)) {
+            if (change.preferenceName === PREFERENCE_NAME) {
                 this.onDidChangeFormattersEmitter.fire();
             }
-        });
-    }
-
-    protected getFormatterPreferenceName(languageId: string): string {
-        return this.preferenceSchema.overridePreferenceName({
-            preferenceName: PREFERENCE_NAME,
-            overrideIdentifier: languageId
         });
     }
 
     getFormatterStatus(editor: TextEditor): FormatterStatus {
         const { languageId, uri: resourceUri } = editor.document;
         const formatters = this.getAvailableFormatters(editor);
-        const preferenceName = this.getFormatterPreferenceName(languageId);
 
-        const configuredStatus = this.getConfiguredFormatterStatus(preferenceName, resourceUri, formatters);
+        const configuredStatus = this.getConfiguredFormatterStatus(languageId, resourceUri, formatters);
         if (configuredStatus) {
             return configuredStatus;
         }
@@ -115,11 +104,11 @@ export class MonacoFormatterService implements FormatterService {
     }
 
     protected getConfiguredFormatterStatus(
-        preferenceName: string,
+        languageId: string,
         resourceUri: string,
         formatters: FormatterInfo[]
     ): FormatterStatus | undefined {
-        const inspection = this.preferenceService.inspect<string>(preferenceName, resourceUri);
+        const inspection = this.preferenceService.inspect<string>(PREFERENCE_NAME, resourceUri, languageId);
         if (!inspection) {
             return undefined;
         }
@@ -218,19 +207,16 @@ export class MonacoFormatterService implements FormatterService {
         const isEditor = typeof languageIdOrEditor !== 'string';
         const languageId = isEditor ? languageIdOrEditor.document.languageId : languageIdOrEditor;
         const resourceUri = isEditor ? languageIdOrEditor.document.uri : undefined;
-        const preferenceName = this.getFormatterPreferenceName(languageId);
-        await this.preferenceService.set(preferenceName, formatterId, scope, resourceUri);
+        await this.preferenceService.set(PREFERENCE_NAME, formatterId, scope, resourceUri, languageId);
     }
 
     getDefaultFormatter(languageId: string, resourceUri: string): string | undefined {
-        const preferenceName = this.getFormatterPreferenceName(languageId);
-        return this.preferenceService.get<string>(preferenceName, undefined, resourceUri);
+        return this.preferenceService.get<string>(PREFERENCE_NAME, { resource: resourceUri, override: languageId });
     }
 
     getConfiguredScope(editor: TextEditor): PreferenceScope | undefined {
         const { languageId, uri: resourceUri } = editor.document;
-        const preferenceName = this.getFormatterPreferenceName(languageId);
-        const inspection = this.preferenceService.inspect<string>(preferenceName, resourceUri);
+        const inspection = this.preferenceService.inspect<string>(PREFERENCE_NAME, resourceUri, languageId);
 
         if (!inspection) {
             return undefined;

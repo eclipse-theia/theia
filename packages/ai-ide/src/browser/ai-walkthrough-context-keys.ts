@@ -114,7 +114,7 @@ export class AiWalkthroughContextKeys implements FrontendApplicationContribution
     }
 
     protected updateDefaultAgentState(): void {
-        this.hasDefaultAgent.set(!!this.preferenceService.get<string>(DEFAULT_CHAT_AGENT_PREF, ''));
+        this.hasDefaultAgent.set(!!this.preferenceService.get(DEFAULT_CHAT_AGENT_PREF, ''));
     }
 
     /**
