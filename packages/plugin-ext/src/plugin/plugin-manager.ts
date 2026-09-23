@@ -37,6 +37,7 @@ import * as theia from '@theia/plugin';
 import * as types from './types-impl';
 import { join } from './path';
 import { EnvExtImpl } from './env';
+import { TelemetryExtImpl } from './telemetry-ext';
 import { PreferenceRegistryExtImpl } from './preference-registry';
 import { InternalStorageExt, Memento, GlobalState } from './plugin-storage';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
@@ -474,6 +475,9 @@ export class PluginManagerExtImpl extends AbstractPluginManagerExtImpl<PluginMan
     @inject(WebviewsExtImpl)
     protected readonly webview: WebviewsExtImpl;
 
+    @inject(TelemetryExtImpl)
+    protected readonly telemetryExt: TelemetryExtImpl;
+
     private supportedActivationEvents: Set<string>;
 
     async $init(params: PluginManagerInitializeParams): Promise<void> {
@@ -489,6 +493,8 @@ export class PluginManagerExtImpl extends AbstractPluginManagerExtImpl<PluginMan
         this.envExt.setAppUriScheme(params.env.appUriScheme);
 
         this.preferencesManager.init(params.preferences);
+        // must be in place before activation: plugins create their telemetry loggers during `activate()`
+        this.telemetryExt.setLevel(params.telemetryLevel ?? 'off');
 
         if (params.extApi) {
             this.host.initExtApi(params.extApi);
