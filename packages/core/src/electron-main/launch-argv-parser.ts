@@ -27,6 +27,8 @@ import { LaunchArguments } from '../common/launch-arguments';
  * `--name value` or `--name=value`, options repeatable to yield multiple values, a token that
  * itself looks like an option (starts with `-`) never consumed as a value, and `--no-name` /
  * `--name=false` recognised as an explicit negation.
+ *
+ * @experimental
  */
 export namespace LaunchArgvParser {
 

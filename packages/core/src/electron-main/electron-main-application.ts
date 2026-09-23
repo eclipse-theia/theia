@@ -77,6 +77,8 @@ export interface ElectronMainCommandOptions {
      * The parsed CLI options of a forwarded launch. Set for `second-instance` launches so that
      * per-window options (e.g. `--attach-container`, `--session-preference`) are carried to the
      * newly created window rather than being dropped.
+     *
+     * @experimental
      */
     readonly launchArgs?: LaunchArguments;
 
@@ -85,6 +87,8 @@ export interface ElectronMainCommandOptions {
      * `claimsWindow` hook (e.g. a `--attach-container` launch claimed by `@theia/dev-container`).
      * When set, an empty window is opened instead of restoring the last workspace, since the window
      * is about to be replaced by whatever the claiming contribution attaches to.
+     *
+     * @experimental
      */
     readonly claimed?: boolean;
 }
@@ -128,6 +132,8 @@ export interface ElectronMainApplicationContribution {
      * replaced by whatever the claiming contribution attaches to. Core itself stays agnostic of the
      * concrete CLI options. The frontend receives the same options (see `LaunchArgsStore`), so the
      * corresponding frontend contribution can show a placeholder from the first paint.
+     *
+     * @experimental
      */
     claimsWindow?(args: LaunchArguments): MaybePromise<boolean>;
 }
@@ -577,6 +583,8 @@ export class ElectronMainApplication {
      * Associates the parsed options of a forwarded launch with the target window before it loads its
      * URL, so that the preload script cannot ask for them before they are stored. No-op for a
      * cold-start launch, which carries none.
+     *
+     * @experimental
      */
     protected stashLaunchArgs(window: BrowserWindow, launchArgs?: LaunchArguments): void {
         if (launchArgs) {
@@ -633,6 +641,8 @@ export class ElectronMainApplication {
      * Returns the parsed launch options stored for the window with the given `webContents` id, or
      * `undefined` for a cold-start window. Read from the per-window metadata channel, where the
      * caller is identified by the IPC sender, so a window can only ever see its own options.
+     *
+     * @experimental
      */
     getLaunchArgs(windowId: number): LaunchArguments | undefined {
         return this.launchArgsStore.get(windowId);
@@ -642,6 +652,8 @@ export class ElectronMainApplication {
      * Whether any {@link ElectronMainApplicationContribution} claims responsibility for a window
      * opened for the given launch (see its `claimsWindow` hook). Core stays agnostic of the concrete
      * CLI options; e.g. `@theia/dev-container` claims `--attach-container` launches.
+     *
+     * @experimental
      */
     protected async isWindowClaimed(args: LaunchArguments): Promise<boolean> {
         for (const contribution of this.contributions.getContributions()) {

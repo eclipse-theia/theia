@@ -48,7 +48,7 @@ Models appear automatically once an API key is configured, so there is nothing t
 
 _Electron launch-argument forwarding APIs_:
 
-Forwarding a second launch's CLI arguments to the new window added a few APIs that adopters implementing the affected extension points need to be aware of:
+Forwarding a second launch's CLI arguments to the new window added a few APIs that adopters implementing the affected extension points need to be aware of. The new APIs are `@experimental` and will likely receive breaking changes:
 
 - `TheiaCoreAPI.WindowMetadata` (the Electron preload API, `@theia/core/lib/electron-common/electron-api`) gained an optional `launchArgs?: LaunchArguments` member, carrying the parsed CLI options of a forwarded launch. It is filled in synchronously by the preload script over the existing `CHANNEL_WC_METADATA` channel, which now answers with the whole metadata object instead of just the `webContents` id. Adopters with a custom preload must return `{ webcontentId, launchArgs }` from that channel.
 - `ElectronMainApplicationContribution` gained an optional `claimsWindow?(args: LaunchArguments): MaybePromise<boolean>` hook. A contribution returning `true` opens an empty window for that launch instead of restoring the last workspace, since the window is about to be replaced by whatever the contribution attaches to. `@theia/dev-container` uses this to claim `--attach-container` launches, from a new `electronMain` entry point (`lib/electron-main/dev-container-electron-main-module`) that adopters assembling their extension list manually must include.

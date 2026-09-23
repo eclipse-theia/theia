@@ -23,6 +23,8 @@ import { WindowLaunchArgs } from '../../browser/window/window-launch-args';
  * to this window's metadata, which the preload script fetches synchronously before any frontend code
  * runs, and which main keys by the IPC sender rather than by any value from the URL (see
  * `LaunchArgsStore`).
+ *
+ * @experimental
  */
 @injectable()
 export class ElectronWindowLaunchArgs implements WindowLaunchArgs {

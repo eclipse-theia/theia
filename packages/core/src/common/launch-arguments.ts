@@ -19,6 +19,8 @@
  * `second-instance` handling in `ElectronMainApplication`) receives this rather than a raw `argv`:
  * the command line is parsed once, in the Electron main process, so that no consumer has to
  * re-implement the argument grammar and the frontend never sees an unparsed command line.
+ *
+ * @experimental
  */
 export interface LaunchArguments {
 
@@ -32,6 +34,7 @@ export interface LaunchArguments {
     readonly negated: readonly string[];
 }
 
+/** @experimental */
 export namespace LaunchArguments {
 
     /** A launch that carried no options. */

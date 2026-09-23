@@ -50,6 +50,8 @@ export interface TheiaCoreAPI {
          * `ElectronMainApplication`), or `undefined` for a cold-start window. Provided synchronously
          * by the preload script, so a frontend contribution can act on it from the first paint.
          * The options never ride on the window URL; see `LaunchArgsStore` for the rationale.
+         *
+         * @experimental
          */
         launchArgs?: LaunchArguments;
     }

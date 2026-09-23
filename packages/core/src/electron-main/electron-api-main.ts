@@ -90,8 +90,6 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             event.returnValue = this.electronSecurityToken.value;
         });
 
-        // redemption of a forwarded launch's CLI arguments for the calling window, identified by its IPC sender
-
         ipcMain.handle(CHANNEL_ATTACH_SECURITY_TOKEN, (event, endpoint) => session.defaultSession.cookies.set({
             url: endpoint,
             name: ElectronSecurityToken,

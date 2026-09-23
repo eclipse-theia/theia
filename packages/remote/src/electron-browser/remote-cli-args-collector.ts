@@ -23,6 +23,8 @@ import { RemoteCliArgsContribution } from '@theia/core/lib/common/remote-cli-arg
  * {@link RemoteCliArgsContribution}s. This carries per-window options (e.g. the forwarded
  * `--session-preference` values of a second-instance window) that the shared local backend cannot
  * provide. Usable by any remote attach flow (dev container, SSH) so they stay consistent.
+ *
+ * @experimental
  */
 @injectable()
 export class RemoteCliArgsCollector {

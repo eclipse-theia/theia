@@ -37,6 +37,8 @@ import { LaunchArguments } from '../common/launch-arguments';
  * closed, and when the window is redirected to a *different* frontend (e.g. into a dev container
  * after a CLI attach), since the arguments describe the launch rather than whatever the window is
  * navigated to afterwards. See `TheiaElectronWindow.reload`.
+ *
+ * @experimental
  */
 @injectable()
 export class LaunchArgsStore {

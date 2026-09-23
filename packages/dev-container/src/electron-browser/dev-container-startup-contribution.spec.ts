@@ -207,3 +207,39 @@ describe('DevContainerStartupContribution#runStartupAttach', () => {
         expect(harness.disposeCount).to.be.greaterThan(0);
     });
 });
+
+class StartupHarness extends DevContainerStartupContribution {
+    errors: string[] = [];
+
+    setup(): void {
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+        (this as any).logger = { info: () => { }, warn: () => { }, error: () => { } };
+        (this as any).launchArgs = { getLaunchArgs: () => undefined };
+        (this as any).attachScreen = { isAttached: false, dispose: () => { } };
+        (this as any).messageService = { error: (message: string) => this.errors.push(message) };
+        (this as any).connectionProvider = {
+            getAttachContainerArgs: async () => { throw new Error('backend unreachable'); }
+        };
+        /* eslint-enable @typescript-eslint/no-explicit-any */
+    }
+
+    run(): Promise<void> {
+        return this.handleStartupAttach();
+    }
+}
+
+describe('DevContainerStartupContribution#handleStartupAttach', () => {
+
+    before(() => disableJSDOM = enableJSDOM());
+    after(() => disableJSDOM());
+
+    it('reports a failure to resolve the attach arguments on a cold start', async () => {
+        const harness = new StartupHarness();
+        harness.setup();
+
+        await harness.run();
+
+        expect(harness.errors).to.have.lengthOf(1);
+        expect(harness.errors[0]).to.contain('backend unreachable');
+    });
+});

@@ -26,6 +26,8 @@ export const RemoteCliArgsContribution = Symbol('RemoteCliArgsContribution');
  * window be re-applied on the remote backend. Unlike the node-side `RemoteCliContribution#enhanceArgs`,
  * which reads process-global state on the shared backend, this contribution runs in the renderer and
  * therefore has access to the current window's context.
+ *
+ * @experimental
  */
 export interface RemoteCliArgsContribution {
     /**

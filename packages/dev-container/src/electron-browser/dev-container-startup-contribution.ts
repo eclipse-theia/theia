@@ -18,7 +18,7 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { AttachContainerArgs, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { AbstractRemoteRegistryContribution } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
-import { ILogger, nls } from '@theia/core';
+import { ILogger, MessageService, nls } from '@theia/core';
 import { LaunchArguments } from '@theia/core/lib/common/launch-arguments';
 import { WindowLaunchArgs } from '@theia/core/lib/browser/window/window-launch-args';
 import { RemotePreferences } from '@theia/remote/lib/electron-common/remote-preferences';
@@ -34,6 +34,9 @@ export class DevContainerStartupContribution extends AbstractRemoteRegistryContr
 
     @inject(ILogger) @named('dev-container:DevContainerStartupContribution')
     protected readonly logger: ILogger;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     @inject(RemotePreferences)
     protected readonly remotePreferences: RemotePreferences;
@@ -80,7 +83,9 @@ export class DevContainerStartupContribution extends AbstractRemoteRegistryContr
                     close: () => this.disposeAttachScreen()
                 });
             } else {
+                // No attach screen is up, so fall back to a notification.
                 this.disposeAttachScreen();
+                this.messageService.error(nls.localize('theia/remote/dev-container/cliAttachError', 'Failed to attach to container: {0}', message));
             }
             return;
         }

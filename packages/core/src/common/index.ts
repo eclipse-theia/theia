@@ -24,6 +24,7 @@ export * from './core-preferences';
 export * from './disposable';
 export * from './event';
 export * from './inversify-utils';
+export * from './launch-arguments';
 export * from './listener';
 export * from './logger';
 export * from './logger-sanitizer';

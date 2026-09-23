@@ -23,6 +23,8 @@ export const WindowLaunchArgs = Symbol('WindowLaunchArgs');
  * Provides the CLI options a window was launched with, when it was opened by a *forwarded*
  * (second-instance) launch. See the `second-instance` handling in `ElectronMainApplication`, and
  * `LaunchArgsStore` for why the options are provided over a trusted channel rather than the URL.
+ *
+ * @experimental
  */
 export interface WindowLaunchArgs {
 
@@ -39,6 +41,8 @@ export interface WindowLaunchArgs {
  * browser deployment, and the window URL must never be treated as one, so this always reports "no
  * launch options". Electron rebinds {@link WindowLaunchArgs} to an implementation backed by the
  * per-window metadata the preload script provides.
+ *
+ * @experimental
  */
 @injectable()
 export class DefaultWindowLaunchArgs implements WindowLaunchArgs {
