@@ -75,9 +75,8 @@ export class ModelDiscoveryFetcherImpl implements ModelDiscoveryFetcher {
                 this.logger.warn(`${request.providerLabel}: model discovery failed (${message}); using cached snapshot.`);
                 return { models: cached, fromCache: true, error: message };
             }
-            // Only the provider's page shows what a failed run reports, and a run that never succeeded
-            // has no snapshot to fall back on either, so without this the failure leaves no trace at all.
-            this.logger.error(`${request.providerLabel}: model discovery failed (${message}); no cached snapshot to fall back on.`, error);
+            // A run that never succeeded has no snapshot to fall back on, so record the failure here.
+            this.logger.error(`${request.providerLabel}: model discovery failed; no cached snapshot to fall back on.`, error);
             throw error;
         }
     }
