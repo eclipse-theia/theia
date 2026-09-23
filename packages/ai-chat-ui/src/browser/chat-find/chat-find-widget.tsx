@@ -348,9 +348,9 @@ export class ChatFindWidget extends ReactWidget {
         const hasQuery = this.query.length > 0;
         const count = this.matches.length;
         const noResults = hasQuery && count === 0;
-        const label = !hasQuery ? '' : noResults
-            ? nls.localizeByDefault('No results')
-            : nls.localizeByDefault('{0} of {1}', this.currentIndex + 1, count);
+        const label = count > 0
+            ? nls.localizeByDefault('{0} of {1}', this.currentIndex + 1, count)
+            : nls.localizeByDefault('No results');
         return <div className='theia-chat-find-bar' role='search'>
             <div className={`theia-chat-find-input-box${noResults ? ' no-results' : ''}`}>
                 <input

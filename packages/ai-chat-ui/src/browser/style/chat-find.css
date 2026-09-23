@@ -86,7 +86,10 @@
 }
 
 .theia-chat-find-count {
+  /* Wide enough for 'No results' and most counts, so the bar does not change width while typing. */
+  min-width: 64px;
   margin: 0 4px;
+  text-align: center;
   white-space: nowrap;
   font-size: var(--theia-ui-font-size0);
 }
