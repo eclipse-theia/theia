@@ -19,6 +19,7 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { transformSync } from 'esbuild';
 import { compressAssetsPlugin, nativeDependenciesPlugin } from './esbuild-plugin';
 
 const expect = chai.expect;
@@ -112,6 +113,59 @@ describe('nativeDependenciesPlugin', () => {
         expect(result, 'callback must return a resolution result').to.be.an('object');
         expect(result.namespace, 'binding must be routed through the `node-file` namespace').to.equal('node-file');
         expect(result.path, 'binding must point at a prebuilt watcher.node file').to.match(/watcher\.node$/);
+    });
+
+    describe('@vscode/ripgrep replacement', () => {
+
+        async function resolveRgPath(platform: 'win32' | 'linux', dirname: string): Promise<string> {
+            const { build, resolvers } = createFakeBuild();
+            const plugin = nativeDependenciesPlugin({
+                trash: false,
+                ripgrep: true,
+                pty: false,
+                nativeBindings: {}
+            });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            plugin.setup(build as any);
+
+            const ripgrepPath = path.join('node_modules', '@vscode', 'ripgrep', 'lib', 'index.js');
+            const loader = resolvers.find(r => r.filter.test(ripgrepPath));
+            expect(loader, 'plugin should register an onLoad for @vscode/ripgrep').to.not.equal(undefined);
+            const { contents } = await loader!.callback({ path: ripgrepPath });
+
+            // Evaluate the replacement module as it would run in the bundle, on the given platform.
+            const { code } = transformSync(contents, { format: 'cjs', loader: 'js' });
+            const pathModule = platform === 'win32' ? path.win32 : path.posix;
+            const module = { exports: {} as { rgPath?: string } };
+            new Function('module', 'exports', 'require', '__dirname', 'process', code)(
+                module, module.exports, () => pathModule, dirname, { platform }
+            );
+            return module.exports.rgPath!;
+        }
+
+        it('points to the copied binary next to the bundle', async () => {
+            expect(await resolveRgPath('linux', '/opt/app/lib/backend')).to.equal('/opt/app/lib/backend/native/rg');
+            expect(await resolveRgPath('win32', 'C:\\app\\lib\\backend')).to.equal('C:\\app\\lib\\backend\\native\\rg.exe');
+        });
+
+        it('points to `app.asar.unpacked` when the bundle is packaged into an asar archive', async () => {
+            // `child_process.spawn` is not redirected into asar archives by Electron, so the binary
+            // has to be extracted (`asarUnpack`) and spawned from the unpacked directory.
+            expect(await resolveRgPath('linux', '/opt/app/resources/app.asar/lib/backend'))
+                .to.equal('/opt/app/resources/app.asar.unpacked/lib/backend/native/rg');
+            expect(await resolveRgPath('win32', 'C:\\Program Files\\app\\resources\\app.asar\\lib\\backend'))
+                .to.equal('C:\\Program Files\\app\\resources\\app.asar.unpacked\\lib\\backend\\native\\rg.exe');
+        });
+
+        it('does not rewrite a path that already points to `app.asar.unpacked`', async () => {
+            expect(await resolveRgPath('linux', '/opt/app/resources/app.asar.unpacked/lib/backend'))
+                .to.equal('/opt/app/resources/app.asar.unpacked/lib/backend/native/rg');
+        });
+
+        it('only rewrites the `app.asar` archive, not other `.asar` segments in the path', async () => {
+            expect(await resolveRgPath('linux', '/opt/x.asar/resources/app.asar/lib/backend'))
+                .to.equal('/opt/x.asar/resources/app.asar.unpacked/lib/backend/native/rg');
+        });
     });
 });
 
