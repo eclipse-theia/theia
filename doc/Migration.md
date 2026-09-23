@@ -110,6 +110,13 @@ For example, in an `electron-builder` configuration, ensure the `lib/backend/she
 
 The `lib/**/*` glob already covers `lib/backend/shell-integrations/`. If you use a more restrictive `files` pattern, make sure `lib/backend/shell-integrations/**/*` is explicitly included, as `ShellIntegrationInjector` resolves these scripts relative to `__dirname` (i.e. `lib/backend/`).
 
+If the application is packaged into an asar archive, Bash and Zsh cannot read the scripts from `app.asar`, so `ShellIntegrationInjector` resolves them from `app.asar.unpacked` instead. They have to be extracted there, for example with `electron-builder`:
+
+```yaml
+asarUnpack:
+  - "**/lib/backend/shell-integrations/**"
+```
+
 ### v1.76.0
 
 #### GitHub Copilot is served through the Copilot CLI

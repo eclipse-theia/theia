@@ -88,9 +88,10 @@ export class ShellIntegrationInjector {
      * In an asar-packaged Electron application, `__dirname` resolves inside `app.asar`.
      * The shell cannot read files from the archive, so the integration scripts have to be extracted
      * using electron-builder's `asarUnpack` and referenced from the `app.asar.unpacked` directory.
+     * Only the `app.asar` segment is rewritten, which is the name electron-builder and electron-forge give the archive.
      */
     protected toUnpackedAsarPath(filePath: string): string {
-        return filePath.replace(/\.asar([\\/])/, '.asar.unpacked$1');
+        return filePath.replace(/([\\/])app\.asar(?=[\\/])/, '$1app.asar.unpacked');
     }
 
     protected stripLoginFlag(args: string | string[] | undefined): string[] | undefined {

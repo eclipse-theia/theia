@@ -45,5 +45,10 @@ describe('ShellIntegrationInjector', () => {
             expect(injector.toUnpackedAsarPath('/opt/app/resources/app.asar.unpacked/lib/backend/shell-integrations/zsh'))
                 .to.equal('/opt/app/resources/app.asar.unpacked/lib/backend/shell-integrations/zsh');
         });
+
+        it('only rewrites the `app.asar` archive, not other `.asar` segments in the path', () => {
+            expect(injector.toUnpackedAsarPath('/opt/x.asar/resources/app.asar/lib/backend/shell-integrations/zsh'))
+                .to.equal('/opt/x.asar/resources/app.asar.unpacked/lib/backend/shell-integrations/zsh');
+        });
     });
 });
