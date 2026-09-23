@@ -203,7 +203,8 @@ export class ChatFindWidget extends ReactWidget {
     }
 
     protected scheduleRecompute(): void {
-        if (this.recomputeTimeout !== undefined) {
+        // A closed bar keeps its query but does not follow the model; `open()` recomputes.
+        if (!this.isOpen || this.recomputeTimeout !== undefined) {
             return;
         }
         this.recomputeTimeout = setTimeout(() => {
@@ -215,12 +216,13 @@ export class ChatFindWidget extends ReactWidget {
     /**
      * Recompute matches. The current match is kept by identity when it still exists; otherwise (or when
      * `moveToNearest` is set after a query change) the first match at or after the previous position becomes current.
+     * While the bar is closed there are no matches.
      */
     protected recompute(moveToNearest: boolean): void {
         const previous = this.currentMatch;
         this.regexp = this.matcher.createRegExp(this.query, this.options);
         this.nodeOrder = this.computeNodeOrder();
-        this.matches = this.chatModel && this.regexp ? this.matcher.findMatches(this.chatModel, this.regexp) : [];
+        this.matches = this.isOpen && this.chatModel && this.regexp ? this.matcher.findMatches(this.chatModel, this.regexp) : [];
         this.currentIndex = this.pickCurrentIndex(previous, moveToNearest);
         this.update();
         this.fireStateIfOpen();

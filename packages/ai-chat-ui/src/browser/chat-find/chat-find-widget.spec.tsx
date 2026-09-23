@@ -92,6 +92,7 @@ describe('ChatFindWidget', () => {
     it('computes matches for the query and reveals the first one', () => {
         const { model } = fakeModel([fakeRequest('r1', 'alpha', 'alpha beta alpha')]);
         widget.setChatModel(model);
+        widget.open();
         widget.setQuery('alpha');
         expect(widget.state.matches).to.have.length(3);
         expect(widget.currentMatch).to.deep.include({ nodeId: 'r1', occurrence: 0 });
@@ -101,6 +102,7 @@ describe('ChatFindWidget', () => {
     it('cycles with next and previous, wrapping around', () => {
         const { model } = fakeModel([fakeRequest('r1', 'x', 'x', 'x')]);
         widget.setChatModel(model);
+        widget.open();
         widget.setQuery('x');
         widget.next();
         expect(widget.currentMatch).to.deep.include({ nodeId: 'r1-response', contentIndex: 0 });
@@ -117,6 +119,7 @@ describe('ChatFindWidget', () => {
         const second = fakeRequest('r2', '', 'nee');
         const { model } = fakeModel([first, second]);
         widget.setChatModel(model);
+        widget.open();
         widget.setQuery('needle');
         widget.next(); // current: r1-response
         second.content[0] = new TextChatResponseContentImpl('needle needle');
@@ -133,6 +136,7 @@ describe('ChatFindWidget', () => {
         const requests = [first, second];
         const { model, changed } = fakeModel(requests);
         widget.setChatModel(model);
+        widget.open();
         widget.setQuery('a');
         widget.next(); // r1-response
         requests.splice(0, 1);
@@ -140,6 +144,25 @@ describe('ChatFindWidget', () => {
         await new Promise(resolve => setTimeout(resolve, 150));
         expect(widget.state.matches).to.have.length(2);
         expect(widget.currentMatch).to.deep.include({ nodeId: 'r2' });
+    });
+
+    it('does not search while closed, and catches up on open', async () => {
+        const streaming = fakeRequest('r1', '', 'nee');
+        const { model } = fakeModel([streaming]);
+        let searches = 0;
+        const findMatches = widget['matcher'].findMatches.bind(widget['matcher']);
+        widget['matcher'].findMatches = (...args) => { searches++; return findMatches(...args); };
+        widget.setChatModel(model);
+        widget.open();
+        widget.setQuery('needle');
+        widget.dismiss();
+        searches = 0;
+        streaming.content[0] = new TextChatResponseContentImpl('needle');
+        streaming.responseChanged.fire();
+        await new Promise(resolve => setTimeout(resolve, 150));
+        expect(searches).to.equal(0);
+        widget.open();
+        expect(widget.state.matches).to.have.length(1);
     });
 
     it('reports no matches for an invalid regular expression', () => {
@@ -193,6 +216,7 @@ describe('ChatFindWidget', () => {
         const { model: a } = fakeModel([fakeRequest('r1', 'k k', 'k')]);
         const { model: b } = fakeModel([fakeRequest('r9', 'K', 'k')]);
         widget.setChatModel(a);
+        widget.open();
         widget.setQuery('k');
         widget.next();
         widget.next();
