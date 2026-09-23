@@ -128,6 +128,21 @@ describe('ChatFindHighlighter', () => {
         expect(ranges.some(r => contents[0].contains(r.startContainer))).to.be.false;
     });
 
+    it('resolves content parts among the row\'s own nodes, not those of a delegated sub-chat inside a part', () => {
+        // A delegation renders the sub-chat's response node inline (collapsed) inside the outer content element.
+        root.querySelectorAll('.theia-ResponseNode-Content')[0].innerHTML = '<details><div class="theia-ResponseNode">' +
+            '<div class="theia-ResponseNode-Content"><p>find me in the sub-chat</p></div></div></details>';
+        const match = contentMatch(1, 0);
+        highlighter.update(root, /find me/gi, [match], match);
+        const inSubChat = (range: Range): boolean => !!range.startContainer.parentElement!.closest('details');
+        const ranges = registry.highlights.get(ChatFindHighlighter.MATCH_HIGHLIGHT)!;
+        expect(ranges).to.have.length(2);
+        expect(ranges.some(inSubChat)).to.be.false;
+        const current = registry.highlights.get(ChatFindHighlighter.CURRENT_HIGHLIGHT)!;
+        expect(current.map(range => range.toString())).to.deep.equal(['find me']);
+        expect(current.some(inSubChat)).to.be.false;
+    });
+
     it('does not highlight text inside <style> or <script>, e.g. a diagram stylesheet', () => {
         root.querySelectorAll('.theia-ResponseNode-Content')[1].innerHTML =
             '<svg><style>.find-me-node{fill:#fff}</style>' +

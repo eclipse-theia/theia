@@ -300,10 +300,11 @@ export class ChatFindHighlighter implements Disposable {
         if (!row) {
             return undefined;
         }
+        // Only the row's own nodes: a delegated sub-chat renders another response node inside a content element.
         if (match.contentIndex === undefined) {
-            return row.querySelector('.theia-RequestNode > p') ?? undefined;
+            return row.querySelector(':scope > .theia-RequestNode > p') ?? undefined;
         }
-        return row.querySelectorAll('.theia-ResponseNode > .theia-ResponseNode-Content')[match.contentIndex] ?? undefined;
+        return row.querySelectorAll(':scope > .theia-ResponseNode > .theia-ResponseNode-Content')[match.contentIndex] ?? undefined;
     }
 
     /** The element holding exactly the text the matcher searched for a part: an error part searches only its message. */
