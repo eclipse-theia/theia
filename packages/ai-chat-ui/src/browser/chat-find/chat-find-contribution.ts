@@ -33,7 +33,8 @@ export const CHAT_FIND_HIDE_COMMAND = Command.toLocalizedCommand({
 }, 'theia/ai/chat-ui/findHide', ChatCommands.CHAT_CATEGORY_KEY);
 
 /**
- * Ctrl+F in the chat view opens the find bar over the response tree. The binding takes precedence over core's
+ * Ctrl+F in the chat response tree opens the find bar over it; in the chat input, Ctrl+F keeps its default
+ * behavior. The binding is only enabled while the session has content to search. It takes precedence over core's
  * `CommonCommands.FIND` and Monaco's `actions.find` because it is registered later within the default scope,
  * the same mechanism `ChatInputPasteContribution` relies on for Ctrl+V.
  */
@@ -45,7 +46,7 @@ export class ChatFindContribution implements CommandContribution, KeybindingCont
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(CHAT_FIND_COMMAND, {
-            isEnabled: () => this.findActiveChatViewWidget() !== undefined,
+            isEnabled: () => this.findActiveChatViewWidget()?.treeWidget.canFind === true,
             execute: () => this.findActiveChatViewWidget()?.treeWidget.showFind()
         });
         commands.registerCommand(CHAT_FIND_HIDE_COMMAND, {
@@ -58,7 +59,7 @@ export class ChatFindContribution implements CommandContribution, KeybindingCont
         keybindings.registerKeybinding({
             command: CHAT_FIND_COMMAND.id,
             keybinding: 'ctrlcmd+f',
-            when: 'chatInputFocus || chatResponseFocus'
+            when: 'chatResponseFocus'
         });
         keybindings.registerKeybinding({
             command: CHAT_FIND_HIDE_COMMAND.id,
