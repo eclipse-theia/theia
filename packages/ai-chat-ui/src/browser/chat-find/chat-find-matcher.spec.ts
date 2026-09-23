@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+let disableJSDOM = enableJSDOM();
 import {
     ChatModel, ChatRequestModel, ChatResponseContent, CodeChatResponseContentImpl, ErrorChatResponseContentImpl,
     InformationalChatResponseContentImpl, MarkdownChatResponseContentImpl, TextChatResponseContentImpl,
@@ -21,6 +23,7 @@ import {
 } from '@theia/ai-chat/lib/common';
 import { expect } from 'chai';
 import { ChatFindMatcher, ChatFindOptions } from './chat-find-matcher';
+disableJSDOM();
 
 const plain: ChatFindOptions = { matchCase: false, wholeWord: false, useRegex: false };
 
@@ -38,6 +41,11 @@ function model(...requests: ChatRequestModel[]): ChatModel {
 
 describe('ChatFindMatcher', () => {
     const matcher = new ChatFindMatcher();
+    const count = (chat: ChatModel, query: string, options: ChatFindOptions = plain): number =>
+        matcher.findMatches(chat, matcher.createRegExp(query, options)!).length;
+
+    before(() => disableJSDOM = enableJSDOM());
+    after(() => disableJSDOM());
 
     describe('createRegExp', () => {
         it('returns undefined for an empty query', () => {
@@ -54,11 +62,21 @@ describe('ChatFindMatcher', () => {
             expect(matcher.createRegExp('abc', { ...plain, matchCase: true })!.test('ABC')).to.be.false;
         });
 
-        it('wraps the pattern in word boundaries for wholeWord', () => {
-            const regexp = matcher.createRegExp('cat', { ...plain, wholeWord: true })!;
-            expect(regexp.test('a cat sat')).to.be.true;
-            regexp.lastIndex = 0;
-            expect(regexp.test('concatenate')).to.be.false;
+        it('matches whole words only for wholeWord', () => {
+            const whole = { ...plain, wholeWord: true };
+            const find = (query: string, text: string) => matcher.findInText(text, matcher.createRegExp(query, whole)!);
+            expect(find('cat', 'a cat sat')).to.deep.equal([{ start: 2, end: 5 }]);
+            expect(find('cat', 'concatenate')).to.deep.equal([]);
+            expect(find('cat', 'cat')).to.deep.equal([{ start: 0, end: 3 }]);
+            expect(find('cat', 'cat.')).to.deep.equal([{ start: 0, end: 3 }]);
+        });
+
+        it('matches whole words that start or end with a separator, unlike \\b', () => {
+            const whole = { ...plain, wholeWord: true };
+            const find = (query: string, text: string) => matcher.findInText(text, matcher.createRegExp(query, whole)!);
+            expect(find('C++', 'I like C++ a lot')).to.deep.equal([{ start: 7, end: 10 }]);
+            expect(find('foo()', 'call foo() now')).to.deep.equal([{ start: 5, end: 10 }]);
+            expect(find('C++', 'xC++')).to.deep.equal([]);
         });
 
         it('returns undefined for an invalid regular expression', () => {
@@ -85,19 +103,41 @@ describe('ChatFindMatcher', () => {
                 request('r2', 'other', [new CodeChatResponseContentImpl('const findMe = 1;', 'ts')])
             );
             const matches = matcher.findMatches(chat, matcher.createRegExp('find', plain)!);
+            // Offsets are into the rendered text: the markdown renders as 'find me and find me'.
             expect(matches).to.deep.equal([
-                { nodeId: 'r1', contentIndex: undefined, occurrence: 0, start: 0, end: 4 },
-                { nodeId: 'r1-response', contentIndex: 1, occurrence: 0, start: 0, end: 4 },
-                { nodeId: 'r1-response', contentIndex: 1, occurrence: 1, start: 16, end: 20 },
-                { nodeId: 'r2-response', contentIndex: 0, occurrence: 0, start: 6, end: 10 }
+                { nodeId: 'r1', kind: 'request', contentIndex: undefined, occurrence: 0, start: 0, end: 4 },
+                { nodeId: 'r1-response', kind: 'markdownContent', contentIndex: 1, occurrence: 0, start: 0, end: 4 },
+                { nodeId: 'r1-response', kind: 'markdownContent', contentIndex: 1, occurrence: 1, start: 12, end: 16 },
+                { nodeId: 'r2-response', kind: 'code', contentIndex: 0, occurrence: 0, start: 6, end: 10 }
             ]);
         });
 
-        it('searches informational parts and the visible error headline only', () => {
+        it('searches markdown as rendered: link targets and markup are not searched, text across markup is', () => {
+            const chat = model(request('r1', '', [
+                new MarkdownChatResponseContentImpl('See the [docs](https://example.org/docs/page) for **important note** details.')
+            ]));
+            expect(count(chat, 'docs')).to.equal(1);
+            expect(count(chat, 'for important')).to.equal(1);
+            expect(count(chat, '**')).to.equal(0);
+        });
+
+        it('follows streamed markdown', () => {
+            const content = new MarkdownChatResponseContentImpl('first needle');
+            const chat = model(request('r1', '', [content]));
+            expect(count(chat, 'needle')).to.equal(1);
+            content.merge(new MarkdownChatResponseContentImpl(' and a second needle'));
+            expect(count(chat, 'needle')).to.equal(2);
+        });
+
+        it('searches request text as rendered markdown', () => {
+            expect(count(model(request('r1', 'use `npm` **now**', [])), 'npm now')).to.equal(1);
+        });
+
+        it('searches the visible error headline only and skips informational parts, which are not rendered', () => {
             const error = new ErrorChatResponseContentImpl(new Error('401 {"error":{"message":"needle in headline","type":"needle_type"}}'));
             const chat = model(request('r1', '', [new InformationalChatResponseContentImpl('needle info'), error]));
             const matches = matcher.findMatches(chat, matcher.createRegExp('needle', plain)!);
-            expect(matches.map(m => [m.contentIndex, m.occurrence])).to.deep.equal([[0, 0], [1, 0]]);
+            expect(matches.map(m => [m.contentIndex, m.kind, m.occurrence])).to.deep.equal([[1, 'error', 0]]);
         });
 
         it('ignores a mermaid block, which is rendered as a diagram rather than as its source', () => {
@@ -127,7 +167,7 @@ describe('ChatFindMatcher', () => {
                 response: { id: 'r1-response', response: { content: [] } }
             } as unknown as ChatRequestModel;
             const matches = matcher.findMatches(model(req), matcher.createRegExp('coder please', plain)!);
-            expect(matches).to.deep.equal([{ nodeId: 'r1', contentIndex: undefined, occurrence: 0, start: 1, end: 13 }]);
+            expect(matches).to.deep.equal([{ nodeId: 'r1', kind: 'request', contentIndex: undefined, occurrence: 0, start: 1, end: 13 }]);
         });
     });
 });

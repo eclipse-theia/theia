@@ -51,7 +51,7 @@ import {
 } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ChatFindHighlighter } from '../chat-find/chat-find-highlighter';
-import { ChatFindMatch, ChatFindMatcher } from '../chat-find/chat-find-matcher';
+import { ChatFindMatch } from '../chat-find/chat-find-matcher';
 import { ChatFindWidget } from '../chat-find/chat-find-widget';
 import { nls } from '@theia/core/lib/common/nls';
 import {
@@ -66,7 +66,7 @@ import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { formatTokenCount } from '../chat-token-usage-indicator-util';
-import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
+import { MarkdownRendering, useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
 import { ProgressMessage } from '../chat-progress-message';
 import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-tree-input-widget';
 import { PromptVariantBadge } from './prompt-variant-badge';
@@ -158,10 +158,8 @@ export class ChatViewTreeWidget extends TreeWidget {
     @inject(ChatFindWidget)
     protected readonly findWidget: ChatFindWidget;
 
-    @inject(ChatFindMatcher)
-    protected readonly findMatcher: ChatFindMatcher;
-
-    protected findHighlighter: ChatFindHighlighter;
+    @inject(ChatFindHighlighter)
+    protected readonly findHighlighter: ChatFindHighlighter;
 
     protected readonly onDidSubmitEditEmitter = new Emitter<ChatRequest>();
     onDidSubmitEdit = this.onDidSubmitEditEmitter.event;
@@ -222,7 +220,6 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.node.setAttribute('tabindex', '0');
         this.node.setAttribute('aria-label', nls.localize('theia/ai/chat-ui/chatResponses', 'Chat responses'));
 
-        this.findHighlighter = new ChatFindHighlighter((text, regexp) => this.findMatcher.findInText(text, regexp));
         this.findWidget.fallbackFocusTarget = this.node;
         this.toDispose.pushAll([
             this.findWidget,
@@ -302,9 +299,7 @@ export class ChatViewTreeWidget extends TreeWidget {
             this.findHighlighter.refresh();
             this.findHighlighter.scrollCurrentIntoView(this.node);
         };
-        const mounted = Array.from(this.node.querySelectorAll<HTMLElement>('[data-node-id]'))
-            .some(candidate => candidate.dataset.nodeId === match.nodeId);
-        if (mounted) {
+        if (this.findHighlighter.findRow(this.node, match.nodeId)) {
             requestAnimationFrame(settle);
             return;
         }
@@ -974,9 +969,7 @@ export const ChatRequestRender = (
                         );
                     } else {
                         const ref = useMarkdownRendering(
-                            part.text
-                                .replace(/^[\r\n]+|[\r\n]+$/g, '') // remove excessive new lines
-                                .replace(/(^ )/g, '&nbsp;'), // enforce keeping space before
+                            MarkdownRendering.prepareRequestText(part.text),
                             openerService,
                             true,
                             undefined,
