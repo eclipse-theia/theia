@@ -326,21 +326,20 @@ export class AIChatInputWidget extends ReactWidget {
      * Resolves the reasoning level to display in the selector. Priority: session override →
      * persisted per-agent selection (from {@link AISettingsService}) →
      * `ai-features.reasoning.defaults` preference entry matching the current model/agent →
-     * model's declared default → `'off'`.
+     * model's declared default → `'off'`. The result is clamped to the model's supported levels, matching
+     * what the frontend language model service sends.
      */
     protected getCurrentReasoningLevel(): ReasoningLevel | undefined {
         if (!this.currentReasoningSupport) {
             return undefined;
         }
         const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
-        const sessionLevel = session?.model.settings?.commonSettings?.reasoning?.level;
-        if (sessionLevel) {
-            return sessionLevel;
-        }
-        if (this.savedReasoning?.level) {
-            return this.savedReasoning.level;
-        }
-        return this.resolvePreferenceReasoningLevel() ?? this.currentReasoningSupport.defaultLevel ?? 'off';
+        const level = session?.model.settings?.commonSettings?.reasoning?.level
+            ?? this.savedReasoning?.level
+            ?? this.resolvePreferenceReasoningLevel()
+            ?? this.currentReasoningSupport.defaultLevel
+            ?? 'off';
+        return ReasoningSupport.clampLevel(this.currentReasoningSupport, level);
     }
 
     protected resolvePreferenceReasoningLevel(): ReasoningLevel | undefined {
@@ -2948,7 +2947,7 @@ const ReasoningSelector: React.FunctionComponent<ReasoningSelectorProps> = React
     );
 
     const title = nls.localizeByDefault('Reasoning');
-    const effectiveLevel = currentLevel ?? reasoningSupport.defaultLevel ?? reasoningSupport.supportedLevels[0] ?? 'off';
+    const effectiveLevel = ReasoningSupport.clampLevel(reasoningSupport, currentLevel ?? reasoningSupport.defaultLevel ?? 'off');
 
     return (
         <span onMouseEnter={hoverHandler(hoverService, title)}>

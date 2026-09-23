@@ -21,12 +21,13 @@ import {
     LanguageModelResponse,
     LanguageModelStreamResponsePart,
     TextMessage,
+    ThinkingResponsePart,
     ToolCallResult,
     ToolInvocationContext,
     ToolRequest,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken, nls, unreachable, ILogger } from '@theia/core';
+import { CancellationToken, isObject, nls, unreachable, ILogger } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
@@ -116,20 +117,20 @@ export class OpenAiResponseApiUtils {
         // If no tools are provided, use simple response handling
         if (!tools || tools.length === 0) {
             if (isStreaming) {
-                const stream = openai.responses.stream({
+                const stream = this.streamWithReasoningSummaryFallback(effectiveSettings, modelId, sentSettings => openai.responses.stream({
                     model: model as ResponsesModel,
                     instructions,
                     input,
-                    ...effectiveSettings
-                });
+                    ...sentSettings
+                }));
                 return { stream: this.createSimpleResponseApiStreamIterator(stream, cancellationToken) };
             } else {
-                const response = await openai.responses.create({
+                const response = await this.sendWithReasoningSummaryFallback(effectiveSettings, modelId, sentSettings => openai.responses.create({
                     model: model as ResponsesModel,
                     instructions,
                     input,
-                    ...effectiveSettings
-                });
+                    ...sentSettings
+                }));
 
                 return {
                     text: response.output_text || '',
@@ -189,12 +190,99 @@ export class OpenAiResponseApiUtils {
         return converted;
     }
 
+    /**
+     * Maps a reasoning-summary stream event to a thinking part. With `reasoning.summary` set, the Responses API streams
+     * one or more `summary_text` parts per reasoning item; parts after the first are separated by a blank line.
+     */
+    reasoningSummaryThought(event: ResponseStreamEvent): ThinkingResponsePart | undefined {
+        if (event.type === 'response.reasoning_summary_part.added') {
+            return event.summary_index > 0 ? { thought: '\n\n', signature: '' } : undefined;
+        }
+        if (event.type === 'response.reasoning_summary_text.delta') {
+            return { thought: event.delta, signature: '' };
+        }
+        return undefined;
+    }
+
+    /**
+     * Model ids whose organization rejected `reasoning.summary` (OpenAI requires a verified organization for summaries).
+     * Later requests to these models omit the field.
+     */
+    protected readonly reasoningSummaryRejectedModels = new Set<string>();
+
+    protected withoutRejectedReasoningSummary(settings: Record<string, unknown>, modelId: string): Record<string, unknown> {
+        const reasoning = settings.reasoning;
+        if (!this.reasoningSummaryRejectedModels.has(modelId) || !isObject(reasoning) || !('summary' in reasoning)) {
+            return settings;
+        }
+        const withoutSummary = { ...reasoning };
+        delete withoutSummary.summary;
+        return { ...settings, reasoning: withoutSummary };
+    }
+
+    /**
+     * Returns `true` and remembers the rejection when `error` is the 400 an unverified organization gets for `reasoning.summary`,
+     * so the request can be sent once more without it.
+     */
+    protected handleReasoningSummaryRejection(error: unknown, sentSettings: Record<string, unknown>, modelId: string): boolean {
+        const reasoning = sentSettings.reasoning;
+        if (!(error instanceof OpenAI.BadRequestError) || error.param !== 'reasoning.summary' || !isObject(reasoning) || !('summary' in reasoning)) {
+            return false;
+        }
+        this.logger.warn(`Model ${modelId} rejected reasoning summaries (${error.message}); continuing without them.`);
+        this.reasoningSummaryRejectedModels.add(modelId);
+        return true;
+    }
+
+    /**
+     * Sends a Responses API request, retrying once without `reasoning.summary` if the organization is not allowed to request it.
+     */
+    async sendWithReasoningSummaryFallback<T>(
+        settings: Record<string, unknown>,
+        modelId: string,
+        send: (settings: Record<string, unknown>) => Promise<T>
+    ): Promise<T> {
+        const sentSettings = this.withoutRejectedReasoningSummary(settings, modelId);
+        try {
+            return await send(sentSettings);
+        } catch (error) {
+            if (!this.handleReasoningSummaryRejection(error, sentSettings, modelId)) {
+                throw error;
+            }
+            return send(this.withoutRejectedReasoningSummary(settings, modelId));
+        }
+    }
+
+    /**
+     * Streaming counterpart of {@link sendWithReasoningSummaryFallback}. The rejection arrives before any event, so nothing is emitted twice.
+     */
+    async *streamWithReasoningSummaryFallback(
+        settings: Record<string, unknown>,
+        modelId: string,
+        open: (settings: Record<string, unknown>) => AsyncIterable<ResponseStreamEvent>
+    ): AsyncIterable<ResponseStreamEvent> {
+        const sentSettings = this.withoutRejectedReasoningSummary(settings, modelId);
+        let received = false;
+        try {
+            for await (const event of open(sentSettings)) {
+                received = true;
+                yield event;
+            }
+        } catch (error) {
+            if (received || !this.handleReasoningSummaryRejection(error, sentSettings, modelId)) {
+                throw error;
+            }
+            yield* open(this.withoutRejectedReasoningSummary(settings, modelId));
+        }
+    }
+
     protected createSimpleResponseApiStreamIterator(
         stream: AsyncIterable<ResponseStreamEvent>,
         cancellationToken?: CancellationToken
     ): AsyncIterable<LanguageModelStreamResponsePart> {
 
         const logger = this.logger;
+        const reasoningSummaryThought = (event: ResponseStreamEvent): ThinkingResponsePart | undefined => this.reasoningSummaryThought(event);
 
         return {
             async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
@@ -210,6 +298,11 @@ export class OpenAiResponseApiUtils {
                             yield {
                                 content: event.delta
                             };
+                        } else if (event.type === 'response.reasoning_summary_part.added' || event.type === 'response.reasoning_summary_text.delta') {
+                            const thought = reasoningSummaryThought(event);
+                            if (thought) {
+                                yield thought;
+                            }
                         } else if (event.type === 'response.output_item.done' && event.item?.type === 'compaction') {
                             yield {
                                 compaction: {
@@ -500,13 +593,13 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
 
         if (this.isStreaming) {
             // Use streaming API
-            const stream = this.openai.responses.stream({
+            const stream = this.utils.streamWithReasoningSummaryFallback(this.settings, this.modelId, settings => this.openai.responses.stream({
                 model: this.model as ResponsesModel,
                 instructions: this.instructions,
                 input: this.currentInput,
                 tools: this.tools,
-                ...this.settings
-            });
+                ...settings
+            }));
 
             for await (const event of stream) {
                 if (this.cancellationToken?.isCancellationRequested) {
@@ -521,13 +614,13 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
     }
 
     protected async processNonStreamingResponse(): Promise<void> {
-        const response = await this.openai.responses.create({
+        const response = await this.utils.sendWithReasoningSummaryFallback(this.settings, this.modelId, settings => this.openai.responses.create({
             model: this.model as ResponsesModel,
             instructions: this.instructions,
             input: this.currentInput,
             tools: this.tools,
-            ...this.settings
-        });
+            ...settings
+        }));
 
         // Record token usage
         if (response.usage) {
@@ -618,6 +711,15 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                     this.pendingReasoningItems = [];
                 }
                 break;
+
+            case 'response.reasoning_summary_part.added':
+            case 'response.reasoning_summary_text.delta': {
+                const thought = this.utils.reasoningSummaryThought(event);
+                if (thought) {
+                    this.handleIncoming(thought);
+                }
+                break;
+            }
 
             case 'response.completed':
                 if (event.response?.usage) {
