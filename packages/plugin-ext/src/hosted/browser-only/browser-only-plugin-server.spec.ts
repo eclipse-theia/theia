@@ -59,9 +59,8 @@ const pluginPathsService: PluginPathsService = {
 };
 
 /**
- * A minimal stand-in for the browser's `LockManager`: grants a lock request only once every
- * earlier request for the same name has settled, so that two `request()` calls for the same
- * name never run concurrently, same as the real Web Locks API guarantees across tabs.
+ * Stand-in for the browser's `LockManager`. Like the real one, it runs requests for the same
+ * lock name one after another.
  */
 class FakeLockManager {
     private readonly queues = new Map<string, Promise<unknown>>();
@@ -166,14 +165,10 @@ describe('BrowserOnlyPluginServer', () => {
         });
     });
 
-    describe('concurrent writes from two tabs', () => {
+    describe('concurrent writes', () => {
 
-        async function assertNeitherUpdateIsLost(): Promise<void> {
-            const one = createServer();
-            // stands for another tab of the application, running its own plugin host over the same browser storage
-            const other = createServer();
-
-            // genuinely concurrent, unlike the earlier tests that await one call before starting the next
+        async function assertNeitherUpdateIsLost(one: BrowserOnlyPluginServer, other: BrowserOnlyPluginServer): Promise<void> {
+            // start both writes before awaiting either, so they actually overlap
             await Promise.all([
                 one.setStorageValue('plugin.one', { count: 1 }, undefined),
                 other.setStorageValue('plugin.other', { count: 2 }, undefined)
@@ -185,17 +180,19 @@ describe('BrowserOnlyPluginServer', () => {
             });
         }
 
-        it('does not lose either update, serialized via the Web Locks API', async () => {
+        it('does not lose either update from two tabs, serialized via the Web Locks API', async () => {
             const restore = installFakeLockManager();
             try {
-                await assertNeitherUpdateIsLost();
+                // one server per tab, sharing the same browser storage
+                await assertNeitherUpdateIsLost(createServer(), createServer());
             } finally {
                 restore();
             }
         });
 
-        it('does not lose either update, serialized via the same-realm fallback when the Web Locks API is unavailable', async () => {
-            await assertNeitherUpdateIsLost();
+        it('does not lose either update within one tab when the Web Locks API is unavailable', async () => {
+            const server = createServer();
+            await assertNeitherUpdateIsLost(server, server);
         });
     });
 

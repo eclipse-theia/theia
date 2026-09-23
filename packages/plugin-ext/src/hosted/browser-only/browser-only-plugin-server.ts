@@ -50,15 +50,9 @@ export class BrowserOnlyPluginServer implements PluginServer {
     @inject(PluginPathsService)
     protected readonly pluginPathsService: PluginPathsService;
 
-    /**
-     * Fallback for {@link withStoreLock} when the Web Locks API is unavailable, plus the flag for
-     * its one-time warning. Both `static`, not `protected readonly`, so they're shared by every
-     * instance in this JS realm - otherwise two `BrowserOnlyPluginServer`s in the same realm
-     * (e.g. two plugin hosts sharing one page) wouldn't serialize against each other either, and
-     * each would warn separately.
-     */
-    protected static readonly localLocks = new Map<string, Mutex>();
-    protected static missingLocksWarned = false;
+    /** Fallback for {@link withStoreLock} when the Web Locks API is unavailable. */
+    protected readonly localLock = new Mutex();
+    protected missingLocksWarned = false;
 
     async install(pluginEntry: string, type?: PluginType, options?: PluginDeployOptions): Promise<void> {
         throw new Error(nls.localize('theia/plugin-ext/browserOnlyInstallUnsupported', 'Installing plugins is not supported in a browser-only application.'));
@@ -132,19 +126,12 @@ export class BrowserOnlyPluginServer implements PluginServer {
             return this.requestLock(locks, `${LOCK_NAME_PREFIX}${storeKey}`, task);
         }
         // no Web Locks API (insecure context, older browser): fall back to serializing writes
-        // within this JS realm. A write from another tab, which doesn't share this realm, can
-        // still race and get lost.
-        if (!BrowserOnlyPluginServer.missingLocksWarned) {
-            BrowserOnlyPluginServer.missingLocksWarned = true;
+        // within this tab. A write from another tab can still race and get lost.
+        if (!this.missingLocksWarned) {
+            this.missingLocksWarned = true;
             this.logger.warn('Web Locks API unavailable: plugin storage updates from different tabs may race.');
         }
-        const queue = BrowserOnlyPluginServer.localLocks;
-        let mutex = queue.get(storeKey);
-        if (!mutex) {
-            mutex = new Mutex();
-            queue.set(storeKey, mutex);
-        }
-        return mutex.runExclusive(task);
+        return this.localLock.runExclusive(task);
     }
 
     /** The Web Locks API of this browsing context, or `undefined` in an insecure context or an older browser. */
