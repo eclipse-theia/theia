@@ -64,7 +64,11 @@ class TestHost extends WatcherHost {
     /** Runs once during the next directory read, to drive an event while a start is mid-flight. */
     duringNextRead: (() => void) | undefined;
 
+    /** How many times a directory was read. */
+    reads = 0;
+
     override async readChildren(directory: string): Promise<Set<string>> {
+        this.reads++;
         const during = this.duringNextRead;
         this.duringNextRead = undefined;
         during?.();
@@ -300,6 +304,23 @@ describe('node-directory-watcher', function (): void {
             box.write('a.txt');
 
             await box.expect(1, 'updated a.txt');
+        });
+
+        it('still confirms a deletion when another one on its timer is called off', async () => {
+            box.write('a.txt');
+            box.write('b.txt');
+            await box.watching(box.root, box.directory());
+
+            box.remove('a.txt');
+            box.remove('b.txt');
+            box.fire('rename', 'a.txt');
+            box.fire('rename', 'b.txt');
+            // After the batch resolved, within the grace period.
+            await wait(TIMINGS.changeDelay * 2);
+            box.write('a.txt');
+            box.fire('rename', 'a.txt');
+
+            await box.expect(1, 'updated a.txt', 'deleted b.txt');
         });
 
         it('reports a file that appears and vanishes within the grace period as both', async () => {
@@ -605,6 +626,37 @@ describe('node-directory-watcher', function (): void {
             box.fire('rename', 'Foo.txt');
 
             await box.expect(1, 'added Foo.txt', 'deleted foo.txt');
+        });
+
+        it('reads the directory once for a batch of renames where names ignore case', async () => {
+            box.host.caseInsensitive = true;
+            await box.watching(box.root, box.directory());
+            const readsBefore = box.host.reads;
+
+            ['a.txt', 'b.txt', 'c.txt'].forEach(fileName => {
+                box.write(fileName);
+                box.fire('rename', fileName);
+            });
+
+            await box.expect(1, 'added a.txt', 'added b.txt', 'added c.txt');
+            assert.strictEqual(box.host.reads - readsBefore, 1);
+        });
+
+        it('confirms the deletions of a batch with one directory read where names ignore case', async () => {
+            box.host.caseInsensitive = true;
+            const fileNames = ['a.txt', 'b.txt', 'c.txt'];
+            fileNames.forEach(fileName => box.write(fileName));
+            await box.watching(box.root, box.directory());
+            const readsBefore = box.host.reads;
+
+            fileNames.forEach(fileName => {
+                box.remove(fileName);
+                box.fire('rename', fileName);
+            });
+
+            await box.expect(1, 'deleted a.txt', 'deleted b.txt', 'deleted c.txt');
+            // One read resolves the batch, one confirms its deletions.
+            assert.strictEqual(box.host.reads - readsBefore, 2);
         });
 
         it('rejects a timing that would silently become 1ms', () => {

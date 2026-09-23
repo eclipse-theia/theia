@@ -61,6 +61,12 @@ interface PendingEvent {
     fileName: string | undefined;
 }
 
+/** What the events of one batch share: one directory read, and one timer for the deletions they defer. */
+interface EventBatch {
+    childExists(fileName: string): Promise<boolean>;
+    scheduleDelete(fileName: string): void;
+}
+
 /**
  * Watches one directory level with Node's `fs.watch`.
  *
@@ -296,6 +302,7 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
     protected async processEvents(events: PendingEvent[]): Promise<ResolvedChange[]> {
         const changes: ResolvedChange[] = [];
         let renamed = false;
+        const batch = this.createBatch();
         for (const { eventType, fileName } of events) {
             if (fileName === undefined) {
                 const rescanned = await this.host.readChildren(this.watchedDirectory);
@@ -308,13 +315,13 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
                 continue;
             } else if (eventType === 'rename') {
                 renamed = true;
-                if (!await this.namesWatchedDirectory(fileName)) {
-                    const change = await this.resolveRename(fileName);
+                if (!await this.namesWatchedDirectory(fileName, batch)) {
+                    const change = await this.resolveRename(fileName, batch);
                     if (change) {
                         changes.push(change);
                     }
                 }
-            } else if (await this.namesWatchedDirectory(fileName)) {
+            } else if (await this.namesWatchedDirectory(fileName, batch)) {
                 // A metadata change on the watched directory itself, which libuv names after the directory.
                 continue;
             } else {
@@ -334,16 +341,16 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
      * inside, so only {@link isWatchedDirectoryGone} settles whether it is still there. A child of that name
      * is ruled out on disk, since a brand new one is in neither.
      */
-    protected async namesWatchedDirectory(fileName: string): Promise<boolean> {
+    protected async namesWatchedDirectory(fileName: string, batch: EventBatch): Promise<boolean> {
         return this.host.samePath(fileName, this.host.normalizeFileName(path.basename(this.watchedDirectory)))
             && !this.children.has(fileName)
-            && !await this.host.childExists(this.watchedDirectory, fileName);
+            && !await batch.childExists(fileName);
     }
 
     /** The change this rename resolves to, or `undefined` when it is deferred to the delete timer. */
-    protected async resolveRename(fileName: string): Promise<ResolvedChange | undefined> {
-        if (!await this.host.childExists(this.watchedDirectory, fileName)) {
-            this.scheduleDelete(fileName);
+    protected async resolveRename(fileName: string, batch: EventBatch): Promise<ResolvedChange | undefined> {
+        if (!await batch.childExists(fileName)) {
+            batch.scheduleDelete(fileName);
             return undefined;
         }
         this.cancelDelete(fileName);
@@ -359,37 +366,59 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
         return { fileName, type: FileChangeType.ADDED };
     }
 
-    /**
-     * A deletion is confirmed rather than reported right away: tools that save atomically delete and recreate
-     * the file, which would otherwise surface as a deletion followed by an addition.
-     */
-    private scheduleDelete(fileName: string): void {
-        if (this.isDisposed || this.pendingDeletes.has(fileName)) {
-            return;
-        }
-        this.pendingDeletes.set(fileName, setTimeout(() => {
-            this.enqueue(() => this.confirmDelete(fileName));
-        }, this.timings.deleteDelay));
+    /** A new {@link EventBatch}. Where names ignore case, its lookups share one directory read. */
+    protected createBatch(): EventBatch {
+        return {
+            childExists: this.host.childLookup(this.watchedDirectory),
+            scheduleDelete: this.deleteScheduler()
+        };
     }
 
+    /**
+     * A deletion is confirmed rather than reported right away: tools that save atomically delete and recreate
+     * the file, which would otherwise surface as a deletion followed by an addition. The deletions of one batch
+     * share a timer, created on first use, so that they are confirmed with one directory read as well.
+     */
+    private deleteScheduler(): (fileName: string) => void {
+        let timer: NodeJS.Timeout | undefined;
+        return fileName => {
+            if (this.isDisposed || this.pendingDeletes.has(fileName)) {
+                return;
+            }
+            if (!timer) {
+                const created = setTimeout(() => this.enqueue(() => this.confirmDeletes(created)), this.timings.deleteDelay);
+                timer = created;
+            }
+            this.pendingDeletes.set(fileName, timer);
+        };
+    }
+
+    /** Leaves the shared timer running: it confirms only the names still waiting on it. */
     private cancelDelete(fileName: string): void {
-        clearTimeout(this.pendingDeletes.get(fileName));
         this.pendingDeletes.delete(fileName);
     }
 
     private clearPendingDeletes(): void {
-        for (const timer of this.pendingDeletes.values()) {
-            clearTimeout(timer);
-        }
+        new Set(this.pendingDeletes.values()).forEach(timer => clearTimeout(timer));
         this.pendingDeletes.clear();
     }
 
-    protected async confirmDelete(fileName: string): Promise<ResolvedChange[]> {
-        if (!this.pendingDeletes.delete(fileName)) {
-            // Cancelled after the timer fired but before this ran, so the deletion was already settled.
-            return [];
+    /** Confirms the deletions still waiting on `timer`. One cancelled meanwhile has left it, settled already. */
+    protected async confirmDeletes(timer: NodeJS.Timeout): Promise<ResolvedChange[]> {
+        const fileNames = Array.from(this.pendingDeletes)
+            .filter(([, pending]) => pending === timer)
+            .map(([fileName]) => fileName);
+        fileNames.forEach(fileName => this.pendingDeletes.delete(fileName));
+        const childExists = this.host.childLookup(this.watchedDirectory);
+        const changes: ResolvedChange[] = [];
+        for (const fileName of fileNames) {
+            changes.push(...await this.confirmDelete(fileName, childExists));
         }
-        if (await this.host.childExists(this.watchedDirectory, fileName)) {
+        return changes;
+    }
+
+    protected async confirmDelete(fileName: string, childExists: EventBatch['childExists']): Promise<ResolvedChange[]> {
+        if (await childExists(fileName)) {
             return [this.recordPresent(fileName)];
         }
         const known = this.children.delete(fileName);
