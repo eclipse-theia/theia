@@ -24,6 +24,7 @@ FrontendApplicationConfigProvider.set({});
 import 'reflect-metadata';
 
 import { expect } from 'chai';
+import { ReasoningLevel, ReasoningSettings, ReasoningSupport } from '@theia/ai-core';
 import { AIChatInputWidget } from './chat-input-widget';
 
 disableJSDOM();
@@ -44,6 +45,16 @@ class TestChatInputWidget extends AIChatInputWidget {
         return this.refreshCapabilities();
     }
 
+    setReasoningState(support: ReasoningSupport, saved?: ReasoningSettings): void {
+        this.currentReasoningSupport = support;
+        this.savedReasoning = saved;
+        (this as unknown as { chatService: unknown }).chatService = { getSessions: () => [] };
+    }
+
+    currentReasoningLevelForTest(): ReasoningLevel | undefined {
+        return this.getCurrentReasoningLevel();
+    }
+
     protected override async updateCapabilitiesForAgent(agentId: string, modeId?: string, preserveOverrides?: boolean): Promise<void> {
         this.updateCalls.push({ agentId, modeId, preserveOverrides });
     }
@@ -56,6 +67,24 @@ class TestChatInputWidget extends AIChatInputWidget {
 describe('AIChatInputWidget', () => {
     before(() => disableJSDOM = enableJSDOM());
     after(() => disableJSDOM());
+
+    describe('getCurrentReasoningLevel', () => {
+        const oSeries: ReasoningSupport = { supportedLevels: ['off', 'low', 'medium', 'high', 'auto'], defaultLevel: 'auto' };
+
+        it('clamps a persisted level the current model does not support to the nearest supported one', () => {
+            const widget = new TestChatInputWidget();
+            widget.setReasoningState(oSeries, { level: 'minimal' });
+
+            expect(widget.currentReasoningLevelForTest()).to.equal('low');
+        });
+
+        it('keeps a persisted level the current model supports', () => {
+            const widget = new TestChatInputWidget();
+            widget.setReasoningState(oSeries, { level: 'high' });
+
+            expect(widget.currentReasoningLevelForTest()).to.equal('high');
+        });
+    });
 
     describe('refreshCapabilities', () => {
         it('preserves capability selections while reloading prompt-template capabilities', async () => {

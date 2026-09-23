@@ -18,7 +18,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Prioritizeable } from '@theia/core/lib/common/prioritizeable';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
-import { AiConfigurationService, LanguageModel, LanguageModelResponse, ReasoningSettings, UserRequest } from '../common';
+import { AiConfigurationService, LanguageModel, LanguageModelResponse, ReasoningSettings, ReasoningSupport, UserRequest } from '../common';
 import { LanguageModelServiceImpl } from '../common/language-model-service';
 import {
     PREFERENCE_NAME_REQUEST_SETTINGS,
@@ -74,6 +74,14 @@ export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
                 languageModelRequest.reasoning = matchingReasoning.reasoning;
             } else if (languageModel.reasoningSupport?.defaultLevel) {
                 languageModelRequest.reasoning = { level: languageModel.reasoningSupport.defaultLevel };
+            }
+        }
+        // A persisted selection or preference entry can name a level the current model does not accept,
+        // which the provider would otherwise send as-is; clamp it to the model's declared levels.
+        if (languageModelRequest.reasoning && languageModel.reasoningSupport) {
+            const level = ReasoningSupport.clampLevel(languageModel.reasoningSupport, languageModelRequest.reasoning.level);
+            if (level !== languageModelRequest.reasoning.level) {
+                languageModelRequest.reasoning = { ...languageModelRequest.reasoning, level };
             }
         }
 
