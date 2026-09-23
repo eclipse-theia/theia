@@ -177,7 +177,7 @@ export class FrontendExternalChatSessionProvider implements ExternalChatSessionP
      */
     protected async getPersistedSessionsWorkspace(workspace: string | undefined): Promise<string | undefined> {
         await this.preferenceService.ready;
-        const scope = this.preferenceService.get<SessionStorageScope>(SESSION_STORAGE_PREF, 'workspace');
+        const scope = <SessionStorageScope>this.preferenceService.get(SESSION_STORAGE_PREF, 'workspace');
         return scope === 'workspace' ? workspace : undefined;
     }
 
