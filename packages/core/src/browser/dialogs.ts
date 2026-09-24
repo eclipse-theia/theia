@@ -100,11 +100,7 @@ export class DialogOverlayService implements FrontendApplicationContribution {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     push(dialog: AbstractDialog<any>): Disposable {
-        if (this.documents.findIndex(document => document === dialog.node.ownerDocument) < 0) {
-            addKeyListener(dialog.node.ownerDocument.body, Key.ENTER, e => this.handleEnter(e));
-            addKeyListener(dialog.node.ownerDocument.body, Key.ESCAPE, e => this.handleEscape(e));
-            this.documents.push(dialog.node.ownerDocument);
-        }
+        this.ensureKeyListeners(dialog.node.ownerDocument);
         this.dialogs.unshift(dialog);
         return Disposable.create(() => {
             const index = this.dialogs.indexOf(dialog);
@@ -112,6 +108,15 @@ export class DialogOverlayService implements FrontendApplicationContribution {
                 this.dialogs.splice(index, 1);
             }
         });
+    }
+
+    /** Add the key listeners for `ownerDocument`, unless they are there already. */
+    protected ensureKeyListeners(ownerDocument: Document): void {
+        if (this.documents.indexOf(ownerDocument) < 0) {
+            addKeyListener(ownerDocument.body, Key.ENTER, e => this.handleEnter(e));
+            addKeyListener(ownerDocument.body, Key.ESCAPE, e => this.handleEscape(e));
+            this.documents.push(ownerDocument);
+        }
     }
 
     protected handleEscape(event: KeyboardEvent): boolean | void {
