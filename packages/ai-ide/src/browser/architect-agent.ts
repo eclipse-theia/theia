@@ -50,7 +50,9 @@ export class ArchitectAgent extends AbstractModeAwareChatAgent {
     override description = nls.localize('theia/ai/workspace/workspaceAgent/description',
         'An AI assistant integrated into {0}, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files' +
         ' and folders and retrieve their content. It cannot modify files. It can therefore answer questions about the current project, project files and source code in the' +
-        ' workspace, such as how to build the project, where to put source code, where to find specific code or configurations, etc.',
+        ' workspace, such as how to build the project, where to put source code, where to find specific code or configurations, etc.' +
+        ' It explores and produces an implementation plan (task context). Delegate to it when "what should change?" is itself open:' +
+        ' design decisions, changes across 3+ files or 2+ packages, or crossing architectural layers.',
         FrontendApplicationConfigProvider.get().applicationName);
 
     protected readonly modeDefinitions: Omit<ChatMode, 'isDefault'>[] = [
