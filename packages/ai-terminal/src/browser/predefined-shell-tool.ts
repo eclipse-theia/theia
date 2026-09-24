@@ -55,7 +55,7 @@ export abstract class PredefinedShellTool extends AbstractShellExecutionTool {
 
     /**
      * Resolves the working directory for the shell command, given the same parsed arguments that
-     * {@link buildCommand} receives — a tool may well let the caller pick the folder it runs in.
+     * {@link buildCommand} receives, so a tool can let the caller pick the folder it runs in.
      *
      * Deliberately abstract: the cwd materially affects most predefined commands (anything
      * talking to a specific repository, build script, or per-folder tool), and silently
@@ -70,7 +70,7 @@ export abstract class PredefinedShellTool extends AbstractShellExecutionTool {
     /**
      * The **first** workspace root, or `undefined` when no workspace is open. Only a sensible
      * `resolveWorkspaceRoot` implementation for commands that produce the same output regardless
-     * of cwd — in a multi-root workspace the first root is arbitrary.
+     * of cwd. In a multi-root workspace the first root is arbitrary.
      */
     protected firstWorkspaceRoot(): string | undefined {
         return this.workspaceService.getWorkspaceRootUri(undefined)?.path.fsPath();

@@ -85,8 +85,8 @@ export class CommitMessageAgent implements Agent {
         }
 
         const parameters = { changes };
-        const systemMessage = await this.promptService.getResolvedPromptFragment(COMMIT_MESSAGE_SYSTEM_PROMPT_ID, parameters).then(p => p?.text);
-        const userMessage = await this.promptService.getResolvedPromptFragment(COMMIT_MESSAGE_USER_PROMPT_ID, parameters).then(p => p?.text);
+        const systemMessage = await this.promptService.getResolvedPromptFragmentWithoutFunctions(COMMIT_MESSAGE_SYSTEM_PROMPT_ID, parameters).then(p => p?.text);
+        const userMessage = await this.promptService.getResolvedPromptFragmentWithoutFunctions(COMMIT_MESSAGE_USER_PROMPT_ID, parameters).then(p => p?.text);
         if (!systemMessage || !userMessage) {
             throw new Error('The prompt service did not return prompts for the Commit Message agent.');
         }

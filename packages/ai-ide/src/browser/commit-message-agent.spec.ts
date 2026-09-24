@@ -26,7 +26,7 @@ describe('CommitMessageAgent', () => {
     let container: Container;
     let agent: CommitMessageAgent;
     let registry: { selectLanguageModel: sinon.SinonStub };
-    let promptService: { getResolvedPromptFragment: sinon.SinonStub; getPromptVariantInfo: sinon.SinonStub };
+    let promptService: { getResolvedPromptFragmentWithoutFunctions: sinon.SinonStub; getPromptVariantInfo: sinon.SinonStub };
     let languageModelService: { sendRequest: sinon.SinonStub };
     const fakeModel = {} as LanguageModel;
 
@@ -34,7 +34,7 @@ describe('CommitMessageAgent', () => {
         container = new Container();
         registry = { selectLanguageModel: sinon.stub().resolves(fakeModel) };
         promptService = {
-            getResolvedPromptFragment: sinon.stub().callsFake((id: string) => Promise.resolve({ text: `resolved:${id}` })),
+            getResolvedPromptFragmentWithoutFunctions: sinon.stub().callsFake((id: string) => Promise.resolve({ text: `resolved:${id}` })),
             getPromptVariantInfo: sinon.stub().returns(undefined)
         };
         languageModelService = { sendRequest: sinon.stub().resolves({ text: 'feat: add thing\n' }) };
@@ -57,15 +57,15 @@ describe('CommitMessageAgent', () => {
         const result = await agent.generateCommitMessage('the diff');
 
         expect(result).to.equal('feat: add thing');
-        expect(promptService.getResolvedPromptFragment.calledWith(COMMIT_MESSAGE_SYSTEM_PROMPT_ID)).to.be.true;
-        expect(promptService.getResolvedPromptFragment.calledWith(COMMIT_MESSAGE_USER_PROMPT_ID)).to.be.true;
+        expect(promptService.getResolvedPromptFragmentWithoutFunctions.calledWith(COMMIT_MESSAGE_SYSTEM_PROMPT_ID)).to.be.true;
+        expect(promptService.getResolvedPromptFragmentWithoutFunctions.calledWith(COMMIT_MESSAGE_USER_PROMPT_ID)).to.be.true;
         expect(languageModelService.sendRequest.calledOnce).to.be.true;
     });
 
     it('injects the diff into the prompt parameters', async () => {
         await agent.generateCommitMessage('the diff');
 
-        const [, params] = promptService.getResolvedPromptFragment.firstCall.args;
+        const [, params] = promptService.getResolvedPromptFragmentWithoutFunctions.firstCall.args;
         expect(params).to.deep.equal({ changes: 'the diff' });
     });
 
@@ -88,7 +88,7 @@ describe('CommitMessageAgent', () => {
     });
 
     it('throws when the prompts cannot be resolved', async () => {
-        promptService.getResolvedPromptFragment.resolves(undefined);
+        promptService.getResolvedPromptFragmentWithoutFunctions.resolves(undefined);
 
         const error = await agent.generateCommitMessage('the diff').then(() => undefined, e => e);
         expect(error).to.be.instanceOf(Error);

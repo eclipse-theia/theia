@@ -49,10 +49,10 @@ export namespace GitChangesRepositoryError {
  * untracked files need no separate handling.
  *
  * The `repository` argument is matched against the repositories the SCM service actually knows
- * about, and the command then runs in *that* repository's root — the argument never reaches the
- * shell, so a repository name cannot inject a command. An unknown name is answered with the list
- * of valid ones rather than a silent fallback, so the model cannot mistake one repository's diff
- * for another's.
+ * about, and the command then runs in *that* repository's root. The argument never reaches the
+ * shell, so a repository name cannot inject a command. An unknown or ambiguous name is answered
+ * with the list of valid ones rather than a silent fallback, so the model cannot mistake one
+ * repository's diff for another's.
  */
 @injectable()
 export class GetGitChangesTool extends PredefinedShellTool {
@@ -121,7 +121,13 @@ export class GetGitChangesTool extends PredefinedShellTool {
      * @throws if the git command fails, so a `fatal: ...` message is never mistaken for a diff.
      */
     async getStagedChanges(repository: ScmRepository, cancellationToken?: CancellationToken): Promise<string> {
-        const result = await this.execute(JSON.stringify({ repository: repository.provider.rootUri }), { cancellationToken });
+        const result = await this.runShellCommand({
+            command: this.buildCommand(),
+            cwd: new URI(repository.provider.rootUri).path.fsPath(),
+            timeout: this.timeout,
+            ctx: { cancellationToken },
+            truncation: this.truncation
+        });
         if (ShellExecutionCanceledResult.is(result)) {
             return '';
         }
@@ -141,12 +147,19 @@ export class GetGitChangesTool extends PredefinedShellTool {
         ctx?: ToolInvocationContext
     ): Promise<ShellExecutionToolResult | ShellExecutionCanceledResult | GitChangesRepositoryError> {
         const args: Record<string, unknown> = argString ? JSON.parse(argString) : {};
-        if (!this.findRepository(args)) {
-            const requested = this.requestedRepository(args);
+        const requested = this.requestedRepository(args);
+        const candidates = this.findRepositories(args);
+        if (candidates.length > 1) {
+            return {
+                error: `Repository '${requested}' is ambiguous. Pass the relative path shown in availableRepositories or the absolute path of the repository root.`,
+                availableRepositories: this.availableRepositories()
+            };
+        }
+        if (candidates.length === 0) {
             return {
                 error: requested
                     ? `Unknown repository '${requested}'.`
-                    : 'No repository is selected in the Source Control view; pass the repository argument.',
+                    : 'No repository is selected in the Source Control view. Pass the repository argument.',
                 availableRepositories: this.availableRepositories()
             };
         }
@@ -167,23 +180,35 @@ export class GetGitChangesTool extends PredefinedShellTool {
         return typeof args.repository === 'string' && args.repository.trim() ? args.repository.trim() : undefined;
     }
 
-    /**
-     * Matches the `repository` argument against the known repositories by label, folder name or
-     * path, and falls back to the selected repository when the argument is absent.
-     */
+    /** The repository identified by the `repository` argument, or `undefined` if it is unknown or ambiguous. */
     protected findRepository(args: Record<string, unknown>): ScmRepository | undefined {
+        const candidates = this.findRepositories(args);
+        return candidates.length === 1 ? candidates[0] : undefined;
+    }
+
+    /**
+     * Matches the `repository` argument against the known repositories by label or path. The
+     * folder name alone is only used when nothing matches by label or path. Falls back to the
+     * selected repository when the argument is absent. More than one result means the argument
+     * is ambiguous.
+     */
+    protected findRepositories(args: Record<string, unknown>): ScmRepository[] {
         const requested = this.requestedRepository(args);
         if (!requested) {
-            return this.scmService.selectedRepository;
+            return this.scmService.selectedRepository ? [this.scmService.selectedRepository] : [];
         }
         const normalized = this.normalize(requested);
-        return this.scmService.repositories.find(repository => {
+        const repositories = this.scmService.repositories;
+        const byLabelOrPath = repositories.filter(repository => {
             const root = new URI(repository.provider.rootUri);
             return this.normalize(this.repositoryLabel(repository)) === normalized
-                || this.normalize(root.path.base) === normalized
                 || this.normalize(root.path.fsPath()) === normalized
                 || this.normalize(root.toString()) === normalized;
         });
+        if (byLabelOrPath.length > 0) {
+            return byLabelOrPath;
+        }
+        return repositories.filter(repository => this.normalize(new URI(repository.provider.rootUri).path.base) === normalized);
     }
 
     protected availableRepositories(): string[] {
@@ -192,7 +217,8 @@ export class GetGitChangesTool extends PredefinedShellTool {
 
     /**
      * Identifies a repository by the path of its root relative to the workspace, so that the label
-     * is both unambiguous and usable as the `repository` argument of a follow-up call.
+     * is usable as the `repository` argument of a follow-up call. Workspace roots sharing a folder
+     * name produce identical labels, which {@link findRepositories} reports as ambiguous.
      */
     protected repositoryLabel(repository: ScmRepository): string {
         const root = new URI(repository.provider.rootUri);

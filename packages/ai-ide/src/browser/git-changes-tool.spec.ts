@@ -130,6 +130,26 @@ describe('GetGitChangesTool', () => {
         expect(shellServer.execute.called).to.be.false;
     });
 
+    it('reports an ambiguous folder name instead of picking the first matching repository', async () => {
+        const otherLib = makeRepo('file:///work/frontend/vendor/lib');
+        scmService.repositories = [backend, frontend, nested, otherLib];
+
+        const result = await tool.getTool().handler(JSON.stringify({ repository: 'lib' })) as GitChangesRepositoryError;
+        expect(result.error).to.contain('ambiguous');
+        expect(shellServer.execute.called).to.be.false;
+
+        await tool.getTool().handler(JSON.stringify({ repository: 'frontend/vendor/lib' }));
+        expect(cwdOfCall()).to.equal('/work/frontend/vendor/lib');
+    });
+
+    it('prefers an exact label match over a folder name shared with a nested repository', async () => {
+        const nestedBackend = makeRepo('file:///work/frontend/backend');
+        scmService.repositories = [backend, frontend, nestedBackend];
+
+        await tool.getTool().handler(JSON.stringify({ repository: 'backend' }));
+        expect(cwdOfCall()).to.equal('/work/backend');
+    });
+
     it('never derives the working directory from the argument, only from the matched repository', async () => {
         await tool.getTool().handler(JSON.stringify({ repository: 'backend; rm -rf /' }));
         expect(shellServer.execute.called).to.be.false;
