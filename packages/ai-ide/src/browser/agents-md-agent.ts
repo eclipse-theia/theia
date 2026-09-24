@@ -16,28 +16,29 @@
 import { AbstractStreamParsingChatAgent } from '@theia/ai-chat';
 import { LanguageModelRequirement } from '@theia/ai-core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { projectInfoSystemVariants, projectInfoTemplateVariants } from '../common/project-info-prompt-template';
+import { agentsMdSystemVariants, agentsMdTemplateVariants } from '../common/agents-md-prompt-template';
 import { ILogger, nls } from '@theia/core';
 
 @injectable()
-export class ProjectInfoAgent extends AbstractStreamParsingChatAgent {
+export class AgentsMdAgent extends AbstractStreamParsingChatAgent {
 
-    @inject(ILogger) @named('ai-ide:ProjectInfoAgent')
+    @inject(ILogger) @named('ai-ide:AgentsMdAgent')
     protected override readonly logger: ILogger;
 
-    name = 'ProjectInfo';
-    id = 'ProjectInfo';
+    name = 'AgentsMd';
+    id = 'AgentsMd';
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
         identifier: 'default/fast',
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
 
-    override description = nls.localize('theia/ai/workspace/projectInfoAgent/description',
-        'An AI assistant for managing project information templates. This agent helps create, update, and review the .prompts/project-info.prompttemplate file which provides ' +
-        'context about your project to other AI agents. It can analyze your workspace to suggest project information or update existing templates based on your requirements.');
+    override description = nls.localize('theia/ai/workspace/agentsMdAgent/description',
+        'An AI assistant for managing the project context that other AI agents use. This agent helps create, update and review the AGENTS.md file at the root of your ' +
+        'workspace, following the open AGENTS.md standard that other agentic tools read as well. It can analyze your workspace to suggest project information, ' +
+        'consolidate existing instruction files such as CLAUDE.md or copilot-instructions.md, or update the file based on your requirements.');
 
-    override prompts = [projectInfoSystemVariants, projectInfoTemplateVariants];
-    protected override systemPromptId: string | undefined = projectInfoSystemVariants.id;
+    override prompts = [agentsMdSystemVariants, agentsMdTemplateVariants];
+    protected override systemPromptId: string | undefined = agentsMdSystemVariants.id;
     override iconClass: string = 'codicon codicon-repo';
 }
