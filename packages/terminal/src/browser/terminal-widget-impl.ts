@@ -289,7 +289,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.updateConfig();
             if (change.preferenceName === 'terminal.integrated.enableCommandBlockActions') {
                 this.updateBlockOverlayController();
-            } else if (['terminal.integrated.enableCommandHistory'].includes(change.preferenceName)) {
+            } else if (change.preferenceName === 'terminal.integrated.enableCommandHistory') {
                 this.updateCommandHistoryHandlers();
             }
             this.needsResize = true;
