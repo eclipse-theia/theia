@@ -22,6 +22,8 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { cancelled, isCancelled } from '@theia/core/lib/common/cancellation';
+import { ILogger } from '@theia/core/lib/common/logger';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Container } from '@theia/core/shared/inversify';
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
@@ -57,6 +59,7 @@ describe('ProcessTaskResolver', () => {
 
     function createResolver(inputValue: string | undefined, workspaceRoot?: URI): ProcessTaskResolver {
         const container = new Container();
+        container.bind(ILogger).to(MockLogger);
         container.bind(VariableRegistry).toSelf().inSingletonScope();
         container.bind(VariableResolverService).toSelf().inSingletonScope();
         container.bind(TaskDefinitionRegistry).toSelf().inSingletonScope();

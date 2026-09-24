@@ -23,8 +23,10 @@ import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { CommandService } from '@theia/core/lib/common/command';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { isCancelled } from '@theia/core/lib/common/cancellation';
+import { ILogger } from '@theia/core/lib/common/logger';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { QuickInputService } from '@theia/core/lib/common/quick-pick-service';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Container } from '@theia/core/shared/inversify';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
@@ -66,6 +68,7 @@ describe('CommonVariableContribution', () => {
 
     beforeEach(async () => {
         const container = new Container();
+        container.bind(ILogger).to(MockLogger);
         input = sinon.stub().resolves('task-argument');
         showQuickPick = sinon.stub();
         const inputs = [promptInput, pickInput];
