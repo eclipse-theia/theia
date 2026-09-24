@@ -527,6 +527,12 @@ export class ChatViewTreeWidget extends TreeWidget {
         }
     }
 
+    protected override doUpdateRows(): void {
+        super.doUpdateRows();
+        // Follow new requests and responses to the end of the chat, unless auto-scroll is locked.
+        this.scheduleUpdateScrollToRow();
+    }
+
     protected override getScrollToRow(): number | undefined {
         // Only scroll to end if auto-scroll is enabled (not locked)
         if (this.shouldScrollToEnd) {
