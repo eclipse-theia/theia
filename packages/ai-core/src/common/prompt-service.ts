@@ -897,7 +897,7 @@ export class PromptServiceImpl implements PromptService {
         let resolvedTemplate = promptFragment.template;
         const variableAndArgResolutions = await this.resolveVariablesAndArgs(promptFragment.template, args, context);
         variableAndArgResolutions.replacements.forEach(replacement =>
-            resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
+            resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, () => replacement.value));
 
         // Then resolve function references with already resolved variables and arguments
         // This allows to resolve function references contained in resolved variables (e.g. prompt fragments)
@@ -920,7 +920,7 @@ export class PromptServiceImpl implements PromptService {
             };
         });
         functionReplacements.forEach(replacement =>
-            resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
+            resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, () => replacement.value));
 
         return {
             id: systemOrFragmentId,
@@ -945,7 +945,7 @@ export class PromptServiceImpl implements PromptService {
         const resolutions = await this.resolveVariablesAndArgs(promptFragment.template, args, context, resolveVariable);
         let resolvedTemplate = promptFragment.template;
         resolutions.replacements.forEach(replacement =>
-            resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
+            resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, () => replacement.value));
 
         return {
             id: systemOrFragmentId,
