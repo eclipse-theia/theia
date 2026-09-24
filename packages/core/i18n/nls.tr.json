@@ -72,6 +72,9 @@
         "title": "Ajan Ayarları"
       },
       "anthropic": {
+        "allowEnvApiKey": {
+          "description": "Theia'nın ortamda bulunan bir Anthropic API anahtarını (`ANTHROPIC_API_KEY`) kullanmasına izin verin. Anahtar kullanılmadan önce bunu bir kez onaylamanız istenir; izni geri çekmek için değeri `false` olarak ayarlayın."
+        },
         "apiKey": {
           "description": "Resmi Anthropic Hesabınızın API Anahtarını girin. **Lütfen dikkat:** Bu tercihi kullanarak, Anthropic API anahtarı Theia'yı çalıştıran makinede açık metin olarak saklanacaktır. Anahtarı güvenli bir şekilde ayarlamak için `ANTHROPIC_API_KEY` ortam değişkenini kullanın."
         },
@@ -91,13 +94,16 @@
           "enableStreaming": {
             "title": "Akış API'sının kullanılıp kullanılmayacağını belirtir. Varsayılan olarak `true`."
           },
+          "headers": {
+            "title": "Uç noktaya gönderilen her istekle birlikte gönderilen ek HTTP başlıkları"
+          },
           "id": {
             "title": "UI'da özel modeli tanımlamak için kullanılan benzersiz bir tanımlayıcı."
           },
           "maxRetries": {
             "title": "Bir istek başarısız olduğunda maksimum yeniden deneme sayısı. Varsayılan olarak 3'tür."
           },
-          "mdDescription": "Anthropic API ile uyumlu özel modelleri entegre edin. Gerekli öznitelikler `model` ve `url`'dir.            \n            İsteğe bağlı olarak,            \n            - kullanıcı arayüzünde özel modeli tanımlamak için benzersiz bir `id` belirtebilirsiniz. Hiçbiri belirtilmezse `model`, `id` olarak kullanılır.            \n            - Verilen URL'de sunulan API'ye erişmek için bir `apiKey` sağlayın. Global Anthropic API anahtarının kullanıldığını belirtmek için `true` kullanın.            \n            - Akışın kullanılmayacağını belirtmek için `enableStreaming: false` belirtin.            \n            - Hızlı önbelleklemenin kullanılmayacağını belirtmek için `useCaching: false` belirtin.            \n            - Bir istek başarısız olduğunda maksimum yeniden deneme sayısını belirtmek için `maxRetries: <number>` belirtin. Varsayılan değer 3'tür.            \n            Akıl yürütme yetenekleri ve maksimum çıktı belirteci sınırı, uç noktanın `/v1/models` yanıtından türetilir.",
+          "mdDescription": "Anthropic API ile uyumlu özel modelleri entegre edin. Gerekli öznitelikler `model` ve `url`'dir.            \n            İsteğe bağlı olarak,            \n            - kullanıcı arayüzünde özel modeli tanımlamak için benzersiz bir `id` belirtebilirsiniz. Herhangi bir `id` belirtilmezse, `model` özniteliği `id` olarak kullanılır.            \n            - Verilen URL'de sunulan API'ye erişmek için bir `apiKey` sağlayın. Global Anthropic API anahtarının kullanılacağını belirtmek için `true` değerini kullanın.            \n            - Akışın kullanılmayacağını belirtmek için `enableStreaming: false` değerini belirtin.            \n            - Prompt önbelleklemenin kullanılmamasını belirtmek için `useCaching: false` değerini belirtin.            \n            - Bir istek başarısız olduğunda maksimum yeniden deneme sayısını belirtmek için `maxRetries: <sayı>` değerini belirtin. Varsayılan değer 3'tür.            \n            - Uç noktaya gönderilen her istekte ek HTTP başlıkları göndermek için `headers` değerini belirtin; örneğin, API’nin önündeki bir ağ geçidi tarafından gerekli görülen başlıklar.            \n            Akıl yürütme yetenekleri ve maksimum çıktı belirteci sınırı, uç noktanın `/v1/models` yanıtından elde edilir.",
           "modelId": {
             "title": "Model Kimliği"
           },
@@ -111,8 +117,16 @@
         "customProvider": {
           "label": "{0} (Özel)"
         },
-        "models": {
-          "description": "Kullanılacak resmi Anthropic modelleri"
+        "discovery": {
+          "cached": "Önbelleğe alınmış modeller gösteriliyor; son yenileme başarısız oldu: {0}",
+          "consentPrompt": "Ortamda bir Anthropic API anahtarı bulundu (ANTHROPIC_API_KEY). Theia'nın bu anahtarı kullanarak Anthropic modellerini bulmasına ve çağırmasına izin veriliyor mu?",
+          "consentRequired": "Ortamda bir Anthropic API anahtarı bulundu. Modelleri keşfetmek için bu anahtarın kullanıldığını onaylayın.",
+          "noKey": "Anthropic API anahtarı ayarlanmamış. Modelleri keşfetmek için bir anahtar ekleyin.",
+          "overridden": "Model listesi manuel olarak yapılandırılır. Sağlayıcıdan modelleri yeniden bulmak için model geçersiz kılmalarını temizleyin.",
+          "useEnvKey": "Anahtar kullan"
+        },
+        "modelOverrides": {
+          "description": "Anthropic'ten keşfedilen modelleri geçersiz kılın. Boş bırakıldığında (varsayılan), kullanılabilir modeller sağlayıcıdan keşfedilir. Bunun yerine tam olarak bu modelleri kullanmak için açık model kimliklerini ayarlayın; bu durumda keşif işlemi hiç kullanılmaz."
         }
       },
       "chat": {
@@ -306,7 +320,8 @@
           "status": {
             "canceled": "iptal edildi",
             "generating": "oluşturuluyor...",
-            "starting": "başlıyor..."
+            "starting": "başlıyor...",
+            "waitingForInput": "giriş bekleniyor"
           }
         },
         "deleteChangeSet": "Değişiklik Setini Sil",
@@ -320,11 +335,14 @@
         "failedToLoadChats": "Sohbet oturumları yüklenemedi",
         "failedToRestoreSession": "Sohbet oturumunu geri yükleyemedi",
         "failedToRetry": "Yeniden deneme başarısız mesajı",
+        "find": "Sohbette Bul",
+        "findHide": "Sohbette Bul'u Gizle",
         "focusInput": "Odak Sohbet Girişi",
         "focusResponse": "Odak Sohbet Yanıtı",
         "functions": "İşlevler",
         "functionsDescription": "{0}u uzantıları tarafından sağlanan yerleşik işlevler",
         "genericCapabilities": "Genel Yetenekler",
+        "manageModels": "Modelleri yönet…",
         "mcpFunctionsDescription": "Bağlı sunuculardan Model Bağlam Protokolü (MCP) işlevleri",
         "mermaid-rendering": {
           "copySource": "Kaynağı Kopyala",
@@ -340,7 +358,6 @@
         "modelUnavailable": "kullanılamıyor",
         "noChatAgentsAvailable": "Sohbet temsilcisi mevcut değil.",
         "noMatchingCapabilities": "Eşleşen özellik yok",
-        "openDiff": "Açık Fark",
         "openImage": "Resmi aç",
         "openOriginalFile": "Orijinal Dosyayı Aç",
         "performThisTask": "Bu görevi gerçekleştirin.",
@@ -476,7 +493,6 @@
         "findMatchingFiles": "Geçerli dizinde \"{0}\" glob desenine uyan dosyaları bul",
         "findMatchingFilesWithPath": "{1} içinde \"{0}\" glob desenine uyan dosyaları bulun.",
         "finding": "Bulma",
-        "from": "Kaynak",
         "globPattern": "glob kalıbı",
         "grepOptions": {
           "caseInsensitive": "büyük/küçük harf duyarlı değil",
@@ -533,7 +549,6 @@
         "startingLine": "Başlangıç Satırı",
         "timeout": "Zaman aşımı",
         "timeoutInMs": "Zaman aşımı: {0} ms",
-        "to": "To",
         "todoList": "Tüm Liste",
         "todoPriority": {
           "high": "yüksek",
@@ -646,23 +661,32 @@
           "signIn": "GitHub Copilot'a giriş yapın",
           "signOut": "GitHub Copilot'tan çıkış yapın"
         },
+        "discovery": {
+          "disabled": "GitHub Copilot sağlayıcısı devre dışıdır. Modelleri keşfetmek için bunu etkinleştirin.",
+          "overridden": "Model listesi manuel olarak yapılandırılır. GitHub Copilot'tan modelleri yeniden keşfetmek için model geçersiz kılmalarını temizleyin.",
+          "signedOut": "GitHub Copilot'ta oturum açılmadı. Sunulan modelleri keşfetmek için oturum açın."
+        },
         "enabled": {
-          "mdDescription": "GitHub Copilot sağlayıcısını etkinleştirin. Etkinleştirildiğinde, kimlik doğrulama için bir durum çubuğu girişi görünür ve Copilot aboneliğinizden kullanılabilir modeller tespit edilir."
+          "mdDescription": "GitHub Copilot sağlayıcısını etkinleştirin. Etkinleştirildiğinde, kimlik doğrulama için bir durum çubuğu girişi görünür ve Copilot aboneliğinizden kullanılabilir modeller tespit edilir.\n\nİstekler, arka ucu barındıran makinede arka plan işlemi olarak çalışan resmi GitHub Copilot CLI üzerinden yönlendirilir. Bu CLI'ye yalnızca Copilot oturum açma kimlik bilgileriniz verilir; başka hiçbir bilgi verilmez; dolayısıyla ortamdaki bir jeton veya GitHub CLI'nin mevcut oturum açma bilgileri kullanılmaz."
         },
         "enterpriseUrl": {
-          "mdDescription": "Copilot API için GitHub Enterprise etki alanı (ör. `github.mycompany.com`). GitHub.com için boş bırakın."
+          "mdDescription": "Kimlik doğrulama yapmak ve istek göndermek için kullanılacak GitHub Enterprise etki alanı (örn., `github.mycompany.com`). GitHub.com için boş bırakın."
+        },
+        "enterpriseUrlChanged": "GitHub Copilot etki alanı değişti. Değişikliğin yürürlüğe girmesi için yeniden oturum açın.",
+        "executablePath": {
+          "mdDescription": "Arka ucu barındıran makinede GitHub Copilot CLI yürütülebilir dosyasının konumu. Boş bırakıldığında (varsayılan), CLI, uygulamanın kurulum dizininde, `PATH` değişkeninde ve genel `npm` dizininde aranır. CLI başka bir yere kurulmuşsa bu ayarı yapın.\n\nCLI, uygulama ile birlikte gelmez; `npm install -g @github/copilot` komutuyla yükleyin."
         },
         "modelOverrides": {
           "mdDescription": "Otomatik olarak keşfedilen GitHub Copilot modellerini geçersiz kılın. Boş bırakıldığında (varsayılan), Copilot aboneliğinizden kullanılabilir modeller keşfedilir. Otomatik keşfi geçersiz kılmak için açık model kimlikleri ayarlayın."
         },
+        "signInAgain": "GitHub Copilot artık GitHub Copilot CLI üzerinden oturum açmaktadır. Önceki oturum açma bilgilerinizi aktaramadık ve bu bilgiler silinmiştir. Copilot modellerini kullanmak için lütfen yeniden oturum açın.",
         "signOut": {
           "confirmMessage": "GitHub Copilot'tan çıkış yapmak istediğinizden emin misiniz?"
         },
         "statusBar": {
           "signedIn": "{0} olarak GitHub Copilot'a giriş yaptınız. Çıkmak için tıklayın.",
           "signedOut": "GitHub Copilot'a giriş yapmadınız. Giriş yapmak için tıklayın."
-        },
-        "tokenMigration": "GitHub Copilot oturumunuzda eski bir kimlik doğrulama yöntemi kullanıldı ve oturum silindi. Kullanılabilir tüm modellere erişmek için lütfen tekrar oturum açın."
+        }
       },
       "core": {
         "agentConfiguration": {
@@ -760,11 +784,18 @@
         "discardCustomPrompt": {
           "tooltip": "Özelleştirmeleri Sil"
         },
+        "favoriteModels": {
+          "mdDescription": "AI sohbet girişindeki model seçicinin, her sağlayıcının en yeni modellerine ek olarak gösterdiği modeller, tam nitelikli kimlikler (ör. `anthropic/claude-opus-5`) olarak gösterilir. Bu, eski veya sürümüne sabitlenmiş bir modeli el altında tutmak içindir. Bir modeli eklemek için AI Yapılandırma görünümünde ilgili sağlayıcının sayfasından modeli işaretleyin.",
+          "title": "Favori Modeller"
+        },
         "fileVariable": {
           "description": "Bir dosyanın içeriğini çözer",
           "uri": {
             "description": "İstenen dosyanın URI'si."
           }
+        },
+        "hiddenModels": {
+          "mdDescription": "AI sohbet girişindeki model seçicisi, varsayılan olarak gösterilmesi gerekse de, tam nitelikli kimlikler (ör. `google/gemini-flash-lite-latest`) olarak gösterilmeyen modelleri modeller. Yalnızca favoriler listesinde yer almayan modeller, yani bir sağlayıcının en yeni modelleri buraya gelir. Bir modeli eklemek için, AI Yapılandırma görünümünde ilgili sağlayıcının sayfasında o modelin işaretini kaldırın."
         },
         "languageModelRenderer": {
           "alias": "[alias] {0}",
@@ -911,7 +942,6 @@
           "dotRelativePath": "Şu anda açık olan dosyanın çalışma alanına göre göreceli yoluna (\"currentRelativeFilePath\") ilişkin kısa açıklama."
         },
         "variantSet": {
-          "templateLabel": "Şablon",
           "unavailableVariant": "{0} (kullanılamıyor)",
           "variantCount": "{0} varyantlar",
           "variantCountSingular": "1. varyant"
@@ -931,14 +961,25 @@
         }
       },
       "google": {
+        "allowEnvApiKey": {
+          "description": "Theia'nın ortamda bulunan bir Google AI (Gemini) API anahtarını (`GOOGLE_API_KEY` / `GEMINI_API_KEY`) kullanmasına izin verin. Anahtar kullanılmadan önce bunu bir kez onaylamanız istenir; izni iptal etmek için değeri `false` olarak ayarlayın."
+        },
         "apiKey": {
           "description": "Resmi Google AI (Gemini) Hesabınızın API Anahtarını girin. **Lütfen dikkat:** Bu tercihi kullanarak GOOGLE AI API anahtarı, Theia'yı çalıştıran makinede açık metin olarak saklanacaktır. Anahtarı güvenli bir şekilde ayarlamak için `GOOGLE_API_KEY` ortam değişkenini kullanın."
+        },
+        "discovery": {
+          "cached": "Önbelleğe alınmış modeller gösteriliyor; son yenileme başarısız oldu: {0}",
+          "consentPrompt": "Ortamda bir Google AI API anahtarı bulundu (GOOGLE_API_KEY / GEMINI_API_KEY). Theia'nın bunu Gemini modellerini bulmak ve çağırmak için kullanmasına izin verilsin mi?",
+          "consentRequired": "Ortamda bir Google AI API anahtarı bulundu. Modelleri keşfetmek için bu anahtarın kullanıldığını onaylayın.",
+          "noKey": "Google AI API anahtarı ayarlanmamış. Modelleri keşfetmek için bir anahtar ekleyin.",
+          "overridden": "Model listesi manuel olarak yapılandırılır. Sağlayıcıdan modelleri yeniden keşfetmek için model geçersiz kılmalarını temizleyin.",
+          "useEnvKey": "Anahtar kullan"
         },
         "maxRetriesOnErrors": {
           "description": "Hata durumunda maksimum yeniden deneme sayısı. 1'den küçükse, yeniden deneme mantığı devre dışı bırakılır."
         },
-        "models": {
-          "description": "Kullanılacak resmi Google Gemini modelleri"
+        "modelOverrides": {
+          "description": "Google Gemini'den keşfedilen modelleri geçersiz kılın. Boş bırakıldığında (varsayılan), kullanılabilir modeller sağlayıcıdan keşfedilir. Bunun yerine tam olarak bunları kullanmak için açık model kimlikleri belirleyin; bu durumda keşif işlemi hiç kullanılmaz."
         },
         "retryDelayOnOtherErrors": {
           "description": "Diğer hatalarda yeniden deneme arasında saniye cinsinden gecikme (bazen Google GenAI, modelden döndürülen eksik JSON sözdizimi veya 500 Dahili Sunucu Hatası gibi hatalar bildirir). Bunu -1 olarak ayarlamak, bu durumlarda yeniden denemeyi engeller. Aksi takdirde, yeniden deneme ya hemen (0 olarak ayarlandığında) ya da bu gecikme süresi kadar saniye sonra (pozitif bir sayı olarak ayarlandığında) gerçekleşir."
@@ -1053,6 +1094,7 @@
           "pageTypeLabel": "Sayfa"
         },
         "allowAllMode": {
+          "hideForThisSession": "Bu oturum için gizle",
           "stripTooltip": "Bu oturumda AI araç çağrıları onay gerektirmeden çalışır. Yalnızca güvendiğiniz ortamlarda etkinleştirin.",
           "stripTooltipFooter": "--session-preference seçeneği ile ayarlanır. Kaydedilen ayarları geri yüklemek için bu bayrağı kullanmadan yeniden başlatın.",
           "title": "Theia AI Her Şeye İzin Ver Modu"
@@ -1111,7 +1153,6 @@
             "startNewChat": "Sohbetleri kısa ve odaklanmış tutun. Yeni bir görev için [yeni bir sohbet başlatın]({0}) veya [bu sohbetin özetini içeren yeni bir sohbet başlatın]({1})."
           }
         },
-        "collapseSession": "{0}'i daralt",
         "commandAgent": {
           "commandCallback": {
             "confirmAction": "Anladım",
@@ -1131,19 +1172,16 @@
           }
         },
         "configurationState": "Yapılandırma sorunları",
-        "configureAgent": {
-          "header": "Varsayılan aracıyı yapılandırın"
-        },
         "continueAnyway": "Yine de Devam Et",
         "createSkillAgent": {
           "mode": {
             "edit": "Varsayılan Mod"
           }
         },
+        "defaultChatAgentSet": "Varsayılan sohbet temsilcisi artık {0}'dur.",
         "enableAI": {
           "mdDescription": "Bu ayar, en son AI özelliklerine erişmenizi sağlar.            \n            Bu özelliklerin, erişim sağladığınız dil modellerine (LLM'ler) sürekli istekler gönderebileceğini bilmeniz önemlidir. Bu, yakından izlemeniz gereken maliyetlere neden olabilir. Bu seçeneği etkinleştirerek, bu riskleri kabul etmiş olursunuz.            \n            **Lütfen dikkat! Bu bölümdeki aşağıdaki ayarlar,\n            ana özellik ayarı etkinleştirildikten sonra geçerli olacaktır. Özelliği etkinleştirdikten sonra, aşağıda en az bir LLM sağlayıcısı yapılandırmanız gerekir. Ayrıca [belgelere](https://theia-ide.org/docs/user_ai/) bakın**."
         },
-        "expandSession": "{0}'i genişlet",
         "exploreAgent": {
           "description": "Kod tabanından bilgileri ayıklayan ve özetleyen bir kod tabanı keşif asistanı.         Mevcut durumla ilgili bilgileri raporlar, kod alıntıları sunar ve gözlemlenen kalıpları açıklar."
         },
@@ -1201,16 +1239,36 @@
         },
         "model-selection-description": "[AI Yapılandırma Görünümü]({0}) içinde her bir AI ajanı tarafından hangi Büyük Dil Modellerinin (LLM) kullanılacağını seçin.",
         "modelsConfiguration": {
+          "awaitingConsent": "Onay bekleniyor",
+          "defaultModel": "Bu sağlayıcının en yeni modellerinden biri; AI sohbet girişindeki model seçici, burada gizlenmediği sürece bu modeli gösterir.",
           "description": "Dil modeli sağlayıcılarını ve ajanların kullanabileceği modelleri yapılandırın.",
+          "discovery": "Model Keşfi",
+          "fetching": "Alınıyor…",
+          "filterModels": "Filtre modelleri",
+          "hideModel": "Bu modeli AI sohbet girdisinin model seçicisinden gizle",
+          "modelNotReady": "Henüz hazır değil",
           "modelSettings": "Model Ayarları",
+          "noKey": "API anahtarı yok",
+          "noModels": "Henüz herhangi bir model bulunamadı.",
           "noProviders": "Herhangi bir dil modeli sağlayıcısı yüklü değildir.",
-          "providers": "Sağlayıcılar"
+          "providers": "Sağlayıcılar",
+          "ready": "Hazır",
+          "refresh": "Model listesini yenile",
+          "refreshUnavailable": "Sağlayıcı bir kimlik bilgisine sahip olana kadar yenilenecek bir şey yoktur",
+          "released": "{0} sürümü yayınlandı",
+          "resetShown": "Varsayılan ayarlara sıfırla",
+          "resetShownUnavailable": "Zaten varsayılan ayarlarda",
+          "showAllModels": "Tespit edilen tüm modelleri göster",
+          "showCheckedModels": "Yalnızca AI sohbet girişindeki model seçicinin gösterdiği modelleri göster",
+          "showModel": "Bu modeli AI sohbet girişinin model seçicisinde göster",
+          "shownExplanation": "{0} AI sohbet girişinin model seçicisinde gösterilen {1}",
+          "updated": "{0} güncellendi"
         },
-        "moreAgentsAvailable": {
-          "header": "Daha fazla ajan mevcuttur"
+        "noDefaultAgent": {
+          "header": "Varsayılan aracı yok"
         },
-        "noRecommendedAgents": "Önerilen ajan bulunmamaktadır.",
         "openAiConfiguration": "Open AI Yapılandırması",
+        "openGettingStartedWalkthrough": "AI'ya Başlangıç",
         "orchestrator": {
           "error": {
             "noAgents": "İsteği işleyebilecek sohbet ajanı mevcut değil. Lütfen yapılandırmanızda herhangi bir ajanın etkin olup olmadığını kontrol edin."
@@ -1234,8 +1292,7 @@
               "name": "GH PR Bilgisi"
             },
             "localCheckout": {
-              "description": "Pull isteğini yerel olarak kontrol eder ve mevcut çalışma ağacındaki değişiklikleri korur.",
-              "name": "Ödeme"
+              "description": "Pull isteğini yerel olarak kontrol eder ve mevcut çalışma ağacındaki değişiklikleri korur."
             },
             "localValidation": {
               "description": "Pull isteği için yerel yükleme, derleme, lint, test veya benzer doğrulama görevlerini çalıştırır.",
@@ -1292,6 +1349,7 @@
           "toolConfirmation": "Araç başına onay geçersiz kılmaları: {0}",
           "toolConfirmationGeneric": "Araç başına onay geçersiz kılma ayarları"
         },
+        "setDefaultChatAgent": "Varsayılan Sohbet Aracısını Ayarla",
         "shellExecutionCapability": {
           "description": "Ajanın ana sistemde rastgele kabuk komutları çalıştırmasına izin verir. Ajan daha sonra görev olarak kullanılamayan komut dosyalarını yürütmek, sistem bilgilerini sorgulamak ve özel bir aracı olmayan işlemleri gerçekleştirmek için yetki devredebilir.",
           "name": "Kabuk Yürütme"
@@ -1314,9 +1372,6 @@
           },
           "slashCommandsGroupDescription": "Sohbet penceresinde /name yazarak çağırabileceğiniz ve bir veya daha fazla temsilci tarafından kullanılabilen komut istemi parçaları.",
           "slashCommandsSectionHeader": "Slash Komutları"
-        },
-        "toolConfirmationInfo": {
-          "header": "Araç onayı"
         },
         "toolConfirmationOverrides": {
           "stripTooltip": "Bu oturum için bir veya daha fazla AI aracı, komut satırı bayrakları aracılığıyla otomatik olarak onaylanmıştır.",
@@ -1380,7 +1435,6 @@
           "filterPlaceholder": "Değişkenleri ada veya açıklamaya göre filtreleyin",
           "noMatches": "\"{0}\" ile eşleşen değişken bulunamadı.",
           "noVariables": "Kullanılabilir değişken yoktur.",
-          "openAgent": "Açık ajan {0}",
           "optional": "isteğe bağlı",
           "pageSubtitle": "Komut istemind{0}su ile başvurabileceğiniz değerler. Bunlar, istek anında çözümlenir ve eklenir.",
           "plainGroup": "Düz Değişkenler",
@@ -1388,7 +1442,40 @@
           "required": "gerekli",
           "usedByAgents": "Ajanlar tarafından kullanılır."
         },
-        "waitingForInput": "Girişinizi bekliyoruz"
+        "waitingForInput": "Girişinizi bekliyoruz",
+        "walkthrough": {
+          "aiSupport": {
+            "description": "\n{0}\nAI desteği ile birlikte gelir: projeniz hakkında uzman temsilcilerle sohbet edin, kodları değiştirmelerine ve görevleri yürütmelerine izin verin, yazarken kod tamamlama özelliğinden yararlanın ve terminalde yardım alın.\n\nBu özellikler varsayılan olarak devre dışıdır; böylece kendi takdirinize göre bu özellikleri etkinleştirebilirsiniz.\n\nEtkinleştirildikten sonra, erişim izni verdiğiniz dil modellerine sürekli istekler gönderebilirler. Bu durum, yakından takip etmeniz gereken maliyetlere yol açabilir.\n\n[Belgeleri okuyun]({1}\n).\n\nGeri bildirimlerinizi, katkılarınızı ve sponsorluklarınızı bekliyoruz! Devam eden geliştirme çalışmalarını desteklemek için [GitHub projesini]({2}\n) ziyaret edin. Topluluğumuzun bir parçası olduğunuz için teşekkür ederiz!\n\nTüm bunlar, yapay zeka destekli araçlar ve IDE'ler için bir çerçeve olan ve kararlı bir sürüm olarak yayınlanan Theia AI üzerine inşa edilmiştir. [Çerçeve belgelerini okuyun]({3}\n).\n",
+            "title": "{0}'da yapay zeka desteği"
+          },
+          "chooseAgent": {
+            "intro": "Her sohbet isteği bir temsilciye yönlendirilir ve siz kendiniz bir temsilci belirtmediğinizde bunlardan biri yanıt verir.\n\n**Varsayılan temsilcinizi ayarlayın:**\n",
+            "outro": "Ayrıca ayarlardan [varsayılan ajanı seçebilir]({0}\n) ve *@AgentName* ile başlayarak tek bir mesaj için başka bir ajana hitap edebilirsiniz.\n[Ajanlar]({1}\n) sayfasında hepsi listelenmiştir.\n",
+            "title": "Varsayılan aracınızı seçin"
+          },
+          "connectModel": {
+            "description": "Barındırılan bir sağlayıcı için API anahtarı ekleyin:\n\n- [OpenAI]({0}\n)\n- [Anthropic]({1}\n)\n- [Google]({2}\n)\n\nYerel kalmayı mı tercih edersiniz yoksa başka bir hizmet mi kullanmak istersiniz? Ollama, llamafile ve OpenAI ile uyumlu herhangi bir uç nokta, [Modeller]({3}\n) sayfasında ayarlanabilir.\n\nBazı ajanlar, örneğin Claude Code, kendi modellerini getirir ve bir sağlayıcıya ihtiyaç duymadan çalışır.\n",
+            "title": "Bir dil modelini bağlayın"
+          },
+          "description": "{0}'ın yapay zeka özelliklerini kurun ve bu özelliklerle nasıl çalışılacağını öğrenin.",
+          "enableAi": {
+            "description": "AI özelliklerini etkinleştirene kadar hiçbir bilgi hiçbir yere gönderilmez ve bu özellikleri istediğiniz zaman tekrar devre dışı bırakabilirsiniz.\n\n[AI Yapılandırmasını Açın]({0}\n) ve buradan özellikleri etkinleştirin.\n",
+            "title": "AI özelliklerini etkinleştirin"
+          },
+          "firstQuestion": {
+            "description": "[AI Sohbetini Açın]({0}\n) ve projenizle ilgili bir şey sorun.\n\nCevapların çok daha iyi olmasını sağlayan iki şey vardır:\n\n- *@AgentName*, bu mesaj için ajanı seçer; örneğin *@Coder*.\n- *#* bağlam ekler; örneğin *#file* veya *#selectedText*. Giriş alanının yanındaki ataç düğmesi de aynı işlevi görür.\n\nSohbet, oturumlarınızı hatırlar; böylece daha sonra bir konuşmaya devam edebilirsiniz.\n",
+            "title": "İlk sorunuzu sorun"
+          },
+          "goFurther": {
+            "description": "Sohbet sadece başlangıç. AI ayrıca yazarken kod tamamlama özelliği sunar ve *Ctrl+I* tuşuyla terminalde size yardımcı olur.\n\n- [Komut istemleri ve beceriler]({0}\n): ajanların çalıştığı talimatları okuyun ve uyarlayın.\n- [MCP sunucuları]({1}\n): {3}\nile birlikte gelen araçların ötesinde araçlar ekleyin.\n- [Token kullanımı]({2}\n): isteklerinizin ne kadar token tükettiğini görün.\n- [Perspektif Değiştir]({5}\n) (deneysel): *AI First* düzeni, sohbeti ana alana taşır; gezgin ve kaynak kontrolü ise sağ tarafta yer alır.\n\nMevcut olduğu durumlarda, AI Geçmişi görünümü modele gerçekte neyin gönderildiğini gösterir.\n\n[Belgelerde]({4}\n) daha fazla bilgi bulabilirsiniz; geri bildirimlerinizi her zaman memnuniyetle bekliyoruz.\n",
+            "title": "Daha fazlasını öğrenin"
+          },
+          "title": "AI ile ilk adımlar",
+          "toolConfirmation": {
+            "description": "Ajanlar, araçlar aracılığıyla çalışma alanınızda işlem yapar: dosyaları okur, terminal komutlarını çalıştırır veya kodu düzenler.\n\nHer araç çağrısı önce onayınızı ister. [Araçlar]({0}\n) sayfasında bu varsayılan ayarı değiştirebilir veya güvendiğiniz araçları önceden onaylayabilirsiniz.\n\nÇalışma alanı güvenilir olarak işaretlenmedikçe AI özellikleri tamamen devre dışıdır. Proje bazında karar vermek için [Çalışma alanı güvenilirliğini yönetin]({1}\n).\n",
+            "title": "Ajanların yaptıklarını kontrol altında tutun"
+          }
+        }
       },
       "llamaFile": {
         "prefs": {
@@ -1434,6 +1521,7 @@
           "label": "MCP: MCP OAuth Yönlendirme URL'sini Al"
         },
         "info": {
+          "noToolsAvailable": "Kullanılabilir araç yok.",
           "oauthRedirectUrl": "MCP OAuth yönlendirme URL'si: {0}",
           "serverSignedIn": "\"{0}\" adlı MCP sunucusuna oturum açıldı.",
           "serverSignedOut": "\"{0}\" MCP sunucusundan çıkış yapıldı.",
@@ -1609,6 +1697,7 @@
           "serverUrlPlaceholder": "Örneğin, https://mcp.example.com",
           "serverUrlRequired": "Uzak sunucular için sunucu URL'si gereklidir."
         },
+        "noServersConfigured": "Yapılandırılmış MCP sunucusu yok",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "Yetkilendirme Sunucusu",
         "oauthClientId": "OAuth İstemci Kimliği",
@@ -1636,6 +1725,9 @@
         "typeRemoteOAuth": "Uzak (OAuth)"
       },
       "openai": {
+        "allowEnvApiKey": {
+          "description": "Theia'nın ortamda bulunan bir OpenAI API anahtarını (`OPENAI_API_KEY`) kullanmasına izin verin. Anahtar kullanılmadan önce bunu bir kez onaylamanız istenir; izni iptal etmek için değeri tekrar `false` olarak ayarlayın."
+        },
         "apiKey": {
           "mdDescription": "Resmi OpenAI Hesabınızın API Anahtarını girin. **Lütfen dikkat:** Bu tercihi kullanarak Open AI API anahtarı, Theia'yı çalıştıran makinede açık metin olarak saklanacaktır. Anahtarı güvenli bir şekilde ayarlamak için `OPENAI_API_KEY` ortam değişkenini kullanın."
         },
@@ -1664,10 +1756,13 @@
           "enableStreaming": {
             "title": "Akış API'sının kullanılıp kullanılmayacağını belirtir. Varsayılan olarak `true`."
           },
+          "headers": {
+            "title": "Uç noktaya gönderilen her istekle birlikte gönderilen ek HTTP başlıkları"
+          },
           "id": {
             "title": "UI'da özel modeli tanımlamak için kullanılan benzersiz bir tanımlayıcı."
           },
-          "mdDescription": "Örneğin `vllm` aracılığıyla OpenAI API ile uyumlu özel modelleri entegre edin. Gerekli öznitelikler `model` ve `url`'dir.            \n            İsteğe bağlı olarak,            \n            - kullanıcı arayüzünde özel modeli tanımlamak için benzersiz bir `id` belirtebilirsiniz. Hiçbiri belirtilmezse `model`, `id` olarak kullanılır.            \n            - Verilen URL'de sunulan API'ye erişmek için bir `apiKey` sağlayın. Global OpenAI API anahtarının kullanıldığını belirtmek için `true` değerini kullanın.            \n            - Azure'da verilen URL'de sunulan API'ye erişmek için bir `apiVersion` sağlayın. Global OpenAI API sürümünün kullanıldığını belirtmek için `true` değerini kullanın.            \n            - Azure dağıtımınız için bir `deployment` adı sağlayın.            \n            - geliştirici mesajının nasıl dahil edileceğini kontrol etmek için `developerMessageSettings` değerini `user`, `system`, `developer`, `mergeWithFollowingUserMessage` veya `skip` seçeneklerinden birine ayarlayın (burada `user`, `system` ve `developer` bir rol olarak kullanılacak, `mergeWithFollowingUserMessage` ise takip eden kullanıcı mesajının başına sistem mesajını ekleyecek veya bir sonraki mesaj bir kullanıcı mesajı değilse sistem mesajını kullanıcı mesajına dönüştürecektir. `skip` ise sadece sistem mesajını kaldıracaktır).            Varsayılan değer `developer`'dır.            \n            - Yapılandırılmış çıktının kullanılmayacağını belirtmek için `supportsStructuredOutput: false` değerini belirtin.            \n            - Akışın kullanılmayacağını belirtmek için `enableStreaming: false` değerini belirtin.            \n            - Chat Completion API yerine daha yeni OpenAI Response API'sini kullanmak için `useResponseApi: true` değerini belirtin (uyumlu uç nokta gerektirir).            \n            - Sohbet akıl yürütme seçicisini etkinleştirmek için `reasoningSupport` belirtin. `supportedLevels` (ör. `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`) ve isteğe bağlı bir `defaultLevel` içeren bir nesne sağlayın.            \n            Daha fazla bilgi için [belgelerimize](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) bakın.",
+          "mdDescription": "Örneğin `vllm` aracılığıyla OpenAI API ile uyumlu özel modelleri entegre edin. Gerekli öznitelikler `model` ve `url`'dir.            \n            İsteğe bağlı olarak,            \n            - kullanıcı arayüzünde özel modeli tanımlamak için benzersiz bir `id` belirtebilirsiniz. Hiçbir şey belirtilmezse `model`, `id` olarak kullanılır.            \n            - Verilen URL'de sunulan API'ye erişmek için bir `apiKey` sağlayın. Global OpenAI API anahtarının kullanıldığını belirtmek için `true` değerini kullanın.            \n            - Azure'da belirtilen URL'de sunulan API'ye erişmek için bir `apiVersion` sağlayın. Global OpenAI API sürümünün kullanıldığını belirtmek için `true` değerini kullanın.            \n            - Azure dağıtımınız için bir `deployment` adı sağlayın.            \n            - `developerMessageSettings` değerini `user`, `system`, `developer`, `mergeWithFollowingUserMessage` veya `skip` seçeneklerinden birine ayarlayarak geliştirici mesajının nasıl dahil edileceğini kontrol edin (burada `user`, `system` ve `developer` bir rol olarak kullanılır; `mergeWithFollowingUserMessage`, takip eden kullanıcı mesajının başına sistem            mesajını ekler veya bir sonraki mesaj kullanıcı mesajı değilse sistem mesajını kullanıcı mesajına dönüştürür. `skip`, sistem mesajını sadece kaldırır).            Varsayılan değer `developer`'dır.            \n            - Yapılandırılmış çıktının kullanılmayacağını belirtmek için `supportsStructuredOutput: false` değerini belirtin.            \n            - Akışın kullanılmayacağını belirtmek için `enableStreaming: false` değerini belirtin.            \n            - Chat Completion API yerine daha yeni OpenAI Response API'sini kullanmak için `useResponseApi: true` değerini belirtin (uyumlu bir uç nokta gerektirir).            \n            - Sohbet akıl yürütme seçicisini etkinleştirmek için `reasoningSupport` değerini belirtin. `supportedLevels` (örn. `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`) ve isteğe bağlı bir `defaultLevel` içeren bir nesne sağlayın.            \n            - Uç noktaya gönderilen her istekte ek HTTP başlıkları göndermek için `headers`'ı belirtin; örneğin, API'nin önündeki bir ağ geçidi tarafından gerekli görülen başlıklar.            \n            Daha fazla bilgi için [belgelerimize](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) bakın.",
           "modelId": {
             "title": "Model Kimliği"
           },
@@ -1687,8 +1782,16 @@
         "customProvider": {
           "label": "{0} (Özel)"
         },
-        "models": {
-          "description": "Kullanılacak resmi OpenAI modelleri"
+        "discovery": {
+          "cached": "Önbelleğe alınmış modeller gösteriliyor; son yenileme başarısız oldu: {0}",
+          "consentPrompt": "Ortamda bir OpenAI API anahtarı bulundu (OPENAI_API_KEY). Theia'nın bu anahtarı kullanarak OpenAI modellerini bulmasına ve çağırmasına izin verecek misiniz?",
+          "consentRequired": "Ortamda bir OpenAI API anahtarı bulundu. Modelleri keşfetmek için bu anahtarın kullanıldığını onaylayın.",
+          "noKey": "OpenAI API anahtarı ayarlanmamış. Modelleri keşfetmek için bir anahtar ekleyin.",
+          "overridden": "Model listesi manuel olarak yapılandırılır. Sağlayıcıdan modelleri yeniden bulmak için model geçersiz kılmalarını temizleyin.",
+          "useEnvKey": "Anahtar kullan"
+        },
+        "modelOverrides": {
+          "description": "OpenAI'dan keşfedilen modelleri geçersiz kılın. Boş bırakıldığında (varsayılan), kullanılabilir modeller sağlayıcıdan keşfedilir. Bunun yerine tam olarak bunları kullanmak için açık model kimlikleri ayarlayın; bu durumda keşif işlemi hiç kullanılmaz."
         },
         "useResponseApi": {
           "mdDescription": "Resmi OpenAI modelleri için Chat Completion API yerine daha yeni olan OpenAI Response API'sini kullanın. Bu ayar yalnızca resmi OpenAI modelleri için geçerlidir; özel sağlayıcılar bunu ayrı ayrı yapılandırmalıdır."
@@ -1936,6 +2039,26 @@
       "codeReview": {
         "description": "Her uygulamadan sonra kod inceleme aracısına devreder. İnceleme geçene kadar sonraki adımları engeller."
       },
+      "commit-message": {
+        "agent-disabled-tooltip": "Commit Message ajanı devre dışıdır. AI Yapılandırma görünümünde bunu etkinleştirin.",
+        "cancel-tooltip": "Commit mesajı oluşturmayı iptal et",
+        "empty": "Model, boş bir commit mesajı döndürdü.",
+        "failed": "Commit mesajı oluşturulamadı: {0}",
+        "generate-from-staged": "Aşamalı Değişikliklerden Commit Mesajı Oluştur",
+        "no-changes": "Commit mesajı oluşturulacak aşamalı değişiklikler bulunmamaktadır.",
+        "no-repository": "Hiçbir kaynak kontrol deposu seçilmemiştir.",
+        "replace-prompt": "Commit mesajı alanı boş değil. İçeriğini oluşturulan mesajla değiştirmek ister misiniz?",
+        "replace-title": "Commit Mesajını Değiştir",
+        "staged-tooltip": "Aşamaya alınmış değişikliklerden commit mesajı oluştur"
+      },
+      "commitMessageAgent": {
+        "description": "Çalışma alanı deposundaki aşamalandırılmış değişikliklerden git commit mesajları oluşturur. AI sparkle düğmesi aracılığıyla SCM commit-message girişinden çağrılır.",
+        "vars": {
+          "changes": {
+            "description": "Commit mesajının oluşturulduğu, aşamaya alınmış değişikliklerin birleştirilmiş git diff'i."
+          }
+        }
+      },
       "fixGhTicketCommand": {
         "argumentHint": "<bilet numarası>",
         "description": "GitHub biletini analiz edin ve çözümü uygulayın."
@@ -2004,6 +2127,7 @@
         "updateTooltip": "{0} adresinden {1} adresine güncelleme"
       },
       "autoUpdate": {
+        "aiSettings": "AI Ayarları",
         "ask": "Yüklü bir beceri, MCP sunucusu veya Ajan Eklentisi için güncelleme mevcut olduğunda bildirimde bulun.",
         "changeLater": "Bunu daha sonra {0} dosyasında değiştirebilirsiniz.",
         "configureDefault": "{0} dosyasında varsayılan ayarları yapılandırın.",
@@ -2040,9 +2164,7 @@
           "oneSkipped": "\"{0}\" bileşeni atlandı: {1}"
         },
         "dialog": {
-          "contains": "İçerik",
           "endorsedBy": "Onaylayan",
-          "from": "Kaynak:",
           "install": {
             "title": "\"{0}\" Aracı Eklentisini Yükleyin"
           },
@@ -2104,10 +2226,6 @@
         "serverUnknownField": "Sunucu yapılandırmasında, aktarım türü açısından izin verilmeyen \"{0}\" alanı tanımlanmıştır.",
         "serverUnknownType": "Sunucu yapılandırması, bilinmeyen \"{0}\" aktarım türünü tanımlamaktadır.",
         "serverUnsupportedTransport": "\"{0}\" adlı MCP aktarım yöntemi desteklenmemektedir.",
-        "stat": {
-          "oneServer": "1 MCP sunucusu",
-          "servers": "{0} MCP sunucuları"
-        },
         "uninstalled": "\"{0}\" adlı Ajan Eklentisi kaldırıldı.",
         "unknownManifestField": "Bilinmeyen \"plugin.json\" alanı \"{0}\" göz ardı ediliyor.",
         "unlinked": "Bağlantısı kesilmiş Ajan Eklentisi \"{0}\".",
@@ -2244,7 +2362,6 @@
       "collaborate": "İşbirliği",
       "collaboration": "İşbirliği",
       "collaborationWorkspace": "İşbirliği Çalışma Alanı",
-      "connected": "Bağlı",
       "connectedSession": "İşbirliği oturumuna bağlı",
       "copiedInvitation": "Davet kodu panoya kopyalandı.",
       "copyAgain": "Tekrar Kopyala",
@@ -2471,6 +2588,25 @@
       "userSettingsDetail": "Tüm çalışma alanlarına uygula",
       "workspaceSettingsDetail": "Yalnızca mevcut çalışma alanına uygula"
     },
+    "external-api": {
+      "delivery": {
+        "description": "Harici HTTP API'sinin sunulup sunulmayacağını ve nasıl sunulacağını kontrol eder.",
+        "off": "Harici API'yi sunmayın.",
+        "samePort": "Harici API'yi arka uçla aynı bağlantı noktasında sunun.",
+        "samePortLabel": "Arka uçla aynı bağlantı noktası",
+        "separatePort": "\"externalApi.port\" aracılığıyla yapılandırılan, ayrılmış bir bağlantı noktasında harici API'yi sunun.",
+        "separatePortLabel": "Ayrı bağlantı noktası"
+      },
+      "hostname": {
+        "description": "Harici HTTP API sunucusunun bağlandığı ana bilgisayar adı veya IP adresi. Uzak bağlantıları kabul etmek için \"0.0.0.0\" değerini kullanın. \"localhost\" gibi bir ad, çözümlendiği şekilde bağlanır; bu nedenle, diğer geri döngü adresini kullanan istemciler sunucuya erişemeyebilir; bir adresi sabitlemek için \"127.0.0.1\" veya \"::1\" kullanın. Yalnızca \"externalApi.delivery\" \"separatePort\" olarak ayarlandığında kullanılır."
+      },
+      "port": {
+        "description": "Harici HTTP API'sının sunulduğu bağlantı noktası. Yalnızca \"externalApi.delivery\" ayarı \"separatePort\" olarak belirlendiğinde kullanılır."
+      },
+      "token": {
+        "description": "Korunan harici API uç noktalarına erişmek için gerekli olan taşıyıcı belirteci (\"Authorization: Bearer <token>\"). Boş bırakıldığında, harici API doğrulama yapılmadan sunulur."
+      }
+    },
     "external-terminal": {
       "cwd": "Yeni harici terminal için geçerli çalışma dizinini seçin"
     },
@@ -2514,10 +2650,6 @@
       "uploadedOutOf": "{1} adresinden {0} adresine yüklendi."
     },
     "getting-started": {
-      "ai": {
-        "header": "{0}'da AI desteği artık kullanılabilir!",
-        "openAIChatView": "Başlamak için şimdi AI Sohbet Görünümünü açın!"
-      },
       "apiComparator": "{0} API Uyumluluğu",
       "markStepUndone": "Geri Al",
       "newExtension": "Yeni Bir Uzantı Oluşturma",
@@ -2736,9 +2868,6 @@
       },
       "toolbar": "Araç çubuğu"
     },
-    "preview": {
-      "openByDefault": "Varsayılan olarak düzenleyici yerine önizlemeyi açın."
-    },
     "property-view": {
       "lastModified": "Son değiştirilme tarihi",
       "noProperties": "Kullanılabilir özellik yok.",
@@ -2749,6 +2878,16 @@
       "dev-container": {
         "attach": "Çalışan Konteynere Ekle",
         "attachError": "Konteynere bağlanılamadı: {0}",
+        "attachScreen": {
+          "errorHeader": "Konteynere bağlanılamadı",
+          "firstStartNote": "Bir konteynerin ilk başlatılması bir veya iki dakika sürebilir. Sonraki başlatmalar çok daha hızlıdır.",
+          "locating": "{0} konteyneri aranıyor...",
+          "preparing": "Bağlanmaya hazırlanılıyor...",
+          "preparingWorkspace": "Çalışma alanı hazırlanıyor...",
+          "starting": "Uygulamayı kapsayıcı içinde başlatılıyor...",
+          "title": "Konteynere bağlanma",
+          "titleNamed": "{0}'e ekleme"
+        },
         "attachWarning": "Bir konteynere bağlanmak, içindeki kodu çalıştırır. Yalnızca kaynağına güvendiğiniz konteynerlere bağlanın.",
         "attachWarningTitle": "Konteynere Ekle",
         "attaching": "Konteynere bağlanma",
@@ -2799,7 +2938,6 @@
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Son taahhüdü değiştir",
       "changeRepository": "Depoyu Değiştir...",
-      "copyCommitHash": "Kopyalama Taahhüt Hash",
       "dirtyDiff": {
         "close": "Kapat Değiştir Peek Görünümü"
       },

@@ -72,6 +72,9 @@
         "title": "Configuración del agente"
       },
       "anthropic": {
+        "allowEnvApiKey": {
+          "description": "Permite que Theia utilice una clave API de Anthropic que se encuentra en el entorno (`ANTHROPIC_API_KEY`). Se te pedirá que lo confirmes una vez antes de que se utilice la clave; vuelve a establecerlo en `false` para revocar el consentimiento."
+        },
         "apiKey": {
           "description": "Introduzca una clave API de su cuenta oficial de Anthropic. **Nota:** al utilizar esta preferencia, la clave API de Anthropic se almacenará en texto sin cifrar en el equipo que ejecuta Theia. Utilice la variable de entorno `ANTHROPIC_API_KEY` para configurar la clave de forma segura."
         },
@@ -91,13 +94,16 @@
           "enableStreaming": {
             "title": "Indica si se debe utilizar la API de streaming. Por defecto es «true»."
           },
+          "headers": {
+            "title": "Encabezados HTTP adicionales enviados con cada solicitud al punto final"
+          },
           "id": {
             "title": "Identificador único que se utiliza en la interfaz de usuario para identificar el modelo personalizado."
           },
           "maxRetries": {
             "title": "Número máximo de reintentos cuando falla una solicitud. 3 por defecto."
           },
-          "mdDescription": "Integra modelos personalizados compatibles con la API de Anthropic. Los atributos obligatorios son `model` y `url`.            \n            Opcionalmente, puedes            \n            - especificar un `id` único para identificar el modelo personalizado en la interfaz de usuario. Si no se proporciona ninguno, se utilizará `model` como `id`.            \n            - proporcionar una `apiKey` para acceder a la API servida en la URL indicada. Utilice `true` para indicar el uso de la clave global de la API de Anthropic.            \n            - especificar `enableStreaming: false` para indicar que no se utilizará el streaming.            \n            - especificar `useCaching: false` para indicar que no se utilizará el almacenamiento en caché de las solicitudes.            \n            - especificar `maxRetries: <número>` para indicar el número máximo de reintentos cuando falla una solicitud. El valor predeterminado es 3.            \n            Las capacidades de razonamiento y el límite máximo de tokens de salida se derivan de la respuesta del punto final `/v1/models`.",
+          "mdDescription": "Integra modelos personalizados compatibles con la API de Anthropic. Los atributos obligatorios son `model` y `url`.            \n            Opcionalmente, puedes            \n            - especificar un `id` único para identificar el modelo personalizado en la interfaz de usuario. Si no se proporciona ninguno, se utilizará `model` como `id`.            \n            - Proporciona una `apiKey` para acceder a la API servida en la URL indicada. Utiliza `true` para indicar el uso de la clave global de la API de Anthropic.            \n            - Especifica `enableStreaming: false` para indicar que no se utilizará el streaming.            \n            - Especifica `useCaching: false` para indicar que no se utilizará el almacenamiento en caché de las indicaciones.            \n            - Especifica `maxRetries: <número>` para indicar el número máximo de reintentos cuando falla una solicitud. El valor predeterminado es 3.            \n            - Especifica `headers` para enviar encabezados HTTP adicionales con cada solicitud al punto final; por ejemplo, los encabezados requeridos por una pasarela situada delante de la API.            \n            Las capacidades de razonamiento y el límite máximo de tokens de salida se derivan de la respuesta `/v1/models` del punto final.",
           "modelId": {
             "title": "ID del modelo"
           },
@@ -111,8 +117,16 @@
         "customProvider": {
           "label": "{0} (Personalizado)"
         },
-        "models": {
-          "description": "Modelos oficiales de Anthropic que se utilizarán."
+        "discovery": {
+          "cached": "Mostrando modelos almacenados en caché; la última actualización ha fallado: {0}",
+          "consentPrompt": "Se ha encontrado una clave API de Anthropic en el entorno (ANTHROPIC_API_KEY). ¿Permites que Theia la utilice para detectar y llamar a modelos de Anthropic?",
+          "consentRequired": "Se ha encontrado una clave de API de Anthropic en el entorno. Confirma su uso para descubrir modelos.",
+          "noKey": "No se ha configurado ninguna clave de API de Anthropic. Añade una clave para descubrir modelos.",
+          "overridden": "La lista de modelos se configura manualmente. Borra las modificaciones de los modelos para volver a detectar los modelos del proveedor.",
+          "useEnvKey": "Tecla de uso"
+        },
+        "modelOverrides": {
+          "description": "Anula los modelos detectados por Anthropic. Cuando está vacío (valor por defecto), los modelos disponibles se detectan a través del proveedor. Establece identificadores de modelo explícitos para utilizar exactamente esos; en ese caso, no se utiliza la detección en absoluto."
         }
       },
       "chat": {
@@ -306,7 +320,8 @@
           "status": {
             "canceled": "cancelado",
             "generating": "generando...",
-            "starting": "Iniciando..."
+            "starting": "Iniciando...",
+            "waitingForInput": "a la espera de entrada"
           }
         },
         "deleteChangeSet": "Eliminar conjunto de cambios",
@@ -320,11 +335,14 @@
         "failedToLoadChats": "No se han podido cargar las sesiones de chat.",
         "failedToRestoreSession": "No se ha podido restaurar la sesión de chat.",
         "failedToRetry": "Mensaje de error al reintentar",
+        "find": "Buscar en el chat",
+        "findHide": "Ocultar «Buscar en el chat»",
         "focusInput": "Entrada de chat enfocada",
         "focusResponse": "Respuesta de chat enfocada",
         "functions": "Funciones",
         "functionsDescription": "Funciones integradas proporcionadas por las extensiones de{0}",
         "genericCapabilities": "Capacidades genéricas",
+        "manageModels": "Gestionar modelos…",
         "mcpFunctionsDescription": "Funciones del Protocolo de Contexto de Modelo (MCP) de servidores conectados.",
         "mermaid-rendering": {
           "copySource": "Copiar código fuente",
@@ -340,7 +358,6 @@
         "modelUnavailable": "no disponible",
         "noChatAgentsAvailable": "No hay agentes de chat disponibles.",
         "noMatchingCapabilities": "Sin capacidades coincidentes",
-        "openDiff": "Abrir Diff",
         "openImage": "Abrir imagen",
         "openOriginalFile": "Abrir archivo original",
         "performThisTask": "Realice esta tarea.",
@@ -476,7 +493,6 @@
         "findMatchingFiles": "Buscar archivos que coincidan con el patrón global «{0}» en el directorio actual.",
         "findMatchingFilesWithPath": "Buscar archivos que coincidan con el patrón global «{0}» dentro de {1}",
         "finding": "Búsqueda",
-        "from": "De",
         "globPattern": "patrón glob",
         "grepOptions": {
           "caseInsensitive": "no distingue entre mayúsculas y minúsculas",
@@ -533,7 +549,6 @@
         "startingLine": "Línea de salida",
         "timeout": "Tiempo de espera",
         "timeoutInMs": "Tiempo de espera: {0} ms",
-        "to": "A",
         "todoList": "Todo List",
         "todoPriority": {
           "high": "alto",
@@ -646,23 +661,32 @@
           "signIn": "Iniciar sesión en GitHub Copilot",
           "signOut": "Cerrar sesión en GitHub Copilot"
         },
+        "discovery": {
+          "disabled": "El proveedor de GitHub Copilot está desactivado. Actívalo para descubrir modelos.",
+          "overridden": "La lista de modelos se configura manualmente. Borra las modificaciones de los modelos para volver a detectar los modelos de GitHub Copilot.",
+          "signedOut": "No has iniciado sesión en GitHub Copilot. Inicia sesión para descubrir los modelos que ofrece."
+        },
         "enabled": {
-          "mdDescription": "Habilita el proveedor GitHub Copilot. Una vez habilitado, aparecerá una entrada en la barra de estado para la autenticación y se detectarán los modelos disponibles de tu suscripción a Copilot."
+          "mdDescription": "Activa el proveedor de GitHub Copilot. Una vez activado, aparecerá una entrada en la barra de estado para la autenticación y se detectarán los modelos disponibles de tu suscripción a Copilot.\n\nLas solicitudes se canalizan a través de la CLI oficial de GitHub Copilot, que se ejecuta como un proceso en segundo plano en el equipo que aloja el backend. Solo se le proporcionan las credenciales de tu inicio de sesión en Copilot y nada más, por lo que no se utiliza ningún token del entorno ni un inicio de sesión existente de la CLI de GitHub."
         },
         "enterpriseUrl": {
-          "mdDescription": "Dominio de GitHub Enterprise para la API de Copilot (por ejemplo, `github.mycompany.com`). Déjelo vacío para GitHub.com."
+          "mdDescription": "Dominio de GitHub Enterprise para autenticarse y enviar solicitudes (por ejemplo, `github.mycompany.com`). Déjalo en blanco para GitHub.com."
+        },
+        "enterpriseUrlChanged": "El dominio de GitHub Copilot ha cambiado. Vuelve a iniciar sesión para que el cambio surta efecto.",
+        "executablePath": {
+          "mdDescription": "Ubicación del ejecutable de la CLI de GitHub Copilot en el equipo que aloja el backend. Cuando está vacío (valor por defecto), se busca la CLI en la instalación de la aplicación, en la variable `PATH` y en el directorio global de `npm`. Configura este campo cuando la CLI esté instalada en otra ubicación.\n\nLa CLI no se incluye con la aplicación; instálala con `npm install -g @github/copilot`."
         },
         "modelOverrides": {
           "mdDescription": "Anula los modelos de GitHub Copilot detectados automáticamente. Cuando está vacío (valor predeterminado), los modelos disponibles se detectan a partir de tu suscripción a Copilot. Establece ID de modelo explícitos para anular la detección automática."
         },
+        "signInAgain": "GitHub Copilot ahora permite iniciar sesión a través de la CLI de GitHub Copilot. No se ha podido conservar tu sesión anterior, por lo que se ha eliminado; inicia sesión de nuevo para utilizar los modelos de Copilot.",
         "signOut": {
           "confirmMessage": "¿Estás seguro de que deseas cerrar sesión en GitHub Copilot?"
         },
         "statusBar": {
           "signedIn": "Iniciado sesión en GitHub Copilot como {0}. Haga clic para cerrar sesión.",
           "signedOut": "No has iniciado sesión en GitHub Copilot. Haz clic para iniciar sesión."
-        },
-        "tokenMigration": "Tu sesión de GitHub Copilot utilizaba un método de autenticación obsoleto y se ha borrado. Inicia sesión de nuevo para acceder a todos los modelos disponibles."
+        }
       },
       "core": {
         "agentConfiguration": {
@@ -760,11 +784,18 @@
         "discardCustomPrompt": {
           "tooltip": "Descartar personalizaciones"
         },
+        "favoriteModels": {
+          "mdDescription": "Muestra los modelos que aparece en el selector de modelos del chat de IA, además de los más recientes de cada proveedor, como identificadores completos (p. ej., `anthropic/claude-opus-5`). Esto sirve para tener a mano un modelo más antiguo o una versión fija. Para añadir un modelo, selecciónalo en la página de su proveedor en la vista «Configuración de IA».",
+          "title": "Modelos favoritos"
+        },
         "fileVariable": {
           "description": "Resuelve el contenido de un archivo.",
           "uri": {
             "description": "El URI del archivo solicitado."
           }
+        },
+        "hiddenModels": {
+          "mdDescription": "Modelos que el selector de modelos del chat de IA no muestra, aunque lo haría por defecto, como identificadores completos (p. ej., `google/gemini-flash-lite-latest`). Aquí solo aparecen los modelos que no figuran como favoritos, es decir, los más recientes de un proveedor. Desmarca un modelo en la página de su proveedor, en la vista «Configuración de IA», para añadirlo."
         },
         "languageModelRenderer": {
           "alias": "[alias] {0}",
@@ -911,7 +942,6 @@
           "dotRelativePath": "Referencia breve a la ruta relativa al espacio de trabajo del archivo abierto actualmente («currentRelativeFilePath»)."
         },
         "variantSet": {
-          "templateLabel": "Plantilla",
           "unavailableVariant": "{0} (no disponible)",
           "variantCount": "{0} variantes",
           "variantCountSingular": "1 variante"
@@ -931,14 +961,25 @@
         }
       },
       "google": {
+        "allowEnvApiKey": {
+          "description": "Permite que Theia utilice una clave API de Google AI (Gemini) que se encuentra en el entorno (`GOOGLE_API_KEY` / `GEMINI_API_KEY`). Se te pedirá que lo confirmes una vez antes de que se utilice la clave; vuelve a establecerlo en `false` para revocar el consentimiento."
+        },
         "apiKey": {
           "description": "Introduzca una clave API de su cuenta oficial de Google AI (Gemini). **Nota:** al utilizar esta preferencia, la clave API de GOOGLE AI se almacenará en texto sin cifrar en el equipo que ejecuta Theia. Utilice la variable de entorno `GOOGLE_API_KEY` para configurar la clave de forma segura."
+        },
+        "discovery": {
+          "cached": "Mostrando modelos almacenados en caché; la última actualización ha fallado: {0}",
+          "consentPrompt": "Se ha encontrado una clave de la API de IA de Google en el entorno (GOOGLE_API_KEY / GEMINI_API_KEY). ¿Permites que Theia la utilice para detectar y llamar a los modelos de Gemini?",
+          "consentRequired": "Se ha encontrado una clave de la API de IA de Google en el entorno. Confirma su uso para descubrir modelos.",
+          "noKey": "No se ha configurado ninguna clave de la API de Google AI. Añade una clave para descubrir modelos.",
+          "overridden": "La lista de modelos se configura manualmente. Borra las modificaciones de los modelos para volver a detectar los modelos del proveedor.",
+          "useEnvKey": "Tecla de uso"
         },
         "maxRetriesOnErrors": {
           "description": "Número máximo de reintentos en caso de errores. Si es menor que 1, la lógica de reintento se desactiva."
         },
-        "models": {
-          "description": "Modelos oficiales de Google Gemini que se utilizarán"
+        "modelOverrides": {
+          "description": "Anula los modelos detectados a partir de Google Gemini. Cuando está vacío (valor por defecto), los modelos disponibles se detectan a partir del proveedor. Establece identificadores de modelo explícitos para utilizar exactamente esos; en ese caso, no se utiliza la detección en absoluto."
         },
         "retryDelayOnOtherErrors": {
           "description": "Retraso en segundos entre reintentos en caso de otros errores (a veces, Google GenAI informa de errores como sintaxis JSON incompleta devuelta por el modelo o error 500 del servidor interno). Al establecer este valor en -1, se evitan los reintentos en estos casos. De lo contrario, el reintento se produce inmediatamente (si se establece en 0) o tras este retraso en segundos (si se establece en un número positivo)."
@@ -1053,6 +1094,7 @@
           "pageTypeLabel": "Página"
         },
         "allowAllMode": {
+          "hideForThisSession": "Ocultar durante esta sesión",
           "stripTooltip": "Las llamadas a herramientas de IA se ejecutan sin confirmación en esta sesión. Actívalas únicamente en entornos en los que confíes.",
           "stripTooltipFooter": "Se configuran mediante --session-preference. Reinicia sin el indicador para restaurar la configuración guardada.",
           "title": "Modo «Permitir todo» de Theia AI"
@@ -1111,7 +1153,6 @@
             "startNewChat": "Mantén los chats breves y centrados. [Inicia un nuevo chat]({0}) para una nueva tarea o [inicia un nuevo chat con un resumen de este]({1})."
           }
         },
-        "collapseSession": "Ocultar «{0}»",
         "commandAgent": {
           "commandCallback": {
             "confirmAction": "Entendido.",
@@ -1131,19 +1172,16 @@
           }
         },
         "configurationState": "Problemas de configuración",
-        "configureAgent": {
-          "header": "Configurar un agente predeterminado"
-        },
         "continueAnyway": "Continuar de todos modos",
         "createSkillAgent": {
           "mode": {
             "edit": "Modo predeterminado"
           }
         },
+        "defaultChatAgentSet": "El agente de chat predeterminado es ahora {0}.",
         "enableAI": {
           "mdDescription": "Esta configuración le permite acceder a las últimas capacidades de IA.            \n            Es importante tener en cuenta que estas funciones pueden generar            solicitudes continuas a los modelos de lenguaje (LLM) a los que proporciona acceso. Esto podría incurrir en costes que            deberá supervisar de cerca. Al habilitar esta opción, usted reconoce estos riesgos.            \n            **¡Tenga en cuenta que los ajustes que se indican a continuación en esta sección solo surtirán efecto\n            una vez que se haya habilitado el ajuste de la función principal. Después de habilitar la función, debe configurar al menos un            proveedor de LLM a continuación. Consulte también [la documentación](https://theia-ide.org/docs/user_ai/)**."
         },
-        "expandSession": "Ver más{0}",
         "exploreAgent": {
           "description": "Un asistente de exploración del código fuente que extrae y sintetiza información del código fuente. Informa sobre lo que existe, proporciona fragmentos de código y describe los patrones observados."
         },
@@ -1201,16 +1239,36 @@
         },
         "model-selection-description": "Elija qué modelos de lenguaje grandes (LLM) utiliza cada agente de IA en la [Vista de configuración de IA]({0}).",
         "modelsConfiguration": {
+          "awaitingConsent": "A la espera de consentimiento",
+          "defaultModel": "Uno de los modelos más recientes de este proveedor, que el selector de modelos del chat de IA muestra a menos que esté oculto aquí",
           "description": "Configurar los proveedores de modelos de lenguaje y los modelos disponibles para los agentes.",
+          "discovery": "Descubrimiento de modelos",
+          "fetching": "Cargando…",
+          "filterModels": "Modelos de filtro",
+          "hideModel": "Ocultar este modelo del selector de modelos de la entrada del chat de IA",
+          "modelNotReady": "No está listo",
           "modelSettings": "Configuración del modelo",
+          "noKey": "Sin clave API",
+          "noModels": "Aún no se han encontrado modelos.",
           "noProviders": "No hay ningún proveedor de modelos de lenguaje instalado.",
-          "providers": "Proveedores"
+          "providers": "Proveedores",
+          "ready": "Listo",
+          "refresh": "Actualizar la lista de modelos",
+          "refreshUnavailable": "No hay nada que actualizar hasta que el proveedor disponga de una credencial",
+          "released": "Publicado en {0}",
+          "resetShown": "Restablecer los valores predeterminados",
+          "resetShownUnavailable": "Ya están configurados por defecto",
+          "showAllModels": "Mostrar todos los modelos detectados",
+          "showCheckedModels": "Mostrar solo los modelos que aparecen en el selector de modelos de la entrada del chat de IA",
+          "showModel": "Mostrar este modelo en el selector de modelos de la entrada del chat de IA",
+          "shownExplanation": "{0} de {1} que aparece en el selector de modelos de la entrada del chat de IA",
+          "updated": "Actualizado{0}"
         },
-        "moreAgentsAvailable": {
-          "header": "Hay más agentes disponibles."
+        "noDefaultAgent": {
+          "header": "Sin agente predeterminado"
         },
-        "noRecommendedAgents": "No hay agentes recomendados disponibles.",
         "openAiConfiguration": "Configuración de OpenAI",
+        "openGettingStartedWalkthrough": "Primeros pasos con la IA",
         "orchestrator": {
           "error": {
             "noAgents": "No hay ningún agente de chat disponible para gestionar la solicitud. Compruebe su configuración para ver si hay alguno habilitado."
@@ -1234,8 +1292,7 @@
               "name": "Información de GH PR"
             },
             "localCheckout": {
-              "description": "Extrae la solicitud de incorporación de cambios localmente y protege los cambios existentes en el árbol de trabajo.",
-              "name": "Finalizar compra"
+              "description": "Extrae la solicitud de incorporación de cambios localmente y protege los cambios existentes en el árbol de trabajo."
             },
             "localValidation": {
               "description": "Ejecuta tareas locales de instalación, compilación, lint, prueba o validación similar para la solicitud de incorporación de cambios.",
@@ -1292,6 +1349,7 @@
           "toolConfirmation": "Anulaciones de confirmación por herramienta: {0}",
           "toolConfirmationGeneric": "Configuración de anulaciones de confirmación por herramienta"
         },
+        "setDefaultChatAgent": "Establecer el agente de chat predeterminado",
         "shellExecutionCapability": {
           "description": "Permite al agente ejecutar comandos de shell arbitrarios en el sistema host. El agente puede entonces delegar la ejecución de scripts que no están disponibles como tareas, consultar información del sistema y realizar operaciones para las que no existe una herramienta específica.",
           "name": "Ejecución de shell"
@@ -1314,9 +1372,6 @@
           },
           "slashCommandsGroupDescription": "Fragmentos de indicaciones que se activan escribiendo /nombre en el chat, disponibles para uno o más agentes.",
           "slashCommandsSectionHeader": "Comandos de barra"
-        },
-        "toolConfirmationInfo": {
-          "header": "Confirmación de la herramienta"
         },
         "toolConfirmationOverrides": {
           "stripTooltip": "Una o varias herramientas de IA se aprueban automáticamente para esta sesión mediante opciones de la línea de comandos.",
@@ -1380,7 +1435,6 @@
           "filterPlaceholder": "Filtrar variables por nombre o descripción",
           "noMatches": "No hay ninguna variable que coincida con «{0}».",
           "noVariables": "No hay variables disponibles.",
-          "openAgent": "Agente de Open {0}",
           "optional": "opcional",
           "pageSubtitle": "Valores a los que puedes hacer referencia con un nombr{0}e en una línea de comandos. Se resuelven e insertan en el momento de la solicitud.",
           "plainGroup": "Variables simples",
@@ -1388,7 +1442,40 @@
           "required": "obligatorio",
           "usedByAgents": "Utilizado por los agentes."
         },
-        "waitingForInput": "A la espera de tu entrada"
+        "waitingForInput": "A la espera de tu entrada",
+        "walkthrough": {
+          "aiSupport": {
+            "description": "\n{0}\nIncluye soporte de IA: chatea con agentes especializados sobre tu proyecto, deja que modifiquen el código y ejecuten tareas, completa el código a medida que escribes y obtén ayuda en la terminal.\n\nEstas funciones están desactivadas por defecto, para que puedas activarlas a tu discreción.\n\nUna vez habilitadas, pueden generar solicitudes continuas a los modelos de lenguaje a los que les proporciones acceso. Esto podría suponer unos costes que deberás supervisar de cerca.\n\n[Lee la documentación]({1}\n).\n\n¡Agradecemos tus comentarios, contribuciones y patrocinios! Visita el [proyecto de GitHub]({2}\n) para apoyar el desarrollo en curso. ¡Gracias por formar parte de nuestra comunidad!\n\nTodo esto se basa en Theia AI, el marco para herramientas e IDE impulsados por IA, publicado como versión estable. [Lee la documentación del marco]({3}\n).\n",
+            "title": "Compatibilidad con IA en {0}"
+          },
+          "chooseAgent": {
+            "intro": "Todas las solicitudes de chat se envían a un agente, y uno de ellos responde siempre que no elijas tú mismo a quién.\n\n**Establece tu agente predeterminado:**\n",
+            "outro": "También puedes [seleccionar el agente predeterminado]({0}\n) en la configuración y dirigirte a otro agente para un mensaje concreto haciéndolo comenzar con *@AgentName*.\nLa página [Agentes]({1}\n) los muestra todos.\n",
+            "title": "Elige tu agente predeterminado"
+          },
+          "connectModel": {
+            "description": "Añade una clave API para un proveedor alojado:\n\n- [OpenAI]({0}\n)\n- [Anthropic]({1}\n)\n- [Google]({2}\n)\n\n¿Prefieres mantenerlo local o utilizar otro servicio? Ollama, llamafile y cualquier punto final compatible con OpenAI se pueden configurar en la página [Modelos]({3}\n).\n\nAlgunos agentes traen su propio modelo, como por ejemplo Claude Code, y funcionan sin necesidad de un proveedor.\n",
+            "title": "Conectar un modelo de lenguaje"
+          },
+          "description": "Configura las funciones de IA de {0} y aprende a utilizarlas.",
+          "enableAi": {
+            "description": "No se envía nada a ningún sitio hasta que actives las funciones de IA, y puedes desactivarlas de nuevo en cualquier momento.\n\n[Abre la configuración de IA]({0}\n) y actívalas desde allí.\n",
+            "title": "Activar las funciones de IA"
+          },
+          "firstQuestion": {
+            "description": "[Abre el chat de IA]({0}\n) y pregunta algo sobre tu proyecto.\n\nHay dos cosas que mejoran mucho las respuestas:\n\n- *@AgentName* selecciona el agente para este mensaje, por ejemplo, *@Coder*.\n- *#* añade contexto, por ejemplo, *#file* o *#selectedText*. El botón con forma de clip situado junto al campo de entrada hace lo mismo.\n\nEl chat recuerda tus sesiones, por lo que puedes retomar una conversación más tarde.\n",
+            "title": "Haz tu primera pregunta"
+          },
+          "goFurther": {
+            "description": "El chat es solo el principio. La IA también autocompleta el código a medida que escribes y te ayuda en la terminal con *Ctrl+I*.\n\n- [Indicaciones y habilidades]({0}\n): lee y adapta las instrucciones con las que trabajan los agentes.\n- [Servidores MCP]({1}\n): añade herramientas además de las que incluye por def{3}\n.\n- [Uso de tokens]({2}\n): comprueba qué consumen tus solicitudes.\n- [Cambiar perspectiva]({5}\n) (experimental): el diseño *AI First* desplaza el chat al área principal, con el explorador y el control de código fuente a la derecha.\n\nLa vista «Historial de IA», cuando está disponible, muestra lo que se envió realmente al modelo.\n\nEncontrarás más información en [la documentación]({4}\n) y tus comentarios son siempre bienvenidos.\n",
+            "title": "Más información"
+          },
+          "title": "Primeros pasos con la IA",
+          "toolConfirmation": {
+            "description": "Los agentes actúan en tu espacio de trabajo a través de herramientas: leen archivos, ejecutan comandos de terminal o editan código.\n\nCada vez que se invoca una herramienta, se te pide primero tu confirmación. En la página [Herramientas]({0}\n) puedes cambiar esa configuración predeterminada o autorizar previamente las herramientas en las que confías.\n\nLas funciones de IA permanecen desactivadas por completo mientras un espacio de trabajo no sea de confianza. [Gestiona la confianza del espacio de trabajo]({1}\n) para decidirlo proyecto por proyecto.\n",
+            "title": "Mantén el control sobre lo que hacen los agentes"
+          }
+        }
       },
       "llamaFile": {
         "prefs": {
@@ -1434,6 +1521,7 @@
           "label": "MCP: Obtener la URL de redireccionamiento de OAuth de MCP"
         },
         "info": {
+          "noToolsAvailable": "No hay herramientas disponibles.",
           "oauthRedirectUrl": "URL de redireccionamiento de OAuth de MCP: {0}",
           "serverSignedIn": "Inicio de sesión en el servidor MCP «{0}».",
           "serverSignedOut": "Se ha cerrado la sesión en el servidor MCP «{0}».",
@@ -1609,6 +1697,7 @@
           "serverUrlPlaceholder": "Por ejemplo, https://mcp.example.com",
           "serverUrlRequired": "Se requiere la URL del servidor para servidores remotos."
         },
+        "noServersConfigured": "No hay servidores MCP configurados",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "Servidor de autorización",
         "oauthClientId": "ID de cliente de OAuth",
@@ -1636,6 +1725,9 @@
         "typeRemoteOAuth": "Remoto (OAuth)"
       },
       "openai": {
+        "allowEnvApiKey": {
+          "description": "Permite que Theia utilice una clave API de OpenAI que se encuentra en el entorno (`OPENAI_API_KEY`). Se te pedirá que lo confirmes una vez antes de que se utilice la clave; vuelve a establecerlo en `false` para revocar el consentimiento."
+        },
         "apiKey": {
           "mdDescription": "Introduzca una clave API de su cuenta oficial de OpenAI. **Nota:** al utilizar esta preferencia, la clave API de Open AI se almacenará en texto sin cifrar en el equipo que ejecuta Theia. Utilice la variable de entorno `OPENAI_API_KEY` para configurar la clave de forma segura."
         },
@@ -1664,10 +1756,13 @@
           "enableStreaming": {
             "title": "Indica si se debe utilizar la API de streaming. Por defecto es «true»."
           },
+          "headers": {
+            "title": "Encabezados HTTP adicionales enviados con cada solicitud al punto final"
+          },
           "id": {
             "title": "Identificador único que se utiliza en la interfaz de usuario para identificar el modelo personalizado."
           },
-          "mdDescription": "Integra modelos personalizados compatibles con la API de OpenAI, por ejemplo, a través de `vllm`. Los atributos obligatorios son `model` y `url`.            \n            Opcionalmente, puedes            \n            - especificar un `id` único para identificar el modelo personalizado en la interfaz de usuario. Si no se proporciona ninguno, se utilizará `model` como `id`.            \n            - proporcionar una `apiKey` para acceder a la API servida en la URL indicada. Utilice `true` para indicar el uso de la clave global de la API de OpenAI.            \n            - proporcionar una `apiVersion` para acceder a la API servida en la URL indicada en Azure. Utilice `true` para indicar el uso de la versión global de la API de OpenAI.            \n            - proporcione un nombre de `deployment` para su implementación de Azure.            \n            - establezca `developerMessageSettings` en uno de los siguientes valores: `user`, `system`, `developer`, `mergeWithFollowingUserMessage` o `skip` para controlar cómo se incluye el mensaje del desarrollador (donde «user», «system» y «developer» se utilizarán como un rol; «mergeWithFollowingUserMessage» antepondrá el mensaje del sistema al siguiente mensaje de usuario o convertirá el mensaje del sistema en un mensaje de usuario si el siguiente mensaje no es un mensaje de usuario; «skip» simplemente eliminará el mensaje del sistema). El valor predeterminado es «developer».            \n            - Especifique `supportsStructuredOutput: false` para indicar que no se utilizará la salida estructurada.            \n            - Especifique `enableStreaming: false` para indicar que no se utilizará la transmisión.            \n            - Especifique `useResponseApi: true` para utilizar la API de respuesta de OpenAI más reciente en lugar de la API de finalización de chat (requiere un punto final compatible).            \n            - Especifique `reasoningSupport` para activar el selector de razonamiento del chat. Proporcione un objeto con `supportedLevels` (por ejemplo, `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`) y un `defaultLevel` opcional.            \n            Consulte [nuestra documentación](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) para obtener más información.",
+          "mdDescription": "Integra modelos personalizados compatibles con la API de OpenAI, por ejemplo, a través de `vllm`. Los atributos obligatorios son `model` y `url`.            \n            Opcionalmente, puedes            \n            - especificar un `id` único para identificar el modelo personalizado en la interfaz de usuario. Si no se proporciona ninguno, se utilizará `model` como `id`.            \n            - Proporciona una `apiKey` para acceder a la API servida en la URL indicada. Utiliza `true` para indicar el uso de la clave global de la API de OpenAI.            \n            - Proporcione una `apiVersion` para acceder a la API alojada en la URL indicada en Azure. Utilice `true` para indicar el uso de la versión global de la API de OpenAI.            \n            - Proporcione un nombre de `deployment` para su implementación en Azure.            \n            - Establece `developerMessageSettings` en uno de los siguientes valores: `user`, `system`, `developer`, `mergeWithFollowingUserMessage` o `skip` para controlar cómo se incluye el mensaje del desarrollador             (donde `user`, `system` y `developer` se utilizarán como un rol; `mergeWithFollowingUserMessage` antepondrá el mensaje del sistema al siguiente mensaje de usuario            o convertirá el mensaje del sistema en un mensaje de usuario si el siguiente mensaje no es un mensaje de usuario; `skip` simplemente eliminará el mensaje del sistema).            El valor por defecto es `developer`.            \n            - Especifica `supportsStructuredOutput: false` para indicar que no se debe utilizar la salida estructurada.            \n            - Especifica `enableStreaming: false` para indicar que no se debe utilizar la transmisión en tiempo real.            \n            - Especifica `useResponseApi: true` para utilizar la nueva API de respuesta de OpenAI en lugar de la API de finalización de chat (requiere un punto final compatible).            \n            - Especifica `reasoningSupport` para activar el selector de razonamiento del chat. Proporcione un objeto con            `supportedLevels` (p. ej., `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`) y un `defaultLevel` opcional.            \n            - Especifica `headers` para enviar encabezados HTTP adicionales con cada solicitud al punto final, por ejemplo, los encabezados requeridos por una pasarela situada delante de la API.            \n            Consulta [nuestra documentación](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) para obtener más información.",
           "modelId": {
             "title": "ID del modelo"
           },
@@ -1687,8 +1782,16 @@
         "customProvider": {
           "label": "{0} (Personalizado)"
         },
-        "models": {
-          "description": "Modelos oficiales de OpenAI que se utilizarán."
+        "discovery": {
+          "cached": "Mostrando modelos almacenados en caché; la última actualización ha fallado: {0}",
+          "consentPrompt": "Se ha encontrado una clave de API de OpenAI en el entorno (OPENAI_API_KEY). ¿Permites que Theia la utilice para detectar y llamar a modelos de OpenAI?",
+          "consentRequired": "Se ha encontrado una clave de API de OpenAI en el entorno. Confirma su uso para descubrir modelos.",
+          "noKey": "No se ha configurado ninguna clave de la API de OpenAI. Añade una clave para descubrir modelos.",
+          "overridden": "La lista de modelos se configura manualmente. Borra las modificaciones de los modelos para volver a detectar los modelos del proveedor.",
+          "useEnvKey": "Tecla de uso"
+        },
+        "modelOverrides": {
+          "description": "Anula los modelos detectados por OpenAI. Cuando está vacío (valor predeterminado), los modelos disponibles se detectan a partir del proveedor. Establece identificadores de modelo explícitos para utilizar exactamente esos; en ese caso, no se utiliza la detección en absoluto."
         },
         "useResponseApi": {
           "mdDescription": "Utiliza la API OpenAI Response más reciente en lugar de la API Chat Completion para los modelos oficiales de OpenAI. Esta configuración solo se aplica a los modelos oficiales de OpenAI; los proveedores personalizados deben configurarla de forma individual."
@@ -1936,6 +2039,26 @@
       "codeReview": {
         "description": "Delega en el agente de revisión de código tras cada implementación. Bloquea los siguientes pasos hasta que se apruebe la revisión."
       },
+      "commit-message": {
+        "agent-disabled-tooltip": "El agente «Mensaje de confirmación» está desactivado. Actívalo en la vista «Configuración de IA».",
+        "cancel-tooltip": "Cancelar la generación del mensaje de confirmación",
+        "empty": "El modelo ha devuelto un mensaje de confirmación vacío.",
+        "failed": "No se ha podido generar el mensaje de confirmación: {0}",
+        "generate-from-staged": "Generar mensaje de confirmación a partir de los cambios preparados",
+        "no-changes": "No hay cambios en fase de preparación a partir de los cuales generar un mensaje de confirmación.",
+        "no-repository": "No hay ningún repositorio de control de código fuente seleccionado.",
+        "replace-prompt": "El campo del mensaje de confirmación no está vacío. ¿Deseas sustituir su contenido por el mensaje generado?",
+        "replace-title": "Sustituir mensaje de confirmación",
+        "staged-tooltip": "Generar un mensaje de confirmación a partir de los cambios preparados"
+      },
+      "commitMessageAgent": {
+        "description": "Genera mensajes de confirmación de Git a partir de los cambios preparados en el repositorio del espacio de trabajo. Se invoca desde el campo de entrada del mensaje de confirmación del SCM mediante el botón «AI Sparkle».",
+        "vars": {
+          "changes": {
+            "description": "El git diff unificado de los cambios preparados a partir del cual se genera el mensaje de confirmación."
+          }
+        }
+      },
       "fixGhTicketCommand": {
         "argumentHint": "<número de ticket>",
         "description": "Analizar un ticket de GitHub e implementar la solución."
@@ -2004,6 +2127,7 @@
         "updateTooltip": "Actualización de {0} a {1}"
       },
       "autoUpdate": {
+        "aiSettings": "Configuración de IA",
         "ask": "Notificar cuando haya una actualización disponible para una skill instalada, un servidor MCP o un complemento de agente.",
         "changeLater": "Puedes modificarlo más adelante en {0}.",
         "configureDefault": "Configura los valores predeterminados en {0}.",
@@ -2040,9 +2164,7 @@
           "oneSkipped": "Componente «{0}» omitido: {1}"
         },
         "dialog": {
-          "contains": "Contiene",
           "endorsedBy": "Con el respaldo de",
-          "from": "De",
           "install": {
             "title": "Instalar el complemento «{0}»"
           },
@@ -2104,10 +2226,6 @@
         "serverUnknownField": "La configuración del servidor declara el campo «{0}», lo cual no está permitido para su tipo de transporte.",
         "serverUnknownType": "La configuración del servidor declara el tipo de transporte desconocido «{0}».",
         "serverUnsupportedTransport": "El transporte MCP «{0}» no es compatible.",
-        "stat": {
-          "oneServer": "1 servidor MCP",
-          "servers": "{0} Servidores MCP"
-        },
         "uninstalled": "Complemento de agente desinstalado «{0}».",
         "unknownManifestField": "Se ignora el campo desconocido «{0}» del archivo «plugin.json».",
         "unlinked": "Complemento de agente desvinculado «{0}».",
@@ -2244,7 +2362,6 @@
       "collaborate": "Colaborar",
       "collaboration": "Colaboración",
       "collaborationWorkspace": "Espacio de trabajo colaborativo",
-      "connected": "Conectado",
       "connectedSession": "Conectado a una sesión de colaboración",
       "copiedInvitation": "Código de invitación copiado al portapapeles.",
       "copyAgain": "Copiar de nuevo",
@@ -2471,6 +2588,25 @@
       "userSettingsDetail": "Aplicar a todos los espacios de trabajo",
       "workspaceSettingsDetail": "Aplicar solo al espacio de trabajo actual."
     },
+    "external-api": {
+      "delivery": {
+        "description": "Controla si se ofrece la API HTTP externa y de qué manera.",
+        "off": "No se debe ofrecer la API externa.",
+        "samePort": "Sirve la API externa en el mismo puerto que el backend.",
+        "samePortLabel": "Mismo puerto que el backend",
+        "separatePort": "Sirve la API externa en un puerto dedicado, configurado mediante «externalApi.port».",
+        "separatePortLabel": "Puerto independiente"
+      },
+      "hostname": {
+        "description": "Nombre de host o dirección IP a la que se vincula el servidor externo de la API HTTP. Utiliza «0.0.0.0» para aceptar conexiones remotas. Un nombre como «localhost» se vincula a medida que se resuelve, por lo que es posible que los clientes que utilicen la otra dirección de bucle invertido no puedan acceder al servidor; utiliza «127.0.0.1» o «::1» para fijar una. Solo se utiliza cuando «externalApi.delivery» está configurado en «separatePort»."
+      },
+      "port": {
+        "description": "Puerto en el que se aloja la API HTTP externa. Solo se utiliza cuando «externalApi.delivery» está configurado en «separatePort»."
+      },
+      "token": {
+        "description": "Se requiere un token «Bearer» para acceder a los puntos finales protegidos de la API externa («Authorization: Bearer <token>»). Si se deja en blanco, se accede a la API externa sin verificación."
+      }
+    },
     "external-terminal": {
       "cwd": "Seleccionar el directorio de trabajo actual para el nuevo terminal externo."
     },
@@ -2514,10 +2650,6 @@
       "uploadedOutOf": "Subido {0} de {1}"
     },
     "getting-started": {
-      "ai": {
-        "header": "¡Ya está disponible la compatibilidad con IA en {0}!",
-        "openAIChatView": "¡Abre ahora la vista de chat con IA para aprender cómo empezar!"
-      },
       "apiComparator": "{0} Compatibilidad con API",
       "markStepUndone": "Marcar como sin hacer",
       "newExtension": "Creación de una nueva extensión",
@@ -2736,9 +2868,6 @@
       },
       "toolbar": "Barra de herramientas"
     },
-    "preview": {
-      "openByDefault": "Abrir la vista previa en lugar del editor de forma predeterminada."
-    },
     "property-view": {
       "lastModified": "Última modificación",
       "noProperties": "No hay propiedades disponibles.",
@@ -2749,6 +2878,16 @@
       "dev-container": {
         "attach": "Conectar al contenedor en ejecución",
         "attachError": "No se ha podido conectar al contenedor: {0}",
+        "attachScreen": {
+          "errorHeader": "No se ha podido conectar al contenedor",
+          "firstStartNote": "El primer inicio de un contenedor puede tardar uno o dos minutos. Los siguientes inicios son mucho más rápidos.",
+          "locating": "Localizando el contenedor {0}...",
+          "preparing": "Preparando la conexión...",
+          "preparingWorkspace": "Preparando el espacio de trabajo...",
+          "starting": "Iniciando la aplicación dentro del contenedor...",
+          "title": "Conectarse a un contenedor",
+          "titleNamed": "Conectarse a {0}"
+        },
         "attachWarning": "Al conectarse a un contenedor, se ejecutará el código que hay en su interior. Conéctese únicamente a contenedores cuyo origen le inspire confianza.",
         "attachWarningTitle": "Adjuntar al contenedor",
         "attaching": "Conectarse al contenedor",
@@ -2799,7 +2938,6 @@
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Modificar la última confirmación",
       "changeRepository": "Cambiar repositorio...",
-      "copyCommitHash": "Copiar hash de confirmación",
       "dirtyDiff": {
         "close": "Cerrar Cambiar Vista previa"
       },

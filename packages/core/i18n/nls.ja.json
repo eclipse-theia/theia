@@ -72,6 +72,9 @@
         "title": "エージェント設定"
       },
       "anthropic": {
+        "allowEnvApiKey": {
+          "description": "Theiaが環境変数(`ANTHROPIC_API_KEY`)に設定されたAnthropic APIキーを使用することを許可します。キーが使用される前に一度確認を求められます。同意を取り消すには、この設定を`false`に戻してください。"
+        },
         "apiKey": {
           "description": "公式AnthropicアカウントのAPIキーを入力してください。**ご注意:**この設定を使用すると、Anthropic APIキーがTheiaを実行しているマシン上に平文で保存されます。キーを安全に設定するには環境変数`ANTHROPIC_API_KEY`を使用してください。"
         },
@@ -91,13 +94,16 @@
           "enableStreaming": {
             "title": "ストリーミングAPIを使用するかどうかを示します。デフォルトは`true`です。"
           },
+          "headers": {
+            "title": "エンドポイントへの各リクエストとともに送信される追加のHTTPヘッダー"
+          },
           "id": {
             "title": "UI内でカスタムモデルを識別するために使用される一意の識別子"
           },
           "maxRetries": {
             "title": "リクエスト失敗時の最大再試行回数。デフォルトは3回。"
           },
-          "mdDescription": "Anthropic APIと互換性のあるカスタムモデルを統合します。必須の属性は `model` および `url` です。            \n            オプションで、以下の設定が可能です。            \n            - UI上でカスタムモデルを識別するための一意の `id` を指定します。 指定がない場合、`model`が`id`として使用されます。            \n            - 指定されたURLで提供されるAPIにアクセスするための`apiKey`を指定します。グローバルなAnthropic APIキーを使用する場合は`true`を指定します。            \n            - ストリーミングを使用しない場合は、`enableStreaming: false`を指定します。            \n            - `useCaching: false` を指定して、プロンプトのキャッシュを使用しないことを示します。            \n            - `maxRetries: <number>` を指定して、リクエストが失敗した際の再試行の最大回数を示します。デフォルトは 3 回です。            \n            推論機能および出力トークンの最大制限は、エンドポイントの `/v1/models` レスポンスから取得されます。",
+          "mdDescription": "Anthropic APIと互換性のあるカスタムモデルを統合します。必須の属性は `model` および `url` です。            \n            オプションで、以下の設定が可能です。            \n            - UI上でカスタムモデルを識別するための一意の `id` を指定します。指定がない場合は、`model` が `id` として使用されます。            \n            - 指定された URL で提供される API にアクセスするための `apiKey` を指定します。グローバルな Anthropic API キーを使用する場合は `true` を指定してください。            \n            - ストリーミングを使用しない場合は、`enableStreaming: false` を指定します。            \n            - `useCaching: false` を指定して、プロンプトのキャッシュを使用しないことを示します。            \n            - `maxRetries: <number>` を指定して、リクエストが失敗した際の再試行の最大回数を指定します。デフォルトは 3 回です。            \n            - `headers` を指定すると、エンドポイントへの各リクエストに追加の HTTP ヘッダーを送信できます。例:API の前段にあるゲートウェイで必要とされるヘッダーなど。            \n            推論機能および最大出力トークン数の上限は、エンドポイントの `/v1/models` レスポンスから導出されます。",
           "modelId": {
             "title": "モデルID"
           },
@@ -111,8 +117,16 @@
         "customProvider": {
           "label": "{0} (カスタム)"
         },
-        "models": {
-          "description": "使用する公式Anthropicモデル"
+        "discovery": {
+          "cached": "キャッシュされたモデルを表示中。前回の更新に失敗しました:{0}",
+          "consentPrompt": "環境変数(ANTHROPIC_API_KEY)にAnthropicのAPIキーが見つかりました。TheiaがこのAPIキーを使用してAnthropicモデルを検出・呼び出すことを許可しますか?",
+          "consentRequired": "環境内にAnthropicのAPIキーが検出されました。モデルの検索に使用されていることを確認してください。",
+          "noKey": "Anthropic API キーが設定されていません。モデルを検索するには、キーを追加してください。",
+          "overridden": "モデルリストは手動で設定されます。モデルの上書き設定をクリアすると、プロバイダーからモデルを再度検出できます。",
+          "useEnvKey": "キーの使用"
+        },
+        "modelOverrides": {
+          "description": "Anthropic から検出されたモデルを上書きします。空の場合(デフォルト)、利用可能なモデルはプロバイダーから検出されます。特定のモデル ID を明示的に設定すると、そのモデルのみが使用され、検出機能は一切使用されなくなります。"
         }
       },
       "chat": {
@@ -306,7 +320,8 @@
           "status": {
             "canceled": "キャンセル済み",
             "generating": "生成中...",
-            "starting": "開始中..."
+            "starting": "開始中...",
+            "waitingForInput": "入力を待機中"
           }
         },
         "deleteChangeSet": "変更セットを削除",
@@ -320,11 +335,14 @@
         "failedToLoadChats": "チャットセッションの読み込みに失敗しました",
         "failedToRestoreSession": "チャットセッションの復元に失敗しました",
         "failedToRetry": "再試行に失敗しました",
+        "find": "チャット内で検索",
+        "findHide": "チャット内の検索を非表示にする",
         "focusInput": "フォーカスチャット入力",
         "focusResponse": "フォーカスチャット応答",
         "functions": "機能",
         "functionsDescription": "{0}拡張機能によって提供される組み込み機能",
         "genericCapabilities": "汎用機能",
+        "manageModels": "モデルの管理…",
         "mcpFunctionsDescription": "接続済みサーバーからのモデルコンテキストプロトコル(MCP)機能",
         "mermaid-rendering": {
           "copySource": "ソースをコピー",
@@ -340,7 +358,6 @@
         "modelUnavailable": "利用不可",
         "noChatAgentsAvailable": "チャットエージェントは利用できません。",
         "noMatchingCapabilities": "一致する機能はありません",
-        "openDiff": "Open Diff",
         "openImage": "画像を開く",
         "openOriginalFile": "元のファイルを開く",
         "performThisTask": "このタスクを実行してください。",
@@ -476,7 +493,6 @@
         "findMatchingFiles": "現在のディレクトリ内で、グロブパターン「{0}」に一致するファイルを検索する",
         "findMatchingFilesWithPath": "{1} 内で、グロブパターン「{0}」に一致するファイルを検索する",
         "finding": "検索",
-        "from": "From",
         "globPattern": "globパターン",
         "grepOptions": {
           "caseInsensitive": "大文字小文字を区別しない",
@@ -533,7 +549,6 @@
         "startingLine": "開始ライン",
         "timeout": "タイムアウト",
         "timeoutInMs": "タイムアウト: {0} ms",
-        "to": "To",
         "todoList": "Todo List",
         "todoPriority": {
           "high": "high",
@@ -646,23 +661,32 @@
           "signIn": "GitHub Copilot にサインイン",
           "signOut": "GitHub Copilot からサインアウトする"
         },
+        "discovery": {
+          "disabled": "GitHub Copilot プロバイダーは無効になっています。モデルを検出するには、これを有効にしてください。",
+          "overridden": "モデルリストは手動で設定されます。モデルのオーバーライドをクリアすると、GitHub Copilotからモデルを再度検出できます。",
+          "signedOut": "GitHub Copilot にログインしていません。ログインして、利用可能なモデルを確認してください。"
+        },
         "enabled": {
-          "mdDescription": "GitHub Copilot プロバイダーを有効にします。有効にすると、認証用のステータスバー項目が表示され、Copilot サブスクリプションから利用可能なモデルが検出されます。"
+          "mdDescription": "GitHub Copilot プロバイダーを有効にします。有効にすると、認証用のステータスバー項目が表示され、Copilot サブスクリプションから利用可能なモデルが検出されます。\n\nリクエストは、バックエンドをホストするマシン上でバックグラウンドプロセスとして実行される公式の GitHub Copilot CLI を経由してルーティングされます。この CLI には、Copilot サインインの認証情報のみが渡され、それ以外は一切渡されないため、環境変数内のトークンや GitHub CLI の既存のサインイン情報は使用されません。"
         },
         "enterpriseUrl": {
-          "mdDescription": "Copilot API用のGitHub Enterpriseドメイン(例:`github.mycompany.com`)。GitHub.comの場合は空欄のままにしてください。"
+          "mdDescription": "認証およびリクエストの送信先となる GitHub Enterprise ドメイン(例:`github.mycompany.com`)。GitHub.com を使用する場合は、空欄のままにしてください。"
+        },
+        "enterpriseUrlChanged": "GitHub Copilotのドメインが変更されました。変更を反映させるには、再度サインインしてください。",
+        "executablePath": {
+          "mdDescription": "バックエンドをホストするマシン上の GitHub Copilot CLI 実行ファイルの場所。空の場合(デフォルト)、CLI はアプリケーションのインストール先、`PATH`、およびグローバル `npm` ディレクトリ内で検索されます。CLI が別の場所にインストールされている場合は、ここで設定してください。\n\nCLIはアプリケーションに同梱されていません。`npm install -g @github/copilot` を実行してインストールしてください。"
         },
         "modelOverrides": {
           "mdDescription": "自動的に検出された GitHub Copilot モデルを上書きします。空の場合(デフォルト)、Copilot サブスクリプションから利用可能なモデルが検出されます。自動検出を上書きするには、明示的なモデル ID を設定してください。"
         },
+        "signInAgain": "GitHub Copilotは、GitHub Copilot CLIを介してログインするようになりました。以前のログイン情報は引き継がれず削除されましたので、Copilotモデルをご利用になるには、再度ログインしてください。",
         "signOut": {
           "confirmMessage": "GitHub Copilotからログアウトしてもよろしいですか?"
         },
         "statusBar": {
           "signedIn": "GitHub Copilot に {0} としてサインインしています。クリックしてサインアウトします。",
           "signedOut": "GitHub Copilot にサインインしていません。クリックしてサインインしてください。"
-        },
-        "tokenMigration": "GitHub Copilotのセッションで古い認証方法が使用されたため、セッションがクリアされました。利用可能なすべてのモデルにアクセスするには、再度サインインしてください。"
+        }
       },
       "core": {
         "agentConfiguration": {
@@ -760,11 +784,18 @@
         "discardCustomPrompt": {
           "tooltip": "カスタマイズを破棄する"
         },
+        "favoriteModels": {
+          "mdDescription": "AIチャットの入力画面にあるモデルピッカーには、各プロバイダーの最新モデルに加え、完全修飾ID(例:`anthropic/claude-opus-5`)として表示されるモデルがモデル化されています。これは、古いモデルや特定のリリースに固定されたモデルを手元に置いておくためのものです。 AI 設定ビューで、プロバイダーのページにあるモデルを確認し、追加してください。",
+          "title": "お気に入りのモデル"
+        },
         "fileVariable": {
           "description": "ファイルの内容を解決する",
           "uri": {
             "description": "要求されたファイルのURI。"
           }
+        },
+        "hiddenModels": {
+          "mdDescription": "AIチャットの入力画面にあるモデルピッカーでは、デフォルトでは表示されるはずのモデルが、完全修飾ID(例:`google/gemini-flash-lite-latest`)として表示されない場合があります。ここには、「お気に入り」として登録されていないモデル、つまりプロバイダーの最新モデルのみが表示されます。 AI設定ビュー内のプロバイダーのページで、対象モデルのチェックボックスをオフにすると、そのモデルが追加されます。"
         },
         "languageModelRenderer": {
           "alias": "[別名] {0}",
@@ -911,7 +942,6 @@
           "dotRelativePath": "現在開かれているファイルのワークスペース相対パス(「currentRelativeFilePath」)に関する簡易リファレンス。"
         },
         "variantSet": {
-          "templateLabel": "テンプレート",
           "unavailableVariant": "{0} (利用不可)",
           "variantCount": "{0} バリエーション",
           "variantCountSingular": "1つのバリエーション"
@@ -931,14 +961,25 @@
         }
       },
       "google": {
+        "allowEnvApiKey": {
+          "description": "Theiaが環境変数(`GOOGLE_API_KEY` / `GEMINI_API_KEY`)に設定されているGoogle AI(Gemini)APIキーを使用することを許可します。キーが使用される前に一度確認を求められます。同意を取り消すには、この設定を`false`に戻してください。"
+        },
         "apiKey": {
           "description": "公式のGoogle AI(Gemini)アカウントのAPIキーを入力してください。**ご注意:**この設定を使用すると、GOOGLE AI APIキーがTheiaを実行しているマシン上に平文で保存されます。キーを安全に設定するには環境変数`GOOGLE_API_KEY`を使用してください。"
+        },
+        "discovery": {
+          "cached": "キャッシュされたモデルを表示中。前回の更新に失敗しました:{0}",
+          "consentPrompt": "環境内に Google AI API キー(GOOGLE_API_KEY / GEMINI_API_KEY)が検出されました。Theia がこのキーを使用して Gemini モデルを検出し、呼び出すことを許可しますか?",
+          "consentRequired": "環境内に Google AI API キーが検出されました。モデルの検索に使用されているかどうかを確認してください。",
+          "noKey": "Google AI API キーが設定されていません。モデルを検索するには、キーを追加してください。",
+          "overridden": "モデルリストは手動で設定されます。モデルのオーバーライドをクリアすると、プロバイダーからモデルを再度検出できます。",
+          "useEnvKey": "キーの使用"
         },
         "maxRetriesOnErrors": {
           "description": "エラー発生時の最大再試行回数。1未満の場合、再試行ロジックは無効化される"
         },
-        "models": {
-          "description": "使用する公式Google Geminiモデル"
+        "modelOverrides": {
+          "description": "Google Geminiから検出されたモデルを上書きします。空の場合(デフォルト)、利用可能なモデルはプロバイダーから検出されます。特定のモデルIDを明示的に設定すると、それらのモデルが優先的に使用され、検出機能は一切使用されなくなります。"
         },
         "retryDelayOnOtherErrors": {
           "description": "その他のエラー発生時の再試行間隔(秒単位)。(Google GenAIがモデルの返したJSON構文不備や500内部サーバーエラーなどのエラーを報告する場合がある)。-1に設定するとこれらのケースで再試行を無効化。それ以外の場合、再試行は即時(0設定時)またはこの間隔(秒単位)後に発生(正の数値設定時)。"
@@ -1053,6 +1094,7 @@
           "pageTypeLabel": "ページ"
         },
         "allowAllMode": {
+          "hideForThisSession": "このセッション中は非表示にする",
           "stripTooltip": "このセッションでは、AI ツールによる呼び出しは確認なしに実行されます。信頼できる環境でのみ有効にしてください。",
           "stripTooltipFooter": "--session-preference オプションで設定します。このフラグを指定せずに再起動すると、保存された設定が復元されます。",
           "title": "Theia AI すべて許可モード"
@@ -1111,7 +1153,6 @@
             "startNewChat": "チャットは簡潔に、焦点を絞って行いましょう。新しいタスクについては[新しいチャットを開始]({0})、または[このチャットの要約付きで新しいチャットを開始]({1})してください。"
           }
         },
-        "collapseSession": "{0} を折りたたむ",
         "commandAgent": {
           "commandCallback": {
             "confirmAction": "了解しました",
@@ -1131,19 +1172,16 @@
           }
         },
         "configurationState": "設定に関する問題",
-        "configureAgent": {
-          "header": "デフォルトエージェントの設定"
-        },
         "continueAnyway": "続行する",
         "createSkillAgent": {
           "mode": {
             "edit": "デフォルトモード"
           }
         },
+        "defaultChatAgentSet": "デフォルトのチャットエージェントは、{0} になりました。",
         "enableAI": {
           "mdDescription": "この設定により、最新のAI機能にアクセスできます。            \n            これらの機能は、アクセスを許可した言語モデル(LLM)に対して継続的なリクエストを生成する可能性があることを認識することが重要です。これにより、注意深く監視する必要のあるコストが発生する可能性があります。 このオプションを有効化することで、これらのリスクを認識したものとみなされます。            \n            **ご注意！このセクションの以下の設定は、\n            メイン機能設定が有効になって初めて有効になります。機能を有効化した後、以下のLLMプロバイダーを少なくとも1つ設定する必要があります。詳細は[ドキュメント](https://theia-ide.org/docs/user_ai/)も参照してください**。"
         },
-        "expandSession": "{0} を展開",
         "exploreAgent": {
           "description": "コードベースから情報を抽出して要約する、コードベース探索アシスタント。         コードベースに何が存在するかに関する事実を報告し、コードの抜粋を提供し、観察されたパターンを説明します。"
         },
@@ -1201,16 +1239,36 @@
         },
         "model-selection-description": "各AIエージェントが使用する大規模言語モデル(LLM)を[AI設定ビュー]({0})で選択します。",
         "modelsConfiguration": {
+          "awaitingConsent": "承認待ち",
+          "defaultModel": "このプロバイダーの最新モデルの一つで、AIチャット入力のモデルピッカーで、ここで非表示にされていない限り表示されます。",
           "description": "エージェントが利用可能な言語モデルプロバイダーおよびモデルを設定します。",
+          "discovery": "モデル検出",
+          "fetching": "取得中…",
+          "filterModels": "フィルタモデル",
+          "hideModel": "AIチャット入力のモデルピッカーからこのモデルを非表示にする",
+          "modelNotReady": "準備中",
           "modelSettings": "モデル設定",
+          "noKey": "APIキーなし",
+          "noModels": "まだモデルは見つかっていません。",
           "noProviders": "言語モデルプロバイダーはインストールされていません。",
-          "providers": "プロバイダー"
+          "providers": "プロバイダー",
+          "ready": "準備完了",
+          "refresh": "モデル一覧を更新する",
+          "refreshUnavailable": "プロバイダーが認証情報を取得するまでは、更新される項目はありません",
+          "released": "{0} をリリースしました",
+          "resetShown": "デフォルト設定にリセット",
+          "resetShownUnavailable": "すでにデフォルト設定となっています",
+          "showAllModels": "検出されたすべてのモデルを表示",
+          "showCheckedModels": "AIチャットの入力欄にあるモデルピッカーに表示されているモデルのみを表示する",
+          "showModel": "AIチャットの入力画面にあるモデルピッカーでこのモデルを表示する",
+          "shownExplanation": "{0} AIチャット入力のモデルピッカーに表示されている{1}のもの",
+          "updated": "{0} を更新しました"
         },
-        "moreAgentsAvailable": {
-          "header": "追加のエージェントが利用可能です"
+        "noDefaultAgent": {
+          "header": "デフォルトのエージェントなし"
         },
-        "noRecommendedAgents": "推奨されるエージェントは利用できません。",
         "openAiConfiguration": "OpenAIの設定",
+        "openGettingStartedWalkthrough": "AIの始め方",
         "orchestrator": {
           "error": {
             "noAgents": "リクエストを処理できるチャットエージェントが利用できません。設定で有効化されているかご確認ください。"
@@ -1234,8 +1292,7 @@
               "name": "GH PR 情報"
             },
             "localCheckout": {
-              "description": "プルリクエストをローカルにチェックアウトし、既存のワークツリーの変更を保護します。",
-              "name": "チェックアウト"
+              "description": "プルリクエストをローカルにチェックアウトし、既存のワークツリーの変更を保護します。"
             },
             "localValidation": {
               "description": "プルリクエストに対して、ローカルでのインストール、ビルド、リンティング、テスト、またはこれらに相当する検証タスクを実行します。",
@@ -1292,6 +1349,7 @@
           "toolConfirmation": "ツールごとの確認メッセージのオーバーライド:{0}",
           "toolConfirmationGeneric": "ツールごとの確認メッセージのオーバーライド設定"
         },
+        "setDefaultChatAgent": "デフォルトのチャットエージェントを設定する",
         "shellExecutionCapability": {
           "description": "エージェントがホストシステム上で任意のシェルコマンドを実行できるようにします。これによりエージェントは、タスクとして利用できないスクリプトの実行を委譲したり、システム情報の照会を行ったり、専用ツールが存在しない操作を実行したりすることが可能になります。",
           "name": "シェル実行"
@@ -1314,9 +1372,6 @@
           },
           "slashCommandsGroupDescription": "チャットで「/name」と入力して呼び出すプロンプトの断片。1人以上のエージェントが利用可能です。",
           "slashCommandsSectionHeader": "スラッシュコマンド"
-        },
-        "toolConfirmationInfo": {
-          "header": "ツールの確認"
         },
         "toolConfirmationOverrides": {
           "stripTooltip": "このセッションでは、コマンドラインフラグを介して1つ以上のAIツールが自動的に承認されています。",
@@ -1380,7 +1435,6 @@
           "filterPlaceholder": "名前または説明で変数をフィルタリングする",
           "noMatches": "「{0}」に一致する変数はありません。",
           "noVariables": "利用可能な変数はありません。",
-          "openAgent": "エージェントを開く {0}",
           "optional": "オプション",
           "pageSubtitle": "プロンプト内で{0}という名前で参照できる値です。これらはリクエスト時に解決され、挿入されます。",
           "plainGroup": "単純な変数",
@@ -1388,7 +1442,40 @@
           "required": "必須",
           "usedByAgents": "エージェントが使用する"
         },
-        "waitingForInput": "入力をお待ちしています"
+        "waitingForInput": "入力をお待ちしています",
+        "walkthrough": {
+          "aiSupport": {
+            "description": "\n{0}\nAI サポートが搭載されています:プロジェクトについて専門のエージェントとチャットしたり、エージェントにコードの変更やタスクの実行を依頼したり、入力中にコードを補完してもらったり、ターミナルでヘルプを受けたりできます。\n\nこれらの機能はデフォルトで無効になっているため、ご自身の判断で有効にすることができます。\n\n有効化すると、アクセスを許可した言語モデルに対して継続的なリクエストが発生する可能性があります。これにより費用が発生する可能性があるため、注意深く監視する必要があります。\n\n[ドキュメントを読む]({1}\n)。\n\nフィードバック、貢献、スポンサーシップを歓迎します！[GitHubプロジェクト]({2}\n)にアクセスして、継続的な開発を支援してください。コミュニティの一員となっていただき、ありがとうございます！\n\nこれらはすべて、AI 搭載ツールおよび IDE 向けのフレームワークである Theia AI を基盤として構築されており、安定版として公開されています。[フレームワークのドキュメントはこちら]({3}\n)。\n",
+            "title": "{0}におけるAIサポート"
+          },
+          "chooseAgent": {
+            "intro": "チャットのリクエストはすべてエージェントに送信され、特定のエージェントを指定しない場合は、いずれかのエージェントが回答します。\n\n**デフォルトのエージェントを設定する:**\n",
+            "outro": "また、設定で [デフォルトのエージェントを選択]({0}\n) したり、*@AgentName* で先頭を開始することで、1つのメッセージに対して別のエージェントを指定したりすることもできます。\n[エージェント]({1}\n) ページには、すべてのエージェントが一覧表示されています。\n",
+            "title": "デフォルトのエージェントを選択してください"
+          },
+          "connectModel": {
+            "description": "ホスト型プロバイダーのAPIキーを追加します:\n\n- [OpenAI]({0}\n)\n- [Anthropic]({1}\n)\n- [Google]({2}\n)\n\nローカルでの利用や他のサービスの利用をご希望ですか?Ollama、llamafile、およびOpenAI互換のエンドポイントは、[Models]({3}\n)ページで設定できます。\n\n一部のエージェント(例:Claude Code)は独自のモデルを持ち込んでおり、プロバイダーなしで動作します。\n",
+            "title": "言語モデルを接続する"
+          },
+          "description": "{0}のAI機能を設定し、その使い方を学びましょう。",
+          "enableAi": {
+            "description": "AI機能を有効にするまでは、いかなる情報も外部へ送信されることはありません。また、AI機能はいつでも無効にすることができます。\n\n[AI設定を開く]({0}\n) し、そこでAI機能を有効にしてください。\n",
+            "title": "AI機能を有効にする"
+          },
+          "firstQuestion": {
+            "description": "[AIチャットを開く]({0}\n) して、プロジェクトについて何か質問してみてください。\n\n以下の2つのポイントを押さえると、回答の質が格段に向上します:\n\n- *@AgentName* は、このメッセージに対応するエージェントを選択します(例:*@Coder*)。\n- *#* はコンテキストを付加します。例:*#file* や *#selectedText*。入力欄の横にあるクリップのボタンでも同じ操作ができます。\n\nチャットはセッションを記憶しているため、後で会話を再開することができます。\n",
+            "title": "最初の質問を投稿してください"
+          },
+          "goFurther": {
+            "description": "チャット機能はほんの始まりに過ぎません。AIは入力中にコードを補完したり、ターミナルで *Ctrl+I* キーを使って支援を行ったりします。\n\n- [プロンプトとスキル]({0}\n):エージェントが動作するための指示を読み、適応させます。\n- [MCP サーバー]({1}\n): {3}\nに標準で搭載されているツール以外にも、ツールを追加できます。\n- [トークンの使用状況]({2}\n): リクエストによって消費されるトークンの量を確認できます。\n- [パースペクティブの切り替え]({5}\n) (実験的機能): *AI First* レイアウトでは、チャットがメインエリアに移動し、エクスプローラーとソース管理が右側に表示されます。\n\n利用可能な場合、「AI 履歴」ビューには、モデルに実際に送信された内容が表示されます。\n\n詳細は[ドキュメント]({4}\n)をご覧ください。皆様からのフィードバックをいつでも歓迎いたします。\n",
+            "title": "さらに詳しく"
+          },
+          "title": "AIの始め方",
+          "toolConfirmation": {
+            "description": "エージェントは、ツールを通じてワークスペース上で動作します。具体的には、ファイルの読み取り、ターミナルコマンドの実行、コードの編集などを行います。\n\nツールを呼び出すたびに、まず確認が求められます。[ツール]({0}\n) ページでは、このデフォルト設定を変更したり、信頼できるツールを事前に承認したりすることができます。\n\nワークスペースが信頼されていない間は、AI 機能は完全に無効のままとなります。[ワークスペースの信頼を管理]({1}\n) から、プロジェクトごとに設定を決定してください。\n",
+            "title": "エージェントの動作を管理し続ける"
+          }
+        }
       },
       "llamaFile": {
         "prefs": {
@@ -1434,6 +1521,7 @@
           "label": "MCP: MCP OAuth リダイレクト URL の取得"
         },
         "info": {
+          "noToolsAvailable": "利用可能なツールはありません。",
           "oauthRedirectUrl": "MCP OAuth リダイレクト URL: {0}",
           "serverSignedIn": "MCPサーバー「{0}」にサインインしました。",
           "serverSignedOut": "MCPサーバー「{0}」からサインアウトしました。",
@@ -1609,6 +1697,7 @@
           "serverUrlPlaceholder": "例: https://mcp.example.com",
           "serverUrlRequired": "リモートサーバーにはサーバーURLが必要です"
         },
+        "noServersConfigured": "MCP サーバーは設定されていません",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "認証サーバー",
         "oauthClientId": "OAuth クライアント ID",
@@ -1636,6 +1725,9 @@
         "typeRemoteOAuth": "リモート(OAuth)"
       },
       "openai": {
+        "allowEnvApiKey": {
+          "description": "Theia が環境変数(`OPENAI_API_KEY`)に設定された OpenAI API キーを使用することを許可します。キーが使用される前に一度確認を求められます。同意を取り消すには、この設定を `false` に戻してください。"
+        },
         "apiKey": {
           "mdDescription": "公式OpenAIアカウントのAPIキーを入力してください。**ご注意:**この設定を使用すると、OpenAI APIキーがTheiaを実行しているマシン上に平文で保存されます。キーを安全に設定するには環境変数`OPENAI_API_KEY`を使用してください。"
         },
@@ -1664,10 +1756,13 @@
           "enableStreaming": {
             "title": "ストリーミングAPIを使用するかどうかを示します。デフォルトは`true`です。"
           },
+          "headers": {
+            "title": "エンドポイントへの各リクエストとともに送信される追加のHTTPヘッダー"
+          },
           "id": {
             "title": "UI内でカスタムモデルを識別するために使用される一意の識別子"
           },
-          "mdDescription": "OpenAI APIと互換性のあるカスタムモデルを、例えば`vllm`を介して統合します。必須の属性は`model`と`url`です。            \n            オプションで、以下の設定が可能です。            \n            - UI上でカスタムモデルを識別するための一意の`id`を指定します。 指定がない場合、`model` が `id` として使用されます。            \n            - 指定された URL で提供される API にアクセスするための `apiKey` を指定します。グローバルな OpenAI API キーを使用する場合は `true` を指定します。            \n            - Azure 上の指定された URL で提供される API にアクセスするための `apiVersion` を指定します。 グローバルな OpenAI API バージョンを使用する場合は `true` を指定します。            \n            - Azure デプロイメントの `deployment` 名を指定します。            \n            - `developerMessageSettings` を `user`、`system`、`developer`、`mergeWithFollowingUserMessage`、または `skip` のいずれかに設定して、開発者メッセージの組み込み方法を制御します (ここで、`user`、`system`、および `developer` はロールとして使用され、`mergeWithFollowingUserMessage` は、次のユーザーメッセージの先頭にシステムメッセージを付加するか、次のメッセージがユーザーメッセージでない場合はシステムメッセージをユーザーメッセージに変換します。`skip` は単にシステムメッセージを削除します)。デフォルトは `developer` です。            \n            - `supportsStructuredOutput: false` を指定して、構造化出力を使用しないことを示します。            \n            - `enableStreaming: false` を指定して、ストリーミングを使用しないことを示します。            \n            - `useResponseApi: true` を指定して、Chat Completion API の代わりに新しい OpenAI Response API を使用します(互換性のあるエンドポイントが必要です)。            \n            - `reasoningSupport` を指定して、チャット推論セレクタを有効にします。`supportedLevels`(例:`[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`)と、オプションの `defaultLevel` を含むオブジェクトを指定してください。            \n            詳細については、[当社のドキュメント](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)を参照してください。",
+          "mdDescription": "OpenAI API と互換性のあるカスタムモデルを、例えば `vllm` などを介して統合します。必須の属性は `model` および `url` です。            \n            オプションで、以下の設定が可能です。            \n            - UI 上でカスタムモデルを識別するための一意の `id` を指定します。 指定がない場合、`model` が `id` として使用されます。            \n            - 指定された URL で提供される API にアクセスするための `apiKey` を指定します。グローバルな OpenAI API キーを使用する場合は `true` を指定します。            \n            - 指定された URL で提供される Azure の API にアクセスするための `apiVersion` を指定します。グローバルな OpenAI API バージョンを使用する場合は `true` を指定します。            \n            - Azure デプロイメントの `deployment` 名を指定します。            \n            - `developerMessageSettings` を `user`、`system`、`developer`、`mergeWithFollowingUserMessage`、または `skip` のいずれかに設定して、開発者メッセージの            組み込み方法を制御します (ここで、`user`、`system`、および `developer` はロールとして使用され、`mergeWithFollowingUserMessage` は、次のユーザーメッセージの先頭にシステムメッセージを付加するか、次のメッセージがユーザーメッセージでない場合はシステムメッセージをユーザーメッセージに変換します。`skip` はシステムメッセージを単に削除します)。            デフォルトは `developer` です。            \n            - 構造化出力を使用しない場合は、`supportsStructuredOutput: false` を指定します。            \n            - ストリーミングを使用しない場合は、`enableStreaming: false` を指定します。            \n            - `useResponseApi: true` を指定すると、Chat Completion API の代わりに新しい OpenAI Response API を使用します(互換性のあるエンドポイントが必要です)。            \n            - `reasoningSupport` を指定すると、チャット推論セレクタを有効にします。 `supportedLevels`(例:`[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`)と、オプションの `defaultLevel` を含むオブジェクトを指定します。            \n            - `headers` を指定すると、エンドポイントへのすべてのリクエストに追加の HTTP ヘッダーを送信できます。例:API の前に配置されたゲートウェイで必要なヘッダーなど。            \n            詳細については、[当社のドキュメント](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)を参照してください。",
           "modelId": {
             "title": "モデルID"
           },
@@ -1687,8 +1782,16 @@
         "customProvider": {
           "label": "{0} (カスタム)"
         },
-        "models": {
-          "description": "使用する公式OpenAIモデル"
+        "discovery": {
+          "cached": "キャッシュされたモデルを表示中。前回の更新に失敗しました:{0}",
+          "consentPrompt": "環境変数(OPENAI_API_KEY)に OpenAI API キーが検出されました。Theia がこのキーを使用して OpenAI モデルを検出し、呼び出すことを許可しますか?",
+          "consentRequired": "環境内に OpenAI API キーが検出されました。モデルの検索に使用することを確認してください。",
+          "noKey": "OpenAI API キーが設定されていません。モデルを検索するには、キーを追加してください。",
+          "overridden": "モデルリストは手動で設定されます。モデルのオーバーライドをクリアすると、プロバイダからモデルを再度検出できます。",
+          "useEnvKey": "キーの使用"
+        },
+        "modelOverrides": {
+          "description": "OpenAIから検出されたモデルを上書きします。空の場合(デフォルト)、利用可能なモデルはプロバイダーから検出されます。特定のモデルIDを明示的に設定すると、そのモデルのみが使用され、検出機能は一切使用されなくなります。"
         },
         "useResponseApi": {
           "mdDescription": "OpenAIの公式モデルについては、Chat Completion APIの代わりに、新しいOpenAI Response APIを使用してください。この設定はOpenAIの公式モデルにのみ適用されます。カスタムプロバイダーについては、個別に設定を行う必要があります。"
@@ -1936,6 +2039,26 @@
       "codeReview": {
         "description": "各実装後にコードレビュー担当者に委譲します。レビューが通過するまで次のステップを保留します。"
       },
+      "commit-message": {
+        "agent-disabled-tooltip": "コミットメッセージエージェントは無効になっています。AI 設定ビューで有効にしてください。",
+        "cancel-tooltip": "コミットメッセージの生成をキャンセルする",
+        "empty": "モデルは空のコミットメッセージを返しました。",
+        "failed": "コミットメッセージの生成に失敗しました: {0}",
+        "generate-from-staged": "ステージされた変更からコミットメッセージを生成する",
+        "no-changes": "コミットメッセージを生成するためのステージングされた変更はありません。",
+        "no-repository": "ソース管理リポジトリは選択されていません。",
+        "replace-prompt": "コミットメッセージ欄が空ではありません。その内容を生成されたメッセージに置き換えますか?",
+        "replace-title": "コミットメッセージの置き換え",
+        "staged-tooltip": "ステージングされた変更からコミットメッセージを生成する"
+      },
+      "commitMessageAgent": {
+        "description": "ワークスペースリポジトリ内のステージングされた変更から、Gitのコミットメッセージを生成します。SCMのコミットメッセージ入力欄にあるAIスパークルボタンから呼び出されます。",
+        "vars": {
+          "changes": {
+            "description": "コミットメッセージの生成元となる、ステージングされた変更の統合された git diff。"
+          }
+        }
+      },
       "fixGhTicketCommand": {
         "argumentHint": "<チケット番号>",
         "description": "GitHubチケットを分析し、解決策を実装する"
@@ -2004,6 +2127,7 @@
         "updateTooltip": "{0} から {1} への更新"
       },
       "autoUpdate": {
+        "aiSettings": "AI設定",
         "ask": "インストール済みのスキル、MCPサーバー、またはエージェントプラグインの更新が利用可能になった際に通知する。",
         "changeLater": "これらは後で {0} で変更できます。",
         "configureDefault": "{0} でデフォルト設定を構成します。",
@@ -2040,9 +2164,7 @@
           "oneSkipped": "コンポーネント「{0}」はスキップされました:{1}"
         },
         "dialog": {
-          "contains": "内容",
           "endorsedBy": "推奨:",
-          "from": "出典:",
           "install": {
             "title": "エージェントプラグイン「{0}」をインストールする"
           },
@@ -2104,10 +2226,6 @@
         "serverUnknownField": "サーバー構成では、「{0}」というフィールドが宣言されていますが、そのトランスポートタイプでは許可されていません。",
         "serverUnknownType": "サーバー構成では、未知のトランスポートタイプ「{0}」が宣言されています。",
         "serverUnsupportedTransport": "MCPトランスポート「{0}」はサポートされていません。",
-        "stat": {
-          "oneServer": "1 MCPサーバー",
-          "servers": "{0} MCPサーバー"
-        },
         "uninstalled": "エージェントプラグイン「{0}」がアンインストールされました。",
         "unknownManifestField": "不明な「plugin.json」フィールド「{0}」は無視します。",
         "unlinked": "リンクされていないエージェントプラグイン「{0}」。",
@@ -2244,7 +2362,6 @@
       "collaborate": "共同作業",
       "collaboration": "コラボレーション",
       "collaborationWorkspace": "コラボレーションワークスペース",
-      "connected": "接続済み",
       "connectedSession": "コラボレーションセッションに接続中",
       "copiedInvitation": "招待コードがクリップボードにコピーされました。",
       "copyAgain": "再度コピー",
@@ -2471,6 +2588,25 @@
       "userSettingsDetail": "すべてのワークスペースに適用",
       "workspaceSettingsDetail": "現在のワークスペースにのみ適用"
     },
+    "external-api": {
+      "delivery": {
+        "description": "外部HTTP APIの提供の有無およびその方法を制御します。",
+        "off": "外部APIへの提供は行わないでください。",
+        "samePort": "外部APIをバックエンドと同じポートで提供してください。",
+        "samePortLabel": "バックエンドと同じポート",
+        "separatePort": "「externalApi.port」で設定された専用ポートで、外部APIを提供します。",
+        "separatePortLabel": "独立したポート"
+      },
+      "hostname": {
+        "description": "外部HTTP APIサーバーがバインドするホスト名またはIPアドレス。「0.0.0.0」を使用すると、リモート接続を受け付けます。 「localhost」のような名前は解決される通りにバインドされるため、他のループバックアドレスを使用するクライアントはサーバーに到達できない可能性があります。「127.0.0.1」または「::1」を使用して、特定のアドレスを固定してください。 「externalApi.delivery」が「separatePort」に設定されている場合にのみ使用されます。"
+      },
+      "port": {
+        "description": "外部HTTP APIが提供されるポート。これは、「externalApi.delivery」が「separatePort」に設定されている場合にのみ使用されます。"
+      },
+      "token": {
+        "description": "保護された外部APIエンドポイントにアクセスするために必要なベアラートークン(「Authorization: Bearer <token>」)。空の場合、外部APIは検証なしに提供されます。"
+      }
+    },
     "external-terminal": {
       "cwd": "新しい外部ターミナル用の現在の作業ディレクトリを選択"
     },
@@ -2514,10 +2650,6 @@
       "uploadedOutOf": "アップロード済み {0} / {1}"
     },
     "getting-started": {
-      "ai": {
-        "header": "{0}でのAIサポートが利用可能になりました！",
-        "openAIChatView": "今すぐAIチャットビューを開いて、始め方をご覧ください！"
-      },
       "apiComparator": "{0} API互換性",
       "markStepUndone": "「元に戻す」",
       "newExtension": "新しい拡張機能の構築",
@@ -2736,9 +2868,6 @@
       },
       "toolbar": "ツールバー"
     },
-    "preview": {
-      "openByDefault": "デフォルトではエディターではなくプレビューを開く。"
-    },
     "property-view": {
       "lastModified": "最終更新日",
       "noProperties": "プロパティは利用できません。",
@@ -2749,6 +2878,16 @@
       "dev-container": {
         "attach": "実行中のコンテナに接続",
         "attachError": "コンテナへの接続に失敗しました: {0}",
+        "attachScreen": {
+          "errorHeader": "コンテナへの接続に失敗しました",
+          "firstStartNote": "コンテナの初回起動には1～2分ほどかかる場合があります。2回目以降の起動は、はるかに高速になります。",
+          "locating": "コンテナ {0} の検索中...",
+          "preparing": "接続の準備中...",
+          "preparingWorkspace": "ワークスペースの準備中...",
+          "starting": "コンテナ内でアプリケーションを起動しています...",
+          "title": "コンテナへのアタッチ",
+          "titleNamed": "{0} へのアタッチ"
+        },
         "attachWarning": "コンテナにアタッチすると、その内部でコードが実行されます。信頼できる発信元からのコンテナにのみアタッチしてください。",
         "attachWarningTitle": "コンテナにアタッチ",
         "attaching": "コンテナへの接続",
@@ -2799,7 +2938,6 @@
       "amendHeadCommit": "HEAD コミット",
       "amendLastCommit": "最後のコミットを修正する",
       "changeRepository": "リポジトリを変更...",
-      "copyCommitHash": "コミットハッシュをコピー",
       "dirtyDiff": {
         "close": "閉じる 変更 プレビュー表示"
       },
