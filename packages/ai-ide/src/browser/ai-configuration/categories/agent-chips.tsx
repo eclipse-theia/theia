@@ -21,7 +21,7 @@ import { getAgentIconClass } from '../agent-icon';
 
 /** A single navigable agent chip (icon + name); shared by the Variables, Skills and Slash Command surfaces. */
 export const AgentChip: React.FC<{ agent: Agent; onOpenAgent: (agentId: string) => void }> = ({ agent, onOpenAgent }) => {
-    const label = nls.localize('theia/ai/ide/variableConfiguration/openAgent', 'Open agent {0}', agent.name);
+    const label = nls.localizeByDefault('Open agent {0}', agent.name);
     return <button
         type='button'
         className='agent-chip'

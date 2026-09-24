@@ -326,7 +326,7 @@ function genericStatusBadge(status: ModelDiscoveryStatus): AiConfigurationItemSt
             return { kind: 'off', label: nls.localizeByDefault('Manual'), tooltip: status.message };
         case 'ready':
             if (status.fromCache) {
-                return { kind: 'warn', label: nls.localize('theia/ai/ide/modelsConfiguration/cached', 'Cached'), tooltip: status.message };
+                return { kind: 'warn', label: nls.localizeByDefault('Cached'), tooltip: status.message };
             }
             return {
                 kind: 'on',

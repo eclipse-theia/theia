@@ -3092,7 +3092,7 @@ function toUiElement(element: ChangeSetElement,
 }
 
 const ChangeSetElement: React.FC<ChangeSetUIElement> = element => (
-    <li title={nls.localize('theia/ai/chat-ui/openDiff', 'Open Diff')} onClick={() => element.openChange?.()}>
+    <li title={nls.localizeByDefault('Open Diff')} onClick={() => element.openChange?.()}>
         <div className={`theia-ChatInput-ChangeSet-Icon ${element.iconClass}`}>
         </div>
         <div className='theia-ChatInput-ChangeSet-labelParts'>
