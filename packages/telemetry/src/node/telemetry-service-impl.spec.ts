@@ -65,7 +65,7 @@ function createSink(
 }
 
 function createConsentProvider(level: TelemetryLevel): TelemetryConsentProvider {
-    return { level, onDidChangeTelemetryLevel: new Emitter<TelemetryLevel>().event };
+    return { level, onDidChangeTelemetryLevel: new Emitter<TelemetryLevel>().event, ready: Promise.resolve() };
 }
 
 function createServiceWithPreferences(
