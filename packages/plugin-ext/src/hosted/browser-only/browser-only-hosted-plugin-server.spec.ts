@@ -112,6 +112,16 @@ describe('BrowserOnlyHostedPluginServer', () => {
             error => expect(error.message).to.contain('http://localhost/hostedPlugin/list.json').and.to.contain('404'));
     });
 
+    it('fetches the list again after a failed attempt', async () => {
+        let attempt = 0;
+        stubFetch(() => ++attempt === 1 ? new Response('', { status: 503 }) : Response.json([plugin('a')]));
+        const server = createServer();
+
+        await server.getDeployedPluginIds().catch(() => undefined);
+        expect(await server.getDeployedPluginIds()).to.deep.equal(['theia.a@1.0.0']);
+        expect(requestedUrls).to.have.lengthOf(2);
+    });
+
     it('rejects a list that is not an array', async () => {
         stubFetch(() => Response.json({ plugins: [] }));
         const server = createServer();

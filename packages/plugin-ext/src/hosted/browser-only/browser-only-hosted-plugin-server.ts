@@ -49,7 +49,12 @@ export class BrowserOnlyHostedPluginServer implements HostedPluginServer, RpcCon
 
     /** The statically deployed plugins, from {@link BrowserOnlyPluginOptions} if bound, otherwise from the list the build wrote. */
     protected getPlugins(): Promise<DeployedPlugin[]> {
-        return this.plugins ??= this.options ? Promise.resolve(this.options.pluginMetadata) : this.fetchDeployedPlugins();
+        if (!this.plugins) {
+            this.plugins = this.options ? Promise.resolve(this.options.pluginMetadata) : this.fetchDeployedPlugins();
+            // don't keep a failed fetch around, otherwise the tab has no plugins until it's reloaded
+            this.plugins.catch(() => this.plugins = undefined);
+        }
+        return this.plugins;
     }
 
     protected async fetchDeployedPlugins(): Promise<DeployedPlugin[]> {
