@@ -418,7 +418,9 @@ export class OllamaModel implements LanguageModel {
                 return undefined;
             }
 
-            const result: Record<string, { type: string, description: string, enum?: string[] }> = {};
+            // Mirrors the `Tool` type from the `ollama` package, which allows
+            // `type?: string | string[]` for JSON Schema union types.
+            const result: Record<string, { type: string | string[], description: string, enum?: string[] }> = {};
             for (const [key, prop] of Object.entries(props)) {
                 const type = resolveType(prop);
                 if (type) {
