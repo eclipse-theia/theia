@@ -2191,7 +2191,8 @@ button.agent-chip:focus-visible {
   margin: 0;
   padding: 4px 0;
   min-width: 180px;
-  max-height: 320px;
+  max-height: 200px;
+  box-sizing: border-box;
   overflow-y: auto;
 }
 
