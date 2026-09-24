@@ -921,17 +921,14 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
         menus.registerMenuAction(TerminalMenus.TERMINAL_BLOCK_COPY_ACTIONS, {
             commandId: TerminalCommands.TERMINAL_BLOCK_COPY_ALL.id,
-            label: nls.localizeByDefault('Copy Command and Output'),
             order: '1'
         });
         menus.registerMenuAction(TerminalMenus.TERMINAL_BLOCK_COPY_ACTIONS, {
             commandId: TerminalCommands.TERMINAL_BLOCK_COPY_COMMAND.id,
-            label: nls.localizeByDefault('Copy Command'),
             order: '2'
         });
         menus.registerMenuAction(TerminalMenus.TERMINAL_BLOCK_COPY_ACTIONS, {
             commandId: TerminalCommands.TERMINAL_BLOCK_COPY_OUTPUT.id,
-            label: nls.localizeByDefault('Copy Output'),
             order: '3'
         });
         menus.registerMenuAction(TerminalMenus.TERMINAL_BLOCK_SCROLL_ACTIONS, {
