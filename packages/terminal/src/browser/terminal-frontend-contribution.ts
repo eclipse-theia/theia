@@ -781,12 +781,13 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             isVisible: (block: TerminalBlock) => !!block && (block.output?.length ?? 0) > 0
         });
         commands.registerHandler(CommonCommands.COPY.id, {
+            isEnabled: () => !!this.getCopySourceTerminal(),
             execute: () => {
                 const terminal = this.shell.activeWidget;
                 if (terminal instanceof TerminalWidget && terminal.hasSelection()) {
                     this.copyHandler.syncCopy(terminal.getSelection());
                 }
-            }
+            },
         });
         commands.registerCommand(TerminalCommands.COPY_TERMINAL_SELECTION, {
             isEnabled: () => !!this.getCopySourceTerminal(),
