@@ -177,7 +177,7 @@ export const VariantSetCard: React.FC<VariantSetCardProps> = ({ agentId, promptV
         trailing={<div className='ai-variant-controls'>
             <AiEnumSelect
                 value={invalidSelection ? explicitSelection : selected}
-                ariaLabel={nls.localize('theia/ai/core/variantSet/templateLabel', 'Template')}
+                ariaLabel={nls.localizeByDefault('Template')}
                 options={options}
                 invalid={invalidSelection}
                 onCommit={selectVariant}
