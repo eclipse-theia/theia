@@ -29,6 +29,7 @@
     "@theia/scm": "1.75.0",
     "@theia/search-in-workspace": "1.75.0",
     "@theia/task": "1.75.0",
+    "@theia/telemetry": "1.75.0",
     "@theia/terminal": "1.75.0",
     "@theia/test": "1.75.0",
     "@theia/timeline": "1.75.0",
@@ -61,6 +62,9 @@
       "backend": "lib/plugin-ext-backend-module",
       "backendElectron": "lib/plugin-ext-backend-electron-module",
       "frontend": "lib/plugin-ext-frontend-module"
+    },
+    {
+      "frontendOnly": "lib/plugin-ext-frontend-only-module"
     },
     {
       "frontendElectron": "lib/plugin-ext-frontend-electron-module"

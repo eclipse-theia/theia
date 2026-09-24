@@ -37,6 +37,7 @@ import * as theia from '@theia/plugin';
 import * as types from './types-impl';
 import { join } from './path';
 import { EnvExtImpl } from './env';
+import { TelemetryExtImpl } from './telemetry-ext';
 import { PreferenceRegistryExtImpl } from './preference-registry';
 import { InternalStorageExt, Memento, GlobalState } from './plugin-storage';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
@@ -244,8 +245,12 @@ export abstract class AbstractPluginManagerExtImpl<P extends Record<string, any>
             contributes.jsonValidation = (contributes.jsonValidation || []).concat(this.jsonValidation);
         }
         this.registry.set(plugin.model.id, plugin);
+        if (!plugin.pluginPath) {
+            // No entry point at all, so nothing to activate here.
+            return;
+        }
         const activationEvents = this.getActivationEvents(plugin);
-        if (plugin.pluginPath && activationEvents) {
+        if (activationEvents) {
             const activation = () => this.$activatePlugin(plugin.model.id);
             // an internal activation event is a subject to change
             this.setActivation(`onPlugin:${plugin.model.id}`, activation);
@@ -474,6 +479,9 @@ export class PluginManagerExtImpl extends AbstractPluginManagerExtImpl<PluginMan
     @inject(WebviewsExtImpl)
     protected readonly webview: WebviewsExtImpl;
 
+    @inject(TelemetryExtImpl)
+    protected readonly telemetryExt: TelemetryExtImpl;
+
     private supportedActivationEvents: Set<string>;
 
     async $init(params: PluginManagerInitializeParams): Promise<void> {
@@ -489,6 +497,8 @@ export class PluginManagerExtImpl extends AbstractPluginManagerExtImpl<PluginMan
         this.envExt.setAppUriScheme(params.env.appUriScheme);
 
         this.preferencesManager.init(params.preferences);
+        // must be in place before activation: plugins create their telemetry loggers during `activate()`
+        this.telemetryExt.setLevel(params.telemetryLevel ?? 'off');
 
         if (params.extApi) {
             this.host.initExtApi(params.extApi);

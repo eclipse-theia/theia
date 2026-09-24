@@ -16,6 +16,7 @@
 
 import { deepClone, deepFreeze } from '@theia/core/lib/common/objects';
 import { isObject } from '@theia/core/lib/common/types';
+import { TelemetryEventKind } from './telemetry-types';
 
 /** @experimental */
 export type TelemetryPrimitive = string | number | boolean;
@@ -65,14 +66,6 @@ export function isTelemetryData(data: unknown): data is Record<string, Telemetry
 /** @experimental */
 export function snapshotTelemetryData<T extends object>(data: TelemetryData<T> | undefined): TelemetryData<T> | undefined {
     return data === undefined ? undefined : deepFreeze(deepClone(data));
-}
-
-/** @experimental */
-export type TelemetryEventKind = 'usage' | 'error' | 'crash';
-
-/** @experimental */
-export function isTelemetryEventKind(value: unknown): value is TelemetryEventKind {
-    return value === 'usage' || value === 'error' || value === 'crash';
 }
 
 /** @experimental */

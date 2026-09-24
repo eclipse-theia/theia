@@ -46,6 +46,12 @@ import { sep } from '@theia/core/lib/common/paths';
 
 const replaceRegex = new RegExp('//+', 'g');
 
+const backslashRegex = new RegExp('\\\\', 'g');
+
+function toPosixSeparators(p: string): string {
+    return p.replace(backslashRegex, sep);
+}
+
 export function resolve(...paths: string[]): string {
     let processed: string[] = [];
     for (const p of paths) {
@@ -70,8 +76,11 @@ export function resolve(...paths: string[]): string {
 export function relative(from: string, to: string): string {
     let i: number;
 
-    from = resolve(from);
-    to = resolve(to);
+    // This module is POSIX-only: `sep` is always '/'. Callers hand it native
+    // paths (e.g. `Uri.fsPath`), which on Windows are backslash-separated and
+    // would otherwise split into a single segment and yield ''.
+    from = resolve(toPosixSeparators(from));
+    to = resolve(toPosixSeparators(to));
     const fromSegments = from.split(sep);
     const toSegments = to.split(sep);
 

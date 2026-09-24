@@ -15,7 +15,22 @@
 // *****************************************************************************
 
 /** @experimental */
+export type TelemetryEventKind = 'usage' | 'error' | 'crash';
+
+/** @experimental */
+export function isTelemetryEventKind(value: unknown): value is TelemetryEventKind {
+    return value === 'usage' || value === 'error' || value === 'crash';
+}
+
+/** @experimental */
 export type TelemetryLevel = 'off' | 'crash' | 'error' | 'all';
+
+/** @experimental */
+export function isKindAllowedByLevel(level: TelemetryLevel, kind: TelemetryEventKind): boolean {
+    return level === 'all'
+        || level === 'error' && (kind === 'error' || kind === 'crash')
+        || level === 'crash' && kind === 'crash';
+}
 
 /** @experimental */
 export const BACKEND_TELEMETRY_SESSION = 'backend';

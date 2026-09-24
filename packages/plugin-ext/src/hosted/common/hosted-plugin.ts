@@ -23,7 +23,7 @@
 
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { injectable, inject, interfaces, named, postConstruct, unmanaged } from '@theia/core/shared/inversify';
-import { PluginMetadata, HostedPluginServer, DeployedPlugin, PluginServer, PluginIdentifiers } from '../../common/plugin-protocol';
+import { PluginMetadata, HostedPluginServer, DeployedPlugin, PluginServer, PluginIdentifiers, PLUGIN_HOST_FRONTEND } from '../../common/plugin-protocol';
 import { AbstractPluginManagerExt, ConfigStorage } from '../../common/plugin-api-rpc';
 import {
     Disposable, DisposableCollection, Emitter,
@@ -37,7 +37,7 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { Measurement, Stopwatch } from '@theia/core/lib/common';
 
-export type PluginHost = 'frontend' | string;
+export type PluginHost = typeof PLUGIN_HOST_FRONTEND | string;
 
 export const ALL_ACTIVATION_EVENT = '*';
 
@@ -336,7 +336,7 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
 
             if (contributions.state === PluginContributions.State.LOADED) {
                 contributions.state = PluginContributions.State.STARTING;
-                const host = plugin.model.entryPoint.frontend ? 'frontend' : plugin.host;
+                const host = plugin.model.entryPoint.frontend ? PLUGIN_HOST_FRONTEND : plugin.host;
                 const dynamicContributions = hostContributions.get(host) || [];
                 dynamicContributions.push(contributions);
                 hostContributions.set(host, dynamicContributions);
@@ -381,7 +381,7 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
 
         for (const [host, hostContributions] of contributionsByHost) {
             // do not start plugins for electron browser
-            if (host === 'frontend' && environment.electron.is()) {
+            if (host === PLUGIN_HOST_FRONTEND && environment.electron.is()) {
                 continue;
             }
 
