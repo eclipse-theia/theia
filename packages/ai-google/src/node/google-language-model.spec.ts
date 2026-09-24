@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LanguageModelRequest, ReasoningApi, ReasoningSupport } from '@theia/ai-core';
+import { LanguageModelRequest, LanguageModelTextResponse, ReasoningApi, ReasoningSupport } from '@theia/ai-core';
+import type { GoogleGenAI } from '@google/genai';
 import { GoogleModel } from './google-language-model';
 
 const GEMINI_REASONING_SUPPORT: ReasoningSupport = {
@@ -90,5 +91,35 @@ describe('GoogleModel reasoning translation', () => {
         it('exposes the google vendor (used to key server tool selections and the capabilities UI)', () => {
             expect(createModel('gemini-3-pro').vendor).to.equal('google');
         });
+    });
+});
+
+describe('GoogleModel non-streaming requests', () => {
+    /** Model whose generateContent() resolves to the given response instead of calling the API. */
+    class NonStreamingGoogleModel extends GoogleModel {
+        constructor(protected readonly generateContentResponse: object) {
+            super(
+                'test-id', 'gemini-3-pro', { status: 'ready' }, false,
+                () => 'test-key',
+                () => ({ maxRetriesOnErrors: 0, retryDelayOnRateLimitError: -1, retryDelayOnOtherErrors: -1 }),
+                GEMINI_REASONING_SUPPORT, 'effort'
+            );
+        }
+        protected override initializeGemini(): GoogleGenAI {
+            return { models: { generateContent: async () => this.generateContentResponse } } as unknown as GoogleGenAI;
+        }
+    }
+
+    it('excludes thought parts from the response text', async () => {
+        const model = new NonStreamingGoogleModel({
+            candidates: [{ content: { role: 'model', parts: [{ text: 'Weighing the options.', thought: true }, { text: 'Answer' }] } }],
+            usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 }
+        });
+        const response = await model.request({
+            messages: [{ actor: 'user', type: 'text', text: 'hello' }],
+            reasoning: { level: 'medium' },
+            agentId: 'test', sessionId: 'session', requestId: 'req'
+        });
+        expect((response as LanguageModelTextResponse).text).to.equal('Answer');
     });
 });

@@ -24,6 +24,7 @@ import {
     isToolCallHtmlAppResult,
     LanguageModel,
     LanguageModelSelector,
+    ReasoningSupport,
     resolveCompactionDefault,
     resolveCompactionTokenThreshold,
     resolveCompactionTokenThresholdDefault,
@@ -355,5 +356,35 @@ describe('isToolCallHtmlAppResult', () => {
 </body>
 </html>`;
         expect(isToolCallHtmlAppResult({ type: 'html', html, title: 'Animated Unit Test Sandbox' })).to.be.true;
+    });
+});
+
+describe('ReasoningSupport.clampLevel', () => {
+    const oSeries: ReasoningSupport = { supportedLevels: ['off', 'low', 'medium', 'high', 'auto'], defaultLevel: 'auto' };
+
+    it('returns a supported level unchanged', () => {
+        expect(ReasoningSupport.clampLevel(oSeries, 'medium')).to.equal('medium');
+        expect(ReasoningSupport.clampLevel(oSeries, 'auto')).to.equal('auto');
+    });
+
+    it('raises an unsupported minimal to low rather than lowering it to off', () => {
+        expect(ReasoningSupport.clampLevel(oSeries, 'minimal')).to.equal('low');
+    });
+
+    it('lowers an unsupported level when nothing higher is supported', () => {
+        expect(ReasoningSupport.clampLevel({ supportedLevels: ['off', 'low', 'medium'] }, 'high')).to.equal('medium');
+    });
+
+    it('raises an unsupported off to the lowest supported effort', () => {
+        expect(ReasoningSupport.clampLevel({ supportedLevels: ['low', 'high'] }, 'off')).to.equal('low');
+    });
+
+    it('resolves an unsupported auto to the default level, then to the first supported level', () => {
+        expect(ReasoningSupport.clampLevel({ supportedLevels: ['low', 'high'], defaultLevel: 'high' }, 'auto')).to.equal('high');
+        expect(ReasoningSupport.clampLevel({ supportedLevels: ['low', 'high'] }, 'auto')).to.equal('low');
+    });
+
+    it('returns the level unchanged when the model declares no levels', () => {
+        expect(ReasoningSupport.clampLevel({ supportedLevels: [] }, 'minimal')).to.equal('minimal');
     });
 });

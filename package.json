@@ -6,14 +6,23 @@
     "node": ">=24"
   },
   "overrides": {
+    "@tootallnate/once": "^2.0.1",
     "@typescript-eslint/eslint-plugin-tslint": {
       "@typescript-eslint/utils": "^7.18.0"
     },
     "adm-zip": "^0.6.0",
     "dompurify": "^3.4.13",
+    "express": {
+      "qs": "^6.16.0"
+    },
     "js-yaml": "^4.3.1",
+    "jsondiffpatch": "^0.7.6",
+    "lerna": {
+      "pacote": "^21.5.1"
+    },
     "nx": {
-      "brace-expansion": "^5.0.9"
+      "brace-expansion": "^5.0.9",
+      "smol-toml": "^1.7.1"
     },
     "perfect-scrollbar": "1.5.5",
     "serialize-javascript": "^7.1.0",
@@ -33,7 +42,6 @@
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/eslint-plugin-tslint": "^7.0.2",
     "@typescript-eslint/parser": "^7.18.0",
-    "@vscode/vsce": "^3.9.2",
     "archiver": "^5.3.2",
     "chai": "4.3.10",
     "chai-spies": "1.0.0",
@@ -56,8 +64,8 @@
     "lerna": "^9.0.7",
     "minimatch": "^10.2.6",
     "mkdirp": "^0.5.6",
-    "node-abi": "^4.33.0",
-    "node-gyp": "^13.0.1",
+    "node-abi": "^4.35.0",
+    "node-gyp": "^13.0.2",
     "nyc": "^18.0.0",
     "puppeteer": "25.1.0",
     "puppeteer-core": "25.1.0",
@@ -140,7 +148,6 @@
   "allowScripts": {
     "@google/genai": false,
     "@parcel/watcher": true,
-    "@vscode/vsce-sign": false,
     "@vscode/windows-ca-certs": true,
     "core-js": false,
     "cpu-features": true,

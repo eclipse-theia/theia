@@ -15,3 +15,5 @@
 // *****************************************************************************
 
 export * from './proxy-util';
+export * from './model-snapshot-store';
+export * from './model-discovery-fetcher';

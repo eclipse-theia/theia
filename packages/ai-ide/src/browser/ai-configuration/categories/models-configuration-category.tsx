@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Emitter, Event, nls } from '@theia/core';
+import { CommandService, Emitter, Event, nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import { DisposableCollection } from '@theia/core/lib/common';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
@@ -32,6 +32,9 @@ import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configura
 import { AiConfigurationSection } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-primitives';
 import { CollectionCategoryRenderer } from '@theia/ai-core-ui/lib/browser/ai-configuration/renderers/collection-category-renderer';
 import { AiSettingsRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row';
+import { LanguageModel, LanguageModelRegistry } from '@theia/ai-core/lib/common';
+import { FavoriteModelsService, ModelDiscoveryStatusService } from '@theia/ai-core/lib/browser';
+import { ProviderModelDiscoverySection } from './provider-model-discovery-section';
 
 /** Prefix shared by every AI preference. */
 const AI_FEATURES_PREFIX = 'ai-features.';
@@ -73,9 +76,24 @@ export class ModelsConfigurationCategory extends CollectionCategoryRenderer impl
     @inject(AiSettingsRowService)
     protected readonly settingsRowService: AiSettingsRowService;
 
+    @inject(ModelDiscoveryStatusService)
+    protected readonly discoveryStatus: ModelDiscoveryStatusService;
+
+    @inject(FavoriteModelsService)
+    protected readonly favoriteModels: FavoriteModelsService;
+
+    @inject(CommandService)
+    protected readonly commandService: CommandService;
+
+    @inject(LanguageModelRegistry)
+    protected readonly languageModelRegistry: LanguageModelRegistry;
+
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
     protected readonly toDispose = new DisposableCollection(this.onDidChangeEmitter);
+
+    /** Registered models, kept in sync so the provider detail can list them synchronously while rendering. */
+    protected models: LanguageModel[] = [];
 
     get renderer(): this {
         return this;
@@ -96,6 +114,14 @@ export class ModelsConfigurationCategory extends CollectionCategoryRenderer impl
     @postConstruct()
     protected init(): void {
         this.toDispose.push(this.settingsRowService.onPreferenceChanged(() => this.onDidChangeEmitter.fire()));
+        this.toDispose.push(this.discoveryStatus.onDidChange(() => this.onDidChangeEmitter.fire()));
+        this.toDispose.push(this.languageModelRegistry.onChange(() => this.updateModels()));
+        this.updateModels();
+    }
+
+    protected async updateModels(): Promise<void> {
+        this.models = await this.languageModelRegistry.getLanguageModels();
+        this.onDidChangeEmitter.fire();
     }
 
     dispose(): void {
@@ -130,15 +156,36 @@ export class ModelsConfigurationCategory extends CollectionCategoryRenderer impl
         </AiConfigurationSection>;
     }
 
-    /** Provider detail (node selected): that provider's settings. */
+    /** Provider detail (node selected): that provider's settings, followed by its model discovery. */
     protected renderItemSections(item: AiConfigurationTreeItem, ctx: AiConfigurationRenderContext): React.ReactNode {
         const section = this.getProviderSections().find(candidate => candidate.id === item.id);
         if (!section) {
             return undefined;
         }
-        return <AiConfigurationSection title={nls.localizeByDefault('Settings')}>
-            {section.preferenceIds.map(preferenceId => this.renderPreferenceRow(ctx, preferenceId))}
-        </AiConfigurationSection>;
+        return <>
+            <AiConfigurationSection title={nls.localizeByDefault('Settings')}>
+                {section.preferenceIds.map(preferenceId => this.renderPreferenceRow(ctx, preferenceId))}
+            </AiConfigurationSection>
+            {this.renderModelDiscovery(item.id)}
+        </>;
+    }
+
+    /** Only providers that participate in dynamic model discovery contribute this section. */
+    protected renderModelDiscovery(providerId: string): React.ReactNode {
+        const status = this.discoveryStatus.getStatus(providerId);
+        if (!status) {
+            return undefined;
+        }
+        // A provider's registered model ids may carry a prefix that differs from its preference segment
+        // (e.g. the `openAiOfficial` block registers `openai/…` models).
+        const prefix = `${status.modelIdPrefix ?? providerId}/`;
+        return <ProviderModelDiscoverySection
+            status={status}
+            models={this.models.filter(model => model.id.startsWith(prefix))}
+            favorites={this.favoriteModels}
+            onRefresh={() => this.discoveryStatus.refresh(providerId)}
+            onAction={action => this.commandService.executeCommand(action.commandId, ...(action.args ?? []))}
+        />;
     }
 
     protected renderPreferenceRow(ctx: AiConfigurationRenderContext, preferenceId: string): React.ReactNode {
