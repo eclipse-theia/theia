@@ -231,7 +231,6 @@ As a side effect, `CommonFrontendContribution` registers a UTF-8 encoding overri
   - untitled workspace files and the recent workspaces list
   - workspace metadata
   - AI stores: chat sessions, prompt customizations, skills, sketched tools
-  - plugin global storage
 - Files outside `/.theia` are no longer forced to UTF-8 encoding.
 
 **Adopter-facing:**
