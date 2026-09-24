@@ -402,34 +402,64 @@ export class OllamaModel implements LanguageModel {
     }
 
     protected toOllamaTool(tool: ToolRequest): ToolWithHandler {
-        const resolveType = (prop: ToolRequestParameterProperty): string | undefined => {
-            if (prop.type) {
-                return prop.type;
-            }
-            if (prop.anyOf) {
-                const nonNull = prop.anyOf.find(p => p.type && p.type !== 'null');
-                return nonNull?.type ?? undefined;
-            }
-            return undefined;
+        // Flatten anyOf by merging the first non-null branch into the top-level prop so that
+        // fields carried by the branch (e.g. items, properties) are visible to the callers.
+        const normalizeProp = (prop: ToolRequestParameterProperty): ToolRequestParameterProperty => {
+            if (!prop.anyOf) { return prop; }
+            const nonNull = prop.anyOf.find(p => p.type && p.type !== 'null');
+            if (!nonNull) { return prop; }
+            const merged = { ...nonNull, ...prop };
+            delete (merged as Record<string, unknown>)['anyOf'];
+            return merged as ToolRequestParameterProperty;
         };
+
+        const recurseProperties = (raw: unknown): unknown =>
+            ToolRequest.isToolRequestParametersProperties(raw) ? transform(raw) : raw;
 
         const transform = (props: ToolRequestParametersProperties | undefined) => {
             if (!props) {
                 return undefined;
             }
-
-            const result: Record<string, { type: string, description: string, enum?: string[] }> = {};
-            for (const [key, prop] of Object.entries(props)) {
-                const type = resolveType(prop);
-                if (type) {
-                    const description = typeof prop.description == 'string' ? prop.description : '';
-                    result[key] = {
-                        type: type,
-                        description: description
+            const result: Record<string, Record<string, unknown>> = {};
+            for (const [key, rawProp] of Object.entries(props)) {
+                const prop = normalizeProp(rawProp);
+                if (prop.type) {
+                    const entry: Record<string, unknown> = {
+                        ...prop,
+                        type: prop.type,
+                        ...(prop.description !== undefined && { description: String(prop.description) }),
+                        ...(prop.properties !== undefined && { properties: recurseProperties(prop.properties) }),
+                        ...(prop.items !== undefined && { items: transformItem(prop.items) }),
                     };
+                    delete entry['anyOf'];
+                    result[key] = entry;
+                } else {
+                    result[key] = rawProp as Record<string, unknown>;
                 }
             }
             return result;
+        };
+
+        const transformItem = (items: unknown): unknown => {
+            if (Array.isArray(items)) {
+                return items.map(item => transformItem(item));
+            }
+            if (items && typeof items === 'object') {
+                const prop = normalizeProp(items as ToolRequestParameterProperty);
+                if (!prop.type) {
+                    return items;
+                }
+                const itemResult: Record<string, unknown> = {
+                    ...prop,
+                    type: prop.type,
+                    ...(prop.description !== undefined && { description: String(prop.description) }),
+                    ...(prop.properties !== undefined && { properties: recurseProperties(prop.properties) }),
+                    ...(prop.items !== undefined && { items: transformItem(prop.items) }),
+                };
+                delete itemResult['anyOf'];
+                return itemResult;
+            }
+            return items;
         };
         return {
             type: 'function',
