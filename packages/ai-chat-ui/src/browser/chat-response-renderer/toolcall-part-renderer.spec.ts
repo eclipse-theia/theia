@@ -16,8 +16,15 @@
 
 import { expect } from 'chai';
 import { ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
-import { OpenerService } from '@theia/core/lib/browser';
+import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
+import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
+import { ToolInvocationRegistry } from '@theia/ai-core';
+import { HoverRequest, HoverService, KeybindingRegistry, OpenerService } from '@theia/core/lib/browser';
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 import { ReactNode } from '@theia/core/shared/react';
+import { flushSync } from '@theia/core/shared/react-dom';
+import { createRoot, Root } from '@theia/core/shared/react-dom/client';
+import { ResponseNode } from '../chat-tree-view';
 import { ToolCallPartRenderer } from './toolcall-part-renderer';
 import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
 
@@ -419,6 +426,59 @@ describe('ToolCallPartRenderer.renderResult', () => {
         const node = renderResult(result)!;
         expect(node.type).to.equal('pre');
         expect(node.props.children).to.equal(JSON.stringify(result, undefined, 2));
+    });
+
+});
+
+describe('ToolCallPartRenderer arguments tooltip', () => {
+    let disableJSDOM: () => void;
+    let container: HTMLElement;
+    let root: Root;
+    let requests: HoverRequest[];
+
+    before(() => disableJSDOM = enableJSDOM());
+    after(() => disableJSDOM());
+
+    beforeEach(() => {
+        requests = [];
+        container = document.createElement('div');
+        document.body.appendChild(container);
+        root = createRoot(container);
+    });
+
+    afterEach(() => {
+        root.unmount();
+        document.body.removeChild(container);
+    });
+
+    it('anchors the tooltip of a finished call to the inline label, not the full-width summary', () => {
+        const renderer = new ToolCallPartRenderer();
+        Object.assign(renderer, {
+            hoverService: { requestHover: (request: HoverRequest) => requests.push(request) } as unknown as HoverService,
+            openerService: {} as OpenerService,
+            toolInvocationRegistry: { getFunction: () => undefined } as unknown as ToolInvocationRegistry,
+            toolConfirmationManager: { getConfirmationMode: () => ToolConfirmationMode.ALWAYS_ALLOW } as unknown as ToolConfirmationManager,
+            keybindingRegistry: { getKeybindingsForCommand: () => [] } as unknown as KeybindingRegistry
+        });
+        const response = {
+            kind: 'toolCall',
+            name: 'searchInWorkspace',
+            arguments: JSON.stringify({ query: 'hover', useRegExp: false, fileExtensions: ['ts'] }),
+            finished: true,
+            confirm: () => { }
+        } as unknown as ToolCallChatResponseContent;
+        const parentNode = { sessionId: 'session', response: { isCanceled: false } } as unknown as ResponseNode;
+        flushSync(() => root.render(renderer.render(response, parentNode)));
+        const summary = container.querySelector('summary')!;
+
+        container.querySelector('.theia-toolCall-args-label')!.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+
+        expect(requests).to.have.lengthOf(1);
+        const target = requests[0].target;
+        expect(target).to.not.equal(summary);
+        expect(target.tagName).to.equal('SPAN');
+        expect(target.parentElement).to.equal(summary);
+        expect(target.textContent).to.contain('searchInWorkspace');
     });
 
 });
