@@ -4,19 +4,57 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## 1.76.0 - tbd
+## 1.76.0 - 9/24/2026
 
-- [core, filesystem, plugin-ext] fixed file decorations being dropped by large change events: change events are batched, and events exceeding the plugin-ext cap arrive as a flush that is re-fetched on demand [#17766](https://github.com/eclipse-theia/theia/pull/17766) - Contributed on behalf of K2view
-- [core, plugin-ext] fixed tab bar toolbar items being evaluated against whichever widget holds the focus rather than the tab that owns the toolbar, so an `editor/title` item could show on a tab whose resource does not match its `when` clause and go missing from the tab that does. The submenu chevron, its popup and the `More Actions...` menu now resolve the same keys as the visibility check [#17978](https://github.com/eclipse-theia/theia/pull/17978)
-- [preview] removed the `@theia/preview` extension code entirely (deprecated and unpublished since v1.73.0) [#18001](https://github.com/eclipse-theia/theia/pull/18001)
-- [ai-copilot] fixed visiblity of "I have authorized" button when using the authentication dialog twice
-- [private-eslint-plugin] added the `preload-localization-check` ESLint rule that reports code of the preload phase reading a localized string while it is being loaded, either directly or through the modules it imports [#18017](https://github.com/eclipse-theia/theia/pull/18017) - Contributed on behalf of STMicroelectronics
+- [ai] added gpt-6-astra, claude-fable-5-1 and gemini-3.8-flash to the default models [#18033](https://github.com/eclipse-theia/theia/pull/18033)
+- [ai] clamped the reasoning level to the model's supported levels [#18048](https://github.com/eclipse-theia/theia/pull/18048)
+- [ai] surfaced reasoning summaries on OpenAI Responses and fixed non-streaming thinking handling [#18046](https://github.com/eclipse-theia/theia/pull/18046)
+- [ai] surfaced userInteraction calls from delegated sessions [#17984](https://github.com/eclipse-theia/theia/pull/17984)
+- [ai-anthropic, ai-openai] supported custom HTTP headers for custom model endpoints [#17907](https://github.com/eclipse-theia/theia/pull/17907) - Contributed on behalf of K2view
+- [ai-chat] supported resuming delegation sessions via sessionId [#17965](https://github.com/eclipse-theia/theia/pull/17965) - Contributed on behalf of K2view
+- [ai-chat-ui] added sticky response headers and a live thinking preview [#18069](https://github.com/eclipse-theia/theia/pull/18069)
+- [ai-chat-ui] kept chat input cursor visible on wrapped lines [#18013](https://github.com/eclipse-theia/theia/pull/18013)
+- [ai-chat-ui] labeled streaming tool calls from top-level fields only [#18026](https://github.com/eclipse-theia/theia/pull/18026)
+- [ai-chat-ui] skipped doomed JSON.parse on streaming tool arguments [#17975](https://github.com/eclipse-theia/theia/pull/17975)
+- [ai-chat-ui] supported searching text within a chat session [#18024](https://github.com/eclipse-theia/theia/pull/18024)
+- [ai-copilot] fixed visibility of "I have authorized" button when using the authorization dialog twice [#18034](https://github.com/eclipse-theia/theia/pull/18034) - Contributed on behalf of MVTec Software GmbH
+- [ai-copilot] supported images with copilot models [#17992](https://github.com/eclipse-theia/theia/pull/17992) - Contributed on behalf of MVTec Software GmbH
+- [ai-core, ai-openai] kept model discovery from throwing on the body-less models request [#18058](https://github.com/eclipse-theia/theia/pull/18058)
+- [ai-core-ui] fixed agent detail select font and truncated tool descriptions [#17987](https://github.com/eclipse-theia/theia/pull/17987)
+- [ai-google] fixed token usage showing incorrect values for Gemini models [#17991](https://github.com/eclipse-theia/theia/pull/17991)
+- [ai-ide] rejected malformed userInteraction arguments [#17964](https://github.com/eclipse-theia/theia/pull/17964)
+- [ai-ide] unclipped the AI configuration breadcrumb popup list scrollbar [#18028](https://github.com/eclipse-theia/theia/pull/18028)
+- [ai-ollama] accepted the `tool_calls` done reason [#17972](https://github.com/eclipse-theia/theia/pull/17972)
+- [ai-registry] resolved MCP entries via any approval with a usable install config [#17997](https://github.com/eclipse-theia/theia/pull/17997)
+- [ai-registry] routed AI settings links through the AI settings command [#18000](https://github.com/eclipse-theia/theia/pull/18000)
+- [ai-tool-sketchpad] made `SketchedToolServiceImpl.onStart` non-blocking (265.66ms → 0.56ms) [#17953](https://github.com/eclipse-theia/theia/pull/17953)
+- [bundle-plugin] resolved ripgrep from app.asar.unpacked in asar-packaged apps [#18018](https://github.com/eclipse-theia/theia/pull/18018)
+- [core] aligned icon and label in viewsWelcome buttons [#18004](https://github.com/eclipse-theia/theia/pull/18004)
+- [core] recovered file decorations dropped by large change events [#17766](https://github.com/eclipse-theia/theia/pull/17766) - Contributed on behalf of K2view
+- [core] rendered hovers in the document of their target element [#17934](https://github.com/eclipse-theia/theia/pull/17934)
+- [core] scrolled tree widgets to the focused node once per request [#18063](https://github.com/eclipse-theia/theia/pull/18063)
+- [core] stopped the dialog overlay retaining the first dialog [#18060](https://github.com/eclipse-theia/theia/pull/18060)
+- [core] translation update for version 1.76.0 [#18071](https://github.com/eclipse-theia/theia/pull/18071)
+- [core] upgraded npm dependencies after 1.75.0 [#18005](https://github.com/eclipse-theia/theia/pull/18005) - Contributed on behalf of STMicroelectronics
+- [docs] required a changelog entry only for breaking changes [#18056](https://github.com/eclipse-theia/theia/pull/18056)
+- [external-api] added contributable HTTP API for external tools [#17791](https://github.com/eclipse-theia/theia/pull/17791)
+- [getting-started] supported SVG rendering and interactive command links in walkthroughs [#17954](https://github.com/eclipse-theia/theia/pull/17954)
+- [monaco] kept the tokenizer state when a line exceeds the line limit [#18008](https://github.com/eclipse-theia/theia/pull/18008)
+- [plugin-ext] fixed saving editors that are not text editors [#17977](https://github.com/eclipse-theia/theia/pull/17977)
+- [plugin-ext] handled native Windows separators in relative() [#18035](https://github.com/eclipse-theia/theia/pull/18035) - Contributed on behalf of JuliaHub, Inc.
+- [plugin-ext] ignored OS metadata files when resolving a local plugin directory [#18009](https://github.com/eclipse-theia/theia/pull/18009)
+- [plugin-ext] routed setTextDocumentLanguage to the notebook cell model [#17990](https://github.com/eclipse-theia/theia/pull/17990)
+- [preferences] filtered settings editor by selected category [#17526](https://github.com/eclipse-theia/theia/pull/17526)
+- [preview] removed deprecated @theia/preview extension code [#18002](https://github.com/eclipse-theia/theia/pull/18002)
+- [private-eslint-plugin] added the `preload-localization-check` ESLint rule [#18017](https://github.com/eclipse-theia/theia/pull/18017) - Contributed on behalf of STMicroelectronics
+- [vscode] bumped the VS Code API compatibility and updated the nls metadata to 1.139.0 [#18068](https://github.com/eclipse-theia/theia/pull/18068) - Contributed on behalf of STMicroelectronics
+- [workflows] authenticated SBOM uploads with PIA [#18050](https://github.com/eclipse-theia/theia/pull/18050)
 
 <a name="breaking_changes_1.76.0">[Breaking Changes:](#breaking_changes_1.76.0)</a>
 
-- [ai-anthropic, ai-google, ai-openai] removed the curated model list preferences `ai-features.anthropic.AnthropicModels`, `ai-features.google.models` and `ai-features.openAiOfficial.officialOpenAiModels`; the models are discovered from the provider and can be pinned with the new `ai-features.<provider>.modelOverrides`. An API key found in the environment is no longer used until it has been confirmed once, per provider in `ai-features.<provider>.allowEnvironmentApiKey`. The `AnthropicLanguageModelsManager`, `GoogleLanguageModelsManager` and `OpenAiLanguageModelsManager` interfaces gained `fetchAvailableModels`, `getApiKeySource` and `setAllowEnvironmentApiKey`, and `CopilotLanguageModelsManager.fetchAvailableModelIds` was replaced by `fetchAvailableModels`. See the migration guide [#PR](https://github.com/eclipse-theia/theia/pull/PR)
+- [ai-anthropic, ai-google, ai-openai] removed the curated model list preferences `ai-features.anthropic.AnthropicModels`, `ai-features.google.models` and `ai-features.openAiOfficial.officialOpenAiModels`; the models are discovered from the provider and can be pinned with the new `ai-features.<provider>.modelOverrides`. An API key found in the environment is no longer used until it has been confirmed once, per provider in `ai-features.<provider>.allowEnvironmentApiKey`. The `AnthropicLanguageModelsManager`, `GoogleLanguageModelsManager` and `OpenAiLanguageModelsManager` interfaces gained `fetchAvailableModels`, `getApiKeySource` and `setAllowEnvironmentApiKey`, and `CopilotLanguageModelsManager.fetchAvailableModelIds` was replaced by `fetchAvailableModels`. See the migration guide [#18011](https://github.com/eclipse-theia/theia/pull/18011)
 - [ai-copilot] removed the direct REST transport and its GitHub OAuth App sign-in; all requests are now served by the official GitHub Copilot CLI, which is signed in from within the application and needs to be reachable on the machine hosting the backend. Access to the Copilot models is granted per OAuth application, and the built-in application was never entitled for the current lineup, so the REST path only ever exposed a small legacy subset. Removed as a consequence: the `CopilotOAuthConfig` symbol and its `DEFAULT_COPILOT_OAUTH_CONFIG` value, the `CopilotLanguageModel` class, `getCopilotApiBaseUrl`, `COPILOT_API_BASE_URL`, and the `enableStreaming` and `supportsStructuredOutput` members of `CopilotModelDescription`. `CopilotAuthService.initiateDeviceFlow`, `pollForToken`, `getAccessToken` and `signOut` are replaced by `startSignIn`, `waitForSignIn` and `cancelSignIn`, since the CLI performs and polls the flow itself and owns the resulting token, and `setExecutablePath` has been added so that the frontend can hand the configured location of the CLI to the backend. Users have to sign in again: the sign-in of the previous version belongs to an OAuth app that is no longer used, so it is removed from the credential store on first start and a notification asks for a new sign-in. Adopters that rebound `CopilotOAuthConfig` to their own OAuth App no longer need to, and adopters relying on the REST transport should note that structured output is not available on the CLI path. See the migration guide [#17919](https://github.com/eclipse-theia/theia/pull/17919)
-- [ai-core-ui] replaced the `.ai-variant-action-button` and `.ai-configuration-value-row-copy` CSS classes with the shared `.ai-configuration-icon-button` of the new `AiConfigurationIconButton` component [#PR](https://github.com/eclipse-theia/theia/pull/PR)
+- [ai-core-ui] replaced the `.ai-variant-action-button` and `.ai-configuration-value-row-copy` CSS classes with the shared `.ai-configuration-icon-button` of the new `AiConfigurationIconButton` component [#18011](https://github.com/eclipse-theia/theia/pull/18011)
 - [ai-ide] `IdeChatWelcomeMessageProvider` no longer renders the default-agent picker (`renderAgentSelectionScreen`) or the tool-confirmation explainer (`renderToolConfirmationAlert`), and no longer blocks the chat on a missing default chat agent; that content moved to the getting started walkthrough. `AiConfigurationDetailWidget.centerInBody()` became `revealInBody()` and scrolls a deep-linked row to the top of the page rather than its centre. `@theia/ai-ide` now depends on `@theia/getting-started` [#17969](https://github.com/eclipse-theia/theia/pull/17969)
 - [ai-ide] rebound `ScmCommitWidget` to `AiAwareScmCommitWidget`, which renders the stock SCM commit input plus an AI overlay. Adopters that rebind `ScmCommitWidget` themselves now override this binding and lose the commit-message button; they should extend `AiAwareScmCommitWidget` instead of `ScmCommitWidget` to keep it [#17669](https://github.com/eclipse-theia/theia/pull/17669)
 - [core] made the `contextMatcher` parameter of `TabBarToolbarItem.isVisible` mandatory, so that neither a caller nor an override that drops the argument can fall back to the context of the focused widget. Adopters calling `isVisible` themselves have to pass a matcher, and subclasses overriding it have to declare and forward the argument; passing the injected `ContextKeyService` reproduces the previous behavior [#17978](https://github.com/eclipse-theia/theia/pull/17978)
