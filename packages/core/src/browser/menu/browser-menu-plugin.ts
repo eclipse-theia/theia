@@ -571,6 +571,12 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
             }
         };
 
+        // Mouse interaction while Alt is held is a modifier gesture of its own, e.g. Alt+click to add a
+        // cursor or Alt+scroll to scroll faster, so it invalidates the Alt-only gesture as any other key does.
+        const onPointerInteraction = (): void => {
+            lastKeyWasAlt = false;
+        };
+
         const onKeyUp = (e: KeyboardEvent): void => {
             if (e.key !== 'Alt') {
                 return;
@@ -605,11 +611,15 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
 
         document.addEventListener('keydown', onKeyDown, true);
         document.addEventListener('keyup', onKeyUp, true);
+        document.addEventListener('mousedown', onPointerInteraction, true);
+        document.addEventListener('wheel', onPointerInteraction, { capture: true, passive: true });
         menu.node.addEventListener('focusout', onFocusOut);
 
         disposables.push(Disposable.create(() => {
             document.removeEventListener('keydown', onKeyDown, true);
             document.removeEventListener('keyup', onKeyUp, true);
+            document.removeEventListener('mousedown', onPointerInteraction, true);
+            document.removeEventListener('wheel', onPointerInteraction, true);
             menu.node.removeEventListener('focusout', onFocusOut);
         }));
 
