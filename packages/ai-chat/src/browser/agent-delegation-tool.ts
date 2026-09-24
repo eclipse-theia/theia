@@ -78,7 +78,9 @@ export class AgentDelegationTool implements ToolProvider {
                     prompt: {
                         type: 'string',
                         description:
-                            'The task, question, or prompt to pass to the specified agent.',
+                            'The task, question, or prompt to pass to the specified agent. Include the overall goal, the specific question, ' +
+                            'and relevant file paths. Keep the question narrow (e.g. "list every call site of X with surrounding lines"); ' +
+                            'vague prompts produce slow, generic reports.',
                     },
                     taskContextId: {
                         type: 'string',

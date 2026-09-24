@@ -37,7 +37,9 @@ export class ExploreAgent extends AbstractStreamParsingChatAgent {
     protected defaultLanguageModelPurpose: string = 'chat';
     override description = nls.localize('theia/ai/ide/exploreAgent/description',
         'A codebase exploration assistant that extracts and distills information from the codebase. \
-        Reports facts about what exists, provides code excerpts, and describes observed patterns.');
+        Reports facts about what exists, provides code excerpts, and describes observed patterns. \
+        Delegate to it when the design is clear but facts must be gathered across files: call sites, data flow, patterns, ripple checks. \
+        It does not plan. For 1-2 known files or a single targeted search, use tools directly instead.');
 
     override prompts = [{ id: EXPLORE_SYSTEM_PROMPT_ID, defaultVariant: exploreSystemPrompt, variants: [] }];
     protected override systemPromptId: string = EXPLORE_SYSTEM_PROMPT_ID;

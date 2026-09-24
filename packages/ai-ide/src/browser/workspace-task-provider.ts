@@ -153,6 +153,8 @@ export class TaskRunnerProvider implements ToolProvider {
                 '(e.g., "npm: build"), test tasks (e.g., "npm: test"), and lint tasks (e.g., "npm: lint"). ' +
                 'If the task fails, the error output is included in the response. Tasks may take significant ' +
                 'time to complete (builds can take minutes). The operation can be cancelled by the user. ' +
+                'Because it blocks until the task ends, do NOT use it for long-running processes (dev servers, watch tasks, ' +
+                'applications under test) - use runLaunchConfiguration for those. ' +
                 'If multiple tasks share the same label, specify the workspaceRoot parameter to disambiguate. ' +
                 'Do NOT use this for tasks you haven\'t discovered via listTasks first.',
             parameters: {
