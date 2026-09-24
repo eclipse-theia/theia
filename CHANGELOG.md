@@ -8,7 +8,6 @@
 
 - [ai-anthropic, ai-openai] added support for custom HTTP headers on custom model endpoints [#17907](https://github.com/eclipse-theia/theia/pull/17907) - Contributed on behalf of K2view
 - [ai-chat] added an optional `sessionId` to the agent delegation tool, which continues a previous delegation so the delegated agent keeps its conversation context instead of starting over. Delegation results now end with a `[delegation sessionId: <id>]` line that reports the id to pass back [#17965](https://github.com/eclipse-theia/theia/pull/17965) - Contributed on behalf of K2view
-- [ai-ide] fixed the AI configuration breadcrumb popup (Providers & Models, MCP servers, Agents) clipping its own scrollbar, which hid all but the first ~8 entries of a list with no way to reach the rest [#18028](https://github.com/eclipse-theia/theia/pull/18028)
 - [core, filesystem, plugin-ext] fixed file decorations being dropped by large change events: change events are batched, and events exceeding the plugin-ext cap arrive as a flush that is re-fetched on demand [#17766](https://github.com/eclipse-theia/theia/pull/17766) - Contributed on behalf of K2view
 - [preview] removed the `@theia/preview` extension code entirely (deprecated and unpublished since v1.73.0) [#18001](https://github.com/eclipse-theia/theia/pull/18001)
 
