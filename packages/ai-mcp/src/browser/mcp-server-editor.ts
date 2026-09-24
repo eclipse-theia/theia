@@ -215,7 +215,7 @@ export class MCPServerEditorImpl implements MCPServerEditor {
      */
     async save(formData: MCPServerFormData): Promise<void> {
         const currentServers = this.preferenceService.get<Record<string, object>>(MCP_SERVERS_PREF, {}) ?? {};
-        const serverName = formData.name.trim();
+        const serverName = formData.name;
         const existing = (currentServers[serverName] ?? {}) as Record<string, unknown>;
         const serverConfig = formData.serverType === 'local'
             ? this.toLocalConfig(formData)
