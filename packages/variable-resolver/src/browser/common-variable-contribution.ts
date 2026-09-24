@@ -26,7 +26,6 @@ import { VariableInput } from './variable-input';
 import { QuickInputService, QuickPickValue } from '@theia/core/lib/browser';
 import { MaybeArray, RecursivePartial } from '@theia/core/lib/common/types';
 import { cancelled } from '@theia/core/lib/common/cancellation';
-import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()
@@ -109,7 +108,15 @@ export class CommonVariableContribution implements VariableContribution {
                     if (typeof input.description !== 'string') {
                         return undefined;
                     }
-                    return this.resolvePromptStringInput(input.description, input.default);
+                    const value = await this.quickInputService?.input({
+                        prompt: input.description,
+                        value: input.default,
+                        ignoreFocusLost: true
+                    });
+                    if (value === undefined) {
+                        throw cancelled();
+                    }
+                    return value;
                 }
                 if (input.type === 'pickString') {
                     if (typeof input.description !== 'string' || !Array.isArray(input.options)) {
@@ -150,36 +157,6 @@ export class CommonVariableContribution implements VariableContribution {
                 }
                 return undefined;
             }
-        });
-    }
-
-    protected resolvePromptStringInput(description: string, defaultValue: string | undefined): Promise<string> {
-        const inputBox = this.quickInputService?.createInputBox();
-        if (!inputBox) {
-            throw cancelled();
-        }
-        return new Promise((resolve, reject) => {
-            const toDispose = new DisposableCollection();
-            toDispose.push(inputBox.onDidAccept(() => {
-                const value = inputBox.value;
-                toDispose.dispose();
-                inputBox.hide();
-                inputBox.dispose();
-                if (value === undefined) {
-                    reject(cancelled());
-                } else {
-                    resolve(value);
-                }
-            }));
-            toDispose.push(inputBox.onDidHide(() => {
-                toDispose.dispose();
-                inputBox.dispose();
-                reject(cancelled());
-            }));
-            inputBox.prompt = description;
-            inputBox.value = defaultValue;
-            inputBox.ignoreFocusOut = true;
-            inputBox.show();
         });
     }
 }
