@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 Red Hat, Inc. and others.
+// Copyright (C) 2026 Robert Jandow
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,8 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/**
- * @deprecated since 1.76.0 - `PluginPaths` moved to `@theia/plugin-ext/lib/main/common/paths/const`
- * so the browser-only frontend can share it. Import it from there.
- */
-export { PluginPaths } from '../../common/paths/const';
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { BrowserOnlyTerminalFrontendContribution } from './browser-only-terminal-frontend-contribution';
+import { TerminalFrontendContribution } from '../browser/terminal-frontend-contribution';
+
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
+    rebind(TerminalFrontendContribution).to(BrowserOnlyTerminalFrontendContribution).inSingletonScope();
+});

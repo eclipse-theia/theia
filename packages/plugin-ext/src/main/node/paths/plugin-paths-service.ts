@@ -23,7 +23,7 @@ import { remove } from '@theia/core/shared/fs-extra';
 import * as crypto from 'crypto';
 import { ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
-import { PluginPaths } from './const';
+import { PluginPaths } from '../../common/paths/const';
 import { PluginPathsService } from '../../common/plugin-paths-protocol';
 import { UntitledWorkspaceService } from '@theia/workspace/lib/common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';

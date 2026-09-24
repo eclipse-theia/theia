@@ -24,7 +24,7 @@
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { PluginWorker } from './plugin-worker';
-import { getPluginId, DeployedPlugin, HostedPluginServer } from '../../common/plugin-protocol';
+import { getPluginId, DeployedPlugin, HostedPluginServer, PLUGIN_HOST_FRONTEND } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
 import { ExtensionKind, MAIN_RPC_CONTEXT, PluginManagerExt, UIKind } from '../../common/plugin-api-rpc';
 import { setUpPluginApi } from '../../main/browser/main-context';
@@ -380,7 +380,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     }
 
     protected initRpc(host: PluginHost, pluginId: string): RPCProtocol {
-        const rpc = host === 'frontend' ? new PluginWorker().rpc : this.createServerRpc(host);
+        const rpc = host === PLUGIN_HOST_FRONTEND ? new PluginWorker().rpc : this.createServerRpc(host);
         setUpPluginApi(rpc, this.container);
         this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, this.container));
         return rpc;

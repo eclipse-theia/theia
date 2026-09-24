@@ -16,6 +16,12 @@
 
 export const PLUGINS_BASE_PATH = 'hostedPlugin';
 
+/**
+ * URI scheme for plugin assets read through the `FileService`. Browser-only serves them over HTTP
+ * from `PLUGINS_BASE_PATH` instead.
+ */
+export const PLUGINS_SCHEME = 'theia-plugin';
+
 export const UNPUBLISHED = '<unpublished>';
 
 export const DEFAULT_PLUGINS_DIR = 'plugins';

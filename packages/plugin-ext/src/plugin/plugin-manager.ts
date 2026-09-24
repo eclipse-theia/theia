@@ -245,8 +245,12 @@ export abstract class AbstractPluginManagerExtImpl<P extends Record<string, any>
             contributes.jsonValidation = (contributes.jsonValidation || []).concat(this.jsonValidation);
         }
         this.registry.set(plugin.model.id, plugin);
+        if (!plugin.pluginPath) {
+            // No entry point at all, so nothing to activate here.
+            return;
+        }
         const activationEvents = this.getActivationEvents(plugin);
-        if (plugin.pluginPath && activationEvents) {
+        if (activationEvents) {
             const activation = () => this.$activatePlugin(plugin.model.id);
             // an internal activation event is a subject to change
             this.setActivation(`onPlugin:${plugin.model.id}`, activation);

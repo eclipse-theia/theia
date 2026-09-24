@@ -117,20 +117,28 @@ pluginManager.setPluginHost({
                     pluginsModulesNames.set(plugin.lifecycle.frontendModuleName!, plugin);
                     return { target: result, plugin };
                 } else {
-                    return {
-                        target: foreign,
-                        plugin: {
-                            pluginPath: pluginModel.entryPoint.backend,
-                            pluginFolder: pluginModel.packagePath,
-                            pluginUri: pluginModel.packageUri,
-                            model: pluginModel,
-                            lifecycle: pluginLifecycle,
+                    const common = {
+                        pluginPath: pluginModel.entryPoint.backend,
+                        pluginFolder: pluginModel.packagePath,
+                        pluginUri: pluginModel.packageUri,
+                        model: pluginModel,
+                        lifecycle: pluginLifecycle,
+                        isUnderDevelopment: !!plg.isUnderDevelopment
+                    };
+                    const plugin: Plugin = pluginModel.entryPoint.backend
+                        // Runs in another host, so its manifest is that host's problem.
+                        ? {
+                            ...common,
                             get rawModel(): never {
                                 throw new Error('not supported');
-                            },
-                            isUnderDevelopment: !!plg.isUnderDevelopment
+                            }
                         }
-                    };
+                        // No entry point anywhere, so there is nothing to run - it only contributes
+                        // grammars, themes and the like. It does still turn up in `theia.extensions`,
+                        // where reading `packageJSON` must not throw, so give it a real manifest.
+                        // Only browser-only gets here; with a backend these go to the backend host.
+                        : { ...common, rawModel: await loadManifest(pluginModel) };
+                    return { target: foreign, plugin };
                 }
             }));
             // Collect the ordered plugins and insert them in the target array:
