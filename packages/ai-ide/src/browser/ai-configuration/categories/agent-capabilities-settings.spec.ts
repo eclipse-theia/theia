@@ -24,9 +24,11 @@ import { expect } from 'chai';
 import * as React from '@theia/core/shared/react';
 import { flushSync } from '@theia/core/shared/react-dom';
 import { createRoot } from '@theia/core/shared/react-dom/client';
-import { AISettingsService, ServerToolDescriptor } from '@theia/ai-core/lib/common';
+import { AISettingsService, GenericCapabilitySelections, ServerToolDescriptor } from '@theia/ai-core/lib/common';
+import { HoverService } from '@theia/core/lib/browser';
+import { AvailableGenericCapabilities } from '@theia/ai-chat-ui/lib/browser/generic-capabilities-service';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
-import { AgentServerToolsSettings } from './agent-capabilities-settings';
+import { AgentGenericCapabilitiesSettings, AgentServerToolsSettings } from './agent-capabilities-settings';
 
 disableJSDOM();
 
@@ -154,6 +156,121 @@ describe('AgentServerToolsSettings', () => {
             await new Promise(resolve => setTimeout(resolve, 0));
 
             expect(updates).to.deep.equal([{ serverToolSelections: undefined }]);
+        } finally {
+            dispose();
+        }
+    });
+});
+
+describe('AgentGenericCapabilitiesSettings', () => {
+
+    before(() => {
+        disableJSDOM = enableJSDOM();
+        // The tree's root tooltips read the application name; the config lives on the fresh window.
+        FrontendApplicationConfigProvider.set({});
+    });
+    after(() => disableJSDOM());
+
+    const available: AvailableGenericCapabilities = {
+        skills: [{ id: 'skill-a', name: 'skill-a' }, { id: 'skill-b', name: 'skill-b' }],
+        mcpFunctions: [],
+        functions: [{ id: 'fn-used', name: 'fn-used' }],
+        promptFragments: [],
+        agentDelegation: [],
+        variables: []
+    };
+
+    interface Rendered {
+        container: HTMLElement;
+        updates: Array<Record<string, unknown>>;
+        dispose: () => void;
+    }
+
+    function render(savedSelections: GenericCapabilitySelections | undefined, availableCapabilities: AvailableGenericCapabilities | undefined): Rendered {
+        const updates: Array<Record<string, unknown>> = [];
+        const aiSettingsService = {
+            updateAgentSettings: async (_agent: string, settings: Record<string, unknown>) => { updates.push(settings); }
+        } as unknown as AISettingsService;
+        const container = document.createElement('div');
+        document.body.appendChild(container);
+        const root = createRoot(container);
+        flushSync(() => root.render(React.createElement(AgentGenericCapabilitiesSettings, {
+            agentId: 'coder',
+            savedSelections,
+            availableCapabilities,
+            usedCapabilities: { functions: ['fn-used'] },
+            aiSettingsService,
+            settingsRowService: { openResetMenu: () => { } } as unknown as AiSettingsRowService,
+            hoverService: { requestHover: () => { } } as unknown as HoverService,
+            onOpenPromptSnippet: () => { }
+        })));
+        return { container, updates, dispose: () => { flushSync(() => root.unmount()); container.remove(); } };
+    }
+
+    function openEditorAndExpand(container: HTMLElement, rootName: string): void {
+        flushSync(() => container.querySelector<HTMLButtonElement>('button[aria-label="Edit generic capabilities"]')!.click());
+        const header = Array.from(container.querySelectorAll<HTMLElement>('.theia-GenericCapabilities-TreeNodeHeader'))
+            .find(candidate => candidate.textContent === rootName);
+        flushSync(() => header!.click());
+    }
+
+    function item(container: HTMLElement, name: string): HTMLElement {
+        return Array.from(container.querySelectorAll<HTMLElement>('.theia-GenericCapabilities-TreeItem')).find(candidate => candidate.textContent === name)!;
+    }
+
+    it('offers no editor when there is nothing to choose from', () => {
+        const { container, dispose } = render({ skills: ['skill-a'] }, undefined);
+        try {
+            expect(Boolean(container.querySelector('button[aria-label="Edit generic capabilities"]'))).to.equal(false);
+            expect(container.textContent).to.include('skill-a');
+        } finally {
+            dispose();
+        }
+    });
+
+    it('saves a selection made in the editor right away, keeping earlier edits', async () => {
+        const { container, updates, dispose } = render(undefined, available);
+        try {
+            openEditorAndExpand(container, 'Skills');
+            flushSync(() => item(container, 'skill-a').click());
+            flushSync(() => item(container, 'skill-b').click());
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(updates).to.deep.equal([
+                { genericCapabilitySelections: { skills: ['skill-a'] } },
+                { genericCapabilitySelections: { skills: ['skill-a', 'skill-b'] } }
+            ]);
+            // The summary row reflects the edit without waiting for the saved value to be reloaded.
+            expect(container.querySelector('.ai-configuration-item-list')!.textContent).to.include('skill-a, skill-b');
+        } finally {
+            dispose();
+        }
+    });
+
+    it('drops the setting instead of storing empty lists when the last selection is removed', async () => {
+        const { container, updates, dispose } = render({ skills: ['skill-a'] }, available);
+        try {
+            openEditorAndExpand(container, 'Skills');
+            flushSync(() => item(container, 'skill-a').click());
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(updates).to.deep.equal([{ genericCapabilitySelections: undefined }]);
+        } finally {
+            dispose();
+        }
+    });
+
+    it('shows what the prompt already uses as checked and locked', () => {
+        const { container, updates, dispose } = render(undefined, available);
+        try {
+            openEditorAndExpand(container, 'Functions');
+            const used = item(container, 'fn-used');
+            const checkbox = used.querySelector<HTMLInputElement>('input[type=checkbox]')!;
+            expect(checkbox.checked).to.equal(true);
+            expect(checkbox.disabled).to.equal(true);
+
+            flushSync(() => used.click());
+            expect(updates).to.deep.equal([]);
         } finally {
             dispose();
         }

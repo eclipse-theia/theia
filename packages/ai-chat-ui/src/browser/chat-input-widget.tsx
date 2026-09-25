@@ -534,6 +534,23 @@ export class AIChatInputWidget extends ReactWidget {
         }
     }
 
+    /**
+     * Re-reads the persisted generic capability selections, which the agent detail can change too, adopting
+     * them the same way {@link refreshSavedServerTools} does.
+     */
+    protected async refreshSavedGenericCapabilities(agentId: string | undefined): Promise<void> {
+        if (!agentId) {
+            return;
+        }
+        const saved = (await this.aiSettingsService.getAgentSettings(agentId))?.genericCapabilitySelections;
+        const adoptable = !this.hasGenericCapabilityChangesFromSaved();
+        this.savedGenericCapabilitySelections = saved ? { ...saved } : undefined;
+        if (adoptable) {
+            this.genericCapabilitySelections = saved ? { ...saved } : {};
+            this.update();
+        }
+    }
+
     protected applyReasoningToSession(reasoning: ReasoningSettings | undefined): void {
         const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel?.id);
         if (!session) {
@@ -661,17 +678,7 @@ export class AIChatInputWidget extends ReactWidget {
             return;
         }
 
-        const mcpFunctions = await this.genericCapabilitiesService.getAvailableMCPFunctions();
-
-        this.availableGenericCapabilities = {
-            skills: this.genericCapabilitiesService.getAvailableSkills(),
-            mcpFunctions,
-            functions: this.genericCapabilitiesService.getAvailableFunctions(),
-            promptFragments: this.genericCapabilitiesService.getAvailablePromptFragments(),
-            agentDelegation: this.genericCapabilitiesService.getAvailableAgents(this.receivingAgent?.agentId),
-            variables: this.genericCapabilitiesService.getAvailableVariables()
-        };
-
+        this.availableGenericCapabilities = await this.genericCapabilitiesService.getAvailableCapabilities(this.receivingAgent?.agentId);
         this.update();
     }
 
@@ -1164,6 +1171,7 @@ export class AIChatInputWidget extends ReactWidget {
             // Reasoning row), so re-read it rather than only refreshing which levels the model supports.
             this.refreshSavedReasoning(this.receivingAgent?.agentId);
             this.refreshSavedServerTools(this.receivingAgent?.agentId);
+            this.refreshSavedGenericCapabilities(this.receivingAgent?.agentId);
         }));
         this.loadAvailableModels().then(() => this.update());
         this.updateResolvedDefaultModel();
