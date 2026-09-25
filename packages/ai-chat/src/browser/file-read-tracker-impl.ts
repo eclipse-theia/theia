@@ -114,6 +114,27 @@ export class FileReadTrackerImpl implements FileReadTracker {
         return labels.filter((label): label is string => label !== undefined);
     }
 
+    async forceRefresh(sessionId: string, uri?: URI): Promise<string[]> {
+        const files = this.sessions.get(sessionId);
+        if (!files) {
+            return [];
+        }
+        const entries = uri
+            ? (files.has(uri.toString()) ? [[uri.toString(), files.get(uri.toString())!] as const] : [])
+            : [...files];
+        // Deliberately does NOT re-snapshot to current content or clear the stale flag: that would drop the
+        // overwrite protection precisely when a stubborn agent is ignoring the "file changed" error, letting a
+        // repeated stale write clobber the user's edits. Instead, re-check and report which files are still
+        // stale, so the caller can tell the agent to genuinely re-read them; a real `recordRead` clears the flag.
+        const labels = await Promise.all(entries.map(async ([key, tracked]) => {
+            if (!tracked.maybeStale) {
+                return undefined;
+            }
+            return await this.recheck(files, key, tracked) === 'unchanged' ? undefined : this.getLabel(new URI(key));
+        }));
+        return labels.filter((label): label is string => label !== undefined);
+    }
+
     /**
      * Flags the tracked files the event touched, by uri lookup rather than {@link FileChangesEvent.contains},
      * which scans the whole change list. A deleted parent folder is therefore only noticed on the next read.
