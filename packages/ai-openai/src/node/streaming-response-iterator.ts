@@ -67,7 +67,14 @@ export abstract class AbstractStreamingResponseIterator implements AsyncIterable
         return Promise.resolve({ done: true, value: undefined });
     }
 
+    /**
+     * Delivers a part to the consumer. Parts arriving after the iterator is done (e.g. from a tool handler that
+     * finishes after cancellation or after the consumer abandoned the iteration) are dropped.
+     */
     protected handleIncoming(message: LanguageModelStreamResponsePart): void {
+        if (this.done) {
+            return;
+        }
         if (this.messageCache.length && this.requestQueue.length) {
             throw new Error('Assertion error: cache and queue should not both be populated.');
         }

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelStreamResponsePart, ToolCallExecutor, ToolCallResult, UserRequest } from '@theia/ai-core';
+import { formatToolCallContentForModel, ToolCallExecutor, ToolCallResult, UserRequest } from '@theia/ai-core';
 import { CancellationError, CancellationToken, Disposable, ILogger } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
@@ -227,18 +227,6 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
         }
     }
 
-    /**
-     * Drops parts arriving after the iterator is done (in particular after {@link cancel} disposed it while tool
-     * execution was still in flight), so an uninterruptible handler that finishes late cannot surface a
-     * finished tool-call part - or any other part - as if it were still part of the live turn.
-     */
-    protected override handleIncoming(message: LanguageModelStreamResponsePart): void {
-        if (this.done) {
-            return;
-        }
-        super.handleIncoming(message);
-    }
-
     protected async executeAndAppendToolCalls(assistantText: string, toolCalls: CollectedToolCall[]): Promise<void> {
         const results = await this.toolCallExecutor.executeToolCalls(
             toolCalls.map(toolCall => ({ id: toolCall.id, name: toolCall.name, arguments: toolCall.arguments || '{}' })),
@@ -273,10 +261,7 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
     }
 
     protected formatToolResult(result: ToolCallResult): string {
-        if (result === undefined) {
-            return '';
-        }
-        return typeof result === 'string' ? result : JSON.stringify(result);
+        return result === undefined ? '' : formatToolCallContentForModel(result);
     }
 
 }
