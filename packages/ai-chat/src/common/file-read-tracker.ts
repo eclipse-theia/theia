@@ -26,4 +26,12 @@ export interface FileReadTracker {
     isStale(sessionId: string, uri: URI): Promise<boolean>;
     /** Files changed since the session's agent read them, reported again until it reads them anew so an ignored notice cannot get lost. */
     getChangedFiles(sessionId: string): Promise<string[]>;
+    /**
+     * Re-snapshots the session's tracked files against their current content, clearing every stale flag.
+     * Used to break a tool-call loop where an agent keeps hitting the "file changed since you last read it"
+     * guard: after the refresh the agent's view matches the current content, so the guard stops firing and
+     * the retry can proceed. Pass a `uri` to refresh only that file, or omit it to refresh the whole session.
+     * Returns the labels of the files whose stale flag was cleared.
+     */
+    forceRefresh(sessionId: string, uri?: URI): Promise<string[]>;
 }
