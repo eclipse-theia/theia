@@ -414,7 +414,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         const filePath = await this.fileDialogService.showSaveDialog({
             title: nls.localize('theia/markers/exportProblems', 'Export Problems'),
             filters: { [nls.localize('theia/markers/jsonFiles', 'JSON Files')]: ['json'] },
-            saveLabel: nls.localize('theia/markers/export', 'Export'),
+            saveLabel: nls.localizeByDefault('Export'),
             inputValue: nls.localizeByDefault('Problems').toLowerCase() + '.json'
         });
 

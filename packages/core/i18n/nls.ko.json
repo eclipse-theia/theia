@@ -72,6 +72,9 @@
         "title": "에이전트 설정"
       },
       "anthropic": {
+        "allowEnvApiKey": {
+          "description": "Theia가 환경에서 발견된 Anthropic API 키(`ANTHROPIC_API_KEY`)를 사용하도록 허용합니다. 키가 사용되기 전에 한 번 확인을 요청받게 되며, 동의를 철회하려면 이 값을 `false`로 다시 설정하십시오."
+        },
         "apiKey": {
           "description": "공식 Anthropic 계정의 API 키를 입력하세요. **참고:** 이 설정을 사용하면 Anthropic API 키가 Theia가 실행되는 머신에 평문으로 저장됩니다. 키를 안전하게 설정하려면 환경 변수 `ANTHROPIC_API_KEY`를 사용하세요."
         },
@@ -91,13 +94,16 @@
           "enableStreaming": {
             "title": "스트리밍 API 사용 여부를 나타냅니다. 기본값은 `true`입니다."
           },
+          "headers": {
+            "title": "엔드포인트로 전송되는 모든 요청에 함께 전송되는 추가 HTTP 헤더"
+          },
           "id": {
             "title": "UI에서 사용자 정의 모델을 식별하는 데 사용되는 고유 식별자"
           },
           "maxRetries": {
             "title": "요청 실패 시 최대 재시도 횟수. 기본값은 3입니다."
           },
-          "mdDescription": "Anthropic API와 호환되는 사용자 정의 모델을 통합합니다. 필수 속성은 `model`과 `url`입니다.            \n            선택적으로 다음을 수행할 수 있습니다.            \n            - UI에서 사용자 정의 모델을 식별할 고유한 `id`를 지정합니다. 지정하지 않으면 `model`이 `id`로 사용됩니다.            \n            - 지정된 URL에서 제공되는 API에 액세스하기 위해 `apiKey`를 제공하십시오. 전역 Anthropic API 키를 사용하려면 `true`를 사용하십시오.            \n            - 스트리밍을 사용하지 않으려면 `enableStreaming: false`를 지정하십시오.            \n            - 프롬프트 캐싱을 사용하지 않으려면 `useCaching: false`를 지정합니다.            \n            - 요청이 실패할 때 재시도할 최대 횟수를 지정하려면 `maxRetries: <number>`를 사용합니다. 기본값은 3입니다.            \n            추론 기능 및 최대 출력 토큰 제한은 엔드포인트의 `/v1/models` 응답에서 파생됩니다.",
+          "mdDescription": "Anthropic API와 호환되는 사용자 정의 모델을 통합합니다. 필수 속성은 `model`과 `url`입니다.            \n            선택적으로 다음을 수행할 수 있습니다.            \n            - UI에서 사용자 정의 모델을 식별할 고유한 `id`를 지정할 수 있습니다. 지정하지 않으면 `model`이 `id`로 사용됩니다.            \n            - 지정된 URL에서 제공되는 API에 액세스하기 위해 `apiKey`를 제공하십시오. 전역 Anthropic API 키를 사용하려면 `true`를 사용하십시오.            \n            - 스트리밍을 사용하지 않으려면 `enableStreaming: false`를 지정하십시오.            \n            - 프롬프트 캐싱을 사용하지 않으려면 `useCaching: false`를 지정하세요.            \n            - 요청이 실패했을 때 재시도할 최대 횟수를 지정하려면 `maxRetries: <number>`를 사용하세요. 기본값은 3입니다.            \n            - `headers`를 지정하여 엔드포인트로 보내는 모든 요청에 추가 HTTP 헤더를 전송할 수 있습니다(예: API 앞단의 게이트웨이에서 요구하는 헤더).            \n            추론 기능 및 최대 출력 토큰 제한은 엔드포인트의 `/v1/models` 응답에서 파생됩니다.",
           "modelId": {
             "title": "모델 ID"
           },
@@ -111,8 +117,16 @@
         "customProvider": {
           "label": "{0} (사용자 정의)"
         },
-        "models": {
-          "description": "사용할 공식 Anthropic 모델"
+        "discovery": {
+          "cached": "캐시된 모델 표시 중; 마지막 새로고침에 실패했습니다: {0}",
+          "consentPrompt": "환경에서 Anthropic API 키(ANTHROPIC_API_KEY)가 발견되었습니다. Theia가 이 키를 사용하여 Anthropic 모델을 검색하고 호출하도록 허용하시겠습니까?",
+          "consentRequired": "환경에서 Anthropic API 키가 발견되었습니다. 모델 검색에 사용되는지 확인하십시오.",
+          "noKey": "Anthropic API 키가 설정되어 있지 않습니다. 모델을 검색하려면 키를 추가하십시오.",
+          "overridden": "모델 목록은 수동으로 구성됩니다. 모델 재정의 설정을 지우면 공급자로부터 모델을 다시 검색할 수 있습니다.",
+          "useEnvKey": "키 사용"
+        },
+        "modelOverrides": {
+          "description": "Anthropic에서 검색된 모델을 재정의합니다. 빈 값(기본값)인 경우, 사용 가능한 모델은 제공업체에서 검색됩니다. 사용하려는 모델의 ID를 명시적으로 설정하면 해당 모델만 정확히 사용되며, 이 경우 모델 검색 기능은 전혀 사용되지 않습니다."
         }
       },
       "chat": {
@@ -306,7 +320,8 @@
           "status": {
             "canceled": "취소됨",
             "generating": "생성 중...",
-            "starting": "시작 중..."
+            "starting": "시작 중...",
+            "waitingForInput": "입력 대기 중"
           }
         },
         "deleteChangeSet": "변경 세트 삭제",
@@ -320,11 +335,14 @@
         "failedToLoadChats": "채팅 세션 로드 실패",
         "failedToRestoreSession": "채팅 세션 복원에 실패했습니다",
         "failedToRetry": "재시도 실패 메시지",
+        "find": "채팅에서 찾기",
+        "findHide": "채팅에서 찾기 숨기기",
         "focusInput": "초점 채팅 입력",
         "focusResponse": "포커스 채팅 응답",
         "functions": "기능",
         "functionsDescription": "{0} 확장 프로그램에서 제공하는 내장 기능",
         "genericCapabilities": "일반 기능",
+        "manageModels": "모델 관리…",
         "mcpFunctionsDescription": "연결된 서버의 모델 컨텍스트 프로토콜(MCP) 기능",
         "mermaid-rendering": {
           "copySource": "소스 복사",
@@ -340,7 +358,6 @@
         "modelUnavailable": "사용 불가",
         "noChatAgentsAvailable": "사용 가능한 채팅 에이전트가 없습니다.",
         "noMatchingCapabilities": "일치하는 기능 없음",
-        "openDiff": "차이점 열기",
         "openImage": "이미지 열기",
         "openOriginalFile": "원본 파일 열기",
         "performThisTask": "이 작업을 수행하십시오.",
@@ -476,7 +493,6 @@
         "findMatchingFiles": "현재 디렉터리에서 \"{0}\" 글로브 패턴에 일치하는 파일을 찾습니다.",
         "findMatchingFilesWithPath": "{1} 내에서 \"{0}\" 글로브 패턴에 일치하는 파일을 찾습니다.",
         "finding": "찾기",
-        "from": "From",
         "globPattern": "glob 패턴",
         "grepOptions": {
           "caseInsensitive": "대소문자 구분 없음",
@@ -533,7 +549,6 @@
         "startingLine": "시작 라인",
         "timeout": "타임아웃",
         "timeoutInMs": "타임아웃: {0} ms",
-        "to": "To",
         "todoList": "Todo List",
         "todoPriority": {
           "high": "높음",
@@ -646,23 +661,32 @@
           "signIn": "GitHub Copilot에 로그인하세요",
           "signOut": "GitHub Copilot에서 로그아웃"
         },
+        "discovery": {
+          "disabled": "GitHub Copilot 제공자가 비활성화되어 있습니다. 모델을 검색하려면 이 기능을 활성화하세요.",
+          "overridden": "모델 목록은 수동으로 구성됩니다. 모델 재정의 설정을 지우면 GitHub Copilot에서 모델을 다시 검색할 수 있습니다.",
+          "signedOut": "GitHub Copilot에 로그인되어 있지 않습니다. 로그인하여 제공되는 모델을 확인해 보세요."
+        },
         "enabled": {
-          "mdDescription": "GitHub Copilot 제공자를 활성화하세요. 활성화되면 인증을 위한 상태 표시줄 항목이 나타나며, Copilot 구독에서 사용 가능한 모델이 검색됩니다."
+          "mdDescription": "GitHub Copilot 제공자를 활성화하세요. 활성화되면 인증을 위한 상태 표시줄 항목이 나타나며, Copilot 구독에서 사용 가능한 모델이 탐지됩니다.\n\n요청은 백엔드를 호스팅하는 컴퓨터에서 백그라운드 프로세스로 실행되는 공식 GitHub Copilot CLI를 통해 전달됩니다. 이 CLI에는 사용자의 Copilot 로그인 자격 증명만 제공되며 그 외의 정보는 제공되지 않으므로, 환경에 있는 토큰이나 GitHub CLI의 기존 로그인 정보는 사용되지 않습니다."
         },
         "enterpriseUrl": {
-          "mdDescription": "Copilot API용 GitHub Enterprise 도메인(예: `github.mycompany.com`). GitHub.com을 사용할 경우 비워둡니다."
+          "mdDescription": "인증 및 요청 전송에 사용할 GitHub Enterprise 도메인(예: `github.mycompany.com`). GitHub.com을 사용할 경우 비워 둡니다."
+        },
+        "enterpriseUrlChanged": "GitHub Copilot 도메인이 변경되었습니다. 변경 사항을 적용하려면 다시 로그인하십시오.",
+        "executablePath": {
+          "mdDescription": "백엔드를 호스팅하는 컴퓨터에서 GitHub Copilot CLI 실행 파일의 위치입니다. 비어 있는 경우(기본값), 애플리케이션 설치 경로, `PATH` 및 전역 `npm` 디렉터리에서 CLI를 검색합니다. CLI가 다른 위치에 설치된 경우 이 값을 설정하십시오.\n\nCLI는 애플리케이션에 포함되어 있지 않으므로, `npm install -g @github/copilot` 명령어를 사용하여 설치하십시오."
         },
         "modelOverrides": {
           "mdDescription": "자동으로 검색된 GitHub Copilot 모델을 재정의합니다. 비워두면(기본값), 사용 가능한 모델은 Copilot 구독에서 검색됩니다. 자동 검색을 재정의하려면 모델 ID를 명시적으로 설정하십시오."
         },
+        "signInAgain": "GitHub Copilot은 이제 GitHub Copilot CLI를 통해 로그인합니다. 이전 로그인 정보는 이관되지 않아 삭제되었으므로, Copilot 모델을 사용하려면 다시 로그인해 주십시오.",
         "signOut": {
           "confirmMessage": "GitHub Copilot에서 로그아웃하시겠습니까?"
         },
         "statusBar": {
           "signedIn": "{0}로 GitHub Copilot에 로그인했습니다. 로그아웃하려면 클릭하세요.",
           "signedOut": "GitHub Copilot에 로그인하지 않았습니다. 클릭하여 로그인하세요."
-        },
-        "tokenMigration": "GitHub Copilot 세션에서 오래된 인증 방법이 사용되어 세션이 종료되었습니다. 사용 가능한 모든 모델에 액세스하려면 다시 로그인해 주세요."
+        }
       },
       "core": {
         "agentConfiguration": {
@@ -760,11 +784,18 @@
         "discardCustomPrompt": {
           "tooltip": "사용자 지정 내용 삭제"
         },
+        "favoriteModels": {
+          "mdDescription": "AI 채팅 입력의 모델 선택기에 각 제공업체의 최신 모델 외에도 표시되는 모델들을 완전한 ID 형식(예: `anthropic/claude-opus-5`)으로 나타냅니다. 이는 구버전이나 특정 릴리스에 고정된 모델을 손쉽게 사용할 수 있도록 하기 위한 것입니다. AI 구성 보기에서 해당 제공업체의 페이지에 있는 모델을 선택하여 추가할 수 있습니다.",
+          "title": "선호하는 모델"
+        },
         "fileVariable": {
           "description": "파일의 내용을 해결합니다",
           "uri": {
             "description": "요청된 파일의 URI."
           }
+        },
+        "hiddenModels": {
+          "mdDescription": "AI 채팅 입력의 모델 선택기에서 기본적으로 표시되지만, 여기에는 완전히 정규화된 ID(예: `google/gemini-flash-lite-latest`) 형태로만 모델이 표시됩니다. 즐겨찾기로 등록되지 않은 모델, 즉 제공업체의 최신 모델만 여기에 표시됩니다. AI 구성 화면에서 해당 제공업체 페이지의 모델 선택란에서 체크를 해제하면 모델이 추가됩니다."
         },
         "languageModelRenderer": {
           "alias": "[별칭] {0}",
@@ -911,7 +942,6 @@
           "dotRelativePath": "현재 열려 있는 파일의 작업 공간 상대 경로('currentRelativeFilePath')에 대한 간략한 참조."
         },
         "variantSet": {
-          "templateLabel": "템플릿",
           "unavailableVariant": "{0} (사용 불가)",
           "variantCount": "{0} 변형",
           "variantCountSingular": "1번 버전"
@@ -931,14 +961,25 @@
         }
       },
       "google": {
+        "allowEnvApiKey": {
+          "description": "Theia가 환경에서 발견된 Google AI(Gemini) API 키(`GOOGLE_API_KEY` / `GEMINI_API_KEY`)를 사용할 수 있도록 허용합니다. 키가 사용되기 전에 한 번 확인을 요청받게 되며, 동의를 철회하려면 이 값을 `false`로 다시 설정하십시오."
+        },
         "apiKey": {
           "description": "공식 Google AI(Gemini) 계정의 API 키를 입력하세요. **참고:** 이 설정을 사용하면 GOOGLE AI API 키가 Theia가 실행되는 머신에 평문으로 저장됩니다. 키를 안전하게 설정하려면 환경 변수 `GOOGLE_API_KEY`를 사용하세요."
+        },
+        "discovery": {
+          "cached": "캐시된 모델을 표시 중입니다. 마지막 새로고침에 실패했습니다: {0}",
+          "consentPrompt": "환경에서 Google AI API 키(GOOGLE_API_KEY / GEMINI_API_KEY)가 발견되었습니다. Theia가 이 키를 사용하여 Gemini 모델을 검색하고 호출하도록 허용하시겠습니까?",
+          "consentRequired": "환경에서 Google AI API 키가 발견되었습니다. 모델 검색에 사용되는지 확인해 주세요.",
+          "noKey": "Google AI API 키가 설정되어 있지 않습니다. 모델을 검색하려면 키를 추가하십시오.",
+          "overridden": "모델 목록은 수동으로 구성됩니다. 모델 재정의 항목을 지우면 공급자로부터 모델을 다시 검색할 수 있습니다.",
+          "useEnvKey": "키 사용"
         },
         "maxRetriesOnErrors": {
           "description": "오류 발생 시 최대 재시도 횟수. 1보다 작을 경우 재시도 로직이 비활성화됩니다."
         },
-        "models": {
-          "description": "사용할 공식 Google Gemini 모델"
+        "modelOverrides": {
+          "description": "Google Gemini에서 검색된 모델을 재정의합니다. 빈 값(기본값)인 경우, 사용 가능한 모델은 제공업체에서 검색됩니다. 대신 정확히 해당 모델을 사용하려면 모델 ID를 명시적으로 설정하십시오. 이 경우 검색 기능은 전혀 사용되지 않습니다."
         },
         "retryDelayOnOtherErrors": {
           "description": "기타 오류 발생 시 재시도 간격(초) 설정(Google GenAI가 모델에서 반환된 불완전한 JSON 구문이나 500 내부 서버 오류 등의 오류를 보고하는 경우). 이 값을 -1로 설정하면 해당 오류 발생 시 재시도가 차단됩니다. 그렇지 않으면 재시도가 즉시(0으로 설정 시) 또는 이 지연 시간(초) 후(양수 설정 시) 발생합니다."
@@ -1053,6 +1094,7 @@
           "pageTypeLabel": "페이지"
         },
         "allowAllMode": {
+          "hideForThisSession": "이번 세션 동안 숨기기",
           "stripTooltip": "이 세션에서는 AI 도구 호출이 확인 절차 없이 실행됩니다. 신뢰할 수 있는 환경에서만 활성화하십시오.",
           "stripTooltipFooter": "--session-preference 옵션을 통해 설정합니다. 저장된 설정을 복원하려면 해당 플래그를 지정하지 않고 다시 시작하십시오.",
           "title": "Theia AI 허용 모드"
@@ -1111,7 +1153,6 @@
             "startNewChat": "대화는 짧고 핵심만 전달하세요. 새 작업에 대해서는 [새 대화 시작]({0})하거나, [이 대화 내용을 요약한 새 대화 시작]({1})하세요."
           }
         },
-        "collapseSession": "{0} 접기",
         "commandAgent": {
           "commandCallback": {
             "confirmAction": "알겠습니다",
@@ -1131,19 +1172,16 @@
           }
         },
         "configurationState": "구성 문제",
-        "configureAgent": {
-          "header": "기본 에이전트 구성"
-        },
         "continueAnyway": "어쨌든 계속",
         "createSkillAgent": {
           "mode": {
             "edit": "기본 모드"
           }
         },
+        "defaultChatAgentSet": "기본 채팅 에이전트는 이제 {0}입니다.",
         "enableAI": {
           "mdDescription": "이 설정을 통해 최신 AI 기능에 접근할 수 있습니다.            \n            특히, 이 기능들은 사용자가 접근 권한을 부여한 언어 모델(LLM)에 지속적인 요청을 발생시킬 수 있다는 점을 인지해야 합니다. 이로 인해 비용이 발생할 수 있으므로 주의 깊게 모니터링해야 합니다. 이 옵션을 활성화함으로써 귀하는 이러한 위험을 인지한 것으로 간주됩니다.            \n            **주의! 본 섹션의 아래 설정은 메인 기능 설정이 활성화된 후에만 적용됩니다.            기능 활성화 후 아래에서 최소 한 개의 LLM 공급자를 구성해야 합니다. [관련 문서](https://theia-ide.org/docs/user_ai/)도 참조하십시오.**"
         },
-        "expandSession": "{0} 확장",
         "exploreAgent": {
           "description": "코드베이스에서 정보를 추출하고 요약해 주는 코드베이스 탐색 도우미입니다.         존재하는 요소에 대한 정보를 보고하고, 코드 발췌문을 제공하며, 관찰된 패턴을 설명합니다."
         },
@@ -1201,16 +1239,36 @@
         },
         "model-selection-description": "[AI 구성 보기]({0})에서 각 AI 에이전트가 사용할 대규모 언어 모델(LLM)을 선택하세요.",
         "modelsConfiguration": {
+          "awaitingConsent": "동의 대기 중",
+          "defaultModel": "이 제공업체의 최신 모델 중 하나로, 여기에서 숨겨져 있지 않은 한 AI 채팅 입력의 모델 선택기에 표시됩니다.",
           "description": "언어 모델 제공자와 에이전트가 사용할 수 있는 모델을 구성합니다.",
+          "discovery": "모델 탐색",
+          "fetching": "로딩 중…",
+          "filterModels": "모델 필터링",
+          "hideModel": "AI 채팅 입력의 모델 선택기에서 이 모델을 숨기기",
+          "modelNotReady": "준비되지 않음",
           "modelSettings": "모델 설정",
+          "noKey": "API 키 없음",
+          "noModels": "아직 발견된 모델이 없습니다.",
           "noProviders": "언어 모델 제공자가 설치되어 있지 않습니다.",
-          "providers": "제공업체"
+          "providers": "제공업체",
+          "ready": "준비됨",
+          "refresh": "모델 목록 새로 고침",
+          "refreshUnavailable": "프로바이더가 자격 증명을 확보할 때까지는 새로 고칠 내용이 없습니다.",
+          "released": "{0} 버전 출시",
+          "resetShown": "기본값으로 재설정",
+          "resetShownUnavailable": "이미 기본값으로 설정되어 있습니다",
+          "showAllModels": "검출된 모든 모델 표시",
+          "showCheckedModels": "AI 채팅 입력창의 모델 선택기에 표시되는 모델만 표시",
+          "showModel": "AI 채팅 입력창의 모델 선택기에서 이 모델을 표시하세요.",
+          "shownExplanation": "{0} AI 채팅 입력창의 모델 선택기에 표시된 {1}",
+          "updated": "{0} 업데이트됨"
         },
-        "moreAgentsAvailable": {
-          "header": "추가 에이전트 사용 가능"
+        "noDefaultAgent": {
+          "header": "기본 에이전트 없음"
         },
-        "noRecommendedAgents": "권장 에이전트가 없습니다.",
         "openAiConfiguration": "OpenAI 구성",
+        "openGettingStartedWalkthrough": "AI 시작하기",
         "orchestrator": {
           "error": {
             "noAgents": "요청을 처리할 채팅 에이전트가 없습니다. 활성화된 에이전트가 있는지 설정을 확인해 주세요."
@@ -1234,8 +1292,7 @@
               "name": "GH PR 정보"
             },
             "localCheckout": {
-              "description": "풀 리퀘스트를 로컬에 체크아웃하고 기존 작업 트리의 변경 사항을 보호합니다.",
-              "name": "체크아웃"
+              "description": "풀 리퀘스트를 로컬에 체크아웃하고 기존 작업 트리의 변경 사항을 보호합니다."
             },
             "localValidation": {
               "description": "풀 리퀘스트에 대해 로컬 설치, 빌드, 린트, 테스트 또는 이와 유사한 검증 작업을 실행합니다.",
@@ -1292,6 +1349,7 @@
           "toolConfirmation": "도구별 확인 메시지 재정의: {0}",
           "toolConfirmationGeneric": "도구별 확인 설정 재정의"
         },
+        "setDefaultChatAgent": "기본 채팅 에이전트 설정",
         "shellExecutionCapability": {
           "description": "에이전트가 호스트 시스템에서 임의의 셸 명령을 실행할 수 있도록 합니다. 이를 통해 에이전트는 작업으로 제공되지 않는 스크립트 실행 위임, 시스템 정보 조회, 전용 도구가 없는 작업 수행이 가능합니다.",
           "name": "셸 실행"
@@ -1314,9 +1372,6 @@
           },
           "slashCommandsGroupDescription": "채팅창에서 /name을 입력하여 호출하는 프롬프트 조각으로, 하나 이상의 에이전트가 사용할 수 있습니다.",
           "slashCommandsSectionHeader": "슬래시 명령어"
-        },
-        "toolConfirmationInfo": {
-          "header": "도구 확인"
         },
         "toolConfirmationOverrides": {
           "stripTooltip": "명령줄 플래그를 통해 이 세션에 하나 이상의 AI 도구가 자동으로 승인됩니다.",
@@ -1380,7 +1435,6 @@
           "filterPlaceholder": "이름이나 설명을 기준으로 변수를 필터링합니다.",
           "noMatches": "\"{0}\"와 일치하는 변수가 없습니다.",
           "noVariables": "사용 가능한 변수는 없습니다.",
-          "openAgent": "Open Agent {0}",
           "optional": "선택 사항",
           "pageSubtitle": "프롬프트에서 `{0}` 이름을 사용하여 참조할 수 있는 값들입니다. 이 값들은 요청 시점에 해결되어 삽입됩니다.",
           "plainGroup": "일반 변수",
@@ -1388,7 +1442,40 @@
           "required": "필수",
           "usedByAgents": "에이전트 사용"
         },
-        "waitingForInput": "사용자의 입력을 기다리고 있습니다"
+        "waitingForInput": "사용자의 입력을 기다리고 있습니다",
+        "walkthrough": {
+          "aiSupport": {
+            "description": "\n{0}\nAI 지원 기능이 포함되어 있습니다: 프로젝트에 대해 전문 상담원과 채팅하고, 상담원이 코드를 수정하고 작업을 실행하도록 허용하며, 입력하는 대로 코드를 자동 완성하고 터미널에서 도움을 받을 수 있습니다.\n\n이러한 기능은 기본적으로 비활성화되어 있으므로, 사용자의 재량에 따라 활성화할 수 있습니다.\n\n기능을 활성화하면, 접근 권한을 부여한 언어 모델에 대한 요청이 지속적으로 발생할 수 있습니다. 이로 인해 비용이 발생할 수 있으므로 주의 깊게 모니터링해야 합니다.\n\n[문서 읽기]({1}\n).\n\n여러분의 피드백, 기여 및 후원을 환영합니다! [GitHub 프로젝트]({2}\n)를 방문하여 지속적인 개발을 지원해 주세요. 커뮤니티의 일원이 되어 주셔서 감사합니다!\n\n이 모든 기능은 AI 기반 도구 및 IDE를 위한 프레임워크인 Theia AI를 기반으로 구축되었으며, 현재 안정 버전이 공개되어 있습니다. [프레임워크 문서]({3}\n)를 확인해 주세요.\n",
+            "title": "{0}의 AI 지원"
+          },
+          "chooseAgent": {
+            "intro": "모든 채팅 요청은 에이전트에게 전달되며, 사용자가 특정 에이전트를 지정하지 않을 경우 에이전트 중 한 명이 응답합니다.\n\n**기본 에이전트 설정:**\n",
+            "outro": "또한 설정에서 [기본 에이전트를 선택할 수 있으며]({0}\n), *@AgentName*으로 시작하여 단일 메시지에 대해 다른 에이전트를 지정할 수도 있습니다.\n[에이전트]({1}\n) 페이지에 모든 에이전트가 나열되어 있습니다.\n",
+            "title": "기본 에이전트 선택"
+          },
+          "connectModel": {
+            "description": "호스팅된 제공업체에 대한 API 키 추가:\n\n- [OpenAI]({0}\n)\n- [Anthropic]({1}\n)\n- [Google]({2}\n)\n\n로컬에서 사용하거나 다른 서비스를 이용하고 싶으신가요? Ollama, llamafile 및 OpenAI와 호환되는 모든 엔드포인트는 [모델]({3}\n) 페이지에서 설정할 수 있습니다.\n\nClaude Code와 같이 자체 모델을 제공하는 일부 에이전트는 별도의 제공자 없이도 작동합니다.\n",
+            "title": "언어 모델 연결"
+          },
+          "description": "{0}의 AI 기능을 설정하고 이를 활용하는 방법을 알아보세요.",
+          "enableAi": {
+            "description": "AI 기능을 켜기 전까지는 어떤 정보도 외부로 전송되지 않으며, 언제든지 다시 끌 수 있습니다.\n\n[AI 설정 열기]({0}\n)에서 해당 기능을 활성화하십시오.\n",
+            "title": "AI 기능 켜기"
+          },
+          "firstQuestion": {
+            "description": "[AI 채팅 열기]({0}\n)를 클릭하고 프로젝트에 대해 질문해 보세요.\n\n다음 두 가지를 활용하면 훨씬 더 나은 답변을 얻을 수 있습니다:\n\n- *@AgentName*은 이 메시지에 대한 에이전트를 지정합니다(예: *@Coder*).\n- *#*는 컨텍스트를 첨부합니다(예: *#file* 또는 *#selectedText*). 입력란 옆의 클립 모양 버튼도 같은 기능을 합니다.\n\n채팅은 세션을 기억하므로, 나중에 대화를 다시 이어갈 수 있습니다.\n",
+            "title": "첫 번째 질문을 남겨주세요"
+          },
+          "goFurther": {
+            "description": "채팅은 시작에 불과합니다. AI는 사용자가 입력하는 동안 코드를 자동 완성해 주며, *Ctrl+I*를 통해 터미널 작업도 지원합니다.\n\n- [프롬프트 및 스킬]({0}\n): 에이전트가 사용하는 지침을 읽고 적용하세요.\n- [MCP 서버]({1}\n): {3}\n에 기본으로 포함된 도구 외에도 추가 도구를 활용하세요.\n- [토큰 사용량]({2}\n): 요청 시 소비되는 토큰을 확인하세요.\n- [관점 전환]({5}\n) (실험적 기능): *AI First* 레이아웃을 사용하면 채팅창이 메인 영역으로 이동하고, 탐색기 및 소스 제어 기능이 오른쪽에 배치됩니다.\n\nAI 기록 보기는(사용 가능한 경우) 모델에 실제로 전송된 내용을 보여줍니다.\n\n자세한 내용은 [문서]({4}\n)에서 확인하실 수 있으며, 여러분의 피드백은 언제나 환영합니다.\n",
+            "title": "더 알아보기"
+          },
+          "title": "AI 시작하기",
+          "toolConfirmation": {
+            "description": "에이전트는 도구를 통해 작업 공간에서 작업을 수행합니다. 즉, 파일을 읽거나, 터미널 명령을 실행하거나, 코드를 편집합니다.\n\n모든 도구 호출 시 먼저 사용자의 확인을 요청합니다. [도구]({0}\n) 페이지에서 이 기본 설정을 변경하거나 신뢰하는 도구에 대해 사전 승인을 설정할 수 있습니다.\n\n워크스페이스가 신뢰되지 않는 동안에는 AI 기능이 완전히 비활성화됩니다. [워크스페이스 신뢰 관리]({1}\n)를 통해 프로젝트별로 결정할 수 있습니다.\n",
+            "title": "에이전트의 동작을 철저히 통제하세요"
+          }
+        }
       },
       "llamaFile": {
         "prefs": {
@@ -1434,6 +1521,7 @@
           "label": "MCP: MCP OAuth 리디렉션 URL 가져오기"
         },
         "info": {
+          "noToolsAvailable": "사용 가능한 도구가 없습니다.",
           "oauthRedirectUrl": "MCP OAuth 리디렉션 URL: {0}",
           "serverSignedIn": "MCP 서버 \"{0}\"에 로그인했습니다.",
           "serverSignedOut": "MCP 서버 \"{0}\"에서 로그아웃되었습니다.",
@@ -1609,6 +1697,7 @@
           "serverUrlPlaceholder": "예: https://mcp.example.com",
           "serverUrlRequired": "원격 서버에는 서버 URL이 필요합니다."
         },
+        "noServersConfigured": "구성된 MCP 서버가 없습니다",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "인증 서버",
         "oauthClientId": "OAuth 클라이언트 ID",
@@ -1636,6 +1725,9 @@
         "typeRemoteOAuth": "원격(OAuth)"
       },
       "openai": {
+        "allowEnvApiKey": {
+          "description": "Theia가 환경에서 발견된 OpenAI API 키(`OPENAI_API_KEY`)를 사용하도록 허용합니다. 키가 사용되기 전에 한 번 확인을 요청받게 되며, 동의를 철회하려면 이 값을 `false`로 다시 설정하십시오."
+        },
         "apiKey": {
           "mdDescription": "공식 OpenAI 계정의 API 키를 입력하세요. **참고:** 이 설정을 사용하면 OpenAI API 키가 Theia가 실행되는 머신에 평문으로 저장됩니다. 키를 안전하게 설정하려면 환경 변수 `OPENAI_API_KEY`를 사용하세요."
         },
@@ -1664,10 +1756,13 @@
           "enableStreaming": {
             "title": "스트리밍 API 사용 여부를 나타냅니다. 기본값은 `true`입니다."
           },
+          "headers": {
+            "title": "엔드포인트로 전송되는 모든 요청에 함께 전송되는 추가 HTTP 헤더"
+          },
           "id": {
             "title": "UI에서 사용자 정의 모델을 식별하는 데 사용되는 고유 식별자"
           },
-          "mdDescription": "`vllm` 등을 통해 OpenAI API와 호환되는 사용자 정의 모델을 통합합니다. 필수 속성은 `model`과 `url`입니다.            \n            선택적으로 다음을 수행할 수 있습니다.            \n            - UI에서 사용자 정의 모델을 식별할 고유한 `id`를 지정합니다. 지정하지 않으면 `model`이 `id`로 사용됩니다.            \n            - 지정된 URL에서 제공되는 API에 액세스하기 위해 `apiKey`를 제공하십시오. 전역 OpenAI API 키 사용을 나타내려면 `true`를 사용하십시오.            \n            - Azure에서 지정된 URL에서 제공되는 API에 액세스하기 위해 `apiVersion`을 제공하십시오. 글로벌 OpenAI API 버전을 사용하려면 `true`를 지정하십시오.            \n            - Azure 배포에 대한 `deployment` 이름을 제공하십시오.            \n            - `developerMessageSettings`를 `user`, `system`, `developer`, `mergeWithFollowingUserMessage` 또는 `skip` 중 하나로 설정하여 개발자 메시지가 포함되는 방식을 제어하십시오 (여기서 `user`, `system`, `developer`는 역할로 사용되며, `mergeWithFollowingUserMessage`는 다음 사용자 메시지 앞에 시스템 메시지를 추가하거나, 다음 메시지가 사용자 메시지가 아닐 경우 시스템 메시지를 사용자 메시지로 변환합니다. `skip`은 시스템 메시지를 단순히 제거합니다).            기본값은 `developer`입니다.            \n            - `supportsStructuredOutput: false`를 지정하여 구조화된 출력을 사용하지 않도록 설정합니다.            \n            - `enableStreaming: false`를 지정하여 스트리밍을 사용하지 않도록 설정합니다.            \n            - `useResponseApi: true`를 지정하여 Chat Completion API 대신 최신 OpenAI Response API를 사용합니다(호환되는 엔드포인트 필요).            \n            - `reasoningSupport`를 지정하여 채팅 추론 선택기를 활성화할 수 있습니다. `supportedLevels`(예: `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`)와 선택 사항인 `defaultLevel`을 포함한 객체를 제공하십시오.            \n            자세한 내용은 [문서](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)를 참조하십시오.",
+          "mdDescription": "예를 들어 `vllm`을 통해 OpenAI API와 호환되는 사용자 정의 모델을 통합할 수 있습니다. 필수 속성은 `model`과 `url`입니다.            \n            선택적으로 다음을 수행할 수 있습니다.            \n            - UI에서 사용자 정의 모델을 식별할 고유한 `id`를 지정할 수 있습니다. 지정된 항목이 없는 경우 `model`이 `id`로 사용됩니다.            \n            - 지정된 URL에서 제공되는 API에 액세스하기 위해 `apiKey`를 제공하세요. 전역 OpenAI API 키를 사용하려면 `true`를 지정하세요.            \n            - 지정된 URL에서 Azure를 통해 제공되는 API에 액세스하기 위해 `apiVersion`을 지정합니다. 전역 OpenAI API 버전을 사용하려면 `true`를 지정하십시오.            \n            - Azure 배포에 대한 `deployment` 이름을 지정합니다.            \n            - `developerMessageSettings`를 `user`, `system`, `developer`, `mergeWithFollowingUserMessage` 또는 `skip` 중 하나로 설정하여 개발자 메시지가            어떻게 포함될지 제어합니다 (여기서 `user`, `system`, `developer`는 역할로 사용되며, `mergeWithFollowingUserMessage`는 다음 사용자 메시지 앞에 시스템 메시지를 추가하거나, 다음 메시지가 사용자 메시지가 아닐 경우 시스템 메시지를 사용자 메시지로 변환합니다. `skip`은 시스템 메시지를 단순히 제거합니다).            기본값은 `developer`입니다.            \n            - 구조화된 출력을 사용하지 않으려면 `supportsStructuredOutput: false`를 지정하십시오.            \n            - 스트리밍을 사용하지 않으려면 `enableStreaming: false`를 지정하십시오.            \n            - `useResponseApi: true`를 지정하면 Chat Completion API 대신 최신 OpenAI Response API를 사용합니다(호환되는 엔드포인트 필요).            \n            - `reasoningSupport`를 지정하여 채팅 추론 선택기를 활성화할 수 있습니다. `supportedLevels`(예: `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`)와 선택 사항인 `defaultLevel`이 포함된 객체를 제공하십시오.            \n            - `headers`를 지정하여 엔드포인트에 대한 모든 요청에 추가 HTTP 헤더를 전송할 수 있습니다(예: API 앞에 위치한 게이트웨이에서 요구하는 헤더).            \n            자세한 내용은 [당사 문서](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)를 참조하십시오.",
           "modelId": {
             "title": "모델 ID"
           },
@@ -1687,8 +1782,16 @@
         "customProvider": {
           "label": "{0} (사용자 정의)"
         },
-        "models": {
-          "description": "사용할 공식 OpenAI 모델"
+        "discovery": {
+          "cached": "캐시된 모델 표시 중; 마지막 새로고침에 실패했습니다: {0}",
+          "consentPrompt": "환경 변수(OPENAI_API_KEY)에서 OpenAI API 키가 발견되었습니다. Theia가 이 키를 사용하여 OpenAI 모델을 검색하고 호출하도록 허용하시겠습니까?",
+          "consentRequired": "환경에서 OpenAI API 키가 발견되었습니다. 모델 검색에 이 키를 사용할지 확인하십시오.",
+          "noKey": "OpenAI API 키가 설정되어 있지 않습니다. 모델을 검색하려면 키를 추가하십시오.",
+          "overridden": "모델 목록은 수동으로 구성됩니다. 모델 재정의 항목을 지우면 공급자로부터 모델을 다시 검색할 수 있습니다.",
+          "useEnvKey": "키 사용"
+        },
+        "modelOverrides": {
+          "description": "OpenAI에서 검색된 모델을 재정의합니다. 빈 값(기본값)인 경우, 사용 가능한 모델은 제공업체에서 검색됩니다. 사용하려는 모델의 ID를 명시적으로 설정하면 해당 모델만 사용되며, 이 경우 모델 검색 기능은 전혀 사용되지 않습니다."
         },
         "useResponseApi": {
           "mdDescription": "공식 OpenAI 모델의 경우, Chat Completion API 대신 최신 OpenAI Response API를 사용하십시오. 이 설정은 공식 OpenAI 모델에만 적용되며, 사용자 정의 제공자는 이를 개별적으로 구성해야 합니다."
@@ -1936,6 +2039,26 @@
       "codeReview": {
         "description": "각 구현 후 코드 검토 에이전트에 위임합니다. 검토가 통과될 때까지 다음 단계를 차단합니다."
       },
+      "commit-message": {
+        "agent-disabled-tooltip": "커밋 메시지 에이전트가 비활성화되어 있습니다. AI 구성 뷰에서 이를 활성화하십시오.",
+        "cancel-tooltip": "커밋 메시지 생성을 취소합니다",
+        "empty": "모델이 빈 커밋 메시지를 반환했습니다.",
+        "failed": "커밋 메시지 생성에 실패했습니다: {0}",
+        "generate-from-staged": "스테이징된 변경 사항에서 커밋 메시지 생성",
+        "no-changes": "커밋 메시지를 생성할 수 있는 스테이징된 변경 사항이 없습니다.",
+        "no-repository": "소스 제어 저장소가 선택되지 않았습니다.",
+        "replace-prompt": "커밋 메시지 필드가 비어 있지 않습니다. 해당 내용을 생성된 메시지로 대체하시겠습니까?",
+        "replace-title": "커밋 메시지 교체",
+        "staged-tooltip": "스테이징된 변경 내용을 바탕으로 커밋 메시지 생성"
+      },
+      "commitMessageAgent": {
+        "description": "작업 공간 저장소의 스테이징된 변경 내용을 기반으로 git 커밋 메시지를 생성합니다. SCM 커밋 메시지 입력란에서 AI 스파클 버튼을 통해 호출됩니다.",
+        "vars": {
+          "changes": {
+            "description": "커밋 메시지가 생성된, 스테이징된 변경 사항에 대한 통합 git diff입니다."
+          }
+        }
+      },
       "fixGhTicketCommand": {
         "argumentHint": "<티켓 번호>",
         "description": "GitHub 티켓을 분석하고 해결책을 구현하십시오."
@@ -2004,6 +2127,7 @@
         "updateTooltip": "{0}에서 {1}로 업데이트됨"
       },
       "autoUpdate": {
+        "aiSettings": "AI 설정",
         "ask": "설치된 스킬, MCP 서버 또는 에이전트 플러그인에 대한 업데이트가 있을 때 알림을 제공합니다.",
         "changeLater": "나중에 {0}에서 이 설정을 변경할 수 있습니다.",
         "configureDefault": "{0}에서 기본값을 구성하십시오.",
@@ -2040,9 +2164,7 @@
           "oneSkipped": "\"{0}\" 구성 요소 건너뛰기: {1}"
         },
         "dialog": {
-          "contains": "포함 내용",
           "endorsedBy": "다음 기관의 승인을 받았습니다.",
-          "from": "출처:",
           "install": {
             "title": "에이전트 플러그인 “{0}” 설치"
           },
@@ -2104,10 +2226,6 @@
         "serverUnknownField": "서버 구성에서 “{0}” 필드가 선언되었으나, 해당 전송 유형에서는 허용되지 않습니다.",
         "serverUnknownType": "서버 구성에서 알 수 없는 전송 유형인 “{0}”이 선언되어 있습니다.",
         "serverUnsupportedTransport": "MCP 전송 방식인 “{0}”은 지원되지 않습니다.",
-        "stat": {
-          "oneServer": "1 MCP 서버",
-          "servers": "{0} MCP 서버"
-        },
         "uninstalled": "제거된 에이전트 플러그인 \"{0}\".",
         "unknownManifestField": "알 수 없는 \"plugin.json\" 필드인 \"{0}\"은 무시합니다.",
         "unlinked": "연결 해제된 에이전트 플러그인 “{0}”.",
@@ -2244,7 +2362,6 @@
       "collaborate": "협업",
       "collaboration": "협업",
       "collaborationWorkspace": "협업 작업 공간",
-      "connected": "연결됨",
       "connectedSession": "협업 세션에 연결됨",
       "copiedInvitation": "초대 코드가 클립보드에 복사되었습니다.",
       "copyAgain": "다시 복사",
@@ -2471,6 +2588,25 @@
       "userSettingsDetail": "모든 작업 공간에 적용",
       "workspaceSettingsDetail": "현재 작업 공간에만 적용"
     },
+    "external-api": {
+      "delivery": {
+        "description": "외부 HTTP API가 제공되는지 여부와 제공 방식을 제어합니다.",
+        "off": "외부 API를 제공하지 마십시오.",
+        "samePort": "백엔드와 동일한 포트에서 외부 API를 제공하십시오.",
+        "samePortLabel": "백엔드와 동일한 포트",
+        "separatePort": "\"externalApi.port\"를 통해 구성된 전용 포트에서 외부 API를 제공합니다.",
+        "separatePortLabel": "별도의 포트"
+      },
+      "hostname": {
+        "description": "외부 HTTP API 서버가 바인딩되는 호스트 이름 또는 IP 주소입니다. 원격 연결을 허용하려면 \"0.0.0.0\"을 사용하십시오. \"localhost\"와 같은 이름은 이름 해결 시 바인딩되므로, 다른 루프백 주소를 사용하는 클라이언트는 서버에 접속하지 못할 수 있습니다. 특정 주소를 고정하려면 \"127.0.0.1\" 또는 \"::1\"을 사용하십시오. \"externalApi.delivery\"가 \"separatePort\"로 설정된 경우에만 사용됩니다."
+      },
+      "port": {
+        "description": "외부 HTTP API가 제공되는 포트입니다. \"externalApi.delivery\"가 \"separatePort\"로 설정된 경우에만 사용됩니다."
+      },
+      "token": {
+        "description": "보호된 외부 API 엔드포인트에 액세스하는 데 필요한 베어러 토큰(\"Authorization: Bearer <token>\"). 빈 값인 경우, 외부 API는 인증 없이 제공됩니다."
+      }
+    },
     "external-terminal": {
       "cwd": "새 외부 터미널을 위한 현재 작업 디렉터리 선택"
     },
@@ -2514,10 +2650,6 @@
       "uploadedOutOf": "업로드됨 {0} / {1}"
     },
     "getting-started": {
-      "ai": {
-        "header": "{0}에서 AI 지원 기능을 이용하실 수 있습니다!",
-        "openAIChatView": "지금 AI 채팅 뷰를 열어 시작하는 방법을 알아보세요!"
-      },
       "apiComparator": "{0} API 호환성",
       "markStepUndone": "취소 표시",
       "newExtension": "새 확장 프로그램 만들기",
@@ -2736,9 +2868,6 @@
       },
       "toolbar": "도구 모음"
     },
-    "preview": {
-      "openByDefault": "기본적으로 편집기 대신 미리보기를 엽니다."
-    },
     "property-view": {
       "lastModified": "마지막 수정일",
       "noProperties": "사용 가능한 속성이 없습니다.",
@@ -2749,6 +2878,16 @@
       "dev-container": {
         "attach": "실행 중인 컨테이너에 연결",
         "attachError": "컨테이너에 연결하지 못했습니다: {0}",
+        "attachScreen": {
+          "errorHeader": "컨테이너에 연결하지 못했습니다",
+          "firstStartNote": "컨테이너를 처음 시작할 때는 1~2분 정도 걸릴 수 있습니다. 이후에는 훨씬 더 빠르게 시작됩니다.",
+          "locating": "컨테이너 {0}를 찾고 있습니다...",
+          "preparing": "연결 준비 중...",
+          "preparingWorkspace": "작업 공간 준비 중...",
+          "starting": "컨테이너 내에서 애플리케이션을 시작 중입니다...",
+          "title": "컨테이너에 연결하기",
+          "titleNamed": "{0}에 연결"
+        },
         "attachWarning": "컨테이너에 연결하면 그 안의 코드가 실행됩니다. 출처를 신뢰할 수 있는 컨테이너에만 연결하십시오.",
         "attachWarningTitle": "컨테이너에 연결",
         "attaching": "컨테이너에 연결",
@@ -2799,7 +2938,6 @@
       "amendHeadCommit": "HEAD 커밋",
       "amendLastCommit": "마지막 커밋 수정",
       "changeRepository": "저장소 변경...",
-      "copyCommitHash": "커밋 해시 복사",
       "dirtyDiff": {
         "close": "닫기 변경 미리보기 보기"
       },

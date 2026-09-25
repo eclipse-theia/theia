@@ -93,8 +93,11 @@ export const frontendOnlyApplicationModule = new ContainerModule((bind, unbind, 
         getExecPath: async (): Promise<string> => '',
         getVariables: async (): Promise<EnvVariable[]> => [],
         getValue: async (_key: string): Promise<EnvVariable | undefined> => undefined,
-        getConfigDirUri: async (): Promise<string> => '',
-        getHomeDirUri: async (): Promise<string> => '',
+        // Matches the backend's default '.theia' configuration folder.
+        getConfigDirUri: async (): Promise<string> => 'file:///.theia',
+        // Has to be a directory that already exists: consumers such as the file dialog only
+        // resolve this, they never create it, and nothing seeds a home folder in OPFS.
+        getHomeDirUri: async (): Promise<string> => 'file:///',
         getDrives: async (): Promise<string[]> => []
     };
     if (isBound(EnvVariablesServer)) {

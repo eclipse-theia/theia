@@ -22,6 +22,7 @@ export * from './markdown-part-renderer';
 export * from './mcp-app-frame';
 export * from './mermaid-part-renderer';
 export * from './mermaid-rendering';
+export * from './spinner';
 export * from './text-part-renderer';
 export * from './toolcall-part-renderer';
 export * from './server-toolcall-part-renderer';

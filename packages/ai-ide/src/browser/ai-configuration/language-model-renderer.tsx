@@ -18,6 +18,7 @@ import {
     Agent,
     AISettingsService,
     FrontendLanguageModelRegistry,
+    groupModelsByProvider,
     LanguageModel,
     LanguageModelRequirement,
     PREFERENCE_NAME_REASONING,
@@ -248,13 +249,20 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                 label: nls.localize('theia/ai/core/languageModelRenderer/alias', '[alias] {0}', alias.id)
             });
         });
-        languageModels?.slice().sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id)).forEach(model => {
+        const modelOption = (model: LanguageModel): SelectOption => {
             const isNotReady = model.status.status !== 'ready';
-            options.push({
+            return {
                 value: model.id,
                 label: `${model.name ?? model.id} ${isNotReady ? '✗' : '✓'}`,
                 description: isNotReady && model.status.message ? model.status.message : undefined
-            });
+            };
+        };
+        // Divided per provider, newest first inside each group. Every model is offered here, not just
+        // the ones the chat picker carries: this is the page where a specific older or release-pinned
+        // model is deliberately assigned to an agent.
+        groupModelsByProvider(languageModels ?? []).forEach(({ models }) => {
+            options.push({ separator: true });
+            options.push(...models.map(modelOption));
         });
         return options;
     }, [aliases, languageModels]);

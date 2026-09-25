@@ -30,7 +30,7 @@ import {
     ServerToolDescriptor,
     formatToolCallContentForModel
 } from '@theia/ai-core';
-import { CancellationToken } from '@theia/core';
+import { CancellationToken, isObject } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { OpenAI, AzureOpenAI } from 'openai';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
@@ -46,9 +46,11 @@ import { createProxyFetch } from '@theia/ai-core/lib/node';
 
 export class MistralFixedOpenAI extends OpenAI {
     protected override async prepareOptions(options: FinalRequestOptions): Promise<void> {
-        const messages = (options.body as { messages: Array<ChatCompletionMessageParam> }).messages;
+        // Every request the client issues passes through here, including the body-less `GET /models`
+        // that model discovery runs, so the body cannot be assumed to exist, let alone to carry messages.
+        const messages = (options.body as { messages?: Array<ChatCompletionMessageParam> } | undefined)?.messages;
         if (Array.isArray(messages)) {
-            (options.body as { messages: Array<ChatCompletionMessageParam> }).messages.forEach(m => {
+            messages.forEach(m => {
                 if (m.role === 'assistant' && m.tool_calls) {
                     // Mistral OpenAI Endpoint expects refusal to be undefined and not null for optional properties
                     // eslint-disable-next-line no-null/no-null
@@ -70,6 +72,36 @@ export class MistralFixedOpenAI extends OpenAI {
 export const OpenAiModelIdentifier = Symbol('OpenAiModelIdentifier');
 
 export type DeveloperMessageSettings = 'user' | 'system' | 'developer' | 'mergeWithFollowingUserMessage' | 'skip';
+
+/** Options for {@link createOpenAiClient}. */
+export interface OpenAiClientOptions {
+    /** The key to authenticate with. A custom endpoint may need none. */
+    readonly apiKey: string | undefined;
+    /** Base URL of a custom endpoint; the SDK's own default is used without one. */
+    readonly baseURL?: string;
+    /** Azure API version. Its presence is what selects the Azure client over the plain one. */
+    readonly apiVersion?: string;
+    readonly deployment?: string;
+    readonly proxyUrl?: string;
+    /** Additional HTTP headers sent with every request, e.g. headers required by a gateway in front of the API. */
+    readonly headers?: Record<string, string>;
+}
+
+/**
+ * The single place an OpenAI SDK client is built, so that a chat request and the model discovery
+ * reach the provider the same way: through the configured proxy, with a key the SDK accepts, and
+ * with the Azure client where an API version says so.
+ */
+export function createOpenAiClient(options: OpenAiClientOptions): OpenAI {
+    // The SDK refuses to be constructed without a key, so an endpoint that needs none still gets one.
+    const apiKey = options.apiKey ?? 'no-key';
+    const proxyFetch = createProxyFetch(options.proxyUrl);
+    return options.apiVersion
+        ? new AzureOpenAI({
+            apiKey, baseURL: options.baseURL, apiVersion: options.apiVersion, deployment: options.deployment, fetch: proxyFetch, defaultHeaders: options.headers
+        })
+        : new MistralFixedOpenAI({ apiKey, baseURL: options.baseURL, fetch: proxyFetch, defaultHeaders: options.headers });
+}
 
 export class OpenAiModel implements LanguageModel {
 
@@ -120,15 +152,23 @@ export class OpenAiModel implements LanguageModel {
         public serverSideCompactionSupport: boolean = false,
         public serverSideCompactionEnabledByDefault: boolean = false,
         public serverSideCompactionTokenThresholdByDefault?: number,
-        public headers?: Record<string, string>
+        public headers?: Record<string, string>,
+        public released?: number
     ) { }
 
-    /** Reasoning-level translation lives in {@link openAiReasoningFor}. */
+    /**
+     * Reasoning-level translation lives in {@link openAiReasoningFor}. On the Responses API, user-configured `reasoning`
+     * fields from the request settings (e.g. `summary`) are kept; the selected level still decides `effort`.
+     */
     protected getSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
-        return {
-            ...request.settings,
-            ...openAiReasoningFor(request.reasoning?.level, forResponseApi, !!this.reasoningSupport)
-        };
+        const reasoning = openAiReasoningFor(request.reasoning?.level, forResponseApi, !!this.reasoningSupport);
+        const ours = reasoning.reasoning;
+        const theirs = request.settings?.reasoning;
+        if (isObject(ours) && isObject(theirs)) {
+            const effort = (ours as { effort?: string }).effort;
+            return { ...request.settings, reasoning: { ...ours, ...theirs, ...(effort !== undefined && { effort }) } };
+        }
+        return { ...request.settings, ...reasoning };
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -248,19 +288,14 @@ export class OpenAiModel implements LanguageModel {
             throw new Error('Please provide OPENAI_API_KEY in preferences or via environment variable');
         }
 
-        const apiVersion = this.apiVersion();
-        // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
-        const key = apiKey ?? 'no-key';
-
-        const proxyFetch = createProxyFetch(this.proxy);
-
-        if (apiVersion) {
-            return new AzureOpenAI({
-                apiKey: key, baseURL: this.url, apiVersion: apiVersion, deployment: this.deployment, fetch: proxyFetch, defaultHeaders: this.headers
-            });
-        } else {
-            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url, fetch: proxyFetch, defaultHeaders: this.headers });
-        }
+        return createOpenAiClient({
+            apiKey,
+            baseURL: this.url,
+            apiVersion: this.apiVersion(),
+            deployment: this.deployment,
+            proxyUrl: this.proxy,
+            headers: this.headers
+        });
     }
 
     /**

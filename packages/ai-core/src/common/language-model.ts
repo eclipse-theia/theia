@@ -41,6 +41,38 @@ export interface ReasoningSupport {
     readonly supportedLevels: ReadonlyArray<ReasoningLevel>;
     readonly defaultLevel?: ReasoningLevel;
 }
+export namespace ReasoningSupport {
+    /** Levels ordered by increasing effort; `'auto'` sits outside the scale. */
+    const EFFORT_SCALE: ReadonlyArray<ReasoningLevel> = ['off', 'minimal', 'low', 'medium', 'high'];
+
+    /**
+     * Returns `level` when `support` lists it, otherwise the nearest supported level on the effort scale,
+     * preferring the higher neighbour (an unsupported `minimal` becomes `low`, not `off`). An unsupported
+     * `'auto'` resolves to `defaultLevel`, then to the first supported level. Returns `level` unchanged
+     * when nothing suitable is supported.
+     */
+    export function clampLevel(support: ReasoningSupport, level: ReasoningLevel): ReasoningLevel {
+        const supported = support.supportedLevels;
+        if (supported.includes(level)) {
+            return level;
+        }
+        if (level === 'auto') {
+            return support.defaultLevel && supported.includes(support.defaultLevel) ? support.defaultLevel : supported[0] ?? level;
+        }
+        const index = EFFORT_SCALE.indexOf(level);
+        for (let distance = 1; distance < EFFORT_SCALE.length; distance++) {
+            const higher = EFFORT_SCALE[index + distance];
+            if (higher && supported.includes(higher)) {
+                return higher;
+            }
+            const lower = EFFORT_SCALE[index - distance];
+            if (lower && supported.includes(lower)) {
+                return lower;
+            }
+        }
+        return supported.includes('auto') ? 'auto' : level;
+    }
+}
 
 export type LanguageModelMessage =
     TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage | ServerToolUseMessage | ImageMessage | CompactionMessage;
@@ -667,6 +699,11 @@ export interface LanguageModelMetaData {
     readonly family?: string;
     readonly maxInputTokens?: number;
     readonly maxOutputTokens?: number;
+    /**
+     * Release date (ms since epoch) as reported by the provider, where it reports one. Lets the model
+     * lists offer the newest models first instead of ordering them by name.
+     */
+    readonly released?: number;
     readonly status: LanguageModelStatus;
     readonly reasoningSupport?: ReasoningSupport;
     /**

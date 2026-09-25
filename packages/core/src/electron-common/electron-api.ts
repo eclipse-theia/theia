@@ -18,6 +18,7 @@ import { NativeKeyboardLayout } from '../common/keyboard/keyboard-layout-provide
 import { Disposable } from '../common';
 import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
 import { ThemeMode } from '../common/theme';
+import { LaunchArguments } from '../common/launch-arguments';
 
 export type MenuRole = ('undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll' | 'about' | 'services' | 'hide' | 'hideOthers' | 'unhide' | 'quit');
 
@@ -44,6 +45,15 @@ export type WindowEvent = 'maximize' | 'unmaximize' | 'focus';
 export interface TheiaCoreAPI {
     WindowMetadata: {
         webcontentId: string;
+        /**
+         * The parsed CLI options of a *forwarded* launch (see the `second-instance` handling in
+         * `ElectronMainApplication`), or `undefined` for a cold-start window. Provided synchronously
+         * by the preload script, so a frontend contribution can act on it from the first paint.
+         * The options never ride on the window URL; see `LaunchArgsStore` for the rationale.
+         *
+         * @experimental
+         */
+        launchArgs?: LaunchArguments;
     }
     getSecurityToken: () => string;
     attachSecurityToken: (endpoint: string) => Promise<void>;

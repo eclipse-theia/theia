@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { Emitter, Event } from '@theia/core/lib/common';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { TELEMETRY_LEVEL, TelemetryPreferences } from './telemetry-preferences';
-import { TelemetryEventKind } from './telemetry-service';
 import { TelemetryLevel } from './telemetry-types';
 
 /** @experimental */
@@ -27,13 +27,13 @@ export const TelemetryConsentProvider = Symbol('TelemetryConsentProvider');
 export interface TelemetryConsentProvider {
     readonly level: TelemetryLevel;
     readonly onDidChangeTelemetryLevel: Event<TelemetryLevel>;
-}
-
-/** @experimental */
-export function isKindAllowedByLevel(level: TelemetryLevel, kind: TelemetryEventKind): boolean {
-    return level === 'all'
-        || level === 'error' && (kind === 'error' || kind === 'crash')
-        || level === 'crash' && kind === 'crash';
+    /**
+     * Resolves once `level` reflects the application's consent state.
+     *
+     * Implementations must settle this even when consent cannot be determined, leaving `level` at its default,
+     * since callers gate application startup on it.
+     */
+    readonly ready: Promise<void>;
 }
 
 /** @experimental */
@@ -43,6 +43,9 @@ export class PreferenceTelemetryConsentProvider implements TelemetryConsentProvi
     protected currentLevel: TelemetryLevel = 'off';
     protected readonly onDidChangeTelemetryLevelEmitter = new Emitter<TelemetryLevel>();
     readonly onDidChangeTelemetryLevel = this.onDidChangeTelemetryLevelEmitter.event;
+
+    protected readonly readyDeferred = new Deferred<void>();
+    readonly ready = this.readyDeferred.promise;
 
     @inject(TelemetryPreferences)
     protected readonly preferences: TelemetryPreferences;
@@ -56,7 +59,8 @@ export class PreferenceTelemetryConsentProvider implements TelemetryConsentProvi
         });
         this.preferences.ready.then(() => {
             this.setLevel(this.preferences[TELEMETRY_LEVEL]);
-        }, () => undefined);
+            this.readyDeferred.resolve();
+        }, () => this.readyDeferred.resolve());
     }
 
     protected setLevel(level: TelemetryLevel): void {

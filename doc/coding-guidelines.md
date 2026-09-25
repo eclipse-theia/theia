@@ -257,6 +257,26 @@ Learn more in the [documentation](https://theia-ide.org/docs/).
 > [!NOTE]
 > When Markdown is not suitable and HTML must be used, ensure content is sanitized with `DOMPurify.sanitize()` before rendering with `dangerouslySetInnerHTML`.
 
+<a name="nls-preload"></a>
+
+* [4.](#nls-preload) Do not read a localized string while a module of the preload phase is being loaded, that is at the top level of the module rather than from a function called later. The localization data is only available once the `Preloader` has run, so a string read before that stays in English for the rest of the session.
+
+> This applies to the modules that a preload entry point imports as well, which is why such an entry point should import the symbols it needs from the modules that declare them rather than through a barrel such as `@theia/core/lib/common`. The `@theia/preload-localization-check` ESLint rule reports both cases.
+
+```ts
+// bad - evaluated when the module is loaded
+export namespace ProgressMessage {
+    export const Cancel = nls.localizeByDefault('Cancel');
+}
+
+// good - evaluated when the string is needed
+export namespace ProgressMessage {
+    export function cancel(): string {
+        return nls.localizeByDefault('Cancel');
+    }
+}
+```
+
 ## Style
 
 * Use arrow functions `=>` over anonymous function expressions.

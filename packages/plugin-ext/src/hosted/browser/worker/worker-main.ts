@@ -34,6 +34,7 @@ import { loadManifest } from './plugin-manifest-loader';
 import { EnvExtImpl } from '../../../plugin/env';
 import { DebugExtImpl } from '../../../plugin/debug/debug-ext';
 import { LocalizationExtImpl } from '../../../plugin/localization-ext';
+import { TelemetryExtImpl } from '../../../plugin/telemetry-ext';
 import pluginHostModule from './worker-plugin-module';
 import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
 
@@ -116,20 +117,28 @@ pluginManager.setPluginHost({
                     pluginsModulesNames.set(plugin.lifecycle.frontendModuleName!, plugin);
                     return { target: result, plugin };
                 } else {
-                    return {
-                        target: foreign,
-                        plugin: {
-                            pluginPath: pluginModel.entryPoint.backend,
-                            pluginFolder: pluginModel.packagePath,
-                            pluginUri: pluginModel.packageUri,
-                            model: pluginModel,
-                            lifecycle: pluginLifecycle,
+                    const common = {
+                        pluginPath: pluginModel.entryPoint.backend,
+                        pluginFolder: pluginModel.packagePath,
+                        pluginUri: pluginModel.packageUri,
+                        model: pluginModel,
+                        lifecycle: pluginLifecycle,
+                        isUnderDevelopment: !!plg.isUnderDevelopment
+                    };
+                    const plugin: Plugin = pluginModel.entryPoint.backend
+                        // Runs in another host, so its manifest is that host's problem.
+                        ? {
+                            ...common,
                             get rawModel(): never {
                                 throw new Error('not supported');
-                            },
-                            isUnderDevelopment: !!plg.isUnderDevelopment
+                            }
                         }
-                    };
+                        // No entry point anywhere, so there is nothing to run - it only contributes
+                        // grammars, themes and the like. It does still turn up in `theia.extensions`,
+                        // where reading `packageJSON` must not throw, so give it a real manifest.
+                        // Only browser-only gets here; with a backend these go to the backend host.
+                        : { ...common, rawModel: await loadManifest(pluginModel) };
+                    return { target: foreign, plugin };
                 }
             }));
             // Collect the ordered plugins and insert them in the target array:
@@ -162,6 +171,7 @@ const messageRegistryExt = container.get(MessageRegistryExt);
 const clipboardExt = container.get(ClipboardExt);
 const webviewExt = container.get(WebviewsExtImpl);
 const localizationExt = container.get(LocalizationExtImpl);
+const telemetryExt = container.get(TelemetryExtImpl);
 const storageProxy = container.get(KeyValueStorageProxy);
 
 const apiFactory = createAPIFactory(
@@ -175,7 +185,8 @@ const apiFactory = createAPIFactory(
     messageRegistryExt,
     clipboardExt,
     webviewExt,
-    localizationExt
+    localizationExt,
+    telemetryExt
 );
 let defaultApi: typeof theia;
 

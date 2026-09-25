@@ -269,7 +269,9 @@ export function preload(): void {
             }
         }
     });
-    api.WindowMetadata.webcontentId = ipcRenderer.sendSync(CHANNEL_WC_METADATA);
+    // Synchronous, so the metadata (including the parsed options of a forwarded launch) is in place
+    // before any frontend code runs.
+    api.WindowMetadata = ipcRenderer.sendSync(CHANNEL_WC_METADATA);
 
     contextBridge.exposeInMainWorld('electronTheiaCore', api);
 }

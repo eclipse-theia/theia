@@ -15,3 +15,4 @@
 // *****************************************************************************
 
 export * from './shell-command-permission-service';
+export * from './predefined-shell-tool';
