@@ -66,6 +66,14 @@ import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { formatTokenCount } from '../chat-token-usage-indicator-util';
+import {
+    CHARS_PER_TOKEN_ESTIMATE,
+    computeResponseStats,
+    formatResponseTime,
+    formatStatTokens,
+    formatTokensPerSecond
+} from '../chat-response-stats-util';
+import { CHAT_VIEW_TOKEN_USAGE_ENABLED, ChatViewPreferences } from '../chat-view-preferences';
 import { MarkdownRendering, useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
 import { ProgressMessage } from '../chat-progress-message';
 import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-tree-input-widget';
@@ -146,6 +154,9 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     @inject(ChatService)
     protected readonly chatService: ChatService;
+
+    @inject(ChatViewPreferences)
+    protected readonly chatViewPreferences: ChatViewPreferences;
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
@@ -257,6 +268,13 @@ export class ChatViewTreeWidget extends TreeWidget {
                 this.toDispose.push(contribution.onDidChange(() => this.update()));
             }
         }
+
+        // Re-render responses when the token usage indicator preference toggles, since it gates the stats footer.
+        this.toDispose.push(this.chatViewPreferences.onPreferenceChanged(event => {
+            if (event.preferenceName === CHAT_VIEW_TOKEN_USAGE_ENABLED) {
+                this.update();
+            }
+        }));
 
     }
 
@@ -781,6 +799,60 @@ export class ChatViewTreeWidget extends TreeWidget {
                     .map((c, i) =>
                         <ProgressMessage {...c} key={`${node.id}-progress-afterComplete-${i}`} />
                     )
+                }
+                {this.renderResponseStats(node)}
+            </div>
+        );
+    }
+
+    protected renderResponseStats(node: ResponseNode): React.ReactNode {
+        // The stats footer overlaps with the experimental token usage indicator, so gate it behind the same preference.
+        if (!this.chatViewPreferences[CHAT_VIEW_TOKEN_USAGE_ENABLED] || !node.response.isComplete || node.response.isCanceled) {
+            return undefined;
+        }
+        const request = this.chatService.getSession(node.sessionId)?.model.getRequests().find(r => r.id === node.response.requestId);
+        const stats = computeResponseStats(node.response, request);
+        // Nothing meaningful to show (e.g. empty error response with no timing).
+        if (stats.responseTimeMs === undefined && stats.inputTokens === 0 && stats.outputTokens === 0) {
+            return undefined;
+        }
+
+        const responseTimeLabel = nls.localize('theia/ai/chat-ui/stats/responseTime', 'Response time');
+        const inputLabel = nls.localize('theia/ai/chat-ui/stats/inputTokens', 'Query');
+        const outputLabel = nls.localizeByDefault('Response');
+        const throughputLabel = nls.localize('theia/ai/chat-ui/stats/throughput', 'Throughput');
+
+        const inputTitle = stats.inputEstimated
+            ? nls.localize('theia/ai/chat-ui/stats/inputEstimatedTitle',
+                'Estimated query tokens (~{0} chars/token) from the visible message only; the actual prompt also includes the system prompt, skills and tools.',
+                CHARS_PER_TOKEN_ESTIMATE)
+            : nls.localize('theia/ai/chat-ui/stats/inputActualTitle',
+                'Query tokens reported by the model, including the system prompt, skills, tools and history.');
+        const outputTitle = stats.outputEstimated
+            ? nls.localize('theia/ai/chat-ui/stats/outputEstimatedTitle', 'Estimated response tokens (~{0} chars/token).', CHARS_PER_TOKEN_ESTIMATE)
+            : nls.localize('theia/ai/chat-ui/stats/outputActualTitle', 'Response tokens reported by the model.');
+
+        return (
+            <div className='theia-ResponseNode-Stats' role='note' aria-label={nls.localize('theia/ai/chat-ui/stats/label', 'Response statistics')}>
+                {stats.responseTimeMs !== undefined &&
+                    <span className='theia-ResponseStat' title={responseTimeLabel}>
+                        <span className={codicon('watch')} aria-hidden={true}></span>
+                        {formatResponseTime(stats.responseTimeMs)}
+                    </span>
+                }
+                <span className='theia-ResponseStat' title={inputTitle}>
+                    <span className={codicon('arrow-up')} aria-hidden={true}></span>
+                    {inputLabel} {formatStatTokens(stats.inputTokens, stats.inputEstimated)}
+                </span>
+                <span className='theia-ResponseStat' title={outputTitle}>
+                    <span className={codicon('arrow-down')} aria-hidden={true}></span>
+                    {outputLabel} {formatStatTokens(stats.outputTokens, stats.outputEstimated)}
+                </span>
+                {stats.tokensPerSecond !== undefined &&
+                    <span className='theia-ResponseStat' title={throughputLabel}>
+                        <span className={codicon('dashboard')} aria-hidden={true}></span>
+                        {formatTokensPerSecond(stats.tokensPerSecond)}
+                    </span>
                 }
             </div>
         );
