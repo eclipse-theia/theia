@@ -32,6 +32,8 @@ Example of a valid `keymaps.json` file
 
 Printable keys use logical-character semantics. For example, `ctrl+[` means Ctrl plus the character `[`, regardless of which physical key produces it on the active keyboard layout. Bare one-code-point characters such as `a`, `3`, `/`, `^`, `§`, `²`, and `ä` can be used directly.
 
+Latin letters that the active layout does not produce on its base or Shift layer (for example on Cyrillic or Greek layouts) fall back to their US key position, so `ctrl+c` keeps working while typing in another script. This mirrors VS Code and applies to letters only; digits and punctuation always follow the logical character.
+
 Use a bracketed scan code such as `ctrl+[BracketLeft]` when a binding should follow a physical key rather than a character. Scan-code names are validated against supported `KeyboardEvent.code` values.
 
 Characters reserved by the keybinding grammar use a Unicode escape. For example, use `ctrl+[char:0x2B]` for logical `+`, `[char:0x20]` for Space as a logical character, and `[char:0x5D]` for `]`. Literal escapes such as `[char:§]` are supported when the character is not reserved. Each character token must contain exactly one Unicode code point; multi-code-point graphemes are not supported.
@@ -44,7 +46,7 @@ You can use `shift`, `ctrl`, `alt`, `meta`, `option` (`alt`), `command` (`meta`)
 
 You can also use the following strings for special keys: `backspace`, `tab`, `enter`, `return`, `capslock`, `esc`, `escape`, `space`, `pageup`, `pagedown`, `end`, `home`, `left`, `up`, `right`, `down`, `ins` and `del`.
 
-The keybinding recorder saves printable input as its logical character. When Windows reports AltGraph together with Ctrl+Alt, the recorder still records the produced logical character, so recorded shortcuts stay typeable on the current layout. Non-printable and dead-key captures use `[ScanCode]` syntax.
+The keybinding recorder saves printable input as its logical character. For a Latin-letter fallback on a non-Latin layout, it records the Latin letter (`ctrl+c`, not `ctrl+с`), matching VS Code. When Windows reports AltGraph together with Ctrl+Alt, the recorder still records the produced logical character, so recorded shortcuts stay typeable on the current layout. Non-printable and dead-key captures use `[ScanCode]` syntax.
 
 If unsure you can always look at the framework's [supported keys](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_core.common_keys.Key.html)
 

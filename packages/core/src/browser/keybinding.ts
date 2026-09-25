@@ -835,7 +835,22 @@ export class KeybindingRegistry {
     authoredKeyCodeForKeyboardInput(input: NormalizedKeyboardInput): KeyCode | undefined {
         const interpretations = this.getKeyCodeInterpretations(input);
         const keyCode = interpretations.find(candidate => candidate.interpretation === 'layoutModifiers') ?? interpretations[0];
-        if (!keyCode || keyCode.isModifierOnly() || keyCode.interpretation !== 'layoutModifiers' || !keyCode.character) {
+        if (!keyCode || keyCode.isModifierOnly()) {
+            return keyCode;
+        }
+        const fallbackLetter = keyCode.key && this.keyboardLayoutService.getLatinLetterFallback(keyCode.key);
+        if (fallbackLetter && keyCode.character && keyCode.character.toLocaleLowerCase() !== fallbackLetter) {
+            const shift = keyCode.shift || layoutModifiersIncludeShift(keyCode.layoutModifiers);
+            return new KeyCode({
+                key: keyCode.key,
+                ctrl: keyCode.ctrl,
+                alt: keyCode.alt,
+                meta: keyCode.meta,
+                shift,
+                character: shift ? fallbackLetter.toLocaleUpperCase() : fallbackLetter
+            });
+        }
+        if (keyCode.interpretation !== 'layoutModifiers' || !keyCode.character) {
             return keyCode;
         }
         try {

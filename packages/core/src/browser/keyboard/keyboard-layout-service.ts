@@ -37,6 +37,8 @@ export interface KeyboardLayoutCandidate {
 export interface KeyboardLayout {
     readonly candidatesByCharacter: ReadonlyMap<string, readonly KeyboardLayoutCandidate[]>;
     readonly candidatesByFoldedCharacter: ReadonlyMap<string, readonly KeyboardLayoutCandidate[]>;
+    /** Physical KeyboardEvent code to the lowercase Latin letter registered as a fallback. */
+    readonly latinFallbackByCode: ReadonlyMap<string, string>;
     /**
      * Mapping of KeyboardEvent codes to the characters shown on the user's keyboard
      * for the respective keys.
@@ -93,9 +95,10 @@ export class KeyboardLayoutService {
 
     /**
      * Resolve an authored keybinding stroke against the active layout.
-     * Physical and non-printable strokes, and strokes resolved without an active layout, are returned unchanged. A logical
-     * character missing from the active layout is returned with {@link KeyCode.supportedByLayout} set to `false`.
-     * Authored Shift is absorbed when it produces the character (US-key tokens or shift-layer candidates); otherwise it remains a command modifier.
+     * Physical and non-printable strokes, and strokes resolved without an active layout, are returned unchanged. Latin letters
+     * missing from the active layout resolve to their US key position; any other missing logical character is returned with
+     * {@link KeyCode.supportedByLayout} set to `false`. Authored Shift is absorbed when it produces the character (US-key tokens
+     * or shift-layer candidates); otherwise it remains a command modifier.
      */
     resolveKeyCode(inCode: KeyCode): KeyCode {
         if (inCode.physical || !this.currentLayout || inCode.key && !this.isPrintableKey(inCode.key) && !inCode.character) {
@@ -295,6 +298,11 @@ export class KeyboardLayoutService {
         return key.easyString;
     }
 
+    /** Return the Latin letter registered for a physical key because the active layout does not produce it, or `undefined`. */
+    getLatinLetterFallback(key: Key): string | undefined {
+        return this.currentLayout?.latinFallbackByCode.get(key.code);
+    }
+
     /**
      * Called when a KeyboardEvent is processed by the KeybindingRegistry.
      * The KeyValidator may trigger a keyboard layout change.
@@ -335,6 +343,7 @@ export class KeyboardLayoutService {
                 }
             }
         }
+        const latinFallbackByCode = this.addMissingLatinLetterCandidates(candidatesByCharacter);
         for (const candidates of candidatesByCharacter.values()) {
             candidates.sort((left, right) => this.layoutModifierCost(left.layoutModifiers) - this.layoutModifierCost(right.layoutModifiers)
                 || left.key.code.localeCompare(right.key.code));
@@ -348,7 +357,7 @@ export class KeyboardLayoutService {
                 || left.key.code.localeCompare(right.key.code));
             candidatesByFoldedCharacter.set(folded, existing);
         }
-        return { candidatesByCharacter, candidatesByFoldedCharacter, code2Character };
+        return { candidatesByCharacter, candidatesByFoldedCharacter, latinFallbackByCode, code2Character };
     }
 
     protected shouldIncludeKey(code: string): boolean {
@@ -361,6 +370,34 @@ export class KeyboardLayoutService {
 
     protected layoutModifierCost(layoutModifiers: LayoutModifiers): number {
         return LAYOUT_MODIFIER_COST[layoutModifiers];
+    }
+
+    /**
+     * Register VS Code-compatible US-position fallbacks for Latin letters that the layout does not produce
+     * on its base or Shift layer. This is called once whenever the active keyboard layout is transformed.
+     */
+    protected addMissingLatinLetterCandidates(candidatesByCharacter: Map<string, KeyboardLayoutCandidate[]>): Map<string, string> {
+        const result = new Map<string, string>();
+        const produced = (lower: string, upper: string): boolean => [lower, upper].some(character =>
+            candidatesByCharacter.get(character)?.some(candidate =>
+                candidate.layoutModifiers === 'none' || candidate.layoutModifiers === 'shift'));
+
+        for (const lower of LATIN_LETTERS) {
+            const upper = lower.toUpperCase();
+            if (produced(lower, upper)) {
+                continue;
+            }
+            const key = VALUE_TO_KEY[lower].key;
+            const lowercaseCandidates = candidatesByCharacter.get(lower) ?? [];
+            lowercaseCandidates.push({ key, character: lower, layoutModifiers: 'none' });
+            candidatesByCharacter.set(lower, lowercaseCandidates);
+
+            const uppercaseCandidates = candidatesByCharacter.get(upper) ?? [];
+            uppercaseCandidates.push({ key, character: upper, layoutModifiers: 'shift' });
+            candidatesByCharacter.set(upper, uppercaseCandidates);
+            result.set(key.code, lower);
+        }
+        return result;
     }
 
     private addKeyMappings(candidatesByCharacter: Map<string, KeyboardLayoutCandidate[]>, mappedKey: Key,
@@ -503,6 +540,8 @@ const VALUE_TO_KEY: { [value: string]: { key: Key, shift?: boolean } } = {
 function usCharacterIndex(key: Key, shift = false): string {
     return `${key.code}:${shift}`;
 }
+
+const LATIN_LETTERS = 'abcdefghijklmnopqrstuvwxyz';
 
 const LAYOUT_MODIFIER_COST: Record<LayoutModifiers, number> = {
     none: 0,

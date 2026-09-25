@@ -32,6 +32,19 @@ class TestKeyboardLayoutService extends KeyboardLayoutService {
     }
 }
 
+const RUSSIAN_LAYOUT: NativeKeyboardLayout = {
+    info: { id: 'ru', lang: 'ru' },
+    mapping: {
+        KeyA: { value: 'ф', withShift: 'Ф', withAltGr: '', withShiftAltGr: '' },
+        KeyC: { value: 'с', withShift: 'С', withAltGr: '', withShiftAltGr: '' },
+        KeyV: { value: 'м', withShift: 'М', withAltGr: '', withShiftAltGr: '' },
+        KeyS: { value: 'ы', withShift: 'Ы', withAltGr: '', withShiftAltGr: '' },
+        Digit8: { value: '8', withShift: '*', withAltGr: '', withShiftAltGr: '' },
+        BracketLeft: { value: 'х', withShift: 'Х', withAltGr: '', withShiftAltGr: '' },
+        Comma: { value: 'б', withShift: 'Б', withAltGr: '', withShiftAltGr: '' }
+    }
+};
+
 describe('keyboard layout service', function (): void {
 
     let stubOSX: sinon.SinonStub;
@@ -199,11 +212,101 @@ describe('keyboard layout service', function (): void {
         chai.expect(indent.layoutModifiers).to.equal('altGraph');
     });
 
+    it('falls back to the US position for Latin letters missing from a non-Latin layout', async () => {
+        const service = await setup(RUSSIAN_LAYOUT, 'linux');
+
+        const resolved = service.resolveKeyCode(KeyCode.parse('ctrl+c'));
+        chai.expect(resolved.key).to.equal(Key.KEY_C);
+        chai.expect(resolved.supportedByLayout).to.be.true;
+        chai.expect(resolved.layoutModifiers).to.equal('none');
+        chai.expect(resolved.dispatchString()).to.equal('ctrl+c');
+        chai.expect(service.getLatinLetterFallback(Key.KEY_C)).to.equal('c');
+        chai.expect(service.getLatinLetterFallback(Key.DIGIT8)).to.be.undefined;
+        chai.expect(service.resolveKeyCode(KeyCode.parse('с')).key).to.equal(Key.KEY_C);
+        chai.expect(service.getKeyboardCharacter(Key.KEY_C)).to.equal('с');
+    });
+
+    it('absorbs Shift into the Latin fallback letter', async () => {
+        const service = await setup(RUSSIAN_LAYOUT, 'linux');
+
+        const resolved = service.resolveKeyCode(KeyCode.parse('ctrl+shift+a'));
+        chai.expect(resolved.key).to.equal(Key.KEY_A);
+        chai.expect(resolved.layoutModifiers).to.equal('shift');
+        chai.expect(resolved.shift).to.be.false;
+        chai.expect(resolved.character).to.equal('A');
+    });
+
+    it('does not fall back for punctuation on a non-Latin layout', async () => {
+        const service = await setup(RUSSIAN_LAYOUT, 'linux');
+
+        chai.expect(service.resolveKeyCode(KeyCode.parse('ctrl+[')).supportedByLayout).to.be.false;
+    });
+
+    it('does not override Latin letters produced elsewhere on the layout', async () => {
+        const german = require('../../../src/common/keyboard/layouts/de-German-pc.json');
+        const service = await setup(german, 'linux');
+
+        chai.expect(service.resolveKeyCode(KeyCode.parse('ctrl+z')).key).to.equal(Key.KEY_Y);
+        chai.expect(service.getLatinLetterFallback(Key.KEY_Z)).to.be.undefined;
+    });
+
+    it('does not override letters produced in only one case on the base or Shift layer', async () => {
+        const layout: NativeKeyboardLayout = {
+            info: { id: 'one-case-only', lang: 'en' },
+            mapping: {
+                KeyS: { value: 'o', withShift: 'Q', withAltGr: '', withShiftAltGr: '' },
+                KeyO: { value: 's', withShift: 'P', withAltGr: '', withShiftAltGr: '' }
+            }
+        };
+        const service = await setup(layout, 'linux');
+
+        chai.expect(service.resolveKeyCode(KeyCode.parse('o')).key).to.equal(Key.KEY_S);
+        chai.expect(service.resolveKeyCode(KeyCode.parse('p')).key).to.equal(Key.KEY_O);
+        chai.expect(service.resolveKeyCode(KeyCode.parse('p')).layoutModifiers).to.equal('shift');
+        for (const key of [Key.KEY_O, Key.KEY_P, Key.KEY_Q, Key.KEY_S]) {
+            chai.expect(service.getLatinLetterFallback(key)).to.be.undefined;
+        }
+    });
+
+    it('adds a fallback when a letter is produced only on the AltGraph layer', async () => {
+        const layout: NativeKeyboardLayout = {
+            info: { id: 'altgraph-only-latin', lang: 'ru' },
+            mapping: {
+                KeyQ: { value: 'й', withShift: 'Й', withAltGr: 'a', withShiftAltGr: '' }
+            }
+        };
+        const service = await setup(layout, 'linux');
+
+        const resolved = service.resolveKeyCode(KeyCode.parse('a'));
+        chai.expect(resolved.key).to.equal(Key.KEY_A);
+        chai.expect(resolved.layoutModifiers).to.equal('none');
+        chai.expect(service.getLatinLetterFallback(Key.KEY_A)).to.equal('a');
+    });
+
+    it('adds Latin fallbacks to Windows mappings with vkeys and character values', async () => {
+        const layout: NativeKeyboardLayout = {
+            ...RUSSIAN_LAYOUT,
+            mapping: {
+                ...RUSSIAN_LAYOUT.mapping,
+                KeyC: { ...RUSSIAN_LAYOUT.mapping.KeyC, vkey: 'VK_C' } as never
+            }
+        };
+        const service = await setup(layout, 'win');
+
+        chai.expect(service.resolveKeyCode(KeyCode.parse('ctrl+c')).key).to.equal(Key.KEY_C);
+        chai.expect(service.getLatinLetterFallback(Key.KEY_C)).to.equal('c');
+    });
+
     it('marks printable bindings unresolved when the layout mapping is empty', async () => {
         const layout: NativeKeyboardLayout = { info: { id: 'empty', lang: 'en' }, mapping: {} };
         const service = await setup(layout, 'linux');
 
         chai.expect(service.resolveKeyCode(KeyCode.parse('ctrl+[')).supportedByLayout).to.be.false;
+        for (const lower of 'abcdefghijklmnopqrstuvwxyz') {
+            const key = Key.getKey(`Key${lower.toUpperCase()}`)!;
+            chai.expect(service.resolveKeyCode(KeyCode.parse(`ctrl+${lower}`)).key).to.equal(key);
+            chai.expect(service.getLatinLetterFallback(key)).to.equal(lower);
+        }
         chai.expect(service.resolveKeyCode(KeyCode.parse('f1')).supportedByLayout).to.be.true;
     });
 

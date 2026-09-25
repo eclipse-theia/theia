@@ -82,6 +82,19 @@ const corePreferences = {
     onPreferenceChanged: preferenceChanged.event
 } as unknown as CorePreferences;
 
+const RUSSIAN_LAYOUT: NativeKeyboardLayout = {
+    info: { id: 'ru', lang: 'ru' },
+    mapping: {
+        KeyA: { value: 'ф', withShift: 'Ф', withAltGr: '', withShiftAltGr: '' },
+        KeyC: { value: 'с', withShift: 'С', withAltGr: '', withShiftAltGr: '' },
+        KeyV: { value: 'м', withShift: 'М', withAltGr: '', withShiftAltGr: '' },
+        KeyS: { value: 'ы', withShift: 'Ы', withAltGr: '', withShiftAltGr: '' },
+        Digit8: { value: '8', withShift: '*', withAltGr: '', withShiftAltGr: '' },
+        BracketLeft: { value: 'х', withShift: 'Х', withAltGr: '', withShiftAltGr: '' },
+        Comma: { value: 'б', withShift: 'Б', withAltGr: '', withShiftAltGr: '' }
+    }
+};
+
 before(async () => {
     testContainer = new Container();
     const module = new ContainerModule((bind, unbind, isBound, rebind) => {
@@ -691,6 +704,41 @@ describe('keybindings', () => {
         expect(keybindingRegistry.matchKeybinding(keybindingRegistry.resolveKeybinding(binding))?.kind).to.equal('full');
     });
 
+    it('should keep default Latin-letter bindings active on a non-Latin layout', async () => {
+        const binding = { command: TEST_COMMAND_SHADOW.id, keybinding: 'ctrl+c' };
+        keybindingRegistry.setKeymap(KeybindingScope.USER, [binding]);
+        const notifier = testContainer.get(MockKeyboardLayoutChangeNotifier);
+        notifier.emitter.fire(RUSSIAN_LAYOUT);
+        const execute = sinon.spy();
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
+
+        try {
+            expect(keybindingRegistry.isKeybindingInactive(binding)).to.be.false;
+            keybindingRegistry.dispatchNormalizedKeyDown({
+                key: 'с', code: 'KeyC', ctrlKey: true
+            }, new EventTarget());
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(execute.calledOnce).to.be.true;
+        } finally {
+            handler.dispose();
+            notifier.emitter.fire(require('../../src/common/keyboard/layouts/en-US-pc.json'));
+        }
+    });
+
+    it('should keep punctuation bindings inactive on a non-Latin layout', () => {
+        const binding = { command: TEST_COMMAND.id, keybinding: 'ctrl+[' };
+        keybindingRegistry.setKeymap(KeybindingScope.USER, [binding]);
+        const notifier = testContainer.get(MockKeyboardLayoutChangeNotifier);
+        notifier.emitter.fire(RUSSIAN_LAYOUT);
+
+        try {
+            expect(keybindingRegistry.isKeybindingInactive(binding)).to.be.true;
+        } finally {
+            notifier.emitter.fire(require('../../src/common/keyboard/layouts/en-US-pc.json'));
+        }
+    });
+
     it('should execute an authored Shift command modifier on a non-US logical character', async () => {
         testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
         const binding = { command: TEST_COMMAND_SHADOW.id, keybinding: 'ctrl+shift+ü' };
@@ -894,6 +942,23 @@ describe('keybindings', () => {
 
         expect(keybindingRegistry.authoredKeyCodeForKeyboardInput({ key: '[', code: 'Digit8' })?.toString()).to.equal('ctrl+[');
         interpretations.restore();
+    });
+
+    it('should record the Latin fallback letter on a non-Latin layout', () => {
+        const notifier = testContainer.get(MockKeyboardLayoutChangeNotifier);
+        notifier.emitter.fire(RUSSIAN_LAYOUT);
+
+        expect(keybindingRegistry.authoredKeyCodeForKeyboardInput({
+            key: 'с', code: 'KeyC', ctrlKey: true
+        })?.toAuthoredKeybindingString()).to.equal('ctrl+c');
+        expect(keybindingRegistry.authoredKeyCodeForKeyboardInput({
+            key: 'С', code: 'KeyC', ctrlKey: true, shiftKey: true
+        })?.toAuthoredKeybindingString()).to.equal('shift+ctrl+c');
+
+        notifier.emitter.fire(require('../../src/common/keyboard/layouts/en-US-pc.json'));
+        expect(keybindingRegistry.authoredKeyCodeForKeyboardInput({
+            key: 'c', code: 'KeyC', ctrlKey: true
+        })?.toAuthoredKeybindingString()).to.equal('ctrl+c');
     });
 
     it('should record legacy Windows AltGraph input as its logical character', () => {

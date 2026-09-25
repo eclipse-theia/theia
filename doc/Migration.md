@@ -163,6 +163,8 @@ If you worked around this by overriding the `@vscode/ripgrep` replacement in you
 
 Printable keybinding tokens now identify logical characters on the active keyboard layout. Existing `keymaps.json` files and keybinding strings remain parseable, so no file-format migration is required. Shift in an authored logical-character stroke is absorbed when it produces the character; otherwise it remains a command modifier.
 
+Latin letters that the active layout does not produce on its base or Shift layer fall back to their US key position, matching VS Code so common shortcuts continue working on non-Latin layouts. This fallback applies to letters only; digits and punctuation always follow the logical character. The recorder stores the Latin fallback letter in this case (`ctrl+c`, not `ctrl+с`).
+
 Bindings that intentionally target a physical position must use explicit scan-code syntax. For example, replace a position-dependent `ctrl+[` binding with `ctrl+[BracketLeft]`. Reserved logical characters can be authored with `[char:0x...]`, such as `ctrl+[char:0x2B]` for logical `+`.
 
 Available printable bindings now follow their logical characters. For example, German `ctrl+[` resolves to physical `Ctrl+AltGr+8` instead of the US `BracketLeft` position. On Windows, browsers may not expose the additional Ctrl in `Ctrl+AltGr+8`, so this logical binding may not be triggerable by hand; use `ctrl+[BracketLeft]`, set `"keyboard.dispatch": "keyCode"`, or choose a binding that does not require AltGr. Logical characters unavailable on the active layout remain loaded and visible but inactive; the same applies when authored Shift is a command modifier but the character requires an AltGr layer that consumes Shift. Theia no longer silently maps these bindings to a different key combination.
@@ -171,6 +173,7 @@ Set `"keyboard.dispatch": "keyCode"` to restore positional key-code dispatch glo
 
 ##### Adopter APIs
 
+- `KeyboardLayout` gained `latinFallbackByCode`; `KeyboardLayoutService.getLatinLetterFallback(key)` exposes it. Subclasses replacing `transformNativeLayout()` must call the protected `KeyboardLayoutService.addMissingLatinLetterCandidates()` method to keep Latin-letter shortcuts working on non-Latin layouts.
 - Replace consumers of `KeyboardLayout.key2KeyCode` with `candidatesByCharacter` or `candidatesByFoldedCharacter`. Each `KeyboardLayoutCandidate` provides the physical `key`, logical `character`, and required `layoutModifiers`. Subclasses of `KeyboardLayoutService` that overrode the removed protected `transformKeyCode()` or `getCharacterIndex()` methods must move their logic to `resolveKeyCode()` and candidate lookup.
 - Pass the normalized keyboard input as the second argument to `KeyboardLayoutService.validateKeyCode`.
 - Review `KeyCode` consumers: `equals()` requires the same physical key and `dispatchString()`, character-only values are not modifier-only, and `toString()` preserves authored spelling. Use `dispatchString()` when a runtime match identity is required.
