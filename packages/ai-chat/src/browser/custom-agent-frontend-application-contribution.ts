@@ -105,7 +105,7 @@ export class AICustomAgentsFrontendApplicationContribution implements FrontendAp
             this.knownCustomAgents.delete(id);
         });
         customAgentsToAdd.forEach(agent => {
-            this.customAgentFactory(agent.id, agent.name, agent.description, agent.prompt, agent.defaultLLM, agent.showInChat, agent.promptVariants);
+            this.customAgentFactory(agent.id, agent.name, agent.description, agent.prompt, agent.defaultLLM, agent.showInChat, agent.promptVariants, agent.turnPrompt);
             this.knownCustomAgents.set(agent.id, agent);
         });
     }

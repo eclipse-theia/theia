@@ -90,34 +90,14 @@ When making file modifications:
 
 ### Contextual Information Available
 
-The following IDE context is dynamically provided with each request.
-Evaluate the relevance of each context type based on the user's specific query and task requirements.
+The current IDE state — selection, active editor, open editors and attached context files — is provided at the
+start of each user message inside an \`<ide-context>\` block. It is accurate as of that message; later messages
+carry their own block. Evaluate the relevance of each part based on the user's specific query and task requirements:
 
-#### Current Selection
-
-\`\`\`
-{{selectedText}}
-\`\`\`
-
-**When to prioritize**: User asks about specific code segments, wants to refactor selected code, or requests explanations of selected text.
-
-#### Active Editor
-
-{{activeEditor}}
-
-**When to prioritize**: User's request relates to the currently focused file, asks questions about the code, or needs context about the current working file.
-
-#### Open Editors
-
-{{openEditors}}
-
-**How to use it**: As a guidance on what files might be relevant for the current user's request.
-
-#### Context Files
-
-{{contextFiles}}
-
-**When to prioritize**: User explicitly references attached files or when additional files are needed to understand the full scope of the request.
+- **Current Selection**: prioritize when the user asks about specific code segments, wants to refactor selected code, or requests explanations of selected text.
+- **Active Editor**: prioritize when the request relates to the currently focused file, asks questions about the code, or needs context about the current working file.
+- **Open Editors**: a guidance on what files might be relevant for the current user's request.
+- **Context Files**: prioritize when the user explicitly references attached files or when additional files are needed to understand the full scope of the request.
 
 ### Context Utilization Guidelines
 
@@ -137,6 +117,40 @@ Use the collective context to understand the user's current workspace state and 
 - Leverage open editors to suggest related modifications across the workspace
 `
 };
+
+/**
+ * Volatile IDE state, resolved per request and prepended to the user prompt (not the system prompt) so that the
+ * cached Claude Code system prompt and the resumed session prefix stay stable across turns. State only: the guidance
+ * on how to use it lives in the stable {@link systemPromptAppendixTemplate}.
+ */
+export const ideContextTemplate: BasePromptFragment = {
+    id: 'claude-code-ide-context',
+    template: `<ide-context>
+The following IDE state is current as of this message.
+
+#### Current Selection
+
+\`\`\`
+{{selectedText}}
+\`\`\`
+
+#### Active Editor
+
+{{activeEditor}}
+
+#### Open Editors
+
+{{openEditors}}
+
+#### Context Files
+
+{{contextFiles}}
+</ide-context>`
+};
+
+/** The volatile IDE state resolved into {@link ideContextTemplate}. */
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+export type IdeContextArgs = { contextFiles: string; activeEditor: string; openEditors: string };
 
 export const CLAUDE_CHAT_AGENT_ID = 'ClaudeCode';
 
@@ -163,7 +177,10 @@ export class ClaudeCodeChatAgent implements ChatAgent {
     ];
 
     variables = [];
-    prompts = [{ id: systemPromptAppendixTemplate.id, defaultVariant: systemPromptAppendixTemplate }];
+    prompts = [
+        { id: systemPromptAppendixTemplate.id, defaultVariant: systemPromptAppendixTemplate },
+        { id: ideContextTemplate.id, defaultVariant: ideContextTemplate }
+    ];
     languageModelRequirements = [];
     agentSpecificVariables = [
         {
@@ -226,13 +243,11 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         }
 
         try {
-            const systemPromptAppendix = await this.createSystemPromptAppendix(request);
+            const ideContextArgs = this.collectIdeContextArgs(request);
+            const systemPromptAppendix = await this.createSystemPromptAppendix(request, ideContextArgs);
+            const ideContext = await this.createIdeContext(request, ideContextArgs);
             const claudeSessionId = this.getPreviousClaudeSessionId(request);
-            const agentAddress = `${PromptText.AGENT_CHAR}${CLAUDE_CHAT_AGENT_ID}`;
-            let prompt = request.request.text.trim();
-            if (prompt.startsWith(agentAddress)) {
-                prompt = prompt.replace(agentAddress, '').trim();
-            }
+            const prompt = this.buildPrompt(request, ideContext);
 
             const shouldFork = claudeSessionId !== undefined && this.isEditRequest(request);
 
@@ -291,21 +306,40 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         }
     }
 
-    protected async createSystemPromptAppendix(request: MutableChatRequestModel): Promise<ResolvedPromptFragment | undefined> {
-        const contextVariables = request.context.variables.map(AIVariableResolutionRequest.fromResolved) ?? request.session.context.getVariables();
+    /**
+     * Collects the volatile IDE state once per request. Both fragments receive it, so a customized appendix that
+     * still uses a placeholder like `{{activeEditor}}` keeps resolving.
+     */
+    protected collectIdeContextArgs(request: MutableChatRequestModel): IdeContextArgs {
+        const contextVariables = request.context.variables.map(AIVariableResolutionRequest.fromResolved);
         const contextFiles = contextVariables
             .filter(variable => variable.variable.name === 'file' && !!variable.arg)
             .map(variable => `- ${variable.arg}`)
             .join('\n');
-
         const activeEditor = this.editorManager.currentEditor?.editor.document.uri ?? 'None';
         const openEditors = this.editorManager.all.map(editor => `- ${editor.editor.document.uri}`).join('\n');
+        return { contextFiles, activeEditor, openEditors };
+    }
 
-        return this.promptService.getResolvedPromptFragment(
-            systemPromptAppendixTemplate.id,
-            { contextFiles, activeEditor, openEditors },
-            { model: request.session, request }
-        );
+    /** The stable appendix to Claude Code's system prompt. Must not contain per-request state (see {@link createIdeContext}). */
+    protected async createSystemPromptAppendix(request: MutableChatRequestModel, ideContextArgs: IdeContextArgs): Promise<ResolvedPromptFragment | undefined> {
+        return this.promptService.getResolvedPromptFragment(systemPromptAppendixTemplate.id, ideContextArgs, { model: request.session, request });
+    }
+
+    /** The volatile IDE state for this request, sent inside the user turn. */
+    protected async createIdeContext(request: MutableChatRequestModel, ideContextArgs: IdeContextArgs): Promise<ResolvedPromptFragment | undefined> {
+        return this.promptService.getResolvedPromptFragment(ideContextTemplate.id, ideContextArgs, { model: request.session, request });
+    }
+
+    /** The user's text with the agent mention stripped, preceded by the IDE context block when there is one. */
+    protected buildPrompt(request: MutableChatRequestModel, ideContext: ResolvedPromptFragment | undefined): string {
+        const agentAddress = `${PromptText.AGENT_CHAR}${CLAUDE_CHAT_AGENT_ID}`;
+        let prompt = request.request.text.trim();
+        if (prompt.startsWith(agentAddress)) {
+            prompt = prompt.replace(agentAddress, '').trim();
+        }
+        const block = ideContext?.text.trim();
+        return block ? `${block}\n\n${prompt}` : prompt;
     }
 
     protected initializesEditToolUses(request: MutableChatRequestModel): void {

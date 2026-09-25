@@ -317,3 +317,30 @@ describe('DefaultAIVariableService', () => {
         });
     });
 });
+
+describe('ResolvedAIVariable.findVolatile', () => {
+    const stable: AIVariable = { id: 'p.stable', name: 'stable', description: 'stable' };
+    const editors: AIVariable = { id: 'openEditors', name: 'openEditors', description: 'open editors', isVolatile: true };
+    const selection: AIVariable = { id: 'theia-selectedText', name: 'selectedText', description: 'selection', isVolatile: true };
+
+    it('returns nothing for undefined or non-volatile variables', () => {
+        expect(ResolvedAIVariable.findVolatile(undefined)).to.deep.equal([]);
+        expect(ResolvedAIVariable.findVolatile([{ variable: stable, value: 'x' }])).to.deep.equal([]);
+    });
+
+    it('returns each volatile variable once, including nested dependencies', () => {
+        const nested: ResolvedAIVariable = {
+            variable: { id: 'prompt', name: 'prompt', description: 'nested fragment' },
+            arg: 'open-editors-hint',
+            value: '...',
+            allResolvedDependencies: [{ variable: editors, value: '"a.ts"' }]
+        };
+        const result = ResolvedAIVariable.findVolatile([
+            { variable: stable, value: 'x' },
+            nested,
+            { variable: editors, value: '"a.ts"' },
+            { variable: selection, value: 'foo' }
+        ]);
+        expect(result.map(v => v.name)).to.deep.equal(['openEditors', 'selectedText']);
+    });
+});

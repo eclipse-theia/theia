@@ -19,6 +19,7 @@ import { LanguageModelRequirement } from '@theia/ai-core/lib/common';
 import { ILogger, nls } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { exploreSystemPrompt, EXPLORE_SYSTEM_PROMPT_ID } from './explore-prompt-template';
+import { CONTEXT_FILES_HINT_FRAGMENT_ID } from '../common/turn-prompt-fragment-ids';
 import { ExploreAgentId } from '../common/agent-ids';
 
 export { ExploreAgentId };
@@ -41,5 +42,6 @@ export class ExploreAgent extends AbstractStreamParsingChatAgent {
 
     override prompts = [{ id: EXPLORE_SYSTEM_PROMPT_ID, defaultVariant: exploreSystemPrompt, variants: [] }];
     protected override systemPromptId: string = EXPLORE_SYSTEM_PROMPT_ID;
+    protected override turnPromptId: string | undefined = CONTEXT_FILES_HINT_FRAGMENT_ID;
     override iconClass: string = 'codicon codicon-compass';
 }

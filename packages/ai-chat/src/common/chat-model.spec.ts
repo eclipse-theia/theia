@@ -15,7 +15,9 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { CompactionChatResponseContentImpl, CompactionChatResponseContent } from './chat-model';
+import { CompactionChatResponseContentImpl, CompactionChatResponseContent, MutableChatModel, MutableChatRequestModel } from './chat-model';
+import { ChatAgentLocation } from './chat-agents';
+import { ParsedChatRequestTextPart } from './parsed-chat-request';
 
 describe('CompactionChatResponseContent', () => {
     it('round-trips through serialization', () => {
@@ -38,5 +40,33 @@ describe('CompactionChatResponseContent', () => {
         expect(content.asString()).to.equal(undefined);
         expect(content.asDisplayString()).to.equal('sum');
         expect(CompactionChatResponseContent.is(content)).to.equal(true);
+    });
+});
+
+describe('MutableChatRequestModel.turnPrompt', () => {
+    function addRequest(model: MutableChatModel, text: string): MutableChatRequestModel {
+        return model.addRequest({
+            request: { text },
+            parts: [new ParsedChatRequestTextPart({ start: 0, endExclusive: text.length }, text)],
+            toolRequests: new Map(),
+            variables: []
+        });
+    }
+
+    it('is undefined until set', () => {
+        const request = addRequest(new MutableChatModel(ChatAgentLocation.Panel), 'Hello');
+        expect(request.turnPrompt).to.equal(undefined);
+        request.setTurnPrompt('## Open Editors\n"a.ts"');
+        expect(request.turnPrompt).to.equal('## Open Editors\n"a.ts"');
+        request.setTurnPrompt(undefined);
+        expect(request.turnPrompt).to.equal(undefined);
+    });
+
+    it('round-trips through session serialization', () => {
+        const model = new MutableChatModel(ChatAgentLocation.Panel);
+        addRequest(model, 'First').setTurnPrompt('state 1');
+        addRequest(model, 'Second');
+        const restored = new MutableChatModel(model.toSerializable());
+        expect(restored.getRequests().map(r => r.turnPrompt)).to.deep.equal(['state 1', undefined]);
     });
 });

@@ -16,7 +16,7 @@
 // *****************************************************************************
 
 import { BasePromptFragment } from '@theia/ai-core/lib/common';
-import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from '../../common/context-variables';
+import { TASK_CONTEXT_SUMMARY_VARIABLE_ID } from '../../common/context-variables';
 import {
     FILE_CONTENT_FUNCTION_ID,
     GET_FILE_DIAGNOSTICS_ID,
@@ -490,8 +490,6 @@ When encountering failures, handle them gracefully instead of stopping:
 Where a Mermaid diagram is genuinely useful, use one, for example to explain architecture considerations or a new flow. Include it as a fenced \`mermaid\` code block in the user-facing walkthrough messages, such as the Overview step. It renders directly in the chat, so keep it small and focused. The walkthrough stays terse and chat space is limited.
 
 # Context
-
-{{${CONTEXT_FILES_VARIABLE_ID}}}
 
 {{prompt:project-info}}
 
