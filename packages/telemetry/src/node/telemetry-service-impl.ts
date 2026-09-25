@@ -22,9 +22,9 @@ import { TELEMETRY_FILTERS, TelemetryPreferences } from '../common/telemetry-pre
 import {
     TelemetryEvent, TelemetryRpc, createTelemetryEvent, describeTelemetryEventTopic, isValidTelemetryEvent, snapshotTelemetryEvent
 } from '../common/telemetry-protocol';
-import { TelemetryData, TelemetryReportOptions, TelemetryService } from '../common/telemetry-service';
+import { TelemetryService } from '../common/telemetry-service';
 import { isValidTelemetrySinkId, isValidTelemetryTopicPattern, matchesTelemetryTopic } from '../common/telemetry-topic';
-import { BACKEND_TELEMETRY_SESSION, isKindAllowedByLevel } from '../common/telemetry-types';
+import { BACKEND_TELEMETRY_SESSION, TelemetryData, TelemetryReportOptions, isKindAllowedByLevel } from '../common/telemetry-types';
 import { TelemetrySink } from './telemetry-sink';
 
 const MAX_PENDING_EVENTS = 1_000;
