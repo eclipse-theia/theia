@@ -15,13 +15,14 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
+import { VariableResolveOptions, VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { TaskResolver } from '../task-contribution';
 import { TaskConfiguration } from '../../common/task-protocol';
-import { ProcessTaskConfiguration } from '../../common/process/task-protocol';
+import { CommandProperties, ProcessTaskConfiguration } from '../../common/process/task-protocol';
 import { TaskDefinitionRegistry } from '../task-definition-registry';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { cancelled } from '@theia/core/lib/common/cancellation';
 
 @injectable()
 export class ProcessTaskResolver implements TaskResolver {
@@ -59,31 +60,46 @@ export class ProcessTaskResolver implements TaskResolver {
             }
         }
 
+        const commandProperties = await this.resolveCommandProperties({
+            ...processTaskConfig,
+            options: { ...processTaskConfig.options, cwd }
+        }, variableResolverOptions);
         const result: ProcessTaskConfiguration = {
             ...processTaskConfig,
-            command: await this.variableResolverService.resolve(processTaskConfig.command, variableResolverOptions),
-            args: processTaskConfig.args ? await this.variableResolverService.resolve(processTaskConfig.args, variableResolverOptions) : undefined,
-            windows: processTaskConfig.windows ? {
-                command: await this.variableResolverService.resolve(processTaskConfig.windows.command, variableResolverOptions),
-                args: processTaskConfig.windows.args ? await this.variableResolverService.resolve(processTaskConfig.windows.args, variableResolverOptions) : undefined,
-                options: processTaskConfig.windows.options
-            } : undefined,
-            osx: processTaskConfig.osx ? {
-                command: await this.variableResolverService.resolve(processTaskConfig.osx.command, variableResolverOptions),
-                args: processTaskConfig.osx.args ? await this.variableResolverService.resolve(processTaskConfig.osx.args, variableResolverOptions) : undefined,
-                options: processTaskConfig.osx.options
-            } : undefined,
-            linux: processTaskConfig.linux ? {
-                command: await this.variableResolverService.resolve(processTaskConfig.linux.command, variableResolverOptions),
-                args: processTaskConfig.linux.args ? await this.variableResolverService.resolve(processTaskConfig.linux.args, variableResolverOptions) : undefined,
-                options: processTaskConfig.linux.options
-            } : undefined,
-            options: {
-                cwd: await this.variableResolverService.resolve(cwd, variableResolverOptions),
-                env: processTaskConfig.options?.env && await this.variableResolverService.resolve(processTaskConfig.options.env, variableResolverOptions),
-                shell: processTaskConfig.options && processTaskConfig.options.shell
-            }
+            ...commandProperties,
+            windows: await this.resolveCommandProperties(processTaskConfig.windows, variableResolverOptions),
+            osx: await this.resolveCommandProperties(processTaskConfig.osx, variableResolverOptions),
+            linux: await this.resolveCommandProperties(processTaskConfig.linux, variableResolverOptions)
         };
         return result;
+    }
+
+    protected async resolveCommandProperties(
+        properties: CommandProperties | undefined,
+        variableResolverOptions: VariableResolveOptions
+    ): Promise<CommandProperties | undefined> {
+        if (!properties) {
+            return undefined;
+        }
+        return {
+            command: await this.resolveVariable(properties.command, variableResolverOptions),
+            args: await this.resolveVariable(properties.args, variableResolverOptions),
+            options: properties.options && {
+                ...properties.options,
+                cwd: await this.resolveVariable(properties.options.cwd, variableResolverOptions),
+                env: await this.resolveVariable(properties.options.env, variableResolverOptions)
+            }
+        };
+    }
+
+    protected async resolveVariable<T>(value: T, options: VariableResolveOptions): Promise<T | undefined> {
+        if (value === undefined) {
+            return undefined;
+        }
+        const resolved = await this.variableResolverService.resolve(value, options);
+        if (resolved === undefined) {
+            throw cancelled();
+        }
+        return resolved;
     }
 }
