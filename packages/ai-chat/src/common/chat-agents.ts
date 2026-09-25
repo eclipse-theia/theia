@@ -83,6 +83,7 @@ import {
 } from './chat-model';
 import { ChatToolRequestService } from './chat-tool-request-service';
 import { parseContents } from './parse-contents';
+import { extractErrorMessageWithCause } from './provider-error-formatter';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
 import { ImageContextVariable, ResolvedImageContextVariable } from './image-context-variable';
 
@@ -334,8 +335,15 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
     protected handleError(request: MutableChatRequestModel, error: Error): void {
         this.logger.error('Error handling chat interaction:', error);
-        request.response.response.addContent(new ErrorChatResponseContentImpl(error));
-        request.response.error(error);
+        // Node's fetch reports network failures as an opaque "fetch failed" while the actionable
+        // reason (ECONNREFUSED, ENOTFOUND, TLS errors, ...) lives on error.cause. Flatten the cause
+        // chain into the message so the UI can explain the failure instead of only showing "fetch failed".
+        const enrichedMessage = extractErrorMessageWithCause(error);
+        const displayError = enrichedMessage && enrichedMessage !== error.message
+            ? Object.assign(new Error(enrichedMessage), { stack: error.stack, cause: error })
+            : error;
+        request.response.response.addContent(new ErrorChatResponseContentImpl(displayError));
+        request.response.error(displayError);
     }
 
     protected getLanguageModelSelector(languageModelPurpose: string): LanguageModelRequirement {
