@@ -23,6 +23,7 @@ import { USLayoutResolvedKeybinding } from '@theia/monaco-editor-core/esm/vs/pla
 import * as MonacoPlatform from '@theia/monaco-editor-core/esm/vs/base/common/platform';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { KeyCode, KeySequence, Keystroke, Key, KeyModifier } from '@theia/core/lib/browser/keys';
+import { layoutModifiersIncludeShift } from '@theia/core/lib/common/keys';
 import { isOSX } from '@theia/core/lib/common/os';
 import { KEY_CODE_MAP } from './monaco-keycode-map';
 
@@ -33,9 +34,11 @@ export class MonacoResolvedKeybinding extends ResolvedKeybinding {
     constructor(protected readonly keySequence: KeySequence, keybindingService: KeybindingRegistry) {
         super();
         this.chords = keySequence.map(keyCode => {
+            const components = keybindingService.componentsForKeyCode(keyCode);
             // eslint-disable-next-line no-null/no-null
-            const keyLabel = keyCode.key ? keybindingService.acceleratorForKey(keyCode.key) : null;
+            const keyLabel = keyCode.key ? components[components.length - 1] : null;
             const keyAriaLabel = keyLabel;
+            // The label uses the logical character, so layout Shift must not appear as a command modifier.
             return new ResolvedChord(
                 keyCode.ctrl,
                 keyCode.shift,
@@ -106,7 +109,7 @@ export class MonacoResolvedKeybinding extends ResolvedKeybinding {
     private toKeybinding(keyCode: KeyCode): KeyCodeChord {
         return new KeyCodeChord(
             keyCode.ctrl,
-            keyCode.shift,
+            keyCode.shift || layoutModifiersIncludeShift(keyCode.layoutModifiers),
             keyCode.alt,
             keyCode.meta,
             KEY_CODE_MAP[keyCode.key!.keyCode]

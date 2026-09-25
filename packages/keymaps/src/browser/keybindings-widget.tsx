@@ -25,12 +25,13 @@ import { findSubstringIndex, matchRank } from '@theia/core/lib/common/fuzzy-matc
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import {
     KeybindingRegistry, SingleTextInputDialog, KeySequence, ConfirmDialog, Message, KeybindingScope,
-    SingleTextInputDialogProps, Key, ScopedKeybinding, codicon, StatefulWidget, Widget, ContextMenuRenderer, SELECTED_CLASS, KeyCode
+    SingleTextInputDialogProps, Key, ScopedKeybinding, codicon, StatefulWidget, Widget, ContextMenuRenderer, SELECTED_CLASS
 } from '@theia/core/lib/browser';
 import { KeymapsService } from './keymaps-service';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
-import { DisposableCollection, Disposable, isOSX, isObject, ILogger } from '@theia/core';
+import { DisposableCollection, Disposable, isOSX, isWindows, isObject, ILogger } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
+import { keybindingTooltip } from './keybinding-tooltip';
 
 /**
  * Representation of a keybinding item for the view.
@@ -47,6 +48,10 @@ export interface KeybindingItem {
         source: RenderableLabel;
     }
     visible?: boolean;
+    /** Lazily computed tooltip; reset whenever items are rebuilt. */
+    tooltip?: string;
+    /** Lazily computed; reset whenever items are rebuilt. */
+    inactive?: boolean;
 }
 
 export namespace KeybindingItem {
@@ -71,6 +76,12 @@ export interface RenderableStringSegment {
     value: string;
     match: boolean;
     key?: boolean;
+}
+
+/** Return the authored keybinding stroke that should be persisted for a recorded keyboard event. */
+export function recordedKeybindingStroke(keybindingRegistry: KeybindingRegistry, event: KeyboardEvent): string | undefined {
+    const keyCode = keybindingRegistry.authoredKeyCodeForKeyboardInput(event);
+    return keyCode && !keyCode.isModifierOnly() ? keyCode.toAuthoredKeybindingString() : undefined;
 }
 
 /**
@@ -453,6 +464,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
 
     protected renderRow(item: KeybindingItem, index: number): React.ReactNode {
         const { command, keybinding } = item;
+        const inactive = this.isKeybindingInactive(item);
         // TODO get rid of array functions in event handlers
         return <tr className='kb-item-row' key={index} onDoubleClick={event => this.handleItemDoubleClick(item, index, event)}
             onClick={event => this.handleItemClick(item, index, event)}
@@ -463,8 +475,9 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
             <td className='kb-label' title={this.getCommandLabel(command)}>
                 {this.renderMatchedData(item.labels.command)}
             </td>
-            <td title={this.getKeybindingLabel(keybinding)} className='kb-keybinding monaco-keybinding'>
+            <td title={this.getKeybindingTooltip(item)} className={`kb-keybinding monaco-keybinding${inactive ? ' kb-keybinding-inactive' : ''}`}>
                 {this.renderKeybinding(item)}
+                {inactive && this.renderInactiveIndicator(item)}
             </td>
             <td className='kb-context' title={this.getContextLabel(keybinding)}>
                 <code>{this.renderMatchedData(item.labels.context)}</code>
@@ -650,6 +663,24 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
         return keybinding && keybinding.keybinding;
     }
 
+    protected getKeybindingTooltip(item: KeybindingItem): string | undefined {
+        if (!item.keybinding) {
+            return undefined;
+        }
+        return item.tooltip ??= keybindingTooltip(this.keybindingRegistry, item.keybinding);
+    }
+
+    protected isKeybindingInactive(item: KeybindingItem): boolean {
+        return !!item.keybinding && (item.inactive ??= this.keybindingRegistry.isKeybindingInactive(item.keybinding));
+    }
+
+    protected renderInactiveIndicator(item: KeybindingItem): React.ReactNode {
+        return <i className={`${codicon('warning')} kb-keybinding-inactive-icon`}
+            title={this.getKeybindingTooltip(item)}
+            aria-label={nls.localize('theia/keymaps/inactiveKeybinding', 'Inactive on the current keyboard layout')}
+            role='img' />;
+    }
+
     protected getContextLabel(keybinding: ScopedKeybinding | undefined): string | undefined {
         return keybinding ? keybinding.context || keybinding.when : undefined;
     }
@@ -704,7 +735,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
             maxWidth: 400,
             initialValue: oldKeybinding?.keybinding,
             validate: (newKeybinding, mode) => mode === 'preview' && !newKeybinding ? '' : this.validateKeybinding(command, oldKeybinding?.keybinding, newKeybinding),
-        }, this.keymapsService, item, this.canResetKeybinding(item));
+        }, this.keymapsService, this.keybindingRegistry, item, this.canResetKeybinding(item));
         dialog.open().then(async keybinding => {
             if (keybinding && keybinding !== oldKeybinding?.keybinding) {
                 await this.keymapsService.setKeybinding({
@@ -756,7 +787,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
             title: nls.localize('theia/keymaps/addKeybindingTitle', 'Add Keybinding for {0}', item.labels.command.value),
             maxWidth: 400,
             validate: (newKeybinding, mode) => mode === 'preview' && !newKeybinding ? '' : this.validateKeybinding(command, undefined, newKeybinding),
-        }, this.keymapsService, item, false);
+        }, this.keymapsService, this.keybindingRegistry, item, false);
         dialog.open().then(async keybinding => {
             if (keybinding) {
                 await this.keymapsService.setKeybinding({
@@ -935,6 +966,7 @@ class EditKeybindingDialog extends SingleTextInputDialog {
     constructor(
         @inject(SingleTextInputDialogProps) props: SingleTextInputDialogProps,
         @inject(KeymapsService) protected readonly keymapsService: KeymapsService,
+        @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry,
         item: KeybindingItem,
         canReset: boolean
     ) {
@@ -958,7 +990,10 @@ class EditKeybindingDialog extends SingleTextInputDialog {
         setTimeout(() => {
             const inputField = this.node.querySelector('input');
             if (inputField) {
-                inputField.placeholder = nls.localizeByDefault('Press desired key combination and then press ENTER.');
+                inputField.placeholder = isWindows
+                    ? nls.localize('theia/keymaps/windowsRecorderGuidance',
+                        'Press the desired key combination, then press ENTER. AltGr combinations are saved as their logical character.')
+                    : nls.localizeByDefault('Press desired key combination and then press ENTER.');
             }
         }, 100);
     }
@@ -990,14 +1025,13 @@ class EditKeybindingDialog extends SingleTextInputDialog {
         event.preventDefault();
         event.stopPropagation();
 
-        const keyCode = KeyCode.createKeyCode(event);
+        const keyString = recordedKeybindingStroke(this.keybindingRegistry, event);
 
-        if (keyCode.isModifierOnly()) {
+        if (!keyString) {
             return;
         }
 
         const inputField = target as HTMLInputElement;
-        const keyString = keyCode.toString();
 
         // Clear any existing timeout since a new key was pressed
         if (this.chordTimeout !== undefined) {
