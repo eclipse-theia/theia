@@ -128,6 +128,11 @@ export const codeToTheiaMappings = new Map<string, MenuPath[]>([
 
 type CodeEditorWidget = EditorWidget | WebviewWidget;
 export namespace CodeEditorWidgetUtil {
+    /**
+     * The widgets `editor/title` contributions apply to. `WebviewContextKeys.getContextKeyValues` describes
+     * exactly this set; a widget admitted to the menu delegate without also being described there reads a
+     * stale `activeCustomEditorId` from the focused editor.
+     */
     export function is(arg: unknown): arg is CodeEditorWidget {
         return arg instanceof EditorWidget || arg instanceof WebviewWidget;
     }

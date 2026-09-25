@@ -22,6 +22,16 @@ describe('getOpenAiModelDefaults', () => {
         expect(getOpenAiModelDefaults('totally-made-up-model')).to.deep.equal({});
     });
 
+    describe('GPT-6 Astra', () => {
+        it('matches gpt-6-astra at 1,050,000 with reasoning that drops `minimal`', () => {
+            const d = getOpenAiModelDefaults('gpt-6-astra');
+            expect(d.contextWindow).to.equal(1_050_000);
+            expect(d.reasoningSupport?.supportedLevels).to.not.include('minimal');
+            expect(d.reasoningSupport?.supportedLevels).to.include('high');
+            expect(d.reasoningSupport?.defaultLevel).to.equal('auto');
+        });
+    });
+
     describe('GPT-5.6', () => {
         it('matches the sol, terra, and luna tiers at 1,050,000 with GPT-5 reasoning', () => {
             for (const id of ['gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna']) {

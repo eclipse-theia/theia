@@ -373,7 +373,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         }
         this.rows = new Map(rowsToUpdate);
         this.update();
-        this.scheduleUpdateScrollToRow();
+        if (this.scrollToRowPending) {
+            this.scheduleUpdateScrollToRow();
+        }
     }
 
     protected getDepthForNode(node: TreeNode, depths: Map<CompositeTreeNode | undefined, number>): number {
@@ -395,11 +397,24 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      */
     protected scrollToRow: number | undefined;
     /**
-     * Update the `scrollToRow`.
-     * @param updateOptions the tree widget force update options.
+     * Identifies the latest scroll request, so that the view scrolls to `scrollToRow` once per request
+     * rather than on every render.
+     */
+    protected scrollToRowRequestId = 0;
+    /**
+     * `true` while the latest scroll request has no target row yet, for example when a reveal selects a node
+     * whose parent is still collapsed. The request is served on the first rows update that contains the target.
+     */
+    protected scrollToRowPending = false;
+    /**
+     * Update the `scrollToRow` and request the view to scroll to it.
      */
     protected updateScrollToRow(): void {
         this.scrollToRow = this.getScrollToRow();
+        this.scrollToRowPending = this.scrollToRow === undefined;
+        if (!this.scrollToRowPending) {
+            this.scrollToRowRequestId++;
+        }
         this.update();
     }
 
@@ -510,8 +525,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return this.model.root;
     }
 
-    protected ScrollingRowRenderer: React.FC<{ rows: TreeWidget.NodeRow[] }> = ({ rows }) => {
-        useEffect(() => this.scrollToSelected());
+    protected ScrollingRowRenderer: React.FC<{ rows: TreeWidget.NodeRow[], scrollToRowRequestId?: number }> = ({ rows, scrollToRowRequestId }) => {
+        useEffect(() => this.scrollToSelected(), [scrollToRowRequestId]);
         return <>{rows.map(row => <div key={row.index}>{this.renderNodeRow(row)}</div>)}</>;
     };
 
@@ -524,7 +539,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (model.root) {
             const rows = Array.from(this.rows.values());
             if (this.props.virtualized === false) {
-                return <this.ScrollingRowRenderer rows={rows} />;
+                return <this.ScrollingRowRenderer rows={rows} scrollToRowRequestId={this.scrollToRowRequestId} />;
             }
             return <TreeWidget.View
                 ref={view => { this.view = (view || undefined); }}
@@ -533,6 +548,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 rows={rows}
                 renderNodeRow={this.renderNodeRow}
                 scrollToRow={this.scrollToRow}
+                scrollToRowRequestId={this.scrollToRowRequestId}
                 onAtBottomStateChangeEmitter={this.onAtBottomStateChangeEmitter}
                 {...this.props.viewProps}
             />;
@@ -1600,6 +1616,10 @@ export namespace TreeWidget {
          */
         scrollToRow?: number
         /**
+         * Changes with every scroll request, so that the view scrolls to `scrollToRow` again even if the row did not change.
+         */
+        scrollToRowRequestId?: number
+        /**
          * The list of node rows.
          */
         rows: NodeRow[]
@@ -1614,6 +1634,13 @@ export namespace TreeWidget {
     }
     export class View extends React.Component<ViewProps> {
         list: VirtuosoHandle | undefined;
+
+        /**
+         * Only stores the handle. A new callback on every render would make React detach and re-attach the ref on every commit.
+         */
+        protected readonly setList = (list: VirtuosoHandle | null): void => {
+            this.list = list || undefined;
+        };
 
         /**
          * Ensure the selected row is scrolled into view when virtualization finishes updating.
@@ -1633,18 +1660,15 @@ export namespace TreeWidget {
         }
 
         override componentDidUpdate(prevProps: ViewProps): void {
-            if (this.props.scrollToRow !== prevProps.scrollToRow) {
+            if (this.props.scrollToRow !== prevProps.scrollToRow || this.props.scrollToRowRequestId !== prevProps.scrollToRowRequestId) {
                 this.scrollIntoViewIfNeeded();
             }
         }
 
         override render(): React.ReactNode {
-            const { rows, width, height, scrollToRow, renderNodeRow, onAtBottomStateChangeEmitter, ...other } = this.props;
+            const { rows, width, height, scrollToRow, scrollToRowRequestId, renderNodeRow, onAtBottomStateChangeEmitter, ...other } = this.props;
             return <Virtuoso
-                ref={(list: VirtuosoHandle | null) => {
-                    this.list = (list || undefined);
-                    this.scrollIntoViewIfNeeded();
-                }}
+                ref={this.setList}
                 atBottomStateChange={(atBottom: boolean) => {
                     onAtBottomStateChangeEmitter?.fire(atBottom);
                 }}

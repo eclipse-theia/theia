@@ -72,6 +72,9 @@
         "title": "代理设置"
       },
       "anthropic": {
+        "allowEnvApiKey": {
+          "description": "允许 Theia 使用环境中找到的 Anthropic API 密钥(`ANTHROPIC_API_KEY`)。在使用该密钥之前,系统会要求您确认一次;若要撤销同意,请将其重新设置为 `false`。"
+        },
         "apiKey": {
           "description": "请输入您官方Anthropic账户的API密钥。**请注意:**使用此设置将导致Anthropic API密钥以明文形式存储在运行Theia的机器上。请通过环境变量`ANTHROPIC_API_KEY`安全设置密钥。"
         },
@@ -91,13 +94,16 @@
           "enableStreaming": {
             "title": "指示是否使用流式API。默认值为`true`。"
           },
+          "headers": {
+            "title": "每次向端点发送请求时附带的额外 HTTP 头"
+          },
           "id": {
             "title": "用于在用户界面中标识自定义模型的唯一标识符"
           },
           "maxRetries": {
             "title": "请求失败时的最大重试次数。默认值为3。"
           },
-          "mdDescription": "集成与 Anthropic API 兼容的自定义模型。必需的属性为 `model` 和 `url`。            \n            可选地,您可以            \n            - 指定一个唯一的 `id`,用于在 UI 中识别该自定义模型。 若未指定,则 `model` 将作为 `id` 使用。            \n            - 提供 `apiKey` 以访问指定 URL 提供的 API。使用 `true` 表示使用全局 Anthropic API 密钥。            \n            - 指定 `enableStreaming: false` 以表示不使用流式传输。            \n            - 指定 `useCaching: false` 以表示不使用提示词缓存。            \n            - 指定 `maxRetries: <number>` 以表示请求失败时的最大重试次数。默认值为 3。            \n            推理能力及最大输出令牌限制由端点的 `/v1/models` 响应决定。",
+          "mdDescription": "集成与 Anthropic API 兼容的自定义模型。必需的属性为 `model` 和 `url`。            \n            可选地,您可以            \n            - 指定一个唯一的 `id` 来在 UI 中标识该自定义模型。如果未指定,则 `model` 将被用作 `id`。            \n            - 提供一个 `apiKey` 来访问指定 URL 提供的 API。使用 `true` 表示使用全局 Anthropic API 密钥。            \n            - 指定 `enableStreaming: false` 表示不使用流式传输。            \n            - 指定 `useCaching: false` 以表示不使用提示词缓存。            \n            - 指定 `maxRetries: <number>` 以指定请求失败时的最大重试次数。默认值为 3。            \n            - 指定 `headers` 以在每次向端点发送请求时附加额外的 HTTP 头,例如 API 前端网关所需的头部。            \n            推理能力及最大输出令牌限制由端点的 `/v1/models` 响应决定。",
           "modelId": {
             "title": "模型ID"
           },
@@ -111,8 +117,16 @@
         "customProvider": {
           "label": "{0} (自定义)"
         },
-        "models": {
-          "description": "官方Anthropic模型供使用"
+        "discovery": {
+          "cached": "正在显示缓存模型;上次刷新失败:{0}",
+          "consentPrompt": "在环境中发现了一个 Anthropic API 密钥(ANTHROPIC_API_KEY)。是否允许 Theia 使用该密钥来发现并调用 Anthropic 模型?",
+          "consentRequired": "在环境中发现了一个 Anthropic API 密钥。请确认其是否用于发现模型。",
+          "noKey": "尚未设置 Anthropic API 密钥。请添加密钥以发现模型。",
+          "overridden": "模型列表需手动配置。清除模型覆盖设置,以再次从提供程序中发现模型。",
+          "useEnvKey": "使用说明"
+        },
+        "modelOverrides": {
+          "description": "覆盖从 Anthropic 发现的模型。当此字段为空(默认)时,将从提供商处发现可用模型。若设置显式模型 ID,则将精确使用这些模型;此时将完全不进行模型发现。"
         }
       },
       "chat": {
@@ -306,7 +320,8 @@
           "status": {
             "canceled": "已取消",
             "generating": "生成中...",
-            "starting": "正在启动..."
+            "starting": "正在启动...",
+            "waitingForInput": "等待输入"
           }
         },
         "deleteChangeSet": "删除变更集",
@@ -320,11 +335,14 @@
         "failedToLoadChats": "加载聊天会话失败",
         "failedToRestoreSession": "无法恢复聊天会话",
         "failedToRetry": "重试失败消息",
+        "find": "在聊天中查找",
+        "findHide": "隐藏 聊天中查找",
         "focusInput": "聚焦聊天输入",
         "focusResponse": "焦点聊天响应",
         "functions": "功能",
         "functionsDescription": "{0}扩展提供的内置函数",
         "genericCapabilities": "通用功能",
+        "manageModels": "管理模型…",
         "mcpFunctionsDescription": "来自连接服务器的模型上下文协议(MCP)功能",
         "mermaid-rendering": {
           "copySource": "复制源代码",
@@ -340,7 +358,6 @@
         "modelUnavailable": "不可用",
         "noChatAgentsAvailable": "没有可用的聊天机器人。",
         "noMatchingCapabilities": "无匹配功能",
-        "openDiff": "打开差异",
         "openImage": "打开图像",
         "openOriginalFile": "打开原始文件",
         "performThisTask": "执行此任务。",
@@ -476,7 +493,6 @@
         "findMatchingFiles": "在当前目录中查找匹配通配符模式 \"{0}\" 的文件",
         "findMatchingFilesWithPath": "在{1}目录下查找匹配通配符模式\"{0}\"的文件。",
         "finding": "查找",
-        "from": "源自",
         "globPattern": "全局模式",
         "grepOptions": {
           "caseInsensitive": "不区分大小写",
@@ -533,7 +549,6 @@
         "startingLine": "起始行",
         "timeout": "超时",
         "timeoutInMs": "超时:{0}毫秒",
-        "to": "To",
         "todoList": "Todo List",
         "todoPriority": {
           "high": "高",
@@ -646,23 +661,32 @@
           "signIn": "登录 GitHub Copilot",
           "signOut": "退出 GitHub Copilot"
         },
+        "discovery": {
+          "disabled": "GitHub Copilot 提供程序已禁用。请启用它以发现模型。",
+          "overridden": "模型列表需手动配置。清除模型覆盖设置,即可重新从 GitHub Copilot 发现模型。",
+          "signedOut": "尚未登录 GitHub Copilot。请登录以探索其提供的模型。"
+        },
         "enabled": {
-          "mdDescription": "启用 GitHub Copilot 提供程序。启用后,状态栏中将显示一个条目用于身份验证,并从您的 Copilot 订阅中检索可用模型。"
+          "mdDescription": "启用 GitHub Copilot 提供程序。启用后,状态栏中将出现一个用于身份验证的条目,并会从您的 Copilot 订阅中发现可用的模型。\n\n请求将通过官方的 GitHub Copilot CLI 进行路由,该 CLI 作为后台进程在托管后端的机器上运行。它仅接收您的 Copilot 登录凭据,不接收其他任何信息,因此不会使用环境变量中的令牌或 GitHub CLI 的现有登录凭据。"
         },
         "enterpriseUrl": {
-          "mdDescription": "Copilot API 的 GitHub Enterprise 域名(例如 `github.mycompany.com`)。若使用 GitHub.com 则留空。"
+          "mdDescription": "用于身份验证和发送请求的 GitHub Enterprise 域名(例如,`github.mycompany.com`)。若要使用 GitHub.com,请留空。"
+        },
+        "enterpriseUrlChanged": "GitHub Copilot 的域名已更改。请重新登录以使更改生效。",
+        "executablePath": {
+          "mdDescription": "在托管后端的机器上,GitHub Copilot CLI 可执行文件的位置。若为空(默认),系统将依次在应用程序安装目录、`PATH` 环境变量路径以及全局 `npm` 目录中搜索 CLI。当 CLI 安装在其他位置时,请设置此项。\n\n该 CLI 未随应用程序一同提供,请使用 `npm install -g @github/copilot` 进行安装。"
         },
         "modelOverrides": {
           "mdDescription": "覆盖自动发现的 GitHub Copilot 模型。当为空(默认)时,系统将从您的 Copilot 订阅中发现可用模型。设置明确的模型 ID 以覆盖自动发现功能。"
         },
+        "signInAgain": "GitHub Copilot 现通过 GitHub Copilot CLI 进行登录。您的先前登录信息无法保留,现已删除,请重新登录以使用 Copilot 模型。",
         "signOut": {
           "confirmMessage": "您确定要退出 GitHub Copilot 吗?"
         },
         "statusBar": {
           "signedIn": "已使用{0}账号登录GitHub Copilot。点击退出登录。",
           "signedOut": "尚未登录 GitHub Copilot。点击登录。"
-        },
-        "tokenMigration": "您的 GitHub Copilot 会话使用了过时的身份验证方法,现已清除。请重新登录以访问所有可用模型。"
+        }
       },
       "core": {
         "agentConfiguration": {
@@ -760,11 +784,18 @@
         "discardCustomPrompt": {
           "tooltip": "丢弃自定义设置"
         },
+        "favoriteModels": {
+          "mdDescription": "AI 聊天输入的模型选择器除显示各提供商最新的模型外,还会显示其他模型,以完全限定的 ID 形式呈现(例如 `anthropic/claude-opus-5`)。此功能旨在方便用户随时使用较旧的或版本固定的模型。 在“AI 配置”视图中,于相应提供商的页面上勾选模型即可将其添加。",
+          "title": "常用模型"
+        },
         "fileVariable": {
           "description": "解析文件内容",
           "uri": {
             "description": "请求文件的统一资源标识符(URI)。"
           }
+        },
+        "hiddenModels": {
+          "mdDescription": "此处列出了AI聊天输入中的模型选择器中未显示的模型(尽管默认情况下应显示),这些模型以完全限定的ID形式呈现(例如 `google/gemini-flash-lite-latest`)。只有未被标记为“收藏”的模型会出现在此处,即提供商提供的最新模型。 在“AI 配置”视图中,取消勾选该提供商页面上的模型即可将其添加。"
         },
         "languageModelRenderer": {
           "alias": "[别名] {0}",
@@ -911,7 +942,6 @@
           "dotRelativePath": "当前打开的文件相对于工作区的路径(“currentRelativeFilePath”)的简要说明。"
         },
         "variantSet": {
-          "templateLabel": "模板",
           "unavailableVariant": "{0} (不可用)",
           "variantCount": "{0} 变体",
           "variantCountSingular": "第 1 种变体"
@@ -931,14 +961,25 @@
         }
       },
       "google": {
+        "allowEnvApiKey": {
+          "description": "允许 Theia 使用环境中找到的 Google AI(Gemini)API 密钥(`GOOGLE_API_KEY` / `GEMINI_API_KEY`)。在使用该密钥之前,系统会要求您确认一次;若要撤销授权,请将其重新设置为 `false`。"
+        },
         "apiKey": {
           "description": "请输入您官方Google AI(Gemini)账户的API密钥。**请注意:**使用此设置将导致GOOGLE AI API密钥以明文形式存储在运行Theia的机器上。请通过环境变量`GOOGLE_API_KEY`安全设置密钥。"
+        },
+        "discovery": {
+          "cached": "正在显示缓存的模型;上次刷新失败:{0}",
+          "consentPrompt": "在环境中发现了 Google AI API 密钥(GOOGLE_API_KEY / GEMINI_API_KEY)。是否允许 Theia 使用该密钥来发现并调用 Gemini 模型?",
+          "consentRequired": "在环境中发现了一个 Google AI API 密钥。请确认其用于发现模型。",
+          "noKey": "尚未设置 Google AI API 密钥。请添加密钥以发现模型。",
+          "overridden": "模型列表需手动配置。清除模型覆盖项以重新从提供程序中发现模型。",
+          "useEnvKey": "使用键"
         },
         "maxRetriesOnErrors": {
           "description": "错误发生时的最大重试次数。若小于1,则重试逻辑将被禁用"
         },
-        "models": {
-          "description": "官方Google Gemini模型供使用"
+        "modelOverrides": {
+          "description": "覆盖从 Google Gemini 发现的模型。当为空(默认)时,系统将从提供商处发现可用模型。若设置显式的模型 ID,则仅使用这些模型;此时将完全不进行模型发现。"
         },
         "retryDelayOnOtherErrors": {
           "description": "其他错误发生时重试间隔(以秒为单位)。(例如Google GenAI可能报告模型返回的JSON语法不完整或500内部服务器错误)。设置为-1将禁止此类错误的重试。否则将立即重试(若设为0),或按此延迟时间(若设为正数)延迟后重试。"
@@ -1053,6 +1094,7 @@
           "pageTypeLabel": "页面"
         },
         "allowAllMode": {
+          "hideForThisSession": "在本会话中隐藏",
           "stripTooltip": "在此会话中,AI 工具调用将无需确认即可执行。请仅在您信任的环境中启用此功能。",
           "stripTooltipFooter": "通过 --session-preference 进行设置。若不带该参数重启,将恢复已保存的设置。",
           "title": "Theia AI 全允许模式"
@@ -1111,7 +1153,6 @@
             "startNewChat": "保持聊天简短聚焦。若需新任务请[开启新对话]({0}),或[开启包含本对话摘要的新对话]({1})。"
           }
         },
-        "collapseSession": "折叠{0}",
         "commandAgent": {
           "commandCallback": {
             "confirmAction": "明白了",
@@ -1131,19 +1172,16 @@
           }
         },
         "configurationState": "配置问题",
-        "configureAgent": {
-          "header": "配置默认代理"
-        },
         "continueAnyway": "继续操作",
         "createSkillAgent": {
           "mode": {
             "edit": "默认模式"
           }
         },
+        "defaultChatAgentSet": "默认聊天机器人现为 {0}。",
         "enableAI": {
           "mdDescription": "此设置允许您访问最新的人工智能功能。            \n            需特别注意:这些功能可能持续向您授权访问的语言模型(LLMs)发起请求,由此产生的费用需密切监控。 启用此选项即表示您已知晓上述风险。            \n            **请注意！本节下方设置仅在主功能启用后生效。启用功能后,您需在下方至少配置一个LLM提供商。详情参见[文档](https://theia-ide.org/docs/user_ai/)**。"
         },
-        "expandSession": "展开{0}",
         "exploreAgent": {
           "description": "一款代码库探索助手,能够从代码库中提取并提炼信息。它会报告现有内容的相关事实,提供代码片段,并描述观察到的模式。"
         },
@@ -1201,16 +1239,36 @@
         },
         "model-selection-description": "在[AI配置视图]({0})中选择每个AI代理使用的超大规模语言模型(LLMs)。",
         "modelsConfiguration": {
+          "awaitingConsent": "等待同意",
+          "defaultModel": "该提供商最新型号之一,除非在此处被隐藏,否则AI聊天输入的模型选择器会显示该型号",
           "description": "配置语言模型提供商以及代理可用的模型。",
+          "discovery": "模型发现",
+          "fetching": "正在加载……",
+          "filterModels": "过滤模型",
+          "hideModel": "在 AI 聊天输入的模型选择器中隐藏此模型",
+          "modelNotReady": "尚未准备好",
           "modelSettings": "模型设置",
+          "noKey": "无 API 密钥",
+          "noModels": "尚未发现相关模型。",
           "noProviders": "未安装任何语言模型提供程序。",
-          "providers": "提供商"
+          "providers": "提供商",
+          "ready": "准备就绪",
+          "refresh": "刷新模型列表",
+          "refreshUnavailable": "在提供方获得凭据之前,无内容可刷新",
+          "released": "已发布 {0}",
+          "resetShown": "重置为默认设置",
+          "resetShownUnavailable": "已采用默认设置",
+          "showAllModels": "显示所有已发现的模型",
+          "showCheckedModels": "仅显示AI聊天输入中的模型选择器所显示的模型",
+          "showModel": "在 AI 聊天输入的模型选择器中显示此模型",
+          "shownExplanation": "{0} AI 聊天输入中的模型选择器中显示的 {1}",
+          "updated": "更新于 {0}"
         },
-        "moreAgentsAvailable": {
-          "header": "更多代理程序可用"
+        "noDefaultAgent": {
+          "header": "无默认代理"
         },
-        "noRecommendedAgents": "没有可用的推荐代理。",
         "openAiConfiguration": "OpenAI 配置",
+        "openGettingStartedWalkthrough": "AI 入门指南",
         "orchestrator": {
           "error": {
             "noAgents": "当前无可用聊天机器人处理请求。请检查您的配置中是否启用了相关机器人。"
@@ -1234,8 +1292,7 @@
               "name": "GH PR 信息"
             },
             "localCheckout": {
-              "description": "在本地检出拉取请求,并保护现有工作树中的更改。",
-              "name": "检出"
+              "description": "在本地检出拉取请求,并保护现有工作树中的更改。"
             },
             "localValidation": {
               "description": "为拉取请求执行本地安装、构建、代码检查、测试或类似的验证任务。",
@@ -1292,6 +1349,7 @@
           "toolConfirmation": "按工具设置的确认覆盖规则:{0}",
           "toolConfirmationGeneric": "按工具设置的确认覆盖规则"
         },
+        "setDefaultChatAgent": "设置默认聊天机器人",
         "shellExecutionCapability": {
           "description": "允许代理在主机系统上运行任意shell命令。代理可进一步委托执行非任务类脚本、查询系统信息,以及执行无专用工具支持的操作。",
           "name": "Shell 执行"
@@ -1314,9 +1372,6 @@
           },
           "slashCommandsGroupDescription": "在聊天中输入 /name 即可调用的提示片段,可供一个或多个客服使用。",
           "slashCommandsSectionHeader": "斜杠命令"
-        },
-        "toolConfirmationInfo": {
-          "header": "工具确认"
         },
         "toolConfirmationOverrides": {
           "stripTooltip": "通过命令行参数,本次会话中已自动批准一项或多项 AI 工具。",
@@ -1380,7 +1435,6 @@
           "filterPlaceholder": "按名称或描述过滤变量",
           "noMatches": "没有变量与“{0}”匹配。",
           "noVariables": "没有可用变量。",
-          "openAgent": "打开代理 {0}",
           "optional": "可选",
           "pageSubtitle": "可在提示符中使用{0}名称进行引用的值。这些值将在请求时进行解析并插入。",
           "plainGroup": "普通变量",
@@ -1388,7 +1442,40 @@
           "required": "必填",
           "usedByAgents": "供代理使用"
         },
-        "waitingForInput": "等待您的输入"
+        "waitingForInput": "等待您的输入",
+        "walkthrough": {
+          "aiSupport": {
+            "description": "\n{0}\n该软件支持 AI 功能:您可以与专业助手就您的项目进行交流,让他们修改代码并执行任务,在您输入时自动补全代码,并在终端中获取帮助。\n\n这些功能默认处于禁用状态,以便您根据自身情况自主选择是否启用。\n\n启用后,这些功能可能会持续向您授权访问的语言模型发送请求。这可能会产生费用,您需要密切关注。\n\n[阅读文档]({1}\n)。\n\n我们欢迎您的反馈、贡献和赞助！请访问 [GitHub 项目]({2}\n) 以支持持续开发。感谢您成为我们社区的一员！\n\n所有这些功能均基于 Theia AI 构建,这是一个面向 AI 驱动工具和 IDE 的框架,目前已发布稳定版本。[阅读框架文档]({3}\n)。\n",
+            "title": "{0} 中的 AI 支持"
+          },
+          "chooseAgent": {
+            "intro": "每个聊天请求都会发送给一位客服,如果您未指定具体客服,系统将随机由其中一位进行回复。\n\n**设置默认客服:**\n",
+            "outro": "您还可以在设置中[选择默认代理]({0}\n),并通过在消息开头添加 *@AgentName* 来指定其他代理接收特定消息。\n[代理]({1}\n) 页面列出了所有代理。\n",
+            "title": "选择您的默认代理"
+          },
+          "connectModel": {
+            "description": "为托管提供商添加 API 密钥:\n\n- [OpenAI]({0}\n)\n- [Anthropic]({1}\n)\n- [Google]({2}\n)\n\n更倾向于本地化使用或使用其他服务?您可以在 [模型]({3}\n) 页面中配置 Ollama、llamafile 以及任何与 OpenAI 兼容的端点。\n\n部分智能代理(例如 Claude Code)自带模型,无需通过服务提供商即可运行。\n",
+            "title": "连接语言模型"
+          },
+          "description": "设置 {0} 的 AI 功能,并了解如何使用这些功能。",
+          "enableAi": {
+            "description": "在您开启 AI 功能之前,系统不会向任何地方发送任何数据,且您可随时将其关闭。\n\n[打开 AI 配置]({0}\n) 并在其中启用这些功能。\n",
+            "title": "开启 AI 功能"
+          },
+          "firstQuestion": {
+            "description": "[打开 AI 聊天]({0}\n) 并询问有关您项目的问题。\n\n以下两点可显著提升回答质量:\n\n- *@AgentName* 用于选择此消息对应的代理,例如 *@Coder*。\n- *#* 可附加上下文,例如 *#file* 或 *#selectedText*。输入框旁边的回形针按钮也可实现相同功能。\n\n聊天功能会记住您的会话记录,因此您可以稍后继续之前的对话。\n",
+            "title": "提出您的第一个问题"
+          },
+          "goFurther": {
+            "description": "聊天功能只是开始。AI 还能在您输入时自动补全代码,并可通过 *Ctrl+I* 键在终端中提供协助。\n\n- [提示与技能]({0}\n):阅读并调整代理所遵循的操作指南。\n- [MCP 服务器]({1}\n):添加 {3}\n自带工具之外的其他工具。\n- [令牌使用情况]({2}\n):查看您的请求消耗了多少令牌。\n- [切换视图]({5}\n)(实验性功能):*AI First* 布局将聊天窗口移至主区域,资源管理器和源代码控制位于右侧。\n\n在支持的情况下,AI 历史记录视图会显示实际发送给模型的内容。\n\n更多详情请参阅 [文档]({4}\n)——我们随时欢迎您的反馈。\n",
+            "title": "深入了解"
+          },
+          "title": "开始使用 AI",
+          "toolConfirmation": {
+            "description": "代理会通过工具对您的工作区进行操作:读取文件、执行终端命令或编辑代码。\n\n每次调用工具时,系统都会先征得您的确认。在 [工具]({0}\n) 页面中,您可以更改此默认设置,或预先批准您信任的工具。\n\n当工作区未被信任时,AI 功能将完全禁用。请通过 [管理工作区信任]({1}\n) 针对每个项目进行设置。\n",
+            "title": "掌控代理程序的行为"
+          }
+        }
       },
       "llamaFile": {
         "prefs": {
@@ -1434,6 +1521,7 @@
           "label": "MCP:获取 MCP OAuth 重定向 URL"
         },
         "info": {
+          "noToolsAvailable": "没有可用工具。",
           "oauthRedirectUrl": "MCP OAuth 重定向 URL:{0}",
           "serverSignedIn": "已登录到 MCP 服务器“{0}”。",
           "serverSignedOut": "已从 MCP 服务器“{0}”注销。",
@@ -1609,6 +1697,7 @@
           "serverUrlPlaceholder": "例如:https://mcp.example.com",
           "serverUrlRequired": "远程服务器需提供服务器URL"
         },
+        "noServersConfigured": "未配置任何 MCP 服务器",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "授权服务器",
         "oauthClientId": "OAuth 客户端 ID",
@@ -1636,6 +1725,9 @@
         "typeRemoteOAuth": "远程(OAuth)"
       },
       "openai": {
+        "allowEnvApiKey": {
+          "description": "允许 Theia 使用环境中找到的 OpenAI API 密钥(`OPENAI_API_KEY`)。在使用该密钥之前,系统会要求您确认一次;若要撤销授权,请将其设置回 `false`。"
+        },
         "apiKey": {
           "mdDescription": "请输入您官方 OpenAI 账户的 API 密钥。**请注意:**使用此设置时,OpenAI API 密钥将以明文形式存储在运行 Theia 的机器上。请使用环境变量 `OPENAI_API_KEY` 安全设置密钥。"
         },
@@ -1664,10 +1756,13 @@
           "enableStreaming": {
             "title": "指示是否使用流式API。默认值为`true`。"
           },
+          "headers": {
+            "title": "每次向端点发送请求时附带的额外 HTTP 头"
+          },
           "id": {
             "title": "用于在用户界面中标识自定义模型的唯一标识符"
           },
-          "mdDescription": "集成与 OpenAI API 兼容的自定义模型,例如通过 `vllm`。必需的属性为 `model` 和 `url`。            \n            可选地,您可以            \n            - 指定一个唯一的 `id`,用于在 UI 中识别该自定义模型。 如果未提供,则 `model` 将被用作 `id`。            \n            - 提供一个 `apiKey` 以访问指定 URL 提供的 API。使用 `true` 表示使用全局 OpenAI API 密钥。            \n            - 提供一个 `apiVersion` 以访问 Azure 中指定 URL 提供的 API。 使用 `true` 表示使用全局 OpenAI API 版本。            \n            - 为您的 Azure 部署提供一个 `deployment` 名称。            \n            - 将 `developerMessageSettings` 设置为 `user`、`system`、`developer`、`mergeWithFollowingUserMessage` 或 `skip` 之一,以控制开发者消息的包含方式 (其中 `user`、`system` 和 `developer` 将作为角色使用;`mergeWithFollowingUserMessage` 会在后续用户消息前添加系统消息,或当下一条消息不是用户消息时将系统消息转换为用户消息;`skip` 则仅移除系统消息)。            默认值为 `developer`。            \n            - 指定 `supportsStructuredOutput: false` 以表明不应使用结构化输出。            \n            - 指定 `enableStreaming: false` 以表明不应使用流式处理。            \n            - 指定 `useResponseApi: true` 以使用较新的 OpenAI Response API 代替 Chat Completion API(需要兼容的端点)。            \n            - 指定 `reasoningSupport` 以启用聊天推理选择器。提供一个包含            `supportedLevels`(例如 `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`)和可选 `defaultLevel` 的对象。            \n            更多信息请参阅 [我们的文档](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)。",
+          "mdDescription": "集成与 OpenAI API 兼容的自定义模型,例如通过 `vllm` 实现。必填属性为 `model` 和 `url`。            \n            可选地,您可以            \n            - 指定一个唯一的 `id`,用于在用户界面中标识该自定义模型。 如果未提供,则 `model` 将用作 `id`。            \n            - 提供一个 `apiKey` 以访问指定 URL 提供的 API。使用 `true` 表示使用全局 OpenAI API 密钥。            \n            - 提供 `apiVersion` 以访问 Azure 中指定 URL 提供的 API。使用 `true` 表示使用全局 OpenAI API 版本。            \n            - 为您的 Azure 部署提供一个 `deployment` 名称。            \n            - 将 `developerMessageSettings` 设置为 `user`、`system`、`developer`、`mergeWithFollowingUserMessage` 或 `skip` 之一,以控制开发者消息的            包含方式 (其中 `user`、`system` 和 `developer` 将作为角色使用;`mergeWithFollowingUserMessage` 会将系统消息作为前缀附加到后续用户消息前,或当后续消息非用户消息时将系统消息转换为用户消息;`skip` 则仅移除系统消息)。            默认值为 `developer`。            \n            - 指定 `supportsStructuredOutput: false` 以指示不使用结构化输出。            \n            - 指定 `enableStreaming: false` 以指示不使用流式传输。            \n            - 指定 `useResponseApi: true` 以使用较新的 OpenAI Response API 代替 Chat Completion API(需要兼容的端点)。            \n            - 指定 `reasoningSupport` 以启用聊天推理选择器。 提供一个包含            `supportedLevels`(例如 `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`)和可选的 `defaultLevel` 的对象。            \n            - 指定 `headers` 以在向端点发送的每次请求中附加额外的 HTTP 头部,例如 API 前置网关所需的头部。            \n            更多信息请参阅 [我们的文档](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)。",
           "modelId": {
             "title": "模型ID"
           },
@@ -1687,8 +1782,16 @@
         "customProvider": {
           "label": "{0} (自定义)"
         },
-        "models": {
-          "description": "官方OpenAI模型供使用"
+        "discovery": {
+          "cached": "正在显示缓存模型;上次刷新失败:{0}",
+          "consentPrompt": "在环境中检测到一个 OpenAI API 密钥(OPENAI_API_KEY)。是否允许 Theia 使用该密钥来发现并调用 OpenAI 模型?",
+          "consentRequired": "在环境中发现了一个 OpenAI API 密钥。请确认是否将其用于查找模型。",
+          "noKey": "未设置 OpenAI API 密钥。请添加密钥以发现模型。",
+          "overridden": "模型列表需手动配置。清除模型覆盖项以重新从提供程序中发现模型。",
+          "useEnvKey": "使用键"
+        },
+        "modelOverrides": {
+          "description": "覆盖从 OpenAI 发现的模型。当为空(默认)时,系统将从提供商处发现可用模型。若设置显式模型 ID,则仅使用这些模型;此时将完全不进行模型发现。"
         },
         "useResponseApi": {
           "mdDescription": "对于官方 OpenAI 模型,请使用较新的 OpenAI Response API 代替 Chat Completion API。此设置仅适用于官方 OpenAI 模型——自定义提供商必须单独进行配置。"
@@ -1936,6 +2039,26 @@
       "codeReview": {
         "description": "每次实现后将任务委托给代码审查代理。在审查通过前阻止后续步骤。"
       },
+      "commit-message": {
+        "agent-disabled-tooltip": "“提交消息”代理已禁用。请在“AI 配置”视图中将其启用。",
+        "cancel-tooltip": "取消提交信息生成",
+        "empty": "该模型返回了一条空的提交信息。",
+        "failed": "生成提交信息失败:{0}",
+        "generate-from-staged": "根据暂存的更改生成提交信息",
+        "no-changes": "目前没有已暂存的更改可用于生成提交信息。",
+        "no-repository": "未选择任何源代码控制仓库。",
+        "replace-prompt": "提交信息字段不为空。是否要用生成的信息替换其内容?",
+        "replace-title": "替换提交信息",
+        "staged-tooltip": "根据暂存的更改生成提交信息"
+      },
+      "commitMessageAgent": {
+        "description": "根据工作区仓库中已暂存的更改生成 Git 提交信息。通过 AI 闪光按钮从 SCM 提交信息输入框中调用。",
+        "vars": {
+          "changes": {
+            "description": "用于生成提交信息的、已暂存更改的统一 Git diff。"
+          }
+        }
+      },
       "fixGhTicketCommand": {
         "argumentHint": "<工单编号>",
         "description": "分析GitHub工单并实施解决方案"
@@ -2004,6 +2127,7 @@
         "updateTooltip": "更新自 {0} 至 {1}"
       },
       "autoUpdate": {
+        "aiSettings": "AI 设置",
         "ask": "当已安装的技能、MCP 服务器或代理插件有更新可用时,发出通知。",
         "changeLater": "您稍后可在 {0} 中修改这些内容。",
         "configureDefault": "请在{0}中配置默认设置。",
@@ -2040,9 +2164,7 @@
           "oneSkipped": "跳过了组件“{0}”:{1}"
         },
         "dialog": {
-          "contains": "包含",
           "endorsedBy": "经以下机构认可",
-          "from": "来源:",
           "install": {
             "title": "安装代理插件“{0}”"
           },
@@ -2104,10 +2226,6 @@
         "serverUnknownField": "服务器配置中声明了字段“{0}”,但该字段的传输类型不被允许。",
         "serverUnknownType": "服务器配置中声明了未知传输类型“{0}”。",
         "serverUnsupportedTransport": "不支持 MCP 传输协议“{0}”。",
-        "stat": {
-          "oneServer": "1 MCP 服务器",
-          "servers": "{0} MCP 服务器"
-        },
         "uninstalled": "已卸载的代理插件“{0}”。",
         "unknownManifestField": "忽略未知“plugin.json”字段“{0}”。",
         "unlinked": "未关联的代理插件“{0}”。",
@@ -2244,7 +2362,6 @@
       "collaborate": "协作",
       "collaboration": "协作",
       "collaborationWorkspace": "协作工作区",
-      "connected": "已连接",
       "connectedSession": "已连接至协作会话",
       "copiedInvitation": "邀请代码已复制到剪贴板。",
       "copyAgain": "再次复制",
@@ -2471,6 +2588,25 @@
       "userSettingsDetail": "应用于所有工作区",
       "workspaceSettingsDetail": "仅应用于当前工作区"
     },
+    "external-api": {
+      "delivery": {
+        "description": "控制是否提供外部 HTTP API 以及提供的方式。",
+        "off": "请勿提供外部 API。",
+        "samePort": "在与后端相同的端口上提供外部 API 服务。",
+        "samePortLabel": "与后端使用相同的端口",
+        "separatePort": "通过“externalApi.port”配置,在专用端口上提供外部 API 服务。",
+        "separatePortLabel": "单独端口"
+      },
+      "hostname": {
+        "description": "外部 HTTP API 服务器绑定的主机名或 IP 地址。使用“0.0.0.0”可接受远程连接。 诸如“localhost”之类的名称会根据解析结果进行绑定,因此使用其他回环地址的客户端可能无法连接到服务器;请使用“127.0.0.1”或“::1”来固定一个地址。 仅当“externalApi.delivery”设置为“separatePort”时才使用。"
+      },
+      "port": {
+        "description": "用于提供外部 HTTP API 服务的端口。仅当“externalApi.delivery”设置为“separatePort”时使用。"
+      },
+      "token": {
+        "description": "访问受保护的外部 API 端点需要 Bearer 令牌(“Authorization: Bearer <token>”)。若为空,则外部 API 将不经验证直接提供服务。"
+      }
+    },
     "external-terminal": {
       "cwd": "为新建外部终端选择当前工作目录"
     },
@@ -2514,10 +2650,6 @@
       "uploadedOutOf": "上传地址:{0}(源地址:{1})"
     },
     "getting-started": {
-      "ai": {
-        "header": "{0} 现已支持 AI 功能！",
-        "openAIChatView": "立即打开AI聊天视图,了解如何开始！"
-      },
       "apiComparator": "{0} API兼容性",
       "markStepUndone": "标记为“未完成”",
       "newExtension": "创建新扩展",
@@ -2736,9 +2868,6 @@
       },
       "toolbar": "工具栏"
     },
-    "preview": {
-      "openByDefault": "默认情况下打开预览窗口而非编辑器。"
-    },
     "property-view": {
       "lastModified": "最后修改时间",
       "noProperties": "无可用属性。",
@@ -2749,6 +2878,16 @@
       "dev-container": {
         "attach": "连接到正在运行的容器",
         "attachError": "无法连接到容器:{0}",
+        "attachScreen": {
+          "errorHeader": "无法连接到容器",
+          "firstStartNote": "容器的首次启动可能需要一两分钟。后续启动会快得多。",
+          "locating": "正在定位容器 {0}...",
+          "preparing": "正在准备连接……",
+          "preparingWorkspace": "正在准备工作区...",
+          "starting": "正在容器内启动应用程序……",
+          "title": "连接到容器",
+          "titleNamed": "连接到 {0}"
+        },
         "attachWarning": "连接到容器将执行其中的代码。请仅连接您信任来源的容器。",
         "attachWarningTitle": "附加到容器",
         "attaching": "连接到容器",
@@ -2799,7 +2938,6 @@
       "amendHeadCommit": "HEAD 提交",
       "amendLastCommit": "修改最后一次提交",
       "changeRepository": "更改存储库...",
-      "copyCommitHash": "复制提交哈希值",
       "dirtyDiff": {
         "close": "关闭 更改 预览视图"
       },

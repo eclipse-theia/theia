@@ -24,7 +24,7 @@
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { PluginWorker } from './plugin-worker';
-import { getPluginId, DeployedPlugin, HostedPluginServer } from '../../common/plugin-protocol';
+import { getPluginId, DeployedPlugin, HostedPluginServer, PLUGIN_HOST_FRONTEND } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
 import { ExtensionKind, MAIN_RPC_CONTEXT, PluginManagerExt, UIKind } from '../../common/plugin-api-rpc';
 import { setUpPluginApi } from '../../main/browser/main-context';
@@ -73,6 +73,7 @@ import {
 } from '../common/hosted-plugin';
 import { isRemote } from '@theia/core/lib/browser/browser';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { TelemetryConsentProvider } from '@theia/telemetry/lib/common/telemetry-consent-provider';
 
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
 
@@ -183,6 +184,9 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     @inject(WorkspaceTrustService)
     protected readonly workspaceTrustService: WorkspaceTrustService;
 
+    @inject(TelemetryConsentProvider)
+    protected readonly telemetryConsentProvider: TelemetryConsentProvider;
+
     @inject(ILogger) @named('plugin-ext:HostedPluginSupport')
     protected override readonly logger: ILogger;
 
@@ -245,7 +249,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     }
 
     protected createTheiaReadyPromise(): Promise<unknown> {
-        return Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots]);
+        return Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots, this.telemetryConsentProvider.ready]);
     }
 
     protected override runOperation(operation: () => Promise<void>): Promise<void> {
@@ -364,7 +368,8 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
                 },
                 jsonValidation,
                 pluginKind: isRemote ? ExtensionKind.Workspace : ExtensionKind.UI,
-                supportedActivationEvents
+                supportedActivationEvents,
+                telemetryLevel: this.telemetryConsentProvider.level
             });
             if (toDisconnect.disposed) {
                 return undefined;
@@ -375,7 +380,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     }
 
     protected initRpc(host: PluginHost, pluginId: string): RPCProtocol {
-        const rpc = host === 'frontend' ? new PluginWorker().rpc : this.createServerRpc(host);
+        const rpc = host === PLUGIN_HOST_FRONTEND ? new PluginWorker().rpc : this.createServerRpc(host);
         setUpPluginApi(rpc, this.container);
         this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, this.container));
         return rpc;

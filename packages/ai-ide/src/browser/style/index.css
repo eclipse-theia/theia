@@ -23,6 +23,7 @@
 
 /* Import widget-specific styles */
 @import "./widgets/model-aliases-configuration.css";
+@import "./commit-message-overlay.css";
 
 /* Override preferences grid layout for AI Configuration widgets */
 .ai-configuration-widget.theia-settings-container {
@@ -2191,7 +2192,8 @@ button.agent-chip:focus-visible {
   margin: 0;
   padding: 4px 0;
   min-width: 180px;
-  max-height: 320px;
+  max-height: 200px;
+  box-sizing: border-box;
   overflow-y: auto;
 }
 

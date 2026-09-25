@@ -20,11 +20,12 @@ import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { LanguageModelRequest, LanguageModelResponse, ReasoningSupport, ToolCallExecutor, ToolCallExecutorImpl, UserRequest } from '@theia/ai-core';
 import { OpenAI } from 'openai';
-import { OpenAiModel, OpenAiModelParams } from './openai-language-model';
+import { MistralFixedOpenAI, OpenAiModel, OpenAiModelParams } from './openai-language-model';
 import { OpenAiModelUtils } from './openai-model-utils';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream';
 import { OPENAI_WEB_SEARCH } from './openai-server-tools';
+import type { FinalRequestOptions } from 'openai/internal/request-options';
 
 const GPT5_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
@@ -113,35 +114,47 @@ describe('OpenAiModel reasoning translation', () => {
         it('maps level=minimal to reasoning.effort=minimal', () => {
             const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'minimal' } }, true);
-            expect(result.reasoning).to.deep.equal({ effort: 'minimal' });
+            expect(result.reasoning).to.deep.equal({ effort: 'minimal', summary: 'auto' });
         });
         it('maps level=high to reasoning.effort=high', () => {
             const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'high' } }, true);
-            expect(result.reasoning).to.deep.equal({ effort: 'high' });
+            expect(result.reasoning).to.deep.equal({ effort: 'high', summary: 'auto' });
         });
         it('omits reasoning entirely when level=off', () => {
             const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'off' } }, true);
             expect(result.reasoning).to.equal(undefined);
         });
-        it('omits reasoning when level=auto (provider default applies)', () => {
+        it('requests reasoning summaries for level=auto without constraining effort', () => {
             const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'auto' } }, true);
-            expect(result.reasoning).to.equal(undefined);
+            expect(result.reasoning).to.deep.equal({ summary: 'auto' });
+        });
+        it('keeps user-configured reasoning fields but lets the selected level decide effort', () => {
+            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const result = model.callGetSettings({
+                messages: [], reasoning: { level: 'high' }, settings: { reasoning: { effort: 'low', summary: 'concise' } }
+            }, true);
+            expect(result.reasoning).to.deep.equal({ effort: 'high', summary: 'concise' });
+        });
+        it('keeps a user-configured reasoning.summary for level=auto', () => {
+            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'auto' }, settings: { reasoning: { summary: 'detailed' } } }, true);
+            expect(result.reasoning).to.deep.equal({ summary: 'detailed' });
         });
     });
 
-    describe('Chat Completions API (o-series)', () => {
+    describe('Chat Completions API', () => {
         it('maps level=medium to reasoning_effort=medium', () => {
             const model = createModel('o3-mini', O_SERIES_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'medium' } }, false);
             expect(result.reasoning_effort).to.equal('medium');
         });
-        it('buckets minimal to low (o-series does not accept minimal)', () => {
-            const model = createModel('o3-mini', O_SERIES_REASONING_SUPPORT);
+        it('passes minimal through (GPT-5 accepts it; models that do not exclude it from their supportedLevels)', () => {
+            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'minimal' } }, false);
-            expect(result.reasoning_effort).to.equal('low');
+            expect(result.reasoning_effort).to.equal('minimal');
         });
         it('omits reasoning_effort for level=off', () => {
             const model = createModel('o3-mini', O_SERIES_REASONING_SUPPORT);
@@ -219,6 +232,47 @@ describe('OpenAiModel Response API fallback', () => {
 
         expect(await model.callHandleResponseApiRequest(request)).to.deep.equal({ text: 'fallback' });
         expect(model.chatCompletionsRequests).to.equal(1);
+    });
+});
+
+class TestableMistralFixedOpenAI extends MistralFixedOpenAI {
+    callPrepareOptions(options: FinalRequestOptions): Promise<void> {
+        return this.prepareOptions(options);
+    }
+}
+
+describe('MistralFixedOpenAI request preparation', () => {
+
+    const client = new TestableMistralFixedOpenAI({ apiKey: 'test-key' });
+
+    it('leaves a request without a body alone', async () => {
+        // `GET /models`, which model discovery issues, carries no body at all.
+        const options = { method: 'get', path: '/models' } as FinalRequestOptions;
+        await client.callPrepareOptions(options);
+        expect(options.body).to.equal(undefined);
+    });
+
+    it('leaves a body without messages alone', async () => {
+        const options = { method: 'post', path: '/embeddings', body: { input: 'hello' } } as FinalRequestOptions;
+        await client.callPrepareOptions(options);
+        expect(options.body).to.deep.equal({ input: 'hello' });
+    });
+
+    it('replaces the null refusal of an assistant tool call with undefined', async () => {
+        const options = {
+            method: 'post',
+            path: '/chat/completions',
+            body: {
+                messages: [
+                    // eslint-disable-next-line no-null/no-null
+                    { role: 'assistant', tool_calls: [{ id: 't1' }], refusal: null, parsed: null }
+                ]
+            }
+        } as FinalRequestOptions;
+        await client.callPrepareOptions(options);
+        const message = (options.body as { messages: Array<Record<string, unknown>> }).messages[0];
+        expect(message.refusal).to.equal(undefined);
+        expect(message.parsed).to.equal(undefined);
     });
 });
 

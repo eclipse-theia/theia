@@ -170,6 +170,20 @@ export const GoogleModelParams = Symbol('GoogleModelParams');
 export const GoogleLanguageModelFactory = Symbol('GoogleLanguageModelFactory');
 export type GoogleLanguageModelFactory = (params: GoogleModelParams) => GoogleModel;
 
+/** Options for {@link createGoogleClient}. */
+export interface GoogleClientOptions {
+    readonly apiKey: string;
+}
+
+/**
+ * The single place a Gemini SDK client is built, so that a chat request, a model lookup and the model
+ * discovery all reach the provider the same way.
+ */
+export function createGoogleClient(options: GoogleClientOptions): GoogleGenAI {
+    // TODO test vertexai
+    return new GoogleGenAI({ apiKey: options.apiKey, vertexai: false });
+}
+
 /**
  * Implements the Gemini language model integration for Theia. Reasoning-level
  * translation lives in {@link googleReasoningFor}.
@@ -574,10 +588,11 @@ export class GoogleModel implements LanguageModel {
 
         try {
             let responseText = '';
-            // For non streaming requests we are always only interested in text parts
+            // For non streaming requests we are always only interested in text parts; thought summaries
+            // (parts flagged `thought`, present when includeThoughts is set) are not part of the answer.
             if (model.candidates?.[0]?.content?.parts) {
                 for (const part of model.candidates[0].content.parts) {
-                    if (part.text) {
+                    if (part.text && !part.thought) {
                         responseText += part.text;
                     }
                 }
@@ -605,8 +620,7 @@ export class GoogleModel implements LanguageModel {
             throw new Error('Please provide GOOGLE_API_KEY in preferences or via environment variable');
         }
 
-        // TODO test vertexai
-        return new GoogleGenAI({ apiKey, vertexai: false });
+        return createGoogleClient({ apiKey });
     }
 
     /**

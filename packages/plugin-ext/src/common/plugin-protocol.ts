@@ -30,6 +30,7 @@ import {
 } from '@theia/plugin-utils/lib/common/plugin-model';
 import {
     PLUGIN_HOST_BACKEND,
+    PLUGIN_HOST_FRONTEND,
     PluginEntryPoint,
     PluginLifecycle,
     PluginManifest,
@@ -116,6 +117,7 @@ export { getPluginId };
 export { toPluginUrlFromUtils as toPluginUrl };
 export {
     PLUGIN_HOST_BACKEND,
+    PLUGIN_HOST_FRONTEND,
     PluginEntryPoint,
     PluginLifecycle,
     PluginManifest,

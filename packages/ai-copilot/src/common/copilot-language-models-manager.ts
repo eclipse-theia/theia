@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { ModelDiscoveryResult } from '@theia/ai-core/lib/common';
 export const COPILOT_LANGUAGE_MODELS_MANAGER_PATH = '/services/copilot/language-model-manager';
 export const CopilotLanguageModelsManager = Symbol('CopilotLanguageModelsManager');
 
@@ -49,8 +50,9 @@ export interface CopilotLanguageModelsManager {
      */
     refreshModelsStatus(): Promise<void>;
     /**
-     * Fetches the list of available model IDs from the Copilot CLI.
-     * Requires the CLI to be signed in. Returns an empty array otherwise or if the call fails.
+     * Fetches the models the Copilot CLI offers. Requires the CLI to be signed in; a failure is
+     * reported as {@link ModelDiscoveryResult.error} with no models rather than thrown, since the
+     * CLI being absent or signed out is an expected state rather than a fault.
      */
-    fetchAvailableModelIds(): Promise<string[]>;
+    fetchAvailableModels(): Promise<ModelDiscoveryResult>;
 }

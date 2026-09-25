@@ -90,6 +90,12 @@ describe('PromptService', () => {
         expect(prompt?.text).to.equal('Ciao, {{invalid}}!');
     });
 
+    it('should insert argument values literally without expanding replacement patterns', async () => {
+        const value = "echo $$ $' $& $`";
+        const prompt = await promptService.getResolvedPromptFragment('1', { name: value });
+        expect(prompt?.text).to.equal(`Hello, ${value}!`);
+    });
+
     it('should return undefined if the prompt fragment id is not found', async () => {
         const prompt = await promptService.getResolvedPromptFragment('4');
         expect(prompt).to.be.undefined;
