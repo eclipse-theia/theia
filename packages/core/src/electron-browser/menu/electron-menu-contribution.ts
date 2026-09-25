@@ -27,7 +27,7 @@ import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { FrontendApplicationStateService, FrontendApplicationState } from '../../browser/frontend-application-state';
 import { FrontendApplicationConfigProvider } from '../../browser/frontend-application-config-provider';
 import { PREF_WINDOW_ZOOM_LEVEL, ZoomLevel } from '../../electron-common/electron-window-preferences';
-import { BrowserMenuBarContribution } from '../../browser/menu/browser-menu-plugin';
+import { BrowserMenuBarContribution, MenuBarWidget } from '../../browser/menu/browser-menu-plugin';
 import { WindowService } from '../../browser/window/window-service';
 import { WindowTitleService } from '../../browser/window/window-title-service';
 
@@ -152,8 +152,9 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
 
     handleTitleBarStyling(app: FrontendApplication): void {
         this.hideTopPanel(app);
-        window.electronTheiaCore.getTitleBarStyleAtStartup().then(style => {
+        const titleBarStyleAtStartup = window.electronTheiaCore.getTitleBarStyleAtStartup().then(style => {
             this.titleBarStyle = style;
+            this.factory.titleBarStyle = style;
             this.setMenu(app);
             this.preferenceService.ready.then(() => {
                 const current = this.preferenceService.inspect('window.titleBarStyle');
@@ -171,8 +172,17 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
             });
         });
 
-        this.preferenceService.ready.then(() => {
-            window.electronTheiaCore.setMenuBarVisible(['classic', 'visible'].includes(this.preferenceService.get('window.menuBarVisibility', 'classic')));
+        // `titleBarStyle` decides whether the native menu bar is used at all, so wait for it:
+        // preferences can become ready first, in which case it would still be `undefined` here.
+        Promise.all([titleBarStyleAtStartup, this.preferenceService.ready]).then(() => {
+            const pref = this.preferenceService.get<string>('window.menuBarVisibility', 'classic');
+            if (pref === 'toggle' && this.titleBarStyle !== 'custom') {
+                window.electronTheiaCore.setMenuBarVisible(false);
+                window.electronTheiaCore.setAutoHideMenuBar(true);
+            } else {
+                window.electronTheiaCore.setMenuBarVisible(['classic', 'visible'].includes(pref));
+                window.electronTheiaCore.setAutoHideMenuBar(false);
+            }
         });
 
         this.preferenceService.onPreferenceChanged(change => {
@@ -424,12 +434,47 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     protected handleFullScreen(menuBarVisibility: string): void {
         const shouldShowTop = !window.electronTheiaCore.isFullScreen() || menuBarVisibility === 'visible';
         if (this.titleBarStyle === 'native') {
-            window.electronTheiaCore.setMenuBarVisible(shouldShowTop);
+            if (menuBarVisibility === 'toggle') {
+                window.electronTheiaCore.setMenuBarVisible(false);
+                window.electronTheiaCore.setAutoHideMenuBar(true);
+            } else {
+                window.electronTheiaCore.setMenuBarVisible(shouldShowTop);
+                // Match `ElectronMainMenuFactory.doSetMenuBar`: in 'classic' the menu is hidden in
+                // full screen but Alt still reveals it. Without this the two disagree and the
+                // effective behaviour depends on which of them ran last.
+                window.electronTheiaCore.setAutoHideMenuBar(!shouldShowTop && menuBarVisibility === 'classic');
+            }
+        } else if (menuBarVisibility === 'toggle' && this.menuWidget && this.logoWidget) {
+            // Which widget Alt reveals depends on the full screen state, so re-establish it.
+            this.updateElectronMenuToggleMode(this.menuWidget, this.logoWidget);
         } else if (shouldShowTop) {
             this.shell.topPanel.show();
         } else {
             this.shell.topPanel.hide();
         }
+    }
+
+    /**
+     * Outside of full screen the top panel also carries the window controls, so it has to stay
+     * visible and Alt toggles the menu widgets inside it. In full screen the panel is hidden
+     * altogether, so Alt toggles the panel itself and the widgets inside it stay visible.
+     */
+    protected override applyElectronMenuBarVisibility(menu: MenuBarWidget, logo: Widget, pref: string): void {
+        if (pref === 'toggle' && this.titleBarStyle === 'custom') {
+            const isFullScreen = window.electronTheiaCore.isFullScreen();
+            menu.setHidden(!isFullScreen);
+            logo.setHidden(!isFullScreen);
+            this.shell.topPanel.setHidden(isFullScreen);
+            return;
+        }
+        super.applyElectronMenuBarVisibility(menu, logo, pref);
+    }
+
+    protected override getElectronToggleTargets(menu: MenuBarWidget, logo: Widget): Widget[] {
+        if (this.titleBarStyle === 'custom' && window.electronTheiaCore.isFullScreen()) {
+            return [this.shell.topPanel];
+        }
+        return super.getElectronToggleTargets(menu, logo);
     }
 
     protected handleThemeChange(e: ThemeChangeEvent): void {
