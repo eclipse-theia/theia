@@ -30,8 +30,12 @@ import {
     ServerToolDescriptor,
     ToolInvocationRegistry,
 } from '@theia/ai-core/lib/common';
+import { isChatAgent } from '@theia/ai-chat/lib/common';
+import { AvailableGenericCapabilities, GenericCapabilitiesService } from '@theia/ai-chat-ui/lib/browser/generic-capabilities-service';
+import { ChatCapabilitiesService } from '@theia/ai-chat-ui/lib/browser/chat-capabilities-service';
 import { CommandService } from '@theia/core/lib/common/command';
 import { ILogger } from '@theia/core';
+import { HoverService } from '@theia/core/lib/browser';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
 
 /** The services the agent detail page needs; injected into the owning category and passed down. */
@@ -45,6 +49,9 @@ export interface AgentDetailServices {
     readonly commandService: CommandService;
     readonly settingsRowService: AiSettingsRowService;
     readonly logger: ILogger;
+    readonly genericCapabilitiesService: GenericCapabilitiesService;
+    readonly chatCapabilitiesService: ChatCapabilitiesService;
+    readonly hoverService: HoverService;
 }
 
 export interface ParsedPrompt {
@@ -60,6 +67,10 @@ export interface AgentDetailState {
     completionNotification?: NotificationType;
     capabilityOverrides?: Record<string, boolean>;
     genericCapabilitySelections?: GenericCapabilitySelections;
+    /** What the generic capabilities editor offers; only loaded for chat agents, the only ones that apply selections. */
+    availableGenericCapabilities?: AvailableGenericCapabilities;
+    /** Functions and variables the agent's prompt already references, shown checked and locked in the editor. */
+    usedGenericCapabilities?: GenericCapabilitySelections;
     /** Server tools the agent's model offers, if it declares any; empty/absent hides that section. */
     serverTools?: ServerToolDescriptor[];
     /** Vendor the server tool selections are keyed by, i.e. the vendor of the model offering them. */
@@ -72,12 +83,16 @@ export async function loadAgentDetail(agent: Agent, services: AgentDetailService
     const parsed = await parsePromptFragments(agent, services);
     const agentSettings = await services.aiSettingsService.getAgentSettings(agent.id);
     const serverToolModel = await resolveServerToolModel(agent, services);
+    const chatAgent = isChatAgent(agent);
     return {
         parsed,
         showInChat: agentSettings?.showInChat ?? true,
         completionNotification: agentSettings?.completionNotification,
         capabilityOverrides: agentSettings?.capabilityOverrides,
         genericCapabilitySelections: agentSettings?.genericCapabilitySelections,
+        // Same items the chat input's capabilities popup offers; the agent itself is not offered for delegation.
+        availableGenericCapabilities: chatAgent ? await services.genericCapabilitiesService.getAvailableCapabilities(agent.id) : undefined,
+        usedGenericCapabilities: chatAgent ? await services.chatCapabilitiesService.getUsedGenericCapabilitiesForAgent(agent.id) : undefined,
         serverTools: serverToolModel?.serverTools,
         serverToolVendor: serverToolModel?.vendor,
         serverToolSelections: agentSettings?.serverToolSelections ? { ...agentSettings.serverToolSelections } : undefined

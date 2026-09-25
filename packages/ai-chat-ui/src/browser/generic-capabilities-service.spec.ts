@@ -274,4 +274,26 @@ describe('GenericCapabilitiesServiceImpl', () => {
             ]);
         });
     });
+
+    describe('getAvailableCapabilities', () => {
+        it('returns empty lists for every type when no source is available', async () => {
+            expect(await service.getAvailableCapabilities()).to.deep.equal({
+                skills: [], mcpFunctions: [], functions: [], promptFragments: [], agentDelegation: [], variables: []
+            });
+        });
+
+        it('excludes the given agent from delegation', async () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (service as any).chatAgentService = {
+                getAgents: () => [
+                    { id: 'agent1', name: 'Agent 1', description: 'First agent' },
+                    { id: 'agent2', name: 'Agent 2', description: 'Second agent' }
+                ]
+            };
+
+            const result = await service.getAvailableCapabilities('agent1');
+
+            expect(result.agentDelegation.map(agent => agent.id)).to.deep.equal(['agent2']);
+        });
+    });
 });

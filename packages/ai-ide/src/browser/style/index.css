@@ -1720,6 +1720,21 @@ button.agent-chip:focus-visible {
   margin-left: auto;
 }
 
+/* A second action sits right next to the first instead of splitting the free space with it. */
+.ai-agent-section-header .ai-agent-section-header-action + .ai-configuration-icon-button {
+  margin-left: 0;
+}
+
+/* The chat input's capabilities tree, embedded in the agent detail; capped so an expanded tree scrolls
+   within the section instead of pushing the rest of the page away. */
+.ai-agent-generic-capabilities-editor .theia-GenericCapabilities-Tree-Content {
+  max-height: 300px;
+}
+
+.ai-agent-generic-capabilities-editor {
+  margin-bottom: var(--theia-ui-padding);
+}
+
 .ai-agent-description {
   margin-bottom: calc(var(--theia-ui-padding) * 2);
   color: var(--theia-descriptionForeground);
