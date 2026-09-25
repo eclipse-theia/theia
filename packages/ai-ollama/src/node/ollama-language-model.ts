@@ -402,65 +402,6 @@ export class OllamaModel implements LanguageModel {
     }
 
     protected toOllamaTool(tool: ToolRequest): ToolWithHandler {
-        // Flatten anyOf by merging the first non-null branch into the top-level prop so that
-        // fields carried by the branch (e.g. items, properties) are visible to the callers.
-        const normalizeProp = (prop: ToolRequestParameterProperty): ToolRequestParameterProperty => {
-            if (!prop.anyOf) { return prop; }
-            const nonNull = prop.anyOf.find(p => p.type && p.type !== 'null');
-            if (!nonNull) { return prop; }
-            const merged = { ...nonNull, ...prop };
-            delete (merged as Record<string, unknown>)['anyOf'];
-            return merged as ToolRequestParameterProperty;
-        };
-
-        const recurseProperties = (raw: unknown): unknown =>
-            ToolRequest.isToolRequestParametersProperties(raw) ? transform(raw) : raw;
-
-        const transform = (props: ToolRequestParametersProperties | undefined) => {
-            if (!props) {
-                return undefined;
-            }
-            const result: Record<string, Record<string, unknown>> = {};
-            for (const [key, rawProp] of Object.entries(props)) {
-                const prop = normalizeProp(rawProp);
-                if (prop.type) {
-                    const entry: Record<string, unknown> = {
-                        ...prop,
-                        type: prop.type,
-                        ...(prop.description !== undefined && { description: String(prop.description) }),
-                        ...(prop.properties !== undefined && { properties: recurseProperties(prop.properties) }),
-                        ...(prop.items !== undefined && { items: transformItem(prop.items) }),
-                    };
-                    delete entry['anyOf'];
-                    result[key] = entry;
-                } else {
-                    result[key] = rawProp as Record<string, unknown>;
-                }
-            }
-            return result;
-        };
-
-        const transformItem = (items: unknown): unknown => {
-            if (Array.isArray(items)) {
-                return items.map(item => transformItem(item));
-            }
-            if (items && typeof items === 'object') {
-                const prop = normalizeProp(items as ToolRequestParameterProperty);
-                if (!prop.type) {
-                    return items;
-                }
-                const itemResult: Record<string, unknown> = {
-                    ...prop,
-                    type: prop.type,
-                    ...(prop.description !== undefined && { description: String(prop.description) }),
-                    ...(prop.properties !== undefined && { properties: recurseProperties(prop.properties) }),
-                    ...(prop.items !== undefined && { items: transformItem(prop.items) }),
-                };
-                delete itemResult['anyOf'];
-                return itemResult;
-            }
-            return items;
-        };
         return {
             type: 'function',
             function: {
@@ -469,11 +410,58 @@ export class OllamaModel implements LanguageModel {
                 parameters: {
                     type: tool.parameters?.type ?? 'object',
                     required: tool.parameters?.required ?? [],
-                    properties: transform(tool.parameters?.properties) ?? {}
+                    properties: this.transformProperties(tool.parameters?.properties) ?? {}
                 },
             },
             handler: tool.handler
         };
+    }
+
+    // Flatten anyOf by merging the first non-null branch into the top-level prop so that
+    // fields carried by the branch (e.g. items, properties) are visible to the callers.
+    protected normalizeProp(prop: ToolRequestParameterProperty): ToolRequestParameterProperty {
+        if (!prop.anyOf) { return prop; }
+        const nonNull = prop.anyOf.find(p => p.type && p.type !== 'null');
+        if (!nonNull) { return prop; }
+        const merged = { ...nonNull, ...prop };
+        delete (merged as Record<string, unknown>)['anyOf'];
+        return merged as ToolRequestParameterProperty;
+    }
+
+    protected recurseProperties(raw: unknown): unknown {
+        return ToolRequest.isToolRequestParametersProperties(raw) ? this.transformProperties(raw) : raw;
+    }
+
+    protected transformSchema(schema: unknown): unknown {
+        if (Array.isArray(schema)) {
+            return schema.map(item => this.transformSchema(item));
+        }
+        if (schema && typeof schema === 'object') {
+            const prop = this.normalizeProp(schema as ToolRequestParameterProperty);
+            if (!prop.type) {
+                return schema;
+            }
+            const result: Record<string, unknown> = {
+                ...prop,
+                ...(prop.description !== undefined && { description: String(prop.description) }),
+                ...(prop.properties !== undefined && { properties: this.recurseProperties(prop.properties) }),
+                ...(prop.items !== undefined && { items: this.transformSchema(prop.items) }),
+            };
+            delete result['anyOf'];
+            return result;
+        }
+        return schema;
+    }
+
+    protected transformProperties(props: ToolRequestParametersProperties | undefined): Record<string, Record<string, unknown>> | undefined {
+        if (!props) {
+            return undefined;
+        }
+        const result: Record<string, Record<string, unknown>> = {};
+        for (const [key, rawProp] of Object.entries(props)) {
+            result[key] = this.transformSchema(rawProp) as Record<string, unknown>;
+        }
+        return result;
     }
 
     protected toOllamaMessage(message: LanguageModelMessage): Message | undefined {
