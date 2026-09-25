@@ -46,6 +46,14 @@ Models appear automatically once an API key is configured, so there is nothing t
 - `@theia/ai-copilot` now reports its discovery through the same surface, so its provider page shows what the Copilot CLI returned, whether the list call failed, and which of its models the chat input shows. Signing in is Copilot's equivalent of setting an API key, so a missing sign-in is reported as a missing credential rather than as a failed call — badged "Not signed in" rather than "No API key", with a button that runs the sign-in command and no refresh to press, since nothing can be fetched until it is signed in. A provider whose credential is established by a command names it in `ModelDiscoveryStatus.action`, and one whose credential is not an API key names the badge in `ModelDiscoveryStatus.stateLabel`.
 - Adopters adding their own discovering provider extend `DiscoveringProviderContribution` (`@theia/ai-core/lib/browser`), which runs the discovery: it queues the runs, registers what came back, unregisters what vanished, gates an environment key behind the consent and reports all of it to `ModelDiscoveryStatusService`. A provider supplies its id, its manager, the two preferences it reads, its messages, and how a discovered model becomes a model description; anything else it does (a custom endpoint, a proxy) goes into `initializeProvider` and `handlePreferenceChange`. On the backend, `ModelDiscoveryFetcher` and `ModelSnapshotStore` (`@theia/ai-core/lib/node`) provide a fetch that retries a transient failure and keeps its result as an offline snapshot, and `DiscoveredModels` (`@theia/ai-core/lib/common`) collapses release-pinned ids. `FavoriteModelsService` (`@theia/ai-core/lib/browser`) decides which of the discovered models the chat input offers.
 
+_Electron launch-argument forwarding APIs_:
+
+Forwarding a second launch's CLI arguments to the new window added a few APIs that adopters implementing the affected extension points need to be aware of. The new APIs are `@experimental` and will likely receive breaking changes:
+
+- `TheiaCoreAPI.WindowMetadata` (the Electron preload API, `@theia/core/lib/electron-common/electron-api`) gained an optional `launchArgs?: LaunchArguments` member, carrying the parsed CLI options of a forwarded launch. It is filled in synchronously by the preload script over the existing `CHANNEL_WC_METADATA` channel, which now answers with the whole metadata object instead of just the `webContents` id. Adopters with a custom preload must return `{ webcontentId, launchArgs }` from that channel.
+- `ElectronMainApplicationContribution` gained an optional `claimsWindow?(args: LaunchArguments): MaybePromise<boolean>` hook. A contribution returning `true` opens an empty window for that launch instead of restoring the last workspace, since the window is about to be replaced by whatever the contribution attaches to. `@theia/dev-container` uses this to claim `--attach-container` launches, from a new `electronMain` entry point (`lib/electron-main/dev-container-electron-main-module`) that adopters assembling their extension list manually must include.
+- New replaceable service `WindowLaunchArgs` (interface + symbol, `@theia/core/lib/browser/window/window-launch-args`) exposes those options to the frontend synchronously, and the new contribution point `RemoteCliArgsContribution` (`@theia/core/lib/common/remote-cli-args-contribution`) lets extensions contribute extra CLI arguments to a remote backend.
+
 _ESBuild_:
 
 Theia bundles the application (frontend+backend) with [`ESBuild`](https://esbuild.github.io/). The `webpack` bundling option was removed in 1.75.0, see [v1.75.0](#v1750). Deleting `webpack.config.js` generates an `esbuild.mjs` file upon the next build; bundling instructions you added to `webpack.config.js` need to be migrated to the ESBuild based bundler.
@@ -136,7 +144,18 @@ For example, in an `electron-builder` configuration, ensure the `lib/backend/she
 
 The `lib/**/*` glob already covers `lib/backend/shell-integrations/`. If you use a more restrictive `files` pattern, make sure `lib/backend/shell-integrations/**/*` is explicitly included, as `ShellIntegrationInjector` resolves these scripts relative to `__dirname` (i.e. `lib/backend/`).
 
-### v1.76.0
+_Ripgrep in asar-packaged Electron applications_:
+
+`child_process.spawn` cannot execute a binary inside an asar archive. When the backend bundle runs from `app.asar`, `@theia/bundle-plugin` therefore resolves the ripgrep binary copied to `lib/backend/native/` from `app.asar.unpacked` instead. The binary is only there if your packaging extracts it, for example with `electron-builder`:
+
+```yaml
+asarUnpack:
+  - "**/lib/backend/native/**"
+```
+
+If you worked around this by overriding the `@vscode/ripgrep` replacement in your own esbuild configuration, that override is no longer needed.
+
+### v1.77.0
 
 #### Physical printable-key bindings
 
@@ -157,6 +176,8 @@ Set `"keyboard.dispatch": "keyCode"` to restore positional key-code dispatch glo
 - Review `KeyCode` consumers: `equals()` requires the same physical key and `dispatchString()`, character-only values are not modifier-only, and `toString()` preserves authored spelling. Use `dispatchString()` when a runtime match identity is required.
 - Update `KeybindingRegistry.matchKeybinding()` consumers from `match.binding` to `match.runtime.binding`; the resolved sequence is available as `match.runtime.sequence`. Pass resolved sequences (`resolveKeybinding(binding)`) or runtime interpretations to `matchKeybinding()`; raw `KeySequence.parse()` output is no longer guaranteed to match under `keyboard.dispatch: 'code'`. Subclasses that override chord handling must replace the protected `keySequence` field with `keySequenceCandidates`. Protected keybinding-tree values are runtime records containing the original scoped binding and its resolved sequence, rather than `ScopedKeybinding[]`.
 - Pass an explicit `'logical'` or `'physical'` form to `AcceleratorSource.getAccelerator`. Browser UI uses logical labels, while Electron native menus require physical accelerators.
+
+### v1.76.0
 
 #### GitHub Copilot is served through the Copilot CLI
 
@@ -226,6 +247,26 @@ This extension was deprecated and stopped being published in v1.73.0.
 If your application still depends on `@theia/preview`, migrate to the built-in VS Code Markdown extension (`vscode.markdown-language-features`), which provides the same feature set and is actively maintained. Remove any references to `@theia/preview` from your application's dependencies and ensure the VS Code Markdown extension is included in your application, either through the builtin extension pack or by explicitly adding it to your plugins configuration.
 
 Gone with the extension are the `preview.openByDefault` preference, the `preview:open` and `preview.open.source` commands, and the `PreviewUri`, `PreviewHandler`, `PreviewHandlerProvider`, `PreviewWidget`, `PreviewContribution`, `PreviewCommands`, `MarkdownPreviewHandler` and `PreviewLinkNormalizer` API. The VS Code Markdown extension contributes `markdown.showPreview`, `markdown.showPreviewToSide` and the `markdown.preview.*` preferences in their place.
+
+#### Browser-only config directory moved to `/.theia` [#17966](https://github.com/eclipse-theia/theia/pull/17966)
+
+The browser-only `EnvVariablesServer` stub (`packages/core/src/browser-only/frontend-only-application-module.ts`) previously returned an empty string for `getConfigDirUri()`. `new URI('')` resolves to `file:///`, so in browser-only mode the config directory was effectively the root of the OPFS file system, and every consumer wrote its state there, alongside the user's workspace directories. `getConfigDirUri()` now returns `file:///.theia`, matching the backend's default `.theia` configuration folder (the `configurationFolder` property).
+
+As a side effect, `CommonFrontendContribution` registers a UTF-8 encoding override with `parent: new URI(configDirUri)`. Because that parent used to be `file:///`, the override applied to the entire file tree in browser-only mode. It is now correctly scoped to `/.theia`, matching backend behavior.
+
+**End-user-facing:**
+
+- Existing browser-only deployments have their state at the OPFS root. This is not migrated automatically: after upgrading, Theia looks under `/.theia`, finds nothing, and behaves as a fresh install for that state. Affected data:
+  - `settings.json` and `keymaps.json`
+  - untitled workspace files and the recent workspaces list
+  - workspace metadata
+  - AI stores: chat sessions, prompt customizations, skills, sketched tools
+- Files outside `/.theia` are no longer forced to UTF-8 encoding.
+
+**Adopter-facing:**
+
+- If you need to preserve existing user data, copy the entries listed above from the OPFS root into `/.theia` on first run after upgrading.
+- Do not rely on the old blanket UTF-8 encoding override applying outside the config directory.
 
 ### v1.75.0
 

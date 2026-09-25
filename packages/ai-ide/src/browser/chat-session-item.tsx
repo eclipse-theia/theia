@@ -262,8 +262,8 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
                         tabIndex={0}
                         aria-expanded={isExpanded}
                         aria-label={isExpanded
-                            ? nls.localize('theia/ai/ide/collapseSession', 'Collapse {0}', title)
-                            : nls.localize('theia/ai/ide/expandSession', 'Expand {0}', title)}>
+                            ? nls.localizeByDefault('Collapse {0}', title)
+                            : nls.localizeByDefault('Expand {0}', title)}>
                         <span className={`codicon ${isExpanded ? 'codicon-chevron-down' : 'codicon-chevron-right'}`} />
                     </span>
                 ) : (

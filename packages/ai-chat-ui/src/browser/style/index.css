@@ -1,6 +1,16 @@
 .chat-view-widget {
   display: flex;
   flex-direction: column;
+  /* Background of the area the chat is docked in, for elements that must be opaque. */
+  --chat-ambient-background: var(--theia-editor-background);
+}
+
+.theia-side-panel .chat-view-widget {
+  --chat-ambient-background: var(--theia-sideBar-background);
+}
+
+#theia-bottom-content-panel .chat-view-widget {
+  --chat-ambient-background: var(--theia-panel-background);
 }
 
 .chat-tree-view-widget {
@@ -16,7 +26,7 @@
   cursor: default;
   display: flex;
   flex-direction: column;
-  padding: 16px 20px 6px 20px;
+  padding: 10px 20px 6px 20px;
   user-select: text;
   -webkit-user-select: text;
   border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
@@ -27,13 +37,36 @@ div:last-child>.theia-ChatNode {
   border: none;
 }
 
+/* Pinned while its node is on screen; opaque to cover the content scrolling underneath. */
 .theia-ChatNodeHeader {
   align-items: center;
   display: flex;
   justify-content: space-between;
   height: 24px;
   gap: 8px;
-  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  /* Full-bleed: cancel the node's horizontal padding, then re-apply it. */
+  margin: 0 -20px;
+  padding: var(--theia-ui-padding) 20px;
+  width: auto;
+  background-color: var(--chat-ambient-background);
+  container-type: scroll-state;
+}
+
+/* Shadow only while pinned; without scroll-state query support the header stays flat. */
+@container scroll-state(stuck: top) {
+  .theia-ChatNodeHeader::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: calc(var(--theia-ui-padding) * 2 / 3);
+    pointer-events: none;
+    background: linear-gradient(var(--theia-widget-shadow), transparent);
+  }
 }
 
 .theia-ChatNodeHeader .theia-AgentAvatar {
@@ -64,12 +97,6 @@ div:last-child>.theia-ChatNode {
   flex-shrink: 0;
   white-space: nowrap;
   color: var(--theia-progressBar-background);
-}
-
-.theia-ChatNodeHeader .theia-ChatContentInProgress-Cancel {
-  position: absolute;
-  z-index: 999;
-  right: 20px;
 }
 
 .theia-ChatNode .codicon {
@@ -1296,6 +1323,46 @@ details.theia-tool-confirmation-args>summary::marker {
   background-color: var(--theia-editor-background);
   overflow: auto;
   text-wrap: auto;
+}
+
+.theia-thinking.active {
+  cursor: default;
+}
+
+.theia-thinking-status {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+/* Registered so that the fade can be transitioned. */
+@property --theia-thinking-preview-fade {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+/* Last lines of the reasoning, anchored to the bottom and clipped at the top. */
+.theia-thinking-preview {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  max-height: 3lh;
+  margin-left: calc(var(--theia-icon-size) + var(--theia-ui-padding) / 2);
+  overflow: hidden;
+  user-select: none;
+  mask-image: linear-gradient(to bottom, transparent, black var(--theia-thinking-preview-fade));
+  transition: --theia-thinking-preview-fade 600ms ease-out;
+}
+
+.theia-thinking-preview-text {
+  flex-shrink: 0;
+  overflow-wrap: anywhere;
+}
+
+.theia-thinking-preview.overflowing {
+  --theia-thinking-preview-fade: 1lh;
 }
 
 .theia-toolCall-args-label {

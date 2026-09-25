@@ -32,6 +32,7 @@ import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { ChatViewTreeWidget, ResponseNode } from '../chat-tree-view/chat-view-tree-widget';
 import { IMouseEvent } from '@theia/monaco-editor-core';
+import { CodeWrapperEditors } from './code-wrapper-editors';
 
 export const CodePartRendererAction = Symbol('CodePartRendererAction');
 /**
@@ -249,11 +250,18 @@ export const CodeWrapper = (props: {
         editor.document.textEditorModel.setValue(props.content);
         editor.getControl().onContextMenu(e => props.contextMenuCallback(e.event));
         editorRef.current = editor;
+        if (ref.current) {
+            CodeWrapperEditors.set(ref.current, editor);
+        }
     };
 
     React.useEffect(() => {
         createInputElement();
+        const element = ref.current;
         return () => {
+            if (element) {
+                CodeWrapperEditors.remove(element);
+            }
             if (editorRef.current) {
                 editorRef.current.dispose();
             }
@@ -268,5 +276,5 @@ export const CodeWrapper = (props: {
 
     editorRef.current?.resizeToFit();
 
-    return <div className='theia-CodeWrapper' ref={ref}></div>;
+    return <div className={CodeWrapperEditors.CLASS} ref={ref}></div>;
 };

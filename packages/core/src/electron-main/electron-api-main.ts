@@ -77,7 +77,13 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
 
     onStart(application: ElectronMainApplication): MaybePromise<void> {
         ipcMain.on(CHANNEL_WC_METADATA, event => {
-            event.returnValue = event.sender.id.toString();
+            // Answered synchronously, so the window has its metadata — including the parsed options
+            // of a forwarded launch — before any frontend code runs. The window is identified by the
+            // IPC sender, so it can only ever read its own.
+            event.returnValue = {
+                webcontentId: event.sender.id.toString(),
+                launchArgs: application.getLaunchArgs(event.sender.id)
+            };
         });
 
         // electron security token

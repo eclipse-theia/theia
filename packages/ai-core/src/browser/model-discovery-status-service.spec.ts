@@ -17,11 +17,17 @@
 import { expect } from 'chai';
 import { ModelDiscoveryStatus } from '../common/model-discovery-status';
 import { ModelDiscoveryStatusService } from './model-discovery-status-service';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+
+/** The service logs a failed run, so a bare instance would have no logger to do it with. */
+function createService(): ModelDiscoveryStatusService {
+    return Object.assign(new ModelDiscoveryStatusService(), { logger: new MockLogger() });
+}
 
 describe('ModelDiscoveryStatusService', () => {
 
     it('registers a provider with an initial idle status', () => {
-        const service = new ModelDiscoveryStatusService();
+        const service = createService();
         service.registerProvider({ providerId: 'anthropic', label: 'Anthropic', refresh: async () => { } });
         const status = service.getStatus('anthropic');
         expect(status?.state).to.equal('idle');
@@ -29,7 +35,7 @@ describe('ModelDiscoveryStatusService', () => {
     });
 
     it('merges partial updates and fires onDidChange', () => {
-        const service = new ModelDiscoveryStatusService();
+        const service = createService();
         service.registerProvider({ providerId: 'anthropic', label: 'Anthropic', refresh: async () => { } });
 
         const events: ModelDiscoveryStatus[] = [];
@@ -47,7 +53,7 @@ describe('ModelDiscoveryStatusService', () => {
     });
 
     it('does not reset an existing status when the provider is re-registered', () => {
-        const service = new ModelDiscoveryStatusService();
+        const service = createService();
         service.registerProvider({ providerId: 'anthropic', label: 'Anthropic', refresh: async () => { } });
         service.updateStatus('anthropic', { state: 'ready' });
 
@@ -56,7 +62,7 @@ describe('ModelDiscoveryStatusService', () => {
     });
 
     it('reports a failure and clears what the previous state offered', () => {
-        const service = new ModelDiscoveryStatusService();
+        const service = createService();
         service.registerProvider({ providerId: 'copilot', label: 'GitHub Copilot', refresh: async () => { } });
         service.updateStatus('copilot', {
             state: 'no-credentials',
@@ -75,14 +81,14 @@ describe('ModelDiscoveryStatusService', () => {
     });
 
     it('reports a rejection that is not an error', () => {
-        const service = new ModelDiscoveryStatusService();
+        const service = createService();
         service.registerProvider({ providerId: 'anthropic', label: 'Anthropic', refresh: async () => { } });
         service.reportError('anthropic', 'nope');
         expect(service.getStatus('anthropic')?.message).to.equal('nope');
     });
 
     it('delegates refresh to the registered provider', async () => {
-        const service = new ModelDiscoveryStatusService();
+        const service = createService();
         let refreshed = false;
         service.registerProvider({ providerId: 'anthropic', label: 'Anthropic', refresh: async () => { refreshed = true; } });
 

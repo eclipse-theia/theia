@@ -1,6 +1,6 @@
 # Theia Sample Plugins
 
-A small collection of minimal VS Code extensions used by Theia to exercise the plugin runtime. Each plugin lives under `sample-namespace/` and registers a simple `Hello from <plugin-name>` command. Some demonstrate specific runtime variants (browser-only, ESM, etc.).
+A small collection of minimal VS Code extensions used by Theia to exercise the plugin runtime. Each plugin lives under `sample-namespace/`. Most register a simple `Hello from <plugin-name>` command; the rest demonstrate a specific runtime variant (browser-only, ESM, headless) or a specific API, and say how to exercise them in their own README.
 
 ## Test sample plugin in Theia example applications
 
@@ -19,7 +19,7 @@ Copy the plugin folder into the deployed `plugins` directory. The plugins are pl
     npm run start:browser
     ```
 
-4. Open the command palette and run `Hello from <plugin-name>`.
+4. Open the command palette and run `Hello from <plugin-name>`, or the steps in the plugin's own README.
 
 ## Package a sample plugin as a `.vsix`
 

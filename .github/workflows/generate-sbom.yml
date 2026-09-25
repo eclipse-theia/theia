@@ -23,9 +23,8 @@ jobs:
   generate-sbom:
     name: Generate SBOM
     runs-on: ubuntu-22.04
-    outputs:
-      project-version: ${{ steps.version.outputs.PROJECT_VERSION }}
     permissions:
+      id-token: write
       packages: read
 
     steps:
@@ -60,18 +59,9 @@ jobs:
         run: |
           cdxgen -r -o ${{ env.PRODUCT_PATH }}bom.json
 
-      - name: Upload SBOM as artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      - name: Upload SBOM
+        uses: eclipse-csi/workflows/upload-sbom@d83da6f2897e985d9d2b9541174c7ee5ee6d88ad # main
         with:
-          name: sbom
-          path: ${{ env.PRODUCT_PATH }}/bom.json
-
-  store-sbom-data: # stores sbom and metadata in a predefined format for otterdog to pick up
-    needs: ["generate-sbom"]
-    uses: eclipse-csi/workflows/.github/workflows/store-sbom-data.yml@main
-    with:
-      projectName: "theia"
-      projectVersion: ${{ needs.generate-sbom.outputs.project-version }}
-      bomArtifact: "sbom"
-      bomFilename: "bom.json"
-      parentProject: "2b55dbe6-7a7e-4659-a803-babf4138e03f"
+          sbom-file: ${{ env.PRODUCT_PATH }}/bom.json
+          product-name: "theia"
+          product-version: ${{ steps.version.outputs.PROJECT_VERSION }}

@@ -1,12 +1,12 @@
 {
   "name": "@theia/dev-container",
-  "version": "1.75.0",
+  "version": "1.76.0",
   "description": "Theia - Dev Container Extension",
   "dependencies": {
-    "@theia/core": "1.75.0",
-    "@theia/output": "1.75.0",
-    "@theia/remote": "1.75.0",
-    "@theia/workspace": "1.75.0",
+    "@theia/core": "1.76.0",
+    "@theia/output": "1.76.0",
+    "@theia/remote": "1.76.0",
+    "@theia/workspace": "1.76.0",
     "dockerode": "^5.0.1",
     "jsonc-parser": "^3.3.1"
   },
@@ -16,7 +16,8 @@
   "theiaExtensions": [
     {
       "frontendElectron": "lib/electron-browser/dev-container-frontend-module",
-      "backendElectron": "lib/electron-node/dev-container-backend-module"
+      "backendElectron": "lib/electron-node/dev-container-backend-module",
+      "electronMain": "lib/electron-main/dev-container-electron-main-module"
     }
   ],
   "keywords": [
@@ -44,7 +45,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.75.0",
+    "@theia/ext-scripts": "1.76.0",
     "@types/dockerode": "^3.3.47"
   },
   "nyc": {

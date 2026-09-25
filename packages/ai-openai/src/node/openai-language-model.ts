@@ -30,7 +30,7 @@ import {
     ServerToolDescriptor,
     formatToolCallContentForModel
 } from '@theia/ai-core';
-import { CancellationToken } from '@theia/core';
+import { CancellationToken, isObject } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { OpenAI, AzureOpenAI } from 'openai';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
@@ -46,9 +46,11 @@ import { createProxyFetch } from '@theia/ai-core/lib/node';
 
 export class MistralFixedOpenAI extends OpenAI {
     protected override async prepareOptions(options: FinalRequestOptions): Promise<void> {
-        const messages = (options.body as { messages: Array<ChatCompletionMessageParam> }).messages;
+        // Every request the client issues passes through here, including the body-less `GET /models`
+        // that model discovery runs, so the body cannot be assumed to exist, let alone to carry messages.
+        const messages = (options.body as { messages?: Array<ChatCompletionMessageParam> } | undefined)?.messages;
         if (Array.isArray(messages)) {
-            (options.body as { messages: Array<ChatCompletionMessageParam> }).messages.forEach(m => {
+            messages.forEach(m => {
                 if (m.role === 'assistant' && m.tool_calls) {
                     // Mistral OpenAI Endpoint expects refusal to be undefined and not null for optional properties
                     // eslint-disable-next-line no-null/no-null
@@ -154,12 +156,19 @@ export class OpenAiModel implements LanguageModel {
         public released?: number
     ) { }
 
-    /** Reasoning-level translation lives in {@link openAiReasoningFor}. */
+    /**
+     * Reasoning-level translation lives in {@link openAiReasoningFor}. On the Responses API, user-configured `reasoning`
+     * fields from the request settings (e.g. `summary`) are kept; the selected level still decides `effort`.
+     */
     protected getSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
-        return {
-            ...request.settings,
-            ...openAiReasoningFor(request.reasoning?.level, forResponseApi, !!this.reasoningSupport)
-        };
+        const reasoning = openAiReasoningFor(request.reasoning?.level, forResponseApi, !!this.reasoningSupport);
+        const ours = reasoning.reasoning;
+        const theirs = request.settings?.reasoning;
+        if (isObject(ours) && isObject(theirs)) {
+            const effort = (ours as { effort?: string }).effort;
+            return { ...request.settings, reasoning: { ...ours, ...theirs, ...(effort !== undefined && { effort }) } };
+        }
+        return { ...request.settings, ...reasoning };
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {

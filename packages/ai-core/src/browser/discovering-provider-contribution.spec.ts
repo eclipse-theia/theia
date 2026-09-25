@@ -18,6 +18,7 @@ import { expect } from 'chai';
 import { ApiKeySource, DiscoveredModel, ModelDiscoveryResult } from '../common/model-discovery-status';
 import { DiscoveringLanguageModelsManager, DiscoveringProviderContribution, ModelDiscoveryMessages } from './discovering-provider-contribution';
 import { ModelDiscoveryStatusService } from './model-discovery-status-service';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 interface TestModelDescription {
     id: string;
@@ -123,7 +124,7 @@ function createContribution(
 } {
     const manager = new TestManager();
     const contribution = factory(manager);
-    const status = new ModelDiscoveryStatusService();
+    const status = Object.assign(new ModelDiscoveryStatusService(), { logger: new MockLogger() });
     const written: Record<string, unknown> = {};
     const prompts: string[] = [];
     let choice: string | undefined;
