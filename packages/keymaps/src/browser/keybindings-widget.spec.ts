@@ -9,6 +9,8 @@
 // *****************************************************************************
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+import React = require('@theia/core/shared/react');
+import { renderToStaticMarkup } from '@theia/core/shared/react-dom/server';
 const disableJSDOM = enableJSDOM();
 if (typeof DragEvent === 'undefined') {
     Object.assign(globalThis, { DragEvent: class extends Event { } });
@@ -114,6 +116,9 @@ describe('keybindings widget tooltip', () => {
                 if (event.code === 'F1') {
                     return new KeyCode({ key: Key.F1, ctrl: true });
                 }
+                if (event.code === 'Delete') {
+                    return new KeyCode({ key: Key.DELETE, ctrl: true });
+                }
                 if (event.code === 'KeyP') {
                     return new KeyCode({ key: Key.KEY_P, ctrl: true, shift: true, character: 'P' });
                 }
@@ -123,10 +128,47 @@ describe('keybindings widget tooltip', () => {
 
         chai.expect(recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: '[', code: 'Digit8', ctrlKey: true }))).to.equal('ctrl+[');
         chai.expect(recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: '+', code: 'Equal', ctrlKey: true }))).to.equal('ctrl+[char:0x2B]');
-        chai.expect(recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: 'F1', code: 'F1', ctrlKey: true }))).to.equal('ctrl+[F1]');
+        chai.expect(recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: 'F1', code: 'F1', ctrlKey: true }))).to.equal('ctrl+f1');
+        chai.expect(recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: 'Delete', code: 'Delete', ctrlKey: true }))).to.equal('ctrl+delete');
         const shifted = recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: 'P', code: 'KeyP', ctrlKey: true, shiftKey: true }));
         chai.expect(shifted).to.equal('shift+ctrl+p');
         chai.expect(KeyCode.parse(shifted!).dispatchString()).to.equal('shift+ctrl+p');
         chai.expect(recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: 'Control', code: 'ControlLeft', ctrlKey: true }))).to.be.undefined;
+    });
+
+    it('marks inactive keybindings with struck-through styling and a warning icon', () => {
+        const renderRow = (inactive: boolean): string => {
+            const widget = Object.create(KeybindingWidget.prototype) as KeybindingWidget;
+            Object.defineProperty(widget, 'keybindingRegistry', {
+                value: { isKeybindingInactive: () => inactive }
+            });
+            Object.defineProperty(widget, 'keymapsService', {
+                value: { hasKeybinding: () => false }
+            });
+            const item: KeybindingItem = {
+                command: { id: 'test', label: 'Test' },
+                keybinding: binding,
+                tooltip: 'The key is not available on the current keyboard layout.',
+                labels: {
+                    id: { value: 'test' },
+                    command: { value: 'Test' },
+                    keybinding: { value: 'ctrl+[', segments: [{ value: 'Ctrl', match: false, key: true }] },
+                    context: { value: '' },
+                    source: { value: 'default' }
+                }
+            };
+            return renderToStaticMarkup((widget as unknown as {
+                renderRow: (candidate: KeybindingItem, index: number) => React.ReactNode
+            }).renderRow(item, 0));
+        };
+
+        const inactiveMarkup = renderRow(true);
+        chai.expect(inactiveMarkup).to.contain('kb-keybinding-inactive');
+        chai.expect(inactiveMarkup).to.contain('codicon-warning');
+        chai.expect(inactiveMarkup).to.contain('The key is not available on the current keyboard layout.');
+
+        const activeMarkup = renderRow(false);
+        chai.expect(activeMarkup).not.to.contain('kb-keybinding-inactive');
+        chai.expect(activeMarkup).not.to.contain('codicon-warning');
     });
 });

@@ -401,10 +401,29 @@ describe('keys api', () => {
         expect(() => KeyCode.parse('👨‍👩‍👧‍👦')).to.throw(/Unrecognized key/);
     });
 
-    it('should serialize recorder strokes as logical characters or physical scan codes', () => {
+    it('should serialize recorder strokes as logical characters, named keys, or physical scan codes', () => {
         expect(new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[' }).toAuthoredKeybindingString()).to.equal('ctrl+[');
         expect(new KeyCode({ key: Key.EQUAL, ctrl: true, character: '+' }).toAuthoredKeybindingString()).to.equal('ctrl+[char:0x2B]');
-        expect(new KeyCode({ key: Key.F1, ctrl: true }).toAuthoredKeybindingString()).to.equal('ctrl+[F1]');
+
+        const namedKeys: Array<[Key, string]> = [
+            [Key.F1, 'f1'],
+            [Key.DELETE, 'delete'],
+            [Key.BACKSPACE, 'backspace'],
+            [Key.ENTER, 'enter'],
+            [Key.ARROW_LEFT, 'left'],
+            [Key.SPACE, 'space'],
+            [Key.ESCAPE, 'escape']
+        ];
+        for (const [key, name] of namedKeys) {
+            const serialized = new KeyCode({ key, ctrl: true }).toAuthoredKeybindingString();
+            expect(serialized).to.equal(`ctrl+${name}`);
+            expect(KeyCode.parse(serialized).key).to.equal(key);
+        }
+
+        const physicalPrintable = new KeyCode({ key: Key.DIGIT8, ctrl: true }).toAuthoredKeybindingString();
+        expect(physicalPrintable).to.equal('ctrl+[Digit8]');
+        expect(KeyCode.parse(physicalPrintable).key).to.equal(Key.DIGIT8);
+
         const shiftedLetter = new KeyCode({ key: Key.KEY_P, ctrl: true, shift: true, character: 'P' });
         expect(shiftedLetter.toAuthoredKeybindingString()).to.equal('shift+ctrl+p');
         expect(KeyCode.parse(shiftedLetter.toAuthoredKeybindingString()).dispatchString()).to.equal('shift+ctrl+p');

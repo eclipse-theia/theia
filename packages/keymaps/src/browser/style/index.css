@@ -72,6 +72,17 @@
   padding: 2px 10px 5px 10px;
 }
 
+.kb-keybinding-inactive .monaco-keybinding-key {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
+.kb-keybinding-inactive-icon {
+  color: var(--theia-editorWarning-foreground);
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
 .th-label,
 .th-source,
 .th-context,

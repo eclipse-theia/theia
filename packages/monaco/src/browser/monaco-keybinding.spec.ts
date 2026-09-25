@@ -16,6 +16,9 @@ import { Key, KeybindingRegistry, KeyCode } from '@theia/core/lib/browser';
 import * as os from '@theia/core/lib/common/os';
 import * as monaco from '@theia/monaco-editor-core';
 import * as MonacoPlatform from '@theia/monaco-editor-core/esm/vs/base/common/platform';
+import { KeyCode as MonacoKeyCode } from '@theia/monaco-editor-core/esm/vs/base/common/keyCodes';
+import { KeyCodeChord } from '@theia/monaco-editor-core/esm/vs/base/common/keybindings';
+import { USLayoutResolvedKeybinding } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/usLayoutResolvedKeybinding';
 import * as sinon from 'sinon';
 import { MonacoKeybindingContribution } from './monaco-keybinding';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
@@ -82,5 +85,19 @@ describe('Monaco keybinding adapter', () => {
         const controlLabel = MonacoPlatform.OS === MonacoPlatform.OperatingSystem.Macintosh ? '⌃' : 'Ctrl+';
         expect(bracket.getLabel()).to.equal(`${controlLabel}[`);
         expect(letter.getLabel()).to.equal(`${controlLabel}P`);
+    });
+
+    it('includes layout Shift in dispatch chords but not in labels', () => {
+        const registry = Object.create(KeybindingRegistry.prototype) as KeybindingRegistry;
+        const resolved = new MonacoResolvedKeybinding([
+            new KeyCode({ key: Key.DIGIT7, ctrl: true, character: '/', layoutModifiers: 'shift' })
+        ], registry);
+        const expectedDispatch = USLayoutResolvedKeybinding.getDispatchStr(
+            new KeyCodeChord(true, true, false, false, MonacoKeyCode.Digit7)
+        );
+        const controlLabel = MonacoPlatform.OS === MonacoPlatform.OperatingSystem.Macintosh ? '⌃' : 'Ctrl+';
+
+        expect(resolved.getDispatchChords()).to.deep.equal([expectedDispatch]);
+        expect(resolved.getLabel()).to.equal(`${controlLabel}/`);
     });
 });

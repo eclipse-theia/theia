@@ -87,6 +87,7 @@ const RUSSIAN_LAYOUT: NativeKeyboardLayout = {
     mapping: {
         KeyA: { value: 'ф', withShift: 'Ф', withAltGr: '', withShiftAltGr: '' },
         KeyC: { value: 'с', withShift: 'С', withAltGr: '', withShiftAltGr: '' },
+        KeyE: { value: 'у', withShift: 'У', withAltGr: '€', withShiftAltGr: '' },
         KeyV: { value: 'м', withShift: 'М', withAltGr: '', withShiftAltGr: '' },
         KeyS: { value: 'ы', withShift: 'Ы', withAltGr: '', withShiftAltGr: '' },
         Digit8: { value: '8', withShift: '*', withAltGr: '', withShiftAltGr: '' },
@@ -726,6 +727,27 @@ describe('keybindings', () => {
         }
     });
 
+    it('should dispatch a shifted Latin-letter binding on a non-Latin layout', async () => {
+        const binding = { command: TEST_COMMAND_SHADOW.id, keybinding: 'ctrl+shift+a' };
+        keybindingRegistry.setKeymap(KeybindingScope.USER, [binding]);
+        const notifier = testContainer.get(MockKeyboardLayoutChangeNotifier);
+        notifier.emitter.fire(RUSSIAN_LAYOUT);
+        const execute = sinon.spy();
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
+
+        try {
+            keybindingRegistry.dispatchNormalizedKeyDown({
+                key: 'Ф', code: 'KeyA', ctrlKey: true, shiftKey: true
+            }, new EventTarget());
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(execute.calledOnce).to.be.true;
+        } finally {
+            handler.dispose();
+            notifier.emitter.fire(require('../../src/common/keyboard/layouts/en-US-pc.json'));
+        }
+    });
+
     it('should keep punctuation bindings inactive on a non-Latin layout', () => {
         const binding = { command: TEST_COMMAND.id, keybinding: 'ctrl+[' };
         keybindingRegistry.setKeymap(KeybindingScope.USER, [binding]);
@@ -954,6 +976,12 @@ describe('keybindings', () => {
         expect(keybindingRegistry.authoredKeyCodeForKeyboardInput({
             key: 'С', code: 'KeyC', ctrlKey: true, shiftKey: true
         })?.toAuthoredKeybindingString()).to.equal('shift+ctrl+c');
+        expect(keybindingRegistry.authoredKeyCodeForKeyboardInput({
+            key: '€', code: 'KeyE', ctrlKey: true, altGraph: true
+        })?.toAuthoredKeybindingString()).to.equal('ctrl+€');
+        expect(keybindingRegistry.authoredKeyCodeForKeyboardInput({
+            key: 'у', code: 'KeyE', ctrlKey: true
+        })?.toAuthoredKeybindingString()).to.equal('ctrl+e');
 
         notifier.emitter.fire(require('../../src/common/keyboard/layouts/en-US-pc.json'));
         expect(keybindingRegistry.authoredKeyCodeForKeyboardInput({

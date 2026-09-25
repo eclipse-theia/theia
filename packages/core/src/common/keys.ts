@@ -110,6 +110,14 @@ export function layoutModifiersIncludeAltGraph(layoutModifiers: LayoutModifiers)
     return layoutModifiers === 'altGraph' || layoutModifiers === 'shiftAltGraph';
 }
 
+export function isPrintableKey(key: Key): boolean {
+    return isPrintableCharacter(key.easyString);
+}
+
+export function isPrintableCharacter(character: string | undefined): character is string {
+    return !!character && character !== ' ' && isSingleCharacter(character);
+}
+
 /**
  * Identifies how a key code was derived for runtime matching.
  * `authored` is the constructor default and represents an authored binding, even for manually constructed instances.
@@ -417,7 +425,8 @@ export class KeyCode {
     /**
      * Derive an authored keybinding stroke from a key event for recorder persistence.
      * This cannot use {@link toString}: event-derived key codes have no {@link authoredToken}, so `toString` would persist
-     * the physical US key name instead of the committed logical character.
+     * the physical US key name instead of the committed logical character. Non-printable keys are persisted by name;
+     * printable keys without a committed character are persisted as scan codes.
      */
     toAuthoredKeybindingString(): string {
         const result: string[] = [];
@@ -437,7 +446,7 @@ export class KeyCode {
         if (this.character) {
             result.push(characterToken(shiftedLetter ? this.character.toLocaleLowerCase() : this.character));
         } else if (this.key) {
-            result.push(`[${this.key.code}]`);
+            result.push(isPrintableKey(this.key) ? `[${this.key.code}]` : this.key.easyString);
         }
         return result.join('+');
     }

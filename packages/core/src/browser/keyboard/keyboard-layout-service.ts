@@ -22,7 +22,8 @@ import {
 } from '../../common/keyboard/keyboard-layout-provider';
 import { Emitter, Event } from '../../common/event';
 import {
-    KeyCode, Key, LayoutModifiers, NormalizedKeyboardInput, layoutModifiersIncludeAltGraph, layoutModifiersIncludeShift
+    KeyCode, Key, LayoutModifiers, NormalizedKeyboardInput, isPrintableCharacter, isPrintableKey,
+    layoutModifiersIncludeAltGraph, layoutModifiersIncludeShift
 } from './keys';
 
 /**
@@ -101,7 +102,7 @@ export class KeyboardLayoutService {
      * or shift-layer candidates); otherwise it remains a command modifier.
      */
     resolveKeyCode(inCode: KeyCode): KeyCode {
-        if (inCode.physical || !this.currentLayout || inCode.key && !this.isPrintableKey(inCode.key) && !inCode.character) {
+        if (inCode.physical || !this.currentLayout || inCode.key && !isPrintableKey(inCode.key) && !inCode.character) {
             return inCode;
         }
         const usCharacter = inCode.key ? US_CHARACTER_BY_KEY.get(usCharacterIndex(inCode.key, inCode.shift)) : undefined;
@@ -136,14 +137,6 @@ export class KeyboardLayoutService {
         });
     }
 
-    protected isPrintableKey(key: Key): boolean {
-        return this.isPrintableCharacter(key.easyString);
-    }
-
-    protected isPrintableCharacter(character: string | undefined): character is string {
-        return !!character && character !== ' ' && Array.from(character).length === 1;
-    }
-
     /**
      * Whether the platform's AltGraph layer is active: AltGraph on Linux, Option on macOS, and AltGraph or Ctrl+Alt on Windows.
      */
@@ -156,7 +149,7 @@ export class KeyboardLayoutService {
      * `undefined` means either that no layout modifiers were needed or that the input represents a dead key.
      */
     detectLayoutModifiers(input: NormalizedKeyboardInput): LayoutModifiers | undefined {
-        if (input.isComposing || !input.code || !this.shouldIncludeKey(input.code) || !this.isPrintableCharacter(input.key)) {
+        if (input.isComposing || !input.code || !this.shouldIncludeKey(input.code) || !isPrintableCharacter(input.key)) {
             return undefined;
         }
         const mapping = this.currentNativeLayout?.mapping[input.code] as (ILinuxKeyMapping & Partial<IMacKeyMapping>) | undefined;
@@ -309,7 +302,7 @@ export class KeyboardLayoutService {
      */
     validateKeyCode(keyCode: KeyCode, input: NormalizedKeyboardInput): void {
         const character = input.key;
-        if (this.keyValidator && keyCode.key && this.isPrintableCharacter(character)) {
+        if (this.keyValidator && keyCode.key && isPrintableCharacter(character)) {
             this.keyValidator.validateKey({
                 code: input.code ?? keyCode.key.code,
                 character,

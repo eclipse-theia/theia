@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { Container, injectable } from 'inversify';
+import type { IWindowsKeyMapping } from 'native-keymap';
 import { Emitter, Event } from '../../common/event';
 import { Key, KeyCode, LayoutModifiers, NormalizedKeyboardInput } from './keys';
 import { KeyboardLayoutService } from './keyboard-layout-service';
@@ -357,8 +358,8 @@ describe('keyboard layout service', function (): void {
             info: { id: 'dead-altgraph', lang: 'en' },
             mapping: {
                 KeyP: {
-                    value: 'p', withShift: 'P', withAltGr: '§', withShiftAltGr: '', withAltGrIsDeadKey: true
-                } as never
+                    value: 'p', withShift: 'P', withAltGr: '§', withShiftAltGr: '', withAltGrIsDeadKey: true, vkey: 'VK_P'
+                } as IWindowsKeyMapping & { withAltGrIsDeadKey: boolean }
             }
         };
         for (const system of ['linux', 'win'] as const) {

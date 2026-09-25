@@ -839,7 +839,8 @@ export class KeybindingRegistry {
             return keyCode;
         }
         const fallbackLetter = keyCode.key && this.keyboardLayoutService.getLatinLetterFallback(keyCode.key);
-        if (fallbackLetter && keyCode.character && keyCode.character.toLocaleLowerCase() !== fallbackLetter) {
+        if (fallbackLetter && keyCode.character && !layoutModifiersIncludeAltGraph(keyCode.layoutModifiers)
+            && keyCode.character.toLocaleLowerCase() !== fallbackLetter) {
             const shift = keyCode.shift || layoutModifiersIncludeShift(keyCode.layoutModifiers);
             return new KeyCode({
                 key: keyCode.key,

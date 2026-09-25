@@ -50,6 +50,8 @@ export interface KeybindingItem {
     visible?: boolean;
     /** Lazily computed tooltip; reset whenever items are rebuilt. */
     tooltip?: string;
+    /** Lazily computed; reset whenever items are rebuilt. */
+    inactive?: boolean;
 }
 
 export namespace KeybindingItem {
@@ -462,6 +464,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
 
     protected renderRow(item: KeybindingItem, index: number): React.ReactNode {
         const { command, keybinding } = item;
+        const inactive = this.isKeybindingInactive(item);
         // TODO get rid of array functions in event handlers
         return <tr className='kb-item-row' key={index} onDoubleClick={event => this.handleItemDoubleClick(item, index, event)}
             onClick={event => this.handleItemClick(item, index, event)}
@@ -472,8 +475,9 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
             <td className='kb-label' title={this.getCommandLabel(command)}>
                 {this.renderMatchedData(item.labels.command)}
             </td>
-            <td title={this.getKeybindingTooltip(item)} className='kb-keybinding monaco-keybinding'>
+            <td title={this.getKeybindingTooltip(item)} className={`kb-keybinding monaco-keybinding${inactive ? ' kb-keybinding-inactive' : ''}`}>
                 {this.renderKeybinding(item)}
+                {inactive && this.renderInactiveIndicator(item)}
             </td>
             <td className='kb-context' title={this.getContextLabel(keybinding)}>
                 <code>{this.renderMatchedData(item.labels.context)}</code>
@@ -664,6 +668,17 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
             return undefined;
         }
         return item.tooltip ??= keybindingTooltip(this.keybindingRegistry, item.keybinding);
+    }
+
+    protected isKeybindingInactive(item: KeybindingItem): boolean {
+        return !!item.keybinding && (item.inactive ??= this.keybindingRegistry.isKeybindingInactive(item.keybinding));
+    }
+
+    protected renderInactiveIndicator(item: KeybindingItem): React.ReactNode {
+        return <i className={`${codicon('warning')} kb-keybinding-inactive-icon`}
+            title={this.getKeybindingTooltip(item)}
+            aria-label={nls.localize('theia/keymaps/inactiveKeybinding', 'Inactive on the current keyboard layout')}
+            role='img' />;
     }
 
     protected getContextLabel(keybinding: ScopedKeybinding | undefined): string | undefined {
