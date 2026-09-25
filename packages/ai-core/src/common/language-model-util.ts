@@ -83,6 +83,58 @@ export const getJsonOfText = (text: string): unknown => {
 export const toolRequestToPromptText = (toolRequest: ToolRequest): string => `${toolRequest.id}`;
 
 /**
+ * Builds an error message string that also incorporates the `cause` chain.
+ *
+ * Node's `fetch` (undici) throws `TypeError: fetch failed` while the actionable reason
+ * (e.g. `ECONNREFUSED`, `ENOTFOUND`, a TLS error) lives on `error.cause`. Provider SDKs often
+ * wrap that again. This walks the chain and appends each distinct cause message/code.
+ *
+ * Because the RPC error extension only serializes `code`, `data`, `message`, `name` and `stack`
+ * (see `rpc-message-encoder.ts`), the `cause` is gone by the time a frontend agent sees a backend
+ * error. Backend providers must therefore flatten the chain into the `message` *before* re-wrapping
+ * or throwing, so the actionable reason survives the RPC boundary. Frontend consumers can still call
+ * this defensively for locally thrown errors that keep their `cause`.
+ */
+export const extractErrorMessageWithCause = (error: unknown): string => {
+    const parts: string[] = [];
+    const seen = new Set<unknown>();
+    let current: unknown = error;
+    // Bound the walk to avoid pathological/cyclic cause chains.
+    // eslint-disable-next-line no-null/no-null
+    for (let depth = 0; current !== undefined && current !== null && depth < 10; depth++) {
+        if (seen.has(current)) { break; }
+        seen.add(current);
+
+        let segment: string | undefined;
+        if (typeof current === 'string') {
+            // A string can appear at any depth (e.g. `Object.assign(new Error('fetch failed'),
+            // { cause: 'connect ECONNREFUSED 127.0.0.1:11434' })`). Consume it and stop, since a
+            // string carries no further `cause` to follow.
+            segment = current;
+            current = undefined;
+        } else if (typeof current === 'object') {
+            const obj = current as { message?: unknown; code?: unknown; cause?: unknown };
+            const message = typeof obj.message === 'string' ? obj.message : undefined;
+            const code = typeof obj.code === 'string' ? obj.code : undefined;
+            // Include the code when it is not already part of the message (undici puts the code on
+            // the cause but not always in its message).
+            segment = code && (!message || !message.includes(code))
+                ? [message, code].filter(Boolean).join(': ')
+                : message;
+            current = obj.cause;
+        } else {
+            break;
+        }
+
+        if (segment && !parts.includes(segment)) {
+            parts.push(segment);
+        }
+    }
+
+    return parts.join(' | ') || String(error);
+};
+
+/**
  * Orders models for the lists a user picks from: newest first, since a provider's newest model is
  * almost always the one being looked for, with the id as the tie-break so that models whose provider
  * reports no release date (Gemini reports none) still come out in a stable, readable order.
