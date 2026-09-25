@@ -77,6 +77,9 @@ export interface GenericCapabilitiesService {
 
     /** Get all available variables */
     getAvailableVariables(): GenericCapabilityItem[];
+
+    /** Get all available capabilities of every type, optionally excluding a specific agent from delegation */
+    getAvailableCapabilities(excludeAgentId?: string): Promise<AvailableGenericCapabilities>;
 }
 
 @injectable()
@@ -135,6 +138,17 @@ export class GenericCapabilitiesServiceImpl implements GenericCapabilitiesServic
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    async getAvailableCapabilities(excludeAgentId?: string): Promise<AvailableGenericCapabilities> {
+        return {
+            skills: this.getAvailableSkills(),
+            mcpFunctions: await this.getAvailableMCPFunctions(),
+            functions: this.getAvailableFunctions(),
+            promptFragments: this.getAvailablePromptFragments(),
+            agentDelegation: this.getAvailableAgents(excludeAgentId),
+            variables: this.getAvailableVariables()
+        };
     }
 
     getAvailableSkills(): GenericCapabilityItem[] {

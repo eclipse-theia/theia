@@ -209,20 +209,23 @@ export const AgentDetailView: React.FC<AgentDetailViewProps> = ({
         </>}
 
         {state.parsed.capabilities.length > 0 && <AgentCapabilitiesSettings
-                capabilities={state.parsed.capabilities}
-                agentId={agent.id}
-                savedOverrides={state.capabilityOverrides}
-                aiSettingsService={aiSettingsService}
-                settingsRowService={settingsRowService}
-                onOpenPromptSnippet={onOpenPromptSnippet}
+            capabilities={state.parsed.capabilities}
+            agentId={agent.id}
+            savedOverrides={state.capabilityOverrides}
+            aiSettingsService={aiSettingsService}
+            settingsRowService={settingsRowService}
+            onOpenPromptSnippet={onOpenPromptSnippet}
         />}
 
-        {GenericCapabilitySelections.hasSelections(state.genericCapabilitySelections) && <AgentGenericCapabilitiesSettings
-                agentId={agent.id}
-                savedSelections={state.genericCapabilitySelections}
-                aiSettingsService={aiSettingsService}
-                settingsRowService={settingsRowService}
-                onOpenPromptSnippet={onOpenPromptSnippet}
+        {(state.availableGenericCapabilities || GenericCapabilitySelections.hasSelections(state.genericCapabilitySelections)) && <AgentGenericCapabilitiesSettings
+            agentId={agent.id}
+            savedSelections={state.genericCapabilitySelections}
+            availableCapabilities={state.availableGenericCapabilities}
+            usedCapabilities={state.usedGenericCapabilities}
+            aiSettingsService={aiSettingsService}
+            settingsRowService={settingsRowService}
+            hoverService={services.hoverService}
+            onOpenPromptSnippet={onOpenPromptSnippet}
         />}
 
         {state.serverTools && state.serverTools.length > 0 && state.serverToolVendor && <AgentServerToolsSettings
