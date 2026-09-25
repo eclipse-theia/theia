@@ -232,6 +232,29 @@ describe('ai-ollama package', () => {
         expect(tags['items']).to.deep.equal({ enum: ['a', 'b'] });
     });
 
+    it('preserves top-level $defs alongside a $ref property', () => {
+        const model = new OllamaModelUnderTest();
+        const tool: ToolRequest = {
+            id: 'test',
+            name: 'test',
+            description: 'test',
+            handler: sinon.stub(),
+            parameters: {
+                type: 'object',
+                $defs: { Todo: { type: 'object', properties: { id: { type: 'string', description: 'id' } }, required: ['id'] } },
+                properties: {
+                    item: { $ref: '#/$defs/Todo' }
+                }
+            } as ToolRequest['parameters'] & { $defs: unknown }
+        };
+        const result = model.toOllamaTool(tool);
+        expect(result.function.parameters!['$defs']).to.deep.equal({
+            Todo: { type: 'object', properties: { id: { type: 'string', description: 'id' } }, required: ['id'] }
+        });
+        const item = result.function.parameters!.properties!['item'] as Record<string, unknown>;
+        expect(item['$ref']).to.equal('#/$defs/Todo');
+    });
+
     it('resolves anyOf on items schema preserving branch content', () => {
         const model = new OllamaModelUnderTest();
         const tool: ToolRequest = {

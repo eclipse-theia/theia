@@ -408,6 +408,7 @@ export class OllamaModel implements LanguageModel {
                 name: tool.name,
                 description: tool.description ?? 'Tool named ' + tool.name,
                 parameters: {
+                    ...(tool.parameters as unknown as Record<string, unknown>),
                     type: tool.parameters?.type ?? 'object',
                     required: tool.parameters?.required ?? [],
                     properties: this.transformProperties(tool.parameters?.properties) ?? {}
