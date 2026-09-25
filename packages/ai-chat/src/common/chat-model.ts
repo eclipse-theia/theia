@@ -1168,6 +1168,16 @@ export interface ChatResponseModel {
      */
     readonly languageModel?: string;
     readonly tokenUsage?: ResponseTokenUsage;
+    /**
+     * Timestamp (epoch milliseconds) marking when work on this response started, i.e. when the
+     * request was dispatched. Used to compute the end-to-end response time.
+     */
+    readonly requestStartTime?: number;
+    /**
+     * Timestamp (epoch milliseconds) marking when this response completed (successfully, with an
+     * error, or by cancellation). Combined with {@link requestStartTime} to compute response time.
+     */
+    readonly completionTime?: number;
     toSerializable(): SerializableChatResponseData;
 }
 
@@ -3374,6 +3384,8 @@ export class MutableChatResponseModel implements ChatResponseModel {
     protected _languageModel?: string;
     protected _tokenUsage?: ResponseTokenUsage;
     protected _tokenUsageEntries: ResponseTokenUsage[] = [];
+    protected _requestStartTime?: number;
+    protected _completionTime?: number;
 
     constructor(
         requestId: string,
@@ -3394,6 +3406,8 @@ export class MutableChatResponseModel implements ChatResponseModel {
             this._isComplete = false;
             this._waitingForInputCount = 0;
             this._isError = false;
+            // Mark the start of the request so we can later report the end-to-end response time.
+            this._requestStartTime = Date.now();
         }
 
         const response = new ChatResponseImpl();
@@ -3419,6 +3433,8 @@ export class MutableChatResponseModel implements ChatResponseModel {
         this._isPromptVariantEdited = data.isPromptVariantEdited ?? false;
         this._languageModel = data.languageModel;
         this._tokenUsage = data.tokenUsage;
+        this._requestStartTime = data.requestStartTime;
+        this._completionTime = data.completionTime;
 
         if (data.errorMessage) {
             this._errorObject = new Error(data.errorMessage);
@@ -3520,6 +3536,14 @@ export class MutableChatResponseModel implements ChatResponseModel {
         return this._tokenUsageEntries;
     }
 
+    get requestStartTime(): number | undefined {
+        return this._requestStartTime;
+    }
+
+    get completionTime(): number | undefined {
+        return this._completionTime;
+    }
+
     setPromptVariantInfo(variantId: string | undefined, isEdited: boolean): void {
         this._promptVariantId = variantId;
         this._isPromptVariantEdited = isEdited;
@@ -3544,13 +3568,22 @@ export class MutableChatResponseModel implements ChatResponseModel {
 
     complete(): void {
         this._isComplete = true;
+        this.markCompletionTime();
         this.resetPendingInput();
         this._onDidChangeEmitter.fire();
+    }
+
+    /** Records the wall-clock time at which this response settled, but only the first time it settles. */
+    protected markCompletionTime(): void {
+        if (this._completionTime === undefined) {
+            this._completionTime = Date.now();
+        }
     }
 
     cancel(): void {
         this._cancellationToken.cancel();
         this._isComplete = true;
+        this.markCompletionTime();
         this.resetPendingInput();
 
         // Ensure any pending tool confirmations are canceled when the chat is canceled
@@ -3610,6 +3643,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
 
     error(error: Error): void {
         this._isComplete = true;
+        this.markCompletionTime();
         this.resetPendingInput();
         this._isError = true;
         this._errorObject = error;
@@ -3633,6 +3667,8 @@ export class MutableChatResponseModel implements ChatResponseModel {
             isPromptVariantEdited: this._isPromptVariantEdited,
             languageModel: this._languageModel,
             tokenUsage: this._tokenUsage,
+            requestStartTime: this._requestStartTime,
+            completionTime: this._completionTime,
             content: this.response.content.map(c => {
                 const serialized = c.toSerializable?.();
                 if (!serialized) {

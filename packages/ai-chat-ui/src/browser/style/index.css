@@ -1389,6 +1389,28 @@ details.theia-tool-confirmation-args>summary::marker {
   color: var(--theia-errorForeground);
 }
 
+.theia-ResponseNode-Stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 6px;
+  padding-top: 4px;
+  font-size: var(--theia-ui-font-size0, 11px);
+  color: var(--theia-descriptionForeground);
+  opacity: 0.85;
+}
+
+.theia-ResponseNode-Stats .theia-ResponseStat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.theia-ResponseNode-Stats .theia-ResponseStat .codicon {
+  font-size: 12px;
+}
+
 .spinner {
   display: inline-block;
   animation: spin 2s linear infinite;
