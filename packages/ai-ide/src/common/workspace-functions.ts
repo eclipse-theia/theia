@@ -25,3 +25,4 @@ export const LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID = 'listLaunchConfigurations'
 export const RUN_LAUNCH_CONFIGURATION_FUNCTION_ID = 'runLaunchConfiguration';
 export const STOP_LAUNCH_CONFIGURATION_FUNCTION_ID = 'stopLaunchConfiguration';
 export const GET_SKILL_FILE_CONTENT_FUNCTION_ID = 'getSkillFileContent';
+export const LIST_SKILLS_FUNCTION_ID = 'listSkills';
