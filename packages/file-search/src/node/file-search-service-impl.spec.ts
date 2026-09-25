@@ -18,7 +18,7 @@ import { expect } from 'chai';
 import * as assert from 'assert';
 import * as path from 'path';
 import { FileSearchServiceImpl } from './file-search-service-impl';
-import { FileUri } from '@theia/core/lib/node';
+import { BundledResourceProvider, FileUri } from '@theia/core/lib/node';
 import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { CancellationTokenSource } from '@theia/core';
 import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
@@ -32,6 +32,7 @@ bindLogger(testContainer.bind.bind(testContainer));
 testContainer.bind(RawProcessFactory).toConstantValue(() => {
     throw new Error('should not be used anymore');
 });
+testContainer.bind(BundledResourceProvider).toConstantValue({ resolveExternalPath: async (resourcePath: string) => resourcePath });
 testContainer.load(new ContainerModule(bind => {
     bind(FileSearchServiceImpl).toSelf().inSingletonScope();
 }));

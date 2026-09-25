@@ -144,28 +144,22 @@ For example, in an `electron-builder` configuration, ensure the `lib/backend/she
 
 The `lib/**/*` glob already covers `lib/backend/shell-integrations/`. If you use a more restrictive `files` pattern, make sure `lib/backend/shell-integrations/**/*` is explicitly included, as `ShellIntegrationInjector` resolves these scripts relative to `__dirname` (i.e. `lib/backend/`).
 
-Applications packaged with `asar: true` store these scripts inside `app.asar`, which only the application itself can read, so the shells that Theia spawns cannot source them. Since `1.77.0` this is handled by the application: `BundledResourceProvider` (`@theia/core/lib/node`) extracts the scripts from the archive into the configuration directory (`~/.theia/bundled-resources/` by default) on start-up, and cleans up the copies of earlier versions. No packaging change is required.
+_Bundled files in asar-packaged Electron applications_:
 
-Extraction can be avoided by unpacking the scripts at packaging time, which the provider prefers over its own copy whenever the unpacked files are complete. With `electron-builder`:
+Applications packaged with `asar: true` store their files inside `app.asar`, which only the application itself can read. Processes that Theia spawns therefore cannot use the files in the archive: the shells cannot source the terminal shell integration scripts, and `child_process.spawn` cannot execute the ripgrep binary that `@theia/bundle-plugin` copies to `lib/backend/native/`. Since `1.77.0` the application handles this: `BundledResourceProvider` (`@theia/core/lib/node`) extracts such files from the archive into the configuration directory (`~/.theia/bundled-resources/` by default) when they are first needed, and cleans up the copies of earlier versions. No packaging change is required.
+
+Extraction can be avoided by unpacking the files at packaging time. The provider prefers the unpacked files over its own copy whenever they are complete. With `electron-builder`:
 
 ```yaml
 asar: true
 asarUnpack:
   - "**/lib/backend/shell-integrations/**"
-```
-
-Use `BundledResourceProvider.resolveExternalPath(path)` for any other bundled file that is handed to a process outside of the application, such as a script or a helper executable.
-
-_Ripgrep in asar-packaged Electron applications_:
-
-`child_process.spawn` cannot execute a binary inside an asar archive. When the backend bundle runs from `app.asar`, `@theia/bundle-plugin` therefore resolves the ripgrep binary copied to `lib/backend/native/` from `app.asar.unpacked` instead. The binary is only there if your packaging extracts it, for example with `electron-builder`:
-
-```yaml
-asarUnpack:
   - "**/lib/backend/native/**"
 ```
 
-If you worked around this by overriding the `@vscode/ripgrep` replacement in your own esbuild configuration, that override is no longer needed.
+Use `BundledResourceProvider.resolveExternalPath(path)` for any other bundled file that is handed to a process outside of the application, such as a script or a helper executable. This also applies to code of your own that spawns the `rgPath` exported by `@vscode/ripgrep`: in the bundle, `rgPath` points to `app.asar.unpacked` only if the binary was unpacked, and into the archive otherwise.
+
+If you worked around the ripgrep problem by overriding the `@vscode/ripgrep` replacement in your own esbuild configuration, that override is no longer needed.
 
 ### v1.76.0
 

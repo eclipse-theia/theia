@@ -120,6 +120,20 @@ describe('BundledResourceProvider', () => {
         expect(fs.readFileSync(resolvedPath, 'utf8')).to.equal('echo hello');
     });
 
+    it('extracts a packaged file as executable', async function (): Promise<void> {
+        if (process.platform === 'win32') {
+            this.skip();
+        }
+        // Electron reports the files of an asar archive with this mode, even executables.
+        const archivePath = path.join(appDir, 'app.asar');
+        writeResources(archivePath, { 'native/tool': 'binary' });
+        fs.chmodSync(path.join(archivePath, 'native', 'tool'), 0o644);
+
+        const resolvedPath = await provider.resolveExternalPath(path.join(archivePath, 'native', 'tool'));
+
+        expect(fs.statSync(resolvedPath).mode & 0o700).to.equal(0o700);
+    });
+
     it('prefers the copy that the packaging step has left outside of the archive', async () => {
         const archivePath = path.join(appDir, 'app.asar');
         writeResources(archivePath, { 'scripts/greet.sh': 'echo hello' });

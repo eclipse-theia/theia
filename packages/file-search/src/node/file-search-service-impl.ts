@@ -17,17 +17,21 @@
 import * as cp from 'child_process';
 import * as fuzzy from '@theia/core/shared/fuzzy';
 import * as readline from 'readline';
-import { rgPath } from '@vscode/ripgrep';
+import { rgPath as bundledRgPath } from '@vscode/ripgrep';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { CancellationTokenSource, CancellationToken, ILogger, isWindows } from '@theia/core';
+import { BundledResourceProvider } from '@theia/core/lib/node';
 import { RawProcessFactory } from '@theia/process/lib/node';
 import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
 import * as path from 'path';
 
 @injectable()
 export class FileSearchServiceImpl implements FileSearchService {
+
+    @inject(BundledResourceProvider)
+    protected readonly bundledResourceProvider: BundledResourceProvider;
 
     constructor(
         @inject(ILogger) @named('file-search:FileSearchServiceImpl')
@@ -130,7 +134,8 @@ export class FileSearchServiceImpl implements FileSearchService {
         return [...exactMatches, ...fuzzyMatches].slice(0, opts.limit);
     }
 
-    protected doFind(rootUri: URI, options: FileSearchService.BaseOptions, accept: (fileUri: string) => void, token: CancellationToken): Promise<void> {
+    protected async doFind(rootUri: URI, options: FileSearchService.BaseOptions, accept: (fileUri: string) => void, token: CancellationToken): Promise<void> {
+        const rgPath = await this.resolveRgPath();
         return new Promise((resolve, reject) => {
             const cwd = FileUri.fsPath(rootUri);
             const args = this.getSearchArgs(options);
@@ -158,6 +163,18 @@ export class FileSearchServiceImpl implements FileSearchService {
             });
             lineReader.on('close', () => resolve());
         });
+    }
+
+    /**
+     * Resolve the ripgrep binary to a path that can be spawned, which is not the case for a binary packaged into an asar archive.
+     */
+    protected async resolveRgPath(): Promise<string> {
+        try {
+            return await this.bundledResourceProvider.resolveExternalPath(bundledRgPath);
+        } catch (error) {
+            this.logger.warn(`Could not resolve the ripgrep binary '${bundledRgPath}'.`, error);
+            return bundledRgPath;
+        }
     }
 
     protected getSearchArgs(options: FileSearchService.BaseOptions): string[] {

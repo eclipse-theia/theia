@@ -168,7 +168,9 @@ export class BundledResourceProviderImpl implements BundledResourceProvider {
         // instance never reads partially written content.
         const temporaryPath = `${targetPath}.${process.pid}.tmp`;
         try {
-            await fs.promises.writeFile(temporaryPath, await fs.promises.readFile(sourcePath), { mode: sourceStat.mode & 0o777 | 0o600 });
+            // Electron reports the files of an asar archive as not executable, even those that the archive marks as
+            // executable, so every extracted file is made executable for the owner to keep bundled executables usable.
+            await fs.promises.writeFile(temporaryPath, await fs.promises.readFile(sourcePath), { mode: sourceStat.mode & 0o777 | 0o700 });
             try {
                 await fs.promises.rename(temporaryPath, targetPath);
             } catch {
