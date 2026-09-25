@@ -19,13 +19,17 @@ import * as fs from 'fs';
 import { GeneralShellType, guessShellTypeFromExecutable } from '../common/shell-type';
 import { ShellProcess, ShellProcessOptions } from './shell-process';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { ILogger } from '@theia/core';
+import { ILogger, MaybePromise } from '@theia/core';
+import { BackendApplicationContribution, BundledResourceProvider } from '@theia/core/lib/node';
 
 @injectable()
-export class ShellIntegrationInjector {
+export class ShellIntegrationInjector implements BackendApplicationContribution {
 
     @inject(ILogger) @named('terminal:ShellIntegrationInjector')
     protected readonly logger: ILogger;
+
+    @inject(BundledResourceProvider)
+    protected readonly bundledResourceProvider: BundledResourceProvider;
 
     protected readonly INTEGRATION_ROOT_DIR = 'shell-integrations';
 
@@ -37,6 +41,15 @@ export class ShellIntegrationInjector {
     protected readonly ZDOTDIR_ENV_VAR = 'ZDOTDIR';
     protected readonly ZDOTDIR_RELATIVE_DIR = '/zsh/zdotdir/';
     protected readonly ZDOTDIR_ORIGINAL_ENV_VAR = 'THEIA_ORIGINAL_ZDOTDIR';
+
+    /** The location of the shell integration scripts, as seen by the spawned shells. */
+    protected integrationRootPath: string | undefined;
+    protected resolvingIntegrationRoot: Promise<void> | undefined;
+
+    initialize(): MaybePromise<void> {
+        // Resolve the scripts up-front, because the shells are spawned synchronously.
+        return this.resolveIntegrationRoot();
+    }
 
     injectShellIntegration(options: ShellProcessOptions): ShellProcessOptions {
         const shellExecutable = options.shell ?? ShellProcess.getShellExecutablePath();
@@ -75,8 +88,32 @@ export class ShellIntegrationInjector {
         }
     }
 
+    /**
+     * Make the bundled shell integration scripts available to the shells that we spawn. In a packaged Electron
+     * application, the scripts are stored in an archive that only the application itself can read, so they have
+     * to be resolved to a location outside of that archive.
+     */
+    protected resolveIntegrationRoot(): Promise<void> {
+        return this.resolvingIntegrationRoot ??= (async () => {
+            const bundledPath = path.join(__dirname, this.INTEGRATION_ROOT_DIR);
+            try {
+                this.integrationRootPath = await this.bundledResourceProvider.resolveExternalPath(bundledPath);
+            } catch (error) {
+                this.logger.warn(`Shell integration scripts not available (application may not be bundled correctly): ${bundledPath}`, error);
+                // allow a later attempt to recover, e.g. when the configuration directory was not writable yet
+                this.resolvingIntegrationRoot = undefined;
+            }
+        })();
+    }
+
     protected getShellIntegrationPath(relativePath: string): string | undefined {
-        const fullPath = path.join(__dirname, this.INTEGRATION_ROOT_DIR, relativePath);
+        if (this.integrationRootPath === undefined) {
+            // The scripts are resolved on start-up, so this is only reached if that has failed or has not run.
+            this.resolveIntegrationRoot();
+            this.logger.warn('Shell integration scripts are not available yet.');
+            return undefined;
+        }
+        const fullPath = path.join(this.integrationRootPath, relativePath);
         if (!fs.existsSync(fullPath)) {
             this.logger.warn(`Shell integration file not found (application may not be bundled correctly): ${fullPath}`);
             return undefined;
