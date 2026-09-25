@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 STMicroelectronics and others.
+// Copyright (C) 2026 JuliaHub, Inc. and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -16,7 +16,7 @@
 
 import URI from '@theia/core/lib/common/uri';
 import { expect } from 'chai';
-import { isTelemetryData, isTelemetryEventKind, snapshotTelemetryData } from './telemetry-types';
+import { TelemetryLevel, isKindAllowedByLevel, isTelemetryData, isTelemetryEventKind, snapshotTelemetryData } from './telemetry-types';
 
 const typedPayload = {
     action: 'open',
@@ -114,5 +114,16 @@ describe('telemetry types', () => {
         expect(isTelemetryData({ value: undefined })).to.be.false;
         expect(isTelemetryData({ value: () => 'value' })).to.be.false;
         expect(isTelemetryData({ value: Symbol('value') })).to.be.false;
+    });
+
+    it('maps telemetry levels to event kinds', () => {
+        const kinds = ['usage', 'error', 'crash'] as const;
+        const levels: TelemetryLevel[] = ['off', 'crash', 'error', 'all'];
+        expect(levels.map(level => kinds.filter(kind => isKindAllowedByLevel(level, kind)))).to.deep.equal([
+            [],
+            ['crash'],
+            ['error', 'crash'],
+            ['usage', 'error', 'crash']
+        ]);
     });
 });

@@ -38,7 +38,7 @@ import { Drag } from '@lumino/dragdrop';
 import { MimeData } from '@lumino/coreutils';
 import { ElementExt } from '@lumino/domutils';
 import { TabBarDecoratorService } from './shell/tab-bar-decorator';
-import { ContextKeyService } from './context-key-service';
+import { ContextKeyService, ContextMatcher } from './context-key-service';
 import { KeybindingRegistry } from './keybinding';
 import { SubmenuAsToolbarItemWrapper } from './shell/tab-bar-toolbar/tab-bar-toolbar-menu-adapters';
 import { TheiaSplitPanel } from './shell/theia-split-panel';
@@ -109,8 +109,8 @@ class PartsMenuToolbarItem extends SubmenuAsToolbarItemWrapper {
         super(effectiveMenuPath, commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer, menuNode, group);
     }
 
-    override isVisible(widget: Widget): boolean {
-        return widget === this.target() && super.isVisible(widget);
+    override isVisible(widget: Widget, contextMatcher: ContextMatcher): boolean {
+        return widget === this.target() && super.isVisible(widget, contextMatcher);
     }
 }
 

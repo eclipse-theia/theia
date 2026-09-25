@@ -76,7 +76,7 @@ Read on demand (not auto-loaded) — consult when the task calls for it:
 - [doc/Developing.md](doc/Developing.md) — full build/setup details.
 - [doc/Migration.md](doc/Migration.md) — adopter-facing breaking-change notes.
 - [doc/runtime-policy.md](doc/runtime-policy.md) / [doc/Publishing.md](doc/Publishing.md) — Node/Electron support and release process.
-- [doc/lockfile-maintenance.md](doc/lockfile-maintenance.md) — regenerating `package-lock.json` across the Node 24/26 CI matrix; consult before committing lockfile changes.
+- [doc/lockfile-maintenance.md](doc/lockfile-maintenance.md) — `allowScripts` upkeep and platform-specific entries in `package-lock.json`; consult before committing lockfile changes.
 
 **Code Style:**
 - 4 spaces indentation, single quotes, `undefined` over `null`
@@ -128,5 +128,6 @@ Read on demand (not auto-loaded) — consult when the task calls for it:
 
 - Use Conventional Commits subjects, matching existing history: `type(scope): summary` (e.g. `fix(plugin-ext): ...`, `feat(ai-registry): ...`, `chore(deps): ...`).
 - Use the templates in `.github/` when opening issues or PRs.
+- **Changelog:** only breaking changes require a manual `CHANGELOG.md` entry; whether a PR is breaking is declared in the `Breaking changes` section of its description. Non-breaking changes do not need an entry, they are collected at release time, so do not add one and never report a missing one as a review finding. Per-PR entries cause frequent conflicts in `CHANGELOG.md` across many PRs.
 - Keep commit messages, PR descriptions, issues, and comments **brief and concise** — no padding, marketing language, or restating the diff.
 - **Security:** never disclose vulnerabilities via a GitHub issue or PR — report them per `SECURITY.md`. Such issues are deleted on sight.

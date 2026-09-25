@@ -23,6 +23,8 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { AiSettingsControl, AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
 import { AiConfigurationCategoryId } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
+import { ModelDiscoveryStatusService } from '@theia/ai-core/lib/browser';
+import { ModelDiscoveryStatus } from '@theia/ai-core/lib/common/model-discovery-status';
 import { ModelsConfigurationCategory } from './models-configuration-category';
 
 disableJSDOM();
@@ -69,7 +71,7 @@ describe('ModelsConfigurationCategory', () => {
             'ai-features.modelSettings.requestSettings',
             'ai-features.reasoning.defaults',
             'ai-features.anthropic.AnthropicApiKey',
-            'ai-features.anthropic.AnthropicModels',
+            'ai-features.anthropic.serverSideCompaction',
             'ai-features.google.apiKey',
             // must be ignored: owned by other categories / unrelated
             'ai-features.chat.pinChatAgent',
@@ -84,7 +86,7 @@ describe('ModelsConfigurationCategory', () => {
         const sections = (category as any).getSections() as Array<{ id: string; preferenceIds: string[] }>;
         expect(sections.map(s => s.id)).to.deep.equal(['model-settings', 'anthropic', 'google']);
         expect(sections[0].preferenceIds).to.have.members(['ai-features.modelSettings.requestSettings', 'ai-features.reasoning.defaults']);
-        expect(sections[1].preferenceIds).to.deep.equal(['ai-features.anthropic.AnthropicApiKey', 'ai-features.anthropic.AnthropicModels']);
+        expect(sections[1].preferenceIds).to.deep.equal(['ai-features.anthropic.AnthropicApiKey', 'ai-features.anthropic.serverSideCompaction']);
         expect(sections[2].preferenceIds).to.deep.equal(['ai-features.google.apiKey']);
     });
 
@@ -162,6 +164,49 @@ describe('ModelsConfigurationCategory', () => {
             categoryId: AiConfigurationCategoryId.MODELS,
             itemId: 'anthropic',
             highlight: { rowId: 'ai-features.anthropic.AnthropicApiKey' }
+        });
+    });
+
+    describe('model discovery section', () => {
+
+        function withDiscovery(statuses: ModelDiscoveryStatus[], modelIds: string[]): ModelsConfigurationCategory {
+            const category = createCategory([]);
+            const service: Partial<ModelDiscoveryStatusService> = {
+                getStatus: (providerId: string) => statuses.find(status => status.providerId === providerId)
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (category as any).discoveryStatus = service;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (category as any).models = modelIds.map(id => ({ id }));
+            return category;
+        }
+
+        function discoveredModelIds(category: ModelsConfigurationCategory, providerId: string): string[] | undefined {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const rendered = (category as any).renderModelDiscovery(providerId) as
+                { props: { models: { id: string }[] } } | undefined;
+            return rendered && rendered.props.models.map(model => model.id);
+        }
+
+        it('renders nothing for a provider that does not participate in discovery', () => {
+            const category = withDiscovery([], ['anthropic/claude-opus-5']);
+            expect(discoveredModelIds(category, 'anthropic')).to.equal(undefined);
+        });
+
+        it('lists the provider\'s own models, keyed by the provider id', () => {
+            const category = withDiscovery(
+                [{ providerId: 'anthropic', label: 'Anthropic', state: 'ready' }],
+                ['anthropic/claude-opus-5', 'google/gemini-3.1-pro', 'anthropic-custom/foo']
+            );
+            expect(discoveredModelIds(category, 'anthropic')).to.deep.equal(['anthropic/claude-opus-5']);
+        });
+
+        it('honours a model-id prefix that differs from the provider id', () => {
+            const category = withDiscovery(
+                [{ providerId: 'openAiOfficial', label: 'OpenAI', modelIdPrefix: 'openai', state: 'ready' }],
+                ['openai/gpt-5.5', 'openAiOfficial/gpt-5.5', 'openai-custom/local']
+            );
+            expect(discoveredModelIds(category, 'openAiOfficial')).to.deep.equal(['openai/gpt-5.5']);
         });
     });
 });

@@ -21,7 +21,8 @@ import { SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM } from '@theia/ai-core/l
 import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.anthropic.AnthropicApiKey';
-export const MODELS_PREF = 'ai-features.anthropic.AnthropicModels';
+export const ALLOW_ENV_API_KEY_PREF = 'ai-features.anthropic.allowEnvironmentApiKey';
+export const MODEL_OVERRIDES_PREF = 'ai-features.anthropic.modelOverrides';
 export const CUSTOM_ENDPOINTS_PREF = 'ai-features.anthropicCustom.customAnthropicModels';
 export const SERVER_SIDE_COMPACTION_PREF = 'ai-features.anthropic.serverSideCompaction';
 export const SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF = 'ai-features.anthropic.serverSideCompactionTokenThreshold';
@@ -36,23 +37,24 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
             on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely.') + LINUX_ENV_HINT,
             title: AI_CORE_PREFERENCES_TITLE,
         },
-        [MODELS_PREF]: {
-            type: 'array',
-            description: nls.localize('theia/ai/anthropic/models/description', 'Official Anthropic models to use'),
+        [ALLOW_ENV_API_KEY_PREF]: {
+            type: 'boolean',
+            default: false,
             title: AI_CORE_PREFERENCES_TITLE,
-            default: [
-                'claude-opus-5',
-                'claude-sonnet-5',
-                'claude-fable-5',
-                'claude-opus-4-8',
-                'claude-opus-4-7',
-                'claude-opus-4-6',
-                'claude-sonnet-4-6',
-                'claude-haiku-4-5',
-            ],
+            markdownDescription: nls.localize('theia/ai/anthropic/allowEnvApiKey/description',
+                'Allow Theia to use an Anthropic API key found in the environment (`ANTHROPIC_API_KEY`). '
+                + 'You are asked to confirm this once before the key is used; set it back to `false` to revoke consent.'),
+        },
+        [MODEL_OVERRIDES_PREF]: {
+            type: 'array',
+            default: [],
             items: {
                 type: 'string'
-            }
+            },
+            title: AI_CORE_PREFERENCES_TITLE,
+            markdownDescription: nls.localize('theia/ai/anthropic/modelOverrides/description',
+                'Override the models discovered from Anthropic. When empty (default), the available models are discovered from the provider. '
+                + 'Set explicit model ids to use exactly those instead; discovery is then not used at all.')
         },
         [SERVER_SIDE_COMPACTION_PREF]: {
             type: 'string',
@@ -99,6 +101,8 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
             \n\
             - specify `maxRetries: <number>` to indicate the maximum number of retries when a request fails. 3 by default.\
             \n\
+            - specify `headers` to send additional HTTP headers with every request to the endpoint, e.g. headers required by a gateway in front of the API.\
+            \n\
             Reasoning capabilities and the maximum output token limit are derived from the endpoint\'s `/v1/models` response.'),
             default: [],
             items: {
@@ -135,6 +139,12 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
                         type: 'number',
                         title: nls.localize('theia/ai/anthropic/customEndpoints/maxRetries/title',
                             'Maximum number of retries when a request fails. 3 by default'),
+                    },
+                    headers: {
+                        type: 'object',
+                        additionalProperties: { type: 'string' },
+                        title: nls.localize('theia/ai/anthropic/customEndpoints/headers/title',
+                            'Additional HTTP headers sent with every request to the endpoint'),
                     }
                 }
             }

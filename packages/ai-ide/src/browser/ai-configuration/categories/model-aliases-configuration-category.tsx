@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AgentService, AISettingsService, LANGUAGE_MODEL_ALIASES_PREFERENCE } from '@theia/ai-core';
+import { AgentService, AISettingsService, groupModelsByProvider, LANGUAGE_MODEL_ALIASES_PREFERENCE } from '@theia/ai-core';
 import { FrontendLanguageModelRegistry, LanguageModel, LanguageModelRegistry, LanguageModelRequirement } from '@theia/ai-core/lib/common/language-model';
 import { LanguageModelAlias, LanguageModelAliasRegistry } from '@theia/ai-core/lib/common/language-model-alias';
 import { Emitter, Event, nls } from '@theia/core';
@@ -35,7 +35,7 @@ import {
 } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
 import { CollectionCategoryRenderer } from '@theia/ai-core-ui/lib/browser/ai-configuration/renderers/collection-category-renderer';
 import { AiConfigurationSection } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-primitives';
-import { AiEnumSelect } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-controls';
+import { AiEnumOption, AiEnumSelect } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-controls';
 import { AgentChips } from './agent-chips';
 
 /** Sentinel option value representing "use the alias' default priority list" (no explicit model). */
@@ -214,10 +214,24 @@ export class ModelAliasesConfigurationCategory extends CollectionCategoryRendere
                 ariaLabel={nls.localize('theia/ai/core/modelAliasesConfiguration/selectedModelId', 'Selected Model')}
                 value={isInvalid ? undefined : selected}
                 invalid={isInvalid}
-                options={options.map(option => ({ value: String(option.value ?? ''), label: option.label ?? String(option.value ?? ''), title: option.description }))}
+                options={this.toEnumOptions(options)}
                 onCommit={value => this.setSelectedModel(alias, value)}
             />
         </AiConfigurationSection>;
+    }
+
+    /**
+     * Maps the options onto what {@link AiEnumSelect} takes. The per-provider rules have to survive the
+     * mapping: dropping `separator` turns each of them into a selectable entry with no label that
+     * clears the alias when picked.
+     */
+    protected toEnumOptions(options: SelectOption[]): AiEnumOption[] {
+        return options.map(option => ({
+            value: String(option.value ?? ''),
+            label: option.label ?? String(option.value ?? ''),
+            title: option.description,
+            separator: option.separator
+        }));
     }
 
     protected getModelOptions(): SelectOption[] {
@@ -225,15 +239,22 @@ export class ModelAliasesConfigurationCategory extends CollectionCategoryRendere
             value: DEFAULT_LIST_VALUE,
             label: nls.localize('theia/ai/core/modelAliasesConfiguration/defaultList', '[Default list]')
         }];
-        for (const model of [...this.languageModels].sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id))) {
-            const ready = model.status.status === 'ready';
-            options.push({
-                value: model.id,
-                label: `${model.name ?? model.id} ${ready ? '✓' : '✗'}`,
-                description: !ready ? model.status.message : undefined
-            });
+        // Divided per provider, newest first inside each group. An alias names a concrete model, which
+        // includes the older and release-pinned ones, so the whole catalogue is offered here.
+        for (const { models } of groupModelsByProvider(this.languageModels)) {
+            options.push({ separator: true });
+            options.push(...models.map(model => this.toModelOption(model)));
         }
         return options;
+    }
+
+    protected toModelOption(model: LanguageModel): SelectOption {
+        const ready = model.status.status === 'ready';
+        return {
+            value: model.id,
+            label: `${model.name ?? model.id} ${ready ? '✓' : '✗'}`,
+            description: !ready ? model.status.message : undefined
+        };
     }
 
     protected setSelectedModel(alias: LanguageModelAlias, value: string | undefined): void {

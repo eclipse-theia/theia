@@ -41,6 +41,38 @@ export interface ReasoningSupport {
     readonly supportedLevels: ReadonlyArray<ReasoningLevel>;
     readonly defaultLevel?: ReasoningLevel;
 }
+export namespace ReasoningSupport {
+    /** Levels ordered by increasing effort; `'auto'` sits outside the scale. */
+    const EFFORT_SCALE: ReadonlyArray<ReasoningLevel> = ['off', 'minimal', 'low', 'medium', 'high'];
+
+    /**
+     * Returns `level` when `support` lists it, otherwise the nearest supported level on the effort scale,
+     * preferring the higher neighbour (an unsupported `minimal` becomes `low`, not `off`). An unsupported
+     * `'auto'` resolves to `defaultLevel`, then to the first supported level. Returns `level` unchanged
+     * when nothing suitable is supported.
+     */
+    export function clampLevel(support: ReasoningSupport, level: ReasoningLevel): ReasoningLevel {
+        const supported = support.supportedLevels;
+        if (supported.includes(level)) {
+            return level;
+        }
+        if (level === 'auto') {
+            return support.defaultLevel && supported.includes(support.defaultLevel) ? support.defaultLevel : supported[0] ?? level;
+        }
+        const index = EFFORT_SCALE.indexOf(level);
+        for (let distance = 1; distance < EFFORT_SCALE.length; distance++) {
+            const higher = EFFORT_SCALE[index + distance];
+            if (higher && supported.includes(higher)) {
+                return higher;
+            }
+            const lower = EFFORT_SCALE[index - distance];
+            if (lower && supported.includes(lower)) {
+                return lower;
+            }
+        }
+        return supported.includes('auto') ? 'auto' : level;
+    }
+}
 
 export type LanguageModelMessage =
     TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage | ServerToolUseMessage | ImageMessage | CompactionMessage;
@@ -319,6 +351,23 @@ export namespace ToolRequest {
             (!('required' in obj) || (Array.isArray(obj.required) && obj.required.every(prop => typeof prop === 'string')));
     }
 }
+
+/**
+ * Resolves the `headers` attribute of a custom model preference entry. Since preferences are
+ * user-authored JSON, entries with a non-string value are dropped. Returns `undefined` when no
+ * usable header remains, so that the default request headers are left untouched. The keys are
+ * sorted, so equal header maps stringify identically regardless of their order in the preference.
+ */
+export function resolveCustomModelHeaders(headers: unknown): Record<string, string> | undefined {
+    if (typeof headers !== 'object' || !headers || Array.isArray(headers)) {
+        return undefined;
+    }
+    const resolved = Object.entries(headers)
+        .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    return resolved.length > 0 ? Object.fromEntries(resolved) : undefined;
+}
+
 // Anthropic requires at least 50,000 tokens, so use one conservative minimum for all compaction settings.
 export const SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM = 50_000;
 
@@ -650,6 +699,11 @@ export interface LanguageModelMetaData {
     readonly family?: string;
     readonly maxInputTokens?: number;
     readonly maxOutputTokens?: number;
+    /**
+     * Release date (ms since epoch) as reported by the provider, where it reports one. Lets the model
+     * lists offer the newest models first instead of ordering them by name.
+     */
+    readonly released?: number;
     readonly status: LanguageModelStatus;
     readonly reasoningSupport?: ReasoningSupport;
     /**

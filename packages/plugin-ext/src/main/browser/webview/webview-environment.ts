@@ -20,6 +20,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
 import { WebviewExternalEndpoint } from '../../common/webview-protocol';
+import { PLUGIN_HOST_FRONTEND } from '../../../common/plugin-protocol';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 
 @injectable()
@@ -65,7 +66,7 @@ export class WebviewEnvironment {
     }
 
     async resourceRoot(host: string): Promise<string> {
-        if (host === 'frontend') {
+        if (host === PLUGIN_HOST_FRONTEND) {
             return (await this.externalEndpointUrl()).withPath('{{path}}').toString(true);
         }
 

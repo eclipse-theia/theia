@@ -334,6 +334,32 @@ function buildServerToolResultPart(
  * Implements the Anthropic language model integration for Theia. Reasoning-level
  * translation lives in {@link anthropicReasoningFor}.
  */
+/** Options for {@link createAnthropicClient}. */
+export interface AnthropicClientOptions {
+    /** The key to authenticate with. A custom endpoint may need none. */
+    readonly apiKey: string | undefined;
+    /** Base URL of a custom endpoint; the SDK's own default is used without one. */
+    readonly baseURL?: string;
+    readonly proxyUrl?: string;
+    /** Additional HTTP headers sent with every request, e.g. headers required by a gateway in front of the API. */
+    readonly headers?: Record<string, string>;
+}
+
+/**
+ * The single place an Anthropic SDK client is built, so that a chat request, a model lookup and the
+ * model discovery all reach the provider the same way: through the configured proxy, and with a key
+ * the SDK accepts.
+ */
+export function createAnthropicClient(options: AnthropicClientOptions): Anthropic {
+    return new Anthropic({
+        // The SDK refuses to be constructed without a key, so an endpoint that needs none still gets one.
+        apiKey: options.apiKey ?? 'no-key',
+        baseURL: options.baseURL,
+        fetch: createProxyFetch(options.proxyUrl),
+        defaultHeaders: options.headers
+    });
+}
+
 export class AnthropicModel implements LanguageModel {
 
     /** Provider identifier, used to key per-provider settings (e.g. server tool selections) and the capabilities UI. */
@@ -357,7 +383,9 @@ export class AnthropicModel implements LanguageModel {
         public serverTools?: ServerToolDescriptor[],
         public serverSideCompactionSupport: boolean = false,
         public serverSideCompactionEnabledByDefault: boolean = false,
-        public serverSideCompactionTokenThresholdByDefault?: number
+        public serverSideCompactionTokenThresholdByDefault?: number,
+        public headers?: Record<string, string>,
+        public released?: number
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
@@ -711,8 +739,6 @@ export class AnthropicModel implements LanguageModel {
             const response = useCompaction
                 ? await anthropic.beta.messages.create(params as Anthropic.Beta.Messages.MessageCreateParamsNonStreaming)
                 : await anthropic.messages.create(params);
-            const textContent = response.content[0];
-
             const usage = response.usage ? {
                 input_tokens: response.usage.input_tokens,
                 output_tokens: response.usage.output_tokens,
@@ -720,11 +746,9 @@ export class AnthropicModel implements LanguageModel {
                 cache_read_input_tokens: response.usage.cache_read_input_tokens || undefined,
             } : undefined;
 
-            if (textContent?.type === 'text') {
-                return { text: textContent.text, usage };
-            }
-
-            return { text: '', usage };
+            // Thinking and other non-text blocks precede the answer, so collect every text block rather than reading content[0].
+            const text = response.content.flatMap(block => block.type === 'text' ? [block.text] : []).join('');
+            return { text, usage };
         } catch (error) {
             throw new Error(`Failed to get response from Anthropic API: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
@@ -736,9 +760,6 @@ export class AnthropicModel implements LanguageModel {
             throw new Error('Please provide ANTHROPIC_API_KEY in preferences or via environment variable');
         }
 
-        // We need to hand over "some" key, even if a custom url is not key protected as otherwise the Anthropic client will throw an error
-        const key = apiKey ?? 'no-key';
-
-        return new Anthropic({ apiKey: key, baseURL: this.url, fetch: createProxyFetch(this.proxy) });
+        return createAnthropicClient({ apiKey, baseURL: this.url, proxyUrl: this.proxy, headers: this.headers });
     }
 }

@@ -33,6 +33,7 @@ import {
     DENY_LATEST_TOOL_CONFIRMATION_COMMAND
 } from '../tool-confirmation-keybinding-contribution';
 import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
+import { Spinner } from './spinner';
 
 @injectable()
 export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
@@ -164,10 +165,6 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         });
     }
 }
-
-const Spinner = () => (
-    <span className={`${codicon('loading')} theia-animation-spin`}></span>
-);
 
 interface ToolCallContentProps {
     response: ToolCallChatResponseContent;

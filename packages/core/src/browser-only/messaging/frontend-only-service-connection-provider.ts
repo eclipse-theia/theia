@@ -13,7 +13,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { Event, RpcProxy, Channel, RpcProxyFactory, Emitter } from '../../common';
+import { Emitter, Event } from '../../common/event';
+import { Channel } from '../../common/message-rpc/channel';
+import { RpcProxy, RpcProxyFactory } from '../../common/messaging/proxy-factory';
 import { injectable, inject, named } from 'inversify';
 import { ServiceConnectionProvider } from '../../browser/messaging/service-connection-provider';
 import { ILogger } from '../../common/logger';

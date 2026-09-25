@@ -20,9 +20,10 @@ import { ChatResponseContent, ServerToolCallChatResponseContent } from '@theia/a
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
-import { codicon, HoverService, OpenerService } from '@theia/core/lib/browser';
+import { HoverService, OpenerService } from '@theia/core/lib/browser';
 import { renderToolCallResult } from './toolcall-result';
 import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
+import { Spinner } from './spinner';
 
 /**
  * Renders a {@link ServerToolCallChatResponseContent}: a tool the provider executed on its own
@@ -89,10 +90,6 @@ export class ServerToolCallPartRenderer implements ChatResponsePartRenderer<Serv
         });
     }
 }
-
-const Spinner = () => (
-    <span className={`${codicon('loading')} theia-animation-spin`}></span>
-);
 
 interface ServerToolCallContentProps {
     response: ServerToolCallChatResponseContent;

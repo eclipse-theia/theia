@@ -43,19 +43,32 @@ disableJSDOM();
 
 // --- Factory ---
 
-function makeAgentDelegationTool(chatAgentService: ChatAgentService, chatService: ChatService): AgentDelegationTool {
+interface StubLogger {
+    error: sinon.SinonStub;
+    warn: sinon.SinonStub;
+    info: sinon.SinonStub;
+    debug: sinon.SinonStub;
+}
+
+function makeStubLogger(): StubLogger {
+    return { error: sinon.stub(), warn: sinon.stub(), info: sinon.stub(), debug: sinon.stub() };
+}
+
+function makeAgentDelegationTool(chatAgentService: ChatAgentService, chatService: ChatService, logger: StubLogger = makeStubLogger()): AgentDelegationTool {
     const tool = new AgentDelegationTool();
     Object.defineProperty(tool, 'getChatAgentService', { value: () => chatAgentService });
     Object.defineProperty(tool, 'getChatService', { value: () => chatService });
+    Object.defineProperty(tool, 'logger', { value: logger });
     return tool;
 }
 
 // --- Helper factories ---
 
-function makeContextManager(): { addVariables: sinon.SinonStub; getVariables: sinon.SinonStub } {
+function makeContextManager(): { addVariables: sinon.SinonStub; getVariables: sinon.SinonStub; deleteVariables: sinon.SinonStub } {
     return {
         addVariables: sinon.stub(),
-        getVariables: sinon.stub().returns([])
+        getVariables: sinon.stub().returns([]),
+        deleteVariables: sinon.stub()
     };
 }
 
@@ -116,6 +129,37 @@ function makeChatContext(): {
         toolCallId: undefined,
         request: { session: makeParentSession() },
         response: {}
+    };
+}
+
+/** A session previously delegated by the calling session (see {@link makeParentSession}). */
+function makeExistingSession(contextManager = makeContextManager()): {
+    id: string;
+    pinnedAgent: { id: string; name: string } | undefined;
+    rootSessionId: string;
+    parentSessionId: string | undefined;
+    model: {
+        status: string;
+        context: ReturnType<typeof makeContextManager>;
+        changeSet: ReturnType<typeof makeChangeSet>;
+        onDidChange: sinon.SinonStub;
+        rootSessionId: string;
+        parentSessionId: string;
+    };
+} {
+    return {
+        id: 'existing-session-id',
+        pinnedAgent: { id: 'test-agent', name: 'Test Agent' },
+        rootSessionId: 'original-root-id',
+        parentSessionId: 'parent-session-id',
+        model: {
+            status: 'idle',
+            context: contextManager,
+            changeSet: makeChangeSet(),
+            onDidChange: sinon.stub().returns({ dispose: sinon.stub() }),
+            rootSessionId: 'original-root-id',
+            parentSessionId: 'parent-session-id'
+        }
     };
 }
 
@@ -213,7 +257,7 @@ describe('AgentDelegationTool', () => {
             const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'do something' });
             const result = await tool.getTool().handler(argString, ctx);
 
-            expect(result).to.equal('final answer');
+            expect(result).to.equal('final answer\n\n[delegation sessionId: new-session-id]');
             expect(result).to.not.include('thinking');
         });
 
@@ -230,10 +274,10 @@ describe('AgentDelegationTool', () => {
             const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'do something' });
             const result = await tool.getTool().handler(argString, ctx);
 
-            expect(result).to.equal('final answer');
+            expect(result).to.equal('final answer\n\n[delegation sessionId: new-session-id]');
         });
 
-        it('returns empty string when all content is thinking', async () => {
+        it('returns only the session id marker when all content is thinking', async () => {
             const thinkingContent = new ThinkingChatResponseContentImpl('internal', 'sig');
 
             const newSession = makeNewSession();
@@ -245,7 +289,193 @@ describe('AgentDelegationTool', () => {
             const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'do something' });
             const result = await tool.getTool().handler(argString, ctx);
 
-            expect(result).to.equal('');
+            expect(result).to.equal('[delegation sessionId: new-session-id]');
+        });
+    });
+
+    describe('delegateToAgent() — delegation session id in result', () => {
+        it('appends the delegation session id to the tool result', async () => {
+            const newSession = makeNewSession();
+            const agentService = makeChatAgentService();
+            const chatService = makeChatService(newSession);
+            const tool = makeAgentDelegationTool(agentService, chatService);
+            const ctx = makeChatContext();
+
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'do something' });
+            const result = await tool.getTool().handler(argString, ctx);
+
+            expect(result).to.equal('agent response\n\n[delegation sessionId: new-session-id]');
+        });
+    });
+
+    describe('delegateToAgent() — sessionId parameter (resume)', () => {
+        let contextManager: ReturnType<typeof makeContextManager>;
+        let existingSession: ReturnType<typeof makeExistingSession>;
+        let chatService: ChatService;
+        let tool: AgentDelegationTool;
+        let logger: StubLogger;
+        let ctx: ReturnType<typeof makeChatContext>;
+
+        beforeEach(() => {
+            contextManager = makeContextManager();
+            existingSession = makeExistingSession(contextManager);
+            const newSession = makeNewSession();
+            const agentService = makeChatAgentService();
+            chatService = makeChatService(newSession);
+            (chatService.getSession as sinon.SinonStub).withArgs('existing-session-id').returns(existingSession);
+            (chatService.getOrRestoreSession as sinon.SinonStub).withArgs('existing-session-id').resolves(existingSession);
+            logger = makeStubLogger();
+            tool = makeAgentDelegationTool(agentService, chatService, logger);
+            ctx = makeChatContext();
+        });
+
+        it('sends the follow-up request into the existing session instead of creating a new one', async () => {
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id' });
+
+            const result = await tool.getTool().handler(argString, ctx);
+
+            expect((chatService.createSession as sinon.SinonStub).called).to.be.false;
+            const sendRequest = chatService.sendRequest as sinon.SinonStub;
+            expect(sendRequest.calledOnce).to.be.true;
+            expect(sendRequest.firstCall.args[0]).to.equal('existing-session-id');
+            expect(result).to.equal('agent response\n\n[delegation sessionId: existing-session-id]');
+        });
+
+        it('re-establishes event bubbling from the resumed session to the parent', async () => {
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id' });
+
+            await tool.getTool().handler(argString, ctx);
+
+            expect(existingSession.model.onDidChange.calledOnce).to.be.true;
+            expect(existingSession.model.changeSet.onDidChange.calledOnce).to.be.true;
+        });
+
+        it('does not modify rootSessionId or parentSessionId of the resumed session', async () => {
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id' });
+
+            await tool.getTool().handler(argString, ctx);
+
+            expect(existingSession.rootSessionId).to.equal('original-root-id');
+            expect(existingSession.parentSessionId).to.equal('parent-session-id');
+            expect(existingSession.model.rootSessionId).to.equal('original-root-id');
+            expect(existingSession.model.parentSessionId).to.equal('parent-session-id');
+        });
+
+        it('adds the task context variable to the resumed session when taskContextId is provided', async () => {
+            const argString = JSON.stringify({
+                agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id', taskContextId: 'follow-up-ctx-id'
+            });
+
+            await tool.getTool().handler(argString, ctx);
+
+            expect(contextManager.addVariables.calledOnce).to.be.true;
+            const callArg: AIVariableResolutionRequest = contextManager.addVariables.firstCall.args[0];
+            expect(callArg.variable).to.equal(TASK_CONTEXT_VARIABLE);
+            expect(callArg.arg).to.equal('follow-up-ctx-id');
+        });
+
+        it('restores a delegation session that is persisted but no longer in memory', async () => {
+            // e.g. after a page reload: the orchestrator history still carries the session id, but only storage has the session
+            (chatService.getSession as sinon.SinonStub).withArgs('existing-session-id').returns(undefined);
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id' });
+
+            const result = await tool.getTool().handler(argString, ctx);
+
+            const sendRequest = chatService.sendRequest as sinon.SinonStub;
+            expect(sendRequest.calledOnce).to.be.true;
+            expect(sendRequest.firstCall.args[0]).to.equal('existing-session-id');
+            expect(result).to.equal('agent response\n\n[delegation sessionId: existing-session-id]');
+        });
+
+        it('replaces a previous task context when a different taskContextId is provided', async () => {
+            contextManager.getVariables.returns([{ variable: TASK_CONTEXT_VARIABLE, arg: 'stale-ctx-id' }]);
+            const argString = JSON.stringify({
+                agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id', taskContextId: 'new-ctx-id'
+            });
+
+            await tool.getTool().handler(argString, ctx);
+
+            expect(contextManager.deleteVariables.calledOnceWithExactly(0)).to.be.true;
+            const callArg: AIVariableResolutionRequest = contextManager.addVariables.firstCall.args[0];
+            expect(callArg.arg).to.equal('new-ctx-id');
+        });
+
+        it('keeps the existing task context when the same taskContextId is provided again', async () => {
+            contextManager.getVariables.returns([{ variable: TASK_CONTEXT_VARIABLE, arg: 'same-ctx-id' }]);
+            const argString = JSON.stringify({
+                agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id', taskContextId: 'same-ctx-id'
+            });
+
+            await tool.getTool().handler(argString, ctx);
+
+            expect(contextManager.deleteVariables.called).to.be.false;
+        });
+
+        it('disposes the event bubbling when the delegated request fails', async () => {
+            (chatService.sendRequest as sinon.SinonStub).rejects(new Error('provider unavailable'));
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id' });
+
+            await tool.getTool().handler(argString, ctx);
+
+            expect(existingSession.model.onDidChange.firstCall.returnValue.dispose.called).to.be.true;
+            expect(existingSession.model.changeSet.onDidChange.firstCall.returnValue.dispose.called).to.be.true;
+        });
+
+        it('returns an error when the session was delegated by a different session', async () => {
+            existingSession.parentSessionId = 'someone-elses-session-id';
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id' });
+
+            const result = await tool.getTool().handler(argString, ctx);
+
+            expect(result).to.include('was not delegated by this session');
+            expect((chatService.sendRequest as sinon.SinonStub).called).to.be.false;
+        });
+
+        it('returns an error when the session is not a delegated session at all', async () => {
+            // e.g. the id of a normal top-level user chat
+            existingSession.parentSessionId = undefined;
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id' });
+
+            const result = await tool.getTool().handler(argString, ctx);
+
+            expect(result).to.include('was not delegated by this session');
+            expect((chatService.sendRequest as sinon.SinonStub).called).to.be.false;
+        });
+
+        it('returns an error when the sessionId is unknown', async () => {
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'unknown-session-id' });
+
+            const result = await tool.getTool().handler(argString, ctx);
+
+            expect(result).to.include('not found');
+            expect((chatService.sendRequest as sinon.SinonStub).called).to.be.false;
+            expect((chatService.createSession as sinon.SinonStub).called).to.be.false;
+            expect(logger.warn.calledOnce).to.be.true;
+            expect(logger.error.called).to.be.false;
+        });
+
+        it('returns an error when the resumed session is still processing a request', async () => {
+            existingSession.model.status = 'running';
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id' });
+
+            const result = await tool.getTool().handler(argString, ctx);
+
+            expect(result).to.include('still processing');
+            expect((chatService.sendRequest as sinon.SinonStub).called).to.be.false;
+            expect(logger.warn.calledOnce).to.be.true;
+            expect(logger.error.called).to.be.false;
+        });
+
+        it('returns an error when agentId does not match the pinned agent of the session', async () => {
+            existingSession.pinnedAgent = { id: 'other-agent', name: 'Other Agent' };
+            const argString = JSON.stringify({ agentId: 'test-agent', prompt: 'fix the findings', sessionId: 'existing-session-id' });
+
+            const result = await tool.getTool().handler(argString, ctx);
+
+            expect(result).to.include("belongs to agent 'other-agent'");
+            expect((chatService.sendRequest as sinon.SinonStub).called).to.be.false;
+            expect(logger.error.calledOnce).to.be.true;
+            expect(logger.warn.called).to.be.false;
         });
     });
 

@@ -24,6 +24,7 @@ import { WorkspaceStorageService } from '@theia/workspace/lib/browser/workspace-
 import { Command, ILogger, MaybePromise, MessageService, nls, QuickInputService, URI } from '@theia/core';
 import { WorkspaceInput, WorkspaceOpenHandlerContribution, WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { ContainerOutputProvider } from './container-output-provider';
+import { RemoteCliArgsCollector } from '@theia/remote/lib/electron-browser/remote-cli-args-collector';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import { DEV_CONTAINER_PATH_QUERY, DEV_CONTAINER_WORKSPACE_SCHEME } from '../electron-common/dev-container-workspaces';
 import { RemotePreferences } from '@theia/remote/lib/electron-common/remote-preferences';
@@ -88,6 +89,9 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
 
     @inject(ContainerOutputProvider)
     protected readonly containerOutputProvider: ContainerOutputProvider;
+
+    @inject(RemoteCliArgsCollector)
+    protected readonly remoteCliArgsCollector: RemoteCliArgsCollector;
 
     @inject(DevContainerPreferences)
     protected readonly devContainerPreferences: DevContainerPreferences;
@@ -261,7 +265,10 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
             nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate'],
             lastContainerInfo,
             devcontainerFile: devcontainerFile.path,
-            workspacePath: hostWorkspacePath
+            workspacePath: hostWorkspacePath,
+            // Forward per-window CLI options (e.g. session preferences of a second-instance window),
+            // consistent with the attach flows, so "Reopen in Container" applies the same overrides.
+            additionalArgs: await this.remoteCliArgsCollector.collect()
         });
 
         await this.storageService.setData<LastContainerInfo>(lastContainerInfoKey, {
@@ -394,6 +401,9 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
                     workspacePath: selectedPath,
                     nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate'],
                     devcontainerFile,
+                    // Forward per-window CLI options (e.g. session preferences of a second-instance window),
+                    // consistent with the CLI startup attach, so a manual attach applies the same overrides.
+                    additionalArgs: await this.remoteCliArgsCollector.collect(),
                 });
 
                 // Store context so rebuild works from inside the container

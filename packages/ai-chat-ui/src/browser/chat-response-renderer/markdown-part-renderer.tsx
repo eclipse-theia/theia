@@ -77,6 +77,39 @@ export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownCh
     }
 }
 
+export namespace MarkdownRendering {
+    /**
+     * Renders markdown into a detached fragment, exactly as {@link useMarkdownRendering} does before mounting it.
+     * Also used to read the rendered text of markdown that is not mounted, e.g. to search a chat session.
+     */
+    export function renderToFragment(markdown: string, skipSurroundingParagraph: boolean = false, blockExternalResourceLoading: boolean = true): DocumentFragment {
+        const markdownIt = markdownit({ html: true }).use(markdownitemoji.full);
+        const template = document.createElement('template');
+
+        // markdownIt always puts the content in a paragraph element, so we remove it if we don't want that
+        const html = skipSurroundingParagraph ? markdownIt.render(markdown).replace(/^<p>|<\/p>|<p><\/p>$/g, '') : markdownIt.render(markdown);
+
+        template.innerHTML = DOMPurify.sanitize(html, {
+            // DOMPurify usually strips non http(s) links from hrefs
+            // but we want to allow them (see handleClick via OpenerService in useMarkdownRendering)
+            ALLOW_UNKNOWN_PROTOCOLS: true,
+            ADD_TAGS: ['iframe', 'frame'],
+            ADD_ATTR: ['src', 'srcset', 'srcdoc', 'poster', 'href', 'xlink:href', 'data']
+        });
+        // Active embedded content is always blocked; trusted content (blockExternalResourceLoading=false)
+        // still renders its external URL resources directly.
+        blockExternalResources(template.content, blockExternalResourceLoading);
+        return template.content;
+    }
+
+    /** Prepares the text of a chat request text part for inline rendering. */
+    export function prepareRequestText(text: string): string {
+        return text
+            .replace(/^[\r\n]+|[\r\n]+$/g, '') // remove excessive new lines
+            .replace(/(^ )/g, '&nbsp;'); // enforce keeping space before
+    }
+}
+
 export interface DeclaredEventsEventListenerObject extends EventListenerObject {
     handledEvents?: (keyof HTMLElementEventMap)[];
 }
@@ -113,24 +146,8 @@ export const useMarkdownRendering = (
     const ref = useRef<HTMLDivElement | null>(null);
     const markdownString = typeof markdown === 'string' ? markdown : markdown.value;
     useEffect(() => {
-        const markdownIt = markdownit({ html: true }).use(markdownitemoji.full);
         const host = document.createElement('div');
-        const template = document.createElement('template');
-
-        // markdownIt always puts the content in a paragraph element, so we remove it if we don't want that
-        const html = skipSurroundingParagraph ? markdownIt.render(markdownString).replace(/^<p>|<\/p>|<p><\/p>$/g, '') : markdownIt.render(markdownString);
-
-        template.innerHTML = DOMPurify.sanitize(html, {
-            // DOMPurify usually strips non http(s) links from hrefs
-            // but we want to allow them (see handleClick via OpenerService below)
-            ALLOW_UNKNOWN_PROTOCOLS: true,
-            ADD_TAGS: ['iframe', 'frame'],
-            ADD_ATTR: ['src', 'srcset', 'srcdoc', 'poster', 'href', 'xlink:href', 'data']
-        });
-        // Active embedded content is always blocked; trusted content (blockExternalResourceLoading=false)
-        // still renders its external URL resources directly.
-        blockExternalResources(template.content, blockExternalResourceLoading);
-        host.appendChild(template.content);
+        host.appendChild(MarkdownRendering.renderToFragment(markdownString, skipSurroundingParagraph, blockExternalResourceLoading));
         while (ref?.current?.firstChild) {
             ref.current.removeChild(ref.current.firstChild);
         }

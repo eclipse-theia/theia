@@ -21,7 +21,7 @@ import {
 } from './anthropic-language-model';
 import {
     CompactionMessage, isServerToolCallResponsePart, isUsageResponsePart, LanguageModelMessage, LanguageModelRequest,
-    LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport, UserRequest
+    LanguageModelStreamResponsePart, LanguageModelTextResponse, ReasoningApi, ReasoningSupport, UserRequest
 } from '@theia/ai-core';
 import type { Anthropic } from '@anthropic-ai/sdk';
 import type { MessageParam } from '@anthropic-ai/sdk/resources';
@@ -501,6 +501,44 @@ describe('AnthropicModel', () => {
             expect(params).to.have.lengthOf(2);
             const emptyMessages = params[1].messages.filter(message => Array.isArray(message.content) && message.content.length === 0);
             expect(emptyMessages).to.be.empty;
+        });
+    });
+
+    describe('non-streaming requests', () => {
+        /** Mock client whose messages.create() resolves to a message with the given content blocks. */
+        function createNonStreamingModel(content: object[]): AnthropicModel {
+            return new class extends AnthropicModel {
+                protected override initializeAnthropic(): Anthropic {
+                    return {
+                        messages: {
+                            create: async () => ({ content, usage: { input_tokens: 10, output_tokens: 5 } })
+                        }
+                    } as unknown as Anthropic;
+                }
+            }('test-id', 'claude-opus-4-5', { status: 'ready' }, false, false, () => 'test-key', undefined);
+        }
+
+        const request: UserRequest = {
+            messages: [{ actor: 'user', type: 'text', text: 'hello' }],
+            agentId: 'test', sessionId: 'session', requestId: 'req'
+        };
+
+        it('returns the text when a thinking block precedes it', async () => {
+            const model = createNonStreamingModel([
+                { type: 'thinking', thinking: 'Considering the question.', signature: 'sig' },
+                { type: 'text', text: 'Hello!' }
+            ]);
+            const response = await model.request(request);
+            expect((response as LanguageModelTextResponse).text).to.equal('Hello!');
+        });
+
+        it('joins multiple text blocks', async () => {
+            const model = createNonStreamingModel([
+                { type: 'text', text: 'Hel' },
+                { type: 'text', text: 'lo' }
+            ]);
+            const response = await model.request(request);
+            expect((response as LanguageModelTextResponse).text).to.equal('Hello');
         });
     });
 

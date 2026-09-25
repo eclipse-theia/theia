@@ -72,6 +72,9 @@
         "title": "Ügynök beállítások"
       },
       "anthropic": {
+        "allowEnvApiKey": {
+          "description": "Engedélyezze a Theia számára a környezetben található Anthropic API-kulcs (`ANTHROPIC_API_KEY`) használatát. A kulcs használata előtt egyszer meg kell erősítenie ezt; a hozzájárulás visszavonásához állítsa vissza `false` értékre."
+        },
         "apiKey": {
           "description": "Írja be hivatalos Anthropic-fiókjának API-kulcsát. **Megjegyzés:** Ezen beállítás használatával az Anthropic API-kulcs szöveges formában kerül tárolásra a Theia futtatására használt gépen. A kulcs biztonságos beállításához használja az `ANTHROPIC_API_KEY` környezeti változót."
         },
@@ -91,13 +94,16 @@
           "enableStreaming": {
             "title": "Jelzi, hogy a streaming API-t kell-e használni. Alapértelmezés szerint `true`."
           },
+          "headers": {
+            "title": "Minden, a végponthoz küldött kéréssel együtt továbbított további HTTP-fejlécek"
+          },
           "id": {
             "title": "Egyedi azonosító, amelyet a felhasználói felületen használnak az egyéni modell azonosítására."
           },
           "maxRetries": {
             "title": "A kérés sikertelensége esetén megengedett maximális újrakísérletek száma. Alapértelmezés szerint 3."
           },
-          "mdDescription": "Integráljon az Anthropic API-val kompatibilis egyéni modelleket. A szükséges attribútumok a `model` és az `url`.            \n            Opcionálisan megadhatja            \n            - egy egyedi `id`-t az egyéni modell azonosításához a felhasználói felületen. Ha nincs megadva, akkor a `model` lesz az `id`.            \n            - adjon meg egy `apiKey`-t a megadott URL-en elérhető API eléréséhez. Használja a `true` értéket a globális Anthropic API-kulcs használatának jelzésére.            \n            - adja meg az `enableStreaming: false` értéket, ha nem kívánja használni a streaminget.            \n            - adjon meg `useCaching: false` értéket, ha nem kívánja használni a prompt-gyorsítótárazást.            \n            - adjon meg `maxRetries: <szám>` értéket a kérés sikertelensége esetén megengedett újrakísérletek maximális számának megadásához. Az alapértelmezett érték 3.            \n            A következtető képességek és a maximális kimeneti token-korlát az endpoint `/v1/models` válaszából származnak.",
+          "mdDescription": "Az Anthropic API-val kompatibilis egyéni modellek integrálása. A szükséges attribútumok a `model` és az `url`.            \n            Opcionálisan a következőket teheti:            \n            - megadhat egy egyedi `id`-t az egyéni modell azonosításához a felhasználói felületen. Ha nem ad meg ilyet, akkor a `model` értéke lesz az `id`.            \n            - adjon meg egy `apiKey`-t a megadott URL-en elérhető API eléréséhez. A `true` értékkel jelezze a globális Anthropic API-kulcs használatát.            \n            - adja meg az `enableStreaming: false` értéket, ha nem kívánja használni a streaming funkciót.            \n            - Adja meg a `useCaching: false` értéket, ha nem kívánja használni a prompt-gyorsítótárazást.            \n            - Adja meg a `maxRetries: <szám>` értéket, hogy meghatározza a kérés sikertelensége esetén megengedett maximális újrakísérletek számát. Alapértelmezés szerint 3.            \n            - Adja meg a `headers` paramétert, ha minden, az végponthoz küldött kéréssel további HTTP-fejléceket szeretne elküldeni, pl. az API előtt lévő átjáró által megkövetelt fejléceket.            \n            A következtetési képességek és a maximális kimeneti token-korlát az végpont `/v1/models` válaszából származnak.",
           "modelId": {
             "title": "Modellazonosító"
           },
@@ -111,8 +117,16 @@
         "customProvider": {
           "label": "{0} (Egyéni)"
         },
-        "models": {
-          "description": "Használni kívánt hivatalos Anthropic modellek"
+        "discovery": {
+          "cached": "A gyorsítótárban tárolt modellek megjelenítése; az utolsó frissítés sikertelen volt: {0}",
+          "consentPrompt": "Egy Anthropic API-kulcsot találtak a környezetben (ANTHROPIC_API_KEY). Engedélyezze-e a Theia számára, hogy ezt felhasználva felkutassa és meghívja az Anthropic-modelleket?",
+          "consentRequired": "Egy Anthropic API-kulcsot találtunk a környezetben. Erősítse meg annak használatát a modellek felfedezéséhez.",
+          "noKey": "Nincs beállítva Anthropic API-kulcs. Adjon hozzá egy kulcsot a modellek felfedezéséhez.",
+          "overridden": "A modell lista manuálisan konfigurálható. Törölje a modell-felülírásokat, hogy a szolgáltató újra felfedezze a modelleket.",
+          "useEnvKey": "Használati útmutató"
+        },
+        "modelOverrides": {
+          "description": "Az Anthropic-tól felderített modellek felülírása. Ha üres (alapértelmezett), a szolgáltatótól kerülnek felderítésre a rendelkezésre álló modellek. Ha explicit modellazonosítókat állít be, akkor pontosan azok kerülnek használatra; ebben az esetben a felderítés egyáltalán nem kerül alkalmazásra."
         }
       },
       "chat": {
@@ -306,7 +320,8 @@
           "status": {
             "canceled": "törölve",
             "generating": "generálás...",
-            "starting": "indítás..."
+            "starting": "indítás...",
+            "waitingForInput": "beviteli adat várakozás"
           }
         },
         "deleteChangeSet": "Változáskészlet törlése",
@@ -320,11 +335,14 @@
         "failedToLoadChats": "A csevegési munkamenetek betöltése sikertelen",
         "failedToRestoreSession": "A csevegési munkamenet visszaállítása sikertelen",
         "failedToRetry": "A újrapróbálkozás sikertelen üzenet",
+        "find": "Keresés a csevegésben",
+        "findHide": "Elrejtés Keresés a csevegésben",
         "focusInput": "Fókusz Csevegés Bevitel",
         "focusResponse": "Fókusz Csevegés Válasz",
         "functions": "Funkciók",
         "functionsDescription": "{0}-bővítmények által biztosított beépített funkciók",
         "genericCapabilities": "Általános képességek",
+        "manageModels": "Modellek kezelése…",
         "mcpFunctionsDescription": "Csatlakoztatott szerverek MCP (Model Context Protocol) funkciói",
         "mermaid-rendering": {
           "copySource": "Forrás másolása",
@@ -340,7 +358,6 @@
         "modelUnavailable": "nem elérhető",
         "noChatAgentsAvailable": "Nincs elérhető csevegő ügynök.",
         "noMatchingCapabilities": "Nincs megfelelő képesség",
-        "openDiff": "Nyitott Diff",
         "openImage": "Kép megnyitása",
         "openOriginalFile": "Eredeti fájl megnyitása",
         "performThisTask": "Végezze el ezt a feladatot.",
@@ -476,7 +493,6 @@
         "findMatchingFiles": "Keresse meg a glob mintához „{0}” illeszkedő fájlokat az aktuális könyvtárban.",
         "findMatchingFilesWithPath": "Keresse meg a „{0}” glob mintához illeszkedő fájlokat a {1} mappában.",
         "finding": "Találás",
-        "from": "Forrás:",
         "globPattern": "glob minta",
         "grepOptions": {
           "caseInsensitive": "kis- és nagybetűk közötti különbséget nem tesz",
@@ -533,7 +549,6 @@
         "startingLine": "Kezdővonal",
         "timeout": "Időkorlát",
         "timeoutInMs": "Időkorlát: {0} ms",
-        "to": "To",
         "todoList": "Minden lista",
         "todoPriority": {
           "high": "magas",
@@ -646,23 +661,32 @@
           "signIn": "Jelentkezzen be a GitHub Copilotba",
           "signOut": "Kijelentkezés a GitHub Copilotból"
         },
+        "discovery": {
+          "disabled": "A GitHub Copilot szolgáltató le van tiltva. Engedélyezze a modellek felkutatásához.",
+          "overridden": "A modelllista manuálisan konfigurálható. Törölje a modellfelülírásokat, hogy a GitHub Copilot újra felfedezhesse a modelleket.",
+          "signedOut": "Nincs bejelentkezve a GitHub Copilotba. Jelentkezzen be, hogy felfedezze az általa kínált modelleket."
+        },
         "enabled": {
-          "mdDescription": "Engedélyezze a GitHub Copilot szolgáltatót. Engedélyezés után megjelenik egy állapotsor a hitelesítéshez, és a Copilot előfizetéséből felismeri a rendelkezésre álló modelleket."
+          "mdDescription": "Engedélyezze a GitHub Copilot szolgáltatót. Engedélyezés után megjelenik egy állapotsor-bejegyzés a hitelesítéshez, és a Copilot-előfizetéséből felismerésre kerülnek a rendelkezésre álló modellek.\n\nA kéréseket a hivatalos GitHub Copilot CLI-n keresztül továbbítják, amely háttérfolyamatként fut a háttérrendszert futtató gépen. A rendszer kizárólag a Copilot-bejelentkezési adatait kapja meg, semmi mást, így nem kerül felhasználásra sem a környezetben található token, sem a GitHub CLI meglévő bejelentkezési adatai."
         },
         "enterpriseUrl": {
-          "mdDescription": "Copilot API GitHub Enterprise domainje (pl. `github.mycompany.com`). GitHub.com esetén hagyja üresen."
+          "mdDescription": "A GitHub Enterprise domainje, amelyhez hitelesíteni kell és amelyhez kéréseket kell küldeni (pl. `github.mycompany.com`). A GitHub.com esetében hagyja üresen."
+        },
+        "enterpriseUrlChanged": "A GitHub Copilot domainje megváltozott. A változás érvénybe lépéséhez jelentkezzen be újra.",
+        "executablePath": {
+          "mdDescription": "A GitHub Copilot CLI futtatható fájljának helye azon a gépen, amely a háttérrendszert futtatja. Ha üres (alapértelmezett), a CLI-t az alkalmazás telepítési könyvtárában, a `PATH` változóban és a globális `npm` könyvtárban keresi a rendszer. Állítsa be ezt, ha a CLI máshol van telepítve.\n\nA CLI nem része az alkalmazás csomagjának, telepítse a `npm install -g @github/copilot` paranccsal."
         },
         "modelOverrides": {
           "mdDescription": "A rendszer felülírja az automatikusan felismert GitHub Copilot modelleket. Ha üres (alapértelmezett), a rendelkezésre álló modelleket a Copilot előfizetéséből ismeri fel. Állítson be kifejezett modellazonosítókat az automatikus felismerés felülírásához."
         },
+        "signInAgain": "A GitHub Copilot mostantól a GitHub Copilot CLI-n keresztül jelentkezik be. A korábbi bejelentkezési adatai nem vihetők át, ezért azok törlésre kerültek. Kérjük, jelentkezzen be újra a Copilot-modellek használatához.",
         "signOut": {
           "confirmMessage": "Biztosan ki szeretne jelentkezni a GitHub Copilotból?"
         },
         "statusBar": {
           "signedIn": "Bejelentkezett a GitHub Copilotba {0} néven. Kattintson a kijelentkezéshez.",
           "signedOut": "Nincs bejelentkezve a GitHub Copilotba. Kattintson a bejelentkezéshez."
-        },
-        "tokenMigration": "A GitHub Copilot munkamenete elavult hitelesítési módszert használt, ezért törlésre került. Kérjük, jelentkezzen be újra, hogy hozzáférjen az összes elérhető modellhez."
+        }
       },
       "core": {
         "agentConfiguration": {
@@ -760,11 +784,18 @@
         "discardCustomPrompt": {
           "tooltip": "Testreszabások elvetése"
         },
+        "favoriteModels": {
+          "mdDescription": "Az AI-csevegő beviteli mezőjében megjelenő modellválasztó az egyes szolgáltatók legújabb modelljei mellett a teljes azonosítóval (pl. `anthropic/claude-opus-5`) jelöli a modelleket. Ez azért van, hogy egy régebbi vagy egy adott kiadáshoz rögzített modell is kéznél legyen. Egy modell hozzáadásához jelölje be azt a szolgáltató oldalán az AI-konfigurációs nézetben.",
+          "title": "Kedvenc modellek"
+        },
         "fileVariable": {
           "description": "Megoldja a fájl tartalmát",
           "uri": {
             "description": "A kért fájl URI-je."
           }
+        },
+        "hiddenModels": {
+          "mdDescription": "Azok a modellek, amelyeket az AI-csevegés beviteli felületének modellválasztója nem jelenít meg, pedig alapértelmezés szerint megjelenítené őket, teljes azonosítóval (pl. `google/gemini-flash-lite-latest`). Csak azok a modellek kerülnek ide, amelyek nem szerepelnek a kedvencek listáján, azaz a szolgáltató legújabb modelljei. Az AI-konfigurációs nézetben a szolgáltató oldalán törölje a modell jelölését, hogy hozzáadja azt."
         },
         "languageModelRenderer": {
           "alias": "[alias] {0}",
@@ -911,7 +942,6 @@
           "dotRelativePath": "Rövid hivatkozás az éppen megnyitott fájl munkaterülethez viszonyított elérési útjára („currentRelativeFilePath”)."
         },
         "variantSet": {
-          "templateLabel": "Sablon",
           "unavailableVariant": "{0} (nem elérhető)",
           "variantCount": "{0} változatok",
           "variantCountSingular": "1. változat"
@@ -931,14 +961,25 @@
         }
       },
       "google": {
+        "allowEnvApiKey": {
+          "description": "Engedélyezze a Theia számára a környezetben található Google AI (Gemini) API-kulcs (`GOOGLE_API_KEY` / `GEMINI_API_KEY`) használatát. A kulcs használata előtt egyszer meg kell erősítenie ezt; a hozzájárulás visszavonásához állítsa vissza `false` értékre."
+        },
         "apiKey": {
           "description": "Írja be hivatalos Google AI (Gemini) fiókjának API-kulcsát. **Megjegyzés:** Ezen beállítás használatával a GOOGLE AI API-kulcs szöveges formában kerül tárolásra a Theia futtatására használt gépen. A kulcs biztonságos beállításához használja a `GOOGLE_API_KEY` környezeti változót."
+        },
+        "discovery": {
+          "cached": "A gyorsítótárban tárolt modellek megjelenítése; az utolsó frissítés sikertelen volt: {0}",
+          "consentPrompt": "A környezetben egy Google AI API-kulcsot találtak (GOOGLE_API_KEY / GEMINI_API_KEY). Engedélyezze-e a Theia számára, hogy ezt felhasználva felkutassa és meghívja a Gemini-modelleket?",
+          "consentRequired": "A környezetben egy Google AI API-kulcsot találtak. Erősítse meg annak használatát a modellek felfedezéséhez.",
+          "noKey": "Nincs beállítva Google AI API-kulcs. Adjon hozzá egy kulcsot a modellek felfedezéséhez.",
+          "overridden": "A modelllista manuálisan konfigurálható. Törölje a modellfelülírásokat, hogy a szolgáltatótól újra felfedezze a modelleket.",
+          "useEnvKey": "Használati útmutató"
         },
         "maxRetriesOnErrors": {
           "description": "Hibák esetén a maximális újrakísérletek száma. Ha kisebb, mint 1, akkor az újrakísérlet logika deaktiválva van."
         },
-        "models": {
-          "description": "Használni kívánt hivatalos Google Gemini modellek"
+        "modelOverrides": {
+          "description": "A Google Gemini által felderített modellek felülírása. Ha üres (alapértelmezett), a szolgáltatótól kerülnek felderítésre a rendelkezésre álló modellek. Határozzon meg kifejezett modellazonosítókat, hogy pontosan azokat használja; ebben az esetben a felderítés egyáltalán nem kerül alkalmazásra."
         },
         "retryDelayOnOtherErrors": {
           "description": "Más hibák esetén a újrapróbálkozások közötti késleltetés másodpercben (néha a Google GenAI olyan hibákat jelent, mint a modell által visszaküldött hiányos JSON szintaxis vagy 500 belső szerverhiba). Ha ezt -1-re állítja, akkor ezekben az esetekben nem történik újrapróbálkozás. Ellenkező esetben az újrapróbálkozás vagy azonnal megtörténik (ha 0-ra van állítva), vagy a késleltetés után másodpercben (ha pozitív számra van állítva)."
@@ -1053,6 +1094,7 @@
           "pageTypeLabel": "Oldal"
         },
         "allowAllMode": {
+          "hideForThisSession": "Elrejtés ebben a munkamenetben",
           "stripTooltip": "Az AI-eszközök hívásai ebben a munkamenetben megerősítés nélkül futnak. Csak olyan környezetekben engedélyezze őket, amelyekben megbízik.",
           "stripTooltipFooter": "A --session-preference parancsopcióval állítható be. A mentett beállítások visszaállításához indítsa újra a programot a parancsopció nélkül.",
           "title": "Theia AI „Allow-All” mód"
@@ -1111,7 +1153,6 @@
             "startNewChat": "A csevegéseket tartsa rövidnek és lényegre törőnek. [Indítson új csevegést]({0}) egy új feladat esetén, vagy [indítson új csevegést ennek az összefoglalásával]({1})."
           }
         },
-        "collapseSession": "{0} összecsukása",
         "commandAgent": {
           "commandCallback": {
             "confirmAction": "Értem",
@@ -1131,19 +1172,16 @@
           }
         },
         "configurationState": "Konfigurációs problémák",
-        "configureAgent": {
-          "header": "Alapértelmezett ügynök konfigurálása"
-        },
         "continueAnyway": "Mindenképpen folytatás",
         "createSkillAgent": {
           "mode": {
             "edit": "Alapértelmezett mód"
           }
         },
+        "defaultChatAgentSet": "Az alapértelmezett csevegőügynök mostantól {0}.",
         "enableAI": {
           "mdDescription": "Ez a beállítás lehetővé teszi a legújabb AI-funkciók elérését.            \n            Fontos tudni, hogy ezek a funkciók folyamatos kéréseket generálhatnak az Ön által hozzáférhetővé tett nyelvi modellekhez (LLM-ek). Ez olyan költségeket eredményezhet, amelyeket szorosan figyelnie kell. Ennek az opciónak az engedélyezésével Ön tudomásul veszi ezeket a kockázatokat.            \n            **Kérjük, vegye figyelembe! Az alábbi beállítások csak akkor lépnek hatályba,\n            ha a fő funkció beállítása engedélyezve van. A funkció engedélyezése után legalább egy LLM-szolgáltatót kell konfigurálnia az alábbiak közül. Lásd még [a dokumentációt](https://theia-ide.org/docs/user_ai/)**."
         },
-        "expandSession": "{0} kibontása",
         "exploreAgent": {
           "description": "Kódbázis-felfedező asszisztens, amely kivonja és összefoglalja a kódbázisból származó információkat.         Jelentéseket készít a meglévő elemekről, kódrészleteket nyújt, és leírja a megfigyelt mintákat."
         },
@@ -1201,16 +1239,36 @@
         },
         "model-selection-description": "Válassza ki, hogy az egyes AI-ügynökök mely nagy nyelvi modelleket (LLM) használják az [AI konfigurációs nézetben]({0}).",
         "modelsConfiguration": {
+          "awaitingConsent": "Hozzájárulásra vár",
+          "defaultModel": "A szolgáltató egyik legújabb modellje, amelyet az AI-csevegő beviteli felületének modellválasztója megjeleníti, hacsak itt nincs elrejtve",
           "description": "A nyelvi modellszolgáltatók és az ügynökök számára elérhető modellek konfigurálása.",
+          "discovery": "Modellfelfedezés",
+          "fetching": "Betöltés…",
+          "filterModels": "Szűrőmodellek",
+          "hideModel": "Ezt a modellt el kell rejteni az AI-csevegő beviteli felület modellválasztójából",
+          "modelNotReady": "Még nem kész",
           "modelSettings": "Modellbeállítások",
+          "noKey": "Nincs API-kulcs",
+          "noModels": "Még nem találtunk modelleket.",
           "noProviders": "Nincs telepítve nyelvi modellszolgáltató.",
-          "providers": "Szolgáltatók"
+          "providers": "Szolgáltatók",
+          "ready": "Kész",
+          "refresh": "A modell lista frissítése",
+          "refreshUnavailable": "Nincs mit frissíteni, amíg a szolgáltató nem rendelkezik hitelesítő adatokkal",
+          "released": "{0} kiadás",
+          "resetShown": "Alapértelmezett beállítások visszaállítása",
+          "resetShownUnavailable": "Már az alapértelmezett beállításoknál",
+          "showAllModels": "Az összes felfedezett modell megjelenítése",
+          "showCheckedModels": "Csak azokat a modelleket mutassa, amelyeket az AI-csevegő beviteli felületének modellválasztója jelenít meg",
+          "showModel": "Jelenítsd meg ezt a modellt az AI-csevegés beviteli mezőjének modellválasztójában",
+          "shownExplanation": "{0} {1}, amely az AI-csevegő beviteli mezőjének modellválasztójában jelenik meg",
+          "updated": "{0} frissítve"
         },
-        "moreAgentsAvailable": {
-          "header": "További ügynökök állnak rendelkezésre"
+        "noDefaultAgent": {
+          "header": "Nincs alapértelmezett ügynök"
         },
-        "noRecommendedAgents": "Nincs ajánlott ügynök.",
         "openAiConfiguration": "OpenAI konfiguráció",
+        "openGettingStartedWalkthrough": "Az AI használatának megkezdése",
         "orchestrator": {
           "error": {
             "noAgents": "Nincs elérhető csevegő ügynök a kérés kezeléséhez. Kérjük, ellenőrizze a konfigurációját, hogy van-e engedélyezve ilyen."
@@ -1234,8 +1292,7 @@
               "name": "GH PR Info"
             },
             "localCheckout": {
-              "description": "Helyileg ellenőrzi a pull requestet, és védi a meglévő munkatér változásait.",
-              "name": "Kijelentkezés"
+              "description": "Helyileg ellenőrzi a pull requestet, és védi a meglévő munkatér változásait."
             },
             "localValidation": {
               "description": "Helyi telepítési, összeállítási, lint, tesztelési vagy hasonló érvényesítési feladatokat futtat a pull requesthez.",
@@ -1292,6 +1349,7 @@
           "toolConfirmation": "Eszközönkénti megerősítési felülírások: {0}",
           "toolConfirmationGeneric": "Eszközönkénti megerősítési felülírások beállítása"
         },
+        "setDefaultChatAgent": "Alapértelmezett csevegőügynök beállítása",
         "shellExecutionCapability": {
           "description": "Lehetővé teszi az ügynök számára, hogy tetszőleges shell parancsokat futtasson a gazdaszerveren. Az ügynök ezután delegálhat olyan szkriptek végrehajtását, amelyek nem állnak rendelkezésre feladatokként, lekérdezheti a rendszerinformációkat, és olyan műveleteket hajthat végre, amelyekhez nincs dedikált eszköz.",
           "name": "Shell végrehajtás"
@@ -1314,9 +1372,6 @@
           },
           "slashCommandsGroupDescription": "A csevegésben a /name parancs beírásával meghívható parancssori szövegrészletek, amelyek egy vagy több ügynök számára elérhetők.",
           "slashCommandsSectionHeader": "Slash parancsok"
-        },
-        "toolConfirmationInfo": {
-          "header": "Eszköz megerősítése"
         },
         "toolConfirmationOverrides": {
           "stripTooltip": "Egy vagy több AI-eszköz parancssori kapcsolók segítségével automatikusan jóváhagyásra kerül ebben a munkamenetben.",
@@ -1380,7 +1435,6 @@
           "filterPlaceholder": "A változók szűrése név vagy leírás alapján",
           "noMatches": "Nincs olyan változó, amely megfelelne a „{0}” kifejezésnek.",
           "noVariables": "Változók nem állnak rendelkezésre.",
-          "openAgent": "Nyitott ügynök{0}",
           "optional": "opcionális",
           "pageSubtitle": "{0}-névvel hivatkozható értékek egy parancssorban. Ezeket a kéréskor értelmezik és beillesztik.",
           "plainGroup": "Egyszerű változók",
@@ -1388,7 +1442,40 @@
           "required": "kötelező",
           "usedByAgents": "Ügynökök által használt"
         },
-        "waitingForInput": "Várjuk a bevitelét"
+        "waitingForInput": "Várjuk a bevitelét",
+        "walkthrough": {
+          "aiSupport": {
+            "description": "\n{0}\nAI-támogatással rendelkezik: beszélgethet szakértő ügynökökkel a projektjéről, engedélyezheti számukra a kód módosítását és feladatok futtatását, a kód automatikus kiegészítését gépelés közben, valamint segítséget kaphat a terminálban.\n\nEzek a funkciók alapértelmezés szerint letiltva vannak, így saját belátása szerint dönthet azok bekapcsolásáról.\n\nEngedélyezésük után folyamatos kéréseket generálhatnak azokhoz a nyelvi modellekhez, amelyekhez hozzáférést biztosítasz. Ez költségekkel járhat, amelyeket szorosan figyelemmel kell kísérned.\n\n[Olvasd el a dokumentációt]({1}\n).\n\nÖrömmel fogadjuk visszajelzéseidet, hozzájárulásaidat és támogatásodat! Látogass el a [GitHub-projektre]({2}\n), hogy támogasd a folyamatos fejlesztést. Köszönjük, hogy közösségünk tagja vagy!\n\nMindez a Theia AI-n alapul, amely az AI-alapú eszközök és IDE-k keretrendszere, és amely stabil kiadásként jelent meg. [Olvassa el a keretrendszer dokumentációját]({3}\n).\n",
+            "title": "{0} mesterséges intelligencia támogatása"
+          },
+          "chooseAgent": {
+            "intro": "Minden csevegési kérés egy ügynökhöz kerül, és ha nem jelöl meg konkrét ügynököt, akkor az egyikük válaszol.\n\n**Állítsa be az alapértelmezett ügynökét:**\n",
+            "outro": "A beállításokban [kiválaszthatja az alapértelmezett ügynököt]({0}\n), és egy-egy üzenetben egy másik ügynökhöz is címzheti az üzenetet, ha azt *@AgentName*-nel kezdi.\nAz [Ügynökök]({1}\n) oldalon mindegyikük felsorolásra kerül.\n",
+            "title": "Válassza ki az alapértelmezett ügynököt"
+          },
+          "connectModel": {
+            "description": "API-kulcs hozzáadása egy tárolt szolgáltatóhoz:\n\n- [OpenAI]({0}\n)\n- [Anthropic]({1}\n)\n- [Google]({2}\n)\n\nInkább helyben maradna, vagy más szolgáltatást használna? Az Ollama, a llamafile és bármely OpenAI-kompatibilis végpont beállítható a [Modellek]({3}\n) oldalon.\n\nEgyes ügynökök, például a Claude Code, saját modellt hoznak magukkal, és szolgáltató nélkül is működnek.\n",
+            "title": "Nyelvi modell csatlakoztatása"
+          },
+          "description": "Állítsa be a {0} mesterséges intelligencia funkcióit, és tanulja meg, hogyan kell velük dolgozni.",
+          "enableAi": {
+            "description": "Addig semmilyen adat nem kerül továbbításra, amíg be nem kapcsolja az AI-funkciókat, és azokat bármikor újra kikapcsolhatja.\n\n[Nyissa meg az AI-beállításokat]({0}\n), és ott engedélyezze őket.\n",
+            "title": "Kapcsolja be az AI-funkciókat"
+          },
+          "firstQuestion": {
+            "description": "[Nyissa meg az AI Chat-et]({0}\n), és tegyen fel egy kérdést a projektjével kapcsolatban.\n\nKét dolog jelentősen javítja a válaszok minőségét:\n\n- A *@AgentName* kijelöli az üzenethez tartozó ügynököt, például *@Coder*.\n- A *#* kontextust csatol, például *#file* vagy *#selectedText*. A beviteli mező melletti gemkapocs gomb ugyanezt a funkciót látja el.\n\nA csevegő megjegyzi a munkameneteidet, így később folytathatod a beszélgetést.\n",
+            "title": "Tegye fel az első kérdését"
+          },
+          "goFurther": {
+            "description": "A csevegés csak a kezdet. Az AI a gépelés közben is kiegészíti a kódot, és a *Ctrl+I* billentyűkombinációval segítséget nyújt a terminálban.\n\n- [Utasítások és képességek]({0}\n): olvassa el és alakítsa át az ügynökök által használt utasításokat.\n- [MCP-kiszolgálók]({1}\n): adj hozzá olyan eszközöket, amelyek nem szerepelnek a {3}\nalapcsomagjában.\n- [Token-felhasználás]({2}\n): nézd meg, mit fogyasztanak a kéréseid.\n- [Perspektíva váltás]({5}\n) (kísérleti): az *AI First* elrendezés a csevegést a főterületre helyezi, az Explorer és a forráskód-kezelő pedig a jobb oldalon jelenik meg.\n\nAz AI History nézet, amennyiben elérhető, megmutatja, hogy mi került ténylegesen elküldésre a modellnek.\n\nTovábbi információkat találsz [a dokumentációban]({4}\n) – visszajelzéseidet pedig mindig szívesen fogadjuk.\n",
+            "title": "További információk"
+          },
+          "title": "Az AI használatának megkezdése",
+          "toolConfirmation": {
+            "description": "Az ügynökök eszközök segítségével hajtanak végre műveleteket a munkaterületén: fájlokat olvasnak, terminálparancsokat futtatnak vagy kódot szerkesztenek.\n\nMinden eszközhívás előtt a rendszer megerősítést kér. A [Eszközök]({0}\n) oldalon módosíthatja ezt az alapértelmezett beállítást, vagy előre jóváhagyhatja a megbízható eszközöket.\n\nAz AI-funkciók teljesen kikapcsolt állapotban maradnak, amíg a munkaterület nem minősül megbízhatónak. A [Munkaterület megbízhatóságának kezelése]({1}\n) menüpontban projektenként dönthet erről.\n",
+            "title": "Tartsa kézben az ügynökök tevékenységét"
+          }
+        }
       },
       "llamaFile": {
         "prefs": {
@@ -1434,6 +1521,7 @@
           "label": "MCP: MCP OAuth átirányítási URL lekérése"
         },
         "info": {
+          "noToolsAvailable": "Nincsenek elérhető eszközök.",
           "oauthRedirectUrl": "MCP OAuth átirányítási URL: {0}",
           "serverSignedIn": "Bejelentkezett az „{0}” MCP-kiszolgálóra.",
           "serverSignedOut": "Kijelentkezett az „{0}” MCP-kiszolgálóról.",
@@ -1609,6 +1697,7 @@
           "serverUrlPlaceholder": "Például: https://mcp.example.com",
           "serverUrlRequired": "A távoli szerverekhez szerver URL szükséges."
         },
+        "noServersConfigured": "Nincs beállított MCP-kiszolgáló",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "Engedélyezési szerver",
         "oauthClientId": "OAuth kliensazonosító",
@@ -1636,6 +1725,9 @@
         "typeRemoteOAuth": "Távoli (OAuth)"
       },
       "openai": {
+        "allowEnvApiKey": {
+          "description": "Engedélyezze a Theia számára a környezetben található OpenAI API-kulcs (`OPENAI_API_KEY`) használatát. A kulcs használata előtt egyszer meg kell erősítenie ezt; a hozzájárulás visszavonásához állítsa vissza `false` értékre."
+        },
         "apiKey": {
           "mdDescription": "Írja be hivatalos OpenAI-fiókjának API-kulcsát. **Megjegyzés:** Ezen beállítás használatával az Open AI API-kulcs szöveges formában kerül tárolásra a Theia-t futtató gépen. A kulcs biztonságos beállításához használja az `OPENAI_API_KEY` környezeti változót."
         },
@@ -1664,10 +1756,13 @@
           "enableStreaming": {
             "title": "Jelzi, hogy a streaming API-t kell-e használni. Alapértelmezés szerint `true`."
           },
+          "headers": {
+            "title": "Minden, a végponthoz érkező kéréssel együtt elküldött további HTTP-fejlécek"
+          },
           "id": {
             "title": "Egyedi azonosító, amelyet a felhasználói felületen használnak az egyéni modell azonosítására."
           },
-          "mdDescription": "Integráljon az OpenAI API-val kompatibilis egyéni modelleket, például a `vllm` segítségével. A szükséges attribútumok a `model` és az `url`.            \n            Opcionálisan megadhatja            \n            - egy egyedi `id`-t az egyéni modell azonosításához a felhasználói felületen. Ha nem ad meg ilyet, a `model` lesz az `id`.            \n            - adjon meg egy `apiKey`-t a megadott URL-en elérhető API eléréséhez. Használja a `true` értéket a globális OpenAI API-kulcs használatának jelzésére.            \n            - adjon meg egy `apiVersion`-t az Azure-ban a megadott URL-en elérhető API eléréséhez. Használja a `true` értéket a globális OpenAI API verzió használatának jelzésére.            \n            - adjon meg egy `deployment` nevet az Azure-telepítéséhez.            \n            - állítsa be a `developerMessageSettings` értéket `user`, `system`, `developer`, `mergeWithFollowingUserMessage` vagy `skip` értékre a fejlesztői üzenet beillesztésének szabályozásához (ahol a `user`, `system` és `developer` szerepkörként lesz használva, a `mergeWithFollowingUserMessage` a következő felhasználói üzenet elé illeszti a rendszerüzenetet, vagy a rendszerüzenetet felhasználói üzenetté alakítja, ha a következő üzenet nem felhasználói üzenet. A `skip` egyszerűen eltávolítja a rendszerüzenetet).            Alapértelmezés szerint `developer`.            \n            - Adja meg a `supportsStructuredOutput: false` értéket, ha nem kívánja használni a strukturált kimenetet.            \n            - Adja meg az `enableStreaming: false` értéket, ha nem kívánja használni a streaminget.            \n            - Adja meg az `useResponseApi: true` értéket, ha a Chat Completion API helyett az újabb OpenAI Response API-t kívánja használni (kompatibilis végpont szükséges).            \n            - Adja meg a `reasoningSupport` értéket a csevegési érvelés-szelektor bekapcsolásához. Adjon meg egy objektumot a `supportedLevels` (pl. `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`) és egy opcionális `defaultLevel` értékkel.            \n            További információkért olvassa el [dokumentációnkat](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm).",
+          "mdDescription": "Integráljon az OpenAI API-val kompatibilis egyéni modelleket, például a `vllm` segítségével. A kötelező attribútumok a `model` és az `url`.            \n            Opcionálisan megadhatja            \n            - egy egyedi `id`-t az egyéni modell azonosításához a felhasználói felületen. Ha nem ad meg ilyet, akkor a `model` értéke lesz az `id`.            \n            - adjon meg egy `apiKey`-t a megadott URL-en elérhető API-hoz való hozzáféréshez. A `true` értékkel jelezze a globális OpenAI API-kulcs használatát.            \n            - Adjon meg egy `apiVersion` értéket az Azure-ban a megadott URL-en elérhető API eléréséhez. A `true` értékkel jelölje meg a globális OpenAI API-verzió használatát.            \n            - Adjon meg egy `deployment` nevet az Azure-telepítéséhez.            \n            - Állítsa be a `developerMessageSettings` értéket `user`, `system`, `developer`, `mergeWithFollowingUserMessage` vagy `skip` értékre a fejlesztői üzenet beillesztésének szabályozásához            (ahol a `user`, `system` és `developer` szerepkörként kerül felhasználásra, a `mergeWithFollowingUserMessage` a következő felhasználói üzenet elé a rendszerüzenetet illeszti, vagy a rendszerüzenetet felhasználói üzenetté alakítja, ha (ahol a `user`, `system` és `developer` szerepkörként kerülnek felhasználásra, a `mergeWithFollowingUserMessage` a következő felhasználói üzenet elé illeszti a rendszerüzenetet,            vagy a rendszerüzenetet felhasználói üzenetté alakítja át, ha a következő üzenet nem felhasználói üzenet. A `skip` egyszerűen eltávolítja a rendszerüzenetet).            Alapértelmezés szerint `developer`.            \n            - adja meg a `supportsStructuredOutput: false` értéket, ha nem kívánja használni a strukturált kimenetet.            \n            - adja meg az `enableStreaming: false` értéket, ha nem kívánja használni a streaminget.            \n            - Adja meg a `useResponseApi: true` értéket, ha a Chat Completion API helyett az újabb OpenAI Response API-t szeretné használni (ehhez kompatibilis végpont szükséges).            \n            - Adja meg a `reasoningSupport` értéket, ha bekapcsolja a csevegési érvelés-szelektort. Adjon meg egy objektumot, amely tartalmazza a            `supportedLevels` tulajdonságot (pl. `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`) és egy opcionális `defaultLevel` tulajdonságot.            \n            - Adja meg a `headers` paramétert, ha minden, a végponthoz küldött kéréshez további HTTP-fejléceket szeretne csatolni, pl. az API előtt lévő átjáró által megkövetelt fejléceket.            \n            További információkért lásd [a dokumentációnkat](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm).",
           "modelId": {
             "title": "Modellazonosító"
           },
@@ -1687,8 +1782,16 @@
         "customProvider": {
           "label": "{0} (Egyéni)"
         },
-        "models": {
-          "description": "Használni kívánt hivatalos OpenAI modellek"
+        "discovery": {
+          "cached": "A gyorsítótárban tárolt modellek megjelenítése; az utolsó frissítés sikertelen volt: {0}",
+          "consentPrompt": "Egy OpenAI API-kulcsot találtak a környezetben (OPENAI_API_KEY). Engedélyezze-e a Theia számára, hogy ezt felhasználva felkutassa és meghívja az OpenAI-modelleket?",
+          "consentRequired": "Egy OpenAI API-kulcsot találtunk a környezetben. Erősítse meg annak használatát a modellek felfedezéséhez.",
+          "noKey": "Nincs beállítva OpenAI API-kulcs. Adjon meg egy kulcsot a modellek felfedezéséhez.",
+          "overridden": "A modelllista manuálisan konfigurálható. Törölje a modellfelülírásokat, hogy a szolgáltató újra felfedezze a modelleket.",
+          "useEnvKey": "Használati útmutató"
+        },
+        "modelOverrides": {
+          "description": "Az OpenAI-tól felderített modellek felülírása. Ha üres (alapértelmezett), a szolgáltatótól kerülnek felderítésre a rendelkezésre álló modellek. Határozzon meg explicit modellazonosítókat, hogy pontosan azokat használja; ebben az esetben a felderítés egyáltalán nem kerül alkalmazásra."
         },
         "useResponseApi": {
           "mdDescription": "A hivatalos OpenAI-modellek esetében a Chat Completion API helyett az újabb OpenAI Response API-t használja. Ez a beállítás csak a hivatalos OpenAI-modellekre vonatkozik – az egyéni szolgáltatóknak ezt egyedileg kell konfigurálniuk."
@@ -1936,6 +2039,26 @@
       "codeReview": {
         "description": "Minden implementáció után átadja a kód-ellenőrző ügynöknek. A következő lépéseket blokkolja, amíg az ellenőrzés nem teljesül."
       },
+      "commit-message": {
+        "agent-disabled-tooltip": "A Commit Message ügynök le van tiltva. Engedélyezze az AI Configuration nézetben.",
+        "cancel-tooltip": "A commit-üzenet generálásának megszakítása",
+        "empty": "A modell üres commit-üzenetet adott vissza.",
+        "failed": "Nem sikerült létrehozni a commit üzenetet: {0}",
+        "generate-from-staged": "Commit-üzenet generálása a előkészített módosításokból",
+        "no-changes": "Nincsenek szakaszos változások, amelyekből commit üzenetet lehetne generálni.",
+        "no-repository": "Nincs kiválasztva forráskód-kezelő tároló.",
+        "replace-prompt": "A commit üzenet mező nem üres. Cserélje ki a tartalmát a generált üzenetre?",
+        "replace-title": "A commit üzenet cseréje",
+        "staged-tooltip": "Commit-üzenet generálása a staging-be helyezett módosításokból"
+      },
+      "commitMessageAgent": {
+        "description": "Git-commit üzeneteket generál a munkaterületi tárolóban előkészített módosításokból. Az SCM commit-message beviteli mezőből indítható el az AI sparkle gomb segítségével.",
+        "vars": {
+          "changes": {
+            "description": "A commit üzenet alapjául szolgáló, előkészített módosítások egységes git diffje."
+          }
+        }
+      },
       "fixGhTicketCommand": {
         "argumentHint": "<jegy-szám>",
         "description": "GitHub jegy elemzése és a megoldás megvalósítása"
@@ -2004,6 +2127,7 @@
         "updateTooltip": "Frissítés a {0} webhelyről a {1} webhelyre"
       },
       "autoUpdate": {
+        "aiSettings": "AI-beállítások",
         "ask": "Értesítés, ha frissítés érhető el egy telepített skillhez, MCP-kiszolgálóhoz vagy ügynök-bővítményhez.",
         "changeLater": "Ezt később a {0} oldalon módosíthatja.",
         "configureDefault": "Az alapértelmezett beállításokat a „{0}” (Beállítások > Általános > Alapértelmezett) menüpontban lehet konfigurálni.",
@@ -2040,9 +2164,7 @@
           "oneSkipped": "A „{0}” komponens kihagyva: {1}"
         },
         "dialog": {
-          "contains": "Tartalom",
           "endorsedBy": "Jóváhagyta",
-          "from": "Forrás:",
           "install": {
             "title": "Telepítse az „{0}” ügynök-bővítményt"
           },
@@ -2104,10 +2226,6 @@
         "serverUnknownField": "A szerverkonfigurációban szerepel a „{0}” mező, amely a szállítási típus szempontjából nem megengedett.",
         "serverUnknownType": "A szerverkonfigurációban az ismeretlen „{0}” átviteli típus van megadva.",
         "serverUnsupportedTransport": "Az MCP „{0}” átviteli mód nem támogatott.",
-        "stat": {
-          "oneServer": "1 MCP-kiszolgáló",
-          "servers": "{0} MCP-kiszolgálók"
-        },
         "uninstalled": "Az „{0}” ügynök-bővítmény eltávolítása.",
         "unknownManifestField": "Az ismeretlen „plugin.json” mező „{0}” értékének figyelmen kívül hagyása.",
         "unlinked": "Nem összekapcsolt ügynök-bővítmény „{0}”.",
@@ -2244,7 +2362,6 @@
       "collaborate": "Együttműködés",
       "collaboration": "Együttműködés",
       "collaborationWorkspace": "Együttműködési munkaterület",
-      "connected": "Csatlakoztatva",
       "connectedSession": "Csatlakozás egy együttműködési munkamenethez",
       "copiedInvitation": "A meghívó kód a vágólapra másolva.",
       "copyAgain": "Újra másolás",
@@ -2471,6 +2588,25 @@
       "userSettingsDetail": "Alkalmazás minden munkaterületre",
       "workspaceSettingsDetail": "Csak az aktuális munkaterületre alkalmazható"
     },
+    "external-api": {
+      "delivery": {
+        "description": "Ezt a beállítást használja annak szabályozására, hogy a külső HTTP API elérhető legyen-e, és ha igen, milyen módon.",
+        "off": "Ne szolgáltassa a külső API-t.",
+        "samePort": "A külső API-t ugyanazon a porton kell kiszolgálni, mint a háttérrendszert.",
+        "samePortLabel": "Ugyanaz a port, mint a háttérrendszeré",
+        "separatePort": "A külső API-t egy külön porton kell kiszolgálni, amelyet az „externalApi.port” beállítással lehet konfigurálni.",
+        "separatePortLabel": "Külön port"
+      },
+      "hostname": {
+        "description": "A külső HTTP API-kiszolgálóhoz társított gazdanév vagy IP-cím. A távoli kapcsolatok elfogadásához használja a „0.0.0.0” értéket. Egy olyan név, mint a „localhost”, a feloldáskor kapcsolódik, így a másik loopback-címet használó kliensek nem érhetik el a szervert; a „127.0.0.1” vagy a „::1” használatával rögzítheti az egyiket. Csak akkor használható, ha az „externalApi.delivery” beállítása „separatePort”."
+      },
+      "port": {
+        "description": "Az a port, amelyen a külső HTTP API elérhető. Csak akkor használatos, ha az „externalApi.delivery” beállítása „separatePort”."
+      },
+      "token": {
+        "description": "A védett külső API-végpontok eléréséhez szükséges hordozó token („Authorization: Bearer <token>”). Ha üres, a külső API hitelesítés nélkül működik."
+      }
+    },
     "external-terminal": {
       "cwd": "Válassza ki az új külső terminál aktuális munkakönyvtárát"
     },
@@ -2514,10 +2650,6 @@
       "uploadedOutOf": "Feltöltve: {0} a {1} webhelyről."
     },
     "getting-started": {
-      "ai": {
-        "header": "Az AI-támogatás már elérhető az {0}-ban!",
-        "openAIChatView": "Nyissa meg most az AI Chat View-t, hogy megtudja, hogyan kezdje el!"
-      },
       "apiComparator": "{0} API-kompatibilitás",
       "markStepUndone": "Visszavonás",
       "newExtension": "Új kiterjesztés létrehozása",
@@ -2736,9 +2868,6 @@
       },
       "toolbar": "Eszköztár"
     },
-    "preview": {
-      "openByDefault": "Alapértelmezés szerint az előnézetet nyissa meg a szerkesztő helyett."
-    },
     "property-view": {
       "lastModified": "Utolsó módosítás",
       "noProperties": "Nincs elérhető tulajdonság.",
@@ -2749,6 +2878,16 @@
       "dev-container": {
         "attach": "Csatlakozás futó konténerhez",
         "attachError": "Nem sikerült csatlakozni a konténerhez: {0}",
+        "attachScreen": {
+          "errorHeader": "Nem sikerült csatlakozni a konténerhez",
+          "firstStartNote": "A konténer első indítása egy-két percet vehet igénybe. A későbbi indítások sokkal gyorsabbak.",
+          "locating": "A konténer {0} keresése...",
+          "preparing": "Csatlakozás előkészítése...",
+          "preparingWorkspace": "A munkaterület előkészítése...",
+          "starting": "Az alkalmazás elindítása a konténerben...",
+          "title": "Csatlakozás a konténerhez",
+          "titleNamed": "{0}-hez való csatlakozás"
+        },
         "attachWarning": "A konténerhez való csatlakozás a benne lévő kódot fogja végrehajtani. Csak olyan konténerekhez csatlakozzon, amelyek eredetét megbízhatónak tartja.",
         "attachWarningTitle": "Csatlakoztatás konténerhez",
         "attaching": "Csatlakozás konténerhez",
@@ -2799,7 +2938,6 @@
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Utolsó commit módosítása",
       "changeRepository": "Repozitórium módosítása...",
-      "copyCommitHash": "Hash másolása",
       "dirtyDiff": {
         "close": "Bezárás Változtatás Peek View"
       },

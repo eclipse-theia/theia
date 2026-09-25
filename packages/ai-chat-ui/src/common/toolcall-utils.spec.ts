@@ -103,16 +103,125 @@ describe('extractJsonStringField', () => {
             expect(result).to.be.undefined;
         });
 
-        it('should handle escaped quotes - regex stops at first unescaped quote', () => {
+        it('should handle escaped quotes in complete JSON', () => {
             // With complete JSON, JSON.parse handles escapes correctly
             const result = extractJsonStringField('{"cmd": "echo \\"hello\\""}', 'cmd');
             expect(result).to.equal('echo "hello"');
         });
 
-        it('should handle escaped quotes in partial JSON - regex captures up to first quote', () => {
-            // With incomplete JSON, regex stops at the first unescaped quote character
+        it('should unescape escaped quotes in partial JSON', () => {
             const result = extractJsonStringField('{"cmd": "echo \\"hello', 'cmd');
-            expect(result).to.equal('echo \\');
+            expect(result).to.equal('echo "hello');
         });
     });
+
+    describe('parse/scan boundary', () => {
+        it('should unescape via JSON.parse when complete JSON has trailing whitespace', () => {
+            const result = extractJsonStringField('{"cmd": "echo \\"hello\\""}\n', 'cmd');
+            expect(result).to.equal('echo "hello"');
+        });
+
+        it('should extract by scanning when JSON ends with a brace but is still incomplete', () => {
+            const result = extractJsonStringField('{"path": "src/index.ts", "meta": {"x": "y"}', 'path');
+            expect(result).to.equal('src/index.ts');
+        });
+
+        it('should return undefined for a complete array without the field', () => {
+            const result = extractJsonStringField('[{"path": "src/index.ts"}]', 'other');
+            expect(result).to.be.undefined;
+        });
+
+        it('should return undefined for an incomplete array, which has no top-level field', () => {
+            const result = extractJsonStringField('[{"path": "src/index.ts"', 'path');
+            expect(result).to.be.undefined;
+        });
+    });
+
+    describe('top-level fields only (streaming)', () => {
+        it('should ignore a matching key inside a nested object', () => {
+            const result = extractJsonStringField('{"meta": {"path": "inner.ts"}, "path": "outer.ts', 'path');
+            expect(result).to.equal('outer.ts');
+        });
+
+        it('should ignore a matching key inside a nested array of objects', () => {
+            const result = extractJsonStringField('{"edits": [{"path": "inner.ts"}], "path": "outer.ts', 'path');
+            expect(result).to.equal('outer.ts');
+        });
+
+        it('should ignore a matching key inside a string value', () => {
+            const result = extractJsonStringField('{"content": "{\\"path\\": \\"inner.ts\\"}", "path": "outer.ts', 'path');
+            expect(result).to.equal('outer.ts');
+        });
+
+        it('should return undefined when the field only occurs nested', () => {
+            const result = extractJsonStringField('{"meta": {"path": "inner.ts"}, "content": "abc', 'path');
+            expect(result).to.be.undefined;
+        });
+
+        it('should return undefined while a nested object is still streaming', () => {
+            const result = extractJsonStringField('{"meta": {"path": "inner.ts', 'path');
+            expect(result).to.be.undefined;
+        });
+
+        it('should return undefined when the top-level field is not a string', () => {
+            const result = extractJsonStringField('{"path": 42, "content": "abc', 'path');
+            expect(result).to.be.undefined;
+        });
+
+        it('should extract a field that follows a non-string top-level value', () => {
+            const result = extractJsonStringField('{"line": 42, "path": "src/index.ts', 'path');
+            expect(result).to.equal('src/index.ts');
+        });
+
+        it('should extract a field that follows a nested object', () => {
+            const result = extractJsonStringField('{"meta": {"a": {"b": "c"}}, "path": "src/index.ts', 'path');
+            expect(result).to.equal('src/index.ts');
+        });
+
+        it('should not match a key whose name merely ends with the field name', () => {
+            const result = extractJsonStringField('{"filepath": "wrong.ts", "path": "right.ts', 'path');
+            expect(result).to.equal('right.ts');
+        });
+    });
+
+    describe('escapes in streaming values', () => {
+        it('should not end the value at an escaped quote', () => {
+            const result = extractJsonStringField('{"path": "a\\"b", "other": "x', 'path');
+            expect(result).to.equal('a"b');
+        });
+
+        it('should unescape backslashes in a streaming Windows path', () => {
+            const result = extractJsonStringField('{"path": "C:\\\\Users\\\\me', 'path');
+            expect(result).to.equal('C:\\Users\\me');
+        });
+
+        it('should drop a trailing incomplete escape', () => {
+            const result = extractJsonStringField('{"path": "a\\', 'path');
+            expect(result).to.equal('a');
+        });
+
+        it('should drop a trailing incomplete unicode escape', () => {
+            const result = extractJsonStringField('{"path": "a\\u00', 'path');
+            expect(result).to.equal('a');
+        });
+
+        it('should keep a completed escaped backslash at the end of a streaming value', () => {
+            const result = extractJsonStringField('{"path": "a\\\\', 'path');
+            expect(result).to.equal('a\\');
+        });
+
+        it('should keep literal text that looks like an escape', () => {
+            const result = extractJsonStringField('{"path": "a\\\\u0041', 'path');
+            expect(result).to.equal('a\\u0041');
+        });
+    });
+
+    describe('large streaming payloads', () => {
+        it('should extract a field that follows a very large content value', () => {
+            const content = 'x'.repeat(1_000_000);
+            const result = extractJsonStringField(`{"content": "${content}", "path": "src/index.ts`, 'path');
+            expect(result).to.equal('src/index.ts');
+        });
+    });
+
 });

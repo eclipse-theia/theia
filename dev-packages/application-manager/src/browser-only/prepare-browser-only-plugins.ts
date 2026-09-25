@@ -23,6 +23,7 @@ import {
     DEFAULT_PLUGINS_DIR,
     LIST_JSON,
     PLUGINS_BASE_PATH,
+    PLUGINS_SCHEME,
     PLUGIN_COPY_IGNORE,
     UNPUBLISHED,
 } from '@theia/plugin-utils/lib/common/constants';
@@ -34,6 +35,7 @@ import {
     buildModel,
     getPluginId,
     pickEngineType,
+    toPluginUri,
     toPluginUrl
 } from '@theia/plugin-utils/lib/common/plugin-model';
 import { getPluginRootFileUrl } from '@theia/plugin-utils/lib/node/plugin-model';
@@ -47,7 +49,7 @@ import type {
 } from '@theia/plugin-utils/lib/common/contribution-types';
 
 import {
-    PLUGIN_HOST_BACKEND,
+    PLUGIN_HOST_FRONTEND,
     PluginType,
     type DeployedPlugin,
     type PluginEntryPoint,
@@ -172,7 +174,10 @@ async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): 
             plugin: {
                 type: PluginType.System,
                 metadata: {
-                    host: PLUGIN_HOST_BACKEND,
+                    // No backend host in browser-only. `loadContributions` only infers 'frontend' for
+                    // plugins with a frontend entry point, so declarative-only ones would land on a
+                    // host that never answers and hang every RPC to it, saving included.
+                    host: PLUGIN_HOST_FRONTEND,
                     model,
                     lifecycle,
                     outOfSync: false
@@ -278,8 +283,10 @@ async function normalizeManifestForBrowserOnly(manifest: PluginManifest): Promis
     };
     await normalizeContributions({
         plugin: manifest,
+        // `resolveUrl` is for assets the browser loads itself, `resolveUri` for the ones read
+        // through the `FileService` - those need a scheme.
         resolveUrl: relative => toPluginUrl(manifest, relative),
-        resolveUri: (pck, relative) => toPluginUrl(pck, relative),
+        resolveUri: (pck, relative) => toPluginUri(pck, relative),
         readGrammars: async (grammars, pluginPath) => {
             const result = [];
             for (const rawGrammar of grammars) {
@@ -304,15 +311,15 @@ async function normalizeManifestForBrowserOnly(manifest: PluginManifest): Promis
 /**
  * `list.json` carries normalized contributes + plugin metadata (single source of truth for Theia).
  * `hostedPlugin/<id>/package.json` stays a VS Code-style raw manifest for worker `rawModel`:
- * name-prefix strip, `main` removed, entry paths synced, and `packagePath`/`packageUri` set to the
- * static hosted root (needed so relative assets resolve via `toPluginUrl`).
+ * name-prefix strip, `main` removed, entry paths synced, `packagePath` set to the static hosted
+ * root (needed so relative assets resolve via `toPluginUrl`), and `packageUri` set to the scheme
+ * form of that same root (needed for assets read through the `FileService`).
  */
 function prepareHostedPackageJson(manifest: PluginManifest, pluginId: string, entryPoint: PluginEntryPoint): void {
     stripNonFrontendHostFields(manifest);
 
-    const packageRoot = `${PLUGINS_BASE_PATH}/${pluginId}/`;
-    manifest.packagePath = packageRoot;
-    manifest.packageUri = packageRoot;
+    manifest.packagePath = `${PLUGINS_BASE_PATH}/${pluginId}/`;
+    manifest.packageUri = `${PLUGINS_SCHEME}:/${pluginId}/`;
 
     if (entryPoint.frontend) {
         if (manifest.theiaPlugin) {
@@ -336,8 +343,9 @@ function resolveHostedEntryPoint(entryPoint: PluginEntryPoint, pluginRoot: strin
 }
 
 function rewriteModelPathsForHostedStatic(model: PluginModel, buildTimePackageRoot: string, pluginId: string): void {
-    model.packageUri = toHostedPluginUri(model.packageUri, buildTimePackageRoot, pluginId);
-    model.packagePath = model.packageUri;
+    const fileUri = model.packageUri;
+    model.packagePath = toHostedPluginUri(fileUri, buildTimePackageRoot, pluginId);
+    model.packageUri = toHostedPluginAssetUri(fileUri, buildTimePackageRoot, pluginId);
 }
 
 export function resolvePluginEntryFileSync(absolutePath: string): string | undefined {
@@ -357,20 +365,36 @@ export function resolvePluginEntryFileSync(absolutePath: string): string | undef
     return undefined;
 }
 
-export function toHostedPluginUri(fileUri: string, pluginRoot: string, pluginId: string): string {
+/**
+ * Resolves `fileUri` to its `<id>/<relative-path>` form under `pluginRoot`, or `undefined` if it
+ * isn't a `file:` URI inside that root (already-static asset URLs from `toPluginUrl`/`toPluginUri`
+ * pass through their callers unchanged).
+ */
+function toHostedPluginRelativePath(fileUri: string, pluginRoot: string, pluginId: string): string | undefined {
     if (!fileUri.startsWith('file://')) {
-        return fileUri;
+        return undefined;
     }
     try {
         const filePath = fileURLToPath(fileUri);
         const normalizedRoot = path.resolve(pluginRoot);
         const normalizedPath = path.resolve(filePath);
         if (!normalizedPath.startsWith(normalizedRoot + path.sep) && normalizedPath !== normalizedRoot) {
-            return fileUri;
+            return undefined;
         }
         const relative = path.relative(normalizedRoot, normalizedPath);
-        return `${PLUGINS_BASE_PATH}/${pluginId}/${relative.split(path.sep).join('/')}`;
+        return `${pluginId}/${relative.split(path.sep).join('/')}`;
     } catch {
-        return fileUri;
+        return undefined;
     }
+}
+
+export function toHostedPluginUri(fileUri: string, pluginRoot: string, pluginId: string): string {
+    const relativePath = toHostedPluginRelativePath(fileUri, pluginRoot, pluginId);
+    return relativePath === undefined ? fileUri : `${PLUGINS_BASE_PATH}/${relativePath}`;
+}
+
+/** Same as {@link toHostedPluginUri}, but as a `PLUGINS_SCHEME` URI for `FileService` reads. */
+function toHostedPluginAssetUri(fileUri: string, pluginRoot: string, pluginId: string): string {
+    const relativePath = toHostedPluginRelativePath(fileUri, pluginRoot, pluginId);
+    return relativePath === undefined ? fileUri : `${PLUGINS_SCHEME}:/${relativePath}`;
 }

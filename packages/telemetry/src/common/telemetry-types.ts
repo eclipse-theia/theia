@@ -18,7 +18,22 @@ import { deepClone, deepFreeze } from '@theia/core/lib/common/objects';
 import { isObject } from '@theia/core/lib/common/types';
 
 /** @experimental */
+export type TelemetryEventKind = 'usage' | 'error' | 'crash';
+
+/** @experimental */
+export function isTelemetryEventKind(value: unknown): value is TelemetryEventKind {
+    return value === 'usage' || value === 'error' || value === 'crash';
+}
+
+/** @experimental */
 export type TelemetryLevel = 'off' | 'crash' | 'error' | 'all';
+
+/** @experimental */
+export function isKindAllowedByLevel(level: TelemetryLevel, kind: TelemetryEventKind): boolean {
+    return level === 'all'
+        || level === 'error' && (kind === 'error' || kind === 'crash')
+        || level === 'crash' && kind === 'crash';
+}
 
 /** @experimental */
 export const BACKEND_TELEMETRY_SESSION = 'backend';
@@ -71,14 +86,6 @@ export function isTelemetryData(data: unknown): data is Record<string, Telemetry
 /** @experimental */
 export function snapshotTelemetryData<T extends object>(data: TelemetryData<T> | undefined): TelemetryData<T> | undefined {
     return data === undefined ? undefined : deepFreeze(deepClone(data));
-}
-
-/** @experimental */
-export type TelemetryEventKind = 'usage' | 'error' | 'crash';
-
-/** @experimental */
-export function isTelemetryEventKind(value: unknown): value is TelemetryEventKind {
-    return value === 'usage' || value === 'error' || value === 'crash';
 }
 
 /** @experimental */
