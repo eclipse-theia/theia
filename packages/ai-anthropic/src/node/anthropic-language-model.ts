@@ -35,7 +35,9 @@ import {
     ToolCallResult,
     ToolCallExecutor,
     createToolCallError,
-    UserRequest
+    ToolInvocationContext,
+    UserRequest,
+    extractErrorMessageWithCause
 } from '@theia/ai-core';
 import { CancellationToken, ILogger, isArray, nls } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
@@ -504,7 +506,12 @@ export class AnthropicModel implements LanguageModel {
             }
             return this.handleNonStreamingRequest(anthropic, request);
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            // Flatten the `cause` chain into the message here, on the backend, before re-wrapping.
+            // Node's fetch reports network failures as an opaque "fetch failed" with the actionable
+            // reason (ECONNREFUSED, ENOTFOUND, TLS errors, ...) on error.cause, and the RPC error
+            // extension drops `cause` when the error crosses to the frontend. Embedding it in the
+            // message string lets the chat UI explain the failure.
+            const errorMessage = error instanceof Error ? extractErrorMessageWithCause(error) : 'Unknown error occurred';
             throw new Error(`Anthropic API request failed: ${errorMessage}`);
         }
     }
