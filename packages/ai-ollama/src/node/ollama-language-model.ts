@@ -442,14 +442,12 @@ export class OllamaModel implements LanguageModel {
             if (!prop.type) {
                 return schema;
             }
-            const result: Record<string, unknown> = {
+            return {
                 ...prop,
                 ...(prop.description !== undefined && { description: String(prop.description) }),
                 ...(prop.properties !== undefined && { properties: this.recurseProperties(prop.properties) }),
                 ...(prop.items !== undefined && { items: this.transformSchema(prop.items) }),
             };
-            delete result['anyOf'];
-            return result;
         }
         return schema;
     }
