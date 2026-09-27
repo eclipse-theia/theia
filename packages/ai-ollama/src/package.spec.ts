@@ -39,80 +39,39 @@ describe('ai-ollama package', () => {
 
     it('resolves anyOf directly on an items schema', () => {
         const model = new OllamaModelUnderTest();
-        const tool: ToolRequest = {
-            id: 'test',
-            name: 'test',
-            description: 'test',
-            handler: sinon.stub(),
-            parameters: {
-                type: 'object',
-                properties: {
-                    tags: {
-                        type: 'array',
-                        description: 'list of tags',
-                        items: {
-                            anyOf: [{ type: 'string' }, { type: 'null' }],
-                            description: 'a tag'
-                        }
-                    }
-                }
-            }
-        };
-        const result = model.toOllamaTool(tool);
+        const result = model.toOllamaTool(createToolRequest({
+            tags: { type: 'array', description: 'list of tags', items: { anyOf: [{ type: 'string' }, { type: 'null' }], description: 'a tag' } }
+        }));
         const tags = result.function.parameters!.properties!['tags'] as Record<string, unknown>;
         expect(tags['items']).to.deep.equal({ type: 'string', description: 'a tag' });
     });
 
     it('passes enum values through to output', () => {
         const model = new OllamaModelUnderTest();
-        const tool: ToolRequest = {
-            id: 'test',
-            name: 'test',
-            description: 'test',
-            handler: sinon.stub(),
-            parameters: {
-                type: 'object',
-                properties: {
-                    status: {
-                        type: 'string',
-                        description: 'task status',
-                        enum: ['pending', 'in-progress', 'done']
-                    }
-                }
-            }
-        };
-        const result = model.toOllamaTool(tool);
+        const result = model.toOllamaTool(createToolRequest({
+            status: { type: 'string', description: 'task status', enum: ['pending', 'in-progress', 'done'] }
+        }));
         const status = result.function.parameters!.properties!['status'] as Record<string, unknown>;
         expect(status['enum']).to.deep.equal(['pending', 'in-progress', 'done']);
     });
 
     it('passes required and nested properties through array items (todoWrite schema)', () => {
         const model = new OllamaModelUnderTest();
-        const tool: ToolRequest = {
-            id: 'test',
-            name: 'test',
-            description: 'test',
-            handler: sinon.stub(),
-            parameters: {
-                type: 'object',
-                properties: {
-                    todos: {
-                        type: 'array',
-                        description: 'The updated todo list.',
-                        items: {
-                            type: 'object',
-                            properties: {
-                                id: { type: 'string', description: 'unique id' },
-                                text: { type: 'string', description: 'todo text' },
-                                done: { type: 'boolean', description: 'completion flag' }
-                            },
-                            required: ['id', 'text', 'done']
-                        }
-                    }
+        const result = model.toOllamaTool(createToolRequest({
+            todos: {
+                type: 'array',
+                description: 'The updated todo list.',
+                items: {
+                    type: 'object',
+                    properties: {
+                        id: { type: 'string', description: 'unique id' },
+                        text: { type: 'string', description: 'todo text' },
+                        done: { type: 'boolean', description: 'completion flag' }
+                    },
+                    required: ['id', 'text', 'done']
                 }
             }
-        };
-        const result = model.toOllamaTool(tool);
+        }));
         const todos = result.function.parameters!.properties!['todos'] as Record<string, unknown>;
         const items = todos['items'] as Record<string, unknown>;
         expect(items['required']).to.deep.equal(['id', 'text', 'done']);
@@ -125,22 +84,9 @@ describe('ai-ollama package', () => {
 
     it('passes through a type-less property unchanged', () => {
         const model = new OllamaModelUnderTest();
-        const tool: ToolRequest = {
-            id: 'test',
-            name: 'test',
-            description: 'test',
-            handler: sinon.stub(),
-            parameters: {
-                type: 'object',
-                properties: {
-                    status: {
-                        enum: ['a', 'b'],
-                        description: 'no explicit type'
-                    }
-                }
-            }
-        };
-        const result = model.toOllamaTool(tool);
+        const result = model.toOllamaTool(createToolRequest({
+            status: { enum: ['a', 'b'], description: 'no explicit type' }
+        }));
         const status = result.function.parameters!.properties!['status'] as Record<string, unknown>;
         expect(status['enum']).to.deep.equal(['a', 'b']);
         expect(status['description']).to.equal('no explicit type');
@@ -148,22 +94,9 @@ describe('ai-ollama package', () => {
 
     it('resolves anyOf on a top-level property preserving branch content', () => {
         const model = new OllamaModelUnderTest();
-        const tool: ToolRequest = {
-            id: 'test',
-            name: 'test',
-            description: 'test',
-            handler: sinon.stub(),
-            parameters: {
-                type: 'object',
-                properties: {
-                    tags: {
-                        anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }],
-                        description: 'optional tags'
-                    }
-                }
-            }
-        };
-        const result = model.toOllamaTool(tool);
+        const result = model.toOllamaTool(createToolRequest({
+            tags: { anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }], description: 'optional tags' }
+        }));
         const tags = result.function.parameters!.properties!['tags'] as Record<string, unknown>;
         expect(tags['type']).to.equal('array');
         expect(tags['description']).to.equal('optional tags');
@@ -173,61 +106,28 @@ describe('ai-ollama package', () => {
 
     it('resolves anyOf inside array items sub-properties', () => {
         const model = new OllamaModelUnderTest();
-        const tool: ToolRequest = {
-            id: 'test',
-            name: 'test',
-            description: 'test',
-            handler: sinon.stub(),
-            parameters: {
-                type: 'object',
-                properties: {
-                    arr: {
-                        type: 'array',
-                        description: 'list',
-                        items: {
-                            type: 'object',
-                            properties: {
-                                maybe: {
-                                    anyOf: [{ type: 'string' }, { type: 'null' }],
-                                    description: 'nullable field'
-                                }
-                            }
-                        }
-                    }
+        const result = model.toOllamaTool(createToolRequest({
+            arr: {
+                type: 'array',
+                description: 'list',
+                items: {
+                    type: 'object',
+                    properties: { maybe: { anyOf: [{ type: 'string' }, { type: 'null' }], description: 'nullable field' } }
                 }
             }
-        };
-        const result = model.toOllamaTool(tool);
+        }));
         const arr = result.function.parameters!.properties!['arr'] as Record<string, unknown>;
         expect(arr['items']).to.deep.equal({
             type: 'object',
-            properties: {
-                maybe: { type: 'string', description: 'nullable field' }
-            }
+            properties: { maybe: { type: 'string', description: 'nullable field' } }
         });
     });
 
     it('passes through a type-less item schema unchanged', () => {
         const model = new OllamaModelUnderTest();
-        const tool: ToolRequest = {
-            id: 'test',
-            name: 'test',
-            description: 'test',
-            handler: sinon.stub(),
-            parameters: {
-                type: 'object',
-                properties: {
-                    tags: {
-                        type: 'array',
-                        description: 'list of tags',
-                        items: {
-                            enum: ['a', 'b']
-                        }
-                    }
-                }
-            }
-        };
-        const result = model.toOllamaTool(tool);
+        const result = model.toOllamaTool(createToolRequest({
+            tags: { type: 'array', description: 'list of tags', items: { enum: ['a', 'b'] } }
+        }));
         const tags = result.function.parameters!.properties!['tags'] as Record<string, unknown>;
         expect(tags['items']).to.deep.equal({ enum: ['a', 'b'] });
     });
@@ -235,16 +135,11 @@ describe('ai-ollama package', () => {
     it('preserves top-level $defs alongside a $ref property', () => {
         const model = new OllamaModelUnderTest();
         const tool: ToolRequest = {
-            id: 'test',
-            name: 'test',
-            description: 'test',
-            handler: sinon.stub(),
+            ...createToolRequest(),
             parameters: {
                 type: 'object',
                 $defs: { Todo: { type: 'object', properties: { id: { type: 'string', description: 'id' } }, required: ['id'] } },
-                properties: {
-                    item: { $ref: '#/$defs/Todo' }
-                }
+                properties: { item: { $ref: '#/$defs/Todo' } }
             } as ToolRequest['parameters'] & { $defs: unknown }
         };
         const result = model.toOllamaTool(tool);
@@ -257,28 +152,18 @@ describe('ai-ollama package', () => {
 
     it('resolves anyOf on items schema preserving branch content', () => {
         const model = new OllamaModelUnderTest();
-        const tool: ToolRequest = {
-            id: 'test',
-            name: 'test',
-            description: 'test',
-            handler: sinon.stub(),
-            parameters: {
-                type: 'object',
-                properties: {
-                    records: {
-                        type: 'array',
-                        description: 'list of records',
-                        items: {
-                            anyOf: [
-                                { type: 'object', properties: { id: { type: 'string', description: 'unique id' } }, required: ['id'] },
-                                { type: 'null' }
-                            ]
-                        }
-                    }
+        const result = model.toOllamaTool(createToolRequest({
+            records: {
+                type: 'array',
+                description: 'list of records',
+                items: {
+                    anyOf: [
+                        { type: 'object', properties: { id: { type: 'string', description: 'unique id' } }, required: ['id'] },
+                        { type: 'null' }
+                    ]
                 }
             }
-        };
-        const result = model.toOllamaTool(tool);
+        }));
         const records = result.function.parameters!.properties!['records'] as Record<string, unknown>;
         const items = records['items'] as Record<string, unknown>;
         expect(items['type']).to.equal('object');
@@ -297,25 +182,21 @@ class OllamaModelUnderTest extends OllamaModel {
         return super.toOllamaTool(tool);
     }
 }
-function createToolRequest(): ToolRequest {
+function createToolRequest(properties?: ToolRequest['parameters']['properties']): ToolRequest {
     return {
         id: 'tool-1',
         name: 'example-tool',
         description: 'Example Tool',
-        parameters: {
-            type: 'object',
-            properties: {
-                question: {
-                    type: 'string',
-                    description: 'What is the best pizza topping?'
+        parameters: properties
+            ? { type: 'object', properties }
+            : {
+                type: 'object',
+                properties: {
+                    question: { type: 'string', description: 'What is the best pizza topping?' },
+                    optional: { type: 'string', description: 'Optional parameter' }
                 },
-                optional: {
-                    type: 'string',
-                    description: 'Optional parameter'
-                }
+                required: ['question']
             },
-            required: ['question']
-        },
         handler: sinon.stub()
     };
 }
