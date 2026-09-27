@@ -123,6 +123,15 @@ describe('ai-ollama package', () => {
         });
     });
 
+    it('passes items schema through for a simple array property', () => {
+        const model = new OllamaModelUnderTest();
+        const result = model.toOllamaTool(createToolRequest({
+            tags: { type: 'array', description: 'list of tags', items: { type: 'string' } }
+        }));
+        const tags = result.function.parameters!.properties!['tags'] as Record<string, unknown>;
+        expect(tags['items']).to.deep.equal({ type: 'string' });
+    });
+
     it('passes through a type-less item schema unchanged', () => {
         const model = new OllamaModelUnderTest();
         const result = model.toOllamaTool(createToolRequest({
