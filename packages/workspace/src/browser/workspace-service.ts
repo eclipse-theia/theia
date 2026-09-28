@@ -855,7 +855,12 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
      * These are the root names used by {@link getRootPrefixedPath} and resolved by {@link resolveRootPrefixedPath}.
      */
     getRootNames(): Map<string, URI> {
-        const roots = this.tryGetRoots().map(root => root.resource);
+        const roots: URI[] = [];
+        for (const root of this.tryGetRoots()) {
+            if (!roots.some(other => other.isEqual(root.resource))) {
+                roots.push(root.resource);
+            }
+        }
         const byBasename = new Map<string, URI[]>();
         for (const root of roots) {
             const peers = byBasename.get(root.path.base) ?? [];

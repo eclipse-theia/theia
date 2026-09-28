@@ -113,6 +113,12 @@ describe('WorkspaceService root names', () => {
                 .to.deep.equal(namesOf(workspaceWith('file:///bob/app', 'file:///alice/app')));
         });
 
+        it('names a root listed twice once, after its basename', () => {
+            expect(namesOf(workspaceWith('file:///home/user/app', 'file:///home/user/app'))).to.deep.equal({
+                app: 'file:///home/user/app'
+            });
+        });
+
         it('falls back to the URI for roots with the same path', () => {
             expect(namesOf(workspaceWith('file:///x/app', 'memfs:/x/app'))).to.deep.equal({
                 'file:///x/app': 'file:///x/app',
