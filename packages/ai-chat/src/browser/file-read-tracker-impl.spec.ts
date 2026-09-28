@@ -24,7 +24,7 @@ import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileChangeType, FileOperationError, FileOperationResult, FileStat } from '@theia/filesystem/lib/common/files';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
-import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { withWorkspaceServiceDefaults } from '@theia/workspace/lib/browser/test/with-workspace-service-defaults';
 import { expect } from 'chai';
 import { FileReadTrackerImpl } from './file-read-tracker-impl';
 
@@ -49,9 +49,9 @@ class TestFileReadTracker extends FileReadTrackerImpl {
     protected override readonly maxFilesPerSession = 2;
     /** The workspace roots labels are built against. */
     readonly roots = [ROOT];
-    protected override readonly workspaceService = {
+    protected override readonly workspaceService = withWorkspaceServiceDefaults({
         tryGetRoots: () => this.roots.map(resource => ({ resource } as FileStat))
-    } as WorkspaceService;
+    });
     protected override readonly monacoWorkspace = { getTextDocument: () => undefined } as unknown as MonacoWorkspace;
     /** Both decoders, so that a test can tell which one the tracker reads through. */
     protected override readonly fileService = {
@@ -279,8 +279,10 @@ describe('FileReadTrackerImpl', () => {
             expect(await nameOf(FILE, ROOT)).to.deep.equal([FILE_LABEL]);
         });
 
-        it('names a file by uri when two roots share the name it would use', async () => {
-            expect(await nameOf(FILE, new URI('file:///elsewhere/workspace'))).to.deep.equal([FILE.toString()]);
+        it('names a file by the unique root name when two roots share a basename', async () => {
+            const elsewhere = new URI('file:///elsewhere/workspace');
+            expect(await nameOf(FILE, elsewhere)).to.deep.equal([FILE_LABEL]);
+            expect(await nameOf(elsewhere.resolve('a.ts'), elsewhere)).to.deep.equal(['elsewhere/workspace/a.ts']);
         });
 
         it('names a file by uri when it is outside every root', async () => {
