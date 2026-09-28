@@ -18,7 +18,7 @@ import * as dns from 'dns';
 import * as path from 'path';
 import * as http from 'http';
 import * as https from 'https';
-import * as express from 'express';
+import express from 'express';
 import * as yargs from 'yargs';
 import * as fs from 'fs-extra';
 import { inject, named, injectable, type interfaces, postConstruct } from 'inversify';

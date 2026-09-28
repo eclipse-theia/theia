@@ -5,7 +5,8 @@
   "dependencies": {
     "@huggingface/inference": "^4.13.28",
     "@theia/ai-core": "1.76.0",
-    "@theia/core": "1.76.0"
+    "@theia/core": "1.76.0",
+    "tslib": "^2.8.1"
   },
   "publishConfig": {
     "access": "public"

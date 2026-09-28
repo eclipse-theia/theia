@@ -22,7 +22,7 @@ import { spawn, execSync, SpawnOptions, ChildProcess, spawnSync } from 'child_pr
 import { Readable } from 'stream';
 import { join } from 'path';
 import { ShellCommandBuilder, CommandLineOptions, ProcessInfo } from './shell-command-builder';
-import * as chalk from 'chalk';
+import chalk from 'chalk';
 
 export interface TestProcessInfo extends ProcessInfo {
     shell: ChildProcess

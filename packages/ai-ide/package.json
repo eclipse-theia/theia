@@ -41,7 +41,8 @@
     "js-yaml": "^4.3.2",
     "minimatch": "^10.2.6",
     "puppeteer-core": "^25.1.0",
-    "simple-git": "^3.36.0"
+    "simple-git": "^3.36.0",
+    "tslib": "^2.8.1"
   },
   "publishConfig": {
     "access": "public"

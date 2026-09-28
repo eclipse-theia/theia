@@ -120,7 +120,7 @@ export interface TreeProps {
     /**
      * Props that are forwarded to the virtuoso list rendered. Defaults to `{}`.
      */
-    readonly viewProps?: VirtuosoProps<unknown, unknown>;
+    readonly viewProps?: Omit<VirtuosoProps<unknown, unknown>, 'width' | 'height' | 'rows'>;
 }
 
 /**
@@ -1602,7 +1602,7 @@ export namespace TreeWidget {
     /**
      * Representation of the tree view properties.
      */
-    export interface ViewProps extends VirtuosoProps<unknown, unknown> {
+    export interface ViewProps extends Omit<VirtuosoProps<unknown, unknown>, 'width' | 'height' | 'rows'> {
         /**
          * The width property.
          */

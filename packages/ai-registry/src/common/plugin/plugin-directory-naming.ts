@@ -18,7 +18,7 @@
 // package's `exports` map, and the sub-path that does type-resolve fails at runtime with
 // ERR_PACKAGE_PATH_NOT_EXPORTED. The entry point pulls Node's `path` into the browser graph, which
 // both bundlers already polyfill.
-import * as filenamify from 'filenamify';
+import filenamify from 'filenamify';
 import { nls } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 

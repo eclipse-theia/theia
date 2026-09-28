@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as bent from 'bent';
+import bent from 'bent';
 import { RateLimiter } from 'limiter';
 
 const post = bent('POST', 'json', 200);

@@ -13,6 +13,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "importHelpers": true,
+    "esModuleInterop": true,
     "downlevelIteration": true,
     "resolveJsonModule": true,
     "useDefineForClassFields": false,

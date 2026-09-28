@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as path from 'path';
-import * as filenamify from 'filenamify';
+import filenamify from 'filenamify';
 import * as fs from '@theia/core/shared/fs-extra';
 import { URI, ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';

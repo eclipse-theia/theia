@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as yargs from 'yargs';
+import yargs from 'yargs';
 import { inject, named, injectable } from 'inversify';
 import { ContributionProvider } from '../common/contribution-provider';
 import { MaybePromise } from '../common/types';

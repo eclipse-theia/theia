@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as decompress from 'decompress';
+import decompress from 'decompress';
 import * as path from 'path';
-import * as filenamify from 'filenamify';
+import filenamify from 'filenamify';
 import { FileUri } from '@theia/core/lib/node';
 import * as fs from '@theia/core/shared/fs-extra';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';

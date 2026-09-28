@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { PluginDeployerEntry, PluginDeployerFileHandlerContext } from '../../common/plugin-protocol';
-import * as decompress from 'decompress';
+import decompress from 'decompress';
 
 export class PluginDeployerFileHandlerContextImpl implements PluginDeployerFileHandlerContext {
 
