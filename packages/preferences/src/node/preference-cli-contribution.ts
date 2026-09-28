@@ -27,17 +27,19 @@ export class PreferenceCliContribution implements CliContribution, CliPreference
     @inject(ILogger) @named('preferences:PreferenceCliContribution')
     protected readonly logger: ILogger;
 
-    protected preferences: [string, unknown][] = [];
-    protected sessionPreferences: [string, unknown][] = [];
+    protected preferences: CliPreference[] = [];
+    protected sessionPreferences: CliPreference[] = [];
 
     configure(conf: Argv<{}>): void {
         conf.option('set-preference', {
             nargs: 1,
-            desc: 'sets the specified preference (persisted to user settings)'
+            desc: 'sets the specified preference (persisted to user settings). '
+                + 'Language override: \'[languageId].preferenceName=JSONVALUE\' (quote the brackets).'
         });
         conf.option('session-preference', {
             nargs: 1,
-            desc: 'sets the specified preference for this process only (in-memory, not persisted)'
+            desc: 'sets the specified preference for this process only (in-memory, not persisted). '
+                + 'Language override: \'[languageId].preferenceName=JSONVALUE\' (quote the brackets).'
         });
     }
 
@@ -50,23 +52,41 @@ export class PreferenceCliContribution implements CliContribution, CliPreference
         }
     }
 
-    protected parseInto(raw: unknown, target: [string, unknown][]): void {
+    protected parseInto(raw: unknown, target: CliPreference[]): void {
         const entries: string[] = raw instanceof Array ? raw : [raw as string];
         target.push(...CliPreferenceEntry.parseAll(entries, message => this.logger.warn(message)));
     }
 
-    async getPreferences(): Promise<[string, unknown][]> {
+    /**
+     * Splits an encoded override key `[languageId].preferenceName` using the same
+     * first-dot + {@link OVERRIDE_PROPERTY_PATTERN} check as resource preference providers.
+     * Nested-object CLI keys (`[typescript]={...}`) have no `.` after the brackets and
+     * are kept as a literal `preferenceName`.
+     */
+    protected toCliPreference(rawKey: string, value: unknown): CliPreference {
+        const index = rawKey.indexOf('.');
+        if (index !== -1) {
+            const matches = rawKey.substring(0, index).match(OVERRIDE_PROPERTY_PATTERN);
+            if (matches) {
+                return { preferenceName: rawKey.substring(index + 1), value, overrideIdentifier: matches[1] };
+            }
+        }
+        return { preferenceName: rawKey, value };
+    }
+
+    async getPreferences(): Promise<CliPreference[]> {
         return this.preferences;
     }
 
-    async getSessionPreferences(): Promise<[string, unknown][]> {
+    async getSessionPreferences(): Promise<CliPreference[]> {
         return this.sessionPreferences;
     }
 
     /**
      * Forward `--session-preference` values to the remote backend when attaching
      * to a remote (e.g. dev container). Values are base64-encoded JSON to survive
-     * shell argument parsing intact.
+     * shell argument parsing intact. Language overrides are re-encoded as
+     * `[languageId].preferenceName` so the remote CLI can parse them again.
      */
     enhanceArgs(_context: RemoteCliContext): string[] {
         return this.sessionPreferences.map(entry => CliPreferenceEntry.toArg('session-preference', entry));
