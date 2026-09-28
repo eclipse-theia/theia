@@ -175,7 +175,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         // `titleBarStyle` decides whether the native menu bar is used at all, so wait for it:
         // preferences can become ready first, in which case it would still be `undefined` here.
         Promise.all([titleBarStyleAtStartup, this.preferenceService.ready]).then(() => {
-            const pref = this.preferenceService.get<string>('window.menuBarVisibility', 'classic');
+            const pref = this.preferenceService.get('window.menuBarVisibility', 'classic');
             if (pref === 'toggle' && this.titleBarStyle !== 'custom') {
                 window.electronTheiaCore.setMenuBarVisible(false);
                 window.electronTheiaCore.setAutoHideMenuBar(true);
