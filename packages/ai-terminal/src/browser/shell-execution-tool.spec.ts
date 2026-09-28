@@ -24,7 +24,9 @@ import * as sinon from 'sinon';
 import { OS } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { Container } from '@theia/core/shared/inversify';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { withWorkspaceServiceDefaults } from '@theia/workspace/lib/browser/test/with-workspace-service-defaults';
 import { ShellExecutionRequest, ShellExecutionServer } from '../common/shell-execution-server';
 import { ShellCommandPermissionService } from './shell-command-permission-service';
 import { ShellExecutionTool } from './shell-execution-tool';
@@ -59,12 +61,13 @@ describe('ShellExecutionTool working directory', () => {
             })),
             cancel: sinon.stub().resolves(true)
         };
-        const workspaceService = {
+        const workspaceService = withWorkspaceServiceDefaults({
             tryGetRoots: () => roots.map(root => ({ resource: new URI(root), isDirectory: true }))
-        } as unknown as WorkspaceService;
+        });
         container.bind(ShellExecutionServer).toConstantValue(shellServer as unknown as ShellExecutionServer);
         container.bind(WorkspaceService).toConstantValue(workspaceService);
         container.bind(ShellCommandPermissionService).toConstantValue({} as ShellCommandPermissionService);
+        container.bind(EnvVariablesServer).toConstantValue({ getHomeDirUri: async () => 'file:///home/test' } as unknown as EnvVariablesServer);
         container.bind(ShellExecutionTool).toSelf();
         tool = container.get(ShellExecutionTool);
     };
@@ -86,7 +89,35 @@ describe('ShellExecutionTool working directory', () => {
         expect(executedCwd()).to.equal('/ws/theia');
     });
 
-    // Documents the current behavior (D1): agents often omit cwd on their first call and get this error.
+    it('resolves a root name shared with another root by its parent-qualified name', async () => {
+        setUp(['file:///x/app', 'file:///y/app']);
+        await run({ cwd: 'y/app/src' });
+        expect(executedCwd()).to.equal('/y/app/src');
+    });
+
+    it('resolves absolute paths, file URIs and the home directory', async () => {
+        setUp(['file:///ws/theia', 'file:///ws/other']);
+        await run({ cwd: '/tmp/build' });
+        expect(executedCwd()).to.equal('/tmp/build');
+        await run({ cwd: 'file:///ws/other/src' });
+        expect(executedCwd()).to.equal('/ws/other/src');
+        await run({ cwd: '~/projects' });
+        expect(executedCwd()).to.equal('/home/test/projects');
+    });
+
+    it('rejects a basename shared by several roots, listing the root names', async () => {
+        setUp(['file:///x/app', 'file:///y/app']);
+        let error: Error | undefined;
+        try {
+            await run({ cwd: 'app' });
+        } catch (e) {
+            error = e;
+        }
+        expect(error?.message).to.contain('x/app (/x/app), y/app (/y/app)');
+        expect(shellServer.execute.called).to.be.false;
+    });
+
+    // Agents often omit cwd on their first call and get this error (D1). It is required by design.
     it('requires cwd in a multi-root workspace (D1)', async () => {
         setUp(['file:///ws/theia', 'file:///ws/other']);
         let error: Error | undefined;

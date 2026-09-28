@@ -322,10 +322,11 @@ describe('Multi-root path consistency (#17612)', () => {
             return executed[executed.length - 1]?.cwd;
         };
 
-        it('resolves a root name to the same directory as the workspace tools (A3)', async () => {
-            // Workspace order puts `/y/app` first, URI sort order puts `/x/app` first.
-            const expected = new URI(await resolve('app')).path.fsPath();
-            expect(await cwdFor('app')).to.equal(expected);
+        it('resolves each root name to the same directory as the workspace tools (A3)', async () => {
+            for (const name of workspaceScope.getRootMapping().keys()) {
+                const expected = new URI(await resolve(name)).path.fsPath();
+                expect(await cwdFor(name), `cwd '${name}'`).to.equal(expected);
+            }
         });
 
         it('accepts the directory forms that the workspace tools accept (D3)', async () => {
