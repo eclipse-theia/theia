@@ -18,7 +18,7 @@ import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { Argv } from '@theia/core/shared/yargs';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { RemoteCliContext, RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-contribution';
-import { CliPreferences, CliPreferenceEntry } from '../common/cli-preferences';
+import { CliPreference, CliPreferences, CliPreferenceEntry } from '../common/cli-preferences';
 import { ILogger } from '@theia/core';
 
 @injectable()
@@ -55,23 +55,6 @@ export class PreferenceCliContribution implements CliContribution, CliPreference
     protected parseInto(raw: unknown, target: CliPreference[]): void {
         const entries: string[] = raw instanceof Array ? raw : [raw as string];
         target.push(...CliPreferenceEntry.parseAll(entries, message => this.logger.warn(message)));
-    }
-
-    /**
-     * Splits an encoded override key `[languageId].preferenceName` using the same
-     * first-dot + {@link OVERRIDE_PROPERTY_PATTERN} check as resource preference providers.
-     * Nested-object CLI keys (`[typescript]={...}`) have no `.` after the brackets and
-     * are kept as a literal `preferenceName`.
-     */
-    protected toCliPreference(rawKey: string, value: unknown): CliPreference {
-        const index = rawKey.indexOf('.');
-        if (index !== -1) {
-            const matches = rawKey.substring(0, index).match(OVERRIDE_PROPERTY_PATTERN);
-            if (matches) {
-                return { preferenceName: rawKey.substring(index + 1), value, overrideIdentifier: matches[1] };
-            }
-        }
-        return { preferenceName: rawKey, value };
     }
 
     async getPreferences(): Promise<CliPreference[]> {
