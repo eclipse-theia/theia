@@ -17,9 +17,20 @@
 export const CliPreferences = Symbol('CliPreferences');
 export const CliPreferencesPath = '/services/cli-preferences';
 
+/**
+ * A preference supplied via `--set-preference` or `--session-preference`.
+ * Language overrides use the encoded CLI key `[languageId].preferenceName`; the
+ * CLI contribution splits that into `preferenceName` + `overrideIdentifier`.
+ */
+export interface CliPreference {
+    preferenceName: string;
+    value: unknown;
+    overrideIdentifier?: string;
+}
+
 export interface CliPreferences {
-    getPreferences(): Promise<[string, unknown][]>;
-    getSessionPreferences(): Promise<[string, unknown][]>;
+    getPreferences(): Promise<CliPreference[]>;
+    getSessionPreferences(): Promise<CliPreference[]>;
 }
 
 export namespace CliPreferenceEntry {

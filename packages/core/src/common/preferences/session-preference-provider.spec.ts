@@ -17,6 +17,8 @@
 import { expect } from 'chai';
 import { SessionPreferenceProvider } from './session-preference-provider.js';
 import { PreferenceScope } from './preference-scope.js';
+import { ILogger } from '../logger.js';
+import { MockLogger } from '../test/mock-logger.js';
 
 describe('SessionPreferenceProvider', () => {
 
@@ -24,6 +26,7 @@ describe('SessionPreferenceProvider', () => {
 
     beforeEach(() => {
         provider = new SessionPreferenceProvider();
+        (provider as unknown as { logger: ILogger }).logger = new MockLogger();
         // PostConstruct emulation
         (provider as unknown as { init(): void }).init();
     });
