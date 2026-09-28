@@ -47,6 +47,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ChangeSetElementArgs, ChangeSetFileElementFactory, ChangeSetFileElement } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { URI } from '@theia/core/lib/common/uri';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { withWorkspaceServiceDefaults } from '@theia/workspace/lib/browser/test/with-workspace-service-defaults';
 
 disableJSDOM();
 
@@ -346,11 +347,11 @@ describe('File Changeset Functions access control', () => {
 
         container = new Container();
         container.bind(ILogger).to(MockLogger).inSingletonScope();
-        container.bind(WorkspaceService).toConstantValue({
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults({
             roots: [{ resource: new URI('file:///workspace') }],
             tryGetRoots: () => [{ resource: new URI('file:///workspace') }],
             onWorkspaceChanged: () => ({ dispose: () => { } })
-        } as unknown as WorkspaceService);
+        } as unknown as WorkspaceService));
         container.bind(FileService).toConstantValue({
             exists: async () => true,
             read: async () => ({ value: { toString: () => 'old content' } }),

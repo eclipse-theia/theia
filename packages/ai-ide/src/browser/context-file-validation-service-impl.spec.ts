@@ -31,6 +31,7 @@ import { WorkspaceFunctionScope } from './workspace-functions';
 import { AiConfigurationService } from '@theia/ai-core';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { withWorkspaceServiceDefaults } from '@theia/workspace/lib/browser/test/with-workspace-service-defaults';
 
 disableJSDOM();
 
@@ -112,7 +113,7 @@ describe('ContextFileValidationService', () => {
         } as unknown as PreferenceService;
 
         container.bind(FileService).toConstantValue(mockFileService);
-        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(AiConfigurationService).toConstantValue({
             get: <T>(_name: string, fallback?: T) => fallback,

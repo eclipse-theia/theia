@@ -86,7 +86,6 @@ export class WorkspaceFunctionScope {
     private gitignoreMatchers = new Map<string, ReturnType<typeof ignore> | undefined>();
     private gitignoreWatchersInitialized = new Set<string>();
 
-    private _rootMapping: Map<string, URI> | undefined;
     private _allRootUris: URI[] | undefined;
 
     private homeDirUri: Promise<URI | undefined> | undefined;
@@ -96,7 +95,6 @@ export class WorkspaceFunctionScope {
     @postConstruct()
     protected init(): void {
         this.workspaceService.onWorkspaceChanged(() => {
-            this._rootMapping = undefined;
             this._allRootUris = undefined;
         });
     }
@@ -114,56 +112,21 @@ export class WorkspaceFunctionScope {
     }
 
     /**
-     * Returns a mapping of root names to root URIs.
+     * Returns a mapping of root names to root URIs, in workspace order.
      *
-     * Root names are always the directory basename. When multiple roots share the
-     * same basename, only the first (by URI sort order) is addressable by name —
-     * the others are still reachable via the `resolveRelativePath` supra-relative
-     * check (which examines path segments against all roots).
-     *
-     * **Known limitation:** duplicate basenames are not disambiguated with synthetic
-     * suffixes because agents observe real filesystem paths in terminal output,
-     * compiler errors, stack traces, etc. Synthetic names like `app-1` would
-     * conflict with those observations and cause more confusion than they solve.
-     * A future improvement could let users assign display names to roots.
+     * Root names are assigned by {@link WorkspaceService.getRootNames}: the directory basename, or for
+     * roots sharing a basename, the shortest tail of the path that tells them apart (e.g. `alice/app`
+     * and `bob/app`). Every root thus has a name, and names are always the ending of the real path.
      */
     getRootMapping(): Map<string, URI> {
-        if (this._rootMapping) {
-            return this._rootMapping;
-        }
-
-        const wsRoots = this.workspaceService.tryGetRoots();
-        const sortedRoots = [...wsRoots].sort((a, b) => a.resource.toString().localeCompare(b.resource.toString()));
-        const mapping = new Map<string, URI>();
-
-        for (const root of sortedRoots) {
-            const basename = root.resource.path.base;
-            if (mapping.has(basename)) {
-                this.logger.debug(
-                    `Multiple workspace roots share the basename '${basename}'. ` +
-                    `Only '${mapping.get(basename)!.toString()}' is addressable as '${basename}'. ` +
-                    `'${root.resource.toString()}' can still be accessed but may require full paths.`
-                );
-                continue;
-            }
-            mapping.set(basename, root.resource);
-        }
-
-        this._rootMapping = mapping;
-        return mapping;
+        return this.workspaceService.getRootNames();
     }
 
     /**
-     * Returns the root name for a given root URI based on the cached mapping.
+     * Returns the root name for a given root URI, see {@link WorkspaceService.getRootName}.
      */
     getRootName(rootUri: URI): string | undefined {
-        const mapping = this.getRootMapping();
-        for (const [name, uri] of mapping) {
-            if (uri.toString() === rootUri.toString()) {
-                return name;
-            }
-        }
-        return undefined;
+        return this.workspaceService.getRootName(rootUri);
     }
 
     /**
@@ -185,26 +148,11 @@ export class WorkspaceFunctionScope {
     }
 
     /**
-     * Converts a URI to a workspace-relative path with root name prefix.
+     * Converts a URI to a workspace-relative path with root name prefix, see {@link WorkspaceService.getRootPrefixedPath}.
      * Format: <rootName>/<relativePath>
      */
     toWorkspaceRelativePath(uri: URI): string | undefined {
-        const containingRoot = this.getContainingRoot(uri);
-        if (!containingRoot) {
-            return undefined;
-        }
-
-        const rootName = this.getRootName(containingRoot);
-        if (!rootName) {
-            return undefined;
-        }
-
-        const relativePath = containingRoot.relative(uri);
-        if (!relativePath || relativePath.toString() === '') {
-            return rootName; // URI is the root itself
-        }
-
-        return `${rootName}/${relativePath.toString()}`;
+        return this.getContainingRoot(uri) ? this.workspaceService.getRootPrefixedPath(uri) : undefined;
     }
 
     // ── Path resolution ─────────────────────────────────────────────────
@@ -215,57 +163,40 @@ export class WorkspaceFunctionScope {
      * format. If the path cannot be resolved deterministically, an error is thrown.
      *
      * Resolution order:
-     * 1. Root+relative: first segment matches a root name → resolve rest relative to that root.
+     * 1. Root+relative: the path starts with a root name → resolve the rest relative to that root.
      * 2. Supra-relative: a root's basename appears as a segment, and any preceding material
      *    matches the preceding path components of the root → resolve the trailing portion.
+     *    If this matches different files in several roots, the path is ambiguous.
      * 3. Single-root fallback: if exactly one workspace root, resolve relative to it.
      * 4. Error: tell the agent how to format the path.
      */
     resolveRelativePath(relativePath: string): URI {
         const normalizedPath = new Path(Path.normalizePathSeparator(relativePath)).normalize().toString();
-        const mapping = this.getRootMapping();
         const roots = this.getAllRootUris();
         const segments = normalizedPath.split('/');
 
         // Phase 1 — Root+relative check:
-        if (segments.length > 0) {
-            const potentialRootName = segments[0];
-            const rootUri = mapping.get(potentialRootName);
-            if (rootUri) {
-                const restOfPath = segments.slice(1).join('/');
-                return restOfPath ? rootUri.resolve(restOfPath) : rootUri;
-            }
+        const rootRelative = this.workspaceService.resolveRootPrefixedPath(normalizedPath);
+        if (rootRelative) {
+            return rootRelative;
         }
 
         // Phase 2 — Supra-relative check:
+        const candidates = new Map<string, URI>();
         for (const rootUri of roots) {
-            const rootBasename = rootUri.path.base;
-            for (let i = 0; i < segments.length; i++) {
-                if (segments[i] !== rootBasename) {
-                    continue;
-                }
-                const rootPathSegments = rootUri.path.toString().split('/').filter(s => s.length > 0);
-                const rootPrecedingSegments = rootPathSegments.slice(0, rootPathSegments.length - 1);
-                const pathPrecedingSegments = segments.slice(0, i);
-
-                let matches = true;
-                if (pathPrecedingSegments.length > rootPrecedingSegments.length) {
-                    matches = false;
-                } else {
-                    const rootTail = rootPrecedingSegments.slice(rootPrecedingSegments.length - pathPrecedingSegments.length);
-                    for (let j = 0; j < pathPrecedingSegments.length; j++) {
-                        if (pathPrecedingSegments[j] !== rootTail[j]) {
-                            matches = false;
-                            break;
-                        }
-                    }
-                }
-
-                if (matches) {
-                    const restOfPath = segments.slice(i + 1).join('/');
-                    return restOfPath ? rootUri.resolve(restOfPath) : rootUri;
-                }
+            const candidate = this.resolveSupraRelativePath(rootUri, segments);
+            if (candidate) {
+                candidates.set(candidate.toString(), candidate);
             }
+        }
+        if (candidates.size === 1) {
+            return candidates.values().next().value!;
+        }
+        if (candidates.size > 1) {
+            throw new Error(
+                `Path '${relativePath}' is ambiguous in this multi-root workspace. ` +
+                `Prefix it with one of the workspace root names: ${this.describeRoots()}`
+            );
         }
 
         // Phase 3 — Single-root fallback:
@@ -274,11 +205,42 @@ export class WorkspaceFunctionScope {
         }
 
         // Phase 4 — Error:
-        const rootNames = Array.from(mapping.keys());
         throw new Error(
             `Could not resolve path '${relativePath}'. In a multi-root workspace, prefix paths with the workspace root name ` +
-            `(e.g., 'rootName/path/to/file'). Available roots: ${rootNames.join(', ')}`
+            `(e.g., 'rootName/path/to/file'). Available roots: ${this.describeRoots()}`
         );
+    }
+
+    /**
+     * Resolves `segments` if they contain the basename of `rootUri`, preceded by nothing or by the
+     * trailing segments of the root's parent path, e.g. `bob/app/src` for the root `/home/bob/app`.
+     */
+    protected resolveSupraRelativePath(rootUri: URI, segments: string[]): URI | undefined {
+        const rootBasename = rootUri.path.base;
+        const rootPathSegments = rootUri.path.toString().split('/').filter(s => s.length > 0);
+        const rootPrecedingSegments = rootPathSegments.slice(0, rootPathSegments.length - 1);
+        for (let i = 0; i < segments.length; i++) {
+            if (segments[i] !== rootBasename) {
+                continue;
+            }
+            const pathPrecedingSegments = segments.slice(0, i);
+            if (pathPrecedingSegments.length > rootPrecedingSegments.length) {
+                continue;
+            }
+            const rootTail = rootPrecedingSegments.slice(rootPrecedingSegments.length - pathPrecedingSegments.length);
+            if (pathPrecedingSegments.every((segment, j) => segment === rootTail[j])) {
+                const restOfPath = segments.slice(i + 1).join('/');
+                return restOfPath ? rootUri.resolve(restOfPath) : rootUri;
+            }
+        }
+        return undefined;
+    }
+
+    /**
+     * Lists the workspace root names with their locations, for error messages.
+     */
+    protected describeRoots(): string {
+        return Array.from(this.getRootMapping(), ([name, uri]) => `${name} (${uri.path.fsPath()})`).join(', ');
     }
 
     async resolveToUri(pathOrUri: string | URI): Promise<URI | undefined> {
