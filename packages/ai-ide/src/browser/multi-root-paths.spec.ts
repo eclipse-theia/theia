@@ -49,6 +49,8 @@ disableJSDOM();
  * - `/y/app` and `/x/app`: roots sharing a basename, listed so that workspace order differs from URI sort order;
  * - `/ws/theia/packages/nested`: a root nested in `/ws/theia`.
  *
+ * The `/ws/theia/other` folder is named like the `/ws/other` root.
+ *
  * Where a fix may change how paths are displayed (e.g. `x/app/...` for a duplicate basename), the tests check
  * that the output resolves back to the right file rather than asserting a particular string.
  */
@@ -65,6 +67,7 @@ describe('Multi-root path consistency (#17612)', () => {
     /** The files that exist, as found by a search in each root. */
     const FILES = [
         'file:///ws/theia/packages/core/a.ts',
+        'file:///ws/theia/other/c.md',
         'file:///ws/theia/packages/nested/n.ts',
         'file:///ws/other/b.ts',
         'file:///x/app/shared.ts',
@@ -92,15 +95,18 @@ describe('Multi-root path consistency (#17612)', () => {
         OS.backend.isWindows = originalIsWindows;
     });
 
-    /** Mimics ripgrep: the files under the requested root that match the include globs, relative to that root. */
-    const makeFileSearchService = (): FileSearchService => ({
+    /** Mimics ripgrep: the files under the requested root that match the include and not the exclude globs, relative to that root. */
+    const makeFileSearchService = (files = FILES): FileSearchService => ({
         find: async (_searchPattern: string, options: FileSearchService.Options) => {
             const rootUri = new URI(options.rootUris![0]);
             const includes = (options.includePatterns ?? []).map(pattern => new Minimatch(pattern, { dot: true }));
-            return FILES.filter(file => {
+            const excludes = (options.excludePatterns ?? []).map(pattern => new Minimatch(pattern, { dot: true }));
+            return files.filter(file => {
                 const relativePath = rootUri.relative(new URI(file))?.toString();
-                return relativePath !== undefined && (includes.length === 0 || includes.some(matcher => matcher.match(relativePath)));
-            });
+                return relativePath !== undefined
+                    && (includes.length === 0 || includes.some(matcher => matcher.match(relativePath)))
+                    && !excludes.some(matcher => matcher.match(relativePath));
+            }).slice(0, options.limit);
         }
     } as unknown as FileSearchService);
 
@@ -163,7 +169,7 @@ describe('Multi-root path consistency (#17612)', () => {
 
     const resolve = async (path: string): Promise<string> => (await workspaceScope.resolveAccessiblePath(path)).toString();
 
-    const findFiles = async (args: object): Promise<{ files?: string[]; error?: string }> =>
+    const findFiles = async (args: object): Promise<{ files?: string[]; truncated?: boolean; error?: string }> =>
         JSON.parse(await container.get(FindFilesByPattern).getTool().handler(JSON.stringify(args), undefined) as string);
 
     describe('findFilesByPattern', () => {
@@ -193,10 +199,61 @@ describe('Multi-root path consistency (#17612)', () => {
             expect(await resolve(result.files![0])).to.equal('file:///ws/theia/packages/core/a.ts');
         });
 
+        it('applies a root-prefixed exclude to that root only', async () => {
+            const result = await findFiles({ pattern: '**/shared.ts', exclude: ['x/app/**'] });
+            const resolved = await Promise.all((result.files ?? []).map(resolve));
+            expect(resolved).to.deep.equal(['file:///y/app/shared.ts']);
+        });
+
+        it('includes files of a nested root when searching the outer root only', async () => {
+            const result = await findFiles({ pattern: 'theia/packages/**/*.ts' });
+            const resolved = await Promise.all((result.files ?? []).map(resolve));
+            expect(resolved).to.have.members(['file:///ws/theia/packages/core/a.ts', 'file:///ws/theia/packages/nested/n.ts']);
+        });
+
+        it('searches a folder named like a root in every root', async () => {
+            const result = await findFiles({ pattern: 'other/**/*.md' });
+            const resolved = await Promise.all((result.files ?? []).map(resolve));
+            expect(resolved).to.deep.equal(['file:///ws/theia/other/c.md']);
+        });
+
+        it('excludes a folder named like a root in every root', async () => {
+            const result = await findFiles({ pattern: '**/*.md', exclude: ['other/**'] });
+            expect(result.files).to.deep.equal([]);
+        });
+
+        it('keeps the escapes of a root-prefixed glob', async () => {
+            const result = await findFiles({ pattern: 'theia/packages/core/\\*.ts' });
+            expect(result.files).to.deep.equal([]);
+        });
+
         it('reports a file in a nested root only once (C1)', async () => {
             const result = await findFiles({ pattern: '**/n.ts' });
             expect(result.files).to.have.length(1);
             expect(await resolve(result.files![0])).to.equal('file:///ws/theia/packages/nested/n.ts');
+        });
+
+        it('reports a file in a nested root that only the glob relative to the outer root matches', async () => {
+            const result = await findFiles({ pattern: 'packages/*/n.ts' });
+            const resolved = await Promise.all((result.files ?? []).map(resolve));
+            expect(resolved).to.deep.equal(['file:///ws/theia/packages/nested/n.ts']);
+        });
+
+        it('reports truncated results when files of a nested root fill the limit of the outer root', async () => {
+            const nestedFiles = Array.from({ length: 250 }, (_, i) => `file:///ws/theia/packages/nested/f${i}.ts`);
+            container.rebind(FileSearchService).toConstantValue(makeFileSearchService([...nestedFiles, ...FILES]));
+            const result = await findFiles({ pattern: 'packages/**/*.ts' });
+            expect(result.files).to.have.length(200);
+            expect(result.truncated).to.be.true;
+        });
+
+        it('reports the files of a nested root once without truncating the results', async () => {
+            const nestedFiles = Array.from({ length: 150 }, (_, i) => `file:///ws/theia/packages/nested/f${i}.ts`);
+            container.rebind(FileSearchService).toConstantValue(makeFileSearchService([...nestedFiles, ...FILES]));
+            const result = await findFiles({ pattern: '**/*.ts' });
+            expect(result.files).to.have.length(nestedFiles.length + FILES.filter(file => file.endsWith('.ts')).length);
+            expect(new Set(result.files).size).to.equal(result.files!.length);
+            expect(result.truncated).to.be.undefined;
         });
     });
 

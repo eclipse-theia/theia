@@ -620,7 +620,8 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
                 properties: {
                     root: {
                         type: 'string',
-                        description: 'Optional absolute path or `file://` URI to inspect instead of the workspace. ' +
+                        description: 'Optional directory to inspect instead of the whole workspace: a workspace-relative path (\'rootName/path\'), ' +
+                            'an absolute path or a `file://` URI. ' +
                             'Must point to a directory the tools may access, such as one listed in the `allowedExternalPaths` preference. ' +
                             'When omitted, all workspace roots are returned.'
                     }
@@ -1271,6 +1272,9 @@ export class FindFilesByPattern implements ToolProvider {
     @inject(FileSearchService)
     protected readonly fileSearchService: FileSearchService;
 
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
     getTool(): ToolRequest {
         return {
             id: FindFilesByPattern.ID,
@@ -1289,23 +1293,27 @@ export class FindFilesByPattern implements ToolProvider {
                 properties: {
                     pattern: {
                         type: 'string',
-                        description: 'Glob pattern to match files against. ' +
+                        description: 'Glob pattern to match files against, relative to each workspace root. ' +
+                            'Start it with a root name, as in the returned paths, to match it relative to that root as well. ' +
                             'Examples: \'**/*.ts\' (all TypeScript files), \'src/**/*.js\' (JS files in src), ' +
+                            '\'my-project/src/**/*.js\' (JS files in src of the my-project root, or in my-project/src of any root), ' +
                             '\'**/*.{js,ts}\' (JS or TS files), \'**/test/**/*.spec.ts\' (test files).'
                     },
                     exclude: {
                         type: 'array',
                         items: { type: 'string' },
-                        description: 'Optional glob patterns to exclude. ' +
+                        description: 'Optional glob patterns to exclude, relative to each workspace root or starting with a root name. ' +
                             'Examples: [\'**/*.spec.ts\', \'**/node_modules/**\']. ' +
                             'Common exclusions (node_modules, .git) are applied automatically via gitignore.'
                     },
                     searchRoot: {
                         type: 'string',
-                        description: 'Optional absolute path or `file://` URI to search instead of the workspace. ' +
+                        description: 'Optional directory to search instead of the whole workspace: a workspace-relative path ' +
+                            '(\'rootName/path\'), an absolute path or a `file://` URI. ' +
                             'Must point to a directory the tools may access, such as one listed in the `allowedExternalPaths` preference. ' +
-                            'When set, results are returned as absolute paths so they can be passed back to getFileContent. ' +
-                            'When omitted (default), all workspace roots are searched and results are workspace-relative.'
+                            'Results in the workspace are workspace-relative, results outside of it are absolute paths, ' +
+                            'so they can be passed back to getFileContent. ' +
+                            'When omitted (default), all workspace roots are searched.'
                     }
                 },
                 required: ['pattern']
@@ -1347,54 +1355,59 @@ export class FindFilesByPattern implements ToolProvider {
             const maxResults = 200;
             const useGitIgnore = this.preferences.get(CONSIDER_GITIGNORE_PREF, true);
             const userExcludes = this.preferences.get<string[]>(USER_EXCLUDE_PATTERN_PREF, []);
-            const excludes = [...userExcludes, ...(excludePatterns ?? [])];
 
             // Resolve the set of roots to search and how each root's results should be rendered.
-            const targets: { rootUri: URI; rootName?: string; external: boolean }[] = [];
+            const targets: { rootUri: URI; rootName?: string; external: boolean; patterns: string[] }[] = [];
             if (searchRoot) {
                 const resolved = await this.workspaceScope.resolveAccessiblePath(searchRoot);
-                targets.push({ rootUri: resolved, external: !this.workspaceScope.isInWorkspace(resolved) });
+                targets.push({ rootUri: resolved, external: !this.workspaceScope.isInWorkspace(resolved), patterns: [pattern] });
             } else {
                 const rootMapping = this.workspaceScope.getRootMapping();
                 if (rootMapping.size === 0) {
                     return JSON.stringify({ error: 'No workspace has been opened yet' });
                 }
                 for (const [rootName, rootUri] of rootMapping) {
-                    targets.push({ rootUri, rootName, external: false });
+                    targets.push({ rootUri, rootName, external: false, patterns: this.globsForRoot([pattern], rootUri) });
                 }
             }
 
             // Delegate the actual traversal to the backend ripgrep-based file search.
             // It runs natively on the backend filesystem (no per-directory RPC) and applies
             // include/exclude globs.
-            const files: string[] = [];
+            // A file in a nested root is found in the outer root as well, if the glob matches it relative to either.
+            const found = new Map<string, { uri: URI; display: string }>();
             for (const target of targets) {
                 if (cancellationToken?.isCancellationRequested) {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
-                if (files.length > maxResults) {
+                if (found.size > maxResults) {
                     break;
                 }
+                const excludes = [...userExcludes, ...this.globsForRoot(excludePatterns ?? [], target.rootUri)];
                 // `considerGitIgnore` is scoped to workspace roots (see its preference description),
                 // so external allow-listed roots are searched with user/caller excludes only (plus
                 // `.git`). Applying gitignore there would also leak the user's *global* gitignore
                 // into an explicitly allow-listed directory and silently hide files.
-                // Request one extra result across all roots so we can detect truncation.
+                // Request one extra result across all roots so we can detect truncation, besides the files
+                // of this root that were found in a nested or outer root already.
+                const foundInRoot = Array.from(found.values()).filter(file => target.rootUri.isEqualOrParent(file.uri)).length;
                 const matches = await this.fileSearchService.find('', {
                     rootUris: [target.rootUri.toString()],
-                    includePatterns: [pattern],
+                    includePatterns: target.patterns,
                     excludePatterns: target.external ? [...excludes, '.git'] : excludes,
                     useGitIgnore: target.external ? false : useGitIgnore,
                     fuzzyMatch: false,
-                    limit: maxResults - files.length + 1
+                    limit: maxResults - found.size + 1 + foundInRoot
                 }, cancellationToken);
                 for (const match of matches) {
-                    const display = this.toDisplayPath(new URI(match), target);
+                    const matchUri = new URI(match);
+                    const display = this.toDisplayPath(matchUri, target);
                     if (display !== undefined) {
-                        files.push(display);
+                        found.set(matchUri.toString(), { uri: matchUri, display });
                     }
                 }
             }
+            const files = Array.from(found.values(), file => file.display);
 
             if (cancellationToken?.isCancellationRequested) {
                 return JSON.stringify({ error: 'Operation cancelled by user' });
@@ -1415,18 +1428,30 @@ export class FindFilesByPattern implements ToolProvider {
     }
 
     /**
+     * Returns the caller's globs to match relative to the given root. A glob is relative to every root,
+     * and if it starts with the name of this root, e.g. `backend/src/**\/*.ts` as in the paths this tool
+     * returns, its rest is relative to this root as well, as the caller may mean either.
+     */
+    protected globsForRoot(globs: string[], rootUri: URI): string[] {
+        const result: string[] = [];
+        for (const glob of globs) {
+            result.push(glob);
+            const rootPrefixed = this.workspaceService.splitRootPrefixedPath(glob);
+            if (rootPrefixed?.rest && rootPrefixed.rootUri.isEqual(rootUri)) {
+                result.push(rootPrefixed.rest);
+            }
+        }
+        return result;
+    }
+
+    /**
      * Renders a search-result URI in the format expected by the caller: an absolute
-     * path for external roots, or a `<rootName>/<relativePath>` (or bare relative
-     * path when no root name is available) for workspace roots.
+     * path for external roots, or a `<rootName>/<relativePath>` for workspace roots.
      */
     protected toDisplayPath(match: URI, target: { rootUri: URI; rootName?: string; external: boolean }): string | undefined {
         if (target.external) {
             return match.path.fsPath();
         }
-        const relativePath = target.rootUri.relative(match)?.toString();
-        if (relativePath === undefined) {
-            return undefined;
-        }
-        return target.rootName ? `${target.rootName}/${relativePath}` : relativePath;
+        return this.workspaceScope.toWorkspaceRelativePath(match) ?? match.path.fsPath();
     }
 }
