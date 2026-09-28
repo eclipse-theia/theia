@@ -4,6 +4,8 @@
     "skipLibCheck": true,
     "declaration": true,
     "declarationMap": true,
+    // TS 6 defaults `strict` to true; Theia keeps its explicit subset of strictness flags for now.
+    "strict": false,
     "noImplicitAny": true,
     "noImplicitOverride": true,
     "noEmitOnError": false,
@@ -14,11 +16,18 @@
     "emitDecoratorMetadata": true,
     "importHelpers": true,
     "esModuleInterop": true,
-    "downlevelIteration": true,
     "resolveJsonModule": true,
     "useDefineForClassFields": false,
+    // TS 6 defaults `types` to []; Node and Mocha globals are needed in all packages (specs live next to sources).
+    "types": [
+      "node",
+      "mocha"
+    ],
+    // TS 6 defaults this to true; Theia imports CSS for side effects without module declarations.
+    "noUncheckedSideEffectImports": false,
     "module": "CommonJS",
-    "moduleResolution": "Node",
+    // `node`/`node10` resolution is deprecated in TS 6; `bundler` + CommonJS is the recommended successor.
+    "moduleResolution": "bundler",
     "target": "ES2023",
     "jsx": "react-jsx",
     "jsxImportSource": "@theia/core/shared/react",
