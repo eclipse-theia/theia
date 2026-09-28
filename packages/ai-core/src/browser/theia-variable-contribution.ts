@@ -72,7 +72,7 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
             {
                 name: 'currentRelativeFilePath',
                 description: nls.localize('theia/ai/core/variable-contribution/currentRelativeFilePath',
-                    'The workspace-relative path of the currently opened file (e.g., my-project/src/index.ts).')
+                    'The path of the currently opened file relative to its workspace root, without the root name (e.g., src/index.ts).')
             },
             {
                 name: '_f',
@@ -84,7 +84,7 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
             {
                 name: 'currentRelativeDirPath',
                 description: nls.localize('theia/ai/core/variable-contribution/currentRelativeDirPath',
-                    'The workspace-relative path of the directory containing the currently opened file (e.g., my-project/src).')
+                    'The path of the directory containing the currently opened file relative to its workspace root, without the root name (e.g., src).')
             }
         ]],
         ['lineNumber', [{}]],
