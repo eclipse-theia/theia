@@ -119,6 +119,16 @@ describe('WorkspaceService root names', () => {
             });
         });
 
+        it('returns the same names until the roots change', () => {
+            let roots = [{ resource: new URI('file:///alice/app'), isDirectory: true }];
+            const service: WorkspaceService = Object.create(WorkspaceService.prototype, { tryGetRoots: { value: () => roots } });
+            const names = service.getRootNames();
+            expect(service.getRootNames()).to.equal(names);
+            roots = [...roots, { resource: new URI('file:///bob/app'), isDirectory: true }];
+            expect(Array.from(service.getRootNames().keys())).to.deep.equal(['alice/app', 'bob/app']);
+            expect(service.getRootName(new URI('file:///bob/app'))).to.equal('bob/app');
+        });
+
         it('falls back to the URI for roots with the same path', () => {
             expect(namesOf(workspaceWith('file:///x/app', 'memfs:/x/app'))).to.deep.equal({
                 'file:///x/app': 'file:///x/app',

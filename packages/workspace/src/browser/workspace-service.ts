@@ -854,9 +854,29 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
      *
      * These are the root names used by {@link getRootPrefixedPath} and resolved by {@link resolveRootPrefixedPath}.
      */
-    getRootNames(): Map<string, URI> {
+    getRootNames(): ReadonlyMap<string, URI> {
+        return this.getRootNamesCache().names;
+    }
+
+    /**
+     * The root names, and the names by root URI, for the roots they were computed from, as the names of the roots depend on each other.
+     */
+    protected rootNamesCache: { roots: FileStat[]; length: number; names: ReadonlyMap<string, URI>; namesByRoot: ReadonlyMap<string, string> } | undefined;
+
+    protected getRootNamesCache(): { names: ReadonlyMap<string, URI>; namesByRoot: ReadonlyMap<string, string> } {
+        // The roots are replaced rather than modified when they change, except for their removal on close.
+        const roots = this.tryGetRoots();
+        if (this.rootNamesCache?.roots !== roots || this.rootNamesCache.length !== roots.length) {
+            const names = this.computeRootNames(roots);
+            const namesByRoot = new Map(Array.from(names, ([name, uri]) => [uri.toString(), name]));
+            this.rootNamesCache = { roots, length: roots.length, names, namesByRoot };
+        }
+        return this.rootNamesCache;
+    }
+
+    protected computeRootNames(workspaceRoots: FileStat[]): Map<string, URI> {
         const roots: URI[] = [];
-        for (const root of this.tryGetRoots()) {
+        for (const root of workspaceRoots) {
             if (!roots.some(other => other.isEqual(root.resource))) {
                 roots.push(root.resource);
             }
@@ -879,12 +899,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
      * `undefined` if the URI is not a workspace root.
      */
     getRootName(rootUri: URI): string | undefined {
-        for (const [name, uri] of this.getRootNames()) {
-            if (uri.isEqual(rootUri)) {
-                return name;
-            }
-        }
-        return undefined;
+        return this.getRootNamesCache().namesByRoot.get(rootUri.toString());
     }
 
     /**

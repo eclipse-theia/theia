@@ -119,7 +119,7 @@ export class WorkspaceFunctionScope {
      * and `bob/app`). Every root thus has a name, and names are always the ending of the real path.
      */
     getRootMapping(): Map<string, URI> {
-        return this.workspaceService.getRootNames();
+        return new Map(this.workspaceService.getRootNames());
     }
 
     /**
