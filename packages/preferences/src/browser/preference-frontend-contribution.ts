@@ -58,7 +58,7 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
             // Log keys only. Values may carry overrides for security-sensitive prefs
             // (e.g. AI tool auto-approval) and should not leak into screenshots or support bundles.
             this.logger.info(`Applied ${session.length} --session-preference value(s):`,
-                session.map(([k]) => k).join(', '));
+                session.map(entry => this.formatPreferenceKey(entry)).join(', '));
         }
 
         await this.applyAll(persistent, PreferenceScope.User);
@@ -112,13 +112,17 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
      * individual write (bad key, invalid scope, etc.) is logged and does not abort the
      * remaining writes, and it is not left as an unhandled promise rejection.
      */
-    protected async applyAll(entries: ReadonlyArray<[string, unknown]>, scope: PreferenceScope): Promise<void> {
-        for (const [key, value] of entries) {
+    protected async applyAll(entries: ReadonlyArray<CliPreference>, scope: PreferenceScope): Promise<void> {
+        for (const entry of entries) {
             try {
-                await this.preferenceService.set(key, value, scope);
+                await this.preferenceService.set(entry.preferenceName, entry.value, scope, undefined, entry.overrideIdentifier);
             } catch (e) {
-                this.logger.warn(`Failed to apply CLI preference "${key}" to ${PreferenceScope[scope]} scope:`, e);
+                this.logger.warn(`Failed to apply CLI preference "${this.formatPreferenceKey(entry)}" to ${PreferenceScope[scope]} scope:`, e);
             }
         }
+    }
+
+    protected formatPreferenceKey(entry: CliPreference): string {
+        return entry.overrideIdentifier ? `[${entry.overrideIdentifier}].${entry.preferenceName}` : entry.preferenceName;
     }
 }

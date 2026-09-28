@@ -27,7 +27,6 @@ import { PreferenceScope } from './preference-scope';
  */
 @injectable()
 export class SessionPreferenceProvider extends PreferenceProviderImpl implements PreferenceProvider {
-
     protected readonly preferences = new Map<string, JSONValue>();
 
     @postConstruct()
@@ -47,21 +46,24 @@ export class SessionPreferenceProvider extends PreferenceProviderImpl implements
         return result;
     }
 
-    async setPreference(key: string, value: JSONValue | undefined): Promise<boolean> {
-        const oldValue = this.preferences.get(key);
+    override async setPreference(key: string, value: JSONValue | undefined, _resourceUri?: string, overrideIdentifier?: string): Promise<boolean> {
+        console.error('setPreference', key, value, _resourceUri, overrideIdentifier);
+        const storageKey = overrideIdentifier ? `[${overrideIdentifier}].${key}` : key;
+        const oldValue = this.preferences.get(storageKey);
         if (value === undefined) {
-            if (!this.preferences.has(key)) {
+            if (!this.preferences.has(storageKey)) {
                 return false;
             }
-            this.preferences.delete(key);
+            this.preferences.delete(storageKey);
         } else {
-            this.preferences.set(key, value);
+            this.preferences.set(storageKey, value);
         }
         const change: PreferenceProviderDataChange = {
             preferenceName: key,
             newValue: value,
             oldValue,
-            scope: PreferenceScope.Session
+            scope: PreferenceScope.Session,
+            overrideIdentifier
         };
         await this.emitPreferencesChangedEvent([change]);
         return true;
