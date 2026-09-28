@@ -38,6 +38,14 @@ class CountingView extends TreeWidget.View {
             this.scrollCount++;
         }
     };
+    /** Reports the list height the way Virtuoso does once it has measured the list. */
+    measure(height: number, renderedHeight = height): void {
+        this.setRenderedHeight(renderedHeight);
+        this.onTotalListHeightChanged(height);
+    }
+    setRenderedHeight(scrollHeight: number): void {
+        this.scroller = { scrollHeight } as HTMLElement;
+    }
 }
 
 class TestTreeWidget extends TreeWidget {
@@ -190,6 +198,8 @@ describe('TreeWidget', () => {
         let container: HTMLElement;
         let root: Root;
         let view: CountingView | undefined;
+        let frames: FrameRequestCallback[];
+        let requestAnimationFrame: typeof window.requestAnimationFrame;
         const rows: TreeWidget.NodeRow[] = [0, 1, 2].map(index => ({ index, depth: 0, node: leaf(`node-${index}`) }));
 
         const render = (props: Partial<TreeWidget.ViewProps>): void => flushSync(() => root.render(
@@ -202,20 +212,47 @@ describe('TreeWidget', () => {
                 {...props}
             />
         ));
+        const runFrames = (): void => frames.splice(0).forEach(frame => frame(0));
+        /** Mount and measure the list, and serve the mount-time request. */
+        const mount = (props: Partial<TreeWidget.ViewProps>): void => {
+            render(props);
+            view!.measure(300);
+            runFrames();
+        };
 
         beforeEach(() => {
             container = document.createElement('div');
             document.body.appendChild(container);
             root = createRoot(container);
+            frames = [];
+            requestAnimationFrame = window.requestAnimationFrame;
+            window.requestAnimationFrame = frame => frames.push(frame);
         });
 
         afterEach(() => {
+            window.requestAnimationFrame = requestAnimationFrame;
             flushSync(() => root.unmount());
             document.body.removeChild(container);
         });
 
-        it('does not scroll again when re-rendered without a new scroll request', () => {
+        it('holds a scroll request made before the list is measured until the list is rendered at its height', () => {
             render({ scrollToRow: 2, scrollToRowRequestId: 1 });
+            expect(view!.scrollCount).to.equal(0);
+
+            view!.measure(300, 100);
+            runFrames();
+            expect(view!.scrollCount).to.equal(0);
+
+            view!.setRenderedHeight(300);
+            runFrames();
+            expect(view!.scrollCount).to.equal(1);
+
+            runFrames();
+            expect(view!.scrollCount).to.equal(1);
+        });
+
+        it('does not scroll again when re-rendered without a new scroll request', () => {
+            mount({ scrollToRow: 2, scrollToRowRequestId: 1 });
             const scrollsAfterMount = view!.scrollCount;
 
             render({ scrollToRow: 2, scrollToRowRequestId: 1 });
@@ -225,7 +262,7 @@ describe('TreeWidget', () => {
         });
 
         it('scrolls again when a new scroll request arrives for the same row', () => {
-            render({ scrollToRow: 2, scrollToRowRequestId: 1 });
+            mount({ scrollToRow: 2, scrollToRowRequestId: 1 });
             const scrollsAfterMount = view!.scrollCount;
 
             render({ scrollToRow: 2, scrollToRowRequestId: 2 });
@@ -234,7 +271,7 @@ describe('TreeWidget', () => {
         });
 
         it('scrolls when the row to scroll to changes', () => {
-            render({ scrollToRow: 1 });
+            mount({ scrollToRow: 1 });
             const scrollsAfterMount = view!.scrollCount;
 
             render({ scrollToRow: 2 });

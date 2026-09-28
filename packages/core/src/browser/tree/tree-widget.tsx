@@ -1655,13 +1655,64 @@ export namespace TreeWidget {
             }
         };
 
+        /**
+         * `true` once Virtuoso has measured the list. Before that, `scrollIntoView` sees every row as visible and does nothing.
+         */
+        protected measured = false;
+        /**
+         * `true` while a scroll request made before the list was measured waits to be served.
+         */
+        protected scrollHeld = false;
+        protected scroller: HTMLElement | undefined;
+
+        /**
+         * Scroll now, or hold the request until the list is measured, e.g. for the focus restored when the view mounts.
+         */
+        protected requestScroll(): void {
+            if (this.measured) {
+                this.scrollIntoViewIfNeeded();
+            } else {
+                this.scrollHeld = this.props.scrollToRow !== undefined;
+            }
+        }
+
+        protected readonly onTotalListHeightChanged = (height: number): void => {
+            if (!this.measured && height > 0) {
+                this.measured = true;
+                if (this.scrollHeld) {
+                    this.scrollHeld = false;
+                    this.scrollWhenRendered(height);
+                }
+            }
+            this.props.totalListHeightChanged?.(height);
+        };
+
+        protected readonly setScroller = (scroller: HTMLElement | Window | null): void => {
+            this.scroller = scroller instanceof HTMLElement ? scroller : undefined;
+            this.props.scrollerRef?.(scroller);
+        };
+
+        /**
+         * Virtuoso reports the list height before React renders the list at it, and a scroll before that is clamped
+         * to the old height. Wait for the rendered height, a few frames at most.
+         */
+        protected scrollWhenRendered(height: number, framesLeft = 30): void {
+            window.requestAnimationFrame(() => {
+                if (this.scroller && this.scroller.scrollHeight < height && framesLeft > 0) {
+                    this.scrollWhenRendered(height, framesLeft - 1);
+                } else {
+                    this.scrollIntoViewIfNeeded();
+                }
+            });
+        }
+
         override componentDidMount(): void {
-            this.scrollIntoViewIfNeeded();
+            this.requestScroll();
         }
 
         override componentDidUpdate(prevProps: ViewProps): void {
             if (this.props.scrollToRow !== prevProps.scrollToRow || this.props.scrollToRowRequestId !== prevProps.scrollToRowRequestId) {
-                this.scrollIntoViewIfNeeded();
+                this.requestScroll();
             }
         }
 
@@ -1681,6 +1732,8 @@ export namespace TreeWidget {
                 // Higher value provides smoother scrolling experience especially during inference, but uses more memory
                 overscan={800}
                 {...other}
+                totalListHeightChanged={this.onTotalListHeightChanged}
+                scrollerRef={this.setScroller}
             />;
         }
     }
