@@ -20,7 +20,7 @@ import {
 } from '@theia/ai-core';
 import { FrontendVariableService, AIVariablePasteResult, AIVariableCompletionContext } from '@theia/ai-core/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
-import { ILogger, nls, Path, URI } from '@theia/core';
+import { ILogger, nls, URI } from '@theia/core';
 import { LabelProvider, LabelProviderContribution, open, OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -279,15 +279,9 @@ export class ImageContextVariableContribution implements AIVariableContribution,
     }
 
     protected async makeAbsolute(pathStr: string): Promise<URI | undefined> {
-        const path = new Path(Path.normalizePathSeparator(pathStr));
-        if (!path.isAbsolute) {
-            const workspaceRoots = this.wsService.tryGetRoots();
-            const wsUris = workspaceRoots.map(root => root.resource.resolve(path));
-            for (const uri of wsUris) {
-                if (await this.fileService.exists(uri)) {
-                    return uri;
-                }
-            }
+        const workspaceUri = await this.wsService.resolveExistingRelativePath(pathStr);
+        if (workspaceUri) {
+            return workspaceUri;
         }
         const argUri = new URI(pathStr);
         if (await this.fileService.exists(argUri)) {

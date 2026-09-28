@@ -927,6 +927,47 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     /**
+     * Resolves a relative path to an existing file or folder in the workspace. Besides the format of
+     * {@link getRootPrefixedPath}, it accepts the formats of paths saved by earlier versions, e.g. in chat
+     * sessions: prefixed with the basename of a root, if only one of the roots with that basename contains
+     * the file, or relative to any root.
+     *
+     * @returns `undefined` if the path is absolute or does not resolve to an existing file or folder.
+     */
+    async resolveExistingRelativePath(relativePath: string): Promise<URI | undefined> {
+        const normalizedPath = Path.normalizePathSeparator(relativePath);
+        const path = new Path(normalizedPath);
+        if (path.isAbsolute) {
+            return undefined;
+        }
+        const rootPrefixed = this.resolveRootPrefixedPath(normalizedPath);
+        if (rootPrefixed && await this.fileService.exists(rootPrefixed)) {
+            return rootPrefixed;
+        }
+        const segments = normalizedPath.split('/');
+        const basenamePrefixed: URI[] = [];
+        for (const root of this.tryGetRoots()) {
+            if (root.resource.path.base === segments[0]) {
+                const rest = segments.slice(1).join('/');
+                const uri = rest ? root.resource.resolve(rest) : root.resource;
+                if (!basenamePrefixed.some(other => other.isEqual(uri)) && await this.fileService.exists(uri)) {
+                    basenamePrefixed.push(uri);
+                }
+            }
+        }
+        if (basenamePrefixed.length === 1) {
+            return basenamePrefixed[0];
+        }
+        for (const root of this.tryGetRoots()) {
+            const uri = root.resource.resolve(path);
+            if (await this.fileService.exists(uri)) {
+                return uri;
+            }
+        }
+        return undefined;
+    }
+
+    /**
      * Computes the name of a root from the roots that share its basename (including itself).
      */
     protected computeRootName(root: URI, peers: URI[]): string {

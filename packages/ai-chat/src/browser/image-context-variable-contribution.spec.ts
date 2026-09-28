@@ -53,12 +53,14 @@ describe('ImageContextVariableContribution path resolution', () => {
 
     const setUp = (roots: string[]): void => {
         const container = new Container();
+        const fileService = { exists: async (uri: URI) => uri.toString() === IMAGE } as unknown as FileService;
         // A real `WorkspaceService` prototype, so that `getRootPrefixedPath` is the production code.
         const workspaceService = Object.assign(Object.create(WorkspaceService.prototype) as WorkspaceService, {
-            tryGetRoots: () => roots.map(root => ({ resource: new URI(root), isDirectory: true }))
+            tryGetRoots: () => roots.map(root => ({ resource: new URI(root), isDirectory: true })),
+            fileService
         });
         container.bind(WorkspaceService).toConstantValue(workspaceService);
-        container.bind(FileService).toConstantValue({ exists: async (uri: URI) => uri.toString() === IMAGE } as unknown as FileService);
+        container.bind(FileService).toConstantValue(fileService);
         container.bind(OpenerService).toConstantValue({} as OpenerService);
         container.bind(LabelProvider).toConstantValue({} as LabelProvider);
         container.bind(ILogger).to(MockLogger);
@@ -79,5 +81,10 @@ describe('ImageContextVariableContribution path resolution', () => {
     it('resolves the root-prefixed path of an image in a multi-root workspace (B3)', async () => {
         setUp(['file:///ws/other', 'file:///ws/theia']);
         expect((await contribution.resolvePath(displayedPath()))?.toString()).to.equal(IMAGE);
+    });
+
+    it('resolves a path prefixed with a basename shared by several roots, as saved by earlier versions', async () => {
+        setUp(['file:///alice/theia', 'file:///ws/theia']);
+        expect((await contribution.resolvePath('theia/images/logo.png'))?.toString()).to.equal(IMAGE);
     });
 });

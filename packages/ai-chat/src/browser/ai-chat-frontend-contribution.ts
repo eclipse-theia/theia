@@ -66,7 +66,7 @@ export class AIChatFrontendContribution implements CommandContribution {
     }
 
     /**
-     * Open a file by its workspace-relative path.
+     * Open a file by its workspace-relative path, in the format of `WorkspaceService.getRootPrefixedPath`.
      */
     async openFileByPath(wsRelativePath: string): Promise<void> {
         const uri = await this.resolveWorkspaceRelativePath(wsRelativePath);
@@ -84,13 +84,6 @@ export class AIChatFrontendContribution implements CommandContribution {
             }
             return undefined;
         }
-        const workspaceRoots = this.workspaceService.tryGetRoots();
-        for (const root of workspaceRoots) {
-            const uri = root.resource.resolve(path);
-            if (await this.fileService.exists(uri)) {
-                return uri;
-            }
-        }
-        return undefined;
+        return this.workspaceService.resolveExistingRelativePath(wsRelativePath);
     }
 }
