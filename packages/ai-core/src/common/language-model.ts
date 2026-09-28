@@ -188,8 +188,15 @@ export interface AutoActionResult {
     reason?: string;
 }
 
+/**
+ * The primitive JSON Schema types allowed in a {@link ToolRequestParameterProperty}.
+ * Follows JSON Schema 2020-12 / MCP: a property may declare a single type or a
+ * union of types (e.g. `type: ["string", "null"]`).
+ */
+export type ToolRequestParameterType = 'string' | 'number' | 'integer' | 'boolean' | 'object' | 'array' | 'null';
+
 export interface ToolRequestParameterProperty {
-    type?: | 'string' | 'number' | 'integer' | 'boolean' | 'object' | 'array' | 'null';
+    type?: ToolRequestParameterType | ToolRequestParameterType[];
     anyOf?: ToolRequestParameterProperty[];
     [key: string]: unknown;
 }
@@ -326,8 +333,17 @@ export namespace ToolRequest {
                 }
             }
         }
-        if ('type' in record && typeof record.type !== 'string') {
-            return false;
+        if ('type' in record) {
+            if (typeof record.type !== 'string' && !Array.isArray(record.type)) {
+                return false;
+            }
+            if (Array.isArray(record.type)) {
+                for (const typeItem of record.type) {
+                    if (typeof typeItem !== 'string') {
+                        return false;
+                    }
+                }
+            }
         }
 
         // No further checks required for additional properties.
