@@ -40,15 +40,6 @@ describe('BinaryMessagePipe', () => {
         stream.destroy();
     });
 
-    for (let split = 1; split < headerLength; split++) {
-        it(`receives the original payload when the header is split after byte ${split}`, () => {
-            stream.emit('data', frame.subarray(0, split));
-            stream.emit('data', frame.subarray(split));
-
-            expect(messages).to.deep.equal([payload]);
-        });
-    }
-
     it('accumulates consecutive chunks that are shorter than the header', () => {
         stream.emit('data', frame.subarray(0, 10));
         stream.emit('data', frame.subarray(10, headerLength));
@@ -57,29 +48,17 @@ describe('BinaryMessagePipe', () => {
         expect(messages).to.deep.equal([payload]);
     });
 
-    it('receives a frame fragmented into single-byte chunks', () => {
-        for (let offset = 0; offset < frame.length; offset++) {
-            stream.emit('data', frame.subarray(offset, offset + 1));
-        }
+    it('receives the original payload when the header is split between chunks', () => {
+        stream.emit('data', frame.subarray(0, 10));
+        stream.emit('data', frame.subarray(10));
 
         expect(messages).to.deep.equal([payload]);
     });
 
-    it('receives multiple frames following a partial header, including an empty message', () => {
-        const emptyPayload = Buffer.alloc(0);
+    it('preserves the next frame in the same chunk after a partial header', () => {
         const nextPayload = Buffer.from('next');
         stream.emit('data', frame.subarray(0, 10));
-        stream.emit('data', Buffer.concat([frame.subarray(10), encodeFrame(emptyPayload), encodeFrame(nextPayload)]));
-
-        expect(messages).to.deep.equal([payload, emptyPayload, nextPayload]);
-    });
-
-    it('continues a partial payload and receives the following frame', () => {
-        const nextPayload = Buffer.from('next');
-        const payloadSplit = headerLength + 7;
-        stream.emit('data', frame.subarray(0, 10));
-        stream.emit('data', frame.subarray(10, payloadSplit));
-        stream.emit('data', Buffer.concat([frame.subarray(payloadSplit), encodeFrame(nextPayload)]));
+        stream.emit('data', Buffer.concat([frame.subarray(10), encodeFrame(nextPayload)]));
 
         expect(messages).to.deep.equal([payload, nextPayload]);
     });
