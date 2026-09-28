@@ -77,7 +77,7 @@ describe('UserInteractionTool', () => {
         container.bind(ILogger).to(MockLogger).inSingletonScope();
 
         mockWorkspaceScope = {
-            resolveRelativePath: sinon.stub().callsFake((path: string) => workspaceRoot.resolve(path)),
+            resolveAccessiblePath: sinon.stub().callsFake(async (path: string) => workspaceRoot.resolve(path)),
             getContainingRoot: sinon.stub().returns(workspaceRoot)
         };
 
@@ -615,6 +615,23 @@ describe('UserInteractionTool', () => {
         expect(leftUri.scheme).to.equal(MEMORY_TEXT_READONLY);
         expect(leftUri.query).to.contain('Unable to resolve revision');
         expect(leftUri.query).to.contain('abc123');
+    });
+
+    it('should show the not-found content when a file link path cannot be resolved', async () => {
+        (mockWorkspaceScope.resolveAccessiblePath as sinon.SinonStub).rejects(new Error('Could not resolve path'));
+
+        await tool.openLink({ ref: 'src/file.ts' });
+
+        expect((mockEditorManager.open as sinon.SinonStub).called).to.be.false;
+        const openedUri = (mockOpenerService.getOpener as sinon.SinonStub).getCall(0).args[0] as URI;
+        expect(openedUri.scheme).to.equal(MEMORY_TEXT_READONLY);
+        expect(openedUri.query).to.contain('does not exist');
+    });
+
+    it('should resolve link paths with the same parsing as the workspace tools', async () => {
+        await tool.openLink({ ref: '/abs/src/file.ts' });
+
+        expect((mockWorkspaceScope.resolveAccessiblePath as sinon.SinonStub).calledWith('/abs/src/file.ts')).to.be.true;
     });
 
     it('should not open anything when single link ref is EmptyContentRef', async () => {
