@@ -18,6 +18,7 @@ import { Container } from '@theia/core/shared/inversify';
 import { ILogger, isWindows } from '@theia/core';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { BundledResourceProvider } from '@theia/core/lib/node';
 import { RawProcessFactory, RawProcessOptions, RawProcess, ProcessManager } from '@theia/process/lib/node';
 import { RipgrepSearchInWorkspaceServer, RgPath } from './ripgrep-search-in-workspace-server';
 import { SearchInWorkspaceClient, SearchInWorkspaceResult } from '../common/search-in-workspace-interface';
@@ -210,6 +211,7 @@ function createInstance(rgPath: string): RipgrepSearchInWorkspaceServer {
     );
 
     container.bind(RgPath).toConstantValue(rgPath);
+    container.bind(BundledResourceProvider).toConstantValue({ resolveExternalPath: async (resourcePath: string) => resourcePath });
 
     return container.get(RipgrepSearchInWorkspaceServer);
 }
