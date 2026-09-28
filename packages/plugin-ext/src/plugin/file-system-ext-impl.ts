@@ -24,9 +24,9 @@
  */
 
 /* eslint-disable arrow-body-style */
-/* eslint-disable @typescript-eslint/quotes */
-/* eslint-disable @typescript-eslint/tslint/config */
+/* eslint-disable @stylistic/quotes */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-restricted-syntax */
 
 import { Schemes as Schemas, UriComponents } from '../common/uri-components';
 import { FileChangeType, FileSystemError, URI } from './types-impl';

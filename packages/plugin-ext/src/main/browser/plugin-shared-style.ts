@@ -87,12 +87,12 @@ export class PluginSharedStyle {
         selector: string;
         body: (theme: Theme) => string
     }): void {
-        const sheet = (<CSSStyleSheet>this.style.sheet);
+        const sheet = this.style.sheet as CSSStyleSheet;
         const cssBody = body(this.themeService.getCurrentTheme());
         sheet.insertRule(selector + ' {\n' + cssBody + '\n}', 0);
     }
     deleteRule(selector: string): void {
-        const sheet = (<CSSStyleSheet>this.style.sheet);
+        const sheet = this.style.sheet as CSSStyleSheet;
         const rules = sheet.rules || sheet.cssRules || [];
         for (let i = rules.length - 1; i >= 0; i--) {
             const rule = rules[i];

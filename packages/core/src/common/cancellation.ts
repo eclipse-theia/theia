@@ -128,7 +128,7 @@ export class CancellationTokenSource {
             // before someone asks for the token
             this._token = CancellationToken.Cancelled;
         } else if (this._token !== CancellationToken.Cancelled) {
-            (<MutableToken>this._token).cancel();
+            (this._token as MutableToken).cancel();
         }
     }
 

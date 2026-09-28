@@ -124,7 +124,7 @@ interface CapabilityChipProps {
  * option buttons (match case, regex). Uses inputOption theme colors
  * when enabled, transparent when disabled.
  */
-export const CapabilityChip = React.memo<CapabilityChipProps>(function CapabilityChip({
+export const CapabilityChip = React.memo<CapabilityChipProps>(function CapabilityChipComponent({
     fragmentId,
     name,
     description,

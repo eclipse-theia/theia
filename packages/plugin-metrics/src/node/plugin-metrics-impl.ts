@@ -22,8 +22,7 @@ export class PluginMetricsImpl implements PluginMetrics {
 
     private metrics: string = '{}';
 
-    // tslint:disable-next-line:typedef
-    setMetrics(metrics: string) {
+    setMetrics(metrics: string): void {
         this.metrics = metrics;
     }
 

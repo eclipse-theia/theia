@@ -91,7 +91,6 @@ export class TerminalManagerTreeWidget extends TreeWidget {
     protected override renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
         if (TerminalManagerTreeTypes.isTerminalManagerTreeNode(node) && !!node.isEditing) {
             const label = this.toNodeName(node);
-            // eslint-disable-next-line @typescript-eslint/ban-types
             const assignRef = (element: HTMLInputElement | null) => {
                 if (element) {
                     element.selectionStart = 0;

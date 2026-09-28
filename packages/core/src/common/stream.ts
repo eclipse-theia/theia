@@ -22,7 +22,8 @@
 
 /* eslint-disable max-len */
 /* eslint-disable no-null/no-null */
-/* eslint-disable @typescript-eslint/tslint/config */
+/* eslint-disable @stylistic/brace-style */
+/* eslint-disable no-restricted-syntax */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { DisposableCollection, Disposable } from './disposable';

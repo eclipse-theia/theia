@@ -125,8 +125,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             if (!token.isCancellationRequested) {
                 this.logger.error(e.message, e);
             }
-        }
-        finally {
+        } finally {
             progress.cancel();
         }
     }
