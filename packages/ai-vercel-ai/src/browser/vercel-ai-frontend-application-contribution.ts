@@ -55,10 +55,10 @@ export class VercelAiFrontendApplicationContribution implements FrontendApplicat
             }
 
             // Initial setup of models
-            const models = this.preferenceService.get<ModelConfig[]>(MODELS_PREF, []);
+            const models = this.preferenceService.get<ModelConfig>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(model => this.createVercelAiModelDescription(model)));
 
-            const customModels = this.preferenceService.get<Partial<VercelAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+            const customModels = this.preferenceService.get<Partial<VercelAiModelDescription>>(CUSTOM_ENDPOINTS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
 
             // Set up listeners for preference changes
@@ -161,10 +161,10 @@ export class VercelAiFrontendApplicationContribution implements FrontendApplicat
     }
 
     protected updateAllModels(): void {
-        const models = this.preferenceService.get<ModelConfig[]>(MODELS_PREF, []);
+        const models = this.preferenceService.get<ModelConfig>(MODELS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...models.map(model => this.createVercelAiModelDescription(model)));
 
-        const customModels = this.preferenceService.get<Partial<VercelAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+        const customModels = this.preferenceService.get<Partial<VercelAiModelDescription>>(CUSTOM_ENDPOINTS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
     }
 

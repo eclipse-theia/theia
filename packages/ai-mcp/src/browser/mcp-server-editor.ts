@@ -162,7 +162,7 @@ export class MCPServerEditorImpl implements MCPServerEditor {
     }
 
     protected readServers(): Record<string, unknown> {
-        return this.preferenceService.get<Record<string, unknown>>(MCP_SERVERS_PREF, {}) ?? {};
+        return this.preferenceService.get<Record<string, unknown>>(MCP_SERVERS_PREF, {fallback: {}}) ?? {};
     }
 
     /**
@@ -214,7 +214,7 @@ export class MCPServerEditorImpl implements MCPServerEditor {
      * (e.g. `registryMetadata`) since the dialog only edits user-facing fields.
      */
     async save(formData: MCPServerFormData): Promise<void> {
-        const currentServers = this.preferenceService.get<Record<string, object>>(MCP_SERVERS_PREF, {}) ?? {};
+        const currentServers = this.preferenceService.get<Record<string, object>>(MCP_SERVERS_PREF, {fallback: {}}) ?? {};
         const serverName = formData.name.trim();
         const existing = (currentServers[serverName] ?? {}) as Record<string, unknown>;
         const serverConfig = formData.serverType === 'local'

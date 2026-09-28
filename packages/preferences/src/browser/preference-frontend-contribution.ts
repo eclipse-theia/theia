@@ -18,7 +18,7 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { LaunchArguments } from '@theia/core/lib/common/launch-arguments';
 import { WindowLaunchArgs } from '@theia/core/lib/browser/window/window-launch-args';
-import { CliPreferences, CliPreferenceEntry } from '../common/cli-preferences';
+import { CliPreference, CliPreferences, CliPreferenceEntry } from '../common/cli-preferences';
 import { PreferenceService, PreferenceScope } from '@theia/core/lib/common/preferences';
 import { ILogger } from '@theia/core';
 
@@ -58,7 +58,7 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
             // Log keys only. Values may carry overrides for security-sensitive prefs
             // (e.g. AI tool auto-approval) and should not leak into screenshots or support bundles.
             this.logger.info(`Applied ${session.length} --session-preference value(s):`,
-                session.map(([k]) => k).join(', '));
+                session.map(entry => CliPreferenceEntry.encodedKey(entry)).join(', '));
         }
 
         await this.applyAll(persistent, PreferenceScope.User);
@@ -74,17 +74,17 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
      * second-instance window keeps the process-wide values instead of dropping them, while an attach
      * window still gets its own overrides.
      */
-    protected async resolveCliPreferences(): Promise<{ session: [string, unknown][], persistent: [string, unknown][] }> {
+    protected async resolveCliPreferences(): Promise<{ session: CliPreference[], persistent: CliPreference[] }> {
         // Fetch both buckets in parallel; both are RPC hops to the same backend and
         // can overlap with the preference service initialising its providers.
         const [session, persistent] = await Promise.all([
             this.CliPreferences.getSessionPreferences().catch(e => {
                 this.logger.warn('Failed to fetch --session-preference values:', e);
-                return [] as [string, unknown][];
+                return [] as CliPreference[];
             }),
             this.CliPreferences.getPreferences().catch(e => {
                 this.logger.warn('Failed to fetch --set-preference values:', e);
-                return [] as [string, unknown][];
+                return [] as CliPreference[];
             })
         ]);
         const forwarded = this.launchArgs.getLaunchArgs();
@@ -98,13 +98,16 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
         };
     }
 
-    /** Overlays `overrides` onto `base`, later entries winning per key while preserving order (base first). */
-    protected mergeEntries(base: ReadonlyArray<[string, unknown]>, overrides: ReadonlyArray<[string, unknown]>): [string, unknown][] {
-        const merged = new Map<string, unknown>();
-        for (const [key, value] of [...base, ...overrides]) {
-            merged.set(key, value);
+    /**
+     * Overlays `overrides` onto `base`, later entries winning per encoded key
+     * (`[override].name` or plain name) while preserving order (base first).
+     */
+    protected mergeEntries(base: ReadonlyArray<CliPreference>, overrides: ReadonlyArray<CliPreference>): CliPreference[] {
+        const merged = new Map<string, CliPreference>();
+        for (const entry of [...base, ...overrides]) {
+            merged.set(CliPreferenceEntry.encodedKey(entry), entry);
         }
-        return [...merged];
+        return [...merged.values()];
     }
 
     /**
@@ -112,12 +115,12 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
      * individual write (bad key, invalid scope, etc.) is logged and does not abort the
      * remaining writes, and it is not left as an unhandled promise rejection.
      */
-    protected async applyAll(entries: ReadonlyArray<[string, unknown]>, scope: PreferenceScope): Promise<void> {
-        for (const [key, value] of entries) {
+    protected async applyAll(entries: ReadonlyArray<CliPreference>, scope: PreferenceScope): Promise<void> {
+        for (const entry of entries) {
             try {
-                await this.preferenceService.set(key, value, scope);
+                await this.preferenceService.set(entry.preferenceName, entry.value, scope, undefined, entry.overrideIdentifier);
             } catch (e) {
-                this.logger.warn(`Failed to apply CLI preference "${key}" to ${PreferenceScope[scope]} scope:`, e);
+                this.logger.warn(`Failed to apply CLI preference "${CliPreferenceEntry.encodedKey(entry)}" to ${PreferenceScope[scope]} scope:`, e);
             }
         }
     }

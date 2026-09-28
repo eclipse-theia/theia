@@ -50,9 +50,9 @@ export class GoogleFrontendApplicationContribution extends DiscoveringProviderCo
 
     protected override initializeProvider(): void {
         this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
-        this.manager.setMaxRetriesOnErrors(this.preferenceService.get<number>(MAX_RETRIES, 3));
-        this.manager.setRetryDelayOnRateLimitError(this.preferenceService.get<number>(RETRY_DELAY_RATE_LIMIT, 60));
-        this.manager.setRetryDelayOnOtherErrors(this.preferenceService.get<number>(RETRY_DELAY_OTHER_ERRORS, -1));
+        this.manager.setMaxRetriesOnErrors(this.preferenceService.get(MAX_RETRIES, 3));
+        this.manager.setRetryDelayOnRateLimitError(this.preferenceService.get(RETRY_DELAY_RATE_LIMIT, 60));
+        this.manager.setRetryDelayOnOtherErrors(this.preferenceService.get(RETRY_DELAY_OTHER_ERRORS, -1));
     }
 
     protected override handlePreferenceChange(event: PreferenceChange): void {
@@ -60,11 +60,11 @@ export class GoogleFrontendApplicationContribution extends DiscoveringProviderCo
             this.manager.setApiKey(this.preferenceService.get<string>(API_KEY_PREF, undefined));
             this.discoverAndRegisterModels();
         } else if (event.preferenceName === MAX_RETRIES) {
-            this.manager.setMaxRetriesOnErrors(this.preferenceService.get<number>(MAX_RETRIES, 3));
+            this.manager.setMaxRetriesOnErrors(this.preferenceService.get(MAX_RETRIES, 3));
         } else if (event.preferenceName === RETRY_DELAY_RATE_LIMIT) {
-            this.manager.setRetryDelayOnRateLimitError(this.preferenceService.get<number>(RETRY_DELAY_RATE_LIMIT, 60));
+            this.manager.setRetryDelayOnRateLimitError(this.preferenceService.get(RETRY_DELAY_RATE_LIMIT, 60));
         } else if (event.preferenceName === RETRY_DELAY_OTHER_ERRORS) {
-            this.manager.setRetryDelayOnOtherErrors(this.preferenceService.get<number>(RETRY_DELAY_OTHER_ERRORS, -1));
+            this.manager.setRetryDelayOnOtherErrors(this.preferenceService.get(RETRY_DELAY_OTHER_ERRORS, -1));
         }
     }
 

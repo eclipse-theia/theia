@@ -112,7 +112,7 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
         this.toDispose.push(
             this.preferenceService.onPreferenceChanged(e => {
                 if (e.preferenceName === BYPASS_MODEL_REQUIREMENT_PREF) {
-                    const effectiveValue = this.preferenceService.get<boolean>(BYPASS_MODEL_REQUIREMENT_PREF, false);
+                    const effectiveValue = this.preferenceService.get(BYPASS_MODEL_REQUIREMENT_PREF, false);
                     if (this._modelRequirementBypassed !== effectiveValue) {
                         this._modelRequirementBypassed = effectiveValue;
                         this.notifyStateChanged();
@@ -149,7 +149,7 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
     }
 
     protected updateDefaultAgentState(): void {
-        const hasDefaultAgent = !!this.preferenceService.get<string>(DEFAULT_CHAT_AGENT_PREF, '');
+        const hasDefaultAgent = !!this.preferenceService.get(DEFAULT_CHAT_AGENT_PREF, '');
         if (this._hasDefaultAgent !== hasDefaultAgent) {
             this._hasDefaultAgent = hasDefaultAgent;
             this.notifyStateChanged();

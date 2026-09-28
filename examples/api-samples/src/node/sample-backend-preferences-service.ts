@@ -12,45 +12,28 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { SampleBackendPreferencesService } from '../common/preference-protocol';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { PreferenceInspection, PreferenceLanguageOverrideService, PreferenceScope, PreferenceService } from '@theia/core';
+import { PreferenceInspection, PreferenceScope, PreferenceService } from '@theia/core';
 
 @injectable()
 export class SampleBackendPreferencesBackendServiceImpl implements SampleBackendPreferencesService {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
-    @inject(PreferenceLanguageOverrideService)
-    protected readonly languageOverrideService: PreferenceLanguageOverrideService;
-
     async getPreference(key: string, overrideIdentifier: string): Promise<JSONValue | undefined> {
-        let preferenceName = key;
-        if (overrideIdentifier) {
-            preferenceName = this.languageOverrideService.overridePreferenceName({ preferenceName, overrideIdentifier });
-
-        }
-        return this.preferenceService.get(preferenceName);
+        return this.preferenceService.get(key, overrideIdentifier ? { override: overrideIdentifier } : undefined);
     }
 
     async inspectPreference(key: string, overrideIdentifier?: string): Promise<PreferenceInspection | undefined> {
-        let preferenceName = key;
-        if (overrideIdentifier) {
-            preferenceName = this.languageOverrideService.overridePreferenceName({ preferenceName, overrideIdentifier });
-
-        }
-        return this.preferenceService.inspect(preferenceName);
+        return this.preferenceService.inspect(key, undefined, overrideIdentifier);
     }
 
     async setPreference(key: string, overrideIdentifier: string | undefined, value: JSONValue): Promise<void> {
-        let preferenceName = key;
-        if (overrideIdentifier) {
-            preferenceName = this.languageOverrideService.overridePreferenceName({ preferenceName, overrideIdentifier });
-
-        }
-        this.preferenceService.set(preferenceName, value, PreferenceScope.User);
+        return this.preferenceService.set(key, value, PreferenceScope.User, undefined, overrideIdentifier);
     }
 
 }

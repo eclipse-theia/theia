@@ -124,12 +124,12 @@ export class FavoriteModelsService {
 
     /** The ids the user marked explicitly, the ones offered by default excluded. */
     getFavorites(): string[] {
-        return this.preferenceService.get<string[]>(PREFERENCE_NAME_FAVORITE_MODELS, []);
+        return this.preferenceService.get(PREFERENCE_NAME_FAVORITE_MODELS, []);
     }
 
     /** The ids the user took out of the picker, which would otherwise be offered by default. */
     getHidden(): string[] {
-        return this.preferenceService.get<string[]>(PREFERENCE_NAME_HIDDEN_MODELS, []);
+        return this.preferenceService.get(PREFERENCE_NAME_HIDDEN_MODELS, []);
     }
 
     /**
@@ -150,7 +150,7 @@ export class FavoriteModelsService {
      */
     async resetToDefaults(modelIdPrefix: string): Promise<void> {
         for (const preferenceName of [PREFERENCE_NAME_FAVORITE_MODELS, PREFERENCE_NAME_HIDDEN_MODELS]) {
-            const ids = this.preferenceService.get<string[]>(preferenceName, []);
+            const ids = this.preferenceService.get<string>(preferenceName, []);
             const kept = ids.filter(id => !id.startsWith(`${modelIdPrefix}/`));
             if (kept.length !== ids.length) {
                 await this.write(preferenceName, kept);
@@ -287,7 +287,7 @@ export class FavoriteModelsService {
         const prefix = status.modelIdPrefix ?? status.providerId;
         const offered = new Set(status.discovered.map(model => `${prefix}/${model.id}`));
         for (const preferenceName of [PREFERENCE_NAME_FAVORITE_MODELS, PREFERENCE_NAME_HIDDEN_MODELS]) {
-            const ids = this.preferenceService.get<string[]>(preferenceName, []);
+            const ids = this.preferenceService.get<string>(preferenceName, []);
             const kept = ids.filter(id => !id.startsWith(`${prefix}/`) || offered.has(id));
             if (kept.length !== ids.length) {
                 this.write(preferenceName, kept);

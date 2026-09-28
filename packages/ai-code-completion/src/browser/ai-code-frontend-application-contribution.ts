@@ -62,9 +62,9 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
 
         this.toDispose.set('inlineCompletions', handler());
 
-        this.debounceDelay = this.preferenceService.get<number>(PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY, 300);
+        this.debounceDelay = this.preferenceService.get(PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY, 300);
 
-        const cacheCapacity = this.preferenceService.get<number>(PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY, 100);
+        const cacheCapacity = this.preferenceService.get(PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY, 100);
         this.completionCache.setMaxSize(cacheCapacity);
 
         this.preferenceService.onPreferenceChanged(event => {
@@ -74,10 +74,10 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
                 this.toDispose.set('inlineCompletions', handler());
             }
             if (event.preferenceName === PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY) {
-                this.debounceDelay = this.preferenceService.get<number>(PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY, 300);
+                this.debounceDelay = this.preferenceService.get(PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY, 300);
             }
             if (event.preferenceName === PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY) {
-                this.completionCache.setMaxSize(this.preferenceService.get<number>(PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY, 100));
+                this.completionCache.setMaxSize(this.preferenceService.get(PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY, 100));
             }
         });
 
@@ -99,8 +99,8 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
         if (!this.activationService.canRun) {
             return Disposable.NULL;
         }
-        const automatic = this.preferenceService.get<boolean>(PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE, true);
-        const excludedExtensions = this.preferenceService.get<string[]>(PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS, []);
+        const automatic = this.preferenceService.get(PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE, true);
+        const excludedExtensions = this.preferenceService.get<string>(PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS, []);
 
         return monaco.languages.registerInlineCompletionsProvider(
             { scheme: 'file' },

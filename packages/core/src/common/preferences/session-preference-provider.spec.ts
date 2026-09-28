@@ -15,6 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import { ILogger } from '../logger';
+import { MockLogger } from '../test/mock-logger';
 import { SessionPreferenceProvider } from './session-preference-provider';
 import { PreferenceScope } from './preference-scope';
 
@@ -24,6 +26,7 @@ describe('SessionPreferenceProvider', () => {
 
     beforeEach(() => {
         provider = new SessionPreferenceProvider();
+        (provider as unknown as { logger: ILogger }).logger = new MockLogger();
         // PostConstruct emulation
         (provider as unknown as { init(): void }).init();
     });
@@ -51,12 +54,11 @@ describe('SessionPreferenceProvider', () => {
     it('emits a change event on set', async () => {
         let received: { name: string; newValue: unknown; oldValue: unknown; scope: PreferenceScope } | undefined;
         provider.onDidPreferencesChanged(changes => {
-            const key = Object.keys(changes)[0];
             received = {
-                name: changes[key].preferenceName,
-                newValue: changes[key].newValue,
-                oldValue: changes[key].oldValue,
-                scope: changes[key].scope
+                name: changes[0].preferenceName,
+                newValue: changes[0].newValue,
+                oldValue: changes[0].oldValue,
+                scope: changes[0].scope
             };
         });
         await provider.setPreference('foo', 'bar');
