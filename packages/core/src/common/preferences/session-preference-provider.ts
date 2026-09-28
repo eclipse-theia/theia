@@ -47,7 +47,6 @@ export class SessionPreferenceProvider extends PreferenceProviderImpl implements
     }
 
     override async setPreference(key: string, value: JSONValue | undefined, _resourceUri?: string, overrideIdentifier?: string): Promise<boolean> {
-        console.error('setPreference', key, value, _resourceUri, overrideIdentifier);
         const storageKey = overrideIdentifier ? `[${overrideIdentifier}].${key}` : key;
         const oldValue = this.preferences.get(storageKey);
         if (value === undefined) {

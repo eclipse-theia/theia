@@ -492,7 +492,7 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
      */
     protected updateElectronMenuToggleMode(menu: MenuBarWidget, logo: Widget): void {
         this.toggleModeListeners.dispose();
-        const pref = this.preferenceService.get<string>('window.menuBarVisibility', 'classic');
+        const pref = this.preferenceService.get('window.menuBarVisibility', 'classic');
         this.applyElectronMenuBarVisibility(menu, logo, pref);
         if (pref === 'toggle') {
             this.toggleModeListeners = this.installAltKeyToggle(menu, () => this.getElectronToggleTargets(menu, logo));
@@ -523,7 +523,7 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
      */
     protected updateBrowserMenuToggleMode(menu: MenuBarWidget): void {
         this.toggleModeListeners.dispose();
-        const pref = this.preferenceService.get<string>('window.menuBarVisibility', 'classic');
+        const pref = this.preferenceService.get('window.menuBarVisibility', 'classic');
         if (pref === 'toggle') {
             this.toggleModeListeners = this.installAltKeyToggle(menu, () => [this.shell.topPanel]);
         }
