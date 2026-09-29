@@ -18,6 +18,7 @@
  * Script for tests: creates a `BackendApplication`, which installs its process handlers, starts a
  * child process, prints the PID of the child and exits with code {@link EXITING_BACKEND_EXIT_CODE}.
  * The `exit` handler of the `BackendApplication` then terminates the process tree.
+ * Set {@link EXITING_BACKEND_NO_POWERSHELL} to make the listing of the children of the process fail.
  */
 
 import 'reflect-metadata';
@@ -33,12 +34,23 @@ import { ProcessUtils } from '../process-utils';
 
 export const EXITING_BACKEND_EXIT_CODE = 3;
 
+/**
+ * Environment variable that makes PowerShell unrunnable for the {@link ProcessUtils} of the script.
+ */
+export const EXITING_BACKEND_NO_POWERSHELL = 'THEIA_TEST_EXITING_BACKEND_NO_POWERSHELL';
+
+class NoPowerShellProcessUtils extends ProcessUtils {
+    protected override winGetPowerShellPath(): string {
+        return 'C:\\does-not-exist\\powershell.exe';
+    }
+}
+
 if (require.main === module) {
     const container = new Container();
     container.bind(RootContainer).toConstantValue(container);
     container.bind(ILogger).to(MockLogger).inSingletonScope();
     container.bind(Stopwatch).to(NodeStopwatch).inSingletonScope();
-    container.bind(ProcessUtils).toSelf().inSingletonScope();
+    container.bind(ProcessUtils).to(process.env[EXITING_BACKEND_NO_POWERSHELL] ? NoPowerShellProcessUtils : ProcessUtils).inSingletonScope();
     container.bind(BackendApplicationCliContribution).toSelf().inSingletonScope();
     container.bind(EarlyExpressMiddleware).toSelf().inSingletonScope();
     bindContributionProvider(container, BackendApplicationContribution);

@@ -81,12 +81,14 @@ export class ProcessUtils {
     }
 
     /**
-     * @returns the PIDs of the direct children of the given process.
+     * @returns the PIDs of the direct children of the given process, except for the PowerShell
+     * process that lists them, which is a child of the current process and exits right after.
      */
     protected winGetChildPids(ppid: number): number[] {
         const { stdout } = this.spawnSync(this.winGetPowerShellPath(), [
             '-NoLogo', '-NoProfile', '-NonInteractive', '-Command',
-            `Get-CimInstance -ClassName Win32_Process -Filter 'ParentProcessId=${ppid.toString(10)}' | ForEach-Object { $_.ProcessId }`
+            `Get-CimInstance -ClassName Win32_Process -Filter 'ParentProcessId=${ppid.toString(10)}'`
+            + ' | Where-Object { $_.ProcessId -ne $PID } | ForEach-Object { $_.ProcessId }'
         ], { windowsHide: true, timeout: WIN_LIST_CHILDREN_TIMEOUT_MS });
         return stdout
             .split(/\s+/)

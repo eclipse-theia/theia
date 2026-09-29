@@ -20,7 +20,7 @@ import { Container } from 'inversify';
 import { ILogger } from '../common/logger';
 import { MockLogger } from '../common/test/mock-logger';
 import { ProcessUtils } from './process-utils';
-import { EXITING_BACKEND_EXIT_CODE } from './test/exiting-backend';
+import { EXITING_BACKEND_EXIT_CODE, EXITING_BACKEND_NO_POWERSHELL } from './test/exiting-backend';
 
 interface ExitingProcessResult {
     exitCode: number | null;
@@ -93,9 +93,9 @@ describe('ProcessUtils (real processes)', function (): void {
     });
 
     (process.platform === 'win32' ? it : it.skip)('kills the whole tree of the backend when PowerShell cannot be run', async () => {
-        // PowerShell is run from the Windows directory, which does not exist. The fallback kills
-        // the backend as well, which terminates it with exit code 1.
-        await expectTerminatedTree({ env: { SystemRoot: 'C:\\does-not-exist' } }, 1);
+        // Only PowerShell is made unrunnable: breaking the environment, e.g. `SystemRoot`, would
+        // break `taskkill.exe` as well. The fallback kills the backend too, with exit code 1.
+        await expectTerminatedTree({ env: { [EXITING_BACKEND_NO_POWERSHELL]: 'true' } }, 1);
     });
 
     (process.platform === 'win32' ? it : it.skip)('lists the children of a process with PowerShell', async () => {
@@ -108,6 +108,9 @@ describe('ProcessUtils (real processes)', function (): void {
         await Promise.all(children.map(child => new Promise(resolve => child.on('spawn', resolve))));
         childPids.push(...children.map(child => child.pid!));
 
-        expect(processUtils['winGetChildPids'](process.pid)).to.include.members(childPids);
+        const listedPids = processUtils['winGetChildPids'](process.pid);
+        expect(listedPids).to.include.members(childPids);
+        // The PowerShell process that lists the children has exited by now, so it must not be listed.
+        expect(listedPids.filter(pid => !isAlive(pid)), 'only live processes should be listed').to.be.empty;
     });
 });
