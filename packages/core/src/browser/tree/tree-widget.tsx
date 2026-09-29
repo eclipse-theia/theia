@@ -1663,6 +1663,14 @@ export namespace TreeWidget {
          * `true` while a scroll request made before the list was measured waits to be served.
          */
         protected scrollHeld = false;
+        /**
+         * The latest list height reported by Virtuoso. It can still change after the first report, as more rows are measured.
+         */
+        protected listHeight = 0;
+        /**
+         * How many frames a held scroll request waits for the list to be rendered at its height, about half a second at 60 Hz.
+         */
+        protected readonly maxRenderWaitFrames = 30;
         protected scroller: HTMLElement | undefined;
 
         /**
@@ -1677,11 +1685,12 @@ export namespace TreeWidget {
         }
 
         protected readonly onTotalListHeightChanged = (height: number): void => {
+            this.listHeight = height;
             if (!this.measured && height > 0) {
                 this.measured = true;
                 if (this.scrollHeld) {
                     this.scrollHeld = false;
-                    this.scrollWhenRendered(height);
+                    this.scrollWhenRendered();
                 }
             }
             this.props.totalListHeightChanged?.(height);
@@ -1694,12 +1703,12 @@ export namespace TreeWidget {
 
         /**
          * Virtuoso reports the list height before React renders the list at it, and a scroll before that is clamped
-         * to the old height. Wait for the rendered height, a few frames at most.
+         * to the old height. Wait for the rendered height, at most `maxRenderWaitFrames` frames.
          */
-        protected scrollWhenRendered(height: number, framesLeft = 30): void {
+        protected scrollWhenRendered(framesLeft = this.maxRenderWaitFrames): void {
             window.requestAnimationFrame(() => {
-                if (this.scroller && this.scroller.scrollHeight < height && framesLeft > 0) {
-                    this.scrollWhenRendered(height, framesLeft - 1);
+                if (this.scroller && this.scroller.scrollHeight < this.listHeight && framesLeft > 0) {
+                    this.scrollWhenRendered(framesLeft - 1);
                 } else {
                     this.scrollIntoViewIfNeeded();
                 }

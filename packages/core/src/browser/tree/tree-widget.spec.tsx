@@ -251,6 +251,25 @@ describe('TreeWidget', () => {
             expect(view!.scrollCount).to.equal(1);
         });
 
+        it('waits for the latest list height when the first reported height shrinks', () => {
+            render({ scrollToRow: 2, scrollToRowRequestId: 1 });
+            view!.measure(300, 100);
+            view!.measure(200, 200);
+            runFrames();
+            expect(view!.scrollCount).to.equal(1);
+        });
+
+        it('serves a held scroll request when the list is never rendered at its height', () => {
+            render({ scrollToRow: 2, scrollToRowRequestId: 1 });
+            view!.measure(300, 100);
+            for (let frame = 0; frame < 30; frame++) {
+                runFrames();
+                expect(view!.scrollCount).to.equal(0);
+            }
+            runFrames();
+            expect(view!.scrollCount).to.equal(1);
+        });
+
         it('does not scroll again when re-rendered without a new scroll request', () => {
             mount({ scrollToRow: 2, scrollToRowRequestId: 1 });
             const scrollsAfterMount = view!.scrollCount;
