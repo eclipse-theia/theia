@@ -26,7 +26,7 @@
 /* eslint-disable arrow-body-style */
 /* eslint-disable @stylistic/quotes */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-restricted-syntax */
+/* eslint-disable @theia/explicit-return-type */
 
 import { Schemes as Schemas, UriComponents } from '../common/uri-components';
 import { FileChangeType, FileSystemError, URI } from './types-impl';

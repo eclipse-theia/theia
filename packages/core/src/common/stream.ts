@@ -23,7 +23,7 @@
 /* eslint-disable max-len */
 /* eslint-disable no-null/no-null */
 /* eslint-disable @stylistic/brace-style */
-/* eslint-disable no-restricted-syntax */
+/* eslint-disable @theia/explicit-return-type */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { DisposableCollection, Disposable } from './disposable';
@@ -731,7 +731,7 @@ export function fileToStream(file: File): ReadableStream<BinaryBuffer> {
         try {
             while (true) {
                 const { value, done } = await reader.read();
-                if (done) {break;}
+                if (done) { break; }
 
                 if (value?.byteLength) {
                     await ws.write(BinaryBuffer.wrap(value));
@@ -741,7 +741,7 @@ export function fileToStream(file: File): ReadableStream<BinaryBuffer> {
         } catch (e: unknown) {
             try {
                 await reader.cancel();
-            } catch {}
+            } catch { }
 
             ws.error(e instanceof Error ? e : new Error(String(e)));
         }

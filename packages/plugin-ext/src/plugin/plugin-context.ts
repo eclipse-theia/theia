@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-restricted-syntax */
+/* eslint-disable @theia/explicit-return-type */
 
 import type * as theia from '@theia/plugin';
 import { CommandRegistryImpl } from './command-registry';

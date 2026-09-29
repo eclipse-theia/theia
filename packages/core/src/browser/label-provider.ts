@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable, named, postConstruct } from 'inversify';
-// The default import preserves non-enumerable helpers such as getClassWithColor.
+// The default import returns the exported FileIcons instance itself; a namespace import would be an interop copy of its own
+// properties only, and getClass/getClassWithColor live on the prototype.
 import fileIcons from 'file-icons-js';
 import URI from '../common/uri';
 import { ContributionProvider } from '../common/contribution-provider';

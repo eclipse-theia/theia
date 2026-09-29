@@ -366,9 +366,9 @@ export namespace KnownCommands {
         return L.create(l.uri.toString(), fromRangeToR(l.range));
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, no-restricted-syntax
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @theia/explicit-return-type
     function vscodeToMonacoArgsConverter(args: any[]) {
-        // eslint-disable-next-line no-restricted-syntax
+        // eslint-disable-next-line @theia/explicit-return-type
         return cloneAndChange(args, function (value) {
             if (CallHierarchyItem.isCallHierarchyItem(value)) {
                 return fromCallHierarchyItem(value);
@@ -394,9 +394,9 @@ export namespace KnownCommands {
         });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, no-restricted-syntax
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @theia/explicit-return-type
     function monacoToVscodeArgsConverter(args: any[]) {
-        // eslint-disable-next-line no-restricted-syntax
+        // eslint-disable-next-line @theia/explicit-return-type
         return cloneAndChange(args, function (value) {
             if (isModelCallHierarchyItem(value)) {
                 return toCallHierarchyItem(value);
@@ -422,7 +422,7 @@ export namespace KnownCommands {
 }
 
 function toArrayConversion<T, U>(f: (a: T) => U): (a: T[]) => U[] {
-    // eslint-disable-next-line no-restricted-syntax
+    // eslint-disable-next-line @theia/explicit-return-type
     return function (a: T[]) {
         return a.map(f);
     };

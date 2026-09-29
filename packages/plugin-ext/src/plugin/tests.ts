@@ -23,7 +23,7 @@
 
 // /* eslint-disable */
 
-/* eslint-disable no-restricted-syntax */
+/* eslint-disable @theia/explicit-return-type */
 
 import * as theia from '@theia/plugin';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';

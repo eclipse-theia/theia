@@ -21,7 +21,7 @@
 // based on https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/base/common/map.ts#L251
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-restricted-syntax */
+/* eslint-disable @theia/explicit-return-type */
 
 import URI from './uri';
 import { CharCode } from './char-code';

@@ -157,7 +157,7 @@ If you worked around this by overriding the `@vscode/ripgrep` replacement in you
 
 ### v1.77.0
 
-_TypeScript 6.0_:
+#### TypeScript 6.0 [#18100](https://github.com/eclipse-theia/theia/pull/18100)
 
 Theia is built with TypeScript 6.0.x. Adopters that only consume Theia's declaration files are not required to upgrade immediately: declarations emitted by TypeScript 6 remain consumable by TypeScript 5.9. Applications and extensions that replicate Theia's `configs/base.tsconfig.json` settings (in particular `moduleResolution: bundler` with CommonJS) must use TypeScript 6, because TypeScript 5.9 rejects that combination. Upgrading is recommended in either case so that applications and extensions use the same compiler behavior as the framework.
 
@@ -174,7 +174,7 @@ When adopting TypeScript 6 or replicating Theia's `configs/base.tsconfig.json` s
 
 To make the IDE use the workspace compiler, add `"typescript.tsdk": "node_modules/typescript/lib"` to workspace settings when the IDE's bundled TypeScript is older than 6. Otherwise the editor can report configuration errors for `moduleResolution: bundler` with CommonJS even though the workspace compiler accepts it.
 
-The shared ESLint configuration no longer uses `@typescript-eslint/eslint-plugin-tslint`, `tslint`, or `eslint-plugin-deprecation`. Adopters extending `configs/*.eslintrc.json` need typescript-eslint v8, `@stylistic/eslint-plugin` v3, `eslint-plugin-jsdoc`, and the `@theia/eslint-plugin` `file-header` rule. ESLint rule arrays do not merge: if an adopter configures `no-restricted-syntax`, it must append its selectors to Theia's call-signature selectors instead of replacing the array. A file that intentionally uses a different license header must place `/* eslint-disable @theia/file-header */` on line 1 because the rule reports at line 1.
+The shared ESLint configuration no longer uses `@typescript-eslint/eslint-plugin-tslint`, `tslint`, or `eslint-plugin-deprecation`. Adopters extending `configs/*.eslintrc.json` need typescript-eslint v8, `@stylistic/eslint-plugin` v3, `eslint-plugin-jsdoc`, and the `@theia/eslint-plugin` `file-header` rule. The former TSLint `typedef: call-signature` check is now the `@theia/explicit-return-type` rule of `@theia/eslint-plugin`. A file that intentionally uses a different license header must place `/* eslint-disable @theia/file-header */` on line 1 because the rule reports at line 1.
 
 ### v1.76.0
 

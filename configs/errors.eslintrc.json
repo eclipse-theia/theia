@@ -113,33 +113,11 @@
     "@stylistic/keyword-spacing": "error",
     "@stylistic/semi-spacing": "error",
     "@stylistic/space-infix-ops": "error",
+    "@theia/explicit-return-type": "error",
     "@theia/file-header": [
       "error",
       {
         "match": "SPDX-License-Identifier: EPL-2\\.0 OR GPL-2\\.0-only WITH Classpath-exception-2\\.0"
-      }
-    ],
-    "no-restricted-syntax": [
-      "error",
-      {
-        "selector": "FunctionDeclaration:not([returnType])",
-        "message": "Expected a return type annotation (typedef: call-signature)."
-      },
-      {
-        "selector": "TSDeclareFunction:not([returnType])",
-        "message": "Expected a return type annotation (typedef: call-signature)."
-      },
-      {
-        "selector": "FunctionExpression:not([returnType]):not(MethodDefinition[kind='constructor'] > *):not(MethodDefinition[kind='set'] > *):not(Property[kind='set'] > *)",
-        "message": "Expected a return type annotation (typedef: call-signature)."
-      },
-      {
-        "selector": "TSEmptyBodyFunctionExpression:not([returnType]):not(MethodDefinition[kind='constructor'] > *):not(TSAbstractMethodDefinition[kind='constructor'] > *):not(MethodDefinition[kind='set'] > *):not(TSAbstractMethodDefinition[kind='set'] > *)",
-        "message": "Expected a return type annotation (typedef: call-signature)."
-      },
-      {
-        "selector": "TSMethodSignature:not([returnType])",
-        "message": "Expected a return type annotation (typedef: call-signature)."
       }
     ],
     "jsdoc/check-alignment": "error",

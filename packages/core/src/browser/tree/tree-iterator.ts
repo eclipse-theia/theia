@@ -47,7 +47,7 @@ export abstract class AbstractTreeIterator implements TreeIterator, Iterable<Tre
         this.delegate = this.iterator(this.root);
     }
 
-    // eslint-disable-next-line no-restricted-syntax
+    // eslint-disable-next-line @theia/explicit-return-type
     [Symbol.iterator]() {
         return this.delegate;
     }

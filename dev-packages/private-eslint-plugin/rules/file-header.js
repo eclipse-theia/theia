@@ -36,7 +36,7 @@ module.exports = {
         ]
     },
     create(context) {
-        const sourceCode = context.getSourceCode();
+        const sourceCode = context.sourceCode;
         const options = /** @type {{ match: string }} */ (context.options[0]);
         const pattern = new RegExp(options.match);
         return {

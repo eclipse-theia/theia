@@ -21,7 +21,7 @@
 
 /* eslint-disable max-len */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-restricted-syntax */
+/* eslint-disable @theia/explicit-return-type */
 
 import { URI } from '@theia/core/shared/vscode-uri';
 import { interfaces } from '@theia/core/shared/inversify';
