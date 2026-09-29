@@ -274,11 +274,9 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             event.returnValue = BrowserWindow.fromWebContents(event.sender)?.isFullScreen();
         });
 
-        ipcMain.on(CHANNEL_READ_CLIPBOARD, event => {
-            event.returnValue = clipboard.readText();
-        });
+        ipcMain.handle(CHANNEL_READ_CLIPBOARD, () => clipboard.readText());
         ipcMain.on(CHANNEL_WRITE_CLIPBOARD, (event, text) => {
-            clipboard.writeText(text);
+            void clipboard.writeText(text);
         });
 
         nativeKeymap.onDidChangeKeyboardLayout(() => {

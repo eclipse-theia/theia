@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.77.0
+
+<a name="breaking_changes_1.77.0">[Breaking Changes:](#breaking_changes_1.77.0)</a>
+
+- [electron] upgraded Electron from 42.8.1 to 44.4.5. Downstream Electron applications must update their `electron` devDependency to `44.4.5`. Electron 44 requires macOS 13 (Ventura) or later and ships only 64-bit (x64/arm64) builds, and its clipboard module was rearchitected to the async W3C Clipboard API and is no longer exposed to the renderer process. As a result the `TheiaCoreAPI` preload method `readClipboard()` now returns `Promise<string>` (backed by `ipcRenderer.invoke`/`ipcMain.handle` instead of synchronous IPC) and `ElectronClipboardService.readText()` now returns a `Promise<string>`; adopters with a custom Electron preload script must return a promise from `readClipboard()`. See the Electron breaking changes for [43.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-430) and [44.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-440). [#18XXX](https://github.com/eclipse-theia/theia/pull/18XXX) - Contributed on behalf of STMicroelectronics
+
 ## 1.76.0 - 9/24/2026
 
 - [ai] added gpt-6-astra, claude-fable-5-1 and gemini-3.8-flash to the default models [#18033](https://github.com/eclipse-theia/theia/pull/18033)
