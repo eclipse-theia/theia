@@ -15,8 +15,14 @@
 // *****************************************************************************
 
 import * as cp from 'child_process';
+import * as path from 'path';
 import { injectable, inject, named } from 'inversify';
 import { ILogger } from '../common/logger';
+
+/**
+ * How long to wait for PowerShell to list child processes before giving up, in milliseconds.
+ */
+const WIN_LIST_CHILDREN_TIMEOUT_MS = 5000;
 
 /**
  * `@theia/core` service with some process-related utilities.
@@ -36,15 +42,70 @@ export class ProcessUtils {
     }
 
     protected winTerminateProcessTree(ppid: number): void {
-        const result = cp.spawnSync('taskkill.exe', ['/f', '/t', '/pid', ppid.toString(10)], { encoding: 'utf8' });
+        if (ppid !== process.pid) {
+            this.winTaskkillTrees([ppid]);
+            return;
+        }
+        // `taskkill /t` always kills the root of the tree as well. Killing the current process
+        // with `/f` terminates it with exit code 1, overriding the exit code that it may be
+        // exiting with, so only kill the trees of its children, as on Unix.
+        let childPids: number[];
+        try {
+            childPids = this.winGetChildPids(ppid);
+        } catch (error) {
+            // Without the list of children, killing the whole tree is the only way to avoid leaking
+            // child processes, at the cost of the current process exiting with code 1.
+            this.logger.warn(`Failed to list the child processes of PID ${ppid}, killing its whole tree`, error);
+            this.winTaskkillTrees([ppid]);
+            return;
+        }
+        if (childPids.length > 0) {
+            this.winTaskkillTrees(childPids);
+        }
+    }
+
+    /**
+     * Forcefully kills the given processes together with all of their descendants.
+     */
+    protected winTaskkillTrees(pids: number[]): void {
+        const pidArgs = pids.flatMap(pid => ['/pid', pid.toString(10)]);
+        const result = cp.spawnSync('taskkill.exe', ['/f', '/t', ...pidArgs], { encoding: 'utf8' });
         if (result.error) {
             throw result.error;
         }
         // taskkill may exit with a non-zero code when some child processes have already exited.
         // This is expected during shutdown — log but don't throw.
         if (result.status !== 0) {
-            this.logger.warn(`taskkill.exe exited with ${result.status} for PID ${ppid}. Output:\n${JSON.stringify(result.output)}`);
+            this.logger.warn(`taskkill.exe exited with ${result.status} for PIDs ${pids.join(', ')}. Output:\n${JSON.stringify(result.output)}`);
         }
+    }
+
+    /**
+     * @returns the PIDs of the direct children of the given process.
+     */
+    protected winGetChildPids(ppid: number): number[] {
+        const { stdout } = this.spawnSync(this.winGetPowerShellPath(), [
+            '-NoLogo', '-NoProfile', '-NonInteractive', '-Command',
+            `Get-CimInstance -ClassName Win32_Process -Filter 'ParentProcessId=${ppid.toString(10)}' | ForEach-Object { $_.ProcessId }`
+        ], { windowsHide: true, timeout: WIN_LIST_CHILDREN_TIMEOUT_MS });
+        return stdout
+            .split(/\s+/)
+            .filter(token => /^\d+$/.test(token))
+            .map(token => Number.parseInt(token, 10));
+    }
+
+    /**
+     * @returns the absolute path of Windows PowerShell, so that it does not depend on the `PATH`,
+     * or just its name if the Windows directory is unknown.
+     */
+    protected winGetPowerShellPath(): string {
+        const systemRoot = process.env.SystemRoot;
+        if (!systemRoot) {
+            return 'powershell.exe';
+        }
+        // `v1.0` is not the version: all versions of Windows PowerShell, up to the final 5.1, are installed
+        // in this directory. PowerShell 7 and later are a separate, optional installation (`pwsh.exe`).
+        return path.win32.join(systemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
     }
 
     protected unixTerminateProcessTree(ppid: number): void {
