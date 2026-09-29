@@ -77,7 +77,7 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
             {
                 name: '_f',
                 description: nls.localize('theia/ai/core/variable-contribution/dotRelativePath',
-                    'Short reference to the workspace-relative path of the currently opened file (\'currentRelativeFilePath\').')
+                    'Short reference to the path of the currently opened file relative to its workspace root, without the root name (\'currentRelativeFilePath\').')
             }
         ]],
         ['relativeFileDirname', [

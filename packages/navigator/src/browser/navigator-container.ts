@@ -15,13 +15,14 @@
 // *****************************************************************************
 
 import { Container, interfaces } from '@theia/core/shared/inversify';
-import { TreeProps, defaultTreeProps } from '@theia/core/lib/browser';
+import { TreeCompressionService, TreeProps, defaultTreeProps } from '@theia/core/lib/browser';
 import { createFileTreeContainer } from '@theia/filesystem/lib/browser';
 import { FileNavigatorTree } from './navigator-tree';
 import { FileNavigatorModel } from './navigator-model';
 import { FileNavigatorWidget } from './navigator-widget';
 import { NAVIGATOR_CONTEXT_MENU } from './navigator-contribution';
 import { NavigatorDecoratorService } from './navigator-decorator-service';
+import { FileNavigatorTreeCompressionService } from './navigator-tree-compression-service';
 
 export const FILE_NAVIGATOR_PROPS = <TreeProps>{
     ...defaultTreeProps,
@@ -39,6 +40,8 @@ export function createFileNavigatorContainer(parent: interfaces.Container): Cont
         decoratorService: NavigatorDecoratorService,
         props: FILE_NAVIGATOR_PROPS,
     });
+    child.bind(FileNavigatorTreeCompressionService).toSelf().inSingletonScope();
+    child.rebind(TreeCompressionService).toService(FileNavigatorTreeCompressionService);
 
     return child;
 }

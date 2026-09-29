@@ -40,6 +40,12 @@ after(() => disableJSDOM());
 let container: Container;
 let labelProvider: WorkspaceUriLabelProviderContribution;
 let roots: FileStat[];
+let workspaceService: WorkspaceService;
+/** Changes the roots, as `WorkspaceService.updateRoots` does, which resets their names. */
+const setRoots = (newRoots: FileStat[]): void => {
+    roots = newRoots;
+    workspaceService['rootNamesCache'] = undefined;
+};
 beforeEach(() => {
     roots = [FileStat.dir('file:///workspace')];
 
@@ -53,7 +59,7 @@ beforeEach(() => {
         onDidCreateWidget: Event.None
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
-    const workspaceService = new WorkspaceService();
+    workspaceService = new WorkspaceService();
     workspaceService.tryGetRoots = () => roots;
     container.bind(WorkspaceService).toConstantValue(workspaceService);
     container.bind(WorkspaceVariableContribution).toSelf().inSingletonScope();
@@ -140,28 +146,27 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
         });
 
         it('should return the folder name of a workspace root', () => {
-            roots = [FileStat.dir('file:///home/alice/app'), FileStat.dir('file:///home/bob/lib')];
+            setRoots([FileStat.dir('file:///home/alice/app'), FileStat.dir('file:///home/bob/lib')]);
             expect(labelProvider.getName(FileStat.dir('file:///home/alice/app'))).eq('app');
         });
 
         it('should return the unique names of workspace roots sharing a folder name', () => {
-            roots = [FileStat.dir('file:///home/alice/app'), FileStat.dir('file:///home/bob/app')];
+            setRoots([FileStat.dir('file:///home/alice/app'), FileStat.dir('file:///home/bob/app')]);
             expect(labelProvider.getName(FileStat.dir('file:///home/alice/app'))).eq('alice/app');
             expect(labelProvider.getName(new URI('file:///home/bob/app'))).eq('bob/app');
         });
 
         it('should return the folder name of a folder that shares its name with a workspace root', () => {
-            roots = [FileStat.dir('file:///home/alice/app'), FileStat.dir('file:///home/bob/app')];
+            setRoots([FileStat.dir('file:///home/alice/app'), FileStat.dir('file:///home/bob/app')]);
             expect(labelProvider.getName(FileStat.dir('file:///home/alice/app/app'))).eq('app');
         });
 
         it('should notify a change of the name of a workspace root when a root sharing its folder name is added', () => {
-            const workspaceService = container.get(WorkspaceService);
-            roots = [FileStat.dir('file:///home/alice/app'), FileStat.dir('file:///home/other')];
+            setRoots([FileStat.dir('file:///home/alice/app'), FileStat.dir('file:///home/other')]);
             workspaceService['onWorkspaceChangeEmitter'].fire(roots);
             const events: DidChangeLabelEvent[] = [];
             labelProvider.onDidChange(event => events.push(event));
-            roots = [...roots, FileStat.dir('file:///home/bob/app')];
+            setRoots([...roots, FileStat.dir('file:///home/bob/app')]);
             workspaceService['onWorkspaceChangeEmitter'].fire(roots);
             expect(events.some(event => event.affects(new URI('file:///home/alice/app')))).to.be.true;
             expect(events.some(event => event.affects(FileStat.dir('file:///home/alice/app')))).to.be.true;
@@ -172,7 +177,7 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
 
     describe('getDetails()', () => {
         it('should prefix the path of a file with the unique name of its workspace root', () => {
-            roots = [FileStat.dir('file:///home/alice/app'), FileStat.dir('file:///home/bob/app')];
+            setRoots([FileStat.dir('file:///home/alice/app'), FileStat.dir('file:///home/bob/app')]);
             expect(labelProvider.getDetails(new URI('file:///home/bob/app/src/index.ts'))).eq('bob/app • src');
         });
     });
@@ -213,7 +218,7 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
         });
 
         it('should return the path of a file if WorkspaceService returns no roots', () => {
-            roots = [];
+            setRoots([]);
             const file = new URI('file:///tmp/prout.txt');
             const longName = labelProvider.getLongName(file);
 

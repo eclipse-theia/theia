@@ -27,6 +27,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { withWorkspaceServiceDefaults } from '@theia/workspace/lib/browser/test/with-workspace-service-defaults';
 import { FileVariableContribution } from './file-variable-contribution';
+import { WorkspaceRelativePathResolver } from './workspace-relative-path-resolver';
 
 disableJSDOM();
 
@@ -56,12 +57,12 @@ describe('FileVariableContribution path resolution', () => {
         const container = new Container();
         const fileService = { exists: async (uri: URI) => FILES.includes(uri.toString()) } as unknown as FileService;
         workspaceService = withWorkspaceServiceDefaults({
-            tryGetRoots: () => ROOTS.map(root => ({ resource: new URI(root), isDirectory: true })),
-            fileService
+            tryGetRoots: () => ROOTS.map(root => ({ resource: new URI(root), isDirectory: true }))
         });
         container.bind(WorkspaceService).toConstantValue(workspaceService);
         container.bind(FileService).toConstantValue(fileService);
         container.bind(OpenerService).toConstantValue({} as OpenerService);
+        container.bind(WorkspaceRelativePathResolver).toSelf();
         container.bind(TestFileVariableContribution).toSelf();
         contribution = container.get(TestFileVariableContribution);
     });
@@ -84,5 +85,15 @@ describe('FileVariableContribution path resolution', () => {
 
     it('resolves a path without a root name, as saved by earlier versions', async () => {
         expect(await resolve('README.md')).to.equal('file:///ws/theia/README.md');
+    });
+
+    it('does not resolve a relative path that leaves its root', async () => {
+        FILES.push('file:///alice/secret.txt');
+        try {
+            expect(await resolve('../secret.txt')).to.be.undefined;
+            expect(await resolve('app/../../secret.txt')).to.be.undefined;
+        } finally {
+            FILES.pop();
+        }
     });
 });

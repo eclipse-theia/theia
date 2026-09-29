@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { AIContextVariable, AIVariableService } from '@theia/ai-core';
+import { WorkspaceRelativePathResolver } from '@theia/ai-core/lib/browser';
 import { Command, CommandContribution, CommandRegistry, Path, URI } from '@theia/core';
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -43,6 +44,8 @@ export class AIChatFrontendContribution implements CommandContribution {
     protected readonly fileService: FileService;
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+    @inject(WorkspaceRelativePathResolver)
+    protected readonly pathResolver: WorkspaceRelativePathResolver;
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(VARIABLE_ADD_CONTEXT_COMMAND, {
@@ -84,6 +87,6 @@ export class AIChatFrontendContribution implements CommandContribution {
             }
             return undefined;
         }
-        return this.workspaceService.resolveExistingRelativePath(wsRelativePath);
+        return this.pathResolver.resolveExistingRelativePath(wsRelativePath);
     }
 }

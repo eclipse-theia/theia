@@ -23,6 +23,7 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
 import { OS } from '@theia/core/lib/common/os';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from './workspace-service';
 
 disableJSDOM();
@@ -119,12 +120,15 @@ describe('WorkspaceService root names', () => {
             });
         });
 
-        it('returns the same names until the roots change', () => {
-            let roots = [{ resource: new URI('file:///alice/app'), isDirectory: true }];
-            const service: WorkspaceService = Object.create(WorkspaceService.prototype, { tryGetRoots: { value: () => roots } });
+        it('returns the same names until the roots change', async () => {
+            let roots = [FileStat.dir('file:///alice/app')];
+            const service = new WorkspaceService();
+            service['computeRoots'] = async () => roots;
+            await service['updateRoots']();
             const names = service.getRootNames();
             expect(service.getRootNames()).to.equal(names);
-            roots = [...roots, { resource: new URI('file:///bob/app'), isDirectory: true }];
+            roots = [...roots, FileStat.dir('file:///bob/app')];
+            await service['updateRoots']();
             expect(Array.from(service.getRootNames().keys())).to.deep.equal(['alice/app', 'bob/app']);
             expect(service.getRootName(new URI('file:///bob/app'))).to.equal('bob/app');
         });

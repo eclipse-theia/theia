@@ -313,6 +313,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         }
         if (rootsChanged) {
             this._roots = newRoots;
+            this.rootNamesCache = undefined;
             this.deferredRoots.resolve(this._roots); // in order to resolve first
             this.deferredRoots = new Deferred<FileStat[]>();
             this.deferredRoots.resolve(this._roots);
@@ -597,6 +598,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
             this.windowService.setSafeToShutDown();
             this._workspace = undefined;
             this._roots.length = 0;
+            this.rootNamesCache = undefined;
 
             if (!this.isRemoteSession()) {
                 await this.server.setMostRecentlyUsedWorkspace('');
@@ -859,17 +861,15 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     /**
-     * The root names, and the names by root URI, for the roots they were computed from, as the names of the roots depend on each other.
+     * The root names, and the names by root URI, which depend on each other. Reset whenever the roots change.
      */
-    protected rootNamesCache: { roots: FileStat[]; length: number; names: ReadonlyMap<string, URI>; namesByRoot: ReadonlyMap<string, string> } | undefined;
+    protected rootNamesCache: { names: ReadonlyMap<string, URI>; namesByRoot: ReadonlyMap<string, string> } | undefined;
 
     protected getRootNamesCache(): { names: ReadonlyMap<string, URI>; namesByRoot: ReadonlyMap<string, string> } {
-        // The roots are replaced rather than modified when they change, except for their removal on close.
-        const roots = this.tryGetRoots();
-        if (this.rootNamesCache?.roots !== roots || this.rootNamesCache.length !== roots.length) {
-            const names = this.computeRootNames(roots);
+        if (!this.rootNamesCache) {
+            const names = this.computeRootNames(this.tryGetRoots());
             const namesByRoot = new Map(Array.from(names, ([name, uri]) => [uri.toString(), name]));
-            this.rootNamesCache = { roots, length: roots.length, names, namesByRoot };
+            this.rootNamesCache = { names, namesByRoot };
         }
         return this.rootNamesCache;
     }
@@ -944,47 +944,6 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
             }
         }
         return match && { rootName: match.rootName, rootUri: match.rootUri, rest: segments.slice(match.length).join('/') };
-    }
-
-    /**
-     * Resolves a relative path to an existing file or folder in the workspace. Besides the format of
-     * {@link getRootPrefixedPath}, it accepts the formats of paths saved by earlier versions, e.g. in chat
-     * sessions: prefixed with the basename of a root, if only one of the roots with that basename contains
-     * the file, or relative to any root.
-     *
-     * @returns `undefined` if the path is absolute or does not resolve to an existing file or folder.
-     */
-    async resolveExistingRelativePath(relativePath: string): Promise<URI | undefined> {
-        const normalizedPath = Path.normalizePathSeparator(relativePath);
-        const path = new Path(normalizedPath);
-        if (path.isAbsolute) {
-            return undefined;
-        }
-        const rootPrefixed = this.resolveRootPrefixedPath(normalizedPath);
-        if (rootPrefixed && await this.fileService.exists(rootPrefixed)) {
-            return rootPrefixed;
-        }
-        const segments = normalizedPath.split('/');
-        const basenamePrefixed: URI[] = [];
-        for (const root of this.tryGetRoots()) {
-            if (root.resource.path.base === segments[0]) {
-                const rest = segments.slice(1).join('/');
-                const uri = rest ? root.resource.resolve(rest) : root.resource;
-                if (!basenamePrefixed.some(other => other.isEqual(uri)) && await this.fileService.exists(uri)) {
-                    basenamePrefixed.push(uri);
-                }
-            }
-        }
-        if (basenamePrefixed.length === 1) {
-            return basenamePrefixed[0];
-        }
-        for (const root of this.tryGetRoots()) {
-            const uri = root.resource.resolve(path);
-            if (await this.fileService.exists(uri)) {
-                return uri;
-            }
-        }
-        return undefined;
     }
 
     /**

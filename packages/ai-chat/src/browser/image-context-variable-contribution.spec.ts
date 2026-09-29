@@ -25,6 +25,7 @@ import { LabelProvider, OpenerService } from '@theia/core/lib/browser';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Container, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { WorkspaceRelativePathResolver } from '@theia/ai-core/lib/browser/workspace-relative-path-resolver';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { ImageContextVariableContribution } from './image-context-variable-contribution';
 import { PendingImageRegistry } from './pending-image-registry';
@@ -56,8 +57,7 @@ describe('ImageContextVariableContribution path resolution', () => {
         const fileService = { exists: async (uri: URI) => uri.toString() === IMAGE } as unknown as FileService;
         // A real `WorkspaceService` prototype, so that `getRootPrefixedPath` is the production code.
         const workspaceService = Object.assign(Object.create(WorkspaceService.prototype) as WorkspaceService, {
-            tryGetRoots: () => roots.map(root => ({ resource: new URI(root), isDirectory: true })),
-            fileService
+            tryGetRoots: () => roots.map(root => ({ resource: new URI(root), isDirectory: true }))
         });
         container.bind(WorkspaceService).toConstantValue(workspaceService);
         container.bind(FileService).toConstantValue(fileService);
@@ -65,6 +65,7 @@ describe('ImageContextVariableContribution path resolution', () => {
         container.bind(LabelProvider).toConstantValue({} as LabelProvider);
         container.bind(ILogger).to(MockLogger);
         container.bind(PendingImageRegistry).toConstantValue({} as PendingImageRegistry);
+        container.bind(WorkspaceRelativePathResolver).toSelf();
         container.bind(TestImageContextVariableContribution).toSelf();
         contribution = container.get(TestImageContextVariableContribution);
     };

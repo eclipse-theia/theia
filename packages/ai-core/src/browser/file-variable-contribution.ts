@@ -29,6 +29,7 @@ import {
     ResolvedAIContextVariable,
 } from '../common/variable-service';
 import { FrontendVariableService } from './frontend-variable-service';
+import { WorkspaceRelativePathResolver } from './workspace-relative-path-resolver';
 
 export namespace FileVariableArgs {
     export const uri = 'uri';
@@ -54,6 +55,9 @@ export class FileVariableContribution implements AIVariableContribution, AIVaria
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+
+    @inject(WorkspaceRelativePathResolver)
+    protected readonly pathResolver: WorkspaceRelativePathResolver;
 
     registerVariables(service: FrontendVariableService): void {
         service.registerResolver(FILE_VARIABLE, this);
@@ -104,7 +108,7 @@ export class FileVariableContribution implements AIVariableContribution, AIVaria
     }
 
     protected async makeAbsolute(pathStr: string): Promise<URI | undefined> {
-        const workspaceUri = await this.wsService.resolveExistingRelativePath(pathStr);
+        const workspaceUri = await this.pathResolver.resolveExistingRelativePath(pathStr);
         if (workspaceUri) {
             return workspaceUri;
         }

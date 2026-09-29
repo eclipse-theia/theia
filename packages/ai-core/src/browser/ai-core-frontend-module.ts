@@ -67,6 +67,7 @@ import { DefaultPromptFragmentCustomizationService } from './frontend-prompt-cus
 import { DefaultFrontendVariableService, FrontendVariableService } from './frontend-variable-service';
 import { PromptTemplateContribution } from './prompttemplate-contribution';
 import { FileVariableContribution } from './file-variable-contribution';
+import { WorkspaceRelativePathResolver } from './workspace-relative-path-resolver';
 import { TheiaVariableContribution } from './theia-variable-contribution';
 import { TodayVariableContribution } from '../common/today-variable-contribution';
 import { AgentsVariableContribution } from '../common/agents-variable-contribution';
@@ -156,6 +157,7 @@ export default new ContainerModule(bind => {
     bind(PromptVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(PromptVariableContribution);
     bind(AIVariableContribution).to(TodayVariableContribution).inSingletonScope();
+    bind(WorkspaceRelativePathResolver).toSelf().inSingletonScope();
     bind(AIVariableContribution).to(FileVariableContribution).inSingletonScope();
     bind(AgentsVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(AgentsVariableContribution);

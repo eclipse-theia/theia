@@ -46,3 +46,4 @@ export * from '../common/language-model-service';
 export * from './generic-capabilities-variable-contribution';
 export * from './generic-capabilities-prompt-fragment-contribution';
 export * from './prompt-variable-contribution';
+export * from './workspace-relative-path-resolver';

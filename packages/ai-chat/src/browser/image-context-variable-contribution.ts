@@ -18,7 +18,7 @@ import {
     AIVariableContext, AIVariableContribution,
     AIVariableOpener, AIVariableResolutionRequest, AIVariableResolver, ResolvedAIContextVariable
 } from '@theia/ai-core';
-import { FrontendVariableService, AIVariablePasteResult, AIVariableCompletionContext } from '@theia/ai-core/lib/browser';
+import { FrontendVariableService, AIVariablePasteResult, AIVariableCompletionContext, WorkspaceRelativePathResolver } from '@theia/ai-core/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
 import { ILogger, nls, URI } from '@theia/core';
 import { LabelProvider, LabelProviderContribution, open, OpenerService } from '@theia/core/lib/browser';
@@ -49,6 +49,9 @@ export class ImageContextVariableContribution implements AIVariableContribution,
 
     @inject(PendingImageRegistry)
     protected readonly pendingImageRegistry: PendingImageRegistry;
+
+    @inject(WorkspaceRelativePathResolver)
+    protected readonly pathResolver: WorkspaceRelativePathResolver;
 
     registerVariables(service: FrontendVariableService): void {
         service.registerResolver(IMAGE_CONTEXT_VARIABLE, this);
@@ -279,7 +282,7 @@ export class ImageContextVariableContribution implements AIVariableContribution,
     }
 
     protected async makeAbsolute(pathStr: string): Promise<URI | undefined> {
-        const workspaceUri = await this.wsService.resolveExistingRelativePath(pathStr);
+        const workspaceUri = await this.pathResolver.resolveExistingRelativePath(pathStr);
         if (workspaceUri) {
             return workspaceUri;
         }
