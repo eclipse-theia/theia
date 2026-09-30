@@ -8,8 +8,8 @@
 
 <a name="breaking_changes_1.77.0">[Breaking Changes:](#breaking_changes_1.77.0)</a>
 
-- [core] `TreeSelectionState` keeps the ids of the selected nodes rather than the nodes themselves, so that it does not retain nodes the tree has replaced. `selectionStack` became a getter that resolves those ids against the tree and leaves out the nodes it no longer holds, so it can no longer be redeclared as a property by a subclass [#10681](https://github.com/eclipse-theia/theia/issues/10681)
-- [debug] `DebugConsoleSession.debugSession` is now a read-only `DebugSession | undefined`, as the console releases the session once it terminates. The setter is replaced by `startFor(session)`, the new `label` and `configurationName` describe a session that has already ended, and `id` is now generated, so a console is no longer found by `ConsoleSessionManager.get(session.id)` [#10681](https://github.com/eclipse-theia/theia/issues/10681)
+- [core] `TreeSelectionState` keeps the ids of the selected nodes rather than the nodes themselves, so that it does not retain nodes the tree has replaced. `selectionStack` became a getter that resolves those ids against the tree and leaves out the nodes it no longer holds, so it can no longer be redeclared as a property by a subclass [#18111](https://github.com/eclipse-theia/theia/issues/18111)
+- [debug] `DebugConsoleSession.debugSession` is now a read-only `DebugSession | undefined`, as the console releases the session once it terminates. The setter is replaced by `startFor(session)`, the new `label` and `configurationName` describe a session that has already ended, and `id` is now generated, so a console is no longer found by `ConsoleSessionManager.get(session.id)` [#18111](https://github.com/eclipse-theia/theia/issues/18111)
 
 ## 1.76.0 - 9/24/2026
 
