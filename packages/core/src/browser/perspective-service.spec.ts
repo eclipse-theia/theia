@@ -718,6 +718,41 @@ describe('PerspectiveService', () => {
         expect(() => service.onLayoutRestored('non-existent')).to.not.throw();
     });
 
+    it('should set the active placement map on the WidgetAreaResolver', () => {
+        service.registerPerspective({
+            id: 'ai-first',
+            label: 'AI First',
+            viewPlacements: new Map([
+                ['explorer', 'right' as ApplicationShell.Area],
+                ['chat-view', 'left' as ApplicationShell.Area]
+            ])
+        });
+
+        service.onLayoutRestored('ai-first');
+
+        // The resolver should now use the perspective's placement map
+        expect(widgetAreaResolver.resolveArea('explorer', 'left')).to.equal('right');
+        expect(widgetAreaResolver.resolveArea('chat-view', 'right')).to.equal('left');
+        // Unmapped widgets should still return undefined
+        expect(widgetAreaResolver.resolveArea('unknown-widget', 'main')).to.be.undefined;
+    });
+
+    it('should not set a placement map for an unregistered perspective', () => {
+        service.registerPerspective({
+            id: 'real-persp',
+            label: 'Real',
+            viewPlacements: new Map([['widget-a', 'right' as ApplicationShell.Area]])
+        });
+
+        // First set up a known state
+        service.onLayoutRestored('real-persp');
+        expect(widgetAreaResolver.resolveArea('widget-a', 'left')).to.equal('right');
+
+        // Calling with an unregistered ID should not change the map
+        service.onLayoutRestored('non-existent');
+        expect(widgetAreaResolver.resolveArea('widget-a', 'left')).to.equal('right');
+    });
+
     // --- Rejection resilience tests ---
 
     it('should warn and continue when setLayoutData rejects during saved layout restore', async () => {

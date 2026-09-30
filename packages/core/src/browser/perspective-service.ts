@@ -219,6 +219,10 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
     protected switchInProgress: Promise<void> | undefined;
 
     onLayoutRestored(activePerspectiveId: string): void {
+        const descriptor = this.perspectives.get(activePerspectiveId);
+        if (descriptor) {
+            this.widgetAreaResolver.setActivePlacementMap(descriptor.viewPlacements);
+        }
         this.updateActivePerspectiveContextKey(activePerspectiveId);
     }
 
