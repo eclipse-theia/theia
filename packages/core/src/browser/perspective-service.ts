@@ -28,7 +28,7 @@ import { ILogger } from '../common/logger';
 import { QuickInputService, QuickPickItem } from '../common/quick-pick-service';
 import { nls } from '../common/nls';
 import { CommonCommands } from './common-commands';
-import { ContextKeyService } from './context-key-service';
+import { ContextKey, ContextKeyService } from './context-key-service';
 
 export const ACTIVE_PERSPECTIVE_CONTEXT_KEY = 'activePerspectiveId';
 
@@ -216,6 +216,8 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
     protected readonly onDidChangePerspectiveEmitter = new Emitter<string>();
     readonly onDidChangePerspective: Event<string> = this.onDidChangePerspectiveEmitter.event;
 
+    protected activePerspectiveContextKey: ContextKey<string> | undefined;
+
     protected switchInProgress: Promise<void> | undefined;
 
     onLayoutRestored(activePerspectiveId: string): void {
@@ -233,7 +235,7 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
             viewPlacements: new Map()
         });
         this.activePerspectiveId = PerspectiveServiceImpl.DEFAULT_PERSPECTIVE_ID;
-        this.updateActivePerspectiveContextKey(PerspectiveServiceImpl.DEFAULT_PERSPECTIVE_ID);
+        this.activePerspectiveContextKey = this.contextKeyService?.createKey<string>(ACTIVE_PERSPECTIVE_CONTEXT_KEY, PerspectiveServiceImpl.DEFAULT_PERSPECTIVE_ID);
 
         if (this.contributions) {
             for (const contribution of this.contributions.getContributions()) {
@@ -247,7 +249,7 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
     }
 
     protected updateActivePerspectiveContextKey(id: string): void {
-        this.contextKeyService?.createKey<string>(ACTIVE_PERSPECTIVE_CONTEXT_KEY, id).set(id);
+        this.activePerspectiveContextKey?.set(id);
     }
 
     registerPerspective(descriptor: PerspectiveDescriptor): void {
