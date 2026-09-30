@@ -20,10 +20,12 @@ import { ConsoleSession, ConsoleItem } from '@theia/console/lib/browser/console-
 import { AnsiConsoleItem } from '@theia/console/lib/browser/ansi-console-item';
 import { DebugSession } from '../debug-session';
 import URI from '@theia/core/lib/common/uri';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 import { ExpressionContainer, ExpressionItem } from './debug-console-items';
 import { Severity } from '@theia/core/lib/common/severity';
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { DebugSessionManager } from '../debug-session-manager';
+import { DebugPreferences } from '../../common/debug-preferences';
 import * as monaco from '@theia/monaco-editor-core';
 import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
 import { Disposable, ILogger } from '@theia/core';
@@ -42,24 +44,52 @@ export class DebugConsoleSession extends ConsoleSession {
     @inject(ILogger) @named('debug:DebugConsoleSession')
     protected readonly logger: ILogger;
 
+    @inject(DebugPreferences)
+    protected readonly preferences: DebugPreferences;
+
+    /**
+     * The console has an identity of its own, independent of the sessions that run in it: it outlives the session it
+     * was created for and is reused by a later one.
+     */
+    override id = generateUuid();
+
     protected items: ConsoleItem[] = [];
 
     protected _terminated = false;
 
-    protected _debugSession: DebugSession;
+    protected _debugSession: DebugSession | undefined;
+
+    protected _label = '';
+
+    protected _configurationName: string | undefined;
 
     // content buffer for [append](#append) method
     protected uncompletedItemContent: string | undefined;
 
     protected readonly completionKinds = new Map<DebugProtocol.CompletionItemType | undefined, monaco.languages.CompletionItemKind>();
 
-    get debugSession(): DebugSession {
+    /**
+     * The debug session this console currently belongs to, or `undefined` once that session has terminated.
+     *
+     * The reference is dropped on termination so that the console does not keep the whole session graph alive
+     * while it preserves the output of that session.
+     */
+    get debugSession(): DebugSession | undefined {
         return this._debugSession;
     }
 
-    set debugSession(value: DebugSession) {
-        this._debugSession = value;
-        this.id = value.id;
+    /**
+     * The label of the session this console belongs to, retained after that session has terminated.
+     */
+    get label(): string {
+        return this._label;
+    }
+
+    /**
+     * The name of the configuration this console was started for, used to match a restarted session to its console.
+     */
+    get configurationName(): string | undefined {
+        return this._configurationName;
     }
 
     get terminated(): boolean {
@@ -69,8 +99,28 @@ export class DebugConsoleSession extends ConsoleSession {
     markTerminated(): void {
         if (!this._terminated) {
             this._terminated = true;
+            // Release the session: from here on the console only holds the output it has already collected.
+            this._debugSession = undefined;
             this.fireDidChange();
         }
+    }
+
+    /**
+     * Runs the given session in this console, whether it is the session the console was created for or a later one
+     * reusing it. Counterpart of {@link markTerminated}.
+     *
+     * The output of any previous session is dropped: it belongs to that run, and keeping it would merge two runs into
+     * one view with no boundary between them. The filter and severity stay, since they are the view the user has set
+     * up for this configuration.
+     */
+    startFor(session: DebugSession): void {
+        this.items = [];
+        this.uncompletedItemContent = undefined;
+        this._debugSession = session;
+        this._label = session.label;
+        this._configurationName = session.configuration.name;
+        this._terminated = false;
+        this.fireDidChange();
     }
 
     @postConstruct()
@@ -175,16 +225,17 @@ export class DebugConsoleSession extends ConsoleSession {
     }
 
     protected findCurrentSession(): DebugSession | undefined {
+        const debugSession = this._debugSession;
         const currentSession = this.sessionManager.currentSession;
-        if (!currentSession) {
+        if (!debugSession || !currentSession) {
             return undefined;
         }
-        if (currentSession.id === this.debugSession.id) {
+        if (currentSession.id === debugSession.id) {
             // perfect match
-            return this.debugSession;
+            return debugSession;
         }
         const parentSession = currentSession.findConsoleParent();
-        if (parentSession?.id === this.debugSession.id) {
+        if (parentSession?.id === debugSession.id) {
             // child of our session
             return currentSession;
         }
@@ -215,7 +266,7 @@ export class DebugConsoleSession extends ConsoleSession {
 
     async execute(value: string): Promise<void> {
         const expression = new ExpressionItem(value, () => this.findCurrentSession());
-        this.items.push(expression);
+        this.appendItems([expression]);
         await expression.evaluate();
         this.fireDidChange();
     }
@@ -238,13 +289,26 @@ export class DebugConsoleSession extends ConsoleSession {
             this.uncompletedItemContent = value;
         }
 
-        this.items.push(new AnsiConsoleItem(this.uncompletedItemContent, Severity.Info));
+        this.appendItems([new AnsiConsoleItem(this.uncompletedItemContent, Severity.Info)]);
         this.fireDidChange();
     }
 
     appendLine(value: string): void {
-        this.items.push(new AnsiConsoleItem(value, Severity.Info));
+        this.appendItems([new AnsiConsoleItem(value, Severity.Info)]);
         this.fireDidChange();
+    }
+
+    /**
+     * Appends items, dropping the oldest ones so that the console stays within `debug.console.maximumLines`.
+     */
+    protected appendItems(items: ConsoleItem[]): void {
+        for (const item of items) {
+            this.items.push(item);
+        }
+        const maximumLines = this.preferences['debug.console.maximumLines'];
+        if (maximumLines > 0 && this.items.length > maximumLines) {
+            this.items.splice(0, this.items.length - maximumLines);
+        }
     }
 
     async logOutput(session: DebugSession, event: DebugProtocol.OutputEvent): Promise<void> {
@@ -256,14 +320,13 @@ export class DebugConsoleSession extends ConsoleSession {
         }
         const severity = category === 'stderr' ? Severity.Error : event.body.category === 'console' ? Severity.Warning : Severity.Info;
         if (variablesReference) {
-            const items = await new ExpressionContainer({ session: () => session, variablesReference }).getElements();
-            for (const item of items) {
-                this.items.push(Object.assign(item, { severity }));
-            }
+            // Resolve the session by id rather than capturing it, so that the items do not keep it alive once it is gone.
+            const { id } = session;
+            const sessionProvider = () => this.sessionManager.getSession(id);
+            const items = await new ExpressionContainer({ session: sessionProvider, variablesReference }).getElements();
+            this.appendItems(Array.from(items, item => Object.assign(item, { severity })));
         } else if (typeof body.output === 'string') {
-            for (const line of body.output.split('\n')) {
-                this.items.push(new AnsiConsoleItem(line, severity));
-            }
+            this.appendItems(body.output.split('\n').map(line => new AnsiConsoleItem(line, severity)));
         }
         this.fireDidChange();
     }

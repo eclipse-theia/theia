@@ -142,10 +142,9 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
 
         this.session = this.sessionManager.selectedSession;
         this.toDispose.push(this.sessionManager.onDidChangeSelectedSession(session => {
-            // Do not clear the session output when `undefined`.
-            if (session) {
-                this.session = session;
-            }
+            // Follow `undefined` as well, so that deleting a session releases it instead of leaving the widget
+            // pointing at a disposed one. Sessions are no longer deleted when they end, only when the user clears them.
+            this.session = session;
         }));
 
         this.updateFont();
