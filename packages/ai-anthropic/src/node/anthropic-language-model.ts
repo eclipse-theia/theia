@@ -378,7 +378,6 @@ export class AnthropicModel implements LanguageModel {
         public proxy?: string,
         public reasoningSupport?: ReasoningSupport,
         public reasoningApi?: ReasoningApi,
-        public supportsXHighEffort?: boolean,
         public maxInputTokens?: number,
         public serverTools?: ServerToolDescriptor[],
         public serverSideCompactionSupport: boolean = false,
@@ -389,9 +388,12 @@ export class AnthropicModel implements LanguageModel {
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
+        const level = request.reasoning && this.reasoningSupport
+            ? ReasoningSupport.clampLevel(this.reasoningSupport, request.reasoning.level)
+            : undefined;
         return {
             ...request.settings,
-            ...anthropicReasoningFor(request.reasoning?.level, this.reasoningApi, this.supportsXHighEffort)
+            ...anthropicReasoningFor(level, this.reasoningApi)
         };
     }
 
