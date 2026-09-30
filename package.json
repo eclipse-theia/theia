@@ -6,8 +6,7 @@
     "node": ">=22"
   },
   "overrides": {
-    "perfect-scrollbar": "1.5.5",
-    "yauzl": "~3.3.2"
+    "perfect-scrollbar": "1.5.5"
   },
   "devDependencies": {
     "@eclipse-dash/nodejs-wrapper": "^0.0.1",
