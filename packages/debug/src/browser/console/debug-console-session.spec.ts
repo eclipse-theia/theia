@@ -132,7 +132,7 @@ describe('DebugConsoleSession', () => {
             expect(consoleSession.configurationName).to.equal('Launch Program');
         });
 
-        it('does not retain the session through the items it logged', async () => {
+        it('keeps what was expanded while the session ran', async () => {
             const session = createDebugSession('session-1', 'Launch Program');
             manager.add(session);
             consoleSession.startFor(session);
@@ -146,9 +146,24 @@ describe('DebugConsoleSession', () => {
             manager.remove(session.id);
             consoleSession.markTerminated();
 
-            // The item is still there, but it no longer reaches the session: it resolves it by id through the
-            // manager, which has dropped it, rather than holding on to it.
             expect(Array.from(consoleSession.getElements())).to.have.lengthOf(1, 'output is preserved');
+            expect(Array.from(await logged.getElements())).to.have.lengthOf(1, 'expanded children are preserved');
+        });
+
+        it('does not retain the session through the items it logged', async () => {
+            const session = createDebugSession('session-1', 'Launch Program');
+            manager.add(session);
+            consoleSession.startFor(session);
+            await consoleSession.logOutput(session, outputEvent({ variablesReference: 1 }));
+
+            const [logged] = Array.from(consoleSession.getElements()) as ExpressionContainer[];
+
+            manager.remove(session.id);
+            consoleSession.markTerminated();
+
+            // Nothing was expanded before the session ended, so there is nothing cached to fall back on. The item
+            // resolves its session by id through the manager, which has dropped it, rather than holding on to it,
+            // so it has nothing left to ask.
             expect(Array.from(await logged.getElements())).to.be.empty;
         });
 

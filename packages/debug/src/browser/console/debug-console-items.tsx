@@ -92,12 +92,17 @@ export class ExpressionContainer implements CompositeConsoleItem {
 
     protected elements: Promise<ExpressionContainer[]> | undefined;
     async getElements(): Promise<IterableIterator<ExpressionContainer>> {
-        if (!this.hasElements || !this.session) {
+        if (!this.hasElements) {
             return [][Symbol.iterator]();
         }
         if (!this.elements) {
+            if (!this.session) {
+                // Nothing was resolved while the session ran, and there is no session left to resolve it with.
+                return [][Symbol.iterator]();
+            }
             this.elements = this.doResolve();
         }
+        // What was resolved while the session ran stays available after it has ended, as it does in VS Code.
         return (await this.elements)[Symbol.iterator]();
     }
     protected async doResolve(): Promise<ExpressionContainer[]> {
