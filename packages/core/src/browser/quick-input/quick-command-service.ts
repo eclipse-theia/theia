@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, optional, postConstruct } from 'inversify';
 import { KeybindingRegistry } from '../keybinding';
 import { Disposable, Command, CommandRegistry, CancellationToken, nls } from '../../common';
 import { ContextKeyService } from '../context-key-service';
 import { CorePreferences } from '../../common/core-preferences';
 import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from './quick-access';
-import { filterItems, QuickPickItem, QuickPicks } from './quick-input-service';
+import { filterItems, QuickInputService, QuickPickItem, QuickPicks } from './quick-input-service';
 import { KeySequence } from '../keys';
 import { codiconArray } from '../widgets';
 
@@ -56,6 +56,9 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
     @inject(KeybindingRegistry)
     protected readonly keybindingRegistry: KeybindingRegistry;
 
+    @inject(QuickInputService) @optional()
+    protected readonly quickInputService: QuickInputService | undefined;
+
     // The list of exempted commands not to be displayed in the recently used list.
     readonly exemptedCommands: Command[] = [
         CLEAR_COMMAND_HISTORY,
@@ -63,6 +66,17 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
 
     private recentItems: QuickPickItem[] = [];
     private otherItems: QuickPickItem[] = [];
+
+    /**
+     * The element that was focused when the quick input was opened.
+     * Commands are evaluated against its context, since focus moves to the quick input while the palette is open.
+     */
+    protected commandContextElement: HTMLElement | undefined;
+
+    @postConstruct()
+    protected init(): void {
+        this.quickInputService?.onHide(() => this.commandContextElement = undefined);
+    }
 
     registerQuickAccessProvider(): void {
         this.quickAccessRegistry.registerQuickAccessProvider({
@@ -74,7 +88,8 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
     }
 
     reset(): void {
-        const { recent, other } = this.getCommands();
+        this.updateCommandContextElement();
+        const { recent, other } = this.withCommandContext(() => this.getCommands());
         this.recentItems = [];
         this.otherItems = [];
         this.recentItems.push(...recent.map(command => this.toItem(command)));
@@ -105,7 +120,7 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
     toItem(command: Command): QuickPickItem {
         const label = (command.category) ? `${command.category}: ` + command.label! : command.label!;
         const iconClasses = this.getItemIconClasses(command);
-        const activeElement = window.document.activeElement as HTMLElement;
+        const commandContextElement = this.commandContextElement;
 
         const originalLabel = command.originalLabel || command.label!;
         const originalCategory = command.originalCategory || command.category;
@@ -121,11 +136,22 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
             alwaysShow: !!this.commandRegistry.getActiveHandler(command.id),
             keySequence: this.getKeybinding(command),
             execute: () => {
-                activeElement.focus({ preventScroll: true });
+                commandContextElement?.focus({ preventScroll: true });
                 this.commandRegistry.executeCommand(command.id);
                 this.commandRegistry.addRecentCommand(command);
             }
         };
+    }
+
+    protected updateCommandContextElement(): void {
+        // When the palette is opened directly, the picks are computed before the quick input is shown and focused.
+        const element = this.quickInputService?.previousFocusElement ?? window.document.activeElement;
+        this.commandContextElement = element instanceof HTMLElement ? element : undefined;
+    }
+
+    protected withCommandContext<T>(callback: () => T): T {
+        const element = this.commandContextElement;
+        return element?.isConnected ? this.contextKeyService.withContext(element, callback) : callback();
     }
 
     private getKeybinding(command: Command): KeySequence | undefined {

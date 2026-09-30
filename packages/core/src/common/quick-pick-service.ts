@@ -282,6 +282,11 @@ export interface QuickInputService {
     readonly backButton: QuickInputButton;
     readonly onShow: Event<void>;
     readonly onHide: Event<void>;
+    /**
+     * The element that had focus when the quick input was shown, while the quick input is showing.
+     * Items whose state depends on context keys should be evaluated against this element rather than the quick input itself.
+     */
+    readonly previousFocusElement?: HTMLElement;
     open(filter: string): void;
     createInputBox(): InputBox;
     input(options?: InputOptions, token?: CancellationToken): Promise<string | undefined>;
