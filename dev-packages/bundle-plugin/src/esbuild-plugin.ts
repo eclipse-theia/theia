@@ -411,13 +411,17 @@ class PluginImpl implements Plugin {
  *
  * In an asar-packaged Electron application, `__dirname` resolves inside `app.asar`. Electron redirects
  * `require` calls into the archive, but `child_process.spawn` receives the path as-is and fails.
- * Executables therefore have to be extracted using electron-builder's `asarUnpack`,
- * and the path needs to point to the `app.asar.unpacked` directory instead.
+ * If the packaging extracted the binary (e.g. with electron-builder's `asarUnpack`), the path points to the
+ * `app.asar.unpacked` directory instead. Otherwise it is left inside the archive, from which Theia's own
+ * consumers extract it via the `BundledResourceProvider` before spawning it.
  * Only the `app.asar` segment is rewritten, which is the name electron-builder and electron-forge give the archive.
  */
 function ripgrepReplacement(): string {
-    return `const path = require("path");
-export const rgPath = path.join(__dirname, \`./native/rg\${process.platform === "win32" ? ".exe" : ""}\`).replace(/([\\\\/])app\\.asar(?=[\\\\/])/, "$1app.asar.unpacked");`;
+    return `const fs = require("fs");
+const path = require("path");
+const bundledPath = path.join(__dirname, \`./native/rg\${process.platform === "win32" ? ".exe" : ""}\`);
+const unpackedPath = bundledPath.replace(/([\\\\/])app\\.asar(?=[\\\\/])/, "$1app.asar.unpacked");
+export const rgPath = unpackedPath !== bundledPath && fs.existsSync(unpackedPath) ? unpackedPath : bundledPath;`;
 }
 
 async function copyRipgrep(outdir: string): Promise<void> {

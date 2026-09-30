@@ -34,7 +34,10 @@ describe('ai-ollama package', () => {
         expect(ollamaTool.function.name).equals('example-tool');
         expect(ollamaTool.function.description).equals('Example Tool');
         expect(ollamaTool.function.parameters?.type).equal('object');
-        expect(ollamaTool.function.parameters?.properties).to.deep.equal(req.parameters.properties);
+        expect(ollamaTool.function.parameters?.properties).to.deep.equal({
+            question: { type: 'string', description: 'What is the best pizza topping?' },
+            optional: { type: 'string', description: 'Optional parameter' }
+        });
         expect(ollamaTool.function.parameters?.required).to.deep.equal(['question']);
     });
 
@@ -93,6 +96,150 @@ describe('ai-ollama package', () => {
 
         expect(observedToken).to.equal(source.token);
     });
+
+    it('resolves anyOf directly on an items schema', () => {
+        const model = createModel();
+        const result = model.toOllamaTool(createToolRequest({
+            tags: { type: 'array', description: 'list of tags', items: { anyOf: [{ type: 'string' }, { type: 'null' }], description: 'a tag' } }
+        }));
+        const tags = result.function.parameters!.properties!['tags'] as Record<string, unknown>;
+        expect(tags['items']).to.deep.equal({ type: 'string', description: 'a tag' });
+    });
+
+    it('passes enum values through to output', () => {
+        const model = createModel();
+        const result = model.toOllamaTool(createToolRequest({
+            status: { type: 'string', description: 'task status', enum: ['pending', 'in-progress', 'done'] }
+        }));
+        const status = result.function.parameters!.properties!['status'] as Record<string, unknown>;
+        expect(status['enum']).to.deep.equal(['pending', 'in-progress', 'done']);
+    });
+
+    it('passes required and nested properties through array items (todoWrite schema)', () => {
+        const model = createModel();
+        const result = model.toOllamaTool(createToolRequest({
+            todos: {
+                type: 'array',
+                description: 'The updated todo list.',
+                items: {
+                    type: 'object',
+                    properties: {
+                        id: { type: 'string', description: 'unique id' },
+                        text: { type: 'string', description: 'todo text' },
+                        done: { type: 'boolean', description: 'completion flag' }
+                    },
+                    required: ['id', 'text', 'done']
+                }
+            }
+        }));
+        const todos = result.function.parameters!.properties!['todos'] as Record<string, unknown>;
+        const items = todos['items'] as Record<string, unknown>;
+        expect(items['required']).to.deep.equal(['id', 'text', 'done']);
+        expect(items['properties']).to.deep.equal({
+            id: { type: 'string', description: 'unique id' },
+            text: { type: 'string', description: 'todo text' },
+            done: { type: 'boolean', description: 'completion flag' }
+        });
+    });
+
+    it('passes through a type-less property unchanged', () => {
+        const model = createModel();
+        const result = model.toOllamaTool(createToolRequest({
+            status: { enum: ['a', 'b'], description: 'no explicit type' }
+        }));
+        const status = result.function.parameters!.properties!['status'] as Record<string, unknown>;
+        expect(status['enum']).to.deep.equal(['a', 'b']);
+        expect(status['description']).to.equal('no explicit type');
+    });
+
+    it('resolves anyOf on a top-level property preserving branch content', () => {
+        const model = createModel();
+        const result = model.toOllamaTool(createToolRequest({
+            tags: { anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }], description: 'optional tags' }
+        }));
+        const tags = result.function.parameters!.properties!['tags'] as Record<string, unknown>;
+        expect(tags['type']).to.equal('array');
+        expect(tags['description']).to.equal('optional tags');
+        expect(tags['items']).to.deep.equal({ type: 'string' });
+        expect(tags).to.not.have.property('anyOf');
+    });
+
+    it('resolves anyOf inside array items sub-properties', () => {
+        const model = createModel();
+        const result = model.toOllamaTool(createToolRequest({
+            arr: {
+                type: 'array',
+                description: 'list',
+                items: {
+                    type: 'object',
+                    properties: { maybe: { anyOf: [{ type: 'string' }, { type: 'null' }], description: 'nullable field' } }
+                }
+            }
+        }));
+        const arr = result.function.parameters!.properties!['arr'] as Record<string, unknown>;
+        expect(arr['items']).to.deep.equal({
+            type: 'object',
+            properties: { maybe: { type: 'string', description: 'nullable field' } }
+        });
+    });
+
+    it('passes items schema through for a simple array property', () => {
+        const model = createModel();
+        const result = model.toOllamaTool(createToolRequest({
+            tags: { type: 'array', description: 'list of tags', items: { type: 'string' } }
+        }));
+        const tags = result.function.parameters!.properties!['tags'] as Record<string, unknown>;
+        expect(tags['items']).to.deep.equal({ type: 'string' });
+    });
+
+    it('passes through a type-less item schema unchanged', () => {
+        const model = createModel();
+        const result = model.toOllamaTool(createToolRequest({
+            tags: { type: 'array', description: 'list of tags', items: { enum: ['a', 'b'] } }
+        }));
+        const tags = result.function.parameters!.properties!['tags'] as Record<string, unknown>;
+        expect(tags['items']).to.deep.equal({ enum: ['a', 'b'] });
+    });
+
+    it('preserves top-level $defs alongside a $ref property', () => {
+        const model = createModel();
+        const tool: ToolRequest = {
+            ...createToolRequest(),
+            parameters: {
+                type: 'object',
+                $defs: { Todo: { type: 'object', properties: { id: { type: 'string', description: 'id' } }, required: ['id'] } },
+                properties: { item: { $ref: '#/$defs/Todo' } }
+            } as ToolRequest['parameters'] & { $defs: unknown }
+        };
+        const result = model.toOllamaTool(tool);
+        expect(result.function.parameters!['$defs']).to.deep.equal({
+            Todo: { type: 'object', properties: { id: { type: 'string', description: 'id' } }, required: ['id'] }
+        });
+        const item = result.function.parameters!.properties!['item'] as Record<string, unknown>;
+        expect(item['$ref']).to.equal('#/$defs/Todo');
+    });
+
+    it('resolves anyOf on items schema preserving branch content', () => {
+        const model = createModel();
+        const result = model.toOllamaTool(createToolRequest({
+            records: {
+                type: 'array',
+                description: 'list of records',
+                items: {
+                    anyOf: [
+                        { type: 'object', properties: { id: { type: 'string', description: 'unique id' } }, required: ['id'] },
+                        { type: 'null' }
+                    ]
+                }
+            }
+        }));
+        const records = result.function.parameters!.properties!['records'] as Record<string, unknown>;
+        const items = records['items'] as Record<string, unknown>;
+        expect(items['type']).to.equal('object');
+        expect(items['properties']).to.deep.equal({ id: { type: 'string', description: 'unique id' } });
+        expect(items['required']).to.deep.equal(['id']);
+        expect(items).to.not.have.property('anyOf');
+    });
 });
 
 function createModel(): OllamaModelUnderTest {
@@ -124,25 +271,21 @@ class OllamaModelUnderTest extends OllamaModel {
         return this.processToolCalls(toolCalls, chatRequest as any, cancellation);
     }
 }
-function createToolRequest(): ToolRequest {
+function createToolRequest(properties?: ToolRequest['parameters']['properties']): ToolRequest {
     return {
         id: 'tool-1',
         name: 'example-tool',
         description: 'Example Tool',
-        parameters: {
-            type: 'object',
-            properties: {
-                question: {
-                    type: 'string',
-                    description: 'What is the best pizza topping?'
+        parameters: properties
+            ? { type: 'object', properties }
+            : {
+                type: 'object',
+                properties: {
+                    question: { type: 'string', description: 'What is the best pizza topping?' },
+                    optional: { type: 'string', description: 'Optional parameter' }
                 },
-                optional: {
-                    type: 'string',
-                    description: 'Optional parameter'
-                }
+                required: ['question']
             },
-            required: ['question']
-        },
         handler: sinon.stub()
     };
 }

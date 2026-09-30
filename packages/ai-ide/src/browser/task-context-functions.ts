@@ -101,7 +101,11 @@ export class GetTaskContextFunction implements ToolProvider {
             id: GetTaskContextFunction.ID,
             name: GetTaskContextFunction.ID,
             description: 'Read the current task context (implementation plan). ' +
-                'Always call this before editing to ensure you have the latest version, ' +
+                'Call this before planning or exploring a task. If a matching plan exists, use it as your roadmap instead of re-exploring, ' +
+                'but treat it as a starting point, not a mandate: deviate when a step is wrong (outdated assumptions, conflicts) ' +
+                'or a simpler alternative exists. Explain each deviation before acting on it and list deviations in your final report. ' +
+                'When a sub-agent reports a taskContextId, read it with this tool and use it as your plan. ' +
+                'Always call this before editing or resuming work to ensure you have the latest version, ' +
                 'as the user may have edited the plan directly in the editor.',
             parameters: {
                 type: 'object',

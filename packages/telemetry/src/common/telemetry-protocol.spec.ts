@@ -14,12 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { TelemetryData, TelemetryReportOptions } from './telemetry-types';
+import { expect } from 'chai';
+import { isValidTelemetryEvent } from './telemetry-protocol';
 
-/** @experimental */
-export const TelemetryService = Symbol('TelemetryService');
+describe('telemetry protocol', () => {
+    it('validates event kind, attributes, and session', () => {
+        const event = {
+            topic: 'consumer/action',
+            kind: 'error' as const,
+            data: { action: 'open', duration: 12 },
+            attributes: { source: 'consumer' },
+            session: 'frontend-session',
+            timestamp: 42
+        };
 
-/** @experimental */
-export interface TelemetryService {
-    report<T extends object>(topic: string, data?: TelemetryData<T>, options?: TelemetryReportOptions): void;
-}
+        expect(isValidTelemetryEvent(event)).to.be.true;
+        expect(isValidTelemetryEvent({ ...event, kind: 'invalid' })).to.be.false;
+        expect(isValidTelemetryEvent({ ...event, session: '' })).to.be.false;
+        expect(isValidTelemetryEvent({ ...event, attributes: { nested: {} } })).to.be.false;
+    });
+});

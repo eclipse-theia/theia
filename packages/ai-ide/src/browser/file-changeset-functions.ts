@@ -184,6 +184,7 @@ export class WriteFileContent implements ToolProvider {
              If the new content is empty, the file will be deleted. To move a file, delete it and re-create it at the new location.
              Use this for creating new files or complete file rewrites in agent mode.
              For targeted edits, prefer writeFileReplacements - it's more efficient and less error-prone.
+             Never write to the same file in parallel tool calls.
              CAUTION: Changes are applied immediately and cannot be undone through the chat interface.`,
             parameters: {
                 type: 'object',
@@ -749,7 +750,8 @@ export class WriteFileReplacements implements ToolProvider {
             - If found 0: The content doesn't exist, has different whitespace/indentation, or the file changed. Re-read the file first.
             - If found 2+: Add more surrounding lines to oldContent to make it unique.
             Common mistakes: Missing/extra trailing newlines, wrong indentation, outdated content.
-            Always read the file with getFileContent before attempting replacements.`,
+            Always read the file with getFileContent before attempting replacements.
+            Never write to the same file in parallel tool calls. After many edits to one file, re-read it to verify the result.`,
             parameters: metadata.parameters,
             handler: async (args: string, ctx?: ToolInvocationContext): Promise<string> => {
                 assertChatContext(ctx);

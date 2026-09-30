@@ -17,6 +17,7 @@
 import * as fs from '@theia/core/shared/fs-extra';
 import * as path from 'path';
 import { ILogger } from '@theia/core';
+import { BundledResourceProvider } from '@theia/core/lib/node';
 import { RawProcess, RawProcessFactory, RawProcessOptions } from '@theia/process/lib/node';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import URI from '@theia/core/lib/common/uri';
@@ -86,6 +87,9 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
     @inject(RgPath)
     protected readonly rgPath: string;
 
+    @inject(BundledResourceProvider)
+    protected readonly bundledResourceProvider: BundledResourceProvider;
+
     constructor(
         @inject(ILogger) @named('search-in-workspace:RipgrepSearchInWorkspaceServer')
         protected readonly logger: ILogger,
@@ -94,6 +98,19 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
 
     setClient(client: SearchInWorkspaceClient | undefined): void {
         this.client = client;
+    }
+
+    /**
+     * Resolve the ripgrep binary to a path that can be spawned, which is not the case for a binary packaged into an asar archive.
+     */
+    protected async resolveRgPath(): Promise<string> {
+        try {
+            return await this.bundledResourceProvider.resolveExternalPath(this.rgPath);
+        } catch (error) {
+            // Spawn the binary as configured to report the failure to the client.
+            this.logger.warn(`Could not resolve the ripgrep binary '${this.rgPath}'.`, error);
+            return this.rgPath;
+        }
     }
 
     protected getArgs(options?: SearchInWorkspaceOptions): string[] {
@@ -239,7 +256,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
 
         const args = [...rgArgs, what, ...searchPaths];
         const processOptions: RawProcessOptions = {
-            command: this.rgPath,
+            command: await this.resolveRgPath(),
             args
         };
 

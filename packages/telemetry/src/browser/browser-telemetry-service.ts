@@ -21,9 +21,9 @@ import { TelemetryConsentProvider } from '../common/telemetry-consent-provider';
 import {
     TelemetryRpc, createTelemetryEvent, describeTelemetryTopic, isValidTelemetryEvent, snapshotTelemetryEvent
 } from '../common/telemetry-protocol';
-import { TelemetryData, TelemetryReportOptions, TelemetryService } from '../common/telemetry-service';
-import { isKindAllowedByLevel } from '../common/telemetry-types';
+import { TelemetryService } from '../common/telemetry-service';
 import { matchesTelemetryTopic } from '../common/telemetry-topic';
+import { TelemetryData, TelemetryReportOptions, isKindAllowedByLevel } from '../common/telemetry-types';
 
 @injectable()
 export class BrowserTelemetryService implements TelemetryService {
