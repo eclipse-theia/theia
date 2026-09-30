@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Event, URI } from '@theia/core';
+import { Event, Path, URI } from '@theia/core';
 import { FileSystemAccessPermissionState } from './file-system-access-types';
 import { LocalDirectoryFileSystemProvider } from './local-directory-file-system-provider';
 
@@ -60,19 +60,39 @@ export namespace LocalDirectoryMount {
     export const ROOT = '/local';
 
     export function rootUri(): URI {
-        return new URI('file://' + ROOT);
+        return new URI('file:///').withPath(ROOT);
     }
 
     export function toUri(name: string): URI {
         return rootUri().resolve(name);
     }
 
-    /** Returns the mount name of the given URI, or `undefined` if it is not located in a mount. */
-    export function getMountName(uri: URI): string | undefined {
-        if (uri.scheme !== 'file') {
+    /**
+     * Returns `path` relative to {@link ROOT}, e.g. `<name>/src/index.ts`, or `undefined` if it is outside of it.
+     * {@link ROOT} itself gives an empty path.
+     */
+    export function relativeToRoot(path: Path): Path | undefined {
+        return rootUri().path.relative(path.normalize());
+    }
+
+    /**
+     * Splits `path` into the mount name and the path inside the mount,
+     * e.g. `a` and `src/index.ts` for `/local/a/src/index.ts`.
+     */
+    export function splitPath(path: Path): { name: string, relative: Path } | undefined {
+        const relative = relativeToRoot(path);
+        if (!relative || relative.toString() === '') {
             return undefined;
         }
-        const segments = uri.path.toString().split('/').filter(segment => segment.length > 0);
-        return segments.length >= 2 && '/' + segments[0] === ROOT ? segments[1] : undefined;
+        let top = relative;
+        while (top.hasDir) {
+            top = top.dir;
+        }
+        return { name: top.toString(), relative: top.relative(relative) ?? new Path('') };
+    }
+
+    /** Returns the mount name of `uri`, or `undefined` if it is not inside a mount. */
+    export function getMountName(uri: URI): string | undefined {
+        return uri.scheme === 'file' ? splitPath(uri.path)?.name : undefined;
     }
 }

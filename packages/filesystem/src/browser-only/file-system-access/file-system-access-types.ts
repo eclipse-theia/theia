@@ -59,17 +59,3 @@ export interface WindowWithFileSystemAccess {
     showDirectoryPicker?(options?: DirectoryPickerOptions): Promise<FileSystemDirectoryHandle>;
     FileSystemObserver?: FileSystemObserverConstructor;
 }
-
-export namespace FileSystemAccess {
-    export function getWindow(): WindowWithFileSystemAccess | undefined {
-        return typeof window === 'undefined' ? undefined : window as unknown as WindowWithFileSystemAccess;
-    }
-
-    export function isSupported(): boolean {
-        return typeof getWindow()?.showDirectoryPicker === 'function';
-    }
-
-    export function getObserverConstructor(): FileSystemObserverConstructor | undefined {
-        return getWindow()?.FileSystemObserver;
-    }
-}

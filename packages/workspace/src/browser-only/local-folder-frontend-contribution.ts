@@ -22,11 +22,11 @@ import { LocalDirectoryMount, LocalDirectoryMountService } from '@theia/filesyst
 import { WorkspaceService } from '../browser/workspace-service';
 
 export namespace LocalFolderCommands {
-    export const OPEN_LOCAL_FOLDER = Command.toLocalizedCommand({
+    export const OPEN_LOCAL_FOLDER = Command.toDefaultLocalizedCommand({
         id: 'workspace:openLocalFolder',
         category: CommonCommands.FILE_CATEGORY,
         label: 'Open Local Folder...'
-    }, 'theia/workspace/openLocalFolder', CommonCommands.FILE_CATEGORY_KEY);
+    });
     export const ADD_LOCAL_FOLDER = Command.toLocalizedCommand({
         id: 'workspace:addLocalFolder',
         category: CommonCommands.FILE_CATEGORY,

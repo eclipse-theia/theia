@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, Emitter, Event, URI } from '@theia/core';
+import { Disposable, DisposableCollection, Emitter, Event, Path, URI } from '@theia/core';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
@@ -27,7 +27,7 @@ import {
     FileSystemProviderWithOpenReadWriteCloseCapability, FileType, FileUpdateOptions, FileUpdateResult,
     FileWriteOptions, Stat, WatchOptions, createFileSystemProviderError
 } from '../../common/files';
-import { FileSystemAccess, FileSystemAccessHandle, FileSystemObserverRecord } from './file-system-access-types';
+import { FileSystemAccessHandle, FileSystemObserverConstructor, FileSystemObserverRecord, WindowWithFileSystemAccess } from './file-system-access-types';
 
 export const LocalDirectoryFileSystemProviderOptions = Symbol('LocalDirectoryFileSystemProviderOptions');
 export interface LocalDirectoryFileSystemProviderOptions {
@@ -93,7 +93,7 @@ export class LocalDirectoryFileSystemProvider implements Disposable,
     watch(resource: URI, opts: WatchOptions): Disposable {
         // Without the FileSystemObserver (Chromium only) there is no way to learn about changes that are made outside of Theia.
         // Changes made through this provider are always reported by the mutating methods themselves.
-        const observerConstructor = FileSystemAccess.getObserverConstructor();
+        const observerConstructor = this.getObserverConstructor();
         if (!observerConstructor) {
             return Disposable.NULL;
         }
@@ -114,6 +114,10 @@ export class LocalDirectoryFileSystemProvider implements Disposable,
             disposed = true;
             observer.disconnect();
         }));
+    }
+
+    protected getObserverConstructor(): FileSystemObserverConstructor | undefined {
+        return typeof window === 'undefined' ? undefined : (window as unknown as WindowWithFileSystemAccess).FileSystemObserver;
     }
 
     protected handleObserverRecords(watched: string[], records: FileSystemObserverRecord[]): void {
@@ -433,11 +437,12 @@ export class LocalDirectoryFileSystemProvider implements Disposable,
     }
 
     protected getSegments(resource: URI): string[] {
-        return resource.path.toString().split('/').filter(segment => segment.length > 0);
+        // The root and repeated or trailing slashes show up as empty names.
+        return resource.allLocations.map(location => location.path.base).filter(name => name.length > 0).reverse();
     }
 
     protected toUri(segments: string[]): URI {
-        return new URI('file:///').withPath('/' + segments.join('/'));
+        return new URI('file:///').withPath(new Path(Path.separator).join(...segments));
     }
 
     protected getName(resource: URI): string {

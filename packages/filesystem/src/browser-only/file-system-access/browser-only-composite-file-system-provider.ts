@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, DisposableWrapper, Emitter, Event, URI } from '@theia/core';
+import { Disposable, DisposableCollection, DisposableWrapper, Emitter, Event, Path, URI } from '@theia/core';
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import {
     FileChange, FileChangeType, FileDeleteOptions, FileOpenOptions, FileOverwriteOptions,
@@ -143,8 +143,7 @@ export class BrowserOnlyCompositeFileSystemProvider implements Disposable,
     }
 
     protected toAbsolute(mount: LocalDirectoryMount, relative: URI): URI {
-        const path = relative.path.toString().replace(/^\/+/, '');
-        return path ? mount.uri.resolve(path) : mount.uri;
+        return mount.uri.resolve(new Path(Path.separator).relative(relative.path) ?? '');
     }
 
     // #endregion
@@ -152,16 +151,11 @@ export class BrowserOnlyCompositeFileSystemProvider implements Disposable,
     // #region Routing
 
     protected getRoute(resource: URI): Route {
-        const segments = resource.path.toString().split('/').filter(segment => segment.length > 0);
-        if (segments.length === 0 || '/' + segments[0] !== LocalDirectoryMount.ROOT) {
-            return { kind: 'opfs' };
+        const mountPath = LocalDirectoryMount.splitPath(resource.path);
+        if (mountPath) {
+            return { kind: 'mount', name: mountPath.name, relative: new URI('file:///').resolve(mountPath.relative) };
         }
-        if (segments.length === 1) {
-            return { kind: 'local-root' };
-        }
-        const rest = segments.slice(2).join('/');
-        const root = new URI('file:///');
-        return { kind: 'mount', name: segments[1], relative: rest ? root.resolve(rest) : root };
+        return LocalDirectoryMount.relativeToRoot(resource.path) ? { kind: 'local-root' } : { kind: 'opfs' };
     }
 
     /** Waits for the mounts of previous sessions first, so that requests made during startup don't fail with FileNotFound. */
@@ -179,7 +173,7 @@ export class BrowserOnlyCompositeFileSystemProvider implements Disposable,
     }
 
     protected isMountRoot(route: Route): boolean {
-        return route.kind === 'mount' && route.relative.path.toString() === '/';
+        return route.kind === 'mount' && route.relative.path.isRoot;
     }
 
     /**
@@ -293,8 +287,10 @@ export class BrowserOnlyCompositeFileSystemProvider implements Disposable,
         }
         if (target.route.kind === 'opfs') {
             const entries = await this.opfs.readdir(resource);
-            if (resource.path.toString().replace(/\/+$/, '') === '' && this.mountService.getMounts().length > 0) {
-                const name = LocalDirectoryMount.ROOT.substring(1);
+            // `/` or an empty path
+            const isRoot = !resource.path.hasDir && !resource.path.base;
+            if (isRoot && this.mountService.getMounts().length > 0) {
+                const name = LocalDirectoryMount.rootUri().path.base;
                 return [...entries.filter(([entry]) => entry !== name), [name, FileType.Directory]];
             }
             return entries;

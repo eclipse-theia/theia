@@ -16,7 +16,7 @@
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter, Event, ILogger, URI } from '@theia/core';
-import { FileSystemAccess, FileSystemAccessHandle, FileSystemAccessPermissionState } from './file-system-access-types';
+import { FileSystemAccessHandle, FileSystemAccessPermissionState, WindowWithFileSystemAccess } from './file-system-access-types';
 import { LocalDirectoryMount, LocalDirectoryMountService } from './local-directory-mount-service';
 import { LocalDirectoryHandleStore } from './local-directory-handle-store';
 import { LocalDirectoryFileSystemProviderFactory } from './local-directory-file-system-provider';
@@ -65,12 +65,16 @@ export class LocalDirectoryMountServiceImpl implements LocalDirectoryMountServic
     }
 
     isSupported(): boolean {
-        return FileSystemAccess.isSupported();
+        return typeof this.getWindow()?.showDirectoryPicker === 'function';
+    }
+
+    protected getWindow(): WindowWithFileSystemAccess | undefined {
+        return typeof window === 'undefined' ? undefined : window as unknown as WindowWithFileSystemAccess;
     }
 
     async pickAndMount(): Promise<URI | undefined> {
         await this.ready;
-        const win = FileSystemAccess.getWindow();
+        const win = this.getWindow();
         if (!win?.showDirectoryPicker) {
             return undefined;
         }
