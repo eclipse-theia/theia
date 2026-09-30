@@ -31,6 +31,7 @@ describe('PerspectiveService', () => {
     let service: PerspectiveServiceImpl;
     let addWidgetStub: sinon.SinonStub;
     let activateWidgetStub: sinon.SinonStub;
+    let revealWidgetStub: sinon.SinonStub;
     let getTabBarForStub: sinon.SinonStub;
     let getAreaForStub: sinon.SinonStub;
     let getOrCreateWidgetStub: sinon.SinonStub;
@@ -52,6 +53,7 @@ describe('PerspectiveService', () => {
 
         addWidgetStub = sinon.stub().resolves();
         activateWidgetStub = sinon.stub().resolves(undefined);
+        revealWidgetStub = sinon.stub().resolves(undefined);
         getTabBarForStub = sinon.stub().returns(undefined);
         getAreaForStub = sinon.stub().returns(undefined);
         getOrCreateWidgetStub = sinon.stub().resolves(testWidget);
@@ -65,6 +67,7 @@ describe('PerspectiveService', () => {
         const mockShell = {
             addWidget: addWidgetStub,
             activateWidget: activateWidgetStub,
+            revealWidget: revealWidgetStub,
             getTabBarFor: getTabBarForStub,
             getAreaFor: getAreaForStub,
             getLayoutData: getLayoutDataStub,
@@ -611,24 +614,24 @@ describe('PerspectiveService', () => {
         expect(mockLogger.warn.firstCall.args[1]).to.equal(widgetError);
     });
 
-    it('should log warning when widget activation fails during switchPerspective', async () => {
-        const activationError = new Error('Activation failed');
-        activateWidgetStub.rejects(activationError);
+    it('should log warning when widget reveal fails during switchPerspective', async () => {
+        const revealError = new Error('Reveal failed');
+        revealWidgetStub.rejects(revealError);
 
         service.registerPerspective({
-            id: 'activate-fail',
-            label: 'Activate Fail',
+            id: 'reveal-fail',
+            label: 'Reveal Fail',
             viewPlacements: new Map([['test-widget', 'main' as ApplicationShell.Area]])
         });
 
-        await service.switchPerspective('activate-fail');
+        await service.switchPerspective('reveal-fail');
 
         expect(mockLogger.warn.called).to.be.true;
-        const activateCall = mockLogger.warn.getCalls().find(
-            (c: sinon.SinonSpyCall) => c.args[0] === 'Failed to activate widget for perspective'
+        const revealCall = mockLogger.warn.getCalls().find(
+            (c: sinon.SinonSpyCall) => c.args[0] === 'Failed to reveal widget for perspective'
         );
-        expect(activateCall).to.not.be.undefined;
-        expect(activateCall!.args[1]).to.equal(activationError);
+        expect(revealCall).to.not.be.undefined;
+        expect(revealCall!.args[1]).to.equal(revealError);
     });
 
     // --- Reentrancy guard tests ---
@@ -878,6 +881,7 @@ describe('PerspectiveService', () => {
             getOrCreateWidgetStub.resetHistory();
             addWidgetStub.resetHistory();
             activateWidgetStub.resetHistory();
+            revealWidgetStub.resetHistory();
 
             await service.resetCurrentPerspective();
 

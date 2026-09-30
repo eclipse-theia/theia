@@ -332,9 +332,9 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
 
         for (const [viewId] of descriptor.viewPlacements) {
             try {
-                await this.shell.activateWidget(viewId);
+                await this.shell.revealWidget(viewId);
             } catch (error) {
-                this.logger.warn('Failed to activate widget for perspective', error);
+                this.logger.warn('Failed to reveal widget for perspective', error);
             }
         }
 
