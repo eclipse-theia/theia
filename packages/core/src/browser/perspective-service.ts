@@ -600,7 +600,7 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(PerspectiveServiceImpl.SWITCH_PERSPECTIVE_COMMAND, {
-            execute: () => this.showPerspectivePicker(),
+            execute: (id?: string) => id ? this.switchPerspective(id) : this.showPerspectivePicker(),
             isVisible: () => this.perspectives.size > 1
         });
         commands.registerCommand(PerspectiveServiceImpl.RESET_PERSPECTIVE_COMMAND, {

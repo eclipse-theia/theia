@@ -2306,4 +2306,101 @@ describe('PerspectiveService', () => {
             });
         });
     });
+
+    describe('registerCommands', () => {
+        it('should call switchPerspective when id argument is provided', async () => {
+            service.registerPerspective({
+                id: 'testPersp',
+                label: 'Test Perspective',
+                viewPlacements: new Map()
+            });
+
+            let capturedHandler: { execute: (id?: string) => Promise<void> } | undefined;
+            const mockRegistry = {
+                registerCommand: sinon.stub().callsFake((_cmd: unknown, handler: { execute: (id?: string) => Promise<void> }) => {
+                    if ((_cmd as { id: string }).id === 'perspective.switch') {
+                        capturedHandler = handler;
+                    }
+                })
+            };
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            service.registerCommands(mockRegistry as any);
+
+            expect(capturedHandler).to.not.be.undefined;
+
+            const switchSpy = sinon.spy(service, 'switchPerspective');
+
+            await capturedHandler!.execute('testPersp');
+
+            expect(switchSpy.calledOnce).to.be.true;
+            expect(switchSpy.calledWith('testPersp')).to.be.true;
+            expect(service.getActivePerspective()?.id).to.equal('testPersp');
+        });
+
+        it('should show perspective picker when no id argument is provided', async () => {
+            service.registerPerspective({
+                id: 'perspA',
+                label: 'A',
+                viewPlacements: new Map()
+            });
+            service.registerPerspective({
+                id: 'perspB',
+                label: 'B',
+                viewPlacements: new Map()
+            });
+
+            const showQuickPickStub = sinon.stub().resolves(undefined);
+            (service as unknown as Record<string, unknown>)['quickInputService'] = {
+                showQuickPick: showQuickPickStub
+            };
+
+            let capturedHandler: { execute: (id?: string) => Promise<void> } | undefined;
+            const mockRegistry = {
+                registerCommand: sinon.stub().callsFake((_cmd: unknown, handler: { execute: (id?: string) => Promise<void> }) => {
+                    if ((_cmd as { id: string }).id === 'perspective.switch') {
+                        capturedHandler = handler;
+                    }
+                })
+            };
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            service.registerCommands(mockRegistry as any);
+
+            expect(capturedHandler).to.not.be.undefined;
+
+            await capturedHandler!.execute();
+
+            expect(showQuickPickStub.calledOnce).to.be.true;
+        });
+
+        it('should not show perspective picker when id argument is provided', async () => {
+            service.registerPerspective({
+                id: 'testPersp',
+                label: 'Test',
+                viewPlacements: new Map()
+            });
+
+            const showQuickPickStub = sinon.stub().resolves(undefined);
+            (service as unknown as Record<string, unknown>)['quickInputService'] = {
+                showQuickPick: showQuickPickStub
+            };
+
+            let capturedHandler: { execute: (id?: string) => Promise<void> } | undefined;
+            const mockRegistry = {
+                registerCommand: sinon.stub().callsFake((_cmd: unknown, handler: { execute: (id?: string) => Promise<void> }) => {
+                    if ((_cmd as { id: string }).id === 'perspective.switch') {
+                        capturedHandler = handler;
+                    }
+                })
+            };
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            service.registerCommands(mockRegistry as any);
+
+            await capturedHandler!.execute('testPersp');
+
+            expect(showQuickPickStub.called).to.be.false;
+        });
+    });
 });
