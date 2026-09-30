@@ -1058,7 +1058,7 @@ button.agent-chip:focus-visible {
   line-height: 1.6;
 }
 
-.theia-WelcomeMessage-SessionsSection {
+.theia-ChatSessions-Section {
   padding-left: calc(var(--theia-ui-padding) * 2);
   padding-right: calc(var(--theia-ui-padding) * 2);
   box-sizing: border-box;
@@ -1068,30 +1068,30 @@ button.agent-chip:focus-visible {
   align-items: stretch;
 }
 
-.theia-WelcomeMessage-SessionsList {
+.theia-ChatSessions-List {
   display: flex;
   flex-direction: column;
   width: 100%;
   min-height: 0;
 }
 
-.theia-WelcomeMessage-SessionsGroup {
+.theia-ChatSessions-Group {
   display: flex;
   flex-direction: column;
 }
 
-.theia-WelcomeMessage-SessionsGroup+.theia-WelcomeMessage-SessionsGroup {
+.theia-ChatSessions-Group+.theia-ChatSessions-Group {
   margin-top: var(--theia-ui-padding);
 }
 
-.theia-WelcomeMessage-SessionsHeader {
+.theia-ChatSessions-Header {
   color: var(--theia-descriptionForeground);
   font-size: var(--theia-ui-font-size1);
   font-weight: 500;
   padding: var(--theia-ui-padding) var(--theia-ui-padding) calc(var(--theia-ui-padding) / 2);
 }
 
-.theia-WelcomeMessage-SessionsFooter {
+.theia-ChatSessions-Footer {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -1102,14 +1102,14 @@ button.agent-chip:focus-visible {
   font-size: var(--theia-ui-font-size1);
 }
 
-.theia-WelcomeMessage-FooterLink {
+.theia-ChatSessions-FooterLink {
   color: var(--theia-textLink-foreground);
   cursor: pointer;
   text-decoration: none;
 }
 
-.theia-WelcomeMessage-FooterLink:hover,
-.theia-WelcomeMessage-FooterLink:focus {
+.theia-ChatSessions-FooterLink:hover,
+.theia-ChatSessions-FooterLink:focus {
   color: var(--theia-textLink-activeForeground);
 }
 

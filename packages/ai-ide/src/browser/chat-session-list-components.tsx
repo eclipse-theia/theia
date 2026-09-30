@@ -14,10 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatSessionMetadata } from '@theia/ai-chat';
-import { buttonKeyboardProps, isActivationKey } from '@theia/core/lib/browser';
+import { ChatAgentService, ChatService, ChatSessionMetadata } from '@theia/ai-chat';
+import { AI_CHAT_OPEN_SESSION } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
+import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
+import { CommandRegistry, ContributionProvider } from '@theia/core';
+import { buttonKeyboardProps, HoverService, isActivationKey } from '@theia/core/lib/browser';
+import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { nls } from '@theia/core/lib/common/nls';
 import * as React from '@theia/core/shared/react';
+import { ChatSessionItem } from './chat-session-item';
+import { ChatSessionItemAction, ChatSessionItemActionContribution } from './chat-session-item-action-contribution';
+import { ChatSessionListService } from './chat-session-list-service';
 
 /** When both Active and Restored sections are non-empty, keep at least this many Restored slots. */
 const RESTORED_MIN_RESERVATION = 5;
@@ -99,26 +106,26 @@ export function SessionsList({ rows, maxSessions = Number.MAX_SAFE_INTEGER, rend
     const hiddenCount = topLevelRows.length - activeVisible.length - restoredVisible.length;
 
     return (
-        <div className="theia-WelcomeMessage-SessionsList">
+        <div className="theia-ChatSessions-List">
             {activeVisible.length > 0 && (
-                <div className="theia-WelcomeMessage-SessionsGroup">
-                    <div className="theia-WelcomeMessage-SessionsHeader">
+                <div className="theia-ChatSessions-Group">
+                    <div className="theia-ChatSessions-Header">
                         {nls.localizeByDefault('Active')}
                     </div>
                     {activeVisible.map(row => renderRow(row))}
                 </div>
             )}
             {restoredVisible.length > 0 && (
-                <div className="theia-WelcomeMessage-SessionsGroup">
-                    <div className="theia-WelcomeMessage-SessionsHeader">
+                <div className="theia-ChatSessions-Group">
+                    <div className="theia-ChatSessions-Header">
                         {nls.localize('theia/ai/ide/sectionRestored', 'Restored')}
                     </div>
                     {restoredVisible.map(row => renderRow(row))}
                 </div>
             )}
             {hiddenCount > 0 && onBrowseAll && (
-                <div className="theia-WelcomeMessage-SessionsFooter">
-                    <a className="theia-WelcomeMessage-FooterLink"
+                <div className="theia-ChatSessions-Footer">
+                    <a className="theia-ChatSessions-FooterLink"
                         {...buttonKeyboardProps(nls.localize('theia/ai/ide/browseAllChats', 'Browse all chats...'))}
                         onClick={onBrowseAll}
                         onKeyDown={e => {
@@ -133,4 +140,70 @@ export function SessionsList({ rows, maxSessions = Number.MAX_SAFE_INTEGER, rend
             )}
         </div>
     );
+}
+
+export interface SessionRowRendererProps {
+    chatService: ChatService;
+    chatAgentService: ChatAgentService;
+    hoverService: HoverService;
+    markdownRenderer: MarkdownRenderer;
+    sessionListService: ChatSessionListService;
+    commandRegistry: CommandRegistry;
+    chatSessionItemActionContributions: ContributionProvider<ChatSessionItemActionContribution>;
+}
+
+export function getSessionActions(
+    session: ChatSessionMetadata,
+    contributions: ContributionProvider<ChatSessionItemActionContribution>,
+    commandRegistry: CommandRegistry
+): ChatSessionItemAction[] {
+    return contributions
+        .getContributions()
+        .flatMap(c => c.getActions(session))
+        .filter(action => commandRegistry.isEnabled(action.commandId, session))
+        .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+}
+
+export function createSessionRowRenderer(props: SessionRowRendererProps): (row: SessionRow) => React.ReactNode {
+    const {
+        chatService, chatAgentService, hoverService, markdownRenderer,
+        sessionListService, commandRegistry, chatSessionItemActionContributions
+    } = props;
+
+    const renderAtDepth = (row: SessionRow, depth: number): React.ReactNode => {
+        const hasChildSessions = row.childSessions.length > 0;
+        const isExpanded = hasChildSessions && sessionListService.isExpanded(row.session.sessionId);
+        const descendantNeedsAttention = sessionListService.descendantRequiresAction(row);
+
+        return (
+            <React.Fragment key={row.session.sessionId}>
+                <ChatSessionItem
+                    session={row.session}
+                    isRestored={row.isRestored}
+                    chatService={chatService}
+                    chatAgentService={chatAgentService}
+                    hoverService={hoverService}
+                    markdownRenderer={markdownRenderer}
+                    unreadState={sessionListService}
+                    onClick={async () => {
+                        await commandRegistry.executeCommand(AI_CHAT_OPEN_SESSION.id, row.session.sessionId);
+                    }}
+                    actions={getSessionActions(row.session, chatSessionItemActionContributions, commandRegistry)}
+                    onAction={(action: ChatSessionItemAction, s: ChatSessionMetadata) => {
+                        commandRegistry.executeCommand(action.commandId, s);
+                    }}
+                    formatTimeAgo={date => formatTimeAgo(date)}
+                    hasChildSessions={hasChildSessions}
+                    isChildSession={depth > 0}
+                    depth={depth}
+                    isExpanded={isExpanded}
+                    descendantNeedsAttention={descendantNeedsAttention}
+                    onToggleExpand={hasChildSessions ? () => sessionListService.toggleExpand(row.session.sessionId) : undefined}
+                />
+                {isExpanded && row.childSessions.map(child => renderAtDepth(child, depth + 1))}
+            </React.Fragment>
+        );
+    };
+
+    return (row: SessionRow): React.ReactNode => renderAtDepth(row, 0);
 }

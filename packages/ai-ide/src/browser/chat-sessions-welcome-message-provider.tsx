@@ -15,16 +15,14 @@
 // *****************************************************************************
 
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
-import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
 import {
-    ChatAgentService, ChatService, ChatSessionMetadata
+    ChatAgentService, ChatService
 } from '@theia/ai-chat';
 import { BYPASS_MODEL_REQUIREMENT_PREF, WELCOME_SCREEN_SESSIONS_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
-import { ChatSessionItemAction, ChatSessionItemActionContribution } from './chat-session-item-action-contribution';
+import { ChatSessionItemActionContribution } from './chat-session-item-action-contribution';
 import { ChatSessionListService } from './chat-session-list-service';
-import { SectionedSessions, SessionRow, SessionsList } from './chat-session-list-components';
-import { ChatSessionItem } from './chat-session-item';
+import { createSessionRowRenderer, SectionedSessions, SessionsList } from './chat-session-list-components';
 import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
 import { CommandRegistry, ContributionProvider, Emitter, Event, PreferenceService } from '@theia/core';
 import { ApplicationShell, HoverService } from '@theia/core/lib/browser';
@@ -153,69 +151,29 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         const maxSessions = this.preferenceService.get<number>(WELCOME_SCREEN_SESSIONS_PREF, 20);
         const rows = this.sessionListService.buildRows(sections);
 
+        const renderRow = createSessionRowRenderer({
+            chatService: this.chatService,
+            chatAgentService: this.chatAgentService,
+            hoverService: this.hoverService,
+            markdownRenderer: this.markdownRenderer,
+            sessionListService: this.sessionListService,
+            commandRegistry: this.commandRegistry,
+            chatSessionItemActionContributions: this.chatSessionItemActionContributions
+        });
+
         return (
             <div className="theia-WelcomeMessage" key="sessions-section">
-                <div className="theia-WelcomeMessage-SessionsSection">
+                <div className="theia-ChatSessions-Section">
                     <SessionsList
                         rows={rows}
                         maxSessions={maxSessions}
-                        renderRow={this.renderSessionRow}
+                        renderRow={renderRow}
                         onBrowseAll={this.handleBrowseAllChats}
                     />
                 </div>
             </div>
         );
     }
-
-    protected getSessionActions(session: ChatSessionMetadata): ChatSessionItemAction[] {
-        return this.chatSessionItemActionContributions
-            .getContributions()
-            .flatMap(c => c.getActions(session))
-            .filter(action => this.commandRegistry.isEnabled(action.commandId, session))
-            .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
-    }
-
-    protected renderSessionRow = (row: SessionRow): React.ReactNode => this.renderSessionRowAtDepth(row, 0);
-
-    protected renderSessionRowAtDepth(row: SessionRow, depth: number): React.ReactNode {
-        const hasChildSessions = row.childSessions.length > 0;
-        const isExpanded = hasChildSessions && this.sessionListService.isExpanded(row.session.sessionId);
-        const descendantNeedsAttention = this.sessionListService.descendantRequiresAction(row);
-
-        return (
-            <React.Fragment key={row.session.sessionId}>
-                <ChatSessionItem
-                    session={row.session}
-                    isRestored={row.isRestored}
-                    chatService={this.chatService}
-                    chatAgentService={this.chatAgentService}
-                    hoverService={this.hoverService}
-                    markdownRenderer={this.markdownRenderer}
-                    unreadState={this.sessionListService}
-                    onClick={() => this.handleSessionItemClick(row.session.sessionId)}
-                    actions={this.getSessionActions(row.session)}
-                    onAction={this.handleSessionItemAction}
-                    formatTimeAgo={date => formatTimeAgo(date)}
-                    hasChildSessions={hasChildSessions}
-                    isChildSession={depth > 0}
-                    depth={depth}
-                    isExpanded={isExpanded}
-                    descendantNeedsAttention={descendantNeedsAttention}
-                    onToggleExpand={hasChildSessions ? () => this.sessionListService.toggleExpand(row.session.sessionId) : undefined}
-                />
-                {isExpanded && row.childSessions.map(child => this.renderSessionRowAtDepth(child, depth + 1))}
-            </React.Fragment>
-        );
-    }
-
-    protected handleSessionItemAction = (action: ChatSessionItemAction, session: ChatSessionMetadata): void => {
-        this.commandRegistry.executeCommand(action.commandId, session);
-    };
-
-    protected handleSessionItemClick = async (sessionId: string): Promise<void> => {
-        await this.chatService.getOrRestoreSession(sessionId);
-        this.chatService.setActiveSession(sessionId, { focus: true });
-    };
 
     protected handleBrowseAllChats = (): void => {
         this.commandRegistry.executeCommand(AI_CHAT_SHOW_CHATS_COMMAND.id);
