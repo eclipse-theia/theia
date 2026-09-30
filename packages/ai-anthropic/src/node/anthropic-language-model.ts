@@ -319,7 +319,6 @@ export interface AnthropicModelParams {
     proxy?: string;
     reasoningSupport?: ReasoningSupport;
     reasoningApi?: ReasoningApi;
-    supportsXHighEffort?: boolean;
     maxInputTokens?: number;
     serverTools?: ServerToolDescriptor[];
     serverSideCompactionSupport?: boolean;
@@ -404,7 +403,6 @@ export class AnthropicModel implements LanguageModel {
     proxy?: string;
     reasoningSupport?: ReasoningSupport;
     reasoningApi?: ReasoningApi;
-    supportsXHighEffort?: boolean;
     maxInputTokens?: number;
     serverTools?: ServerToolDescriptor[];
     serverSideCompactionSupport: boolean;
@@ -440,7 +438,6 @@ export class AnthropicModel implements LanguageModel {
         this.proxy = params.proxy;
         this.reasoningSupport = params.reasoningSupport;
         this.reasoningApi = params.reasoningApi;
-        this.supportsXHighEffort = params.supportsXHighEffort;
         this.maxInputTokens = params.maxInputTokens;
         this.serverTools = params.serverTools;
         this.serverSideCompactionSupport = params.serverSideCompactionSupport ?? false;
@@ -451,9 +448,12 @@ export class AnthropicModel implements LanguageModel {
     }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
+        const level = request.reasoning && this.reasoningSupport
+            ? ReasoningSupport.clampLevel(this.reasoningSupport, request.reasoning.level)
+            : undefined;
         return {
             ...request.settings,
-            ...anthropicReasoningFor(request.reasoning?.level, this.reasoningApi, this.supportsXHighEffort)
+            ...anthropicReasoningFor(level, this.reasoningApi)
         };
     }
 

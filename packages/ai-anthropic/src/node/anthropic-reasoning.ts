@@ -26,18 +26,16 @@ type AnthropicEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
  * See https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking.
  *
  * @param api `'effort'` for adaptive thinking, `'budget'` for legacy extended thinking.
- * @param supportsXHighEffort set on models that accept the `xhigh` effort value.
  */
 export function anthropicReasoningFor(
     level: ReasoningLevel | undefined,
-    api: ReasoningApi | undefined,
-    supportsXHighEffort: boolean = false
+    api: ReasoningApi | undefined
 ): Record<string, unknown> {
     if (!level || !api || level === 'off') {
         return {};
     }
     if (api === 'effort') {
-        const effort = anthropicEffortForLevel(level, supportsXHighEffort);
+        const effort = anthropicEffortForLevel(level);
         // On `auto`, omit `output_config` so Anthropic's own default applies.
         return {
             thinking: { type: 'adaptive', display: 'summarized' },
@@ -48,12 +46,14 @@ export function anthropicReasoningFor(
     return { thinking: { type: 'enabled', budget_tokens: anthropicBudgetForLevel(level) } };
 }
 
-function anthropicEffortForLevel(level: ReasoningLevel, supportsXHighEffort: boolean): AnthropicEffort | undefined {
+function anthropicEffortForLevel(level: ReasoningLevel): AnthropicEffort | undefined {
     switch (level) {
         case 'minimal': return 'low';
-        case 'low': return 'medium';
-        case 'medium': return supportsXHighEffort ? 'xhigh' : 'high';
-        case 'high': return 'max';
+        case 'low':
+        case 'medium':
+        case 'high':
+        case 'xhigh':
+        case 'max': return level;
         default: return undefined; // 'auto' → provider default
     }
 }

@@ -72,10 +72,13 @@ const ModelSelect: React.FC<{
 const reasoningLevelLabel = (level: ReasoningLevel): string => {
     switch (level) {
         case 'off': return nls.localizeByDefault('Off');
+        case 'none': return nls.localizeByDefault('None');
         case 'minimal': return nls.localizeByDefault('Minimal');
         case 'low': return nls.localizeByDefault('Low');
         case 'medium': return nls.localizeByDefault('Medium');
         case 'high': return nls.localizeByDefault('High');
+        case 'xhigh': return nls.localizeByDefault('Extra High');
+        case 'max': return nls.localize('theia/ai/core/reasoning/max', 'Maximum');
         case 'auto': return nls.localizeByDefault('Auto');
     }
 };
@@ -110,7 +113,7 @@ export const ReasoningRow: React.FC<{
             onSelect(option.value as ReasoningLevel);
         }
     }, [onSelect]);
-    const effectiveLevel = savedLevel ?? inheritedLevel;
+    const effectiveLevel = ReasoningSupport.clampLevel(support, savedLevel ?? inheritedLevel);
     return <AiConfigurationSettingRow
         title={nls.localizeByDefault('Reasoning')}
         description={savedLevel
@@ -118,7 +121,7 @@ export const ReasoningRow: React.FC<{
                 'Reasoning effort this agent asks the model for. Set here or by the chat input\'s selector, which writes the same setting.')
             : nls.localize('theia/ai/core/languageModelRenderer/reasoningInherited',
                 'Reasoning effort this agent asks the model for. Not set, so "{0}" applies, from the reasoning defaults preference or the model.',
-                reasoningLevelLabel(inheritedLevel))}
+                reasoningLevelLabel(effectiveLevel))}
         modified={savedLevel !== undefined}
         below={<SelectComponent
             className={`ai-config-select theia-ReasoningLevelSelector reasoning-level-${effectiveLevel}`}

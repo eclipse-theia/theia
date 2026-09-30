@@ -20,7 +20,7 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 export type MessageActor = 'user' | 'ai' | 'system';
 
 /** Provider-agnostic reasoning level; each provider maps this to its native API. */
-export type ReasoningLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'auto';
+export type ReasoningLevel = 'off' | 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'auto';
 
 export interface ReasoningSettings {
     level: ReasoningLevel;
@@ -43,7 +43,7 @@ export interface ReasoningSupport {
 }
 export namespace ReasoningSupport {
     /** Levels ordered by increasing effort; `'auto'` sits outside the scale. */
-    const EFFORT_SCALE: ReadonlyArray<ReasoningLevel> = ['off', 'minimal', 'low', 'medium', 'high'];
+    const EFFORT_SCALE: ReadonlyArray<ReasoningLevel> = ['off', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'];
 
     /**
      * Returns `level` when `support` lists it, otherwise the nearest supported level on the effort scale,
