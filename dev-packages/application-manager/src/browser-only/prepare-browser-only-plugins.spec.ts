@@ -19,9 +19,11 @@ import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
 import { pathToFileURL } from 'url';
-import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
-import type { PluginManifest } from '@theia/plugin-utils/lib/common/manifest-types';
+import type { ApplicationPackage } from '@theia/application-package';
+import { LIST_JSON, PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
+import type { DeployedPlugin, PluginManifest } from '@theia/plugin-utils/lib/common/manifest-types';
 import {
+    prepareBrowserOnlyPlugins,
     resolvePluginEntryFileSync,
     resolvePluginRoot,
     shouldCopyPluginPath,
@@ -164,6 +166,39 @@ describe('prepare-browser-only-plugins helpers', () => {
             expect(shouldCopyPluginPath(pluginRoot, pluginRoot)).to.equal(true);
             expect(shouldCopyPluginPath(path.join(pluginRoot, 'node_modules', 'dep', 'index.js'), pluginRoot)).to.equal(false);
             expect(shouldCopyPluginPath(path.join(pluginRoot, '.git', 'config'), pluginRoot)).to.equal(false);
+        });
+    });
+
+    describe('prepareBrowserOnlyPlugins', () => {
+        it('inlines grammars the hosted copy leaves out and drops missing ones', async () => {
+            const pluginRoot = path.join(tmpRoot, 'plugins', 'acme');
+            const vendoredGrammar = path.join('node_modules', 'acme-grammar', 'acme.tmLanguage.json');
+            await fs.ensureDir(path.join(pluginRoot, path.dirname(vendoredGrammar)));
+            await fs.writeJson(path.join(pluginRoot, 'package.json'), {
+                name: 'acme',
+                version: '1.0.0',
+                engines: { vscode: '*' },
+                contributes: {
+                    grammars: [
+                        { language: 'acme', scopeName: 'source.acme', path: `./${vendoredGrammar}` },
+                        { language: 'other', scopeName: 'source.other', path: './syntaxes/missing.tmLanguage.json' }
+                    ]
+                }
+            });
+            await fs.writeJson(path.join(pluginRoot, vendoredGrammar), { scopeName: 'source.acme' });
+
+            const outDir = path.join(tmpRoot, 'out');
+            const applicationPackage = {
+                projectPath: tmpRoot,
+                pck: { theiaPluginsDir: 'plugins' },
+                lib: (...segments: string[]) => path.join(outDir, ...segments)
+            } as unknown as ApplicationPackage;
+            await prepareBrowserOnlyPlugins(applicationPackage);
+
+            const [plugin]: DeployedPlugin[] = await fs.readJson(path.join(outDir, 'frontend', PLUGINS_BASE_PATH, LIST_JSON));
+            const grammars = plugin.contributes!.grammars!;
+            expect(grammars.map(grammar => grammar.scope)).to.deep.equal(['source.acme']);
+            expect(grammars[0].grammar).to.deep.equal({ scopeName: 'source.acme' });
         });
     });
 });

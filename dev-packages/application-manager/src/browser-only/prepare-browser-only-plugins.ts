@@ -40,12 +40,14 @@ import {
 } from '@theia/plugin-utils/lib/common/plugin-model';
 import { getPluginRootFileUrl } from '@theia/plugin-utils/lib/node/plugin-model';
 import { normalizeContributions } from '@theia/plugin-utils/lib/node/normalize-contributions';
-import { readGrammarFromDisk } from '@theia/plugin-utils/lib/node/read-grammars';
+import { readGrammarFromDisk, toGrammarContribution } from '@theia/plugin-utils/lib/node/read-grammars';
 import { localizePackage } from '@theia/plugin-utils/lib/common/package-nls';
 import { loadPackageTranslations } from '@theia/plugin-utils/lib/node/package-nls';
 import { deepClone } from '@theia/plugin-utils/lib/common/utils';
 import type {
+    GrammarsContribution,
     NormalizedPluginContribution,
+    PluginPackageGrammarsContribution,
 } from '@theia/plugin-utils/lib/common/contribution-types';
 
 import {
@@ -287,16 +289,7 @@ async function normalizeManifestForBrowserOnly(manifest: PluginManifest): Promis
         // through the `FileService` - those need a scheme.
         resolveUrl: relative => toPluginUrl(manifest, relative),
         resolveUri: (pck, relative) => toPluginUri(pck, relative),
-        readGrammars: async (grammars, pluginPath) => {
-            const result = [];
-            for (const rawGrammar of grammars) {
-                const grammar = await readGrammarFromDisk(rawGrammar, pluginPath, { onError });
-                if (grammar) {
-                    result.push(grammar);
-                }
-            }
-            return result;
-        },
+        readGrammars: (grammars, pluginPath) => readGrammarsForBrowserOnly(grammars, pluginPath, onError),
         onError,
         onWarn,
     }, contributes);
@@ -306,6 +299,37 @@ async function normalizeManifestForBrowserOnly(manifest: PluginManifest): Promis
     }
 
     return contributes;
+}
+
+/**
+ * Grammars are most of `list.json`'s size, so only their location goes in and the frontend fetches
+ * the file from the hosted copy when it needs it. Files the copy skips (`node_modules`) are inlined,
+ * and missing files are reported here instead of at runtime.
+ */
+async function readGrammarsForBrowserOnly(
+    grammars: readonly PluginPackageGrammarsContribution[],
+    pluginPath: string,
+    onError: (type: string, err: unknown, detail?: unknown) => void
+): Promise<GrammarsContribution[]> {
+    const result: GrammarsContribution[] = [];
+    for (const rawGrammar of grammars) {
+        const contribution = toGrammarContribution(rawGrammar, pluginPath, { onError });
+        if (!contribution) {
+            continue;
+        }
+        const grammarPath = path.resolve(pluginPath, rawGrammar.path);
+        if (!shouldCopyPluginPath(grammarPath, pluginPath)) {
+            const inlined = await readGrammarFromDisk(rawGrammar, pluginPath, { onError });
+            if (inlined) {
+                result.push(inlined);
+            }
+        } else if (await fs.pathExists(grammarPath)) {
+            result.push(contribution);
+        } else {
+            onError('grammars', new Error(`Grammar file '${rawGrammar.path}' of '${rawGrammar.scopeName}' does not exist.`));
+        }
+    }
+    return result;
 }
 
 /**
