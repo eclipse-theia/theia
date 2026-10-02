@@ -320,15 +320,10 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         if (!this.fieldRef.current) {
             return;
         }
-        if (ev.key === 'ArrowUp') {
-            const selected = this.nextNotSeparator('backwards', this.state.hover);
-            this.setState({
-                selected,
-                hover: selected
-            });
-        } else if (ev.key === 'ArrowDown') {
+        if (ev.key === 'ArrowUp' || ev.key === 'ArrowDown') {
+            const direction = ev.key === 'ArrowUp' ? 'backwards' : 'forwards';
             if (this.state.dimensions) {
-                const selected = this.nextNotSeparator('forwards', this.state.hover);
+                const selected = this.nextNotSeparator(direction, this.state.hover);
                 this.setState({
                     selected,
                     hover: selected
@@ -337,7 +332,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                 this.toggleVisibility();
                 // Start on the first selectable option (startFrom -1 evaluates index 0 first), so a
                 // leading separator or disabled option is skipped instead of becoming the active row.
-                const selected = this.nextNotSeparator('forwards', -1);
+                const selected = this.nextNotSeparator(direction, -1);
                 this.setState({
                     selected,
                     hover: selected,
