@@ -15,20 +15,31 @@
 // *****************************************************************************
 
 import { injectable, inject, optional } from 'inversify';
-import type { ILinuxKeyMapping, IMacKeyMapping, IWindowsKeyMapping } from 'native-keymap';
+import type { IKeyboardLayoutInfo, ILinuxKeyMapping, IMacKeyMapping, IWindowsKeyMapping } from 'native-keymap';
 import { isOSX, isWindows } from '../../common/os';
 import {
     NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator
 } from '../../common/keyboard/keyboard-layout-provider';
 import { Emitter, Event } from '../../common/event';
-import { KeyCode, Key } from './keys';
+import {
+    KeyCode, Key, LayoutModifiers, NormalizedKeyboardInput, isPrintableCharacter, isPrintableKey,
+    layoutModifiersIncludeAltGraph, layoutModifiersIncludeShift
+} from './keys';
+
+/**
+ * A physical key and keyboard-layout modifier layer that can produce a logical character.
+ */
+export interface KeyboardLayoutCandidate {
+    readonly key: Key;
+    readonly character: string;
+    readonly layoutModifiers: LayoutModifiers;
+}
 
 export interface KeyboardLayout {
-    /**
-     * Mapping of standard US keyboard keys to the actual key codes to use.
-     * See `KeyboardLayoutService.getCharacterIndex` for the index computation.
-     */
-    readonly key2KeyCode: KeyCode[];
+    readonly candidatesByCharacter: ReadonlyMap<string, readonly KeyboardLayoutCandidate[]>;
+    readonly candidatesByFoldedCharacter: ReadonlyMap<string, readonly KeyboardLayoutCandidate[]>;
+    /** Physical KeyboardEvent code to the lowercase Latin letter registered as a fallback. */
+    readonly latinFallbackByCode: ReadonlyMap<string, string>;
     /**
      * Mapping of KeyboardEvent codes to the characters shown on the user's keyboard
      * for the respective keys.
@@ -48,11 +59,25 @@ export class KeyboardLayoutService {
     @inject(KeyValidator) @optional()
     protected readonly keyValidator?: KeyValidator;
 
+    // The transformed layout used for logical-character resolution and display.
     private currentLayout?: KeyboardLayout;
+    // The provider's original layout data used to verify characters produced by key events.
+    private currentNativeLayout?: NativeKeyboardLayout;
+    private currentLayoutInfo?: IKeyboardLayoutInfo;
+
+    get layoutInfo(): IKeyboardLayoutInfo | undefined {
+        return this.currentLayoutInfo;
+    }
+
+    get layoutSource(): string {
+        return this.layoutProvider.layoutSource ?? 'unknown';
+    }
 
     protected updateLayout(newLayout: NativeKeyboardLayout): KeyboardLayout {
         const transformed = this.transformNativeLayout(newLayout);
         this.currentLayout = transformed;
+        this.currentNativeLayout = newLayout;
+        this.currentLayoutInfo = newLayout.info;
         this.keyboardLayoutChanged.fire(transformed);
         return transformed;
     }
@@ -70,25 +95,175 @@ export class KeyboardLayoutService {
     }
 
     /**
-     * Resolve a KeyCode of a keybinding using the current keyboard layout.
-     * If no keyboard layout has been detected or the layout does not contain the
-     * key used in the KeyCode, the KeyCode is returned unchanged.
+     * Resolve an authored keybinding stroke against the active layout.
+     * Physical and non-printable strokes, and strokes resolved without an active layout, are returned unchanged. Latin letters
+     * missing from the active layout resolve to their US key position; any other missing logical character is returned with
+     * {@link KeyCode.supportedByLayout} set to `false`. Authored Shift is absorbed when it produces the character (US-key tokens
+     * or shift-layer candidates); otherwise it remains a command modifier.
      */
     resolveKeyCode(inCode: KeyCode): KeyCode {
-        const layout = this.currentLayout;
-        if (layout && inCode.key) {
-            for (let shift = 0; shift <= 1; shift++) {
-                const index = this.getCharacterIndex(inCode.key, !!shift);
-                const mappedCode = layout.key2KeyCode[index];
-                if (mappedCode) {
-                    const transformed = this.transformKeyCode(inCode, mappedCode, !!shift);
-                    if (transformed) {
-                        return transformed;
-                    }
-                }
-            }
+        if (inCode.physical || !this.currentLayout || inCode.key && !isPrintableKey(inCode.key) && !inCode.character) {
+            return inCode;
         }
-        return inCode;
+        const usCharacter = inCode.key ? US_CHARACTER_BY_KEY.get(usCharacterIndex(inCode.key, inCode.shift)) : undefined;
+        const character = inCode.character ?? usCharacter ?? inCode.key?.easyString;
+        if (!character) {
+            return inCode;
+        }
+        const exactCandidates = this.currentLayout.candidatesByCharacter.get(character);
+        const candidate = exactCandidates?.[0] ?? this.currentLayout.candidatesByFoldedCharacter.get(character.toLocaleLowerCase())?.[0];
+        if (!candidate) {
+            return new KeyCode({
+                key: inCode.key,
+                meta: inCode.meta,
+                ctrl: inCode.ctrl,
+                shift: inCode.shift,
+                alt: inCode.alt,
+                character,
+                authoredToken: inCode.authoredToken,
+                supportedByLayout: false
+            });
+        }
+        return new KeyCode({
+            key: candidate.key,
+            meta: inCode.meta,
+            ctrl: inCode.ctrl,
+            shift: inCode.shift && !usCharacter && !layoutModifiersIncludeShift(candidate.layoutModifiers),
+            alt: inCode.alt,
+            character,
+            layoutModifiers: candidate.layoutModifiers,
+            interpretation: 'authored',
+            authoredToken: inCode.authoredToken
+        });
+    }
+
+    /**
+     * Whether the platform's AltGraph layer is active: AltGraph on Linux, Option on macOS, and AltGraph or Ctrl+Alt on Windows.
+     */
+    protected isAltGraphActive(input: NormalizedKeyboardInput): boolean {
+        return isOSX ? !!input.altKey : isWindows ? !!input.altGraph || !!(input.ctrlKey && input.altKey) : !!input.altGraph;
+    }
+
+    /**
+     * Detect the keyboard-layout modifier layer that produced an input character.
+     * `undefined` means either that no layout modifiers were needed or that the input represents a dead key.
+     */
+    detectLayoutModifiers(input: NormalizedKeyboardInput): LayoutModifiers | undefined {
+        if (input.isComposing || !input.code || !this.shouldIncludeKey(input.code) || !isPrintableCharacter(input.key)) {
+            return undefined;
+        }
+        const mapping = this.currentNativeLayout?.mapping[input.code] as (ILinuxKeyMapping & Partial<IMacKeyMapping>) | undefined;
+        if (!mapping) {
+            return undefined;
+        }
+        const altGraphActive = this.isAltGraphActive(input);
+        if (input.shiftKey && altGraphActive && mapping.withShiftAltGr === input.key && !mapping.withShiftAltGrIsDeadKey) {
+            return 'shiftAltGraph';
+        }
+        if (input.shiftKey && altGraphActive && !mapping.withShiftAltGr && mapping.withAltGr === input.key && !mapping.withAltGrIsDeadKey) {
+            return 'shiftAltGraph';
+        }
+        if (!input.shiftKey && altGraphActive && mapping.withAltGr === input.key && !mapping.withAltGrIsDeadKey) {
+            return 'altGraph';
+        }
+        if (input.shiftKey && mapping.withShift && !mapping.withShiftIsDeadKey
+            && mapping.withShift.toLocaleLowerCase() === input.key.toLocaleLowerCase()) {
+            return 'shift';
+        }
+        return undefined;
+    }
+
+    /** Return all command- and layout-modifier interpretations of a normalized keyboard input. */
+    getKeyCodeInterpretations(input: NormalizedKeyboardInput, eventDispatch: 'code' | 'keyCode'): KeyCode[] {
+        const keyCode = KeyCode.createKeyCode(input, eventDispatch);
+        if (eventDispatch === 'keyCode' || keyCode.isModifierOnly()) {
+            return [keyCode];
+        }
+        const layoutModifiers = this.detectLayoutModifiers(input);
+        if (isOSX) {
+            return this.getMacKeyCodeInterpretations(keyCode, input, layoutModifiers);
+        }
+        if (isWindows) {
+            return this.getWindowsKeyCodeInterpretations(keyCode, input, layoutModifiers);
+        }
+        return this.getLinuxKeyCodeInterpretations(keyCode, input, layoutModifiers);
+    }
+
+    protected getLinuxKeyCodeInterpretations(keyCode: KeyCode, input: NormalizedKeyboardInput, layoutModifiers: LayoutModifiers | undefined): KeyCode[] {
+        if (!layoutModifiers || layoutModifiersIncludeAltGraph(layoutModifiers) && !input.altGraph) {
+            return [keyCode];
+        }
+        return layoutModifiers === 'shift'
+            ? this.shiftLayerInterpretations(keyCode, layoutModifiers)
+            : [this.toLayoutModifiersKeyCode(keyCode, layoutModifiers)];
+    }
+
+    protected getWindowsKeyCodeInterpretations(keyCode: KeyCode, input: NormalizedKeyboardInput, layoutModifiers: LayoutModifiers | undefined): KeyCode[] {
+        if (!layoutModifiers) {
+            return [keyCode];
+        }
+        if (!layoutModifiersIncludeAltGraph(layoutModifiers)) {
+            return this.shiftLayerInterpretations(keyCode, layoutModifiers);
+        }
+        if (input.altGraph) {
+            // Explicit AltGraph identifies both Ctrl and Alt as legacy artifacts. Without it, only Alt can be safely consumed,
+            // preserving Ctrl as a possible authored command modifier for Ctrl+Alt-emulated AltGraph.
+            if (input.ctrlKey && input.altKey) {
+                return [
+                    new KeyCode({ ...keyCode, interpretation: 'commandModifiers' }),
+                    this.toLayoutModifiersKeyCode(keyCode, layoutModifiers, { ctrl: true, alt: true })
+                ];
+            }
+            return [this.toLayoutModifiersKeyCode(keyCode, layoutModifiers)];
+        }
+        if (input.ctrlKey && input.altKey) {
+            return [
+                new KeyCode({ ...keyCode, interpretation: 'commandModifiers' }),
+                this.toLayoutModifiersKeyCode(keyCode, layoutModifiers, { alt: true })
+            ];
+        }
+        return [keyCode];
+    }
+
+    protected getMacKeyCodeInterpretations(keyCode: KeyCode, input: NormalizedKeyboardInput, layoutModifiers: LayoutModifiers | undefined): KeyCode[] {
+        if (!layoutModifiers) {
+            return [keyCode];
+        }
+        if (!layoutModifiersIncludeAltGraph(layoutModifiers)) {
+            return this.shiftLayerInterpretations(keyCode, layoutModifiers);
+        }
+        if (!input.altKey) {
+            return [keyCode];
+        }
+        return [
+            new KeyCode({ ...keyCode, interpretation: 'commandModifiers' }),
+            this.toLayoutModifiersKeyCode(keyCode, layoutModifiers, { alt: true })
+        ];
+    }
+
+    /** Interpret Shift either as a command modifier or as part of the keyboard layout. */
+    protected shiftLayerInterpretations(keyCode: KeyCode, layoutModifiers: LayoutModifiers): KeyCode[] {
+        if (!layoutModifiersIncludeShift(layoutModifiers)) {
+            return [keyCode];
+        }
+        return [
+            new KeyCode({ ...keyCode, interpretation: 'commandModifiers' }),
+            this.toLayoutModifiersKeyCode(keyCode, layoutModifiers)
+        ];
+    }
+
+    protected toLayoutModifiersKeyCode(keyCode: KeyCode, layoutModifiers: LayoutModifiers,
+        consumed: { ctrl?: boolean, alt?: boolean } = {}): KeyCode {
+        return new KeyCode({
+            key: keyCode.key,
+            character: keyCode.character,
+            ctrl: consumed.ctrl ? false : keyCode.ctrl,
+            meta: keyCode.meta,
+            shift: false,
+            alt: consumed.alt ? false : keyCode.alt,
+            layoutModifiers,
+            interpretation: 'layoutModifiers'
+        });
     }
 
     /**
@@ -116,40 +291,31 @@ export class KeyboardLayoutService {
         return key.easyString;
     }
 
+    /** Return the Latin letter registered for a physical key because the active layout does not produce it, or `undefined`. */
+    getLatinLetterFallback(key: Key): string | undefined {
+        return this.currentLayout?.latinFallbackByCode.get(key.code);
+    }
+
     /**
      * Called when a KeyboardEvent is processed by the KeybindingRegistry.
      * The KeyValidator may trigger a keyboard layout change.
      */
-    validateKeyCode(keyCode: KeyCode): void {
-        if (this.keyValidator && keyCode.key && keyCode.character) {
+    validateKeyCode(keyCode: KeyCode, input: NormalizedKeyboardInput): void {
+        const character = input.key;
+        if (this.keyValidator && keyCode.key && isPrintableCharacter(character)) {
             this.keyValidator.validateKey({
-                code: keyCode.key.code,
-                character: keyCode.character,
-                shiftKey: keyCode.shift,
-                ctrlKey: keyCode.ctrl,
-                altKey: keyCode.alt
+                code: input.code ?? keyCode.key.code,
+                character,
+                shiftKey: input.shiftKey,
+                ctrlKey: input.ctrlKey,
+                altKey: input.altKey,
+                altGraph: this.isAltGraphActive(input)
             });
         }
     }
 
-    protected transformKeyCode(inCode: KeyCode, mappedCode: KeyCode, keyNeedsShift: boolean): KeyCode | undefined {
-        if (!inCode.shift && keyNeedsShift) {
-            return undefined;
-        }
-        if (mappedCode.alt && (inCode.alt || inCode.ctrl || inCode.shift && !keyNeedsShift)) {
-            return undefined;
-        }
-        return new KeyCode({
-            key: mappedCode.key,
-            meta: inCode.meta,
-            ctrl: inCode.ctrl || mappedCode.alt,
-            shift: inCode.shift && !keyNeedsShift || mappedCode.shift,
-            alt: inCode.alt || mappedCode.alt
-        });
-    }
-
     protected transformNativeLayout(nativeLayout: NativeKeyboardLayout): KeyboardLayout {
-        const key2KeyCode: KeyCode[] = new Array(2 * (Key.MAX_KEY_CODE + 1));
+        const candidatesByCharacter = new Map<string, KeyboardLayoutCandidate[]>();
         const code2Character: { [code: string]: string } = {};
         const mapping = nativeLayout.mapping;
         for (const code in mapping) {
@@ -158,19 +324,33 @@ export class KeyboardLayoutService {
                 const mappedKey = Key.getKey(code);
                 if (mappedKey && this.shouldIncludeKey(code)) {
                     if (isWindows) {
-                        this.addWindowsKeyMapping(key2KeyCode, mappedKey, (keyMapping as IWindowsKeyMapping).vkey, keyMapping.value);
-                    } else if (isOSX) {
-                        this.addMacKeyMappings(key2KeyCode, mappedKey, keyMapping as IMacKeyMapping);
-                    } else {
-                        this.addKeyMappings(key2KeyCode, mappedKey, keyMapping);
+                        const windowsMapping = keyMapping as IWindowsKeyMapping & Partial<ILinuxKeyMapping>;
+                        if (!windowsMapping.value && VKEY_TO_KEY[windowsMapping.vkey]) {
+                            this.addKeyMapping(candidatesByCharacter, mappedKey, VKEY_TO_KEY[windowsMapping.vkey].easyString, 'none');
+                        }
                     }
+                    this.addKeyMappings(candidatesByCharacter, mappedKey, keyMapping as ILinuxKeyMapping & Partial<IMacKeyMapping>);
                 }
                 if (keyMapping.value) {
                     code2Character[code] = keyMapping.value;
                 }
             }
         }
-        return { key2KeyCode, code2Character };
+        const latinFallbackByCode = this.addMissingLatinLetterCandidates(candidatesByCharacter);
+        for (const candidates of candidatesByCharacter.values()) {
+            candidates.sort((left, right) => this.layoutModifierCost(left.layoutModifiers) - this.layoutModifierCost(right.layoutModifiers)
+                || left.key.code.localeCompare(right.key.code));
+        }
+        const candidatesByFoldedCharacter = new Map<string, KeyboardLayoutCandidate[]>();
+        for (const [character, candidates] of candidatesByCharacter) {
+            const folded = character.toLocaleLowerCase();
+            const existing = candidatesByFoldedCharacter.get(folded) ?? [];
+            existing.push(...candidates);
+            existing.sort((left, right) => this.layoutModifierCost(left.layoutModifiers) - this.layoutModifierCost(right.layoutModifiers)
+                || left.key.code.localeCompare(right.key.code));
+            candidatesByFoldedCharacter.set(folded, existing);
+        }
+        return { candidatesByCharacter, candidatesByFoldedCharacter, latinFallbackByCode, code2Character };
     }
 
     protected shouldIncludeKey(code: string): boolean {
@@ -181,73 +361,64 @@ export class KeyboardLayoutService {
         return !code.startsWith('Numpad');
     }
 
-    private addKeyMappings(key2KeyCode: KeyCode[], mappedKey: Key, keyMapping: ILinuxKeyMapping): void {
-        if (keyMapping.value) {
-            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.value, false, false);
-        }
-        if (keyMapping.withShift) {
-            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withShift, true, false);
-        }
-        if (keyMapping.withAltGr) {
-            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withAltGr, false, true);
-        }
-        if (keyMapping.withShiftAltGr) {
-            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withShiftAltGr, true, true);
-        }
+    protected layoutModifierCost(layoutModifiers: LayoutModifiers): number {
+        return LAYOUT_MODIFIER_COST[layoutModifiers];
     }
 
-    private addMacKeyMappings(key2KeyCode: KeyCode[], mappedKey: Key, keyMapping: IMacKeyMapping): void {
-        // Dead keys (e.g. the combining-accent layer of Option+E on macOS US) await a following keystroke to
-        // compose a glyph and so never produce a committed character. They must not be registered as if they
-        // produced their display glyph, which would otherwise collide with the real key for that glyph.
+    /**
+     * Register VS Code-compatible US-position fallbacks for Latin letters that the layout does not produce
+     * on its base or Shift layer. This is called once whenever the active keyboard layout is transformed.
+     */
+    protected addMissingLatinLetterCandidates(candidatesByCharacter: Map<string, KeyboardLayoutCandidate[]>): Map<string, string> {
+        const result = new Map<string, string>();
+        const produced = (lower: string, upper: string): boolean => [lower, upper].some(character =>
+            candidatesByCharacter.get(character)?.some(candidate =>
+                candidate.layoutModifiers === 'none' || candidate.layoutModifiers === 'shift'));
+
+        for (const lower of LATIN_LETTERS) {
+            const upper = lower.toUpperCase();
+            if (produced(lower, upper)) {
+                continue;
+            }
+            const key = VALUE_TO_KEY[lower].key;
+            const lowercaseCandidates = candidatesByCharacter.get(lower) ?? [];
+            lowercaseCandidates.push({ key, character: lower, layoutModifiers: 'none' });
+            candidatesByCharacter.set(lower, lowercaseCandidates);
+
+            const uppercaseCandidates = candidatesByCharacter.get(upper) ?? [];
+            uppercaseCandidates.push({ key, character: upper, layoutModifiers: 'shift' });
+            candidatesByCharacter.set(upper, uppercaseCandidates);
+            result.set(key.code, lower);
+        }
+        return result;
+    }
+
+    private addKeyMappings(candidatesByCharacter: Map<string, KeyboardLayoutCandidate[]>, mappedKey: Key,
+        keyMapping: ILinuxKeyMapping & Partial<IMacKeyMapping>): void {
+        // Dead keys await a following keystroke to compose a glyph and never produce a committed character. The flags are
+        // currently reported only on macOS, but applying the guards uniformly keeps resolution and detection symmetric.
         if (keyMapping.value && !keyMapping.valueIsDeadKey) {
-            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.value, false, false);
+            this.addKeyMapping(candidatesByCharacter, mappedKey, keyMapping.value, 'none');
         }
         if (keyMapping.withShift && !keyMapping.withShiftIsDeadKey) {
-            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withShift, true, false);
+            this.addKeyMapping(candidatesByCharacter, mappedKey, keyMapping.withShift, 'shift');
         }
         if (keyMapping.withAltGr && !keyMapping.withAltGrIsDeadKey) {
-            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withAltGr, false, true);
+            this.addKeyMapping(candidatesByCharacter, mappedKey, keyMapping.withAltGr, 'altGraph');
         }
         if (keyMapping.withShiftAltGr && !keyMapping.withShiftAltGrIsDeadKey) {
-            this.addKeyMapping(key2KeyCode, mappedKey, keyMapping.withShiftAltGr, true, true);
+            this.addKeyMapping(candidatesByCharacter, mappedKey, keyMapping.withShiftAltGr, 'shiftAltGraph');
         }
     }
 
-    private addKeyMapping(key2KeyCode: KeyCode[], mappedKey: Key, value: string, shift: boolean, alt: boolean): void {
-        const key = VALUE_TO_KEY[value];
-        if (key) {
-            const index = this.getCharacterIndex(key.key, key.shift);
-            if (key2KeyCode[index] === undefined) {
-                key2KeyCode[index] = new KeyCode({
-                    key: mappedKey,
-                    shift,
-                    alt,
-                    character: value
-                });
-            }
+    private addKeyMapping(candidatesByCharacter: Map<string, KeyboardLayoutCandidate[]>, mappedKey: Key,
+        value: string, layoutModifiers: LayoutModifiers): void {
+        if (Array.from(value).length !== 1) {
+            return;
         }
-    }
-
-    private addWindowsKeyMapping(key2KeyCode: KeyCode[], mappedKey: Key, vkey: string, value: string): void {
-        const key = VKEY_TO_KEY[vkey];
-        if (key) {
-            const index = this.getCharacterIndex(key);
-            if (key2KeyCode[index] === undefined) {
-                key2KeyCode[index] = new KeyCode({
-                    key: mappedKey,
-                    character: value
-                });
-            }
-        }
-    }
-
-    protected getCharacterIndex(key: Key, shift?: boolean): number {
-        if (shift) {
-            return Key.MAX_KEY_CODE + key.keyCode + 1;
-        } else {
-            return key.keyCode;
-        }
+        const candidates = candidatesByCharacter.get(value) ?? [];
+        candidates.push({ key: mappedKey, character: value, layoutModifiers });
+        candidatesByCharacter.set(value, candidates);
     }
 
 }
@@ -358,6 +529,24 @@ const VALUE_TO_KEY: { [value: string]: { key: Key, shift?: boolean } } = {
     '\n': { key: Key.ENTER },
     ' ': { key: Key.SPACE },
 };
+
+function usCharacterIndex(key: Key, shift = false): string {
+    return `${key.code}:${shift}`;
+}
+
+const LATIN_LETTERS = 'abcdefghijklmnopqrstuvwxyz';
+
+const LAYOUT_MODIFIER_COST: Record<LayoutModifiers, number> = {
+    none: 0,
+    shift: 1,
+    altGraph: 2,
+    shiftAltGraph: 3
+};
+
+const US_CHARACTER_BY_KEY = new Map<string, string>();
+for (const [character, value] of Object.entries(VALUE_TO_KEY)) {
+    US_CHARACTER_BY_KEY.set(usCharacterIndex(value.key, !!value.shift), character);
+}
 
 /**
  * Mapping of Windows Virtual Keys to the corresponding keys on a standard US keyboard layout.
