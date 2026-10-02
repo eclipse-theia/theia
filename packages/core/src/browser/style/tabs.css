@@ -287,6 +287,27 @@
   content: "\ebb2";
 }
 
+.lm-TabBar.theia-app-centers.theia-pinned-tab-shrink .lm-TabBar-tab.theia-mod-pinned {
+  order: -1;
+  position: sticky;
+  left: 0;
+}
+
+.lm-TabBar.theia-app-centers.theia-pinned-tab-shrink .lm-TabBar-tab.theia-mod-pinned>.lm-TabBar-tabCloseIcon {
+  display: inline-block;
+}
+
+.lm-TabBar.theia-app-centers.theia-pinned-tab-shrink:not(.dynamic-tabs) .lm-TabBar-tab.theia-mod-pinned {
+  min-width: 80px;
+  max-width: 80px;
+}
+
+.lm-TabBar.theia-app-centers.theia-pinned-tab-shrink .lm-TabBar-tab.theia-mod-pinned .lm-TabBar-tabLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .lm-TabBar-tabIcon.no-icon {
   display: none !important;
 }
