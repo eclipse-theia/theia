@@ -566,6 +566,11 @@ See: <https://github.com/eclipse-theia/theia/issues/10877#issuecomment-110700022
 * [1.](#theming-no-css-color-variables) Do not introduce CSS color variables. Implement `ColorContribution` and use `ColorRegistry.register` to register new colors.
 <a name="theming-no-css-color-values"></a>
 * [2.](#theming-no-css-color-values) Do not introduce hard-coded color values in CSS. Instead, refer to [VS Code colors](https://code.visualstudio.com/api/references/theme-color) in CSS by prefixing them with `--theia` and replacing all dots with dashes. For example `widget.shadow` color can be referred to in CSS with `var(--theia-widget-shadow)`.
+
+> [!NOTE]
+> `ColorApplicationContribution` sets every registered color on the document element under both the `--theia-` and the `--vscode-` prefix, so that VS Code extensions referencing `--vscode-` prefixed color variables (e.g. in inline styles of rendered HTML) work in Theia.
+> Theia's own code should always use the `--theia-` prefix; do not add ad-hoc `--vscode-` aliases in CSS files.
+
 <a name="theming-derive-colors-from-vscode"></a>
 * [3.](#theming-derive-colors-from-vscode) Always derive new colors from existing [VS Code colors](https://code.visualstudio.com/api/references/theme-color). New colors can be derived from an existing color by plain reference, e.g. `dark: 'widget.shadow'`, or transformation, e.g. `dark: Color.lighten('widget.shadow', 0.4)`.
 

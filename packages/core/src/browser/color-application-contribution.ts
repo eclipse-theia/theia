@@ -73,6 +73,13 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
         this.onDidChangeEmitter.fire();
     }
 
+    /**
+     * The CSS variables currently applied to the document element of a window. Used to only remove
+     * those that the current theme does not provide anymore, instead of removing and re-applying all
+     * of them on every update.
+     */
+    protected readonly appliedCssVariables = new WeakMap<Window, ReadonlySet<string>>();
+
     protected readonly toUpdate = new DisposableCollection();
     protected update(): void {
         this.toUpdate.dispose();
@@ -88,14 +95,27 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
 
         const documentElement = win.document.documentElement;
         if (documentElement) {
+            const applied = new Set<string>();
             for (const id of this.colors.getColors()) {
                 const variable = this.colors.getCurrentCssVariable(id);
                 if (variable) {
                     const { name, value } = variable;
                     documentElement.style.setProperty(name, value);
-                    this.toUpdate.push(Disposable.create(() => documentElement.style.removeProperty(name)));
+                    applied.add(name);
+                    // VS Code extensions reference colors with the `--vscode-` prefix, e.g. in the inline styles of the
+                    // HTML they render. Monaco only defines those variables within its own containers, so alias them
+                    // here to make them resolvable everywhere, like the webview theme data does.
+                    const alias = this.colors.toCssVariableName(id, 'vscode');
+                    documentElement.style.setProperty(alias, value);
+                    applied.add(alias);
                 }
             }
+            for (const name of this.appliedCssVariables.get(win) ?? []) {
+                if (!applied.has(name)) {
+                    documentElement.style.removeProperty(name);
+                }
+            }
+            this.appliedCssVariables.set(win, applied);
         }
     }
 
