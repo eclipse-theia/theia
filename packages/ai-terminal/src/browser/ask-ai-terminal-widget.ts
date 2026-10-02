@@ -94,10 +94,12 @@ export class AskAITerminalOverlay implements Disposable {
     protected handleSubmit(request: ChatRequest): void {
         this.onSubmitEmitter.fire(request);
         this.dispose();
+        this.terminalWidget.getTerminal().focus();
     }
 
     protected handleCancel(): void {
         this.onCancelEmitter.fire();
         this.dispose();
+        this.terminalWidget.getTerminal().focus();
     }
 }
