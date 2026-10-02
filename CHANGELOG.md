@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.77.0 - TBD
+
+<a name="breaking_changes_1.77.0">[Breaking Changes:](#breaking_changes_1.77.0)</a>
+
+- [core] added `withContext(context: HTMLElement | Context, callback)` to the `ContextKeyService` interface [#18113](https://github.com/eclipse-theia/theia/pull/18113)
+
 ## 1.76.0 - 9/24/2026
 
 - [ai] added gpt-6-astra, claude-fable-5-1 and gemini-3.8-flash to the default models [#18033](https://github.com/eclipse-theia/theia/pull/18033)

@@ -108,7 +108,7 @@ export class MonacoContextKeyService implements TheiaContextKeyService {
         }
     }
 
-    withContext<T>(context: Context, callback: () => T): T {
+    withContext<T>(context: HTMLElement | Context, callback: () => T): T {
         const oldActive = this.activeContext;
         this.activeContext = context;
         try {
