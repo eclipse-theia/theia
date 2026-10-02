@@ -63,13 +63,31 @@ function staleFileError(path: string): string {
     return `File ${path} changed since you last read it. Read it again before overwriting it, so that the changes made in the meantime are not lost.`;
 }
 
+const DEFAULT_WRITE_CONTENT_MAX_SIZE_KB = 256;
+
+function getWriteContentMaxSizeKB(preferenceService: PreferenceService): number {
+    return preferenceService.get<number>(WRITE_CONTENT_MAX_SIZE_KB_PREF, DEFAULT_WRITE_CONTENT_MAX_SIZE_KB);
+}
+
 /**
  * Whole-file writes require the model to re-emit the entire content as tool arguments, so their cost grows
  * with file size; mirror the read-side limit and steer oversized writes to the replacement-based tools.
+ * The check only runs once the arguments have been generated, so it blocks the write and steers retries;
+ * stating the limit in the tool description is what lets the model avoid the oversized call up front.
+ *
+ * @returns the error to report, or `undefined` if the content is within the limit.
  */
-function writeContentSizeError(sizeKB: number, maxSizeKB: number, replacementsToolId: string): string {
+function writeContentSizeError(content: string, maxSizeKB: number, fileExists: boolean, replacementsToolId: string): string | undefined {
+    const sizeKB = Math.round(Buffer.byteLength(content, 'utf8') / 1024);
+    if (sizeKB <= maxSizeKB) {
+        return undefined;
+    }
+    // The replacement tools edit existing content, so a new file has to be created small first.
+    const hint = fileExists
+        ? `Use ${replacementsToolId} for targeted edits`
+        : `Create the file with a smaller initial part, then add the rest with ${replacementsToolId}`;
     return `The provided content is ${sizeKB}KB, but the maximum write size is ${maxSizeKB}KB ` +
-        `(preference "${WRITE_CONTENT_MAX_SIZE_KB_PREF}"). Use ${replacementsToolId} for targeted edits, ` +
+        `(preference "${WRITE_CONTENT_MAX_SIZE_KB_PREF}"). ${hint}, ` +
         'or avoid embedding large data in the file and reference it by path instead.';
 }
 
@@ -103,16 +121,20 @@ export class SuggestFileContent implements ToolProvider {
     protected readonly preferenceService: PreferenceService;
 
     getTool(): ToolRequest {
+        const preferenceService = this.preferenceService;
         return {
             id: SuggestFileContent.ID,
             name: SuggestFileContent.ID,
-            description: `Proposes writing complete content to a file for user review. If the file exists, it will be overwritten with the provided content.
+            // A getter, because the registry keeps the tool from startup while the limit is a live preference.
+            get description(): string {
+                return `Proposes writing complete content to a file for user review. If the file exists, it will be overwritten with the provided content.
              If the file does not exist, it will be created. This tool will automatically create any directories needed to write the file.
              If the new content is empty, the file will be deleted. To move a file, delete it and re-create it at the new location.
              The proposed changes will be applied when the user accepts. If called again for the same file, previously proposed changes will be overridden.
              Use this for creating new files or when you need to rewrite an entire file.
              For targeted edits to existing files, prefer suggestFileReplacements instead - it's more efficient and shows clearer diffs.
-             Content exceeding the configured maximum write size is rejected.`,
+             Content larger than ${getWriteContentMaxSizeKB(preferenceService)}KB is rejected.`;
+            },
             parameters: {
                 type: 'object',
                 properties: {
@@ -134,11 +156,6 @@ export class SuggestFileContent implements ToolProvider {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
                 const { path, content } = JSON.parse(args);
-                const maxWriteSizeKB = this.preferenceService.get<number>(WRITE_CONTENT_MAX_SIZE_KB_PREF, 256);
-                const contentSizeKB = Math.round(Buffer.byteLength(content, 'utf8') / 1024);
-                if (contentSizeKB > maxWriteSizeKB) {
-                    return JSON.stringify({ error: writeContentSizeError(contentSizeKB, maxWriteSizeKB, SUGGEST_FILE_REPLACEMENTS_ID) });
-                }
                 const chatSessionId = ctx.request.session.id;
                 let uri: URI;
                 try {
@@ -149,11 +166,16 @@ export class SuggestFileContent implements ToolProvider {
                 if (await this.fileReadTracker?.isStale(chatSessionId, uri)) {
                     return JSON.stringify({ error: staleFileError(path) });
                 }
+                const exists = await this.fileService.exists(uri);
+                const sizeError = writeContentSizeError(content, getWriteContentMaxSizeKB(this.preferenceService), exists, SUGGEST_FILE_REPLACEMENTS_ID);
+                if (sizeError) {
+                    return JSON.stringify({ error: sizeError });
+                }
                 let type: ChangeSetElementArgs['type'] = 'modify';
                 if (content === '') {
                     type = 'delete';
                 }
-                if (!(await this.fileService.exists(uri))) {
+                if (!exists) {
                     type = 'add';
                 }
                 ctx.request.session.changeSet.addElements(
@@ -199,17 +221,21 @@ export class WriteFileContent implements ToolProvider {
     protected readonly preferenceService: PreferenceService;
 
     getTool(): ToolRequest {
+        const preferenceService = this.preferenceService;
         return {
             id: WriteFileContent.ID,
             name: WriteFileContent.ID,
-            description: `Immediately writes complete content to a file WITHOUT user confirmation. If the file exists, it will be overwritten.
+            // A getter, because the registry keeps the tool from startup while the limit is a live preference.
+            get description(): string {
+                return `Immediately writes complete content to a file WITHOUT user confirmation. If the file exists, it will be overwritten.
              If the file does not exist, it will be created. This tool will automatically create any directories needed to write the file.
              If the new content is empty, the file will be deleted. To move a file, delete it and re-create it at the new location.
              Use this for creating new files or complete file rewrites in agent mode.
              For targeted edits, prefer writeFileReplacements - it's more efficient and less error-prone.
              Never write to the same file in parallel tool calls.
-             Content exceeding the configured maximum write size is rejected.
-             CAUTION: Changes are applied immediately and cannot be undone through the chat interface.`,
+             Content larger than ${getWriteContentMaxSizeKB(preferenceService)}KB is rejected.
+             CAUTION: Changes are applied immediately and cannot be undone through the chat interface.`;
+            },
             parameters: {
                 type: 'object',
                 properties: {
@@ -231,11 +257,6 @@ export class WriteFileContent implements ToolProvider {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
                 const { path, content } = JSON.parse(args);
-                const maxWriteSizeKB = this.preferenceService.get<number>(WRITE_CONTENT_MAX_SIZE_KB_PREF, 256);
-                const contentSizeKB = Math.round(Buffer.byteLength(content, 'utf8') / 1024);
-                if (contentSizeKB > maxWriteSizeKB) {
-                    return JSON.stringify({ error: writeContentSizeError(contentSizeKB, maxWriteSizeKB, WRITE_FILE_REPLACEMENTS_ID) });
-                }
                 const chatSessionId = ctx.request.session.id;
                 let uri: URI;
                 try {
@@ -246,11 +267,16 @@ export class WriteFileContent implements ToolProvider {
                 if (await this.fileReadTracker?.isStale(chatSessionId, uri)) {
                     return JSON.stringify({ error: staleFileError(path) });
                 }
+                const exists = await this.fileService.exists(uri);
+                const sizeError = writeContentSizeError(content, getWriteContentMaxSizeKB(this.preferenceService), exists, WRITE_FILE_REPLACEMENTS_ID);
+                if (sizeError) {
+                    return JSON.stringify({ error: sizeError });
+                }
                 let type = 'modify';
                 if (content === '') {
                     type = 'delete';
                 }
-                if (!(await this.fileService.exists(uri))) {
+                if (!exists) {
                     type = 'add';
                 }
 

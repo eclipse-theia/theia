@@ -352,6 +352,29 @@ describe('File Changeset Functions Cancellation Tests', () => {
             expect(createdElements).to.be.empty;
         });
 
+        it('WriteFileContent steers an oversized new file to creating it smaller first', async () => {
+            preferenceValues[WRITE_CONTENT_MAX_SIZE_KB_PREF] = 1;
+            container.rebind(FileService).toConstantValue({ exists: async () => false } as unknown as FileService);
+            const handler = container.get(WriteFileContent).getTool().handler;
+
+            const result = await handler(JSON.stringify({ path: 'test.txt', content: 'x'.repeat(2048) }), mockCtx);
+
+            const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
+            expect(jsonResponse.error).to.include('Create the file with a smaller initial part, then add the rest with writeFileReplacements');
+            expect(createdElements).to.be.empty;
+        });
+
+        it('tool descriptions state the current maximum write size', () => {
+            const writeTool = container.get(WriteFileContent).getTool();
+            const suggestTool = container.get(SuggestFileContent).getTool();
+            expect(writeTool.description).to.include('larger than 256KB');
+
+            preferenceValues[WRITE_CONTENT_MAX_SIZE_KB_PREF] = 64;
+
+            expect(writeTool.description).to.include('larger than 64KB');
+            expect(suggestTool.description).to.include('larger than 64KB');
+        });
+
         it('WriteFileContent accepts content within the limit', async () => {
             preferenceValues[WRITE_CONTENT_MAX_SIZE_KB_PREF] = 1;
             const handler = container.get(WriteFileContent).getTool().handler;
