@@ -22,8 +22,10 @@ import {
     ServerToolDescriptor,
 } from '@theia/ai-core/lib/common';
 import { nls } from '@theia/core';
-import { codicon } from '@theia/core/lib/browser';
+import { codicon, HoverService } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
+import { AvailableGenericCapabilities } from '@theia/ai-chat-ui/lib/browser/generic-capabilities-service';
+import { GenericCapabilitiesTree } from '@theia/ai-chat-ui/lib/browser/generic-capabilities-tree';
 import { AiConfigurationItemRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-item-row';
 import { AiConfigurationIconButton } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-primitives';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
@@ -170,48 +172,50 @@ export const AgentCapabilitiesSettings = ({
 export interface AgentGenericCapabilitiesSettingsProps {
     agentId: string;
     savedSelections: GenericCapabilitySelections | undefined;
+    /** What the editor offers; without it the section is a read-only summary of the saved selections. */
+    availableCapabilities: AvailableGenericCapabilities | undefined;
+    /** Items the agent's prompt already references, shown checked and locked in the editor. */
+    usedCapabilities: GenericCapabilitySelections | undefined;
     aiSettingsService: AISettingsService;
     settingsRowService: AiSettingsRowService;
+    hoverService: HoverService;
     /** Reveals the snippet that wraps this capability type's selections, as in {@link AgentCapabilitiesSettings}. */
     onOpenPromptSnippet: (fragmentId: string) => void;
 }
 
 /**
  * The "Generic Capabilities" section of the agent detail page: one row per capability type the user has
- * selected (skills, MCP functions, functions, prompt fragments, agent delegation, variables). Only
- * selected types are shown; each row is an override with a per-type reset and a shared "Reset All".
+ * selected (skills, MCP functions, functions, prompt fragments, agent delegation, variables), each an
+ * override with a per-type reset and a shared "Reset All". The header's edit action opens the same tree
+ * the chat input's capabilities popup uses; every change is saved right away, like the other rows here.
  */
 export const AgentGenericCapabilitiesSettings = ({
-    agentId, savedSelections, aiSettingsService, settingsRowService, onOpenPromptSnippet
+    agentId, savedSelections, availableCapabilities, usedCapabilities, aiSettingsService, settingsRowService, hoverService, onOpenPromptSnippet
 }: AgentGenericCapabilitiesSettingsProps) => {
-    const [loading, setLoading] = React.useState(false);
-
-    const handleResetAll = async (): Promise<void> => {
-        if (loading) {
-            return;
-        }
-        setLoading(true);
-        try {
-            await aiSettingsService.updateAgentSettings(agentId, { genericCapabilitySelections: undefined });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Drop a single capability type's selections.
-    const handleReset = async (capabilityType: keyof GenericCapabilitySelections): Promise<void> => {
-        if (loading) {
-            return;
-        }
-        setLoading(true);
-        try {
-            await aiSettingsService.updateAgentSettings(agentId, { genericCapabilitySelections: { ...savedSelections, [capabilityType]: undefined } });
-        } finally {
-            setLoading(false);
-        }
-    };
-
+    // Held locally so consecutive edits build on each other instead of on the not yet reloaded saved value.
+    const [selections, setSelections] = React.useState<GenericCapabilitySelections>(savedSelections ?? {});
+    React.useEffect(() => setSelections(savedSelections ?? {}), [savedSelections]);
+    const [editing, setEditing] = React.useState(false);
     const capabilityTypes = CAPABILITY_TYPE_PROMPT_MAP.map(m => m.type);
+
+    const save = (next: GenericCapabilitySelections): Promise<void> => {
+        // Drop emptied types, and the whole setting once nothing is left, so no stale keys accumulate.
+        const cleaned: GenericCapabilitySelections = {};
+        for (const type of capabilityTypes) {
+            if ((next[type]?.length ?? 0) > 0) {
+                cleaned[type] = next[type];
+            }
+        }
+        setSelections(cleaned);
+        return aiSettingsService.updateAgentSettings(agentId, {
+            genericCapabilitySelections: GenericCapabilitySelections.hasSelections(cleaned) ? cleaned : undefined
+        });
+    };
+
+    const handleChange = (type: keyof GenericCapabilitySelections, ids: string[]): Promise<void> => save({ ...selections, [type]: ids });
+    const handleResetAll = (): Promise<void> => save({});
+    const handleReset = (type: keyof GenericCapabilitySelections): Promise<void> => save({ ...selections, [type]: undefined });
+
     const promptIdFor = (type: keyof GenericCapabilitySelections): string =>
         CAPABILITY_TYPE_PROMPT_MAP.find(entry => entry.type === type)!.promptId;
     const getDisplayName = (type: keyof GenericCapabilitySelections): string => ({
@@ -225,21 +229,42 @@ export const AgentGenericCapabilitiesSettings = ({
 
     // Only types the user has actually selected are shown; each such row is an override, so it carries the
     // modified bar. A single "Reset All" clears every selection, mirroring the Available Capabilities section.
-    const shownTypes = capabilityTypes.filter(type => (savedSelections?.[type]?.length ?? 0) > 0);
+    const shownTypes = capabilityTypes.filter(type => (selections[type]?.length ?? 0) > 0);
+    const editTitle = editing
+        ? nls.localize('theia/ai/ide/agentConfiguration/closeGenericCapabilitiesEditor', 'Close the generic capabilities editor')
+        : nls.localize('theia/ai/ide/agentConfiguration/editGenericCapabilities', 'Edit generic capabilities');
     return <>
         <AgentSectionHeader
             title={nls.localize('theia/ai/ide/agentConfiguration/genericCapabilitiesSettings', 'Generic Capabilities')}
-            action={shownTypes.length > 0 && <ResetAllButton
-                onReset={handleResetAll}
-                disabled={loading}
-                title={nls.localize('theia/ai/ide/agentConfiguration/resetAllGenericCapabilities', 'Reset all generic capability selections')}
-            />}
+            action={<>
+                {availableCapabilities && <AiConfigurationIconButton
+                    iconClass={codicon(editing ? 'close' : 'edit')}
+                    title={editTitle}
+                    className='ai-agent-section-header-action'
+                    onClick={() => setEditing(!editing)}
+                />}
+                {shownTypes.length > 0 && <ResetAllButton
+                    onReset={handleResetAll}
+                    title={nls.localize('theia/ai/ide/agentConfiguration/resetAllGenericCapabilities', 'Reset all generic capability selections')}
+                />}
+            </>}
         />
+        {editing && availableCapabilities && <div className='ai-agent-generic-capabilities-editor'>
+            <GenericCapabilitiesTree
+                genericCapabilities={selections}
+                onGenericCapabilityChange={handleChange}
+                // Every change is saved at once, so the tree's "back to saved" reset only has its search to clear.
+                onResetGenericCapabilities={() => { }}
+                availableCapabilities={availableCapabilities}
+                disabledCapabilities={usedCapabilities ?? {}}
+                hoverService={hoverService}
+            />
+        </div>}
         <div className='ai-configuration-item-list'>
             {shownTypes.map(type => <AiConfigurationItemRow
                 key={type}
                 label={getDisplayName(type)}
-                description={(savedSelections?.[type] ?? []).join(', ')}
+                description={(selections[type] ?? []).join(', ')}
                 modified={true}
                 onOpenMenu={gear => settingsRowService.openResetMenu(gear, () => handleReset(type))}
                 onActivateLabel={() => onOpenPromptSnippet(promptIdFor(type))}
