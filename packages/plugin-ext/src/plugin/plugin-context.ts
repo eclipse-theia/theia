@@ -504,7 +504,7 @@ export function createAPIFactory(
                 preserveFocus?: boolean
             ): Promise<theia.TextEditor> {
                 let documentOptions: theia.TextDocumentShowOptions | undefined;
-                const uri: URI = documentArg instanceof URI ? documentArg : documentArg.uri;
+                const uri: URI = URI.isUri(documentArg) ? URI.revive(documentArg) : documentArg.uri;
                 if (typeof columnOrOptions === 'number') {
                     documentOptions = {
                         viewColumn: columnOrOptions
