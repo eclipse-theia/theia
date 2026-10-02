@@ -27,7 +27,7 @@ import {
     PLUGIN_COPY_IGNORE,
     UNPUBLISHED,
 } from '@theia/plugin-utils/lib/common/constants';
-import { stripVscodeBuiltinNamePrefix } from '@theia/plugin-utils/lib/common/plugin-manifest';
+import { prepareLoadedManifest, stripVscodeBuiltinNamePrefix } from '@theia/plugin-utils/lib/common/plugin-manifest';
 import { updateActivationEvents } from '@theia/plugin-utils/lib/common/plugin-activation-events';
 import {
     applyTrustExtraction,
@@ -142,10 +142,11 @@ async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): 
         delete normalized.contributes;
 
         const translations = await loadPackageTranslations(buildTimePackageRoot);
-        if (translations.default && Object.keys(translations.default).length > 0) {
-            const resolve = (_: string, defaultVal: string): string => defaultVal;
-            normalized = localizePackage(normalized, translations, resolve);
-            contributes = localizePackage(contributes, translations, resolve);
+        const hasTranslations = !!translations.default && Object.keys(translations.default).length > 0;
+        const useDefaultTranslation = (_: string, defaultValue: string): string => defaultValue;
+        if (hasTranslations) {
+            normalized = localizePackage(normalized, translations, useDefaultTranslation);
+            contributes = localizePackage(contributes, translations, useDefaultTranslation);
         }
 
         const engineType = pickEngineType(normalized);
@@ -167,10 +168,16 @@ async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): 
         resolveHostedEntryPoint(model.entryPoint, dst);
         rewriteModelPathsForHostedStatic(model, buildTimePackageRoot, pluginId);
 
-        // Raw VS Code-style package.json for worker rawModel (contributes stay unnormalized).
+        // Raw VS Code-style package.json (contributes stay unnormalized).
         const diskManifest = deepClone(rawManifest);
         prepareHostedPackageJson(diskManifest, pluginId, model.entryPoint);
         await fs.writeJson(path.join(dst, 'package.json'), diskManifest, { spaces: 2 });
+        // Same result as the worker's `loadManifest` on the file above. Saves it fetching
+        // `package.json` and `package.nls.json` per plugin at startup.
+        const loadedManifest = prepareLoadedManifest(diskManifest, { updateActivationEvents: false });
+        const manifest = hasTranslations
+            ? localizePackage(loadedManifest, translations, useDefaultTranslation)
+            : loadedManifest;
 
         return {
             plugin: {
@@ -182,7 +189,8 @@ async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): 
                     host: PLUGIN_HOST_FRONTEND,
                     model,
                     lifecycle,
-                    outOfSync: false
+                    outOfSync: false,
+                    manifest
                 },
                 ...(Object.keys(contributes).length > 0 ? { contributes } : {})
             }
@@ -333,8 +341,10 @@ async function readGrammarsForBrowserOnly(
 }
 
 /**
- * `list.json` carries normalized contributes + plugin metadata (single source of truth for Theia).
- * `hostedPlugin/<id>/package.json` stays a VS Code-style raw manifest for worker `rawModel`:
+ * `list.json` carries normalized contributes + plugin metadata (single source of truth for Theia),
+ * including the localized manifest the worker uses as `rawModel`.
+ * `hostedPlugin/<id>/package.json` stays a VS Code-style raw manifest for reads relative to the
+ * plugin root, and for the worker if the metadata comes without a manifest:
  * name-prefix strip, `main` removed, entry paths synced, `packagePath` set to the static hosted
  * root (needed so relative assets resolve via `toPluginUrl`), and `packageUri` set to the scheme
  * form of that same root (needed for assets read through the `FileService`).

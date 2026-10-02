@@ -20,8 +20,9 @@ import * as os from 'os';
 import * as path from 'path';
 import { pathToFileURL } from 'url';
 import type { ApplicationPackage } from '@theia/application-package';
-import { LIST_JSON, PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
+import { LIST_JSON, PLUGINS_BASE_PATH, UNPUBLISHED } from '@theia/plugin-utils/lib/common/constants';
 import type { DeployedPlugin, PluginManifest } from '@theia/plugin-utils/lib/common/manifest-types';
+import { getPluginId } from '@theia/plugin-utils/lib/common/plugin-model';
 import {
     prepareBrowserOnlyPlugins,
     resolvePluginEntryFileSync,
@@ -170,6 +171,50 @@ describe('prepare-browser-only-plugins helpers', () => {
     });
 
     describe('prepareBrowserOnlyPlugins', () => {
+        it('leaves grammar contents out of list.json and embeds the localized manifest', async () => {
+            const pluginRoot = path.join(tmpRoot, 'plugins', 'acme');
+            await fs.ensureDir(path.join(pluginRoot, 'syntaxes'));
+            await fs.writeJson(path.join(pluginRoot, 'package.json'), {
+                name: '@theia/vscode-builtin-acme',
+                version: '1.0.0',
+                displayName: '%displayName%',
+                engines: { vscode: '*' },
+                contributes: {
+                    languages: [{ id: 'acme', extensions: ['.acme'] }],
+                    grammars: [{ language: 'acme', scopeName: 'source.acme', path: './syntaxes/acme.tmLanguage.json' }]
+                }
+            });
+            await fs.writeJson(path.join(pluginRoot, 'package.nls.json'), { displayName: 'Acme Language' });
+            await fs.writeJson(path.join(pluginRoot, 'syntaxes', 'acme.tmLanguage.json'), { scopeName: 'source.acme' });
+
+            const outDir = path.join(tmpRoot, 'out');
+            const applicationPackage = {
+                projectPath: tmpRoot,
+                pck: { theiaPluginsDir: 'plugins' },
+                lib: (...segments: string[]) => path.join(outDir, ...segments)
+            } as unknown as ApplicationPackage;
+            await prepareBrowserOnlyPlugins(applicationPackage);
+
+            const hostedPluginDir = path.join(outDir, 'frontend', PLUGINS_BASE_PATH);
+            const [plugin]: DeployedPlugin[] = await fs.readJson(path.join(hostedPluginDir, LIST_JSON));
+
+            const [grammar] = plugin.contributes!.grammars!;
+            expect(grammar).to.not.have.property('grammar');
+            expect(grammar.scope).to.equal('source.acme');
+            expect(grammar.grammarLocation).to.equal('./syntaxes/acme.tmLanguage.json');
+
+            const manifest = plugin.metadata.manifest!;
+            expect(manifest.name).to.equal('acme');
+            expect(manifest.publisher).to.equal(UNPUBLISHED);
+            expect(manifest.displayName).to.equal('Acme Language');
+            expect(manifest.contributes?.grammars).to.have.length(1);
+
+            // the grammar is loaded from the hosted copy later, and the hosted package.json stays raw
+            const pluginId = getPluginId(manifest);
+            expect(await fs.pathExists(path.join(hostedPluginDir, pluginId, 'syntaxes', 'acme.tmLanguage.json'))).to.equal(true);
+            expect((await fs.readJson(path.join(hostedPluginDir, pluginId, 'package.json'))).displayName).to.equal('%displayName%');
+        });
+
         it('inlines grammars the hosted copy leaves out and drops missing ones', async () => {
             const pluginRoot = path.join(tmpRoot, 'plugins', 'acme');
             const vendoredGrammar = path.join('node_modules', 'acme-grammar', 'acme.tmLanguage.json');
