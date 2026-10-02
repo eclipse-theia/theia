@@ -21,8 +21,12 @@ import { sep } from 'path';
 export const USER_KEY_TYPING_DELAY = 80;
 
 export function normalizeId(nodeId: string): string {
-    // Special characters (i.e. in our case '.',':','/','%', and '\\') in CSS IDs have to be escaped
-    return nodeId.replace(/[.:,%/\\]/g, matchedChar => '\\' + matchedChar);
+    // Special characters (i.e. in our case '.',':','/','%', '\\' and '~') in CSS IDs have to be escaped
+    return nodeId.replace(/[.:,%/\\~]/g, matchedChar => '\\' + matchedChar);
+}
+
+export function escapeDoubleQuotes(nodeId: string): string {
+    return nodeId.replace('"', '\\"');
 }
 
 export async function toTextContentArray(items: ElementHandle<SVGElement | HTMLElement>[]): Promise<string[]> {
