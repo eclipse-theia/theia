@@ -51,6 +51,7 @@ export interface MCPFrontendService {
     getServerDescription(name: string): Promise<MCPServerDescription | undefined>;
     getTools(serverName: string): Promise<ListToolsResult | undefined>;
     getPromptTemplateId(serverName: string): string;
+    getToolIdPrefix(serverName: string): string;
 }
 
 export const MCPFrontendNotificationService = Symbol('MCPFrontendNotificationService');
