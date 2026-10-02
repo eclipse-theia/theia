@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import debounce from 'p-debounce';
-import * as markdownit from '@theia/core/shared/markdown-it';
+import markdownit from '@theia/core/shared/markdown-it';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';

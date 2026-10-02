@@ -2,20 +2,20 @@
   "$schema": "https://json.schemastore.org/eslintrc",
   "rules": {
     "@typescript-eslint/consistent-type-definitions": "error",
-    "@typescript-eslint/indent": "off",
+    "@stylistic/indent": "off",
     "@typescript-eslint/no-explicit-any": "error",
-    "@typescript-eslint/quotes": [
+    "@stylistic/quotes": [
       "error",
       "single",
       {
         "avoidEscape": true
       }
     ],
-    "@typescript-eslint/semi": [
+    "@stylistic/semi": [
       "error",
       "always"
     ],
-    "@typescript-eslint/type-annotation-spacing": "error",
+    "@stylistic/type-annotation-spacing": "error",
     "arrow-body-style": [
       "error",
       "as-needed"
@@ -102,44 +102,32 @@
         ]
       }
     ],
-    "@typescript-eslint/tslint/config": [
+    "@stylistic/brace-style": [
       "error",
+      "1tbs",
       {
-        "rules": {
-          "file-header": [
-            true,
-            {
-              "allow-single-line-comments": true,
-              "match": "SPDX-License-Identifier: EPL-2\\.0 OR GPL-2\\.0-only WITH Classpath-exception-2\\.0"
-            }
-          ],
-          "jsdoc-format": [
-            true,
-            "check-multiline-start"
-          ],
-          "one-line": [
-            true,
-            "check-open-brace",
-            "check-catch",
-            "check-else",
-            "check-whitespace"
-          ],
-          "typedef": [
-            true,
-            "call-signature",
-            "property-declaration"
-          ],
-          "whitespace": [
-            true,
-            "check-branch",
-            "check-decl",
-            "check-operator",
-            "check-separator",
-            "check-type"
-          ]
-        }
+        "allowSingleLine": true
       }
     ],
+    "@stylistic/comma-spacing": "error",
+    "@stylistic/keyword-spacing": "error",
+    "@stylistic/semi-spacing": "error",
+    "@stylistic/space-infix-ops": "error",
+    "@theia/explicit-return-type": "error",
+    "@theia/file-header": [
+      "error",
+      {
+        "match": "SPDX-License-Identifier: EPL-2\\.0 OR GPL-2\\.0-only WITH Classpath-exception-2\\.0"
+      }
+    ],
+    "jsdoc/check-alignment": "error",
+    "jsdoc/multiline-blocks": [
+      "error",
+      {
+        "noZeroLineText": true
+      }
+    ],
+    "jsdoc/require-asterisk-prefix": "error",
     "@theia/annotation-check": "error",
     "@theia/localization-check": "error",
     "@theia/named-logger-check": "error",

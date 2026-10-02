@@ -150,8 +150,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         </div>;
     }
 
-    // tslint:disable-next-line:typedef
-    protected toIconClass(symbolKind: number) {
+    protected toIconClass(symbolKind: number): string {
         switch (symbolKind) {
             case SymbolKind.File: return 'file';
             case SymbolKind.Module: return 'module';

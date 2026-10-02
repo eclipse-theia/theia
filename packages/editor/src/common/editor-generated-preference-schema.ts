@@ -17,7 +17,7 @@
 import { isOSX, isWindows, nls } from '@theia/core';
 import { PreferenceSchema, PreferenceScope } from '@theia/core/lib/common/preferences';
 
-/* eslint-disable @typescript-eslint/quotes,max-len,no-null/no-null */
+/* eslint-disable @stylistic/quotes,max-len,no-null/no-null */
 
 /**
  * Please do not modify this file by hand. It should be generated automatically

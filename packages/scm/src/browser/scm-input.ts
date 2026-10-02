@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as debounce from 'p-debounce';
+import debounce from 'p-debounce';
 import { Disposable, DisposableCollection, Emitter } from '@theia/core/lib/common';
 import { JSONExt, JSONObject } from '@theia/core/shared/@lumino/coreutils';
 

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { assert, expect, spy, use } from 'chai';
-import * as spies from 'chai-spies';
+import spies from 'chai-spies';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from './uint8-array-message-buffer';
 import { ChannelMultiplexer, ForwardingChannel, MessageProvider } from './channel';
 import { RpcProtocol } from './rpc-protocol';

@@ -16,7 +16,7 @@
 
 import * as DOMPurify from 'dompurify';
 import { injectable, inject, postConstruct } from 'inversify';
-import * as markdownit from 'markdown-it';
+import markdownit from 'markdown-it';
 import * as markdownitemoji from 'markdown-it-emoji';
 import { MarkdownString } from '../../common/markdown-rendering/markdown-string';
 import { Disposable, DisposableGroup } from '../../common';

@@ -17,7 +17,7 @@
 import { ContributionProvider, THEIA_VERSION } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { RequestContext, RequestService, RequestOptions } from '@theia/core/shared/@theia/request';
-import * as decompress from 'decompress';
+import decompress from 'decompress';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { DependencyDownload, DirectoryDependencyDownload, RemoteNativeDependencyContribution } from './remote-native-dependency-contribution';

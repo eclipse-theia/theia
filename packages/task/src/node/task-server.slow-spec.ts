@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-// tslint:disable-next-line:no-implicit-dependencies
 import 'reflect-metadata';
 import { createTaskTestContainer } from './test/task-test-container';
 import { BackendApplication } from '@theia/core/lib/node/backend-application';

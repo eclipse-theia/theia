@@ -583,7 +583,7 @@ export class MiniBrowserContent extends BaseWidget {
                     this.pdfContainer.style.display = 'block';
                     this.frame.style.display = 'none';
                     PDFObject.embed(url, this.pdfContainer, {
-                        // eslint-disable-next-line max-len, @typescript-eslint/quotes
+                        // eslint-disable-next-line max-len, @stylistic/quotes
                         fallbackLink: `<p style="padding: 0px 15px 0px 15px">Your browser does not support inline PDFs. Click on this <a href='[url]' target="_blank">link</a> to open the PDF in a new tab.</p>`
                     });
                     clearTimeout(this.frameLoadTimeout);

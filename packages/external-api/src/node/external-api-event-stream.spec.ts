@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as express from '@theia/core/shared/express';
+import express from '@theia/core/shared/express';
 import { expect } from 'chai';
 import * as http from 'http';
 import { AddressInfo } from 'net';

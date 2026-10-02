@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.77.0 - NOT YET RELEASED
+
+<a name="breaking_changes_1.77.0">[Breaking Changes:](#breaking_changes_1.77.0)</a>
+
+- [core] upgraded to TypeScript 6.0.x: `configs/base.tsconfig.json` now enables `esModuleInterop`, uses `moduleResolution: bundler`, and declares global `types` explicitly. Published extensions that emit import helpers must declare `tslib`; consumers compiling Theia's declarations need `esModuleInterop`, `allowSyntheticDefaultImports`, or `skipLibCheck`. `TreeProps.viewProps` and `TreeWidget.ViewProps` no longer accept the inherited HTML `width`, `height`, or `rows` properties, and `@theia/localization-manager` now depends on TypeScript 6. See the [migration guide](doc/Migration.md) [#18100](https://github.com/eclipse-theia/theia/pull/18100) - Contributed on behalf of STMicroelectronics
+
 ## 1.76.0 - 9/24/2026
 
 - [ai] added gpt-6-astra, claude-fable-5-1 and gemini-3.8-flash to the default models [#18033](https://github.com/eclipse-theia/theia/pull/18033)

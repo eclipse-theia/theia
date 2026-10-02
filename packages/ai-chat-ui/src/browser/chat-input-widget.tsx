@@ -2237,7 +2237,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     }, [props.genericCapabilitiesProps.serverToolSelections]);
 
     // Without user input, if we can default to "Perform this task.", do so
-    const submit = React.useCallback(function submit(value: string): void {
+    const submit = React.useCallback(function submitCallback(value: string): void {
         let effectiveValue = value;
         if ((!value || value.trim().length === 0) && shouldUseTaskPlaceholder) {
             effectiveValue = taskPlaceholder;

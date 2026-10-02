@@ -28,7 +28,7 @@ import { NotebookContextManager } from '../service/notebook-context-manager';
 import { NotebookOptionsService } from '../service/notebook-options';
 import { NotebookCodeCellStatus } from './notebook-code-cell-view';
 import { NotebookEditorFindMatch, NotebookEditorFindMatchOptions } from './notebook-find-widget';
-import * as mark from 'advanced-mark.js';
+import mark from 'advanced-mark.js';
 import { NotebookCellEditorService } from '../service/notebook-cell-editor-service';
 import { NotebookCellStatusBarService } from '../service/notebook-cell-status-bar-service';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';

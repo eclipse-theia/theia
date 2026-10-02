@@ -311,7 +311,7 @@ export class MonacoEditorProvider {
     protected createOptions(prefixes: string[], uri: string, overrideIdentifier?: string): Record<string, any> {
         const flat: Record<string, any> = {};
         for (const preferenceName of Object.keys(this.editorPreferences)) {
-            flat[preferenceName] = (<any>this.editorPreferences).get({ preferenceName, overrideIdentifier }, undefined, uri);
+            flat[preferenceName] = (this.editorPreferences as any).get({ preferenceName, overrideIdentifier }, undefined, uri);
         }
         return Object.entries(flat).reduce((tree, [preferenceName, value]) => this.setOption(preferenceName, deepClone(value), prefixes, tree), {});
     }
