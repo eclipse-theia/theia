@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { AIContextVariable, AIVariableService } from '@theia/ai-core';
+import { WorkspaceRelativePathResolver } from '@theia/ai-core/lib/browser';
 import { Command, CommandContribution, CommandRegistry, Path, URI } from '@theia/core';
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -43,6 +44,8 @@ export class AIChatFrontendContribution implements CommandContribution {
     protected readonly fileService: FileService;
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+    @inject(WorkspaceRelativePathResolver)
+    protected readonly pathResolver: WorkspaceRelativePathResolver;
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(VARIABLE_ADD_CONTEXT_COMMAND, {
@@ -66,7 +69,7 @@ export class AIChatFrontendContribution implements CommandContribution {
     }
 
     /**
-     * Open a file by its workspace-relative path.
+     * Open a file by its workspace-relative path, in the format of `WorkspaceService.getRootPrefixedPath`.
      */
     async openFileByPath(wsRelativePath: string): Promise<void> {
         const uri = await this.resolveWorkspaceRelativePath(wsRelativePath);
@@ -84,13 +87,6 @@ export class AIChatFrontendContribution implements CommandContribution {
             }
             return undefined;
         }
-        const workspaceRoots = this.workspaceService.tryGetRoots();
-        for (const root of workspaceRoots) {
-            const uri = root.resource.resolve(path);
-            if (await this.fileService.exists(uri)) {
-                return uri;
-            }
-        }
-        return undefined;
+        return this.pathResolver.resolveExistingRelativePath(wsRelativePath);
     }
 }

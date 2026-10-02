@@ -86,7 +86,6 @@ export class WorkspaceFunctionScope {
     private gitignoreMatchers = new Map<string, ReturnType<typeof ignore> | undefined>();
     private gitignoreWatchersInitialized = new Set<string>();
 
-    private _rootMapping: Map<string, URI> | undefined;
     private _allRootUris: URI[] | undefined;
 
     private homeDirUri: Promise<URI | undefined> | undefined;
@@ -96,7 +95,6 @@ export class WorkspaceFunctionScope {
     @postConstruct()
     protected init(): void {
         this.workspaceService.onWorkspaceChanged(() => {
-            this._rootMapping = undefined;
             this._allRootUris = undefined;
         });
     }
@@ -114,56 +112,21 @@ export class WorkspaceFunctionScope {
     }
 
     /**
-     * Returns a mapping of root names to root URIs.
+     * Returns a mapping of root names to root URIs, in workspace order.
      *
-     * Root names are always the directory basename. When multiple roots share the
-     * same basename, only the first (by URI sort order) is addressable by name —
-     * the others are still reachable via the `resolveRelativePath` supra-relative
-     * check (which examines path segments against all roots).
-     *
-     * **Known limitation:** duplicate basenames are not disambiguated with synthetic
-     * suffixes because agents observe real filesystem paths in terminal output,
-     * compiler errors, stack traces, etc. Synthetic names like `app-1` would
-     * conflict with those observations and cause more confusion than they solve.
-     * A future improvement could let users assign display names to roots.
+     * Root names are assigned by {@link WorkspaceService.getRootNames}: the directory basename, or for
+     * roots sharing a basename, the shortest tail of the path that tells them apart (e.g. `alice/app`
+     * and `bob/app`). Every root thus has a name, and names are always the ending of the real path.
      */
     getRootMapping(): Map<string, URI> {
-        if (this._rootMapping) {
-            return this._rootMapping;
-        }
-
-        const wsRoots = this.workspaceService.tryGetRoots();
-        const sortedRoots = [...wsRoots].sort((a, b) => a.resource.toString().localeCompare(b.resource.toString()));
-        const mapping = new Map<string, URI>();
-
-        for (const root of sortedRoots) {
-            const basename = root.resource.path.base;
-            if (mapping.has(basename)) {
-                this.logger.debug(
-                    `Multiple workspace roots share the basename '${basename}'. ` +
-                    `Only '${mapping.get(basename)!.toString()}' is addressable as '${basename}'. ` +
-                    `'${root.resource.toString()}' can still be accessed but may require full paths.`
-                );
-                continue;
-            }
-            mapping.set(basename, root.resource);
-        }
-
-        this._rootMapping = mapping;
-        return mapping;
+        return new Map(this.workspaceService.getRootNames());
     }
 
     /**
-     * Returns the root name for a given root URI based on the cached mapping.
+     * Returns the root name for a given root URI, see {@link WorkspaceService.getRootName}.
      */
     getRootName(rootUri: URI): string | undefined {
-        const mapping = this.getRootMapping();
-        for (const [name, uri] of mapping) {
-            if (uri.toString() === rootUri.toString()) {
-                return name;
-            }
-        }
-        return undefined;
+        return this.workspaceService.getRootName(rootUri);
     }
 
     /**
@@ -185,26 +148,11 @@ export class WorkspaceFunctionScope {
     }
 
     /**
-     * Converts a URI to a workspace-relative path with root name prefix.
+     * Converts a URI to a workspace-relative path with root name prefix, see {@link WorkspaceService.getRootPrefixedPath}.
      * Format: <rootName>/<relativePath>
      */
     toWorkspaceRelativePath(uri: URI): string | undefined {
-        const containingRoot = this.getContainingRoot(uri);
-        if (!containingRoot) {
-            return undefined;
-        }
-
-        const rootName = this.getRootName(containingRoot);
-        if (!rootName) {
-            return undefined;
-        }
-
-        const relativePath = containingRoot.relative(uri);
-        if (!relativePath || relativePath.toString() === '') {
-            return rootName; // URI is the root itself
-        }
-
-        return `${rootName}/${relativePath.toString()}`;
+        return this.getContainingRoot(uri) ? this.workspaceService.getRootPrefixedPath(uri) : undefined;
     }
 
     // ── Path resolution ─────────────────────────────────────────────────
@@ -215,57 +163,40 @@ export class WorkspaceFunctionScope {
      * format. If the path cannot be resolved deterministically, an error is thrown.
      *
      * Resolution order:
-     * 1. Root+relative: first segment matches a root name → resolve rest relative to that root.
+     * 1. Root+relative: the path starts with a root name → resolve the rest relative to that root.
      * 2. Supra-relative: a root's basename appears as a segment, and any preceding material
      *    matches the preceding path components of the root → resolve the trailing portion.
+     *    If this matches different files in several roots, the path is ambiguous.
      * 3. Single-root fallback: if exactly one workspace root, resolve relative to it.
      * 4. Error: tell the agent how to format the path.
      */
     resolveRelativePath(relativePath: string): URI {
         const normalizedPath = new Path(Path.normalizePathSeparator(relativePath)).normalize().toString();
-        const mapping = this.getRootMapping();
         const roots = this.getAllRootUris();
         const segments = normalizedPath.split('/');
 
         // Phase 1 — Root+relative check:
-        if (segments.length > 0) {
-            const potentialRootName = segments[0];
-            const rootUri = mapping.get(potentialRootName);
-            if (rootUri) {
-                const restOfPath = segments.slice(1).join('/');
-                return restOfPath ? rootUri.resolve(restOfPath) : rootUri;
-            }
+        const rootRelative = this.workspaceService.resolveRootPrefixedPath(normalizedPath);
+        if (rootRelative) {
+            return rootRelative;
         }
 
         // Phase 2 — Supra-relative check:
+        const candidates = new Map<string, URI>();
         for (const rootUri of roots) {
-            const rootBasename = rootUri.path.base;
-            for (let i = 0; i < segments.length; i++) {
-                if (segments[i] !== rootBasename) {
-                    continue;
-                }
-                const rootPathSegments = rootUri.path.toString().split('/').filter(s => s.length > 0);
-                const rootPrecedingSegments = rootPathSegments.slice(0, rootPathSegments.length - 1);
-                const pathPrecedingSegments = segments.slice(0, i);
-
-                let matches = true;
-                if (pathPrecedingSegments.length > rootPrecedingSegments.length) {
-                    matches = false;
-                } else {
-                    const rootTail = rootPrecedingSegments.slice(rootPrecedingSegments.length - pathPrecedingSegments.length);
-                    for (let j = 0; j < pathPrecedingSegments.length; j++) {
-                        if (pathPrecedingSegments[j] !== rootTail[j]) {
-                            matches = false;
-                            break;
-                        }
-                    }
-                }
-
-                if (matches) {
-                    const restOfPath = segments.slice(i + 1).join('/');
-                    return restOfPath ? rootUri.resolve(restOfPath) : rootUri;
-                }
+            const candidate = this.resolveSupraRelativePath(rootUri, segments);
+            if (candidate) {
+                candidates.set(candidate.toString(), candidate);
             }
+        }
+        if (candidates.size === 1) {
+            return candidates.values().next().value!;
+        }
+        if (candidates.size > 1) {
+            throw new Error(
+                `Path '${relativePath}' is ambiguous in this multi-root workspace. ` +
+                `Prefix it with one of the workspace root names: ${this.describeRoots()}`
+            );
         }
 
         // Phase 3 — Single-root fallback:
@@ -274,11 +205,42 @@ export class WorkspaceFunctionScope {
         }
 
         // Phase 4 — Error:
-        const rootNames = Array.from(mapping.keys());
         throw new Error(
             `Could not resolve path '${relativePath}'. In a multi-root workspace, prefix paths with the workspace root name ` +
-            `(e.g., 'rootName/path/to/file'). Available roots: ${rootNames.join(', ')}`
+            `(e.g., 'rootName/path/to/file'). Available roots: ${this.describeRoots()}`
         );
+    }
+
+    /**
+     * Resolves `segments` if they contain the basename of `rootUri`, preceded by nothing or by the
+     * trailing segments of the root's parent path, e.g. `bob/app/src` for the root `/home/bob/app`.
+     */
+    protected resolveSupraRelativePath(rootUri: URI, segments: string[]): URI | undefined {
+        const rootBasename = rootUri.path.base;
+        const rootPathSegments = rootUri.path.toString().split('/').filter(s => s.length > 0);
+        const rootPrecedingSegments = rootPathSegments.slice(0, rootPathSegments.length - 1);
+        for (let i = 0; i < segments.length; i++) {
+            if (segments[i] !== rootBasename) {
+                continue;
+            }
+            const pathPrecedingSegments = segments.slice(0, i);
+            if (pathPrecedingSegments.length > rootPrecedingSegments.length) {
+                continue;
+            }
+            const rootTail = rootPrecedingSegments.slice(rootPrecedingSegments.length - pathPrecedingSegments.length);
+            if (pathPrecedingSegments.every((segment, j) => segment === rootTail[j])) {
+                const restOfPath = segments.slice(i + 1).join('/');
+                return restOfPath ? rootUri.resolve(restOfPath) : rootUri;
+            }
+        }
+        return undefined;
+    }
+
+    /**
+     * Lists the workspace root names with their locations, for error messages.
+     */
+    protected describeRoots(): string {
+        return Array.from(this.getRootMapping(), ([name, uri]) => `${name} (${uri.path.fsPath()})`).join(', ');
     }
 
     async resolveToUri(pathOrUri: string | URI): Promise<URI | undefined> {
@@ -658,7 +620,8 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
                 properties: {
                     root: {
                         type: 'string',
-                        description: 'Optional absolute path or `file://` URI to inspect instead of the workspace. ' +
+                        description: 'Optional directory to inspect instead of the whole workspace: a workspace-relative path (\'rootName/path\'), ' +
+                            'an absolute path or a `file://` URI. ' +
                             'Must point to a directory the tools may access, such as one listed in the `allowedExternalPaths` preference. ' +
                             'When omitted, all workspace roots are returned.'
                     }
@@ -1309,6 +1272,9 @@ export class FindFilesByPattern implements ToolProvider {
     @inject(FileSearchService)
     protected readonly fileSearchService: FileSearchService;
 
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
     getTool(): ToolRequest {
         return {
             id: FindFilesByPattern.ID,
@@ -1327,23 +1293,27 @@ export class FindFilesByPattern implements ToolProvider {
                 properties: {
                     pattern: {
                         type: 'string',
-                        description: 'Glob pattern to match files against. ' +
+                        description: 'Glob pattern to match files against, relative to each workspace root. ' +
+                            'Start it with a root name, as in the returned paths, to match it relative to that root as well. ' +
                             'Examples: \'**/*.ts\' (all TypeScript files), \'src/**/*.js\' (JS files in src), ' +
+                            '\'my-project/src/**/*.js\' (JS files in src of the my-project root, or in my-project/src of any root), ' +
                             '\'**/*.{js,ts}\' (JS or TS files), \'**/test/**/*.spec.ts\' (test files).'
                     },
                     exclude: {
                         type: 'array',
                         items: { type: 'string' },
-                        description: 'Optional glob patterns to exclude. ' +
+                        description: 'Optional glob patterns to exclude, relative to each workspace root or starting with a root name. ' +
                             'Examples: [\'**/*.spec.ts\', \'**/node_modules/**\']. ' +
                             'Common exclusions (node_modules, .git) are applied automatically via gitignore.'
                     },
                     searchRoot: {
                         type: 'string',
-                        description: 'Optional absolute path or `file://` URI to search instead of the workspace. ' +
+                        description: 'Optional directory to search instead of the whole workspace: a workspace-relative path ' +
+                            '(\'rootName/path\'), an absolute path or a `file://` URI. ' +
                             'Must point to a directory the tools may access, such as one listed in the `allowedExternalPaths` preference. ' +
-                            'When set, results are returned as absolute paths so they can be passed back to getFileContent. ' +
-                            'When omitted (default), all workspace roots are searched and results are workspace-relative.'
+                            'Results in the workspace are workspace-relative, results outside of it are absolute paths, ' +
+                            'so they can be passed back to getFileContent. ' +
+                            'When omitted (default), all workspace roots are searched.'
                     }
                 },
                 required: ['pattern']
@@ -1385,54 +1355,59 @@ export class FindFilesByPattern implements ToolProvider {
             const maxResults = 200;
             const useGitIgnore = this.preferences.get(CONSIDER_GITIGNORE_PREF, true);
             const userExcludes = this.preferences.get<string[]>(USER_EXCLUDE_PATTERN_PREF, []);
-            const excludes = [...userExcludes, ...(excludePatterns ?? [])];
 
             // Resolve the set of roots to search and how each root's results should be rendered.
-            const targets: { rootUri: URI; rootName?: string; external: boolean }[] = [];
+            const targets: { rootUri: URI; rootName?: string; external: boolean; patterns: string[] }[] = [];
             if (searchRoot) {
                 const resolved = await this.workspaceScope.resolveAccessiblePath(searchRoot);
-                targets.push({ rootUri: resolved, external: !this.workspaceScope.isInWorkspace(resolved) });
+                targets.push({ rootUri: resolved, external: !this.workspaceScope.isInWorkspace(resolved), patterns: [pattern] });
             } else {
                 const rootMapping = this.workspaceScope.getRootMapping();
                 if (rootMapping.size === 0) {
                     return JSON.stringify({ error: 'No workspace has been opened yet' });
                 }
                 for (const [rootName, rootUri] of rootMapping) {
-                    targets.push({ rootUri, rootName, external: false });
+                    targets.push({ rootUri, rootName, external: false, patterns: this.globsForRoot([pattern], rootUri) });
                 }
             }
 
             // Delegate the actual traversal to the backend ripgrep-based file search.
             // It runs natively on the backend filesystem (no per-directory RPC) and applies
             // include/exclude globs.
-            const files: string[] = [];
+            // A file in a nested root is found in the outer root as well, if the glob matches it relative to either.
+            const found = new Map<string, { uri: URI; display: string }>();
             for (const target of targets) {
                 if (cancellationToken?.isCancellationRequested) {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
-                if (files.length > maxResults) {
+                if (found.size > maxResults) {
                     break;
                 }
+                const excludes = [...userExcludes, ...this.globsForRoot(excludePatterns ?? [], target.rootUri)];
                 // `considerGitIgnore` is scoped to workspace roots (see its preference description),
                 // so external allow-listed roots are searched with user/caller excludes only (plus
                 // `.git`). Applying gitignore there would also leak the user's *global* gitignore
                 // into an explicitly allow-listed directory and silently hide files.
-                // Request one extra result across all roots so we can detect truncation.
+                // Request one extra result across all roots so we can detect truncation, besides the files
+                // of this root that were found in a nested or outer root already.
+                const foundInRoot = Array.from(found.values()).filter(file => target.rootUri.isEqualOrParent(file.uri)).length;
                 const matches = await this.fileSearchService.find('', {
                     rootUris: [target.rootUri.toString()],
-                    includePatterns: [pattern],
+                    includePatterns: target.patterns,
                     excludePatterns: target.external ? [...excludes, '.git'] : excludes,
                     useGitIgnore: target.external ? false : useGitIgnore,
                     fuzzyMatch: false,
-                    limit: maxResults - files.length + 1
+                    limit: maxResults - found.size + 1 + foundInRoot
                 }, cancellationToken);
                 for (const match of matches) {
-                    const display = this.toDisplayPath(new URI(match), target);
+                    const matchUri = new URI(match);
+                    const display = this.toDisplayPath(matchUri, target);
                     if (display !== undefined) {
-                        files.push(display);
+                        found.set(matchUri.toString(), { uri: matchUri, display });
                     }
                 }
             }
+            const files = Array.from(found.values(), file => file.display);
 
             if (cancellationToken?.isCancellationRequested) {
                 return JSON.stringify({ error: 'Operation cancelled by user' });
@@ -1453,18 +1428,30 @@ export class FindFilesByPattern implements ToolProvider {
     }
 
     /**
+     * Returns the caller's globs to match relative to the given root. A glob is relative to every root,
+     * and if it starts with the name of this root, e.g. `backend/src/**\/*.ts` as in the paths this tool
+     * returns, its rest is relative to this root as well, as the caller may mean either.
+     */
+    protected globsForRoot(globs: string[], rootUri: URI): string[] {
+        const result: string[] = [];
+        for (const glob of globs) {
+            result.push(glob);
+            const rootPrefixed = this.workspaceService.splitRootPrefixedPath(glob);
+            if (rootPrefixed?.rest && rootPrefixed.rootUri.isEqual(rootUri)) {
+                result.push(rootPrefixed.rest);
+            }
+        }
+        return result;
+    }
+
+    /**
      * Renders a search-result URI in the format expected by the caller: an absolute
-     * path for external roots, or a `<rootName>/<relativePath>` (or bare relative
-     * path when no root name is available) for workspace roots.
+     * path for external roots, or a `<rootName>/<relativePath>` for workspace roots.
      */
     protected toDisplayPath(match: URI, target: { rootUri: URI; rootName?: string; external: boolean }): string | undefined {
         if (target.external) {
             return match.path.fsPath();
         }
-        const relativePath = target.rootUri.relative(match)?.toString();
-        if (relativePath === undefined) {
-            return undefined;
-        }
-        return target.rootName ? `${target.rootName}/${relativePath}` : relativePath;
+        return this.workspaceScope.toWorkspaceRelativePath(match) ?? match.path.fsPath();
     }
 }

@@ -16,6 +16,7 @@
 
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
+import { Path } from '@theia/core/lib/common/path';
 import { WorkspaceServer, UntitledWorkspaceService, WorkspaceFileService } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { DEFAULT_WINDOW_HASH } from '@theia/core/lib/common/window';
@@ -312,6 +313,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         }
         if (rootsChanged) {
             this._roots = newRoots;
+            this.rootNamesCache = undefined;
             this.deferredRoots.resolve(this._roots); // in order to resolve first
             this.deferredRoots = new Deferred<FileStat[]>();
             this.deferredRoots.resolve(this._roots);
@@ -596,6 +598,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
             this.windowService.setSafeToShutDown();
             this._workspace = undefined;
             this._roots.length = 0;
+            this.rootNamesCache = undefined;
 
             if (!this.isRemoteSession()) {
                 await this.server.setMostRecentlyUsedWorkspace('');
@@ -833,12 +836,174 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         if (!rootUri) {
             return uri.path.fsPath();
         }
-        const rootName = rootUri.path.base;
+        const rootName = this.getRootName(rootUri) ?? rootUri.path.base;
         const relative = rootUri.relative(uri);
         if (!relative || relative.toString() === '') {
             return rootName;
         }
         return `${rootName}/${relative.toString()}`;
+    }
+
+    /**
+     * Returns a unique name for each workspace root, in workspace order.
+     *
+     * A root is named after its directory basename, e.g. `backend`. Roots that share a basename are
+     * treated as peers: each of them is named after the shortest tail of its path that tells them
+     * apart, e.g. `alice/app` and `bob/app`. A name that another name starts with, e.g. `alice` next to
+     * `alice/app`, is qualified in the same way, e.g. `work/alice`, so that every path resolves to the root
+     * it came from. The names are thus always the ending of the real path, so they match what appears in
+     * terminal output, compiler errors and the like.
+     *
+     * These are the root names used by {@link getRootPrefixedPath} and resolved by {@link resolveRootPrefixedPath}.
+     */
+    getRootNames(): ReadonlyMap<string, URI> {
+        return this.getRootNamesCache().names;
+    }
+
+    /**
+     * The root names, and the names by root URI, which depend on each other. Reset whenever the roots change.
+     */
+    protected rootNamesCache: { names: ReadonlyMap<string, URI>; namesByRoot: ReadonlyMap<string, string> } | undefined;
+
+    protected getRootNamesCache(): { names: ReadonlyMap<string, URI>; namesByRoot: ReadonlyMap<string, string> } {
+        if (!this.rootNamesCache) {
+            const names = this.computeRootNames(this.tryGetRoots());
+            const namesByRoot = new Map(Array.from(names, ([name, uri]) => [uri.toString(), name]));
+            this.rootNamesCache = { names, namesByRoot };
+        }
+        return this.rootNamesCache;
+    }
+
+    protected computeRootNames(workspaceRoots: FileStat[]): Map<string, URI> {
+        const roots: URI[] = [];
+        for (const root of workspaceRoots) {
+            if (!roots.some(other => other.isEqual(root.resource))) {
+                roots.push(root.resource);
+            }
+        }
+        const byBasename = new Map<string, URI[]>();
+        for (const root of roots) {
+            const peers = byBasename.get(root.path.base) ?? [];
+            peers.push(root);
+            byBasename.set(root.path.base, peers);
+        }
+        const names = new Map<string, URI>();
+        for (const root of roots) {
+            names.set(this.computeRootName(root, byBasename.get(root.path.base)!), root);
+        }
+        return this.qualifyRootNames(names);
+    }
+
+    /**
+     * Returns the name of the given workspace root, as assigned by {@link getRootNames}, or
+     * `undefined` if the URI is not a workspace root.
+     */
+    getRootName(rootUri: URI): string | undefined {
+        return this.getRootNamesCache().namesByRoot.get(rootUri.toString());
+    }
+
+    /**
+     * Resolves a path in the format of {@link getRootPrefixedPath}, i.e. `<rootName>/<relativePath>`
+     * or a bare `<rootName>`, to a URI. If more than one root name is a prefix of the path, which is
+     * the case when a root named `a` has a subfolder `b` and another root is named `a/b`, the longest
+     * one wins.
+     *
+     * @returns `undefined` if the path is absolute, does not start with a root name or leaves its root.
+     */
+    resolveRootPrefixedPath(rootPrefixedPath: string): URI | undefined {
+        const path = new Path(Path.normalizePathSeparator(rootPrefixedPath)).normalize();
+        if (path.isAbsolute || Path.isDrive(path.toString().split('/')[0])) {
+            return undefined;
+        }
+        const segments = path.toString().split('/').filter(segment => segment.length > 0);
+        if (segments.includes('..')) {
+            return undefined;
+        }
+        const match = this.splitRootPrefixedPath(segments.join('/'));
+        if (!match) {
+            return undefined;
+        }
+        return match.rest ? match.rootUri.resolve(match.rest) : match.rootUri;
+    }
+
+    /**
+     * Splits a `/`-separated path that starts with a root name, as in {@link getRootPrefixedPath}, into
+     * that root and the rest of the path, which is empty for a bare root name. The rest is not normalized,
+     * so it may as well be a glob. If more than one root name is a prefix of the path, the longest one wins.
+     *
+     * @returns `undefined` if the path does not start with a root name.
+     */
+    splitRootPrefixedPath(rootPrefixedPath: string): { rootName: string; rootUri: URI; rest: string } | undefined {
+        const segments = rootPrefixedPath.split('/');
+        let match: { rootName: string; rootUri: URI; length: number } | undefined;
+        for (const [rootName, rootUri] of this.getRootNames()) {
+            const nameSegments = rootName.split('/');
+            const matches = nameSegments.length <= segments.length && nameSegments.every((segment, i) => segment === segments[i]);
+            if (matches && (!match || nameSegments.length > match.length)) {
+                match = { rootName, rootUri, length: nameSegments.length };
+            }
+        }
+        return match && { rootName: match.rootName, rootUri: match.rootUri, rest: segments.slice(match.length).join('/') };
+    }
+
+    /**
+     * Computes the name of a root from the roots that share its basename (including itself).
+     */
+    protected computeRootName(root: URI, peers: URI[]): string {
+        if (peers.length === 1) {
+            return root.path.base || root.path.toString();
+        }
+        const segmentsOf = (uri: URI): string[] => uri.path.toString().split('/').filter(segment => segment.length > 0);
+        const rootSegments = segmentsOf(root);
+        const peerSegments = peers.filter(peer => !peer.isEqual(root)).map(segmentsOf);
+        // A root with a shorter path than a peer, e.g. `/app` next to `/x/app`, is named by its whole path, `app`.
+        const maxLength = Math.max(rootSegments.length, ...peerSegments.map(segments => segments.length));
+        for (let length = 2; length <= maxLength; length++) {
+            const tail = rootSegments.slice(-length).join('/');
+            if (peerSegments.every(segments => segments.slice(-length).join('/') !== tail)) {
+                return tail;
+            }
+        }
+        // The paths are the same, e.g. in different URI schemes, so only the full URI tells them apart.
+        return root.toString();
+    }
+
+    /**
+     * Qualifies a root name that another root name starts with, e.g. `alice` next to `alice/app`, by more
+     * segments of its path, as a path in the one root would otherwise resolve to the other. If the root
+     * named `alice/app` is the `app` folder of the root named `alice`, the names are left as they are:
+     * the nested root is then also the one that {@link getRootPrefixedPath} names its files after.
+     */
+    protected qualifyRootNames(names: Map<string, URI>): Map<string, URI> {
+        const entries = Array.from(names, ([name, root]) => ({ name, root }));
+        let qualified = true;
+        while (qualified) {
+            qualified = false;
+            for (const shorter of entries) {
+                for (const longer of entries) {
+                    if (longer.name.startsWith(shorter.name + '/')
+                        && !shorter.root.resolve(longer.name.substring(shorter.name.length + 1)).isEqual(longer.root)) {
+                        qualified = this.qualifyRootName(shorter) || this.qualifyRootName(longer) || qualified;
+                    }
+                }
+            }
+        }
+        return new Map(entries.map(({ name, root }) => [name, root]));
+    }
+
+    /**
+     * Adds the next parent segment to the name of a root, unless the name is its whole path or its URI already.
+     *
+     * @returns whether the name was qualified
+     */
+    protected qualifyRootName(entry: { name: string; root: URI }): boolean {
+        const segments = entry.root.path.toString().split('/').filter(segment => segment.length > 0);
+        const length = entry.name.split('/').length;
+        if (entry.name === entry.root.toString() || length >= segments.length) {
+            return false;
+        }
+        entry.name = segments.slice(-(length + 1)).join('/');
+        return true;
     }
 
     areWorkspaceRoots(uris: URI[]): boolean {

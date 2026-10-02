@@ -27,9 +27,42 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
     @inject(WorkspaceVariableContribution) protected readonly workspaceVariable: WorkspaceVariableContribution;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
 
+    /**
+     * The names of the workspace roots by root URI, as last labeled.
+     */
+    protected rootNames = new Map<string, string>();
+
     @postConstruct()
     override init(): void {
-        // no-op, backward compatibility
+        this.rootNames = this.getRootNamesByUri();
+        this.workspaceService.onWorkspaceChanged(() => this.updateRootNames());
+    }
+
+    protected getRootNamesByUri(): Map<string, string> {
+        return new Map(Array.from(this.workspaceService.getRootNames(), ([name, uri]) => [uri.toString(), name]));
+    }
+
+    /**
+     * Notifies a change of the labels of the roots whose names changed, such as a root named `app` that
+     * is named `alice/app` once a root `bob/app` is added.
+     */
+    protected updateRootNames(): void {
+        const rootNames = this.getRootNamesByUri();
+        const changed = new Set<string>();
+        for (const [uri, name] of rootNames) {
+            if (this.rootNames.get(uri) !== name) {
+                changed.add(uri);
+            }
+        }
+        this.rootNames = rootNames;
+        if (changed.size > 0) {
+            this.onDidChangeEmitter.fire({
+                affects: element => {
+                    const uri = this.canHandle(element) > 0 ? this.getUri(element as URI | URIIconReference | FileStat) : undefined;
+                    return !!uri && changed.has(uri.toString());
+                }
+            });
+        }
     }
 
     override canHandle(element: object): number {
@@ -43,7 +76,16 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
         return super.getIcon(this.asURIIconReference(element));
     }
 
+    /**
+     * Names a workspace root by its unique name (see {@link WorkspaceService.getRootNames}), so that
+     * roots sharing a folder name can be told apart, e.g. `alice/app` and `bob/app`.
+     */
     override getName(element: URI | URIIconReference | FileStat): string | undefined {
+        const uri = this.getUri(element);
+        const rootName = uri && this.workspaceService.getRootName(uri);
+        if (rootName) {
+            return rootName;
+        }
         return super.getName(this.asURIIconReference(element));
     }
 

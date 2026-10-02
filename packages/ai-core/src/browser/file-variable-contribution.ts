@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { nls, Path, URI } from '@theia/core';
+import { nls, URI } from '@theia/core';
 import { OpenerService, codiconArray, open } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -29,6 +29,7 @@ import {
     ResolvedAIContextVariable,
 } from '../common/variable-service';
 import { FrontendVariableService } from './frontend-variable-service';
+import { WorkspaceRelativePathResolver } from './workspace-relative-path-resolver';
 
 export namespace FileVariableArgs {
     export const uri = 'uri';
@@ -54,6 +55,9 @@ export class FileVariableContribution implements AIVariableContribution, AIVaria
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+
+    @inject(WorkspaceRelativePathResolver)
+    protected readonly pathResolver: WorkspaceRelativePathResolver;
 
     registerVariables(service: FrontendVariableService): void {
         service.registerResolver(FILE_VARIABLE, this);
@@ -104,32 +108,9 @@ export class FileVariableContribution implements AIVariableContribution, AIVaria
     }
 
     protected async makeAbsolute(pathStr: string): Promise<URI | undefined> {
-        const normalizedPath = Path.normalizePathSeparator(pathStr);
-        const path = new Path(normalizedPath);
-
-        if (!path.isAbsolute) {
-            const workspaceRoots = this.wsService.tryGetRoots();
-
-            const segments = normalizedPath.split('/');
-            if (segments.length > 0) {
-                const potentialRootName = segments[0];
-                for (const root of workspaceRoots) {
-                    if (root.resource.path.base === potentialRootName) {
-                        const restOfPath = segments.slice(1).join('/');
-                        const uri = restOfPath ? root.resource.resolve(restOfPath) : root.resource;
-                        if (await this.fileService.exists(uri)) {
-                            return uri;
-                        }
-                    }
-                }
-            }
-
-            const wsUris = workspaceRoots.map(root => root.resource.resolve(path));
-            for (const uri of wsUris) {
-                if (await this.fileService.exists(uri)) {
-                    return uri;
-                }
-            }
+        const workspaceUri = await this.pathResolver.resolveExistingRelativePath(pathStr);
+        if (workspaceUri) {
+            return workspaceUri;
         }
 
         const argUri = new URI(pathStr);

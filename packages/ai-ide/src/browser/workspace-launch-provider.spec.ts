@@ -40,6 +40,7 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { withWorkspaceServiceDefaults } from '@theia/workspace/lib/browser/test/with-workspace-service-defaults';
 
 const makeTrustAwareReader = (): AiConfigurationService => ({
     get: <T>(_name: string, fallback?: T) => fallback,
@@ -87,7 +88,7 @@ describe('Launch Management Tool Providers', () => {
             onWorkspaceChanged: () => ({ dispose: () => { } })
         } as unknown as WorkspaceService;
 
-        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
         container.bind(FileService).toConstantValue({} as FileService);
         container.bind(PreferenceService).toConstantValue({ get: () => false } as unknown as PreferenceService);
         container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -396,7 +397,7 @@ describe('Launch Management Tool Providers', () => {
                 onWorkspaceChanged: () => ({ dispose: () => { } })
             } as unknown as WorkspaceService;
 
-            multiRootContainer.bind(WorkspaceService).toConstantValue(multiRootWorkspaceService);
+            multiRootContainer.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(multiRootWorkspaceService));
             multiRootContainer.bind(FileService).toConstantValue({} as FileService);
             multiRootContainer.bind(PreferenceService).toConstantValue({ get: () => false } as unknown as PreferenceService);
             multiRootContainer.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
