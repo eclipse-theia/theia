@@ -28,8 +28,6 @@ import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
 import { PluginPaths } from '../../main/common/paths/const';
 import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
 
-const GLOBAL_STATE_FILE = 'global-state.json';
-const WORKSPACE_STATE_FILE = 'workspace-state.json';
 const LEGACY_GLOBAL_STORAGE_KEY = 'plugin-storage:global';
 const LEGACY_WORKSPACE_STORAGE_KEY_PREFIX = 'plugin-storage:workspace:';
 const LOCK_NAME_PREFIX = 'theia:plugin-storage:';
@@ -122,7 +120,7 @@ export class BrowserOnlyPluginServer implements PluginServer {
             }
             // a failed write rejects, so the plugin's `Memento.update` does too instead of
             // resolving for a value that was never saved
-            await this.writeStore(store.uri, values);
+            await this.writeStore(store, values);
         });
         return true;
     }
@@ -171,8 +169,8 @@ export class BrowserOnlyPluginServer implements PluginServer {
         }
     }
 
-    protected async writeStore(uri: URI, values: KeysToKeysToAnyValue): Promise<void> {
-        await this.fileService.writeFile(uri, BinaryBuffer.fromString(JSON.stringify(values)));
+    protected async writeStore(store: BrowserOnlyPluginStore, values: KeysToKeysToAnyValue): Promise<void> {
+        await this.fileService.writeFile(store.uri, BinaryBuffer.fromString(JSON.stringify(values)));
     }
 
     /**
@@ -185,14 +183,13 @@ export class BrowserOnlyPluginServer implements PluginServer {
             return {};
         }
         try {
-            await this.writeStore(store.uri, values);
+            await this.writeStore(store, values);
+            await this.storageService.setData(store.legacyKey, undefined);
         } catch (error) {
-            // better than the empty state `getAllStorageValues` would fall back to. The move is
-            // tried again on the next read.
+            // the values are still better than the empty state `getAllStorageValues` would fall
+            // back to. If the file wasn't written, the move is tried again on the next read.
             this.logger.error(`Failed to move plugin data to ${store.uri.toString()}:`, error);
-            return values;
         }
-        await this.storageService.setData(store.legacyKey, undefined);
         return values;
     }
 
@@ -238,7 +235,7 @@ export class BrowserOnlyPluginServer implements PluginServer {
         const configDirUri = new URI(await this.envServer.getConfigDirUri());
         if (!kind) {
             return {
-                uri: configDirUri.resolve(PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR).resolve(GLOBAL_STATE_FILE),
+                uri: configDirUri.resolve(PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR).resolve(PluginPaths.PLUGINS_GLOBAL_STATE_FILE),
                 legacyKey: LEGACY_GLOBAL_STORAGE_KEY
             };
         }
@@ -246,7 +243,7 @@ export class BrowserOnlyPluginServer implements PluginServer {
         // system as the config dir, so we can take the scheme from there
         const storagePath = await this.pluginPathsService.getHostStoragePath(kind.workspace, kind.roots);
         return storagePath ? {
-            uri: configDirUri.withPath(storagePath).resolve(WORKSPACE_STATE_FILE),
+            uri: configDirUri.withPath(storagePath).resolve(PluginPaths.PLUGINS_WORKSPACE_STATE_FILE),
             legacyKey: `${LEGACY_WORKSPACE_STORAGE_KEY_PREFIX}${storagePath}`
         } : undefined;
     }
