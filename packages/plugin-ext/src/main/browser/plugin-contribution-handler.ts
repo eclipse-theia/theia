@@ -53,6 +53,8 @@ import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
 import { JSONObject, JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { ILogger } from '@theia/core';
+import URI from '@theia/core/lib/common/uri';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 // The enum export is missing from `vscode-textmate@9.2.0`
 const enum StandardTokenType {
@@ -151,6 +153,9 @@ export class PluginContributionHandler {
     @inject(ILogger) @named('plugin-ext:PluginContributionHandler')
     protected readonly logger: ILogger;
 
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
     protected readonly commandHandlers = new Map<string, CommandHandler['execute'] | undefined>();
 
     protected readonly onDidRegisterCommandHandlerEmitter = new Emitter<string>();
@@ -235,6 +240,7 @@ export class PluginContributionHandler {
         const grammars = contributions.grammars;
         if (grammars && grammars.length) {
             const grammarsWithLanguage: GrammarsContribution[] = [];
+            const registeredGrammars = new Set<string>();
             for (const grammar of grammars) {
                 if (grammar.injectTo) {
                     for (const injectScope of grammar.injectTo) {
@@ -255,11 +261,22 @@ export class PluginContributionHandler {
                     // processing is deferred.
                     grammarsWithLanguage.push(grammar);
                 }
+                // Registering the scope once is enough, and a second registration makes the registry load
+                // both grammars just to compare their locations. Inline grammars have no location to compare,
+                // so they keep last-one-wins.
+                if (grammar.grammarLocation !== undefined) {
+                    const grammarKey = `${grammar.scope}\n${grammar.grammarLocation}`;
+                    if (registeredGrammars.has(grammarKey)) {
+                        continue;
+                    }
+                    registeredGrammars.add(grammarKey);
+                }
+                const loadGrammarContent = this.createGrammarContentLoader(plugin, grammar);
                 pushContribution(`grammar.textmate.scope.${grammar.scope}`, () => this.grammarsRegistry.registerTextmateGrammarScope(grammar.scope, {
                     async getGrammarDefinition(): Promise<GrammarDefinition> {
                         return {
                             format: grammar.format,
-                            content: grammar.grammar || '',
+                            content: await loadGrammarContent(),
                             location: grammar.grammarLocation
                         };
                     },
@@ -497,6 +514,26 @@ export class PluginContributionHandler {
         }
 
         return toDispose;
+    }
+
+    /**
+     * Browser-only builds leave the grammar content out of the plugin metadata, so it is fetched from
+     * the plugin's files when the registry asks for it. No caching here, vscode-textmate keeps loaded grammars.
+     */
+    protected createGrammarContentLoader(plugin: DeployedPlugin, grammar: GrammarsContribution): () => Promise<string | object> {
+        const content = grammar.grammar;
+        if (content !== undefined) {
+            return async () => content;
+        }
+        const location = grammar.grammarLocation;
+        // `resolveToAbsolute` rather than `resolve`, which would keep the `./` grammar paths usually start with
+        const grammarUri = location ? new URI(plugin.metadata.model.packageUri).resolveToAbsolute(location) : undefined;
+        if (!grammarUri) {
+            return async () => {
+                throw new Error(`Grammar '${grammar.scope}' has no content and no location to load it from.`);
+            };
+        }
+        return async () => (await this.fileService.read(grammarUri)).value;
     }
 
     protected registerCommands(contribution: PluginContribution): Disposable {
