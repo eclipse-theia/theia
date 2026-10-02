@@ -18,6 +18,7 @@ import { RPCProtocol } from '@theia/plugin-ext/lib/common/rpc-protocol';
 import { EnvMainImpl } from '@theia/plugin-ext/lib/main/common/env-main';
 import { BasicMessageRegistryMainImpl } from '@theia/plugin-ext/lib/main/common/basic-message-registry-main';
 import { BasicNotificationMainImpl } from '@theia/plugin-ext/lib/main/common/basic-notification-main';
+import { LoggerMainImpl } from '@theia/plugin-ext/lib/main/common/logger-main';
 
 import { HEADLESSMAIN_RPC_CONTEXT, HEADLESSPLUGIN_RPC_CONTEXT } from '../../common/headless-plugin-rpc';
 
@@ -32,4 +33,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const notificationMain = new BasicNotificationMainImpl(rpc, container, HEADLESSMAIN_RPC_CONTEXT.NOTIFICATION_EXT);
     rpc.set(HEADLESSPLUGIN_RPC_CONTEXT.NOTIFICATION_MAIN, notificationMain);
+
+    const loggerMain = new LoggerMainImpl(container);
+    rpc.set(HEADLESSPLUGIN_RPC_CONTEXT.LOGGER_MAIN, loggerMain);
 }
