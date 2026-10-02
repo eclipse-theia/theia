@@ -176,9 +176,11 @@ export const browserOptions = {
                     to: join(__dirname, 'lib', 'frontend')
                 }${this.ifPackage('@theia/plugin-ext', `,
                 {
-                    // copy webview files to lib folder
+                    // copy webview files to lib folder${this.ifBrowserOnly(`
+                    // browser-only has no backend serving lib/webview/pre, so put them next to the
+                    // frontend bundle to keep the same /webview path`)}
                     from: join(resolvePackagePath('@theia/plugin-ext', __dirname), '..', 'src', 'main', 'browser', 'webview', 'pre', '*'),
-                    to: join(__dirname, 'lib', 'webview', 'pre')
+                    to: ${this.ifBrowserOnly("join(__dirname, 'lib', 'frontend', 'webview')", "join(__dirname, 'lib', 'webview', 'pre')")}
                 }`)}${this.ifPackage('@theia/plugin-ext-vscode', `,
                 {
                     // copy frontend plugin host files
