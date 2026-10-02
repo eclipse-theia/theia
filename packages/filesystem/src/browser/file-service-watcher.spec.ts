@@ -20,7 +20,7 @@ let disableJSDOM = enableJSDOM();
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 FrontendApplicationConfigProvider.set({});
 
-import { Disposable, Emitter, URI } from '@theia/core';
+import { Disposable, Emitter, Event, URI } from '@theia/core';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { FileChange, FileChangeType, FileSystemProvider, FileSystemProviderCapabilities, WatchOptions } from '../common/files';
@@ -892,5 +892,85 @@ describe('FileService applies files.watcherExclude to all watchers', () => {
         // With files.watcherExclude applied uniformly, the child's excludes now match the parent's,
         // so the root watcher subsumes it — a single OS watcher instead of two.
         expect(liveWatcherCount(mockProvider)).to.equal(1);
+    });
+
+    it('refreshes watcher excludes when files.watcherExclude preference changes', async () => {
+        const preferenceChanged = new Emitter<{ preferenceName: string }>();
+        const initialExclude = { '**/node_modules/**': true };
+
+        // Set up preferences with both get and onPreferenceChanged
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (fileService as any).preferences = {
+            get: (name: string): unknown => (name === 'files.watcherExclude' ? initialExclude : undefined),
+            get onPreferenceChanged(): Event<{ preferenceName: string }> { return preferenceChanged.event; },
+        };
+
+        fileService.watch(new URI('file:///project'), { recursive: true, excludes: [] });
+        await flush();
+
+        expect(mockProvider.watchers).to.have.lengthOf(1);
+        let excludes = mockProvider.watchers[0].options.excludes;
+        expect(excludes).to.include('**/node_modules/**');
+
+        // Change the preference — add a new exclude pattern
+        const newExclude = { '**/node_modules/**': true, '**/build/**': true };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (fileService as any).preferences.get = (name: string) => (name === 'files.watcherExclude' ? newExclude : undefined) as any;
+
+        // Fire the preference change event
+        preferenceChanged.fire({ preferenceName: 'files.watcherExclude' });
+
+        excludes = mockProvider.watchers[0].options.excludes;
+        expect(excludes).to.include('**/node_modules/**');
+        expect(excludes).to.include('**/build/**');
+    });
+
+    it('does not recreate the OS watcher when excludes change', async () => {
+        const preferenceChanged = new Emitter<{ preferenceName: string }>();
+        const initialExclude = { '**/node_modules/**': true };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (fileService as any).preferences = {
+            get: (name: string): unknown => (name === 'files.watcherExclude' ? initialExclude : undefined),
+            get onPreferenceChanged(): Event<{ preferenceName: string }> { return preferenceChanged.event; },
+        };
+
+        fileService.watch(new URI('file:///project'), { recursive: true, excludes: [] });
+        await flush();
+
+        const originalWatcher = mockProvider.watchers[0];
+
+        // Change the preference
+        const newExclude = { '**/node_modules/**': true, '**/build/**': true };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (fileService as any).preferences.get = (name: string) => (name === 'files.watcherExclude' ? newExclude : undefined) as any;
+        preferenceChanged.fire({ preferenceName: 'files.watcherExclude' });
+
+        // The original OS watcher should still be alive (not recreated)
+        expect(originalWatcher.disposed).to.be.false;
+        expect(liveWatcherCount(mockProvider)).to.equal(1);
+    });
+
+    it('skips refresh when excludes have not actually changed', async () => {
+        const preferenceChanged = new Emitter<{ preferenceName: string }>();
+        const initialExclude = { '**/node_modules/**': true };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (fileService as any).preferences = {
+            get: (name: string): unknown => (name === 'files.watcherExclude' ? initialExclude : undefined),
+            get onPreferenceChanged(): Event<{ preferenceName: string }> { return preferenceChanged.event; },
+        };
+
+        fileService.watch(new URI('file:///project'), { recursive: true, excludes: [] });
+        await flush();
+
+        const originalWatcher = mockProvider.watchers[0];
+        const initialWatcherCount = liveWatcherCount(mockProvider);
+
+        // Fire the event without changing the exclude value
+        preferenceChanged.fire({ preferenceName: 'files.watcherExclude' });
+
+        expect(liveWatcherCount(mockProvider)).to.equal(initialWatcherCount);
+        expect(originalWatcher.disposed).to.be.false;
     });
 });
