@@ -172,7 +172,7 @@ async function processPlugin(pluginSourceDir: string, hostedPluginDir: string): 
         const diskManifest = deepClone(rawManifest);
         prepareHostedPackageJson(diskManifest, pluginId, model.entryPoint);
         await fs.writeJson(path.join(dst, 'package.json'), diskManifest, { spaces: 2 });
-        // Same result as the worker's `loadManifest` on the file above. Saves it fetching
+        // Same result as the worker's `loadManifest` on the file above. Spares the worker fetching
         // `package.json` and `package.nls.json` per plugin at startup.
         const loadedManifest = prepareLoadedManifest(diskManifest, { updateActivationEvents: false });
         const manifest = hasTranslations

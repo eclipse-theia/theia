@@ -261,9 +261,9 @@ export class PluginContributionHandler {
                     // processing is deferred.
                     grammarsWithLanguage.push(grammar);
                 }
-                // One grammar file is often mapped to several languages. Registering the scope once is
-                // enough, and a second registration makes the registry load both grammars just to compare
-                // their locations. Inline grammars have no location to compare, so they keep last-one-wins.
+                // Registering the scope once is enough, and a second registration makes the registry load
+                // both grammars just to compare their locations. Inline grammars have no location to compare,
+                // so they keep last-one-wins.
                 if (grammar.grammarLocation !== undefined) {
                     const grammarKey = `${grammar.scope}\n${grammar.grammarLocation}`;
                     if (registeredGrammars.has(grammarKey)) {

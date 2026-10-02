@@ -30,7 +30,7 @@ import { encodePluginAssetPath } from '@theia/plugin-utils/lib/common/plugin-mod
  * off its disk via `file:`; browser-only has to fetch them over HTTP.
  *
  * Read-only, and only for what goes through the `FileService`: color themes, icon themes, icon
- * fonts and Textmate grammars.
+ * fonts and TextMate grammars.
  */
 @injectable()
 export class BrowserOnlyPluginFileSystemProvider implements FileSystemProvider {
