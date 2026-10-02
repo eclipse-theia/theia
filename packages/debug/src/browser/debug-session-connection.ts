@@ -151,6 +151,15 @@ export class DebugSessionConnection implements Disposable {
         return this.toDispose.disposed;
     }
 
+    /**
+     * Whether the underlying channel has been closed, so that no further request can be sent.
+     *
+     * This becomes `true` as soon as the channel closes, which is before the connection itself is disposed.
+     */
+    get closed(): boolean {
+        return this.isClosed;
+    }
+
     protected checkDisposed(): void {
         if (this.disposed) {
             throw new Error('the debug session connection is disposed, id: ' + this.sessionId);

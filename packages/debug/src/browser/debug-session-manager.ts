@@ -568,9 +568,12 @@ export class DebugSessionManager {
             this.disposeOnCurrentSessionChanged.push(current.onDidResolveLazyVariable(variable => this.onDidResolveLazyVariableEmitter.fire({ session: current, variable })));
             this.disposeOnCurrentSessionChanged.push(current.onDidFocusStackFrame(frame => this.onDidFocusStackFrameEmitter.fire(frame)));
             this.disposeOnCurrentSessionChanged.push(current.onDidFocusThread(thread => this.onDidFocusThreadEmitter.fire(thread)));
-            const { currentThread } = current;
-            this.onDidFocusThreadEmitter.fire(currentThread);
         }
+        // Announce what is focused now, also when nothing is: the forwarding above is torn down with the previous
+        // session, so without this the last thread and frame of a session that has ended stay the focused ones.
+        const { currentThread, currentFrame } = this;
+        this.onDidFocusThreadEmitter.fire(currentThread);
+        this.onDidFocusStackFrameEmitter.fire(currentFrame);
         this.open();
         this.fireDidChange(current);
     }
