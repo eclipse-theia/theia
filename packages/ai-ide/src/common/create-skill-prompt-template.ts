@@ -18,7 +18,6 @@ import {
     GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID,
     FIND_FILES_BY_PATTERN_FUNCTION_ID
 } from './workspace-functions';
-import { CONTEXT_FILES_VARIABLE_ID } from './context-variables';
 import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
 import {
     SUGGEST_FILE_CONTENT_ID,
@@ -147,10 +146,6 @@ This skill provides instructions for performing comprehensive code reviews.
 - Prioritize issues by severity
 - Suggest improvements, not just point out problems
 \`\`\`
-
-## Additional Context
-
-{{${CONTEXT_FILES_VARIABLE_ID}}}
 
 ## Non-Negotiable Requirements
 - Skill names MUST be lowercase kebab-case. Always. No exceptions.

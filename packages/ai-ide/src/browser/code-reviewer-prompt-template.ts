@@ -125,8 +125,6 @@ You receive:
 
 # Context
 
-{{contextFiles}}
-
 {{prompt:project-info}}
 `
 };

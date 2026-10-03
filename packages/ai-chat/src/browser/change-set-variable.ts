@@ -25,6 +25,7 @@ export const CHANGE_SET_SUMMARY_VARIABLE: AIVariable = {
     description: nls.localize('theia/ai/core/changeSetSummaryVariable/description', 'Provides a summary of the files in a change set and their contents.'),
 
     name: CHANGE_SET_SUMMARY_VARIABLE_ID,
+    isVolatile: true
 };
 
 @injectable()
