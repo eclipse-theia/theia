@@ -41,6 +41,7 @@ export class ProcessTaskResolver implements TaskResolver {
      * it to the backend to be executed. We can make sure that parameters that
      * are optional to the user but required by the server will be defined, with
      * sane default values. Also, resolve all known variables, e.g. `${workspaceFolder}`.
+     * Rejects with a cancellation error if the user cancels a variable, e.g. an input prompt.
      */
     async resolveTask(taskConfig: TaskConfiguration): Promise<TaskConfiguration> {
         const type = taskConfig.executionType || taskConfig.type;

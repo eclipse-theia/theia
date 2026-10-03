@@ -57,7 +57,10 @@ describe('ProcessTaskResolver', () => {
         };
     }
 
+    let requestedInputs: string[];
+
     function createResolver(inputValue: string | undefined, workspaceRoot?: URI): ProcessTaskResolver {
+        requestedInputs = [];
         const container = new Container();
         container.bind(ILogger).to(MockLogger);
         container.bind(VariableRegistry).toSelf().inSingletonScope();
@@ -71,7 +74,8 @@ describe('ProcessTaskResolver', () => {
         const variableRegistry = container.get(VariableRegistry);
         const input: Variable = {
             name: 'input',
-            resolve: () => {
+            resolve: (_context, inputId) => {
+                requestedInputs.push(inputId!);
                 if (inputValue === undefined) {
                     throw cancelled();
                 }
@@ -101,6 +105,14 @@ describe('ProcessTaskResolver', () => {
             task: createTask({ options: { env: { BEFORE: 'unchanged', INPUT: '${input:value}', AFTER: 'unchanged' } } })
         },
         {
+            name: 'a platform-specific command',
+            task: createTask({ osx: { command: '${input:value}' } })
+        },
+        {
+            name: 'platform-specific arguments',
+            task: createTask({ windows: { args: ['${input:value}'] } })
+        },
+        {
             name: 'a platform-specific working directory',
             task: createTask({ windows: { options: { cwd: '${input:value}' } } })
         },
@@ -126,6 +138,24 @@ describe('ProcessTaskResolver', () => {
             });
         }
     }
+
+    it('does not request further inputs after an input is cancelled', async () => {
+        const resolver = createResolver(undefined);
+
+        let error: Error | undefined;
+        try {
+            await resolver.resolveTask(createTask({
+                args: ['${input:first}', '${input:second}'],
+                options: { cwd: '${input:cwd}', env: { INPUT: '${input:env}' } },
+                windows: { args: ['${input:windows}'] }
+            }));
+        } catch (e) {
+            error = e as Error;
+        }
+
+        expect(isCancelled(error)).to.equal(true);
+        expect(requestedInputs).to.deep.equal(['first']);
+    });
 
     it('resolves command properties and preserves unrelated options', async () => {
         const resolver = createResolver('resolved-value');

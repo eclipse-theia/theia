@@ -40,6 +40,7 @@ class TestTaskService extends TaskService {
     override readonly logger = new MockLogger();
     override readonly taskResolverRegistry = new TaskResolverRegistry();
     override readonly taskDefinitionRegistry = new TaskDefinitionRegistry();
+    override readonly removeProblemMarkers = sinon.stub<[RunTaskOption?], Promise<void>>().resolves();
     override readonly runResolvedTask = sinon.stub<[TaskConfiguration, RunTaskOption?], Promise<TaskInfo | undefined>>().resolves();
 
     resolveAndRun(task: TaskConfiguration): Promise<TaskInfo | undefined> {
@@ -76,11 +77,13 @@ describe('TaskService task resolution', () => {
 
             expect(await service.resolveAndRun(task)).to.equal(undefined);
             sinon.assert.calledOnce(resolver.resolveTask);
+            sinon.assert.notCalled(service.removeProblemMarkers);
             sinon.assert.notCalled(service.runResolvedTask);
             sinon.assert.notCalled(logError);
 
             resolver.resolveTask.resolves(task);
             await service.resolveAndRun(task);
+            sinon.assert.calledOnce(service.removeProblemMarkers);
             sinon.assert.calledOnceWithExactly(service.runResolvedTask, task, undefined);
             sinon.assert.notCalled(logError);
         });
