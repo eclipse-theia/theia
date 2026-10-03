@@ -22,6 +22,7 @@ export * from './language-model-delegate';
 export * from './language-model-util';
 export * from './language-model';
 export * from './language-model-alias';
+export * from './tool-call-execution';
 export * from './model-discovery-status';
 export * from './model-discovery-util';
 export * from './prompt-service';

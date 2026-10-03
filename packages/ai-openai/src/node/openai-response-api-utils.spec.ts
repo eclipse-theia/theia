@@ -16,11 +16,14 @@
 
 import { expect } from 'chai';
 import {
-    CompactionMessage, isCompactionResponsePart, isServerToolCallResponsePart, isTextResponsePart, isThinkingResponsePart, isUsageResponsePart,
-    LanguageModelMessage, LanguageModelResponse, LanguageModelStreamResponsePart, UserRequest
+    CompactionMessage, isCompactionResponsePart, isServerToolCallResponsePart, isTextResponsePart, isThinkingResponsePart, isToolCallResponsePart,
+    isUsageResponsePart, LanguageModelMessage, LanguageModelResponse, LanguageModelStreamResponsePart, ToolCallExecutor, ToolCallExecutorImpl, UserRequest
 } from '@theia/ai-core';
-import { OpenAiModelUtils } from './openai-language-model';
+import { ILogger } from '@theia/core';
+import { Container } from '@theia/core/shared/inversify';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import { OpenAiModelUtils } from './openai-model-utils';
 import { OpenAI } from 'openai';
 import { OPENAI_FUNCTION_CALL_REASONING_DATA_KEY, OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools';
@@ -31,10 +34,19 @@ async function* toStream(events: unknown[]): AsyncIterable<unknown> {
     }
 }
 
+function functionCallItem(id: string, name: string, args: string): unknown {
+    return {
+        type: 'response.output_item.added',
+        item: { id, call_id: id, type: 'function_call', name, arguments: args }
+    };
+}
+
 function createTestUtils(): OpenAiResponseApiUtils {
-    const utils = new OpenAiResponseApiUtils();
-    (utils as unknown as { logger: MockLogger }).logger = new MockLogger();
-    return utils;
+    const container = new Container();
+    container.bind(ILogger).to(MockLogger);
+    container.bind(ToolCallExecutor).to(ToolCallExecutorImpl).inSingletonScope();
+    container.bind(OpenAiResponseApiUtils).toSelf();
+    return container.get(OpenAiResponseApiUtils);
 }
 
 describe('OpenAiResponseApiUtils', () => {
@@ -162,7 +174,6 @@ describe('OpenAiResponseApiUtils', () => {
             'gpt-5',
             new OpenAiModelUtils(),
             'developer',
-            { maxChatCompletions: 3 },
             'openai/gpt-5',
             true
         );
@@ -226,7 +237,7 @@ describe('OpenAiResponseApiUtils', () => {
 
         const response = await utils.handleRequest(
             openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer',
-            { maxChatCompletions: 3 }, 'openai/gpt-5', true
+            'openai/gpt-5', true
         );
         const parts: LanguageModelStreamResponsePart[] = [];
         if ('stream' in response) {
@@ -272,7 +283,6 @@ describe('OpenAiResponseApiUtils', () => {
             'gpt-5',
             new OpenAiModelUtils(),
             'developer',
-            { maxChatCompletions: 3 },
             'openai/gpt-5',
             true
         );
@@ -340,7 +350,6 @@ describe('OpenAiResponseApiUtils', () => {
             'gpt-5',
             new OpenAiModelUtils(),
             'developer',
-            { maxChatCompletions: 3 },
             'openai/gpt-5',
             true
         );
@@ -397,7 +406,7 @@ describe('OpenAiResponseApiUtils', () => {
 
         const response = await utils.handleRequest(
             openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer',
-            { maxChatCompletions: 3 }, 'openai/gpt-5', true
+            'openai/gpt-5', true
         );
         const parts: LanguageModelStreamResponsePart[] = [];
         if ('stream' in response) {
@@ -438,7 +447,7 @@ describe('OpenAiResponseApiUtils', () => {
 
         const response = await utils.handleRequest(
             openai as never, request, { include: ['file_search_call.results', 'web_search_call.action.sources'] },
-            'gpt-5', new OpenAiModelUtils(), 'developer', { maxChatCompletions: 3 }, 'openai/gpt-5', false
+            'gpt-5', new OpenAiModelUtils(), 'developer', 'openai/gpt-5', false
         );
         const parts: LanguageModelStreamResponsePart[] = [];
         if ('stream' in response) {
@@ -522,7 +531,7 @@ describe('OpenAiResponseApiUtils', () => {
 
         const response = await utils.handleRequest(
             openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer',
-            { maxChatCompletions: 3 }, 'openai/gpt-5', true
+            'openai/gpt-5', true
         );
         const parts: LanguageModelStreamResponsePart[] = [];
         if ('stream' in response) {
@@ -595,7 +604,7 @@ describe('OpenAiResponseApiUtils', () => {
 
             const parts = await drain(await utils.handleRequest(
                 openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer',
-                { maxChatCompletions: 3 }, 'openai/gpt-5', true
+                'openai/gpt-5', true
             ));
 
             expect(thoughts(parts)).to.equal('Weighing options\n\nDeciding');
@@ -632,7 +641,7 @@ describe('OpenAiResponseApiUtils', () => {
 
             const parts = await drain(await utils.handleRequest(
                 openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer',
-                { maxChatCompletions: 3 }, 'openai/gpt-5', true
+                'openai/gpt-5', true
             ));
 
             expect(thoughts(parts)).to.equal('Weighing options\n\nDeciding');
@@ -673,7 +682,7 @@ describe('OpenAiResponseApiUtils', () => {
                 };
                 const send = async () => drain(await utils.handleRequest(
                     openai as never, request, summarySettings, 'gpt-5', new OpenAiModelUtils(), 'developer',
-                    { maxChatCompletions: 3 }, 'openai/gpt-5', true
+                    'openai/gpt-5', true
                 ));
 
                 const parts = await send();
@@ -704,7 +713,7 @@ describe('OpenAiResponseApiUtils', () => {
 
                 const parts = await drain(await utils.handleRequest(
                     openai as never, toolRequest, summarySettings, 'gpt-5', new OpenAiModelUtils(), 'developer',
-                    { maxChatCompletions: 3 }, 'openai/gpt-5', false
+                    'openai/gpt-5', false
                 ));
 
                 expect(parts.filter(isTextResponsePart).map(part => part.content).join('')).to.equal('done');
@@ -726,7 +735,7 @@ describe('OpenAiResponseApiUtils', () => {
                 try {
                     await utils.handleRequest(
                         openai as never, request, summarySettings, 'gpt-5', new OpenAiModelUtils(), 'developer',
-                        { maxChatCompletions: 3 }, 'openai/gpt-5', false
+                        'openai/gpt-5', false
                     );
                 } catch (e) {
                     error = e;
@@ -831,5 +840,50 @@ describe('OpenAiResponseApiUtils', () => {
             expect(serialized).to.contain('ai B');
             expect(serialized).to.contain('user C');
         });
+    });
+
+    it('executes the tool calls of a single turn concurrently', async () => {
+        const streams = [
+            [
+                functionCallItem('call-a', 'a', '{}'),
+                functionCallItem('call-b', 'b', '{}'),
+                { type: 'response.completed', response: { usage: { input_tokens: 1, output_tokens: 1 } } }
+            ],
+            [
+                { type: 'response.output_text.delta', delta: 'done' },
+                { type: 'response.completed', response: { usage: { input_tokens: 2, output_tokens: 2 } } }
+            ]
+        ];
+        const openai = {
+            responses: {
+                stream: () => toStream(streams.shift() ?? [])
+            }
+        };
+        // `a` only resolves once `b` has started: a sequential implementation would deadlock here.
+        const bStarted = new Deferred<void>();
+        const request: UserRequest = {
+            sessionId: 'session-1',
+            requestId: 'request-1',
+            messages: [{ actor: 'user', type: 'text', text: 'hello' }],
+            tools: [
+                { id: 'a', name: 'a', parameters: { type: 'object', properties: {} }, handler: async () => { await bStarted.promise; return 'a-result'; } },
+                { id: 'b', name: 'b', parameters: { type: 'object', properties: {} }, handler: async () => { bStarted.resolve(); return 'b-result'; } }
+            ]
+        };
+
+        const response = await utils.handleRequest(openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer', 'openai/gpt-5', true);
+        const parts: LanguageModelStreamResponsePart[] = [];
+        if ('stream' in response) {
+            for await (const part of response.stream) {
+                parts.push(part);
+            }
+        }
+
+        const finishedResults = parts
+            .filter(isToolCallResponsePart)
+            .flatMap(part => part.tool_calls)
+            .filter(call => call.finished)
+            .map(call => call.result);
+        expect(finishedResults).to.have.members(['a-result', 'b-result']);
     });
 });
