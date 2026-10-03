@@ -584,7 +584,7 @@ export interface ToolCallTextResult { type: 'text', text: string; };
 export interface ToolCallImageResult extends Base64ImageContent { type: 'image' };
 export interface ToolCallAudioResult { type: 'audio', data: string; mimeType: string };
 export interface ToolCallHtmlAppResult { type: 'html'; html: string; title?: string };
-export type ToolCallErrorKind = 'tool-not-available';
+export type ToolCallErrorKind = 'tool-not-available' | 'tool-loop-detected';
 export interface ToolCallErrorResult { type: 'error', data: string; errorKind?: ToolCallErrorKind; };
 export type ToolCallContentResult = ToolCallTextResult | ToolCallImageResult | ToolCallAudioResult | ToolCallHtmlAppResult | ToolCallErrorResult;
 export interface ToolCallContent {
@@ -606,6 +606,9 @@ export const isToolCallErrorResult = (item: unknown): item is ToolCallErrorResul
 
 export const isToolNotAvailableError = (item: unknown): item is ToolCallErrorResult =>
     isToolCallErrorResult(item) && item.errorKind === 'tool-not-available';
+
+export const isToolLoopDetectedError = (item: unknown): item is ToolCallErrorResult =>
+    isToolCallErrorResult(item) && item.errorKind === 'tool-loop-detected';
 
 export const hasToolCallError = (result: ToolCallResult): boolean =>
     isToolCallContent(result) && result.content.some(isToolCallErrorResult);

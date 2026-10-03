@@ -114,6 +114,36 @@ export class FileReadTrackerImpl implements FileReadTracker {
         return labels.filter((label): label is string => label !== undefined);
     }
 
+    async forceRefresh(sessionId: string, uri?: URI): Promise<string[]> {
+        const files = this.sessions.get(sessionId);
+        if (!files) {
+            return [];
+        }
+        const entries = uri
+            ? (files.has(uri.toString()) ? [[uri.toString(), files.get(uri.toString())!] as const] : [])
+            : [...files];
+        const labels = await Promise.all(entries.map(async ([key, tracked]) => {
+            if (!tracked.maybeStale) {
+                return undefined;
+            }
+            // Re-snapshot against current content so the agent's view is treated as fresh again. A file that is
+            // gone is forgotten, matching `recheck`, so a later write recreating it is not wrongly blocked.
+            let current: string;
+            try {
+                current = await this.readCurrentContent(new URI(key));
+            } catch (error) {
+                if (this.isFileNotFound(error)) {
+                    files.delete(key);
+                }
+                return this.getLabel(new URI(key));
+            }
+            tracked.seenHash = hash(current);
+            tracked.maybeStale = false;
+            return this.getLabel(new URI(key));
+        }));
+        return labels.filter((label): label is string => label !== undefined);
+    }
+
     /**
      * Flags the tracked files the event touched, by uri lookup rather than {@link FileChangesEvent.contains},
      * which scans the whole change list. A deleted parent folder is therefore only noticed on the next read.
