@@ -55,6 +55,31 @@ class TestChatInputWidget extends AIChatInputWidget {
         return this.getCurrentReasoningLevel();
     }
 
+    setModelSelectorState(currentModelId?: string): void {
+        this.availableModels = [{
+            id: 'available-model',
+            status: { status: 'ready' },
+            request: async () => ({ text: '' })
+        }];
+        (this as unknown as { chatAgentService: unknown }).chatAgentService = {
+            getAgent: (agentId: string, includeHidden: boolean) => {
+                expect(includeHidden).to.equal(true);
+                if (agentId === 'unknown-agent') {
+                    return undefined;
+                }
+                return { languageModelRequirements: agentId === 'model-agent' ? [{ purpose: 'chat' }] : [] };
+            }
+        };
+        (this as unknown as { chatService: unknown }).chatService = {
+            getSessions: () => [{ model: { id: undefined, settings: { commonSettings: { modelId: currentModelId } } } }]
+        };
+        (this as unknown as { favoriteModels: unknown }).favoriteModels = { isFavorite: () => true };
+    }
+
+    modelSelectorPropsForTest(): ReturnType<AIChatInputWidget['getModelSelectorProps']> {
+        return this.getModelSelectorProps();
+    }
+
     protected override async updateCapabilitiesForAgent(agentId: string, modeId?: string, preserveOverrides?: boolean): Promise<void> {
         this.updateCalls.push({ agentId, modeId, preserveOverrides });
     }
@@ -67,6 +92,45 @@ class TestChatInputWidget extends AIChatInputWidget {
 describe('AIChatInputWidget', () => {
     before(() => disableJSDOM = enableJSDOM());
     after(() => disableJSDOM());
+
+    describe('getModelSelectorProps', () => {
+        it('updates visibility when switching between agents with and without model requirements', () => {
+            const widget = new TestChatInputWidget();
+            widget.setModelSelectorState();
+            widget.setReceivingAgent('model-agent');
+            expect(widget.modelSelectorPropsForTest().show).to.equal(true);
+
+            widget.setReceivingAgent('ClaudeCode');
+            const props = widget.modelSelectorPropsForTest();
+            expect(props.models).to.have.length(1);
+            expect(props.show).to.equal(false);
+
+            widget.setReceivingAgent('model-agent');
+            expect(widget.modelSelectorPropsForTest().show).to.equal(true);
+        });
+
+        it('hides the selector without a resolved agent', () => {
+            const widget = new TestChatInputWidget();
+            widget.setModelSelectorState();
+            expect(widget.modelSelectorPropsForTest().show).to.equal(false);
+
+            widget.setReceivingAgent('unknown-agent');
+            expect(widget.modelSelectorPropsForTest().show).to.equal(false);
+        });
+
+        it('hides the selector for an agent without model requirements while preserving the session override', () => {
+            const widget = new TestChatInputWidget();
+            widget.setModelSelectorState('saved-model');
+            widget.setReceivingAgent('ClaudeCode');
+
+            const props = widget.modelSelectorPropsForTest();
+            expect(props.show).to.equal(false);
+            expect(props.currentModelId).to.equal('saved-model');
+
+            widget.setReceivingAgent('model-agent');
+            expect(widget.modelSelectorPropsForTest().currentModelId).to.equal('saved-model');
+        });
+    });
 
     describe('getCurrentReasoningLevel', () => {
         const oSeries: ReasoningSupport = { supportedLevels: ['off', 'low', 'medium', 'high', 'auto'], defaultLevel: 'auto' };
