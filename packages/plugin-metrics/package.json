@@ -16,6 +16,7 @@
   "theiaExtensions": [
     {
       "frontend": "lib/browser/plugin-metrics-frontend-module",
+      "frontendOnly": "lib/browser-only/plugin-metrics-frontend-only-module",
       "backend": "lib/node/plugin-metrics-backend-module"
     }
   ],
