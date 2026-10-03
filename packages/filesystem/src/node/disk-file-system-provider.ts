@@ -541,7 +541,7 @@ export class DiskFileSystemProvider implements Disposable,
             }
 
             // Delete but do not return as promise
-            void this.rimrafUnlink(pathInTemp).catch(error => {
+            this.rimrafUnlink(pathInTemp).catch(error => {
                 this.logger.warn(`Failed to clean up temporary rimraf folder '${pathInTemp}':`, error);
             });
         } catch (error) {
