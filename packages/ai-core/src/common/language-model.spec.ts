@@ -367,6 +367,25 @@ describe('ReasoningSupport.clampLevel', () => {
         expect(ReasoningSupport.clampLevel(oSeries, 'auto')).to.equal('auto');
     });
 
+    it('passes through native none, xhigh, and max when supported', () => {
+        const support: ReasoningSupport = { supportedLevels: ['none', 'low', 'medium', 'high', 'xhigh', 'max', 'auto'] };
+        for (const level of support.supportedLevels) {
+            expect(ReasoningSupport.clampLevel(support, level)).to.equal(level);
+        }
+    });
+
+    it('clamps extended efforts to older models and max to max-only models', () => {
+        expect(ReasoningSupport.clampLevel(oSeries, 'xhigh')).to.equal('high');
+        expect(ReasoningSupport.clampLevel(oSeries, 'max')).to.equal('high');
+        expect(ReasoningSupport.clampLevel({ supportedLevels: ['low', 'medium', 'high', 'max'] }, 'xhigh')).to.equal('max');
+        expect(ReasoningSupport.clampLevel({ supportedLevels: ['low', 'medium', 'high', 'xhigh'] }, 'max')).to.equal('xhigh');
+    });
+
+    it('clamps none to the nearest supported effort', () => {
+        expect(ReasoningSupport.clampLevel({ supportedLevels: ['low', 'medium', 'high'] }, 'none')).to.equal('low');
+        expect(ReasoningSupport.clampLevel(oSeries, 'none')).to.equal('off');
+    });
+
     it('raises an unsupported minimal to low rather than lowering it to off', () => {
         expect(ReasoningSupport.clampLevel(oSeries, 'minimal')).to.equal('low');
     });

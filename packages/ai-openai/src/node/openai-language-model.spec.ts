@@ -19,10 +19,11 @@ import { LanguageModelMessage, LanguageModelRequest, LanguageModelResponse, Reas
 import { OpenAI } from 'openai';
 import { MistralFixedOpenAI, OpenAiModel, OpenAiModelUtils } from './openai-language-model';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
+import { getOpenAiModelDefaults } from './openai-model-defaults';
 import { OPENAI_WEB_SEARCH } from './openai-server-tools';
 import type { FinalRequestOptions } from 'openai/internal/request-options';
 
-const GPT5_REASONING_SUPPORT: ReasoningSupport = {
+const LEGACY_GPT5_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
     defaultLevel: 'auto'
 };
@@ -77,36 +78,68 @@ function createCompactionModel(
 
 describe('OpenAiModel reasoning translation', () => {
 
+    describe('family reasoning presets', () => {
+        for (const modelId of ['gpt-5.1', 'gpt-5.5-pro', 'gpt-5.6-sol', 'gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-luna']) {
+            const reasoningSupport = getOpenAiModelDefaults(modelId).reasoningSupport;
+            for (const level of reasoningSupport?.supportedLevels ?? []) {
+                it(`passes ${level} for ${modelId} through both APIs`, () => {
+                    const model = createModel(modelId, reasoningSupport);
+                    const request = { messages: [], reasoning: { level } };
+                    expect(model.callGetSettings(request, true).reasoning).to.deep.equal(
+                        level === 'off' ? undefined : level === 'auto' ? { summary: 'auto' } : { effort: level, summary: 'auto' }
+                    );
+                    expect(model.callGetSettings(request, false).reasoning_effort).to.equal(level === 'off' || level === 'auto' ? undefined : level);
+                });
+            }
+        }
+
+        it('preserves raw request settings when off is selected for a family preset', () => {
+            const model = createModel('gpt-6-astra', getOpenAiModelDefaults('gpt-6-astra').reasoningSupport);
+            const settings = { reasoning: { effort: 'high', summary: 'concise' }, reasoning_effort: 'medium' };
+            for (const forResponseApi of [false, true]) {
+                expect(model.callGetSettings({ messages: [], settings, reasoning: { level: 'off' } }, forResponseApi)).to.deep.equal(settings);
+            }
+        });
+
+        it('keeps configured summaries while overriding effort with none', () => {
+            const model = createModel('gpt-6-luna', getOpenAiModelDefaults('gpt-6-luna').reasoningSupport);
+            const result = model.callGetSettings({
+                messages: [], reasoning: { level: 'none' }, settings: { reasoning: { effort: 'high', summary: 'concise' } }
+            }, true);
+            expect(result.reasoning).to.deep.equal({ effort: 'none', summary: 'concise' });
+        });
+    });
+
     describe('Responses API (GPT-5)', () => {
         it('maps level=minimal to reasoning.effort=minimal', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'minimal' } }, true);
             expect(result.reasoning).to.deep.equal({ effort: 'minimal', summary: 'auto' });
         });
         it('maps level=high to reasoning.effort=high', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'high' } }, true);
             expect(result.reasoning).to.deep.equal({ effort: 'high', summary: 'auto' });
         });
         it('omits reasoning entirely when level=off', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'off' } }, true);
             expect(result.reasoning).to.equal(undefined);
         });
         it('requests reasoning summaries for level=auto without constraining effort', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'auto' } }, true);
             expect(result.reasoning).to.deep.equal({ summary: 'auto' });
         });
         it('keeps user-configured reasoning fields but lets the selected level decide effort', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({
                 messages: [], reasoning: { level: 'high' }, settings: { reasoning: { effort: 'low', summary: 'concise' } }
             }, true);
             expect(result.reasoning).to.deep.equal({ effort: 'high', summary: 'concise' });
         });
         it('keeps a user-configured reasoning.summary for level=auto', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'auto' }, settings: { reasoning: { summary: 'detailed' } } }, true);
             expect(result.reasoning).to.deep.equal({ summary: 'detailed' });
         });
@@ -119,7 +152,7 @@ describe('OpenAiModel reasoning translation', () => {
             expect(result.reasoning_effort).to.equal('medium');
         });
         it('passes minimal through (GPT-5 accepts it; models that do not exclude it from their supportedLevels)', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'minimal' } }, false);
             expect(result.reasoning_effort).to.equal('minimal');
         });

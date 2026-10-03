@@ -902,6 +902,12 @@ div:last-child>.theia-ChatNode {
   opacity: 0.85;
 }
 
+/* None: empty bulb for an explicit request without reasoning. */
+.theia-ReasoningLevelSelector.reasoning-level-none::before {
+  content: '\ec40';
+  opacity: 0.35;
+}
+
 /* Minimal: empty (outline only) bulb at low opacity — "on, but barely".
    Lower opacity than `low` so the brightness order matches the level order:
    the crisper outline at full opacity would otherwise read brighter than a filled bulb at 0.55. */
@@ -924,6 +930,17 @@ div:last-child>.theia-ChatNode {
 /* High: filled bulb at full opacity, tinted with the warning foreground (warm/yellow). */
 .theia-ReasoningLevelSelector.reasoning-level-high::before {
   color: var(--theia-editorWarning-foreground);
+}
+
+/* Extra high and maximum: sparkle bulb with increasingly prominent highlighting. */
+.theia-ReasoningLevelSelector.reasoning-level-xhigh::before,
+.theia-ReasoningLevelSelector.reasoning-level-max::before {
+  content: '\ec1f';
+  color: var(--theia-editorWarning-foreground);
+}
+
+.theia-ReasoningLevelSelector.reasoning-level-max::before {
+  text-shadow: 0 0 3px currentColor;
 }
 
 /* Auto: lightbulb-sparkle — "the model decides automatically". */
