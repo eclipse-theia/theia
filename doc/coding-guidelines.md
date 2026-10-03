@@ -333,33 +333,43 @@ export class MyComponent {
 bind(CommandContribution).to(LoggerFrontendContribution);
 
 // good
-bind(CommandContribution).to(LoggerFrontendContribution).inSingletonScope();
+bind(LoggerFrontendContribution).toSelf().inSingletonScope();
+bind(CommandContribution).toService(LoggerFrontendContribution);
 ```
+
+> Why? Binding the implementation to itself lets adopters `rebind(LoggerFrontendContribution)` to substitute a subclass. If it is bound only under the contribution symbol, they have to resort to contribution filters instead.
 
 <a name="di-function-export"></a>
 
-* [4.](#di-function-export) Don't export functions, convert them into class methods. Functions cannot be overridden to change their behavior or work around a bug.
+* [4.](#di-function-export) Don't export functions. Convert them into methods of an injectable service. A function can be neither overridden nor rebound to change its behavior or work around a bug. Declare the service as an interface + symbol, see [Interfaces/Symbols 2](#interfaces-over-classes).
 
 ```ts
 // bad
 export function createWebSocket(url: string): WebSocket {
-   ...
+    ...
 }
 
 // good
-@injectable()
-export class WebSocketProvider {
-   protected createWebSocket(url: string): WebSocket {
-       ...
-   }
+export const WebSocketProvider = Symbol('WebSocketProvider');
+export interface WebSocketProvider {
+    createWebSocket(url: string): WebSocket;
 }
 
 @injectable()
-export class MyWebSocketProvider extends WebSocketProvider {
-   protected createWebSocket(url: string): WebSocket {
-      // create a web socket with custom options
-   }
+export class WebSocketProviderImpl implements WebSocketProvider {
+    createWebSocket(url: string): WebSocket {
+        ...
+    }
 }
+
+@injectable()
+export class MyWebSocketProvider extends WebSocketProviderImpl {
+    override createWebSocket(url: string): WebSocket {
+        // create a web socket with custom options
+    }
+}
+
+rebind(WebSocketProvider).to(MyWebSocketProvider).inSingletonScope();
 ```
 
 **Exceptions**
@@ -420,9 +430,14 @@ export interface MyCompositeTreeNode extends CompositeTreeNode {
 * [4.3](#di-auxiliary-function-export) Auxiliary functions which are called from the customizable context can be exported in the corresponding namespace.
 
 ```ts
+export const DirtyDiffModel = Symbol('DirtyDiffModel');
+export interface DirtyDiffModel {
+    ...
+}
+
 @injectable()
-export class DirtyDiffModel {
-    // This method can be overridden. Subclasses have access to `DirtyDiffModel.documentContentLines`.
+export class DirtyDiffModelImpl implements DirtyDiffModel {
+    // This method can be overridden. Subclasses and independent implementations have access to `DirtyDiffModel.documentContentLines`.
     protected handleDocumentChanged(document: TextEditorDocument): void {
         this.currentContent = DirtyDiffModel.documentContentLines(document);
         this.update();
@@ -481,9 +496,21 @@ export interface TaskProcessOptions {
     process: Process;
 }
 
+export const ProcessTask = Symbol('ProcessTask');
+export interface ProcessTask {
+    readonly label: string;
+}
+
 @injectable()
-export class ProcessTask {
-    constructor(@inject(TaskProcessOptions) protected readonly options: TaskProcessOptions) { }
+export class ProcessTaskImpl implements ProcessTask {
+
+    @inject(TaskProcessOptions)
+    protected readonly options: TaskProcessOptions;
+
+    get label(): string {
+        return this.options.label;
+    }
+
 }
 
 export const TaskFactory = Symbol('TaskFactory');
@@ -504,12 +531,12 @@ export class ProcessTaskRunner {
 
 }
 
-bind(ProcessTask).toSelf();
+bind(ProcessTask).to(ProcessTaskImpl);
 bind(TaskFactory).toFactory(ctx => (options: TaskProcessOptions) => {
     const child = new Container({ defaultScope: 'Singleton' });
     child.parent = ctx.container;
     child.bind(TaskProcessOptions).toConstantValue(options);
-    return child.get(ProcessTask);
+    return child.get<ProcessTask>(ProcessTask);
 });
 ```
 
