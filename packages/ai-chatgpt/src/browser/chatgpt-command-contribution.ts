@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandRegistry, Disposable, DisposableCollection, MessageService, nls } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, Disposable, DisposableCollection, MessageService, nls, PreferenceService } from '@theia/core';
 import { ConfirmDialog, Dialog, QuickInputService } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { ChatGptAuthService, ChatGptAuthState } from '../common';
+import { CHATGPT_ENABLED_PREF, ChatGptAuthService, ChatGptAuthState } from '../common';
 
 export namespace ChatGptCommands {
     export const SIGN_IN: Command = Command.toLocalizedCommand(
@@ -57,30 +57,49 @@ export class ChatGptCommandContribution implements CommandContribution, Disposab
     @inject(AIActivationService)
     protected readonly activationService: AIActivationService;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     protected authState: ChatGptAuthState = { isAuthenticated: false };
+    protected authGeneration = 0;
+    protected disposed = false;
     protected readonly toDispose = new DisposableCollection();
 
     @postConstruct()
     protected init(): void {
-        this.authService.getAuthState().then(state => this.authState = state);
-        this.toDispose.push(this.authService.onAuthStateChanged(state => this.authState = state));
+        this.toDispose.push(this.authService.onAuthStateChanged(state => {
+            this.authGeneration++;
+            this.authState = state;
+        }));
+        this.refreshAuthState();
     }
 
     dispose(): void {
+        this.disposed = true;
         this.toDispose.dispose();
+    }
+
+    protected async refreshAuthState(): Promise<boolean> {
+        const generation = ++this.authGeneration;
+        const state = await this.authService.getAuthState();
+        if (this.disposed || generation !== this.authGeneration) {
+            return false;
+        }
+        this.authState = state;
+        return true;
     }
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(ChatGptCommands.SIGN_IN, {
             execute: () => this.signIn(),
             isEnabled: () => !this.authState.isAuthenticated,
-            isVisible: () => this.activationService.isActive
+            isVisible: () => this.activationService.isActive && this.preferenceService.get<boolean>(CHATGPT_ENABLED_PREF, true)
         });
 
         registry.registerCommand(ChatGptCommands.SIGN_OUT, {
             execute: () => this.signOut(),
             isEnabled: () => this.authState.isAuthenticated,
-            isVisible: () => this.activationService.isActive
+            isVisible: () => this.activationService.isActive && this.preferenceService.get<boolean>(CHATGPT_ENABLED_PREF, true)
         });
     }
 
@@ -89,8 +108,7 @@ export class ChatGptCommandContribution implements CommandContribution, Disposab
             const session = await this.authService.startLogin();
             this.windowService.openNewWindow(session.authorizationUrl, { external: true });
             const success = session.callbackListening ? await this.awaitAuthorization() : await this.requestAuthorizationCode();
-            if (success) {
-                this.authState = await this.authService.getAuthState();
+            if (success && await this.refreshAuthState() && this.authState.isAuthenticated) {
                 this.messageService.info(this.authState.accountLabel
                     ? nls.localize('theia/ai/chatgpt/signedInAs', 'Signed in to ChatGPT as {0}.', this.authState.accountLabel)
                     : nls.localize('theia/ai/chatgpt/signedIn', 'Signed in to ChatGPT.'));

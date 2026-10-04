@@ -21,7 +21,7 @@ import { Container } from '@theia/core/shared/inversify';
 import { LanguageModel, LanguageModelRegistry, LanguageModelSelector } from '@theia/ai-core';
 import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-language-model';
 import { ChatGptAuthState } from '../common';
-import { ChatGptAuthServiceImpl } from './chatgpt-auth-service-impl';
+import { ChatGptBackendAuthService } from './chatgpt-auth-service';
 import { ChatGptModel } from './chatgpt-language-model';
 import { ChatGptLanguageModelsManagerImpl } from './chatgpt-language-models-manager-impl';
 import { ChatGptModelCatalog } from './chatgpt-model-catalog';
@@ -74,10 +74,10 @@ describe('ChatGptLanguageModelsManagerImpl', () => {
 
         const container = new Container();
         container.bind(LanguageModelRegistry).toConstantValue(registry);
-        container.bind(ChatGptAuthServiceImpl).toConstantValue({
+        container.bind(ChatGptBackendAuthService).toConstantValue({
             getAuthState: async () => authState,
             getCredentials: async () => ({ accessToken: 'token', accountId: 'account-id' })
-        } as unknown as ChatGptAuthServiceImpl);
+        } as unknown as ChatGptBackendAuthService);
         container.bind(ChatGptResponseApiUtils).toSelf().inSingletonScope();
         container.bind(OpenAiModelUtils).toSelf().inSingletonScope();
         container.bind(ChatGptModelCatalog).toConstantValue({

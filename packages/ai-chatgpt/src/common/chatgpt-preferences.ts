@@ -17,11 +17,11 @@
 import { AI_CORE_PREFERENCES_TITLE, MODEL_PROVIDER_TYPE_DETAIL, ModelProviderTypeDetail } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { nls, PreferenceSchema } from '@theia/core';
 
+export const CHATGPT_ENABLED_PREF = 'ai-features.chatGpt.enabled';
 export const MODELS_PREF = 'ai-features.chatGpt.models';
 
 /**
- * Models offered while the ones available to the account cannot be determined, i.e. before the first sign in or
- * when the endpoint listing them cannot be reached.
+ * Models offered when discovery for an authenticated account fails.
  */
 export const CHATGPT_FALLBACK_MODELS = [
     'gpt-5.6-sol',
@@ -46,6 +46,15 @@ Leave this empty to offer the models your ChatGPT plan actually grants, which ar
 
 export const ChatGptPreferencesSchema: PreferenceSchema = {
     properties: {
+        [CHATGPT_ENABLED_PREF]: {
+            type: 'boolean',
+            typeDetails: { [MODEL_PROVIDER_TYPE_DETAIL]: { label: 'ChatGPT' } satisfies ModelProviderTypeDetail },
+            markdownDescription: nls.localize('theia/ai/chatgpt/enabled/mdDescription',
+                'Enable the ChatGPT provider. When enabled, a status bar entry appears for authentication '
+                + 'and available models are discovered from your ChatGPT subscription.'),
+            title: AI_CORE_PREFERENCES_TITLE,
+            default: true
+        },
         [MODELS_PREF]: {
             type: 'array',
             typeDetails: { [MODEL_PROVIDER_TYPE_DETAIL]: { label: 'ChatGPT' } satisfies ModelProviderTypeDetail },

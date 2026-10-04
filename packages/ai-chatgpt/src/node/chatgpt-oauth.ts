@@ -22,7 +22,7 @@ export const CHATGPT_AUTHORIZE_URL = 'https://auth.openai.com/oauth/authorize';
 export const CHATGPT_TOKEN_URL = 'https://auth.openai.com/oauth/token';
 export const CHATGPT_SCOPE = 'openid profile email offline_access';
 /**
- * The port and path are registered with the OAuth application and cannot be chosen freely.
+ * Default callback registered with the OAuth application. Custom clients must use their registered callback.
  */
 export const CHATGPT_CALLBACK_PORT = 1455;
 export const CHATGPT_CALLBACK_HOST = 'localhost';
@@ -59,10 +59,10 @@ export function createLoginState(): string {
     return randomBytes(16).toString('hex');
 }
 
-export function buildAuthorizationUrl(challenge: string, state: string, redirectUri: string = CHATGPT_REDIRECT_URI): string {
+export function buildAuthorizationUrl(challenge: string, state: string, redirectUri: string = CHATGPT_REDIRECT_URI, clientId: string = CHATGPT_CLIENT_ID): string {
     const url = new URL(CHATGPT_AUTHORIZE_URL);
     url.searchParams.set('response_type', 'code');
-    url.searchParams.set('client_id', CHATGPT_CLIENT_ID);
+    url.searchParams.set('client_id', clientId);
     url.searchParams.set('redirect_uri', redirectUri);
     url.searchParams.set('scope', CHATGPT_SCOPE);
     url.searchParams.set('code_challenge', challenge);
@@ -79,14 +79,14 @@ export function buildAuthorizationUrl(challenge: string, state: string, redirect
  *
  * @throws if no code can be extracted, if the redirect URL is not the sign in callback or if its state does not match
  */
-export function parseAuthorizationInput(input: string, expectedState: string): string {
+export function parseAuthorizationInput(input: string, expectedState: string, callbackPath: string = CHATGPT_CALLBACK_PATH): string {
     const trimmed = input.trim();
     if (!trimmed) {
         throw new Error('No authorization code provided.');
     }
     if (/^https?:\/\//i.test(trimmed)) {
         const url = new URL(trimmed);
-        if (url.pathname !== CHATGPT_CALLBACK_PATH) {
+        if (url.pathname !== callbackPath) {
             throw new Error('The provided URL is not the sign in callback URL.');
         }
         // The state correlates the redirect with this login attempt, so it is required rather than merely compared.

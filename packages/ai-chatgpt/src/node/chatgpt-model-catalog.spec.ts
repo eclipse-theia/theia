@@ -21,7 +21,7 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Container } from '@theia/core/shared/inversify';
 import { CHATGPT_FALLBACK_MODELS, ChatGptAuthState, ChatGptCredentials } from '../common';
-import { ChatGptAuthServiceImpl } from './chatgpt-auth-service-impl';
+import { ChatGptBackendAuthService } from './chatgpt-auth-service';
 import { ChatGptModelCatalog } from './chatgpt-model-catalog';
 import { CHATGPT_ORIGINATOR } from './chatgpt-oauth';
 
@@ -64,15 +64,16 @@ describe('ChatGptModelCatalog', () => {
         authStateEmitter = new Emitter<ChatGptAuthState>();
 
         const container = new Container();
-        container.bind(ChatGptAuthServiceImpl).toConstantValue({
+        container.bind(ChatGptBackendAuthService).toConstantValue({
             getCredentials: async () => {
                 if (credentialsError) {
                     throw credentialsError;
                 }
                 return credentials;
             },
+            getAuthState: async () => ({ isAuthenticated: credentials !== undefined }),
             onAuthStateChanged: authStateEmitter.event
-        } as unknown as ChatGptAuthServiceImpl);
+        } as unknown as ChatGptBackendAuthService);
         container.bind(ILogger).to(MockLogger).inSingletonScope();
         container.bind(ChatGptModelCatalog).toSelf().inSingletonScope();
         catalog = container.get(ChatGptModelCatalog);
@@ -104,11 +105,34 @@ describe('ChatGptModelCatalog', () => {
         expect(headers.originator).to.equal(CHATGPT_ORIGINATOR);
     });
 
-    it('offers the built-in models while nobody is signed in', async () => {
+    it('offers no models while nobody is signed in', async () => {
         credentials = undefined;
 
-        expect(await catalog.getAvailableModels()).to.deep.equal(CHATGPT_FALLBACK_MODELS);
+        expect(await catalog.getAvailableModels()).to.deep.equal([]);
         expect(fetchStub.called).to.equal(false);
+    });
+
+    it('clears a cached listing when the account signs out', async () => {
+        fetchStub.resolves(listing(MODELS));
+        await catalog.getAvailableModels();
+        credentials = undefined;
+        authStateEmitter.fire({ isAuthenticated: false });
+
+        expect(await catalog.getAvailableModels()).to.deep.equal([]);
+        expect(fetchStub.calledOnce).to.equal(true);
+    });
+
+    it('does not offer a stale listing or fallback after signing out during discovery', async () => {
+        let respond: (response: Response) => void = () => { };
+        fetchStub.returns(new Promise<Response>(resolve => { respond = resolve; }));
+        const models = catalog.getAvailableModels();
+        await waitFor(() => fetchStub.called);
+        credentials = undefined;
+        authStateEmitter.fire({ isAuthenticated: false });
+        respond(listing(MODELS));
+
+        expect(await models).to.deep.equal([]);
+        expect(fetchStub.calledOnce).to.equal(true);
     });
 
     it('offers the built-in models when the listing is rejected', async () => {

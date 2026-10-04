@@ -16,18 +16,55 @@ The `@theia/ai-chatgpt` extension serves OpenAI models through your ChatGPT subs
 The models appear as `chatgpt/<model>` in the model picker and coexist with the API-key based `openai/<model>` models contributed by `@theia/ai-openai`.
 
 By default the models your ChatGPT plan grants are queried from the endpoint once you are signed in. Set the `ai-features.chatGpt.models`
-preference to offer a fixed list of models instead. A built-in list is offered while the granted models cannot be determined, i.e. before the
-first sign in or when the endpoint cannot be reached.
+preference to offer a fixed list of models instead. A built-in list is offered when authenticated discovery fails, for example when the
+endpoint cannot be reached. Discovery returns no models without credentials.
 
 ### Signing in
 
-Run the command _ChatGPT: Sign in_, or use the sign in link in the settings under _AI Features_ &rarr; _ChatGPT_. It opens the OpenAI authorization
+Click the ChatGPT status bar item, run the command _ChatGPT: Sign in_, or use the sign in link in the AI Configuration view. It opens the OpenAI authorization
 page in your browser. The browser returns the authorization code to a
 listener on `http://localhost:1455/auth/callback`, which is provided by the Theia backend. If the backend does not run on the same machine as
 your browser, or the port is already in use, you can paste the authorization code (or the full redirect URL) into the input box Theia offers
 instead. The credentials are stored in the credential store of your operating system and are removed again by the command _ChatGPT: Sign out_.
 
-While you are not signed in, the configured models are still listed, but reported as unavailable.
+Models are only registered while signed in. The status bar shows the signed-in account and provides a sign-out action.
+Set `ai-features.chatGpt.enabled` to `false` to disable the provider, remove its models and hide its status bar item; the configured model list is preserved.
+
+### Backend application configuration
+
+Application authors can rebind `ChatGptAuthServiceConfig` from `@theia/ai-chatgpt/lib/node/chatgpt-auth-service` in a backend module
+loaded after this extension. These are backend DI values, not frontend preferences. All fields are required; spread
+`DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG` to override only selected values:
+
+```typescript
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { ChatGptAuthServiceConfig, DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG } from '@theia/ai-chatgpt/lib/node/chatgpt-auth-service';
+
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
+    rebind(ChatGptAuthServiceConfig).toConstantValue({
+        ...DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG,
+        clientId: 'your-registered-client-id',
+        keyStoreService: 'your-application-chatgpt'
+    });
+});
+```
+
+| Field | Default |
+| --- | --- |
+| `clientId` | `app_EMoamEEZ73f0CkXaXp7hrann` |
+| `callbackHost` | `localhost` |
+| `callbackPort` | `1455` |
+| `callbackPath` | `/auth/callback` |
+| `keyStoreService` | `theia-chatgpt` |
+| `keyStoreAccount` | `default` |
+
+The redirect URI is derived as `http://<callbackHost>:<callbackPort><callbackPath>` and is used consistently for authorization,
+code exchange and the loopback listener. Supply a hostname or unbracketed IP address, a fixed port and an absolute callback path.
+The client and redirect URI must match an OpenAI OAuth registration; changing local values does not register a new callback.
+Changing key store identifiers selects a different credential entry and does not migrate existing credentials.
+
+Backend consumers use the `ChatGptBackendAuthService` interface symbol from the same module, which application authors can rebind
+for a custom auth implementation. The frontend RPC service remains a narrow facade: it never exposes credentials or backend client registration.
 
 ### Limitations
 

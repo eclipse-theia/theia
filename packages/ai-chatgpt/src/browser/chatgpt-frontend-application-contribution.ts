@@ -19,7 +19,7 @@ import { ModelDiscoveryStatusService } from '@theia/ai-core/lib/browser';
 import { nls, PreferenceService } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { CHATGPT_PROVIDER_ID, ChatGptAuthService, ChatGptLanguageModelsManager, ChatGptModelDescription, MODELS_PREF } from '../common';
+import { CHATGPT_ENABLED_PREF, CHATGPT_PROVIDER_ID, ChatGptAuthService, ChatGptLanguageModelsManager, ChatGptModelDescription, MODELS_PREF } from '../common';
 import { ChatGptCommands } from './chatgpt-command-contribution';
 
 /**
@@ -47,6 +47,7 @@ export class ChatGptFrontendApplicationContribution implements FrontendApplicati
     protected discoveryStatus: ModelDiscoveryStatusService;
 
     protected registeredModels: string[] = [];
+    protected refreshGeneration = 0;
     /** Serializes the refreshes, so a slow one cannot register models the next one already dropped. */
     protected refreshes: Promise<void> = Promise.resolve();
 
@@ -62,7 +63,11 @@ export class ChatGptFrontendApplicationContribution implements FrontendApplicati
             this.refreshModels();
 
             this.preferenceService.onPreferenceChanged(event => {
-                if (event.preferenceName === MODELS_PREF) {
+                if (event.preferenceName === MODELS_PREF || event.preferenceName === CHATGPT_ENABLED_PREF) {
+                    if (!this.isEnabled()) {
+                        this.removeRegisteredModels();
+                        this.updateDisabledStatus();
+                    }
                     this.refreshModels();
                 } else if (event.preferenceName === 'http.proxy') {
                     this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
@@ -77,35 +82,104 @@ export class ChatGptFrontendApplicationContribution implements FrontendApplicati
             });
 
             // Signing in or out changes the credentials, the availability of the models and which models are granted.
-            this.authService.onAuthStateChanged(() => this.refreshModels());
+            this.authService.onAuthStateChanged(state => {
+                if (!state.isAuthenticated) {
+                    this.removeRegisteredModels();
+                    if (this.isEnabled()) {
+                        this.updateDiscoveryStatus(false, false, []);
+                    }
+                }
+                this.refreshModels();
+            });
         });
     }
 
     protected refreshModels(): Promise<void> {
-        this.refreshes = this.refreshes.then(() => this.doRefreshModels())
-            .catch(error => this.discoveryStatus.reportError(CHATGPT_DISCOVERY_PROVIDER_ID, error));
+        const generation = ++this.refreshGeneration;
+        this.refreshes = this.refreshes.then(async () => {
+            if (generation !== this.refreshGeneration) {
+                return;
+            }
+            try {
+                await this.doRefreshModels(generation);
+            } catch (error) {
+                if (generation === this.refreshGeneration) {
+                    this.discoveryStatus.reportError(CHATGPT_DISCOVERY_PROVIDER_ID, error);
+                }
+            }
+        });
         return this.refreshes;
     }
 
-    protected async doRefreshModels(): Promise<void> {
+    protected async doRefreshModels(generation: number): Promise<void> {
+        if (!this.isEnabled()) {
+            this.removeRegisteredModels();
+            this.updateDisabledStatus();
+            return;
+        }
         const configured = this.preferenceService.get<string[]>(MODELS_PREF, []);
         const { isAuthenticated } = await this.authService.getAuthState();
-        if (isAuthenticated && !configured.length) {
+        if (generation !== this.refreshGeneration) {
+            return;
+        }
+        if (!isAuthenticated) {
+            this.removeRegisteredModels();
+            this.updateDiscoveryStatus(false, false, []);
+            return;
+        }
+        if (!configured.length) {
             this.discoveryStatus.updateStatus(CHATGPT_DISCOVERY_PROVIDER_ID, { state: 'fetching', stateLabel: undefined, message: undefined, action: undefined });
         }
         // The configured models, or the ones the ChatGPT plan grants while none are configured.
         const models = configured.length ? configured : await this.manager.getAvailableModels();
+        if (generation !== this.refreshGeneration) {
+            return;
+        }
         const removed = this.registeredModels.filter(model => !models.includes(model));
         this.registeredModels = models;
         if (removed.length) {
             this.manager.removeLanguageModels(...removed.map(model => `${CHATGPT_PROVIDER_ID}/${model}`));
         }
         // Registering a model that is already registered updates it, which is what a refresh is after.
-        await this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createModelDescription(modelId)));
+        try {
+            await this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createModelDescription(modelId)));
+        } finally {
+            if (generation !== this.refreshGeneration) {
+                // An in-flight registration can finish after sign-out removed its models. Remove them again before the next refresh.
+                this.manager.removeLanguageModels(...models.map(model => `${CHATGPT_PROVIDER_ID}/${model}`));
+                this.registeredModels = [];
+            }
+        }
+        if (generation !== this.refreshGeneration) {
+            return;
+        }
         this.updateDiscoveryStatus(isAuthenticated, configured.length > 0, models);
     }
 
-    /** Signed out comes first: whichever models are registered, none of them can be used without a sign in. */
+    protected isEnabled(): boolean {
+        return this.preferenceService.get<boolean>(CHATGPT_ENABLED_PREF, true);
+    }
+
+    protected removeRegisteredModels(): void {
+        if (this.registeredModels.length) {
+            this.manager.removeLanguageModels(...this.registeredModels.map(model => `${CHATGPT_PROVIDER_ID}/${model}`));
+            this.registeredModels = [];
+        }
+    }
+
+    protected updateDisabledStatus(): void {
+        this.discoveryStatus.updateStatus(CHATGPT_DISCOVERY_PROVIDER_ID, {
+            state: 'idle',
+            stateLabel: nls.localizeByDefault('Disabled'),
+            message: undefined,
+            discovered: [],
+            lastFetch: undefined,
+            fromCache: undefined,
+            action: undefined
+        });
+    }
+
+    /** Signed-out accounts never register models, even when a list is configured. */
     protected updateDiscoveryStatus(isAuthenticated: boolean, configured: boolean, models: string[]): void {
         const discovered = models.map(id => ({ id }));
         if (!isAuthenticated) {
@@ -115,6 +189,8 @@ export class ChatGptFrontendApplicationContribution implements FrontendApplicati
                 message: nls.localize('theia/ai/chatgpt/discovery/signedOut',
                     'Not signed in with ChatGPT. Sign in to use the models of your ChatGPT plan.'),
                 discovered,
+                lastFetch: undefined,
+                fromCache: undefined,
                 action: { label: nls.localize('theia/ai/chatgpt/models/signIn', 'Sign in with ChatGPT'), commandId: ChatGptCommands.SIGN_IN.id }
             });
         } else if (configured) {

@@ -24,7 +24,7 @@ import { Emitter, Event, ILogger, PreferenceChange, PreferenceService } from '@t
 import { Container } from '@theia/core/shared/inversify';
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { ModelDiscoveryStatusService } from '@theia/ai-core/lib/browser/model-discovery-status-service';
-import { ChatGptAuthService, ChatGptAuthState, ChatGptLanguageModelsManager, ChatGptModelDescription, MODELS_PREF } from '../common';
+import { CHATGPT_ENABLED_PREF, ChatGptAuthService, ChatGptAuthState, ChatGptLanguageModelsManager, ChatGptModelDescription, MODELS_PREF } from '../common';
 import { CHATGPT_DISCOVERY_PROVIDER_ID, ChatGptFrontendApplicationContribution } from './chatgpt-frontend-application-contribution';
 import { ChatGptCommands } from './chatgpt-command-contribution';
 
@@ -115,7 +115,7 @@ describe('ChatGptFrontendApplicationContribution', () => {
         preferences = new FakePreferenceService();
         aiCorePreferenceEmitter = new Emitter<PreferenceChange>();
         authStateEmitter = new Emitter<ChatGptAuthState>();
-        authState = { isAuthenticated: false };
+        authState = { isAuthenticated: true };
         maxRetries = 3;
 
         const container = new Container();
@@ -150,6 +150,7 @@ describe('ChatGptFrontendApplicationContribution', () => {
         });
 
         it('asks for a sign in while signed out, whether or not models are configured', async () => {
+            authState = { isAuthenticated: false };
             preferences.values.set(MODELS_PREF, ['gpt-5.5']);
 
             await start();
@@ -159,6 +160,7 @@ describe('ChatGptFrontendApplicationContribution', () => {
         });
 
         it('reports the granted models once signed in and drops the sign in action', async () => {
+            authState = { isAuthenticated: false };
             manager.available = ['gpt-5.6-sol', 'gpt-5.5'];
             await start();
 
@@ -203,7 +205,7 @@ describe('ChatGptFrontendApplicationContribution', () => {
         });
     });
 
-    it('registers the configured models on startup, regardless of the sign in state', async () => {
+    it('registers the configured models on startup while signed in', async () => {
         preferences.values.set(MODELS_PREF, ['gpt-5.5', 'gpt-5.5-pro']);
 
         await start();
@@ -248,25 +250,33 @@ describe('ChatGptFrontendApplicationContribution', () => {
         expect(registeredIds(manager.created[2])).to.deep.equal(['chatgpt/gpt-5.6-sol']);
     });
 
-    it('refreshes the models when the user signs in or out, so their status follows', async () => {
+    it('removes configured models on sign-out and restores the preserved list on sign-in', async () => {
         preferences.values.set(MODELS_PREF, ['gpt-5.5']);
         await start();
 
+        setAuthState({ isAuthenticated: false });
+        expect(manager.removed).to.deep.equal([['chatgpt/gpt-5.5']]);
+        await flush();
+        expect(manager.created).to.have.lengthOf(1);
+        expect(preferences.get(MODELS_PREF, [])).to.deep.equal(['gpt-5.5']);
+        expect(discoveryStatus.getStatus(CHATGPT_DISCOVERY_PROVIDER_ID)?.discovered).to.be.empty;
+
         setAuthState({ isAuthenticated: true, accountLabel: 'user@example.com' });
         await flush();
-
         expect(registeredIds(manager.created[1])).to.deep.equal(['chatgpt/gpt-5.5']);
     });
 
     it('picks up the models the plan grants once the user is signed in', async () => {
+        authState = { isAuthenticated: false };
         await start();
-        expect(registeredIds(manager.created[0])).to.be.empty;
+        expect(manager.created).to.be.empty;
+        expect(manager.availableCalls).to.equal(0);
 
         manager.available = ['gpt-5.6-sol'];
         setAuthState({ isAuthenticated: true });
         await flush();
 
-        expect(registeredIds(manager.created[1])).to.deep.equal(['chatgpt/gpt-5.6-sol']);
+        expect(registeredIds(manager.created[0])).to.deep.equal(['chatgpt/gpt-5.6-sol']);
     });
 
     it('applies overlapping refreshes one after the other', async () => {
@@ -274,7 +284,7 @@ describe('ChatGptFrontendApplicationContribution', () => {
         manager.getAvailableModels = () => new Promise<string[]>(resolve => listings.push(resolve));
         await start();
 
-        setAuthState({ isAuthenticated: true });
+        const refreshing = discoveryStatus.refresh(CHATGPT_DISCOVERY_PROVIDER_ID);
         await flush();
         expect(listings).to.have.lengthOf(1);
 
@@ -283,11 +293,101 @@ describe('ChatGptFrontendApplicationContribution', () => {
         expect(listings).to.have.lengthOf(2);
 
         listings[1](['gpt-5.6-sol']);
-        await flush();
+        await refreshing;
 
-        expect(registeredIds(manager.created[0])).to.deep.equal(['chatgpt/gpt-5.5']);
-        expect(registeredIds(manager.created[1])).to.deep.equal(['chatgpt/gpt-5.6-sol']);
+        expect(manager.created).to.have.lengthOf(1);
+        expect(registeredIds(manager.created[0])).to.deep.equal(['chatgpt/gpt-5.6-sol']);
+        expect(manager.removed).to.be.empty;
+    });
+
+    for (const configured of [[], ['gpt-5.5']]) {
+        it(`registers no models while signed out with ${configured.length ? 'configured' : 'discovered'} models`, async () => {
+            authState = { isAuthenticated: false };
+            preferences.values.set(MODELS_PREF, configured);
+            manager.available = ['gpt-5.5'];
+            await start();
+            expect(manager.created).to.be.empty;
+            expect(manager.availableCalls).to.equal(0);
+        });
+
+        it(`registers no models while disabled with ${configured.length ? 'configured' : 'discovered'} models`, async () => {
+            preferences.values.set(CHATGPT_ENABLED_PREF, false);
+            preferences.values.set(MODELS_PREF, configured);
+            manager.available = ['gpt-5.5'];
+            await start();
+            expect(manager.created).to.be.empty;
+            expect(manager.availableCalls).to.equal(0);
+            expect(discoveryStatus.getStatus(CHATGPT_DISCOVERY_PROVIDER_ID)?.stateLabel).to.equal('Disabled');
+        });
+    }
+
+    it('removes models when disabled and restores the configured list when enabled', async () => {
+        preferences.values.set(MODELS_PREF, ['gpt-5.5']);
+        await start();
+        preferences.set(CHATGPT_ENABLED_PREF, false);
         expect(manager.removed).to.deep.equal([['chatgpt/gpt-5.5']]);
+        await flush();
+        expect(manager.created).to.have.lengthOf(1);
+        expect(preferences.get(MODELS_PREF, [])).to.deep.equal(['gpt-5.5']);
+        expect(discoveryStatus.getStatus(CHATGPT_DISCOVERY_PROVIDER_ID)?.action).to.be.undefined;
+        preferences.set(CHATGPT_ENABLED_PREF, true);
+        await flush();
+        expect(registeredIds(manager.created[1])).to.deep.equal(['chatgpt/gpt-5.5']);
+    });
+
+    for (const change of ['sign-out', 'disable']) {
+        it(`discards discovery completed after ${change}`, async () => {
+            let resolveListing: (models: string[]) => void = () => undefined;
+            manager.getAvailableModels = () => new Promise<string[]>(resolve => resolveListing = resolve);
+            await start();
+            if (change === 'sign-out') {
+                setAuthState({ isAuthenticated: false });
+            } else {
+                preferences.set(CHATGPT_ENABLED_PREF, false);
+            }
+            resolveListing(['gpt-5.5']);
+            await flush();
+            expect(manager.created).to.be.empty;
+            expect(discoveryStatus.getStatus(CHATGPT_DISCOVERY_PROVIDER_ID)?.discovered).to.be.empty;
+        });
+
+        it(`cleans up registration completed after ${change}`, async () => {
+            let finishRegistration: () => void = () => undefined;
+            manager.createOrUpdateLanguageModels = (...models) => {
+                manager.created.push(models);
+                return new Promise<void>(resolve => finishRegistration = resolve);
+            };
+            preferences.values.set(MODELS_PREF, ['gpt-5.5']);
+            await start();
+            if (change === 'sign-out') {
+                setAuthState({ isAuthenticated: false });
+            } else {
+                preferences.set(CHATGPT_ENABLED_PREF, false);
+            }
+            expect(manager.removed).to.have.lengthOf(1);
+            finishRegistration();
+            await flush();
+            expect(manager.removed).to.deep.equal([['chatgpt/gpt-5.5'], ['chatgpt/gpt-5.5']]);
+            expect(discoveryStatus.getStatus(CHATGPT_DISCOVERY_PROVIDER_ID)?.discovered).to.be.empty;
+        });
+    }
+
+    it('discards an auth-state lookup completed after sign-out', async () => {
+        let resolveAuth: (state: ChatGptAuthState) => void = () => undefined;
+        Object.assign(contribution, {
+            authService: {
+                getAuthState: () => new Promise<ChatGptAuthState>(resolve => resolveAuth = resolve),
+                onAuthStateChanged: authStateEmitter.event
+            }
+        });
+        await start();
+        setAuthState({ isAuthenticated: false });
+        resolveAuth({ isAuthenticated: true });
+        await flush();
+        resolveAuth({ isAuthenticated: false });
+        await flush();
+        expect(manager.created).to.be.empty;
+        expect(manager.availableCalls).to.equal(0);
     });
 
     it('applies a changed retry count to the registered models', async () => {

@@ -21,7 +21,7 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-language-model';
 import { getOpenAiModelDefaults } from '@theia/ai-openai/lib/node/openai-model-defaults';
 import { CHATGPT_RESPONSES_BASE_URL, ChatGptLanguageModelsManager, ChatGptModelDescription } from '../common';
-import { ChatGptAuthServiceImpl } from './chatgpt-auth-service-impl';
+import { ChatGptBackendAuthService } from './chatgpt-auth-service';
 import { ChatGptModel } from './chatgpt-language-model';
 import { ChatGptModelCatalog } from './chatgpt-model-catalog';
 import { ChatGptResponseApiUtils } from './chatgpt-response-api-utils';
@@ -32,8 +32,8 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
 
-    @inject(ChatGptAuthServiceImpl)
-    protected readonly authService: ChatGptAuthServiceImpl;
+    @inject(ChatGptBackendAuthService)
+    protected readonly authService: ChatGptBackendAuthService;
 
     @inject(ChatGptResponseApiUtils)
     protected readonly responseApiUtils: ChatGptResponseApiUtils;

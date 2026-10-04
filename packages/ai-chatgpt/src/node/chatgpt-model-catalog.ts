@@ -18,7 +18,7 @@ import { ILogger } from '@theia/core';
 import { createProxyFetch, getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { CHATGPT_FALLBACK_MODELS, CHATGPT_RESPONSES_BASE_URL } from '../common';
-import { ChatGptAuthServiceImpl } from './chatgpt-auth-service-impl';
+import { ChatGptBackendAuthService } from './chatgpt-auth-service';
 import { CHATGPT_CLIENT_VERSION, CHATGPT_ORIGINATOR } from './chatgpt-oauth';
 
 /** Lists the models the endpoint serves to the signed in account. The client version is required. */
@@ -27,13 +27,13 @@ const CHATGPT_MODELS_URL = `${CHATGPT_RESPONSES_BASE_URL}/models?client_version=
 /**
  * The models a ChatGPT plan grants, as reported by the endpoint. The listing is not part of OpenAI's documented
  * API, so the result is treated as a hint: whenever it cannot be obtained, {@link CHATGPT_FALLBACK_MODELS} is
- * served instead, which keeps the feature usable while signed out or offline.
+ * served instead for authenticated discovery failures. Without credentials no models are offered.
  */
 @injectable()
 export class ChatGptModelCatalog {
 
-    @inject(ChatGptAuthServiceImpl)
-    protected readonly authService: ChatGptAuthServiceImpl;
+    @inject(ChatGptBackendAuthService)
+    protected readonly authService: ChatGptBackendAuthService;
 
     @inject(ILogger) @named('ai-chatgpt:ChatGptModelCatalog')
     protected readonly logger: ILogger;
@@ -53,7 +53,7 @@ export class ChatGptModelCatalog {
 
     async getAvailableModels(): Promise<string[]> {
         // A sign in or out while the models are being listed invalidates the result, so it is looked up again for
-        // the account that is signed in now. One retry, because the fallback is an acceptable answer either way.
+        // the account that is signed in now. One retry, then use a fallback only if an account is still signed in.
         for (let attempt = 0; attempt < 2; attempt++) {
             const generation = this.generation;
             if (!this.discovery) {
@@ -64,7 +64,7 @@ export class ChatGptModelCatalog {
             if (generation !== this.generation) {
                 continue;
             }
-            if (discovered?.length) {
+            if (discovered !== undefined) {
                 return discovered;
             }
             // Nothing was learned, so the next call retries instead of serving the fallback for good. A listing
@@ -74,14 +74,14 @@ export class ChatGptModelCatalog {
             }
             break;
         }
-        return [...CHATGPT_FALLBACK_MODELS];
+        return (await this.authService.getAuthState()).isAuthenticated ? [...CHATGPT_FALLBACK_MODELS] : [];
     }
 
     protected async discoverModels(): Promise<string[] | undefined> {
         try {
             const credentials = await this.authService.getCredentials();
             if (!credentials) {
-                return undefined;
+                return [];
             }
             const proxyFetch = createProxyFetch(getProxyUrl(CHATGPT_MODELS_URL)) ?? fetch;
             const response = await proxyFetch(CHATGPT_MODELS_URL, {
@@ -94,7 +94,8 @@ export class ChatGptModelCatalog {
             if (!response.ok) {
                 throw new Error(`The model listing failed with status ${response.status}: ${await response.text()}`);
             }
-            return toModelSlugs(await response.json());
+            const models = toModelSlugs(await response.json());
+            return models.length ? models : undefined;
         } catch (error) {
             this.logger.warn('Could not list the models of the ChatGPT plan, offering the built-in models instead:', error);
             return undefined;

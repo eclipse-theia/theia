@@ -21,14 +21,18 @@ import { Container } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ChatGptAuthState } from '../common';
 import { ChatGptAuthServiceImpl, createRemoteAuthService } from './chatgpt-auth-service-impl';
 import { CHATGPT_REDIRECT_URI } from './chatgpt-oauth';
+import { ChatGptAuthServiceConfig, ChatGptBackendAuthService, DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG } from './chatgpt-auth-service';
+import { ChatGptModelCatalog } from './chatgpt-model-catalog';
 
 /** Avoids binding the loopback callback port. The code hand over is exercised through {@link completeLogin} instead. */
 class TestAuthService extends ChatGptAuthServiceImpl {
+    callbackServerStartup: Promise<http.Server | undefined> | undefined;
     protected override async startCallbackServer(): Promise<http.Server | undefined> {
-        return undefined;
+        return this.callbackServerStartup;
     }
     get pendingState(): string | undefined {
         return this.pendingLogin?.state;
@@ -105,6 +109,7 @@ async function waitFor(condition: () => boolean): Promise<void> {
 describe('ChatGptAuthServiceImpl', () => {
 
     let authService: TestAuthService;
+    let container: Container;
     let getPasswordStub: sinon.SinonStub;
     let setPasswordStub: sinon.SinonStub;
     let deletePasswordStub: sinon.SinonStub;
@@ -123,7 +128,8 @@ describe('ChatGptAuthServiceImpl', () => {
             keys: sinon.stub().resolves([]) as KeyStoreService['keys']
         };
 
-        const container = new Container();
+        container = new Container();
+        container.bind(ChatGptAuthServiceConfig).toConstantValue(DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG);
         container.bind(KeyStoreService).toConstantValue(keyStoreService);
         container.bind(ILogger).to(MockLogger).inSingletonScope();
         container.bind(TestAuthService).toSelf().inSingletonScope();
@@ -136,6 +142,122 @@ describe('ChatGptAuthServiceImpl', () => {
         // Abandoned login attempts keep a timer alive.
         await authService.cancelLogin();
         sinon.restore();
+    });
+
+    describe('custom backend configuration', () => {
+        const config: ChatGptAuthServiceConfig = {
+            clientId: 'custom-client',
+            callbackHost: '127.0.0.1',
+            callbackPort: 2468,
+            callbackPath: '/custom/callback',
+            keyStoreService: 'custom-chatgpt',
+            keyStoreAccount: 'custom-account'
+        };
+        const redirectUri = 'http://127.0.0.1:2468/custom/callback';
+
+        beforeEach(() => {
+            container.rebind(ChatGptAuthServiceConfig).toConstantValue(config);
+            container.rebind(TestAuthService).toSelf().inSingletonScope();
+            authService = container.get(TestAuthService);
+        });
+
+        it('uses the configured client and callback for authorization and code exchange', async () => {
+            fetchStub.resolves(tokenResponse({ access_token: createAccessToken('account-id'), refresh_token: 'refresh-token', expires_in: 3600 }));
+            const session = await authService.startLogin();
+            const url = new URL(session.authorizationUrl);
+            expect(url.searchParams.get('client_id')).to.equal(config.clientId);
+            expect(url.searchParams.get('redirect_uri')).to.equal(redirectUri);
+            await expectRejection(authService.completeLogin(`${CHATGPT_REDIRECT_URI}?code=code&state=${authService.pendingState}`), /callback/);
+            expect(await authService.completeLogin(`${redirectUri}?code=code&state=${authService.pendingState}`)).to.equal(true);
+            const body = fetchStub.firstCall.args[1].body as URLSearchParams;
+            expect(body.get('client_id')).to.equal(config.clientId);
+            expect(body.get('redirect_uri')).to.equal(redirectUri);
+            expect(setPasswordStub.firstCall.args.slice(0, 2)).to.deep.equal([config.keyStoreService, config.keyStoreAccount]);
+        });
+
+        it('uses the configured key store identifiers and client when refreshing and signing out', async () => {
+            getPasswordStub.resolves(storedCredentials(Date.now() + 1000));
+            fetchStub.resolves(tokenResponse({ access_token: REFRESHED_TOKEN, expires_in: 3600 }));
+            await authService.getCredentials();
+            expect(getPasswordStub.firstCall.args).to.deep.equal([config.keyStoreService, config.keyStoreAccount]);
+            expect((fetchStub.firstCall.args[1].body as URLSearchParams).get('client_id')).to.equal(config.clientId);
+            expect(setPasswordStub.firstCall.args.slice(0, 2)).to.deep.equal([config.keyStoreService, config.keyStoreAccount]);
+            await authService.signOut();
+            expect(deletePasswordStub.firstCall.args).to.deep.equal([config.keyStoreService, config.keyStoreAccount]);
+        });
+
+        it('accepts only the configured loopback callback path', async () => {
+            fetchStub.resolves(tokenResponse({ access_token: createAccessToken('account-id'), expires_in: 3600 }));
+            await authService.startLogin();
+            expect(authService.callCallback(`/auth/callback?code=code&state=${authService.pendingState}`).statusCode).to.equal(404);
+            expect(authService.callCallback(`${config.callbackPath}?code=code&state=${authService.pendingState}`).statusCode).to.equal(200);
+            expect(await authService.waitForLogin()).to.equal(true);
+        });
+
+        it('binds the listener to the configured host and port', async () => {
+            const server = {
+                once: sinon.stub(),
+                listen: sinon.stub().callsFake((port: number, host: string, listening: () => void) => listening()),
+                close: sinon.stub(),
+                closeAllConnections: sinon.stub()
+            };
+            sinon.stub(http, 'createServer').returns(server as unknown as http.Server);
+            container.bind(ChatGptAuthServiceImpl).toSelf().inSingletonScope();
+            const service = container.get(ChatGptAuthServiceImpl);
+            try {
+                expect((await service.startLogin()).callbackListening).to.equal(true);
+                expect(server.listen.firstCall.args.slice(0, 2)).to.deep.equal([config.callbackPort, config.callbackHost]);
+            } finally {
+                await service.cancelLogin();
+            }
+        });
+    });
+
+    describe('pending callback startup', () => {
+        it('closes a listener that starts after cancellation without arming a timeout', async () => {
+            const clock = sinon.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+            const server = { close: sinon.stub(), closeAllConnections: sinon.stub() };
+            let listening: (server: http.Server) => void = () => { };
+            authService.callbackServerStartup = new Promise<http.Server>(resolve => { listening = resolve; });
+            const starting = expectRejection(authService.startLogin(), /cancelled/);
+            await flush();
+            const result = authService.waitForLogin();
+            await authService.cancelLogin();
+            listening(server as unknown as http.Server);
+            await starting;
+
+            expect(await result).to.equal(false);
+            expect(server.close.calledOnce).to.equal(true);
+            expect(server.closeAllConnections.calledOnce).to.equal(true);
+            expect(clock.countTimers()).to.equal(0);
+            expect(authService.pendingState).to.equal(undefined);
+        });
+
+        it('closes a replaced listener without closing or timing out the current attempt', async () => {
+            const clock = sinon.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+            const staleServer = { close: sinon.stub(), closeAllConnections: sinon.stub() };
+            const currentServer = { close: sinon.stub(), closeAllConnections: sinon.stub() };
+            let listening: (server: http.Server) => void = () => { };
+            authService.callbackServerStartup = new Promise<http.Server>(resolve => { listening = resolve; });
+            const staleStartup = expectRejection(authService.startLogin(), /cancelled/);
+            await flush();
+            const staleResult = authService.waitForLogin();
+            authService.callbackServerStartup = Promise.resolve(currentServer as unknown as http.Server);
+            expect((await authService.startLogin()).callbackListening).to.equal(true);
+            const currentState = authService.pendingState;
+            listening(staleServer as unknown as http.Server);
+            await staleStartup;
+
+            expect(await staleResult).to.equal(false);
+            expect(staleServer.close.calledOnce).to.equal(true);
+            expect(staleServer.closeAllConnections.calledOnce).to.equal(true);
+            expect(currentServer.close.called).to.equal(false);
+            expect(authService.pendingState).to.equal(currentState);
+            expect(clock.countTimers()).to.equal(1);
+            await authService.cancelLogin();
+            expect(clock.countTimers()).to.equal(0);
+            expect(currentServer.close.calledOnce).to.equal(true);
+        });
     });
 
     describe('getAuthState', () => {
@@ -248,6 +370,88 @@ describe('ChatGptAuthServiceImpl', () => {
             expect(await authService.getAuthState()).to.deep.equal({ isAuthenticated: false });
         });
 
+        for (const hasPreviousSession of [false, true]) {
+            it(`rolls back a cancelled login write ${hasPreviousSession ? 'to the previous session' : 'without leaving credentials'}`, async () => {
+                const previous = hasPreviousSession ? storedCredentials(Date.now() + 3600_000) : undefined;
+                getPasswordStub.resolves(previous);
+                const states: ChatGptAuthState[] = [];
+                authService.addClient({ onAuthStateChanged: state => states.push(state) });
+                fetchStub.resolves(tokenResponse({ access_token: createAccessToken('cancelled-account'), refresh_token: 'refresh', expires_in: 3600 }));
+                let completeWrite: () => void = () => { };
+                setPasswordStub.onFirstCall().returns(new Promise<void>(resolve => { completeWrite = resolve; }));
+
+                await authService.startLogin();
+                const signingIn = authService.completeLogin('code');
+                const result = authService.waitForLogin();
+                await waitFor(() => setPasswordStub.called);
+                const reading = authService.getAuthState();
+                await flush();
+                expect(getPasswordStub.calledOnce).to.equal(true);
+                await authService.cancelLogin();
+                completeWrite();
+
+                expect(await signingIn).to.equal(false);
+                expect(await result).to.equal(false);
+                expect(states).to.be.empty;
+                expect(await reading).to.deep.equal(hasPreviousSession
+                    ? { isAuthenticated: true, accountLabel: 'user@example.com', planType: 'plus' }
+                    : { isAuthenticated: false });
+                expect((await authService.getCredentials())?.accountId).to.equal(hasPreviousSession ? 'account-id' : undefined);
+                if (hasPreviousSession) {
+                    expect(setPasswordStub.callCount).to.equal(2);
+                    expect(setPasswordStub.lastCall.args[2]).to.equal(previous);
+                    expect(deletePasswordStub.called).to.equal(false);
+                } else {
+                    expect(setPasswordStub.calledOnce).to.equal(true);
+                    expect(deletePasswordStub.calledOnce).to.equal(true);
+                }
+            });
+        }
+
+        it('rolls back a replaced login write before storing the new session', async () => {
+            const states: ChatGptAuthState[] = [];
+            authService.addClient({ onAuthStateChanged: state => states.push(state) });
+            fetchStub.resolves(tokenResponse({ access_token: createAccessToken('old-account'), expires_in: 3600 }));
+            let completeWrite: () => void = () => { };
+            setPasswordStub.onFirstCall().returns(new Promise<void>(resolve => { completeWrite = resolve; }));
+            await authService.startLogin();
+            const oldLogin = authService.completeLogin('old-code');
+            await waitFor(() => setPasswordStub.called);
+
+            const newToken = createAccessToken('new-account');
+            fetchStub.resolves(tokenResponse({ access_token: newToken, expires_in: 3600 }));
+            await authService.startLogin();
+            const newLogin = authService.completeLogin('new-code');
+            await flush();
+            expect(setPasswordStub.calledOnce).to.equal(true);
+            completeWrite();
+
+            expect(await oldLogin).to.equal(false);
+            expect(await newLogin).to.equal(true);
+            expect(states).to.have.lengthOf(1);
+            expect(deletePasswordStub.calledOnce).to.equal(true);
+            expect(deletePasswordStub.firstCall.calledBefore(setPasswordStub.lastCall)).to.equal(true);
+            expect(JSON.parse(setPasswordStub.lastCall.args[2]).accountId).to.equal('new-account');
+            expect(await authService.getCredentials()).to.deep.equal({ accessToken: newToken, accountId: 'new-account' });
+        });
+
+        it('does not let a stale failed login write affect its replacement', async () => {
+            let failWrite: (error: Error) => void = () => { };
+            setPasswordStub.onFirstCall().returns(new Promise<void>((resolve, reject) => { failWrite = reject; }));
+            fetchStub.resolves(tokenResponse({ access_token: createAccessToken('old-account'), expires_in: 3600 }));
+            await authService.startLogin();
+            const oldLogin = authService.completeLogin('old-code');
+            await waitFor(() => setPasswordStub.called);
+            fetchStub.resolves(tokenResponse({ access_token: createAccessToken('new-account'), expires_in: 3600 }));
+            await authService.startLogin();
+            const newLogin = authService.completeLogin('new-code');
+            failWrite(new Error('stale write failed'));
+
+            expect(await oldLogin).to.equal(false);
+            expect(await newLogin).to.equal(true);
+            expect((await authService.getCredentials())?.accountId).to.equal('new-account');
+        });
+
         it('stops notifying a client whose registration was disposed', async () => {
             const states: ChatGptAuthState[] = [];
             authService.addClient({ onAuthStateChanged: state => states.push(state) }).dispose();
@@ -281,6 +485,84 @@ describe('ChatGptAuthServiceImpl', () => {
             expect(second).to.deep.equal(first);
             expect(getPasswordStub.calledOnce).to.equal(true);
         });
+
+        it('discards a pending key store load after a new session is accepted', async () => {
+            let completeRead: (stored: string) => void = () => { };
+            getPasswordStub.onFirstCall().returns(new Promise<string>(resolve => { completeRead = resolve; }));
+            const reading = authService.getAuthState();
+            await waitFor(() => getPasswordStub.called);
+            const newToken = createAccessToken('new-account');
+            fetchStub.resolves(tokenResponse({ access_token: newToken, expires_in: 3600 }));
+            await authService.startLogin();
+            expect(await authService.completeLogin('new-code')).to.equal(true);
+            completeRead(storedCredentials(Date.now() + 3600_000));
+
+            expect(await reading).to.deep.equal({ isAuthenticated: true, accountLabel: 'user@example.com', planType: 'plus' });
+            expect(await authService.getCredentials()).to.deep.equal({ accessToken: newToken, accountId: 'new-account' });
+        });
+
+        for (const response of [
+            tokenResponse({ access_token: REFRESHED_TOKEN, expires_in: 3600 }),
+            tokenResponse({ error: 'invalid_grant' }, 400),
+            tokenResponse({ error: 'server_error' }, 503)
+        ]) {
+            it(`discards a stale refresh response (${response.status}) after accepting a new login without signing out`, async () => {
+                getPasswordStub.resolves(storedCredentials(Date.now() + 1000));
+                let respond: (response: Response) => void = () => { };
+                fetchStub.onFirstCall().returns(new Promise<Response>(resolve => { respond = resolve; }));
+                const refreshing = authService.getCredentials();
+                await waitFor(() => fetchStub.called);
+                const newToken = createAccessToken('new-account');
+                fetchStub.resolves(tokenResponse({ access_token: newToken, expires_in: 3600 }));
+                await authService.startLogin();
+                expect(await authService.completeLogin('new-code')).to.equal(true);
+                respond(response);
+
+                expect(await refreshing).to.equal(undefined);
+                expect(deletePasswordStub.called).to.equal(false);
+                expect(setPasswordStub.calledOnce).to.equal(true);
+                expect(await authService.getCredentials()).to.deep.equal({ accessToken: newToken, accountId: 'new-account' });
+            });
+        }
+
+        for (const signOutFirst of [false, true]) {
+            it(`refreshes a new session independently of a pending old refresh ${signOutFirst ? 'after sign out' : 'after direct replacement'}`, async () => {
+                getPasswordStub.resolves(storedCredentials(Date.now() + 1000));
+                const oldResponse = new Deferred<Response>();
+                const newResponse = new Deferred<Response>();
+                fetchStub.onFirstCall().returns(oldResponse.promise);
+                fetchStub.onSecondCall().resolves(tokenResponse({
+                    access_token: createAccessToken('new-account'), refresh_token: 'new-refresh', expires_in: 0
+                }));
+                fetchStub.onThirdCall().returns(newResponse.promise);
+
+                const oldRefresh = authService.getCredentials();
+                await waitFor(() => fetchStub.called);
+                if (signOutFirst) {
+                    await authService.signOut();
+                }
+                await authService.startLogin();
+                expect(await authService.completeLogin('new-code')).to.equal(true);
+                const newRefresh = authService.getCredentials();
+                await flush();
+                expect(fetchStub.callCount).to.equal(3);
+                expect((fetchStub.thirdCall.args[1].body as URLSearchParams).get('refresh_token')).to.equal('new-refresh');
+
+                oldResponse.resolve(tokenResponse({ access_token: REFRESHED_TOKEN, expires_in: 3600 }));
+                expect(await oldRefresh).to.equal(undefined);
+                const concurrentRefresh = authService.getCredentials();
+                await flush();
+                // Finishing the old refresh must not clear the new session's coalesced request.
+                expect(fetchStub.callCount).to.equal(3);
+                const newToken = createAccessToken('new-account');
+                newResponse.resolve(tokenResponse({ access_token: newToken, expires_in: 3600 }));
+                const expected = { accessToken: newToken, accountId: 'new-account' };
+                expect(await newRefresh).to.deep.equal(expected);
+                expect(await concurrentRefresh).to.deep.equal(expected);
+                expect(await authService.getCredentials()).to.deep.equal(expected);
+                expect(deletePasswordStub.callCount).to.equal(signOutFirst ? 1 : 0);
+            });
+        }
 
         it('refreshes an expiring access token and retains the refresh token when none is rotated in', async () => {
             getPasswordStub.resolves(storedCredentials(Date.now() + 1000));
@@ -483,6 +765,46 @@ describe('ChatGptAuthServiceImpl', () => {
             expect(states).to.deep.equal([{ isAuthenticated: false }]);
             expect(await authService.getAuthState()).to.deep.equal({ isAuthenticated: false });
         });
+
+        for (const pendingDiscovery of [false, true]) {
+            it(`notifies clients and invalidates ${pendingDiscovery ? 'pending' : 'cached'} models before keystore deletion completes`, async () => {
+                getPasswordStub.resolves(storedCredentials(Date.now() + 3600_000));
+                const deletion = new Deferred<boolean>();
+                deletePasswordStub.returns(deletion.promise);
+                const listingResponse = tokenResponse({ models: [{ slug: 'gpt-5.5', supported_in_api: true, visibility: 'list' }] });
+                const discoveryResponse = new Deferred<Response>();
+                fetchStub.returns(pendingDiscovery ? discoveryResponse.promise : Promise.resolve(listingResponse));
+                container.bind(ChatGptBackendAuthService).toConstantValue(authService);
+                container.bind(ChatGptModelCatalog).toSelf().inSingletonScope();
+                const catalog = container.get(ChatGptModelCatalog);
+                const models = catalog.getAvailableModels();
+                await waitFor(() => fetchStub.called);
+                if (!pendingDiscovery) {
+                    expect(await models).to.deep.equal(['gpt-5.5']);
+                }
+                const clientStates: ChatGptAuthState[] = [];
+                const eventStates: ChatGptAuthState[] = [];
+                authService.addClient({ onAuthStateChanged: state => clientStates.push(state) });
+                authService.onAuthStateChanged(state => eventStates.push(state));
+
+                let signedOut = false;
+                const signingOut = authService.signOut().then(() => { signedOut = true; });
+                expect(clientStates).to.deep.equal([{ isAuthenticated: false }]);
+                expect(eventStates).to.deep.equal([{ isAuthenticated: false }]);
+                await waitFor(() => deletePasswordStub.called);
+                expect(signedOut).to.equal(false);
+                expect(await catalog.getAvailableModels()).to.deep.equal([]);
+                if (pendingDiscovery) {
+                    discoveryResponse.resolve(listingResponse);
+                    expect(await models).to.deep.equal([]);
+                }
+                expect(fetchStub.calledOnce).to.equal(true);
+                deletion.resolve(true);
+                await signingOut;
+                expect(clientStates).to.have.lengthOf(1);
+                expect(eventStates).to.have.lengthOf(1);
+            });
+        }
 
         it('abandons a pending sign in', async () => {
             await authService.startLogin();

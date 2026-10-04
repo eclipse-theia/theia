@@ -28,6 +28,7 @@ import {
 } from '../common';
 import { ChatGptCommandContribution } from './chatgpt-command-contribution';
 import { ChatGptFrontendApplicationContribution } from './chatgpt-frontend-application-contribution';
+import { ChatGptStatusBarContribution } from './chatgpt-status-bar-contribution';
 
 class ChatGptAuthServiceClientImpl implements ChatGptAuthServiceClient {
     protected readonly onAuthStateChangedEmitter = new Emitter<ChatGptAuthState>();
@@ -43,6 +44,8 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(ChatGptFrontendApplicationContribution);
     bind(ChatGptCommandContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(ChatGptCommandContribution);
+    bind(ChatGptStatusBarContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ChatGptStatusBarContribution);
     bind(ChatGptLanguageModelsManager).toDynamicValue(ctx => {
         const provider = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
         return provider.createProxy<ChatGptLanguageModelsManager>(CHATGPT_LANGUAGE_MODELS_MANAGER_PATH);

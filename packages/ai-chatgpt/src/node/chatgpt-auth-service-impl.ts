@@ -33,16 +33,10 @@ import {
     createPkcePair,
     decodeChatGptIdentity,
     parseAuthorizationInput,
-    CHATGPT_CALLBACK_HOST,
-    CHATGPT_CALLBACK_PATH,
-    CHATGPT_CALLBACK_PORT,
-    CHATGPT_CLIENT_ID,
-    CHATGPT_REDIRECT_URI,
     CHATGPT_TOKEN_URL
 } from './chatgpt-oauth';
+import { ChatGptAuthServiceConfig, ChatGptBackendAuthService } from './chatgpt-auth-service';
 
-const KEYSTORE_SERVICE = 'theia-chatgpt';
-const KEYSTORE_ACCOUNT = 'default';
 /** A login attempt is abandoned when the user does not complete it within this time. */
 const LOGIN_TIMEOUT_MS = 10 * 60 * 1000;
 /** Access tokens are refreshed this long before they actually expire. */
@@ -96,7 +90,15 @@ class TokenRequestError extends Error {
  * the backend does not run on the user's machine, the code can be handed over manually instead.
  */
 @injectable()
-export class ChatGptAuthServiceImpl implements ChatGptAuthService {
+export class ChatGptAuthServiceImpl implements ChatGptBackendAuthService {
+
+    @inject(ChatGptAuthServiceConfig)
+    protected readonly config: ChatGptAuthServiceConfig;
+
+    protected get redirectUri(): string {
+        const host = this.config.callbackHost.includes(':') ? `[${this.config.callbackHost}]` : this.config.callbackHost;
+        return `http://${host}:${this.config.callbackPort}${this.config.callbackPath}`;
+    }
 
     @inject(KeyStoreService)
     protected readonly keyStoreService: KeyStoreService;
@@ -109,8 +111,8 @@ export class ChatGptAuthServiceImpl implements ChatGptAuthService {
     protected credentials: StoredCredentials | undefined;
     protected credentialsLoaded = false;
     protected credentialsLoading: Promise<StoredCredentials | undefined> | undefined;
-    protected refreshInProgress: Promise<ChatGptCredentials | undefined> | undefined;
-    /** Incremented whenever the credentials are invalidated, so results of requests started before that are discarded. */
+    protected refreshInProgress: { generation: number; promise: Promise<ChatGptCredentials | undefined> } | undefined;
+    /** Incremented on sign out or a new login being accepted, so results from earlier sessions are discarded. */
     protected credentialsGeneration = 0;
     /** Serializes the key store updates, so a slow update cannot be applied on top of a later one. */
     protected keyStoreUpdates: Promise<unknown> = Promise.resolve();
@@ -118,27 +120,32 @@ export class ChatGptAuthServiceImpl implements ChatGptAuthService {
     protected readonly onAuthStateChangedEmitter = new Emitter<ChatGptAuthState>();
     readonly onAuthStateChanged: Event<ChatGptAuthState> = this.onAuthStateChangedEmitter.event;
 
-    /**
-     * Registers the client of a frontend connection. The credentials are shared by all frontends of this backend,
-     * hence this is not part of the service interface.
-     */
+    /** Registers a frontend connection with the shared backend session. Not part of the frontend RPC interface. */
     addClient(client: ChatGptAuthServiceClient): Disposable {
         this.clients.add(client);
         return Disposable.create(() => this.clients.delete(client));
     }
 
     async startLogin(): Promise<ChatGptLoginSession> {
-        await this.cancelLogin();
+        if (this.pendingLogin) {
+            this.settleLogin(this.pendingLogin, false);
+        }
         const { verifier, challenge } = createPkcePair();
         const state = createLoginState();
         const pending: PendingLogin = { verifier, state, result: new Deferred<boolean>(), settled: false };
         // The result is only awaited when the browser callback is used, so failures must not surface as unhandled rejections.
         pending.result.promise.catch(() => undefined);
         this.pendingLogin = pending;
-        pending.server = await this.startCallbackServer(pending);
+        const server = await this.startCallbackServer(pending);
+        if (pending.settled || this.pendingLogin !== pending) {
+            server?.close();
+            server?.closeAllConnections();
+            throw new Error('The ChatGPT sign in was cancelled.');
+        }
+        pending.server = server;
         pending.timeout = setTimeout(() => this.settleLogin(pending, false), LOGIN_TIMEOUT_MS);
         return {
-            authorizationUrl: buildAuthorizationUrl(challenge, state),
+            authorizationUrl: buildAuthorizationUrl(challenge, state, this.redirectUri, this.config.clientId),
             callbackListening: pending.server !== undefined
         };
     }
@@ -155,7 +162,7 @@ export class ChatGptAuthServiceImpl implements ChatGptAuthService {
         if (!pending) {
             throw new Error('No ChatGPT sign in is in progress.');
         }
-        return this.exchangeCode(pending, parseAuthorizationInput(codeOrRedirectUrl, pending.state));
+        return this.exchangeCode(pending, parseAuthorizationInput(codeOrRedirectUrl, pending.state, this.config.callbackPath));
     }
 
     async cancelLogin(): Promise<void> {
@@ -184,18 +191,20 @@ export class ChatGptAuthServiceImpl implements ChatGptAuthService {
     }
 
     async signOut(): Promise<void> {
-        await this.cancelLogin();
+        if (this.pendingLogin) {
+            this.settleLogin(this.pendingLogin, false);
+        }
         this.credentialsGeneration++;
         this.credentials = undefined;
         this.credentialsLoaded = true;
+        this.notifyAuthStateChanged();
         await this.enqueueKeyStoreUpdate(async () => {
             try {
-                await this.keyStoreService.deletePassword(KEYSTORE_SERVICE, KEYSTORE_ACCOUNT);
+                await this.keyStoreService.deletePassword(this.config.keyStoreService, this.config.keyStoreAccount);
             } catch (error) {
                 this.logger.warn('Failed to delete the stored ChatGPT credentials:', error);
             }
         });
-        this.notifyAuthStateChanged();
     }
 
     protected enqueueKeyStoreUpdate<T>(update: () => Promise<T>): Promise<T> {
@@ -209,16 +218,16 @@ export class ChatGptAuthServiceImpl implements ChatGptAuthService {
 
         return new Promise<http.Server | undefined>(resolve => {
             server.once('error', error => {
-                this.logger.info(`Could not listen on ${CHATGPT_REDIRECT_URI}, the authorization code has to be provided manually: ${error.message}`);
+                this.logger.info(`Could not listen on ${this.redirectUri}, the authorization code has to be provided manually: ${error.message}`);
                 resolve(undefined);
             });
-            server.listen(CHATGPT_CALLBACK_PORT, CHATGPT_CALLBACK_HOST, () => resolve(server));
+            server.listen(this.config.callbackPort, this.config.callbackHost, () => resolve(server));
         });
     }
 
     protected handleCallbackRequest(pending: PendingLogin, request: http.IncomingMessage, response: http.ServerResponse): void {
-        const url = new URL(request.url ?? '', `http://${CHATGPT_CALLBACK_HOST}`);
-        if (url.pathname !== CHATGPT_CALLBACK_PATH) {
+        const url = new URL(request.url ?? '', this.redirectUri);
+        if (url.pathname !== this.config.callbackPath) {
             this.respond(response, 404, 'Unknown callback route.');
             return;
         }
@@ -244,29 +253,32 @@ export class ChatGptAuthServiceImpl implements ChatGptAuthService {
     }
 
     protected async exchangeCode(pending: PendingLogin, code: string): Promise<boolean> {
-        if (pending.settled) {
+        if (pending.settled || this.pendingLogin !== pending) {
             return false;
         }
         const generation = this.credentialsGeneration;
         try {
             const grant = await this.requestTokens(new URLSearchParams({
                 grant_type: 'authorization_code',
-                client_id: CHATGPT_CLIENT_ID,
+                client_id: this.config.clientId,
                 code,
                 code_verifier: pending.verifier,
-                redirect_uri: CHATGPT_REDIRECT_URI
+                redirect_uri: this.redirectUri
             }));
             if (!grant.accountId) {
                 throw new Error('The ChatGPT account could not be determined from the token. Please try again.');
             }
             // The attempt may have been cancelled or replaced by a newer one while the tokens were being requested.
-            if (pending.settled || generation !== this.credentialsGeneration) {
+            if (pending.settled || this.pendingLogin !== pending || generation !== this.credentialsGeneration) {
                 return false;
             }
-            const signedIn = await this.storeCredentials({ ...grant, accountId: grant.accountId });
+            const signedIn = await this.storeCredentials({ ...grant, accountId: grant.accountId }, pending);
             this.settleLogin(pending, signedIn);
             return signedIn;
         } catch (error) {
+            if (pending.settled || this.pendingLogin !== pending || generation !== this.credentialsGeneration) {
+                return false;
+            }
             this.settleLogin(pending, error instanceof Error ? error : new Error(String(error)));
             throw error;
         }
@@ -295,10 +307,15 @@ export class ChatGptAuthServiceImpl implements ChatGptAuthService {
     }
 
     protected async refreshCredentials(stored: StoredCredentials): Promise<ChatGptCredentials | undefined> {
-        if (!this.refreshInProgress) {
-            this.refreshInProgress = this.doRefreshCredentials(stored).finally(() => this.refreshInProgress = undefined);
+        if (!this.refreshInProgress || this.refreshInProgress.generation !== this.credentialsGeneration) {
+            const promise = this.doRefreshCredentials(stored).finally(() => {
+                if (this.refreshInProgress?.promise === promise) {
+                    this.refreshInProgress = undefined;
+                }
+            });
+            this.refreshInProgress = { generation: this.credentialsGeneration, promise };
         }
-        return this.refreshInProgress;
+        return this.refreshInProgress.promise;
     }
 
     protected async doRefreshCredentials(stored: StoredCredentials): Promise<ChatGptCredentials | undefined> {
@@ -306,7 +323,7 @@ export class ChatGptAuthServiceImpl implements ChatGptAuthService {
         try {
             const grant = await this.requestTokens(new URLSearchParams({
                 grant_type: 'refresh_token',
-                client_id: CHATGPT_CLIENT_ID,
+                client_id: this.config.clientId,
                 refresh_token: stored.refreshToken
             }));
             if (generation !== this.credentialsGeneration) {
@@ -326,14 +343,12 @@ export class ChatGptAuthServiceImpl implements ChatGptAuthService {
             }
             return { accessToken: credentials.accessToken, accountId: credentials.accountId };
         } catch (error) {
+            if (generation !== this.credentialsGeneration) {
+                return undefined;
+            }
             // Only a rejected grant proves that the session is gone. Other failures, e.g. rate limiting or a server
             // error, must not cost the user their credentials.
             if (error instanceof TokenRequestError && error.oauthError !== undefined && SPENT_REFRESH_TOKEN_ERRORS.has(error.oauthError)) {
-                // The rejection concerns the session this refresh started with. If that session has since been
-                // replaced, signing out would discard the credentials of whoever is signed in now.
-                if (generation !== this.credentialsGeneration) {
-                    return undefined;
-                }
                 this.logger.info('The stored ChatGPT credentials are no longer valid, signing out.');
                 await this.signOut();
                 throw new Error('The ChatGPT session has expired. Please sign in with ChatGPT again.');
@@ -384,7 +399,9 @@ export class ChatGptAuthServiceImpl implements ChatGptAuthService {
         const generation = this.credentialsGeneration;
         let loaded: StoredCredentials | undefined;
         try {
-            const stored = await this.keyStoreService.getPassword(KEYSTORE_SERVICE, KEYSTORE_ACCOUNT);
+            // Do not read a login's tentative write before its ownership check or rollback has finished.
+            await this.keyStoreUpdates;
+            const stored = await this.keyStoreService.getPassword(this.config.keyStoreService, this.config.keyStoreAccount);
             if (stored) {
                 loaded = this.toStoredCredentials(stored);
                 if (!loaded) {
@@ -427,20 +444,35 @@ export class ChatGptAuthServiceImpl implements ChatGptAuthService {
         };
     }
 
-    /**
-     * Persists the session before publishing it, so a failed write cannot leave the backend reporting a session that
-     * is not stored. Returns `false` if the session was ended while it was being obtained or written, in which case
-     * the sign out queued behind this update removes what was written.
-     */
-    protected async storeCredentials(credentials: StoredCredentials): Promise<boolean> {
+    /** Persists a session before publishing it, rolling back a login write if its attempt lost ownership. */
+    protected async storeCredentials(credentials: StoredCredentials, pending?: PendingLogin): Promise<boolean> {
         const generation = this.credentialsGeneration;
+        const isCurrent = (): boolean => generation === this.credentialsGeneration
+            && (!pending || (!pending.settled && this.pendingLogin === pending));
         return this.enqueueKeyStoreUpdate(async () => {
-            if (generation !== this.credentialsGeneration) {
+            if (!isCurrent()) {
                 return false;
             }
-            await this.keyStoreService.setPassword(KEYSTORE_SERVICE, KEYSTORE_ACCOUNT, JSON.stringify(credentials));
-            if (generation !== this.credentialsGeneration) {
+            const previous = pending
+                ? await this.keyStoreService.getPassword(this.config.keyStoreService, this.config.keyStoreAccount)
+                : undefined;
+            if (!isCurrent()) {
                 return false;
+            }
+            await this.keyStoreService.setPassword(this.config.keyStoreService, this.config.keyStoreAccount, JSON.stringify(credentials));
+            if (!isCurrent()) {
+                if (pending) {
+                    // Restore within the same queue item, before any sign out or replacement session writes.
+                    if (previous !== undefined) {
+                        await this.keyStoreService.setPassword(this.config.keyStoreService, this.config.keyStoreAccount, previous);
+                    } else {
+                        await this.keyStoreService.deletePassword(this.config.keyStoreService, this.config.keyStoreAccount);
+                    }
+                }
+                return false;
+            }
+            if (pending) {
+                this.credentialsGeneration++;
             }
             this.credentials = credentials;
             this.credentialsLoaded = true;
@@ -467,7 +499,7 @@ export class ChatGptAuthServiceImpl implements ChatGptAuthService {
  * object it serves, so handing out the service itself would let any client of the connection call
  * {@link ChatGptAuthServiceImpl.getCredentials} and read the access token of the signed in account.
  */
-export function createRemoteAuthService(service: ChatGptAuthServiceImpl): ChatGptAuthService {
+export function createRemoteAuthService(service: ChatGptBackendAuthService): ChatGptAuthService {
     return {
         startLogin: () => service.startLogin(),
         waitForLogin: () => service.waitForLogin(),

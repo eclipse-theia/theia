@@ -20,12 +20,12 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { Command, CommandHandler, CommandRegistry, Emitter, Event, MessageService } from '@theia/core';
+import { Command, CommandHandler, CommandRegistry, Emitter, Event, MessageService, PreferenceService } from '@theia/core';
 import { QuickInputService } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { ChatGptAuthService, ChatGptAuthState, ChatGptLoginSession, ChatGptPreferencesSchema, MODELS_PREF } from '../common';
+import { CHATGPT_ENABLED_PREF, ChatGptAuthService, ChatGptAuthState, ChatGptLoginSession, ChatGptPreferencesSchema, MODELS_PREF } from '../common';
 import { ChatGptCommandContribution, ChatGptCommands } from './chatgpt-command-contribution';
 
 disableJSDOM();
@@ -117,7 +117,8 @@ describe('ChatGptCommandContribution', () => {
         const activationService = { isActive: true } as unknown as AIActivationService;
 
         contribution = new ChatGptCommandContribution();
-        Object.assign(contribution, { authService, windowService, messageService, quickInputService, activationService });
+        const preferenceService = { get: (_name: string, fallback: boolean) => fallback } as unknown as PreferenceService;
+        Object.assign(contribution, { authService, windowService, messageService, quickInputService, activationService, preferenceService });
         (contribution as unknown as { init(): void }).init();
         // The initial state is fetched asynchronously.
         await Promise.resolve();
@@ -146,11 +147,58 @@ describe('ChatGptCommandContribution', () => {
         expect(handlers.get(ChatGptCommands.SIGN_OUT.id)!.isEnabled!()).to.equal(true);
     });
 
+    function initWithPendingAuthState(): Deferred<ChatGptAuthState> {
+        contribution.dispose();
+        const lookup = new Deferred<ChatGptAuthState>();
+        authService.getAuthState = () => lookup.promise;
+        contribution = new ChatGptCommandContribution();
+        Object.assign(contribution, { authService });
+        (contribution as unknown as { init(): void }).init();
+        return lookup;
+    }
+
+    for (const isAuthenticated of [true, false]) {
+        it(`ignores an initial lookup after a newer ${isAuthenticated ? 'sign-in' : 'sign-out'} event`, async () => {
+            const lookup = initWithPendingAuthState();
+            const handlers = registerCommands();
+            authService.fireAuthStateChanged({ isAuthenticated });
+            lookup.resolve({ isAuthenticated: !isAuthenticated });
+            await lookup.promise;
+            expect(handlers.get(ChatGptCommands.SIGN_IN.id)!.isEnabled!()).to.equal(!isAuthenticated);
+            expect(handlers.get(ChatGptCommands.SIGN_OUT.id)!.isEnabled!()).to.equal(isAuthenticated);
+        });
+    }
+
+    it('ignores an initial lookup completed after disposal', async () => {
+        const lookup = initWithPendingAuthState();
+        const handlers = registerCommands();
+        contribution.dispose();
+        authService.fireAuthStateChanged({ isAuthenticated: true });
+        lookup.resolve({ isAuthenticated: true });
+        await lookup.promise;
+        expect(handlers.get(ChatGptCommands.SIGN_IN.id)!.isEnabled!()).to.equal(true);
+        expect(handlers.get(ChatGptCommands.SIGN_OUT.id)!.isEnabled!()).to.equal(false);
+    });
+
     it('hides both commands while the AI features are disabled', () => {
         Object.assign(contribution, { activationService: { isActive: false } });
         const handlers = registerCommands();
         expect(handlers.get(ChatGptCommands.SIGN_IN.id)!.isVisible!()).to.equal(false);
         expect(handlers.get(ChatGptCommands.SIGN_OUT.id)!.isVisible!()).to.equal(false);
+    });
+
+    it('hides both commands while the ChatGPT provider is disabled', () => {
+        Object.assign(contribution, { preferenceService: { get: () => false } });
+        const handlers = registerCommands();
+        expect(handlers.get(ChatGptCommands.SIGN_IN.id)!.isVisible!()).to.equal(false);
+        expect(handlers.get(ChatGptCommands.SIGN_OUT.id)!.isVisible!()).to.equal(false);
+    });
+
+    it('shows both commands when AI and the provider are enabled', () => {
+        const handlers = registerCommands();
+        expect(handlers.get(ChatGptCommands.SIGN_IN.id)!.isVisible!()).to.equal(true);
+        expect(handlers.get(ChatGptCommands.SIGN_OUT.id)!.isVisible!()).to.equal(true);
+        expect(ChatGptPreferencesSchema.properties[CHATGPT_ENABLED_PREF].default).to.equal(true);
     });
 
     it('opens the authorization page and reports the account once the browser completed the sign in', async () => {
@@ -167,6 +215,33 @@ describe('ChatGptCommandContribution', () => {
         expect(infoMessages.pop()).to.contain('user@example.com');
         expect(quickInputRequests).to.equal(0);
     });
+
+    for (const change of ['auth-event', 'dispose']) {
+        it(`ignores a post-login lookup after ${change}`, async () => {
+            const lookup = new Deferred<ChatGptAuthState>();
+            const lookupStarted = new Deferred<void>();
+            authService.getAuthState = () => {
+                lookupStarted.resolve();
+                return lookup.promise;
+            };
+            const handlers = registerCommands();
+            const signingIn = handlers.get(ChatGptCommands.SIGN_IN.id)!.execute();
+            authService.login.resolve(true);
+            await lookupStarted.promise;
+
+            if (change === 'auth-event') {
+                authService.fireAuthStateChanged({ isAuthenticated: false });
+            } else {
+                contribution.dispose();
+            }
+            lookup.resolve({ isAuthenticated: true, accountLabel: 'old@example.com' });
+            await signingIn;
+
+            expect(handlers.get(ChatGptCommands.SIGN_IN.id)!.isEnabled!()).to.equal(true);
+            expect(handlers.get(ChatGptCommands.SIGN_OUT.id)!.isEnabled!()).to.equal(false);
+            expect(infoMessages.some(message => message.includes('Signed in to ChatGPT'))).to.equal(false);
+        });
+    }
 
     it('asks for the authorization code when the callback listener is not reachable', async () => {
         authService.session = { authorizationUrl: 'https://auth.openai.com/oauth/authorize', callbackListening: false };

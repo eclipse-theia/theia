@@ -26,6 +26,7 @@ import {
     ChatGptPreferencesSchema
 } from '../common';
 import { ChatGptAuthServiceImpl, createRemoteAuthService } from './chatgpt-auth-service-impl';
+import { ChatGptAuthServiceConfig, ChatGptBackendAuthService, DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG } from './chatgpt-auth-service';
 import { ChatGptLanguageModelsManagerImpl } from './chatgpt-language-models-manager-impl';
 import { ChatGptModelCatalog } from './chatgpt-model-catalog';
 import { ChatGptResponseApiUtils } from './chatgpt-response-api-utils';
@@ -40,7 +41,7 @@ const chatGptConnectionModule = ConnectionContainerModule.create(({ bind }) => {
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler<ChatGptAuthServiceClient>(CHATGPT_AUTH_SERVICE_PATH, client => {
             // The service is owned by the backend container because all frontends share the same stored credentials.
-            const authService = ctx.container.get<ChatGptAuthServiceImpl>(ChatGptAuthServiceImpl);
+            const authService = ctx.container.get<ChatGptBackendAuthService>(ChatGptBackendAuthService);
             const registration = authService.addClient(client);
             client.onDidCloseConnection(() => registration.dispose());
             return createRemoteAuthService(authService);
@@ -50,8 +51,10 @@ const chatGptConnectionModule = ConnectionContainerModule.create(({ bind }) => {
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: ChatGptPreferencesSchema });
+    bind(ChatGptAuthServiceConfig).toConstantValue(DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG);
     bind(ChatGptAuthServiceImpl).toSelf().inSingletonScope();
-    bind(ChatGptAuthService).toService(ChatGptAuthServiceImpl);
+    bind(ChatGptBackendAuthService).toService(ChatGptAuthServiceImpl);
+    bind(ChatGptAuthService).toService(ChatGptBackendAuthService);
     // Owned by the backend container as well, so all frontends share one listing of the account's models.
     bind(ChatGptModelCatalog).toSelf().inSingletonScope();
     // Bound under its own symbol so that the OpenAI models keep using the unmodified `OpenAiResponseApiUtils`.
