@@ -27,6 +27,7 @@ import {
     ReasoningSupport
 } from '@theia/ai-core/lib/common';
 import { mergeReasoningSettings } from '@theia/ai-core/lib/browser/frontend-language-model-service';
+import { reasoningLevelDescription, reasoningLevelLabel } from '@theia/ai-core/lib/browser/reasoning-labels';
 import { LanguageModelAlias } from '@theia/ai-core/lib/common/language-model-alias';
 import { Mutable } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
@@ -68,21 +69,6 @@ const ModelSelect: React.FC<{
     />;
 };
 
-/** Same wording as the chat input's selector, so a level reads identically wherever it is set. */
-const reasoningLevelLabel = (level: ReasoningLevel): string => {
-    switch (level) {
-        case 'off': return nls.localizeByDefault('Off');
-        case 'none': return nls.localizeByDefault('None');
-        case 'minimal': return nls.localizeByDefault('Minimal');
-        case 'low': return nls.localizeByDefault('Low');
-        case 'medium': return nls.localizeByDefault('Medium');
-        case 'high': return nls.localizeByDefault('High');
-        case 'xhigh': return nls.localizeByDefault('Extra High');
-        case 'max': return nls.localize('theia/ai/core/reasoning/max', 'Maximum');
-        case 'auto': return nls.localizeByDefault('Auto');
-    }
-};
-
 /**
  * The agent's persisted reasoning level, shown right below its models because that is the model
  * capability it depends on. The chat input's selector writes this same per-agent setting, so without this
@@ -105,7 +91,9 @@ export const ReasoningRow: React.FC<{
     settingsRowService: AiSettingsRowService;
 }> = ({ support, savedLevel, inheritedLevel, onSelect, onReset, settingsRowService }) => {
     const options = React.useMemo<SelectOption[]>(
-        () => support.supportedLevels.map(level => ({ value: level, label: reasoningLevelLabel(level) })),
+        () => support.supportedLevels.map(level => ({
+            value: level, label: reasoningLevelLabel(level), description: reasoningLevelDescription(level)
+        })),
         [support]
     );
     const handleChange = React.useCallback((option: SelectOption): void => {

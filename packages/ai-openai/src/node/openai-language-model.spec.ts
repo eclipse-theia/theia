@@ -60,7 +60,11 @@ class TestableOpenAiModel extends OpenAiModel {
     }
 }
 
-function buildModel(params: Partial<OpenAiModelParams> & Pick<OpenAiModelParams, 'model'>, responseApiUtils?: OpenAiResponseApiUtils): TestableOpenAiModel {
+function buildModel<T extends OpenAiModel>(
+    modelType: new (...args: never[]) => T,
+    params: Partial<OpenAiModelParams> & Pick<OpenAiModelParams, 'model'>,
+    responseApiUtils?: OpenAiResponseApiUtils
+): T {
     const parent = new Container();
     parent.bind(OpenAiModelUtils).toSelf();
     if (responseApiUtils) {
@@ -73,7 +77,7 @@ function buildModel(params: Partial<OpenAiModelParams> & Pick<OpenAiModelParams,
     // These tests never issue a streaming request, so the iterator factory is never invoked.
     const iteratorFactory: ChatCompletionStreamingAsyncIteratorFactory = () => { throw new Error('iterator not used in these tests'); };
     parent.bind(ChatCompletionStreamingAsyncIteratorFactory).toConstantValue(iteratorFactory);
-    parent.bind(TestableOpenAiModel).toSelf().inTransientScope();
+    parent.bind(modelType).toSelf().inTransientScope();
 
     const child = new Container();
     child.parent = parent;
@@ -88,11 +92,11 @@ function buildModel(params: Partial<OpenAiModelParams> & Pick<OpenAiModelParams,
         deployment: undefined,
         ...params
     });
-    return child.get(TestableOpenAiModel);
+    return child.get(modelType);
 }
 
 function createModel(modelId: string, reasoningSupport?: ReasoningSupport): TestableOpenAiModel {
-    return buildModel({ model: modelId, reasoningSupport });
+    return buildModel(TestableOpenAiModel, { model: modelId, reasoningSupport });
 }
 
 function createCompactionModel(
@@ -100,7 +104,7 @@ function createCompactionModel(
     useResponseApi: boolean = true,
     serverSideCompactionTokenThresholdByDefault?: number
 ): TestableOpenAiModel {
-    return buildModel({
+    return buildModel(TestableOpenAiModel, {
         model: 'gpt-5',
         useResponseApi,
         serverSideCompactionSupport: useResponseApi,
@@ -110,6 +114,30 @@ function createCompactionModel(
 }
 
 describe('OpenAiModel reasoning translation', () => {
+
+    for (const forResponseApi of [false, true]) {
+        it(`clamps unsupported levels for direct calls using ${forResponseApi ? 'Responses' : 'Chat Completions'}`, async () => {
+            const model = buildModel(OpenAiModel, {
+                model: 'gpt-5', enableStreaming: false, useResponseApi: forResponseApi, reasoningSupport: LEGACY_GPT5_REASONING_SUPPORT
+            });
+            const captured: Record<string, unknown>[] = [];
+            const fetch = async (_input: unknown, init?: RequestInit): Promise<Response> => {
+                captured.push(JSON.parse(init?.body as string));
+                return new Response(JSON.stringify(forResponseApi
+                    ? { id: 'r', output: [{ type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'ok' }] }] }
+                    : { choices: [{ message: { content: 'ok' } }] }), { headers: { 'content-type': 'application/json' } });
+            };
+            const client = new OpenAI({ apiKey: 'test-key', fetch });
+            Object.assign(model, { initializeOpenAi: () => client });
+            for (const level of ['none', 'max'] as const) {
+                await model.request({ messages: [], sessionId: 's', requestId: level, reasoning: { level } });
+            }
+            expect(captured).to.have.length(2);
+            expect(forResponseApi ? captured[0].reasoning : captured[0].reasoning_effort).to.equal(undefined);
+            expect(forResponseApi ? captured[1].reasoning : captured[1].reasoning_effort)
+                .to.deep.equal(forResponseApi ? { effort: 'high', summary: 'auto' } : 'high');
+        });
+    }
 
     describe('family reasoning presets', () => {
         for (const modelId of ['gpt-5.1', 'gpt-5.5-pro', 'gpt-5.6-sol', 'gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-luna']) {
@@ -232,7 +260,7 @@ describe('OpenAiModel Response API fallback', () => {
         const responseApiUtils = {
             handleRequest: async () => { throw new Error('Response API unavailable'); }
         } as unknown as OpenAiResponseApiUtils;
-        return buildModel({ model: 'gpt-5', useResponseApi: true }, responseApiUtils);
+        return buildModel(TestableOpenAiModel, { model: 'gpt-5', useResponseApi: true }, responseApiUtils);
     }
 
     it('does not fall back to Chat Completions when a server tool is selected', async () => {

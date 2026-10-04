@@ -207,8 +207,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
         const info = await this.fetchModelInfo(description, apiKey, proxyUrl);
         const reasoningApi = this.deriveReasoningApi(info);
         const effort = info?.capabilities?.effort;
-        const supportedEfforts = (['low', 'medium', 'high', 'xhigh', 'max'] as const).filter(level =>
-            effort?.supported !== false && (effort?.[level]?.supported ?? (level !== 'xhigh' && level !== 'max')));
+        const supportedEfforts = effort?.supported === false ? [] : (['low', 'medium', 'high', 'xhigh', 'max'] as const).filter(level =>
+            effort?.[level]?.supported ?? (level !== 'xhigh' && level !== 'max'));
         const reasoningSupport: ReasoningSupport | undefined = reasoningApi === 'effort' ? {
             supportedLevels: ['off', ...supportedEfforts, 'auto'],
             defaultLevel: 'auto'

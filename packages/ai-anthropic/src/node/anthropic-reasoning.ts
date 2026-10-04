@@ -48,7 +48,6 @@ export function anthropicReasoningFor(
 
 function anthropicEffortForLevel(level: ReasoningLevel): AnthropicEffort | undefined {
     switch (level) {
-        case 'minimal': return 'low';
         case 'low':
         case 'medium':
         case 'high':

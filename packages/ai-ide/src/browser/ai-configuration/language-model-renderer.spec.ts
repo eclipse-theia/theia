@@ -71,7 +71,7 @@ describe('ReasoningRow', () => {
         }
     });
 
-    for (const [level, label] of [['none', 'None'], ['xhigh', 'Extra High'], ['max', 'Maximum']] as const) {
+    for (const [level, label] of [['none', 'None'], ['xhigh', 'Extra High'], ['max', 'Max']] as const) {
         it(`labels the native ${level} effort and marks its glyph`, () => {
             const rendered = render({ support: { supportedLevels: [level] }, inheritedLevel: level });
             try {

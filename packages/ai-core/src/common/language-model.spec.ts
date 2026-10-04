@@ -384,10 +384,12 @@ describe('ReasoningSupport.clampLevel', () => {
     it('clamps none to the nearest supported effort', () => {
         expect(ReasoningSupport.clampLevel({ supportedLevels: ['low', 'medium', 'high'] }, 'none')).to.equal('low');
         expect(ReasoningSupport.clampLevel(oSeries, 'none')).to.equal('off');
+        expect(ReasoningSupport.clampLevel({ supportedLevels: ['off', 'minimal', 'low', 'auto'] }, 'none')).to.equal('off');
     });
 
     it('raises an unsupported minimal to low rather than lowering it to off', () => {
         expect(ReasoningSupport.clampLevel(oSeries, 'minimal')).to.equal('low');
+        expect(ReasoningSupport.clampLevel({ supportedLevels: ['none', 'low'] }, 'minimal')).to.equal('low');
     });
 
     it('lowers an unsupported level when nothing higher is supported', () => {
