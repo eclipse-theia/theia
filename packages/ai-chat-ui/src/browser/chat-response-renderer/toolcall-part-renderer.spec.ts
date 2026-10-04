@@ -14,19 +14,27 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+
+let disableJSDOM = enableJSDOM();
+
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+FrontendApplicationConfigProvider.set({});
+
 import { expect } from 'chai';
 import { ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { ToolInvocationRegistry } from '@theia/ai-core';
 import { HoverRequest, HoverService, KeybindingRegistry, OpenerService } from '@theia/core/lib/browser';
-import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 import { ReactNode } from '@theia/core/shared/react';
 import { flushSync } from '@theia/core/shared/react-dom';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { ResponseNode } from '../chat-tree-view';
 import { ToolCallPartRenderer } from './toolcall-part-renderer';
 import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
+
+disableJSDOM();
 
 describe('condenseArguments', () => {
 
@@ -431,7 +439,6 @@ describe('ToolCallPartRenderer.renderResult', () => {
 });
 
 describe('ToolCallPartRenderer arguments tooltip', () => {
-    let disableJSDOM: () => void;
     let container: HTMLElement;
     let root: Root;
     let requests: HoverRequest[];
