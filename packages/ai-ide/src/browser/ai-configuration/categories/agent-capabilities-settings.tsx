@@ -189,14 +189,38 @@ export interface AgentGenericCapabilitiesSettingsProps {
  * override with a per-type reset and a shared "Reset All". The header's edit action opens the same tree
  * the chat input's capabilities popup uses; every change is saved right away, like the other rows here.
  */
-export const AgentGenericCapabilitiesSettings = ({
-    agentId, savedSelections, availableCapabilities, usedCapabilities, aiSettingsService, settingsRowService, hoverService, onOpenPromptSnippet
-}: AgentGenericCapabilitiesSettingsProps) => {
+export const AgentGenericCapabilitiesSettings = (props: AgentGenericCapabilitiesSettingsProps) => {
+    const { agentId, savedSelections, availableCapabilities, usedCapabilities, aiSettingsService, settingsRowService, hoverService, onOpenPromptSnippet } = props;
     // Held locally so consecutive edits build on each other instead of on the not yet reloaded saved value.
     const [selections, setSelections] = React.useState<GenericCapabilitySelections>(savedSelections ?? {});
-    React.useEffect(() => setSelections(savedSelections ?? {}), [savedSelections]);
+    const currentSelections = React.useRef(selections);
+    const operation = React.useMemo(() => ({ generation: 0, pendingWrites: 0, disposed: false, writeQueue: Promise.resolve() }), [agentId, aiSettingsService]);
     const [editing, setEditing] = React.useState(false);
     const capabilityTypes = CAPABILITY_TYPE_PROMPT_MAP.map(m => m.type);
+
+    const reconcile = React.useCallback(async (): Promise<void> => {
+        const generation = ++operation.generation;
+        if (operation.disposed || operation.pendingWrites > 0) {
+            return;
+        }
+        const settings = await aiSettingsService.getAgentSettings(agentId);
+        if (!operation.disposed && generation === operation.generation && operation.pendingWrites === 0) {
+            const saved = settings?.genericCapabilitySelections ?? {};
+            currentSelections.current = saved;
+            setSelections(saved);
+        }
+    }, [agentId, aiSettingsService, operation]);
+
+    React.useEffect(() => {
+        operation.disposed = false;
+        return () => {
+            operation.disposed = true;
+            operation.generation++;
+        };
+    }, [operation]);
+
+    // Detail-load snapshots only invalidate the editor; always read the current stored value.
+    React.useEffect(() => { reconcile(); }, [props, reconcile]);
 
     const save = (next: GenericCapabilitySelections): Promise<void> => {
         // Drop emptied types, and the whole setting once nothing is left, so no stale keys accumulate.
@@ -206,15 +230,25 @@ export const AgentGenericCapabilitiesSettings = ({
                 cleaned[type] = next[type];
             }
         }
+        operation.generation++;
+        operation.pendingWrites++;
+        currentSelections.current = cleaned;
         setSelections(cleaned);
-        return aiSettingsService.updateAgentSettings(agentId, {
+        const write = operation.writeQueue.then(() => aiSettingsService.updateAgentSettings(agentId, {
             genericCapabilitySelections: GenericCapabilitySelections.hasSelections(cleaned) ? cleaned : undefined
+        }));
+        // A rejected write must not prevent later edits from being saved.
+        operation.writeQueue = write.catch(() => { });
+        return write.finally(async () => {
+            operation.pendingWrites--;
+            // The settings service also resolves failed writes, so reconcile once every write has settled.
+            await reconcile();
         });
     };
 
-    const handleChange = (type: keyof GenericCapabilitySelections, ids: string[]): Promise<void> => save({ ...selections, [type]: ids });
+    const handleChange = (type: keyof GenericCapabilitySelections, ids: string[]): Promise<void> => save({ ...currentSelections.current, [type]: ids });
     const handleResetAll = (): Promise<void> => save({});
-    const handleReset = (type: keyof GenericCapabilitySelections): Promise<void> => save({ ...selections, [type]: undefined });
+    const handleReset = (type: keyof GenericCapabilitySelections): Promise<void> => save({ ...currentSelections.current, [type]: undefined });
 
     const promptIdFor = (type: keyof GenericCapabilitySelections): string =>
         CAPABILITY_TYPE_PROMPT_MAP.find(entry => entry.type === type)!.promptId;

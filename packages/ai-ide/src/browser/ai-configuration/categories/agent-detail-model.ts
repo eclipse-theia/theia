@@ -83,7 +83,10 @@ export async function loadAgentDetail(agent: Agent, services: AgentDetailService
     const parsed = await parsePromptFragments(agent, services);
     const agentSettings = await services.aiSettingsService.getAgentSettings(agent.id);
     const serverToolModel = await resolveServerToolModel(agent, services);
-    const chatAgent = isChatAgent(agent);
+    const [availableGenericCapabilities, usedGenericCapabilities] = isChatAgent(agent) ? await Promise.all([
+        services.genericCapabilitiesService.getAvailableCapabilities(agent.id),
+        services.chatCapabilitiesService.getUsedGenericCapabilitiesForAgent(agent.id)
+    ]) : [undefined, undefined];
     return {
         parsed,
         showInChat: agentSettings?.showInChat ?? true,
@@ -91,8 +94,8 @@ export async function loadAgentDetail(agent: Agent, services: AgentDetailService
         capabilityOverrides: agentSettings?.capabilityOverrides,
         genericCapabilitySelections: agentSettings?.genericCapabilitySelections,
         // Same items the chat input's capabilities popup offers; the agent itself is not offered for delegation.
-        availableGenericCapabilities: chatAgent ? await services.genericCapabilitiesService.getAvailableCapabilities(agent.id) : undefined,
-        usedGenericCapabilities: chatAgent ? await services.chatCapabilitiesService.getUsedGenericCapabilitiesForAgent(agent.id) : undefined,
+        availableGenericCapabilities,
+        usedGenericCapabilities,
         serverTools: serverToolModel?.serverTools,
         serverToolVendor: serverToolModel?.vendor,
         serverToolSelections: agentSettings?.serverToolSelections ? { ...agentSettings.serverToolSelections } : undefined

@@ -24,7 +24,8 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import { GenericCapabilitiesServiceImpl } from './generic-capabilities-service';
-import { ToolRequest, PromptFragment, Skill } from '@theia/ai-core';
+import { ToolRequest, PromptFragment, Skill, GenericCapabilitiesContribution, GenericCapabilityGroup } from '@theia/ai-core';
+import { ContributionProvider, Emitter } from '@theia/core';
 
 disableJSDOM();
 
@@ -272,6 +273,104 @@ describe('GenericCapabilitiesServiceImpl', () => {
             expect(service.getAvailableSkills()).to.deep.equal([
                 { id: 'bigquery:query-builder', name: 'bigquery:query-builder', description: 'Build SQL' }
             ]);
+        });
+    });
+
+    describe('getAvailableMCPFunctions', () => {
+        class CachedService extends GenericCapabilitiesServiceImpl {
+            protected override readonly contributions: ContributionProvider<GenericCapabilitiesContribution>;
+
+            constructor(contribution: GenericCapabilitiesContribution) {
+                super();
+                this.contributions = { getContributions: () => [contribution] } as ContributionProvider<GenericCapabilitiesContribution>;
+                this.init();
+            }
+
+            flushChanges(): void {
+                this.fireChangeDebounced.flush();
+            }
+        }
+
+        it('shares concurrent and completed lookups between detail reloads', async () => {
+            let calls = 0;
+            const cached = new CachedService({
+                capabilityType: 'mcpFunctions',
+                getAvailableCapabilities: async () => { calls++; return []; }
+            });
+            try {
+                await Promise.all([cached.getAvailableCapabilities(), cached.getAvailableCapabilities('coder')]);
+                await cached.getAvailableCapabilities();
+                expect(calls).to.equal(1);
+            } finally {
+                cached.dispose();
+            }
+        });
+
+        it('invalidates the lookup before notifying availability listeners', async () => {
+            const changed = new Emitter<void>();
+            let calls = 0;
+            const cached = new CachedService({
+                capabilityType: 'mcpFunctions', onDidChange: changed.event,
+                getAvailableCapabilities: async () => { calls++; return []; }
+            });
+            const listener = cached.onDidChangeAvailableCapabilities(() => { cached.getAvailableMCPFunctions(); });
+            try {
+                await cached.getAvailableMCPFunctions();
+                changed.fire();
+                cached.flushChanges();
+                await cached.getAvailableMCPFunctions();
+                expect(calls).to.equal(2);
+            } finally {
+                listener.dispose();
+                cached.dispose();
+                changed.dispose();
+            }
+        });
+
+        it('retries a rejected lookup', async () => {
+            let calls = 0;
+            const failure = new Error('Lookup failed');
+            const cached = new CachedService({
+                capabilityType: 'mcpFunctions',
+                getAvailableCapabilities: async () => {
+                    if (++calls === 1) {
+                        throw failure;
+                    }
+                    return [];
+                }
+            });
+            try {
+                expect(await cached.getAvailableMCPFunctions().catch(error => error)).to.equal(failure);
+                expect(await cached.getAvailableMCPFunctions()).to.deep.equal([]);
+                expect(calls).to.equal(2);
+            } finally {
+                cached.dispose();
+            }
+        });
+
+        it('does not replace a fresh lookup when an invalidated lookup finishes', async () => {
+            const changed = new Emitter<void>();
+            let rejectFirst: (error: Error) => void = () => { };
+            let calls = 0;
+            const cached = new CachedService({
+                capabilityType: 'mcpFunctions', onDidChange: changed.event,
+                getAvailableCapabilities: () => ++calls === 1
+                    ? new Promise<GenericCapabilityGroup[]>((_resolve, reject) => { rejectFirst = reject; })
+                    : Promise.resolve([])
+            });
+            try {
+                const first = cached.getAvailableMCPFunctions().catch(() => { });
+                changed.fire();
+                cached.flushChanges();
+                await cached.getAvailableMCPFunctions();
+                rejectFirst(new Error('Old lookup failed'));
+                await first;
+                await cached.getAvailableMCPFunctions();
+                expect(calls).to.equal(2);
+            } finally {
+                cached.dispose();
+                changed.dispose();
+            }
         });
     });
 

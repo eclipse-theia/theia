@@ -25,6 +25,9 @@ import 'reflect-metadata';
 
 import { expect } from 'chai';
 import { ReasoningLevel, ReasoningSettings, ReasoningSupport } from '@theia/ai-core';
+import { AISettingsService } from '@theia/ai-core/lib/common';
+import { ChatModel } from '@theia/ai-chat';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { AIChatInputWidget } from './chat-input-widget';
 
 disableJSDOM();
@@ -39,6 +42,31 @@ class TestChatInputWidget extends AIChatInputWidget {
             modes: [],
             currentModeId: modeId
         };
+    }
+
+    renderUpdates = 0;
+
+    setCapabilityState(saved: Record<string, boolean> | undefined, current = saved ?? {}): void {
+        this.savedCapabilityOverrides = saved;
+        this.userCapabilityOverrides = new Map(Object.entries(current));
+    }
+
+    setSavedCapabilityLoader(load: () => Promise<Record<string, boolean> | undefined>): void {
+        (this as unknown as { aiSettingsService: Pick<AISettingsService, 'getAgentSettings'> }).aiSettingsService = {
+            getAgentSettings: async () => ({ capabilityOverrides: await load() })
+        };
+    }
+
+    refreshSavedCapabilityOverridesForTest(agentId: string | undefined): Promise<void> {
+        return this.refreshSavedCapabilityOverrides(agentId);
+    }
+
+    capabilityStateForTest(): { saved: Record<string, boolean> | undefined; current: Record<string, boolean> } {
+        return { saved: this.savedCapabilityOverrides, current: Object.fromEntries(this.userCapabilityOverrides) };
+    }
+
+    setChatModelForTest(id: string): void {
+        this._chatModel = { id } as ChatModel;
     }
 
     refreshCapabilitiesForTest(): Promise<void> {
@@ -60,7 +88,7 @@ class TestChatInputWidget extends AIChatInputWidget {
     }
 
     override update(): void {
-        // no-op
+        this.renderUpdates++;
     }
 }
 
@@ -83,6 +111,113 @@ describe('AIChatInputWidget', () => {
             widget.setReasoningState(oSeries, { level: 'high' });
 
             expect(widget.currentReasoningLevelForTest()).to.equal('high');
+        });
+    });
+
+    describe('refreshSavedCapabilityOverrides', () => {
+        let widget: TestChatInputWidget;
+
+        beforeEach(() => {
+            widget = new TestChatInputWidget();
+            widget.setReceivingAgent('test-agent');
+        });
+
+        it('adopts externally saved overrides when there are no unsaved edits', async () => {
+            widget.setCapabilityState({ capability: false });
+            widget.setSavedCapabilityLoader(async () => ({ capability: true, another: false }));
+
+            await widget.refreshSavedCapabilityOverridesForTest('test-agent');
+
+            expect(widget.capabilityStateForTest()).to.deep.equal({
+                saved: { capability: true, another: false },
+                current: { capability: true, another: false }
+            });
+            expect(widget.hasAnyChangesFromSaved()).to.equal(false);
+            expect(widget.renderUpdates).to.equal(1);
+        });
+
+        it('preserves unsaved edits while updating the baseline', async () => {
+            widget.setCapabilityState({ capability: false }, { capability: true });
+            widget.setSavedCapabilityLoader(async () => ({ another: false }));
+
+            await widget.refreshSavedCapabilityOverridesForTest('test-agent');
+
+            expect(widget.capabilityStateForTest()).to.deep.equal({ saved: { another: false }, current: { capability: true } });
+            expect(widget.hasAnyChangesFromSaved()).to.equal(true);
+            expect(widget.renderUpdates).to.equal(1);
+        });
+
+        it('clears the unsaved indicator when an external save matches local edits', async () => {
+            widget.setCapabilityState({ capability: false }, { capability: true });
+            widget.setSavedCapabilityLoader(async () => ({ capability: true }));
+
+            await widget.refreshSavedCapabilityOverridesForTest('test-agent');
+
+            expect(widget.hasAnyChangesFromSaved()).to.equal(false);
+            expect(widget.renderUpdates).to.equal(1);
+        });
+
+        it('adopts an external reset when there are no unsaved edits', async () => {
+            widget.setCapabilityState({ capability: false });
+            widget.setSavedCapabilityLoader(async () => undefined);
+
+            await widget.refreshSavedCapabilityOverridesForTest('test-agent');
+
+            expect(widget.capabilityStateForTest()).to.deep.equal({ saved: undefined, current: {} });
+            expect(widget.hasAnyChangesFromSaved()).to.equal(false);
+        });
+
+        it('preserves edits made while the settings read is pending, including on reset', async () => {
+            const saved = new Deferred<Record<string, boolean> | undefined>();
+            widget.setCapabilityState({ capability: false });
+            widget.setSavedCapabilityLoader(() => saved.promise);
+            const refresh = widget.refreshSavedCapabilityOverridesForTest('test-agent');
+            widget.setCapabilityState({ capability: false }, { capability: true });
+            saved.resolve(undefined);
+
+            await refresh;
+
+            expect(widget.capabilityStateForTest()).to.deep.equal({ saved: undefined, current: { capability: true } });
+            expect(widget.hasAnyChangesFromSaved()).to.equal(true);
+        });
+
+        it('discards a pending refresh after switching agents, even when switching back', async () => {
+            const saved = new Deferred<Record<string, boolean> | undefined>();
+            widget.setSavedCapabilityLoader(() => saved.promise);
+            const refresh = widget.refreshSavedCapabilityOverridesForTest('test-agent');
+            widget.setReceivingAgent('another-agent');
+            widget.setReceivingAgent('test-agent');
+            widget.setCapabilityState({ another: false });
+            saved.resolve({ capability: true });
+
+            await refresh;
+
+            expect(widget.capabilityStateForTest()).to.deep.equal({ saved: { another: false }, current: { another: false } });
+            expect(widget.renderUpdates).to.equal(0);
+        });
+
+        it('discards a pending refresh after switching sessions with the same agent', async () => {
+            const saved = new Deferred<Record<string, boolean> | undefined>();
+            widget.setChatModelForTest('first');
+            widget.setSavedCapabilityLoader(() => saved.promise);
+            const refresh = widget.refreshSavedCapabilityOverridesForTest('test-agent');
+            widget.setChatModelForTest('second');
+            widget.setCapabilityState({ another: false });
+            saved.resolve({ capability: true });
+
+            await refresh;
+
+            expect(widget.capabilityStateForTest()).to.deep.equal({ saved: { another: false }, current: { another: false } });
+            expect(widget.renderUpdates).to.equal(0);
+        });
+
+        it('does not read settings without a matching receiving agent', async () => {
+            widget.setSavedCapabilityLoader(async () => {
+                throw new Error('Unexpected settings read');
+            });
+
+            await widget.refreshSavedCapabilityOverridesForTest(undefined);
+            await widget.refreshSavedCapabilityOverridesForTest('another-agent');
         });
     });
 

@@ -516,6 +516,28 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     /**
+     * Re-reads persisted capability overrides, adopting them only when there are no unsaved local edits.
+     * Always updates the saved baseline so change detection reflects the stored settings.
+     */
+    protected async refreshSavedCapabilityOverrides(agentId: string | undefined): Promise<void> {
+        if (!agentId || agentId !== this.receivingAgent?.agentId) {
+            return;
+        }
+        const receivingAgent = this.receivingAgent;
+        const chatModel = this._chatModel;
+        const saved = (await this.aiSettingsService.getAgentSettings(agentId))?.capabilityOverrides;
+        if (receivingAgent !== this.receivingAgent || chatModel !== this._chatModel) {
+            return;
+        }
+        const adoptable = !this.hasCapabilityChangesFromSaved();
+        this.savedCapabilityOverrides = saved ? { ...saved } : undefined;
+        if (adoptable) {
+            this.userCapabilityOverrides = new Map(Object.entries(saved ?? {}));
+        }
+        this.update();
+    }
+
+    /**
      * Re-reads the persisted server tool selections, which the agent detail can change too. Adopts them into
      * the live selection only while the user has none of their own pending here, so an external change never
      * discards edits that are waiting to be saved; the baseline is updated either way, so the "unsaved
@@ -1170,6 +1192,7 @@ export class AIChatInputWidget extends ReactWidget {
             // The level itself is persisted per agent and also editable outside chat (the agent detail's
             // Reasoning row), so re-read it rather than only refreshing which levels the model supports.
             this.refreshSavedReasoning(this.receivingAgent?.agentId);
+            this.refreshSavedCapabilityOverrides(this.receivingAgent?.agentId);
             this.refreshSavedServerTools(this.receivingAgent?.agentId);
             this.refreshSavedGenericCapabilities(this.receivingAgent?.agentId);
         }));
