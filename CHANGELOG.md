@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.77.0 - not yet released
+
+<a name="breaking_changes_1.77.0">[Breaking Changes:](#breaking_changes_1.77.0)</a>
+
+- [core] removed the `effectiveMenuPath` parameter from `MenuNode.isVisible`, `CompoundMenuNode.isEmpty` and `Action.isEnabled`, `isToggled` and `run`, and the `MenuNode.effectiveMenuPath` property. Menu nodes that need to know where they are shown must carry that information themselves. The menu path parameters were also removed from `BrowserMainMenuFactory.createContextMenu` and `createMenuWidget`, `DynamicMenuWidget`, `ElectronMainMenuFactory.createElectronContextMenu`, `ContextMenuRenderer.doRender` and the tab-bar toolbar menu wrappers, and `RenderContextMenuOptions.menuPath` is optional when `menu` is given
+
 ## 1.76.0 - 9/24/2026
 
 - [ai] added gpt-6-astra, claude-fable-5-1 and gemini-3.8-flash to the default models [#18033](https://github.com/eclipse-theia/theia/pull/18033)

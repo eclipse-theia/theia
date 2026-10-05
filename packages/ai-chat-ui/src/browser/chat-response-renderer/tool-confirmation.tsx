@@ -19,7 +19,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { codicon, ContextMenuRenderer, LocalizedMarkdown, MarkdownRenderer, OpenerService } from '@theia/core/lib/browser';
 import { ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ToolRequest } from '@theia/ai-core';
-import { CommandMenu, ContextExpressionMatcher, MenuPath } from '@theia/core/lib/common/menu';
+import { CommandMenu, ContextExpressionMatcher } from '@theia/core/lib/common/menu';
 import { GroupImpl } from '@theia/core/lib/browser/menu/composite-menu-node';
 import { ToolConfirmationMode as ToolConfirmationPreferenceMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
@@ -182,7 +182,7 @@ export class InlineActionMenuNode implements CommandMenu {
         readonly icon?: string
     ) { }
 
-    isVisible<T>(_effectiveMenuPath: MenuPath, _contextMatcher: ContextExpressionMatcher<T>, _context: T | undefined): boolean {
+    isVisible<T>(_contextMatcher: ContextExpressionMatcher<T>, _context: T | undefined): boolean {
         return true;
     }
 

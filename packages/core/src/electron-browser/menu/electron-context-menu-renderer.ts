@@ -110,7 +110,6 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
     }
 
     protected override doRender(params: {
-        menuPath: MenuPath,
         menu: CompoundMenuNode,
         anchor: Anchor,
         contextMatcher: ContextMatcher,
@@ -119,7 +118,7 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
         onHide?: () => void
     }): ContextMenuAccess {
         if (this.useNativeStyle) {
-            const contextMenu = this.electronMenuFactory.createElectronContextMenu(params.menuPath, params.menu, params.contextMatcher, params.args, params.context);
+            const contextMenu = this.electronMenuFactory.createElectronContextMenu(params.menu, params.contextMatcher, params.args, params.context);
             const { x, y } = coordinateFromAnchor(params.anchor);
 
             const windowName = params.context?.ownerDocument.defaultView?.Window.name;

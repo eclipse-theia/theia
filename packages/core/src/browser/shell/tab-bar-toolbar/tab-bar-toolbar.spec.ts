@@ -32,7 +32,7 @@ import { WidgetContextKeyContribution } from '../../widget-context-key-contribut
 import { TabBarToolbar } from './tab-bar-toolbar';
 import { TOOLBAR_WRAPPER_ID_SUFFIX } from './tab-bar-toolbar-menu-adapters';
 import { TabBarToolbarRegistry } from './tab-bar-toolbar-registry';
-import { TAB_BAR_TOOLBAR_CONTEXT_MENU, TabBarToolbarAction } from './tab-bar-toolbar-types';
+import { TabBarToolbarAction } from './tab-bar-toolbar-types';
 
 disableJSDOM();
 
@@ -132,10 +132,10 @@ describe('tab-bar-toolbar', () => {
             if (!CommandMenu.is(node)) {
                 throw new Error('Expected a command menu node.');
             }
-            expect(node.isVisible(TAB_BAR_TOOLBAR_CONTEXT_MENU, contextKeyService, testWidget.node, testWidget)).to.be.true;
-            expect(node.isEnabled(TAB_BAR_TOOLBAR_CONTEXT_MENU, testWidget)).to.be.true;
-            expect(node.isToggled(TAB_BAR_TOOLBAR_CONTEXT_MENU, testWidget)).to.be.true;
-            await node.run(TAB_BAR_TOOLBAR_CONTEXT_MENU, testWidget);
+            expect(node.isVisible(contextKeyService, testWidget.node, testWidget)).to.be.true;
+            expect(node.isEnabled(testWidget)).to.be.true;
+            expect(node.isToggled(testWidget)).to.be.true;
+            await node.run(testWidget);
             expect(executedWith).to.equal(testWidget);
             testWidget.dispose();
         });
@@ -259,7 +259,7 @@ describe('tab-bar-toolbar', () => {
             if (!CompoundMenuNode.is(node)) {
                 throw new Error('Expected a compound menu node.');
             }
-            expect(node.isEmpty(TAB_BAR_TOOLBAR_CONTEXT_MENU, contextKeyService, testWidget.node, testWidget)).to.be.false;
+            expect(node.isEmpty(contextKeyService, testWidget.node, testWidget)).to.be.false;
             testWidget.dispose();
         });
 
@@ -324,16 +324,16 @@ class TestMenuNodeFactory implements MenuNodeFactory {
 
     createCommandMenu(item: MenuAction): CommandMenu {
         return {
-            isVisible: (_path, contextMatcher, context, ...args) =>
+            isVisible: (contextMatcher, context, ...args) =>
                 (!item.when || contextMatcher.match(item.when, context)) && this.commands.isVisible(item.commandId, ...args),
-            isEnabled: (_path, ...args) => this.commands.isEnabled(item.commandId, ...args),
-            isToggled: (_path, ...args) => this.commands.isToggled(item.commandId, ...args),
+            isEnabled: (...args) => this.commands.isEnabled(item.commandId, ...args),
+            isToggled: (...args) => this.commands.isToggled(item.commandId, ...args),
             id: item.commandId,
             label: item.label || this.commands.getCommand(item.commandId)?.label || '',
             icon: item.icon,
             when: item.when,
             sortString: item.order || '',
-            run: async (_path, ...args) => { await this.commands.executeCommand(item.commandId, ...args); }
+            run: async (...args) => { await this.commands.executeCommand(item.commandId, ...args); }
         };
     }
 }

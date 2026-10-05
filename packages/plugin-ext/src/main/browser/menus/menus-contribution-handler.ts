@@ -17,8 +17,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
-import { MenuPath, CommandRegistry, Disposable, DisposableCollection, nls, CommandMenu, AcceleratorSource, ContextExpressionMatcher, environment, ILogger } from '@theia/core';
-import { MenuModelRegistry } from '@theia/core/lib/common';
+import {
+    MenuPath, CommandRegistry, Disposable, DisposableCollection, nls, CommandMenu, AcceleratorSource, ContextExpressionMatcher, environment, ILogger, Submenu, CompoundMenuNode
+} from '@theia/core';
+import { MenuModelRegistry, MenuNodeFactory } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { DeployedPlugin, IconUrl, Menu } from '../../../common';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
@@ -29,7 +31,8 @@ import {
     CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint,
     PLUGIN_EDITOR_TITLE_MENU, PLUGIN_EDITOR_TITLE_RUN_MENU, PLUGIN_SCM_TITLE_MENU, PLUGIN_VIEW_TITLE_MENU
 } from './vscode-theia-menu-mappings';
-import { PluginMenuCommandAdapter } from './plugin-menu-command-adapter';
+import { ArgumentAdapter, PluginMenuCommandAdapter } from './plugin-menu-command-adapter';
+import { ArgumentAdaptingCompoundMenuNode } from './argument-adapting-menu-node';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
@@ -38,6 +41,7 @@ import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themable
 export class MenusContributionPointHandler {
 
     @inject(MenuModelRegistry) private readonly menuRegistry: MenuModelRegistry;
+    @inject(MenuNodeFactory) protected readonly menuNodeFactory: MenuNodeFactory;
     @inject(CommandRegistry) private readonly commandRegistry: CommandRegistry;
     @inject(TabBarToolbarRegistry) private readonly tabBarToolbar: TabBarToolbarRegistry;
     @inject(PluginMenuCommandAdapter) pluginMenuCommandAdapter: PluginMenuCommandAdapter;
@@ -107,8 +111,9 @@ export class MenusContributionPointHandler {
                                 `Menu item ${command} from plugin ${plugin.metadata.model.id} contributed both submenu and command. Only command will be registered.`
                             );
                         }
+                        const argumentAdapter = this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint);
                         if (command) {
-
+                            const adaptArguments = argumentAdapter ?? ((...args: unknown[]) => args);
                             targets.forEach(target => {
                                 const menuPath = group ? [...target, group] : target;
 
@@ -123,20 +128,20 @@ export class MenusContributionPointHandler {
                                     id: command,
                                     sortString: order || '',
                                     when: item.when,
-                                    isVisible: <T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: any[]): boolean => {
+                                    isVisible: <T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: any[]): boolean => {
                                         if (item.when && !contextMatcher.match(item.when, context)) {
                                             return false;
                                         }
 
-                                        return this.commandRegistry.isVisible(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(effectiveMenuPath)(...args));
+                                        return this.commandRegistry.isVisible(command, ...adaptArguments(...args));
                                     },
                                     icon: icon,
                                     label: label,
-                                    isEnabled: (effeciveMenuPath: MenuPath, ...args: any[]): boolean =>
-                                        this.commandRegistry.isEnabled(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(effeciveMenuPath)(...args)),
-                                    run: (effeciveMenuPath: MenuPath, ...args: any[]): Promise<void> =>
-                                        this.commandRegistry.executeCommand(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(effeciveMenuPath)(...args)),
-                                    isToggled: (effectiveMenuPath: MenuPath) => false,
+                                    isEnabled: (...args: any[]): boolean =>
+                                        this.commandRegistry.isEnabled(command, ...adaptArguments(...args)),
+                                    run: (...args: any[]): Promise<void> =>
+                                        this.commandRegistry.executeCommand(command, ...adaptArguments(...args)),
+                                    isToggled: () => false,
                                     getAccelerator: (context: HTMLElement | undefined): string[] => {
                                         const bindings = this.keybindingRegistry.getKeybindingsForCommand(command);
                                         // Only consider the first active keybinding.
@@ -153,12 +158,9 @@ export class MenusContributionPointHandler {
                                 toDispose.push(this.menuRegistry.registerCommandMenu(menuPath, action));
                             });
                         } else if (submenu) {
-                            targets.forEach(target => toDispose.push(this.menuRegistry.linkCompoundMenuNode({
-                                newParentPath: group ? [...target, group] : target,
-                                submenuPath: [submenu!],
-                                order: order,
-                                when: item.when
-                            })));
+                            targets.forEach(target => toDispose.push(
+                                this.linkSubmenu(group ? [...target, group] : target, submenu, order, item.when, argumentAdapter)
+                            ));
                         }
                     }
                 } catch (error) {
@@ -169,6 +171,26 @@ export class MenusContributionPointHandler {
         }
 
         return toDispose;
+    }
+
+    /**
+     * Links the plugin submenu into the given menu. If the contribution point the submenu is contributed to
+     * requires converted arguments, the link converts the arguments for all actions reached through it.
+     */
+    protected linkSubmenu(newParentPath: MenuPath, submenuId: string, order: string | undefined, when: string | undefined,
+        argumentAdapter: ArgumentAdapter | undefined): Disposable {
+        if (!argumentAdapter) {
+            return this.menuRegistry.linkCompoundMenuNode({ newParentPath, submenuPath: [submenuId], order, when });
+        }
+        const submenu = this.menuRegistry.getMenu([submenuId]);
+        if (!submenu) {
+            throw new Error(`Not a menu node: ${submenuId}`);
+        }
+        const link = this.menuNodeFactory.createSubmenuLink(submenu as Submenu, order, when);
+        if (!CompoundMenuNode.is(link)) {
+            throw new Error(`Not a compound menu node: ${link.id}`);
+        }
+        return this.menuRegistry.registerMenuNode(newParentPath, new ArgumentAdaptingCompoundMenuNode(link, argumentAdapter));
     }
 
     private parseGroup(rawGroup?: string): { group?: string, order?: string } {

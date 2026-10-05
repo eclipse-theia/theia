@@ -86,7 +86,7 @@ export abstract class ContextMenuRenderer {
     render(options: RenderContextMenuOptions): ContextMenuAccess {
         let menu = options.menu;
         if (!menu) {
-            menu = this.menuRegistry.getMenu(options.menuPath) || new GroupImpl('emtpyContextMenu');
+            menu = (options.menuPath && this.menuRegistry.getMenu(options.menuPath)) || new GroupImpl('emtpyContextMenu');
         }
 
         const resolvedOptions = this.resolve(options);
@@ -96,7 +96,6 @@ export abstract class ContextMenuRenderer {
         }
 
         const access = this.doRender({
-            menuPath: options.menuPath,
             menu,
             anchor: resolvedOptions.anchor,
             contextMatcher: options.contextKeyService || this.contextKeyService,
@@ -109,7 +108,6 @@ export abstract class ContextMenuRenderer {
     }
 
     protected abstract doRender(params: {
-        menuPath: MenuPath,
         menu: CompoundMenuNode,
         anchor: Anchor,
         contextMatcher: ContextMatcher,
@@ -132,8 +130,14 @@ export abstract class ContextMenuRenderer {
 }
 
 export interface RenderContextMenuOptions {
+    /**
+     * The menu to show. If omitted, the menu registered at {@link menuPath} is shown.
+     */
     menu?: CompoundMenuNode,
-    menuPath: MenuPath;
+    /**
+     * The path of the registered menu to show. Required unless {@link menu} is given.
+     */
+    menuPath?: MenuPath;
     anchor: Anchor;
     args?: any[];
     /**
