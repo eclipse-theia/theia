@@ -89,11 +89,11 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
 
     reset(): void {
         this.updateCommandContextElement();
-        const { recent, other } = this.withCommandContext(() => this.getCommands());
-        this.recentItems = [];
-        this.otherItems = [];
-        this.recentItems.push(...recent.map(command => this.toItem(command)));
-        this.otherItems.push(...other.map(command => this.toItem(command)));
+        this.withCommandContext(() => {
+            const { recent, other } = this.getCommands();
+            this.recentItems = recent.map(command => this.toItem(command));
+            this.otherItems = other.map(command => this.toItem(command));
+        });
     }
 
     getPicks(filter: string, token: CancellationToken): QuickPicks {
@@ -120,7 +120,8 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
     toItem(command: Command): QuickPickItem {
         const label = (command.category) ? `${command.category}: ` + command.label! : command.label!;
         const iconClasses = this.getItemIconClasses(command);
-        const commandContextElement = this.commandContextElement;
+        const activeElement = window.document.activeElement;
+        const commandContextElement = this.commandContextElement ?? (activeElement instanceof HTMLElement ? activeElement : undefined);
 
         const originalLabel = command.originalLabel || command.label!;
         const originalCategory = command.originalCategory || command.category;
