@@ -19,7 +19,7 @@ import { Menu } from '../widgets';
 import { Anchor, ContextMenuAccess, ContextMenuRenderer, coordinateFromAnchor } from '../context-menu-renderer';
 import { BrowserMainMenuFactory } from './browser-menu-plugin';
 import { ContextMatcher } from '../context-key-service';
-import { CompoundMenuNode, MenuPath } from '../../common';
+import { CompoundMenuNode } from '../../common';
 
 export class BrowserContextMenuAccess extends ContextMenuAccess {
     constructor(
@@ -34,7 +34,6 @@ export class BrowserContextMenuRenderer extends ContextMenuRenderer {
     @inject(BrowserMainMenuFactory) private menuFactory: BrowserMainMenuFactory;
 
     protected doRender(params: {
-        menuPath: MenuPath,
         menu: CompoundMenuNode,
         anchor: Anchor,
         contextMatcher: ContextMatcher,
@@ -42,7 +41,7 @@ export class BrowserContextMenuRenderer extends ContextMenuRenderer {
         context?: HTMLElement,
         onHide?: () => void
     }): ContextMenuAccess {
-        const contextMenu = this.menuFactory.createContextMenu(params.menuPath, params.menu, params.contextMatcher, params.args, params.context);
+        const contextMenu = this.menuFactory.createContextMenu(params.menu, params.contextMatcher, params.args, params.context);
         const { x, y } = coordinateFromAnchor(params.anchor);
         if (params.onHide) {
             contextMenu.aboutToClose.connect(() => params.onHide!());

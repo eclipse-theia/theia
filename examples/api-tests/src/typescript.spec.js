@@ -231,7 +231,7 @@ describe('TypeScript', function () {
 
     it('document formatting should be visible and enabled', async function () {
         await openEditor(demoFileUri);
-        const menu = menuFactory.createContextMenu(EDITOR_CONTEXT_MENU, menuRegistry.getMenu(EDITOR_CONTEXT_MENU), contextKeyService);
+        const menu = menuFactory.createContextMenu(menuRegistry.getMenu(EDITOR_CONTEXT_MENU), contextKeyService);
         const item = menu.items.find(i => i.command === 'editor.action.formatDocument');
         if (item) {
             assert.isTrue(item.isVisible, 'item is visible');

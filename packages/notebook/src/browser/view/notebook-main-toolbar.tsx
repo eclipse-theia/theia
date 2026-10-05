@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ArrayUtils, CommandMenu, CommandRegistry, DisposableCollection, Group, GroupImpl, MenuModelRegistry, MenuNode, MenuPath, nls } from '@theia/core';
+import { ArrayUtils, CommandMenu, CommandRegistry, DisposableCollection, Group, GroupImpl, MenuModelRegistry, MenuNode, nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { NotebookCommands, NotebookMenus } from '../contributions/notebook-actions-contribution';
@@ -147,7 +147,7 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
     override render(): React.ReactNode {
         const menuItems = this.getMenuItems();
         return <div className='theia-notebook-main-toolbar' id='notebook-main-toolbar'>
-            {menuItems.slice(0, menuItems.length - this.calculateNumberOfHiddenItems(menuItems)).map(item => this.renderMenuItem(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR, item))}
+            {menuItems.slice(0, menuItems.length - this.calculateNumberOfHiddenItems(menuItems)).map(item => this.renderMenuItem(item))}
             {
                 this.state.numberOfHiddenItems > 0 &&
                 <span className={`${codicon('ellipsis')} action-label theia-notebook-main-toolbar-item`} onClick={e => this.renderContextMenu(e.nativeEvent, menuItems)} />
@@ -174,17 +174,17 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
         }
     }
 
-    protected renderMenuItem<T>(itemPath: MenuPath, item: MenuNode, submenu?: string): React.ReactNode {
+    protected renderMenuItem<T>(item: MenuNode, submenu?: string): React.ReactNode {
         if (Group.is(item)) {
-            const itemNodes = ArrayUtils.coalesce(item.children?.map(child => this.renderMenuItem([...itemPath, child.id], child, item.id)) ?? []);
+            const itemNodes = ArrayUtils.coalesce(item.children?.map(child => this.renderMenuItem(child, item.id)) ?? []);
             return <React.Fragment key={item.id}>
                 {itemNodes}
                 {itemNodes && itemNodes.length > 0 && <span key={`${item.id}-separator`} className='theia-notebook-toolbar-separator'></span>}
             </React.Fragment>;
-        } else if (CommandMenu.is(item) && ((this.nativeSubmenus.includes(submenu ?? '')) || item.isVisible(itemPath, this.props.contextKeyService, this.props.editorNode))) {
-            return <div key={item.id} id={item.id} title={item.label} className={`theia-notebook-main-toolbar-item action-label${this.getAdditionalClasses(itemPath, item)}`}
+        } else if (CommandMenu.is(item) && ((this.nativeSubmenus.includes(submenu ?? '')) || item.isVisible(this.props.contextKeyService, this.props.editorNode))) {
+            return <div key={item.id} id={item.id} title={item.label} className={`theia-notebook-main-toolbar-item action-label${this.getAdditionalClasses(item)}`}
                 onClick={() => {
-                    item.run(itemPath, this.props.notebookModel.uri);
+                    item.run(this.props.notebookModel.uri);
                 }}>
                 <span className={item.icon} />
                 <span className='theia-notebook-main-toolbar-item-text'>{item.label}</span>
@@ -197,8 +197,8 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
         return this.props.menuRegistry.getMenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR)!.children; // we contribute to this menu, so it exists
     }
 
-    protected getAdditionalClasses(itemPath: MenuPath, item: CommandMenu): string {
-        return item.isEnabled(itemPath, this.props.editorNode) ? '' : ' theia-mod-disabled';
+    protected getAdditionalClasses(item: CommandMenu): string {
+        return item.isEnabled(this.props.editorNode) ? '' : ' theia-mod-disabled';
     }
 
     protected calculateNumberOfHiddenItems(allMenuItems: readonly MenuNode[]): number {

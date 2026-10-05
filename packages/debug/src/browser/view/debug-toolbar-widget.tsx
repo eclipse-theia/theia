@@ -57,10 +57,10 @@ export class DebugToolBar extends ReactWidget {
         const debugActions: React.ReactNode[] = [];
         // first, search for CompoundMenuNodes:
         this.menuModelRegistry.getMenu(DebugToolBar.MENU)!.children.forEach(compoundMenuNode => {
-            if (CompoundMenuNode.is(compoundMenuNode) && compoundMenuNode.isVisible(DebugToolBar.MENU, this.contextKeyService, this.node)) {
+            if (CompoundMenuNode.is(compoundMenuNode) && compoundMenuNode.isVisible(this.contextKeyService, this.node)) {
                 // second, search for nested CommandMenuNodes:
                 compoundMenuNode.children.forEach(commandMenuNode => {
-                    if (CommandMenu.is(commandMenuNode) && commandMenuNode.isVisible(DebugToolBar.MENU, this.contextKeyService, this.node)) {
+                    if (CommandMenu.is(commandMenuNode) && commandMenuNode.isVisible(this.contextKeyService, this.node)) {
                         debugActions.push(this.debugAction(commandMenuNode));
                     }
                 });
@@ -71,10 +71,10 @@ export class DebugToolBar extends ReactWidget {
 
     protected debugAction(commandMenuNode: CommandMenu): React.ReactNode {
         const accelerator = this.acceleratorFor(commandMenuNode.id);
-        const run = (effectiveMenuPath: MenuPath) => commandMenuNode.run(effectiveMenuPath).catch(e => this.logger.error(e));
+        const run = () => commandMenuNode.run().catch(e => this.logger.error(e));
         return <DebugAction
             key={commandMenuNode.id}
-            enabled={commandMenuNode.isEnabled(DebugToolBar.MENU)}
+            enabled={commandMenuNode.isEnabled()}
             label={commandMenuNode.label}
             tooltip={commandMenuNode.label + (accelerator ? ` (${accelerator})` : '')}
             iconClass={commandMenuNode.icon || ''}

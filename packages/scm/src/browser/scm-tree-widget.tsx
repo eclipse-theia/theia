@@ -602,7 +602,6 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
             <ScmInlineActions {...{
                 hover,
                 menu: menus.getMenu(ScmTreeWidget.RESOURCE_INLINE_MENU),
-                menuPath: ScmTreeWidget.RESOURCE_INLINE_MENU,
                 args: this.contextMenuArgs,
                 contextKeys,
                 model,
@@ -699,7 +698,6 @@ export class ScmResourceGroupElement extends ScmElement<ScmResourceGroupComponen
                 hover,
                 args: this.contextMenuArgs,
                 menu: menus.getMenu(ScmTreeWidget.RESOURCE_GROUP_INLINE_MENU),
-                menuPath: ScmTreeWidget.RESOURCE_GROUP_INLINE_MENU,
                 contextKeys,
                 model,
                 treeNode
@@ -758,7 +756,6 @@ export class ScmResourceFolderElement extends ScmElement<ScmResourceFolderElemen
             <ScmInlineActions {...{
                 hover,
                 menu: menus.getMenu(ScmTreeWidget.RESOURCE_FOLDER_INLINE_MENU),
-                menuPath: ScmTreeWidget.RESOURCE_FOLDER_INLINE_MENU,
                 args: this.contextMenuArgs,
                 contextKeys,
                 model,
@@ -793,12 +790,12 @@ export namespace ScmResourceFolderElement {
 
 export class ScmInlineActions extends React.Component<ScmInlineActions.Props> {
     override render(): React.ReactNode {
-        const { hover, menu, menuPath, args, model, treeNode, contextKeys, children } = this.props;
+        const { hover, menu, args, model, treeNode, contextKeys, children } = this.props;
         return <div className='theia-scm-inline-actions-container'>
             <div className='theia-scm-inline-actions'>
                 {hover && menu?.children
                     .map((node, index) => CommandMenu.is(node) &&
-                        <ScmInlineAction key={index} {...{ node, menuPath, args, model, treeNode, contextKeys }} />)}
+                        <ScmInlineAction key={index} {...{ node, args, model, treeNode, contextKeys }} />)}
             </div>
             {children}
         </div>;
@@ -808,7 +805,6 @@ export namespace ScmInlineActions {
     export interface Props {
         hover: boolean;
         menu: CompoundMenuNode | undefined;
-        menuPath: MenuPath;
         model: ScmTreeModel;
         treeNode: TreeNode;
         contextKeys: ScmContextKeyService;
@@ -819,11 +815,11 @@ export namespace ScmInlineActions {
 
 export class ScmInlineAction extends React.Component<ScmInlineAction.Props> {
     override render(): React.ReactNode {
-        const { node, menuPath, model, treeNode, args, contextKeys } = this.props;
+        const { node, model, treeNode, args, contextKeys } = this.props;
 
         let isActive: boolean = false;
         model.execInNodeContext(treeNode, () => {
-            isActive = node.isVisible(menuPath, contextKeys, undefined, ...args);
+            isActive = node.isVisible(contextKeys, undefined, ...args);
         });
 
         if (!isActive) {
@@ -837,14 +833,13 @@ export class ScmInlineAction extends React.Component<ScmInlineAction.Props> {
     protected execute = (event: React.MouseEvent) => {
         event.stopPropagation();
 
-        const { node, menuPath, args } = this.props;
-        node.run(menuPath, ...args);
+        const { node, args } = this.props;
+        node.run(...args);
     };
 }
 export namespace ScmInlineAction {
     export interface Props {
         node: CommandMenu;
-        menuPath: MenuPath;
         model: ScmTreeModel;
         treeNode: TreeNode;
         contextKeys: ScmContextKeyService;
