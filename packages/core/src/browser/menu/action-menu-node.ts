@@ -17,7 +17,7 @@
 import { AcceleratorForm, KeybindingRegistry } from '../keybinding.js';
 import { ContextKeyService } from '../context-key-service.js';
 import { DisposableCollection, isObject, CommandRegistry, Emitter } from '../../common/index.js';
-import { CommandMenu, ContextExpressionMatcher, MenuAction, MenuPath } from '../../common/menu/menu-types.js';
+import { CommandMenu, ContextExpressionMatcher, MenuAction } from '../../common/menu/menu-types.js';
 
 export { AcceleratorForm } from '../keybinding.js';
 
@@ -73,7 +73,7 @@ export class ActionMenuNode implements CommandMenu {
         this.disposables.dispose();
     }
 
-    isVisible<T>(effeciveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+    isVisible<T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
         if (!this.commands.isVisible(this.action.commandId, ...args)) {
             return false;
         }
@@ -87,13 +87,13 @@ export class ActionMenuNode implements CommandMenu {
         return this.keybindingRegistry.acceleratorForCommand(this.action.commandId, context, form);
     }
 
-    isEnabled(effeciveMenuPath: MenuPath, ...args: unknown[]): boolean {
+    isEnabled(...args: unknown[]): boolean {
         return this.commands.isEnabled(this.action.commandId, ...args);
     }
-    isToggled(effeciveMenuPath: MenuPath, ...args: unknown[]): boolean {
+    isToggled(...args: unknown[]): boolean {
         return this.commands.isToggled(this.action.commandId, ...args);
     }
-    async run(effeciveMenuPath: MenuPath, ...args: unknown[]): Promise<void> {
+    async run(...args: unknown[]): Promise<void> {
         return this.commands.executeCommand(this.action.commandId, ...args);
     }
 

@@ -144,6 +144,30 @@ export class MenuModelRegistry {
     }
 
     /**
+     * Adds the given node to the menu denoted by the given path.
+     * Use this to contribute a node whose behavior is not covered by {@link registerMenuAction}, {@link registerSubmenu} or {@link linkCompoundMenuNode}.
+     *
+     * @returns a disposable which, when called, will remove the node again.
+     */
+    registerMenuNode(menuPath: MenuPath, node: MenuNode): Disposable {
+        const parent = this.root.getOrCreate(menuPath, 0, menuPath.length);
+        parent.addNode(node);
+        this.fireChangeEvent({
+            kind: ChangeKind.ADDED,
+            path: menuPath,
+            affectedChildId: node.id
+        });
+        return Disposable.create(() => {
+            parent.removeNode(node);
+            this.fireChangeEvent({
+                kind: ChangeKind.REMOVED,
+                path: menuPath,
+                affectedChildId: node.id
+            });
+        });
+    }
+
+    /**
      * Adds the given menu action to the menu denoted by the given path.
      *
      * @returns a disposable which, when called, will remove the menu action again.

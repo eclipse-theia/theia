@@ -30,12 +30,12 @@ export class SubMenuLink implements CompoundMenuNode {
     get icon(): string | undefined { return this.delegate.icon; };
 
     get sortString(): string { return this._sortString || this.delegate.sortString; };
-    isVisible<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
-        return this.delegate.isVisible(effectiveMenuPath, contextMatcher, context, ...args) && (!this._when || contextMatcher.match(this._when, context));
+    isVisible<T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+        return this.delegate.isVisible(contextMatcher, context, ...args) && (!this._when || contextMatcher.match(this._when, context));
     }
 
-    isEmpty<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
-        return this.delegate.isEmpty(effectiveMenuPath, contextMatcher, context, ...args);
+    isEmpty<T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+        return this.delegate.isEmpty(contextMatcher, context, ...args);
     }
 }
 
@@ -72,14 +72,14 @@ export abstract class AbstractCompoundMenuImpl implements MenuNode {
     /**
      * Menu nodes are sorted in ascending order based on their `sortString`.
      */
-    isVisible<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+    isVisible<T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
         return (!this.when || contextMatcher.match(this.when, context));
     }
 
-    isEmpty<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+    isEmpty<T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
         for (const child of this.children) {
-            if (child.isVisible(effectiveMenuPath, contextMatcher, context, ...args)) {
-                if (!CompoundMenuNode.is(child) || !child.isEmpty(effectiveMenuPath, contextMatcher, context, ...args)) {
+            if (child.isVisible(contextMatcher, context, ...args)) {
+                if (!CompoundMenuNode.is(child) || !child.isEmpty(contextMatcher, context, ...args)) {
                     return false;
                 }
             }
