@@ -61,6 +61,7 @@ import { AIChatFrontendContribution } from './ai-chat-frontend-contribution';
 import { ImageContextVariableContribution } from './image-context-variable-contribution';
 import { DefaultPendingImageRegistry, PendingImageRegistry } from './pending-image-registry';
 import { AgentDelegationTool } from './agent-delegation-tool';
+import { ListAgentsTool } from './list-agents-tool';
 import { ToolConfirmationManager } from './chat-tool-preference-bindings';
 import { bindChatToolPreferences } from '../common/chat-tool-preferences';
 import { PendingToolConfirmationTracker } from './pending-tool-confirmation-tracker';
@@ -213,4 +214,5 @@ export default new ContainerModule(bind => {
     bind(CommandContribution).toService(AIChatFrontendContribution);
 
     bindToolProvider(AgentDelegationTool, bind);
+    bindToolProvider(ListAgentsTool, bind);
 });

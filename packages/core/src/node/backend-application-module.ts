@@ -57,6 +57,7 @@ import { bindNodeStopwatch, bindBackendStopwatchServer } from './performance';
 import { OSBackendProviderImpl } from './os-backend-provider';
 import { BackendRequestFacade, BackendRequestAllowedContribution } from './request/backend-request-facade';
 import { FileSystemLocking, FileSystemLockingImpl } from './filesystem-locking';
+import { BundledResourceProvider, BundledResourceProviderImpl } from './bundled-resource-provider';
 import { BackendRemoteService } from './remote/backend-remote-service';
 import { RemoteCliContribution } from './remote/remote-cli-contribution';
 import { SettingService, SettingServiceImpl } from './setting-service';
@@ -163,6 +164,9 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bindBackendStopwatchServer(bind);
 
     bind(FileSystemLocking).to(FileSystemLockingImpl).inSingletonScope();
+
+    bind(BundledResourceProviderImpl).toSelf().inSingletonScope();
+    bind(BundledResourceProvider).toService(BundledResourceProviderImpl);
 
     bind(SettingServiceImpl).toSelf().inSingletonScope();
     bind(SettingService).toService(SettingServiceImpl);

@@ -72,39 +72,61 @@ jobs:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
+      # The output of the publish steps is kept in `lerna-publish.log`, the PR step below uses it
+      # to tell whether the registry accepted any package at all. On success, lerna also writes the
+      # exact versions it published to `lerna-publish-summary.json`, which the verification checks.
+      # lerna resolves the summary path against the working directory, so it is written there and
+      # moved out of the repository before the PR step commits the working tree.
       - name: Publish to NPM (Latest)
+        id: publish-latest
         # We only publish minor or patch releases for the current version as latest, never for older patches or next versions.
         if: ${{ (env.RELEASE_TYPE == 'patch' || env.RELEASE_TYPE == 'minor') && env.IS_PATCH_TO_PREVIOUS == 'false' }}
         shell: bash
         run: |
-          npm run publish:latest ${{ env.RELEASE_TYPE }}
-          npm run publish:check
+          npm run publish:latest -- ${{ env.RELEASE_TYPE }} --summary-file lerna-publish-summary.json 2>&1 | tee -a "$RUNNER_TEMP/lerna-publish.log"
+          # lerna writes no summary when there was nothing to publish, e.g. on a re-run
+          if [ -f lerna-publish-summary.json ]; then mv lerna-publish-summary.json "$RUNNER_TEMP/"; fi
         env:
           NPM_CONFIG_PROVENANCE: "true"
 
       - name: Publish to NPM (Patch - To Previous Version)
+        id: publish-patch
         if: ${{ env.RELEASE_TYPE == 'patch' && env.IS_PATCH_TO_PREVIOUS == 'true' }}
         shell: bash
         run: |
-          npm run publish:patch ${{ env.RELEASE_TYPE }}
-          npm run publish:check
+          npm run publish:patch -- ${{ env.RELEASE_TYPE }} --summary-file lerna-publish-summary.json 2>&1 | tee -a "$RUNNER_TEMP/lerna-publish.log"
+          # lerna writes no summary when there was nothing to publish, e.g. on a re-run
+          if [ -f lerna-publish-summary.json ]; then mv lerna-publish-summary.json "$RUNNER_TEMP/"; fi
         env:
           NPM_CONFIG_PROVENANCE: "true"
 
       - name: Publish to NPM (Next)
+        id: publish-next
         if: ${{ env.RELEASE_TYPE == 'next' }}
         shell: bash
         run: |
-          npm run publish:next
+          npm run publish:next -- --summary-file lerna-publish-summary.json
+          # lerna writes no summary when there was nothing to publish, e.g. on a re-run
+          if [ -f lerna-publish-summary.json ]; then mv lerna-publish-summary.json "$RUNNER_TEMP/"; fi
         env:
           NPM_CONFIG_PROVENANCE: "true"
 
+      # Also runs when the publish failed part way, e.g. on a Sigstore error: every version the
+      # registry accepted is final, so the version bump in the PR is right either way.
       - name: Submit PR for package updates
-        if: ${{ env.RELEASE_TYPE != 'next' }}
+        if: ${{ !cancelled() && env.RELEASE_TYPE != 'next' && (steps.publish-latest.outcome != 'skipped' || steps.publish-patch.outcome != 'skipped') }}
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLISH_FAILED: ${{ steps.publish-latest.outcome == 'failure' || steps.publish-patch.outcome == 'failure' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
+          # A version bump is only worth a PR if the registry accepted at least one package of it.
+          if ! grep -q 'lerna success published @' "$RUNNER_TEMP/lerna-publish.log"; then
+            echo "::warning::lerna did not publish any package, not submitting a PR for package updates"
+            exit 0
+          fi
+
           # Configure git
           git config --local user.email "eclipse-theia-bot@eclipse.org"
           git config --local user.name "eclipse-theia-bot"
@@ -112,6 +134,14 @@ jobs:
           # Get the version from lerna.json after publishing
           VERSION=$(node -p "require('./lerna.json').version")
           echo "Lerna Version: $VERSION"
+
+          # A successful publish reverts every package.json but keeps lerna.json and package-lock.json
+          # bumped. Re-apply the version so that the PR updates every package, which also regenerates
+          # packages/core/README.md. Keep the lockfile of the publish: lerna rewrites it as well and
+          # drops fields such as `hasInstallScript` on the way.
+          cp package-lock.json "$RUNNER_TEMP/package-lock.json"
+          npx lerna version "$VERSION" --exact --force-publish --no-git-tag-version --no-push --yes
+          cp "$RUNNER_TEMP/package-lock.json" package-lock.json
 
           # First commit: Update packages/core/README.md
           if git diff --name-only | grep -q "packages/core/README.md"; then
@@ -137,11 +167,16 @@ jobs:
             PR_BODY="Automated package updates for release v${VERSION}
             
             To complete the release:
-            - Update all remaining package versions locally
+            - Check that all package.json files, lerna.json and package-lock.json are updated to the published version
             - Amend the commits with your author details (to ensure the ECA check passes)
             - Keep the commits split (the re-export commit on the readme needs to be separate)
             - Force push the branch
-            - Verify that all checks pass, and then \`rebase and merge\`"
+            - Verify that all checks pass, and then \`rebase and merge\`
+            - Check the [publish workflow run](${RUN_URL}) summary for packages npm has not released yet"
+            if [ "$PUBLISH_FAILED" = "true" ]; then
+              PR_BODY="${PR_BODY}
+            - **The publish failed part way.** Publish the missing packages (see the workflow run) with \`npx lerna publish from-package\` before merging"
+            fi
             
             # Create a new branch for the PR
             BRANCH_NAME="${{ github.ref_name }}-package-updates"
@@ -159,3 +194,20 @@ jobs:
           else
             echo "No commits to push"
           fi
+
+      # Informational only, and after the PR so that the package updates do not depend on it.
+      # A failed upload already fails the publish step. Once lerna reports a package as published,
+      # the registry has accepted it, and npm only has to finish its malware scan before releasing
+      # it, which can take more than fifteen minutes. The check waits for that and reports
+      # packages that are still not available as a warning, since nothing is left to do but wait.
+      # A canary publish that did not complete has no summary and no version to check against.
+      - name: Verify NPM publication
+        if: ${{ !cancelled() && (steps.publish-latest.outcome != 'skipped' || steps.publish-patch.outcome != 'skipped' || steps.publish-next.outcome == 'success') }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          if [ "${{ env.RELEASE_TYPE }}" = "next" ] && [ ! -f "$RUNNER_TEMP/lerna-publish-summary.json" ]; then
+            echo "lerna published no canary versions, nothing to check"
+            exit 0
+          fi
+          npm run publish:check -- --summary-file "$RUNNER_TEMP/lerna-publish-summary.json"

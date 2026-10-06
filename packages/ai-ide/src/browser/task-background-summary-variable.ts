@@ -61,7 +61,8 @@ export class TaskContextSummaryVariableContribution implements AIVariableContrib
         const value = `# Current Plan
 
 The user has provided the following plan as your primary objective. Trust it and implement it directly. Do not re-explore the workspace from scratch.
-Only deviate if you find genuine issues (outdated assumptions, conflicts, unclear steps); if so, explain before proceeding and summarize deviations at the end.
+Treat it as a starting point, not a mandate: deviate when a step is wrong (outdated assumptions, conflicts, unclear steps) or a simpler alternative exists; \
+explain each deviation before acting on it and summarize deviations at the end.
 Work through the plan step by step, maintaining a todo list. Complete each step fully before moving to the next.
 
 ---
