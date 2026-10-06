@@ -56,7 +56,7 @@ export interface CardProps {
  * data, article, or other object. Cards provide interaction behaviour when the `onClick`
  * call-back prop is supplied.
  */
-export const Card = React.memo(function Card(props: CardProps): React.ReactElement {
+export const Card = React.memo(function CardComponent(props: CardProps): React.ReactElement {
     const {
         icon,
         title,

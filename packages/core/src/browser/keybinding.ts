@@ -630,7 +630,7 @@ export class KeybindingRegistry {
             // `isComposing` and `keyCode === 229` cover the native EditContext path where
             // composition events don't reach the DOM. The keyCode check catches keys that
             // finalize a composition (e.g. arrow keys) where isComposing is already false.
-            // eslint-disable-next-line deprecation/deprecation
+            // eslint-disable-next-line @typescript-eslint/no-deprecated
             if (inComposition || event.isComposing || event.keyCode === 229) {
                 return;
             }

@@ -61,7 +61,7 @@ export class TerminalProcess extends Process {
     readonly errorStream = new DevNullStream({ autoDestroy: true });
     readonly inputStream: Writable;
 
-    constructor( // eslint-disable-next-line @typescript-eslint/indent
+    constructor( // eslint-disable-next-line @stylistic/indent
         @inject(TerminalProcessOptions) protected override readonly options: TerminalProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(MultiRingBuffer) protected readonly ringBuffer: MultiRingBuffer,

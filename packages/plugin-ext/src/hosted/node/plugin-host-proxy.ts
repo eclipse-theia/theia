@@ -14,9 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as http from 'http';
-import * as https from 'https';
-import * as tls from 'tls';
+// Default imports resolve to the real Node module objects. With `esModuleInterop`, a namespace
+// import (`import * as http`) is a read-only copy with getter-only properties, and the
+// `Object.assign(http, …)` patches below would throw "Cannot set property … which has only a getter".
+import http from 'http';
+import https from 'https';
+import tls from 'tls';
 
 import { createHttpPatch, createProxyResolver, createTlsPatch, ProxySupportSetting } from '@vscode/proxy-agent';
 import { PreferenceRegistryExtImpl } from '../../plugin/preference-registry';

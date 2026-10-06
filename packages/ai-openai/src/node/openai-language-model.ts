@@ -38,14 +38,19 @@ import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
 import { ChatCompletionAssistantMessageParam, ChatCompletionMessageParam } from 'openai/resources';
 import { StreamingAsyncIterator } from './openai-streaming-iterator';
 import { OPENAI_PROVIDER_ID } from '../common';
-import type { FinalRequestOptions } from 'openai/internal/request-options';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 import { OpenAiResponseApiUtils, processSystemMessages } from './openai-response-api-utils';
 import { openAiReasoningFor } from './openai-reasoning';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 
+// The SDK finalizes method and path before this hook; its equivalent internal type is not exported.
+type FinalizedOpenAIRequestOptions = OpenAI.RequestOptions & {
+    method: NonNullable<OpenAI.RequestOptions['method']>;
+    path: string;
+};
+
 export class MistralFixedOpenAI extends OpenAI {
-    protected override async prepareOptions(options: FinalRequestOptions): Promise<void> {
+    protected override async prepareOptions(options: OpenAI.RequestOptions): Promise<void> {
         // Every request the client issues passes through here, including the body-less `GET /models`
         // that model discovery runs, so the body cannot be assumed to exist, let alone to carry messages.
         const messages = (options.body as { messages?: Array<ChatCompletionMessageParam> } | undefined)?.messages;
@@ -65,7 +70,7 @@ export class MistralFixedOpenAI extends OpenAI {
                 }
             });
         }
-        return super.prepareOptions(options);
+        return super.prepareOptions(options as FinalizedOpenAIRequestOptions);
     };
 }
 

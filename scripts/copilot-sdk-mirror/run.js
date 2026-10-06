@@ -89,13 +89,11 @@ function typeCheck(directory) {
             target: 'ES2023',
             lib: ['ES2023'],
             module: 'CommonJS',
-            moduleResolution: 'node',
             strict: true,
             noEmit: true,
             skipLibCheck: true,
             types: [],
-            baseUrl: modules,
-            paths: { '*': ['*'] }
+            paths: { '*': [path.join(modules, '*')] }
         },
         files: [checkFile, mirrorFile]
     }, undefined, 2));

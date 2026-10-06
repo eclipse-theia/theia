@@ -161,6 +161,27 @@ Use `BundledResourceProvider.resolveExternalPath(path)` for any other bundled fi
 
 If you worked around the ripgrep problem by overriding the `@vscode/ripgrep` replacement in your own esbuild configuration, that override is no longer needed.
 
+### v1.77.0
+
+#### TypeScript 6.0 [#18100](https://github.com/eclipse-theia/theia/pull/18100)
+
+Theia is built with TypeScript 6.0.x. Adopters that only consume Theia's declaration files are not required to upgrade immediately: declarations emitted by TypeScript 6 remain consumable by TypeScript 5.9. Applications and extensions that replicate Theia's `configs/base.tsconfig.json` settings (in particular `moduleResolution: bundler` with CommonJS) must use TypeScript 6, because TypeScript 5.9 rejects that combination. Upgrading is recommended in either case so that applications and extensions use the same compiler behavior as the framework.
+
+When adopting TypeScript 6 or replicating Theia's `configs/base.tsconfig.json` settings, review these compiler changes:
+
+- `moduleResolution` is now `bundler`, which honors package `exports`; deep imports into paths that a dependency does not export will fail. TypeScript 6 deprecates the previous `node` / `node10` resolution mode.
+- TypeScript 6 defaults `types` to an empty array. Add the ambient types your project requires, typically `"types": ["node"]`; Theia's shared configuration includes Node and Mocha because package tests live next to their sources.
+- TypeScript 6 defaults `strict` to `true`. Theia currently sets `strict: false` explicitly and retains its existing individual strictness flags.
+- Remove `downlevelIteration`; TypeScript 6 reports the option as deprecated even when it is disabled.
+- TypeScript 6 defaults `noUncheckedSideEffectImports` to `true`. Theia sets it to `false` because extensions import CSS for side effects without shared module declarations. Adopters can instead declare their side-effect modules, such as `*.css`.
+- `esModuleInterop` is always enabled. Callable or constructable CommonJS modules must use default imports (`import express from 'express'`) rather than namespace imports. The emitted JavaScript uses the `tslib` `__importStar` and `__importDefault` helpers, so every published extension that emits those helpers must declare `tslib` in `dependencies` rather than relying on workspace hoisting.
+- Theia's emitted declarations can now contain default imports of `export =` modules. Consumers need `esModuleInterop`, `allowSyntheticDefaultImports`, or `skipLibCheck` when compiling those declarations.
+- `TreeProps.viewProps` and `TreeWidget.ViewProps` no longer accept the inherited HTML `width`, `height`, or `rows` properties. The tree widget owns those values and the public types now omit them from the forwarded `react-virtuoso` props.
+
+To make the IDE use the workspace compiler, add `"typescript.tsdk": "node_modules/typescript/lib"` to workspace settings when the IDE's bundled TypeScript is older than 6. Otherwise the editor can report configuration errors for `moduleResolution: bundler` with CommonJS even though the workspace compiler accepts it.
+
+The shared ESLint configuration no longer uses `@typescript-eslint/eslint-plugin-tslint`, `tslint`, or `eslint-plugin-deprecation`. Adopters extending `configs/*.eslintrc.json` need typescript-eslint v8, `@stylistic/eslint-plugin` v3, `eslint-plugin-jsdoc`, and the `@theia/eslint-plugin` `file-header` rule. The former TSLint `typedef: call-signature` check is now the `@theia/explicit-return-type` rule of `@theia/eslint-plugin`. A file that intentionally uses a different license header must place `/* eslint-disable @theia/file-header */` on line 1 because the rule reports at line 1.
+
 ### v1.76.0
 
 #### GitHub Copilot is served through the Copilot CLI
@@ -278,7 +299,6 @@ Adopters do not have to switch, but if you want the same setup in your own exten
 
 - set `jsx` and `jsxImportSource` as above in your `tsconfig.json` (if you use `jsx: "react-jsxdev"`, the `jsx-dev-runtime` re-export is used instead)
 - remove `import * as React from '@theia/core/shared/react'` from files that only needed it for JSX. Keep the import wherever `React.*` types or APIs are used (`React.ReactNode`, `React.FC`, `React.MouseEvent`, hooks, …). With `noUnusedLocals` enabled the compiler reports the now-obsolete imports.
-
 
 #### Removal of the webpack bundler
 

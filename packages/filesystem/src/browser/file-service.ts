@@ -24,9 +24,9 @@
 // and https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/workbench/services/workingCopy/common/workingCopyFileOperationParticipant.ts
 
 /* eslint-disable max-len */
+/* eslint-disable @stylistic/brace-style, @stylistic/semi-spacing */
 /* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable no-null/no-null */
-/* eslint-disable @typescript-eslint/tslint/config */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
@@ -515,7 +515,7 @@ export class FileService {
      */
     resolve(resource: URI, options: ResolveMetadataFileOptions): Promise<FileStatWithMetadata>;
     resolve(resource: URI, options?: ResolveFileOptions | undefined): Promise<FileStat>;
-    async resolve(resource: any, options?: any) {
+    async resolve(resource: any, options?: any): Promise<FileStat> {
         try {
             return await this.doResolveFile(resource, options);
         } catch (error) {

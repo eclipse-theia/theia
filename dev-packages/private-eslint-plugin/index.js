@@ -18,6 +18,8 @@
 /** @type {{[ruleId: string]: import('eslint').Rule.RuleModule}} */
 exports.rules = {
     "annotation-check": require('./rules/annotation-check'),
+    "file-header": require('./rules/file-header'),
+    "explicit-return-type": require('./rules/explicit-return-type'),
     "localization-check": require('./rules/localization-check'),
     "named-logger-check": require('./rules/named-logger-check'),
     "no-src-import": require('./rules/no-src-import'),

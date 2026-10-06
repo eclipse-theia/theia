@@ -263,12 +263,12 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         return this.tree.refresh();
     }
 
-    // tslint:disable-next-line:typedef
+    // eslint-disable-next-line @theia/explicit-return-type
     get selectedNodes() {
         return this.selectionService.selectedNodes;
     }
 
-    // tslint:disable-next-line:typedef
+    // eslint-disable-next-line @theia/explicit-return-type
     get onSelectionChanged() {
         return this.selectionService.onSelectionChanged;
     }

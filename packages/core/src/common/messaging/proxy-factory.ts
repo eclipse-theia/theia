@@ -333,7 +333,7 @@ export class JsonRpcProxyFactory<T extends object> extends RpcProxyFactory<T> {
 
 }
 
-// eslint-disable-next-line deprecation/deprecation
+// eslint-disable-next-line @typescript-eslint/no-deprecated
 decorate(injectable(), JsonRpcProxyFactory);
-// eslint-disable-next-line deprecation/deprecation
+// eslint-disable-next-line @typescript-eslint/no-deprecated
 decorate(unmanaged(), JsonRpcProxyFactory, 0);

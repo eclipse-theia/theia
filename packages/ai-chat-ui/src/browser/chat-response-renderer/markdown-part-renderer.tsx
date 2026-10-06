@@ -23,7 +23,7 @@ import {
 } from '@theia/ai-chat/lib/common';
 import { ReactNode, useEffect, useRef } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
-import * as markdownit from '@theia/core/shared/markdown-it';
+import markdownit from '@theia/core/shared/markdown-it';
 import * as markdownitemoji from '@theia/core/shared/markdown-it-emoji';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';

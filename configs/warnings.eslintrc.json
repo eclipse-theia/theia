@@ -1,10 +1,7 @@
 {
-  "plugins": [
-    "deprecation"
-  ],
   "rules": {
     "@typescript-eslint/await-thenable": "warn",
-    "no-return-await": "warn",
-    "deprecation/deprecation": "warn"
+    "@typescript-eslint/no-deprecated": "warn",
+    "no-return-await": "warn"
   }
 }
