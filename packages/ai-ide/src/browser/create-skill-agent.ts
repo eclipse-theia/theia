@@ -22,6 +22,7 @@ import {
     CREATE_SKILL_SYSTEM_DEFAULT_TEMPLATE_ID,
     CREATE_SKILL_SYSTEM_AGENT_MODE_TEMPLATE_ID,
 } from '../common/create-skill-prompt-template';
+import { CONTEXT_FILES_HINT_FRAGMENT_ID } from '../common/turn-prompt-fragment-ids';
 import { AbstractModeAwareChatAgent } from './mode-aware-chat-agent';
 import { ILogger, nls } from '@theia/core';
 
@@ -60,5 +61,6 @@ export class CreateSkillAgent extends AbstractModeAwareChatAgent {
 
     override prompts = [createSkillSystemVariants];
     protected override systemPromptId: string | undefined = CREATE_SKILL_SYSTEM_PROMPT_TEMPLATE_ID;
+    protected override turnPromptId: string | undefined = CONTEXT_FILES_HINT_FRAGMENT_ID;
 
 }

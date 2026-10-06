@@ -66,6 +66,8 @@ interface CustomAgentFrontmatter {
     description: string;
     defaultLLM: string;
     showInChat?: boolean;
+    /** Optional fragment id sent with every user turn instead of the system prompt, see `CustomAgentDescription.turnPrompt`. */
+    turnPrompt?: string;
     /** Allowed but ignored when present; if set, must match the folder name. */
     id?: string;
 }
@@ -80,6 +82,9 @@ namespace CustomAgentFrontmatter {
             return false;
         }
         if ('showInChat' in entry && typeof entry.showInChat !== 'boolean') {
+            return false;
+        }
+        if ('turnPrompt' in entry && typeof entry.turnPrompt !== 'string') {
             return false;
         }
         if ('id' in entry && typeof entry.id !== 'string') {
@@ -1538,6 +1543,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             prompt: body,
             defaultLLM: metadata.defaultLLM,
             showInChat: metadata.showInChat,
+            turnPrompt: metadata.turnPrompt,
             ...(promptVariants.length > 0 ? { promptVariants } : {})
         };
     }
@@ -2069,6 +2075,9 @@ function serializeCustomAgentFile(agent: CustomAgentDescription): string {
     };
     if (agent.showInChat !== undefined) {
         metadata.showInChat = agent.showInChat;
+    }
+    if (agent.turnPrompt !== undefined) {
+        metadata.turnPrompt = agent.turnPrompt;
     }
     return serializeFrontmatter(metadata, agent.prompt);
 }

@@ -13,7 +13,6 @@ import {
     GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, SEARCH_IN_WORKSPACE_FUNCTION_ID,
     FIND_FILES_BY_PATTERN_FUNCTION_ID
 } from './workspace-functions';
-import { CONTEXT_FILES_VARIABLE_ID } from './context-variables';
 import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
 import {
     SUGGEST_FILE_CONTENT_ID,
@@ -147,10 +146,6 @@ Use these functions liberally to suggest file changes. All changes require user 
 - **~{${CLEAR_FILE_CHANGES_ID}}**: Clear all pending changes for a file to start fresh
 
 {{prompt:${PROJECT_INFO_TEMPLATE_PROMPT_ID}}}
-
-## Additional Context
-
-{{${CONTEXT_FILES_VARIABLE_ID}}}
 
 ## Workflow Guidelines
 

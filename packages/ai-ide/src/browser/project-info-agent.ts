@@ -17,6 +17,7 @@ import { AbstractStreamParsingChatAgent } from '@theia/ai-chat';
 import { LanguageModelRequirement } from '@theia/ai-core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { projectInfoSystemVariants, projectInfoTemplateVariants } from '../common/project-info-prompt-template';
+import { CONTEXT_FILES_HINT_FRAGMENT_ID } from '../common/turn-prompt-fragment-ids';
 import { ILogger, nls } from '@theia/core';
 
 @injectable()
@@ -39,5 +40,6 @@ export class ProjectInfoAgent extends AbstractStreamParsingChatAgent {
 
     override prompts = [projectInfoSystemVariants, projectInfoTemplateVariants];
     protected override systemPromptId: string | undefined = projectInfoSystemVariants.id;
+    protected override turnPromptId: string | undefined = CONTEXT_FILES_HINT_FRAGMENT_ID;
     override iconClass: string = 'codicon codicon-repo';
 }

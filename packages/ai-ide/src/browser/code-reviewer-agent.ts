@@ -19,6 +19,7 @@ import { LanguageModelRequirement } from '@theia/ai-core/lib/common';
 import { ILogger, nls } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { codeReviewerSystemPrompt, CODE_REVIEWER_SYSTEM_PROMPT_ID } from './code-reviewer-prompt-template';
+import { CONTEXT_FILES_HINT_FRAGMENT_ID } from '../common/turn-prompt-fragment-ids';
 
 export const CodeReviewerAgentId = 'code-reviewer';
 
@@ -40,5 +41,6 @@ export class CodeReviewerAgent extends AbstractStreamParsingChatAgent {
 
     override prompts = [{ id: CODE_REVIEWER_SYSTEM_PROMPT_ID, defaultVariant: codeReviewerSystemPrompt, variants: [] }];
     protected override systemPromptId: string = CODE_REVIEWER_SYSTEM_PROMPT_ID;
+    protected override turnPromptId: string | undefined = CONTEXT_FILES_HINT_FRAGMENT_ID;
     override iconClass: string = 'codicon codicon-code-review';
 }
