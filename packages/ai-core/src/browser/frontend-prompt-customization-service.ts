@@ -149,6 +149,13 @@ export interface PromptFragmentCustomizationProperties {
     agentDirectoryPaths?: string[];
 }
 
+/** A loaded customization file, including files hidden by a higher-priority override. */
+export interface PromptFragmentCustomizationSource {
+    uri: URI;
+    template: string;
+    active: boolean;
+}
+
 /**
  * Internal representation of a fragment entry in the customization service
  * Extends TemplateMetadata to include command-related properties
@@ -1164,6 +1171,17 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
     isPromptFragmentCustomized(id: string): boolean {
         return this.activeCustomizations.has(id);
+    }
+
+    getPromptFragmentCustomizationSources(id: string): PromptFragmentCustomizationSource[] {
+        const activeSources = this.activeCustomizations.get(id)?.sourceUris ?? [];
+        return Array.from(this.allCustomizations.values())
+            .filter(entry => entry.id === id)
+            .map(entry => ({
+                uri: new URI(entry.sourceUri),
+                template: entry.template,
+                active: activeSources.includes(entry.sourceUri)
+            }));
     }
 
     getActivePromptFragmentCustomization(id: string): CustomizedPromptFragment | undefined {

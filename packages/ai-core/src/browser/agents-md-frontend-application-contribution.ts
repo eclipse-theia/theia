@@ -15,10 +15,14 @@
 // *****************************************************************************
 
 import { inject, injectable, named, optional } from '@theia/core/shared/inversify';
-import { Command, CommandContribution, CommandRegistry, ILogger, MessageService, nls } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, DisposableCollection, ILogger, MessageService, nls } from '@theia/core';
 import { FrontendApplicationContribution, OpenerService, open } from '@theia/core/lib/browser';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
-import { AGENTS_MD_FILE_NAME } from '../common/agents-md';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { WorkspaceStorageService } from '@theia/workspace/lib/browser/workspace-storage-service';
+import { hash } from '@theia/core/lib/common/hash';
+import { DefaultPromptFragmentCustomizationService } from './frontend-prompt-customization-service';
+import { AGENTS_MD_FILE_NAME, PROJECT_INFO_PROMPT_FRAGMENT_ID } from '../common/agents-md';
 import { AgentsMdMigrationReport, AgentsMdMigrationService, LEGACY_PROJECT_INFO_BACKUP_PATH, LEGACY_PROJECT_INFO_PATH } from './agents-md-migration-service';
 
 export const RERUN_AGENTS_MD_MIGRATION_COMMAND: Command = Command.toLocalizedCommand(
@@ -47,6 +51,15 @@ export class AgentsMdFrontendApplicationContribution implements FrontendApplicat
     @inject(WorkspaceTrustService)
     protected readonly workspaceTrustService: WorkspaceTrustService;
 
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
+    @inject(WorkspaceStorageService)
+    protected readonly storageService: WorkspaceStorageService;
+
+    @inject(DefaultPromptFragmentCustomizationService)
+    protected readonly customizationService: DefaultPromptFragmentCustomizationService;
+
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
 
@@ -59,6 +72,10 @@ export class AgentsMdFrontendApplicationContribution implements FrontendApplicat
     /** In-flight run started by {@link onStart} or by the initial trust resolution. */
     protected startupMigration: Promise<void> | undefined;
 
+    protected overrideWarningUpdates: Promise<void> = Promise.resolve();
+    protected shownOverrideFingerprint: number | undefined;
+    protected readonly toDispose = new DisposableCollection();
+
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(RERUN_AGENTS_MD_MIGRATION_COMMAND, {
             execute: () => this.runMigration(true)
@@ -66,12 +83,23 @@ export class AgentsMdFrontendApplicationContribution implements FrontendApplicat
     }
 
     onStart(): void {
+        // Full configuration reloads publish their completed source maps via this event.
+        this.toDispose.push(this.customizationService.onDidChangeCustomAgents(() => this.scheduleOverrideWarning()));
+        this.toDispose.push(this.customizationService.onDidChangePromptFragmentCustomization(ids => {
+            if (ids.includes(PROJECT_INFO_PROMPT_FRAGMENT_ID)) {
+                this.scheduleOverrideWarning();
+            }
+        }));
         this.runStartupMigration();
-        this.workspaceTrustService.onDidChangeWorkspaceTrust(trusted => {
+        this.toDispose.push(this.workspaceTrustService.onDidChangeWorkspaceTrust(trusted => {
             if (trusted) {
                 this.runStartupMigration();
             }
-        });
+        }));
+    }
+
+    onStop(): void {
+        this.toDispose.dispose();
     }
 
     /**
@@ -101,9 +129,67 @@ export class AgentsMdFrontendApplicationContribution implements FrontendApplicat
         try {
             const reports = await this.migrationService.migrate();
             this.showMigrationSummary(reports, reportEmptyResult);
+            this.scheduleOverrideWarning();
         } catch (e) {
             this.logger.warn('AGENTS.md migration failed', e);
         }
+    }
+
+    protected scheduleOverrideWarning(): void {
+        this.overrideWarningUpdates = this.overrideWarningUpdates.then(async () => {
+            // Migration can rename a local source while the initial template scan is still running.
+            await this.startupMigration;
+            await this.showOverrideWarning();
+        }).catch(error => this.logger.warn('Failed to report legacy project-info overrides', error));
+    }
+
+    protected async showOverrideWarning(): Promise<void> {
+        if (!this.messageService || !(await this.workspaceTrustService.getWorkspaceTrust())) {
+            return;
+        }
+        await this.workspaceService.ready;
+        const roots = this.workspaceService.tryGetRoots();
+        if (roots.length === 0) {
+            return;
+        }
+        const localSources = new Set(roots.map(root => root.resource.resolve(LEGACY_PROJECT_INFO_PATH).toString()));
+        const sources = this.customizationService.getPromptFragmentCustomizationSources(PROJECT_INFO_PROMPT_FRAGMENT_ID)
+            .filter(source => !localSources.has(source.uri.toString()))
+            .sort((left, right) => left.uri.toString().localeCompare(right.uri.toString()));
+        if (sources.length === 0) {
+            this.shownOverrideFingerprint = undefined;
+            return;
+        }
+        const fingerprint = hash([
+            this.workspaceService.workspace?.resource.toString(),
+            roots.map(root => root.resource.toString()).sort(),
+            sources.map(source => [source.uri.toString(), source.template, source.active])
+        ]);
+        const storageKey = 'ai-core.agentsMd.dismissedProjectInfoOverrides';
+        if (this.shownOverrideFingerprint === fingerprint || await this.storageService.getData<number>(storageKey) === fingerprint) {
+            return;
+        }
+        this.shownOverrideFingerprint = fingerprint;
+        const paths = sources.map(source => nls.localizeByDefault(
+            '{0} ({1})', source.uri.path.toString(),
+            source.active ? nls.localizeByDefault('Active') : nls.localize('theia/ai/core/agentsMd/inactiveOverride', 'Inactive')
+        )).join('\n');
+        const message = nls.localize(
+            'theia/ai/core/agentsMd/legacyOverrides',
+            'These project-info prompt overrides are not migrated automatically and no longer reach the built-in agents that use AGENTS.md. '
+            + 'Move the instructions you want to keep into the relevant project\'s AGENTS.md. '
+            + 'They still apply to prompts that reference project-info.\n{0}', paths
+        );
+        const openAction = nls.localize('theia/ai/core/agentsMd/openOverrideSources', 'Open Source Files');
+        this.messageService.warn(message, { timeout: 0 }, openAction).then(async choice => {
+            if (choice === openAction) {
+                for (const source of sources) {
+                    await open(this.openerService, source.uri);
+                }
+            } else {
+                await this.storageService.setData(storageKey, fingerprint);
+            }
+        }).catch(error => this.logger.warn('Failed to handle legacy project-info override notification', error));
     }
 
     protected showMigrationSummary(reports: AgentsMdMigrationReport[], reportEmptyResult: boolean): void {
