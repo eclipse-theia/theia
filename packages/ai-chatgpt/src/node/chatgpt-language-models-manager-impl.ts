@@ -18,7 +18,7 @@ import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
 import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { ILogger, nls } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-language-model';
+import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
 import { getOpenAiModelDefaults } from '@theia/ai-openai/lib/node/openai-model-defaults';
 import { CHATGPT_RESPONSES_BASE_URL, ChatGptLanguageModelsManager, ChatGptModelDescription } from '../common';
 import { ChatGptBackendAuthService } from './chatgpt-auth-service';

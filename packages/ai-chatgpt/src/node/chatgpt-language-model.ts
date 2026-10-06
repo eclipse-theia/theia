@@ -17,11 +17,10 @@
 import { LanguageModel, LanguageModelResponse, LanguageModelStatus, ReasoningSupport, UserRequest } from '@theia/ai-core';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { CancellationToken, generateUuid } from '@theia/core';
-import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-language-model';
+import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
 import { openAiReasoningFor } from '@theia/ai-openai/lib/node/openai-reasoning';
 import { OPENAI_SERVER_TOOLS } from '@theia/ai-openai/lib/node/openai-server-tools';
 import { OpenAI } from 'openai';
-import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 import { CHATGPT_RESPONSES_BASE_URL, ChatGptCredentials } from '../common';
 import { CHATGPT_ORIGINATOR } from './chatgpt-oauth';
 import { ChatGptResponseApiUtils } from './chatgpt-response-api-utils';
@@ -39,11 +38,6 @@ export class ChatGptModel implements LanguageModel {
      * rather than derived from the endpoint the way the plain OpenAI model does.
      */
     readonly serverTools = OPENAI_SERVER_TOOLS;
-
-    /** Mirrors the OpenAI model: each tool call counts as a completion, so the limit has to accommodate long tool chains. */
-    protected readonly runnerOptions: RunnerOptions = {
-        maxChatCompletions: 100
-    };
 
     /**
      * @param id the unique id for this language model. It will be used to identify the model in the UI.
@@ -81,7 +75,6 @@ export class ChatGptModel implements LanguageModel {
             this.modelUtils,
             // System messages have to become the top level `instructions`, which only this setting preserves them for.
             'developer',
-            this.runnerOptions,
             this.id,
             true,
             cancellationToken

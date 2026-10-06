@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { LanguageModelMessage, LanguageModelResponse, ReasoningSupport, UserRequest } from '@theia/ai-core';
-import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-language-model';
+import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
 import { OPENAI_WEB_SEARCH } from '@theia/ai-openai/lib/node/openai-server-tools';
 import { OpenAI } from 'openai';
 import { CHATGPT_RESPONSES_BASE_URL, ChatGptCredentials } from '../common';
@@ -43,7 +43,6 @@ class CapturingResponseApiUtils extends ChatGptResponseApiUtils {
         model: string,
         modelUtils: OpenAiModelUtils,
         developerMessageSettings: Parameters<ChatGptResponseApiUtils['handleRequest']>[5],
-        runnerOptions: Parameters<ChatGptResponseApiUtils['handleRequest']>[6],
         modelId: string,
         isStreaming: boolean
     ): Promise<LanguageModelResponse> {

@@ -18,8 +18,8 @@ import { expect } from 'chai';
 import { Emitter, Event, ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Container } from '@theia/core/shared/inversify';
-import { LanguageModel, LanguageModelRegistry, LanguageModelSelector } from '@theia/ai-core';
-import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-language-model';
+import { LanguageModel, LanguageModelRegistry, LanguageModelSelector, ToolCallExecutor, ToolCallExecutorImpl } from '@theia/ai-core';
+import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
 import { ChatGptAuthState } from '../common';
 import { ChatGptBackendAuthService } from './chatgpt-auth-service';
 import { ChatGptModel } from './chatgpt-language-model';
@@ -78,6 +78,7 @@ describe('ChatGptLanguageModelsManagerImpl', () => {
             getAuthState: async () => authState,
             getCredentials: async () => ({ accessToken: 'token', accountId: 'account-id' })
         } as unknown as ChatGptBackendAuthService);
+        container.bind(ToolCallExecutor).to(ToolCallExecutorImpl).inSingletonScope();
         container.bind(ChatGptResponseApiUtils).toSelf().inSingletonScope();
         container.bind(OpenAiModelUtils).toSelf().inSingletonScope();
         container.bind(ChatGptModelCatalog).toConstantValue({
