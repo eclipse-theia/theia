@@ -15,7 +15,9 @@
 // *****************************************************************************
 
 import { inject } from '@theia/core/shared/inversify';
-import { isLanguageModelStreamResponse, LanguageModel, LanguageModelRegistry, LanguageModelResponse, LanguageModelStreamResponsePart, UserRequest } from './language-model';
+import {
+    isLanguageModelStreamResponse, LanguageModel, LanguageModelRegistry, LanguageModelResponse, LanguageModelStreamResponsePart, ReasoningSupport, UserRequest
+} from './language-model';
 import { LanguageModelExchangeRequest, LanguageModelSession } from './language-model-interaction-model';
 import { Emitter } from '@theia/core';
 
@@ -72,6 +74,14 @@ export class LanguageModelServiceImpl implements LanguageModelService {
         languageModel: LanguageModel,
         languageModelRequest: UserRequest
     ): Promise<LanguageModelResponse> {
+        // Clamp persisted selections and direct requests to the model's declared reasoning levels.
+        if (languageModelRequest.reasoning && languageModel.reasoningSupport) {
+            const level = ReasoningSupport.clampLevel(languageModel.reasoningSupport, languageModelRequest.reasoning.level);
+            if (level !== languageModelRequest.reasoning.level) {
+                languageModelRequest.reasoning = { ...languageModelRequest.reasoning, level };
+            }
+        }
+
         // Filter messages based on client settings
         languageModelRequest.messages = languageModelRequest.messages.filter(message => {
             if (message.type === 'thinking' && languageModelRequest.clientSettings?.keepThinking === false) {

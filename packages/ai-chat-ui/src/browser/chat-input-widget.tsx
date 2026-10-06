@@ -26,6 +26,7 @@ import {
     PREFERENCE_NAME_REASONING, ReasoningPreferenceEntry, ServerToolDescriptor
 } from '@theia/ai-core';
 import { mergeReasoningSettings } from '@theia/ai-core/lib/browser/frontend-language-model-service';
+import { reasoningLevelDescription, reasoningLevelLabel } from '@theia/ai-core/lib/browser/reasoning-labels';
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { AI_SHOW_SETTINGS_COMMAND, AIActivationService, FavoriteModelsService, FrontendVariableService } from '@theia/ai-core/lib/browser';
@@ -2918,22 +2919,13 @@ interface ReasoningSelectorProps {
     hoverService: HoverService;
 }
 
-const reasoningLevelLabel = (level: ReasoningLevel): string => {
-    switch (level) {
-        case 'off': return nls.localizeByDefault('Off');
-        case 'minimal': return nls.localizeByDefault('Minimal');
-        case 'low': return nls.localizeByDefault('Low');
-        case 'medium': return nls.localizeByDefault('Medium');
-        case 'high': return nls.localizeByDefault('High');
-        case 'auto': return nls.localizeByDefault('Auto');
-    }
-};
-
 const ReasoningSelector: React.FunctionComponent<ReasoningSelectorProps> = React.memo(({
     reasoningSupport, currentLevel, onReasoningChange, disabled, hoverService
 }) => {
     const options: SelectOption[] = React.useMemo(
-        () => reasoningSupport.supportedLevels.map(level => ({ value: level, label: reasoningLevelLabel(level) })),
+        () => reasoningSupport.supportedLevels.map(level => ({
+            value: level, label: reasoningLevelLabel(level), description: reasoningLevelDescription(level)
+        })),
         [reasoningSupport]
     );
 

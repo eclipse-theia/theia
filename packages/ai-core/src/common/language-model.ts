@@ -20,7 +20,7 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 export type MessageActor = 'user' | 'ai' | 'system';
 
 /** Provider-agnostic reasoning level; each provider maps this to its native API. */
-export type ReasoningLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'auto';
+export type ReasoningLevel = 'off' | 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'auto';
 
 export interface ReasoningSettings {
     level: ReasoningLevel;
@@ -43,11 +43,12 @@ export interface ReasoningSupport {
 }
 export namespace ReasoningSupport {
     /** Levels ordered by increasing effort; `'auto'` sits outside the scale. */
-    const EFFORT_SCALE: ReadonlyArray<ReasoningLevel> = ['off', 'minimal', 'low', 'medium', 'high'];
+    const EFFORT_SCALE: ReadonlyArray<ReasoningLevel> = ['off', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'];
 
     /**
      * Returns `level` when `support` lists it, otherwise the nearest supported level on the effort scale,
-     * preferring the higher neighbour (an unsupported `minimal` becomes `low`, not `off`). An unsupported
+     * preferring the higher neighbour (an unsupported `minimal` becomes `low`, not `off`), except that
+     * unsupported `'none'` prefers `'off'` to avoid enabling reasoning. An unsupported
      * `'auto'` resolves to `defaultLevel`, then to the first supported level. Returns `level` unchanged
      * when nothing suitable is supported.
      */
@@ -55,6 +56,9 @@ export namespace ReasoningSupport {
         const supported = support.supportedLevels;
         if (supported.includes(level)) {
             return level;
+        }
+        if (level === 'none' && supported.includes('off')) {
+            return 'off';
         }
         if (level === 'auto') {
             return support.defaultLevel && supported.includes(support.defaultLevel) ? support.defaultLevel : supported[0] ?? level;

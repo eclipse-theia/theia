@@ -203,7 +203,10 @@ export class OpenAiModel implements LanguageModel {
      * fields from the request settings (e.g. `summary`) are kept; the selected level still decides `effort`.
      */
     protected getSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
-        const reasoning = openAiReasoningFor(request.reasoning?.level, forResponseApi, !!this.reasoningSupport);
+        const level = request.reasoning && this.reasoningSupport
+            ? ReasoningSupport.clampLevel(this.reasoningSupport, request.reasoning.level)
+            : undefined;
+        const reasoning = openAiReasoningFor(level, forResponseApi, !!this.reasoningSupport);
         const ours = reasoning.reasoning;
         const theirs = request.settings?.reasoning;
         if (isObject(ours) && isObject(theirs)) {

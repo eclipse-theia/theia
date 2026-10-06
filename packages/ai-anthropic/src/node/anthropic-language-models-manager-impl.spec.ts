@@ -56,8 +56,8 @@ class TestableAnthropicManager extends AnthropicLanguageModelsManagerImpl {
         return this.deriveReasoningApi(info);
     }
 
-    public callDeriveSupportsXHighEffort(info: ModelInfo | undefined): boolean | undefined {
-        return this.deriveSupportsXHighEffort(info);
+    public callResolveMetadata(desc: AnthropicModelDescription, apiKey?: string): ReturnType<AnthropicLanguageModelsManagerImpl['resolveMetadata']> {
+        return this.resolveMetadata(desc, apiKey, undefined);
     }
 
     public callDeriveServerSideCompactionSupport(desc: AnthropicModelDescription): boolean {
@@ -172,24 +172,105 @@ describe('AnthropicLanguageModelsManagerImpl - metadata derivation', () => {
         });
     });
 
-    describe('deriveSupportsXHighEffort', () => {
-        it('returns undefined when info is missing', () => {
-            expect(manager.callDeriveSupportsXHighEffort(undefined)).to.equal(undefined);
-        });
-
-        it('returns undefined when effort capability is absent', () => {
-            expect(manager.callDeriveSupportsXHighEffort(modelInfo())).to.equal(undefined);
-        });
-
-        it('reflects the supported flag when effort.xhigh is reported', () => {
-            const supported = modelInfo({
-                capabilities: { effort: { xhigh: { supported: true } } }
+    describe('resolveMetadata reasoning support', () => {
+        for (const model of ['claude-opus-5', 'claude-sonnet-4-6', 'claude-mythos-preview', 'custom-model']) {
+            it(`does not fabricate reasoning support for ${model} without model metadata`, async () => {
+                const metadata = await manager.callResolveMetadata(description(model));
+                expect(metadata.reasoningApi).to.equal(undefined);
+                expect(metadata.reasoningSupport).to.equal(undefined);
+                expect(manager.retrieveCalls).to.deep.equal([]);
+            });
+            it(`does not fabricate reasoning support for ${model} when endpoint capabilities are missing`, async () => {
+                manager.stubbedInfo = modelInfo();
+                const metadata = await manager.callResolveMetadata(description(model), 'key');
+                expect(metadata.reasoningApi).to.equal(undefined);
+                expect(metadata.reasoningSupport).to.equal(undefined);
+            });
+        }
+        for (const model of ['claude-opus-5', 'claude-sonnet-4-6', 'claude-mythos-preview', 'custom-model']) {
+            for (const xhigh of [false, true]) {
+                for (const max of [false, true]) {
+                    it(`uses endpoint flags for ${model} with xhigh=${xhigh}, max=${max}`, async () => {
+                        manager.stubbedInfo = modelInfo({
+                            capabilities: {
+                                thinking: { supported: true, types: { adaptive: { supported: true } } },
+                                effort: {
+                                    supported: true, low: { supported: true }, medium: { supported: true }, high: { supported: true },
+                                    xhigh: { supported: xhigh }, max: { supported: max }
+                                }
+                            }
+                        } as Partial<ModelInfo>);
+                        const metadata = await manager.callResolveMetadata(description(model), 'key');
+                        expect(metadata.reasoningApi).to.equal('effort');
+                        expect(metadata.reasoningSupport).to.deep.equal({
+                            supportedLevels: ['off', 'low', 'medium', 'high', ...(xhigh ? ['xhigh'] : []), ...(max ? ['max'] : []), 'auto'],
+                            defaultLevel: 'auto'
+                        });
+                        await manager.callResolveMetadata(description(model), 'key');
+                        expect(manager.retrieveCalls).to.deep.equal([`::${model}`]);
+                    });
+                }
+            }
+        }
+        for (const level of ['low', 'medium', 'high', 'xhigh', 'max'] as const) {
+            it(`omits explicitly unsupported ${level} from adaptive levels`, async () => {
+                manager.stubbedInfo = modelInfo({
+                    capabilities: {
+                        thinking: { supported: true, types: { adaptive: { supported: true } } },
+                        effort: {
+                            supported: true,
+                            low: { supported: level !== 'low' }, medium: { supported: level !== 'medium' }, high: { supported: level !== 'high' },
+                            xhigh: { supported: level !== 'xhigh' }, max: { supported: level !== 'max' }
+                        }
+                    }
+                } as Partial<ModelInfo>);
+                const metadata = await manager.callResolveMetadata(description('custom-model'), 'key');
+                expect(metadata.reasoningSupport?.supportedLevels).to.deep.equal([
+                    'off', ...['low', 'medium', 'high', 'xhigh', 'max'].filter(value => value !== level), 'auto'
+                ]);
+            });
+        }
+        it('honors overall effort unsupported even if individual flags are true', async () => {
+            manager.stubbedInfo = modelInfo({
+                capabilities: {
+                    thinking: { supported: true, types: { adaptive: { supported: true } } },
+                    effort: { supported: false, xhigh: { supported: true }, max: { supported: true } }
+                }
             } as Partial<ModelInfo>);
-            const unsupported = modelInfo({
-                capabilities: { effort: { xhigh: { supported: false } } }
+            const metadata = await manager.callResolveMetadata(description('claude-opus-5'), 'key');
+            expect(metadata.reasoningSupport?.supportedLevels).to.deep.equal(['off', 'auto']);
+        });
+        it('honors disabled endpoint thinking for a familiar model', async () => {
+            manager.stubbedInfo = modelInfo({
+                capabilities: {
+                    thinking: { supported: false, types: { adaptive: { supported: false }, enabled: { supported: false } } }
+                }
             } as Partial<ModelInfo>);
-            expect(manager.callDeriveSupportsXHighEffort(supported)).to.equal(true);
-            expect(manager.callDeriveSupportsXHighEffort(unsupported)).to.equal(false);
+            const metadata = await manager.callResolveMetadata(description('claude-opus-5'), 'key');
+            expect(metadata.reasoningApi).to.equal(undefined);
+            expect(metadata.reasoningSupport).to.equal(undefined);
+        });
+        it('keeps adaptive base levels when effort metadata is missing', async () => {
+            manager.stubbedInfo = modelInfo({
+                capabilities: {
+                    thinking: { supported: true, types: { adaptive: { supported: true } } }
+                }
+            } as Partial<ModelInfo>);
+            const metadata = await manager.callResolveMetadata(description('custom-model'), 'key');
+            expect(metadata.reasoningSupport?.supportedLevels).to.deep.equal(['off', 'low', 'medium', 'high', 'auto']);
+        });
+        it('preserves budget-only levels even when extended effort capabilities are reported', async () => {
+            manager.stubbedInfo = modelInfo({
+                capabilities: {
+                    thinking: { supported: true, types: { adaptive: { supported: false }, enabled: { supported: true } } },
+                    effort: { xhigh: { supported: true }, max: { supported: true } }
+                }
+            } as Partial<ModelInfo>);
+            const metadata = await manager.callResolveMetadata(description('claude-sonnet-4-20250514'), 'key');
+            expect(metadata.reasoningApi).to.equal('budget');
+            expect(metadata.reasoningSupport).to.deep.equal({
+                supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'], defaultLevel: 'auto'
+            });
         });
     });
 

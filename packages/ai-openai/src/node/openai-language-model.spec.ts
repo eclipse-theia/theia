@@ -24,10 +24,11 @@ import { MistralFixedOpenAI, OpenAiModel, OpenAiModelParams } from './openai-lan
 import { OpenAiModelUtils } from './openai-model-utils';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream';
+import { getOpenAiModelDefaults } from './openai-model-defaults';
 import { OPENAI_WEB_SEARCH } from './openai-server-tools';
 import type { FinalRequestOptions } from 'openai/internal/request-options';
 
-const GPT5_REASONING_SUPPORT: ReasoningSupport = {
+const LEGACY_GPT5_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
     defaultLevel: 'auto'
 };
@@ -59,7 +60,11 @@ class TestableOpenAiModel extends OpenAiModel {
     }
 }
 
-function buildModel(params: Partial<OpenAiModelParams> & Pick<OpenAiModelParams, 'model'>, responseApiUtils?: OpenAiResponseApiUtils): TestableOpenAiModel {
+function buildModel<T extends OpenAiModel>(
+    modelType: new (...args: never[]) => T,
+    params: Partial<OpenAiModelParams> & Pick<OpenAiModelParams, 'model'>,
+    responseApiUtils?: OpenAiResponseApiUtils
+): T {
     const parent = new Container();
     parent.bind(OpenAiModelUtils).toSelf();
     if (responseApiUtils) {
@@ -72,7 +77,7 @@ function buildModel(params: Partial<OpenAiModelParams> & Pick<OpenAiModelParams,
     // These tests never issue a streaming request, so the iterator factory is never invoked.
     const iteratorFactory: ChatCompletionStreamingAsyncIteratorFactory = () => { throw new Error('iterator not used in these tests'); };
     parent.bind(ChatCompletionStreamingAsyncIteratorFactory).toConstantValue(iteratorFactory);
-    parent.bind(TestableOpenAiModel).toSelf().inTransientScope();
+    parent.bind(modelType).toSelf().inTransientScope();
 
     const child = new Container();
     child.parent = parent;
@@ -87,11 +92,11 @@ function buildModel(params: Partial<OpenAiModelParams> & Pick<OpenAiModelParams,
         deployment: undefined,
         ...params
     });
-    return child.get(TestableOpenAiModel);
+    return child.get(modelType);
 }
 
 function createModel(modelId: string, reasoningSupport?: ReasoningSupport): TestableOpenAiModel {
-    return buildModel({ model: modelId, reasoningSupport });
+    return buildModel(TestableOpenAiModel, { model: modelId, reasoningSupport });
 }
 
 function createCompactionModel(
@@ -99,7 +104,7 @@ function createCompactionModel(
     useResponseApi: boolean = true,
     serverSideCompactionTokenThresholdByDefault?: number
 ): TestableOpenAiModel {
-    return buildModel({
+    return buildModel(TestableOpenAiModel, {
         model: 'gpt-5',
         useResponseApi,
         serverSideCompactionSupport: useResponseApi,
@@ -110,36 +115,92 @@ function createCompactionModel(
 
 describe('OpenAiModel reasoning translation', () => {
 
+    for (const forResponseApi of [false, true]) {
+        it(`clamps unsupported levels for direct calls using ${forResponseApi ? 'Responses' : 'Chat Completions'}`, async () => {
+            const model = buildModel(OpenAiModel, {
+                model: 'gpt-5', enableStreaming: false, useResponseApi: forResponseApi, reasoningSupport: LEGACY_GPT5_REASONING_SUPPORT
+            });
+            const captured: Record<string, unknown>[] = [];
+            const fetch = async (_input: unknown, init?: RequestInit): Promise<Response> => {
+                captured.push(JSON.parse(init?.body as string));
+                return new Response(JSON.stringify(forResponseApi
+                    ? { id: 'r', output: [{ type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'ok' }] }] }
+                    : { choices: [{ message: { content: 'ok' } }] }), { headers: { 'content-type': 'application/json' } });
+            };
+            const client = new OpenAI({ apiKey: 'test-key', fetch });
+            Object.assign(model, { initializeOpenAi: () => client });
+            for (const level of ['none', 'max'] as const) {
+                await model.request({ messages: [], sessionId: 's', requestId: level, reasoning: { level } });
+            }
+            expect(captured).to.have.length(2);
+            expect(forResponseApi ? captured[0].reasoning : captured[0].reasoning_effort).to.equal(undefined);
+            expect(forResponseApi ? captured[1].reasoning : captured[1].reasoning_effort)
+                .to.deep.equal(forResponseApi ? { effort: 'high', summary: 'auto' } : 'high');
+        });
+    }
+
+    describe('family reasoning presets', () => {
+        for (const modelId of ['gpt-5.1', 'gpt-5.5-pro', 'gpt-5.6-sol', 'gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-luna']) {
+            const reasoningSupport = getOpenAiModelDefaults(modelId).reasoningSupport;
+            for (const level of reasoningSupport?.supportedLevels ?? []) {
+                it(`passes ${level} for ${modelId} through both APIs`, () => {
+                    const model = createModel(modelId, reasoningSupport);
+                    const request = { messages: [], reasoning: { level } };
+                    expect(model.callGetSettings(request, true).reasoning).to.deep.equal(
+                        level === 'off' ? undefined : level === 'auto' ? { summary: 'auto' } : { effort: level, summary: 'auto' }
+                    );
+                    expect(model.callGetSettings(request, false).reasoning_effort).to.equal(level === 'off' || level === 'auto' ? undefined : level);
+                });
+            }
+        }
+
+        it('preserves raw request settings when off is selected for a family preset', () => {
+            const model = createModel('gpt-6-astra', getOpenAiModelDefaults('gpt-6-astra').reasoningSupport);
+            const settings = { reasoning: { effort: 'high', summary: 'concise' }, reasoning_effort: 'medium' };
+            for (const forResponseApi of [false, true]) {
+                expect(model.callGetSettings({ messages: [], settings, reasoning: { level: 'off' } }, forResponseApi)).to.deep.equal(settings);
+            }
+        });
+
+        it('keeps configured summaries while overriding effort with none', () => {
+            const model = createModel('gpt-6-luna', getOpenAiModelDefaults('gpt-6-luna').reasoningSupport);
+            const result = model.callGetSettings({
+                messages: [], reasoning: { level: 'none' }, settings: { reasoning: { effort: 'high', summary: 'concise' } }
+            }, true);
+            expect(result.reasoning).to.deep.equal({ effort: 'none', summary: 'concise' });
+        });
+    });
+
     describe('Responses API (GPT-5)', () => {
         it('maps level=minimal to reasoning.effort=minimal', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'minimal' } }, true);
             expect(result.reasoning).to.deep.equal({ effort: 'minimal', summary: 'auto' });
         });
         it('maps level=high to reasoning.effort=high', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'high' } }, true);
             expect(result.reasoning).to.deep.equal({ effort: 'high', summary: 'auto' });
         });
         it('omits reasoning entirely when level=off', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'off' } }, true);
             expect(result.reasoning).to.equal(undefined);
         });
         it('requests reasoning summaries for level=auto without constraining effort', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'auto' } }, true);
             expect(result.reasoning).to.deep.equal({ summary: 'auto' });
         });
         it('keeps user-configured reasoning fields but lets the selected level decide effort', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({
                 messages: [], reasoning: { level: 'high' }, settings: { reasoning: { effort: 'low', summary: 'concise' } }
             }, true);
             expect(result.reasoning).to.deep.equal({ effort: 'high', summary: 'concise' });
         });
         it('keeps a user-configured reasoning.summary for level=auto', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'auto' }, settings: { reasoning: { summary: 'detailed' } } }, true);
             expect(result.reasoning).to.deep.equal({ summary: 'detailed' });
         });
@@ -152,7 +213,7 @@ describe('OpenAiModel reasoning translation', () => {
             expect(result.reasoning_effort).to.equal('medium');
         });
         it('passes minimal through (GPT-5 accepts it; models that do not exclude it from their supportedLevels)', () => {
-            const model = createModel('gpt-5', GPT5_REASONING_SUPPORT);
+            const model = createModel('gpt-5', LEGACY_GPT5_REASONING_SUPPORT);
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'minimal' } }, false);
             expect(result.reasoning_effort).to.equal('minimal');
         });
@@ -199,7 +260,7 @@ describe('OpenAiModel Response API fallback', () => {
         const responseApiUtils = {
             handleRequest: async () => { throw new Error('Response API unavailable'); }
         } as unknown as OpenAiResponseApiUtils;
-        return buildModel({ model: 'gpt-5', useResponseApi: true }, responseApiUtils);
+        return buildModel(TestableOpenAiModel, { model: 'gpt-5', useResponseApi: true }, responseApiUtils);
     }
 
     it('does not fall back to Chat Completions when a server tool is selected', async () => {

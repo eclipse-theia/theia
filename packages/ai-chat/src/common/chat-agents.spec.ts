@@ -18,12 +18,13 @@ import 'reflect-metadata';
 
 import { expect } from 'chai';
 import {
-    LanguageModel, LanguageModelMessage, LanguageModelRegistry, LanguageModelRequirement, LanguageModelResponse,
+    getTextOfResponse, LanguageModel, LanguageModelMessage, LanguageModelRegistry, LanguageModelRequirement, LanguageModelResponse,
     LanguageModelSelector, LanguageModelService, LanguageModelStreamResponsePart, ServerToolDescriptor, UserRequest
 } from '@theia/ai-core';
 import { AbstractChatAgent, AbstractStreamParsingChatAgent, ChatAgentLocation } from './chat-agents';
 import {
     ChatResponseContent,
+    ErrorChatResponseContent,
     CompactionChatResponseContent,
     MutableChatModel,
     MutableChatRequestModel,
@@ -34,6 +35,7 @@ import {
 } from './chat-model';
 import { ParsedChatRequest, ParsedChatRequestTextPart } from './parsed-chat-request';
 import { FileReadTracker } from './file-read-tracker';
+import { ChatToolRequestService } from './chat-tool-request-service';
 import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
@@ -44,7 +46,7 @@ class TestChatAgent extends AbstractChatAgent {
     protected readonly defaultLanguageModelPurpose = 'chat';
     protected override logger: ILogger = new MockLogger();
 
-    protected addContentsToResponse(): Promise<void> {
+    protected addContentsToResponse(_response: LanguageModelResponse, _request: MutableChatRequestModel): Promise<void> {
         return Promise.resolve();
     }
 
@@ -151,6 +153,73 @@ describe('AbstractChatAgent.getMessages', () => {
             .filter(m => m.actor === 'ai');
         expect(aiTextMessages).to.have.lengthOf(1);
         expect(aiTextMessages[0].text).to.equal('Partial reply before cancel');
+    });
+});
+
+describe('AbstractChatAgent.invoke reasoning error recovery', () => {
+    it('continues the same chat with updated reasoning after an HTTP 400 without replaying the error content', async () => {
+        const capturedRequests: UserRequest[] = [];
+        const providerError = Object.assign(new Error('HTTP 400: Unsupported reasoning effort: xhigh. Supported values: high.'), { status: 400 });
+        const languageModel = { id: 'test-reasoning-model' } as LanguageModel;
+        const agent = new class extends TestChatAgent {
+            protected override languageModelService = {
+                async sendRequest(_model: LanguageModel, request: UserRequest): Promise<LanguageModelResponse> {
+                    capturedRequests.push(request);
+                    if (request.reasoning?.level === 'xhigh') {
+                        throw providerError;
+                    }
+                    return { text: 'Continued successfully' };
+                }
+            } as unknown as LanguageModelService;
+
+            protected override chatToolRequestService = {
+                getChatToolRequests: () => [],
+                toChatToolRequests: () => []
+            } as unknown as ChatToolRequestService;
+
+            protected override async addContentsToResponse(response: LanguageModelResponse, request: MutableChatRequestModel): Promise<void> {
+                request.response.response.addContent(new TextChatResponseContentImpl(await getTextOfResponse(response)));
+            }
+        }();
+        agent.setLanguageModelRegistry({
+            selectLanguageModel: async () => languageModel
+        } as unknown as LanguageModelRegistry);
+        const model = new MutableChatModel(ChatAgentLocation.Panel);
+        try {
+            model.setSettings({ commonSettings: { reasoning: { level: 'xhigh' } } });
+            const first = model.addRequest(createParsedRequest('First question'));
+
+            await agent.invoke(first);
+
+            expect(first.response.isError).to.equal(true);
+            expect(first.response.isComplete).to.equal(true);
+            expect(first.response.errorObject).to.equal(providerError);
+            expect(first.response.response.content.filter(ErrorChatResponseContent.is)).to.have.lengthOf(1);
+            expect(first.response.response.asDisplayString()).to.equal(providerError.message);
+            expect(model.status).to.equal('failed');
+
+            model.setSettings({ commonSettings: { reasoning: { level: 'high' } } });
+            const second = model.addRequest(createParsedRequest('Continue with supported reasoning'));
+
+            await agent.invoke(second);
+
+            expect(second.response.isError).to.equal(false);
+            expect(second.response.isComplete).to.equal(true);
+            expect(second.response.response.asString()).to.equal('Continued successfully');
+            expect(model.status).to.equal('idle');
+            expect(model.getRequests()).to.deep.equal([first, second]);
+            expect(capturedRequests).to.have.lengthOf(2);
+            expect(capturedRequests.map(request => request.reasoning)).to.deep.equal([{ level: 'xhigh' }, { level: 'high' }]);
+            expect(capturedRequests.map(request => request.sessionId)).to.deep.equal([model.id, model.id]);
+            expect(capturedRequests.map(request => request.requestId)).to.deep.equal([first.id, second.id]);
+            expect(capturedRequests[0].messages).to.deep.equal([{ actor: 'user', type: 'text', text: 'First question' }]);
+            expect(capturedRequests[1].messages).to.deep.equal([
+                { actor: 'user', type: 'text', text: 'First question' },
+                { actor: 'user', type: 'text', text: 'Continue with supported reasoning' }
+            ]);
+        } finally {
+            model.dispose();
+        }
     });
 });
 

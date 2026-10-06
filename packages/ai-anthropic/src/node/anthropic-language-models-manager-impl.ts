@@ -29,7 +29,7 @@ import { ILogger } from '@theia/core';
 const ANTHROPIC_DEFAULT_BASE_URL = 'https://api.anthropic.com';
 const ANTHROPIC_SNAPSHOT_FILE = 'anthropic-models.json';
 
-const ANTHROPIC_REASONING_SUPPORT: ReasoningSupport = {
+const ANTHROPIC_BUDGET_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
     defaultLevel: 'auto'
 };
@@ -39,7 +39,6 @@ interface ResolvedModelMetadata {
     maxTokens: number;
     reasoningSupport?: ReasoningSupport;
     reasoningApi?: ReasoningApi;
-    supportsXHighEffort?: boolean;
     serverSideCompactionSupport: boolean;
 }
 
@@ -166,7 +165,6 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 proxy: proxyUrl,
                 reasoningSupport: metadata.reasoningSupport,
                 reasoningApi: metadata.reasoningApi,
-                supportsXHighEffort: metadata.supportsXHighEffort,
                 maxInputTokens: metadata.maxInputTokens,
                 serverSideCompactionSupport: metadata.serverSideCompactionSupport,
                 serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false,
@@ -188,7 +186,6 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                     proxy: proxyUrl,
                     reasoningSupport: metadata.reasoningSupport,
                     reasoningApi: metadata.reasoningApi,
-                    supportsXHighEffort: metadata.supportsXHighEffort,
                     maxInputTokens: metadata.maxInputTokens,
                     serverTools: ANTHROPIC_SERVER_TOOLS,
                     serverSideCompactionSupport: metadata.serverSideCompactionSupport,
@@ -209,12 +206,18 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
     ): Promise<ResolvedModelMetadata> {
         const info = await this.fetchModelInfo(description, apiKey, proxyUrl);
         const reasoningApi = this.deriveReasoningApi(info);
+        const effort = info?.capabilities?.effort;
+        const supportedEfforts = effort?.supported === false ? [] : (['low', 'medium', 'high', 'xhigh', 'max'] as const).filter(level =>
+            effort?.[level]?.supported ?? (level !== 'xhigh' && level !== 'max'));
+        const reasoningSupport: ReasoningSupport | undefined = reasoningApi === 'effort' ? {
+            supportedLevels: ['off', ...supportedEfforts, 'auto'],
+            defaultLevel: 'auto'
+        } : reasoningApi === 'budget' ? ANTHROPIC_BUDGET_REASONING_SUPPORT : undefined;
         return {
             maxInputTokens: info?.max_input_tokens ?? undefined,
             maxTokens: info?.max_tokens ?? DEFAULT_MAX_TOKENS,
-            reasoningSupport: reasoningApi ? ANTHROPIC_REASONING_SUPPORT : undefined,
+            reasoningSupport,
             reasoningApi,
-            supportsXHighEffort: this.deriveSupportsXHighEffort(info),
             serverSideCompactionSupport: this.deriveServerSideCompactionSupport(description)
         };
     }
@@ -279,18 +282,13 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
         if (!thinking?.supported) {
             return undefined;
         }
-        if (thinking.types.adaptive.supported) {
+        if (thinking.types?.adaptive?.supported) {
             return 'effort';
         }
-        if (thinking.types.enabled.supported) {
+        if (thinking.types?.enabled?.supported) {
             return 'budget';
         }
         return undefined;
-    }
-
-    protected deriveSupportsXHighEffort(info: ModelInfo | undefined): boolean | undefined {
-        const xhigh = info?.capabilities?.effort?.xhigh;
-        return xhigh ? xhigh.supported : undefined;
     }
 
     removeLanguageModels(...modelIds: string[]): void {
