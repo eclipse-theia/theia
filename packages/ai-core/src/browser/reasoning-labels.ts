@@ -34,7 +34,7 @@ export function reasoningLevelLabel(level: ReasoningLevel): string {
 export function reasoningLevelDescription(level: ReasoningLevel): string | undefined {
     switch (level) {
         case 'off': return nls.localize('theia/ai/core/reasoning/offDescription',
-            'Disables thinking on Ollama; otherwise omits explicit reasoning effort, allowing provider defaults or raw request settings to apply.');
+            'Omits explicit reasoning effort, allowing provider defaults or raw request settings to apply; on Ollama, disables thinking.');
         case 'none': return nls.localize('theia/ai/core/reasoning/noneDescription', 'Explicitly requests no reasoning.');
         default: return undefined;
     }

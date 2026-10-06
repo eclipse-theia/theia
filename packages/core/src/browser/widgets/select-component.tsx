@@ -163,7 +163,8 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
 
     protected getOptimalWidth(): number {
         const textWidth = measureTextWidth(this.props.options.map(e => e.label || e.value || '' + (e.detail || '')));
-        return Math.ceil(textWidth + 16);
+        const minWidth = this.props.options.some(option => option.description) ? 300 : 0;
+        return Math.max(Math.ceil(textWidth + 16), minWidth);
     }
 
     protected getOptimalHeight(maxWidth?: number): number {

@@ -21,7 +21,7 @@ describe('Reasoning selector wording', () => {
     it('labels max and distinguishes provider-specific off behavior from explicit no reasoning', () => {
         expect(reasoningLevelLabel('max')).to.equal('Max');
         expect(reasoningLevelDescription('off')).to.equal(
-            'Disables thinking on Ollama; otherwise omits explicit reasoning effort, allowing provider defaults or raw request settings to apply.');
+            'Omits explicit reasoning effort, allowing provider defaults or raw request settings to apply; on Ollama, disables thinking.');
         expect(reasoningLevelDescription('none')).to.equal('Explicitly requests no reasoning.');
         expect(reasoningLevelDescription('high')).to.equal(undefined);
     });
