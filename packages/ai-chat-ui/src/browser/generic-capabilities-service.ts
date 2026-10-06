@@ -77,6 +77,9 @@ export interface GenericCapabilitiesService {
 
     /** Get all available variables */
     getAvailableVariables(): GenericCapabilityItem[];
+
+    /** Get all available capabilities of every type, optionally excluding a specific agent from delegation */
+    getAvailableCapabilities(excludeAgentId?: string): Promise<AvailableGenericCapabilities>;
 }
 
 @injectable()
@@ -104,7 +107,10 @@ export class GenericCapabilitiesServiceImpl implements GenericCapabilitiesServic
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChangeAvailableCapabilities: Event<void> = this.onDidChangeEmitter.event;
 
+    protected availableMCPFunctions: Promise<GenericCapabilityGroup[]> | undefined;
+
     protected readonly fireChangeDebounced = debounce(() => {
+        this.availableMCPFunctions = undefined;
         this.onDidChangeEmitter.fire();
     }, 50);
 
@@ -134,7 +140,20 @@ export class GenericCapabilitiesServiceImpl implements GenericCapabilitiesServic
     }
 
     dispose(): void {
+        this.fireChangeDebounced.cancel();
         this.toDispose.dispose();
+        this.availableMCPFunctions = undefined;
+    }
+
+    async getAvailableCapabilities(excludeAgentId?: string): Promise<AvailableGenericCapabilities> {
+        return {
+            skills: this.getAvailableSkills(),
+            mcpFunctions: await this.getAvailableMCPFunctions(),
+            functions: this.getAvailableFunctions(),
+            promptFragments: this.getAvailablePromptFragments(),
+            agentDelegation: this.getAvailableAgents(excludeAgentId),
+            variables: this.getAvailableVariables()
+        };
     }
 
     getAvailableSkills(): GenericCapabilityItem[] {
@@ -149,8 +168,17 @@ export class GenericCapabilitiesServiceImpl implements GenericCapabilitiesServic
         }));
     }
 
-    async getAvailableMCPFunctions(): Promise<GenericCapabilityGroup[]> {
-        return this.getContributedCapabilities('mcpFunctions');
+    getAvailableMCPFunctions(): Promise<GenericCapabilityGroup[]> {
+        if (!this.availableMCPFunctions) {
+            const pending = this.getContributedCapabilities('mcpFunctions').catch(error => {
+                if (this.availableMCPFunctions === pending) {
+                    this.availableMCPFunctions = undefined;
+                }
+                throw error;
+            });
+            this.availableMCPFunctions = pending;
+        }
+        return this.availableMCPFunctions;
     }
 
     protected async getContributedCapabilities(type: CapabilityType): Promise<GenericCapabilityGroup[]> {
