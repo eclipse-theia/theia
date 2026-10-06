@@ -84,6 +84,10 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
     private identity: DirectoryIdentity | undefined;
     /** Direct children of {@link watchedDirectory}, kept in sync to classify changes and to diff a rescan. */
     protected children = new Set<string>();
+    /** The children clients last saw. Kept until a restart reports its diff, so a superseded restart passes it on. */
+    private restartBaseline: Set<string> | undefined;
+    /** The directory last announced through {@link onDidResolveDirectory}, which the provider keys the watcher by. */
+    private announcedDirectory: string;
 
     // Who asked, and what they excluded.
     protected readonly router: WatchRequestRouter;
@@ -91,18 +95,20 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
     // Events in flight: aggregated, then resolved one batch at a time.
     private readonly pendingEvents: PendingEvent[] = [];
     private readonly pendingDeletes = new Map<string, NodeJS.Timeout>();
-    private changeQueue: Promise<void> = Promise.resolve();
+    private changeQueue: Promise<void>;
+    /** Names from `rename` events that arrive while {@link recordSnapshot} reads the directory, else `undefined`. */
+    private renamedDuringSnapshot: Set<string> | undefined;
     /** Collects raw events for one `changeDelay` window, counted from the first. */
     private readonly scheduleFlush: (() => void) & { cancel(): void };
 
     // Lifecycle.
-    /** Cancels the start attempt in flight, so a superseded one writes no state and opens no handle. */
+    /** Cancels the start attempt in flight, so a superseded one opens no handle and reports nothing. */
     private attempt = new CancellationTokenSource();
     private disposalTimer: NodeJS.Timeout | undefined;
     private openFailed = false;
     private readonly directoryResolvedEmitter = new Emitter<void>();
 
-    /** Fires when {@link directory} changed, as a target that did not exist yet resolved to a real one. */
+    /** Fires when {@link directory} changes, for example when a missing target appears as a file. */
     readonly onDidResolveDirectory = this.directoryResolvedEmitter.event;
 
     /** Resolves once the watcher is up, or once it got disposed while starting. Never rejects. */
@@ -121,7 +127,10 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
         this.scheduleFlush = throttle(() => this.flush(), timings.changeDelay, { leading: false });
         this.watchedDirectory = target;
         this.watchPath = target;
-        this.whenStarted = this.start(this.attempt.token).catch(error => this.error(`Watcher failed to start at "${this.target}":`, error));
+        this.announcedDirectory = target;
+        // Queued, as a restart is, so that events flushed during the first read wait for its snapshot.
+        this.changeQueue = this.whenStarted = this.start(this.attempt.token)
+            .catch(error => this.error(`Watcher failed to start at "${this.target}":`, error));
     }
 
     /** The directory the handle is on, settled once {@link whenStarted} resolved. */
@@ -165,12 +174,11 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
     }
 
     /** Waits for the target, then opens the handle before reading the children, so no change is missed. */
-    protected async start(token: CancellationToken, missing = false, previousChildren?: Set<string>): Promise<void> {
+    protected async start(token: CancellationToken, missing = false): Promise<void> {
         if (this.host.isUnsupportedTarget(this.target)) {
             this.error(`Refusing to watch "${this.target}": watching a macOS network share is unstable.`);
             return;
         }
-        const previousDirectory = this.watchedDirectory;
         const wasMissing = await this.openWhenAvailable(token) || missing;
         if (token.isCancellationRequested) {
             return;
@@ -187,15 +195,20 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
             }
             this.router.reportWatchedPath(FileChangeType.ADDED, requests);
         }
-        if (previousChildren) {
-            this.router.report(this.diff(previousChildren, onDisk));
+        if (this.restartBaseline) {
+            this.router.report(this.diff(this.restartBaseline, onDisk));
+            this.restartBaseline = undefined;
         }
-        if (this.watchedDirectory !== previousDirectory) {
+        if (this.watchedDirectory !== this.announcedDirectory) {
+            this.announcedDirectory = this.watchedDirectory;
             this.directoryResolvedEmitter.fire();
         }
     }
 
-    /** Polls until the target exists and a handle is open. Resolves to whether it was ever missing. */
+    /**
+     * Polls until the target exists and a handle is open.
+     * @returns `true` if the target was missing at some point.
+     */
     protected async openWhenAvailable(token: CancellationToken): Promise<boolean> {
         let wasMissing = false;
         let failedOpens = 0;
@@ -217,23 +230,26 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
 
     /** Records what changes are resolved against: the directory's children and its identity. */
     private async recordSnapshot(): Promise<Set<string>> {
-        const onDisk = await this.host.readChildren(this.watchedDirectory);
-        const children = new Set(onDisk);
-        // Resolving an event that landed during the read against a set already holding the name would call
-        // a creation an update. Only the stored set is adjusted; the caller diffs against what is there.
-        for (const event of this.pendingEvents) {
-            if (event.fileName) {
-                children.delete(event.fileName);
-            }
+        const renamed = this.renamedDuringSnapshot = new Set<string>();
+        let onDisk: Set<string>;
+        try {
+            onDisk = await this.host.readChildren(this.watchedDirectory);
+        } finally {
+            this.renamedDuringSnapshot = undefined;
         }
+        // A child created during the read can already be listed, which would turn its creation into an update.
+        // Only a `rename` event announces a creation, so names from `change` events stay known. The caller
+        // still diffs against what is on disk.
+        const children = new Set(onDisk);
+        renamed.forEach(fileName => children.delete(fileName));
         this.children = children;
         this.identity = await this.host.readIdentity(this.watchedDirectory);
         return onDisk;
     }
 
     /**
-     * Applies {@link WatcherHost.resolveTarget} to this watcher. Requests made while the target was missing
-     * could not resolve it, so they are resolved here, which also narrows them if it turned out to be a file.
+     * Resolves the target to the directory to watch. Requests made while the target was missing are resolved
+     * here too, and narrowed to the file if the target is one.
      */
     protected async resolveWatchedDirectory(): Promise<void> {
         const resolved = await this.host.resolveTarget(this.watchPath);
@@ -241,7 +257,8 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
         if (this.watchPath === this.target) {
             this.router.resolveRequests(this.target, resolved.realPath);
             if (!this.host.samePath(resolved.realPath, resolved.directory)) {
-                // Requests for the directory may join once re-keyed, so a restart must not wait for the file.
+                // After the re-key, requests for the directory can join, so a restart polls the directory rather
+                // than the file.
                 this.watchPath = resolved.directory;
             }
         }
@@ -277,7 +294,11 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
         }
         // Windows reports a `ReadDirectoryChangesW` buffer overflow as a change without a file name. Only a
         // rescan can recover the events lost with it.
-        this.pendingEvents.push({ eventType, fileName: fileName ? this.host.normalizeFileName(fileName) : undefined });
+        const normalized = fileName ? this.host.normalizeFileName(fileName) : undefined;
+        if (normalized && eventType === 'rename') {
+            this.renamedDuringSnapshot?.add(normalized);
+        }
+        this.pendingEvents.push({ eventType, fileName: normalized });
         this.scheduleFlush();
     }
 
@@ -325,7 +346,7 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
                 // A metadata change on the watched directory itself, which libuv names after the directory.
                 continue;
             } else {
-                // An unknown name changed during the read, so it is recorded too, or the set stays stale.
+                // A child the snapshot missed. Record it, or the set stays stale.
                 changes.push(this.recordPresent(fileName));
             }
         }
@@ -337,9 +358,9 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
     }
 
     /**
-     * Whether an event names the watched directory rather than a child. macOS reports it for any change
-     * inside, so only {@link isWatchedDirectoryGone} settles whether it is still there. A child of that name
-     * is ruled out on disk, since a brand new one is in neither.
+     * @returns `true` if an event names the watched directory itself rather than a child. macOS reports such an
+     * event for any change inside, so {@link isWatchedDirectoryGone} decides whether the directory is gone. A
+     * new child with the same name is not in {@link children} yet, so the disk rules it out.
      */
     protected async namesWatchedDirectory(fileName: string, batch: EventBatch): Promise<boolean> {
         return this.host.samePath(fileName, this.host.normalizeFileName(path.basename(this.watchedDirectory)))
@@ -403,7 +424,7 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
         this.pendingDeletes.clear();
     }
 
-    /** Confirms the deletions still waiting on `timer`. One cancelled meanwhile has left it, settled already. */
+    /** Confirms the deletions still waiting on `timer`. A deletion cancelled meanwhile is no longer on it. */
     protected async confirmDeletes(timer: NodeJS.Timeout): Promise<ResolvedChange[]> {
         const fileNames = Array.from(this.pendingDeletes)
             .filter(([, pending]) => pending === timer)
@@ -455,11 +476,12 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
         this.clearPendingDeletes();
         this.pendingEvents.length = 0;
         this.scheduleFlush.cancel();
-        const previousChildren = new Set(this.children);
         this.changeQueue = this.changeQueue.then(async () => {
             if (token.isCancellationRequested) {
                 return;
             }
+            // Taken when the restart runs rather than when it is called, so it includes the batches resolved before it.
+            this.restartBaseline ??= new Set(this.children);
             // A handle can also fail while the directory is untouched, and then nothing changed.
             const gone = await this.isWatchedDirectoryGone();
             if (token.isCancellationRequested) {
@@ -470,7 +492,7 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
                 this.router.reportWatchedPath(FileChangeType.DELETED);
             }
             // Only a comparison of the contents can recover what happened while the watcher was down.
-            await this.start(token, gone, previousChildren);
+            await this.start(token, gone);
         }).catch(restartError => this.error(`Watcher failed to restart at "${this.target}":`, restartError));
     }
 
@@ -517,7 +539,7 @@ export class DirectoryWatcherProvider extends AbstractWatcherProvider {
         this.serve(watcherId, watcher, resolved);
     }
 
-    /** `directory` is a guess while the path does not exist, so follow where the watcher lands. */
+    /** While the path does not exist, `directory` is a guess, so re-key the watcher once it resolves. */
     protected createRekeyingWatcher(directory: string): NodeDirectoryWatcher {
         const watcher = this.createWatcher(directory);
         watcher.onDidResolveDirectory(() => this.rekeyWatcher(watcher));

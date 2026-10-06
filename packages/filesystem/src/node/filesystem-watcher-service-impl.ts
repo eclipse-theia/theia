@@ -20,7 +20,7 @@ import { ResolvedWatchOptions, WatcherLogger, WatcherProvider } from './filesyst
 import { DirectoryWatcherProvider } from './nodejs-watcher/node-directory-watcher';
 import { ParcelFileSystemWatcherServerOptions, RecursiveWatcherProvider } from './parcel-watcher/parcel-watcher';
 
-/** Hands each request to the provider that takes it. Which watcher ends up serving it is that provider's. */
+/** Routes each request to the first provider that can handle it. The provider picks the watcher that serves it. */
 export class FileSystemWatcherServiceImpl implements FileSystemWatcherService {
 
     protected client: FileSystemWatcherServiceClient | undefined;
@@ -29,7 +29,7 @@ export class FileSystemWatcherServiceImpl implements FileSystemWatcherService {
 
     protected readonly logger: WatcherLogger;
 
-    /** Asked in order which of them takes a request. */
+    /** Checked in order. The first one whose `canHandle` returns `true` serves the request. */
     protected readonly providers: readonly WatcherProvider[];
 
     /**
@@ -71,7 +71,7 @@ export class FileSystemWatcherServiceImpl implements FileSystemWatcherService {
         }
     }
 
-    /** `options` is parcel-shaped because that is the binding adopters have; only the first provider reads that part. */
+    /** `options` keeps the parcel shape that adopters already bind. Only the recursive provider reads `parcelOptions`. */
     protected createProviders(options: ParcelFileSystemWatcherServerOptions): WatcherProvider[] {
         return [
             new RecursiveWatcherProvider(options, this.maybeClient),

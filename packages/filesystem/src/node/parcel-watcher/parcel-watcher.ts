@@ -40,7 +40,7 @@ export interface ParcelWatcherExcludes {
     ignorePatterns: string[]
 }
 
-/** @deprecated since 1.76.0 - use `ParcelWatcherExcludes`, which does not clash with the injectable token. */
+/** @deprecated since 1.77.0 - use `ParcelWatcherExcludes`, which does not clash with the injectable token. */
 export type ParcelWatcherOptions = ParcelWatcherExcludes;
 
 export const ParcelFileSystemWatcherServerOptions = Symbol('ParcelFileSystemWatcherServerOptions');
@@ -108,7 +108,7 @@ export class ParcelWatcher extends AbstractFileSystemWatcher {
     constructor(
         /**
          * Initial reference to this handle.
-         * @deprecated since 1.76.0 - pass `undefined` and use {@link addRequest}; references follow requests.
+         * @deprecated since 1.77.0 - pass `undefined` and use {@link addRequest}; references follow requests.
          */
         initialClientId: number | undefined,
         /** Filesystem path to be watched. */
