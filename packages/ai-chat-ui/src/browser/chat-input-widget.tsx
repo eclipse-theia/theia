@@ -645,10 +645,14 @@ export class AIChatInputWidget extends ReactWidget {
 
     /** Builds the props for the per-session model selector. */
     protected getModelSelectorProps(): ModelSelectorWidgetProps {
+        const agent = this.receivingAgent
+            ? this.chatAgentService.getAgent(this.receivingAgent.agentId, true)
+            : undefined;
         const currentModelId = this.getSessionModelOverride();
         const defaultLabel = this.resolvedDefaultLabel
             ?? nls.localize('theia/ai/chat-ui/agentDefaultModel', 'agent default');
         return {
+            show: (agent?.languageModelRequirements?.length ?? 0) > 0,
             models: this.getSelectableModels(currentModelId),
             currentModelId,
             defaultLabel,
@@ -1884,6 +1888,7 @@ export class AIChatInputWidget extends ReactWidget {
 
 /** Props for the per-session language model selector. */
 interface ModelSelectorWidgetProps {
+    show: boolean;
     /** Models available to switch to. */
     models: LanguageModel[];
     /** The session's current model override id, if any (undefined = use the agent default). */
@@ -2637,7 +2642,7 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
                         hoverService={hoverService}
                     />
                 )}
-                {(modelSelectorProps.models.length > 0 || modelSelectorProps.currentModelId) && (
+                {modelSelectorProps.show && (modelSelectorProps.models.length > 0 || modelSelectorProps.currentModelId) && (
                     <ChatModelSelector
                         models={modelSelectorProps.models}
                         currentModelId={modelSelectorProps.currentModelId}
