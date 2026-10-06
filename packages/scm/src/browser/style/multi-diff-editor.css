@@ -17,9 +17,10 @@
 .theia-multi-diff-editor {
     height: 100%;
     width: 100%;
-}
+    overflow: hidden;
+    }
 
-/* Override Lumino PanelLayout default absolute positioning to enable document flow. */
+    /* Override Lumino PanelLayout default absolute positioning to enable document flow. */
 .theia-multi-diff-editor>.multi-diff-editor-entries {
     position: absolute;
     top: 0;
@@ -36,14 +37,20 @@
 .theia-multi-diff-editor .multi-diff-editor-entries>.multi-diff-entry {
     position: relative;
     width: 100%;
-    margin-bottom: 4px;
+    margin-bottom: calc(var(--theia-ui-padding) / 2);
     border: 1px solid var(--theia-panel-border);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.theia-multi-diff-editor .multi-diff-entry:only-child {
+    margin-bottom: 0;
 }
 
 .theia-multi-diff-editor .multi-diff-entry-header {
     display: flex;
     align-items: center;
-    padding: 4px 10px;
+    padding: 0 var(--theia-ui-padding);
     background-color: var(--theia-editorGroupHeader-tabsBackground);
     border-bottom: 1px solid var(--theia-panel-border);
     user-select: none;
@@ -59,18 +66,18 @@
 
 .theia-multi-diff-editor .multi-diff-entry-chevron {
     flex-shrink: 0;
-    margin-right: 4px;
+    margin-right: calc(var(--theia-ui-padding) / 2);
     color: var(--theia-foreground);
 }
 
 .theia-multi-diff-editor .multi-diff-entry-icon {
     flex-shrink: 0;
-    margin-right: 6px;
+    margin-right: var(--theia-ui-padding);
 }
 
 .theia-multi-diff-editor .multi-diff-entry-label {
     flex-shrink: 0;
-    margin-right: 8px;
+    margin-right: var(--theia-ui-padding);
     font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
@@ -91,8 +98,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 16px;
+    gap: var(--theia-ui-padding);
+    padding: calc(var(--theia-ui-padding) * 2);
     height: 100%;
     box-sizing: border-box;
 }

@@ -20,8 +20,11 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
+import * as sinon from 'sinon';
+import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { URI } from '@theia/core';
-import { LabelProvider } from '@theia/core/lib/browser';
+import { LabelProvider, MessageLoop, Widget } from '@theia/core/lib/browser';
+import { Container } from '@theia/core/shared/inversify';
 import {
     DiffEntryErrorWidget,
     DiffEntryHeaderWidget,
@@ -30,6 +33,9 @@ import {
     HEADER_HEIGHT,
     MAX_ENTRY_HEIGHT,
     MIN_ENTRY_HEIGHT,
+    MultiDiffEditor,
+    MultiDiffEditorData,
+    MultiDiffEditorLabelProvider,
     MultiDiffEditorOpenHandler,
     MultiDiffEditorState
 } from './multi-diff-editor';
@@ -192,6 +198,36 @@ describe('Multi-Diff Editor — widgets', () => {
             }
         });
 
+        it('should hide content when collapsed, including content loaded afterwards', () => {
+            const { entry } = createEntry();
+            try {
+                entry.setCollapsed(true);
+                expect(entry['currentContent'].isHidden).to.be.true;
+                entry.setError('boom');
+                expect(entry['currentContent'].isHidden).to.be.true;
+                entry.setCollapsed(false);
+                expect(entry['currentContent'].isHidden).to.be.false;
+            } finally {
+                entry.dispose();
+            }
+        });
+
+        it('should retain the available height across content updates and collapse', () => {
+            const { entry } = createEntry();
+            try {
+                entry.setAvailableHeight(800);
+                entry.setHeight(200);
+                expect(entry.node.style.height).to.equal('800px');
+                entry.setCollapsed(true);
+                entry.setAvailableHeight(600);
+                expect(entry.node.style.height).to.equal(`${HEADER_HEIGHT}px`);
+                entry.setCollapsed(false);
+                expect(entry.node.style.height).to.equal('600px');
+            } finally {
+                entry.dispose();
+            }
+        });
+
         it('should be a no-op when setCollapsed is called with the current value', () => {
             const { entry } = createEntry();
             try {
@@ -245,6 +281,29 @@ describe('Multi-Diff Editor — widgets', () => {
         });
     });
 
+    describe('Embedded editor visibility', () => {
+
+        it('should restore the model and view state without focusing an embedded editor', () => {
+            const control = { setModel: sinon.spy(), restoreViewState: sinon.spy(), focus: sinon.spy() };
+            const model = {};
+            const viewState = {};
+            const editor = Object.assign(Object.create(MonacoEditor.prototype) as MonacoEditor, {
+                editor: control,
+                document: { textEditorModel: model },
+                savedViewState: viewState,
+                focusOnShow: false
+            });
+            editor.handleVisibilityChanged(true);
+            expect(control.setModel.calledOnceWithExactly(model)).to.be.true;
+            expect(control.restoreViewState.calledOnceWithExactly(viewState)).to.be.true;
+            expect(control.focus.called).to.be.false;
+
+            editor.focusOnShow = true;
+            editor.handleVisibilityChanged(true);
+            expect(control.focus.calledOnce).to.be.true;
+        });
+    });
+
     describe('MultiDiffEditorState', () => {
 
         it('should accept a valid state', () => {
@@ -268,6 +327,58 @@ describe('Multi-Diff Editor — widgets', () => {
         it('should reject wrong collapsedUris type', () => {
             expect(MultiDiffEditorState.is({ collapsedUris: 'file:///a.ts' })).to.be.false;
             expect(MultiDiffEditorState.is({ collapsedUris: [1, 2] })).to.be.false;
+        });
+    });
+
+    describe('MultiDiffEditor', () => {
+
+        function createEditor(count: number): MultiDiffEditor {
+            const container = new Container();
+            container.bind(MultiDiffEditorData).toConstantValue({ title: 'Changes', resources: Array(count).fill(sampleResource) });
+            container.bind(MultiDiffEditor).toSelf();
+            const editor = container.get(MultiDiffEditor);
+            for (let index = 0; index < count; index++) {
+                editor.addDiffEntry(sampleResource, new DiffEntryHeaderWidget(sampleResource, mockLabelProvider));
+            }
+            return editor;
+        }
+
+        it('should fill the viewport for a single entry and follow resizes', () => {
+            const editor = createEditor(1);
+            try {
+                MessageLoop.sendMessage(editor, new Widget.ResizeMessage(1000, 800));
+                expect(editor.entries[0].node.style.height).to.equal('800px');
+                MessageLoop.sendMessage(editor, new Widget.ResizeMessage(1000, 400));
+                expect(editor.entries[0].node.style.height).to.equal('400px');
+            } finally {
+                editor.dispose();
+            }
+        });
+
+        it('should retain bounded content heights for multiple entries', () => {
+            const editor = createEditor(2);
+            try {
+                MessageLoop.sendMessage(editor, new Widget.ResizeMessage(1000, 800));
+                for (const entry of editor.entries) {
+                    entry.setHeight(1000);
+                    expect(entry.node.style.height).to.equal(`${MAX_ENTRY_HEIGHT}px`);
+                }
+            } finally {
+                editor.dispose();
+            }
+        });
+    });
+
+    describe('MultiDiffEditorLabelProvider', () => {
+
+        it('should label synthetic URIs with the full editor title', () => {
+            const provider = new MultiDiffEditorLabelProvider();
+            const uri = MultiDiffEditorUri.encode({ title: 'Changes in feature/test', resources: [] });
+            expect(provider.canHandle(uri)).to.equal(20);
+            expect(provider.canHandle(new URI('file:///a.ts'))).to.equal(0);
+            expect(provider.getName(uri)).to.equal('Changes in feature/test');
+            expect(provider.getLongName(uri)).to.equal('Changes in feature/test');
+            expect(provider.getIcon()).to.equal('codicon codicon-diff-multiple');
         });
     });
 
