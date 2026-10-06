@@ -18,13 +18,13 @@ import '../../../src/browser/style/multi-diff-editor.css';
 
 import { Container, interfaces } from '@theia/core/shared/inversify';
 import { nls, URI } from '@theia/core';
-import { DiffUris, LabelProvider, NavigatableWidgetOptions, OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
+import { DiffUris, LabelProvider, LabelProviderContribution, NavigatableWidgetOptions, OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
 import {
-    DiffEntryHeaderWidget, MultiDiffEditor, MultiDiffEditorData, MultiDiffEditorOpenHandler, MultiDiffEditorUri
+    DiffEntryHeaderWidget, MultiDiffEditor, MultiDiffEditorData, MultiDiffEditorOpenHandler, MultiDiffEditorUri, MultiDiffEditorLabelProvider
 } from './multi-diff-editor';
 import { MultiDiffEditorResourcePair, MultiDiffEditorUriData } from './multi-diff-editor-uri';
 
@@ -37,6 +37,7 @@ export function bindMultiDiffEditor(bind: interfaces.Bind): void {
 
     bind(MultiDiffEditorOpenHandler).toSelf().inSingletonScope();
     bind(OpenHandler).toService(MultiDiffEditorOpenHandler);
+    bind(LabelProviderContribution).to(MultiDiffEditorLabelProvider).inSingletonScope();
 }
 
 /** Options applied to the embedded diff/code editors. */
@@ -112,6 +113,9 @@ class MultiDiffEditorWidgetFactory {
 
     protected configureEmbeddedEditor(editorWidget: EditorWidget): void {
         const monacoEditor = MonacoEditor.get(editorWidget);
+        if (monacoEditor) {
+            monacoEditor.focusOnShow = false;
+        }
         if (monacoEditor instanceof MonacoDiffEditor) {
             monacoEditor.diffEditor.updateOptions(EMBEDDED_EDITOR_OPTIONS);
         } else if (monacoEditor) {

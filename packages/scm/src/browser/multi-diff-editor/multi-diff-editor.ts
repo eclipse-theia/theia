@@ -17,7 +17,7 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter, Event, isObject, nls, URI } from '@theia/core';
 import {
-    ApplicationShell, BaseWidget, BoxLayout, codicon, Key, LabelProvider,
+    ApplicationShell, BaseWidget, BoxLayout, codicon, Key, LabelProvider, LabelProviderContribution,
     Message, MessageLoop, Navigatable, NavigatableWidgetOpenHandler, Panel, PanelLayout, StatefulWidget,
     Widget, WidgetOpenerOptions
 } from '@theia/core/lib/browser';
@@ -180,6 +180,7 @@ export class DiffEntryWidget extends BaseWidget {
     protected _isCollapsed = false;
     /** Height to restore when expanding from a collapsed state. */
     protected lastExpandedHeight = MIN_ENTRY_HEIGHT;
+    protected availableHeight?: number;
 
     protected readonly onDidChangeCollapsedEmitter = new Emitter<boolean>();
     readonly onDidChangeCollapsed: Event<boolean> = this.onDidChangeCollapsedEmitter.event;
@@ -225,6 +226,7 @@ export class DiffEntryWidget extends BaseWidget {
         }
         this._isCollapsed = collapsed;
         this.header.setCollapsed(collapsed);
+        this.currentContent.setHidden(collapsed);
         if (collapsed) {
             this.lastExpandedHeight = this.getCurrentHeight() || MIN_ENTRY_HEIGHT;
             this.setNodeHeight(HEADER_HEIGHT);
@@ -239,33 +241,9 @@ export class DiffEntryWidget extends BaseWidget {
     }
 
     setEditor(editorWidget: EditorWidget): void {
-        // When the editor widget becomes visible, Monaco's handleVisibilityChanged calls
-        // focus() on the underlying editor, which causes the browser to scroll the entry
-        // into view. As entries load one-by-one (often out of order), each focus() jumps
-        // the viewport to the newly-loaded entry. Capture and restore the scroll offset
-        // to keep the user's viewport stable.
-        const scrollContainer = this.findScrollContainer();
-        const previousScrollTop = scrollContainer?.scrollTop;
-
         this._editorWidget = editorWidget;
         this.replaceContent(editorWidget);
         this.trackContentHeight(editorWidget);
-
-        if (scrollContainer && previousScrollTop !== undefined && scrollContainer.scrollTop !== previousScrollTop) {
-            scrollContainer.scrollTop = previousScrollTop;
-        }
-    }
-
-    protected findScrollContainer(): HTMLElement | undefined {
-        let current: HTMLElement | null = this.node.parentElement;
-        while (current) {
-            const overflowY = getComputedStyle(current).overflowY;
-            if (overflowY === 'auto' || overflowY === 'scroll') {
-                return current;
-            }
-            current = current.parentElement;
-        }
-        return undefined;
     }
 
     /**
@@ -279,6 +257,7 @@ export class DiffEntryWidget extends BaseWidget {
         if (old === widget) {
             return;
         }
+        widget.setHidden(this._isCollapsed);
         BoxLayout.setStretch(widget, 1);
         this.boxLayout.addWidget(widget);
         this.currentContent = widget;
@@ -293,11 +272,17 @@ export class DiffEntryWidget extends BaseWidget {
      * is collapsed; the requested height is remembered and applied on expand.
      */
     setHeight(height: number): void {
-        const clamped = Math.max(MIN_ENTRY_HEIGHT, Math.min(MAX_ENTRY_HEIGHT, height));
+        const clamped = this.availableHeight ?? Math.max(MIN_ENTRY_HEIGHT, Math.min(MAX_ENTRY_HEIGHT, height));
         this.lastExpandedHeight = clamped;
         if (!this._isCollapsed) {
             this.setNodeHeight(clamped);
         }
+    }
+
+    /** Let a single entry fill the viewport instead of applying the multi-entry height limit. */
+    setAvailableHeight(height: number): void {
+        this.availableHeight = Math.max(HEADER_HEIGHT, height);
+        this.setHeight(height);
     }
 
     protected getCurrentHeight(): number {
@@ -444,6 +429,14 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
         }
     }
 
+    protected override onResize(msg: Widget.ResizeMessage): void {
+        super.onResize(msg);
+        const height = msg.height < 0 ? this.node.clientHeight : msg.height;
+        if (this.entryWidgets.length === 1 && height > 0) {
+            this.entryWidgets[0].setAvailableHeight(height);
+        }
+    }
+
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         // Restore scroll after attach so layout has produced valid scroll extents.
@@ -487,6 +480,26 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
     createMoveToUri(_resourceUri: URI): URI | undefined {
         // Multi-diff editors represent a collection of resources, so they cannot be moved to a single resource.
         return undefined;
+    }
+}
+
+@injectable()
+export class MultiDiffEditorLabelProvider implements LabelProviderContribution {
+
+    canHandle(element: object): number {
+        return element instanceof URI && MultiDiffEditorUri.isMultiDiffEditorUri(element) ? 20 : 0;
+    }
+
+    getName(uri: URI): string {
+        return MultiDiffEditorUri.decode(uri).title;
+    }
+
+    getLongName(uri: URI): string {
+        return this.getName(uri);
+    }
+
+    getIcon(): string {
+        return codicon('diff-multiple');
     }
 }
 

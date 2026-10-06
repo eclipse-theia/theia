@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource, MessageService, isArray, ILogger } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource, MessageService, isArray, ILogger, MEMORY_TEXT_READONLY } from '@theia/core';
 import {
     ApplicationShell,
     CommonCommands,
@@ -1325,7 +1325,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: '_workbench.openMultiDiffEditor' }, {
             execute: async (options: {
                 title: string;
-                resources?: { originalUri: UriComponents; modifiedUri: UriComponents }[];
+                resources?: { originalUri?: UriComponents; modifiedUri?: UriComponents }[];
                 reveal?: { modifiedUri: UriComponents };
             }): Promise<void> => {
                 if (!options.resources?.length) {
@@ -1335,7 +1335,12 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     .map(r => {
                         const originalUri = toTheiaUri(r.originalUri);
                         const modifiedUri = toTheiaUri(r.modifiedUri);
-                        return originalUri && modifiedUri ? { originalUri, modifiedUri } : undefined;
+                        const resourceUri = modifiedUri ?? originalUri;
+                        if (!resourceUri) {
+                            return undefined;
+                        }
+                        const emptyUri = new TheiaURI().withScheme(MEMORY_TEXT_READONLY).withPath(resourceUri.path);
+                        return { originalUri: originalUri ?? emptyUri, modifiedUri: modifiedUri ?? emptyUri };
                     })
                     .filter((r): r is { originalUri: TheiaURI; modifiedUri: TheiaURI } => r !== undefined);
                 if (!resources.length) {

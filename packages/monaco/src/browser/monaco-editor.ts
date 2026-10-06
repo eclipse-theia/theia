@@ -264,12 +264,17 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         }));
     }
 
+    /** Whether showing the editor should focus it. Embedded editors can opt out. */
+    focusOnShow = true;
+
     handleVisibilityChanged(nowVisible: boolean): void {
         if (nowVisible) {
             this._stagedForPreview = false;
             this.baseEditor.setModel(this.baseModel);
             this.baseEditor.restoreViewState(this.savedViewState);
-            this.baseEditor.focus();
+            if (this.focusOnShow) {
+                this.baseEditor.focus();
+            }
         } else {
             this._stagedForPreview = false;
             this.savedViewState = this.baseEditor.saveViewState();
