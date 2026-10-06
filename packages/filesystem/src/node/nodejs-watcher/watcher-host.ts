@@ -93,7 +93,7 @@ export class WatcherHost {
 
     exists(fsPath: string): Promise<boolean> {
         return fs.promises.stat(fsPath).then(() => true, error => {
-            // ENOENT answers the question. EACCES or ELOOP would read as an absence, then as a creation.
+            // Only ENOENT means missing. EACCES or ELOOP can turn into a spurious deletion and creation, so log them.
             if (error?.code !== 'ENOENT' && !this.statFailureReported) {
                 this.statFailureReported = true;
                 this.logger.error(`Watcher cannot tell whether "${fsPath}" exists, treating it as missing:`, error);

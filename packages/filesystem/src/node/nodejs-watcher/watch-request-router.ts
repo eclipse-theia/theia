@@ -37,7 +37,7 @@ export interface ResolvedChange {
 /** A change as one client will be told about it. */
 interface ReportedChange {
     readonly clientId: number;
-    readonly uri: string;
+    readonly filePath: string;
     readonly type: FileChangeType;
 }
 
@@ -65,7 +65,7 @@ export class WatchRequestRouter {
         this.requests.set(watcherId, request);
     }
 
-    /** Whether there was a request to remove. */
+    /** @returns `true` if a request was registered under `watcherId`. */
     remove(watcherId: number): boolean {
         return this.requests.delete(watcherId);
     }
@@ -100,10 +100,10 @@ export class WatchRequestRouter {
         const reported: ReportedChange[] = [];
         for (const request of this.requests.values()) {
             for (const { fileName, type } of changes) {
-                const uri = this.resolveChildPath(request, fileName);
+                const childPath = this.resolveChildPath(request, fileName);
                 // Excludes filter children, never the path a client explicitly asked to watch.
-                if (uri && (uri === request.path || !this.isIgnored(request, uri))) {
-                    reported.push({ clientId: request.clientId, uri, type });
+                if (childPath && (childPath === request.path || !this.isIgnored(request, childPath))) {
+                    reported.push({ clientId: request.clientId, filePath: childPath, type });
                 }
             }
         }
@@ -112,7 +112,7 @@ export class WatchRequestRouter {
 
     /** Reports a change to the watched path itself, which each request hears about under its own path. */
     reportWatchedPath(type: FileChangeType, requests: Iterable<DirectoryWatchRequest> = this.requests.values()): void {
-        this.emit(Array.from(requests, request => ({ clientId: request.clientId, uri: request.path, type })));
+        this.emit(Array.from(requests, request => ({ clientId: request.clientId, filePath: request.path, type })));
     }
 
     /** Notifies each client once per watched path, so overlapping requests do not report twice. */
@@ -121,19 +121,19 @@ export class WatchRequestRouter {
             return;
         }
         const perClient = new Map<number, FileChangeCollection>();
-        for (const { clientId, uri, type } of reported) {
+        for (const { clientId, filePath, type } of reported) {
             let collection = perClient.get(clientId);
             if (!collection) {
                 perClient.set(clientId, collection = new FileChangeCollection());
             }
-            collection.push({ uri: FileUri.create(uri).toString(), type });
+            collection.push({ uri: FileUri.create(filePath).toString(), type });
         }
         for (const [clientId, collection] of perClient) {
             this.client.onDidFilesChanged({ clients: [clientId], changes: collection.values() });
         }
     }
 
-    /** The path a request reports a child change under, or `undefined` if the child is none of its business. */
+    /** The path a request reports a child change under, or `undefined` if the request does not cover the child. */
     protected resolveChildPath(request: DirectoryWatchRequest, fileName: string): string | undefined {
         const directory = this.watchedDirectory();
         // Both sides are resolved separately, so compare them the way the host resolves names.

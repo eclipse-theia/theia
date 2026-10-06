@@ -27,12 +27,12 @@ import { FileSystemWatcherServiceImpl } from '../filesystem-watcher-service-impl
 export * from './parcel-watcher';
 export * from '../filesystem-watcher-service-impl';
 
-/** @deprecated since 1.76.0 - use `FileSystemWatcherServiceImpl`, which also serves non-recursive requests. */
+/** @deprecated since 1.77.0 - use `FileSystemWatcherServiceImpl`, which also serves non-recursive requests. */
 export const ParcelFileSystemWatcherService = FileSystemWatcherServiceImpl;
-/** @deprecated since 1.76.0 - use `FileSystemWatcherServiceImpl`, which also serves non-recursive requests. */
+/** @deprecated since 1.77.0 - use `FileSystemWatcherServiceImpl`, which also serves non-recursive requests. */
 export type ParcelFileSystemWatcherService = FileSystemWatcherServiceImpl;
 
-/** @deprecated since 1.76.0 - a watcher id now maps straight to the {@link FileSystemWatcher} serving it. */
+/** @deprecated since 1.77.0 - a watcher id now maps straight to the {@link FileSystemWatcher} serving it. */
 export interface PacelWatcherHandle {
     clientId: number;
     watcher: FileSystemWatcher;

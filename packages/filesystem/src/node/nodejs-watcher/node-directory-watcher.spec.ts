@@ -62,7 +62,7 @@ class TestHost extends WatcherHost {
     }
 
     /** Runs once during the next directory read, to drive an event while a start is mid-flight. */
-    duringNextRead: (() => void) | undefined;
+    duringNextRead: (() => void | Promise<void>) | undefined;
 
     /** How many times a directory was read. */
     reads = 0;
@@ -71,7 +71,7 @@ class TestHost extends WatcherHost {
         this.reads++;
         const during = this.duringNextRead;
         this.duringNextRead = undefined;
-        during?.();
+        await during?.();
         return super.readChildren(directory);
     }
 
@@ -282,6 +282,28 @@ describe('node-directory-watcher', function (): void {
             box.fire('change', 'a.txt');
 
             await box.expect(1, 'updated a.txt');
+        });
+
+        it('reports a modification during the first read as updated, even once its batch was flushed', async () => {
+            box.write('a.txt');
+            box.host.duringNextRead = async () => {
+                box.fire('change', 'a.txt');
+                await wait(TIMINGS.changeDelay * 4);
+            };
+            await box.watching(box.root, box.directory());
+
+            await box.expect(1, 'updated a.txt');
+        });
+
+        it('reports a creation during the first read as added, even once its batch was flushed', async () => {
+            box.host.duringNextRead = async () => {
+                box.write('a.txt');
+                box.fire('rename', 'a.txt');
+                await wait(TIMINGS.changeDelay * 4);
+            };
+            await box.watching(box.root, box.directory());
+
+            await box.expect(1, 'added a.txt');
         });
 
         it('reports a deletion only once the grace period passed', async () => {
@@ -600,6 +622,45 @@ describe('node-directory-watcher', function (): void {
             box.write('a.txt');
             box.fire('rename', 'a.txt');
             await box.expectAmong(1, 'added a.txt');
+        });
+
+        it('reports what changed when a restart is superseded before it could report', async () => {
+            await box.watching(box.root, box.directory());
+
+            box.host.duringNextRead = () => {
+                box.write('a.txt');
+                box.host.fail(new Error('EPERM'));
+            };
+            box.host.fail(new Error('EPERM'));
+
+            await box.expect(1, 'added a.txt');
+        });
+
+        it('is re-keyed when a superseded restart already moved it to the parent', async () => {
+            const target = box.mkdir('later');
+            const watcher = await box.watching(target, box.directory(target));
+            let resolved = 0;
+            watcher.onDidResolveDirectory(() => resolved++);
+
+            box.remove('later');
+            box.write('later');
+            box.host.duringNextRead = () => box.host.fail(new Error('EPERM'));
+            box.host.fail(new Error('EPERM'));
+            await wait(TIMINGS.existencePollDelay * 5);
+
+            assert.strictEqual(watcher.directory, box.root);
+            assert.strictEqual(resolved, 1);
+        });
+
+        it('reports no change when the handle fails during the first read', async () => {
+            box.write('a.txt');
+            box.host.duringNextRead = () => box.host.fail(new Error('EPERM'));
+            await box.watching(box.root, box.directory());
+            await wait(TIMINGS.existencePollDelay * 2);
+
+            box.write('b.txt');
+            box.fire('rename', 'b.txt');
+            await box.expect(1, 'added b.txt');
         });
 
         it('keeps working after a handle failure, without reporting a change', async () => {

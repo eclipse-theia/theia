@@ -35,7 +35,7 @@ export interface WatchRequest {
     readonly ignored: readonly string[];
 }
 
-/** One watch, shared by every request resolving to the same target. Whether it recurses is not said here. */
+/** A watch shared by every request that resolves to the same target. Implementations decide whether it recurses. */
 export interface FileSystemWatcher {
     /** A disposed watcher released its resources and must not be given further requests. */
     readonly isDisposed: boolean;
@@ -47,7 +47,7 @@ export interface FileSystemWatcher {
     removeRequest(watcherId: number): void;
 }
 
-/** The disposal and logging every watcher needs, and nothing about how it observes the file system. */
+/** Handles disposal and logging for a watcher. Subclasses decide how to observe the file system. */
 export abstract class AbstractFileSystemWatcher implements FileSystemWatcher {
 
     private static debugIdSequence = 0;
@@ -71,7 +71,10 @@ export abstract class AbstractFileSystemWatcher implements FileSystemWatcher {
     abstract addRequest(watcherId: number, request: WatchRequest): void;
     abstract removeRequest(watcherId: number): void;
 
-    /** Marks this watcher disposed, once. `false` means it already was, so a caller should not clean up twice. */
+    /**
+     * Marks this watcher disposed.
+     * @returns `false` if it already was, in which case the caller must not clean up again.
+     */
     protected markDisposed(): boolean {
         if (this.isDisposed) {
             return false;
@@ -99,21 +102,24 @@ export abstract class AbstractFileSystemWatcher implements FileSystemWatcher {
 
 export type ResolvedWatchOptions = Required<WatchOptions>;
 
-/** Serves one kind of watching, and holds the requests it took: which watcher serves one is its to change. */
+/** Serves either recursive or non-recursive requests, and decides which watcher serves each one. */
 export interface WatcherProvider {
-    /** Whether requests made with these options are this provider's to serve. */
+    /** @returns `true` if this provider serves requests made with these options. */
     canHandle(options: ResolvedWatchOptions): boolean;
     /** Serves `request` under `watcherId`, on a watcher shared with requests resolving to the same target. */
     watch(watcherId: number, request: WatchRequest): Promise<void>;
-    /** Releases `watcherId`. Whether this provider was the one serving it. */
+    /**
+     * Releases the request registered under `watcherId`.
+     * @returns `true` if this provider served the request.
+     */
     unwatch(watcherId: number): boolean;
 }
 
-/** A {@link WatcherProvider} keeping one watcher per target, keyed however the subclass sees a target. */
+/** A {@link WatcherProvider} that keeps one watcher per target. Subclasses decide which key a target maps to. */
 export abstract class AbstractWatcherProvider implements WatcherProvider {
 
     private readonly watchersByTarget = new Map<string, FileSystemWatcher>();
-    /** Which watcher serves a request. Kept here because only this provider moves a request between them. */
+    /** The watcher that serves each request, by `watcherId`. */
     private readonly watchersByRequest = new Map<number, FileSystemWatcher>();
 
     /** Every watcher this provider currently has open. */
@@ -146,8 +152,8 @@ export abstract class AbstractWatcherProvider implements WatcherProvider {
     }
 
     /**
-     * The watcher under `watcherKey`, or a new one. Disposal is marked synchronously but leaves the map from
-     * a promise callback, so without the check a request in between would attach to a dying watcher.
+     * Returns the watcher under `watcherKey`, or creates one. A disposed watcher stays in the map until a later
+     * promise callback removes it, so it is replaced here rather than handed a new request.
      */
     protected getOrCreateWatcher<T extends FileSystemWatcher>(watcherKey: string, create: () => T): T {
         const existing = this.watchersByTarget.get(watcherKey);
@@ -160,7 +166,7 @@ export abstract class AbstractWatcherProvider implements WatcherProvider {
             if (this.watchersByTarget.get(watcherKey) === watcher) {
                 this.watchersByTarget.delete(watcherKey);
             }
-            // Requests it handed on already point at their new watcher, so only its own are dropped.
+            // Requests it handed to another watcher already point there, so drop only the ones still on it.
             for (const [watcherId, serving] of this.watchersByRequest) {
                 if (serving === watcher) {
                     this.watchersByRequest.delete(watcherId);
@@ -170,7 +176,7 @@ export abstract class AbstractWatcherProvider implements WatcherProvider {
         return watcher;
     }
 
-    /** Whether `watcher` is the one registered under `watcherKey`. */
+    /** @returns `true` if `watcher` is the one registered under `watcherKey`. */
     protected isRegisteredAs(watcher: FileSystemWatcher, watcherKey: string): boolean {
         return this.watchersByTarget.get(watcherKey) === watcher;
     }
