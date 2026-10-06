@@ -33,7 +33,8 @@ import {
     TokenUsageParams,
     ToolCallResult,
     ToolInvocationContext,
-    UserRequest
+    UserRequest,
+    extractErrorMessageWithCause
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import {
@@ -208,7 +209,12 @@ export class GoogleModel implements LanguageModel {
             }
             return this.handleNonStreamingRequest(genAI, request);
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            // Flatten the `cause` chain into the message here, on the backend, before re-wrapping.
+            // Node's fetch reports network failures as an opaque "fetch failed" with the actionable
+            // reason (ECONNREFUSED, ENOTFOUND, TLS errors, ...) on error.cause, and the RPC error
+            // extension drops `cause` when the error crosses to the frontend. Embedding it in the
+            // message string lets the chat UI explain the failure.
+            const errorMessage = error instanceof Error ? extractErrorMessageWithCause(error) : 'Unknown error occurred';
             throw new Error(`Gemini API request failed: ${errorMessage}`);
         }
     }
