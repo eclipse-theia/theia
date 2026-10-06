@@ -412,6 +412,29 @@ describe('keyboard layout service', function (): void {
         chai.expect(service.detectLayoutModifiers({ key: '±', code: 'IntlBackslash', shiftKey: true, altKey: true })).to.equal('shiftAltGraph');
     });
 
+    it('interprets macOS Option as a command modifier besides the Option layer', async () => {
+        const macUS = require('../../../src/common/keyboard/layouts/en-US-mac.json');
+        const service = await setup(macUS, 'mac');
+
+        const optionShift = service.getKeyCodeInterpretations({ key: '∏', code: 'KeyP', shiftKey: true, altKey: true }, 'code');
+        chai.expect(optionShift.map(candidate => candidate.dispatchString())).to.deep.equal(['shift+alt+p', 'alt+p@shift', 'p@shift@altgraph']);
+        chai.expect(optionShift.map(candidate => candidate.character)).to.deep.equal(['P', 'P', '∏']);
+        chai.expect(service.resolveKeyCode(KeyCode.parse('shift+alt+p')).dispatchString()).to.equal('alt+p@shift');
+
+        const option = service.getKeyCodeInterpretations({ key: 'π', code: 'KeyP', altKey: true }, 'code');
+        chai.expect(option.map(candidate => candidate.dispatchString())).to.deep.equal(['alt+p', 'p@altgraph']);
+        chai.expect(option.map(candidate => candidate.character)).to.deep.equal(['p', 'π']);
+
+        const shift = service.getKeyCodeInterpretations({ key: 'P', code: 'KeyP', shiftKey: true }, 'code');
+        chai.expect(shift.map(candidate => candidate.dispatchString())).to.deep.equal(['shift+p', 'p@shift']);
+    });
+
+    it('does not add an AltGraph layer to Linux Alt+Shift input', async () => {
+        const service = await setup(require('../../../src/common/keyboard/layouts/en-US-pc.json'), 'linux');
+        chai.expect(service.getKeyCodeInterpretations({ key: 'P', code: 'KeyP', shiftKey: true, altKey: true }, 'code')
+            .map(candidate => candidate.dispatchString())).to.deep.equal(['shift+alt+p', 'alt+p@shift']);
+    });
+
     it('requires AltGraph for a Linux Shift+AltGraph layer', async () => {
         const layout: NativeKeyboardLayout = {
             info: { id: 'same-shift-layers', lang: 'en' },

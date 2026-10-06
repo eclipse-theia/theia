@@ -60,10 +60,10 @@ export class KeyboardLayoutService {
     protected readonly keyValidator?: KeyValidator;
 
     // The transformed layout used for logical-character resolution and display.
-    private currentLayout?: KeyboardLayout;
+    protected currentLayout?: KeyboardLayout;
     // The provider's original layout data used to verify characters produced by key events.
-    private currentNativeLayout?: NativeKeyboardLayout;
-    private currentLayoutInfo?: IKeyboardLayoutInfo;
+    protected currentNativeLayout?: NativeKeyboardLayout;
+    protected currentLayoutInfo?: IKeyboardLayoutInfo;
 
     get layoutInfo(): IKeyboardLayoutInfo | undefined {
         return this.currentLayoutInfo;
@@ -152,7 +152,7 @@ export class KeyboardLayoutService {
         if (input.isComposing || !input.code || !this.shouldIncludeKey(input.code) || !isPrintableCharacter(input.key)) {
             return undefined;
         }
-        const mapping = this.currentNativeLayout?.mapping[input.code] as (ILinuxKeyMapping & Partial<IMacKeyMapping>) | undefined;
+        const mapping = this.getNativeMapping(input.code);
         if (!mapping) {
             return undefined;
         }
@@ -171,6 +171,10 @@ export class KeyboardLayoutService {
             return 'shift';
         }
         return undefined;
+    }
+
+    protected getNativeMapping(code: string): (ILinuxKeyMapping & Partial<IMacKeyMapping>) | undefined {
+        return this.currentNativeLayout?.mapping[code] as (ILinuxKeyMapping & Partial<IMacKeyMapping>) | undefined;
     }
 
     /** Return all command- and layout-modifier interpretations of a normalized keyboard input. */
@@ -225,6 +229,11 @@ export class KeyboardLayoutService {
         return [keyCode];
     }
 
+    /**
+     * macOS has no AltGraph key: Option selects the layout's AltGraph layer but is also the `alt` command modifier used by
+     * the default macOS bindings. Option layers therefore yield interpretations that keep Option as a command modifier and
+     * carry the character the key produces without Option, followed by the interpretation that attributes Option to the layout.
+     */
     protected getMacKeyCodeInterpretations(keyCode: KeyCode, input: NormalizedKeyboardInput, layoutModifiers: LayoutModifiers | undefined): KeyCode[] {
         if (!layoutModifiers) {
             return [keyCode];
@@ -235,9 +244,21 @@ export class KeyboardLayoutService {
         if (!input.altKey) {
             return [keyCode];
         }
+        const mapping = input.code ? this.getNativeMapping(input.code) : undefined;
+        const optionLayer = this.toLayoutModifiersKeyCode(keyCode, layoutModifiers, { alt: true });
+        if (layoutModifiers === 'shiftAltGraph') {
+            const shiftCharacter = mapping?.withShift && !mapping.withShiftIsDeadKey ? mapping.withShift : keyCode.character;
+            const optionCommand = new KeyCode({ ...keyCode, character: shiftCharacter, interpretation: 'commandModifiers' });
+            return [
+                optionCommand,
+                this.toLayoutModifiersKeyCode(optionCommand, 'shift'),
+                optionLayer
+            ];
+        }
+        const baseCharacter = mapping?.value && !mapping.valueIsDeadKey ? mapping.value : keyCode.character;
         return [
-            new KeyCode({ ...keyCode, interpretation: 'commandModifiers' }),
-            this.toLayoutModifiersKeyCode(keyCode, layoutModifiers, { alt: true })
+            new KeyCode({ ...keyCode, character: baseCharacter, interpretation: 'commandModifiers' }),
+            optionLayer
         ];
     }
 

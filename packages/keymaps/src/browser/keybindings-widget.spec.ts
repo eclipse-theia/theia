@@ -21,13 +21,17 @@ import * as sinon from 'sinon';
 import * as os from '@theia/core/lib/common/os';
 import { Key, KeyCode } from '@theia/core/lib/browser/keyboard/keys';
 import { KeybindingRegistry, ScopedKeybinding } from '@theia/core/lib/browser/keybinding';
-import { keybindingTooltip } from './keybinding-tooltip';
-import { KeybindingItem, KeybindingWidget, recordedKeybindingStroke } from './keybindings-widget';
+import { KeybindingItem, KeybindingWidget } from './keybindings-widget';
 
 after(() => disableJSDOM());
 
 describe('keybindings widget tooltip', () => {
     const binding = { command: 'test', keybinding: 'ctrl+[', scope: 0 } as ScopedKeybinding;
+    const createWidget = (registry: KeybindingRegistry): KeybindingWidget => {
+        const widget = Object.create(KeybindingWidget.prototype) as KeybindingWidget;
+        Object.defineProperty(widget, 'keybindingRegistry', { value: registry });
+        return widget;
+    };
 
     it('shows a logical binding and its real physical realization', () => {
         const platform = sinon.stub(os, 'isOSX').value(false);
@@ -46,7 +50,7 @@ describe('keybindings widget tooltip', () => {
         registry.getShadowingKeybindings = () => [];
 
         chai.expect(registry.componentsForKeyCode(code)).to.deep.equal(['Ctrl', '[']);
-        chai.expect(keybindingTooltip(registry, binding)).to.equal('Ctrl+AltGr+8');
+        chai.expect(createWidget(registry).keybindingTooltip(binding)).to.equal('Ctrl+AltGr+8');
         platform.restore();
     });
 
@@ -70,7 +74,7 @@ describe('keybindings widget tooltip', () => {
             getShadowingKeybindings: () => []
         } as unknown as KeybindingRegistry;
 
-        chai.expect(keybindingTooltip(registry, binding)).to.equal(
+        chai.expect(createWidget(registry).keybindingTooltip(binding)).to.equal(
             'Physical realization unavailable\nThe key is not available on the current keyboard layout.'
         );
     });
@@ -84,8 +88,7 @@ describe('keybindings widget tooltip', () => {
             componentsForKeyCode: () => ['Ctrl', '['],
             getShadowingKeybindings
         } as unknown as KeybindingRegistry;
-        const widget = Object.create(KeybindingWidget.prototype) as KeybindingWidget;
-        Object.defineProperty(widget, 'keybindingRegistry', { value: registry });
+        const widget = createWidget(registry);
         const createItem = (): KeybindingItem => ({
             command: { id: 'test' },
             keybinding: binding,
@@ -105,35 +108,6 @@ describe('keybindings widget tooltip', () => {
 
         chai.expect(getTooltip(createItem())).to.equal('Ctrl+[');
         chai.expect(getShadowingKeybindings.calledTwice).to.be.true;
-    });
-
-    it('captures logical characters, physical non-printables, and ignores modifier-only input', () => {
-        const registry = {
-            authoredKeyCodeForKeyboardInput: (event: KeyboardEvent) => {
-                if (event.code === 'ControlLeft') {
-                    return new KeyCode({ ctrl: true });
-                }
-                if (event.code === 'F1') {
-                    return new KeyCode({ key: Key.F1, ctrl: true });
-                }
-                if (event.code === 'Delete') {
-                    return new KeyCode({ key: Key.DELETE, ctrl: true });
-                }
-                if (event.code === 'KeyP') {
-                    return new KeyCode({ key: Key.KEY_P, ctrl: true, shift: true, character: 'P' });
-                }
-                return new KeyCode({ key: event.code === 'Equal' ? Key.EQUAL : Key.BRACKET_LEFT, ctrl: true, character: event.key });
-            }
-        } as unknown as KeybindingRegistry;
-
-        chai.expect(recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: '[', code: 'Digit8', ctrlKey: true }))).to.equal('ctrl+[');
-        chai.expect(recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: '+', code: 'Equal', ctrlKey: true }))).to.equal('ctrl+[char:0x2B]');
-        chai.expect(recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: 'F1', code: 'F1', ctrlKey: true }))).to.equal('ctrl+f1');
-        chai.expect(recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: 'Delete', code: 'Delete', ctrlKey: true }))).to.equal('ctrl+delete');
-        const shifted = recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: 'P', code: 'KeyP', ctrlKey: true, shiftKey: true }));
-        chai.expect(shifted).to.equal('shift+ctrl+p');
-        chai.expect(KeyCode.parse(shifted!).dispatchString()).to.equal('shift+ctrl+p');
-        chai.expect(recordedKeybindingStroke(registry, new KeyboardEvent('keydown', { key: 'Control', code: 'ControlLeft', ctrlKey: true }))).to.be.undefined;
     });
 
     it('marks inactive keybindings with struck-through styling and a warning icon', () => {

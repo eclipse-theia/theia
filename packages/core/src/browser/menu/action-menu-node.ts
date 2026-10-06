@@ -32,24 +32,6 @@ export namespace AcceleratorSource {
     }
 }
 
-export function acceleratorForCommand(keybindingRegistry: KeybindingRegistry, command: string,
-    context: HTMLElement | undefined, form: AcceleratorForm): string[] {
-    const bindings = keybindingRegistry.getKeybindingsForCommand(command);
-    // Only consider the first active keybinding.
-    if (bindings.length) {
-        const binding = bindings.find(candidate => keybindingRegistry.isEnabledInScope(candidate, context));
-        if (binding) {
-            if (form === 'physical') {
-                return keybindingRegistry.isKeybindingInactive(binding)
-                    ? []
-                    : keybindingRegistry.acceleratorFor(binding, '+', true, 'physical');
-            }
-            return keybindingRegistry.acceleratorFor(binding, '+');
-        }
-    }
-    return [];
-}
-
 /**
  * Node representing an action in the menu tree structure.
  * It's based on {@link MenuAction} for which it tries to determine the
@@ -102,7 +84,7 @@ export class ActionMenuNode implements CommandMenu {
     }
 
     getAccelerator(context: HTMLElement | undefined, form: AcceleratorForm): string[] {
-        return acceleratorForCommand(this.keybindingRegistry, this.action.commandId, context, form);
+        return this.keybindingRegistry.acceleratorForCommand(this.action.commandId, context, form);
     }
 
     isEnabled(effeciveMenuPath: MenuPath, ...args: unknown[]): boolean {

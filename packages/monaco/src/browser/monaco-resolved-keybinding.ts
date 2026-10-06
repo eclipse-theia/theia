@@ -38,10 +38,10 @@ export class MonacoResolvedKeybinding extends ResolvedKeybinding {
             // eslint-disable-next-line no-null/no-null
             const keyLabel = keyCode.key ? components[components.length - 1] : null;
             const keyAriaLabel = keyLabel;
-            // The label uses the logical character, so layout Shift must not appear as a command modifier.
+            // The label uses the logical character, so layout Shift only appears when it produced an uppercase letter.
             return new ResolvedChord(
                 keyCode.ctrl,
-                keyCode.shift,
+                keybindingService.displaysShift(keyCode),
                 keyCode.alt,
                 keyCode.meta,
                 keyLabel,

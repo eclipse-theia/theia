@@ -19,7 +19,7 @@
 import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
 import {
     MenuPath, CommandRegistry, Disposable, DisposableCollection, nls, CommandMenu, AcceleratorSource, AcceleratorForm,
-    ContextExpressionMatcher, acceleratorForCommand, ILogger
+    ContextExpressionMatcher, ILogger
 } from '@theia/core';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -141,7 +141,7 @@ export class MenusContributionPointHandler {
                                         this.commandRegistry.executeCommand(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(effeciveMenuPath)(...args)),
                                     isToggled: (effectiveMenuPath: MenuPath) => false,
                                     getAccelerator: (context: HTMLElement | undefined, form: AcceleratorForm): string[] =>
-                                        acceleratorForCommand(this.keybindingRegistry, command, context, form)
+                                        this.keybindingRegistry.acceleratorForCommand(command, context, form)
                                 };
                                 toDispose.push(this.menuRegistry.registerCommandMenu(menuPath, action));
                             });

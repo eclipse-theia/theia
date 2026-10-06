@@ -429,6 +429,13 @@ describe('keys api', () => {
         expect(KeyCode.parse(shiftedLetter.toAuthoredKeybindingString()).dispatchString()).to.equal('shift+ctrl+p');
     });
 
+    it('should serialize recorder strokes for Space and numpad keys by name', () => {
+        expect(new KeyCode({ key: Key.SPACE, meta: true, shift: true, character: ' ' }).toAuthoredKeybindingString()).to.equal('meta+shift+space');
+        expect(new KeyCode({ key: Key.ADD, ctrl: true, character: '+' }).toAuthoredKeybindingString()).to.equal('ctrl+add');
+        expect(new KeyCode({ key: Key.DECIMAL, ctrl: true, character: '.' }).toAuthoredKeybindingString()).to.equal('ctrl+decimal');
+        expect(new KeyCode({ key: Key.DIGIT1, ctrl: true, character: '1' }).toAuthoredKeybindingString()).to.equal('ctrl+1');
+    });
+
     it('should parse minus as key', () => {
         const keycode = KeyCode.parse('ctrl+-');
         expect(keycode.ctrl).to.be.true;

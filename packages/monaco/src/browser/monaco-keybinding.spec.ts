@@ -100,4 +100,18 @@ describe('Monaco keybinding adapter', () => {
         expect(resolved.getDispatchChords()).to.deep.equal([expectedDispatch]);
         expect(resolved.getLabel()).to.equal(`${controlLabel}/`);
     });
+
+    it('shows layout Shift in labels when it produces an uppercase letter', () => {
+        const registry = Object.create(KeybindingRegistry.prototype) as KeybindingRegistry;
+        const resolved = new MonacoResolvedKeybinding([
+            new KeyCode({ key: Key.KEY_P, ctrl: true, character: 'P', layoutModifiers: 'shift' })
+        ], registry);
+        const expectedDispatch = USLayoutResolvedKeybinding.getDispatchStr(
+            new KeyCodeChord(true, true, false, false, MonacoKeyCode.KeyP)
+        );
+        const isMac = MonacoPlatform.OS === MonacoPlatform.OperatingSystem.Macintosh;
+
+        expect(resolved.getDispatchChords()).to.deep.equal([expectedDispatch]);
+        expect(resolved.getLabel()).to.equal(isMac ? '⌃⇧P' : 'Ctrl+Shift+P');
+    });
 });

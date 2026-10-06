@@ -34,16 +34,14 @@ export function isElectronAcceleratorRepresentable(accelerator: string | undefin
     return true;
 }
 
-export interface ElectronMenuAccelerator {
-    accelerator?: string;
-}
+export type ElectronMenuAccelerator = Pick<MenuDto, 'accelerator'>;
 
-export function electronMenuAcceleratorMetadata(acceleratorSequence: string[]): Pick<MenuDto, 'accelerator'> {
+export function electronMenuAcceleratorMetadata(acceleratorSequence: string[]): ElectronMenuAccelerator {
     return { accelerator: acceleratorSequence.join(' ') || undefined };
 }
 
 /** Return an Electron accelerator only when the rendered single chord is representable. */
-export function electronMenuAccelerator(dto: Pick<MenuDto, 'accelerator'>): ElectronMenuAccelerator {
+export function electronMenuAccelerator(dto: ElectronMenuAccelerator): ElectronMenuAccelerator {
     return isElectronAcceleratorRepresentable(dto.accelerator) ? { accelerator: dto.accelerator } : {};
 }
 

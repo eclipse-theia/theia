@@ -31,7 +31,6 @@ import { KeymapsService } from './keymaps-service';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import { DisposableCollection, Disposable, isOSX, isWindows, isObject, ILogger } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
-import { keybindingTooltip } from './keybinding-tooltip';
 
 /**
  * Representation of a keybinding item for the view.
@@ -76,12 +75,6 @@ export interface RenderableStringSegment {
     value: string;
     match: boolean;
     key?: boolean;
-}
-
-/** Return the authored keybinding stroke that should be persisted for a recorded keyboard event. */
-export function recordedKeybindingStroke(keybindingRegistry: KeybindingRegistry, event: KeyboardEvent): string | undefined {
-    const keyCode = keybindingRegistry.authoredKeyCodeForKeyboardInput(event);
-    return keyCode && !keyCode.isModifierOnly() ? keyCode.toAuthoredKeybindingString() : undefined;
 }
 
 /**
@@ -667,7 +660,20 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
         if (!item.keybinding) {
             return undefined;
         }
-        return item.tooltip ??= keybindingTooltip(this.keybindingRegistry, item.keybinding);
+        return item.tooltip ??= this.keybindingTooltip(item.keybinding);
+    }
+
+    keybindingTooltip(keybinding: ScopedKeybinding): string {
+        const inactiveReason = this.keybindingRegistry.getKeybindingInactiveReason(keybinding);
+        if (inactiveReason) {
+            return `${nls.localize('theia/keymaps/physicalRealizationUnavailable', 'Physical realization unavailable')}\n${inactiveReason}`;
+        }
+        const physical = this.keybindingRegistry.resolveKeybinding(keybinding)
+            .map(code => this.keybindingRegistry.componentsForKeyCode(code, true, 'physical').join('+')).join(' ');
+        if (this.keybindingRegistry.getShadowingKeybindings(keybinding).length > 0) {
+            return `${physical}\n${nls.localize('theia/keymaps/interpretationShadowing', 'A command-modifier interpretation takes precedence over this keybinding.')}`;
+        }
+        return physical;
     }
 
     protected isKeybindingInactive(item: KeybindingItem): boolean {
@@ -1025,7 +1031,7 @@ class EditKeybindingDialog extends SingleTextInputDialog {
         event.preventDefault();
         event.stopPropagation();
 
-        const keyString = recordedKeybindingStroke(this.keybindingRegistry, event);
+        const keyString = this.keybindingRegistry.authoredKeybindingStringForKeyboardInput(event);
 
         if (!keyString) {
             return;

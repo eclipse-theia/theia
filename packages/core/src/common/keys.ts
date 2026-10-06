@@ -425,16 +425,17 @@ export class KeyCode {
     /**
      * Derive an authored keybinding stroke from a key event for recorder persistence.
      * This cannot use {@link toString}: event-derived key codes have no {@link authoredToken}, so `toString` would persist
-     * the physical US key name instead of the committed logical character. Non-printable keys are persisted by name;
-     * printable keys without a committed character are persisted as scan codes.
+     * the physical US key name instead of the committed logical character. Non-printable keys, Space and numpad keys are
+     * persisted by name; printable keys without a committed character are persisted as scan codes.
      */
     toAuthoredKeybindingString(): string {
         const result: string[] = [];
         if (this.meta) {
             result.push(SpecialCases.META);
         }
-        const shiftedLetter = !!this.character && /^[A-Z]$/.test(this.character);
-        if (this.shift && (!this.character || shiftedLetter)) {
+        const character = isPrintableCharacter(this.character) && !this.key?.code.startsWith('Numpad') ? this.character : undefined;
+        const shiftedLetter = !!character && /^[A-Z]$/.test(character);
+        if (this.shift && (!character || shiftedLetter)) {
             result.push(Key.SHIFT_LEFT.easyString);
         }
         if (this.alt) {
@@ -443,8 +444,8 @@ export class KeyCode {
         if (this.ctrl) {
             result.push(Key.CONTROL_LEFT.easyString);
         }
-        if (this.character) {
-            result.push(characterToken(shiftedLetter ? this.character.toLocaleLowerCase() : this.character));
+        if (character) {
+            result.push(characterToken(shiftedLetter ? character.toLocaleLowerCase() : character));
         } else if (this.key) {
             result.push(isPrintableKey(this.key) ? `[${this.key.code}]` : this.key.easyString);
         }

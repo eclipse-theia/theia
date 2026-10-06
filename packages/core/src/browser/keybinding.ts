@@ -544,9 +544,7 @@ export class KeybindingRegistry {
         if (keyCode.alt) {
             keyCodeResult.push(useSymbols ? '⌥' : 'Alt');
         }
-        const logicalCaseShift = layoutModifiersIncludeShift(keyCode.layoutModifiers)
-            && !!keyCode.character && /^[A-Z]$/.test(keyCode.character);
-        if (keyCode.shift || logicalCaseShift) {
+        if (this.displaysShift(keyCode)) {
             keyCodeResult.push(useSymbols ? '⇧' : 'Shift');
         }
         if (keyCode.character) {
@@ -555,6 +553,14 @@ export class KeybindingRegistry {
             keyCodeResult.push(this.acceleratorForKey(keyCode.key, asciiOnly));
         }
         return keyCodeResult;
+    }
+
+    /**
+     * Whether the logical label of a key code shows Shift: when Shift is a command modifier or produces an uppercase letter.
+     * Shift that only selects a layout layer for other characters (e.g. `/` on German layouts) is not shown.
+     */
+    displaysShift(keyCode: KeyCode): boolean {
+        return keyCode.shift || layoutModifiersIncludeShift(keyCode.layoutModifiers) && !!keyCode.character && /^[A-Z]$/.test(keyCode.character);
     }
 
     protected acceleratorForCharacter(character: string): string {
@@ -652,6 +658,21 @@ export class KeybindingRegistry {
             });
         }
         return result;
+    }
+
+    /**
+     * Get the accelerator of the first keybinding of a command that is enabled in the given context.
+     * Physical accelerators (for native menus) are omitted for inactive keybindings.
+     */
+    acceleratorForCommand(commandId: string, context: HTMLElement | undefined, form: AcceleratorForm = 'logical'): string[] {
+        const binding = this.getKeybindingsForCommand(commandId).find(candidate => this.isEnabledInScope(candidate, context));
+        if (!binding) {
+            return [];
+        }
+        if (form === 'physical') {
+            return this.isKeybindingInactive(binding) ? [] : this.acceleratorFor(binding, '+', true, 'physical');
+        }
+        return this.acceleratorFor(binding, '+');
     }
 
     protected isActive(binding: common.Keybinding): boolean {
@@ -834,7 +855,10 @@ export class KeybindingRegistry {
     /** Return the authored representation that should be persisted for normalized keyboard input. */
     authoredKeyCodeForKeyboardInput(input: NormalizedKeyboardInput): KeyCode | undefined {
         const interpretations = this.getKeyCodeInterpretations(input);
-        const keyCode = interpretations.find(candidate => candidate.interpretation === 'layoutModifiers') ?? interpretations[0];
+        // macOS Option is recorded as the `alt` command modifier rather than as the character it produces.
+        const optionAsCommandModifier = isOSX && !!input.altKey;
+        const keyCode = interpretations.find(candidate => candidate.interpretation === 'layoutModifiers' && (!optionAsCommandModifier || candidate.alt))
+            ?? interpretations[0];
         if (!keyCode || keyCode.isModifierOnly()) {
             return keyCode;
         }
@@ -887,6 +911,12 @@ export class KeybindingRegistry {
                 character: keyCode.key?.easyString
             });
         }
+    }
+
+    /** Return the keybinding stroke the keybinding recorder persists for normalized keyboard input, or `undefined` for modifier-only input. */
+    authoredKeybindingStringForKeyboardInput(input: NormalizedKeyboardInput): string | undefined {
+        const keyCode = this.authoredKeyCodeForKeyboardInput(input);
+        return keyCode && !keyCode.isModifierOnly() ? keyCode.toAuthoredKeybindingString() : undefined;
     }
 
     protected runNormalizedKeyboardInput(input: NormalizedKeyboardInput, event: KeyboardEvent, keyCodesOverride?: KeyCode[]): void {

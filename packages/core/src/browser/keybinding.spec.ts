@@ -1035,6 +1035,65 @@ describe('keybindings', () => {
         interpretations.restore();
     });
 
+    it('should record logical characters, physical non-printables, and ignore modifier-only input', () => {
+        const registry = Object.create(KeybindingRegistry.prototype) as KeybindingRegistry;
+        registry.authoredKeyCodeForKeyboardInput = input => {
+            if (input.code === 'ControlLeft') {
+                return new KeyCode({ ctrl: true });
+            }
+            if (input.code === 'F1') {
+                return new KeyCode({ key: Key.F1, ctrl: true });
+            }
+            if (input.code === 'Delete') {
+                return new KeyCode({ key: Key.DELETE, ctrl: true });
+            }
+            if (input.code === 'KeyP') {
+                return new KeyCode({ key: Key.KEY_P, ctrl: true, shift: true, character: 'P' });
+            }
+            return new KeyCode({ key: input.code === 'Equal' ? Key.EQUAL : Key.BRACKET_LEFT, ctrl: true, character: input.key });
+        };
+
+        expect(registry.authoredKeybindingStringForKeyboardInput({ key: '[', code: 'Digit8', ctrlKey: true })).to.equal('ctrl+[');
+        expect(registry.authoredKeybindingStringForKeyboardInput({ key: '+', code: 'Equal', ctrlKey: true })).to.equal('ctrl+[char:0x2B]');
+        expect(registry.authoredKeybindingStringForKeyboardInput({ key: 'F1', code: 'F1', ctrlKey: true })).to.equal('ctrl+f1');
+        expect(registry.authoredKeybindingStringForKeyboardInput({ key: 'Delete', code: 'Delete', ctrlKey: true })).to.equal('ctrl+delete');
+        const shifted = registry.authoredKeybindingStringForKeyboardInput({ key: 'P', code: 'KeyP', ctrlKey: true, shiftKey: true });
+        expect(shifted).to.equal('shift+ctrl+p');
+        expect(KeyCode.parse(shifted!).dispatchString()).to.equal('shift+ctrl+p');
+        expect(registry.authoredKeybindingStringForKeyboardInput({ key: 'Control', code: 'ControlLeft', ctrlKey: true })).to.be.undefined;
+    });
+
+    it('should record Space and numpad keys by name', () => {
+        expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: ' ', code: 'Space', ctrlKey: true, shiftKey: true }))
+            .to.equal('shift+ctrl+space');
+        expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: '+', code: 'NumpadAdd', ctrlKey: true })).to.equal('ctrl+add');
+        expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: '-', code: 'NumpadSubtract', ctrlKey: true })).to.equal('ctrl+subtract');
+        expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: '.', code: 'NumpadDecimal', ctrlKey: true })).to.equal('ctrl+decimal');
+        expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: '1', code: 'Numpad1', ctrlKey: true })).to.equal('ctrl+1');
+    });
+
+    it('should dispatch and record Option bindings as command modifiers on macOS', async () => {
+        stub.value(true);
+        const notifier = testContainer.get(MockKeyboardLayoutChangeNotifier);
+        notifier.emitter.fire(require('../../src/common/keyboard/layouts/en-US-mac.json'));
+        const execute = sinon.spy();
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
+        try {
+            keybindingRegistry.setKeymap(KeybindingScope.USER, [{ command: TEST_COMMAND_SHADOW.id, keybinding: 'shift+alt+p' }]);
+            keybindingRegistry.run(testKeyboardEvent({ key: '∏', code: 'KeyP', shiftKey: true, altKey: true }));
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(execute.calledOnce).to.be.true;
+            expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: '∏', code: 'KeyP', shiftKey: true, altKey: true }))
+                .to.equal('shift+alt+p');
+            expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: 'π', code: 'KeyP', altKey: true })).to.equal('alt+p');
+            expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: 'P', code: 'KeyP', shiftKey: true })).to.equal('shift+p');
+        } finally {
+            handler.dispose();
+            notifier.emitter.fire(require('../../src/common/keyboard/layouts/en-US-pc.json'));
+        }
+    });
+
     it('should classify interpretation shadowing separately from canonical collisions', () => {
         const logical = {
             command: TEST_COMMAND.id,
