@@ -74,10 +74,11 @@ describe('DebugConsoleSession', () => {
     let consoleSession: DebugConsoleSession;
     let maximumLines: number;
 
-    const createDebugSession = (id: string, configurationName: string): DebugSession => ({
+    const createDebugSession = (id: string, configurationName: string, workspaceFolderUri?: string): DebugSession => ({
         id,
         label: configurationName,
         configuration: { name: configurationName, type: 'node', request: 'launch' },
+        options: { workspaceFolderUri },
         autoExpandLazyVariables: false,
         sendRequest: async (_command: string, args: { variablesReference: number }) => ({
             body: { variables: VARIABLES[args.variablesReference] ?? [] }
@@ -189,6 +190,25 @@ describe('DebugConsoleSession', () => {
 
             await consoleSession.logOutput(second, outputEvent({ output: 'second run' }));
             expect(contentsOf(consoleSession)).to.deep.equal(['second run']);
+        });
+
+        it('is reusable only by a session of the same configuration once terminated', () => {
+            consoleSession.startFor(createDebugSession('session-1', 'Launch Program'));
+            expect(consoleSession.isReusableBy(createDebugSession('session-2', 'Launch Program'))).to.be.false;
+
+            consoleSession.markTerminated();
+
+            expect(consoleSession.isReusableBy(createDebugSession('session-2', 'Launch Program'))).to.be.true;
+            expect(consoleSession.isReusableBy(createDebugSession('session-2', 'Attach'))).to.be.false;
+        });
+
+        it('is not reusable by a configuration of the same name from another workspace folder', () => {
+            consoleSession.startFor(createDebugSession('session-1', 'Launch Program', 'file:///a'));
+            consoleSession.markTerminated();
+
+            expect(consoleSession.isReusableBy(createDebugSession('session-2', 'Launch Program', 'file:///b'))).to.be.false;
+            expect(consoleSession.isReusableBy(createDebugSession('session-2', 'Launch Program'))).to.be.false;
+            expect(consoleSession.isReusableBy(createDebugSession('session-2', 'Launch Program', 'file:///a'))).to.be.true;
         });
 
         it('keeps the id it was created with, so that it is not the id of either session', () => {

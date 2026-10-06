@@ -63,6 +63,8 @@ export class DebugConsoleSession extends ConsoleSession {
 
     protected _configurationName: string | undefined;
 
+    protected _workspaceFolderUri: string | undefined;
+
     // content buffer for [append](#append) method
     protected uncompletedItemContent: string | undefined;
 
@@ -92,6 +94,13 @@ export class DebugConsoleSession extends ConsoleSession {
         return this._configurationName;
     }
 
+    /**
+     * The workspace folder of the configuration this console was started for, if any.
+     */
+    get workspaceFolderUri(): string | undefined {
+        return this._workspaceFolderUri;
+    }
+
     get terminated(): boolean {
         return this._terminated;
     }
@@ -103,6 +112,16 @@ export class DebugConsoleSession extends ConsoleSession {
             this._debugSession = undefined;
             this.fireDidChange();
         }
+    }
+
+    /**
+     * Whether the given session can take over this console: its session must have terminated and been started from the
+     * same configuration, which in a multi-root workspace includes the folder the configuration comes from.
+     */
+    isReusableBy(session: DebugSession): boolean {
+        return this._terminated
+            && this._configurationName === session.configuration.name
+            && this._workspaceFolderUri === session.options.workspaceFolderUri;
     }
 
     /**
@@ -119,6 +138,7 @@ export class DebugConsoleSession extends ConsoleSession {
         this._debugSession = session;
         this._label = session.label;
         this._configurationName = session.configuration.name;
+        this._workspaceFolderUri = session.options.workspaceFolderUri;
         this._terminated = false;
         this.fireDidChange();
     }

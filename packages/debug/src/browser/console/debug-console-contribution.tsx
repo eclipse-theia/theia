@@ -103,9 +103,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
                 }
             }),
             this.debugSessionManager.onDidChangeActiveDebugSession(event => this.handleActiveDebugSessionChanged(event)),
-            this.debugSessionManager.onDidDestroyDebugSession(session => {
-                this.findConsoleSession(session)?.markTerminated();
-            }),
+            this.debugSessionManager.onDidDestroyDebugSession(session => this.handleDebugSessionDestroyed(session)),
             this.consoleSessionManager.onDidChangeSelectedSession(() => {
                 const session = this.consoleSessionManager.selectedSession;
                 if (session && this.filterInputRef) {
@@ -137,8 +135,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
      */
     protected getOrCreateConsoleSession(debugSession: DebugSession): DebugConsoleSession {
         const reusable = this.consoleSessionManager.all.find((candidate): candidate is DebugConsoleSession =>
-            candidate instanceof DebugConsoleSession && candidate.terminated
-            && candidate.configurationName === debugSession.configuration.name);
+            candidate instanceof DebugConsoleSession && candidate.isReusableBy(debugSession));
         if (reusable) {
             reusable.startFor(debugSession);
             return reusable;
@@ -146,6 +143,21 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         const consoleSession = this.debugConsoleSessionFactory(debugSession);
         this.consoleSessionManager.add(consoleSession);
         return consoleSession;
+    }
+
+    /**
+     * Terminates the console of the given session once no session runs in it any more.
+     *
+     * A child session merged into its parent's console may outlive the parent if its lifecycle is not managed by the
+     * parent, and it still needs the console to evaluate expressions while it runs.
+     */
+    protected handleDebugSessionDestroyed(debugSession: DebugSession): void {
+        const consoleOwner = debugSession.findConsoleParent() ?? debugSession;
+        const consoleSession = this.findConsoleSession(consoleOwner);
+        if (consoleSession && !this.debugSessionManager.sessions.some(candidate =>
+            candidate.id === consoleOwner.id || candidate.findConsoleParent()?.id === consoleOwner.id)) {
+            consoleSession.markTerminated();
+        }
     }
 
     protected handleActiveDebugSessionChanged(event: DidChangeActiveDebugSession): void {
