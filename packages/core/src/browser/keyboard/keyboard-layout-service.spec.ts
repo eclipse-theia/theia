@@ -429,6 +429,41 @@ describe('keyboard layout service', function (): void {
         chai.expect(shift.map(candidate => candidate.dispatchString())).to.deep.equal(['shift+p', 'p@shift']);
     });
 
+    it('records the base character for dead Option keys on macOS', async () => {
+        const service = await setup(require('../../../src/common/keyboard/layouts/en-US-mac.json'), 'mac');
+
+        const option = service.getKeyCodeInterpretations({ key: 'Dead', code: 'KeyE', altKey: true }, 'code');
+        chai.expect(option).to.have.length(1);
+        chai.expect(option[0].character).to.equal('e');
+        chai.expect(option[0].interpretation).to.equal('commandModifiers');
+        chai.expect(option[0].dispatchString()).to.equal('alt+e');
+
+        const optionShift = service.getKeyCodeInterpretations({ key: 'Dead', code: 'KeyE', altKey: true, shiftKey: true }, 'code');
+        chai.expect(optionShift.map(candidate => candidate.character)).to.deep.equal(['E', 'E']);
+        chai.expect(optionShift.map(candidate => candidate.dispatchString())).to.deep.equal(['shift+alt+e', 'alt+e@shift']);
+
+        const withoutOption = service.getKeyCodeInterpretations({ key: 'Dead', code: 'KeyE' }, 'code');
+        chai.expect(withoutOption).to.have.length(1);
+        chai.expect(withoutOption[0].character).to.be.undefined;
+    });
+
+    it('normalizes the character to the layout layer when Caps Lock inverts the case', async () => {
+        const us = await setup(require('../../../src/common/keyboard/layouts/en-US-pc.json'), 'linux');
+        const capsShift = us.getKeyCodeInterpretations({ key: 'p', code: 'KeyP', ctrlKey: true, shiftKey: true }, 'code');
+        chai.expect(capsShift.map(candidate => candidate.character)).to.deep.equal(['P', 'P']);
+        chai.expect(capsShift.map(candidate => candidate.dispatchString())).to.deep.equal(['shift+ctrl+p', 'ctrl+p@shift']);
+        const shift = us.getKeyCodeInterpretations({ key: 'P', code: 'KeyP', shiftKey: true }, 'code');
+        chai.expect(shift.map(candidate => candidate.character)).to.deep.equal(['P', 'P']);
+        stubOSX.restore();
+        stubWindows.restore();
+
+        const german = await setup(require('../../../src/common/keyboard/layouts/de-German-pc.json'), 'linux');
+        const capsBase = german.getKeyCodeInterpretations({ key: 'Ü', code: 'BracketLeft', ctrlKey: true }, 'code');
+        chai.expect(capsBase).to.have.length(1);
+        chai.expect(capsBase[0].character).to.equal('ü');
+        chai.expect(capsBase[0].dispatchString()).to.equal('ctrl+[');
+    });
+
     it('does not add an AltGraph layer to Linux Alt+Shift input', async () => {
         const service = await setup(require('../../../src/common/keyboard/layouts/en-US-pc.json'), 'linux');
         chai.expect(service.getKeyCodeInterpretations({ key: 'P', code: 'KeyP', shiftKey: true, altKey: true }, 'code')

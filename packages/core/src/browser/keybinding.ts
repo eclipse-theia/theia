@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
-import { isOSX } from '../common/os';
+import { isOSX, isWindows } from '../common/os';
 import { Emitter, Event } from '../common/event';
 import { CommandRegistry, Command } from '../common/command';
 import { Disposable, DisposableCollection } from '../common/disposable';
@@ -315,6 +315,12 @@ export class KeybindingRegistry {
             && !layoutModifiersIncludeShift(code.layoutModifiers))) {
             return nls.localize('theia/core/keybinding/shiftedAltGraphCharacterUnavailable',
                 'The logical character and Shift command modifier cannot be produced together on the current keyboard layout.');
+        }
+        // On macOS, Option selects the AltGraph layer; on Windows, Alt is consumed by AltGraph. Linux keeps Alt and AltGraph distinct.
+        if ((isOSX || isWindows) && sequence.some(code => code.alt && layoutModifiersIncludeAltGraph(code.layoutModifiers))) {
+            return nls.localize('theia/core/keybinding/altAltGraphCharacterUnavailable',
+                'The logical character and the {0} command modifier cannot be produced together on the current keyboard layout.',
+                isOSX ? 'Option' : 'Alt');
         }
         if (sequence.some(code => !code.supportedByLayout)) {
             return nls.localize('theia/core/keybinding/unavailableCharacter', 'The key is not available on the current keyboard layout.');

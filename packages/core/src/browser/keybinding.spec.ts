@@ -30,7 +30,7 @@ import { KeyboardLayoutProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotif
 import { ILogger } from '../common/logger';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution, KeybindingScope } from './keybinding';
 import { Keybinding } from '../common/keybinding';
-import { KeyCode, Key, KeyModifier, KeySequence } from './keyboard/keys';
+import { KeyCode, Key, KeyModifier, KeySequence, NormalizedKeyboardInput } from './keyboard/keys';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { CommandRegistry, CommandService, CommandContribution, Command } from '../common/command';
 import { LabelParser } from './label-parser';
@@ -596,13 +596,14 @@ describe('keybindings', () => {
         const target = document.createElement('div');
         const cases = [
             { keybinding: 'ctrl+[', ctrlKey: true, altKey: false },
-            { keybinding: 'alt+[', ctrlKey: false, altKey: true },
-            { keybinding: 'ctrl+alt+[', ctrlKey: true, altKey: true }
+            { keybinding: 'alt+[', ctrlKey: false, altKey: true, inactive: true },
+            { keybinding: 'ctrl+alt+[', ctrlKey: true, altKey: true, inactive: true }
         ];
 
         try {
             for (const testCase of cases) {
-                keybindingRegistry.setKeymap(KeybindingScope.USER, [{ command: TEST_COMMAND_SHADOW.id, keybinding: testCase.keybinding }]);
+                const binding = { command: TEST_COMMAND_SHADOW.id, keybinding: testCase.keybinding };
+                keybindingRegistry.setKeymap(KeybindingScope.USER, [binding]);
                 const execute = sinon.spy();
                 const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
                 dispatch.resetHistory();
@@ -610,6 +611,13 @@ describe('keybindings', () => {
                     keybindingRegistry.dispatchCommand(TEST_COMMAND_SHADOW.id, target);
                     await new Promise(resolve => setTimeout(resolve, 0));
 
+                    if (testCase.inactive) {
+                        // Windows consumes Alt for AltGraph, so command Alt cannot accompany an AltGraph character.
+                        expect(keybindingRegistry.isKeybindingInactive(binding)).to.be.true;
+                        expect(dispatch.called).to.be.false;
+                        expect(execute.called).to.be.false;
+                        continue;
+                    }
                     expect(dispatch.calledOnce).to.be.true;
                     expect(dispatch.firstCall.args[0]).to.include({
                         key: '[',
@@ -797,6 +805,47 @@ describe('keybindings', () => {
             expect(execute.called).to.be.false;
         } finally {
             handler.dispose();
+        }
+    });
+
+    it('should mark command Alt plus AltGraph character bindings inactive on macOS and Windows', async () => {
+        const notifier = testContainer.get(MockKeyboardLayoutChangeNotifier);
+        const binding = { command: TEST_COMMAND_SHADOW.id, keybinding: 'alt+[' };
+        const execute = sinon.spy();
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
+        const windows = sinon.stub(os, 'isWindows').value(false);
+        const dispatch = async (input: NormalizedKeyboardInput) => {
+            keybindingRegistry.dispatchNormalizedKeyDown(input, new EventTarget());
+            await new Promise(resolve => setTimeout(resolve, 0));
+        };
+
+        try {
+            stub.value(true);
+            notifier.emitter.fire(require('../../src/common/keyboard/layouts/de-German-mac.json'));
+            keybindingRegistry.setKeymap(KeybindingScope.USER, [binding]);
+            expect(keybindingRegistry.getKeybindingInactiveReason(binding)).to.be.a('string');
+            expect(keybindingRegistry.acceleratorForCommand(TEST_COMMAND_SHADOW.id, undefined, 'physical')).to.deep.equal([]);
+            await dispatch({ key: '[', code: 'Digit5', altKey: true });
+            expect(execute.called).to.be.false;
+
+            stub.value(false);
+            windows.value(true);
+            notifier.emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
+            keybindingRegistry.setKeymap(KeybindingScope.USER, [binding]);
+            expect(keybindingRegistry.getKeybindingInactiveReason(binding)).to.be.a('string');
+            await dispatch({ key: '[', code: 'Digit8', ctrlKey: true, altKey: true });
+            expect(execute.called).to.be.false;
+
+            windows.value(false);
+            notifier.emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
+            keybindingRegistry.setKeymap(KeybindingScope.USER, [binding]);
+            expect(keybindingRegistry.getKeybindingInactiveReason(binding)).to.be.undefined;
+            await dispatch({ key: '[', code: 'Digit8', altKey: true, altGraph: true });
+            expect(execute.calledOnce).to.be.true;
+        } finally {
+            windows.restore();
+            handler.dispose();
+            notifier.emitter.fire(require('../../src/common/keyboard/layouts/en-US-pc.json'));
         }
     });
 
@@ -1088,6 +1137,59 @@ describe('keybindings', () => {
                 .to.equal('shift+alt+p');
             expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: 'π', code: 'KeyP', altKey: true })).to.equal('alt+p');
             expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: 'P', code: 'KeyP', shiftKey: true })).to.equal('shift+p');
+        } finally {
+            handler.dispose();
+            notifier.emitter.fire(require('../../src/common/keyboard/layouts/en-US-pc.json'));
+        }
+    });
+
+    it('should dispatch and record dead Option keys as their base character on macOS', async () => {
+        stub.value(true);
+        const notifier = testContainer.get(MockKeyboardLayoutChangeNotifier);
+        notifier.emitter.fire(require('../../src/common/keyboard/layouts/en-US-mac.json'));
+        const execute = sinon.spy();
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
+        try {
+            keybindingRegistry.setKeymap(KeybindingScope.USER, [{ command: TEST_COMMAND_SHADOW.id, keybinding: 'alt+e' }]);
+            keybindingRegistry.run(testKeyboardEvent({ key: 'Dead', code: 'KeyE', altKey: true }));
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(execute.calledOnce).to.be.true;
+            expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: 'Dead', code: 'KeyE', altKey: true })).to.equal('alt+e');
+            expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: 'Dead', code: 'KeyE', altKey: true, shiftKey: true }))
+                .to.equal('shift+alt+e');
+            expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: 'Dead', code: 'KeyE', altKey: true, metaKey: true }))
+                .to.equal('meta+alt+e');
+            expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: 'F1', code: 'F1', altKey: true })).to.equal('alt+f1');
+
+            keybindingRegistry.setKeymap(KeybindingScope.USER, [{ command: TEST_COMMAND_SHADOW.id, keybinding: 'shift+alt+e' }]);
+            keybindingRegistry.run(testKeyboardEvent({ key: 'Dead', code: 'KeyE', altKey: true, shiftKey: true }));
+            await new Promise(resolve => setTimeout(resolve, 0));
+            expect(execute.calledTwice).to.be.true;
+        } finally {
+            handler.dispose();
+            notifier.emitter.fire(require('../../src/common/keyboard/layouts/en-US-pc.json'));
+        }
+    });
+
+    it('should record Caps Lock input with the layout layer case', async () => {
+        const notifier = testContainer.get(MockKeyboardLayoutChangeNotifier);
+        const execute = sinon.spy();
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
+        try {
+            expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: 'p', code: 'KeyP', ctrlKey: true, shiftKey: true }))
+                .to.equal('shift+ctrl+p');
+
+            notifier.emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
+            expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: 'ü', code: 'BracketLeft', ctrlKey: true, shiftKey: true }))
+                .to.equal('ctrl+Ü');
+            const recorded = keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: 'Ü', code: 'BracketLeft', ctrlKey: true });
+            expect(recorded).to.equal('ctrl+ü');
+
+            keybindingRegistry.setKeymap(KeybindingScope.USER, [{ command: TEST_COMMAND_SHADOW.id, keybinding: recorded! }]);
+            keybindingRegistry.dispatchNormalizedKeyDown({ key: 'ü', code: 'BracketLeft', ctrlKey: true }, new EventTarget());
+            await new Promise(resolve => setTimeout(resolve, 0));
+            expect(execute.calledOnce).to.be.true;
         } finally {
             handler.dispose();
             notifier.emitter.fire(require('../../src/common/keyboard/layouts/en-US-pc.json'));

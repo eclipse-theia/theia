@@ -177,13 +177,42 @@ export class KeyboardLayoutService {
         return this.currentNativeLayout?.mapping[code] as (ILinuxKeyMapping & Partial<IMacKeyMapping>) | undefined;
     }
 
-    /** Return all command- and layout-modifier interpretations of a normalized keyboard input. */
+    /**
+     * Return the character committed by the detected layout layer when the input differs from it only by case, e.g. because
+     * Caps Lock inverted the case of the produced character. Returns `undefined` when the input character is already exact.
+     */
+    protected layerCharacter(input: NormalizedKeyboardInput, layoutModifiers: LayoutModifiers | undefined): string | undefined {
+        if (!input.code || !this.shouldIncludeKey(input.code) || !isPrintableCharacter(input.key)) {
+            return undefined;
+        }
+        const mapping = this.getNativeMapping(input.code);
+        if (!mapping) {
+            return undefined;
+        }
+        if (layoutModifiers === 'shift') {
+            return mapping.withShift && !mapping.withShiftIsDeadKey ? mapping.withShift : undefined;
+        }
+        if (layoutModifiers === undefined && !input.shiftKey && !this.isAltGraphActive(input) && mapping.value && !mapping.valueIsDeadKey
+            && mapping.value.toLocaleLowerCase() === input.key.toLocaleLowerCase()) {
+            return mapping.value;
+        }
+        return undefined;
+    }
+
+    /**
+     * Return all command- and layout-modifier interpretations of a normalized keyboard input.
+     * The committed character follows the detected layout layer, so Caps Lock does not change the case of the character.
+     */
     getKeyCodeInterpretations(input: NormalizedKeyboardInput, eventDispatch: 'code' | 'keyCode'): KeyCode[] {
-        const keyCode = KeyCode.createKeyCode(input, eventDispatch);
+        let keyCode = KeyCode.createKeyCode(input, eventDispatch);
         if (eventDispatch === 'keyCode' || keyCode.isModifierOnly()) {
             return [keyCode];
         }
         const layoutModifiers = this.detectLayoutModifiers(input);
+        const character = this.layerCharacter(input, layoutModifiers);
+        if (character !== undefined && character !== keyCode.character) {
+            keyCode = new KeyCode({ ...keyCode, character });
+        }
         if (isOSX) {
             return this.getMacKeyCodeInterpretations(keyCode, input, layoutModifiers);
         }
@@ -235,8 +264,20 @@ export class KeyboardLayoutService {
      * carry the character the key produces without Option, followed by the interpretation that attributes Option to the layout.
      */
     protected getMacKeyCodeInterpretations(keyCode: KeyCode, input: NormalizedKeyboardInput, layoutModifiers: LayoutModifiers | undefined): KeyCode[] {
+        const mapping = input.code && this.shouldIncludeKey(input.code) ? this.getNativeMapping(input.code) : undefined;
         if (!layoutModifiers) {
-            return [keyCode];
+            if (!input.altKey || keyCode.character) {
+                return [keyCode];
+            }
+            // Dead Option keys commit no character. Option is a command modifier on macOS, so the key's base character is used.
+            const deadKeyBaseCharacter = input.shiftKey
+                ? mapping?.withShift && !mapping.withShiftIsDeadKey ? mapping.withShift : undefined
+                : mapping?.value && !mapping.valueIsDeadKey ? mapping.value : undefined;
+            if (!isPrintableCharacter(deadKeyBaseCharacter)) {
+                return [keyCode];
+            }
+            const optionCommand = new KeyCode({ ...keyCode, character: deadKeyBaseCharacter, interpretation: 'commandModifiers' });
+            return input.shiftKey ? this.shiftLayerInterpretations(optionCommand, 'shift') : [optionCommand];
         }
         if (!layoutModifiersIncludeAltGraph(layoutModifiers)) {
             return this.shiftLayerInterpretations(keyCode, layoutModifiers);
@@ -244,7 +285,6 @@ export class KeyboardLayoutService {
         if (!input.altKey) {
             return [keyCode];
         }
-        const mapping = input.code ? this.getNativeMapping(input.code) : undefined;
         const optionLayer = this.toLayoutModifiersKeyCode(keyCode, layoutModifiers, { alt: true });
         if (layoutModifiers === 'shiftAltGraph') {
             const shiftCharacter = mapping?.withShift && !mapping.withShiftIsDeadKey ? mapping.withShift : keyCode.character;
