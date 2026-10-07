@@ -160,6 +160,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
         this.updateFocusedView();
         this.shell.onDidChangeActiveWidget(() => this.updateFocusedView());
+        this.onDidExpandView(viewId => this.prepareWelcomeOnlyView(viewId).catch(e => this.logger.error(e)));
 
         this.widgetManager.onWillCreateWidget(({ factoryId, widget, waitUntil }) => {
             if (factoryId === EXPLORER_VIEW_CONTAINER_ID && widget instanceof ViewContainerWidget) {
@@ -1106,6 +1107,21 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             this.viewDataState.delete(viewId);
         }
         return widget;
+    }
+
+    /**
+     * Gives an expanded view that has `viewsWelcome` content but neither a data provider nor a
+     * content widget its welcome widget, which `onDidInitializeLayout` disposes when it was restored.
+     */
+    protected async prepareWelcomeOnlyView(viewId: string): Promise<void> {
+        if (this.views.get(viewId)?.[1]?.type === PluginViewType.Webview
+            || this.viewDataProviders.has(viewId) || !this.getViewWelcomes(viewId).length) {
+            return;
+        }
+        const view = await this.getView(viewId);
+        if (view && !view.widgets.length) {
+            await this.prepareView(view);
+        }
     }
 
     protected async createViewWelcomeWidget(viewId: string): Promise<TreeViewWidget> {
