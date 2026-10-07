@@ -254,54 +254,68 @@ describe('OpenAiResponseApiUtils', () => {
         expect(input.indexOf(reasoningItem)).to.be.lessThan(input.indexOf(searchCall));
     });
 
-    it('yields a compaction part when the stream contains a response.output_item.done compaction event', async () => {
-        const streamEvents = [
-            {
-                type: 'response.output_item.done',
-                item: { type: 'compaction', id: 'c1', encrypted_content: 'enc1' }
-            } as never,
-            {
-                type: 'response.completed',
-                response: { usage: { input_tokens: 10, output_tokens: 5 } }
-            } as never
-        ];
-        const openai = {
-            responses: {
-                stream: () => toStream(streamEvents)
-            }
-        };
-        const request: UserRequest = {
-            sessionId: 'session-1',
-            requestId: 'request-1',
-            messages: [{ actor: 'user', type: 'text', text: 'hello' }]
-        };
+    for (const withTools of [false, true]) {
+        it(`emits and replays OpenAI compaction ${withTools ? 'with client tools' : 'without tools'}`, async () => {
+            const payloads: Record<string, unknown>[] = [];
+            const openai = {
+                responses: {
+                    stream: (payload: Record<string, unknown>) => {
+                        payloads.push(payload);
+                        return toStream(payloads.length === 1 ? [
+                            { type: 'response.output_item.done', item: { type: 'compaction', id: 'c1', encrypted_content: 'enc1' } },
+                            { type: 'response.completed', response: { usage: { input_tokens: 10, output_tokens: 5 } } }
+                        ] : [{ type: 'response.output_text.delta', delta: 'Continued answer' }]);
+                    }
+                }
+            };
+            const request: UserRequest = {
+                sessionId: 'session-1',
+                requestId: 'request-1',
+                messages: [{ actor: 'user', type: 'text', text: 'hello' }],
+                tools: withTools ? [{ id: 'lookup', name: 'lookup', parameters: { type: 'object', properties: {} }, handler: async () => 'result' }] : undefined
+            };
 
-        const response = await utils.handleRequest(
-            openai as never,
-            request,
-            {},
-            'gpt-5',
-            new OpenAiModelUtils(),
-            'developer',
-            'openai/gpt-5',
-            true
-        );
-        const parts: LanguageModelStreamResponsePart[] = [];
-        if ('stream' in response) {
-            for await (const part of response.stream) {
-                parts.push(part);
+            const response = await utils.handleRequest(
+                openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer', 'openai/gpt-5', true
+            );
+            const parts: LanguageModelStreamResponsePart[] = [];
+            expect('stream' in response).to.equal(true);
+            if ('stream' in response) {
+                for await (const part of response.stream) {
+                    parts.push(part);
+                }
             }
-        }
 
-        const compactionParts = parts.filter(isCompactionResponsePart);
-        expect(compactionParts).to.have.length(1);
-        expect(compactionParts[0]).to.deep.equal({
-            compaction: {
-                provider: 'openai-responses',
-                data: { id: 'c1', encrypted_content: 'enc1' }
+            const compactionParts = parts.filter(isCompactionResponsePart);
+            expect(compactionParts).to.deep.equal([{
+                compaction: { provider: 'openai-responses', data: { id: 'c1', encrypted_content: 'enc1' } }
+            }]);
+            const replayRequest: UserRequest = {
+                ...request,
+                messages: [
+                    ...request.messages,
+                    { actor: 'ai', type: 'compaction', ...compactionParts[0].compaction },
+                    { actor: 'user', type: 'text', text: 'Next turn' }
+                ]
+            };
+            const replay = await utils.handleRequest(
+                openai as never, replayRequest, {}, 'gpt-5', new OpenAiModelUtils(), 'developer', 'openai/gpt-5', true
+            );
+            const replayParts: LanguageModelStreamResponsePart[] = [];
+            expect('stream' in replay).to.equal(true);
+            if ('stream' in replay) {
+                for await (const part of replay.stream) {
+                    replayParts.push(part);
+                }
             }
+            expect(replayParts.filter(isTextResponsePart)).to.deep.equal([{ content: 'Continued answer' }]);
+            expect(payloads).to.have.lengthOf(2);
+            expect(payloads[1].input).to.deep.equal([
+                { type: 'compaction', id: 'c1', encrypted_content: 'enc1' },
+                { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'Next turn' }] }
+            ]);
         });
-    });
+    }
 
     it('surfaces the deferred-tool search as a running then finished server tool call', async () => {
         const streams = [
@@ -795,8 +809,10 @@ describe('OpenAiResponseApiUtils', () => {
             const messages: LanguageModelMessage[] = [
                 userMessage('user A'),
                 compactionMessage('openai-responses', 'enc1'),
+                compactionMessage('chatgpt-responses', 'foreign1'),
                 userMessage('user B'),
                 compactionMessage('openai-responses', 'enc2'),
+                compactionMessage('chatgpt-responses', 'foreign2'),
                 userMessage('user C')
             ];
 
@@ -811,12 +827,13 @@ describe('OpenAiResponseApiUtils', () => {
             expect(serialized).to.not.contain('user A');
             expect(serialized).to.not.contain('user B');
             expect(serialized).to.not.contain('enc1');
+            expect(serialized).to.not.contain('foreign');
         });
 
         it('skips a foreign-provider compaction marker without dropping the prefix', () => {
             const messages: LanguageModelMessage[] = [
                 userMessage('user A'),
-                compactionMessage('anthropic', 'enc1'),
+                compactionMessage('chatgpt-responses', 'enc1'),
                 userMessage('user B')
             ];
 
