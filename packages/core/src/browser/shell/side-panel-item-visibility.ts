@@ -54,13 +54,10 @@ export class SidePanelItemVisibilityImpl implements SidePanelItemVisibility {
     readonly onDidReset = this.onDidResetEmitter.event;
 
     protected readonly loaded = new Deferred<void>();
+    readonly ready = this.loaded.promise;
 
     /** Explicit user choices only, so items the user never touched follow `isHiddenByDefault`. */
     protected overrides: Record<string, boolean> = {};
-
-    get ready(): Promise<void> {
-        return this.loaded.promise;
-    }
 
     @postConstruct()
     protected init(): void {
@@ -86,6 +83,9 @@ export class SidePanelItemVisibilityImpl implements SidePanelItemVisibility {
     }
 
     reset(): void {
+        if (Object.keys(this.overrides).length === 0) {
+            return;
+        }
         this.overrides = {};
         this.save();
         this.onDidResetEmitter.fire();

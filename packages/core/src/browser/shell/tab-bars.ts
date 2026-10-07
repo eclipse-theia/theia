@@ -1308,6 +1308,14 @@ export class SideTabBar extends ScrollableTabBar {
     }
 
     /**
+     * Whether the given title can be hidden. The last title that is not hidden stays, so the
+     * side bar never loses every tab.
+     */
+    canHideTitle(title: Title<Widget>): boolean {
+        return !this.shouldHideTitle(title) && this.titles.some(other => other !== title && !this.shouldHideTitle(other));
+    }
+
+    /**
      * Render the tab bar using the given DOM element as host. The optional `renderData` is forwarded
      * to the TabBarRenderer.
      */
@@ -1322,12 +1330,7 @@ export class SideTabBar extends ScrollableTabBar {
             const current = title === currentTitle;
             const zIndex = current ? n : n - i - 1;
             const hidden = this.isHiddenTab(title);
-            let rd: SideBarRenderData;
-            if (renderData && i < renderData.length) {
-                rd = { title, current, zIndex, hidden, ...renderData[i] };
-            } else {
-                rd = { title, current, zIndex, hidden };
-            }
+            const rd: SideBarRenderData = { title, current, zIndex, hidden, ...renderData?.[i] };
             // Based on how renderTabs() is called, assume renderData will be undefined when invoked for this.hiddenContentNode
             content[i] = renderer.renderTab(rd, true, renderData === undefined);
         }

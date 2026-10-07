@@ -102,6 +102,14 @@ describe('tab bar', () => {
             expect(bar.isHiddenTab(titles[1])).to.be.false;
         });
 
+        it('refuses to hide the last title that is not hidden', () => {
+            const { bar, titles } = createSideTabBar(['debug', 'search']);
+            expect(bar.canHideTitle(titles[0])).to.be.false;
+            expect(bar.canHideTitle(titles[1])).to.be.false;
+            bar.shouldHideTitle = title => title.owner.id === 'debug';
+            expect(bar.canHideTitle(titles[0])).to.be.true;
+        });
+
         it('leaves hidden tabs out of the overflow menu', () => {
             const { bar, titles } = createSideTabBar(['debug']);
             bar.currentTitle = titles[0];

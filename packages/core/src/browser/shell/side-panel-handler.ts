@@ -267,15 +267,6 @@ export class SidePanelHandler {
         });
     }
 
-    /**
-     * Whether the given item can be hidden. The last item on a side that is not hidden stays,
-     * so the side bar never loses every tab.
-     */
-    canHideItem(title: Title<Widget>): boolean {
-        return !this.itemVisibility.isHidden(title.owner.id)
-            && this.tabBar.titles.some(other => other !== title && !this.itemVisibility.isHidden(other.owner.id));
-    }
-
     protected onItemVisibilityChanged(widgetId: string): void {
         const current = this.tabBar.currentTitle;
         if (current?.owner.id === widgetId && this.itemVisibility.isHidden(widgetId)) {
@@ -285,20 +276,19 @@ export class SidePanelHandler {
     }
 
     /**
-     * Makes the nearest item that is not hidden current, or collapses the panel if there is none.
+     * Makes the next item that is not hidden current, else the previous one, or collapses the panel
+     * if there is none.
      */
     protected moveOffHiddenItem(title: Title<Widget>): void {
         const titles = this.tabBar.titles;
         const index = titles.indexOf(title);
-        for (let distance = 1; distance < titles.length; distance++) {
-            const candidate = [titles[index - distance], titles[index + distance]]
-                .find(other => other && !this.itemVisibility.isHidden(other.owner.id));
-            if (candidate) {
-                this.tabBar.currentTitle = candidate;
-                return;
-            }
+        const isShown = (other: Title<Widget>) => !this.itemVisibility.isHidden(other.owner.id);
+        const next = titles.slice(index + 1).find(isShown) ?? titles.slice(0, index).reverse().find(isShown);
+        if (next) {
+            this.tabBar.currentTitle = next;
+        } else {
+            this.collapse();
         }
-        this.collapse();
     }
 
     protected showItemsContextMenu(e: MouseEvent): void {
@@ -314,7 +304,7 @@ export class SidePanelHandler {
             const command = { id: `sidePanel.${this.side}.toggleItem.${title.owner.id}` };
             this.toDisposeOnItemsContextMenu.push(this.commandRegistry.registerCommand(command, {
                 execute: () => this.toggleItem(title),
-                isEnabled: () => this.itemVisibility.isHidden(title.owner.id) || this.canHideItem(title),
+                isEnabled: () => this.itemVisibility.isHidden(title.owner.id) || this.tabBar.canHideTitle(title),
                 isToggled: () => !this.itemVisibility.isHidden(title.owner.id)
             }));
             this.toDisposeOnItemsContextMenu.push(this.menuModelRegistry.registerMenuAction(menuPath, {
@@ -326,7 +316,9 @@ export class SidePanelHandler {
         this.contextMenuRenderer.render({
             menuPath,
             anchor: e,
-            context: this.tabBar.node
+            context: this.tabBar.node,
+            // Deferred so the chosen command still resolves when it runs after the menu closes.
+            onHide: () => setTimeout(() => this.toDisposeOnItemsContextMenu.dispose())
         });
     }
 

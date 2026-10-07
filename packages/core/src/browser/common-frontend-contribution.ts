@@ -32,8 +32,9 @@ import { SelectionService } from '../common/selection-service';
 import { MessageService } from '../common/message-service';
 import { OpenerService, open } from '../browser/opener-service';
 import { ApplicationShell } from './shell/application-shell';
-import { SHELL_TABBAR_CONTEXT_CLOSE, SHELL_TABBAR_CONTEXT_COPY, SHELL_TABBAR_CONTEXT_HIDE, SHELL_TABBAR_CONTEXT_PIN, SHELL_TABBAR_CONTEXT_SPLIT } from './shell/tab-bars';
-import { SidePanelHandler } from './shell/side-panel-handler';
+import {
+    SHELL_TABBAR_CONTEXT_CLOSE, SHELL_TABBAR_CONTEXT_COPY, SHELL_TABBAR_CONTEXT_HIDE, SHELL_TABBAR_CONTEXT_PIN, SHELL_TABBAR_CONTEXT_SPLIT, SideTabBar
+} from './shell/tab-bars';
 import { SidePanelItemVisibility } from './shell/side-panel-item-visibility';
 import { AboutDialog } from './about-dialog';
 import URI from '../common/uri';
@@ -66,7 +67,7 @@ import { WindowService } from './window/window-service';
 import { SecondaryWindowService } from './window/secondary-window-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { DecorationStyle } from './decoration-style';
-import { codicon, isPinned, TabBar, Title, togglePinned, Widget } from './widgets';
+import { codicon, isPinned, Title, togglePinned, Widget } from './widgets';
 import { SaveableService } from './saveable-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
 import { PreferenceChangeEvent, PreferenceScope, PreferenceService, UNTITLED_SCHEME, UntitledResourceResolver } from '../common';
@@ -249,15 +250,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         if (this.preferences['workbench.editor.highlightModifiedTabs']) {
             document.body.classList.add('theia-editor-highlightModifiedTabs');
         }
-    }
-
-    protected findSidePanelHandler(tabBar: TabBar<Widget> | undefined): SidePanelHandler | undefined {
-        return [this.shell.leftPanelHandler, this.shell.rightPanelHandler].find(handler => handler.tabBar === tabBar);
-    }
-
-    /** @returns whether the title is hidden from its side bar, or `undefined` if it is not a side panel item. */
-    protected isSidePanelItemHidden(title: Title<Widget> | undefined, tabBar: TabBar<Widget> | undefined): boolean | undefined {
-        return title && this.findSidePanelHandler(tabBar) ? this.sidePanelItemVisibility.isHidden(title.owner.id) : undefined;
     }
 
     protected updatePinnedKey(): void {
@@ -803,13 +795,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: () => this.selectIconTheme()
         });
         commandRegistry.registerCommand(CommonCommands.HIDE_SIDE_PANEL_ITEM, new CurrentWidgetCommandAdapter(this.shell, {
-            isVisible: (title, tabBar) => this.isSidePanelItemHidden(title, tabBar) === false,
-            isEnabled: (title, tabBar) => Boolean(title && this.findSidePanelHandler(tabBar)?.canHideItem(title)),
+            isVisible: (title, tabBar) => Boolean(title && tabBar instanceof SideTabBar && !tabBar.shouldHideTitle(title)),
+            isEnabled: (title, tabBar) => Boolean(title && tabBar instanceof SideTabBar && tabBar.canHideTitle(title)),
             execute: title => title && this.sidePanelItemVisibility.setHidden(title.owner.id, true),
         }));
         commandRegistry.registerCommand(CommonCommands.KEEP_SIDE_PANEL_ITEM, new CurrentWidgetCommandAdapter(this.shell, {
-            isVisible: (title, tabBar) => this.isSidePanelItemHidden(title, tabBar) === true,
-            isEnabled: (title, tabBar) => this.isSidePanelItemHidden(title, tabBar) === true,
+            isVisible: (title, tabBar) => Boolean(title && tabBar instanceof SideTabBar && tabBar.shouldHideTitle(title)),
             execute: title => title && this.sidePanelItemVisibility.setHidden(title.owner.id, false),
         }));
         commandRegistry.registerCommand(CommonCommands.RESET_HIDDEN_SIDE_PANEL_ITEMS, {
