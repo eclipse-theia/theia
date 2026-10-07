@@ -84,6 +84,7 @@ import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline
 import { CompletionList, Range, Position as PluginPosition } from '@theia/plugin';
 import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 import { ScmContribution } from '@theia/scm/lib/browser/scm-contribution';
+import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { MergeEditorOpenerOptions, MergeEditorUri } from '@theia/scm/lib/browser/merge-editor/merge-editor';
 import { MultiDiffEditorOpenerOptions, MultiDiffEditorUri } from '@theia/scm/lib/browser/multi-diff-editor/multi-diff-editor';
 
@@ -304,6 +305,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected monacoLanguages: MonacoLanguages;
     @inject(ScmContribution)
     protected scmContribution: ScmContribution;
+    @inject(ScmService)
+    protected readonly scmService: ScmService;
 
     @inject(ILogger) @named('plugin-ext-vscode:PluginVscodeCommandsContribution')
     protected readonly logger: ILogger;
@@ -1319,6 +1322,27 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 const options: MergeEditorOpenerOptions = { widgetState: { side1State, side2State } };
 
                 await open(this.openerService, uri, options);
+            }
+        });
+
+        commands.registerCommand({ id: '_workbench.openScmMultiDiffEditor' }, {
+            execute: async (options: { title: string; repositoryUri: UriComponents; resourceGroupId: string }): Promise<void> => {
+                const repositoryUri = toTheiaUri(options.repositoryUri);
+                if (!repositoryUri) {
+                    return;
+                }
+                const repository = this.scmService.repositories.find(repo => new TheiaURI(repo.provider.rootUri).isEqual(repositoryUri));
+                const group = repository?.provider.groups.find(candidate => candidate.id === options.resourceGroupId);
+                if (!group) {
+                    return;
+                }
+                await commands.executeCommand('_workbench.openMultiDiffEditor', {
+                    title: options.title,
+                    resources: group.resources.map(resource => ({
+                        originalUri: resource.multiDiffEditorOriginalUri?.toComponents(),
+                        modifiedUri: resource.multiDiffEditorModifiedUri?.toComponents()
+                    }))
+                });
             }
         });
 

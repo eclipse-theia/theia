@@ -1104,6 +1104,8 @@ export interface SourceControlGroupFeatures {
 export interface ScmRawResource {
     handle: number,
     sourceUri: UriComponents,
+    multiDiffEditorOriginalUri?: UriComponents,
+    multiDiffEditorModifiedUri?: UriComponents,
     icons: (IconUrl | ThemeIcon | undefined)[], /* icons: light, dark */
     tooltip: string,
     strikeThrough: boolean,

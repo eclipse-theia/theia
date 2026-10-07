@@ -41,6 +41,7 @@ import './theia.proposed.notebookMessaging';
 import './theia.proposed.portsAttributes';
 import './theia.proposed.profileContentHandlers';
 import './theia.proposed.resolvers';
+import './theia.proposed.scmMultiDiffEditor';
 import './theia.proposed.scmProviderOptions';
 import './theia.proposed.scmValidation';
 import './theia.proposed.shareProvider';
