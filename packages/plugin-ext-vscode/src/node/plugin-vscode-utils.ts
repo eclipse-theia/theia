@@ -14,13 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as decompress from 'decompress';
 import * as path from 'path';
 import * as filenamify from 'filenamify';
 import { FileUri } from '@theia/core/lib/node';
 import * as fs from '@theia/core/shared/fs-extra';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
 import { PluginIdentifiers, PluginPackage } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { ArchiveExtractor, ArchiveExtractorImpl } from '@theia/filesystem/lib/node/archive/archive-extractor';
+
+const defaultArchiveExtractor = new ArchiveExtractorImpl();
 
 /**
  * Extracts extension identity from a VSIX file by reading its package.json.
@@ -29,13 +31,17 @@ import { PluginIdentifiers, PluginPackage } from '@theia/plugin-ext/lib/common/p
  * This function extracts only the `extension/package.json` file to read the extension metadata.
  *
  * @param vsixPath Path to the VSIX file
+ * @param archiveExtractor the extractor used to read the VSIX file
  * @returns PluginIdentifiers.Components (publisher?, name, version), or undefined if the package.json cannot be read or is invalid
  */
-export async function extractExtensionIdentityFromVsix(vsixPath: string): Promise<PluginIdentifiers.Components | undefined> {
+export async function extractExtensionIdentityFromVsix(
+    vsixPath: string,
+    archiveExtractor: ArchiveExtractor = defaultArchiveExtractor
+): Promise<PluginIdentifiers.Components | undefined> {
     try {
-        // Extract only the package.json file from the VSIX
-        const files = await decompress(vsixPath, {
-            filter: file => file.path === 'extension/package.json'
+        // Read only the package.json file from the VSIX
+        const files = await archiveExtractor.readFiles(vsixPath, {
+            filter: entryPath => entryPath === 'extension/package.json'
         });
 
         if (files.length === 0) {
@@ -65,15 +71,19 @@ export async function extractExtensionIdentityFromVsix(vsixPath: string): Promis
     }
 }
 
-export async function decompressExtension(sourcePath: string, destPath: string): Promise<boolean> {
+export async function decompressExtension(
+    sourcePath: string,
+    destPath: string,
+    archiveExtractor: ArchiveExtractor = defaultArchiveExtractor
+): Promise<boolean> {
     try {
-        await decompress(sourcePath, destPath);
+        await archiveExtractor.extract(sourcePath, destPath);
         if (sourcePath.endsWith('.tgz')) {
             // unzip node_modules from built-in extensions, see https://github.com/eclipse-theia/theia/issues/5756
             const extensionPath = path.join(destPath, 'package');
             const vscodeNodeModulesPath = path.join(extensionPath, 'vscode_node_modules.zip');
             if (await fs.pathExists(vscodeNodeModulesPath)) {
-                await decompress(vscodeNodeModulesPath, path.join(extensionPath, 'node_modules'));
+                await archiveExtractor.extract(vscodeNodeModulesPath, path.join(extensionPath, 'node_modules'));
             }
         }
         return true;
@@ -88,7 +98,12 @@ export async function existsInDeploymentDir(env: PluginVSCodeEnvironment, extens
 }
 
 export const TMP_DIR_PREFIX = 'tmp-vscode-unpacked-';
-export async function unpackToDeploymentDir(env: PluginVSCodeEnvironment, sourcePath: string, extensionId: string): Promise<string> {
+export async function unpackToDeploymentDir(
+    env: PluginVSCodeEnvironment,
+    sourcePath: string,
+    extensionId: string,
+    archiveExtractor: ArchiveExtractor = defaultArchiveExtractor
+): Promise<string> {
     const extensionDeploymentDir = await getExtensionDeploymentDir(env, extensionId);
     if (await fs.pathExists(extensionDeploymentDir)) {
         console.log(`[${extensionId}]: deployment dir "${extensionDeploymentDir}" already exists`);
@@ -98,7 +113,7 @@ export async function unpackToDeploymentDir(env: PluginVSCodeEnvironment, source
     const tempDir = await getTempDir(env, TMP_DIR_PREFIX);
     try {
         console.log(`[${extensionId}]: trying to decompress "${sourcePath}" into "${tempDir}"...`);
-        if (!await decompressExtension(sourcePath, tempDir)) {
+        if (!await decompressExtension(sourcePath, tempDir, archiveExtractor)) {
             await fs.remove(tempDir);
             const msg = `[${extensionId}]: decompressing "${sourcePath}" to "${tempDir}" failed`;
             console.error(msg);

@@ -15,16 +15,19 @@
 // *****************************************************************************
 
 import { PluginDeployerEntry, PluginDeployerFileHandlerContext } from '../../common/plugin-protocol';
-import * as decompress from 'decompress';
+import { ArchiveExtractor, ArchiveExtractorImpl } from '@theia/filesystem/lib/node/archive/archive-extractor';
 
 export class PluginDeployerFileHandlerContextImpl implements PluginDeployerFileHandlerContext {
 
-    constructor(private readonly pluginDeployerEntry: PluginDeployerEntry) {
+    constructor(
+        private readonly pluginDeployerEntry: PluginDeployerEntry,
+        protected readonly archiveExtractor: ArchiveExtractor = new ArchiveExtractorImpl()
+    ) {
 
     }
 
     async unzip(sourcePath: string, destPath: string): Promise<void> {
-        await decompress(sourcePath, destPath);
+        await this.archiveExtractor.extract(sourcePath, destPath);
     }
 
     pluginEntry(): PluginDeployerEntry {
