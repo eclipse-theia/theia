@@ -51,6 +51,7 @@ describe('ShellLayoutRestorer - Perspective Support', () => {
     let mockMigrations: { getContributions: sinon.SinonStub };
     let mockWindowService: { isSafeToShutDown: sinon.SinonStub; reload: sinon.SinonStub };
     let mockThemeService: { reset: sinon.SinonStub };
+    let mockSidePanelItemVisibility: { reset: sinon.SinonStub };
     let toTearDown: () => void;
 
     beforeEach(() => {
@@ -108,6 +109,8 @@ describe('ShellLayoutRestorer - Perspective Support', () => {
         (restorer as unknown as Record<string, unknown>)['migrations'] = mockMigrations;
         (restorer as unknown as Record<string, unknown>)['windowService'] = mockWindowService;
         (restorer as unknown as Record<string, unknown>)['themeService'] = mockThemeService;
+        mockSidePanelItemVisibility = { reset: sinon.stub() };
+        (restorer as unknown as Record<string, unknown>)['sidePanelItemVisibility'] = mockSidePanelItemVisibility;
     });
 
     afterEach(() => {
@@ -669,6 +672,13 @@ describe('ShellLayoutRestorer - Perspective Support', () => {
             await (restorer as unknown as Record<string, () => Promise<void>>)['resetLayout']();
 
             expect(mockWindowService.reload.calledOnce).to.be.true;
+        });
+
+        it('should reset hidden side panel items', async () => {
+
+            await (restorer as unknown as Record<string, () => Promise<void>>)['resetLayout']();
+
+            expect(mockSidePanelItemVisibility.reset.calledOnce).to.be.true;
         });
     });
 

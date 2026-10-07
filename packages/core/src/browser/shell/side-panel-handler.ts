@@ -30,11 +30,13 @@ import { SidePanelToolbar } from './side-panel-toolbar';
 import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './tab-bar-toolbar';
 import { DisposableCollection, Disposable } from '../../common/disposable';
 import { ContextMenuRenderer } from '../context-menu-renderer';
-import { MenuPath } from '../../common/menu';
+import { MenuModelRegistry, MenuPath } from '../../common/menu';
+import { CommandRegistry } from '../../common/command';
 import { SidebarBottomMenuWidget } from './sidebar-bottom-menu-widget';
 import { SidebarTopMenuWidget } from './sidebar-top-menu-widget';
 import { PINNED_CLASS } from '../widgets';
 import { AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './additional-views-menu-widget';
+import { SidePanelItemVisibility } from './side-panel-item-visibility';
 
 /** The class name added to the left and right area panels. */
 export const LEFT_RIGHT_AREA_CLASS = 'theia-app-sides';
@@ -45,6 +47,8 @@ const COLLAPSED_CLASS = 'theia-mod-collapsed';
 export const SidePanelHandlerFactory = Symbol('SidePanelHandlerFactory');
 
 export const SIDE_PANEL_TOOLBAR_CONTEXT_MENU: MenuPath = ['SIDE_PANEL_TOOLBAR_CONTEXT_MENU'];
+/** The context menu of the empty side bar area, listing one show/hide toggle per item. */
+export const SIDE_PANEL_ITEMS_CONTEXT_MENU: MenuPath = ['side-panel-items-context-menu'];
 
 /**
  * A class which manages a dock panel and a related side bar. This is used for the left and right
@@ -132,6 +136,17 @@ export class SidePanelHandler {
     @inject(ContextMenuRenderer)
     protected readonly contextMenuRenderer: ContextMenuRenderer;
 
+    @inject(SidePanelItemVisibility)
+    protected readonly itemVisibility: SidePanelItemVisibility;
+
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
+    @inject(MenuModelRegistry)
+    protected readonly menuModelRegistry: MenuModelRegistry;
+
+    protected readonly toDisposeOnItemsContextMenu = new DisposableCollection();
+
     /**
      * Create the side bar and dock panel widgets.
      */
@@ -184,6 +199,9 @@ export class SidePanelHandler {
         sideBar.currentChanged.connect(this.onCurrentTabChanged, this);
         sideBar.tabDetachRequested.connect(this.onTabDetachRequested, this);
         sideBar.tabsOverflowChanged.connect(this.onTabsOverflowChanged, this);
+        sideBar.isTitleHidden = title => this.itemVisibility.isHidden(title.owner.id);
+        sideBar.node.addEventListener('contextmenu', e => this.showItemsContextMenu(e));
+        this.itemVisibility.onDidChange(widgetId => this.onItemVisibilityChanged(widgetId));
         return sideBar;
     }
 
@@ -243,6 +261,79 @@ export class SidePanelHandler {
             anchor: e,
             context: e.currentTarget instanceof HTMLElement ? e.currentTarget : this.tabBar.node
         });
+    }
+
+    /**
+     * Whether the given item can be hidden. The last item on a side that is not hidden stays,
+     * so the side bar never loses every tab.
+     */
+    canHideItem(title: Title<Widget>): boolean {
+        return !this.itemVisibility.isHidden(title.owner.id)
+            && this.tabBar.titles.some(other => other !== title && !this.itemVisibility.isHidden(other.owner.id));
+    }
+
+    protected onItemVisibilityChanged(widgetId: string | undefined): void {
+        const current = this.tabBar.currentTitle;
+        if (current && this.itemVisibility.isHidden(current.owner.id) && (widgetId === undefined || widgetId === current.owner.id)) {
+            this.moveOffHiddenItem(current);
+        }
+        this.tabBar.update();
+    }
+
+    /**
+     * Makes the nearest item that is not hidden current, or collapses the panel if there is none.
+     */
+    protected moveOffHiddenItem(title: Title<Widget>): void {
+        const titles = this.tabBar.titles;
+        const index = titles.indexOf(title);
+        for (let distance = 1; distance < titles.length; distance++) {
+            const candidate = [titles[index - distance], titles[index + distance]]
+                .find(other => other && !this.itemVisibility.isHidden(other.owner.id));
+            if (candidate) {
+                this.tabBar.currentTitle = candidate;
+                return;
+            }
+        }
+        this.collapse();
+    }
+
+    protected showItemsContextMenu(e: MouseEvent): void {
+        if (this.tabBar.titles.length === 0) {
+            return;
+        }
+        e.stopPropagation();
+        e.preventDefault();
+        this.toDisposeOnItemsContextMenu.dispose();
+        const menuPath = [...SIDE_PANEL_ITEMS_CONTEXT_MENU, this.side];
+        this.tabBar.titles.forEach((title, index) => {
+            // Unlabeled, so the per-item commands stay out of the command palette.
+            const command = { id: `sidePanel.${this.side}.toggleItem.${title.owner.id}` };
+            this.toDisposeOnItemsContextMenu.push(this.commandRegistry.registerCommand(command, {
+                execute: () => this.toggleItem(title),
+                isEnabled: () => this.itemVisibility.isHidden(title.owner.id) || this.canHideItem(title),
+                isToggled: () => !this.itemVisibility.isHidden(title.owner.id)
+            }));
+            this.toDisposeOnItemsContextMenu.push(this.menuModelRegistry.registerMenuAction(menuPath, {
+                commandId: command.id,
+                label: title.label || title.caption,
+                order: index.toString().padStart(4, '0')
+            }));
+        });
+        this.contextMenuRenderer.render({
+            menuPath,
+            anchor: e,
+            context: this.tabBar.node
+        });
+    }
+
+    protected toggleItem(title: Title<Widget>): void {
+        const id = title.owner.id;
+        if (this.itemVisibility.isHidden(id)) {
+            this.itemVisibility.setHidden(id, false);
+            this.activate(id);
+        } else {
+            this.itemVisibility.setHidden(id, true);
+        }
     }
 
     protected createContainer(): Panel {

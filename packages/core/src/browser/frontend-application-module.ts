@@ -141,6 +141,7 @@ import { StylingParticipant, StylingService } from './styling-service';
 import { bindCommonStylingParticipants } from './common-styling-participants';
 import { HoverService } from './hover-service';
 import { AdditionalViewsMenuPath, AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './shell/additional-views-menu-widget';
+import { SidePanelItemVisibility, SidePanelItemVisibilityImpl } from './shell/side-panel-item-visibility';
 import { LanguageIconLabelProvider } from './language-icon-provider';
 import { bindTreePreferences } from '../common/tree-preference';
 import { OpenWithService } from './open-with-service';
@@ -181,6 +182,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(ApplicationShell).toSelf().inSingletonScope();
     bind(SidePanelHandlerFactory).toAutoFactory(SidePanelHandler);
     bind(SidePanelHandler).toSelf();
+    bind(SidePanelItemVisibilityImpl).toSelf().inSingletonScope();
+    bind(SidePanelItemVisibility).toService(SidePanelItemVisibilityImpl);
     bind(SidebarTopMenuWidgetFactory).toAutoFactory(SidebarMenuWidget);
     bind(SidebarMenuWidget).toSelf();
     bind(SidebarBottomMenuWidget).toSelf();

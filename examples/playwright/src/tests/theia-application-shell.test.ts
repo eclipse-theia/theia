@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import * as path from 'path';
 import { TheiaApp } from '../theia-app';
 import { TheiaAppLoader } from '../theia-app-loader';
@@ -44,6 +44,21 @@ test.describe('Theia Application Shell', () => {
 
     test.afterAll(async () => {
         await app.page.close();
+    });
+
+    test('should hide a side panel item and still open its view', async () => {
+        const explorer = await app.openView(TheiaExplorerView);
+
+        const contextMenu = await explorer.openContextMenuOnTab();
+        await contextMenu.clickMenuItem('Hide');
+        await app.page.waitForSelector(explorer.tabSelector, { state: 'hidden' });
+        expect(await explorer.isDisplayed()).toBe(false);
+
+        await explorer.open();
+        expect(await explorer.isActive()).toBe(true);
+
+        await app.quickCommandPalette.trigger('View: Reset Hidden Side Bar Items');
+        await app.page.waitForSelector(explorer.tabSelector, { state: 'visible' });
     });
 
     /**
