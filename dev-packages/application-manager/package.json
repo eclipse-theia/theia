@@ -29,7 +29,7 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "@electron/rebuild": "^4.2.0",
+    "@electron/rebuild": "^4.2.1",
     "@theia/application-package": "1.76.0",
     "@theia/bundle-plugin": "1.76.0",
     "@theia/ffmpeg": "1.76.0",
