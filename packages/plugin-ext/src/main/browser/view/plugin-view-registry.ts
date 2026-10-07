@@ -787,7 +787,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const currentDataWidget = widget.widgets[0];
         const webviewId = currentDataWidget instanceof WebviewWidget ? currentDataWidget.identifier?.id : undefined;
         const viewDataWidget = await this.createViewDataWidget(view.id, webviewId);
-        if (widget.isDisposed) {
+        // `onDidInitializeLayout` can dispose the data widget before it is added here.
+        if (widget.isDisposed || viewDataWidget?.isDisposed) {
             viewDataWidget?.dispose();
             return;
         }
@@ -1030,8 +1031,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     /**
-     * retrieve restored layout state from previous user session but close widgets
-     * widgets should be opened only when view data providers are registered
+     * Retrieves the restored state of the data widgets and disposes them: a view gets a new data widget
+     * once its data provider registers or, for a view with only welcome content, once it is expanded.
      */
     onDidInitializeLayout(): void {
         const widgets = this.widgetManager.getWidgets(PLUGIN_VIEW_DATA_FACTORY_ID);
