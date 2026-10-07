@@ -81,6 +81,9 @@ interface ToolCall {
 @injectable()
 export class OpenAiResponseApiUtils {
 
+    /** Provider identity used for compaction emission and replay; encrypted context is not portable across backends. */
+    readonly compactionProvider: string = 'openai-responses';
+
     @inject(ToolCallExecutor)
     protected readonly toolCallExecutor: ToolCallExecutor;
 
@@ -283,6 +286,7 @@ export class OpenAiResponseApiUtils {
     ): AsyncIterable<LanguageModelStreamResponsePart> {
 
         const logger = this.logger;
+        const compactionProvider = this.compactionProvider;
         const reasoningSummaryThought = (event: ResponseStreamEvent): ThinkingResponsePart | undefined => this.reasoningSummaryThought(event);
 
         return {
@@ -307,7 +311,7 @@ export class OpenAiResponseApiUtils {
                         } else if (event.type === 'response.output_item.done' && event.item?.type === 'compaction') {
                             yield {
                                 compaction: {
-                                    provider: 'openai-responses',
+                                    provider: compactionProvider,
                                     data: { id: event.item.id, encrypted_content: event.item.encrypted_content }
                                 }
                             };
@@ -372,12 +376,12 @@ export class OpenAiResponseApiUtils {
         const nonSystemMessages = processed.filter(m => m.actor !== 'system');
         const input: ResponseInputItem[] = [];
 
-        // Server-side compaction replay: the latest openai-responses compaction marker carries the (encrypted) context for
+        // Server-side compaction replay: the latest matching provider marker carries the (encrypted) context for
         // everything before it. Drop that prefix and replay the marker as a compaction input item; earlier markers are subsumed.
         let sliceStart = 0;
         for (let i = nonSystemMessages.length - 1; i >= 0; i--) {
             const candidate = nonSystemMessages[i];
-            if (LanguageModelMessage.isCompactionMessage(candidate) && candidate.provider === 'openai-responses') {
+            if (LanguageModelMessage.isCompactionMessage(candidate) && candidate.provider === this.compactionProvider) {
                 const data = candidate.data as { encrypted_content: string; id?: string };
                 input.push({
                     type: 'compaction',
@@ -391,7 +395,7 @@ export class OpenAiResponseApiUtils {
 
         for (const message of nonSystemMessages.slice(sliceStart)) {
             if (LanguageModelMessage.isCompactionMessage(message)) {
-                // Skip any remaining compaction marker (foreign provider, or a non-final openai-responses one):
+                // Skip any remaining compaction marker (foreign provider, or an earlier matching one):
                 // it is not the prefix-drop item, so it carries no input for this provider.
                 continue;
             } else if (LanguageModelMessage.isTextMessage(message)) {
@@ -665,7 +669,7 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
                 } else if (event.item?.type === 'compaction') {
                     this.handleIncoming({
                         compaction: {
-                            provider: 'openai-responses',
+                            provider: this.utils.compactionProvider,
                             data: { id: event.item.id, encrypted_content: event.item.encrypted_content }
                         }
                     });

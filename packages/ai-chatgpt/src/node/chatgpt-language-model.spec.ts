@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import {
-    isCompactionResponsePart, LanguageModelMessage, LanguageModelResponse, LanguageModelStreamResponsePart, ReasoningSupport,
+    isCompactionResponsePart, isTextResponsePart, LanguageModelMessage, LanguageModelResponse, LanguageModelStreamResponsePart, ReasoningSupport,
     ToolCallExecutor, ToolCallExecutorImpl, UserRequest
 } from '@theia/ai-core';
 import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
@@ -235,7 +235,11 @@ describe('ChatGptResponseApiUtils', () => {
                     stream: (payload: Record<string, unknown>) => {
                         payloads.push(payload);
                         return (async function* (): AsyncIterable<unknown> {
-                            yield { type: 'response.output_item.done', item: { type: 'compaction', id: 'c1', encrypted_content: 'encrypted' } };
+                            if (payloads.length === 1) {
+                                yield { type: 'response.output_item.done', item: { type: 'compaction', id: 'c1', encrypted_content: 'encrypted' } };
+                            } else {
+                                yield { type: 'response.output_text.delta', delta: 'Continued answer' };
+                            }
                             yield { type: 'response.completed', response: { usage: { input_tokens: 10, output_tokens: 5 } } };
                         })();
                     }
@@ -257,7 +261,7 @@ describe('ChatGptResponseApiUtils', () => {
                 for await (const part of response.stream) { parts.push(part); }
             }
             const compaction = parts.filter(isCompactionResponsePart);
-            expect(compaction).to.deep.equal([{ compaction: { provider: 'openai-responses', data: { id: 'c1', encrypted_content: 'encrypted' } } }]);
+            expect(compaction).to.deep.equal([{ compaction: { provider: 'chatgpt-responses', data: { id: 'c1', encrypted_content: 'encrypted' } } }]);
             const replay = await model.request({
                 ...request,
                 messages: [
@@ -266,9 +270,13 @@ describe('ChatGptResponseApiUtils', () => {
                     { actor: 'user', type: 'text', text: 'Next turn' }
                 ]
             });
+            const replayParts: LanguageModelStreamResponsePart[] = [];
+            expect('stream' in replay).to.equal(true);
             if ('stream' in replay) {
-                for await (const part of replay.stream) { parts.push(part); }
+                for await (const part of replay.stream) { replayParts.push(part); }
             }
+            expect(replayParts.filter(isTextResponsePart)).to.deep.equal([{ content: 'Continued answer' }]);
+            expect(replayParts.filter(isCompactionResponsePart)).to.be.empty;
             expect(payloads).to.have.lengthOf(2);
             expect(payloads[1]).to.include({ store: false, stream: true, instructions: DEFAULT_CHATGPT_INSTRUCTIONS });
             expect(payloads[1].context_management).to.deep.equal([{ type: 'compaction' }]);
@@ -278,6 +286,34 @@ describe('ChatGptResponseApiUtils', () => {
             ]);
         });
     }
+
+    it('ignores OpenAI compaction without dropping earlier conversation history', () => {
+        const { input } = utils.processMessages([
+            { actor: 'user', type: 'text', text: 'Old turn' },
+            { actor: 'ai', type: 'compaction', provider: 'openai-responses', data: { id: 'c1', encrypted_content: 'foreign' } },
+            { actor: 'user', type: 'text', text: 'Next turn' }
+        ], 'developer', 'gpt-5.5');
+        expect(input).to.deep.equal([
+            { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'Old turn' }] },
+            { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'Next turn' }] }
+        ]);
+    });
+
+    it('replays only the latest ChatGPT compaction among mixed provider markers', () => {
+        const { input } = utils.processMessages([
+            { actor: 'user', type: 'text', text: 'Old turn' },
+            { actor: 'ai', type: 'compaction', provider: 'chatgpt-responses', data: { id: 'c1', encrypted_content: 'old' } },
+            { actor: 'ai', type: 'compaction', provider: 'openai-responses', data: { encrypted_content: 'foreign1' } },
+            { actor: 'user', type: 'text', text: 'Middle turn' },
+            { actor: 'ai', type: 'compaction', provider: 'chatgpt-responses', data: { id: 'c2', encrypted_content: 'latest' } },
+            { actor: 'ai', type: 'compaction', provider: 'openai-responses', data: { encrypted_content: 'foreign2' } },
+            { actor: 'user', type: 'text', text: 'Next turn' }
+        ], 'developer', 'gpt-5.5');
+        expect(input).to.deep.equal([
+            { type: 'compaction', id: 'c2', encrypted_content: 'latest' },
+            { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'Next turn' }] }
+        ]);
+    });
 
     it('substitutes default instructions when the request carries no system message', () => {
         const result = utils.processMessages([{ actor: 'user', type: 'text', text: 'Hello' }], 'developer', 'gpt-5.5');

@@ -30,6 +30,8 @@ export const DEFAULT_CHATGPT_INSTRUCTIONS = 'You are a helpful assistant.';
 @injectable()
 export class ChatGptResponseApiUtils extends OpenAiResponseApiUtils {
 
+    override readonly compactionProvider = 'chatgpt-responses';
+
     override processMessages(
         messages: LanguageModelMessage[],
         developerMessageSettings: DeveloperMessageSettings,

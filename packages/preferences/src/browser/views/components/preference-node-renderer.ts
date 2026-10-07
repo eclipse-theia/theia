@@ -192,7 +192,8 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
             event.stopPropagation();
             // Exclude right click
             if (event.button < 2) {
-                open(this.openerService, new URI(event.target.href));
+                const uri = new URI(event.target.href);
+                open(this.openerService, uri);
             }
         }
     }
