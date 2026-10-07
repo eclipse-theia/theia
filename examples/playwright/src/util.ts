@@ -26,7 +26,7 @@ export function normalizeId(nodeId: string): string {
 }
 
 export function escapeDoubleQuotes(nodeId: string): string {
-    return nodeId.replace('"', '\\"');
+    return nodeId.replace(/["\\]/g, matchedChar => '\\' + matchedChar);
 }
 
 export async function toTextContentArray(items: ElementHandle<SVGElement | HTMLElement>[]): Promise<string[]> {
