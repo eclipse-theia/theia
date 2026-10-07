@@ -97,17 +97,9 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
         if (documentElement) {
             const applied = new Set<string>();
             for (const id of this.colors.getColors()) {
-                const variable = this.colors.getCurrentCssVariable(id);
-                if (variable) {
-                    const { name, value } = variable;
+                for (const { name, value } of this.colors.getCurrentCssVariables(id)) {
                     documentElement.style.setProperty(name, value);
                     applied.add(name);
-                    // VS Code extensions reference colors with the `--vscode-` prefix, e.g. in the inline styles of the
-                    // HTML they render. Monaco only defines those variables within its own containers, so alias them
-                    // here to make them resolvable everywhere, like the webview theme data does.
-                    const alias = this.colors.toCssVariableName(id, 'vscode');
-                    documentElement.style.setProperty(alias, value);
-                    applied.add(alias);
                 }
             }
             for (const name of this.appliedCssVariables.get(win) ?? []) {
