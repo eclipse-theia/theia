@@ -21,8 +21,11 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { URI } from '@theia/core';
+import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
+import { MultiDiffEditorWidgetFactory } from './multi-diff-editor-widget-factory';
+import { Emitter, URI } from '@theia/core';
 import { LabelProvider, MessageLoop, Widget } from '@theia/core/lib/browser';
 import { Container } from '@theia/core/shared/inversify';
 import {
@@ -258,6 +261,130 @@ describe('Multi-Diff Editor — widgets', () => {
         });
     });
 
+    describe('entry loading', () => {
+
+        function createEntry(load: () => Promise<EditorWidget>): DiffEntryWidget {
+            return new DiffEntryWidget(sampleResource, new DiffEntryHeaderWidget(sampleResource, mockLabelProvider), load);
+        }
+
+        it('should skip collapsed entries, load on expansion, and suppress concurrent or repeated loads', async () => {
+            let resolve!: (widget: EditorWidget) => void;
+            const load = sinon.stub().returns(new Promise<EditorWidget>(r => resolve = r));
+            const entry = createEntry(load);
+            const widget = new Widget() as EditorWidget;
+            try {
+                entry.setCollapsed(true);
+                await entry.loadEditor();
+                expect(load.callCount).to.equal(0);
+                entry.setCollapsed(false);
+                await entry.loadEditor();
+                expect(load.callCount).to.equal(1);
+                entry.setCollapsed(true);
+                resolve(widget);
+                await Promise.resolve();
+                expect(entry.editorWidget).to.equal(widget);
+                expect(widget.isHidden).to.be.true;
+                entry.setCollapsed(false);
+                await entry.loadEditor();
+                expect(load.callCount).to.equal(1);
+            } finally {
+                entry.dispose();
+            }
+        });
+
+        it('should offer a native Retry button, restore loading state, and serialize retries', async () => {
+            let resolve!: (widget: EditorWidget) => void;
+            const load = sinon.stub();
+            load.onFirstCall().rejects(new Error('provider unavailable'));
+            load.onSecondCall().returns(new Promise<EditorWidget>(r => resolve = r));
+            const entry = createEntry(load);
+            const widget = new Widget() as EditorWidget;
+            try {
+                await entry.loadEditor();
+                const button = entry.node.querySelector('button')!;
+                expect(button.textContent).to.equal('Retry');
+                expect(button.type).to.equal('button');
+                await entry.loadEditor();
+                expect(load.callCount).to.equal(1);
+                button.click();
+                expect(entry.node.querySelector('.multi-diff-entry-loading')).to.exist;
+                button.click();
+                await entry.loadEditor(true);
+                expect(load.callCount).to.equal(2);
+                resolve(widget);
+                await Promise.resolve();
+                expect(entry.editorWidget).to.equal(widget);
+            } finally {
+                entry.dispose();
+            }
+        });
+
+        it('should dispose editors completing after disposal without emitting a load event', async () => {
+            let resolve!: (widget: EditorWidget) => void;
+            const entry = createEntry(() => new Promise(r => resolve = r));
+            const loaded = sinon.spy();
+            entry.onDidLoadEditor(loaded);
+            const pending = entry.loadEditor();
+            entry.dispose();
+            const widget = new Widget() as EditorWidget;
+            resolve(widget);
+            await pending;
+            expect(widget.isDisposed).to.be.true;
+            expect(loaded.called).to.be.false;
+        });
+
+        it('should ignore rejected loads after disposal', async () => {
+            let reject!: (error: Error) => void;
+            const entry = createEntry(() => new Promise((_resolve, r) => reject = r));
+            const setError = sinon.spy(entry, 'setError');
+            const pending = entry.loadEditor();
+            entry.dispose();
+            reject(new Error('late failure'));
+            await pending;
+            expect(setError.called).to.be.false;
+        });
+
+        it('should track both diff content heights as unchanged regions are hidden or expanded and dispose listeners', () => {
+            const originalChanged = new Emitter<void>();
+            const modifiedChanged = new Emitter<void>();
+            let originalHeight = 300;
+            let modifiedHeight = 400;
+            const monacoEditor = Object.create(MonacoDiffEditor.prototype);
+            Object.defineProperty(monacoEditor, 'diffEditor', {
+                value: {
+                    getOriginalEditor: () => ({ getContentHeight: () => originalHeight, onDidContentSizeChange: originalChanged.event }),
+                    getModifiedEditor: () => ({ getContentHeight: () => modifiedHeight, onDidContentSizeChange: modifiedChanged.event })
+                }
+            });
+            const widget = new Widget() as EditorWidget;
+            Object.defineProperty(widget, 'editor', { value: monacoEditor });
+            const entry = createEntry(async () => widget);
+            try {
+                entry.setEditor(widget);
+                expect(entry.node.style.height).to.equal(`${400 + HEADER_HEIGHT}px`);
+                originalHeight = 140;
+                modifiedHeight = 150;
+                modifiedChanged.fire();
+                expect(entry.node.style.height).to.equal(`${150 + HEADER_HEIGHT}px`);
+                entry.setCollapsed(true);
+                originalHeight = 350;
+                originalChanged.fire();
+                expect(entry.node.style.height).to.equal(`${HEADER_HEIGHT}px`);
+                entry.setCollapsed(false);
+                expect(entry.node.style.height).to.equal(`${350 + HEADER_HEIGHT}px`);
+                entry.dispose();
+                const setHeight = sinon.spy(entry, 'setHeight');
+                originalChanged.fire();
+                modifiedChanged.fire();
+                expect(setHeight.called).to.be.false;
+            } finally {
+                entry.dispose();
+                originalChanged.dispose();
+                modifiedChanged.dispose();
+            }
+        });
+    });
+
     describe('DiffEntryLoadingWidget / DiffEntryErrorWidget', () => {
 
         it('should render a spinning codicon loading indicator', () => {
@@ -278,29 +405,6 @@ describe('Multi-Diff Editor — widgets', () => {
             } finally {
                 w.dispose();
             }
-        });
-    });
-
-    describe('Embedded editor visibility', () => {
-
-        it('should restore the model and view state without focusing an embedded editor', () => {
-            const control = { setModel: sinon.spy(), restoreViewState: sinon.spy(), focus: sinon.spy() };
-            const model = {};
-            const viewState = {};
-            const editor = Object.assign(Object.create(MonacoEditor.prototype) as MonacoEditor, {
-                editor: control,
-                document: { textEditorModel: model },
-                savedViewState: viewState,
-                focusOnShow: false
-            });
-            editor.handleVisibilityChanged(true);
-            expect(control.setModel.calledOnceWithExactly(model)).to.be.true;
-            expect(control.restoreViewState.calledOnceWithExactly(viewState)).to.be.true;
-            expect(control.focus.called).to.be.false;
-
-            editor.focusOnShow = true;
-            editor.handleVisibilityChanged(true);
-            expect(control.focus.calledOnce).to.be.true;
         });
     });
 
@@ -332,16 +436,131 @@ describe('Multi-Diff Editor — widgets', () => {
 
     describe('MultiDiffEditor', () => {
 
-        function createEditor(count: number): MultiDiffEditor {
+        function createEditor(count: number, load?: () => Promise<EditorWidget>): MultiDiffEditor {
             const container = new Container();
             container.bind(MultiDiffEditorData).toConstantValue({ title: 'Changes', resources: Array(count).fill(sampleResource) });
             container.bind(MultiDiffEditor).toSelf();
             const editor = container.get(MultiDiffEditor);
             for (let index = 0; index < count; index++) {
-                editor.addDiffEntry(sampleResource, new DiffEntryHeaderWidget(sampleResource, mockLabelProvider));
+                editor.addDiffEntry(sampleResource, new DiffEntryHeaderWidget(sampleResource, mockLabelProvider), load);
             }
             return editor;
         }
+
+        it('should opt out of persistence while accepting legacy collapse state', () => {
+            const editor = createEditor(1);
+            try {
+                editor.restoreState({ collapsedUris: [sampleResource.modifiedUri.toString()], scrollTop: 123 });
+                expect(editor.entries[0].isCollapsed).to.be.true;
+                expect(editor.storeState()).to.be.undefined;
+            } finally {
+                editor.dispose();
+            }
+        });
+
+        it('should observe near-viewport entries, skip collapsed entries, and disconnect safely', async () => {
+            const previous = globalThis.IntersectionObserver;
+            let callback!: IntersectionObserverCallback;
+            const observe = sinon.spy();
+            const disconnect = sinon.spy();
+            let options: IntersectionObserverInit | undefined;
+            globalThis.IntersectionObserver = class {
+                constructor(cb: IntersectionObserverCallback, opts?: IntersectionObserverInit) {
+                    callback = cb;
+                    options = opts;
+                }
+                observe = observe;
+                disconnect = disconnect;
+            } as unknown as typeof IntersectionObserver;
+            const load = sinon.stub().callsFake(async () => new Widget() as EditorWidget);
+            const editor = createEditor(2, load);
+            const firstLoad = sinon.spy(editor.entries[0], 'loadEditor');
+            const secondLoad = sinon.spy(editor.entries[1], 'loadEditor');
+            try {
+                expect(observe.callCount).to.equal(2);
+                expect(options?.root).to.equal(editor['entriesPanel'].node);
+                expect(options?.rootMargin).to.equal('500px 0px');
+                editor.entries[1].setCollapsed(true);
+                const records = editor.entries.map(entry => ({ target: entry.node, isIntersecting: true } as unknown as IntersectionObserverEntry));
+                callback([{ ...records[0], isIntersecting: false }], editor['entryObserver']!);
+                expect(firstLoad.called).to.be.false;
+                callback(records, editor['entryObserver']!);
+                expect(firstLoad.calledOnce).to.be.true;
+                expect(editor.entries[1].editorWidget).to.be.undefined;
+                expect(load.calledOnce).to.be.true;
+                await Promise.resolve();
+                expect(editor.entries[0].editorWidget).to.exist;
+                editor.entries[1].setCollapsed(false);
+                await Promise.resolve();
+                expect(load.calledTwice).to.be.true;
+                expect(editor.entries[1].editorWidget).to.exist;
+                editor.dispose();
+                expect(disconnect.calledOnce).to.be.true;
+                callback(records, editor['entryObserver']!);
+                expect(firstLoad.calledOnce).to.be.true;
+                expect(secondLoad.calledTwice).to.be.true;
+                expect(load.calledTwice).to.be.true;
+            } finally {
+                editor.dispose();
+                globalThis.IntersectionObserver = previous;
+            }
+        });
+
+        it('should expand and load explicitly revealed entries', () => {
+            const previous = globalThis.requestAnimationFrame;
+            globalThis.requestAnimationFrame = sinon.stub().returns(0);
+            const editor = createEditor(1);
+            const load = sinon.spy(editor.entries[0], 'loadEditor');
+            try {
+                editor.entries[0].setCollapsed(true);
+                editor.revealResource(sampleResource.modifiedUri);
+                expect(editor.entries[0].isCollapsed).to.be.false;
+                expect(load.called).to.be.true;
+            } finally {
+                editor.dispose();
+                globalThis.requestAnimationFrame = previous;
+            }
+        });
+
+        it('should activate a visible editor, remember focused entries, and preserve ancestor scroll positions', () => {
+            const editor = createEditor(2);
+            const panel = editor['entriesPanel'].node;
+            sinon.stub(panel, 'getBoundingClientRect').returns({ top: 0, bottom: 500 } as DOMRect);
+            const firstBounds = sinon.stub(editor.entries[0].node, 'getBoundingClientRect').returns({ top: -400, bottom: -100 } as DOMRect);
+            sinon.stub(editor.entries[1].node, 'getBoundingClientRect').returns({ top: 100, bottom: 400 } as DOMRect);
+            class FocusWidget extends Widget {
+                protected override onActivateRequest(): void {
+                    panel.scrollTop = 0;
+                    editor.node.scrollTop = 0;
+                }
+            }
+            const first = new FocusWidget() as unknown as EditorWidget;
+            const second = new FocusWidget() as unknown as EditorWidget;
+            editor.entries[0].setEditor(first);
+            editor.entries[1].setEditor(second);
+            const firstActivate = sinon.spy(first, 'processMessage');
+            const secondActivate = sinon.spy(second, 'processMessage');
+            try {
+                panel.scrollTop = 350;
+                editor.node.scrollTop = 42;
+                MessageLoop.sendMessage(editor, Widget.Msg.ActivateRequest);
+                expect(firstActivate.calledWith(Widget.Msg.ActivateRequest)).to.be.false;
+                expect(secondActivate.calledWith(Widget.Msg.ActivateRequest)).to.be.true;
+                expect(panel.scrollTop).to.equal(350);
+                expect(editor.node.scrollTop).to.equal(42);
+                second.node.dispatchEvent(new window.Event('focusin', { bubbles: true }));
+                firstBounds.returns({ top: 0, bottom: 200 } as DOMRect);
+                secondActivate.resetHistory();
+                MessageLoop.sendMessage(editor, Widget.Msg.ActivateRequest);
+                expect(secondActivate.calledWith(Widget.Msg.ActivateRequest)).to.be.true;
+                editor.entries[1].setCollapsed(true);
+                MessageLoop.sendMessage(editor, Widget.Msg.ActivateRequest);
+                expect(panel.scrollTop).to.equal(350);
+            } finally {
+                sinon.restore();
+                editor.dispose();
+            }
+        });
 
         it('should fill the viewport for a single entry and follow resizes', () => {
             const editor = createEditor(1);
@@ -363,6 +582,55 @@ describe('Multi-Diff Editor — widgets', () => {
                     entry.setHeight(1000);
                     expect(entry.node.style.height).to.equal(`${MAX_ENTRY_HEIGHT}px`);
                 }
+            } finally {
+                editor.dispose();
+            }
+        });
+    });
+
+    describe('MultiDiffEditorWidgetFactory', () => {
+
+        class TestFactory extends MultiDiffEditorWidgetFactory {
+            configure(widget: EditorWidget): void {
+                this.configureEmbeddedEditor(widget);
+            }
+        }
+
+        it('should disable visibility side effects and enable unchanged-region hiding only for diff editors', () => {
+            const factory = new TestFactory(new Container(), {} as EditorManager, mockLabelProvider);
+            const diff = Object.create(MonacoDiffEditor.prototype);
+            const updateDiffOptions = sinon.spy();
+            Object.defineProperty(diff, 'diffEditor', { value: { updateOptions: updateDiffOptions } });
+            const code = Object.create(MonacoEditor.prototype);
+            const updateCodeOptions = sinon.spy();
+            code.getControl = () => ({ updateOptions: updateCodeOptions });
+            factory.configure({ editor: diff } as EditorWidget);
+            factory.configure({ editor: code } as EditorWidget);
+            for (const editor of [diff, code]) {
+                expect(editor.focusOnShow).to.be.false;
+                expect(editor.detachModelOnHide).to.be.false;
+            }
+            expect(updateDiffOptions.firstCall.args[0]).to.deep.equal({
+                folding: false, codeLens: false, stickyScroll: { enabled: false }, minimap: { enabled: false }, hideUnchangedRegions: { enabled: true }
+            });
+            expect(updateCodeOptions.firstCall.args[0]).not.to.have.property('hideUnchangedRegions');
+        });
+
+        it('should return placeholders without loading models, then configure and publish loaded editors', async () => {
+            const widget = new Widget() as EditorWidget;
+            const createByUri = sinon.stub().resolves(widget);
+            const manager = { createByUri } as unknown as EditorManager;
+            const factory = new MultiDiffEditorWidgetFactory(new Container(), manager, mockLabelProvider);
+            const editor = factory.createMultiDiffEditor(MultiDiffEditorUri.encode({ title: 'Changes', resources: [sampleResource] }));
+            const changed = sinon.spy();
+            editor.onDidChangeTrackableWidgets(changed);
+            try {
+                expect(createByUri.called).to.be.false;
+                expect(editor.entries[0].node.querySelector('.multi-diff-entry-loading')).to.exist;
+                await editor.entries[0].loadEditor();
+                expect(createByUri.calledOnce).to.be.true;
+                expect(editor.getTrackableWidgets()).to.deep.equal([widget]);
+                expect(changed.calledOnce).to.be.true;
             } finally {
                 editor.dispose();
             }

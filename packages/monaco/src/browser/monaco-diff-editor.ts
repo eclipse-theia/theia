@@ -126,7 +126,7 @@ export class MonacoDiffEditor extends MonacoEditor {
     }
 
     override handleVisibilityChanged(nowVisible: boolean): void {
-        const isFirstShow = nowVisible && !this.savedViewState;
+        const isFirstShow = nowVisible && this.detachModelOnHide && !this.savedViewState;
         super.handleVisibilityChanged(nowVisible);
         if (isFirstShow) {
             this._diffEditor.revealFirstDiff();

@@ -18,9 +18,9 @@
     height: 100%;
     width: 100%;
     overflow: hidden;
-    }
+}
 
-    /* Override Lumino PanelLayout default absolute positioning to enable document flow. */
+/* Override Lumino PanelLayout default absolute positioning to enable document flow. */
 .theia-multi-diff-editor>.multi-diff-editor-entries {
     position: absolute;
     top: 0;
