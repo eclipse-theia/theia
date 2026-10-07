@@ -16,7 +16,8 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import { Emitter, Event } from '../../common/event';
-import { StorageService } from '../storage-service';
+import { Deferred } from '../../common/promise-util';
+import { LocalStorageService } from '../storage-service';
 
 export const SidePanelItemVisibility = Symbol('SidePanelItemVisibility');
 /**
@@ -25,8 +26,12 @@ export const SidePanelItemVisibility = Symbol('SidePanelItemVisibility');
  * Items are identified by the id of the widget that owns the tab.
  */
 export interface SidePanelItemVisibility {
-    /** Fires with the widget id whose hidden state changed, or `undefined` when all of them may have. */
-    readonly onDidChange: Event<string | undefined>;
+    /** Fires with the id of the widget whose hidden state the user changed. */
+    readonly onDidChange: Event<string>;
+    /** Fires when the user's choices are discarded and every item falls back to its default. */
+    readonly onDidReset: Event<void>;
+    /** Resolves once the user's stored choices are loaded; until then every item has its default state. */
+    readonly ready: Promise<void>;
     isHidden(widgetId: string): boolean;
     setHidden(widgetId: string, hidden: boolean): void;
     /** Discards the user's choices so every item falls back to its default. */
@@ -36,25 +41,35 @@ export interface SidePanelItemVisibility {
 @injectable()
 export class SidePanelItemVisibilityImpl implements SidePanelItemVisibility {
 
-    protected static readonly STORAGE_KEY = 'sidePanel.hiddenItems';
+    static readonly STORAGE_KEY = 'sidePanel.hiddenItems';
 
-    @inject(StorageService)
-    protected readonly storageService: StorageService;
+    /** Hidden items hold across workspaces, and `@theia/workspace` scopes the bound `StorageService` per workspace. */
+    @inject(LocalStorageService)
+    protected readonly storageService: LocalStorageService;
 
-    protected readonly onDidChangeEmitter = new Emitter<string | undefined>();
+    protected readonly onDidChangeEmitter = new Emitter<string>();
     readonly onDidChange = this.onDidChangeEmitter.event;
+
+    protected readonly onDidResetEmitter = new Emitter<void>();
+    readonly onDidReset = this.onDidResetEmitter.event;
+
+    protected readonly loaded = new Deferred<void>();
 
     /** Explicit user choices only, so items the user never touched follow `isHiddenByDefault`. */
     protected overrides: Record<string, boolean> = {};
 
+    get ready(): Promise<void> {
+        return this.loaded.promise;
+    }
+
     @postConstruct()
     protected init(): void {
-        this.storageService.getData<Record<string, boolean>>(SidePanelItemVisibilityImpl.STORAGE_KEY).then(stored => {
-            if (stored) {
-                this.overrides = { ...stored, ...this.overrides };
-                this.onDidChangeEmitter.fire(undefined);
-            }
-        });
+        this.load().finally(() => this.loaded.resolve());
+    }
+
+    protected async load(): Promise<void> {
+        const stored = await this.storageService.getData<Record<string, boolean>>(SidePanelItemVisibilityImpl.STORAGE_KEY);
+        this.overrides = { ...stored, ...this.overrides };
     }
 
     isHidden(widgetId: string): boolean {
@@ -73,7 +88,7 @@ export class SidePanelItemVisibilityImpl implements SidePanelItemVisibility {
     reset(): void {
         this.overrides = {};
         this.save();
-        this.onDidChangeEmitter.fire(undefined);
+        this.onDidResetEmitter.fire();
     }
 
     /**

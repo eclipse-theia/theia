@@ -50,7 +50,6 @@ export const SHELL_TABBAR_CONTEXT_MENU: MenuPath = ['shell-tabbar-context-menu']
 export const SHELL_TABBAR_CONTEXT_CLOSE: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '0_close'];
 export const SHELL_TABBAR_CONTEXT_COPY: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '1_copy'];
 export const SHELL_TABBAR_CONTEXT_HIDE: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '3_hide'];
-// Kept here in anticipation of tab pinning behavior implemented in tab-bars.ts
 export const SHELL_TABBAR_CONTEXT_PIN: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '4_pin'];
 export const SHELL_TABBAR_CONTEXT_SPLIT: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '5_split'];
 
@@ -1114,7 +1113,7 @@ export class SideTabBar extends ScrollableTabBar {
      * Tabs for which this returns `true` are not rendered in the side bar unless they are current.
      * Call `update()` after the outcome changes.
      */
-    isTitleHidden: (title: Title<Widget>) => boolean = () => false;
+    shouldHideTitle: (title: Title<Widget>) => boolean = () => false;
 
     constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
         super(options);
@@ -1305,7 +1304,7 @@ export class SideTabBar extends ScrollableTabBar {
      * Whether the tab of the given title is currently left out of the side bar.
      */
     isHiddenTab(title: Title<Widget>): boolean {
-        return title !== this.currentTitle && this.isTitleHidden(title);
+        return title !== this.currentTitle && this.shouldHideTitle(title);
     }
 
     /**

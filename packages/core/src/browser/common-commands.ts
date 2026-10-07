@@ -177,6 +177,11 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Hide from Side Bar'
     }, 'theia/core/common/hideSidePanelItem', VIEW_CATEGORY_KEY);
+    export const KEEP_SIDE_PANEL_ITEM = Command.toLocalizedCommand({
+        id: 'core.sidePanel.keepItem',
+        category: VIEW_CATEGORY,
+        label: 'Keep in Side Bar'
+    }, 'theia/core/common/keepSidePanelItem', VIEW_CATEGORY_KEY);
     export const RESET_HIDDEN_SIDE_PANEL_ITEMS = Command.toLocalizedCommand({
         id: 'core.sidePanel.resetHiddenItems',
         category: VIEW_CATEGORY,

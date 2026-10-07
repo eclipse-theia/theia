@@ -47,17 +47,27 @@ test.describe('Theia Application Shell', () => {
     });
 
     test('should hide a side panel item and still open its view', async () => {
+        const searchTab = '#shell-tab-search-view-container';
         const explorer = await app.openView(TheiaExplorerView);
 
-        const contextMenu = await explorer.openContextMenuOnTab();
-        await contextMenu.clickMenuItem('Hide');
+        await (await explorer.openContextMenuOnTab()).clickMenuItem('Hide');
         await app.page.waitForSelector(explorer.tabSelector, { state: 'hidden' });
         expect(await explorer.isDisplayed()).toBe(false);
 
         await explorer.open();
         expect(await explorer.isActive()).toBe(true);
 
-        await app.quickCommandPalette.trigger('View: Reset Hidden Side Bar Items');
+        await app.page.click(searchTab);
+        await app.page.waitForSelector(explorer.tabSelector, { state: 'hidden' });
+
+        await app.page.reload();
+        await app.waitForShellAndInitialized();
+        await app.page.waitForSelector(searchTab, { state: 'visible' });
+        await app.page.waitForSelector(explorer.tabSelector, { state: 'hidden' });
+
+        await explorer.open();
+        await (await explorer.openContextMenuOnTab()).clickMenuItem('Keep');
+        await app.page.click(searchTab);
         await app.page.waitForSelector(explorer.tabSelector, { state: 'visible' });
     });
 

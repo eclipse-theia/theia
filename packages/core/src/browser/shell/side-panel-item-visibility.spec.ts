@@ -16,11 +16,11 @@
 
 import { expect } from 'chai';
 import { Container, injectable } from 'inversify';
-import { StorageService } from '../storage-service';
+import { LocalStorageService } from '../storage-service';
 import { MockStorageService } from '../test/mock-storage-service';
 import { SidePanelItemVisibilityImpl } from './side-panel-item-visibility';
 
-const STORAGE_KEY = 'sidePanel.hiddenItems';
+const STORAGE_KEY = SidePanelItemVisibilityImpl.STORAGE_KEY;
 
 @injectable()
 class DebugHiddenByDefault extends SidePanelItemVisibilityImpl {
@@ -35,10 +35,10 @@ describe('SidePanelItemVisibility', () => {
 
     async function create(implementation: typeof SidePanelItemVisibilityImpl = SidePanelItemVisibilityImpl): Promise<SidePanelItemVisibilityImpl> {
         const container = new Container();
-        container.bind(StorageService).toConstantValue(storage);
+        container.bind(LocalStorageService).toConstantValue(storage as unknown as LocalStorageService);
         container.bind(implementation).toSelf();
         const visibility = container.get(implementation);
-        await new Promise(resolve => setTimeout(resolve));
+        await visibility.ready;
         return visibility;
     }
 
@@ -53,7 +53,7 @@ describe('SidePanelItemVisibility', () => {
 
     it('persists only explicit choices and restores them', async () => {
         const visibility = await create();
-        const changed: Array<string | undefined> = [];
+        const changed: string[] = [];
         visibility.onDidChange(id => changed.push(id));
 
         visibility.setHidden('explorer-view-container', true);
@@ -78,14 +78,14 @@ describe('SidePanelItemVisibility', () => {
         const visibility = await create(DebugHiddenByDefault);
         visibility.setHidden('debug', false);
         visibility.setHidden('scm-view-container', true);
-        const changed: Array<string | undefined> = [];
-        visibility.onDidChange(id => changed.push(id));
+        let resets = 0;
+        visibility.onDidReset(() => resets++);
 
         visibility.reset();
 
         expect(visibility.isHidden('debug')).to.be.true;
         expect(visibility.isHidden('scm-view-container')).to.be.false;
         expect(storage.data.get(STORAGE_KEY)).to.be.undefined;
-        expect(changed).to.deep.equal([undefined]);
+        expect(resets).to.equal(1);
     });
 });

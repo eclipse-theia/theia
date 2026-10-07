@@ -70,6 +70,10 @@ describe('tab bar', () => {
             renderedClasses(): string[] {
                 return Array.from(this.contentNode.children, tab => tab.className);
             }
+            overflowFrom(startIndex: number): void {
+                this.hideOverflowingTabs = () => startIndex;
+                this.computeOverflowingTabsData();
+            }
         }
 
         function createSideTabBar(hiddenIds: string[]): { bar: TestSideTabBar, titles: Title<Widget>[] } {
@@ -81,7 +85,7 @@ describe('tab bar', () => {
                 owner.title.label = id;
                 return bar.addTab(owner.title);
             });
-            bar.isTitleHidden = title => hiddenIds.includes(title.owner.id);
+            bar.shouldHideTitle = title => hiddenIds.includes(title.owner.id);
             return { bar, titles };
         }
 
@@ -96,6 +100,24 @@ describe('tab bar', () => {
             bar.render();
             expect(bar.renderedClasses().map(c => c.includes('lm-mod-hidden'))).to.deep.equal([false, false, false]);
             expect(bar.isHiddenTab(titles[1])).to.be.false;
+        });
+
+        it('leaves hidden tabs out of the overflow menu', () => {
+            const { bar, titles } = createSideTabBar(['debug']);
+            bar.currentTitle = titles[0];
+            const overflowing: string[][] = [];
+            bar.tabsOverflowChanged.connect((_, { titles: overflow }) => overflowing.push(overflow.map(title => title.owner.id)));
+            const requestAnimationFrame = window.requestAnimationFrame;
+            window.requestAnimationFrame = callback => {
+                callback(0);
+                return 0;
+            };
+            try {
+                bar.overflowFrom(1);
+            } finally {
+                window.requestAnimationFrame = requestAnimationFrame;
+            }
+            expect(overflowing).to.deep.equal([['search']]);
         });
     });
 });

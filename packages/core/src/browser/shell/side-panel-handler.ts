@@ -48,7 +48,7 @@ export const SidePanelHandlerFactory = Symbol('SidePanelHandlerFactory');
 
 export const SIDE_PANEL_TOOLBAR_CONTEXT_MENU: MenuPath = ['SIDE_PANEL_TOOLBAR_CONTEXT_MENU'];
 /** The context menu of the empty side bar area, listing one show/hide toggle per item. */
-export const SIDE_PANEL_ITEMS_CONTEXT_MENU: MenuPath = ['side-panel-items-context-menu'];
+export const SIDE_PANEL_ITEMS_CONTEXT_MENU: MenuPath = ['SIDE_PANEL_ITEMS_CONTEXT_MENU'];
 
 /**
  * A class which manages a dock panel and a related side bar. This is used for the left and right
@@ -199,9 +199,13 @@ export class SidePanelHandler {
         sideBar.currentChanged.connect(this.onCurrentTabChanged, this);
         sideBar.tabDetachRequested.connect(this.onTabDetachRequested, this);
         sideBar.tabsOverflowChanged.connect(this.onTabsOverflowChanged, this);
-        sideBar.isTitleHidden = title => this.itemVisibility.isHidden(title.owner.id);
+        sideBar.shouldHideTitle = title => this.itemVisibility.isHidden(title.owner.id);
         sideBar.node.addEventListener('contextmenu', e => this.showItemsContextMenu(e));
         this.itemVisibility.onDidChange(widgetId => this.onItemVisibilityChanged(widgetId));
+        // A reset or the stored choices loading only change what renders: the current item stays current
+        // even when it turns out hidden, the same as opening a hidden item.
+        this.itemVisibility.onDidReset(() => sideBar.update());
+        this.itemVisibility.ready.then(() => sideBar.update());
         return sideBar;
     }
 
@@ -272,9 +276,9 @@ export class SidePanelHandler {
             && this.tabBar.titles.some(other => other !== title && !this.itemVisibility.isHidden(other.owner.id));
     }
 
-    protected onItemVisibilityChanged(widgetId: string | undefined): void {
+    protected onItemVisibilityChanged(widgetId: string): void {
         const current = this.tabBar.currentTitle;
-        if (current && this.itemVisibility.isHidden(current.owner.id) && (widgetId === undefined || widgetId === current.owner.id)) {
+        if (current?.owner.id === widgetId && this.itemVisibility.isHidden(widgetId)) {
             this.moveOffHiddenItem(current);
         }
         this.tabBar.update();

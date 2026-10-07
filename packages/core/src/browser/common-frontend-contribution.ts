@@ -255,6 +255,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         return [this.shell.leftPanelHandler, this.shell.rightPanelHandler].find(handler => handler.tabBar === tabBar);
     }
 
+    /** @returns whether the title is hidden from its side bar, or `undefined` if it is not a side panel item. */
+    protected isSidePanelItemHidden(title: Title<Widget> | undefined, tabBar: TabBar<Widget> | undefined): boolean | undefined {
+        return title && this.findSidePanelHandler(tabBar) ? this.sidePanelItemVisibility.isHidden(title.owner.id) : undefined;
+    }
+
     protected updatePinnedKey(): void {
         const activeTab = this.shell.findTabBar();
         const pinningTarget = activeTab && this.shell.findTitle(activeTab);
@@ -455,6 +460,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             commandId: CommonCommands.HIDE_SIDE_PANEL_ITEM.id,
             label: nls.localizeByDefault('Hide'),
             order: '0'
+        });
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_HIDE, {
+            commandId: CommonCommands.KEEP_SIDE_PANEL_ITEM.id,
+            label: nls.localizeByDefault('Keep'),
+            order: '1'
         });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_PIN, {
             commandId: CommonCommands.PIN_TAB.id,
@@ -793,9 +803,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: () => this.selectIconTheme()
         });
         commandRegistry.registerCommand(CommonCommands.HIDE_SIDE_PANEL_ITEM, new CurrentWidgetCommandAdapter(this.shell, {
-            isVisible: (_title, tabBar) => this.findSidePanelHandler(tabBar) !== undefined,
+            isVisible: (title, tabBar) => this.isSidePanelItemHidden(title, tabBar) === false,
             isEnabled: (title, tabBar) => Boolean(title && this.findSidePanelHandler(tabBar)?.canHideItem(title)),
             execute: title => title && this.sidePanelItemVisibility.setHidden(title.owner.id, true),
+        }));
+        commandRegistry.registerCommand(CommonCommands.KEEP_SIDE_PANEL_ITEM, new CurrentWidgetCommandAdapter(this.shell, {
+            isVisible: (title, tabBar) => this.isSidePanelItemHidden(title, tabBar) === true,
+            isEnabled: (title, tabBar) => this.isSidePanelItemHidden(title, tabBar) === true,
+            execute: title => title && this.sidePanelItemVisibility.setHidden(title.owner.id, false),
         }));
         commandRegistry.registerCommand(CommonCommands.RESET_HIDDEN_SIDE_PANEL_ITEMS, {
             execute: () => this.sidePanelItemVisibility.reset()
