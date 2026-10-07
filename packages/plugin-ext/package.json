@@ -40,7 +40,6 @@
     "@vscode/debugprotocol": "^1.68.0",
     "@vscode/proxy-agent": "^0.13.2",
     "async-mutex": "^0.4.1",
-    "decompress": "^4.2.1",
     "escape-html": "^1.0.3",
     "filenamify": "^4.3.0",
     "is-electron": "^2.2.2",
@@ -96,7 +95,6 @@
   },
   "devDependencies": {
     "@theia/ext-scripts": "1.76.0",
-    "@types/decompress": "^4.2.7",
     "@types/escape-html": "^0.0.20",
     "@types/lodash.clonedeep": "^4.5.9"
   },

@@ -45,7 +45,6 @@
   },
   "devDependencies": {
     "@theia/ext-scripts": "1.76.0",
-    "@types/decompress": "^4.2.7",
     "@types/escape-html": "^0.0.20",
     "@types/lodash.clonedeep": "^4.5.9"
   },

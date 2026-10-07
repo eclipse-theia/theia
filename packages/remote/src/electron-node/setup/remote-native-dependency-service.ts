@@ -17,15 +17,11 @@
 import { ContributionProvider, THEIA_VERSION } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { RequestContext, RequestService, RequestOptions } from '@theia/core/shared/@theia/request';
-import decompress from 'decompress';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { DependencyDownload, DirectoryDependencyDownload, RemoteNativeDependencyContribution } from './remote-native-dependency-contribution';
 import { RemotePlatform } from '@theia/core/lib/node/remote/remote-cli-contribution';
-
-const decompressTar = require('decompress-tar');
-const decompressTargz = require('decompress-targz');
-const decompressUnzip = require('decompress-unzip');
+import { ArchiveExtractor } from '@theia/filesystem/lib/node/archive/archive-extractor';
 
 export const DEFAULT_HTTP_OPTIONS = {
     method: 'GET',
@@ -48,6 +44,9 @@ export class RemoteNativeDependencyService {
 
     @inject(RequestService)
     protected requestService: RequestService;
+
+    @inject(ArchiveExtractor)
+    protected archiveExtractor: ArchiveExtractor;
 
     async downloadDependencies(remotePlatform: RemotePlatform, directory: string): Promise<NativeDependencyFile[]> {
         const contributionResults = await Promise.all(this.nativeDependencyContributions.getContributions()
@@ -81,25 +80,12 @@ export class RemoteNativeDependencyService {
 
     protected async storeDependency(dependency: DependencyDownload, directory: string): Promise<NativeDependencyFile[]> {
         if (DirectoryDependencyDownload.is(dependency)) {
-            const archiveBuffer = dependency.buffer;
-            const plugins: unknown[] = [];
-            if (dependency.archive === 'tar') {
-                plugins.push(decompressTar());
-            } else if (dependency.archive === 'tgz') {
-                plugins.push(decompressTargz());
-            } else if (dependency.archive === 'zip') {
-                plugins.push(decompressUnzip());
-            }
-            const files = await decompress(archiveBuffer, directory, { plugins });
-            const result: NativeDependencyFile[] = await Promise.all(files.map(async file => {
-                const localPath = path.join(directory, file.path);
-                return {
-                    path: localPath,
-                    target: file.path,
-                    mode: file.mode
-                };
+            const entries = await this.archiveExtractor.extract(dependency.buffer, directory, { format: dependency.archive });
+            return entries.map(entry => ({
+                path: path.join(directory, entry.path),
+                target: entry.path,
+                mode: entry.mode
             }));
-            return result;
         } else {
             const fileName = path.basename(dependency.file.path);
             const localPath = path.join(directory, fileName);
