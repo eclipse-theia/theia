@@ -79,8 +79,6 @@ input-token threshold. When neither is set, the provider chooses the threshold. 
 Responses remain unstored and streamed; encrypted compaction state returned in the stream is replayed on subsequent ChatGPT requests.
 ChatGPT uses the `chatgpt-responses` compaction marker, distinct from OpenAI's `openai-responses` marker. When switching
 between these providers, foreign compaction markers are ignored and the earlier conversation history is preserved.
-Older ChatGPT markers labelled `openai-responses` cannot be distinguished from OpenAI markers and are not migrated.
-Start a new chat before switching such a conversation to an OpenAI model.
 
 ### Limitations
 

@@ -16,7 +16,7 @@
 
 import { createHash, randomBytes } from 'crypto';
 
-/** Public client id OpenAI registered for clients authenticating with a ChatGPT subscription. */
+/** Public OAuth client id of OpenAI's Codex CLI, used by default to authenticate with a ChatGPT subscription. */
 export const CHATGPT_CLIENT_ID = 'app_EMoamEEZ73f0CkXaXp7hrann';
 export const CHATGPT_AUTHORIZE_URL = 'https://auth.openai.com/oauth/authorize';
 export const CHATGPT_TOKEN_URL = 'https://auth.openai.com/oauth/token';
