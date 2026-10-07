@@ -13,6 +13,8 @@
 - [ai-openai] moved `OpenAiModelUtils` from `openai-language-model.ts` to `openai-model-utils.ts` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
 - [ai-openai] replaced the SDK `runTools` runner: `OpenAiModel.createTools()` returns `ChatCompletionTool[]`, and `OpenAiModel.runnerOptions` and the `runnerOptions` parameter of `OpenAiResponseApiUtils.handleRequest` were removed [#17623](https://github.com/eclipse-theia/theia/pull/17623)
 - [ai-openai] removed the `openAiModelUtils` and `responseApiUtils` fields of `OpenAiLanguageModelsManagerImpl` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [core] `TreeSelectionState` keeps the ids of the selected nodes rather than the nodes themselves, so that it does not retain nodes the tree has replaced. `selectionStack` became a getter that resolves those ids against the tree and leaves out the nodes it no longer holds, so it can no longer be redeclared as a property by a subclass [#18111](https://github.com/eclipse-theia/theia/pull/18111)
+- [debug] `DebugConsoleSession.debugSession` is now a read-only `DebugSession | undefined`, as the console releases the session once it terminates. The setter is replaced by `startFor(session)`, the new `label` and `configurationName` describe a session that has already ended, and `id` is now generated, so a console is no longer found by `ConsoleSessionManager.get(session.id)` [#18111](https://github.com/eclipse-theia/theia/pull/18111)
 
 ## 1.76.0 - 9/24/2026
 
