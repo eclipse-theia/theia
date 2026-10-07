@@ -254,6 +254,54 @@ describe('PluginViewRegistry - welcome-only views on expand', () => {
 
 });
 
+describe('PluginViewRegistry - prepareView', () => {
+
+    interface FakeViewWidget {
+        options: { viewId: string };
+        title: { label: string };
+        widgets: unknown[];
+        isDisposed: boolean;
+        addWidget(widget: unknown): void;
+    }
+
+    let registry: PluginViewRegistry;
+    let view: FakeViewWidget;
+    let dataWidget: { isDisposed: boolean; dispose(): void };
+
+    beforeEach(() => {
+        registry = new PluginViewRegistry();
+        view = {
+            options: { viewId: 'actions' },
+            title: { label: '' },
+            widgets: [],
+            isDisposed: false,
+            addWidget(widget: unknown): void {
+                this.widgets.push(widget);
+            }
+        };
+        dataWidget = { isDisposed: false, dispose: () => { } };
+        (registry as unknown as { views: Map<string, unknown> }).views.set('actions', ['container', { id: 'actions', name: 'Actions' }]);
+        (registry as unknown as { createViewDataWidget: unknown }).createViewDataWidget = async () => dataWidget;
+    });
+
+    const prepareView = (): Promise<void> => (registry as unknown as { prepareView(widget: FakeViewWidget): Promise<void> }).prepareView(view);
+
+    it('adds the created data widget to the view', async () => {
+        await prepareView();
+
+        expect(view.widgets).to.deep.equal([dataWidget]);
+    });
+
+    it('leaves the view empty when its data widget was disposed before it could be added', async () => {
+        dataWidget.isDisposed = true;
+
+        await prepareView();
+
+        expect(view.widgets).to.have.lengthOf(0);
+    });
+
+});
+
 describe('PluginViewRegistry - VS Code view commands', () => {
 
     let registry: PluginViewRegistry;
