@@ -28,7 +28,9 @@ import { ReasoningLevel, ReasoningSettings, ReasoningSupport } from '@theia/ai-c
 import { AISettingsService } from '@theia/ai-core/lib/common';
 import { ChatModel } from '@theia/ai-chat';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { AIChatInputWidget } from './chat-input-widget';
+import { Message } from '@theia/core/lib/browser';
+import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
+import { AIChatInputWidget, applyEditorEnabledState } from './chat-input-widget';
 
 disableJSDOM();
 
@@ -114,6 +116,21 @@ class TestChatInputWidget extends AIChatInputWidget {
 
     override update(): void {
         this.renderUpdates++;
+    }
+
+    focusCalls = 0;
+
+    resolveEditorForTest(): void {
+        this.editorRef = { focus: () => { this.focusCalls++; } } as unknown as SimpleMonacoEditor;
+        this.editorReady.resolve();
+    }
+
+    editorReadyForTest(): Promise<void> {
+        return this.editorReady.promise;
+    }
+
+    activateForTest(): void {
+        this.onActivateRequest(new Message('activate-request'));
     }
 }
 
@@ -282,6 +299,91 @@ describe('AIChatInputWidget', () => {
 
             await widget.refreshSavedCapabilityOverridesForTest(undefined);
             await widget.refreshSavedCapabilityOverridesForTest('another-agent');
+        });
+    });
+
+    describe('applyEditorEnabledState', () => {
+        const createEditor = (hasTextFocus: boolean, domNode?: HTMLElement) => {
+            const updates: Array<Record<string, unknown>> = [];
+            const control = {
+                updateOptions: (options: Record<string, unknown>) => { updates.push(options); },
+                hasTextFocus: () => hasTextFocus,
+                getDomNode: () => domNode
+            };
+            return { updates, editor: { getControl: () => control } as unknown as SimpleMonacoEditor };
+        };
+
+        it('makes the editor read-only and removes it from the tab order while disabled', () => {
+            const { updates, editor } = createEditor(false);
+
+            applyEditorEnabledState(editor, false);
+
+            expect(updates).to.deep.equal([{
+                readOnly: true,
+                domReadOnly: true,
+                tabIndex: -1,
+                readOnlyMessage: { value: 'AI features are disabled' }
+            }]);
+        });
+
+        it('restores an editable, focusable editor while enabled', () => {
+            const { updates, editor } = createEditor(false);
+
+            applyEditorEnabledState(editor, true);
+
+            expect(updates).to.deep.equal([{ readOnly: false, domReadOnly: false, tabIndex: 0, readOnlyMessage: undefined }]);
+        });
+
+        it('gives up the focus the editor still holds when it becomes disabled', () => {
+            const textArea = document.createElement('textarea');
+            document.body.appendChild(textArea);
+            textArea.focus();
+            const { editor } = createEditor(true, textArea);
+
+            applyEditorEnabledState(editor, false);
+
+            expect(document.activeElement).to.not.equal(textArea);
+            textArea.remove();
+        });
+
+        it('keeps the focus of an enabled editor', () => {
+            const textArea = document.createElement('textarea');
+            document.body.appendChild(textArea);
+            textArea.focus();
+            const { editor } = createEditor(true, textArea);
+
+            applyEditorEnabledState(editor, true);
+
+            expect(document.activeElement).to.equal(textArea);
+            textArea.remove();
+        });
+
+        it('does nothing without an editor', () => {
+            applyEditorEnabledState(undefined, false);
+        });
+    });
+
+    describe('onActivateRequest', () => {
+        it('does not focus the input editor while AI features are disabled', async () => {
+            const widget = new TestChatInputWidget();
+            widget.setEnabled(false);
+            widget.resolveEditorForTest();
+
+            widget.activateForTest();
+            await widget.editorReadyForTest();
+
+            expect(widget.focusCalls).to.equal(0);
+        });
+
+        it('focuses the input editor while AI features are enabled', async () => {
+            const widget = new TestChatInputWidget();
+            widget.setEnabled(true);
+            widget.resolveEditorForTest();
+
+            widget.activateForTest();
+            await widget.editorReadyForTest();
+
+            expect(widget.focusCalls).to.equal(1);
         });
     });
 
