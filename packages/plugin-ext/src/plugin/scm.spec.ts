@@ -24,7 +24,13 @@
 import * as assert from 'assert';
 import { Emitter } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { ScmCommandArg, ScmHistoryItemCommandArg } from '../common/plugin-api-rpc';
+import { ScmCommandArg, ScmHistoryItemCommandArg, ScmMain, ScmRawResourceSplices } from '../common/plugin-api-rpc';
+import { ScmExtImpl } from './scm';
+import { RPCProtocol } from '../common/rpc-protocol';
+import { CommandRegistryImpl } from './command-registry';
+import { Plugin } from '../common';
+import { URI } from './types-impl';
+import { SourceControlResourceGroup, SourceControlResourceState } from '@theia/plugin';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -151,6 +157,66 @@ class HistoryProviderBridge {
         this._historyProviderDisposables.dispose();
     }
 }
+
+describe('SCM multi-diff resource snapshots (plugin side)', () => {
+    let group: SourceControlResourceGroup;
+    let updates: ScmRawResourceSplices[][];
+
+    beforeEach(() => {
+        updates = [];
+        const proxy = new Proxy({}, {
+            get: (_target, name) => name === '$spliceResourceStates'
+                ? (_handle: number, splices: ScmRawResourceSplices[]): void => { updates.push(splices); }
+                : (): void => { }
+        }) as ScmMain;
+        const scm = new ScmExtImpl(
+            { getProxy: () => proxy } as unknown as RPCProtocol,
+            { registerArgumentProcessor: () => { } } as unknown as CommandRegistryImpl
+        );
+        const sourceControl = scm.createSourceControl({ model: { id: 'test' } } as Plugin, 'git', 'Git', undefined);
+        group = sourceControl.createResourceGroup('changes', 'Changes');
+    });
+
+    it('serializes added and deleted sides using the proposed modified field name', () => {
+        const added = URI.parse('file:///repo/added.txt');
+        const deleted = URI.parse('git:/repo/deleted.txt?ref=HEAD#original');
+        group.resourceStates = [
+            { resourceUri: added, multiFileDiffEditorModifiedUri: added },
+            { resourceUri: URI.file('/repo/deleted.txt'), multiDiffEditorOriginalUri: deleted }
+        ];
+        const resources = updates[0][0].splices[0].rawResources;
+        assert.strictEqual(resources[0].multiDiffEditorOriginalUri, undefined);
+        assert.strictEqual(resources[0].multiDiffEditorModifiedUri?.toString(), added.toString());
+        assert.strictEqual(resources[1].multiDiffEditorOriginalUri?.toString(), deleted.toString());
+        assert.strictEqual(resources[1].multiDiffEditorModifiedUri, undefined);
+    });
+
+    for (const field of ['multiDiffEditorOriginalUri', 'multiFileDiffEditorModifiedUri'] as const) {
+        it(`detects ${field}-only additions, changes and removals, but ignores equal URIs`, () => {
+            const resourceUri = URI.file('/repo/file.txt');
+            const state: SourceControlResourceState = { resourceUri };
+            group.resourceStates = [state];
+            updates.length = 0;
+            group.resourceStates = [{ ...state }];
+            assert.strictEqual(updates.length, 0);
+
+            for (const uri of [URI.parse('git:/repo/file.txt?ref=HEAD'), URI.parse('git:/repo/file.txt?ref=HEAD~1#changed'), undefined]) {
+                const nextState = { ...state, [field]: uri };
+                group.resourceStates = [nextState];
+                assert.strictEqual(updates.length, 1);
+                const splices = updates[0][0].splices;
+                assert.strictEqual(splices.reduce((count, splice) => count + splice.deleteCount, 0), 1);
+                const resources = splices.flatMap(splice => splice.rawResources);
+                assert.strictEqual(resources.length, 1);
+                const rawField = field === 'multiFileDiffEditorModifiedUri' ? 'multiDiffEditorModifiedUri' : field;
+                assert.strictEqual(resources[0][rawField]?.toString(), uri?.toString());
+                updates.length = 0;
+                group.resourceStates = [{ ...nextState, [field]: uri ? URI.parse(uri.toString()) : undefined }];
+                assert.strictEqual(updates.length, 0);
+            }
+        });
+    }
+});
 
 describe('SCM history provider bridge (plugin side)', () => {
     let bridge: HistoryProviderBridge;
