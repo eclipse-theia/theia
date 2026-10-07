@@ -309,13 +309,9 @@
   min-width: max-content;
 }
 
-/* Editor hover widget and overlay messages.
-   Alias --vscode- to --theia- for git blame hover addition/deletion colors
-   since the git extension uses --vscode- prefixed variables in inline styles. */
+/* Editor hover widget and overlay messages. */
 .monaco-editor .monaco-hover {
   font-family: var(--theia-ui-font-family);
-  --vscode-scmGraph-historyItemHoverAdditionsForeground: var(--theia-scmGraph-historyItemHoverAdditionsForeground);
-  --vscode-scmGraph-historyItemHoverDeletionsForeground: var(--theia-scmGraph-historyItemHoverDeletionsForeground);
 }
 
 .monaco-editor .monaco-hover p {
