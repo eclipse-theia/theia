@@ -24,12 +24,10 @@ import {
     UserRequest,
     LanguageModelStatus,
     ReasoningSupport,
-    resolveCompactionTokenThreshold,
-    resolveServerSideCompaction,
     ServerToolDescriptor
 } from '@theia/ai-core';
 import { OpenAiModelUtils } from './openai-model-utils';
-import { CancellationToken, ILogger, isObject } from '@theia/core';
+import { CancellationToken, ILogger } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { OpenAI, AzureOpenAI } from 'openai';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources';
@@ -38,7 +36,7 @@ import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-compl
 import { OPENAI_PROVIDER_ID } from '../common';
 import type { FinalRequestOptions } from 'openai/internal/request-options';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
-import { openAiReasoningFor } from './openai-reasoning';
+import { applyResponseApiCompaction, getOpenAiRequestSettings } from './openai-request-settings';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 
 export class MistralFixedOpenAI extends OpenAI {
@@ -199,21 +197,14 @@ export class OpenAiModel implements LanguageModel {
     }
 
     /**
-     * Reasoning-level translation lives in {@link openAiReasoningFor}. On the Responses API, user-configured `reasoning`
+     * Reasoning settings are resolved by {@link getOpenAiRequestSettings}. On the Responses API, user-configured `reasoning`
      * fields from the request settings (e.g. `summary`) are kept; the selected level still decides `effort`.
      */
     protected getSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
         const level = request.reasoning && this.reasoningSupport
             ? ReasoningSupport.clampLevel(this.reasoningSupport, request.reasoning.level)
             : undefined;
-        const reasoning = openAiReasoningFor(level, forResponseApi, !!this.reasoningSupport);
-        const ours = reasoning.reasoning;
-        const theirs = request.settings?.reasoning;
-        if (isObject(ours) && isObject(theirs)) {
-            const effort = (ours as { effort?: string }).effort;
-            return { ...request.settings, reasoning: { ...ours, ...theirs, ...(effort !== undefined && { effort }) } };
-        }
-        return { ...request.settings, ...reasoning };
+        return getOpenAiRequestSettings({ ...request, reasoning: level !== undefined ? { level } : undefined }, forResponseApi, !!this.reasoningSupport);
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -347,17 +338,7 @@ export class OpenAiModel implements LanguageModel {
      * given request. When disabled, the settings are returned unchanged so the default path is byte-for-byte identical.
      */
     protected applyResponseApiCompaction(settings: Record<string, unknown>, request: LanguageModelRequest): Record<string, unknown> {
-        if (resolveServerSideCompaction(this.serverSideCompactionSupport, this.serverSideCompactionEnabledByDefault, request.compaction)) {
-            const tokenThreshold = resolveCompactionTokenThreshold(this.serverSideCompactionTokenThresholdByDefault, request.compaction);
-            return {
-                ...settings,
-                context_management: [{
-                    type: 'compaction',
-                    ...(tokenThreshold !== undefined && { compact_threshold: tokenThreshold })
-                }]
-            };
-        }
-        return settings;
+        return applyResponseApiCompaction(settings, request, this);
     }
 
     protected async handleResponseApiRequest(openai: OpenAI, request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {

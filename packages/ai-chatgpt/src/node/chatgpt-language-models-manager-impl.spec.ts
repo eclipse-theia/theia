@@ -137,6 +137,24 @@ describe('ChatGptLanguageModelsManagerImpl', () => {
         expect(model.maxInputTokens).to.be.a('number');
     });
 
+    it('registers and patches compaction defaults, including clearing an optional threshold', async () => {
+        const description = { id: 'chatgpt/gpt-5.5', model: 'gpt-5.5', maxRetries: 3 };
+        await manager.createOrUpdateLanguageModels(description);
+        const model = registry.models.get(description.id) as ChatGptModel;
+        expect(model.serverSideCompactionSupport).to.equal(true);
+        expect(model.serverSideCompactionEnabledByDefault).to.equal(true);
+        expect(model.serverSideCompactionTokenThresholdByDefault).to.equal(undefined);
+        await manager.createOrUpdateLanguageModels({
+            ...description, serverSideCompactionEnabledByDefault: false, serverSideCompactionTokenThresholdByDefault: 100_000
+        });
+        expect(registry.models.get(description.id)).to.equal(model);
+        expect(model.serverSideCompactionEnabledByDefault).to.equal(false);
+        expect(model.serverSideCompactionTokenThresholdByDefault).to.equal(100_000);
+        await manager.createOrUpdateLanguageModels(description);
+        expect(model.serverSideCompactionEnabledByDefault).to.equal(true);
+        expect(model.serverSideCompactionTokenThresholdByDefault).to.equal(undefined);
+    });
+
     it('leaves a model of another provider alone', async () => {
         const foreign = { id: 'chatgpt/gpt-5.5', vendor: 'openai' } as unknown as LanguageModel;
         registry.addLanguageModels([foreign]);

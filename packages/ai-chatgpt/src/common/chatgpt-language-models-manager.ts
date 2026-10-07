@@ -30,6 +30,10 @@ export interface ChatGptModelDescription {
     model: string;
     /** Maximum number of retry attempts when a request fails. */
     maxRetries: number;
+    /** Resolved global/provider default for server-side compaction. */
+    serverSideCompactionEnabledByDefault?: boolean;
+    /** Optional input-token threshold; unset lets the provider choose. */
+    serverSideCompactionTokenThresholdByDefault?: number;
 }
 
 export interface ChatGptLanguageModelsManager {

@@ -22,9 +22,14 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { Emitter, Event, ILogger, PreferenceChange, PreferenceService } from '@theia/core';
 import { Container } from '@theia/core/shared/inversify';
-import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
+import {
+    AICorePreferences, PREFERENCE_NAME_MAX_RETRIES, PREFERENCE_NAME_SERVER_SIDE_COMPACTION, PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD
+} from '@theia/ai-core/lib/common/ai-core-preferences';
 import { ModelDiscoveryStatusService } from '@theia/ai-core/lib/browser/model-discovery-status-service';
-import { CHATGPT_ENABLED_PREF, ChatGptAuthService, ChatGptAuthState, ChatGptLanguageModelsManager, ChatGptModelDescription, MODELS_PREF } from '../common';
+import {
+    CHATGPT_ENABLED_PREF, ChatGptAuthService, ChatGptAuthState, ChatGptLanguageModelsManager, ChatGptModelDescription, ChatGptPreferencesSchema, MODELS_PREF,
+    SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF
+} from '../common';
 import { CHATGPT_DISCOVERY_PROVIDER_ID, ChatGptFrontendApplicationContribution } from './chatgpt-frontend-application-contribution';
 import { ChatGptCommands } from './chatgpt-command-contribution';
 
@@ -399,6 +404,44 @@ describe('ChatGptFrontendApplicationContribution', () => {
         await flush();
 
         expect(manager.created[1][0].maxRetries).to.equal(7);
+    });
+
+    it('declares inheritable compaction and an optional threshold', () => {
+        expect(ChatGptPreferencesSchema.properties[SERVER_SIDE_COMPACTION_PREF].default).to.equal('default');
+        expect(ChatGptPreferencesSchema.properties[SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF].default).to.equal(undefined);
+        expect(ChatGptPreferencesSchema.properties[SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF].minimum).to.equal(50_000);
+    });
+
+    it('inherits global defaults and refreshes provider/global compaction changes', async () => {
+        preferences.values.set(MODELS_PREF, ['gpt-5.5']);
+        await start();
+        const latest = () => manager.created[manager.created.length - 1][0];
+        expect(latest().serverSideCompactionEnabledByDefault).to.equal(true);
+        expect(latest().serverSideCompactionTokenThresholdByDefault).to.equal(undefined);
+        preferences.set(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, false);
+        await flush();
+        expect(manager.created).to.have.lengthOf(2);
+        expect(latest().serverSideCompactionEnabledByDefault).to.equal(false);
+        preferences.set(SERVER_SIDE_COMPACTION_PREF, 'enabled');
+        await flush();
+        expect(manager.created).to.have.lengthOf(3);
+        expect(latest().serverSideCompactionEnabledByDefault).to.equal(true);
+        preferences.set(PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD, 100_000);
+        await flush();
+        expect(manager.created).to.have.lengthOf(4);
+        expect(latest().serverSideCompactionTokenThresholdByDefault).to.equal(100_000);
+        preferences.set(SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF, 150_000);
+        await flush();
+        expect(manager.created).to.have.lengthOf(5);
+        expect(latest().serverSideCompactionTokenThresholdByDefault).to.equal(150_000);
+        preferences.set(SERVER_SIDE_COMPACTION_PREF, 'disabled');
+        await flush();
+        expect(latest().serverSideCompactionEnabledByDefault).to.equal(false);
+        preferences.set(SERVER_SIDE_COMPACTION_PREF, 'default');
+        preferences.set(SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF, undefined);
+        await flush();
+        expect(latest().serverSideCompactionEnabledByDefault).to.equal(false);
+        expect(latest().serverSideCompactionTokenThresholdByDefault).to.equal(100_000);
     });
 
     it('forwards the proxy configuration and re-registers the models when it changes', async () => {

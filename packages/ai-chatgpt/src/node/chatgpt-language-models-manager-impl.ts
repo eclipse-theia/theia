@@ -75,7 +75,9 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
                     maxRetries: description.maxRetries,
                     proxy,
                     reasoningSupport: defaults.reasoningSupport,
-                    maxInputTokens: defaults.contextWindow
+                    maxInputTokens: defaults.contextWindow,
+                    serverSideCompactionEnabledByDefault: description.serverSideCompactionEnabledByDefault ?? true,
+                    serverSideCompactionTokenThresholdByDefault: description.serverSideCompactionTokenThresholdByDefault
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -89,7 +91,9 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
                         description.maxRetries,
                         proxy,
                         defaults.reasoningSupport,
-                        defaults.contextWindow
+                        defaults.contextWindow,
+                        description.serverSideCompactionEnabledByDefault ?? true,
+                        description.serverSideCompactionTokenThresholdByDefault
                     )
                 ]);
             }

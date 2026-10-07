@@ -15,13 +15,13 @@
 The `@theia/ai-chatgpt` extension serves OpenAI models through your ChatGPT subscription instead of an OpenAI API key.
 The models appear as `chatgpt/<model>` in the model picker and coexist with the API-key based `openai/<model>` models contributed by `@theia/ai-openai`.
 
-By default the models your ChatGPT plan grants are queried from the endpoint once you are signed in. Set the `ai-features.chatGpt.models`
+By default the models your ChatGPT plan grants are queried from the endpoint once you are signed in. Set the `ai-features.chatGpt.modelOverrides`
 preference to offer a fixed list of models instead. A built-in list is offered when authenticated discovery fails, for example when the
 endpoint cannot be reached. Discovery returns no models without credentials.
 
 ### Signing in
 
-Click the ChatGPT status bar item, run the command _ChatGPT: Sign in_, or use the sign in link in the AI Configuration view. It opens the OpenAI authorization
+Click the ChatGPT status bar item or run the command _ChatGPT: Sign in_. It opens the OpenAI authorization
 page in your browser. The browser returns the authorization code to a
 listener on `http://localhost:1455/auth/callback`, which is provided by the Theia backend. If the backend does not run on the same machine as
 your browser, or the port is already in use, you can paste the authorization code (or the full redirect URL) into the input box Theia offers
@@ -31,6 +31,10 @@ Models are only registered while signed in. The status bar shows the signed-in a
 Set `ai-features.chatGpt.enabled` to `false` to disable the provider, remove its models and hide its status bar item; the configured model list is preserved.
 
 ### Backend application configuration
+
+The default OAuth client id `app_EMoamEEZ73f0CkXaXp7hrann` belongs to OpenAI's Codex CLI; it is not a client registered by Theia.
+Adopters must evaluate whether using this client and the subscription endpoint is suitable for their application.
+They can rebind the configuration below to use their own registered OAuth client and matching callback configuration.
 
 Application authors can rebind `ChatGptAuthServiceConfig` from `@theia/ai-chatgpt/lib/node/chatgpt-auth-service` in a backend module
 loaded after this extension. These are backend DI values, not frontend preferences. All fields are required; spread
@@ -66,13 +70,23 @@ Changing key store identifiers selects a different credential entry and does not
 Backend consumers use the `ChatGptBackendAuthService` interface symbol from the same module, which application authors can rebind
 for a custom auth implementation. The frontend RPC service remains a narrow facade: it never exposes credentials or backend client registration.
 
+### Server-side compaction
+
+ChatGPT models request automatic server-side compaction through the Responses API `context_management` directive.
+`ai-features.chatGpt.serverSideCompaction` defaults to `default`, inheriting the global chat compaction setting; `enabled`
+and `disabled` override it. The optional `ai-features.chatGpt.serverSideCompactionTokenThreshold` overrides the global
+input-token threshold. When neither is set, the provider chooses the threshold. Session compaction settings take precedence.
+Responses remain unstored and streamed; encrypted compaction state returned in the stream is replayed on subsequent requests.
+
 ### Limitations
+
+This integration is experimental and relies on an undocumented endpoint. There is no stability guarantee: OpenAI may change or
+remove endpoint access, authentication requirements, or supported features without notice, causing the integration to stop working.
+Adopters should evaluate these risks and the suitability of this integration before including it in their applications.
 
 Requests are served by the ChatGPT endpoint `https://chatgpt.com/backend-api/codex`. That endpoint only supports the streaming Response API,
 does not retain responses, and only serves the models included in your ChatGPT plan, so models configured by hand need to be available for
-your plan. Because responses are not retained, server-side compaction is not offered for these models. The endpoint is not documented, so
-neither the web search tool it offers nor the listing of the granted models is a contract: web search can be deselected again in the chat
-capabilities, and the model listing is treated as a hint.
+your plan.
 
 ## Additional Information
 

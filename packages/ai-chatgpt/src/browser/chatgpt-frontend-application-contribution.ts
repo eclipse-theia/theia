@@ -14,12 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
+import {
+    AICorePreferences, PREFERENCE_NAME_MAX_RETRIES, PREFERENCE_NAME_SERVER_SIDE_COMPACTION, PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD
+} from '@theia/ai-core/lib/common/ai-core-preferences';
+import { resolveCompactionDefault, resolveCompactionTokenThresholdDefault, ServerSideCompactionSetting } from '@theia/ai-core';
 import { ModelDiscoveryStatusService } from '@theia/ai-core/lib/browser';
 import { nls, PreferenceService } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { CHATGPT_ENABLED_PREF, CHATGPT_PROVIDER_ID, ChatGptAuthService, ChatGptLanguageModelsManager, ChatGptModelDescription, MODELS_PREF } from '../common';
+import {
+    CHATGPT_ENABLED_PREF, CHATGPT_PROVIDER_ID, ChatGptAuthService, ChatGptLanguageModelsManager, ChatGptModelDescription, MODELS_PREF,
+    SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF
+} from '../common';
 import { ChatGptCommands } from './chatgpt-command-contribution';
 
 /**
@@ -68,6 +74,11 @@ export class ChatGptFrontendApplicationContribution implements FrontendApplicati
                         this.removeRegisteredModels();
                         this.updateDisabledStatus();
                     }
+                    this.refreshModels();
+                } else if (event.preferenceName === SERVER_SIDE_COMPACTION_PREF ||
+                    event.preferenceName === SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF ||
+                    event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION ||
+                    event.preferenceName === PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD) {
                     this.refreshModels();
                 } else if (event.preferenceName === 'http.proxy') {
                     this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
@@ -221,7 +232,15 @@ export class ChatGptFrontendApplicationContribution implements FrontendApplicati
         return {
             id: `${CHATGPT_PROVIDER_ID}/${modelId}`,
             model: modelId,
-            maxRetries: this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3
+            maxRetries: this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3,
+            serverSideCompactionEnabledByDefault: resolveCompactionDefault(
+                this.preferenceService.get<boolean>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true),
+                this.preferenceService.get<ServerSideCompactionSetting>(SERVER_SIDE_COMPACTION_PREF, 'default')
+            ),
+            serverSideCompactionTokenThresholdByDefault: resolveCompactionTokenThresholdDefault(
+                this.preferenceService.get<number>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD, undefined),
+                this.preferenceService.get<number>(SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF, undefined)
+            )
         };
     }
 }

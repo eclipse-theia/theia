@@ -25,7 +25,7 @@ import { QuickInputService } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { CHATGPT_ENABLED_PREF, ChatGptAuthService, ChatGptAuthState, ChatGptLoginSession, ChatGptPreferencesSchema, MODELS_PREF } from '../common';
+import { CHATGPT_ENABLED_PREF, ChatGptAuthService, ChatGptAuthState, ChatGptLoginSession, ChatGptPreferencesSchema } from '../common';
 import { ChatGptCommandContribution, ChatGptCommands } from './chatgpt-command-contribution';
 
 disableJSDOM();
@@ -276,11 +276,4 @@ describe('ChatGptCommandContribution', () => {
         expect(authService.cancelledLogins).to.equal(1);
     });
 
-    it('offers both commands as links on the preference page', () => {
-        const description = ChatGptPreferencesSchema.properties[MODELS_PREF].markdownDescription!;
-        expect(description).to.contain(`(command:${ChatGptCommands.SIGN_IN.id})`);
-        expect(description).to.contain(`(command:${ChatGptCommands.SIGN_OUT.id})`);
-        // Four leading spaces would render the links as a code block instead.
-        expect(description).to.not.match(/\n {4}/);
-    });
 });

@@ -14,11 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModel, LanguageModelResponse, LanguageModelStatus, ReasoningSupport, UserRequest } from '@theia/ai-core';
+import {
+    LanguageModel, LanguageModelResponse, LanguageModelStatus, ReasoningSupport, UserRequest
+} from '@theia/ai-core';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 import { CancellationToken, generateUuid } from '@theia/core';
 import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
-import { openAiReasoningFor } from '@theia/ai-openai/lib/node/openai-reasoning';
+import { applyResponseApiCompaction, getOpenAiRequestSettings } from '@theia/ai-openai/lib/node/openai-request-settings';
 import { OPENAI_SERVER_TOOLS } from '@theia/ai-openai/lib/node/openai-server-tools';
 import { OpenAI } from 'openai';
 import { CHATGPT_RESPONSES_BASE_URL, ChatGptCredentials } from '../common';
@@ -32,6 +34,7 @@ import { ChatGptResponseApiUtils } from './chatgpt-response-api-utils';
 export class ChatGptModel implements LanguageModel {
 
     readonly vendor = 'chatgpt';
+    readonly serverSideCompactionSupport = true;
 
     /**
      * The endpoint serves Codex, which offers the same server-side web search, so it is offered for every model
@@ -55,14 +58,15 @@ export class ChatGptModel implements LanguageModel {
         public maxRetries: number = 3,
         public proxy?: string,
         public reasoningSupport?: ReasoningSupport,
-        public maxInputTokens?: number
+        public maxInputTokens?: number,
+        public serverSideCompactionEnabledByDefault: boolean = true,
+        public serverSideCompactionTokenThresholdByDefault?: number
     ) { }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const openai = await this.initializeOpenAi();
         const settings = {
-            ...request.settings,
-            ...openAiReasoningFor(request.reasoning?.level, true, !!this.reasoningSupport),
+            ...applyResponseApiCompaction(getOpenAiRequestSettings(request, true, !!this.reasoningSupport), request, this),
             // The endpoint rejects anything else with 400 'Store must be set to false' / 'Stream must be set to true'.
             store: false,
             stream: true

@@ -15,10 +15,16 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LanguageModelMessage, LanguageModelResponse, ReasoningSupport, UserRequest } from '@theia/ai-core';
+import {
+    isCompactionResponsePart, LanguageModelMessage, LanguageModelResponse, LanguageModelStreamResponsePart, ReasoningSupport,
+    ToolCallExecutor, ToolCallExecutorImpl, UserRequest
+} from '@theia/ai-core';
 import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
 import { OPENAI_WEB_SEARCH } from '@theia/ai-openai/lib/node/openai-server-tools';
 import { OpenAI } from 'openai';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { Container } from '@theia/core/shared/inversify';
 import { CHATGPT_RESPONSES_BASE_URL, ChatGptCredentials } from '../common';
 import { CHATGPT_ORIGINATOR } from './chatgpt-oauth';
 import { ChatGptModel } from './chatgpt-language-model';
@@ -102,6 +108,37 @@ describe('ChatGptModel', () => {
         expect(utils.captured!.modelId).to.equal('chatgpt/gpt-5.5');
     });
 
+    it('advertises and enables automatic compaction without an explicit threshold by default', async () => {
+        const { model, utils } = createModel();
+        expect(model.serverSideCompactionSupport).to.equal(true);
+        await model.request(createRequest());
+        expect(utils.captured!.settings.context_management).to.deep.equal([{ type: 'compaction' }]);
+    });
+
+    for (const defaultEnabled of [true, false]) {
+        for (const enabled of [undefined, true, false]) {
+            it(`resolves session compaction ${enabled} against model default ${defaultEnabled}`, async () => {
+                const { model, utils } = createModel();
+                model.serverSideCompactionEnabledByDefault = defaultEnabled;
+                await model.request({ ...createRequest(), compaction: { enabled } });
+                expect(utils.captured!.settings.context_management).to.deep.equal(
+                    (enabled ?? defaultEnabled) ? [{ type: 'compaction' }] : undefined
+                );
+            });
+        }
+    }
+
+    it('uses the model threshold unless the session overrides it', async () => {
+        const { model, utils } = createModel();
+        model.serverSideCompactionTokenThresholdByDefault = 100_000;
+        await model.request(createRequest());
+        expect(utils.captured!.settings.context_management).to.deep.equal([{ type: 'compaction', compact_threshold: 100_000 }]);
+        await model.request({ ...createRequest(), compaction: { tokenThreshold: 150_000 } });
+        expect(utils.captured!.settings.context_management).to.deep.equal([{ type: 'compaction', compact_threshold: 150_000 }]);
+        await model.request({ ...createRequest(), compaction: { enabled: false, tokenThreshold: 150_000 } });
+        expect(utils.captured!.settings.context_management).to.equal(undefined);
+    });
+
     it('keeps the system messages available as instructions', async () => {
         const { model, utils } = createModel();
         await model.request(createRequest());
@@ -121,6 +158,30 @@ describe('ChatGptModel', () => {
         const { model, utils } = createModel(async () => CREDENTIALS, GPT5_REASONING_SUPPORT);
         await model.request({ ...createRequest(), reasoning: { level: 'high' } });
         expect(utils.captured!.settings.reasoning).to.deep.equal({ effort: 'high', summary: 'auto' });
+    });
+
+    it('preserves custom reasoning fields while the selected level determines effort', async () => {
+        const { model, utils } = createModel(async () => CREDENTIALS, GPT5_REASONING_SUPPORT);
+        await model.request({
+            ...createRequest({ reasoning: { effort: 'low', summary: 'detailed' }, store: true, stream: false }),
+            reasoning: { level: 'high' }
+        });
+        expect(utils.captured!.settings.reasoning).to.deep.equal({ effort: 'high', summary: 'detailed' });
+        expect(utils.captured!.settings.context_management).to.deep.equal([{ type: 'compaction' }]);
+        expect(utils.captured!.settings).to.include({ store: false, stream: true });
+    });
+
+    it('preserves custom reasoning effort when the selected level is auto', async () => {
+        const { model, utils } = createModel(async () => CREDENTIALS, GPT5_REASONING_SUPPORT);
+        await model.request({ ...createRequest({ reasoning: { effort: 'low', summary: 'detailed' } }), reasoning: { level: 'auto' } });
+        expect(utils.captured!.settings.reasoning).to.deep.equal({ effort: 'low', summary: 'detailed' });
+    });
+
+    it('preserves raw compaction settings when automatic compaction is disabled', async () => {
+        const { model, utils } = createModel();
+        const contextManagement = [{ type: 'compaction', compact_threshold: 120_000 }];
+        await model.request({ ...createRequest({ context_management: contextManagement }), compaction: { enabled: false } });
+        expect(utils.captured!.settings.context_management).to.equal(contextManagement);
     });
 
     it('omits reasoning for models without reasoning support', async () => {
@@ -160,6 +221,63 @@ describe('ChatGptModel', () => {
 describe('ChatGptResponseApiUtils', () => {
 
     const utils = new ChatGptResponseApiUtils();
+
+    for (const withTools of [false, true]) {
+        it(`streams and replays encrypted compaction through the ChatGPT model ${withTools ? 'with client tools' : 'without tools'}`, async () => {
+            const container = new Container();
+            container.bind(ILogger).to(MockLogger);
+            container.bind(ToolCallExecutor).to(ToolCallExecutorImpl).inSingletonScope();
+            container.bind(ChatGptResponseApiUtils).toSelf();
+            const responseUtils = container.get(ChatGptResponseApiUtils);
+            const payloads: Record<string, unknown>[] = [];
+            const openai = {
+                responses: {
+                    stream: (payload: Record<string, unknown>) => {
+                        payloads.push(payload);
+                        return (async function* (): AsyncIterable<unknown> {
+                            yield { type: 'response.output_item.done', item: { type: 'compaction', id: 'c1', encrypted_content: 'encrypted' } };
+                            yield { type: 'response.completed', response: { usage: { input_tokens: 10, output_tokens: 5 } } };
+                        })();
+                    }
+                }
+            } as unknown as OpenAI;
+            class StreamingModel extends ChatGptModel {
+                protected override async initializeOpenAi(): Promise<OpenAI> { return openai; }
+            }
+            const model = new StreamingModel('chatgpt/gpt-5.5', 'gpt-5.5', { status: 'ready' }, async () => CREDENTIALS,
+                responseUtils, new OpenAiModelUtils());
+            const request = {
+                ...createRequest(undefined, [{ actor: 'user', type: 'text', text: 'Old turn' }]),
+                tools: withTools ? [{ id: 'lookup', name: 'lookup', parameters: { type: 'object', properties: {} }, handler: async () => 'result' }] : undefined
+            } satisfies UserRequest;
+            const response = await model.request(request);
+            const parts: LanguageModelStreamResponsePart[] = [];
+            expect('stream' in response).to.equal(true);
+            if ('stream' in response) {
+                for await (const part of response.stream) { parts.push(part); }
+            }
+            const compaction = parts.filter(isCompactionResponsePart);
+            expect(compaction).to.deep.equal([{ compaction: { provider: 'openai-responses', data: { id: 'c1', encrypted_content: 'encrypted' } } }]);
+            const replay = await model.request({
+                ...request,
+                messages: [
+                    ...request.messages,
+                    { actor: 'ai', type: 'compaction', ...compaction[0].compaction },
+                    { actor: 'user', type: 'text', text: 'Next turn' }
+                ]
+            });
+            if ('stream' in replay) {
+                for await (const part of replay.stream) { parts.push(part); }
+            }
+            expect(payloads).to.have.lengthOf(2);
+            expect(payloads[1]).to.include({ store: false, stream: true, instructions: DEFAULT_CHATGPT_INSTRUCTIONS });
+            expect(payloads[1].context_management).to.deep.equal([{ type: 'compaction' }]);
+            expect(payloads[1].input).to.deep.equal([
+                { type: 'compaction', id: 'c1', encrypted_content: 'encrypted' },
+                { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'Next turn' }] }
+            ]);
+        });
+    }
 
     it('substitutes default instructions when the request carries no system message', () => {
         const result = utils.processMessages([{ actor: 'user', type: 'text', text: 'Hello' }], 'developer', 'gpt-5.5');

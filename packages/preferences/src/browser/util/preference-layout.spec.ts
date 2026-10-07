@@ -22,7 +22,7 @@ describe('preference-layout', () => {
     const provider = new PreferenceLayoutProvider();
 
     it('assigns the ChatGPT preferences a section with the brand spelling', () => {
-        const layout = provider.getLayoutForPreference('ai-features.chatGpt.models');
+        const layout = provider.getLayoutForPreference('ai-features.chatGpt.modelOverrides');
         expect(layout?.id).eq('ai-features.chatGpt');
         expect(layout?.label).eq('ChatGPT');
     });

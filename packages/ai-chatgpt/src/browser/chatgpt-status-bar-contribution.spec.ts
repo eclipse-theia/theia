@@ -93,21 +93,21 @@ describe('ChatGptStatusBarContribution', () => {
     it('offers sign-in while signed out and account sign-out after sign-in', async () => {
         await start();
         expect(entry()?.command).to.equal(ChatGptCommands.SIGN_IN.id);
-        expect(entry()?.text).to.contain('Sign in with ChatGPT');
+        expect(entry()?.text).to.equal('$(openai) Sign in with ChatGPT');
         expect(entry()?.alignment).to.equal(StatusBarAlignment.RIGHT);
         authEmitter.fire({ isAuthenticated: true, accountLabel: 'user@example.com' });
-        expect(entry()?.text).to.contain('ChatGPT');
-        expect(entry()?.text).to.contain('user@example.com');
+        expect(entry()?.text).to.equal('$(openai) ChatGPT: user@example.com');
         expect(entry()?.tooltip).to.contain('Click to sign out');
         expect(entry()?.command).to.equal(ChatGptCommands.SIGN_OUT.id);
         authEmitter.fire({ isAuthenticated: false });
+        expect(entry()?.text).to.equal('$(openai) Sign in with ChatGPT');
         expect(entry()?.command).to.equal(ChatGptCommands.SIGN_IN.id);
     });
 
     it('shows the initial authenticated account', async () => {
         initialState = Promise.resolve({ isAuthenticated: true, accountLabel: 'initial@example.com' });
         await start();
-        expect(entry()?.text).to.contain('initial@example.com');
+        expect(entry()?.text).to.equal('$(openai) ChatGPT: initial@example.com');
         expect(entry()?.command).to.equal(ChatGptCommands.SIGN_OUT.id);
     });
 
