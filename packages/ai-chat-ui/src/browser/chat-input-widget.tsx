@@ -1544,7 +1544,7 @@ export class AIChatInputWidget extends ReactWidget {
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.editorReady.promise.then(() => {
-            if (this.editorRef) {
+            if (this.editorRef && this.isEnabled) {
                 this.editorRef.focus();
             }
         });
@@ -2019,6 +2019,32 @@ const hasTaskContext = (chatModel: ChatModel): boolean => chatModel.context.getV
     variable.variable?.id === TASK_CONTEXT_VARIABLE.id
 );
 
+const aiDisabledLabel = () => nls.localize('theia/ai/chat-ui/aiDisabled', 'AI features are disabled');
+
+/**
+ * Aligns the input editor with the enabled state of the widget. A disabled editor neither accepts text nor focus:
+ * it is read-only, removed from the tab order, and gives up the focus it may still hold from before being disabled.
+ * Should an edit still be attempted, Monaco reports why the input is disabled instead of its generic read-only wording.
+ */
+export const applyEditorEnabledState = (editor: SimpleMonacoEditor | undefined, isEnabled: boolean | undefined): void => {
+    const control = editor?.getControl();
+    if (!control) {
+        return;
+    }
+    control.updateOptions({
+        readOnly: !isEnabled,
+        domReadOnly: !isEnabled,
+        tabIndex: isEnabled ? 0 : -1,
+        readOnlyMessage: isEnabled ? undefined : { value: aiDisabledLabel() }
+    });
+    if (!isEnabled && control.hasTextFocus()) {
+        const focused = control.getDomNode()?.ownerDocument.activeElement;
+        if (focused instanceof HTMLElement) {
+            focused.blur();
+        }
+    }
+};
+
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
     const onDeleteChangeSet = () => props.onDeleteChangeSet(props.chatModel.id);
     const onDeleteChangeSetElement = (uri: URI) => props.onDeleteChangeSetElement(props.chatModel.id, uri);
@@ -2043,6 +2069,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const editorRef = React.useRef<SimpleMonacoEditor | undefined>(undefined);
     // eslint-disable-next-line no-null/no-null
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const isEnabledRef = React.useRef(props.isEnabled);
 
     // On the first request of the chat, if the chat has a task context and a pinned
     // agent, show a "Perform this task." placeholder which is the message to send by default
@@ -2053,13 +2080,18 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     // Update placeholder text when focus state or other dependencies change
     React.useEffect(() => {
         const newPlaceholderText = !props.isEnabled
-            ? nls.localize('theia/ai/chat-ui/aiDisabled', 'AI features are disabled')
+            ? aiDisabledLabel()
             : shouldUseTaskPlaceholder
                 ? taskPlaceholder
                 : nls.localize('theia/ai/chat-ui/askQuestion', 'Ask a question') +
                 (props.hasPromptHistory && isInputFocused ? nls.localizeByDefault(' ({0} for history)', '⇅') : '');
         setPlaceholderText(newPlaceholderText);
     }, [props.isEnabled, shouldUseTaskPlaceholder, taskPlaceholder, props.hasPromptHistory, isInputFocused]);
+
+    React.useEffect(() => {
+        isEnabledRef.current = props.isEnabled;
+        applyEditorEnabledState(editorRef.current, props.isEnabled);
+    }, [props.isEnabled]);
 
     // Handle paste events on the container
     const handlePaste = React.useCallback((event: ClipboardEvent) => {
@@ -2179,6 +2211,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             editor.getControl().onDidChangeCursorPosition(e => revealCursor(e.position));
 
             editorRef.current = editor;
+            // The enabled state may have changed while the editor was being created asynchronously.
+            applyEditorEnabledState(editor, isEnabledRef.current);
             props.setEditorRef(editor);
 
             if (props.initialValue) {
