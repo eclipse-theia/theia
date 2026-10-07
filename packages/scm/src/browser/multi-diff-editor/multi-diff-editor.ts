@@ -55,8 +55,8 @@ export const MAX_ENTRY_HEIGHT = 500;
 export const HEADER_HEIGHT = 28;
 
 /**
- * Persisted state of a {@link MultiDiffEditor} — scroll position and per-entry
- * collapsed state, keyed by the modified URI (stable across reloads).
+ * Legacy persisted state of a {@link MultiDiffEditor}. New multi-diff tabs opt out
+ * of layout persistence because resource providers may not be available on restore.
  */
 export interface MultiDiffEditorState {
     scrollTop?: number;
@@ -149,7 +149,7 @@ export class DiffEntryLoadingWidget extends BaseWidget {
  */
 export class DiffEntryErrorWidget extends BaseWidget {
 
-    constructor(message: string) {
+    constructor(message: string, retry?: () => void) {
         super();
         this.addClass('multi-diff-entry-error');
         const icon = document.createElement('span');
@@ -158,6 +158,14 @@ export class DiffEntryErrorWidget extends BaseWidget {
         const text = document.createElement('span');
         text.textContent = message;
         this.node.appendChild(text);
+        if (retry) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'theia-button';
+            button.textContent = nls.localizeByDefault('Retry');
+            this.node.appendChild(button);
+            this.addEventListener(button, 'click', retry);
+        }
     }
 }
 
@@ -181,13 +189,19 @@ export class DiffEntryWidget extends BaseWidget {
     /** Height to restore when expanding from a collapsed state. */
     protected lastExpandedHeight = MIN_ENTRY_HEIGHT;
     protected availableHeight?: number;
+    protected loading = false;
+    protected loadAttempted = false;
+
+    protected readonly onDidLoadEditorEmitter = new Emitter<void>();
+    readonly onDidLoadEditor: Event<void> = this.onDidLoadEditorEmitter.event;
 
     protected readonly onDidChangeCollapsedEmitter = new Emitter<boolean>();
     readonly onDidChangeCollapsed: Event<boolean> = this.onDidChangeCollapsedEmitter.event;
 
     constructor(
         resource: MultiDiffEditorResourcePair,
-        headerWidget: DiffEntryHeaderWidget
+        headerWidget: DiffEntryHeaderWidget,
+        protected readonly createEditor?: () => Promise<EditorWidget>
     ) {
         super();
         this.addClass('multi-diff-entry');
@@ -208,6 +222,7 @@ export class DiffEntryWidget extends BaseWidget {
 
         this.toDispose.pushAll([
             this.onDidChangeCollapsedEmitter,
+            this.onDidLoadEditorEmitter,
             this.header.onDidToggleCollapse(() => this.setCollapsed(!this._isCollapsed))
         ]);
     }
@@ -234,10 +249,38 @@ export class DiffEntryWidget extends BaseWidget {
             this.setNodeHeight(this.lastExpandedHeight);
         }
         this.onDidChangeCollapsedEmitter.fire(collapsed);
+        if (!collapsed) {
+            this.loadEditor();
+        }
+    }
+
+    async loadEditor(retry = false): Promise<void> {
+        if (this.isDisposed || this._isCollapsed || this._editorWidget || this.loading || (!retry && this.loadAttempted) || !this.createEditor) {
+            return;
+        }
+        this.loading = true;
+        this.loadAttempted = true;
+        this.replaceContent(new DiffEntryLoadingWidget());
+        try {
+            const editorWidget = await this.createEditor();
+            if (this.isDisposed) {
+                editorWidget.dispose();
+                return;
+            }
+            this.setEditor(editorWidget);
+            this.onDidLoadEditorEmitter.fire();
+        } catch (error) {
+            if (!this.isDisposed) {
+                const message = error instanceof Error ? error.message : String(error);
+                this.setError(nls.localize('theia/scm/multiDiffEditor/loadFailed', 'Failed to load diff: {0}', message));
+            }
+        } finally {
+            this.loading = false;
+        }
     }
 
     setError(message: string): void {
-        this.replaceContent(new DiffEntryErrorWidget(message));
+        this.replaceContent(new DiffEntryErrorWidget(message, () => this.loadEditor(true)));
     }
 
     setEditor(editorWidget: EditorWidget): void {
@@ -349,6 +392,8 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
     protected readonly entryWidgets: DiffEntryWidget[] = [];
     protected entriesPanel: Panel;
     protected encodedUri: URI;
+    protected entryObserver?: IntersectionObserver;
+    protected lastFocusedEntry?: DiffEntryWidget;
 
     protected readonly onDidChangeTrackableWidgetsEmitter = new Emitter<Widget[]>();
     readonly onDidChangeTrackableWidgets: Event<Widget[]> = this.onDidChangeTrackableWidgetsEmitter.event;
@@ -372,23 +417,40 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
         const layout = new PanelLayout();
         layout.addWidget(this.entriesPanel);
         this.layout = layout;
+        if (typeof IntersectionObserver !== 'undefined') {
+            this.entryObserver = new IntersectionObserver(entries => {
+                if (!this.isDisposed) {
+                    for (const observed of entries) {
+                        if (observed.isIntersecting) {
+                            this.entryWidgets.find(entry => entry.node === observed.target)?.loadEditor();
+                        }
+                    }
+                }
+            }, { root: this.entriesPanel.node, rootMargin: '500px 0px' });
+            this.toDispose.push({ dispose: () => this.entryObserver?.disconnect() });
+        }
+        this.addEventListener(this.entriesPanel.node, 'focusin', event => {
+            this.lastFocusedEntry = this.entryWidgets.find(entry => event.target instanceof Node && entry.node.contains(event.target));
+        });
     }
 
     get entries(): readonly DiffEntryWidget[] {
         return this.entryWidgets;
     }
 
-    addDiffEntry(resource: MultiDiffEditorResourcePair, headerWidget: DiffEntryHeaderWidget): DiffEntryWidget {
-        const entry = new DiffEntryWidget(resource, headerWidget);
+    addDiffEntry(resource: MultiDiffEditorResourcePair, headerWidget: DiffEntryHeaderWidget, createEditor?: () => Promise<EditorWidget>): DiffEntryWidget {
+        const entry = new DiffEntryWidget(resource, headerWidget, createEditor);
         this.entryWidgets.push(entry);
         this.entriesPanel.addWidget(entry);
+        this.toDispose.push(entry.onDidLoadEditor(() => this.notifyTrackableWidgetsChanged()));
+        this.entryObserver?.observe(entry.node);
         return entry;
     }
 
     /**
      * Notify listeners (in particular, the {@link ApplicationShell} focus tracker) that a
-     * new editor widget has been attached to one of the entries. Called by the factory
-     * after {@link DiffEntryWidget.setEditor} resolves.
+     * new editor widget has been attached to one of the entries. Called on the entry's
+     * {@link DiffEntryWidget.onDidLoadEditor} event.
      */
     notifyTrackableWidgetsChanged(): void {
         this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
@@ -400,6 +462,8 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
         if (!entry) {
             return;
         }
+        entry.setCollapsed(false);
+        entry.loadEditor();
         // Defer scrolling so embedded editors have a chance to complete their initial layout.
         requestAnimationFrame(() => {
             if (!this.isDisposed && entry.isAttached) {
@@ -420,12 +484,27 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
 
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        const loadedEntry = this.entryWidgets.find(e => e.editorWidget);
-        if (loadedEntry?.editorWidget) {
-            loadedEntry.editorWidget.activate();
+        const viewport = this.entriesPanel.node.getBoundingClientRect();
+        const isVisible = (candidate: DiffEntryWidget): boolean => {
+            const bounds = candidate.node.getBoundingClientRect();
+            return !candidate.isCollapsed && !!candidate.editorWidget && bounds.bottom > viewport.top && bounds.top < viewport.bottom;
+        };
+        const entry = this.lastFocusedEntry && isVisible(this.lastFocusedEntry)
+            ? this.lastFocusedEntry : this.entryWidgets.find(isVisible);
+        if (entry?.editorWidget) {
+            const scrollPositions: { node: HTMLElement; top: number; left: number }[] = [];
+            for (let node: HTMLElement | undefined = this.entriesPanel.node; node; node = node.parentElement ?? undefined) {
+                scrollPositions.push({ node, top: node.scrollTop, left: node.scrollLeft });
+            }
+            // Deliver activation synchronously so focus-induced ancestor scrolling can be restored.
+            MessageLoop.sendMessage(entry.editorWidget, Widget.Msg.ActivateRequest);
+            for (const position of scrollPositions) {
+                position.node.scrollTop = position.top;
+                position.node.scrollLeft = position.left;
+            }
         } else {
             this.node.tabIndex = -1;
-            this.node.focus();
+            this.node.focus({ preventScroll: true });
         }
     }
 
@@ -439,6 +518,11 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
 
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
+        if (!this.entryObserver) {
+            for (const entry of this.entryWidgets) {
+                entry.loadEditor();
+            }
+        }
         // Restore scroll after attach so layout has produced valid scroll extents.
         if (this.pendingScrollTop !== undefined) {
             const scrollTop = this.pendingScrollTop;
@@ -451,11 +535,9 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
         }
     }
 
-    storeState(): MultiDiffEditorState {
-        return {
-            scrollTop: this.entriesPanel?.node.scrollTop,
-            collapsedUris: this.entryWidgets.filter(e => e.isCollapsed).map(e => e.modifiedUri.toString())
-        };
+    storeState(): undefined {
+        // Resource providers may not be registered yet when the layout is restored.
+        return undefined;
     }
 
     restoreState(state: object): void {
