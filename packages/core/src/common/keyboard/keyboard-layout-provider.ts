@@ -21,8 +21,11 @@ export const keyboardPath = '/services/keyboard';
 
 export const KeyboardLayoutProvider = Symbol('KeyboardLayoutProvider');
 
+export type KeyboardLayoutSource = 'navigator.keyboard' | 'user-choice' | 'pressed-keys' | 'native-keymap';
+
 export interface KeyboardLayoutProvider {
     getNativeLayout(): Promise<NativeKeyboardLayout>;
+    readonly layoutSource?: KeyboardLayoutSource;
 }
 
 export const KeyboardLayoutChangeNotifier = Symbol('KeyboardLayoutChangeNotifier');
@@ -37,6 +40,11 @@ export interface KeyValidationInput {
     shiftKey?: boolean;
     ctrlKey?: boolean;
     altKey?: boolean;
+    /**
+     * Whether the AltGr layer is active for the platform (Linux: AltGraph, macOS: Option, Windows: AltGraph or Ctrl+Alt),
+     * not the raw `AltGraph` modifier state.
+     */
+    altGraph?: boolean;
 }
 
 export const KeyValidator = Symbol('KeyValidator');
