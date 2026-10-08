@@ -28,6 +28,8 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
+import { DuplicateExtensionError } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { VSCodeExtensionUri } from '../common/plugin-vscode-uri';
 import { EditorGroupNavigationRect, PluginVscodeCommandsContribution } from './plugin-vscode-commands-contribution';
 
 after(() => disableJSDOM());
@@ -63,6 +65,39 @@ describe('PluginVscodeCommandsContribution', () => {
             expect(contribution['findClosestEditorGroup'](left, [right], 'left')).to.equal(-1);
             expect(contribution['findClosestEditorGroup'](left, [right], 'up')).to.equal(-1);
             expect(contribution['findClosestEditorGroup'](left, [], 'right')).to.equal(-1);
+        });
+    });
+
+    describe('installExtensionFromId', () => {
+        function withInstall(install: (...args: unknown[]) => Promise<void>): PluginVscodeCommandsContribution {
+            const instance = new PluginVscodeCommandsContribution();
+            (instance as unknown as { pluginServer: unknown }).pluginServer = { install };
+            return instance;
+        }
+
+        it('is a noop when the extension is already installed', async () => {
+            const instance = withInstall(async () => { throw DuplicateExtensionError.create('Extension ms-python.python is already installed.'); });
+            await instance['installExtensionFromId']('ms-python.python');
+        });
+
+        it('rethrows other installation errors', async () => {
+            const instance = withInstall(async () => { throw new Error('Deployment failed.'); });
+            let error: unknown;
+            try {
+                await instance['installExtensionFromId']('ms-python.python');
+            } catch (e) {
+                error = e;
+            }
+            expect(error).to.be.instanceOf(Error).with.property('message', 'Deployment failed.');
+        });
+
+        it('installs the requested version of a versioned ID', async () => {
+            const calls: unknown[][] = [];
+            const instance = withInstall(async (...args) => { calls.push(args); });
+            await instance['installExtensionFromId']('ms-python.python@1.2.3');
+            expect(calls).to.have.lengthOf(1);
+            expect(calls[0][0]).to.equal(VSCodeExtensionUri.fromId('ms-python.python').toString());
+            expect(calls[0][2]).to.deep.equal({ version: '1.2.3', ignoreOtherVersions: true });
         });
     });
 });
