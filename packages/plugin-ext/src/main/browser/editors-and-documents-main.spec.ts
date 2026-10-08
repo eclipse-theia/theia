@@ -22,7 +22,19 @@ import { Emitter, URI } from '@theia/core';
 import { BaseWidget, Navigatable, Saveable, SaveableSource, Widget } from '@theia/core/lib/browser';
 import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
+import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
+import { NotebookCellEditorService, NotebookEditorWidgetService } from '@theia/notebook/lib/browser';
+import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
+import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
+import { interfaces } from '@theia/core/shared/inversify';
+import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
+import { EditorModelService } from './text-editor-model-service';
+import { TabsMainImpl } from './tabs/tabs-main';
+import { RPCProtocol } from '../../common/rpc-protocol';
+import { EditorsAndDocumentsDelta } from '../../common/plugin-api-rpc';
+import { EditorsAndDocumentsExtImpl } from '../../plugin/editors-and-documents';
 
 disableJSDOM();
 
@@ -136,5 +148,89 @@ describe('EditorsAndDocumentsMain#save', () => {
 
         expect(saveAsTargets).to.deep.equal([widget]);
         expect(saved?.toString()).to.equal(uri.toString());
+    });
+});
+
+function createModel(uri: CodeURI, content: string): MonacoEditorModel {
+    const event = new Emitter<never>().event;
+    return {
+        textEditorModel: {
+            uri,
+            getVersionId: () => 1,
+            getLinesContent: () => [content],
+            getEOL: () => '\n',
+            onDidChangeLanguage: event
+        },
+        getLanguageId: () => 'json',
+        languageId: 'json',
+        dirty: false,
+        getEncoding: () => 'utf8',
+        onDidSaveModel: event,
+        onModelWillSaveModel: event,
+        onDirtyChanged: event,
+        onDidChangeEncoding: event
+    } as unknown as MonacoEditorModel;
+}
+
+describe('EditorsAndDocumentsMain document synchronization', () => {
+
+    before(() => {
+        disableJSDOM = enableJSDOM();
+    });
+
+    after(() => {
+        disableJSDOM();
+    });
+
+    const uri = CodeURI.parse('user-storage:/user/settings.json');
+
+    it('replaces a document whose model is disposed and immediately reopened', () => {
+        const ext = new EditorsAndDocumentsExtImpl();
+        (ext as unknown as Record<string, unknown>).rpc = { getProxy: () => ({}) };
+        const errors: unknown[] = [];
+        const proxy = {
+            $acceptEditorsAndDocumentsDelta: (delta: EditorsAndDocumentsDelta) => {
+                try {
+                    ext.acceptEditorsAndDocumentsDelta(delta);
+                } catch (e) {
+                    errors.push(e);
+                }
+            }
+        };
+
+        const models = new Set<MonacoEditorModel>();
+        const created = new Emitter<MonacoEditorModel>();
+        const closed = new Emitter<MonacoEditorModel>();
+        const modelService = new EditorModelService(
+            { get models(): MonacoEditorModel[] { return Array.from(models); }, onDidCreate: created.event } as unknown as MonacoTextModelService,
+            { onDidCloseTextDocument: closed.event } as unknown as MonacoWorkspace
+        );
+        const services = new Map<interfaces.ServiceIdentifier, unknown>([
+            [EditorManager, { onCreated: new Emitter().event, onCurrentEditorChanged: new Emitter().event, all: [], currentEditor: undefined }],
+            [EditorModelService, modelService],
+            [SaveableService, {}],
+            [EncodingRegistry, { getEncodingForResource: () => 'utf8' }],
+            [NotebookCellEditorService, { onDidChangeCellEditors: new Emitter().event, allCellEditors: [], getActiveCell: () => undefined }],
+            [NotebookEditorWidgetService, { onDidChangeCurrentEditor: new Emitter().event }]
+        ]);
+        const container = { get: (id: interfaces.ServiceIdentifier) => services.get(id) } as interfaces.Container;
+        const rpc = { getProxy: () => proxy } as unknown as RPCProtocol;
+        const main = new EditorsAndDocumentsMain(rpc, container, {} as TabsMainImpl);
+        main.listen();
+
+        const first = createModel(uri, 'first');
+        models.add(first);
+        created.fire(first);
+
+        // Mirrors `MonacoTextModelService`, which drops a model before its close event fires.
+        models.delete(first);
+        closed.fire(first);
+        const second = createModel(uri, 'second');
+        models.add(second);
+        created.fire(second);
+
+        expect(errors).to.be.empty;
+        expect(ext.getDocument(uri.toString())?.document.getText()).to.equal('second');
+        main.dispose();
     });
 });

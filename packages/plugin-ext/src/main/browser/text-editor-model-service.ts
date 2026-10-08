@@ -49,11 +49,7 @@ export class EditorModelService {
         this.monacoModelService = monacoModelService;
         monacoModelService.models.forEach(model => this.modelCreated(model));
         monacoModelService.onDidCreate(this.modelCreated, this);
-        monacoWorkspace.onDidCloseTextDocument(model => {
-            setTimeout(() => {
-                this.onModelRemovedEmitter.fire(model);
-            }, 1);
-        });
+        monacoWorkspace.onDidCloseTextDocument(model => this.onModelRemovedEmitter.fire(model));
     }
 
     private modelCreated(model: MonacoEditorModel): void {
