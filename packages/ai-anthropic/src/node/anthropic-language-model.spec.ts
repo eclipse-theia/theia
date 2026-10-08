@@ -346,20 +346,28 @@ describe('AnthropicModel', () => {
                 .filter(block => block.type === 'thinking');
         }
 
-        it('drops a thinking block with empty thinking text, which Anthropic rejects on replay', () => {
+        it('keeps a signed thinking block with empty thinking text by default, as returned by the official API', () => {
             const messages = [userText('do something'), thinkingMessage('', 'signature'), userText('continue')];
 
             const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.deep.equal([{ type: 'thinking', thinking: '', signature: 'signature' }]);
+        });
+
+        it('drops a signed thinking block with empty thinking text when requested, as stripping gateways produce', () => {
+            const messages = [userText('do something'), thinkingMessage('', 'signature'), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false, false, true);
 
             expect(thinkingBlocks(result)).to.be.empty;
             expect(JSON.stringify(result)).to.contain('do something');
             expect(JSON.stringify(result)).to.contain('continue');
         });
 
-        it('drops a thinking block whose thinking text is only whitespace', () => {
+        it('drops a thinking block whose thinking text is only whitespace when requested', () => {
             const messages = [thinkingMessage('  \n', 'signature'), userText('continue')];
 
-            const { messages: result } = transformToAnthropicParams(messages, false);
+            const { messages: result } = transformToAnthropicParams(messages, false, false, true);
 
             expect(thinkingBlocks(result)).to.be.empty;
         });
@@ -385,7 +393,7 @@ describe('AnthropicModel', () => {
             const logged: string[] = [];
             console.debug = (...args: unknown[]) => { logged.push(args.map(String).join(' ')); };
             try {
-                transformToAnthropicParams([thinkingMessage('', 'signature'), userText('continue')], false);
+                transformToAnthropicParams([thinkingMessage('some reasoning', ''), userText('continue')], false);
             } finally {
                 console.debug = originalDebug;
             }
@@ -398,7 +406,7 @@ describe('AnthropicModel', () => {
          * Mock client whose first stream() call yields the given events and whose follow-up calls yield none.
          * All params passed to stream() are captured so the tool loop's follow-up request can be inspected.
          */
-        function createToolLoopModel(firstCallEvents: object[], capturedParams: Anthropic.MessageCreateParams[]): AnthropicModel {
+        function createToolLoopModel(firstCallEvents: object[], capturedParams: Anthropic.MessageCreateParams[], url?: string): AnthropicModel {
             let call = 0;
             const ModelClass = injectable()(class extends AnthropicModel {
                 protected override initializeAnthropic(): Anthropic {
@@ -423,7 +431,7 @@ describe('AnthropicModel', () => {
             });
             return buildModel(ModelClass, {
                 id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' }, enableStreaming: true, useCaching: false,
-                apiKey: () => 'test-key', url: undefined
+                apiKey: () => 'test-key', url
             });
         }
 
@@ -450,9 +458,9 @@ describe('AnthropicModel', () => {
             ];
         }
 
-        async function runToolLoop(firstCallEvents: object[]): Promise<Anthropic.MessageCreateParams[]> {
+        async function runToolLoop(firstCallEvents: object[], url?: string): Promise<Anthropic.MessageCreateParams[]> {
             const capturedParams: Anthropic.MessageCreateParams[] = [];
-            const model = createToolLoopModel(firstCallEvents, capturedParams);
+            const model = createToolLoopModel(firstCallEvents, capturedParams, url);
             const request: UserRequest = {
                 messages: [{ actor: 'user', type: 'text', text: 'do something' }],
                 tools: [{ id: 'myTool', name: 'myTool', parameters: { type: 'object', properties: {} }, handler: async () => 'ok' }],
@@ -487,6 +495,23 @@ describe('AnthropicModel', () => {
             expect(params).to.have.lengthOf(2);
             const thinking = contentBlocks(params[1]).find(block => block.type === 'thinking');
             expect(thinking).to.deep.equal({ type: 'thinking', thinking: 'some reasoning', signature: 'sig' });
+        });
+
+        it('replays a signed thinking block with empty text unchanged for the official API', async () => {
+            const params = await runToolLoop(toolLoopEvents({ type: 'thinking', thinking: '', signature: 'sig' }));
+
+            expect(params).to.have.lengthOf(2);
+            const thinking = contentBlocks(params[1]).find(block => block.type === 'thinking');
+            expect(thinking).to.deep.equal({ type: 'thinking', thinking: '', signature: 'sig' });
+        });
+
+        it('drops a signed thinking block with empty text for a custom endpoint', async () => {
+            const params = await runToolLoop(toolLoopEvents({ type: 'thinking', thinking: '', signature: 'sig' }), 'https://gateway.example.com');
+
+            expect(params).to.have.lengthOf(2);
+            const blocks = contentBlocks(params[1]);
+            expect(blocks.some(block => block.type === 'thinking')).to.be.false;
+            expect(blocks.some(block => block.type === 'tool_use' && block.id === 'call_1')).to.be.true;
         });
 
         it('drops a message left empty after filtering its only (unreplayable) thinking block', async () => {
