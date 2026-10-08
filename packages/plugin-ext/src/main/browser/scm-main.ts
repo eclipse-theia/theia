@@ -106,7 +106,9 @@ export class PluginScmResource implements ScmResource {
         readonly group: PluginScmResourceGroup,
         readonly decorations: ScmResourceDecorations,
         readonly contextValue: string | undefined,
-        readonly command: ScmCommand | undefined
+        readonly command: ScmCommand | undefined,
+        readonly multiDiffEditorOriginalUri?: URI,
+        readonly multiDiffEditorModifiedUri?: URI
     ) { }
 
     open(): Promise<void> {
@@ -487,7 +489,9 @@ export class PluginScmProvider implements ScmProvider {
                         group,
                         decorations,
                         contextValue || undefined,
-                        command
+                        command,
+                        rawResource.multiDiffEditorOriginalUri ? new URI(vscodeURI.revive(rawResource.multiDiffEditorOriginalUri)) : undefined,
+                        rawResource.multiDiffEditorModifiedUri ? new URI(vscodeURI.revive(rawResource.multiDiffEditorModifiedUri)) : undefined
                     );
                 });
 

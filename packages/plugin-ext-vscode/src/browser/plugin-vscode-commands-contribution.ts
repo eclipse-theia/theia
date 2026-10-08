@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource, MessageService, isArray, ILogger } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource, MessageService, isArray, ILogger, MEMORY_TEXT_READONLY } from '@theia/core';
 import {
     ApplicationShell,
     CommonCommands,
@@ -84,7 +84,25 @@ import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline
 import { CompletionList, Range, Position as PluginPosition } from '@theia/plugin';
 import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 import { ScmContribution } from '@theia/scm/lib/browser/scm-contribution';
+import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { MergeEditorOpenerOptions, MergeEditorUri } from '@theia/scm/lib/browser/merge-editor/merge-editor';
+import { MultiDiffEditorOpenerOptions, MultiDiffEditorUri } from '@theia/scm/lib/browser/multi-diff-editor/multi-diff-editor';
+
+/**
+ * Convert a VS Code {@link UriComponents} or a string URI into a Theia {@link TheiaURI}.
+ * Returns `undefined` when given `undefined`.
+ */
+function toTheiaUri(value: UriComponents | string): TheiaURI;
+function toTheiaUri(value: UriComponents | string | undefined): TheiaURI | undefined;
+function toTheiaUri(value: UriComponents | string | undefined): TheiaURI | undefined {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (typeof value === 'string') {
+        return new TheiaURI(value);
+    }
+    return TheiaURI.fromComponents(value);
+}
 
 export namespace VscodeCommands {
 
@@ -287,6 +305,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected monacoLanguages: MonacoLanguages;
     @inject(ScmContribution)
     protected scmContribution: ScmContribution;
+    @inject(ScmService)
+    protected readonly scmService: ScmService;
 
     @inject(ILogger) @named('plugin-ext-vscode:PluginVscodeCommandsContribution')
     protected readonly logger: ILogger;
@@ -1283,13 +1303,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
 
         commands.registerCommand({ id: '_open.mergeEditor' }, {
             execute: async (arg: OpenMergeEditorCommandArg): Promise<void> => {
-                const toTheiaUri = (o: UriComponents | string): TheiaURI => {
-                    if (typeof o === 'string') {
-                        return new TheiaURI(o);
-                    }
-                    return TheiaURI.fromComponents(o);
-                };
-
                 const baseUri = toTheiaUri(arg.base);
                 const resultUri = toTheiaUri(arg.output);
                 const side1Uri = typeof arg.input1 === 'string' ? toTheiaUri(arg.input1) : toTheiaUri(arg.input1.uri);
@@ -1312,32 +1325,55 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             }
         });
 
-        // Temporary workaround: opens a single diff editor for the revealed resource.
-        // TODO: GH-16280 implement a proper MultiDiffEditor widget.
+        commands.registerCommand({ id: '_workbench.openScmMultiDiffEditor' }, {
+            execute: async (options: { title: string; repositoryUri: UriComponents; resourceGroupId: string }): Promise<void> => {
+                const repositoryUri = toTheiaUri(options.repositoryUri);
+                if (!repositoryUri) {
+                    return;
+                }
+                const repository = this.scmService.repositories.find(repo => new TheiaURI(repo.provider.rootUri).isEqual(repositoryUri));
+                const group = repository?.provider.groups.find(candidate => candidate.id === options.resourceGroupId);
+                if (!group) {
+                    return;
+                }
+                await commands.executeCommand('_workbench.openMultiDiffEditor', {
+                    title: options.title,
+                    resources: group.resources.map(resource => ({
+                        originalUri: resource.multiDiffEditorOriginalUri?.toComponents(),
+                        modifiedUri: resource.multiDiffEditorModifiedUri?.toComponents()
+                    }))
+                });
+            }
+        });
+
         commands.registerCommand({ id: '_workbench.openMultiDiffEditor' }, {
             execute: async (options: {
                 title: string;
-                resources?: { originalUri: UriComponents; modifiedUri: UriComponents }[];
+                resources?: { originalUri?: UriComponents; modifiedUri?: UriComponents }[];
                 reveal?: { modifiedUri: UriComponents };
             }): Promise<void> => {
                 if (!options.resources?.length) {
                     return;
                 }
-                const revealModified = options.reveal?.modifiedUri;
-                const revealStr = revealModified ? URI.revive(revealModified)?.toString() : undefined;
-                const target = revealStr
-                    ? options.resources.find(r => URI.revive(r.modifiedUri)?.toString() === revealStr)
-                    : undefined;
-                const resource = target ?? options.resources[0];
-                const left = URI.revive(resource.originalUri);
-                const right = URI.revive(resource.modifiedUri);
-                if (left && right) {
-                    await commands.executeCommand(VscodeCommands.DIFF.id, left, right, options.title);
-                } else if (right) {
-                    await commands.executeCommand(VscodeCommands.OPEN.id, right);
-                } else if (left) {
-                    await commands.executeCommand(VscodeCommands.OPEN.id, left);
+                const resources = options.resources
+                    .map(r => {
+                        const originalUri = toTheiaUri(r.originalUri);
+                        const modifiedUri = toTheiaUri(r.modifiedUri);
+                        const resourceUri = modifiedUri ?? originalUri;
+                        if (!resourceUri) {
+                            return undefined;
+                        }
+                        const emptyUri = new TheiaURI().withScheme(MEMORY_TEXT_READONLY).withPath(resourceUri.path);
+                        return { originalUri: originalUri ?? emptyUri, modifiedUri: modifiedUri ?? emptyUri };
+                    })
+                    .filter((r): r is { originalUri: TheiaURI; modifiedUri: TheiaURI } => r !== undefined);
+                if (!resources.length) {
+                    return;
                 }
+                const uri = MultiDiffEditorUri.encode({ title: options.title, resources });
+                const reveal = toTheiaUri(options.reveal?.modifiedUri);
+                const openerOptions: MultiDiffEditorOpenerOptions = { reveal };
+                await open(this.openerService, uri, openerOptions);
             },
         });
     }
