@@ -635,6 +635,24 @@ export interface PluginDeployOptions {
     ignoreOtherVersions?: boolean;
 }
 
+/**
+ * Thrown by a {@link PluginDeployerResolver} when the plugin it resolves is already installed.
+ * Identified by its `name`, which survives the RPC boundary.
+ */
+export namespace DuplicateExtensionError {
+    export const NAME = 'DuplicateExtensionError';
+
+    export function create(message: string): Error {
+        const error = new Error(message);
+        error.name = NAME;
+        return error;
+    }
+
+    export function is(error: unknown): error is Error {
+        return error instanceof Error && error.name === NAME;
+    }
+}
+
 export const pluginServerJsonRpcPath = '/services/plugin-ext';
 export const PluginServer = Symbol('PluginServer');
 export interface PluginServer {
