@@ -17,11 +17,12 @@
 import { inject, injectable, named, optional } from '@theia/core/shared/inversify';
 import { Command, CommandContribution, CommandRegistry, DisposableCollection, ILogger, MessageService, nls } from '@theia/core';
 import { FrontendApplicationContribution, OpenerService, open } from '@theia/core/lib/browser';
+import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { WorkspaceStorageService } from '@theia/workspace/lib/browser/workspace-storage-service';
 import { hash } from '@theia/core/lib/common/hash';
-import { DefaultPromptFragmentCustomizationService } from './frontend-prompt-customization-service';
+import { PromptFragmentCustomizationService } from '../common/prompt-service';
 import { AGENTS_MD_FILE_NAME, PROJECT_INFO_PROMPT_FRAGMENT_ID } from '../common/agents-md';
 import { AgentsMdMigrationReport, AgentsMdMigrationService, LEGACY_PROJECT_INFO_BACKUP_PATH, LEGACY_PROJECT_INFO_PATH } from './agents-md-migration-service';
 
@@ -57,8 +58,11 @@ export class AgentsMdFrontendApplicationContribution implements FrontendApplicat
     @inject(WorkspaceStorageService)
     protected readonly storageService: WorkspaceStorageService;
 
-    @inject(DefaultPromptFragmentCustomizationService)
-    protected readonly customizationService: DefaultPromptFragmentCustomizationService;
+    @inject(PromptFragmentCustomizationService)
+    protected readonly customizationService: PromptFragmentCustomizationService;
+
+    @inject(FrontendApplicationStateService)
+    protected readonly appStateService: FrontendApplicationStateService;
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
@@ -72,6 +76,16 @@ export class AgentsMdFrontendApplicationContribution implements FrontendApplicat
     /** In-flight run started by {@link onStart} or by the initial trust resolution. */
     protected startupMigration: Promise<void> | undefined;
 
+    /**
+     * How long the prompt customizations have to be stable before overrides are reported. The
+     * workspace template locations are configured only after the initial scan of the global ones, and
+     * each rescan fires several events; reporting on the first of them would show a notification for a
+     * state that is about to change.
+     */
+    protected overrideWarningDelay = 1000;
+    protected overrideWarningTimer: ReturnType<typeof setTimeout> | undefined;
+    /** Set once the application and the workspace trust are ready, the earliest a report makes sense. */
+    protected overrideWarningEnabled = false;
     protected overrideWarningUpdates: Promise<void> = Promise.resolve();
     protected shownOverrideFingerprint: number | undefined;
     protected readonly toDispose = new DisposableCollection();
@@ -96,9 +110,18 @@ export class AgentsMdFrontendApplicationContribution implements FrontendApplicat
                 this.runStartupMigration();
             }
         }));
+        Promise.all([
+            this.appStateService.reachedState('ready'),
+            this.workspaceService.ready,
+            this.workspaceTrustService.getWorkspaceTrust()
+        ]).then(() => {
+            this.overrideWarningEnabled = true;
+            this.scheduleOverrideWarning();
+        });
     }
 
     onStop(): void {
+        clearTimeout(this.overrideWarningTimer);
         this.toDispose.dispose();
     }
 
@@ -128,7 +151,13 @@ export class AgentsMdFrontendApplicationContribution implements FrontendApplicat
     protected async runMigration(reportEmptyResult: boolean): Promise<void> {
         try {
             const reports = await this.migrationService.migrate();
-            this.showMigrationSummary(reports, reportEmptyResult);
+            if (reports.length === 0 && reportEmptyResult && !(await this.workspaceTrustService.getWorkspaceTrust())) {
+                // The migration skips untrusted workspaces, so "nothing to migrate" would be misleading.
+                this.messageService?.info(nls.localize('theia/ai/core/agentsMd/migrationResult/untrusted',
+                    'AGENTS.md migration: the workspace is not trusted, so no project info was migrated.'));
+            } else {
+                this.showMigrationSummary(reports, reportEmptyResult);
+            }
             this.scheduleOverrideWarning();
         } catch (e) {
             this.logger.warn('AGENTS.md migration failed', e);
@@ -136,11 +165,19 @@ export class AgentsMdFrontendApplicationContribution implements FrontendApplicat
     }
 
     protected scheduleOverrideWarning(): void {
-        this.overrideWarningUpdates = this.overrideWarningUpdates.then(async () => {
-            // Migration can rename a local source while the initial template scan is still running.
-            await this.startupMigration;
-            await this.showOverrideWarning();
-        }).catch(error => this.logger.warn('Failed to report legacy project-info overrides', error));
+        if (!this.overrideWarningEnabled) {
+            // A check is scheduled as soon as it is.
+            return;
+        }
+        clearTimeout(this.overrideWarningTimer);
+        this.overrideWarningTimer = setTimeout(() => {
+            this.overrideWarningTimer = undefined;
+            this.overrideWarningUpdates = this.overrideWarningUpdates.then(async () => {
+                // Migration can rename a local source while the initial template scan is still running.
+                await this.startupMigration;
+                await this.showOverrideWarning();
+            }).catch(error => this.logger.warn('Failed to report legacy project-info overrides', error));
+        }, this.overrideWarningDelay);
     }
 
     protected async showOverrideWarning(): Promise<void> {
@@ -153,32 +190,35 @@ export class AgentsMdFrontendApplicationContribution implements FrontendApplicat
             return;
         }
         const localSources = new Set(roots.map(root => root.resource.resolve(LEGACY_PROJECT_INFO_PATH).toString()));
-        const sources = this.customizationService.getPromptFragmentCustomizationSources(PROJECT_INFO_PROMPT_FRAGMENT_ID)
+        const sources = (this.customizationService.getPromptFragmentCustomizationSources?.(PROJECT_INFO_PROMPT_FRAGMENT_ID) ?? [])
             .filter(source => !localSources.has(source.uri.toString()))
             .sort((left, right) => left.uri.toString().localeCompare(right.uri.toString()));
         if (sources.length === 0) {
             this.shownOverrideFingerprint = undefined;
             return;
         }
+        // The active status is deliberately not part of it: it depends on which template locations
+        // are loaded, so it can differ between startups without anything the user would act on.
         const fingerprint = hash([
             this.workspaceService.workspace?.resource.toString(),
             roots.map(root => root.resource.toString()).sort(),
-            sources.map(source => [source.uri.toString(), source.template, source.active])
+            sources.map(source => [source.uri.toString(), source.template])
         ]);
         const storageKey = 'ai-core.agentsMd.dismissedProjectInfoOverrides';
         if (this.shownOverrideFingerprint === fingerprint || await this.storageService.getData<number>(storageKey) === fingerprint) {
             return;
         }
         this.shownOverrideFingerprint = fingerprint;
+        // Notifications render Markdown and collapse newlines, so each path is a code span in a flat list.
         const paths = sources.map(source => nls.localizeByDefault(
-            '{0} ({1})', source.uri.path.toString(),
+            '{0} ({1})', `\`${source.uri.path.toString()}\``,
             source.active ? nls.localizeByDefault('Active') : nls.localize('theia/ai/core/agentsMd/inactiveOverride', 'Inactive')
-        )).join('\n');
+        )).join(', ');
         const message = nls.localize(
             'theia/ai/core/agentsMd/legacyOverrides',
             'These project-info prompt overrides are not migrated automatically and no longer reach the built-in agents that use AGENTS.md. '
             + 'Move the instructions you want to keep into the relevant project\'s AGENTS.md. '
-            + 'They still apply to prompts that reference project-info.\n{0}', paths
+            + 'They still apply to prompts that reference project-info: {0}', paths
         );
         const openAction = nls.localize('theia/ai/core/agentsMd/openOverrideSources', 'Open Source Files');
         this.messageService.warn(message, { timeout: 0 }, openAction).then(async choice => {
@@ -230,13 +270,6 @@ export class AgentsMdFrontendApplicationContribution implements FrontendApplicat
                 LEGACY_PROJECT_INFO_PATH, LEGACY_PROJECT_INFO_BACKUP_PATH, AGENTS_MD_FILE_NAME
             );
         }
-        if (withPromptSyntax > 0) {
-            message += ' ' + nls.localize(
-                'theia/ai/core/agentsMd/migrationResult/promptSyntax',
-                '{0} of the migrated files still contain prompt template syntax, which {1} no longer resolves — review and remove it.',
-                withPromptSyntax, AGENTS_MD_FILE_NAME
-            );
-        }
 
         const openAction = migrated.length > 0 ? nls.localizeByDefault('Open') : undefined;
         // Keep the result visible until dismissed: it announces a new file in the user's repository.
@@ -246,5 +279,13 @@ export class AgentsMdFrontendApplicationContribution implements FrontendApplicat
                 open(this.openerService, migrated[0].root.resolve(AGENTS_MD_FILE_NAME));
             }
         });
+        if (withPromptSyntax > 0) {
+            // A separate warning: appended to the summary it was easy to miss.
+            this.messageService.warn(nls.localize(
+                'theia/ai/core/agentsMd/migrationResult/promptSyntax',
+                '{0} of the migrated files still contain prompt template syntax, which {1} no longer resolves. Review and remove it.',
+                withPromptSyntax, AGENTS_MD_FILE_NAME
+            ), { timeout: 0 });
+        }
     }
 }

@@ -142,16 +142,20 @@ export class AgentsMdMigrationService {
         const targetURI = root.resolve(AGENTS_MD_FILE_NAME);
 
         try {
-            if (await this.fileService.exists(targetURI)) {
+            const content = (await this.fileService.read(legacyURI)).value;
+            if (!(await this.fileService.exists(targetURI))) {
+                await this.fileService.createFile(targetURI, BinaryBuffer.fromString(content));
+                report.migrated = true;
+            } else if ((await this.fileService.read(targetURI)).value === content) {
+                // A previous run wrote AGENTS.md but was cut off before the backup, e.g. by the window
+                // reload that granting trust can trigger. Finish that run instead of reporting a skip.
+                report.migrated = true;
+            } else {
                 // Never overwrite: an existing AGENTS.md is authoritative, and it is what every other
                 // tool reading the standard already sees.
                 report.alreadyPresent = true;
-            } else {
-                const content = (await this.fileService.read(legacyURI)).value;
-                report.containsPromptSyntax = PROMPT_SYNTAX_PATTERN.test(content);
-                await this.fileService.createFile(targetURI, BinaryBuffer.fromString(content));
-                report.migrated = true;
             }
+            report.containsPromptSyntax = report.migrated && PROMPT_SYNTAX_PATTERN.test(content);
         } catch (e) {
             report.error = `${e?.message ?? e}`;
             this.logger.warn(`Failed to migrate ${legacyURI.toString()} to ${targetURI.toString()}: ${report.error}`);

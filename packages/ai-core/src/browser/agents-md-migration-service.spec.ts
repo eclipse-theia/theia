@@ -144,10 +144,23 @@ describe('AgentsMdMigrationService', () => {
 
         it('never overwrites an existing AGENTS.md, but still retires the legacy file', async () => {
             existing(legacyPath, '/ws/AGENTS.md');
+            fileServiceMock.read.callsFake((uri: URI) => Promise.resolve({
+                value: uri.path.toString() === '/ws/AGENTS.md' ? 'own conventions' : 'project conventions'
+            }));
             const reports = await createService().migrate();
 
             expect(reports[0].migrated).to.be.false;
             expect(reports[0].alreadyPresent).to.be.true;
+            expect(reports[0].backedUp).to.be.true;
+            expect(fileServiceMock.createFile.called).to.be.false;
+        });
+
+        it('finishes a run that was cut off after writing AGENTS.md', async () => {
+            existing(legacyPath, '/ws/AGENTS.md');
+            const reports = await createService().migrate();
+
+            expect(reports[0].migrated).to.be.true;
+            expect(reports[0].alreadyPresent).to.be.false;
             expect(reports[0].backedUp).to.be.true;
             expect(fileServiceMock.createFile.called).to.be.false;
         });

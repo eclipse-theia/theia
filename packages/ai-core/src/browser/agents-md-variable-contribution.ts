@@ -119,15 +119,15 @@ export class AgentsMdVariableContribution implements AIVariableContribution, AIV
     }
 
     /**
-     * Inlines the single root's file. The content is raw Markdown and deliberately not escaped; only
-     * the path, which is an attribute, is.
+     * Inlines the single root's file. The content is raw Markdown and not XML-escaped; only the path,
+     * which is an attribute, is.
      */
     protected generateAutoLoaded(files: AgentsMdFile[]): string {
         if (!this.isAutoLoading() || files.length === 0) {
             return '';
         }
         const file = files[0];
-        return `<project_instructions path="${this.escapeXml(this.toWorkspaceRelativePath(file))}">\n${file.content}\n</project_instructions>`;
+        return `<project_instructions path="${this.escapeXml(this.toWorkspaceRelativePath(file))}">\n${this.escapeFunctionReferences(file.content)}\n</project_instructions>`;
     }
 
     /**
@@ -151,9 +151,20 @@ export class AgentsMdVariableContribution implements AIVariableContribution, AIV
             return '';
         }
         if (files.length === 1) {
-            return files[0].content;
+            return this.escapeFunctionReferences(files[0].content);
         }
-        return files.map(file => `### ${file.rootName}\n\n${file.content}`).join('\n\n');
+        return files.map(file => `### ${file.rootName}\n\n${this.escapeFunctionReferences(file.content)}`).join('\n\n');
+    }
+
+    /**
+     * Keeps `~{...}` in inlined content literal. Function references are matched on the resolved
+     * prompt text, so a `~{someTool}` in a file anyone in the repository can edit would otherwise
+     * attach that tool to every agent using the fragment. A zero-width space between `~` and `{`
+     * breaks the match without changing what the model reads. `{{...}}` needs no such treatment, as
+     * variables are not resolved recursively.
+     */
+    protected escapeFunctionReferences(content: string): string {
+        return content.replace(/~\{/g, '~\u200B{');
     }
 
     protected toWorkspaceRelativePath(file: AgentsMdFile): string {

@@ -18,7 +18,8 @@ import { DisposableCollection, URI, Event, Emitter, nls, ILogger } from '@theia/
 import { OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import {
-    PromptFragmentCustomizationService, CustomAgentDescription, CustomAgentPromptVariant, CustomizedPromptFragment, CommandPromptFragmentMetadata, CustomAgentsLocation
+    PromptFragmentCustomizationService, CustomAgentDescription, CustomAgentPromptVariant, CustomizedPromptFragment, CommandPromptFragmentMetadata, CustomAgentsLocation,
+    PromptFragmentCustomizationSource
 } from '../common';
 import { ConfigurableInMemoryResources } from '../common/configurable-in-memory-resources';
 import { parseFrontmatter, serializeFrontmatter } from '../common/frontmatter';
@@ -147,13 +148,6 @@ export interface PromptFragmentCustomizationProperties {
      * {@link CUSTOM_AGENT_WORKSPACE_DIRECTORIES} against the workspace roots.
      */
     agentDirectoryPaths?: string[];
-}
-
-/** A loaded customization file, including files hidden by a higher-priority override. */
-export interface PromptFragmentCustomizationSource {
-    uri: URI;
-    template: string;
-    active: boolean;
 }
 
 /**

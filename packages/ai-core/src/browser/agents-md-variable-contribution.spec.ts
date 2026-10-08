@@ -31,6 +31,7 @@ import { URI } from '@theia/core';
 import { AgentsMdFile, AgentsMdService } from './agents-md-service';
 import { AGENTS_MD_AUTO_LOADED_VARIABLE, AGENTS_MD_CONTENT_VARIABLE, AGENTS_MD_VARIABLE, AgentsMdVariableContribution } from './agents-md-variable-contribution';
 import { AIVariableContext } from '../common/variable-service';
+import { matchFunctionsRegEx } from '../common/prompt-service-util';
 
 disableJSDOM();
 
@@ -89,6 +90,12 @@ describe('AgentsMdVariableContribution', () => {
             const resolved = await resolve([file('a&b', '# Heading <not xml> & "quoted"')], AGENTS_MD_AUTO_LOADED_VARIABLE, 1);
             expect(resolved).to.contain('path="a&amp;b/AGENTS.md"');
             expect(resolved).to.contain('# Heading <not xml> & "quoted"');
+        });
+
+        it('keeps function references in the content from attaching tools', async () => {
+            const resolved = await resolve([file('a', 'Use ~{getFileContent} and {{selectedText}}.')], AGENTS_MD_AUTO_LOADED_VARIABLE, 1);
+            expect(matchFunctionsRegEx(resolved)).to.be.empty;
+            expect(resolved).to.contain('{{selectedText}}');
         });
     });
 
@@ -152,6 +159,11 @@ describe('AgentsMdVariableContribution', () => {
             expect(await resolve([file('a', 'first'), file('b', 'second')], AGENTS_MD_CONTENT_VARIABLE)).to.equal(
                 '### a\n\nfirst\n\n### b\n\nsecond'
             );
+        });
+
+        it('keeps function references in the content from attaching tools', async () => {
+            expect(matchFunctionsRegEx(await resolve([file('a', '~{getFileContent}')], AGENTS_MD_CONTENT_VARIABLE))).to.be.empty;
+            expect(matchFunctionsRegEx(await resolve([file('a', '~{x}'), file('b', '~{y}')], AGENTS_MD_CONTENT_VARIABLE))).to.be.empty;
         });
     });
 

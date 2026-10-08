@@ -28,7 +28,7 @@ import * as sinon from 'sinon';
 import { Emitter, URI } from '@theia/core';
 import { AgentsMdFrontendApplicationContribution } from './agents-md-frontend-application-contribution';
 import { LEGACY_PROJECT_INFO_PATH } from './agents-md-migration-service';
-import { PromptFragmentCustomizationSource } from './frontend-prompt-customization-service';
+import { PromptFragmentCustomizationSource } from '../common/prompt-service';
 
 disableJSDOM();
 
@@ -40,6 +40,8 @@ class TestContribution extends AgentsMdFrontendApplicationContribution {
 
     async settleWarnings(): Promise<void> {
         await this.startupMigration;
+        // Let the debounce timer, which has no delay in these tests, fire.
+        await new Promise(resolve => setTimeout(resolve, 0));
         await this.overrideWarningUpdates;
         // Allow the notification action's asynchronous handler to finish.
         await Promise.resolve();
@@ -55,6 +57,7 @@ describe('AgentsMdFrontendApplicationContribution - legacy overrides', () => {
     let choice: string | undefined;
     let contribution: TestContribution;
     let warning: sinon.SinonStub;
+    let info: sinon.SinonStub;
     let opener: sinon.SinonStub;
     let writeStorage: sinon.SinonStub;
     let migration: sinon.SinonStub;
@@ -77,10 +80,13 @@ describe('AgentsMdFrontendApplicationContribution - legacy overrides', () => {
                 onDidChangePromptFragmentCustomization: fragmentsChanged.event
             },
             storageService: { getData: async () => stored, setData: writeStorage },
-            messageService: { warn: warning, info: sinon.stub().resolves() },
+            messageService: { warn: warning, info },
             openerService: { getOpener: async () => ({ open: opener }) },
             migrationService: { migrate: migration },
-            logger: { warn: sinon.stub() }
+            appStateService: { reachedState: async () => { } },
+            logger: { warn: sinon.stub() },
+            overrideWarningDelay: 0,
+            overrideWarningEnabled: true
         });
         return result;
     }
@@ -92,6 +98,7 @@ describe('AgentsMdFrontendApplicationContribution - legacy overrides', () => {
         stored = undefined;
         choice = undefined;
         warning = sinon.stub().callsFake(async () => choice);
+        info = sinon.stub().resolves();
         opener = sinon.stub().resolves();
         writeStorage = sinon.stub().callsFake(async (_key: string, value: number) => { stored = value; });
         migration = sinon.stub().resolves([]);
@@ -123,8 +130,8 @@ describe('AgentsMdFrontendApplicationContribution - legacy overrides', () => {
         ];
         await contribution.checkOverrides();
         const message = warning.firstCall.args[0];
-        expect(message).to.contain('/config/project-info.prompttemplate (Inactive)');
-        expect(message).to.contain('/ws/.my-prompts/project-info.prompttemplate (Active)');
+        expect(message).to.contain('`/config/project-info.prompttemplate` (Inactive), `/ws/.my-prompts/project-info.prompttemplate` (Active)');
+        expect(message).not.to.contain('\n');
         expect(message).not.to.contain(`/ws/${LEGACY_PROJECT_INFO_PATH}`);
         expect(message).to.contain('still apply to prompts that reference project-info');
     });
@@ -147,7 +154,7 @@ describe('AgentsMdFrontendApplicationContribution - legacy overrides', () => {
         expect(warning.calledOnce).to.be.true;
     });
 
-    it('warns again when content, source paths or active status changes', async () => {
+    it('warns again when content or source paths change, but not for the active status alone', async () => {
         sources = [source('/config/project-info.prompttemplate')];
         await contribution.checkOverrides();
         sources[0].template = 'Changed instructions';
@@ -156,7 +163,42 @@ describe('AgentsMdFrontendApplicationContribution - legacy overrides', () => {
         await contribution.checkOverrides();
         sources[0].active = false;
         await contribution.checkOverrides();
-        expect(warning.callCount).to.equal(4);
+        expect(warning.callCount).to.equal(3);
+    });
+
+    it('reports once for a burst of rescans', async () => {
+        sources = [source('/config/project-info.prompttemplate')];
+        contribution.onStart();
+        scanCompleted.fire();
+        sources[0].active = false;
+        fragmentsChanged.fire(['project-info']);
+        scanCompleted.fire();
+        await contribution.settleWarnings();
+        expect(warning.calledOnce).to.be.true;
+        expect(warning.firstCall.args[0]).to.contain('(Inactive)');
+    });
+
+    it('does not report anything before the application is ready', async () => {
+        sources = [source('/config/project-info.prompttemplate')];
+        contribution = createContribution();
+        Object.assign(contribution, { overrideWarningEnabled: false, appStateService: { reachedState: () => new Promise(() => { }) } });
+        contribution.onStart();
+        scanCompleted.fire();
+        await contribution.settleWarnings();
+        expect(warning.called).to.be.false;
+    });
+
+    it('reports leftover prompt syntax in a warning of its own', async () => {
+        migration.resolves([{ root: URI.fromFilePath('/ws'), migrated: true, alreadyPresent: false, backedUp: true, containsPromptSyntax: true }]);
+        await (contribution as unknown as { runMigration(reportEmptyResult: boolean): Promise<void> }).runMigration(false);
+        expect(info.firstCall.args[0]).not.to.contain('prompt template syntax');
+        expect(warning.firstCall.args[0]).to.contain('prompt template syntax');
+    });
+
+    it('tells the user that an untrusted workspace was not migrated', async () => {
+        trusted = false;
+        await (contribution as unknown as { runMigration(reportEmptyResult: boolean): Promise<void> }).runMigration(true);
+        expect(info.firstCall.args[0]).to.contain('not trusted');
     });
 
     it('does not show duplicates while a notification is pending', async () => {
