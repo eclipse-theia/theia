@@ -269,7 +269,6 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
             this._stagedForPreview = false;
             this.baseEditor.setModel(this.baseModel);
             this.baseEditor.restoreViewState(this.savedViewState);
-            this.baseEditor.focus();
         } else {
             this._stagedForPreview = false;
             this.savedViewState = this.baseEditor.saveViewState();
