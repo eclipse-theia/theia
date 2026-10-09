@@ -313,8 +313,17 @@ export class GettingStartedWidget extends ReactWidget {
             {open}
             {openFile}
             {openFolder}
+            {this.renderAdditionalStartActions()}
             {openWorkspace}
         </div>;
+    }
+
+    /**
+     * Hook for adding actions to the "Start" section, rendered after the "Open" actions.
+     * Each action should be wrapped in a `gs-action-container` element.
+     */
+    protected renderAdditionalStartActions(): React.ReactNode {
+        return undefined;
     }
 
     /**
