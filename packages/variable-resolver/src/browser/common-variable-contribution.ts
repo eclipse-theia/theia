@@ -108,10 +108,15 @@ export class CommonVariableContribution implements VariableContribution {
                     if (typeof input.description !== 'string') {
                         return undefined;
                     }
-                    return this.quickInputService?.input({
+                    const value = await this.quickInputService?.input({
                         prompt: input.description,
-                        value: input.default
+                        value: input.default,
+                        ignoreFocusLost: true
                     });
+                    if (value === undefined) {
+                        throw cancelled();
+                    }
+                    return value;
                 }
                 if (input.type === 'pickString') {
                     if (typeof input.description !== 'string' || !Array.isArray(input.options)) {
@@ -135,8 +140,14 @@ export class CommonVariableContribution implements VariableContribution {
                             });
                         }
                     }
-                    const selectedPick = await this.quickInputService?.showQuickPick(elements, { placeholder: input.description });
-                    return selectedPick?.value;
+                    const selectedPick = await this.quickInputService?.showQuickPick(elements, {
+                        placeholder: input.description,
+                        ignoreFocusOut: true
+                    });
+                    if (!selectedPick) {
+                        throw cancelled();
+                    }
+                    return selectedPick.value;
                 }
                 if (input.type === 'command') {
                     if (typeof input.command !== 'string') {

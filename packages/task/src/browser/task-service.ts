@@ -16,7 +16,7 @@
 
 import { ApplicationShell, FrontendApplication, QuickPickValue, WidgetManager, WidgetOpenMode } from '@theia/core/lib/browser';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
-import { CommandService, ILogger, nls } from '@theia/core/lib/common';
+import { CommandService, ILogger, isCancelled, nls } from '@theia/core/lib/common';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { QuickPickItemOrSeparator, QuickPickService } from '@theia/core/lib/common/quick-pick-service';
@@ -862,6 +862,9 @@ export class TaskService implements TaskConfigurationClient {
             await this.removeProblemMarkers(option);
             return this.runResolvedTask(taskToRun, option);
         } catch (error) {
+            if (isCancelled(error)) {
+                return undefined;
+            }
             const errMessage = `Error resolving task '${task.label}': ${error}`;
             this.logger.error(errMessage);
         }
