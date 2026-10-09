@@ -20,7 +20,7 @@ import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import {
     ANTHROPIC_RESULT_BLOCK_DATA_KEY, AnthropicModel, AnthropicModelParams, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage,
-    mergeConsecutiveSameRoleMessages, transformToAnthropicParams
+    createAnthropicClient, mergeConsecutiveSameRoleMessages, transformToAnthropicParams
 } from './anthropic-language-model';
 import {
     CompactionMessage, isServerToolCallResponsePart, isUsageResponsePart, LanguageModelMessage, LanguageModelRequest,
@@ -401,6 +401,42 @@ describe('AnthropicModel', () => {
         });
     });
 
+    describe('isCustomEndpoint', () => {
+        let originalBaseUrl: string | undefined;
+
+        beforeEach(() => {
+            originalBaseUrl = process.env.ANTHROPIC_BASE_URL;
+            delete process.env.ANTHROPIC_BASE_URL;
+        });
+
+        afterEach(() => {
+            if (originalBaseUrl === undefined) {
+                delete process.env.ANTHROPIC_BASE_URL;
+            } else {
+                process.env.ANTHROPIC_BASE_URL = originalBaseUrl;
+            }
+        });
+
+        function isCustomEndpoint(baseURL?: string): boolean {
+            const model = createReasoningModel('claude-opus-4-5', 'budget');
+            return model['isCustomEndpoint'](createAnthropicClient({ apiKey: 'test-key', baseURL }));
+        }
+
+        it('is false for the official API', () => {
+            expect(isCustomEndpoint()).to.be.false;
+            expect(isCustomEndpoint('https://api.anthropic.com/')).to.be.false;
+        });
+
+        it('is true for a configured custom url', () => {
+            expect(isCustomEndpoint('https://gateway.example.com')).to.be.true;
+        });
+
+        it('is true for a custom url set through ANTHROPIC_BASE_URL', () => {
+            process.env.ANTHROPIC_BASE_URL = 'https://gateway.example.com';
+            expect(isCustomEndpoint()).to.be.true;
+        });
+    });
+
     describe('tool loop thinking block replay', () => {
         /**
          * Mock client whose first stream() call yields the given events and whose follow-up calls yield none.
@@ -411,6 +447,8 @@ describe('AnthropicModel', () => {
             const ModelClass = injectable()(class extends AnthropicModel {
                 protected override initializeAnthropic(): Anthropic {
                     return {
+                        // Mirrors how the SDK resolves the base URL when none is configured.
+                        baseURL: url ?? 'https://api.anthropic.com',
                         messages: {
                             stream: (params: Anthropic.MessageCreateParams) => {
                                 capturedParams.push(params);

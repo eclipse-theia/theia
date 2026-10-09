@@ -54,6 +54,9 @@ export const DEFAULT_MAX_TOKENS = 4096;
  */
 export const ANTHROPIC_RESULT_BLOCK_DATA_KEY = 'anthropicResultBlock';
 
+/** Origin of the official Anthropic API, the SDK's default base URL. */
+const ANTHROPIC_API_ORIGIN = 'https://api.anthropic.com';
+
 interface ToolCallback {
     readonly name: string;
     readonly id: string;
@@ -514,7 +517,7 @@ export class AnthropicModel implements LanguageModel {
     ): Promise<LanguageModelStreamResponse> {
         const settings = this.getSettings(request);
         const useCompaction = this.useServerSideCompaction(request);
-        const { messages, systemMessage } = transformToAnthropicParams(request.messages, this.useCaching, useCompaction, this.isCustomEndpoint());
+        const { messages, systemMessage } = transformToAnthropicParams(request.messages, this.useCaching, useCompaction, this.isCustomEndpoint(anthropic));
 
         let anthropicMessages = [...messages, ...(toolMessages ?? [])];
 
@@ -727,7 +730,7 @@ export class AnthropicModel implements LanguageModel {
                         cancellationToken,
                         [
                             ...(toolMessages ?? []),
-                            ...currentMessages.map(m => ({ role: m.role, content: dropUnreplayableThinking(m.content, that.isCustomEndpoint()) }))
+                            ...currentMessages.map(m => ({ role: m.role, content: dropUnreplayableThinking(m.content, that.isCustomEndpoint(anthropic)) }))
                                 .filter(m => m.content.length > 0),
                             toolResponseMessage
                         ]
@@ -787,7 +790,7 @@ export class AnthropicModel implements LanguageModel {
     ): Promise<LanguageModelTextResponse> {
         const settings = this.getSettings(request);
         const useCompaction = this.useServerSideCompaction(request);
-        const { messages, systemMessage } = transformToAnthropicParams(request.messages, true, useCompaction, this.isCustomEndpoint());
+        const { messages, systemMessage } = transformToAnthropicParams(request.messages, true, useCompaction, this.isCustomEndpoint(anthropic));
 
         const params: Anthropic.MessageCreateParams = this.applyCompactionParams({
             max_tokens: this.maxTokens,
@@ -829,8 +832,13 @@ export class AnthropicModel implements LanguageModel {
     /**
      * Whether requests go to a custom (API-compatible) endpoint rather than the official Anthropic API.
      * Such gateways may strip thinking text while forwarding signatures, so empty thinking blocks are dropped on replay.
+     * Checks the client's resolved base URL, which also reflects the `ANTHROPIC_BASE_URL` environment variable.
      */
-    protected isCustomEndpoint(): boolean {
-        return !!this.url;
+    protected isCustomEndpoint(anthropic: Anthropic): boolean {
+        try {
+            return new URL(anthropic.baseURL).origin !== ANTHROPIC_API_ORIGIN;
+        } catch {
+            return true;
+        }
     }
 }
