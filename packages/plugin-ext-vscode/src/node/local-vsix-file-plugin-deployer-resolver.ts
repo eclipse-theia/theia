@@ -16,7 +16,7 @@
 
 import * as path from 'path';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { PluginDeployerResolverContext, PluginIdentifiers } from '@theia/plugin-ext';
+import { DuplicateExtensionError, PluginDeployerResolverContext, PluginIdentifiers } from '@theia/plugin-ext';
 import { LocalPluginDeployerResolver } from '@theia/plugin-ext/lib/main/node/resolvers/local-plugin-deployer-resolver';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
 import { isVSCodePluginFile } from './plugin-vscode-file-handler';
@@ -68,11 +68,7 @@ export class LocalVSIXFilePluginDeployerResolver extends LocalPluginDeployerReso
         // Check if the deployment directory already exists on disk
         if (await existsInDeploymentDir(this.environment, versionedId)) {
             const unversionedId = PluginIdentifiers.componentsToUnversionedId(components);
-            const error = new Error(
-                `Extension ${unversionedId} is already installed (version: ${components.version}).`
-            );
-            error.name = 'DuplicateExtensionError';
-            throw error;
+            throw DuplicateExtensionError.create(`Extension ${unversionedId} is already installed (version: ${components.version}).`);
         }
 
         const extensionDeploymentDir = await unpackToDeploymentDir(this.environment, localPath, versionedId);

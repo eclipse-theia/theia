@@ -53,7 +53,7 @@ import { DiffService } from '@theia/workspace/lib/browser/diff-service';
 import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
 import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 import { URI } from '@theia/core/shared/vscode-uri';
-import { PluginDeployOptions, PluginIdentifiers, PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { DuplicateExtensionError, PluginDeployOptions, PluginIdentifiers, PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { QuickOpenWorkspace } from '@theia/workspace/lib/browser/quick-open-workspace';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -578,14 +578,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand(VscodeCommands.INSTALL_EXTENSION_FROM_ID_OR_URI, {
             execute: async (vsixUriOrExtensionId: TheiaURI | UriComponents | string) => {
                 if (typeof vsixUriOrExtensionId === 'string') {
-                    let extensionId = vsixUriOrExtensionId;
-                    let opts: PluginDeployOptions | undefined;
-                    const versionedId = PluginIdentifiers.idAndVersionFromVersionedId(vsixUriOrExtensionId);
-                    if (versionedId) {
-                        extensionId = versionedId.id;
-                        opts = { version: versionedId.version, ignoreOtherVersions: true };
-                    }
-                    await this.pluginServer.install(VSCodeExtensionUri.fromId(extensionId).toString(), undefined, opts);
+                    await this.installExtensionFromId(vsixUriOrExtensionId);
                 } else {
                     await this.deployPlugin(vsixUriOrExtensionId);
                 }
@@ -1340,6 +1333,26 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 }
             },
         });
+    }
+
+    /**
+     * Installs an extension by its (optionally versioned) ID. Installing an extension that is already installed is a noop.
+     */
+    protected async installExtensionFromId(extensionIdOrVersionedId: string): Promise<void> {
+        let extensionId = extensionIdOrVersionedId;
+        let opts: PluginDeployOptions | undefined;
+        const versionedId = PluginIdentifiers.idAndVersionFromVersionedId(extensionIdOrVersionedId);
+        if (versionedId) {
+            extensionId = versionedId.id;
+            opts = { version: versionedId.version, ignoreOtherVersions: true };
+        }
+        try {
+            await this.pluginServer.install(VSCodeExtensionUri.fromId(extensionId).toString(), undefined, opts);
+        } catch (e) {
+            if (!DuplicateExtensionError.is(e)) {
+                throw e;
+            }
+        }
     }
 
     private async deployPlugin(uri: TheiaURI | UriComponents): Promise<void> {
