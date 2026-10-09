@@ -288,9 +288,11 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
         // must not run while the ShellLayoutRestorer still holds restored plugin view widgets, otherwise
         // removeStaleWidgets can dispose a restored view container mid-restore and abort the whole
         // layout restoration (see https://github.com/eclipse-theia/theia/issues/17770).
+        // Wait for `ready` rather than `initialized_layout`: only `ready` follows the onDidInitializeLayout
+        // hooks, and PluginViewRegistry's hook disposes the data widgets that initWidgets would prepare.
         // Deliberately not awaited: startPlugins runs after this hook and may register file system
         // providers the layout restoration depends on (see beforeLoadContributions).
-        this.appState.reachedState('initialized_layout').then(async () => {
+        this.appState.reachedState('ready').then(async () => {
             if (toDisconnect.disposed) {
                 return;
             }
