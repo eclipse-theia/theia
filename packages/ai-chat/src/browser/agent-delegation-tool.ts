@@ -237,6 +237,8 @@ export class AgentDelegationTool implements ToolProvider {
                 }
             }
 
+            const sessionIdSuffix = `[delegation sessionId: ${session.id}]`;
+
             // Send the request. The `finally` releases the event bubbling on every outcome: a resumed
             // session is long-lived, so leaking a listener per failed round would forward its events
             // into stale parent responses.
@@ -248,7 +250,7 @@ export class AgentDelegationTool implements ToolProvider {
                 let response: ChatRequestInvocation | undefined;
                 try {
                     if (ctx.cancellationToken?.isCancellationRequested) {
-                        return 'Operation cancelled by user';
+                        return `Operation cancelled by user\n\n${sessionIdSuffix}`;
                     }
 
                     const chatService = this.getChatService();
@@ -293,9 +295,6 @@ export class AgentDelegationTool implements ToolProvider {
                     try {
                         // Wait for completion to return the final result as tool output
                         const result = await response.responseCompleted;
-                        if (result.isCanceled) {
-                            return `Delegation to agent '${agentId}' was cancelled by the user.`;
-                        }
                         const filteredContent = result.response.content.filter(c => !ThinkingChatResponseContent.is(c) && !ToolCallChatResponseContent.is(c));
                         const stringResult = filteredContent
                             .map(c => ChatResponseContent.hasAsString(c) ? c.asString() : undefined)
@@ -304,14 +303,14 @@ export class AgentDelegationTool implements ToolProvider {
 
                         // Return the raw text to the top-level Agent, as a tool result. The session id
                         // allows the caller to send follow-up requests into the same session.
-                        const sessionIdSuffix = `[delegation sessionId: ${session.id}]`;
-                        return stringResult ? `${stringResult}\n\n${sessionIdSuffix}` : sessionIdSuffix;
+                        const cancellationNotice = result.isCanceled ? `Delegation to agent '${agentId}' was cancelled by the user.` : '';
+                        return [stringResult, cancellationNotice, sessionIdSuffix].filter(text => text !== '').join('\n\n');
                     } catch (completionError) {
                         if (
                             completionError instanceof Error &&
                             completionError.message.includes('cancelled')
                         ) {
-                            return 'Operation cancelled by user';
+                            return `Operation cancelled by user\n\n${sessionIdSuffix}`;
                         }
                         const errorMsg = `Failed to complete response from agent '${agentId}': ${completionError instanceof Error ? completionError.message : completionError}`;
                         this.logger.error(errorMsg, completionError);

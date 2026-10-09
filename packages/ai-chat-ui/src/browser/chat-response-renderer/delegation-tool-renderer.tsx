@@ -276,6 +276,14 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
         event.preventDefault();
     };
 
+    private handleCancelDelegation = (event: React.MouseEvent): void => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (this.props.toolCallId) {
+            this.props.agentDelegationTool.cancelDelegation(this.props.toolCallId);
+        }
+    };
+
     private renderPendingInteractions(pendingInteractions: ReadonlyArray<InteractiveContent & ChatResponseContent>): React.ReactNode[] {
         // Key by interactionId so a sibling interaction resolving does not remount the
         // remaining ones (losing in-progress wizard state); disambiguate the rare
@@ -365,20 +373,18 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
                                 <span className={`codicon ${statusIcon} delegation-status-icon`}></span>
                                 <span className='delegation-status-text'>{statusText}</span>
                             </span>
-                            <span className={`delegation-toggle-arrow${isOpen ? ' open' : ''}`} />
                             {hasNode && !isComplete && !isCanceled && !isError && !!this.props.toolCallId && (
                                 <button
+                                    type='button'
                                     className='delegation-cancel-button'
-                                    onClick={e => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        this.props.agentDelegationTool.cancelDelegation(this.props.toolCallId!);
-                                    }}
+                                    onClick={this.handleCancelDelegation}
                                     title={nls.localize('theia/ai/chat-ui/delegation-response-renderer/cancel', 'Cancel delegation')}
+                                    aria-label={nls.localize('theia/ai/chat-ui/delegation-response-renderer/cancel', 'Cancel delegation')}
                                 >
-                                    <span className='codicon codicon-debug-stop' />
+                                    <span className='codicon codicon-stop-circle' />
                                 </button>
                             )}
+                            <span className={`delegation-toggle-arrow${isOpen ? ' open' : ''}`} />
                         </div>
                         {showInteractionsInSummary && (
                             <div className='delegation-pending-confirmations' onClick={this.preventSummaryToggle}>
