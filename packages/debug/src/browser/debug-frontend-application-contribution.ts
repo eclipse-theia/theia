@@ -69,6 +69,7 @@ import {
     DebugEditorContextCommands, DebugBreakpointWidgetCommands, nlsEnableBreakpoint, nlsDisableBreakpoint
 } from './debug-commands';
 import { ILogger } from '@theia/core';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 
 @injectable()
 export class DebugFrontendApplicationContribution extends AbstractViewContribution<DebugWidget>
@@ -118,6 +119,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
     @inject(ILogger) @named('debug:DebugFrontendApplicationContribution')
     protected readonly logger: ILogger;
+
+    @inject(ClipboardService)
+    protected readonly clipboardService: ClipboardService;
 
     constructor() {
         super({
@@ -697,7 +701,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isVisible: () => !!this.selectedVariable && this.selectedVariable.supportSetVariable
         });
         registry.registerCommand(DebugCommands.COPY_VARIABLE_VALUE, {
-            execute: () => this.selectedVariable && this.selectedVariable.copyValue(),
+            execute: () => this.copyValue(this.selectedVariable),
             isEnabled: () => !!this.selectedVariable && this.selectedVariable.supportCopyValue,
             isVisible: () => !!this.selectedVariable && this.selectedVariable.supportCopyValue
         });
@@ -826,7 +830,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isVisible: () => !!this.watchExpression
         });
         registry.registerCommand(DebugCommands.COPY_WATCH_EXPRESSION_VALUE, {
-            execute: () => this.watchExpression && this.watchExpression.copyValue(),
+            execute: () => this.copyValue(this.watchExpression),
             isEnabled: () => !!this.watchExpression && this.watchExpression.supportCopyValue,
             isVisible: () => !!this.watchExpression && this.watchExpression.supportCopyValue
         });
@@ -863,6 +867,12 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isEnabled: widget => widget instanceof Widget ? widget instanceof DebugWatchWidget : !!this.watch,
             isVisible: widget => widget instanceof Widget ? widget instanceof DebugWatchWidget : !!this.watch
         });
+    }
+
+    protected async copyValue(item: { getValueToCopy(): Promise<string> } | undefined): Promise<void> {
+        if (item) {
+            await this.clipboardService.writeText(await item.getValueToCopy());
+        }
     }
 
     override registerKeybindings(keybindings: KeybindingRegistry): void {
