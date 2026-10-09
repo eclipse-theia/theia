@@ -54,6 +54,9 @@ export const DEFAULT_MAX_TOKENS = 4096;
  */
 export const ANTHROPIC_RESULT_BLOCK_DATA_KEY = 'anthropicResultBlock';
 
+/** Origin of the official Anthropic API, the SDK's default base URL. */
+const ANTHROPIC_API_ORIGIN = 'https://api.anthropic.com';
+
 interface ToolCallback {
     readonly name: string;
     readonly id: string;
@@ -62,24 +65,28 @@ interface ToolCallback {
 }
 
 /**
- * Anthropic rejects replayed thinking blocks without content ('each thinking block must contain thinking')
- * or without a signature. Both can reach us from API-compatible endpoints that omit thinking text or
- * signature deltas, and from streams cancelled before the signature arrived.
+ * Anthropic rejects replayed thinking blocks without a signature, which reach us from API-compatible endpoints
+ * that omit signature deltas and from streams cancelled before the signature arrived.
+ *
+ * Signed blocks with empty text are legitimate on the official API (e.g. `display: 'omitted'`) and must be
+ * passed back as received. API-compatible gateways may however strip the text while forwarding the signature,
+ * which Anthropic rejects ('each thinking block must contain thinking'). As both look identical, empty blocks
+ * are only dropped when `dropEmptyThinking` is set, i.e. for custom endpoints.
  */
-const isReplayableThinking = (thinking: string | undefined, signature: string | undefined): boolean =>
-    !!thinking?.trim() && !!signature;
+const isReplayableThinking = (thinking: string | undefined, signature: string | undefined, dropEmptyThinking: boolean): boolean =>
+    !!signature && (!dropEmptyThinking || !!thinking?.trim());
 
 /** The tool loop replays streamed messages raw (bypassing {@link createMessageContent}); drop thinking blocks Anthropic would reject. */
-const dropUnreplayableThinking = (content: Message['content']): Message['content'] =>
+const dropUnreplayableThinking = (content: Message['content'], dropEmptyThinking: boolean): Message['content'] =>
     content.filter(block => {
-        if (block.type === 'thinking' && !isReplayableThinking(block.thinking, block.signature)) {
+        if (block.type === 'thinking' && !isReplayableThinking(block.thinking, block.signature, dropEmptyThinking)) {
             console.debug('Anthropic: dropping thinking block from tool loop replay that cannot be replayed (missing thinking text or signature)');
             return false;
         }
         return true;
     });
 
-const createMessageContent = (message: LanguageModelMessage, compactionEnabled: boolean): MessageParam['content'] => {
+const createMessageContent = (message: LanguageModelMessage, compactionEnabled: boolean, dropEmptyThinking: boolean): MessageParam['content'] => {
     if (LanguageModelMessage.isCompactionMessage(message)) {
         // Only replay our own provider's compaction blocks, and only when the request will use the beta endpoint.
         // Returning [] for a skipped/foreign/disabled compaction message lets the surrounding real history carry the context.
@@ -92,7 +99,7 @@ const createMessageContent = (message: LanguageModelMessage, compactionEnabled: 
         return [{ type: 'text', text: message.text }];
     } else if (LanguageModelMessage.isThinkingMessage(message)) {
         // Returning [] drops an unreplayable thinking block so the surrounding history still replays.
-        if (!isReplayableThinking(message.thinking, message.signature)) {
+        if (!isReplayableThinking(message.thinking, message.signature, dropEmptyThinking)) {
             console.debug('Anthropic: dropping thinking block from history that cannot be replayed (missing thinking text or signature)');
             return [];
         }
@@ -171,12 +178,14 @@ function isNonThinkingParam(
  * @param messages Array of LanguageModelRequestMessage to transform
  * @param addCacheControl whether to add prompt-cache control to the system message
  * @param compactionEnabled whether the request will use the beta endpoint, so compaction replay blocks may be emitted
+ * @param dropEmptyThinking whether to drop signed thinking blocks with empty text, which gateways stripping the text produce
  * @returns Object containing transformed messages and optional system message
  */
 export function transformToAnthropicParams(
     messages: readonly LanguageModelMessage[],
     addCacheControl: boolean = true,
-    compactionEnabled: boolean = false
+    compactionEnabled: boolean = false,
+    dropEmptyThinking: boolean = false
 ): { messages: MessageParam[]; systemMessage?: Anthropic.Messages.TextBlockParam[] } {
     // Extract the system message (if any), as it is a separate parameter in the Anthropic API.
     const systemMessageObj = messages.find(message => message.actor === 'system');
@@ -191,7 +200,7 @@ export function transformToAnthropicParams(
         .filter(message => !(LanguageModelMessage.isServerToolUseMessage(message) && message.name === ANTHROPIC_TOOL_SEARCH))
         .map(message => ({
             role: toAnthropicRole(message),
-            content: createMessageContent(message, compactionEnabled)
+            content: createMessageContent(message, compactionEnabled, dropEmptyThinking)
         }))
         // Drop messages whose content converted to empty (e.g. a skipped compaction message), so no empty turns are sent.
         .filter(message => !Array.isArray(message.content) || message.content.length > 0);
@@ -508,7 +517,7 @@ export class AnthropicModel implements LanguageModel {
     ): Promise<LanguageModelStreamResponse> {
         const settings = this.getSettings(request);
         const useCompaction = this.useServerSideCompaction(request);
-        const { messages, systemMessage } = transformToAnthropicParams(request.messages, this.useCaching, useCompaction);
+        const { messages, systemMessage } = transformToAnthropicParams(request.messages, this.useCaching, useCompaction, this.isCustomEndpoint(anthropic));
 
         let anthropicMessages = [...messages, ...(toolMessages ?? [])];
 
@@ -721,7 +730,7 @@ export class AnthropicModel implements LanguageModel {
                         cancellationToken,
                         [
                             ...(toolMessages ?? []),
-                            ...currentMessages.map(m => ({ role: m.role, content: dropUnreplayableThinking(m.content) }))
+                            ...currentMessages.map(m => ({ role: m.role, content: dropUnreplayableThinking(m.content, that.isCustomEndpoint(anthropic)) }))
                                 .filter(m => m.content.length > 0),
                             toolResponseMessage
                         ]
@@ -781,7 +790,7 @@ export class AnthropicModel implements LanguageModel {
     ): Promise<LanguageModelTextResponse> {
         const settings = this.getSettings(request);
         const useCompaction = this.useServerSideCompaction(request);
-        const { messages, systemMessage } = transformToAnthropicParams(request.messages, true, useCompaction);
+        const { messages, systemMessage } = transformToAnthropicParams(request.messages, true, useCompaction, this.isCustomEndpoint(anthropic));
 
         const params: Anthropic.MessageCreateParams = this.applyCompactionParams({
             max_tokens: this.maxTokens,
@@ -818,5 +827,18 @@ export class AnthropicModel implements LanguageModel {
         }
 
         return createAnthropicClient({ apiKey, baseURL: this.url, proxyUrl: this.proxy, headers: this.headers });
+    }
+
+    /**
+     * Whether requests go to a custom (API-compatible) endpoint rather than the official Anthropic API.
+     * Such gateways may strip thinking text while forwarding signatures, so empty thinking blocks are dropped on replay.
+     * Checks the client's resolved base URL, which also reflects the `ANTHROPIC_BASE_URL` environment variable.
+     */
+    protected isCustomEndpoint(anthropic: Anthropic): boolean {
+        try {
+            return new URL(anthropic.baseURL).origin !== ANTHROPIC_API_ORIGIN;
+        } catch {
+            return true;
+        }
     }
 }

@@ -20,7 +20,7 @@ import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import {
     ANTHROPIC_RESULT_BLOCK_DATA_KEY, AnthropicModel, AnthropicModelParams, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage,
-    mergeConsecutiveSameRoleMessages, transformToAnthropicParams
+    createAnthropicClient, mergeConsecutiveSameRoleMessages, transformToAnthropicParams
 } from './anthropic-language-model';
 import {
     CompactionMessage, isServerToolCallResponsePart, isUsageResponsePart, LanguageModelMessage, LanguageModelRequest,
@@ -346,20 +346,28 @@ describe('AnthropicModel', () => {
                 .filter(block => block.type === 'thinking');
         }
 
-        it('drops a thinking block with empty thinking text, which Anthropic rejects on replay', () => {
+        it('keeps a signed thinking block with empty thinking text by default, as returned by the official API', () => {
             const messages = [userText('do something'), thinkingMessage('', 'signature'), userText('continue')];
 
             const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.deep.equal([{ type: 'thinking', thinking: '', signature: 'signature' }]);
+        });
+
+        it('drops a signed thinking block with empty thinking text when requested, as stripping gateways produce', () => {
+            const messages = [userText('do something'), thinkingMessage('', 'signature'), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false, false, true);
 
             expect(thinkingBlocks(result)).to.be.empty;
             expect(JSON.stringify(result)).to.contain('do something');
             expect(JSON.stringify(result)).to.contain('continue');
         });
 
-        it('drops a thinking block whose thinking text is only whitespace', () => {
+        it('drops a thinking block whose thinking text is only whitespace when requested', () => {
             const messages = [thinkingMessage('  \n', 'signature'), userText('continue')];
 
-            const { messages: result } = transformToAnthropicParams(messages, false);
+            const { messages: result } = transformToAnthropicParams(messages, false, false, true);
 
             expect(thinkingBlocks(result)).to.be.empty;
         });
@@ -385,11 +393,47 @@ describe('AnthropicModel', () => {
             const logged: string[] = [];
             console.debug = (...args: unknown[]) => { logged.push(args.map(String).join(' ')); };
             try {
-                transformToAnthropicParams([thinkingMessage('', 'signature'), userText('continue')], false);
+                transformToAnthropicParams([thinkingMessage('some reasoning', ''), userText('continue')], false);
             } finally {
                 console.debug = originalDebug;
             }
             expect(logged.some(line => line.includes('thinking'))).to.be.true;
+        });
+    });
+
+    describe('isCustomEndpoint', () => {
+        let originalBaseUrl: string | undefined;
+
+        beforeEach(() => {
+            originalBaseUrl = process.env.ANTHROPIC_BASE_URL;
+            delete process.env.ANTHROPIC_BASE_URL;
+        });
+
+        afterEach(() => {
+            if (originalBaseUrl === undefined) {
+                delete process.env.ANTHROPIC_BASE_URL;
+            } else {
+                process.env.ANTHROPIC_BASE_URL = originalBaseUrl;
+            }
+        });
+
+        function isCustomEndpoint(baseURL?: string): boolean {
+            const model = createReasoningModel('claude-opus-4-5', 'budget');
+            return model['isCustomEndpoint'](createAnthropicClient({ apiKey: 'test-key', baseURL }));
+        }
+
+        it('is false for the official API', () => {
+            expect(isCustomEndpoint()).to.be.false;
+            expect(isCustomEndpoint('https://api.anthropic.com/')).to.be.false;
+        });
+
+        it('is true for a configured custom url', () => {
+            expect(isCustomEndpoint('https://gateway.example.com')).to.be.true;
+        });
+
+        it('is true for a custom url set through ANTHROPIC_BASE_URL', () => {
+            process.env.ANTHROPIC_BASE_URL = 'https://gateway.example.com';
+            expect(isCustomEndpoint()).to.be.true;
         });
     });
 
@@ -398,11 +442,13 @@ describe('AnthropicModel', () => {
          * Mock client whose first stream() call yields the given events and whose follow-up calls yield none.
          * All params passed to stream() are captured so the tool loop's follow-up request can be inspected.
          */
-        function createToolLoopModel(firstCallEvents: object[], capturedParams: Anthropic.MessageCreateParams[]): AnthropicModel {
+        function createToolLoopModel(firstCallEvents: object[], capturedParams: Anthropic.MessageCreateParams[], url?: string): AnthropicModel {
             let call = 0;
             const ModelClass = injectable()(class extends AnthropicModel {
                 protected override initializeAnthropic(): Anthropic {
                     return {
+                        // Mirrors how the SDK resolves the base URL when none is configured.
+                        baseURL: url ?? 'https://api.anthropic.com',
                         messages: {
                             stream: (params: Anthropic.MessageCreateParams) => {
                                 capturedParams.push(params);
@@ -423,7 +469,7 @@ describe('AnthropicModel', () => {
             });
             return buildModel(ModelClass, {
                 id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' }, enableStreaming: true, useCaching: false,
-                apiKey: () => 'test-key', url: undefined
+                apiKey: () => 'test-key', url
             });
         }
 
@@ -450,9 +496,9 @@ describe('AnthropicModel', () => {
             ];
         }
 
-        async function runToolLoop(firstCallEvents: object[]): Promise<Anthropic.MessageCreateParams[]> {
+        async function runToolLoop(firstCallEvents: object[], url?: string): Promise<Anthropic.MessageCreateParams[]> {
             const capturedParams: Anthropic.MessageCreateParams[] = [];
-            const model = createToolLoopModel(firstCallEvents, capturedParams);
+            const model = createToolLoopModel(firstCallEvents, capturedParams, url);
             const request: UserRequest = {
                 messages: [{ actor: 'user', type: 'text', text: 'do something' }],
                 tools: [{ id: 'myTool', name: 'myTool', parameters: { type: 'object', properties: {} }, handler: async () => 'ok' }],
@@ -487,6 +533,23 @@ describe('AnthropicModel', () => {
             expect(params).to.have.lengthOf(2);
             const thinking = contentBlocks(params[1]).find(block => block.type === 'thinking');
             expect(thinking).to.deep.equal({ type: 'thinking', thinking: 'some reasoning', signature: 'sig' });
+        });
+
+        it('replays a signed thinking block with empty text unchanged for the official API', async () => {
+            const params = await runToolLoop(toolLoopEvents({ type: 'thinking', thinking: '', signature: 'sig' }));
+
+            expect(params).to.have.lengthOf(2);
+            const thinking = contentBlocks(params[1]).find(block => block.type === 'thinking');
+            expect(thinking).to.deep.equal({ type: 'thinking', thinking: '', signature: 'sig' });
+        });
+
+        it('drops a signed thinking block with empty text for a custom endpoint', async () => {
+            const params = await runToolLoop(toolLoopEvents({ type: 'thinking', thinking: '', signature: 'sig' }), 'https://gateway.example.com');
+
+            expect(params).to.have.lengthOf(2);
+            const blocks = contentBlocks(params[1]);
+            expect(blocks.some(block => block.type === 'thinking')).to.be.false;
+            expect(blocks.some(block => block.type === 'tool_use' && block.id === 'call_1')).to.be.true;
         });
 
         it('drops a message left empty after filtering its only (unreplayable) thinking block', async () => {
