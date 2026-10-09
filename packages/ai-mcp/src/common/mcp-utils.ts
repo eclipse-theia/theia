@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2026 Abdelrahman Sharaf.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,7 +13,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './mcp-server-manager';
-export * from './mcp-oauth';
-export * from './mcp-server-preference-validator';
-export * from './mcp-utils';
+
+/**
+ * Sanitizes MCP server names to comply with the pattern `^[a-zA-Z0-9_-]+$`
+ * by replacing spaces with underscores and removing special characters.
+ */
+export function sanitizeMCPName(name: string): string {
+    return name
+        .trim()
+        .replace(/\s/g, '_')
+        .replace(/[^a-zA-Z0-9_-]/g, '');
+}
