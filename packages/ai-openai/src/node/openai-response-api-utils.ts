@@ -439,7 +439,8 @@ export class OpenAiResponseApiUtils {
                     arguments: JSON.stringify(message.input)
                 });
             } else if (LanguageModelMessage.isToolResultMessage(message)) {
-                const content = typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
+                // Responses requires an output even when the tool returned no value.
+                const content = typeof message.content === 'string' ? message.content : JSON.stringify(message.content) ?? '';
                 input.push({
                     type: 'function_call_output',
                     call_id: message.tool_use_id,
@@ -908,20 +909,15 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
         for (const [itemId, toolCall] of this.currentToolCalls) {
             const callId = toolCall.call_id || itemId;
 
-            if (toolCall.result !== undefined) {
-                const resultContent = typeof toolCall.result === 'string' ? toolCall.result : JSON.stringify(toolCall.result);
-                toolResults.push({
-                    type: 'function_call_output',
-                    call_id: callId,
-                    output: resultContent
-                });
-            } else if (toolCall.error) {
-                toolResults.push({
-                    type: 'function_call_output',
-                    call_id: callId,
-                    output: `Error: ${toolCall.error.message}`
-                });
-            }
+            // Every function call needs a corresponding output, including tools that return no value.
+            const resultContent = toolCall.error
+                ? `Error: ${toolCall.error.message}`
+                : typeof toolCall.result === 'string' ? toolCall.result : JSON.stringify(toolCall.result) ?? '';
+            toolResults.push({
+                type: 'function_call_output',
+                call_id: callId,
+                output: resultContent
+            });
         }
 
         this.currentInput = [...this.currentInput, ...this.currentWebSearchReplayItems, assistantMessage, ...functionCalls, ...toolResults];
