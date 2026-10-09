@@ -130,6 +130,8 @@ export class DelegationToolRenderer implements ChatResponsePartRenderer<ToolCall
                 keybindingHints: this.getKeybindingHints(),
                 markdownRenderer: this.markdownRenderer
             }}
+            toolCallId={response.id}
+            agentDelegationTool={this.agentDelegationTool}
         />;
     }
 
@@ -157,6 +159,8 @@ interface DelegatedChatProps {
     subChatWidgetFactory: SubChatWidgetFactory;
     contextMenuRenderer: ContextMenuRenderer;
     chatResponsePartRenderers: ContributionProvider<ChatResponsePartRenderer<ChatResponseContent>>;
+    toolCallId?: string;
+    agentDelegationTool: AgentDelegationTool;
 }
 
 interface DelegatedChatState {
@@ -272,6 +276,14 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
         event.preventDefault();
     };
 
+    private handleCancelDelegation = (event: React.MouseEvent): void => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (this.props.toolCallId) {
+            this.props.agentDelegationTool.cancelDelegation(this.props.toolCallId);
+        }
+    };
+
     private renderPendingInteractions(pendingInteractions: ReadonlyArray<InteractiveContent & ChatResponseContent>): React.ReactNode[] {
         // Key by interactionId so a sibling interaction resolving does not remount the
         // remaining ones (losing in-progress wizard state); disambiguate the rare
@@ -361,6 +373,17 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
                                 <span className={`codicon ${statusIcon} delegation-status-icon`}></span>
                                 <span className='delegation-status-text'>{statusText}</span>
                             </span>
+                            {hasNode && !isComplete && !isCanceled && !isError && !!this.props.toolCallId && (
+                                <button
+                                    type='button'
+                                    className='delegation-cancel-button'
+                                    onClick={this.handleCancelDelegation}
+                                    title={nls.localize('theia/ai/chat-ui/delegation-response-renderer/cancel', 'Cancel delegation')}
+                                    aria-label={nls.localize('theia/ai/chat-ui/delegation-response-renderer/cancel', 'Cancel delegation')}
+                                >
+                                    <span className='codicon codicon-stop-circle' />
+                                </button>
+                            )}
                             <span className={`delegation-toggle-arrow${isOpen ? ' open' : ''}`} />
                         </div>
                         {showInteractionsInSummary && (
