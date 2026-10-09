@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Emitter, Event, isObject, nls, URI } from '@theia/core';
+import { Emitter, Event, nls, URI } from '@theia/core';
 import {
     ApplicationShell, BaseWidget, BoxLayout, codicon, Key, LabelProvider, LabelProviderContribution,
     Message, MessageLoop, Navigatable, NavigatableWidgetOpenHandler, Panel, PanelLayout, StatefulWidget,
@@ -53,31 +53,6 @@ export const MAX_ENTRY_HEIGHT = 500;
  * Used as the collapsed-entry height and as the sizeBasis of the BoxLayout header child.
  */
 export const HEADER_HEIGHT = 28;
-
-/**
- * Legacy persisted state of a {@link MultiDiffEditor}. New multi-diff tabs opt out
- * of layout persistence because resource providers may not be available on restore.
- */
-export interface MultiDiffEditorState {
-    scrollTop?: number;
-    collapsedUris?: string[];
-}
-
-export namespace MultiDiffEditorState {
-    export function is(value: unknown): value is MultiDiffEditorState {
-        if (!isObject<MultiDiffEditorState>(value)) {
-            return false;
-        }
-        if (value.scrollTop !== undefined && typeof value.scrollTop !== 'number') {
-            return false;
-        }
-        if (value.collapsedUris !== undefined
-            && (!Array.isArray(value.collapsedUris) || !value.collapsedUris.every(u => typeof u === 'string'))) {
-            return false;
-        }
-        return true;
-    }
-}
 
 /**
  * Header widget for a single diff entry. Displays a collapse/expand toggle, file icon,
@@ -398,8 +373,7 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
     protected readonly onDidChangeTrackableWidgetsEmitter = new Emitter<Widget[]>();
     readonly onDidChangeTrackableWidgets: Event<Widget[]> = this.onDidChangeTrackableWidgetsEmitter.event;
 
-    /** Scroll position from a previous session, applied once the widget is attached. */
-    protected pendingScrollTop?: number;
+    protected pendingReveal?: DiffEntryWidget;
 
     @postConstruct()
     protected init(): void {
@@ -442,7 +416,12 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
         const entry = new DiffEntryWidget(resource, headerWidget, createEditor);
         this.entryWidgets.push(entry);
         this.entriesPanel.addWidget(entry);
-        this.toDispose.push(entry.onDidLoadEditor(() => this.notifyTrackableWidgetsChanged()));
+        this.toDispose.push(entry.onDidLoadEditor(() => {
+            this.notifyTrackableWidgetsChanged();
+            if (this.pendingReveal === entry) {
+                this.scrollToEntry(entry);
+            }
+        }));
         this.entryObserver?.observe(entry.node);
         return entry;
     }
@@ -462,12 +441,20 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
         if (!entry) {
             return;
         }
+        this.pendingReveal = entry;
         entry.setCollapsed(false);
         entry.loadEditor();
-        // Defer scrolling so embedded editors have a chance to complete their initial layout.
+        this.scrollToEntry(entry);
+        }
+
+        protected scrollToEntry(entry: DiffEntryWidget): void {
+        // Scroll only the entries panel, and repeat after the target editor's initial layout.
         requestAnimationFrame(() => {
-            if (!this.isDisposed && entry.isAttached) {
-                entry.node.scrollIntoView({ block: 'start' });
+            if (!this.isDisposed && entry.isAttached && this.pendingReveal === entry) {
+                this.entriesPanel.node.scrollTop = entry.node.offsetTop;
+                if (entry.editorWidget) {
+                    this.pendingReveal = undefined;
+                }
             }
         });
     }
@@ -523,16 +510,6 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
                 entry.loadEditor();
             }
         }
-        // Restore scroll after attach so layout has produced valid scroll extents.
-        if (this.pendingScrollTop !== undefined) {
-            const scrollTop = this.pendingScrollTop;
-            this.pendingScrollTop = undefined;
-            requestAnimationFrame(() => {
-                if (!this.isDisposed && this.entriesPanel.isAttached) {
-                    this.entriesPanel.node.scrollTop = scrollTop;
-                }
-            });
-        }
     }
 
     storeState(): undefined {
@@ -540,20 +517,7 @@ export class MultiDiffEditor extends BaseWidget implements Navigatable, Applicat
         return undefined;
     }
 
-    restoreState(state: object): void {
-        if (!MultiDiffEditorState.is(state)) {
-            return;
-        }
-        if (state.collapsedUris) {
-            const collapsed = new Set(state.collapsedUris);
-            for (const entry of this.entryWidgets) {
-                if (collapsed.has(entry.modifiedUri.toString())) {
-                    entry.setCollapsed(true);
-                }
-            }
-        }
-        this.pendingScrollTop = state.scrollTop;
-    }
+    restoreState(_state: object): void { }
 
     getResourceUri(): URI | undefined {
         return this.encodedUri;

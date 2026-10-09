@@ -23,7 +23,7 @@ import { MultiDiffEditorOpenHandler, MultiDiffEditorLabelProvider } from './mult
 import { MultiDiffEditorWidgetFactory } from './multi-diff-editor-widget-factory';
 
 export function bindMultiDiffEditor(bind: interfaces.Bind): void {
-    bind(MultiDiffEditorWidgetFactory).toDynamicValue(ctx => new MultiDiffEditorWidgetFactory(ctx.container));
+    bind(MultiDiffEditorWidgetFactory).toDynamicValue(ctx => new MultiDiffEditorWidgetFactory(ctx.container)).inSingletonScope();
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: MultiDiffEditorOpenHandler.ID,
         createWidget: (options: NavigatableWidgetOptions) => ctx.container.get(MultiDiffEditorWidgetFactory).createMultiDiffEditor(new URI(options.uri))
