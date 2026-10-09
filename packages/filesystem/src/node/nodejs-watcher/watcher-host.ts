@@ -61,7 +61,7 @@ export class WatcherHost {
     async resolveTarget(fsPath: string): Promise<WatchTarget> {
         const realPath = await fs.promises.realpath(fsPath).catch(() => fsPath);
         const stat = await fs.promises.stat(realPath).catch(() => undefined);
-        return { directory: stat?.isFile() ? path.dirname(realPath) : realPath, realPath };
+        return { directory: stat && !stat.isDirectory() ? path.dirname(realPath) : realPath, realPath };
     }
 
     watch(directory: string, listener: WatchEventListener): fs.FSWatcher {
@@ -73,28 +73,33 @@ export class WatcherHost {
         return new Set(children.map(fileName => this.normalizeFileName(fileName)));
     }
 
+    /** The identity of a directory, or `undefined` if the path is missing or not a directory. */
     async readIdentity(directory: string): Promise<DirectoryIdentity | undefined> {
         const stat = await fs.promises.stat(directory).catch(() => undefined);
         // The inode number alone is not enough: deleting a directory frees it for its replacement.
-        return stat && { dev: stat.dev, ino: stat.ino, birthtimeMs: stat.birthtimeMs };
+        return stat?.isDirectory() ? { dev: stat.dev, ino: stat.ino, birthtimeMs: stat.birthtimeMs } : undefined;
     }
 
     /**
-     * Exact-case lookup of children, for several names at one moment. `stat` accepts a differing case, making
-     * a `foo.txt` to `Foo.txt` rename an update, so where names ignore case the directory is read, once.
+     * Looks up the stored name of children, for several names at one moment. Where names ignore case, it reads the
+     * directory once, as `stat` would hide a `foo.txt` to `Foo.txt` rename.
      */
-    childLookup(directory: string): (fileName: string) => Promise<boolean> {
+    childLookup(directory: string): (fileName: string) => Promise<string | undefined> {
         if (!this.caseInsensitiveFileNames) {
-            return fileName => this.exists(path.resolve(directory, fileName));
+            return async fileName => await this.exists(path.resolve(directory, fileName)) ? fileName : undefined;
         }
-        let children: Promise<Set<string>> | undefined;
-        return async fileName => (await (children ??= this.readChildren(directory))).has(fileName);
+        let stored: Promise<{ names: Set<string>, byKey: Map<string, string> }> | undefined;
+        return async fileName => {
+            const { names, byKey } = await (stored ??= this.readChildren(directory)
+                .then(children => ({ names: children, byKey: new Map(Array.from(children, child => [this.pathKey(child), child])) })));
+            return names.has(fileName) ? fileName : byKey.get(this.pathKey(fileName));
+        };
     }
 
     exists(fsPath: string): Promise<boolean> {
         return fs.promises.stat(fsPath).then(() => true, error => {
-            // Only ENOENT means missing. EACCES or ELOOP can turn into a spurious deletion and creation, so log them.
-            if (error?.code !== 'ENOENT' && !this.statFailureReported) {
+            // Only ENOENT and ENOTDIR mean missing. EACCES or ELOOP can turn into a spurious deletion and creation, so log them.
+            if (!['ENOENT', 'ENOTDIR'].includes(error?.code) && !this.statFailureReported) {
                 this.statFailureReported = true;
                 this.logger.error(`Watcher cannot tell whether "${fsPath}" exists, treating it as missing:`, error);
             }
@@ -107,7 +112,13 @@ export class WatcherHost {
         return isOSX ? fileName.normalize('NFC') : fileName;
     }
 
+    /** The form in which the host compares paths. A path read from the disk can be decomposed on macOS. */
+    pathKey(fsPath: string): string {
+        const normalized = this.normalizeFileName(fsPath);
+        return this.caseInsensitiveFileNames ? normalized.toLowerCase() : normalized;
+    }
+
     samePath(expected: string, actual: string): boolean {
-        return this.caseInsensitiveFileNames ? expected.toLowerCase() === actual.toLowerCase() : expected === actual;
+        return this.pathKey(expected) === this.pathKey(actual);
     }
 }

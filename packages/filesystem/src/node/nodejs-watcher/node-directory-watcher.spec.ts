@@ -25,7 +25,7 @@ import { isWindows } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
 import { DidFilesChangedParams, FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol';
 import { NO_LOGGING, TempDir, WATCHER_TIMINGS as TIMINGS } from '../test/watcher-test-helper';
-import { NodeDirectoryWatcher } from './node-directory-watcher';
+import { DirectoryWatcherProvider, NodeDirectoryWatcher } from './node-directory-watcher';
 import { DirectoryWatchRequest } from './watch-request-router';
 import { DirectoryIdentity, WatcherHost, WatchEventListener } from './watcher-host';
 
@@ -362,7 +362,19 @@ describe('node-directory-watcher', function (): void {
             // eslint-disable-next-line no-null/no-null
             box.fire('change', null);
 
-            await box.expect(1, 'added new.txt', 'deleted gone.txt');
+            await box.expect(1, 'deleted gone.txt', 'added new.txt');
+        });
+
+        it('reports a deletion once when its rename follows a rescan in the same batch', async () => {
+            box.write('a.txt');
+            await box.watching(box.root, box.directory());
+
+            box.remove('a.txt');
+            // eslint-disable-next-line no-null/no-null
+            box.fire('change', null);
+            box.fire('rename', 'a.txt');
+
+            await box.expect(1, 'deleted a.txt');
         });
 
         it('reports a deletion once when a rescan settles it before the grace period', async () => {
@@ -469,6 +481,18 @@ describe('node-directory-watcher', function (): void {
             await box.expect(1, `added ${composed}`);
         });
 
+        it('matches a composed file name against the decomposed path a request resolved to', async () => {
+            const decomposed = 'café.txt'.normalize('NFD');
+            const file = box.write(decomposed);
+            box.host.decomposes = true;
+            // `realpath` returns the name as HFS+ stores it, decomposed.
+            await box.watching(box.root, box.file(file));
+
+            box.fire('change', decomposed);
+
+            await box.expect(1, `updated ${decomposed}`);
+        });
+
         it('matches a file name irrespective of case where the platform does', async () => {
             await box.watching(box.root, box.file(box.path('Wanted.txt')));
             box.host.caseInsensitive = true;
@@ -493,6 +517,18 @@ describe('node-directory-watcher', function (): void {
             box.fire('rename', path.basename(box.write('later', 'a.txt')));
 
             await box.expect(1, 'added later', 'added later/a.txt');
+        });
+
+        it('is reported once it appears, even when the start that found it is superseded', async () => {
+            const target = box.path('later');
+            box.host.expectMissing(target);
+            box.starting(target, box.directory(target));
+
+            await box.host.whenMissing;
+            box.host.duringNextRead = () => box.host.fail(new Error('EPERM'));
+            fs.mkdirSync(target);
+
+            await box.expect(1, 'added later');
         });
 
         it('is the parent when the target turns out to be a file', async () => {
@@ -530,12 +566,13 @@ describe('node-directory-watcher', function (): void {
         it('stays on the parent after the file it was created for is gone', async () => {
             const target = box.path('later.txt');
             box.host.expectMissing(target);
-            // The directory request stands for one a re-key merged in once the file appeared.
-            const watcher = box.starting(target, box.directory(target), box.directory(box.root, 2));
+            const watcher = box.starting(target, box.directory(target));
 
             await box.host.whenMissing;
             fs.writeFileSync(target, 'content');
             await watcher.whenStarted;
+            // Stands for a request a re-key merged in once the file appeared.
+            watcher.addRequest(1, box.directory(box.root, 2));
             box.remove('later.txt');
             box.host.fail(new Error('EPERM'));
             await wait(TIMINGS.existencePollDelay * 2);
@@ -557,7 +594,293 @@ describe('node-directory-watcher', function (): void {
             box.mkdir('workspace');
             box.write('workspace', 'after.txt');
 
-            await box.expect(1, 'deleted workspace', 'added workspace', 'added workspace/after.txt', 'deleted workspace/before.txt');
+            await box.expect(1, 'deleted workspace', 'added workspace', 'deleted workspace/before.txt', 'added workspace/after.txt');
+        });
+
+        it('is reported added once when it turns into a file', async () => {
+            const target = box.mkdir('later');
+            box.write('later', 'a.txt');
+            await box.watching(target, box.directory(target));
+
+            box.remove('later');
+            box.write('later');
+            box.fire('rename', 'later');
+
+            await box.expect(1, 'deleted later', 'added later');
+            assert.deepStrictEqual(box.errors, []);
+        });
+
+        it('keeps a file request waiting while it is a file', async () => {
+            const directory = box.mkdir('dir');
+            const file = box.write('dir', 'f.txt');
+            await box.watching(directory, box.file(file));
+
+            box.remove('dir');
+            box.write('dir');
+            box.fire('rename', 'dir');
+            await box.expect(1, 'deleted dir/f.txt');
+
+            box.remove('dir');
+            box.mkdir('dir');
+            box.write('dir', 'f.txt');
+            await box.expect(1, 'deleted dir/f.txt', 'added dir/f.txt');
+        });
+
+        it('keeps the file request it was created for waiting while it is a file', async () => {
+            box.mkdir('dir');
+            const file = box.path('dir', 'f.txt');
+            box.host.expectMissing(file);
+            const watcher = box.starting(file, box.file(file));
+            await box.host.whenMissing;
+            box.write('dir', 'f.txt');
+            await watcher.whenStarted;
+
+            box.remove('dir');
+            box.write('dir');
+            box.fire('rename', 'dir');
+            await box.expect(1, 'added dir/f.txt', 'deleted dir/f.txt');
+
+            box.remove('dir');
+            box.mkdir('dir');
+            box.write('dir', 'f.txt');
+            await box.expect(1, 'added dir/f.txt', 'deleted dir/f.txt', 'added dir/f.txt');
+        });
+
+        it('tells a file request once that its file went with the directory', async () => {
+            const target = box.mkdir('workspace');
+            const file = box.write('workspace', 'a.txt');
+            await box.watching(target, box.directory(target), box.file(file, 2));
+
+            box.remove('workspace');
+            box.fire('rename', 'workspace');
+            await box.expect(1, 'deleted workspace');
+            box.mkdir('workspace');
+
+            await box.expect(1, 'deleted workspace', 'added workspace', 'deleted workspace/a.txt');
+            await box.expect(2, 'deleted workspace/a.txt');
+        });
+
+        it('tells a file request once about its file across a loss and recovery of the directory', async () => {
+            const target = box.mkdir('workspace');
+            const file = box.write('workspace', 'a.txt');
+            await box.watching(target, box.directory(target), box.file(file, 2));
+
+            box.remove('workspace', 'a.txt');
+            box.fire('rename', 'a.txt');
+            await box.expectAmong(2, 'deleted workspace/a.txt');
+
+            box.remove('workspace');
+            box.fire('rename', 'workspace');
+            await box.expectAmong(1, 'deleted workspace');
+
+            box.mkdir('workspace');
+            box.write('workspace', 'a.txt');
+            await box.expectAmong(1, 'added workspace');
+            await box.expect(2, 'deleted workspace/a.txt', 'added workspace/a.txt');
+        });
+
+        it('tells a file request once about its file when it is created during the recovery read', async () => {
+            const target = box.mkdir('ws');
+            const file = box.write('ws', 'a.txt');
+            await box.watching(target, box.directory(target), box.file(file, 2));
+
+            box.remove('ws', 'a.txt');
+            box.fire('rename', 'a.txt');
+            await box.expect(2, 'deleted ws/a.txt');
+            box.remove('ws');
+            box.fire('rename', 'ws');
+            await box.expectAmong(1, 'deleted ws');
+
+            box.host.duringNextRead = () => {
+                box.write('ws', 'a.txt');
+                box.fire('rename', 'a.txt');
+            };
+            box.mkdir('ws');
+
+            await box.expect(1, 'deleted ws/a.txt', 'deleted ws', 'added ws', 'added ws/a.txt');
+            await box.expect(2, 'deleted ws/a.txt', 'added ws/a.txt');
+        });
+
+        it('is reported deleted once when it goes again while its recovery reads it', async () => {
+            const target = box.mkdir('ws');
+            box.write('ws', 'a.txt');
+            await box.watching(target, box.directory(target));
+            box.remove('ws');
+            box.fire('rename', 'ws');
+            await box.expect(1, 'deleted ws');
+
+            box.host.duringNextRead = () => {
+                box.remove('ws');
+                box.fire('rename', 'ws');
+            };
+            box.mkdir('ws');
+            box.write('ws', 'a.txt');
+            await wait(TIMINGS.existencePollDelay * 4);
+            box.mkdir('ws');
+            box.write('ws', 'a.txt');
+
+            await box.expect(1, 'deleted ws', 'added ws');
+        });
+
+        it('tells a file request its file went when the first start finds the directory gone after its read', async () => {
+            const target = box.mkdir('ws');
+            const file = box.write('ws', 'a.txt');
+            box.host.duringNextRead = () => box.remove('ws');
+            await box.watching(target, box.directory(target), box.file(file, 2));
+
+            await box.expect(1, 'deleted ws');
+            await box.expect(2, 'deleted ws/a.txt');
+        });
+
+        it('reports nothing when the first start finds the directory briefly moved away', async () => {
+            const target = box.mkdir('ws');
+            box.write('ws', 'a.txt');
+            const aside = box.path('ws-aside');
+            const readIdentity = box.host.readIdentity.bind(box.host);
+            box.host.duringNextRead = () => fs.renameSync(target, aside);
+            box.host.readIdentity = async directory => {
+                const identity = await readIdentity(directory);
+                if (!identity && fs.existsSync(aside)) {
+                    // Moved back: the same inode and birth time.
+                    fs.renameSync(aside, target);
+                }
+                return identity;
+            };
+            await box.watching(target, box.directory(target));
+
+            await box.expect(1);
+        });
+
+        it('does not report an existing file added when the first read is found moved away', async () => {
+            const target = box.mkdir('ws');
+            box.write('ws', 'a.txt');
+            const readIdentity = box.host.readIdentity.bind(box.host);
+            let identityReads = 0;
+            box.host.readIdentity = async directory => {
+                if (++identityReads !== 2) {
+                    return readIdentity(directory);
+                }
+                // The check after the first read: moved away and back.
+                fs.renameSync(target, box.path('ws-aside'));
+                const identity = await readIdentity(directory);
+                fs.renameSync(box.path('ws-aside'), target);
+                return identity;
+            };
+            box.host.duringNextRead = async () => {
+                box.write('ws', 'a.txt');
+                box.fire('change', 'a.txt');
+                await wait(TIMINGS.changeDelay * 4);
+            };
+            await box.watching(target, box.directory(target));
+
+            await box.expect(1);
+        });
+
+        it('tells an adopted request nothing while the start recovering the directory finds it gone again', async () => {
+            const target = box.mkdir('cfg');
+            const file = box.write('cfg', 'settings.json');
+            const watcher = await box.watching(target, box.directory(target));
+            box.remove('cfg');
+            box.fire('rename', 'cfg');
+            await box.expect(1, 'deleted cfg');
+
+            box.host.duringNextRead = () => {
+                watcher.adoptRequests(new Map([[7, box.file(file, 2)]]));
+                box.remove('cfg');
+            };
+            box.mkdir('cfg');
+            box.write('cfg', 'settings.json');
+            await wait(TIMINGS.existencePollDelay * 6);
+
+            await box.expect(1, 'deleted cfg');
+            await box.expect(2);
+        });
+
+        it('reports a child once when the start recovering the directory finds it replaced after a batch was queued', async () => {
+            const target = box.mkdir('ws');
+            await box.watching(target, box.directory(target));
+            box.remove('ws');
+            box.fire('rename', 'ws');
+            await box.expect(1, 'deleted ws');
+
+            box.host.duringNextRead = async () => {
+                box.write('ws', 'a.txt');
+                box.fire('rename', 'a.txt');
+                await wait(TIMINGS.changeDelay * 4);
+                fs.renameSync(target, box.path('ws-old'));
+                box.mkdir('ws');
+                box.write('ws', 'a.txt');
+            };
+            box.mkdir('ws');
+
+            await box.expect(1, 'deleted ws', 'added ws', 'added ws/a.txt');
+        });
+
+        it('opens no handle on its path once that is a file', async () => {
+            const target = box.mkdir('later');
+            const watcher = await box.watching(target, box.directory(target));
+            const resolveTarget = box.host.resolveTarget.bind(box.host);
+            box.host.resolveTarget = async fsPath => {
+                const resolved = await resolveTarget(fsPath);
+                box.host.resolveTarget = resolveTarget;
+                // Turns into a file right after it resolved as a directory.
+                box.remove('later');
+                box.write('later');
+                return resolved;
+            };
+            box.host.fail(new Error('EPERM'));
+
+            await box.expect(1, 'deleted later', 'added later');
+            assert.strictEqual(watcher.directory, box.root);
+        });
+
+        it('tells a directory request it became a file when a restart finds that out', async () => {
+            const target = box.mkdir('later');
+            box.write('later', 'a.txt');
+            const watcher = await box.watching(target, box.directory(target));
+
+            // The restart's new handle is refused, as on EMFILE, while the directory turns into a file.
+            const watch = box.host.watch.bind(box.host);
+            box.host.watch = () => {
+                box.host.watch = watch;
+                box.remove('later');
+                box.write('later');
+                throw new Error('EMFILE');
+            };
+            box.host.fail(new Error('EPERM'));
+
+            await box.expect(1, 'deleted later', 'added later');
+            assert.strictEqual(watcher.directory, box.root);
+        });
+
+        it('reports the changes of the batch that finds it replaced', async () => {
+            const target = box.mkdir('ws');
+            await box.watching(target, box.directory(target));
+
+            // What inotify reports for: touch ws/a.txt; mv ws ws-old; mkdir ws; touch ws/a.txt
+            box.write('ws', 'a.txt');
+            fs.renameSync(target, box.path('ws-old'));
+            box.mkdir('ws');
+            box.write('ws', 'a.txt');
+            box.fire('rename', 'a.txt');
+            box.fire('rename', 'ws');
+
+            await box.expect(1, 'added ws/a.txt', 'deleted ws', 'added ws');
+        });
+
+        it('is noticed as replaced while a start reads it', async () => {
+            const target = box.mkdir('ws');
+            box.host.duringNextRead = () => {
+                // After the handle opened on the old directory. Faked, as a file system can reuse the inode.
+                box.host.fakeIdentity = { dev: 1, ino: 2, birthtimeMs: 3 };
+                box.fire('rename', 'ws');
+            };
+            await box.watching(target, box.directory(target));
+            await box.expect(1, 'deleted ws', 'added ws');
+
+            box.write('ws', 'a.txt');
+            box.fire('rename', 'a.txt');
+            await box.expect(1, 'deleted ws', 'added ws', 'added ws/a.txt');
         });
 
         it('is not lost when an event names it, as macOS reports any change inside it', async () => {
@@ -636,6 +959,77 @@ describe('node-directory-watcher', function (): void {
             await box.expect(1, 'added a.txt');
         });
 
+        it('reports itself added again when the restart that reported it deleted is superseded', async () => {
+            await box.watching(box.root, box.directory());
+
+            // The superseded restart stores the new identity, so the next one finds nothing replaced.
+            box.host.fakeIdentity = { dev: 1, ino: 2, birthtimeMs: 3 };
+            box.host.duringNextRead = () => box.host.fail(new Error('EPERM'));
+            box.host.fail(new Error('EPERM'));
+
+            await box.expect(1, 'deleted .', 'added .');
+        });
+
+        it('reports a creation once when the restart that read it is superseded after its batch was flushed', async () => {
+            await box.watching(box.root, box.directory());
+
+            box.host.duringNextRead = async () => {
+                box.write('a.txt');
+                box.fire('rename', 'a.txt');
+                // Long enough for the batch to be queued behind the restart before the handle fails again.
+                await wait(TIMINGS.changeDelay * 4);
+                box.host.fail(new Error('EPERM'));
+            };
+            box.host.fail(new Error('EPERM'));
+
+            await box.expect(1, 'added a.txt');
+        });
+
+        it('reports a child after itself when the restart that reported it deleted is superseded', async () => {
+            await box.watching(box.root, box.directory());
+
+            box.host.fakeIdentity = { dev: 1, ino: 2, birthtimeMs: 3 };
+            box.host.duringNextRead = async () => {
+                box.write('a.txt');
+                box.fire('rename', 'a.txt');
+                await wait(TIMINGS.changeDelay * 4);
+                box.host.fail(new Error('EPERM'));
+            };
+            box.host.fail(new Error('EPERM'));
+
+            await box.expect(1, 'deleted .', 'added .', 'added a.txt');
+        });
+
+        it('reports a creation, a deletion, and a replacement as an update once each during a restart read', async () => {
+            box.write('b.txt');
+            box.write('c.txt');
+            await box.watching(box.root, box.directory());
+
+            box.host.duringNextRead = () => {
+                box.write('a.txt');
+                box.remove('b.txt');
+                box.write('b.txt');
+                box.remove('c.txt');
+                ['a.txt', 'b.txt', 'c.txt'].forEach(fileName => box.fire('rename', fileName));
+            };
+            box.host.fail(new Error('EPERM'));
+
+            await box.expect(1, 'added a.txt', 'updated b.txt', 'deleted c.txt');
+        });
+
+        it('reports a deletion once when the handle fails while its batch is resolved', async () => {
+            box.write('a.txt');
+            await box.watching(box.root, box.directory());
+            // Where names ignore case the batch reads the directory, which lets the failure land mid-batch.
+            box.host.caseInsensitive = true;
+
+            box.host.duringNextRead = () => box.host.fail(new Error('EPERM'));
+            box.remove('a.txt');
+            box.fire('rename', 'a.txt');
+
+            await box.expect(1, 'deleted a.txt');
+        });
+
         it('is re-keyed when a superseded restart already moved it to the parent', async () => {
             const target = box.mkdir('later');
             const watcher = await box.watching(target, box.directory(target));
@@ -677,16 +1071,84 @@ describe('node-directory-watcher', function (): void {
 
     describe('platform behavior', () => {
 
-        it('reports a rename that only changes case as an addition and a deletion', async () => {
-            box.write('foo.txt');
-            await box.watching(box.root, box.directory());
+        it('reports a case-only rename as a deletion and an addition, or as an update to a request for the file', async () => {
+            const file = box.write('foo.txt');
+            await box.watching(box.root, box.directory(), box.file(file, 2));
             box.host.caseInsensitive = true;
 
             fs.renameSync(box.path('foo.txt'), box.path('Foo.txt'));
             box.fire('rename', 'foo.txt');
             box.fire('rename', 'Foo.txt');
 
-            await box.expect(1, 'added Foo.txt', 'deleted foo.txt');
+            await box.expect(1, 'deleted foo.txt', 'added Foo.txt');
+            await box.expect(2, 'updated foo.txt');
+        });
+
+        it('reports a case-only rename found by a rescan as an update to a request for the file', async () => {
+            const file = box.write('foo.txt');
+            await box.watching(box.root, box.file(file));
+            box.host.caseInsensitive = true;
+
+            fs.renameSync(box.path('foo.txt'), box.path('Foo.txt'));
+            // eslint-disable-next-line no-null/no-null
+            box.fire('change', null);
+
+            await box.expect(1, 'updated foo.txt');
+        });
+
+        it('leaves a request for a file with its file when its case changes over two batches', async () => {
+            const file = box.write('foo.txt');
+            box.host.caseInsensitive = true;
+            // A long grace period, so the deletion of the old name still waits after the first batch on a slow host.
+            const watcher = new NodeDirectoryWatcher(box.root, NO_LOGGING, box, { ...TIMINGS, deleteDelay: 1000 }, box.host);
+            watcher.addRequest(0, box.file(file));
+            watcher.addRequest(1, box.directory(box.root, 2));
+            await watcher.whenStarted;
+            try {
+                fs.renameSync(box.path('foo.txt'), box.path('tmp'));
+                box.fire('rename', 'foo.txt');
+                box.fire('rename', 'tmp');
+                await box.expectAmong(2, 'added tmp');
+                fs.renameSync(box.path('tmp'), box.path('Foo.txt'));
+                box.fire('rename', 'tmp');
+                box.fire('rename', 'Foo.txt');
+
+                await box.expect(1, 'added foo.txt', 'updated foo.txt');
+            } finally {
+                watcher.dispose();
+            }
+        });
+
+        it('leaves a request for a file with its file when a rescan finds its case changed', async () => {
+            const file = box.write('foo.txt');
+            await box.watching(box.root, box.file(file));
+            box.host.caseInsensitive = true;
+
+            // The overflow lost the rename; the write that followed it was delivered.
+            fs.renameSync(box.path('foo.txt'), box.path('Foo.txt'));
+            // eslint-disable-next-line no-null/no-null
+            box.fire('change', null);
+            box.fire('change', 'Foo.txt');
+
+            await box.expect(1, 'added foo.txt');
+        });
+
+        it('tells names that differ only in case apart where a directory does', async function (): Promise<void> {
+            box.write('foo.txt');
+            if (fs.existsSync(box.path('FOO.TXT'))) {
+                // This file system ignores case, so it cannot hold both names.
+                this.skip();
+            }
+            box.write('Foo.txt');
+            box.host.caseInsensitive = true;
+            await box.watching(box.root, box.directory());
+
+            box.write('foo.txt');
+            box.fire('rename', 'foo.txt');
+            box.remove('Foo.txt');
+            box.fire('rename', 'Foo.txt');
+
+            await box.expect(1, 'updated foo.txt', 'deleted Foo.txt');
         });
 
         it('reads the directory once for a batch of renames where names ignore case', async () => {
@@ -733,6 +1195,68 @@ describe('node-directory-watcher', function (): void {
 
             assert.strictEqual(box.errors.length, 1, `expected a report, got ${JSON.stringify(box.errors)}`);
             assert.throws(() => box.fire('change', 'a.txt'), /has not opened a handle/);
+        });
+    });
+
+    describe('adopting requests', () => {
+
+        it('tells them about their file once a batch queued before them reported it', async () => {
+            const watcher = await box.watching(box.root, box.directory());
+
+            box.write('x.txt');
+            box.fire('rename', 'x.txt');
+            watcher.adoptRequests(new Map([[1, box.file(box.path('x.txt'), 2)]]));
+
+            await box.expect(1, 'added x.txt');
+            await box.expect(2, 'added x.txt');
+        });
+
+        it('tells only those whose file exists that it was added', async () => {
+            const file = box.write('x.txt');
+            const watcher = await box.watching(box.root, box.directory());
+
+            watcher.adoptRequests(new Map([[1, box.file(file, 2)], [2, box.file(box.path('missing.txt'), 3)]]));
+
+            await box.expect(2, 'added x.txt');
+            await box.expect(3);
+            await box.expect(1);
+        });
+
+        it('leaves a scheduled disposal alone when there are none', async () => {
+            const watcher = await box.watching(box.root, box.directory());
+
+            watcher.removeRequest(0);
+            watcher.adoptRequests(new Map());
+
+            await watcher.whenDisposed;
+        });
+
+        it('tells a request moved onto a watcher still waiting for its directory about its file once', async () => {
+            const provider = new DirectoryWatcherProvider(NO_LOGGING, box, { ...TIMINGS, existencePollDelay: 400 }, box.host);
+            const directory = box.path('cfg');
+            const file = box.path('cfg', 'settings.json');
+            try {
+                await provider.watch(0, box.directory(directory));
+                await wait(200);
+                await provider.watch(1, box.file(file, 2));
+                // Both appear right after the directory watcher polled, so the file watcher finds them first.
+                const exists = box.host.exists.bind(box.host);
+                box.host.exists = async fsPath => {
+                    const result = await exists(fsPath);
+                    if (!result && fsPath === directory) {
+                        box.host.exists = exists;
+                        fs.mkdirSync(directory);
+                        fs.writeFileSync(file, '{}');
+                    }
+                    return result;
+                };
+
+                await box.expect(1, 'added cfg');
+                await box.expect(2, 'added cfg/settings.json');
+            } finally {
+                provider.unwatch(0);
+                provider.unwatch(1);
+            }
         });
     });
 
