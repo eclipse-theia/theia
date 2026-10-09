@@ -24,6 +24,10 @@ export const PERSISTED_SESSION_LIMIT_PREF = 'ai-features.chat.persistedSessionLi
 export const SESSION_STORAGE_PREF = 'ai-features.chat.sessionStorageScope';
 export const WELCOME_SCREEN_SESSIONS_PREF = 'ai-features.chat.welcomeScreenSessions';
 
+export const TOOL_LOOP_GUARD_ENABLED_PREF = 'ai-features.chat.toolLoopGuard.enabled';
+export const TOOL_LOOP_GUARD_REFRESH_THRESHOLD_PREF = 'ai-features.chat.toolLoopGuard.refreshThreshold';
+export const TOOL_LOOP_GUARD_FAIL_THRESHOLD_PREF = 'ai-features.chat.toolLoopGuard.failThreshold';
+
 export type SessionStorageScope = 'workspace' | 'global';
 
 export const aiChatPreferences: PreferenceSchema = {
@@ -86,6 +90,34 @@ export const aiChatPreferences: PreferenceSchema = {
             description: nls.localize('theia/ai/chat/sessionStorageScope/description',
                 'Choose whether to persist chat sessions in separate per-workspace stores or in a single global store. ' +
                 'If no workspace is open, sessions will fall back to global storage.'),
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [TOOL_LOOP_GUARD_ENABLED_PREF]: {
+            type: 'boolean',
+            description: nls.localize('theia/ai/chat/toolLoopGuard/enabled/description',
+                'Detect when a chat agent repeatedly calls the same tool with the same arguments and gets the same error. ' +
+                'When enabled, Theia first forces a refresh of the tracked file state to break the loop, and fails the request ' +
+                'if the identical error still persists afterwards.'),
+            default: true,
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [TOOL_LOOP_GUARD_REFRESH_THRESHOLD_PREF]: {
+            type: 'number',
+            description: nls.localize('theia/ai/chat/toolLoopGuard/refreshThreshold/description',
+                'Number of consecutive identical tool-call errors after which Theia forces a refresh of the tracked file ' +
+                'state to break the loop. Only applies when the tool-call loop guard is enabled.'),
+            default: 3,
+            minimum: 1,
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [TOOL_LOOP_GUARD_FAIL_THRESHOLD_PREF]: {
+            type: 'number',
+            description: nls.localize('theia/ai/chat/toolLoopGuard/failThreshold/description',
+                'Number of consecutive identical tool-call errors after which Theia fails the request, assuming the loop ' +
+                'could not be broken by a refresh. Must be greater than the refresh threshold. Only applies when the ' +
+                'tool-call loop guard is enabled.'),
+            default: 5,
+            minimum: 2,
             title: AI_CORE_PREFERENCES_TITLE,
         }
     }
