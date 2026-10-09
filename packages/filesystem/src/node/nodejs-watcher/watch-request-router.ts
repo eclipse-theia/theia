@@ -32,6 +32,8 @@ export interface DirectoryWatchRequest extends WatchRequest {
 export interface ResolvedChange {
     readonly fileName: string;
     readonly type: FileChangeType;
+    /** Set on a deletion whose name still exists in another case. */
+    readonly pathRemains?: boolean;
 }
 
 /** A change as one client will be told about it. */
@@ -48,6 +50,8 @@ interface ReportedChange {
 export class WatchRequestRouter {
 
     private readonly requests = new Map<number, DirectoryWatchRequest>();
+    /** Requests moved in from another watcher, which hear nothing until {@link admitAdopted}. */
+    private readonly adopted = new Map<number, DirectoryWatchRequest>();
     /** Compiled excludes, shared across requests, which mostly carry the same `files.watcherExclude`. */
     private readonly matchers = new Map<string, Minimatch>();
 
@@ -58,23 +62,59 @@ export class WatchRequestRouter {
     ) { }
 
     get size(): number {
-        return this.requests.size;
+        return this.requests.size + this.adopted.size;
     }
 
     add(watcherId: number, request: DirectoryWatchRequest): void {
         this.requests.set(watcherId, request);
     }
 
+    /** Holds requests moved in from another watcher until {@link admitAdopted}. */
+    adopt(requests: Map<number, DirectoryWatchRequest>): void {
+        requests.forEach((request, watcherId) => this.adopted.set(watcherId, request));
+    }
+
     /** @returns `true` if a request was registered under `watcherId`. */
     remove(watcherId: number): boolean {
-        return this.requests.delete(watcherId);
+        return this.requests.delete(watcherId) || this.adopted.delete(watcherId);
     }
 
     /** Drains the requests, so that they can be moved to the watcher serving their directory. */
     takeAll(): Map<number, DirectoryWatchRequest> {
-        const taken = new Map(this.requests);
+        const taken = new Map([...this.requests, ...this.adopted]);
         this.requests.clear();
+        this.adopted.clear();
         return taken;
+    }
+
+    /** Lets the adopted requests hear changes and, if `report` is set, reports their path added where it exists. */
+    admitAdopted(children: ReadonlySet<string>, report: boolean): void {
+        if (report) {
+            this.reportWatchedPath(FileChangeType.ADDED, Array.from(this.adopted.values()).filter(request => this.knows(request, children)));
+        }
+        this.adopted.forEach((request, watcherId) => this.requests.set(watcherId, request));
+        this.adopted.clear();
+    }
+
+    /** @returns `true` if the request's path is the watched directory or one of `children`. */
+    knows(request: DirectoryWatchRequest, children: ReadonlySet<string>): boolean {
+        return this.watchesDirectory(request) || Array.from(children).some(fileName => this.resolveChildPath(request, fileName));
+    }
+
+    /** @returns `true` if every request is for `fsPath` itself rather than for something inside it. */
+    allFor(fsPath: string): boolean {
+        return [...this.requests.values(), ...this.adopted.values()].every(request => this.host.samePath(request.realPath, fsPath));
+    }
+
+    /** The requests that `include` accepts. */
+    matching(include: (request: DirectoryWatchRequest) => boolean): DirectoryWatchRequest[] {
+        return Array.from(this.requests.values()).filter(include);
+    }
+
+    /** @returns `true` if the request is for the watched directory, rather than for one file in it. */
+    watchesDirectory(request: DirectoryWatchRequest): boolean {
+        // Both sides are resolved separately, so compare them the way the host resolves names.
+        return this.host.samePath(request.realPath, this.watchedDirectory());
     }
 
     /** Points every request made for `target` at where it resolved to, a file or a directory. */
@@ -86,24 +126,15 @@ export class WatchRequestRouter {
         }
     }
 
-    /** Requests whose own path exists, so a recovered directory does not announce files that are still gone. */
-    async existingRequests(): Promise<DirectoryWatchRequest[]> {
-        const entries = Array.from(this.requests);
-        const existing = await Promise.all(entries.map(([, request]) => this.host.exists(request.path)));
-        return entries
-            .filter(([watcherId], index) => existing[index] && this.requests.has(watcherId))
-            .map(([, request]) => request);
-    }
-
-    /** Reports changes to direct children, mapped and filtered per request. */
-    report(changes: readonly ResolvedChange[]): void {
+    /** Reports changes to direct children, mapped and filtered per request, to the requests `include` accepts. */
+    report(changes: readonly ResolvedChange[], include: (request: DirectoryWatchRequest) => boolean = () => true): void {
         const reported: ReportedChange[] = [];
-        for (const request of this.requests.values()) {
-            for (const { fileName, type } of changes) {
+        for (const request of this.matching(include)) {
+            for (const { fileName, type, pathRemains } of changes) {
                 const childPath = this.resolveChildPath(request, fileName);
                 // Excludes filter children, never the path a client explicitly asked to watch.
                 if (childPath && (childPath === request.path || !this.isIgnored(request, childPath))) {
-                    reported.push({ clientId: request.clientId, filePath: childPath, type });
+                    reported.push({ clientId: request.clientId, filePath: childPath, type: pathRemains && !this.watchesDirectory(request) ? FileChangeType.UPDATED : type });
                 }
             }
         }
@@ -135,12 +166,10 @@ export class WatchRequestRouter {
 
     /** The path a request reports a child change under, or `undefined` if the request does not cover the child. */
     protected resolveChildPath(request: DirectoryWatchRequest, fileName: string): string | undefined {
-        const directory = this.watchedDirectory();
-        // Both sides are resolved separately, so compare them the way the host resolves names.
-        if (this.host.samePath(request.realPath, directory)) {
+        if (this.watchesDirectory(request)) {
             return path.resolve(request.path, fileName);
         }
-        return this.host.samePath(path.resolve(directory, fileName), request.realPath) ? request.path : undefined;
+        return this.host.samePath(path.resolve(this.watchedDirectory(), fileName), request.realPath) ? request.path : undefined;
     }
 
     protected isIgnored(request: DirectoryWatchRequest, changed: string): boolean {

@@ -148,6 +148,11 @@ export abstract class AbstractWatcherProvider implements WatcherProvider {
     /** Puts a request on a watcher and records which one, so {@link unwatch} finds it again. */
     protected serve(watcherId: number, watcher: FileSystemWatcher, request: WatchRequest): void {
         watcher.addRequest(watcherId, request);
+        this.assign(watcherId, watcher);
+    }
+
+    /** Records the watcher of a request that reached it without {@link serve}, such as through a re-key. */
+    protected assign(watcherId: number, watcher: FileSystemWatcher): void {
         this.watchersByRequest.set(watcherId, watcher);
     }
 
