@@ -39,8 +39,7 @@ import {
     MultiDiffEditor,
     MultiDiffEditorData,
     MultiDiffEditorLabelProvider,
-    MultiDiffEditorOpenHandler,
-    MultiDiffEditorState
+    MultiDiffEditorOpenHandler
 } from './multi-diff-editor';
 import { MultiDiffEditorResourcePair, MultiDiffEditorUri } from './multi-diff-editor-uri';
 
@@ -408,32 +407,6 @@ describe('Multi-Diff Editor — widgets', () => {
         });
     });
 
-    describe('MultiDiffEditorState', () => {
-
-        it('should accept a valid state', () => {
-            expect(MultiDiffEditorState.is({ scrollTop: 100, collapsedUris: ['file:///a.ts'] })).to.be.true;
-        });
-
-        it('should accept an empty state object', () => {
-            expect(MultiDiffEditorState.is({})).to.be.true;
-        });
-
-        it('should reject non-object values', () => {
-            expect(MultiDiffEditorState.is(undefined)).to.be.false;
-            expect(MultiDiffEditorState.is('string')).to.be.false;
-            expect(MultiDiffEditorState.is(42)).to.be.false;
-        });
-
-        it('should reject wrong scrollTop type', () => {
-            expect(MultiDiffEditorState.is({ scrollTop: '100' })).to.be.false;
-        });
-
-        it('should reject wrong collapsedUris type', () => {
-            expect(MultiDiffEditorState.is({ collapsedUris: 'file:///a.ts' })).to.be.false;
-            expect(MultiDiffEditorState.is({ collapsedUris: [1, 2] })).to.be.false;
-        });
-    });
-
     describe('MultiDiffEditor', () => {
 
         function createEditor(count: number, load?: () => Promise<EditorWidget>): MultiDiffEditor {
@@ -447,11 +420,12 @@ describe('Multi-Diff Editor — widgets', () => {
             return editor;
         }
 
-        it('should opt out of persistence while accepting legacy collapse state', () => {
+        it('should opt out of persistence and ignore restore state', () => {
             const editor = createEditor(1);
             try {
                 editor.restoreState({ collapsedUris: [sampleResource.modifiedUri.toString()], scrollTop: 123 });
-                expect(editor.entries[0].isCollapsed).to.be.true;
+                expect(editor.entries[0].isCollapsed).to.be.false;
+                expect(editor['entriesPanel'].node.scrollTop).to.equal(0);
                 expect(editor.storeState()).to.be.undefined;
             } finally {
                 editor.dispose();
@@ -518,6 +492,68 @@ describe('Multi-Diff Editor — widgets', () => {
                 expect(load.called).to.be.true;
             } finally {
                 editor.dispose();
+                globalThis.requestAnimationFrame = previous;
+            }
+        });
+
+        it('should reveal only within the entries panel and repeat after an in-flight target loads', async () => {
+            const previous = globalThis.requestAnimationFrame;
+            const frames: FrameRequestCallback[] = [];
+            globalThis.requestAnimationFrame = callback => frames.push(callback);
+            let resolve!: (widget: EditorWidget) => void;
+            const editor = createEditor(1, () => new Promise(r => resolve = r));
+            const entry = editor.entries[0];
+            const panel = editor['entriesPanel'].node;
+            const offset = sinon.stub(entry.node, 'offsetTop').get(() => 120);
+            const pending = entry.loadEditor();
+            try {
+                Widget.attach(editor, document.body);
+                editor.node.scrollTop = 42;
+                document.body.scrollTop = 17;
+                editor.revealResource(entry.modifiedUri);
+                frames.splice(0).forEach(frame => frame(0));
+                expect(panel.scrollTop).to.equal(120);
+                expect(editor.node.scrollTop).to.equal(42);
+                expect(document.body.scrollTop).to.equal(17);
+                offset.get(() => 480);
+                resolve(new Widget() as EditorWidget);
+                await pending;
+                frames.splice(0).forEach(frame => frame(0));
+                expect(panel.scrollTop).to.equal(480);
+                expect(editor.node.scrollTop).to.equal(42);
+                expect(document.body.scrollTop).to.equal(17);
+            } finally {
+                editor.dispose();
+                offset.restore();
+                document.body.scrollTop = 0;
+                globalThis.requestAnimationFrame = previous;
+            }
+        });
+
+        it('should ignore stale reveal frames and frames after disposal', () => {
+            const previous = globalThis.requestAnimationFrame;
+            const frames: FrameRequestCallback[] = [];
+            globalThis.requestAnimationFrame = callback => frames.push(callback);
+            const editor = createEditor(1);
+            const otherResource = { ...sampleResource, modifiedUri: new URI('file:///workspace/c.ts') };
+            const other = editor.addDiffEntry(otherResource, new DiffEntryHeaderWidget(otherResource, mockLabelProvider));
+            const panel = editor['entriesPanel'].node;
+            const offset = sinon.stub(other.node, 'offsetTop').get(() => 240);
+            try {
+                Widget.attach(editor, document.body);
+                editor.revealResource(sampleResource.modifiedUri);
+                editor.revealResource(otherResource.modifiedUri);
+                frames.shift()!(0);
+                expect(panel.scrollTop).to.equal(0);
+                frames.shift()!(0);
+                expect(panel.scrollTop).to.equal(240);
+                editor.revealResource(sampleResource.modifiedUri);
+                editor.dispose();
+                frames.splice(0).forEach(frame => frame(0));
+                expect(panel.scrollTop).to.equal(240);
+            } finally {
+                editor.dispose();
+                offset.restore();
                 globalThis.requestAnimationFrame = previous;
             }
         });
