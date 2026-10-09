@@ -80,6 +80,14 @@ export class ParcelWatcher {
     protected watcher: AsyncSubscription | undefined;
 
     /**
+     * The realpath of {@link fsPath}, as resolved by {@link createWatcher}.
+     *
+     * Parcel is subscribed to the resolved path, so all of its events are reported realpath'd.
+     * {@link start} reuses this to report a synthetic creation under the very same path.
+     */
+    protected resolvedFsPath: string | undefined;
+
+    /**
      * When the ref count hits zero, we schedule this watch handle to be disposed.
      */
     protected deferredDisposalTimer: NodeJS.Timeout | undefined;
@@ -220,33 +228,93 @@ export class ParcelWatcher {
 
     /**
      * When starting a watcher, we'll first check and wait for the path to exists
-     * before running a parcel watcher.
+     * before running a parcel watcher. If the path only came into existence while we
+     * were waiting, its creation is reported synthetically once we are subscribed.
+     * Only the watched path itself is reported that way, not entries that were created
+     * underneath it within the same interval.
      */
     protected async start(): Promise<void> {
-        while (await fsp.stat(this.fsPath).then(() => false, () => true)) {
+        let createdWhileWaiting = false;
+        let watcher: AsyncSubscription | undefined;
+        while (!watcher) {
+            if (await this.waitUntilPathExists()) {
+                createdWhileWaiting = true;
+            }
+            // The path can vanish again while we are subscribing, in which case we have
+            // to wait for it to come back instead of failing the watcher for good.
+            watcher = await this.subscribeWithRetries();
+        }
+        this.debug('STARTED', `disposed=${this.disposed}`);
+        // The watcher could be disposed while it was starting, make sure to check for this:
+        if (this.disposed) {
+            await this.stopWatcher(watcher);
+            throw WatcherDisposal;
+        }
+        this.watcher = watcher;
+        if (createdWhileWaiting && this.resolvedFsPath) {
+            // The path did not exist when we were asked to watch it, so its creation happened
+            // before parcel was subscribed and the event is lost. Report it synthetically under
+            // the path parcel resolved, so that it matches all subsequent events of this watcher.
+            // Otherwise clients keep the state they observed while the path was still missing.
+            // VS Code does the same when it resumes a watch request suspended for a missing path.
+            this.handleWatcherEvents([{ type: 'create', path: this.resolvedFsPath }]);
+        }
+    }
+
+    /**
+     * Poll until {@link fsPath} exists.
+     *
+     * @returns `true` if the path was absent at least once, i.e. it came into existence while
+     * we were waiting for it.
+     * @throws with {@link WatcherDisposal} if this instance is disposed while waiting.
+     */
+    protected async waitUntilPathExists(): Promise<boolean> {
+        let wasAbsent = false;
+        while (true) {
+            const error = await fsp.stat(this.fsPath).then(() => undefined, (reason: NodeJS.ErrnoException) => reason);
+            if (!error) {
+                this.assertNotDisposed();
+                return wasAbsent;
+            }
+            // Only a genuinely absent path counts. Any other reason for `stat` to fail, e.g. a
+            // transient EACCES, must not end up reported as a creation.
+            if (this.isAbsenceError(error)) {
+                wasAbsent = true;
+            }
             await timeout(500);
             this.assertNotDisposed();
         }
-        this.assertNotDisposed();
-        // This race is specific to Linux/inotify: parcel-watcher's inotify backend walks
-        // the tree and then calls inotify_add_watch on every subdirectory. If a subdirectory
-        // disappears between the walk and the add (common when watching dirs that contain
-        // auto-rotated log/temp folders), the syscall returns ENOENT and parcel-watcher fails
-        // the entire subscribe. Retry a few times: by the next walk the gone-but-not-forgotten
-        // dir is no longer present. Windows (ReadDirectoryChangesW) and macOS (FSEvents) watch
-        // the whole subtree from a single handle on the root and never register per-subdirectory
-        // watches, so they cannot hit this race; the retry is simply a no-op there.
-        let watcher: AsyncSubscription | undefined;
+    }
+
+    /**
+     * Subscribe to parcel, retrying transient failures.
+     *
+     * @returns the subscription, or `undefined` if {@link fsPath} disappeared again, in which
+     * case the caller has to wait for it to come back.
+     * @throws the underlying error if subscribing keeps failing for another reason.
+     */
+    protected async subscribeWithRetries(): Promise<AsyncSubscription | undefined> {
         let attempt = 0;
         while (true) {
             try {
-                watcher = await this.createWatcher();
-                break;
+                return await this.createWatcher();
             } catch (error) {
                 const message: string = (error && error.message) || '';
-                const isTransientEnoent = message.includes('No such file or directory')
-                    && await fsp.stat(this.fsPath).then(() => true, () => false);
-                if (!isTransientEnoent || attempt >= 4) {
+                // parcel reports this capitalized, Node's `fs` errors in lower case.
+                const isMissingPathError = message.toLowerCase().includes('no such file or directory');
+                if (isMissingPathError && await this.isPathAbsent()) {
+                    // This is not the subtree race handled below: the watched path itself is gone.
+                    return undefined;
+                }
+                // This race is specific to Linux/inotify: parcel-watcher's inotify backend walks
+                // the tree and then calls inotify_add_watch on every subdirectory. If a subdirectory
+                // disappears between the walk and the add (common when watching dirs that contain
+                // auto-rotated log/temp folders), the syscall returns ENOENT and parcel-watcher fails
+                // the entire subscribe. Retry a few times: by the next walk the gone-but-not-forgotten
+                // dir is no longer present. Windows (ReadDirectoryChangesW) and macOS (FSEvents) watch
+                // the whole subtree from a single handle on the root and never register per-subdirectory
+                // watches, so they cannot hit this race; the retry is simply a no-op there.
+                if (!isMissingPathError || attempt >= 4) {
                     throw error;
                 }
                 attempt++;
@@ -255,14 +323,21 @@ export class ParcelWatcher {
                 this.assertNotDisposed();
             }
         }
-        this.assertNotDisposed();
-        this.debug('STARTED', `disposed=${this.disposed}`);
-        // The watcher could be disposed while it was starting, make sure to check for this:
-        if (this.disposed) {
-            await this.stopWatcher(watcher);
-            throw WatcherDisposal;
-        }
-        this.watcher = watcher;
+    }
+
+    /**
+     * Whether {@link fsPath} is absent, as opposed to merely not being statable right now.
+     *
+     * Treating any `stat` failure as an absent path would turn a watcher that cannot be started
+     * at all, e.g. because of an EACCES, into an endless wait which never surfaces to the client.
+     */
+    protected async isPathAbsent(): Promise<boolean> {
+        const error = await fsp.stat(this.fsPath).then(() => undefined, (reason: NodeJS.ErrnoException) => reason);
+        return error !== undefined && this.isAbsenceError(error);
+    }
+
+    protected isAbsenceError(error: NodeJS.ErrnoException): boolean {
+        return error.code === 'ENOENT' || error.code === 'ENOTDIR';
     }
 
     /**
@@ -275,7 +350,11 @@ export class ParcelWatcher {
     }
 
     protected async createWatcher(): Promise<AsyncSubscription> {
-        let fsPath = await fsp.realpath(this.fsPath);
+        // Remember the resolved path so that `start()` can report a synthetic creation under the
+        // very same path. Overrides which subscribe to a different path have to update it as well,
+        // otherwise no creation is reported for a path that did not exist yet.
+        this.resolvedFsPath = await fsp.realpath(this.fsPath);
+        let fsPath = this.resolvedFsPath;
         if ((await fsp.stat(fsPath)).isFile()) {
             fsPath = path.dirname(fsPath);
         }
