@@ -63,6 +63,7 @@ Some additional tools and libraries are needed depending on your platform:
 - Linux
   - [make](https://www.gnu.org/software/make/)
   - [gcc](https://gcc.gnu.org/) (or another compiling toolchain)
+    - Building the Electron example requires GCC 13 or later, or Clang. See [Troubleshooting](#linux) if your distribution ships an older GCC, e.g. Ubuntu 22.04.
   - [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/)
   - build-essential: `sudo apt-get install build-essential`
   <a name="prerequisite_native_keymap"></a>
@@ -535,6 +536,12 @@ It can be done like so:
 
 ```sh
 echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+```
+
+If rebuilding the native modules for Electron fails with `error: expected identifier before '__attribute__'` in `v8-primitive.h`, your GCC is older than 13 and cannot compile the V8 headers of the Electron version Theia uses. Install GCC 13 or later, or build with Clang:
+
+```sh
+CC=clang CXX=clang++ npm run build:electron
 ```
 
 ### Windows
