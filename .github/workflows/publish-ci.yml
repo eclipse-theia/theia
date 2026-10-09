@@ -33,6 +33,9 @@ jobs:
     env:
       RELEASE_TYPE: ${{ inputs.release_type || 'next' }}
       IS_PATCH_TO_PREVIOUS: ${{ inputs.is_patch_to_previous || false }}
+      # GCC before 13 (ubuntu-22.04 ships 11 and 12) cannot compile the V8 headers of Electron 44
+      CC: clang-15
+      CXX: clang++-15
     steps:
       - name: Validate Inputs
         shell: bash
