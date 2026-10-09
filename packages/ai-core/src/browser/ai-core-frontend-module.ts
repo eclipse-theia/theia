@@ -84,6 +84,11 @@ import { ProductNameVariableContribution } from './product-name-variable-contrib
 import { CapabilityVariableContribution } from '../common/capability-variable-contribution';
 import { GenericCapabilitiesVariableContribution } from './generic-capabilities-variable-contribution';
 import { GenericCapabilitiesPromptFragmentContribution } from './generic-capabilities-prompt-fragment-contribution';
+import { AgentsMdService, DefaultAgentsMdService } from './agents-md-service';
+import { AgentsMdVariableContribution } from './agents-md-variable-contribution';
+import { AgentsMdPromptFragmentContribution } from './agents-md-prompt-fragment-contribution';
+import { AgentsMdMigrationService } from './agents-md-migration-service';
+import { AgentsMdFrontendApplicationContribution } from './agents-md-frontend-application-contribution';
 import { LanguageModelService } from '../common/language-model-service';
 import { FrontendLanguageModelServiceImpl } from './frontend-language-model-service';
 import { TokenUsageFrontendService } from './token-usage-frontend-service';
@@ -142,6 +147,13 @@ export default new ContainerModule(bind => {
     bind(SkillPromptCoordinator).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(SkillPromptCoordinator);
 
+    bind(DefaultAgentsMdService).toSelf().inSingletonScope();
+    bind(AgentsMdService).toService(DefaultAgentsMdService);
+    bind(AgentsMdMigrationService).toSelf().inSingletonScope();
+    bind(AgentsMdFrontendApplicationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(AgentsMdFrontendApplicationContribution);
+    bind(CommandContribution).toService(AgentsMdFrontendApplicationContribution);
+
     bindRootContributionProvider(bind, SkillDirectoryContribution);
 
     bindRootContributionProvider(bind, AIVariableContribution);
@@ -162,6 +174,8 @@ export default new ContainerModule(bind => {
     bind(AIVariableContribution).to(OpenEditorsVariableContribution).inSingletonScope();
     bind(SkillsVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(SkillsVariableContribution);
+    bind(AgentsMdVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(AgentsMdVariableContribution);
     bind(AIVariableContribution).to(CapabilityVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(ProductNameVariableContribution).inSingletonScope();
 
@@ -170,6 +184,9 @@ export default new ContainerModule(bind => {
 
     bind(GenericCapabilitiesPromptFragmentContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(GenericCapabilitiesPromptFragmentContribution);
+
+    bind(AgentsMdPromptFragmentContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(AgentsMdPromptFragmentContribution);
 
     bind(FrontendApplicationContribution).to(AICoreFrontendApplicationContribution).inSingletonScope();
 

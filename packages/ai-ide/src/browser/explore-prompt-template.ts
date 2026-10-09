@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { BasePromptFragment } from '@theia/ai-core/lib/common';
+import { AGENTS_MD_PROMPT_FRAGMENT_ID, BasePromptFragment } from '@theia/ai-core/lib/common';
 
 export const EXPLORE_SYSTEM_PROMPT_ID = 'explore-system';
 
@@ -116,6 +116,6 @@ For each file, include ONLY what is needed for the task:
 
 {{contextFiles}}
 
-{{prompt:project-info}}
+{{prompt:${AGENTS_MD_PROMPT_FRAGMENT_ID}}}
 `
 };

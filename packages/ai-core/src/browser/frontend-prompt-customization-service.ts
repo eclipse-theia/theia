@@ -18,7 +18,8 @@ import { DisposableCollection, URI, Event, Emitter, nls, ILogger } from '@theia/
 import { OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import {
-    PromptFragmentCustomizationService, CustomAgentDescription, CustomAgentPromptVariant, CustomizedPromptFragment, CommandPromptFragmentMetadata, CustomAgentsLocation
+    PromptFragmentCustomizationService, CustomAgentDescription, CustomAgentPromptVariant, CustomizedPromptFragment, CommandPromptFragmentMetadata, CustomAgentsLocation,
+    PromptFragmentCustomizationSource
 } from '../common';
 import { ConfigurableInMemoryResources } from '../common/configurable-in-memory-resources';
 import { parseFrontmatter, serializeFrontmatter } from '../common/frontmatter';
@@ -1164,6 +1165,17 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
     isPromptFragmentCustomized(id: string): boolean {
         return this.activeCustomizations.has(id);
+    }
+
+    getPromptFragmentCustomizationSources(id: string): PromptFragmentCustomizationSource[] {
+        const activeSources = this.activeCustomizations.get(id)?.sourceUris ?? [];
+        return Array.from(this.allCustomizations.values())
+            .filter(entry => entry.id === id)
+            .map(entry => ({
+                uri: new URI(entry.sourceUri),
+                template: entry.template,
+                active: activeSources.includes(entry.sourceUri)
+            }));
     }
 
     getActivePromptFragmentCustomization(id: string): CustomizedPromptFragment | undefined {
