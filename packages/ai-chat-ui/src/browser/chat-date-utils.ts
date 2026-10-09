@@ -15,25 +15,61 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core';
-import { formatDistance } from 'date-fns';
-import * as locales from 'date-fns/locale';
 
 /**
- * Returns the date-fns locale matching the current Theia locale.
+ * The relative time units supported by `formatTimeAgo` with their approximate
+ * lengths in milliseconds, from largest to smallest. The first unit that fits
+ * into the elapsed time is used.
  */
-export function getDateFnsLocale(): locales.Locale {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return nls.locale ? (locales as any)[nls.locale] ?? locales.enUS : locales.enUS;
+const RELATIVE_TIME_UNITS: ReadonlyArray<readonly [Intl.RelativeTimeFormatUnit, number]> = [
+    ['year', 31_557_600_000], // 365.25 days
+    ['month', 2_629_800_000], // 30.44 days
+    ['week', 604_800_000],
+    ['day', 86_400_000],
+    ['hour', 3_600_000],
+    ['minute', 60_000],
+    ['second', 1_000]
+];
+
+let cachedRelativeTimeFormat: { locale: string | undefined; format: Intl.RelativeTimeFormat } | undefined;
+
+/**
+ * Returns a cached `Intl.RelativeTimeFormat` for the current Theia locale,
+ * falling back to English if the locale is not supported.
+ */
+function getRelativeTimeFormat(): Intl.RelativeTimeFormat {
+    // Theia locale ids may use '_' as region separator while `Intl` expects BCP-47 ('-').
+    const locale = nls.locale?.replace('_', '-');
+    if (cachedRelativeTimeFormat === undefined || cachedRelativeTimeFormat.locale !== locale) {
+        try {
+            cachedRelativeTimeFormat = { locale, format: new Intl.RelativeTimeFormat(locale, { numeric: 'always' }) };
+        } catch {
+            cachedRelativeTimeFormat = { locale, format: new Intl.RelativeTimeFormat('en', { numeric: 'always' }) };
+        }
+    }
+    return cachedRelativeTimeFormat.format;
 }
 
 /**
  * Formats a timestamp as a human-readable relative time string (e.g., "2 hours ago").
+ *
+ * The largest unit that fits into the elapsed time is used and the value is rounded
+ * down so that it never crosses into the next larger unit. Timestamps less than a
+ * second away render as "0 seconds ago", future ones as "in ...".
  * @param timestamp - The timestamp in milliseconds
- * @param addSuffix - Whether to add "ago" suffix (default: true)
  */
-export function formatTimeAgo(timestamp: number, addSuffix: boolean = true): string {
-    return formatDistance(new Date(timestamp), new Date(), {
-        addSuffix,
-        locale: getDateFnsLocale()
-    });
+export function formatTimeAgo(timestamp: number): string {
+    if (typeof Intl === 'undefined' || typeof Intl.RelativeTimeFormat === 'undefined') {
+        // Environments without `Intl.RelativeTimeFormat` get an absolute date instead.
+        return new Date(timestamp).toLocaleString();
+    }
+    const elapsed = Date.now() - timestamp;
+    const direction = elapsed >= 0 ? -1 : 1; // `Intl` expects negative values for the past
+    const duration = Math.abs(elapsed);
+    for (const [unit, unitLength] of RELATIVE_TIME_UNITS) {
+        if (duration >= unitLength) {
+            return getRelativeTimeFormat().format(direction * Math.floor(duration / unitLength), unit);
+        }
+    }
+    return getRelativeTimeFormat().format(0, 'second');
 }
