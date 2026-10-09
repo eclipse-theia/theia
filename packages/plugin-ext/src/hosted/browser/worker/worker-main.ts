@@ -95,6 +95,8 @@ pluginManager.setPluginHost({
             }>(rawPluginData.map(async plg => {
                 const pluginModel = plg.model;
                 const pluginLifecycle = plg.lifecycle;
+                // Browser-only builds ship the manifest with the metadata.
+                const loadRawModel = async (): Promise<Plugin['rawModel']> => plg.manifest ?? loadManifest(pluginModel);
                 if (pluginModel.entryPoint!.frontend) {
                     let frontendInitPath = pluginLifecycle.frontendInitPath;
                     if (frontendInitPath) {
@@ -102,7 +104,7 @@ pluginManager.setPluginHost({
                     } else {
                         frontendInitPath = '';
                     }
-                    const rawModel = await loadManifest(pluginModel);
+                    const rawModel = await loadRawModel();
                     const plugin: Plugin = {
                         pluginPath: pluginModel.entryPoint.frontend!,
                         pluginFolder: pluginModel.packagePath,
@@ -137,7 +139,7 @@ pluginManager.setPluginHost({
                         // grammars, themes and the like. It does still turn up in `theia.extensions`,
                         // where reading `packageJSON` must not throw, so give it a real manifest.
                         // Only browser-only gets here; with a backend these go to the backend host.
-                        : { ...common, rawModel: await loadManifest(pluginModel) };
+                        : { ...common, rawModel: await loadRawModel() };
                     return { target: foreign, plugin };
                 }
             }));

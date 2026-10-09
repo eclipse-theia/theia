@@ -62,31 +62,24 @@ export function getGrammarContributionValidationError(
     return undefined;
 }
 
-export async function readGrammarFromDisk(
+/**
+ * Validates `rawGrammar` and converts it to a contribution without the grammar content. The
+ * frontend then loads the content from `grammarLocation` once the language is first used.
+ */
+export function toGrammarContribution(
     rawGrammar: PluginPackageGrammarsContribution,
     pluginPath: string,
     log?: Pick<NormalizeContributionsContext, 'onError'>
-): Promise<GrammarsContribution | undefined> {
+): GrammarsContribution | undefined {
     const validationError = getGrammarContributionValidationError(rawGrammar, pluginPath);
     if (validationError) {
         log?.onError('grammars', validationError);
         return undefined;
     }
-
-    let grammar: string | object;
-    const grammarPath = path.resolve(pluginPath, rawGrammar.path);
-
-    if (rawGrammar.path.endsWith('json')) {
-        grammar = await fs.readJson(grammarPath);
-    } else {
-        grammar = await fs.readFile(grammarPath, 'utf8');
-    }
-
     return {
         language: rawGrammar.language,
         scope: rawGrammar.scopeName,
         format: rawGrammar.path.endsWith('json') ? 'json' : 'plist',
-        grammar,
         grammarLocation: rawGrammar.path,
         injectTo: rawGrammar.injectTo,
         embeddedLanguages: rawGrammar.embeddedLanguages,
@@ -94,4 +87,20 @@ export async function readGrammarFromDisk(
         balancedBracketScopes: rawGrammar.balancedBracketScopes,
         unbalancedBracketScopes: rawGrammar.unbalancedBracketScopes
     };
+}
+
+export async function readGrammarFromDisk(
+    rawGrammar: PluginPackageGrammarsContribution,
+    pluginPath: string,
+    log?: Pick<NormalizeContributionsContext, 'onError'>
+): Promise<GrammarsContribution | undefined> {
+    const contribution = toGrammarContribution(rawGrammar, pluginPath, log);
+    if (!contribution) {
+        return undefined;
+    }
+    const grammarPath = path.resolve(pluginPath, rawGrammar.path);
+    const grammar: string | object = contribution.format === 'json'
+        ? await fs.readJson(grammarPath)
+        : await fs.readFile(grammarPath, 'utf8');
+    return { ...contribution, grammar };
 }
