@@ -89,6 +89,10 @@ export interface FileSystemWatcherClient {
 
 export interface WatchOptions {
     ignored: string[];
+    /**
+     * Watch the whole subtree under the given path. Defaults to `true`.
+     */
+    recursive?: boolean;
 }
 export interface FileChange {
     uri: string;
