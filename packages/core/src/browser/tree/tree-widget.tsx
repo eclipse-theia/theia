@@ -64,6 +64,11 @@ export const TREE_NODE_CAPTION_CLASS = 'theia-TreeNodeCaption';
 export const TREE_NODE_INDENT_GUIDE_CLASS = 'theia-tree-node-indent';
 
 /**
+ * Constant indent guide padding value.
+ */
+const INDENT_GUIDE_PADDING = 6;
+
+/**
  * Threshold in pixels to consider the view as being scrolled to the bottom.
  */
 export const SCROLL_BOTTOM_THRESHOLD = 30;
@@ -950,7 +955,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         const indentDivs: React.ReactNode[] = [];
         let current: TreeNode | undefined = node;
         let depth = props.depth;
-        while (current && depth >= 0) {
+        while (current && depth) {
             if (this.shouldRenderIndent(current)) {
                 const classNames: string[] = [TREE_NODE_INDENT_GUIDE_CLASS];
                 if (this.needsActiveIndentGuideline(current)) {
@@ -1081,7 +1086,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected getIndentGuidePadding(depth: number): number {
-        return this.getDepthPadding(depth - 1) + this.props.expansionTogglePadding / 3;
+        return this.getDepthPadding(depth - 1) + INDENT_GUIDE_PADDING;
     }
 
     /**
@@ -1563,7 +1568,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return this.labelProvider.getLongName(node);
     }
     protected getDepthPadding(depth: number): number {
-        return depth * this.treeIndent;
+        return (depth - 1) * this.treeIndent + this.props.leftPadding;
     }
 }
 export namespace TreeWidget {
