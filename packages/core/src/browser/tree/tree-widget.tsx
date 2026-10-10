@@ -64,6 +64,11 @@ export const TREE_NODE_CAPTION_CLASS = 'theia-TreeNodeCaption';
 export const TREE_NODE_INDENT_GUIDE_CLASS = 'theia-tree-node-indent';
 
 /**
+ * Constant indent guide padding value.
+ */
+const INDENT_GUIDE_PADDING = 6;
+
+/**
  * Threshold in pixels to consider the view as being scrolled to the bottom.
  */
 export const SCROLL_BOTTOM_THRESHOLD = 30;
@@ -974,7 +979,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 } else {
                     classNames.push(renderIndentGuides === 'onHover' ? 'hover' : 'always');
                 }
-                const paddingLeft = this.getDepthPadding(depth);
+                const paddingLeft = this.getIndentGuidePadding(depth);
                 indentDivs.unshift(<div key={depth} className={classNames.join(' ')} style={{
                     paddingLeft: `${paddingLeft}px`
                 }} />);
@@ -1093,7 +1098,11 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected getPaddingLeft(node: TreeNode, props: NodeProps): number {
-        return this.getDepthPadding(props.depth) + (this.needsExpansionTogglePadding(node) ? this.props.expansionTogglePadding : 0);
+        return this.getDepthPadding(props.depth);
+    }
+
+    protected getIndentGuidePadding(depth: number): number {
+        return this.getDepthPadding(depth - 1) + INDENT_GUIDE_PADDING;
     }
 
     /**
@@ -1575,10 +1584,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return this.labelProvider.getLongName(node);
     }
     protected getDepthPadding(depth: number): number {
-        if (depth === 1) {
-            return this.props.leftPadding;
-        }
-        return depth * this.treeIndent;
+        return (depth - 1) * this.treeIndent + this.props.leftPadding;
     }
 }
 export namespace TreeWidget {
