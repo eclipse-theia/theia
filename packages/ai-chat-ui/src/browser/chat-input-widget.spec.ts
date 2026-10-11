@@ -26,9 +26,10 @@ import 'reflect-metadata';
 import { expect } from 'chai';
 import { ReasoningLevel, ReasoningSettings, ReasoningSupport } from '@theia/ai-core';
 import { AISettingsService } from '@theia/ai-core/lib/common';
-import { ChatModel } from '@theia/ai-chat';
+import { ChatAgent, ChatModel, ChatRequestModel, ChatSessionSettings, MutableChatModel } from '@theia/ai-chat';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Message } from '@theia/core/lib/browser';
+import { ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { AIChatInputWidget, applyEditorEnabledState } from './chat-input-widget';
 
@@ -67,8 +68,64 @@ class TestChatInputWidget extends AIChatInputWidget {
         return { saved: this.savedCapabilityOverrides, current: Object.fromEntries(this.userCapabilityOverrides) };
     }
 
-    setChatModelForTest(id: string): void {
-        this._chatModel = { id } as ChatModel;
+    setChatModelForTest(id: string, requests: ChatRequestModel[] = []): void {
+        this._chatModel = { id, getRequests: () => requests } as ChatModel;
+    }
+
+    /** Session model stub the reasoning helpers write into; populated by {@link setSessionForTest}. */
+    sessionSettingsForTest: ChatSessionSettings = {};
+
+    setSessionForTest(settings: ChatSessionSettings = {}): void {
+        this.sessionSettingsForTest = settings;
+        const model = {
+            id: this._chatModel.id,
+            get settings(): ChatSessionSettings { return widget.sessionSettingsForTest; },
+            setSettings: (newSettings: ChatSessionSettings) => { widget.sessionSettingsForTest = newSettings; }
+        };
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const widget = this;
+        (this as unknown as { chatService: unknown }).chatService = { getSessions: () => [{ model }] };
+    }
+
+    lastReasoningForTest(): ReasoningSettings | undefined {
+        return this.getLastReasoningFromModel(this._chatModel);
+    }
+
+    restoreReasoningForTest(): void {
+        this.restoreReasoningFromModel(this._chatModel);
+    }
+
+    loadCapabilitiesForTest(agentId: string, savedReasoning?: ReasoningSettings): Promise<void> {
+        (this as unknown as { capabilitiesService: unknown }).capabilitiesService = {
+            getCapabilitiesForAgent: async () => [],
+            getUsedGenericCapabilitiesForAgent: async () => []
+        };
+        (this as unknown as { aiSettingsService: Pick<AISettingsService, 'getAgentSettings'> }).aiSettingsService = {
+            getAgentSettings: async () => ({ reasoning: savedReasoning })
+        };
+        return super.updateCapabilitiesForAgent(agentId);
+    }
+
+    stubContextKeysForTest(): void {
+        const key = { set: () => { } } as unknown as ContextKey<string>;
+        this.chatInputReceivingAgentKey = key;
+        this.chatInputHasModesKey = key as unknown as ContextKey<boolean>;
+    }
+
+    forceCapabilitiesRefreshForTest(): void {
+        this.forceCapabilitiesRefresh = true;
+    }
+
+    updateAgentStateForTest(agent: ChatAgent | undefined): Promise<void> {
+        return this.updateAgentState(agent);
+    }
+
+    currentModeIdForTest(): string | undefined {
+        return this.receivingAgent?.currentModeId;
+    }
+
+    protected override async updateReasoningSupport(): Promise<void> {
+        // The real implementation resolves language models through the registry, which is not available here.
     }
 
     refreshCapabilitiesForTest(): Promise<void> {
@@ -192,6 +249,136 @@ describe('AIChatInputWidget', () => {
             widget.setReasoningState(oSeries, { level: 'high' });
 
             expect(widget.currentReasoningLevelForTest()).to.equal('high');
+        });
+    });
+
+    describe('getLastReasoningFromModel', () => {
+        function modelWithRequests(...reasonings: Array<ReasoningSettings | undefined>): ChatModel {
+            const model = new MutableChatModel();
+            reasonings.forEach((reasoning, index) => model.addRequest({
+                request: { text: `request ${index}`, reasoning },
+                parts: [],
+                toolRequests: new Map(),
+                variables: []
+            }));
+            return model;
+        }
+
+        it('returns the level recorded on the last request', () => {
+            const widget = new TestChatInputWidget();
+            (widget as unknown as { _chatModel: ChatModel })._chatModel = modelWithRequests({ level: 'low' }, { level: 'high' });
+
+            expect(widget.lastReasoningForTest()).to.deep.equal({ level: 'high' });
+        });
+
+        it('returns undefined for a session without requests', () => {
+            const widget = new TestChatInputWidget();
+            (widget as unknown as { _chatModel: ChatModel })._chatModel = modelWithRequests();
+
+            expect(widget.lastReasoningForTest()).to.equal(undefined);
+        });
+
+        it('returns undefined when the last request recorded no level', () => {
+            const widget = new TestChatInputWidget();
+            (widget as unknown as { _chatModel: ChatModel })._chatModel = modelWithRequests({ level: 'high' }, undefined);
+
+            expect(widget.lastReasoningForTest()).to.equal(undefined);
+        });
+    });
+
+    describe('restoreReasoningFromModel', () => {
+        it('mirrors the last request\'s level into the session on a session switch', () => {
+            const widget = new TestChatInputWidget();
+            widget.setChatModelForTest('session', [{ request: { text: 'Hi', reasoning: { level: 'high' } } } as ChatRequestModel]);
+            widget.setSessionForTest({ commonSettings: { reasoning: { level: 'low' } } });
+
+            widget.restoreReasoningForTest();
+
+            expect(widget.sessionSettingsForTest.commonSettings?.reasoning).to.deep.equal({ level: 'high' });
+        });
+
+        it('leaves the session untouched when it has no requests', () => {
+            const widget = new TestChatInputWidget();
+            widget.setChatModelForTest('session');
+            widget.setSessionForTest({ commonSettings: { reasoning: { level: 'low' } } });
+
+            widget.restoreReasoningForTest();
+
+            expect(widget.sessionSettingsForTest.commonSettings?.reasoning).to.deep.equal({ level: 'low' });
+        });
+    });
+
+    describe('updateCapabilitiesForAgent reasoning fallback', () => {
+        it('seeds a session without requests from the persisted agent setting', async () => {
+            const widget = new TestChatInputWidget();
+            widget.setChatModelForTest('session');
+            widget.setSessionForTest();
+
+            await widget.loadCapabilitiesForTest('test-agent', { level: 'medium' });
+
+            expect(widget.sessionSettingsForTest.commonSettings?.reasoning).to.deep.equal({ level: 'medium' });
+        });
+
+        it('keeps the level recorded on the last request instead of the persisted agent setting', async () => {
+            const widget = new TestChatInputWidget();
+            widget.setChatModelForTest('session', [{ request: { text: 'Hi', reasoning: { level: 'high' } } } as ChatRequestModel]);
+            widget.setSessionForTest({ commonSettings: { reasoning: { level: 'high' } } });
+
+            await widget.loadCapabilitiesForTest('test-agent', { level: 'medium' });
+
+            expect(widget.sessionSettingsForTest.commonSettings?.reasoning).to.deep.equal({ level: 'high' });
+        });
+    });
+
+    describe('updateAgentState mode restore', () => {
+        const agent = {
+            id: 'test-agent',
+            modes: [{ id: 'ask', isDefault: true }, { id: 'edit' }]
+        } as ChatAgent;
+
+        function widgetWithLastMode(modeId: string | undefined): TestChatInputWidget {
+            const widget = new TestChatInputWidget();
+            widget.stubContextKeysForTest();
+            widget.setChatModelForTest('session', [{ request: { text: 'Hi', modeId } } as ChatRequestModel]);
+            widget.setSessionForTest();
+            return widget;
+        }
+
+        it('restores the mode recorded on the last request without a forced capabilities refresh', async () => {
+            const widget = widgetWithLastMode('edit');
+
+            await widget.updateAgentStateForTest(agent);
+
+            expect(widget.currentModeIdForTest()).to.equal('edit');
+        });
+
+        it('restores the mode even after an earlier pass without a resolved agent consumed the refresh flag', async () => {
+            const widget = widgetWithLastMode('edit');
+            widget.forceCapabilitiesRefreshForTest();
+            await widget.updateAgentStateForTest(undefined);
+
+            await widget.updateAgentStateForTest(agent);
+
+            expect(widget.currentModeIdForTest()).to.equal('edit');
+        });
+
+        it('falls back to the default mode when the resolved agent does not offer the recorded one', async () => {
+            const widget = widgetWithLastMode('mode-of-another-agent');
+
+            await widget.updateAgentStateForTest(agent);
+
+            expect(widget.currentModeIdForTest()).to.equal('ask');
+        });
+
+        it('falls back to the default mode for a session without requests', async () => {
+            const widget = new TestChatInputWidget();
+            widget.stubContextKeysForTest();
+            widget.setChatModelForTest('session');
+            widget.setSessionForTest();
+
+            await widget.updateAgentStateForTest(agent);
+
+            expect(widget.currentModeIdForTest()).to.equal('ask');
         });
     });
 
