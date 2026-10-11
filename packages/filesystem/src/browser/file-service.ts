@@ -1282,7 +1282,7 @@ export class FileService {
                 throw new Error(nls.localizeByDefault("Unable to move/copy when source '{0}' is parent of target '{1}'.", this.resourceForError(source), this.resourceForError(target)));
             }
 
-            if (!isSameResourceWithDifferentPathCase && target.isEqualOrParent(source, isPathCaseSensitive)) {
+            if (!isSameResourceWithDifferentPathCase && source.isEqualOrParent(target, isPathCaseSensitive)) {
                 throw new Error(nls.localizeByDefault("Unable to move/copy when source '{0}' is parent of target '{1}'.", this.resourceForError(source), this.resourceForError(target)));
             }
         }
@@ -1295,7 +1295,7 @@ export class FileService {
             // it as it would delete the source as well. In this case we have to throw
             if (sourceProvider === targetProvider) {
                 const isPathCaseSensitive = !!(sourceProvider.capabilities & FileSystemProviderCapabilities.PathCaseSensitive);
-                if (source.isEqualOrParent(target, isPathCaseSensitive)) {
+                if (target.isEqualOrParent(source, isPathCaseSensitive)) {
                     throw new Error(nls.localizeByDefault("Unable to move/copy '{0}' into '{1}' since a file would replace the folder it is contained in.", this.resourceForError(source), this.resourceForError(target)));
                 }
             }
