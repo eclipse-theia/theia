@@ -28,6 +28,12 @@ interface LocalMCPServerPreferenceValue extends BaseMCPServerPreferenceValue {
     command: string;
     args?: string[];
     env?: { [key: string]: string };
+    /** Working directory for the process; defaults to `pluginRoot`. Written by `@theia/ai-registry`. */
+    cwd?: string;
+    /** Absolute plugin root; exported as PLUGIN_ROOT. Written by `@theia/ai-registry`. */
+    pluginRoot?: string;
+    /** Absolute plugin data directory; exported as PLUGIN_DATA. Written by `@theia/ai-registry`. */
+    pluginData?: string;
 }
 
 interface RemoteMCPServerPreferenceValue extends BaseMCPServerPreferenceValue {
@@ -71,6 +77,9 @@ function isPreferenceValue(obj: unknown): obj is MCPServersPreferenceValue {
         (!('args' in candidate) || Array.isArray(candidate.args) && candidate.args.every(arg => typeof arg === 'string')) &&
         (!('env' in candidate) || !!candidate.env && typeof candidate.env === 'object'
             && Object.values(candidate.env).every(value => typeof value === 'string')) &&
+        (!('cwd' in candidate) || typeof candidate.cwd === 'string') &&
+        (!('pluginRoot' in candidate) || typeof candidate.pluginRoot === 'string') &&
+        (!('pluginData' in candidate) || typeof candidate.pluginData === 'string') &&
         (!('autostart' in candidate) || typeof candidate.autostart === 'boolean') &&
         (!('deferLoading' in candidate) || typeof candidate.deferLoading === 'boolean') &&
         (!('serverUrl' in candidate) || typeof candidate.serverUrl === 'string') &&
@@ -96,11 +105,19 @@ function isOAuthConfig(obj: unknown): obj is MCPOAuthConfig {
         (!('resource' in obj) || typeof obj.resource === 'string' && isHttpOrHttpsUrl(obj.resource));
 }
 
+/**
+ * A registry-installed server is identified by `serverId`, a server contributed by an installed
+ * Agent Plugin by `pluginId`. Exactly one of the two is written per entry, but at least one must be
+ * present - a `registryMetadata` block that identifies nothing is meaningless provenance.
+ */
 function isRegistryMetadata(obj: unknown): obj is MCPRegistryMetadata {
     return !!obj && typeof obj === 'object'
-        && 'serverId' in obj && typeof obj.serverId === 'string'
+        && ('serverId' in obj && typeof obj.serverId === 'string' || 'pluginId' in obj && typeof obj.pluginId === 'string')
+        && (!('serverId' in obj) || typeof obj.serverId === 'string')
+        && (!('pluginId' in obj) || typeof obj.pluginId === 'string')
         && (!('version' in obj) || typeof obj.version === 'string')
-        && (!('configHash' in obj) || typeof obj.configHash === 'string');
+        && (!('configHash' in obj) || typeof obj.configHash === 'string')
+        && (!('installedAt' in obj) || typeof obj.installedAt === 'string');
 }
 
 /**
@@ -157,6 +174,15 @@ function describeFieldMismatch(candidate: Record<string, unknown>): string | und
         && Object.values(candidate.env).every(envValue => typeof envValue === 'string'))) {
         return 'Field "env" must be an object mapping strings to strings.';
     }
+    if ('cwd' in candidate && typeof candidate.cwd !== 'string') {
+        return 'Field "cwd" must be a string.';
+    }
+    if ('pluginRoot' in candidate && typeof candidate.pluginRoot !== 'string') {
+        return 'Field "pluginRoot" must be a string.';
+    }
+    if ('pluginData' in candidate && typeof candidate.pluginData !== 'string') {
+        return 'Field "pluginData" must be a string.';
+    }
     if ('autostart' in candidate && typeof candidate.autostart !== 'boolean') {
         return 'Field "autostart" must be a boolean.';
     }
@@ -181,7 +207,7 @@ function describeFieldMismatch(candidate: Record<string, unknown>): string | und
         return oauthDetail ?? 'Field "oauth" must be an OAuth configuration object.';
     }
     if ('registryMetadata' in candidate && !isRegistryMetadata(candidate.registryMetadata)) {
-        return 'Field "registryMetadata" must be an object with a string "serverId".';
+        return 'Field "registryMetadata" must be an object with a string "serverId" or a string "pluginId".';
     }
     return undefined;
 }

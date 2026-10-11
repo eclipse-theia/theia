@@ -15,5 +15,3 @@
 // *****************************************************************************
 
 export * from './esbuild-plugin';
-export * from './webpack-plugin';
-export * from './monaco-webpack-plugins';

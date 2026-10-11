@@ -38,11 +38,15 @@ import { bindOriginalStateTestAgentContribution } from './chat/original-state-te
 import { bindCustomResponseContentRendererContribution } from './chat/custom-response-content-agent-contribution';
 import { bindSampleChatCommandContribution } from './chat/sample-chat-command-contribution';
 import { bindSampleCodeCompletionVariableContribution } from './ai-code-completion/sample-code-completion-variable-contribution';
+import { bindSampleChatNodeToolbarPreferences } from './chat/sample-chat-node-toolbar-preferences';
+import { bindSampleChatToolbarConfigurationCategory } from './ai-configuration/sample-chat-toolbar-configuration-category';
 import { bindSamplePreferenceContribution } from './preferences/sample-preferences-contribution';
 import { MCPFrontendContribution } from '@theia/ai-mcp-server/lib/browser/mcp-frontend-contribution';
 import { SampleFrontendMCPContribution } from './mcp/sample-frontend-mcp-contribution';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { CommandContribution } from '@theia/core/lib/common';
 import { ResolveMcpFrontendContribution } from './mcp/resolve-frontend-mcp-contribution';
+import { TelemetrySampleCommandContribution } from './telemetry-sample/telemetry-sample-command-contribution';
 
 export default new ContainerModule((
     bind: interfaces.Bind,
@@ -71,7 +75,10 @@ export default new ContainerModule((
     bindSampleFileSystemCapabilitiesCommands(bind);
     rebindOVSXClientFactory(rebind);
     bindSampleCodeCompletionVariableContribution(bind);
+    bindSampleChatNodeToolbarPreferences(bind);
+    bindSampleChatToolbarConfigurationCategory(bind);
     bindSamplePreferenceContribution(bind);
+    bind(CommandContribution).to(TelemetrySampleCommandContribution).inSingletonScope();
     bind(MCPFrontendContribution).to(SampleFrontendMCPContribution).inSingletonScope();
     bind(ResolveMcpFrontendContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ResolveMcpFrontendContribution);

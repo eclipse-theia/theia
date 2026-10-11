@@ -33,6 +33,12 @@ export class FileTreeDecoratorAdapter implements TreeDecorator {
     protected readonly onDidChangeDecorationsEmitter = new Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>>();
     protected decorationsByUri = new Map<string, TreeDecoration.Data>();
     protected parentDecorations = new Map<string, TreeDecoration.Data>();
+    /**
+     * Resources already queried from the service since the last decoration change event.
+     * Undecorated resources never enter {@link decorationsByUri}, so without this set
+     * every render pass would re-query (and re-parse the URI of) every undecorated node.
+     */
+    protected readonly queriedUris = new Set<string>();
 
     get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, TreeDecoration.Data>> {
         return this.onDidChangeDecorationsEmitter.event;
@@ -41,6 +47,7 @@ export class FileTreeDecoratorAdapter implements TreeDecorator {
     @postConstruct()
     protected init(): void {
         this.decorationsService.onDidChangeDecorations(newDecorations => {
+            this.queriedUris.clear();
             this.updateDecorations(this.decorationsByUri.keys(), newDecorations.keys());
             this.fireDidChangeDecorations();
         });
@@ -57,6 +64,22 @@ export class FileTreeDecoratorAdapter implements TreeDecorator {
                 const uri = this.getUriForNode(node);
                 if (uri) {
                     const stringified = uri.toString();
+                    if (!this.decorationsByUri.has(stringified) && !this.queriedUris.has(stringified)) {
+                        // Query the service once per change event for resources this decorator
+                        // has not seen, so that decorations dropped from change events (e.g. by
+                        // the plugin-ext event cap, see #17507) are fetched on demand. The
+                        // service caches results, including "no decoration": known resources
+                        // resolve synchronously and undecorated ones are not fetched again.
+                        // Resolved fetches arrive as a single batched change event handled in
+                        // updateDecorations.
+                        this.queriedUris.add(stringified);
+                        const nodeUri = new URI(stringified);
+                        const fetched = this.decorationsService.getDecoration(nodeUri, false);
+                        if (fetched.length) {
+                            this.decorationsByUri.set(stringified, this.toTheiaDecoration(fetched, false));
+                            this.propagateDecorationsByUri(nodeUri, fetched);
+                        }
+                    }
                     const ownDecoration = this.decorationsByUri.get(stringified);
                     const bubbledDecoration = this.parentDecorations.get(stringified);
                     const combined = this.mergeDecorations(ownDecoration, bubbledDecoration);
@@ -88,6 +111,7 @@ export class FileTreeDecoratorAdapter implements TreeDecorator {
         const newDecorations = new Map<string, TreeDecoration.Data>();
         const handleUri = (rawUri: string) => {
             if (!newDecorations.has(rawUri)) {
+                this.queriedUris.add(rawUri);
                 const uri = new URI(rawUri);
                 const decorations = this.decorationsService.getDecoration(uri, false);
                 if (decorations.length) {

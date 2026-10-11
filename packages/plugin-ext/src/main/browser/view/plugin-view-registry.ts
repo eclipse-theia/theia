@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, postConstruct, optional } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, optional, named } from '@theia/core/shared/inversify';
 import {
     ApplicationShell, ViewContainer as ViewContainerWidget, WidgetManager, QuickViewService,
     ViewContainerIdentifier, ViewContainerTitleOptions, Widget, FrontendApplicationContribution,
@@ -47,7 +47,7 @@ import { WebviewView, WebviewViewResolver } from '../webview-views/webview-views
 import { WebviewWidget, WebviewWidgetIdentifier } from '../webview/webview';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { generateUuid } from '@theia/core/lib/common/uuid';
-import { nls } from '@theia/core';
+import { nls, ILogger } from '@theia/core';
 import { TheiaDockPanel } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
@@ -101,6 +101,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     @inject(ViewContextKeyService)
     protected readonly viewContextKeys: ViewContextKeyService;
+
+    @inject(ILogger) @named('plugin-ext:PluginViewRegistry')
+    protected readonly logger: ILogger;
 
     protected readonly onDidExpandViewEmitter = new Emitter<string>();
     readonly onDidExpandView = this.onDidExpandViewEmitter.event;
@@ -312,7 +315,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     registerViewContainer(location: string, viewContainer: ViewContainer): Disposable {
         const containerId = `workbench.view.extension.${viewContainer.id}`;
         if (this.viewContainers.has(containerId)) {
-            console.warn('view container such id already registered: ', JSON.stringify(viewContainer));
+            this.logger.warn('view container such id already registered: ', JSON.stringify(viewContainer));
             return Disposable.NULL;
         }
         const toDispose = new DisposableCollection();
@@ -344,15 +347,30 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         return toDispose;
     }
 
+    /**
+     * Toggles the view container the same way as {@link AbstractViewContribution.toggleView}:
+     * collapses its panel if it is the visible tab, otherwise opens and activates it.
+     */
     protected async toggleViewContainer(id: string): Promise<void> {
-        let widget = await this.getPluginViewContainer(id);
-        if (widget && widget.isAttached) {
-            widget.dispose();
-        } else {
-            widget = await this.openViewContainer(id);
-            if (widget) {
-                this.shell.activateWidget(widget.id);
+        const existing = await this.getPluginViewContainer(id);
+        const tabBar = existing && this.shell.getTabBarFor(existing);
+        const area = existing && this.shell.getAreaFor(existing);
+        if (existing && tabBar && area && this.shell.isExpanded(area) && tabBar.currentTitle === existing.title) {
+            if (area === 'left' || area === 'right') {
+                await this.shell.collapsePanel(area);
+            } else if (area === 'bottom') {
+                // Don't collapse the bottom panel if it's currently split
+                if (this.shell.bottomAreaTabBars.length === 1) {
+                    await this.shell.collapsePanel('bottom');
+                }
+            } else {
+                existing.dispose();
             }
+            return;
+        }
+        const widget = await this.openViewContainer(id);
+        if (widget) {
+            await this.shell.activateWidget(widget.id);
         }
     }
 
@@ -366,16 +384,20 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 toDispose.push(Disposable.create(() => this.viewContainerClauseContexts.delete(id)));
             }
         }
-        const toggleCommandId = `plugin.view-container.${id}.toggle`;
         // Some plugins may register empty view containers.
         // We should not register commands for them immediately, as that leads to bad UX.
         // Instead, we register commands the first time we add a view to them.
         let activate = () => {
+            // Like VS Code, use the container's id, e.g. `workbench.view.extension.${id}`, as the command id
             toDispose.push(this.commands.registerCommand({
-                id: toggleCommandId,
+                id,
                 category: nls.localizeByDefault('View'),
                 label: nls.localizeByDefault('Toggle {0}', options.label)
             }, {
+                execute: () => this.toggleViewContainer(id)
+            }));
+            // Kept for backward compatibility with keybindings that use the former command id
+            toDispose.push(this.commands.registerCommand({ id: `plugin.view-container.${id}.toggle` }, {
                 execute: () => this.toggleViewContainer(id)
             }));
             toDispose.push(this.registerViewMenuAction(id, options.label));
@@ -483,7 +505,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 }
             }
             const disposable = this.menus.registerMenuAction(CommonMenus.VIEW_VIEWS, {
-                commandId: `plugin.view-container.${id}.toggle`,
+                commandId: id,
                 label: menuLabel,
                 when: containerInfo.when
             });
@@ -521,7 +543,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             viewContainerId = `workbench.view.extension.${viewContainerId}`;
         }
         if (this.views.has(view.id)) {
-            console.warn('view with such id already registered: ', JSON.stringify(view));
+            this.logger.warn('view with such id already registered: ', JSON.stringify(view));
             return Disposable.NULL;
         }
         const toDispose = new DisposableCollection();
@@ -558,13 +580,22 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             when: view.when,
             open: () => this.openView(view.id, { activate: true })
         }));
-        toDispose.push(this.commands.registerCommand({ id: `${view.id}.focus` }, {
-            execute: async () => { await this.openView(view.id, { activate: true }); }
+        toDispose.push(this.commands.registerCommand({
+            id: `${view.id}.focus`,
+            category: this.viewContainers.get(viewContainerId)?.options.label,
+            label: nls.localizeByDefault('Focus on {0} View', view.name)
+        }, {
+            execute: async (options?: { preserveFocus?: boolean }) => { await this.openView(view.id, this.toOpenViewOptions(options)); },
+            isVisible: () => this.isViewVisible(view.id)
         }));
         toDispose.push(this.commands.registerCommand({ id: `${view.id}.open` }, {
-            execute: async () => { await this.openView(view.id, { activate: true }); }
+            execute: async (options?: { preserveFocus?: boolean }) => { await this.openView(view.id, this.toOpenViewOptions(options)); }
         }));
         return toDispose;
+    }
+
+    protected toOpenViewOptions(options?: { preserveFocus?: boolean }): { activate?: boolean, reveal?: boolean } {
+        return options?.preserveFocus ? { reveal: true } : { activate: true };
     }
 
     async resolveWebviewView(viewId: string, webview: WebviewView, cancellation: CancellationToken): Promise<void> {
@@ -922,39 +953,39 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         for (const id of this.viewContainers.keys()) {
             promises.push((async () => {
                 await this.initViewContainer(id);
-            })().catch(console.error));
+            })().catch(e => this.logger.error(e)));
         }
         promises.push((async () => {
             const explorer = await this.widgetManager.getWidget(EXPLORER_VIEW_CONTAINER_ID);
             if (explorer instanceof ViewContainerWidget) {
                 await this.prepareViewContainer('explorer', explorer);
             }
-        })().catch(console.error));
+        })().catch(e => this.logger.error(e)));
         promises.push((async () => {
             const scm = await this.widgetManager.getWidget(SCM_VIEW_CONTAINER_ID);
             if (scm instanceof ViewContainerWidget) {
                 await this.prepareViewContainer('scm', scm);
             }
-        })().catch(console.error));
+        })().catch(e => this.logger.error(e)));
         promises.push((async () => {
             const search = await this.widgetManager.getWidget(SEARCH_VIEW_CONTAINER_ID);
             if (search instanceof ViewContainerWidget) {
                 await this.prepareViewContainer('search', search);
             }
-        })().catch(console.error));
+        })().catch(e => this.logger.error(e)));
         promises.push((async () => {
             const test = await this.widgetManager.getWidget(TEST_VIEW_CONTAINER_ID);
             if (test instanceof ViewContainerWidget) {
                 await this.prepareViewContainer('test', test);
             }
-        })().catch(console.error));
+        })().catch(e => this.logger.error(e)));
         promises.push((async () => {
             const debug = await this.widgetManager.getWidget(DebugWidget.ID);
             if (debug instanceof DebugWidget) {
                 const viewContainer = debug['sessionWidget']['viewContainer'];
                 await this.prepareViewContainer('debug', viewContainer);
             }
-        })().catch(console.error));
+        })().catch(e => this.logger.error(e)));
         await Promise.all(promises);
     }
 
@@ -1016,7 +1047,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     registerViewDataProvider(viewId: string, provider: ViewDataProvider): Disposable {
         if (this.viewDataProviders.has(viewId)) {
-            console.error(`data provider for '${viewId}' view is already registered`);
+            this.logger.error(`data provider for '${viewId}' view is already registered`);
             return Disposable.NULL;
         }
         this.viewDataProviders.set(viewId, provider);

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { CancellationToken, CancellationTokenSource, ILogger, generateUuid } from '@theia/core';
 import {
     LanguageModelMetaData,
@@ -53,8 +53,8 @@ export class LanguageModelFrontendDelegateImpl implements LanguageModelFrontendD
     @inject(LanguageModelRegistry)
     private registry: LanguageModelRegistry;
 
-    @inject(ILogger)
-    private logger: ILogger;
+    @inject(ILogger) @named('ai-core:LanguageModelFrontendDelegateImpl')
+    protected readonly logger: ILogger;
 
     private frontendDelegateClient: LanguageModelDelegateClient;
     private requestCancellationTokenMap: Map<string, CancellationTokenSource> = new Map();

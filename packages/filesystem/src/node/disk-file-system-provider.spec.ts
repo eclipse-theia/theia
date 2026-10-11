@@ -114,6 +114,35 @@ describe('disk-file-system-provider', () => {
             }
         });
 
+        it('handles errors during temporary cleanup', async () => {
+            const tempDirPath = tracked.mkdirSync();
+            const provider = fsProvider as unknown as {
+                rimrafMove(path: string): Promise<void>;
+                rimrafUnlink(path: string): Promise<void>;
+                logger: ILogger;
+            };
+            const originalRimrafUnlink = provider.rimrafUnlink;
+            const originalWarn = provider.logger.warn;
+            let resolveWarning!: () => void;
+            const warningHandled = new Promise<void>(resolve => {
+                resolveWarning = resolve;
+            });
+            provider.rimrafUnlink = async path => {
+                await fs.rm(path, { recursive: true, force: true });
+                throw new Error('Cleanup failed');
+            };
+            provider.logger.warn = async () => {
+                resolveWarning();
+            };
+            try {
+                await provider.rimrafMove(tempDirPath);
+                await warningHandled;
+            } finally {
+                provider.rimrafUnlink = originalRimrafUnlink;
+                provider.logger.warn = originalWarn;
+            }
+        });
+
         it('delete is able to delete file', async function (): Promise<void> {
             this.timeout(10000);
             // Place the temp dir under $HOME so the XDG trash dir (~/.local/share/Trash) is on the same

@@ -16,8 +16,8 @@
 
 import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-agents';
 import { LanguageModelRequirement } from '@theia/ai-core/lib/common';
-import { nls } from '@theia/core';
-import { injectable } from '@theia/core/shared/inversify';
+import { ILogger, nls } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { exploreSystemPrompt, EXPLORE_SYSTEM_PROMPT_ID } from './explore-prompt-template';
 import { ExploreAgentId } from '../common/agent-ids';
 
@@ -25,6 +25,9 @@ export { ExploreAgentId };
 
 @injectable()
 export class ExploreAgent extends AbstractStreamParsingChatAgent {
+    @inject(ILogger) @named('ai-ide:ExploreAgent')
+    protected override readonly logger: ILogger;
+
     name = 'Explore';
     id = ExploreAgentId;
     languageModelRequirements: LanguageModelRequirement[] = [{
@@ -34,7 +37,9 @@ export class ExploreAgent extends AbstractStreamParsingChatAgent {
     protected defaultLanguageModelPurpose: string = 'chat';
     override description = nls.localize('theia/ai/ide/exploreAgent/description',
         'A codebase exploration assistant that extracts and distills information from the codebase. \
-        Reports facts about what exists, provides code excerpts, and describes observed patterns.');
+        Reports facts about what exists, provides code excerpts, and describes observed patterns. \
+        Delegate to it when the design is clear but facts must be gathered across files: call sites, data flow, patterns, ripple checks. \
+        It does not plan. For 1-2 known files or a single targeted search, use tools directly instead.');
 
     override prompts = [{ id: EXPLORE_SYSTEM_PROMPT_ID, defaultVariant: exploreSystemPrompt, variants: [] }];
     protected override systemPromptId: string = EXPLORE_SYSTEM_PROMPT_ID;

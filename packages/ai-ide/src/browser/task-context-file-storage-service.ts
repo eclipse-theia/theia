@@ -16,13 +16,12 @@
 
 import { Summary, SummaryMetadata, TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { InMemoryTaskContextStorage } from '@theia/ai-chat/lib/browser/task-context-storage-service';
-import { parseFrontmatter } from '@theia/ai-core/lib/common/frontmatter';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { DisposableCollection, EOL, Emitter, ILogger, Path, PreferenceService, URI, unreachable } from '@theia/core';
+import { parseFrontmatter, serializeFrontmatter } from '@theia/ai-core/lib/common/frontmatter';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
+import { DisposableCollection, Emitter, ILogger, Path, PreferenceService, URI, unreachable } from '@theia/core';
 import { OpenerService, open } from '@theia/core/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import * as yaml from 'js-yaml';
 import { FileChange, FileChangeType } from '@theia/filesystem/lib/common/files';
 import { TASK_CONTEXT_STORAGE_DIRECTORY_PREF } from '../common/workspace-preferences';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
@@ -34,7 +33,10 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(FileService) protected readonly fileService: FileService;
     @inject(OpenerService) protected readonly openerService: OpenerService;
-    @inject(ILogger) protected readonly logger: ILogger;
+
+    @inject(ILogger) @named('ai-ide:TaskContextFileStorageService')
+    protected readonly logger: ILogger;
+
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
 
@@ -157,7 +159,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
             };
             const derivedName = label.trim().replace(/[^\p{L}\p{N}]/ug, '-').replace(/^-+|-+$/g, '');
             const filename = (derivedName.length > 32 ? derivedName.slice(0, derivedName.indexOf('-', 32)) : derivedName) + '.md';
-            const content = yaml.dump(frontmatter).trim() + `${EOL}---${EOL}` + summary.summary;
+            const content = serializeFrontmatter(frontmatter, summary.summary);
             const uri = storageLocation.resolve(filename);
             summary.uri = uri;
             await this.fileService.writeFile(uri, BinaryBuffer.fromString(content));

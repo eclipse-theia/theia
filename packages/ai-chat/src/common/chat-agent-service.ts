@@ -130,7 +130,7 @@ export class ChatAgentServiceImpl implements ChatAgentService {
     @inject(ContributionProvider) @named(ChatAgent)
     protected readonly agentContributions: ContributionProvider<ChatAgent>;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('ai-chat:ChatAgentServiceImpl')
     protected readonly logger: ILogger;
 
     @inject(AgentService)

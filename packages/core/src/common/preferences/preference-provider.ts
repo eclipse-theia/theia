@@ -133,6 +133,23 @@ export interface PreferenceProvider extends Disposable {
 }
 
 export namespace PreferenceUtils {
+    const RESERVED_MERGE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+    /**
+     * Recursively merges the values of `target` into `source` and returns the merged result.
+     *
+     * Note the direction: `source` is the accumulator that is mutated and returned, while the
+     * values of `target` take precedence for conflicting primitive values. Nested objects are
+     * merged recursively and arrays are concatenated (`source` entries first, then `target`).
+     * If `source` is not a JSON object, a deep copy of `target` is returned instead.
+     *
+     * Only own properties are considered and reserved keys are ignored, so merged results are
+     * always plain data objects.
+     *
+     * @param source the accumulator to merge into; mutated and returned unless it is not an object
+     * @param target the values that are merged into `source` and take precedence on conflicts
+     * @returns the merged result (the mutated `source`, or a deep copy of `target`)
+     */
     export function merge(source: JSONValue | undefined, target: JSONValue): JSONValue {
         if (source === undefined || !JSONExt.isObject(source)) {
             return JSONExt.deepCopy(target);
@@ -141,7 +158,11 @@ export namespace PreferenceUtils {
             return {};
         }
         for (const [key, value] of Object.entries(target)) {
-            if (key in source) {
+            if (RESERVED_MERGE_KEYS.has(key)) {
+                // Skip reserved object keys so merged results stay plain data objects.
+                continue;
+            }
+            if (Object.prototype.hasOwnProperty.call(source, key)) {
                 const sourceValue = source[key];
                 if (JSONExt.isObject(sourceValue) && JSONExt.isObject(value)) {
                     merge(sourceValue, value);

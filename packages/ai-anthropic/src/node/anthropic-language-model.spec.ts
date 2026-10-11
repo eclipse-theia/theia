@@ -15,13 +15,17 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import { Container, injectable } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import {
-    ANTHROPIC_RESULT_BLOCK_DATA_KEY, AnthropicModel, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage,
+    ANTHROPIC_RESULT_BLOCK_DATA_KEY, AnthropicModel, AnthropicModelParams, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage,
     mergeConsecutiveSameRoleMessages, transformToAnthropicParams
 } from './anthropic-language-model';
 import {
     CompactionMessage, isServerToolCallResponsePart, isUsageResponsePart, LanguageModelMessage, LanguageModelRequest,
-    LanguageModelStreamResponsePart, ReasoningApi, ReasoningSupport, UserRequest
+    LanguageModelStreamResponsePart, LanguageModelTextResponse, ReasoningApi, ReasoningLevel, ReasoningSupport, ToolCallExecutor, ToolCallExecutorImpl,
+    UserRequest
 } from '@theia/ai-core';
 import type { Anthropic } from '@anthropic-ai/sdk';
 import type { MessageParam } from '@anthropic-ai/sdk/resources';
@@ -32,6 +36,7 @@ const REASONING_SUPPORT: ReasoningSupport = {
 };
 
 /** Test helper that exposes the otherwise protected getSettings(), createTools(), and applyCompactionParams() methods. */
+@injectable()
 class TestableAnthropicModel extends AnthropicModel {
     public callGetSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return this.getSettings(request);
@@ -44,76 +49,85 @@ class TestableAnthropicModel extends AnthropicModel {
     }
 }
 
+function buildModel<T extends AnthropicModel>(modelType: new (...args: never[]) => T, params: AnthropicModelParams): T {
+    const parent = new Container();
+    parent.bind(ToolCallExecutor).to(ToolCallExecutorImpl);
+    parent.bind(ILogger).to(MockLogger);
+    parent.bind(modelType).toSelf().inTransientScope();
+
+    const child = new Container();
+    child.parent = parent;
+    child.bind(AnthropicModelParams).toConstantValue(params);
+    return child.get(modelType);
+}
+
 function createReasoningModel(
-    modelId: string, reasoningApi: ReasoningApi, supportsXHighEffort: boolean = false
+    modelId: string, reasoningApi: ReasoningApi,
+    reasoningSupport: ReasoningSupport = reasoningApi === 'budget' ? REASONING_SUPPORT : {
+        supportedLevels: ['off', 'low', 'medium', 'high', 'xhigh', 'max', 'auto'], defaultLevel: 'auto'
+    }
 ): TestableAnthropicModel {
-    return new TestableAnthropicModel(
-        'test-id', modelId, { status: 'ready' }, true, false,
-        () => 'test-key', undefined, DEFAULT_MAX_TOKENS,
-        3, undefined, REASONING_SUPPORT, reasoningApi, supportsXHighEffort
-    );
+    return buildModel(TestableAnthropicModel, {
+        id: 'test-id', model: modelId, status: { status: 'ready' }, enableStreaming: true, useCaching: false,
+        apiKey: () => 'test-key', url: undefined, maxTokens: DEFAULT_MAX_TOKENS,
+        maxRetries: 3, reasoningSupport, reasoningApi
+    });
 }
 
 function createNonReasoningModel(modelId: string): TestableAnthropicModel {
-    return new TestableAnthropicModel(
-        'test-id', modelId, { status: 'ready' }, true, false,
-        () => 'test-key', undefined, DEFAULT_MAX_TOKENS
-    );
+    return buildModel(TestableAnthropicModel, {
+        id: 'test-id', model: modelId, status: { status: 'ready' }, enableStreaming: true, useCaching: false,
+        apiKey: () => 'test-key', url: undefined, maxTokens: DEFAULT_MAX_TOKENS
+    });
 }
 
 describe('AnthropicModel', () => {
 
-    describe('constructor', () => {
+    describe('parameters', () => {
         it('should set default maxRetries to 3 when not provided', () => {
-            const model = new AnthropicModel(
-                'test-id',
-                'claude-3-opus-20240229',
-                {
-                    status: 'ready'
-                },
-                true,
-                true,
-                () => 'test-api-key',
-                undefined,
-                DEFAULT_MAX_TOKENS
-            );
+            const model = buildModel(AnthropicModel, {
+                id: 'test-id',
+                model: 'claude-3-opus-20240229',
+                status: { status: 'ready' },
+                enableStreaming: true,
+                useCaching: true,
+                apiKey: () => 'test-api-key',
+                url: undefined,
+                maxTokens: DEFAULT_MAX_TOKENS
+            });
 
             expect(model.maxRetries).to.equal(3);
         });
 
         it('should set custom maxRetries when provided', () => {
             const customMaxRetries = 5;
-            const model = new AnthropicModel(
-                'test-id',
-                'claude-3-opus-20240229',
-                {
-                    status: 'ready'
-                },
-                true,
-                true,
-                () => 'test-api-key',
-                undefined,
-                DEFAULT_MAX_TOKENS,
-                customMaxRetries
-            );
+            const model = buildModel(AnthropicModel, {
+                id: 'test-id',
+                model: 'claude-3-opus-20240229',
+                status: { status: 'ready' },
+                enableStreaming: true,
+                useCaching: true,
+                apiKey: () => 'test-api-key',
+                url: undefined,
+                maxTokens: DEFAULT_MAX_TOKENS,
+                maxRetries: customMaxRetries
+            });
 
             expect(model.maxRetries).to.equal(customMaxRetries);
         });
 
-        it('should preserve all other constructor parameters', () => {
-            const model = new AnthropicModel(
-                'test-id',
-                'claude-3-opus-20240229',
-                {
-                    status: 'ready'
-                },
-                true,
-                true,
-                () => 'test-api-key',
-                undefined,
-                DEFAULT_MAX_TOKENS,
-                5
-            );
+        it('should preserve all other parameters', () => {
+            const model = buildModel(AnthropicModel, {
+                id: 'test-id',
+                model: 'claude-3-opus-20240229',
+                status: { status: 'ready' },
+                enableStreaming: true,
+                useCaching: true,
+                apiKey: () => 'test-api-key',
+                url: undefined,
+                maxTokens: DEFAULT_MAX_TOKENS,
+                maxRetries: 5
+            });
 
             expect(model.id).to.equal('test-id');
             expect(model.model).to.equal('claude-3-opus-20240229');
@@ -128,19 +142,17 @@ describe('AnthropicModel', () => {
         });
 
         it('should set custom url when provided', () => {
-            const model = new AnthropicModel(
-                'test-id',
-                'claude-3-opus-20240229',
-                {
-                    status: 'ready'
-                },
-                true,
-                true,
-                () => 'test-api-key',
-                'custom-url',
-                DEFAULT_MAX_TOKENS,
-                5
-            );
+            const model = buildModel(AnthropicModel, {
+                id: 'test-id',
+                model: 'claude-3-opus-20240229',
+                status: { status: 'ready' },
+                enableStreaming: true,
+                useCaching: true,
+                apiKey: () => 'test-api-key',
+                url: 'custom-url',
+                maxTokens: DEFAULT_MAX_TOKENS,
+                maxRetries: 5
+            });
 
             expect(model.url).to.equal('custom-url');
         });
@@ -320,6 +332,237 @@ describe('AnthropicModel', () => {
         });
     });
 
+    describe('transformToAnthropicParams thinking blocks', () => {
+        function thinkingMessage(thinking: string, signature: string): LanguageModelMessage {
+            return { actor: 'ai', type: 'thinking', thinking, signature };
+        }
+
+        function userText(text: string): LanguageModelMessage {
+            return { actor: 'user', type: 'text', text };
+        }
+
+        function thinkingBlocks(messages: MessageParam[]): Anthropic.Messages.ContentBlockParam[] {
+            return messages.flatMap(message => Array.isArray(message.content) ? message.content : [])
+                .filter(block => block.type === 'thinking');
+        }
+
+        it('drops a thinking block with empty thinking text, which Anthropic rejects on replay', () => {
+            const messages = [userText('do something'), thinkingMessage('', 'signature'), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.be.empty;
+            expect(JSON.stringify(result)).to.contain('do something');
+            expect(JSON.stringify(result)).to.contain('continue');
+        });
+
+        it('drops a thinking block whose thinking text is only whitespace', () => {
+            const messages = [thinkingMessage('  \n', 'signature'), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.be.empty;
+        });
+
+        it('drops a thinking block without a signature', () => {
+            const messages = [thinkingMessage('some reasoning', ''), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.be.empty;
+        });
+
+        it('keeps a signed thinking block that has content', () => {
+            const messages = [thinkingMessage('some reasoning', 'signature'), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.deep.equal([{ type: 'thinking', thinking: 'some reasoning', signature: 'signature' }]);
+        });
+
+        it('logs a debug message when dropping a thinking block', () => {
+            const originalDebug = console.debug;
+            const logged: string[] = [];
+            console.debug = (...args: unknown[]) => { logged.push(args.map(String).join(' ')); };
+            try {
+                transformToAnthropicParams([thinkingMessage('', 'signature'), userText('continue')], false);
+            } finally {
+                console.debug = originalDebug;
+            }
+            expect(logged.some(line => line.includes('thinking'))).to.be.true;
+        });
+    });
+
+    describe('tool loop thinking block replay', () => {
+        /**
+         * Mock client whose first stream() call yields the given events and whose follow-up calls yield none.
+         * All params passed to stream() are captured so the tool loop's follow-up request can be inspected.
+         */
+        function createToolLoopModel(firstCallEvents: object[], capturedParams: Anthropic.MessageCreateParams[]): AnthropicModel {
+            let call = 0;
+            const ModelClass = injectable()(class extends AnthropicModel {
+                protected override initializeAnthropic(): Anthropic {
+                    return {
+                        messages: {
+                            stream: (params: Anthropic.MessageCreateParams) => {
+                                capturedParams.push(params);
+                                const events = call++ === 0 ? firstCallEvents : [];
+                                async function* iterate(): AsyncGenerator<object> {
+                                    for (const event of events) {
+                                        yield event;
+                                    }
+                                }
+                                const iter = iterate();
+                                (iter as unknown as Record<string, unknown>).on = () => { /* no-op */ };
+                                (iter as unknown as Record<string, unknown>).abort = () => { /* no-op */ };
+                                return iter;
+                            }
+                        }
+                    } as unknown as Anthropic;
+                }
+            });
+            return buildModel(ModelClass, {
+                id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' }, enableStreaming: true, useCaching: false,
+                apiKey: () => 'test-key', url: undefined
+            });
+        }
+
+        function toolLoopEvents(thinkingBlock: { type: 'thinking'; thinking: string; signature: string }): object[] {
+            return [
+                // The SDK accumulates streamed content blocks into the message_start message in place, so by the
+                // time the tool loop replays it, its content holds the raw blocks exactly as streamed. The mock
+                // provides that end state up front.
+                {
+                    type: 'message_start',
+                    message: {
+                        role: 'assistant',
+                        content: [thinkingBlock, { type: 'tool_use', id: 'call_1', name: 'myTool', input: {} }],
+                        usage: { input_tokens: 10, output_tokens: 0 }
+                    }
+                },
+                { type: 'content_block_start', index: 0, content_block: thinkingBlock },
+                { type: 'content_block_stop', index: 0 },
+                { type: 'content_block_start', index: 1, content_block: { type: 'tool_use', id: 'call_1', name: 'myTool', input: {} } },
+                { type: 'content_block_delta', index: 1, delta: { type: 'input_json_delta', partial_json: '{}' } },
+                { type: 'content_block_stop', index: 1 },
+                { type: 'message_delta', delta: { stop_reason: 'tool_use' }, usage: { output_tokens: 5 } },
+                { type: 'message_stop' },
+            ];
+        }
+
+        async function runToolLoop(firstCallEvents: object[]): Promise<Anthropic.MessageCreateParams[]> {
+            const capturedParams: Anthropic.MessageCreateParams[] = [];
+            const model = createToolLoopModel(firstCallEvents, capturedParams);
+            const request: UserRequest = {
+                messages: [{ actor: 'user', type: 'text', text: 'do something' }],
+                tools: [{ id: 'myTool', name: 'myTool', parameters: { type: 'object', properties: {} }, handler: async () => 'ok' }],
+                agentId: 'test', sessionId: 'session', requestId: 'req'
+            };
+            const response = await model.request(request);
+            if ('stream' in response) {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                for await (const _part of response.stream) { /* drain */ }
+            }
+            return capturedParams;
+        }
+
+        function contentBlocks(params: Anthropic.MessageCreateParams): Anthropic.Messages.ContentBlockParam[] {
+            return params.messages.flatMap(message => Array.isArray(message.content) ? message.content : []);
+        }
+
+        it('drops an unreplayable thinking block from the tool loop follow-up request', async () => {
+            const params = await runToolLoop(toolLoopEvents({ type: 'thinking', thinking: '', signature: '' }));
+
+            expect(params).to.have.lengthOf(2);
+            const blocks = contentBlocks(params[1]);
+            expect(blocks.some(block => block.type === 'thinking')).to.be.false;
+            // The rest of the streamed assistant turn and the tool result still replay.
+            expect(blocks.some(block => block.type === 'tool_use' && block.id === 'call_1')).to.be.true;
+            expect(blocks.some(block => block.type === 'tool_result' && block.tool_use_id === 'call_1')).to.be.true;
+        });
+
+        it('replays a valid thinking block unchanged in the tool loop follow-up request', async () => {
+            const params = await runToolLoop(toolLoopEvents({ type: 'thinking', thinking: 'some reasoning', signature: 'sig' }));
+
+            expect(params).to.have.lengthOf(2);
+            const thinking = contentBlocks(params[1]).find(block => block.type === 'thinking');
+            expect(thinking).to.deep.equal({ type: 'thinking', thinking: 'some reasoning', signature: 'sig' });
+        });
+
+        it('drops a message left empty after filtering its only (unreplayable) thinking block', async () => {
+            // Two messages in one stream: the first holds only the invalid thinking block, the second the tool_use.
+            // After filtering, the first message has no content and must not be replayed at all.
+            const events = [
+                {
+                    type: 'message_start',
+                    message: { role: 'assistant', content: [{ type: 'thinking', thinking: '', signature: '' }], usage: { input_tokens: 10, output_tokens: 0 } }
+                },
+                { type: 'content_block_start', index: 0, content_block: { type: 'thinking', thinking: '', signature: '' } },
+                { type: 'content_block_stop', index: 0 },
+                { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 1 } },
+                { type: 'message_stop' },
+                {
+                    type: 'message_start',
+                    message: { role: 'assistant', content: [{ type: 'tool_use', id: 'call_1', name: 'myTool', input: {} }], usage: { input_tokens: 10, output_tokens: 0 } }
+                },
+                { type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'call_1', name: 'myTool', input: {} } },
+                { type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: '{}' } },
+                { type: 'content_block_stop', index: 0 },
+                { type: 'message_delta', delta: { stop_reason: 'tool_use' }, usage: { output_tokens: 5 } },
+                { type: 'message_stop' },
+            ];
+
+            const params = await runToolLoop(events);
+
+            expect(params).to.have.lengthOf(2);
+            const emptyMessages = params[1].messages.filter(message => Array.isArray(message.content) && message.content.length === 0);
+            expect(emptyMessages).to.be.empty;
+        });
+    });
+
+    describe('non-streaming requests', () => {
+        /** Mock client whose messages.create() resolves to a message with the given content blocks. */
+        function createNonStreamingModel(content: object[]): AnthropicModel {
+            @injectable()
+            class MockAnthropicModel extends AnthropicModel {
+                protected override initializeAnthropic(): Anthropic {
+                    return {
+                        messages: {
+                            create: async () => ({ content, usage: { input_tokens: 10, output_tokens: 5 } })
+                        }
+                    } as unknown as Anthropic;
+                }
+            }
+            return buildModel(MockAnthropicModel, {
+                id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' },
+                enableStreaming: false, useCaching: false, apiKey: () => 'test-key', url: undefined
+            });
+        }
+
+        const request: UserRequest = {
+            messages: [{ actor: 'user', type: 'text', text: 'hello' }],
+            agentId: 'test', sessionId: 'session', requestId: 'req'
+        };
+
+        it('returns the text when a thinking block precedes it', async () => {
+            const model = createNonStreamingModel([
+                { type: 'thinking', thinking: 'Considering the question.', signature: 'sig' },
+                { type: 'text', text: 'Hello!' }
+            ]);
+            const response = await model.request(request);
+            expect((response as LanguageModelTextResponse).text).to.equal('Hello!');
+        });
+
+        it('joins multiple text blocks', async () => {
+            const model = createNonStreamingModel([
+                { type: 'text', text: 'Hel' },
+                { type: 'text', text: 'lo' }
+            ]);
+            const response = await model.request(request);
+            expect((response as LanguageModelTextResponse).text).to.equal('Hello');
+        });
+    });
+
     describe('streaming token usage', () => {
         /**
          * Builds a mock Anthropic client whose messages.stream() yields
@@ -346,15 +589,17 @@ describe('AnthropicModel', () => {
 
         function createModel(anthropicEventsByCall: object[][]): AnthropicModel {
             let callIndex = 0;
-            return new class extends AnthropicModel {
+            @injectable()
+            class MockAnthropicModel extends AnthropicModel {
                 protected override initializeAnthropic(): Anthropic {
                     const events = anthropicEventsByCall[Math.min(callIndex++, anthropicEventsByCall.length - 1)];
                     return buildMockAnthropic(events);
                 }
-            }(
-                'test-id', 'claude-opus-4-5', { status: 'ready' },
-                true, false, () => 'test-key', undefined
-            );
+            }
+            return buildModel(MockAnthropicModel, {
+                id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' },
+                enableStreaming: true, useCaching: false, apiKey: () => 'test-key', url: undefined
+            });
         }
 
         async function collectStreamParts(model: AnthropicModel, text: string): Promise<LanguageModelStreamResponsePart[]> {
@@ -497,14 +742,16 @@ describe('AnthropicModel', () => {
                 { type: 'message_stop' },
             ];
 
-            const model = new class extends AnthropicModel {
+            @injectable()
+            class AbortingAnthropicModel extends AnthropicModel {
                 protected override initializeAnthropic(): Anthropic {
                     return buildAbortingAnthropic(events, 4);
                 }
-            }(
-                'test-id', 'claude-opus-4-5', { status: 'ready' },
-                true, false, () => 'test-key', undefined
-            );
+            }
+            const model = buildModel(AbortingAnthropicModel, {
+                id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' },
+                enableStreaming: true, useCaching: false, apiKey: () => 'test-key', url: undefined
+            });
 
             const request: UserRequest = {
                 messages: [{ actor: 'user', type: 'text', text: 'hi' }],
@@ -563,25 +810,47 @@ describe('AnthropicModel', () => {
             expect(result.thinking).to.deep.equal({ type: 'adaptive', display: 'summarized' });
             expect(result.output_config).to.deep.equal({ effort: 'low' });
         });
-        it('maps level=low to effort=medium', () => {
-            const model = createReasoningModel('claude-opus-4-6', 'effort');
-            const result = model.callGetSettings({ messages: [], reasoning: { level: 'low' } });
-            expect(result.output_config).to.deep.equal({ effort: 'medium' });
-        });
-        it('maps level=medium to effort=high on models without xhigh', () => {
-            const model = createReasoningModel('claude-opus-4-6', 'effort');
-            const result = model.callGetSettings({ messages: [], reasoning: { level: 'medium' } });
-            expect(result.output_config).to.deep.equal({ effort: 'high' });
-        });
-        it('maps level=medium to effort=xhigh on models that support xhigh (Opus 4.7)', () => {
-            const model = createReasoningModel('claude-opus-4-7', 'effort', true);
-            const result = model.callGetSettings({ messages: [], reasoning: { level: 'medium' } });
-            expect(result.output_config).to.deep.equal({ effort: 'xhigh' });
-        });
-        it('maps level=high to effort=max', () => {
-            const model = createReasoningModel('claude-opus-4-6', 'effort');
+        for (const level of ['low', 'medium', 'high', 'xhigh', 'max'] as const) {
+            it(`transmits native level=${level} literally`, () => {
+                const model = createReasoningModel('claude-opus-4-7', 'effort');
+                const result = model.callGetSettings({ messages: [], reasoning: { level } });
+                expect(result.output_config).to.deep.equal({ effort: level });
+            });
+        }
+        for (const supportedLevels of [
+            ['off', 'low', 'medium', 'high', 'auto'],
+            ['off', 'low', 'medium', 'high', 'xhigh', 'auto'],
+            ['off', 'low', 'medium', 'high', 'max', 'auto'],
+            ['off', 'low', 'medium', 'high', 'xhigh', 'max', 'auto']
+        ] satisfies ReasoningLevel[][]) {
+            for (const level of ['xhigh', 'max'] as const) {
+                it(`clamps ${level} against supported levels ${supportedLevels.join(', ')}`, () => {
+                    const support: ReasoningSupport = { supportedLevels, defaultLevel: 'auto' };
+                    const model = createReasoningModel('custom-model', 'effort', support);
+                    const result = model.callGetSettings({ messages: [], reasoning: { level } });
+                    const effort = level === 'xhigh'
+                        ? supportedLevels.includes('xhigh') ? 'xhigh' : supportedLevels.includes('max') ? 'max' : 'high'
+                        : supportedLevels.includes('max') ? 'max' : supportedLevels.includes('xhigh') ? 'xhigh' : 'high';
+                    expect(result.output_config).to.deep.equal({ effort });
+                });
+            }
+        }
+        it('clamps base efforts as well as extended efforts for direct backend requests', () => {
+            const model = createReasoningModel('custom-model', 'effort', { supportedLevels: ['low', 'max', 'auto'], defaultLevel: 'auto' });
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'high' } });
             expect(result.output_config).to.deep.equal({ effort: 'max' });
+        });
+        it('does not generate reasoning when the shared clamp resolves to off', () => {
+            const model = createReasoningModel('custom-model', 'effort', { supportedLevels: ['off', 'auto'], defaultLevel: 'auto' });
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'max' } });
+            expect(result.thinking).to.equal(undefined);
+            expect(result.output_config).to.equal(undefined);
+        });
+        it('uses the provider default when auto is the only supported level', () => {
+            const model = createReasoningModel('custom-model', 'effort', { supportedLevels: ['auto'], defaultLevel: 'auto' });
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'max' } });
+            expect(result.thinking).to.deep.equal({ type: 'adaptive', display: 'summarized' });
+            expect(result.output_config).to.equal(undefined);
         });
         it('omits output_config on level=auto so the provider default applies', () => {
             const model = createReasoningModel('claude-opus-4-6', 'effort');
@@ -590,13 +859,39 @@ describe('AnthropicModel', () => {
             expect(result.output_config).to.equal(undefined);
         });
         it('omits thinking entirely when level=off', () => {
-            const model = createReasoningModel('claude-opus-4-7', 'effort', true);
+            const model = createReasoningModel('claude-opus-4-7', 'effort');
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'off' } });
             expect(result.thinking).to.equal(undefined);
+        });
+        it('preserves raw request settings when level=off', () => {
+            const model = createReasoningModel('claude-opus-4-7', 'effort');
+            const settings = { thinking: { type: 'disabled' }, output_config: { effort: 'low' } };
+            expect(model.callGetSettings({ messages: [], settings, reasoning: { level: 'off' } })).to.deep.equal(settings);
+        });
+        it('omits generated settings when no reasoning level is requested', () => {
+            const model = createReasoningModel('claude-opus-4-7', 'effort');
+            expect(model.callGetSettings({ messages: [] })).to.deep.equal({});
         });
     });
 
     describe('getSettings budget API (legacy extended thinking)', () => {
+        const budgets: [ReasoningLevel, number][] = [['minimal', 1024], ['low', 4096], ['medium', 16000], ['high', 32000], ['auto', 8000]];
+        for (const [level, budget_tokens] of budgets) {
+            it(`preserves the legacy budget for ${level}`, () => {
+                const model = createReasoningModel('claude-sonnet-4-20250514', 'budget');
+                const result = model.callGetSettings({ messages: [], reasoning: { level } });
+                expect(result.thinking).to.deep.equal({ type: 'enabled', budget_tokens });
+                expect(result.output_config).to.equal(undefined);
+            });
+        }
+        for (const level of ['xhigh', 'max'] as const) {
+            it(`clamps ${level} to the highest legacy budget instead of using the auto budget`, () => {
+                const model = createReasoningModel('claude-sonnet-4-20250514', 'budget');
+                const result = model.callGetSettings({ messages: [], reasoning: { level } });
+                expect(result.thinking).to.deep.equal({ type: 'enabled', budget_tokens: 32000 });
+                expect(result.output_config).to.equal(undefined);
+            });
+        }
         it('emits thinking.type="enabled" with budget_tokens for level=medium', () => {
             const model = createReasoningModel('claude-sonnet-4-20250514', 'budget');
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'medium' } });
@@ -622,6 +917,12 @@ describe('AnthropicModel', () => {
     });
 
     describe('non-reasoning models', () => {
+        it('does not generate reasoning settings when only the reasoning API is known', () => {
+            const model = createNonReasoningModel('custom-model');
+            model.reasoningApi = 'effort';
+            const settings = { output_config: { effort: 'medium' } };
+            expect(model.callGetSettings({ messages: [], settings, reasoning: { level: 'max' } })).to.deep.equal(settings);
+        });
         it('ignores reasoning settings when the model has no reasoningSupport', () => {
             const model = createNonReasoningModel('claude-3-5-sonnet-20241022');
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'high' } });
@@ -662,11 +963,16 @@ describe('AnthropicModel', () => {
                 { type: 'message_stop' },
             ];
 
-            const model = new class extends AnthropicModel {
+            @injectable()
+            class MockAnthropicModel extends AnthropicModel {
                 protected override initializeAnthropic(): Anthropic {
                     return buildMockAnthropicStream(events);
                 }
-            }('test-id', 'claude-opus-4-5', { status: 'ready' }, true, false, () => 'test-key', undefined);
+            }
+            const model = buildModel(MockAnthropicModel, {
+                id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' },
+                enableStreaming: true, useCaching: false, apiKey: () => 'test-key', url: undefined
+            });
 
             const parts = await collectParts(model, 'fetch https://example.com');
             const serverParts = parts.filter(isServerToolCallResponsePart);
@@ -684,7 +990,8 @@ describe('AnthropicModel', () => {
 
         it('reconstructs the server tool blocks from a ServerToolUseMessage on replay', async () => {
             let capturedParams: Anthropic.MessageCreateParams | undefined;
-            const model = new class extends AnthropicModel {
+            @injectable()
+            class MockAnthropicModel extends AnthropicModel {
                 protected override initializeAnthropic(): Anthropic {
                     return {
                         messages: {
@@ -699,7 +1006,11 @@ describe('AnthropicModel', () => {
                         }
                     } as unknown as Anthropic;
                 }
-            }('test-id', 'claude-opus-4-5', { status: 'ready' }, true, false, () => 'test-key', undefined);
+            }
+            const model = buildModel(MockAnthropicModel, {
+                id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' },
+                enableStreaming: true, useCaching: false, apiKey: () => 'test-key', url: undefined
+            });
 
             const rawBlock = { type: 'web_fetch_result', url: 'https://example.com', content: { type: 'document', title: 'Example' } };
             const request: UserRequest = {
@@ -748,11 +1059,15 @@ describe('AnthropicModel', () => {
                 { type: 'message_stop' },
             ];
 
-            const model = new class extends AnthropicModel {
+            const ModelClass = injectable()(class extends AnthropicModel {
                 protected override initializeAnthropic(): Anthropic {
                     return buildMockAnthropicStream(events);
                 }
-            }('test-id', 'claude-opus-4-5', { status: 'ready' }, true, false, () => 'test-key', undefined);
+            });
+            const model = buildModel(ModelClass, {
+                id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' }, enableStreaming: true, useCaching: false,
+                apiKey: () => 'test-key', url: undefined
+            });
 
             const parts = await collectParts(model, 'do something requiring a deferred tool');
             const calls = parts.filter(isServerToolCallResponsePart).flatMap(p => p.server_tool_calls);
@@ -772,7 +1087,7 @@ describe('AnthropicModel', () => {
 
         it('drops the deferred tool search server tool use message on replay', async () => {
             let capturedParams: Anthropic.MessageCreateParams | undefined;
-            const model = new class extends AnthropicModel {
+            const ModelClass = injectable()(class extends AnthropicModel {
                 protected override initializeAnthropic(): Anthropic {
                     return {
                         messages: {
@@ -787,7 +1102,11 @@ describe('AnthropicModel', () => {
                         }
                     } as unknown as Anthropic;
                 }
-            }('test-id', 'claude-opus-4-5', { status: 'ready' }, true, false, () => 'test-key', undefined);
+            });
+            const model = buildModel(ModelClass, {
+                id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' }, enableStreaming: true, useCaching: false,
+                apiKey: () => 'test-key', url: undefined
+            });
 
             const request: UserRequest = {
                 messages: [
@@ -840,11 +1159,16 @@ describe('AnthropicModel', () => {
             return undefined;
         }
 
-        function createCompactionModel(serverSideCompactionEnabledByDefault: boolean, serverSideCompactionSupport: boolean = true): TestableAnthropicModel {
-            return new TestableAnthropicModel(
-                'test-id', 'claude-opus-4-6', { status: 'ready' }, true, false, () => 'test-key', undefined,
-                DEFAULT_MAX_TOKENS, 3, undefined, undefined, undefined, undefined, undefined, undefined, serverSideCompactionSupport, serverSideCompactionEnabledByDefault
-            );
+        function createCompactionModel(
+            serverSideCompactionEnabledByDefault: boolean,
+            serverSideCompactionSupport: boolean = true,
+            serverSideCompactionTokenThresholdByDefault?: number
+        ): TestableAnthropicModel {
+            return buildModel(TestableAnthropicModel, {
+                id: 'test-id', model: 'claude-opus-4-6', status: { status: 'ready' }, enableStreaming: true, useCaching: false,
+                apiKey: () => 'test-key', url: undefined, maxTokens: DEFAULT_MAX_TOKENS, maxRetries: 3,
+                serverSideCompactionSupport, serverSideCompactionEnabledByDefault, serverSideCompactionTokenThresholdByDefault
+            });
         }
 
         describe('transformToAnthropicParams', () => {
@@ -901,6 +1225,29 @@ describe('AnthropicModel', () => {
 
                 expect(beta.betas).to.deep.equal(['compact-2026-01-12']);
                 expect(beta.context_management).to.deep.equal({ edits: [{ type: 'compact_20260112' }] });
+            });
+
+            it('adds the model default token threshold', () => {
+                const model = createCompactionModel(true, true, 280_000);
+                const params = model.callApplyCompactionParams(baseParams(), { messages: [] });
+                const beta = params as Anthropic.MessageCreateParams & Anthropic.Beta.Messages.MessageCreateParams;
+
+                expect(beta.context_management).to.deep.equal({
+                    edits: [{ type: 'compact_20260112', trigger: { type: 'input_tokens', value: 280_000 } }]
+                });
+            });
+
+            it('uses the session token threshold over the model default', () => {
+                const model = createCompactionModel(true, true, 280_000);
+                const params = model.callApplyCompactionParams(baseParams(), {
+                    messages: [],
+                    compaction: { tokenThreshold: 300_000 }
+                });
+                const beta = params as Anthropic.MessageCreateParams & Anthropic.Beta.Messages.MessageCreateParams;
+
+                expect(beta.context_management).to.deep.equal({
+                    edits: [{ type: 'compact_20260112', trigger: { type: 'input_tokens', value: 300_000 } }]
+                });
             });
 
             it('leaves params unchanged when compaction is disabled by default', () => {

@@ -13,24 +13,22 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { ILogger, LogLevel, MeasurementResult, Stopwatch } from '@theia/core';
-import { UUID } from '@theia/core/shared/@lumino/coreutils';
-import { MeasurementNotificationService } from '../common';
+import { TelemetryService } from '@theia/telemetry/lib/common';
+import { reportMeasurement } from '../common';
 
 @injectable()
 export class MetricsFrontendApplicationContribution implements FrontendApplicationContribution {
     @inject(Stopwatch)
     protected stopwatch: Stopwatch;
 
-    @inject(MeasurementNotificationService)
-    protected notificationService: MeasurementNotificationService;
+    @inject(TelemetryService)
+    protected telemetryService: TelemetryService;
 
-    @inject(ILogger)
-    protected logger: ILogger;
-
-    readonly id = UUID.uuid4();
+    @inject(ILogger) @named('metrics:MetricsFrontendApplicationContribution')
+    protected readonly logger: ILogger;
 
     initialize(): void {
         this.doInitialize();
@@ -46,6 +44,6 @@ export class MetricsFrontendApplicationContribution implements FrontendApplicati
     }
 
     protected notify(result: MeasurementResult): void {
-        this.notificationService.onFrontendMeasurement(this.id, result);
+        reportMeasurement(this.telemetryService, result);
     }
 }

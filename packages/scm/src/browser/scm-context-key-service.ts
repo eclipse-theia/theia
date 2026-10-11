@@ -63,6 +63,11 @@ export class ScmContextKeyService {
         return this._scmCurrentHistoryItemRefHasBase;
     }
 
+    protected _scmCurrentHistoryItemRefInFilter: ContextKey<boolean>;
+    get scmCurrentHistoryItemRefInFilter(): ContextKey<boolean> {
+        return this._scmCurrentHistoryItemRefInFilter;
+    }
+
     @postConstruct()
     protected init(): void {
         this._scmProvider = this.contextKeyService.createKey<string | undefined>('scmProvider', undefined);
@@ -73,6 +78,7 @@ export class ScmContextKeyService {
         this._scmHistoryItemRef = this.contextKeyService.createKey<string | undefined>('scmHistoryItemRef', undefined);
         this._scmCurrentHistoryItemRefHasRemote = this.contextKeyService.createKey<boolean>('scmCurrentHistoryItemRefHasRemote', false);
         this._scmCurrentHistoryItemRefHasBase = this.contextKeyService.createKey<boolean>('scmCurrentHistoryItemRefHasBase', false);
+        this._scmCurrentHistoryItemRefInFilter = this.contextKeyService.createKey<boolean>('scmCurrentHistoryItemRefInFilter', false);
     }
 
     match(expression: string | undefined): boolean {

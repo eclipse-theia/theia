@@ -14,10 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { CliPreferences } from '../common/cli-preferences';
+import { LaunchArguments } from '@theia/core/lib/common/launch-arguments';
+import { WindowLaunchArgs } from '@theia/core/lib/browser/window/window-launch-args';
+import { CliPreferences, CliPreferenceEntry } from '../common/cli-preferences';
 import { PreferenceService, PreferenceScope } from '@theia/core/lib/common/preferences';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class PreferenceFrontendContribution implements FrontendApplicationContribution {
@@ -27,23 +30,18 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(ILogger) @named('preferences:PreferenceFrontendContribution')
+    protected readonly logger: ILogger;
+
+    @inject(WindowLaunchArgs)
+    protected readonly launchArgs: WindowLaunchArgs;
+
     onStart(): void {
         this.applyCliPreferences();
     }
 
     protected async applyCliPreferences(): Promise<void> {
-        // Fetch both buckets in parallel; both are RPC hops to the same backend and
-        // can overlap with the preference service initialising its providers.
-        const [session, persistent] = await Promise.all([
-            this.CliPreferences.getSessionPreferences().catch(e => {
-                console.warn('Failed to fetch --session-preference values:', e);
-                return [] as [string, unknown][];
-            }),
-            this.CliPreferences.getPreferences().catch(e => {
-                console.warn('Failed to fetch --set-preference values:', e);
-                return [] as [string, unknown][];
-            })
-        ]);
+        const { session, persistent } = await this.resolveCliPreferences();
 
         // `preferenceService.set()` needs the target provider registered in the providers
         // map, which only happens once `initializeProviders()` has walked every scope and
@@ -59,11 +57,54 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
         if (session.length > 0) {
             // Log keys only. Values may carry overrides for security-sensitive prefs
             // (e.g. AI tool auto-approval) and should not leak into screenshots or support bundles.
-            console.info(`Applied ${session.length} --session-preference value(s):`,
+            this.logger.info(`Applied ${session.length} --session-preference value(s):`,
                 session.map(([k]) => k).join(', '));
         }
 
         await this.applyAll(persistent, PreferenceScope.User);
+    }
+
+    /**
+     * Resolves the CLI-provided preferences to apply to this window.
+     *
+     * The shared backend reflects the original cold-start launch (it cannot distinguish between
+     * windows), so it supplies the process-wide CLI preferences. A forwarded (second-instance)
+     * window additionally carries its own options, provided by the trusted main process, and layers
+     * them on top, overriding by key. Merging (rather than replacing) means a plain
+     * second-instance window keeps the process-wide values instead of dropping them, while an attach
+     * window still gets its own overrides.
+     */
+    protected async resolveCliPreferences(): Promise<{ session: [string, unknown][], persistent: [string, unknown][] }> {
+        // Fetch both buckets in parallel; both are RPC hops to the same backend and
+        // can overlap with the preference service initialising its providers.
+        const [session, persistent] = await Promise.all([
+            this.CliPreferences.getSessionPreferences().catch(e => {
+                this.logger.warn('Failed to fetch --session-preference values:', e);
+                return [] as [string, unknown][];
+            }),
+            this.CliPreferences.getPreferences().catch(e => {
+                this.logger.warn('Failed to fetch --set-preference values:', e);
+                return [] as [string, unknown][];
+            })
+        ]);
+        const forwarded = this.launchArgs.getLaunchArgs();
+        if (forwarded === undefined) {
+            return { session, persistent };
+        }
+        const warn = (message: string) => this.logger.warn(message);
+        return {
+            session: this.mergeEntries(session, CliPreferenceEntry.parseAll(LaunchArguments.values(forwarded, 'session-preference'), warn)),
+            persistent: this.mergeEntries(persistent, CliPreferenceEntry.parseAll(LaunchArguments.values(forwarded, 'set-preference'), warn))
+        };
+    }
+
+    /** Overlays `overrides` onto `base`, later entries winning per key while preserving order (base first). */
+    protected mergeEntries(base: ReadonlyArray<[string, unknown]>, overrides: ReadonlyArray<[string, unknown]>): [string, unknown][] {
+        const merged = new Map<string, unknown>();
+        for (const [key, value] of [...base, ...overrides]) {
+            merged.set(key, value);
+        }
+        return [...merged];
     }
 
     /**
@@ -76,7 +117,7 @@ export class PreferenceFrontendContribution implements FrontendApplicationContri
             try {
                 await this.preferenceService.set(key, value, scope);
             } catch (e) {
-                console.warn(`Failed to apply CLI preference "${key}" to ${PreferenceScope[scope]} scope:`, e);
+                this.logger.warn(`Failed to apply CLI preference "${key}" to ${PreferenceScope[scope]} scope:`, e);
             }
         }
     }

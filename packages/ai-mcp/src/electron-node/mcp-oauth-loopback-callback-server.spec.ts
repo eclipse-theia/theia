@@ -17,6 +17,8 @@
 import { expect } from 'chai';
 import * as http from 'http';
 import { AddressInfo } from 'net';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { MCPOAuthCallbackService } from '../node/mcp-oauth-callback-service';
 import { MCPOAuthCallbackResponder } from '../node/mcp-oauth-callback-responder';
 import {
@@ -48,6 +50,7 @@ function createServer(): { server: TestableMCPOAuthLoopbackCallbackServer, callb
     (responder as unknown as { callbackService: MCPOAuthCallbackService }).callbackService = callbackService;
     const server = new TestableMCPOAuthLoopbackCallbackServer();
     (server as unknown as { responder: MCPOAuthCallbackResponder }).responder = responder;
+    (server as unknown as { logger: ILogger }).logger = new MockLogger();
     // Bind an OS-assigned port to avoid clashing with the fixed default port in CI.
     server.portOverride = 0;
     return { server, callbackService };
@@ -134,24 +137,24 @@ describe('MCPOAuthLoopbackCallbackServer', () => {
         it('returns the fixed default port when the environment variable is unset', () => {
             delete process.env[MCP_OAUTH_CALLBACK_PORT_ENV];
 
-            expect(new TestableMCPOAuthLoopbackCallbackServer().configuredPort()).to.equal(MCP_OAUTH_DEFAULT_ELECTRON_CALLBACK_PORT);
+            const server = new TestableMCPOAuthLoopbackCallbackServer();
+            (server as unknown as { logger: ILogger }).logger = new MockLogger();
+            expect(server.configuredPort()).to.equal(MCP_OAUTH_DEFAULT_ELECTRON_CALLBACK_PORT);
         });
 
         it('honors a valid environment-variable override', () => {
             process.env[MCP_OAUTH_CALLBACK_PORT_ENV] = '40123';
 
-            expect(new TestableMCPOAuthLoopbackCallbackServer().configuredPort()).to.equal(40123);
+            const server = new TestableMCPOAuthLoopbackCallbackServer();
+            (server as unknown as { logger: ILogger }).logger = new MockLogger();
+            expect(server.configuredPort()).to.equal(40123);
         });
 
         it('falls back to the default for an invalid environment-variable value', () => {
             process.env[MCP_OAUTH_CALLBACK_PORT_ENV] = 'not-a-port';
-            const originalWarn = console.warn;
-            console.warn = () => { /* suppress fallback diagnostic */ };
-            try {
-                expect(new TestableMCPOAuthLoopbackCallbackServer().configuredPort()).to.equal(MCP_OAUTH_DEFAULT_ELECTRON_CALLBACK_PORT);
-            } finally {
-                console.warn = originalWarn;
-            }
+            const server = new TestableMCPOAuthLoopbackCallbackServer();
+            (server as unknown as { logger: ILogger }).logger = new MockLogger();
+            expect(server.configuredPort()).to.equal(MCP_OAUTH_DEFAULT_ELECTRON_CALLBACK_PORT);
         });
     });
 });

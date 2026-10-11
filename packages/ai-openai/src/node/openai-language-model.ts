@@ -22,30 +22,30 @@ import {
     LanguageModelResponse,
     LanguageModelTextResponse,
     UserRequest,
-    ImageContent,
     LanguageModelStatus,
     ReasoningSupport,
-    resolveServerSideCompaction
+    ServerToolDescriptor
 } from '@theia/ai-core';
-import { CancellationToken } from '@theia/core';
-import { injectable } from '@theia/core/shared/inversify';
+import { OpenAiModelUtils } from './openai-model-utils';
+import { CancellationToken, ILogger } from '@theia/core';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { OpenAI, AzureOpenAI } from 'openai';
-import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
-import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
-import { ChatCompletionAssistantMessageParam, ChatCompletionMessageParam } from 'openai/resources';
+import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources';
 import { StreamingAsyncIterator } from './openai-streaming-iterator';
+import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream';
 import { OPENAI_PROVIDER_ID } from '../common';
 import type { FinalRequestOptions } from 'openai/internal/request-options';
-import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
-import { OpenAiResponseApiUtils, processSystemMessages } from './openai-response-api-utils';
-import { openAiReasoningFor } from './openai-reasoning';
+import { OpenAiResponseApiUtils } from './openai-response-api-utils';
+import { applyResponseApiCompaction, getOpenAiRequestSettings } from './openai-request-settings';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 
 export class MistralFixedOpenAI extends OpenAI {
     protected override async prepareOptions(options: FinalRequestOptions): Promise<void> {
-        const messages = (options.body as { messages: Array<ChatCompletionMessageParam> }).messages;
+        // Every request the client issues passes through here, including the body-less `GET /models`
+        // that model discovery runs, so the body cannot be assumed to exist, let alone to carry messages.
+        const messages = (options.body as { messages?: Array<ChatCompletionMessageParam> } | undefined)?.messages;
         if (Array.isArray(messages)) {
-            (options.body as { messages: Array<ChatCompletionMessageParam> }).messages.forEach(m => {
+            messages.forEach(m => {
                 if (m.role === 'assistant' && m.tool_calls) {
                     // Mistral OpenAI Endpoint expects refusal to be undefined and not null for optional properties
                     // eslint-disable-next-line no-null/no-null
@@ -68,59 +68,143 @@ export const OpenAiModelIdentifier = Symbol('OpenAiModelIdentifier');
 
 export type DeveloperMessageSettings = 'user' | 'system' | 'developer' | 'mergeWithFollowingUserMessage' | 'skip';
 
+/** Options for {@link createOpenAiClient}. */
+export interface OpenAiClientOptions {
+    /** The key to authenticate with. A custom endpoint may need none. */
+    readonly apiKey: string | undefined;
+    /** Base URL of a custom endpoint; the SDK's own default is used without one. */
+    readonly baseURL?: string;
+    /** Azure API version. Its presence is what selects the Azure client over the plain one. */
+    readonly apiVersion?: string;
+    readonly deployment?: string;
+    readonly proxyUrl?: string;
+    /** Additional HTTP headers sent with every request, e.g. headers required by a gateway in front of the API. */
+    readonly headers?: Record<string, string>;
+}
+
+/**
+ * The single place an OpenAI SDK client is built, so that a chat request and the model discovery
+ * reach the provider the same way: through the configured proxy, with a key the SDK accepts, and
+ * with the Azure client where an API version says so.
+ */
+export function createOpenAiClient(options: OpenAiClientOptions): OpenAI {
+    // The SDK refuses to be constructed without a key, so an endpoint that needs none still gets one.
+    const apiKey = options.apiKey ?? 'no-key';
+    const proxyFetch = createProxyFetch(options.proxyUrl);
+    return options.apiVersion
+        ? new AzureOpenAI({
+            apiKey, baseURL: options.baseURL, apiVersion: options.apiVersion, deployment: options.deployment, fetch: proxyFetch, defaultHeaders: options.headers
+        })
+        : new MistralFixedOpenAI({ apiKey, baseURL: options.baseURL, fetch: proxyFetch, defaultHeaders: options.headers });
+}
+
+export interface OpenAiModelParams {
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    apiKey: () => string | undefined;
+    apiVersion: () => string | undefined;
+    supportsStructuredOutput: boolean;
+    url: string | undefined;
+    deployment: string | undefined;
+    developerMessageSettings?: DeveloperMessageSettings;
+    maxRetries?: number;
+    useResponseApi?: boolean;
+    proxy?: string;
+    reasoningSupport?: ReasoningSupport;
+    maxInputTokens?: number;
+    serverTools?: ServerToolDescriptor[];
+    serverSideCompactionSupport?: boolean;
+    serverSideCompactionEnabledByDefault?: boolean;
+    serverSideCompactionTokenThresholdByDefault?: number;
+    headers?: Record<string, string>;
+    released?: number;
+}
+
+export const OpenAiModelParams = Symbol('OpenAiModelParams');
+
+export const OpenAiLanguageModelFactory = Symbol('OpenAiLanguageModelFactory');
+export type OpenAiLanguageModelFactory = (params: OpenAiModelParams) => OpenAiModel;
+
+@injectable()
 export class OpenAiModel implements LanguageModel {
 
-    /**
-     * The options for the OpenAI runner.
-     */
-    protected runnerOptions: RunnerOptions = {
-        // The maximum number of chat completions to return in a single request.
-        // Each function call counts as a chat completion.
-        // To support use cases with many function calls (e.g. @Coder), we set this to a high value.
-        maxChatCompletions: 100,
-    };
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    apiKey: () => string | undefined;
+    apiVersion: () => string | undefined;
+    supportsStructuredOutput: boolean;
+    url: string | undefined;
+    deployment: string | undefined;
+    developerMessageSettings: DeveloperMessageSettings;
+    maxRetries: number;
+    useResponseApi: boolean;
+    proxy?: string;
+    reasoningSupport?: ReasoningSupport;
+    maxInputTokens?: number;
+    serverTools?: ServerToolDescriptor[];
+    serverSideCompactionSupport: boolean;
+    serverSideCompactionEnabledByDefault: boolean;
+    serverSideCompactionTokenThresholdByDefault?: number;
+    headers?: Record<string, string>;
+    released?: number;
+
+    /** Provider identifier, used to key per-provider settings (e.g. server tool selections) and the capabilities UI. */
+    readonly vendor = 'openai';
+
+    @inject(OpenAiModelParams)
+    protected readonly params: OpenAiModelParams;
+
+    @inject(OpenAiModelUtils)
+    protected readonly openAiModelUtils: OpenAiModelUtils;
+
+    @inject(OpenAiResponseApiUtils)
+    protected readonly responseApiUtils: OpenAiResponseApiUtils;
+
+    @inject(ChatCompletionStreamingAsyncIteratorFactory)
+    protected readonly chatCompletionStreamFactory: ChatCompletionStreamingAsyncIteratorFactory;
+
+    @inject(ILogger) @named('ai-openai:OpenAiModel')
+    protected readonly logger: ILogger;
+
+    @postConstruct()
+    protected init(): void {
+        const params = this.params;
+        this.id = params.id;
+        this.model = params.model;
+        this.status = params.status;
+        this.enableStreaming = params.enableStreaming;
+        this.apiKey = params.apiKey;
+        this.apiVersion = params.apiVersion;
+        this.supportsStructuredOutput = params.supportsStructuredOutput;
+        this.url = params.url;
+        this.deployment = params.deployment;
+        this.developerMessageSettings = params.developerMessageSettings ?? 'developer';
+        this.maxRetries = params.maxRetries ?? 3;
+        this.useResponseApi = params.useResponseApi ?? false;
+        this.proxy = params.proxy;
+        this.reasoningSupport = params.reasoningSupport;
+        this.maxInputTokens = params.maxInputTokens;
+        this.serverTools = params.serverTools;
+        this.serverSideCompactionSupport = params.serverSideCompactionSupport ?? false;
+        this.serverSideCompactionEnabledByDefault = params.serverSideCompactionEnabledByDefault ?? false;
+        this.serverSideCompactionTokenThresholdByDefault = params.serverSideCompactionTokenThresholdByDefault;
+        this.headers = params.headers;
+        this.released = params.released;
+    }
 
     /**
-     * @param id the unique id for this language model. It will be used to identify the model in the UI.
-     * @param model the model id as it is used by the OpenAI API
-     * @param enableStreaming whether the streaming API shall be used
-     * @param apiKey a function that returns the API key to use for this model, called on each request
-     * @param apiVersion a function that returns the OpenAPI version to use for this model, called on each request
-     * @param developerMessageSettings how to handle system messages
-     * @param url the OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
-     * @param maxRetries the maximum number of retry attempts when a request fails
-     * @param useResponseApi whether to use the newer OpenAI Response API instead of the Chat Completion API
-     * @param serverSideCompactionSupport whether this model supports server-side compaction (only available via the Response API)
-     * @param serverSideCompactionEnabledByDefault resolved default enablement of server-side compaction (global preference folded with the per-provider override)
+     * Reasoning settings are resolved by {@link getOpenAiRequestSettings}. On the Responses API, user-configured `reasoning`
+     * fields from the request settings (e.g. `summary`) are kept; the selected level still decides `effort`.
      */
-    constructor(
-        public readonly id: string,
-        public model: string,
-        public status: LanguageModelStatus,
-        public enableStreaming: boolean,
-        public apiKey: () => string | undefined,
-        public apiVersion: () => string | undefined,
-        public supportsStructuredOutput: boolean,
-        public url: string | undefined,
-        public deployment: string | undefined,
-        public openAiModelUtils: OpenAiModelUtils,
-        public responseApiUtils: OpenAiResponseApiUtils,
-        public developerMessageSettings: DeveloperMessageSettings = 'developer',
-        public maxRetries: number = 3,
-        public useResponseApi: boolean = false,
-        public proxy?: string,
-        public reasoningSupport?: ReasoningSupport,
-        public maxInputTokens?: number,
-        public serverSideCompactionSupport: boolean = false,
-        public serverSideCompactionEnabledByDefault: boolean = false
-    ) { }
-
-    /** Reasoning-level translation lives in {@link openAiReasoningFor}. */
     protected getSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
-        return {
-            ...request.settings,
-            ...openAiReasoningFor(request.reasoning?.level, forResponseApi, !!this.reasoningSupport)
-        };
+        const level = request.reasoning && this.reasoningSupport
+            ? ReasoningSupport.clampLevel(this.reasoningSupport, request.reasoning.level)
+            : undefined;
+        return getOpenAiRequestSettings({ ...request, reasoning: level !== undefined ? { level } : undefined }, forResponseApi, !!this.reasoningSupport);
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -149,29 +233,29 @@ export class OpenAiModel implements LanguageModel {
         if (cancellationToken?.isCancellationRequested) {
             return { text: '' };
         }
-        let runner: ChatCompletionStream;
         const tools = this.createTools(request);
 
         if (tools) {
-            runner = openai.chat.completions.runTools({
-                model: this.model,
-                messages: this.processMessages(request.messages),
-                stream: true,
-                tools: tools,
-                tool_choice: 'auto',
-                ...settings
-            }, {
-                ...this.runnerOptions, maxRetries: this.maxRetries
-            });
-        } else {
-            runner = openai.chat.completions.stream({
-                model: this.model,
-                messages: this.processMessages(request.messages),
-                stream: true,
-                ...settings
-            });
+            return {
+                stream: this.chatCompletionStreamFactory({
+                    openai,
+                    model: this.model,
+                    request,
+                    messages: this.processMessages(request.messages),
+                    settings,
+                    tools,
+                    maxRetries: this.maxRetries,
+                    cancellationToken
+                })
+            };
         }
 
+        const runner = openai.chat.completions.stream({
+            model: this.model,
+            messages: this.processMessages(request.messages),
+            stream: true,
+            ...settings
+        });
         return { stream: new StreamingAsyncIterator(runner, cancellationToken) };
     }
 
@@ -209,7 +293,7 @@ export class OpenAiModel implements LanguageModel {
         });
         const message = result.choices[0].message;
         if (message.refusal || message.parsed === undefined) {
-            console.error('Error in OpenAI chat completion stream:', JSON.stringify(message));
+            this.logger.error('Error in OpenAI chat completion stream:', JSON.stringify(message));
         }
 
         return {
@@ -222,16 +306,15 @@ export class OpenAiModel implements LanguageModel {
         };
     }
 
-    protected createTools(request: LanguageModelRequest): RunnableToolFunctionWithoutParse[] | undefined {
+    protected createTools(request: LanguageModelRequest): ChatCompletionTool[] | undefined {
         return request.tools?.map(tool => ({
             type: 'function',
             function: {
                 name: tool.name,
                 description: tool.description,
-                parameters: tool.parameters,
-                function: (args_string: string) => tool.handler(args_string)
+                parameters: tool.parameters
             }
-        } as RunnableToolFunctionWithoutParse));
+        } as unknown as ChatCompletionTool));
     }
 
     protected initializeOpenAi(): OpenAI {
@@ -240,17 +323,14 @@ export class OpenAiModel implements LanguageModel {
             throw new Error('Please provide OPENAI_API_KEY in preferences or via environment variable');
         }
 
-        const apiVersion = this.apiVersion();
-        // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
-        const key = apiKey ?? 'no-key';
-
-        const proxyFetch = createProxyFetch(this.proxy);
-
-        if (apiVersion) {
-            return new AzureOpenAI({ apiKey: key, baseURL: this.url, apiVersion: apiVersion, deployment: this.deployment, fetch: proxyFetch });
-        } else {
-            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url, fetch: proxyFetch });
-        }
+        return createOpenAiClient({
+            apiKey,
+            baseURL: this.url,
+            apiVersion: this.apiVersion(),
+            deployment: this.deployment,
+            proxyUrl: this.proxy,
+            headers: this.headers
+        });
     }
 
     /**
@@ -258,10 +338,7 @@ export class OpenAiModel implements LanguageModel {
      * given request. When disabled, the settings are returned unchanged so the default path is byte-for-byte identical.
      */
     protected applyResponseApiCompaction(settings: Record<string, unknown>, request: LanguageModelRequest): Record<string, unknown> {
-        if (resolveServerSideCompaction(this.serverSideCompactionSupport, this.serverSideCompactionEnabledByDefault, request.compaction)) {
-            return { ...settings, context_management: [{ type: 'compaction' }] };
-        }
-        return settings;
+        return applyResponseApiCompaction(settings, request, this);
     }
 
     protected async handleResponseApiRequest(openai: OpenAI, request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -276,15 +353,14 @@ export class OpenAiModel implements LanguageModel {
                 this.model,
                 this.openAiModelUtils,
                 this.developerMessageSettings,
-                this.runnerOptions,
                 this.id,
                 isStreamingRequest,
                 cancellationToken
             );
         } catch (error) {
-            // If Response API fails, fall back to Chat Completions API
-            if (error instanceof Error) {
-                console.warn(`Response API failed for model ${this.id}, falling back to Chat Completions API:`, error.message);
+            // Chat Completions cannot execute Response API server tools.
+            if (error instanceof Error && !request.serverTools?.length) {
+                this.logger.warn(`Response API failed for model ${this.id}, falling back to Chat Completions API:`, error.message);
                 return this.handleChatCompletionsRequest(openai, request, cancellationToken);
             }
             throw error;
@@ -294,133 +370,4 @@ export class OpenAiModel implements LanguageModel {
     protected processMessages(messages: LanguageModelMessage[]): ChatCompletionMessageParam[] {
         return this.openAiModelUtils.processMessages(messages, this.developerMessageSettings, this.model);
     }
-}
-
-/**
- * Utility class for processing messages for the OpenAI language model.
- *
- * Adopters can rebind this class to implement custom message processing behavior.
- */
-@injectable()
-export class OpenAiModelUtils {
-
-    protected processSystemMessages(
-        messages: LanguageModelMessage[],
-        developerMessageSettings: DeveloperMessageSettings
-    ): LanguageModelMessage[] {
-        return processSystemMessages(messages, developerMessageSettings);
-    }
-
-    protected toOpenAiRole(
-        message: LanguageModelMessage,
-        developerMessageSettings: DeveloperMessageSettings
-    ): 'developer' | 'user' | 'assistant' | 'system' {
-        if (message.actor === 'system') {
-            if (developerMessageSettings === 'user' || developerMessageSettings === 'system' || developerMessageSettings === 'developer') {
-                return developerMessageSettings;
-            } else {
-                return 'developer';
-            }
-        } else if (message.actor === 'ai') {
-            return 'assistant';
-        }
-        return 'user';
-    }
-
-    protected toOpenAIMessage(
-        message: LanguageModelMessage,
-        developerMessageSettings: DeveloperMessageSettings
-    ): ChatCompletionMessageParam {
-        if (LanguageModelMessage.isTextMessage(message)) {
-            return {
-                role: this.toOpenAiRole(message, developerMessageSettings),
-                content: message.text
-            };
-        }
-        if (LanguageModelMessage.isToolUseMessage(message)) {
-            return {
-                role: 'assistant',
-                tool_calls: [{ id: message.id, function: { name: message.name, arguments: JSON.stringify(message.input) }, type: 'function' }]
-            };
-        }
-        if (LanguageModelMessage.isToolResultMessage(message)) {
-            return {
-                role: 'tool',
-                tool_call_id: message.tool_use_id,
-                // content only supports text content so we need to stringify any potential data we have, e.g., images
-                content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
-            };
-        }
-        if (LanguageModelMessage.isImageMessage(message) && message.actor === 'user') {
-            return {
-                role: 'user',
-                content: [{
-                    type: 'image_url',
-                    image_url: {
-                        url:
-                            ImageContent.isBase64(message.image) ?
-                                `data:${message.image.mimeType};base64,${message.image.base64data}` :
-                                message.image.url
-                    }
-                }]
-            };
-        }
-        throw new Error(`Unknown message type:'${JSON.stringify(message)}'`);
-    }
-
-    /**
-     * Processes the provided list of messages by applying system message adjustments and converting
-     * them to the format expected by the OpenAI API.
-     *
-     * Adopters can rebind this processing to implement custom behavior.
-     *
-     * @param messages the list of messages to process.
-     * @param developerMessageSettings how system and developer messages are handled during processing.
-     * @param model the OpenAI model identifier. Currently not used, but allows subclasses to implement model-specific behavior.
-     * @returns an array of messages formatted for the OpenAI API.
-     */
-    processMessages(
-        messages: LanguageModelMessage[],
-        developerMessageSettings: DeveloperMessageSettings,
-        model?: string
-    ): ChatCompletionMessageParam[] {
-        const processed = this.processSystemMessages(messages, developerMessageSettings);
-        // 'server_tool_use' and 'compaction' replay markers can appear when switching providers within a session;
-        // OpenAI Chat Completions has no equivalent, so they are dropped (like 'thinking' messages).
-        const converted = processed
-            .filter(m => m.type !== 'thinking' && m.type !== 'server_tool_use' && m.type !== 'compaction')
-            .map(m => this.toOpenAIMessage(m, developerMessageSettings));
-        return this.mergeConsecutiveAssistantMessages(converted);
-    }
-
-    protected mergeConsecutiveAssistantMessages(messages: ChatCompletionMessageParam[]): ChatCompletionMessageParam[] {
-        const result: ChatCompletionMessageParam[] = [];
-        for (const message of messages) {
-            const previous = result[result.length - 1];
-            if (previous?.role === 'assistant' && message.role === 'assistant') {
-                const merged: ChatCompletionAssistantMessageParam = { ...previous, role: 'assistant' };
-
-                const previousContent = typeof previous.content === 'string' ? previous.content : undefined;
-                const nextContent = typeof message.content === 'string' ? message.content : undefined;
-                if (previousContent !== undefined && nextContent !== undefined) {
-                    merged.content = `${previousContent}\n${nextContent}`;
-                } else if (nextContent !== undefined) {
-                    merged.content = nextContent;
-                } else if (previousContent !== undefined) {
-                    merged.content = previousContent;
-                }
-
-                const toolCalls = [...(previous.tool_calls ?? []), ...(message.tool_calls ?? [])];
-                if (toolCalls.length > 0) {
-                    merged.tool_calls = toolCalls;
-                }
-
-                result[result.length - 1] = merged;
-            } else {
-                result.push(message);
-            }
-        }
-        return result;
-    }
-
 }

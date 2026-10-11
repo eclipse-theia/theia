@@ -25,6 +25,8 @@ import * as jsoncparser from 'jsonc-parser';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { IconThemeService, IconTheme, IconThemeDefinition } from '@theia/core/lib/browser/icon-theme-service';
 import { IconThemeContribution, DeployedPlugin, UiTheme, getPluginId } from '../../common/plugin-protocol';
+import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
+import { encodePluginAssetPath } from '@theia/plugin-utils/lib/common/plugin-model';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter } from '@theia/core/lib/common/event';
@@ -363,7 +365,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         const iconUri = this.locationUri.resolve(iconPath);
         const relativePath = this.packageRootUri.path.relative(iconUri.path.normalize());
         return relativePath && `url('${new Endpoint({
-            path: `hostedPlugin/${this.pluginId}/${encodeURIComponent(relativePath.normalize().toString())}`
+            path: `${PLUGINS_BASE_PATH}/${this.pluginId}/${encodePluginAssetPath(relativePath.normalize().toString())}`
         }).getRestUrl().toString()}')`;
     }
 

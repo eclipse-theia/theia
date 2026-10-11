@@ -15,14 +15,19 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { LanguageModelRequest, ReasoningApi, ReasoningSupport } from '@theia/ai-core';
-import { GoogleModel } from './google-language-model';
+import { Container, injectable } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { LanguageModelRequest, LanguageModelTextResponse, ReasoningApi, ReasoningSupport, ToolCallExecutor, ToolCallExecutorImpl } from '@theia/ai-core';
+import type { GoogleGenAI } from '@google/genai';
+import { GoogleModel, GoogleModelParams } from './google-language-model';
 
 const GEMINI_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
     defaultLevel: 'auto'
 };
 
+@injectable()
 class TestableGoogleModel extends GoogleModel {
     public callGetSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return this.getSettings(request);
@@ -30,13 +35,24 @@ class TestableGoogleModel extends GoogleModel {
 }
 
 function createModel(modelId: string, reasoningApi?: ReasoningApi): TestableGoogleModel {
-    return new TestableGoogleModel(
-        'test-id', modelId, { status: 'ready' }, true,
-        () => 'test-key',
-        () => ({ maxRetriesOnErrors: 0, retryDelayOnRateLimitError: -1, retryDelayOnOtherErrors: -1 }),
-        reasoningApi ? GEMINI_REASONING_SUPPORT : undefined,
+    const parent = new Container();
+    parent.bind(ToolCallExecutor).to(ToolCallExecutorImpl);
+    parent.bind(ILogger).to(MockLogger);
+    parent.bind(TestableGoogleModel).toSelf().inTransientScope();
+
+    const child = new Container();
+    child.parent = parent;
+    child.bind(GoogleModelParams).toConstantValue({
+        id: 'test-id',
+        model: modelId,
+        status: { status: 'ready' },
+        enableStreaming: true,
+        apiKey: () => 'test-key',
+        retrySettings: () => ({ maxRetriesOnErrors: 0, retryDelayOnRateLimitError: -1, retryDelayOnOtherErrors: -1 }),
+        reasoningSupport: reasoningApi ? GEMINI_REASONING_SUPPORT : undefined,
         reasoningApi
-    );
+    });
+    return child.get(TestableGoogleModel);
 }
 
 describe('GoogleModel reasoning translation', () => {
@@ -90,5 +106,48 @@ describe('GoogleModel reasoning translation', () => {
         it('exposes the google vendor (used to key server tool selections and the capabilities UI)', () => {
             expect(createModel('gemini-3-pro').vendor).to.equal('google');
         });
+    });
+});
+
+describe('GoogleModel non-streaming requests', () => {
+    /** Model whose generateContent() resolves to the given response instead of calling the API. */
+    function createNonStreamingModel(generateContentResponse: object): GoogleModel {
+        @injectable()
+        class NonStreamingGoogleModel extends GoogleModel {
+            protected override initializeGemini(): GoogleGenAI {
+                return { models: { generateContent: async () => generateContentResponse } } as unknown as GoogleGenAI;
+            }
+        }
+        const parent = new Container();
+        parent.bind(ToolCallExecutor).to(ToolCallExecutorImpl);
+        parent.bind(ILogger).to(MockLogger);
+        parent.bind(NonStreamingGoogleModel).toSelf().inTransientScope();
+
+        const child = new Container();
+        child.parent = parent;
+        child.bind(GoogleModelParams).toConstantValue({
+            id: 'test-id',
+            model: 'gemini-3-pro',
+            status: { status: 'ready' },
+            enableStreaming: false,
+            apiKey: () => 'test-key',
+            retrySettings: () => ({ maxRetriesOnErrors: 0, retryDelayOnRateLimitError: -1, retryDelayOnOtherErrors: -1 }),
+            reasoningSupport: GEMINI_REASONING_SUPPORT,
+            reasoningApi: 'effort'
+        });
+        return child.get(NonStreamingGoogleModel);
+    }
+
+    it('excludes thought parts from the response text', async () => {
+        const model = createNonStreamingModel({
+            candidates: [{ content: { role: 'model', parts: [{ text: 'Weighing the options.', thought: true }, { text: 'Answer' }] } }],
+            usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 }
+        });
+        const response = await model.request({
+            messages: [{ actor: 'user', type: 'text', text: 'hello' }],
+            reasoning: { level: 'medium' },
+            agentId: 'test', sessionId: 'session', requestId: 'req'
+        });
+        expect((response as LanguageModelTextResponse).text).to.equal('Answer');
     });
 });

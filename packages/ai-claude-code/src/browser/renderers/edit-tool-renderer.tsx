@@ -19,14 +19,14 @@ import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { URI } from '@theia/core/lib/common/uri';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
 import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
-import { nls } from '@theia/core';
+import { nls, ILogger } from '@theia/core';
 
 interface EditToolInput {
     file_path: string;
@@ -47,6 +47,9 @@ export class EditToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
 
+    @inject(ILogger) @named('ai-claude-code:EditToolRenderer')
+    protected readonly logger: ILogger;
+
     canHandle(response: ChatResponseContent): number {
         if (ClaudeCodeToolCallChatResponseContent.is(response) && response.name === 'Edit') {
             return 15; // Higher than default ToolCallPartRenderer (10)
@@ -62,9 +65,10 @@ export class EditToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
                 workspaceService={this.workspaceService}
                 labelProvider={this.labelProvider}
                 editorManager={this.editorManager}
+                logger={this.logger}
             />;
         } catch (error) {
-            console.warn('Failed to parse Edit tool input:', error);
+            this.logger.warn('Failed to parse Edit tool input:', error);
             return <div className="claude-code-tool error">{nls.localize('theia/ai/claude-code/failedToParseEditToolData', 'Failed to parse Edit tool data')}</div>;
         }
     }
@@ -75,7 +79,8 @@ const EditToolComponent: React.FC<{
     workspaceService: WorkspaceService;
     labelProvider: LabelProvider;
     editorManager: EditorManager;
-}> = ({ input, workspaceService, labelProvider, editorManager }) => {
+    logger: ILogger;
+}> = ({ input, workspaceService, labelProvider, editorManager, logger }) => {
     const getFileName = (filePath: string): string => filePath.split('/').pop() || filePath;
     const getWorkspaceRelativePath = async (filePath: string): Promise<string> => {
         try {
@@ -101,7 +106,7 @@ const EditToolComponent: React.FC<{
             const uri = new URI(input.file_path);
             await editorManager.open(uri);
         } catch (error) {
-            console.error('Failed to open file:', error);
+            logger.error('Failed to open file:', error);
         }
     };
 
@@ -148,7 +153,7 @@ const EditToolComponent: React.FC<{
                 <code className="claude-code-tool detail-value">{input.file_path}</code>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/from', 'From')}</span>
+                <span className="claude-code-tool detail-label">{nls.localizeByDefault('From')}</span>
                 <pre className="claude-code-tool detail-value code-preview">
                     {input.old_string.length > 200
                         ? input.old_string.substring(0, 200) + '...'
@@ -156,7 +161,7 @@ const EditToolComponent: React.FC<{
                 </pre>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/to', 'To')}</span>
+                <span className="claude-code-tool detail-label">{nls.localizeByDefault('To')}</span>
                 <pre className="claude-code-tool detail-value code-preview">
                     {input.new_string.length > 200
                         ? input.new_string.substring(0, 200) + '...'

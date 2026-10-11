@@ -20,7 +20,7 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 export type MessageActor = 'user' | 'ai' | 'system';
 
 /** Provider-agnostic reasoning level; each provider maps this to its native API. */
-export type ReasoningLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'auto';
+export type ReasoningLevel = 'off' | 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'auto';
 
 export interface ReasoningSettings {
     level: ReasoningLevel;
@@ -40,6 +40,42 @@ export type ReasoningApi = 'effort' | 'budget';
 export interface ReasoningSupport {
     readonly supportedLevels: ReadonlyArray<ReasoningLevel>;
     readonly defaultLevel?: ReasoningLevel;
+}
+export namespace ReasoningSupport {
+    /** Levels ordered by increasing effort; `'auto'` sits outside the scale. */
+    const EFFORT_SCALE: ReadonlyArray<ReasoningLevel> = ['off', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'];
+
+    /**
+     * Returns `level` when `support` lists it, otherwise the nearest supported level on the effort scale,
+     * preferring the higher neighbour (an unsupported `minimal` becomes `low`, not `off`), except that
+     * unsupported `'none'` prefers `'off'` to avoid enabling reasoning. An unsupported
+     * `'auto'` resolves to `defaultLevel`, then to the first supported level. Returns `level` unchanged
+     * when nothing suitable is supported.
+     */
+    export function clampLevel(support: ReasoningSupport, level: ReasoningLevel): ReasoningLevel {
+        const supported = support.supportedLevels;
+        if (supported.includes(level)) {
+            return level;
+        }
+        if (level === 'none' && supported.includes('off')) {
+            return 'off';
+        }
+        if (level === 'auto') {
+            return support.defaultLevel && supported.includes(support.defaultLevel) ? support.defaultLevel : supported[0] ?? level;
+        }
+        const index = EFFORT_SCALE.indexOf(level);
+        for (let distance = 1; distance < EFFORT_SCALE.length; distance++) {
+            const higher = EFFORT_SCALE[index + distance];
+            if (higher && supported.includes(higher)) {
+                return higher;
+            }
+            const lower = EFFORT_SCALE[index - distance];
+            if (lower && supported.includes(lower)) {
+                return lower;
+            }
+        }
+        return supported.includes('auto') ? 'auto' : level;
+    }
 }
 
 export type LanguageModelMessage =
@@ -335,6 +371,26 @@ export namespace ToolRequest {
             (!('required' in obj) || (Array.isArray(obj.required) && obj.required.every(prop => typeof prop === 'string')));
     }
 }
+
+/**
+ * Resolves the `headers` attribute of a custom model preference entry. Since preferences are
+ * user-authored JSON, entries with a non-string value are dropped. Returns `undefined` when no
+ * usable header remains, so that the default request headers are left untouched. The keys are
+ * sorted, so equal header maps stringify identically regardless of their order in the preference.
+ */
+export function resolveCustomModelHeaders(headers: unknown): Record<string, string> | undefined {
+    if (typeof headers !== 'object' || !headers || Array.isArray(headers)) {
+        return undefined;
+    }
+    const resolved = Object.entries(headers)
+        .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    return resolved.length > 0 ? Object.fromEntries(resolved) : undefined;
+}
+
+// Anthropic requires at least 50,000 tokens, so use one conservative minimum for all compaction settings.
+export const SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM = 50_000;
+
 /**
  * Per-session/per-request server-side compaction settings, carried verbatim from the chat
  * session's common settings to the request. Kept as an object so further parameters can be
@@ -343,6 +399,8 @@ export namespace ToolRequest {
 export interface CompactionSettings {
     /** Explicit enablement for this session; when set it wins over the model's default. `undefined` means "no explicit choice". */
     enabled?: boolean;
+    /** Input-token threshold for this session; when set it wins over the model's default. `undefined` preserves the provider default. */
+    tokenThreshold?: number;
 }
 
 /** Per-provider override for server-side compaction; combined with the global preference by {@link resolveCompactionDefault}. */
@@ -362,6 +420,20 @@ export function resolveCompactionDefault(globalEnabled: boolean, perProviderOver
         return false;
     }
     return globalEnabled;
+}
+
+export function resolveCompactionTokenThresholdDefault(
+    globalThreshold: number | undefined,
+    perProviderThreshold: number | undefined
+): number | undefined {
+    return perProviderThreshold ?? globalThreshold;
+}
+
+export function resolveCompactionTokenThreshold(
+    thresholdByDefault: number | undefined,
+    compaction: CompactionSettings | undefined
+): number | undefined {
+    return compaction?.tokenThreshold ?? thresholdByDefault;
 }
 
 /**
@@ -531,12 +603,20 @@ export const isCompactionResponsePart = (part: unknown): part is CompactionRespo
 export interface ToolCallTextResult { type: 'text', text: string; };
 export interface ToolCallImageResult extends Base64ImageContent { type: 'image' };
 export interface ToolCallAudioResult { type: 'audio', data: string; mimeType: string };
+export interface ToolCallHtmlAppResult { type: 'html'; html: string; title?: string };
 export type ToolCallErrorKind = 'tool-not-available';
 export interface ToolCallErrorResult { type: 'error', data: string; errorKind?: ToolCallErrorKind; };
-export type ToolCallContentResult = ToolCallTextResult | ToolCallImageResult | ToolCallAudioResult | ToolCallErrorResult;
+export type ToolCallContentResult = ToolCallTextResult | ToolCallImageResult | ToolCallAudioResult | ToolCallHtmlAppResult | ToolCallErrorResult;
 export interface ToolCallContent {
     content: ToolCallContentResult[];
 }
+
+export const isToolCallHtmlAppResult = (item: unknown): item is ToolCallHtmlAppResult =>
+    !!(item &&
+        typeof item === 'object' &&
+        'type' in item && (item as ToolCallHtmlAppResult).type === 'html' &&
+        'html' in item &&
+        typeof (item as ToolCallHtmlAppResult).html === 'string');
 
 export const isToolCallContent = (result: unknown): result is ToolCallContent =>
     !!(result && typeof result === 'object' && 'content' in result && Array.isArray((result as ToolCallContent).content));
@@ -556,6 +636,26 @@ export const hasToolNotAvailableError = (result: ToolCallResult): boolean =>
 export const createToolCallError = (message: string, errorKind?: ToolCallErrorKind): ToolCallContent => ({
     content: [errorKind ? { type: 'error', data: message, errorKind } : { type: 'error', data: message }]
 });
+
+/**
+ * Serializes a {@link ToolCallResult} to a string suitable for sending back to the model.
+ *
+ * HTML app results are replaced with a compact placeholder so that large bundled HTML
+ * (e.g. Plotly charts) does not blow the model's context window. The full HTML is still
+ * available in the structured result for rendering in the UI (e.g. via McpAppFrame).
+ */
+export function formatToolCallContentForModel(result: ToolCallResult): string {
+    if (isToolCallContent(result)) {
+        return result.content.map(c => {
+            if (c.type === 'text') { return c.text; }
+            if (c.type === 'html') { return `[interactive app displayed to the user${c.title ? ': ' + c.title : ''}]`; }
+            if (c.type === 'error') { return c.data; }
+            return JSON.stringify(c);
+        }).join('\n');
+    }
+    if (typeof result === 'string') { return result; }
+    return JSON.stringify(result);
+}
 
 export type ToolCallResult = undefined | object | string | ToolCallContent;
 export interface ToolCall {
@@ -619,6 +719,11 @@ export interface LanguageModelMetaData {
     readonly family?: string;
     readonly maxInputTokens?: number;
     readonly maxOutputTokens?: number;
+    /**
+     * Release date (ms since epoch) as reported by the provider, where it reports one. Lets the model
+     * lists offer the newest models first instead of ordering them by name.
+     */
+    readonly released?: number;
     readonly status: LanguageModelStatus;
     readonly reasoningSupport?: ReasoningSupport;
     /**
@@ -700,8 +805,10 @@ export interface FrontendLanguageModelRegistry extends LanguageModelRegistry {
 
 @injectable()
 export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
-    @inject(ILogger)
-    protected logger: ILogger;
+
+    @inject(ILogger) @named('ai-core:DefaultLanguageModelRegistryImpl')
+    protected readonly logger: ILogger;
+
     @inject(ContributionProvider) @named(LanguageModelProvider)
     protected readonly languageModelContributions: ContributionProvider<LanguageModelProvider>;
 
@@ -732,7 +839,7 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
     addLanguageModels(models: LanguageModel[]): void {
         models.forEach(model => {
             if (this.languageModels.find(lm => lm.id === model.id)) {
-                console.warn(`Tried to add already existing language model with id ${model.id}. The new model will be ignored.`);
+                this.logger.warn(`Tried to add already existing language model with id ${model.id}. The new model will be ignored.`);
                 return;
             }
             this.languageModels.push(model);
@@ -742,7 +849,9 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
 
     async getLanguageModels(): Promise<LanguageModel[]> {
         await this.initialized;
-        return this.languageModels;
+        // Return a fresh array (not the internal, mutated-in-place list) so consumers relying on
+        // reference equality - e.g. React memoization in the chat model selector - detect changes.
+        return [...this.languageModels];
     }
 
     async getLanguageModel(id: string): Promise<LanguageModel | undefined> {
@@ -757,7 +866,7 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
                 this.languageModels.splice(index, 1);
                 this.changeEmitter.fire({ models: this.languageModels });
             } else {
-                console.warn(`Language model with id ${id} was requested to be removed, however it does not exist`);
+                this.logger.warn(`Language model with id ${id} was requested to be removed, however it does not exist`);
             }
         });
     }

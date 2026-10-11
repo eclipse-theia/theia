@@ -23,7 +23,7 @@ import { Disposable, ILogger, PreferenceService } from '@theia/core';
 import { Headers, RequestContext, RequestService } from '@theia/core/shared/@theia/request';
 import { SkillInstallBackendService, SkillInstallClient } from '../common/skill/skill-install-protocol';
 import { InstalledSkillInfo, ResolvedSkillEntry } from '../common/skill/skill-registry-types';
-import { computeSkillContentHash, SkillFileContent } from '../common/skill/skill-content-hash';
+import { computeContentHash, FileContent } from '../common/content-hash';
 import { GITHUB_TOKEN_PREF } from '../common/skill/skill-registry-preferences';
 
 /** File name of the per-skill registry metadata. Dot-prefixed so it is excluded from the content hash. */
@@ -41,7 +41,7 @@ interface SkillRegistryMetadata {
     /**
      * Registry content hash recorded at install/link time. It is the baseline for both
      * update detection (registry's current hash differs) and drift detection (the on-disk
-     * content hash differs), which works because {@link computeSkillContentHash} reproduces
+     * content hash differs), which works because {@link computeContentHash} reproduces
      * the registry's hash byte-for-byte.
      */
     contentHash: string;
@@ -82,6 +82,11 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
 
     /** Caches each skill folder's content hash keyed on a cheap stat signature, so drift detection avoids re-reading unchanged files. */
     protected readonly hashCache = new Map<string, { signature: string; contentHash: string }>();
+
+    /**
+     * Disambiguates staging folders created within the same millisecond. See {@link writeSkill}.
+     */
+    protected stagingCounter = 0;
 
     /**
      * Runs once after construction to sweep any stale staging folders left behind by a
@@ -228,12 +233,19 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
      * The staging folder is always cleaned up in `finally`, so a thrown error or an
      * already-existing target never leaves an orphan `.installing-*` folder behind.
      */
-    protected async writeSkill(entry: ResolvedSkillEntry, files: SkillFileContent[], replaceExisting: boolean): Promise<void> {
+    protected async writeSkill(entry: ResolvedSkillEntry, files: FileContent[], replaceExisting: boolean): Promise<void> {
         const root = this.skillsRoot();
         await fs.mkdir(root, { recursive: true });
         const target = this.skillDir(entry.name);
-        const staging = path.join(root, `${STAGING_PREFIX}${entry.name}-${Date.now()}`);
+        // A counter as well as the clock: `Date.now()` only has millisecond resolution, so two
+        // installs of the same skill in the same millisecond would otherwise pick the same staging
+        // folder, and whichever finished first would delete it from under the other's rename.
+        const staging = path.join(root, `${STAGING_PREFIX}${entry.name}-${Date.now()}-${this.stagingCounter++}`);
+        let renamed = false;
         try {
+            // Created up front rather than by the first file's `mkdir`, so that the metadata write
+            // below has somewhere to go even for a skill whose file list came back empty.
+            await fs.mkdir(staging, { recursive: true });
             for (const file of files) {
                 const segments = file.relativePath.split('/');
                 if (segments.some(segment => segment === '' || segment === '.' || segment === '..' || segment.includes('\\'))) {
@@ -248,15 +260,17 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
                 await fs.rm(target, { recursive: true, force: true });
             }
             await fs.rename(staging, target);
+            renamed = true;
         } finally {
-            // After a successful rename the staging path no longer exists; force makes the
-            // call a no-op in that case. Otherwise (thrown error, or rename failure because
-            // the target was raced into existence) this removes the partial staging folder.
-            await fs.rm(staging, { recursive: true, force: true });
+            // Only when the rename did not happen. Removing unconditionally would, after a
+            // successful rename, delete a path another install may already have staged there.
+            if (!renamed) {
+                await fs.rm(staging, { recursive: true, force: true });
+            }
         }
     }
 
-    protected validateSkill(entry: ResolvedSkillEntry, files: SkillFileContent[]): void {
+    protected validateSkill(entry: ResolvedSkillEntry, files: FileContent[]): void {
         const manifest = files.find(file => file.relativePath === SKILL_MANIFEST);
         if (!manifest) {
             throw new Error(`Skill "${entry.name}" has no ${SKILL_MANIFEST} at ${entry.sourcePath ?? 'the repository root'}.`);
@@ -280,20 +294,20 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
         return line.replace(/^\s*name\s*:/, '').trim().replace(/^['"]|['"]$/g, '');
     }
 
-    protected async download(entry: ResolvedSkillEntry): Promise<SkillFileContent[]> {
+    protected async download(entry: ResolvedSkillEntry): Promise<FileContent[]> {
         const { owner, repo } = this.parseGitHub(entry.sourceUrl);
         const token = this.resolveToken();
         return this.downloadDir(owner, repo, entry.sourcePath ?? '', '', token);
     }
 
-    protected async downloadDir(owner: string, repo: string, repoPath: string, relativeBase: string, token?: string): Promise<SkillFileContent[]> {
+    protected async downloadDir(owner: string, repo: string, repoPath: string, relativeBase: string, token?: string): Promise<FileContent[]> {
         const suffix = this.encodePath(repoPath);
         const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents${suffix ? '/' + suffix : ''}`;
         const items = await this.githubJson(apiUrl, token);
         if (!Array.isArray(items)) {
             throw new Error(`Expected a directory at ${repoPath || 'the repository root'} of ${owner}/${repo}.`);
         }
-        const files: SkillFileContent[] = [];
+        const files: FileContent[] = [];
         for (const item of items as GitHubContentItem[]) {
             const rel = relativeBase ? `${relativeBase}/${item.name}` : item.name;
             if (item.type === 'dir') {
@@ -389,9 +403,9 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
         if (cached && cached.signature === signature) {
             return cached.contentHash;
         }
-        const files: SkillFileContent[] = await Promise.all(stats.map(async stat =>
+        const files: FileContent[] = await Promise.all(stats.map(async stat =>
             ({ relativePath: stat.relativePath, content: await fs.readFile(stat.full) })));
-        const contentHash = computeSkillContentHash(files);
+        const contentHash = computeContentHash(files);
         this.hashCache.set(dir, { signature, contentHash });
         return contentHash;
     }
@@ -399,7 +413,7 @@ export class SkillInstallBackendServiceImpl implements SkillInstallBackendServic
     /**
      * Single recursive traversal of the hash-relevant files under `dir`, capturing each
      * file's POSIX relative path, absolute path, size and mtime. Dot-prefixed entries are
-     * skipped at every level, matching {@link computeSkillContentHash}.
+     * skipped at every level, matching {@link computeContentHash}.
      */
     protected async readSkillStats(dir: string, relativeBase: string = ''): Promise<SkillStatEntry[]> {
         const dirents = await fs.readdir(dir, { withFileTypes: true });

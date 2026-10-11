@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import {
     SearchInWorkspaceServer,
     SearchInWorkspaceClient,
@@ -71,7 +71,9 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
     @inject(SearchInWorkspaceServer) protected readonly searchServer: SearchInWorkspaceServer;
     @inject(SearchInWorkspaceClientImpl) protected readonly client: SearchInWorkspaceClientImpl;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(ILogger) protected readonly logger: ILogger;
+
+    @inject(ILogger) @named('search-in-workspace:SearchInWorkspaceService')
+    protected readonly logger: ILogger;
 
     @postConstruct()
     protected init(): void {

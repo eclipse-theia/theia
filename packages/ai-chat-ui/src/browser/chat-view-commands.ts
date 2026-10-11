@@ -99,3 +99,9 @@ export const AI_CHAT_SHOW_CHATS_COMMAND = Command.toLocalizedCommand({
     category: ChatCommands.CHAT_CATEGORY,
     label: 'Browse all chats...'
 }, 'theia/ai-chat-ui/browseAllChats');
+
+export const AI_CHAT_OPEN_SESSION = Command.toLocalizedCommand({
+    id: 'ai-chat-ui.open-session',
+    category: ChatCommands.CHAT_CATEGORY,
+    label: 'Open Chat Session'
+}, 'theia/ai-chat-ui/openSession', ChatCommands.CHAT_CATEGORY_KEY);

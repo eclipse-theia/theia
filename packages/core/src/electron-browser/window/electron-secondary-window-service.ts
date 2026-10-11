@@ -61,7 +61,7 @@ export class ElectronSecondaryWindowService extends DefaultSecondaryWindowServic
             for (let i = this.secondaryWindows.length - 1; i >= 0; i--) {
                 const windowClosed = new Deferred<void>();
                 const win = this.secondaryWindows[i];
-                win.addEventListener('unload', () => {
+                win.addEventListener('pagehide', () => {
                     windowClosed.resolve();
                 });
                 promises.push(windowClosed.promise);

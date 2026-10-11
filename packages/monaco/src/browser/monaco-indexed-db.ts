@@ -90,7 +90,7 @@ export async function deleteTheme(id: string): Promise<void> {
 
 export function stateToTheme(state: MonacoThemeState): Theme {
     const { id, label, description, uiTheme, data } = state;
-    const type = uiTheme === 'vs' ? 'light' : uiTheme === 'vs-dark' ? 'dark' : 'hc';
+    const type = uiTheme === 'vs' ? 'light' : uiTheme === 'vs-dark' ? 'dark' : uiTheme === 'hc-light' ? 'hcLight' : 'hc';
     return {
         type,
         id,

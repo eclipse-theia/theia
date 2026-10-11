@@ -18,15 +18,22 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 const disableJSDOM = enableJSDOM();
 
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-FrontendApplicationConfigProvider.set({});
+// Guarded: another spec in the same mocha process may already have set it, and `set` throws on a
+// second call.
+try {
+    FrontendApplicationConfigProvider.get();
+} catch {
+    FrontendApplicationConfigProvider.set({});
+}
 
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { parseSkillFile, combineSkillDirectories } from '../common/skill';
+import { parseSkillFile, combineSkillDirectories, Skill, SkillDirectoryEntry } from '../common/skill';
 import { Path } from '@theia/core/lib/common/path';
 import { Disposable, Emitter, ILogger, Logger, URI } from '@theia/core';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
-import { DefaultSkillService } from './skill-service';
+import { DefaultSkillService, SkillDirectoryContribution } from './skill-service';
 
 disableJSDOM();
 
@@ -322,8 +329,11 @@ description: Skill with no content
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let preferenceChangedEmitter: Emitter<any>;
 
-        function createService(): DefaultSkillService {
+        function createService(contributions: SkillDirectoryContribution[] = []): DefaultSkillService {
             const service = new DefaultSkillService();
+            (service as unknown as { skillDirectoryContributions: unknown }).skillDirectoryContributions = {
+                getContributions: () => contributions
+            };
             (service as unknown as { preferences: unknown }).preferences = preferencesMock;
             (service as unknown as { fileService: unknown }).fileService = fileServiceMock;
             const loggerMock: ILogger = sinon.createStubInstance(Logger);
@@ -365,6 +375,7 @@ description: Skill with no content
 
             preferencesMock = {
                 'ai-features.skills.skillDirectories': [],
+                ready: Promise.resolve(),
                 onPreferenceChanged: preferenceChangedEmitter.event
             };
         });
@@ -484,6 +495,41 @@ description: Skill with no content
             // Verify warning is logged for non-existent configured directory
             expect(loggerWarnSpy.calledWith(
                 sinon.match(/Configured skill directory.*does not exist/)
+            )).to.be.true;
+        });
+
+        it('should scan configured directories that only become known once the preferences are ready', async () => {
+            // The preference proxy serves defaults until its `ready` promise resolves, so a scan started before
+            // that point misses the configured directories.
+            const preferencesReady = new Deferred<void>();
+            preferencesMock.ready = preferencesReady.promise;
+
+            // Default skills directory exists and is empty, so the configured directory is the only source of warnings.
+            fileServiceMock.exists
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
+                .resolves(true);
+            fileServiceMock.resolve
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/home/testuser/.theia-ide/skills'))
+                .resolves({ children: [] });
+            fileServiceMock.exists
+                .withArgs(sinon.match((uri: URI) => uri.path.toString() === '/custom/configured/skills'))
+                .resolves(false);
+
+            const service = createService();
+            (service as unknown as { init: () => void }).init();
+            await workspaceServiceMock.ready;
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // Nothing may be scanned yet, the preference value is still the default one.
+            expect(fileServiceMock.exists.called).to.be.false;
+
+            (preferencesMock as Record<string, unknown>)['ai-features.skills.skillDirectories'] = ['/custom/configured/skills'];
+            preferencesReady.resolve();
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // The scan picked up the configured directory instead of the default preference value.
+            expect(loggerWarnSpy.calledWith(
+                sinon.match(/Configured skill directory '\/custom\/configured\/skills' does not exist/)
             )).to.be.true;
         });
 
@@ -629,6 +675,185 @@ Test skill content`
             expect(loggerWarnSpy.calledWith(
                 sinon.match(/Duplicate skill found.*dup-skill/)
             )).to.be.true;
+        });
+
+        describe('contributed skill directories', () => {
+
+            const bigQueryQualifier = 'bigquery-data-analytics';
+            const athenaQualifier = 'athena-analytics';
+
+            /** A contribution returning a fixed set of roots. */
+            function contributing(...entries: SkillDirectoryEntry[]): SkillDirectoryContribution {
+                return { getSkillDirectories: () => entries };
+            }
+
+            /**
+             * Stubs `directory` as an existing skills root holding one skill directory per given name,
+             * each with a valid `SKILL.md` whose description names the root it came from.
+             */
+            function stubSkillsRoot(directory: string, ...skillNames: string[]): void {
+                fileServiceMock.exists
+                    .withArgs(sinon.match((uri: URI) => uri.path.toString() === directory))
+                    .resolves(true);
+                fileServiceMock.resolve
+                    .withArgs(sinon.match((uri: URI) => uri.path.toString() === directory))
+                    .resolves({
+                        children: skillNames.map(name => ({
+                            isDirectory: true,
+                            name,
+                            resource: URI.fromFilePath(`${directory}/${name}`)
+                        }))
+                    });
+                for (const name of skillNames) {
+                    const skillFile = `${directory}/${name}/SKILL.md`;
+                    fileServiceMock.exists
+                        .withArgs(sinon.match((uri: URI) => uri.path.toString() === skillFile))
+                        .resolves(true);
+                    fileServiceMock.read
+                        .withArgs(sinon.match((uri: URI) => uri.path.toString() === skillFile))
+                        .resolves({ value: `---\nname: ${name}\ndescription: from ${directory}\n---\nBody of ${name}` });
+                }
+            }
+
+            async function initialize(service: DefaultSkillService): Promise<void> {
+                (service as unknown as { init: () => void }).init();
+                await workspaceServiceMock.ready;
+                await new Promise(resolve => setTimeout(resolve, 10));
+            }
+
+            it('qualifies the names of skills found under an owned contributed root', async () => {
+                const pluginSkills = '/home/testuser/.agents/plugins/bigquery/skills';
+                stubSkillsRoot(pluginSkills, 'query-builder');
+
+                const service = createService([contributing({ path: pluginSkills, tier: 'plugin', qualifier: bigQueryQualifier })]);
+                await initialize(service);
+
+                const skills = service.getSkills();
+                expect(skills).to.have.length(1);
+                expect(skills[0].name).to.equal('query-builder');
+                expect(skills[0].qualifiedName).to.equal('bigquery-data-analytics:query-builder');
+                expect(Skill.qualifierOf(skills[0])).to.equal('bigquery-data-analytics');
+            });
+
+            it('leaves the qualified name of a skill from a built-in root equal to its plain name', async () => {
+                stubSkillsRoot('/home/testuser/.theia-ide/skills', 'code-review');
+
+                const service = createService();
+                await initialize(service);
+
+                const skills = service.getSkills();
+                expect(skills).to.have.length(1);
+                expect(skills[0].qualifiedName).to.equal('code-review');
+                expect(Skill.qualifierOf(skills[0])).to.be.undefined;
+            });
+
+            it('resolves an owned skill by its qualified name and by its plain name', async () => {
+                const pluginSkills = '/home/testuser/.agents/plugins/bigquery/skills';
+                stubSkillsRoot(pluginSkills, 'query-builder');
+
+                const service = createService([contributing({ path: pluginSkills, tier: 'plugin', qualifier: bigQueryQualifier })]);
+                await initialize(service);
+
+                expect(service.getSkill('bigquery-data-analytics:query-builder')?.name).to.equal('query-builder');
+                // The plain name keeps working, so every reference written before the skill was owned
+                // still resolves.
+                expect(service.getSkill('query-builder')?.qualifiedName).to.equal('bigquery-data-analytics:query-builder');
+            });
+
+            it('loads a skill of the same name from two different plugins and keeps both addressable', async () => {
+                const bigQuerySkills = '/home/testuser/.agents/plugins/bigquery/skills';
+                const athenaSkills = '/home/testuser/.agents/plugins/athena/skills';
+                stubSkillsRoot(bigQuerySkills, 'query-builder');
+                stubSkillsRoot(athenaSkills, 'query-builder');
+
+                const service = createService([contributing(
+                    { path: bigQuerySkills, tier: 'plugin', qualifier: bigQueryQualifier },
+                    { path: athenaSkills, tier: 'plugin', qualifier: athenaQualifier }
+                )]);
+                await initialize(service);
+
+                expect(service.getSkills()).to.have.length(2);
+                expect(service.getSkill('bigquery-data-analytics:query-builder')?.description).to.equal(`from ${bigQuerySkills}`);
+                expect(service.getSkill('athena-analytics:query-builder')?.description).to.equal(`from ${athenaSkills}`);
+                // Neither is dropped as a duplicate, because they no longer share a name.
+                expect(loggerWarnSpy.calledWith(sinon.match(/Duplicate skill found/))).to.be.false;
+            });
+
+            it('resolves an ambiguous plain name to undefined rather than guessing one of the candidates', async () => {
+                const bigQuerySkills = '/home/testuser/.agents/plugins/bigquery/skills';
+                const athenaSkills = '/home/testuser/.agents/plugins/athena/skills';
+                stubSkillsRoot(bigQuerySkills, 'query-builder');
+                stubSkillsRoot(athenaSkills, 'query-builder');
+
+                const service = createService([contributing(
+                    { path: bigQuerySkills, tier: 'plugin', qualifier: bigQueryQualifier },
+                    { path: athenaSkills, tier: 'plugin', qualifier: athenaQualifier }
+                )]);
+                await initialize(service);
+
+                expect(service.getSkill('query-builder')).to.be.undefined;
+            });
+
+            it('keeps loading the remaining roots when one contribution fails', async () => {
+                const pluginSkills = '/home/testuser/.agents/plugins/bigquery/skills';
+                stubSkillsRoot(pluginSkills, 'query-builder');
+                stubSkillsRoot('/home/testuser/.theia-ide/skills', 'code-review');
+
+                const failing: SkillDirectoryContribution = {
+                    getSkillDirectories: () => { throw new Error('cannot enumerate plugins'); }
+                };
+                const service = createService([
+                    failing,
+                    contributing({ path: pluginSkills, tier: 'plugin', qualifier: bigQueryQualifier })
+                ]);
+                await initialize(service);
+
+                expect(service.getSkills().map(skill => skill.qualifiedName).sort())
+                    .to.deep.equal(['bigquery-data-analytics:query-builder', 'code-review']);
+            });
+
+            it('watches the parent of a contributed root that does not exist yet instead of warning about it', async () => {
+                const pluginRoot = '/home/testuser/.agents/plugins/bigquery';
+                fileServiceMock.exists
+                    .withArgs(sinon.match((uri: URI) => uri.path.toString() === `${pluginRoot}/skills`))
+                    .resolves(false);
+                fileServiceMock.exists
+                    .withArgs(sinon.match((uri: URI) => uri.path.toString() === pluginRoot))
+                    .resolves(true);
+
+                const service = createService([contributing({ path: `${pluginRoot}/skills`, tier: 'plugin', qualifier: bigQueryQualifier })]);
+                await initialize(service);
+
+                expect(fileServiceMock.watch.calledWith(
+                    sinon.match((uri: URI) => uri.path.toString() === pluginRoot),
+                    sinon.match({ recursive: false, excludes: [] })
+                )).to.be.true;
+                // A plugin without skills is not a misconfiguration, so it must not warn like a
+                // non-existent configured directory does.
+                expect(loggerWarnSpy.calledWith(sinon.match(/does not exist/))).to.be.false;
+            });
+
+            it('rescans when a contribution reports that its set of roots changed', async () => {
+                const pluginSkills = '/home/testuser/.agents/plugins/bigquery/skills';
+                const onDidChangeEmitter = new Emitter<void>();
+                let entries: SkillDirectoryEntry[] = [];
+                const contribution: SkillDirectoryContribution = {
+                    getSkillDirectories: () => entries,
+                    onDidChange: onDidChangeEmitter.event
+                };
+
+                const service = createService([contribution]);
+                await initialize(service);
+                expect(service.getSkills()).to.have.length(0);
+
+                stubSkillsRoot(pluginSkills, 'query-builder');
+                entries = [{ path: pluginSkills, tier: 'plugin', qualifier: bigQueryQualifier }];
+                onDidChangeEmitter.fire();
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                expect(service.getSkills().map(skill => skill.qualifiedName)).to.deep.equal(['bigquery-data-analytics:query-builder']);
+                onDidChangeEmitter.dispose();
+            });
         });
     });
 });

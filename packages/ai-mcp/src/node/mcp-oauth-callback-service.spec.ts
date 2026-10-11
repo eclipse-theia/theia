@@ -21,6 +21,7 @@ import {
     MCP_OAUTH_REJECTED_CALLBACK_LIMIT,
     MCPOAuthCallbackService
 } from './mcp-oauth-callback-service';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 /**
  * Exposes the protected `reserveCallback` so the timeout test can install a short-lived timer without
@@ -39,6 +40,7 @@ describe('MCPOAuthCallbackService', () => {
 
     beforeEach(() => {
         service = new TestableMCPOAuthCallbackService();
+        (service as unknown as { logger: MockLogger }).logger = new MockLogger();
     });
 
     it('resolves a waiting callback', async () => {

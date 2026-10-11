@@ -44,7 +44,6 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
-    @inject(PreferencesWidget) protected readonly scopeTracker: PreferencesWidget;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(QuickInputService) @optional() protected readonly quickInputService: QuickInputService;
 
@@ -56,6 +55,10 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
                 area: 'main',
             },
         });
+    }
+
+    protected get currentScope(): Preference.SelectedScopeDetails {
+        return this.tryGetWidget()?.currentScope ?? Preference.DEFAULT_SCOPE;
     }
 
     override registerCommands(commands: CommandRegistry): void {
@@ -93,7 +96,8 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
             isEnabled: Preference.EditorCommandArgs.is,
             isVisible: Preference.EditorCommandArgs.is,
             execute: ({ id }: Preference.EditorCommandArgs) => {
-                this.preferenceService.set(id, undefined, Number(this.scopeTracker.currentScope.scope), this.scopeTracker.currentScope.uri);
+                const { scope, uri } = this.currentScope;
+                return this.preferenceService.set(id, undefined, Number(scope), uri);
             }
         });
         commands.registerCommand(PreferencesCommands.OPEN_USER_PREFERENCES, {
@@ -113,9 +117,9 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         commands.registerCommand(PreferencesCommands.OPEN_FOLDER_PREFERENCES, {
             isEnabled: () => !!this.workspaceService.isMultiRootWorkspaceOpened && this.workspaceService.tryGetRoots().length > 0,
             isVisible: () => !!this.workspaceService.isMultiRootWorkspaceOpened && this.workspaceService.tryGetRoots().length > 0,
-            execute: () => this.openFolderPreferences(root => {
-                this.openView({ activate: true });
-                this.scopeTracker.setScope(root.resource);
+            execute: () => this.openFolderPreferences(async root => {
+                const widget = await this.openView({ activate: true });
+                widget.setScope(root.resource);
             })
         });
         commands.registerCommand(PreferencesCommands.OPEN_USER_PREFERENCES_JSON, {
@@ -178,7 +182,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     }
 
     protected async openPreferencesJSON(opener: string | PreferencesWidget): Promise<void> {
-        const { scope, activeScopeIsFolder, uri } = this.scopeTracker.currentScope;
+        const { scope, activeScopeIsFolder, uri } = this.currentScope;
         const scopeID = Number(scope);
         let preferenceId = '';
         if (typeof opener === 'string') {
@@ -217,7 +221,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     protected async openFolderPreferences(callback: (root: FileStat) => unknown): Promise<void> {
         const roots = this.workspaceService.tryGetRoots();
         if (roots.length === 1) {
-            callback(roots[0]);
+            await callback(roots[0]);
         } else {
             const items: QuickPickItem[] = roots.map(root => ({
                 label: root.name,

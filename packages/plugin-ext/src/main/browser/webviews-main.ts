@@ -135,8 +135,8 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
     }
 
     async $reveal(handle: string, showOptions: WebviewPanelShowOptions): Promise<void> {
-        const widget = await this.getWebview(handle);
-        if (widget.isDisposed) {
+        const widget = await this.tryGetWebview(handle);
+        if (!widget || widget.isDisposed) {
             return;
         }
         if ((showOptions.viewColumn !== undefined && showOptions.viewColumn !== widget.viewState.position) || showOptions.area !== undefined) {
@@ -156,22 +156,27 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
     }
 
     async $setTitle(handle: string, value: string): Promise<void> {
-        const webview = await this.getWebview(handle);
-        webview.title.label = value;
+        const webview = await this.tryGetWebview(handle);
+        if (webview) {
+            webview.title.label = value;
+        }
     }
 
     async $setIconPath(handle: string, iconUrl: IconUrl | ThemeIcon | undefined): Promise<void> {
-        const webview = await this.getWebview(handle);
-        webview.setIconUrl(iconUrl);
+        const webview = await this.tryGetWebview(handle);
+        webview?.setIconUrl(iconUrl);
     }
 
     async $setHtml(handle: string, value: string): Promise<void> {
-        const webview = await this.getWebview(handle);
-        webview.setHTML(value);
+        const webview = await this.tryGetWebview(handle);
+        webview?.setHTML(value);
     }
 
     async $setOptions(handle: string, options: WebviewOptions): Promise<void> {
-        const webview = await this.getWebview(handle);
+        const webview = await this.tryGetWebview(handle);
+        if (!webview) {
+            return;
+        }
         const { enableScripts, enableForms, localResourceRoots, ...contentOptions } = options;
         webview.setContentOptions({
             allowScripts: enableScripts,
@@ -183,8 +188,6 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async $postMessage(handle: string, value: any): Promise<boolean> {
-        // Due to async nature of $postMessage, the webview may have been disposed in the meantime.
-        // Therefore, don't throw an error if the webview is not found, but return false in this case.
         const webview = await this.tryGetWebview(handle);
         if (!webview) {
             return false;
@@ -257,14 +260,14 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         this.proxy.$onDidChangeWebviewPanelViewState(widget.identifier.id, widget.viewState);
     }
 
-    private async getWebview(viewId: string): Promise<WebviewWidget> {
-        const webview = await this.tryGetWebview(viewId);
-        if (!webview) {
-            throw new Error(`Unknown Webview: ${viewId}`);
-        }
-        return webview;
-    }
-
+    /**
+     * Looks up the webview widget for the given handle.
+     *
+     * All `$`-methods of this class are invoked over RPC and resolve the widget asynchronously, so the webview may already
+     * have been disposed by the time they run. The plugin host declares most of them as returning `void` and therefore never
+     * attaches a rejection handler, so throwing here surfaces as an unhandled promise rejection in the plugin host. Callers
+     * must instead treat a missing webview as a no-op, the same way VS Code's `MainThreadWebviews` does.
+     */
     private async tryGetWebview(id: string): Promise<WebviewWidget | undefined> {
         const webview = await this.widgetManager.findWidget<WebviewWidget>(WebviewWidget.FACTORY_ID, options => {
             if (options) {

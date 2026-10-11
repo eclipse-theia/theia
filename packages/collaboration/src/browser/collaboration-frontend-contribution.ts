@@ -289,7 +289,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
 
     protected async setStatusBarEntryConnected(code: string): Promise<void> {
         await this.setStatusBarEntry({
-            text: '$(codicon-broadcast) ' + nls.localize('theia/collaboration/connected', 'Connected'),
+            text: '$(codicon-broadcast) ' + nls.localizeByDefault('Connected'),
             tooltip: nls.localize('theia/collaboration/connectedSession', 'Connected to a collaboration session'),
             onclick: () => this.onStatusConnectedClick(code)
         });

@@ -29,7 +29,7 @@ export class ResolveMcpFrontendContribution
     @inject(QuickInputService)
     protected readonly quickInputService: QuickInputService;
 
-    @inject(ILogger) @named('api-samples')
+    @inject(ILogger) @named('api-samples:ResolveMcpFrontendContribution')
     protected readonly logger: ILogger;
 
     async onStart(): Promise<void> {

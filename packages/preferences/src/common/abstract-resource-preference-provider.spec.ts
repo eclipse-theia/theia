@@ -33,6 +33,8 @@ import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { PreferenceTransactionFactory } from '../browser/preference-transaction-manager';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
+import { ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 disableJSDOM();
 
@@ -65,6 +67,7 @@ describe('AbstractResourcePreferenceProvider', () => {
     beforeEach(() => {
         preferenceStorage = new MockPreferenceStorage();
         const testContainer = new Container();
+        testContainer.bind(ILogger).to(MockLogger).inSingletonScope();
         bindPreferenceService(testContainer.bind.bind(testContainer));
         bindMockPreferenceProviders(testContainer.bind.bind(testContainer), testContainer.unbind.bind(testContainer));
         testContainer.rebind(<any>PreferenceSchemaService).toConstantValue(mockSchemaProvider);

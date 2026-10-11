@@ -16,6 +16,9 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+// The plugin host routes console.* calls itself and has no ILogger available.
+/* eslint-disable @theia/named-logger-check */
+
 import * as path from 'path';
 import { pathToFileURL } from 'node:url';
 import { dynamicRequire, removeFromCache } from '@theia/core/lib/node/dynamic-require';
@@ -25,9 +28,10 @@ import {
     MAIN_RPC_CONTEXT, Plugin, PluginAPIFactory, PluginManager,
     LocalizationExt
 } from '../../common/plugin-api-rpc';
-import { PluginMetadata, PluginModel } from '../../common/plugin-protocol';
+import { PluginMetadata, PluginModel, PluginPackage } from '../../common/plugin-protocol';
 import { createAPIFactory } from '../../plugin/plugin-context';
 import { EnvExtImpl } from '../../plugin/env';
+import { TelemetryExtImpl } from '../../plugin/telemetry-ext';
 import { PreferenceRegistryExtImpl } from '../../plugin/preference-registry';
 import { ExtPluginApi, ExtPluginApiBackendInitializationFn } from '../../common/plugin-ext-api-contribution';
 import { DebugExtImpl } from '../../plugin/debug/debug-ext';
@@ -35,7 +39,7 @@ import { EditorsAndDocumentsExtImpl } from '../../plugin/editors-and-documents';
 import { WorkspaceExtImpl } from '../../plugin/workspace';
 import { MessageRegistryExt } from '../../plugin/message-registry';
 import { ClipboardExt } from '../../plugin/clipboard-ext';
-import { loadManifest } from './plugin-manifest-loader';
+import { loadManifest } from '@theia/plugin-utils/lib/node/plugin-manifest';
 import { KeyValueStorageProxy } from '../../plugin/plugin-storage';
 import { WebviewsExtImpl } from '../../plugin/webviews';
 import { TerminalServiceExtImpl } from '../../plugin/terminal-ext';
@@ -61,7 +65,8 @@ export interface ExtInterfaces {
     webviewExt: WebviewsExtImpl,
     terminalServiceExt: TerminalServiceExtImpl,
     secretsExt: SecretsExtImpl,
-    localizationExt: LocalizationExtImpl
+    localizationExt: LocalizationExtImpl,
+    telemetryExt: TelemetryExtImpl
 }
 
 /**
@@ -214,7 +219,7 @@ export abstract class AbstractPluginHostRPC<PM extends AbstractPluginManagerExtI
                         const pluginModel = plg.model;
                         const pluginLifecycle = plg.lifecycle;
 
-                        const rawModel = await loadManifest(pluginModel.packagePath);
+                        const rawModel = await loadManifest<PluginPackage>(pluginModel.packagePath);
                         rawModel.packagePath = pluginModel.packagePath;
                         if (pluginModel.entryPoint!.frontend) {
                             foreign.push({
@@ -349,6 +354,9 @@ export class PluginHostRPC extends AbstractPluginHostRPC<PluginManagerExtImpl, P
     @inject(SecretsExtImpl)
     protected readonly secretsExt: SecretsExtImpl;
 
+    @inject(TelemetryExtImpl)
+    protected readonly telemetryExt: TelemetryExtImpl;
+
     constructor() {
         super('PLUGIN_HOST', '/scanners/backend-init-theia.js',
             {
@@ -377,18 +385,19 @@ export class PluginHostRPC extends AbstractPluginHostRPC<PluginManagerExtImpl, P
             webviewExt: this.webviewExt,
             terminalServiceExt: this.terminalServiceExt,
             secretsExt: this.secretsExt,
-            localizationExt: this.localizationExt
+            localizationExt: this.localizationExt,
+            telemetryExt: this.telemetryExt
         };
     }
 
     protected createAPIFactory(extInterfaces: ExtInterfaces): PluginAPIFactory {
         const {
             envExt, debugExt, preferenceRegistryExt, editorsAndDocumentsExt, workspaceExt,
-            messageRegistryExt, clipboardExt, webviewExt, localizationExt
+            messageRegistryExt, clipboardExt, webviewExt, localizationExt, telemetryExt
         } = extInterfaces;
         return createAPIFactory(this.rpc, this.pluginManager, envExt, debugExt, preferenceRegistryExt,
             editorsAndDocumentsExt, workspaceExt, messageRegistryExt, clipboardExt, webviewExt,
-            localizationExt);
+            localizationExt, telemetryExt);
     }
 
     protected initExtApi(extApi: ExtPluginApi): void {

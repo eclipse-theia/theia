@@ -40,7 +40,7 @@ export class NavigationLocationService {
     private static MAX_STACK_ITEMS = 30;
     private static readonly MAX_RECENTLY_CLOSED_EDITORS = 20;
 
-    @inject(ILogger) @named('NavigationLocationService')
+    @inject(ILogger) @named('editor:NavigationLocationService')
     protected readonly logger: ILogger;
 
     @inject(OpenerService)

@@ -52,8 +52,32 @@ export const frontendOnlyApplicationModule = new ContainerModule((bind, unbind, 
         bind(QuickPickService).to(QuickPickServiceImpl).inSingletonScope();
     }
 
+    let extensionsCache: Promise<ExtensionInfo[]> | undefined;
+
     const mockedApplicationServer: ApplicationServer = {
-        getExtensionsInfos: async (): Promise<ExtensionInfo[]> => [],
+        getExtensionsInfos: async (): Promise<ExtensionInfo[]> => {
+            if (extensionsCache === undefined) {
+                extensionsCache = (async () => {
+                    try {
+                        const res = await fetch('./extensions.json');
+                        if (!res.ok) {
+                            extensionsCache = undefined;
+                            return [];
+                        }
+                        const raw = await res.json();
+                        if (!Array.isArray(raw)) {
+                            extensionsCache = undefined;
+                            return [];
+                        }
+                        return raw as ExtensionInfo[];
+                    } catch {
+                        extensionsCache = undefined;
+                        return [];
+                    }
+                })();
+            }
+            return extensionsCache;
+        },
         getApplicationInfo: async (): Promise<ApplicationInfo | undefined> => undefined,
         getApplicationRoot: async (): Promise<string> => '',
         getApplicationPlatform: () => Promise.resolve('web'),
@@ -69,8 +93,11 @@ export const frontendOnlyApplicationModule = new ContainerModule((bind, unbind, 
         getExecPath: async (): Promise<string> => '',
         getVariables: async (): Promise<EnvVariable[]> => [],
         getValue: async (_key: string): Promise<EnvVariable | undefined> => undefined,
-        getConfigDirUri: async (): Promise<string> => '',
-        getHomeDirUri: async (): Promise<string> => '',
+        // Matches the backend's default '.theia' configuration folder.
+        getConfigDirUri: async (): Promise<string> => 'file:///.theia',
+        // Has to be a directory that already exists: consumers such as the file dialog only
+        // resolve this, they never create it, and nothing seeds a home folder in OPFS.
+        getHomeDirUri: async (): Promise<string> => 'file:///',
         getDrives: async (): Promise<string[]> => []
     };
     if (isBound(EnvVariablesServer)) {

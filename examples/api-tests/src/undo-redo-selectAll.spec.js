@@ -47,7 +47,7 @@ describe('Undo, Redo and Select All', function () {
     const preferenceService = container.get(PreferenceService)
 
     const rootUri = workspaceService.tryGetRoots()[0].resource;
-    const fileUri = rootUri.resolve('webpack.config.js');
+    const fileUri = rootUri.resolve('esbuild.mjs');
 
     const toTearDown = new DisposableCollection();
 

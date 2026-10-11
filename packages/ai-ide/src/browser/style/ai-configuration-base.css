@@ -49,12 +49,6 @@
   padding: var(--theia-ui-padding) 0;
 }
 
-.ai-configuration-section-content ul,
-.ai-configuration-section-content ol {
-  padding-left: calc(var(--theia-ui-padding) * 2);
-  margin: 0 var(--theia-ui-padding) 0;
-}
-
 /* Expandable section styling */
 .ai-expandable-section {
   margin-bottom: var(--theia-ui-padding);

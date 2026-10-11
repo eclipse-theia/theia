@@ -14,13 +14,26 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, LanguageModelStatus, ReasoningSupport } from '@theia/ai-core';
-import { getProxyUrl } from '@theia/ai-core/lib/node';
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { DeveloperMessageSettings, OpenAiModel, OpenAiModelUtils } from './openai-language-model';
-import { OpenAiResponseApiUtils } from './openai-response-api-utils';
+import {
+    ApiKeySource, DiscoveredModel, DiscoveredModels, LanguageModelRegistry, LanguageModelStatus, ModelDiscoveryResult, ReasoningSupport
+} from '@theia/ai-core';
+import { getProxyUrl, ModelDiscoveryFetcher } from '@theia/ai-core/lib/node';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { APIConnectionError } from 'openai';
+import { createOpenAiClient, DeveloperMessageSettings, OpenAiLanguageModelFactory, OpenAiModel } from './openai-language-model';
 import { getOpenAiModelDefaults } from './openai-model-defaults';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common';
+import { ILogger } from '@theia/core';
+import { OPENAI_SERVER_TOOLS } from './openai-server-tools';
+
+const OPENAI_SNAPSHOT_FILE = 'openai-models.json';
+
+/** The part of an OpenAI `/v1/models` entry this manager reads. */
+interface ListedOpenAiModel {
+    id: string;
+    /** Creation time in seconds since the epoch. */
+    created?: number;
+}
 
 interface ResolvedModelMetadata {
     maxInputTokens?: number;
@@ -34,21 +47,101 @@ interface ResolvedModelMetadata {
 @injectable()
 export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsManager {
 
-    @inject(OpenAiModelUtils)
-    protected readonly openAiModelUtils: OpenAiModelUtils;
+    @inject(OpenAiLanguageModelFactory)
+    protected readonly openAiLanguageModelFactory: OpenAiLanguageModelFactory;
 
-    @inject(OpenAiResponseApiUtils)
-    protected readonly responseApiUtils: OpenAiResponseApiUtils;
+    @inject(ILogger) @named('ai-openai:OpenAiLanguageModelsManagerImpl')
+    protected readonly logger: ILogger;
 
     protected _apiKey: string | undefined;
+    /**
+     * Whether a key found in the environment may be used. Withheld until the user confirms it, so the
+     * gate sits on the key itself: every path that reaches for one — discovery, a custom endpoint, a
+     * manually configured model — is covered, and revoking the consent takes effect at once.
+     */
+    protected _allowEnvironmentApiKey = false;
     protected _apiVersion: string | undefined;
     protected _proxyUrl: string | undefined;
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
 
+    @inject(ModelDiscoveryFetcher)
+    protected readonly discoveryFetcher: ModelDiscoveryFetcher;
+
     get apiKey(): string | undefined {
-        return this._apiKey ?? process.env.OPENAI_API_KEY;
+        return this._apiKey ?? (this._allowEnvironmentApiKey ? process.env.OPENAI_API_KEY : undefined);
+    }
+
+    async getApiKeySource(): Promise<ApiKeySource> {
+        if (this._apiKey) {
+            return 'preference';
+        }
+        if (process.env.OPENAI_API_KEY) {
+            return 'environment';
+        }
+        return 'none';
+    }
+
+    async fetchAvailableModels(): Promise<ModelDiscoveryResult> {
+        const apiKey = this.apiKey;
+        if (!apiKey) {
+            return { models: [], fromCache: false };
+        }
+        const proxyUrl = getProxyUrl('https://api.openai.com', this._proxyUrl);
+        return this.discoveryFetcher.fetch({
+            snapshotFile: OPENAI_SNAPSHOT_FILE,
+            providerLabel: 'OpenAI',
+            listModels: async () => this.toDiscoveredModels(await this.listModels(apiKey, proxyUrl)),
+            // Retry only transient connection errors; auth/HTTP errors fail fast.
+            isRetryable: error => error instanceof APIConnectionError
+        });
+    }
+
+    /**
+     * Maps the endpoint's entries onto {@link DiscoveredModel}s and adds the undated alias of every
+     * release-pinned id. The endpoint reports no display name or description — only the id, the
+     * owner and a creation timestamp — so a discovered OpenAI model carries no label.
+     */
+    protected toDiscoveredModels(models: ListedOpenAiModel[]): DiscoveredModel[] {
+        const byId = new Map<string, DiscoveredModel>();
+        for (const model of models) {
+            // OpenAI's /v1/models lists every model type (embeddings, audio, image, …) with no capability
+            // metadata, so we heuristically keep the text-chat families. Custom endpoints cover the rest.
+            if (this.isChatModelId(model.id) && !byId.has(model.id)) {
+                // `created` is in seconds; DiscoveredModel.released is in milliseconds.
+                byId.set(model.id, { id: model.id, released: model.created === undefined ? undefined : model.created * 1000 });
+            }
+        }
+        return DiscoveredModels.withUndatedAliases([...byId.values()]);
+    }
+
+    /**
+     * Heuristic for the text-chat models among everything `/v1/models` reports: the `gpt-*`,
+     * `chatgpt-*` and `o1`/`o3`/`o4`-style families, minus the variants that speak a different API
+     * than chat completions: audio, realtime, live, transcription, speech, image, embeddings,
+     * moderation, the search and computer-use tool endpoints, and the legacy `-instruct` completion
+     * models.
+     *
+     * The terms match anywhere in the id, so a family that carries one in a longer word goes with it
+     * (`o3-deep-research`, which speaks the responses API and not this one). Anything this drops or
+     * misses can still be configured as a custom endpoint.
+     */
+    protected isChatModelId(id: string): boolean {
+        if (!/^(gpt|chatgpt|o\d)/.test(id)) {
+            return false;
+        }
+        return !/(audio|realtime|-live|transcribe|tts|image|embedding|moderation|search|computer-use|-instruct)/.test(id);
+    }
+
+    /** Iterates the (auto-paginated) `/v1/models` endpoint. Overridable for testing. */
+    protected async listModels(apiKey: string, proxyUrl: string | undefined): Promise<ListedOpenAiModel[]> {
+        const openai = createOpenAiClient({ apiKey, proxyUrl });
+        const models: ListedOpenAiModel[] = [];
+        for await (const model of openai.models.list()) {
+            models.push(model);
+        }
+        return models;
     }
 
     get apiVersion(): string | undefined {
@@ -92,10 +185,11 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
 
             const status = this.calculateStatus(modelDescription, apiKeyProvider());
             const metadata = this.resolveMetadata(modelDescription);
+            const serverTools = this.resolveServerTools(modelDescription);
 
             if (model) {
                 if (!(model instanceof OpenAiModel)) {
-                    console.warn(`OpenAI: model ${modelDescription.id} is not an OpenAI model`);
+                    this.logger.warn(`OpenAI: model ${modelDescription.id} is not an OpenAI model`);
                     continue;
                 }
                 await this.languageModelRegistry.patchLanguageModel<OpenAiModel>(modelDescription.id, {
@@ -113,35 +207,45 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                     proxy: proxyUrl,
                     reasoningSupport: metadata.reasoningSupport,
                     maxInputTokens: metadata.maxInputTokens,
+                    serverTools,
                     serverSideCompactionSupport: metadata.serverSideCompactionSupport,
-                    serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false
+                    serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false,
+                    serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault,
+                    headers: modelDescription.headers,
+                    released: modelDescription.released
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
-                    new OpenAiModel(
-                        modelDescription.id,
-                        modelDescription.model,
+                    this.openAiLanguageModelFactory({
+                        id: modelDescription.id,
+                        model: modelDescription.model,
                         status,
-                        metadata.enableStreaming,
-                        apiKeyProvider,
-                        apiVersionProvider,
-                        metadata.supportsStructuredOutput,
-                        modelDescription.url,
-                        modelDescription.deployment,
-                        this.openAiModelUtils,
-                        this.responseApiUtils,
-                        metadata.developerMessageSettings,
-                        modelDescription.maxRetries,
-                        modelDescription.useResponseApi ?? false,
-                        proxyUrl,
-                        metadata.reasoningSupport,
-                        metadata.maxInputTokens,
-                        metadata.serverSideCompactionSupport,
-                        modelDescription.serverSideCompactionEnabledByDefault ?? false
-                    )
+                        enableStreaming: metadata.enableStreaming,
+                        apiKey: apiKeyProvider,
+                        apiVersion: apiVersionProvider,
+                        supportsStructuredOutput: metadata.supportsStructuredOutput,
+                        url: modelDescription.url,
+                        deployment: modelDescription.deployment,
+                        developerMessageSettings: metadata.developerMessageSettings,
+                        maxRetries: modelDescription.maxRetries,
+                        useResponseApi: modelDescription.useResponseApi ?? false,
+                        proxy: proxyUrl,
+                        reasoningSupport: metadata.reasoningSupport,
+                        maxInputTokens: metadata.maxInputTokens,
+                        serverTools,
+                        serverSideCompactionSupport: metadata.serverSideCompactionSupport,
+                        serverSideCompactionEnabledByDefault: modelDescription.serverSideCompactionEnabledByDefault ?? false,
+                        serverSideCompactionTokenThresholdByDefault: modelDescription.serverSideCompactionTokenThresholdByDefault,
+                        headers: modelDescription.headers,
+                        released: modelDescription.released
+                    })
                 ]);
             }
         }
+    }
+
+    protected resolveServerTools(description: OpenAiModelDescription): typeof OPENAI_SERVER_TOOLS | undefined {
+        return description.useResponseApi && !description.url ? OPENAI_SERVER_TOOLS : undefined;
     }
 
     /**
@@ -165,6 +269,10 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
 
     removeLanguageModels(...modelIds: string[]): void {
         this.languageModelRegistry.removeLanguageModels(modelIds);
+    }
+
+    setAllowEnvironmentApiKey(allowed: boolean): void {
+        this._allowEnvironmentApiKey = allowed;
     }
 
     setApiKey(apiKey: string | undefined): void {

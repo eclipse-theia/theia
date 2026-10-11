@@ -119,7 +119,7 @@ export class WidgetManager {
     @inject(ContributionProvider) @named(WidgetFactory)
     protected readonly factoryProvider: ContributionProvider<WidgetFactory>;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('core:WidgetManager')
     protected readonly logger: ILogger;
 
     protected readonly onWillCreateWidgetEmitter = new Emitter<WillCreateWidgetEvent>();

@@ -66,7 +66,7 @@ export class WorkspaceMetadataStorageServiceImpl implements WorkspaceMetadataSto
     @inject(EnvVariablesServer)
     protected readonly envVariableServer: EnvVariablesServer;
 
-    @inject(ILogger) @named('WorkspaceMetadataStorage')
+    @inject(ILogger) @named('workspace:WorkspaceMetadataStorageServiceImpl')
     protected readonly logger: ILogger;
 
     @inject(WorkspaceMetadataStoreFactory)

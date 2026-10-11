@@ -22,12 +22,51 @@ describe('getOpenAiModelDefaults', () => {
         expect(getOpenAiModelDefaults('totally-made-up-model')).to.deep.equal({});
     });
 
+    describe('GPT-6', () => {
+        for (const model of ['gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-sol', 'gpt-6-luna']) {
+            it(`uses the reasoning preset for ${model} and its dated snapshots`, () => {
+                const supportedLevels = model === 'gpt-6-astra' || model === 'gpt-6.1-sol'
+                    ? ['off', 'low', 'medium', 'high', 'xhigh', 'max', 'auto']
+                    : ['off', 'none', 'low', 'medium', 'high', 'xhigh', 'max', 'auto'];
+                for (const id of [model, `${model}-2026-09-01`]) {
+                    const d = getOpenAiModelDefaults(id);
+                    expect(d.contextWindow, id).to.equal(1_050_000);
+                    expect(d.reasoningSupport, id).to.deep.equal({ supportedLevels, defaultLevel: 'auto' });
+                }
+            });
+        }
+
+        it('uses the common GPT-6 preset for other family members', () => {
+            for (const id of ['gpt-6', 'gpt-6-other', 'gpt-6.1-other']) {
+                const d = getOpenAiModelDefaults(id);
+                expect(d.contextWindow, id).to.equal(1_050_000);
+                expect(d.reasoningSupport, id).to.deep.equal({
+                    supportedLevels: ['off', 'none', 'low', 'medium', 'high', 'xhigh', 'max', 'auto'], defaultLevel: 'auto'
+                });
+            }
+        });
+    });
+
+    describe('GPT-5.6', () => {
+        it('uses the GPT-6 preset for all tiers while preserving their context windows', () => {
+            for (const model of ['gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna']) {
+                for (const id of [model, `${model}-2026-09-01`]) {
+                    const d = getOpenAiModelDefaults(id);
+                    expect(d.contextWindow, id).to.equal(1_050_000);
+                    expect(d.reasoningSupport, id).to.deep.equal(getOpenAiModelDefaults('gpt-6-luna').reasoningSupport);
+                }
+            }
+        });
+    });
+
     describe('GPT-5.5', () => {
         it('matches base and pro at 1,050,000 with GPT-5 reasoning', () => {
             for (const id of ['gpt-5.5', 'gpt-5.5-pro']) {
                 const d = getOpenAiModelDefaults(id);
                 expect(d.contextWindow, id).to.equal(1_050_000);
-                expect(d.reasoningSupport?.supportedLevels, id).to.include('minimal');
+                expect(d.reasoningSupport, id).to.deep.equal({
+                    supportedLevels: ['off', 'none', 'low', 'medium', 'high', 'xhigh', 'auto'], defaultLevel: 'auto'
+                });
             }
         });
     });
@@ -51,11 +90,17 @@ describe('getOpenAiModelDefaults', () => {
             }
         });
 
-        it('exposes GPT-5 reasoning support (incl. `minimal`)', () => {
-            const d = getOpenAiModelDefaults('gpt-5');
-            expect(d.reasoningSupport?.supportedLevels).to.include('minimal');
-            expect(d.reasoningSupport?.defaultLevel).to.equal('auto');
-        });
+        for (const model of [
+            'gpt-5', 'gpt-5.1', 'gpt-5.1-codex', 'gpt-5.1-codex-max', 'gpt-5.1-codex-mini', 'gpt-5.1-chat-latest',
+            'gpt-5.2', 'gpt-5.2-pro', 'gpt-5.2-codex', 'gpt-5.2-chat-latest', 'gpt-5.3-codex', 'gpt-5.3-chat-latest',
+            'gpt-5.4', 'gpt-5.4-pro', 'gpt-5.4-mini', 'gpt-5.4-nano', 'gpt-5.5', 'gpt-5.5-pro'
+        ]) {
+            it(`uses the common preset below GPT-5.6 for ${model} without variant exceptions`, () => {
+                expect(getOpenAiModelDefaults(model).reasoningSupport).to.deep.equal({
+                    supportedLevels: ['off', 'none', 'low', 'medium', 'high', 'xhigh', 'auto'], defaultLevel: 'auto'
+                });
+            });
+        }
     });
 
     describe('GPT-4.1', () => {
@@ -119,7 +164,9 @@ describe('getOpenAiModelDefaults', () => {
             for (const id of ['o4-mini', 'o3', 'o3-mini', 'o3-pro']) {
                 const d = getOpenAiModelDefaults(id);
                 expect(d.contextWindow, id).to.equal(200_000);
-                expect(d.reasoningSupport?.supportedLevels, id).to.not.include('minimal');
+                expect(d.reasoningSupport, id).to.deep.equal({
+                    supportedLevels: ['off', 'low', 'medium', 'high', 'auto'], defaultLevel: 'auto'
+                });
             }
         });
 

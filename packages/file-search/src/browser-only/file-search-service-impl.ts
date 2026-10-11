@@ -23,9 +23,8 @@ import { matchesPattern, createIgnoreMatcher, getIgnorePatterns } from '@theia/f
 
 @injectable()
 export class FileSearchServiceImpl implements FileSearchService {
-    @inject(ILogger)
-    @named('file-search')
-    protected logger: ILogger;
+    @inject(ILogger) @named('file-search:FileSearchServiceImpl')
+    protected readonly logger: ILogger;
 
     @inject(FileService)
     protected readonly fs: FileService;

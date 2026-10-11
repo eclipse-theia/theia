@@ -162,9 +162,12 @@ export class GenericCapabilitiesVariableContribution implements AIVariableContri
             return { variable, value: '' };
         }
 
+        // Ids come from the capabilities panel, which lists qualified names; `getSkill` also accepts
+        // a plain one, so a selection stored before a skill gained a qualifier still resolves.
         const skills = skillIds
             .map(skillId => this.skillService!.getSkill(skillId))
-            .filter((skill): skill is NonNullable<typeof skill> => skill !== undefined);
+            .filter((skill): skill is NonNullable<typeof skill> => skill !== undefined)
+            .map(skill => this.skillsContribution!.toSkillSummary(skill));
 
         return this.skillsContribution.resolveSkillsVariable(skills, variable);
     }

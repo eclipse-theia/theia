@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as cp from 'child_process';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import * as path from 'path';
 import { createInterface } from 'readline';
 import { Channel, ConnectionErrorHandler, Disposable, DisposableCollection, ILogger } from '../../common';
@@ -38,7 +38,7 @@ export type IPCConnectionOptions = Partial<ResolvedIPCConnectionOptions> & {
 @injectable()
 export class IPCConnectionProvider {
 
-    @inject(ILogger)
+    @inject(ILogger) @named('core:IPCConnectionProvider')
     protected readonly logger: ILogger;
 
     listen(options: IPCConnectionOptions, acceptor: (connection: Channel) => void): Disposable {

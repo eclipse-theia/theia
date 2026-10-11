@@ -19,7 +19,6 @@ import { UntitledResourceResolver } from '@theia/core';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';

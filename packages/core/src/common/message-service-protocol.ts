@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { CancellationToken } from './cancellation';
 import { nls } from './nls';
+import { ILogger } from './logger';
 
 export const messageServicePath = '/services/messageService';
 
@@ -115,6 +116,9 @@ export interface ProgressUpdate {
 @injectable()
 export class MessageClient {
 
+    @inject(ILogger) @named('core:MessageClient')
+    protected readonly logger: ILogger;
+
     /**
      * Show a message of the given type and possible actions to the user.
      * Resolve to a chosen action.
@@ -123,7 +127,7 @@ export class MessageClient {
      * To be implemented by an extension, e.g. by the messages extension.
      */
     showMessage(message: Message): Promise<string | undefined> {
-        console.info(message.text);
+        this.logger.info(message.text);
         return Promise.resolve(undefined);
     }
 
@@ -133,7 +137,7 @@ export class MessageClient {
      * To be implemented by an extension, e.g. by the messages extension.
      */
     showProgress(progressId: string, message: ProgressMessage, cancellationToken: CancellationToken): Promise<string | undefined> {
-        console.info(message.text);
+        this.logger.info(message.text);
         return Promise.resolve(undefined);
     }
 

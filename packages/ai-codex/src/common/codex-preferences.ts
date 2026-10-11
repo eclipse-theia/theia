@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { AI_CORE_PREFERENCES_TITLE, MODEL_PROVIDER_TYPE_DETAIL, ModelProviderTypeDetail } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { nls, PreferenceSchema } from '@theia/core';
 
 export const CODEX_API_KEY_PREF = 'ai-features.codex.apiKey';
@@ -23,6 +23,7 @@ export const CodexPreferencesSchema: PreferenceSchema = {
     properties: {
         [CODEX_API_KEY_PREF]: {
             type: 'string',
+            typeDetails: { [MODEL_PROVIDER_TYPE_DETAIL]: { label: 'Codex' } satisfies ModelProviderTypeDetail },
             markdownDescription: nls.localize('theia/ai/codex/apiKey/description',
                 'OpenAI API key for Codex. If not set, falls back to the shared OpenAI API key (`ai-features.openAiOfficial.openAiApiKey`). ' +
                 'Can also be set via `OPENAI_API_KEY` environment variable.'),

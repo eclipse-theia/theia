@@ -219,10 +219,17 @@
   padding: 0 var(--theia-ui-padding);
 }
 
+/* Centered as a flex line rather than by text alignment: a codicon is a 16px
+   inline-block on the same baseline as the 13px label, so in normal flow it
+   rides above the text and stretches the line box. */
 .theia-TreeContainer .theia-WelcomeView .theia-WelcomeViewButton {
   width: 100%;
   max-width: var(--theia-welcomeView-button-maxWidth);
   margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--theia-ui-padding) / 2);
 }
 
 .theia-TreeContainer .theia-WelcomeView .theia-WelcomeViewCommandLink {

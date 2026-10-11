@@ -69,6 +69,9 @@
       "path": "../plugin"
     },
     {
+      "path": "../plugin-utils"
+    },
+    {
       "path": "../preferences"
     },
     {
@@ -79,6 +82,9 @@
     },
     {
       "path": "../task"
+    },
+    {
+      "path": "../telemetry"
     },
     {
       "path": "../terminal"

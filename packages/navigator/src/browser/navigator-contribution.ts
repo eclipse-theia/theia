@@ -38,6 +38,7 @@ import {
     isOSX,
     MenuModelRegistry,
     MenuPath,
+    MessageService,
     Mutable,
     PreferenceScope,
     PreferenceService,
@@ -64,6 +65,7 @@ import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-fro
 import { NavigatorDiff, NavigatorDiffCommands } from './navigator-diff';
 import { DirNode, FileNode } from '@theia/filesystem/lib/browser';
 import { FileNavigatorModel } from './navigator-model';
+import { NavigatorFileClipboard } from './navigator-file-clipboard';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget';
@@ -126,6 +128,12 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     @inject(ClipboardService)
     protected readonly clipboardService: ClipboardService;
+
+    @inject(NavigatorFileClipboard)
+    protected readonly fileClipboard: NavigatorFileClipboard;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
@@ -345,6 +353,10 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             isEnabled: widget => this.withWidget(widget, () => this.workspaceService.opened),
             isVisible: widget => this.withWidget(widget, () => this.workspaceService.opened)
         });
+        registry.registerHandler(CommonCommands.PASTE.id, {
+            isEnabled: () => this.canPasteIntoNavigator(),
+            execute: () => this.pasteIntoNavigator()
+        });
     }
 
     protected get editorWidgets(): NavigatableWidget[] {
@@ -368,6 +380,27 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             return cb(widget);
         }
         return false;
+    }
+
+    protected canPasteIntoNavigator(): boolean {
+        const widget = this.tryGetWidget();
+        return !!widget && this.shell.currentWidget === widget && widget.canPasteFiles();
+    }
+
+    /**
+     * Pastes files into the navigator without a trusted paste event. The default
+     * `CommonCommands.PASTE` handler relies on `document.execCommand('paste')`, which browsers
+     * block for programmatic invocations, e.g. from the menu. Prefers the in-app file clipboard
+     * as reading the system clipboard may require a user permission prompt in browsers.
+     */
+    protected async pasteIntoNavigator(): Promise<void> {
+        const widget = this.tryGetWidget();
+        if (widget) {
+            const text = this.fileClipboard.get() ?? await this.clipboardService.readText();
+            if (text) {
+                await widget.pasteFiles(text).catch(error => this.messageService.error(error.message));
+            }
+        }
     }
 
     override registerMenus(registry: MenuModelRegistry): void {

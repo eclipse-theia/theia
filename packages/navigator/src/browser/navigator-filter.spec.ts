@@ -17,8 +17,13 @@
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 const disableJSDOM = enableJSDOM();
 
+import URI from '@theia/core/lib/common/uri';
+import { FileStat } from '@theia/filesystem/lib/common/files';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { expect } from 'chai';
-import { FileNavigatorFilterPredicate } from './navigator-filter';
+import * as sinon from 'sinon';
+import { FileNavigatorPreferences } from '../common/navigator-preferences';
+import { FileNavigatorFilter, FileNavigatorFilterPredicate } from './navigator-filter';
 
 disableJSDOM();
 
@@ -28,15 +33,40 @@ interface Input {
     readonly excludes: string[];
 }
 
+class TestFileNavigatorFilter extends FileNavigatorFilter {
+    constructor(
+        protected override readonly workspaceService: WorkspaceService,
+        filterPredicate: FileNavigatorFilter.Predicate
+    ) {
+        super({} as FileNavigatorPreferences);
+        this.filterPredicate = filterPredicate;
+    }
+
+    testFilter(item: { id: string }): boolean {
+        return this.filterItem(item);
+    }
+}
+
+function toFileStatNode(uri: URI): { id: string; uri: URI; fileStat: FileStat } {
+    return {
+        id: uri.toString(),
+        uri,
+        fileStat: FileStat.dir(uri.toString())
+    };
+}
+
 describe('navigator-filter-glob', () => {
 
-    const pathPrefix = 'file:///some/path/to';
-    const toItem = (id: string) => ({ id: `${pathPrefix}${id}` });
+    const toItem = (id: string) => ({ id: id.replace(/^\//, '') });
     const itemsToFilter = [
         '/.git/',
         '/.git/a',
         '/.git/b',
 
+        '/a.js',
+        '/dist/',
+
+        '/src/dist/',
         '/src/foo/',
         '/src/foo/a.js',
         '/src/foo/b.js',
@@ -70,11 +100,12 @@ describe('navigator-filter-glob', () => {
             },
             includes: [
                 '/src/foo/a.ts',
+                '/src/foo/a.js',
+                '/test/baz/bar/a.js',
                 '/.git/'
             ],
             excludes: [
-                '/src/foo/a.js',
-                '/test/baz/bar/a.js'
+                '/a.js'
             ]
         },
         {
@@ -97,12 +128,12 @@ describe('navigator-filter-glob', () => {
                 '**/.git/**': true
             },
             includes: [
-                '/src/foo/a.ts'
+                '/src/foo/a.ts',
+                '/src/foo/a.js'
             ],
             excludes: [
                 '/.git/',
-                '/src/foo/a.js',
-                '/test/baz/bar/a.js'
+                '/a.js'
             ]
         },
         {
@@ -127,6 +158,28 @@ describe('navigator-filter-glob', () => {
             excludes: [
 
             ]
+        },
+        {
+            patterns: {
+                'dist': true
+            },
+            includes: [
+                '/src/dist/'
+            ],
+            excludes: [
+                '/dist/'
+            ]
+        },
+        {
+            patterns: {
+                '*/dist': true
+            },
+            includes: [
+                '/dist/'
+            ],
+            excludes: [
+                '/src/dist/'
+            ]
         }
     ] as Input[]).forEach((test, index) => {
         it(`${index < 10 ? `0${index + 1}` : `${index + 1}`} glob-filter: (${Object.keys(test.patterns).map(key => `${key} [${test.patterns[key]}]`).join(', ')}) `, () => {
@@ -137,6 +190,21 @@ describe('navigator-filter-glob', () => {
         });
     });
 
+});
+
+describe('navigator-filter workspace paths', () => {
+    const workspaceRoot = new URI('file:///workspace');
+    const workspaceService = sinon.createStubInstance(WorkspaceService);
+    workspaceService.getWorkspaceRootUri.returns(workspaceRoot);
+    const filter = new TestFileNavigatorFilter(workspaceService, new FileNavigatorFilterPredicate({ dist: true }));
+
+    it('matches files.exclude against workspace-relative paths', () => {
+        const rootDist = new URI('file:///workspace/dist');
+        const nestedDist = new URI('file:///workspace/src/dist');
+
+        expect(filter.testFilter(toFileStatNode(rootDist))).to.be.false;
+        expect(filter.testFilter(toFileStatNode(nestedDist))).to.be.true;
+    });
 });
 
 function includes<T>(array: T[], item: T, message: string = `Expected ${JSON.stringify(array)} to include ${JSON.stringify(item)}.`): void {

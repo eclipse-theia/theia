@@ -16,9 +16,10 @@
 
 import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
 import { getProxyUrl } from '@theia/ai-core/lib/node';
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { OllamaModel } from './ollama-language-model';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { OllamaLanguageModelFactory, OllamaModel } from './ollama-language-model';
 import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsManager {
@@ -28,6 +29,12 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
+
+    @inject(OllamaLanguageModelFactory)
+    protected readonly ollamaLanguageModelFactory: OllamaLanguageModelFactory;
+
+    @inject(ILogger) @named('ai-ollama:OllamaLanguageModelsManagerImpl')
+    protected readonly logger: ILogger;
 
     get host(): string | undefined {
         return this._host ?? process.env.OLLAMA_HOST;
@@ -50,7 +57,7 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
 
             if (existingModel) {
                 if (!(existingModel instanceof OllamaModel)) {
-                    console.warn(`Ollama: model ${modelDescription.id} is not an Ollama model`);
+                    this.logger.warn(`Ollama: model ${modelDescription.id} is not an Ollama model`);
                     continue;
                 }
                 const status = this.calculateStatus(host);
@@ -62,14 +69,14 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
             } else {
                 const status = this.calculateStatus(host);
                 this.languageModelRegistry.addLanguageModels([
-                    new OllamaModel(
-                        modelDescription.id,
-                        modelDescription.model,
+                    this.ollamaLanguageModelFactory({
+                        id: modelDescription.id,
+                        model: modelDescription.model,
                         status,
-                        hostProvider,
-                        proxyUrl,
-                        modelDescription.reasoningSupport
-                    )
+                        host: hostProvider,
+                        proxy: proxyUrl,
+                        reasoningSupport: modelDescription.reasoningSupport
+                    })
                 ]);
             }
         }

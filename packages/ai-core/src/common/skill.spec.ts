@@ -17,7 +17,10 @@
 import { expect } from 'chai';
 import {
     SKILL_FILE_NAME,
+    Skill,
     SkillDescription,
+    SkillDirectoryEntry,
+    combineSkillDirectories,
     isValidSkillName,
     validateSkillDescription
 } from './skill';
@@ -217,6 +220,102 @@ describe('Skill Types', () => {
             };
             const errors = validateSkillDescription(description, 'my-skill');
             expect(errors).to.be.empty;
+        });
+
+        it('does not require the frontmatter name of an owned skill to carry its qualifier', () => {
+            // Qualification is layered on top of the name; it never changes what an artifact has to
+            // write into its SKILL.md, which would change the artifact's content hash.
+            const description: SkillDescription = {
+                name: 'query-builder',
+                description: 'Build SQL'
+            };
+            expect(validateSkillDescription(description, 'query-builder')).to.be.empty;
+            expect(Skill.qualifyName(description.name, 'bq')).to.equal('bq:query-builder');
+        });
+    });
+
+    describe('Skill.qualifyName', () => {
+        it('returns the plain name when there is no qualifier', () => {
+            expect(Skill.qualifyName('code-review')).to.equal('code-review');
+        });
+
+        it('prefixes the name with the qualifier', () => {
+            expect(Skill.qualifyName('query-builder', 'bigquery-data-analytics')).to.equal('bigquery-data-analytics:query-builder');
+        });
+    });
+
+    describe('Skill.qualifierOf', () => {
+        const skill = (name: string, qualifiedName: string): Skill =>
+            ({ name, description: 'd', location: '/skills/' + name + '/SKILL.md', qualifiedName });
+
+        it('returns undefined for a skill from a built-in root', () => {
+            expect(Skill.qualifierOf(skill('code-review', 'code-review'))).to.be.undefined;
+        });
+
+        it('returns the qualifier of a contributed skill', () => {
+            expect(Skill.qualifierOf(skill('query-builder', 'bq:query-builder'))).to.equal('bq');
+        });
+
+        it('round-trips with qualifyName', () => {
+            const qualifiedName = Skill.qualifyName('query-builder', 'io.github.acme_tools');
+            expect(Skill.qualifierOf(skill('query-builder', qualifiedName))).to.equal('io.github.acme_tools');
+        });
+    });
+
+    describe('combineSkillDirectories with plugin directories', () => {
+        const pluginEntry: SkillDirectoryEntry = {
+            path: '/home/user/.agents/plugins/io.example.bq/skills',
+            tier: 'plugin',
+            qualifier: 'bq'
+        };
+
+        it('appends plugin directories after every user-controlled tier', () => {
+            const result = combineSkillDirectories(
+                ['/workspace/.prompts/skills'],
+                ['/custom/skills'],
+                ['/home/user/.agents/skills'],
+                [pluginEntry]
+            );
+
+            expect(result).to.deep.equal([
+                { path: '/workspace/.prompts/skills', tier: 'workspace' },
+                { path: '/custom/skills', tier: 'configured' },
+                { path: '/home/user/.agents/skills', tier: 'default' },
+                pluginEntry
+            ]);
+        });
+
+        it('keeps the qualifier of a plugin directory', () => {
+            const result = combineSkillDirectories([], [], [], [pluginEntry]);
+            expect(result[0].qualifier).to.equal('bq');
+        });
+
+        it('drops a plugin directory whose path a user-controlled tier already claimed, so the user wins the collision', () => {
+            const result = combineSkillDirectories(
+                [],
+                [pluginEntry.path],
+                [],
+                [pluginEntry]
+            );
+
+            expect(result).to.deep.equal([
+                { path: pluginEntry.path, tier: 'configured' }
+            ]);
+        });
+
+        it('deduplicates two plugin directories with the same path, keeping the first', () => {
+            const second: SkillDirectoryEntry = {
+                ...pluginEntry,
+                qualifier: 'other'
+            };
+            const result = combineSkillDirectories([], [], [], [pluginEntry, second]);
+            expect(result).to.deep.equal([pluginEntry]);
+        });
+
+        it('behaves exactly as before when no plugin directories are passed', () => {
+            expect(combineSkillDirectories(['/workspace/skills'], [], [])).to.deep.equal([
+                { path: '/workspace/skills', tier: 'workspace' }
+            ]);
         });
     });
 });

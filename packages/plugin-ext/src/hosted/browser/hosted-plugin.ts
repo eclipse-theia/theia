@@ -22,9 +22,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { generateUuid } from '@theia/core/lib/common/uuid';
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { PluginWorker } from './plugin-worker';
-import { getPluginId, DeployedPlugin, HostedPluginServer } from '../../common/plugin-protocol';
+import { getPluginId, DeployedPlugin, HostedPluginServer, PLUGIN_HOST_FRONTEND } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
 import { ExtensionKind, MAIN_RPC_CONTEXT, PluginManagerExt, UIKind } from '../../common/plugin-api-rpc';
 import { setUpPluginApi } from '../../main/browser/main-context';
@@ -33,7 +33,7 @@ import {
     Disposable, DisposableCollection, isCancelled,
     CommandRegistry, WillExecuteCommandEvent,
     CancellationTokenSource, ProgressService, nls,
-    RpcProxy
+    RpcProxy, ILogger
 } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/common/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -73,6 +73,7 @@ import {
 } from '../common/hosted-plugin';
 import { isRemote } from '@theia/core/lib/browser/browser';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { TelemetryConsentProvider } from '@theia/telemetry/lib/common/telemetry-consent-provider';
 
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
 
@@ -183,6 +184,12 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     @inject(WorkspaceTrustService)
     protected readonly workspaceTrustService: WorkspaceTrustService;
 
+    @inject(TelemetryConsentProvider)
+    protected readonly telemetryConsentProvider: TelemetryConsentProvider;
+
+    @inject(ILogger) @named('plugin-ext:HostedPluginSupport')
+    protected override readonly logger: ILogger;
+
     constructor() {
         super(generateUuid());
     }
@@ -242,7 +249,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     }
 
     protected createTheiaReadyPromise(): Promise<unknown> {
-        return Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots]);
+        return Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots, this.telemetryConsentProvider.ready]);
     }
 
     protected override runOperation(operation: () => Promise<void>): Promise<void> {
@@ -290,7 +297,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
             await this.viewRegistry.initWidgets();
             // remove restored plugin widgets which were not registered by contributions
             this.viewRegistry.removeStaleWidgets();
-        }).catch(console.error);
+        }).catch(e => this.logger.error(e));
         this.workspaceTrustService.refreshRestrictedModeIndicator();
     }
 
@@ -361,7 +368,8 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
                 },
                 jsonValidation,
                 pluginKind: isRemote ? ExtensionKind.Workspace : ExtensionKind.UI,
-                supportedActivationEvents
+                supportedActivationEvents,
+                telemetryLevel: this.telemetryConsentProvider.level
             });
             if (toDisconnect.disposed) {
                 return undefined;
@@ -372,7 +380,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     }
 
     protected initRpc(host: PluginHost, pluginId: string): RPCProtocol {
-        const rpc = host === 'frontend' ? new PluginWorker().rpc : this.createServerRpc(host);
+        const rpc = host === PLUGIN_HOST_FRONTEND ? new PluginWorker().rpc : this.createServerRpc(host);
         setUpPluginApi(rpc, this.container);
         this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, this.container));
         return rpc;
@@ -583,7 +591,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
                     return result.length > 0;
                 } catch (e) {
                     if (!isCancelled(e)) {
-                        console.error(e);
+                        this.logger.error(e);
                     }
                     return false;
                 } finally {
@@ -644,7 +652,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
                 webview.setHTML(this.getDeserializationFailedContents(`
                 An error occurred while restoring '${webview.viewType}' view. Please check logs.
                 `));
-                console.error('Failed to restore the webview', e);
+                this.logger.error('Failed to restore the webview', e);
             }
         }
     }

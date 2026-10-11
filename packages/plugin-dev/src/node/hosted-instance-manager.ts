@@ -23,7 +23,7 @@ import * as path from 'path';
 import URI from '@theia/core/lib/common/uri';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { HostedPluginUriPostProcessor, HostedPluginUriPostProcessorSymbolName } from './hosted-plugin-uri-postprocessor';
-import { environment, isWindows } from '@theia/core';
+import { environment, isWindows, ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { LogType } from '@theia/plugin-ext/lib/common/types';
@@ -117,6 +117,9 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
 
     @inject(EnvVariablesServer)
     protected readonly envVariablesServer: EnvVariablesServer;
+
+    @inject(ILogger) @named('plugin-dev:AbstractHostedInstanceManager')
+    protected readonly logger: ILogger;
 
     isRunning(): boolean {
         return this.isPluginRunning;
@@ -249,7 +252,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
             return true;
         } catch (err) {
             if (!isENOENT(err)) {
-                console.error(err);
+                this.logger.error(err);
             }
             return false;
         }

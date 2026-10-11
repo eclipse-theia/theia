@@ -66,7 +66,7 @@ export class WorkspaceMetadataStoreImpl implements WorkspaceMetadataStore {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(ILogger) @named('WorkspaceMetadataStorage')
+    @inject(ILogger) @named('workspace:WorkspaceMetadataStoreImpl')
     protected readonly logger: ILogger;
 
     protected readonly toDispose = new DisposableCollection();

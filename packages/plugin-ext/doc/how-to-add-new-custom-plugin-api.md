@@ -267,24 +267,17 @@ To fire an activation event, you need to call the plugin hosts `$activateByEvent
 
 ## Packaging
 
-When bundling our application with the generated `gen-webpack.node.config.js` we need to make sure that our initialization function is bundled as a `commonjs2` library so it can be dynamically loaded.
-Adjust the `webpack.config.js` accordingly:
+When bundling our application, our initialization function needs to be a dedicated entry point of the backend bundle so it can be dynamically loaded.
+Adjust the `esbuild.mjs` accordingly:
 
-```typescript
-const configs = require('./gen-webpack.config.js');
-const nodeConfig = require('./gen-webpack.node.config.js');
+```javascript
+import { nodeOptions } from './gen-esbuild.node.mjs';
 
-if (nodeConfig.config.entry) {
-    /**
-     * Add our initialization function. If unsure, look at the already generated entries for
-     * the nodeConfig where an entry is added for the default 'backend-init-theia' initialization.
-     */
-    nodeConfig.config.entry['foo-init'] = {
-        import: require.resolve('@namespace/package/lib/node/foo-init'),
-        library: { type: 'commonjs2' }
-    };
-}
-
-module.exports = [...configs, nodeConfig.config];
-
+/**
+ * Add our initialization function. If unsure, look at the already generated entries of
+ * the nodeOptions where an entry is added for the default 'backend-init-theia' initialization.
+ */
+nodeOptions.entryPoints['foo-init'] = '@namespace/package/lib/node/foo-init';
 ```
+
+esbuild emits CommonJS for the `node` platform, so no additional configuration is needed to make the exports of the entry point loadable at runtime.

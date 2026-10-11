@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { Anchor, ContextMenuAccess, KeybindingRegistry, Widget, WidgetManager } from '@theia/core/lib/browser';
+import { Anchor, ApplicationShell, ContextMenuAccess, KeybindingRegistry, Widget, WidgetManager } from '@theia/core/lib/browser';
 import { TabBarToolbar, TabBarToolbarFactory } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, interfaces } from '@theia/core/shared/inversify';
 import { DisposableCollection, MenuPath, PreferenceService, ProgressService } from '@theia/core';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
@@ -26,6 +26,7 @@ import {
     ToolbarAlignment,
     ToolbarAlignmentString,
     ToolbarItemPosition,
+    LateInjector,
 } from './toolbar-interfaces';
 import { ToolbarController } from './toolbar-controller';
 import { ToolbarMenus } from './toolbar-constants';
@@ -43,6 +44,7 @@ export class ToolbarImpl extends TabBarToolbar {
     @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry;
     @inject(ProgressBarFactory) protected readonly progressFactory: ProgressBarFactory;
     @inject(ProgressService) protected readonly progressService: ProgressService;
+    @inject(LateInjector) protected readonly lateInjector: <T>(id: interfaces.ServiceIdentifier<T>) => T;
 
     protected currentlyDraggedItem: HTMLDivElement | undefined;
     protected draggedStartingPosition: ToolbarItemPosition | undefined;
@@ -58,13 +60,19 @@ export class ToolbarImpl extends TabBarToolbar {
     protected async doInit(): Promise<void> {
         this.hide();
         await this.model.ready.promise;
+        const shell = this.lateInjector(ApplicationShell);
 
         this.updateInlineItems();
+        this.setCurrent(shell.currentWidget);
         this.update();
         this.model.onToolbarModelDidUpdate(() => {
             this.updateInlineItems();
             this.update();
         });
+        this.toDispose.push(shell.onDidChangeCurrentWidget(({ newValue }) => {
+            this.setCurrent(newValue ?? undefined);
+            this.maybeUpdate();
+        }));
         this.model.onToolbarDidChangeBusyState(isBusy => {
             if (isBusy) {
                 this.isBusyDeferred = new Deferred<void>();
@@ -82,18 +90,27 @@ export class ToolbarImpl extends TabBarToolbar {
         this.toDisposeOnUpdateItems.dispose();
         this.toDisposeOnUpdateItems = new DisposableCollection();
         this.inline.clear();
+        this.toolbarContextKeys = new Set();
         const { items } = this.model.toolbarItems;
 
         for (const column of Object.keys(items)) {
             for (const group of items[column as ToolbarAlignment]) {
                 for (const item of group) {
                     this.inline.set(item.id, item);
+                    if (item.when) {
+                        this.contextKeyService.parseKeys(item.when)?.forEach(key => this.toolbarContextKeys.add(key));
+                    }
                     if (item.onDidChange) {
                         this.toDisposeOnUpdateItems.push(item.onDidChange(() => this.maybeUpdate()));
                     }
                 }
             }
         }
+    }
+
+    override updateTarget(current?: Widget): void {
+        this.setCurrent(current);
+        this.maybeUpdate();
     }
 
     protected handleContextMenu = (e: React.MouseEvent<HTMLDivElement>): ContextMenuAccess => this.doHandleContextMenu(e);

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
 import { StatusBarAlignment, StatusBarEntry, FrontendApplicationContribution, OnWillStopAction, codicon } from '@theia/core/lib/browser';
 import { MessageService, PreferenceChange, PreferenceServiceImpl } from '@theia/core/lib/common';
@@ -27,6 +27,7 @@ import { HostedPluginManagerClient, HostedInstanceState, HostedPluginCommands, H
 import { HostedPluginLogViewer } from './hosted-plugin-log-viewer';
 import { HostedPluginPreferences } from '../common/hosted-plugin-preferences';
 import { nls } from '@theia/core/lib/common/nls';
+import { ILogger } from '@theia/core';
 
 /**
  * Adds a status bar element displaying the state of secondary Theia instance with hosted plugin and
@@ -65,6 +66,9 @@ export class HostedPluginController implements FrontendApplicationContribution {
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    @inject(ILogger) @named('plugin-dev:HostedPluginController')
+    protected readonly logger: ILogger;
 
     private pluginState: HostedInstanceState = HostedInstanceState.STOPPED;
     // used only for displaying Running instead of Watching in status bar if run of watcher fails
@@ -120,7 +124,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
 
                 this.preferenceService.onPreferenceChanged(preference => this.onPreferencesChanged(preference));
             } else {
-                console.error(`Need to load plugin ${pluginMetadata.model.id}`);
+                this.logger.error(`Need to load plugin ${pluginMetadata.model.id}`);
             }
         });
     }

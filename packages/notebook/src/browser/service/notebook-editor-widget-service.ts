@@ -19,8 +19,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Emitter } from '@theia/core';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { Emitter, ILogger } from '@theia/core';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { ApplicationShell } from '@theia/core/lib/browser';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -34,6 +34,9 @@ export class NotebookEditorWidgetService {
 
     @inject(ContextKeyService)
     protected contextKeyService: ContextKeyService;
+
+    @inject(ILogger) @named('notebook:NotebookEditorWidgetService')
+    protected readonly logger: ILogger;
 
     protected readonly notebookEditors = new Map<string, NotebookEditorWidget>();
 
@@ -68,7 +71,7 @@ export class NotebookEditorWidgetService {
 
     addNotebookEditor(editor: NotebookEditorWidget): void {
         if (this.notebookEditors.has(editor.id)) {
-            console.warn('Attempting to add duplicated notebook editor: ' + editor.id);
+            this.logger.warn('Attempting to add duplicated notebook editor: ' + editor.id);
         }
         this.notebookEditors.set(editor.id, editor);
         this.onNotebookEditorAddEmitter.fire(editor);
@@ -82,7 +85,7 @@ export class NotebookEditorWidgetService {
             this.notebookEditors.delete(editor.id);
             this.onNotebookEditorRemoveEmitter.fire(editor);
         } else {
-            console.warn('Attempting to remove not registered editor: ' + editor.id);
+            this.logger.warn('Attempting to remove not registered editor: ' + editor.id);
         }
     }
 

@@ -58,8 +58,8 @@ export class SampleTestContribution implements TestContribution, CommandContribu
     @inject(FileService)
     private fileService: FileService;
 
-    @inject(ILogger) @named('api-samples')
-    private logger: ILogger;
+    @inject(ILogger) @named('api-samples:SampleTestContribution')
+    protected readonly logger: ILogger;
 
     private testController = new TestControllerImpl('SampleTestController', 'Sample Test Controller');
     private usedUris = new Set<string>();

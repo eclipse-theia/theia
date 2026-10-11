@@ -52,7 +52,7 @@ export interface FrontendApplicationContribution {
     /**
      * Called when an application is stopped or unloaded.
      *
-     * Note that this is implemented using `window.beforeunload` which doesn't allow any asynchronous code anymore.
+     * Note that this is implemented using `window.pagehide` which doesn't allow any asynchronous code anymore.
      * I.e. this is the last tick.
      */
     onStop?(app: FrontendApplication): void;

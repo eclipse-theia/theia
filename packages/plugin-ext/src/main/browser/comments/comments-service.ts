@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import {
@@ -27,6 +27,7 @@ import {
 } from '../../../common/plugin-api-rpc-model';
 import { CommentController } from './comments-main';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { ILogger } from '@theia/core';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -89,6 +90,9 @@ export interface CommentsService {
 
 @injectable()
 export class PluginCommentService implements CommentsService {
+
+    @inject(ILogger) @named('plugin-ext:PluginCommentService')
+    protected readonly logger: ILogger;
 
     private readonly onDidSetDataProviderEmitter: Emitter<void> = new Emitter<void>();
     readonly onDidSetDataProvider: Event<void> = this.onDidSetDataProviderEmitter.event;
@@ -181,7 +185,7 @@ export class PluginCommentService implements CommentsService {
         this.commentControls.forEach(control => {
             commentControlResult.push(control.getDocumentComments(resource, CancellationToken.None)
                 .catch(e => {
-                    console.log(e);
+                    this.logger.info(e);
                     return null;
                 }));
         });

@@ -142,7 +142,9 @@
     ],
     "@theia/annotation-check": "error",
     "@theia/localization-check": "error",
+    "@theia/named-logger-check": "error",
     "@theia/no-src-import": "error",
+    "@theia/preload-localization-check": "error",
     "@theia/runtime-import-check": "error",
     "@theia/shared-dependencies": "error",
     "import/no-extraneous-dependencies": "error",
@@ -173,6 +175,14 @@
       ],
       "rules": {
         "import/no-dynamic-require": "off"
+      }
+    },
+    {
+      "files": [
+        "**/electron-main/**"
+      ],
+      "rules": {
+        "@theia/named-logger-check": "off"
       }
     }
   ]

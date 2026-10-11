@@ -175,7 +175,7 @@ export class PreferenceValidationService {
             const configuredDefault = this.getDefaultFromSchema(schema);
             return this.validateOneOf(key, configuredDefault, { ...schema, default: undefined });
         }
-        console.log(`While validating ${key}, failed to find a valid value or default value. Using configured value ${value}.`);
+        this.logger.info(`While validating ${key}, failed to find a valid value or default value. Using configured value ${value}.`);
         return value;
     }
 

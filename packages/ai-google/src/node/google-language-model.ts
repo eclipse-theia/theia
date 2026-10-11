@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import {
-    createToolCallError,
+    formatToolCallContentForModel,
     ImageContent,
+    isToolCallContent,
     LanguageModel,
     LanguageModelMessage,
     LanguageModelRequest,
@@ -28,11 +29,13 @@ import {
     ReasoningSupport,
     ServerToolCall,
     ServerToolDescriptor,
+    TokenUsageParams,
     ToolCallResult,
-    ToolInvocationContext,
+    ToolCallExecutor,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken } from '@theia/core';
+import { CancellationToken, ILogger } from '@theia/core';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import {
     GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality, FunctionResponse, ToolConfig, Tool, UrlContextMetadata, GroundingMetadata
 } from '@google/genai';
@@ -54,6 +57,9 @@ interface ToolCallback {
 function toFunctionResponse(content: ToolCallResult): FunctionResponse['response'] {
     if (content === undefined) {
         return {};
+    }
+    if (isToolCallContent(content)) {
+        return { result: formatToolCallContentForModel(content) };
     }
     if (Array.isArray(content)) {
         return { result: content };
@@ -146,27 +152,82 @@ function toGoogleRole(message: LanguageModelMessage): 'user' | 'model' {
     }
 }
 
+export interface GoogleModelParams {
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    apiKey: () => string | undefined;
+    retrySettings: () => GoogleLanguageModelRetrySettings;
+    reasoningSupport?: ReasoningSupport;
+    reasoningApi?: ReasoningApi;
+    maxInputTokens?: number;
+    serverTools?: ServerToolDescriptor[];
+}
+
+export const GoogleModelParams = Symbol('GoogleModelParams');
+
+export const GoogleLanguageModelFactory = Symbol('GoogleLanguageModelFactory');
+export type GoogleLanguageModelFactory = (params: GoogleModelParams) => GoogleModel;
+
+/** Options for {@link createGoogleClient}. */
+export interface GoogleClientOptions {
+    readonly apiKey: string;
+}
+
+/**
+ * The single place a Gemini SDK client is built, so that a chat request, a model lookup and the model
+ * discovery all reach the provider the same way.
+ */
+export function createGoogleClient(options: GoogleClientOptions): GoogleGenAI {
+    // TODO test vertexai
+    return new GoogleGenAI({ apiKey: options.apiKey, vertexai: false });
+}
+
 /**
  * Implements the Gemini language model integration for Theia. Reasoning-level
  * translation lives in {@link googleReasoningFor}.
  */
+@injectable()
 export class GoogleModel implements LanguageModel {
+
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    apiKey: () => string | undefined;
+    retrySettings: () => GoogleLanguageModelRetrySettings;
+    reasoningSupport?: ReasoningSupport;
+    reasoningApi?: ReasoningApi;
+    maxInputTokens?: number;
+    serverTools?: ServerToolDescriptor[];
 
     /** Provider identifier, used to key per-provider settings (e.g. server tool selections) and the capabilities UI. */
     readonly vendor = 'google';
 
-    constructor(
-        public readonly id: string,
-        public model: string,
-        public status: LanguageModelStatus,
-        public enableStreaming: boolean,
-        public apiKey: () => string | undefined,
-        public retrySettings: () => GoogleLanguageModelRetrySettings,
-        public reasoningSupport?: ReasoningSupport,
-        public reasoningApi?: ReasoningApi,
-        public maxInputTokens?: number,
-        public serverTools?: ServerToolDescriptor[]
-    ) { }
+    @inject(GoogleModelParams)
+    protected readonly params: GoogleModelParams;
+
+    @inject(ToolCallExecutor)
+    protected readonly toolCallExecutor: ToolCallExecutor;
+
+    @inject(ILogger) @named('ai-google:GoogleModel')
+    protected readonly logger: ILogger;
+
+    @postConstruct()
+    protected init(): void {
+        const params = this.params;
+        this.id = params.id;
+        this.model = params.model;
+        this.status = params.status;
+        this.enableStreaming = params.enableStreaming;
+        this.apiKey = params.apiKey;
+        this.retrySettings = params.retrySettings;
+        this.reasoningSupport = params.reasoningSupport;
+        this.reasoningApi = params.reasoningApi;
+        this.maxInputTokens = params.maxInputTokens;
+        this.serverTools = params.serverTools;
+    }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return {
@@ -241,6 +302,7 @@ export class GoogleModel implements LanguageModel {
                 let latestUrlContextMetadata: UrlContextMetadata | undefined;
                 let latestGroundingMetadata: GroundingMetadata | undefined;
                 try {
+                    let tokenUsage: TokenUsageParams | undefined = undefined;
                     for await (const chunk of stream) {
                         if (cancellationToken?.isCancellationRequested) {
                             break;
@@ -262,7 +324,7 @@ export class GoogleModel implements LanguageModel {
                                 // MALFORMED_FUNCTION_CALL: The model produced a malformed function call.
                                 // Log warning but continue - there might still be usable text content.
                                 case 'MALFORMED_FUNCTION_CALL':
-                                    console.warn('Gemini returned MALFORMED_FUNCTION_CALL finish reason.', {
+                                    that.logger.warn('Gemini returned MALFORMED_FUNCTION_CALL finish reason.', {
                                         finishReason,
                                         candidate: chunk.candidates?.[0],
                                         content: chunk.candidates?.[0]?.content,
@@ -275,7 +337,7 @@ export class GoogleModel implements LanguageModel {
                                 // e.g. SAFETY, MAX_TOKENS, RECITATION, LANGUAGE, ...
                                 // https://ai.google.dev/api/generate-content#FinishReason
                                 default:
-                                    console.error('Gemini streaming ended with unexpected finish reason:', {
+                                    that.logger.error('Gemini streaming ended with unexpected finish reason:', {
                                         finishReason,
                                         candidate: chunk.candidates?.[0],
                                         content: chunk.candidates?.[0]?.content,
@@ -340,14 +402,23 @@ export class GoogleModel implements LanguageModel {
                             yield { content: chunk.text };
                         }
 
-                        // Report token usage if available
+                        // Remember the token usage as Gemini's metadata is cumulative
                         if (chunk.usageMetadata) {
                             const promptTokens = chunk.usageMetadata.promptTokenCount;
                             const completionTokens = chunk.usageMetadata.candidatesTokenCount;
                             if (promptTokens !== undefined && completionTokens !== undefined) {
-                                yield { input_tokens: promptTokens, output_tokens: completionTokens };
+                                tokenUsage = {
+                                    inputTokens: promptTokens,
+                                    outputTokens: completionTokens,
+                                    requestId: request.requestId
+                                };
                             }
                         }
+                    }
+
+                    // Report token usage if available
+                    if (tokenUsage !== undefined && that.id) {
+                        yield { input_tokens: tokenUsage.inputTokens, output_tokens: tokenUsage.outputTokens };
                     }
 
                     // Surface any server tools (url_context / google_search) that the provider executed.
@@ -359,27 +430,11 @@ export class GoogleModel implements LanguageModel {
                     // Process tool calls if any exist
                     const toolCalls = Object.values(toolCallMap);
                     if (toolCalls.length > 0) {
-                        // Collect tool results
-                        const toolResult = await Promise.all(toolCalls.map(async tc => {
-                            const tool = request.tools?.find(t => t.name === tc.name);
-                            let result;
-                            if (!tool) {
-                                result = createToolCallError(`Tool '${tc.name}' not found in the available tools for this request.`, 'tool-not-available');
-                            } else {
-                                try {
-                                    result = await tool.handler(tc.args, ToolInvocationContext.create(tc.id));
-                                } catch (e) {
-                                    console.error(`Error executing tool ${tc.name}:`, e);
-                                    result = createToolCallError(e.message || 'Tool execution failed');
-                                }
-                            }
-                            return {
-                                name: tc.name,
-                                result: result,
-                                id: tc.id,
-                                arguments: tc.args,
-                            };
-                        }));
+                        const toolResult = await that.toolCallExecutor.executeToolCalls(
+                            toolCalls.map(tc => ({ id: tc.id, name: tc.name, arguments: tc.args })),
+                            request.tools,
+                            { cancellationToken }
+                        );
 
                         // Generate tool call responses
                         const calls = toolResult.map(tr => ({
@@ -421,7 +476,7 @@ export class GoogleModel implements LanguageModel {
                         }
                     }
                 } catch (e) {
-                    console.error('Error in Gemini streaming:', e);
+                    that.logger.error('Error in Gemini streaming:', e);
                     throw e;
                 }
             },
@@ -533,10 +588,11 @@ export class GoogleModel implements LanguageModel {
 
         try {
             let responseText = '';
-            // For non streaming requests we are always only interested in text parts
+            // For non streaming requests we are always only interested in text parts; thought summaries
+            // (parts flagged `thought`, present when includeThoughts is set) are not part of the answer.
             if (model.candidates?.[0]?.content?.parts) {
                 for (const part of model.candidates[0].content.parts) {
-                    if (part.text) {
+                    if (part.text && !part.thought) {
                         responseText += part.text;
                     }
                 }
@@ -564,8 +620,7 @@ export class GoogleModel implements LanguageModel {
             throw new Error('Please provide GOOGLE_API_KEY in preferences or via environment variable');
         }
 
-        // TODO test vertexai
-        return new GoogleGenAI({ apiKey, vertexai: false });
+        return createGoogleClient({ apiKey });
     }
 
     /**
@@ -595,14 +650,14 @@ export class GoogleModel implements LanguageModel {
                     }
 
                     const delayMs = retryDelayOnRateLimitError * 1000;
-                    console.warn(`Received 429 (Too Many Requests). Retrying in ${retryDelayOnRateLimitError}s. Attempt ${i + 1} of ${maxRetriesOnErrors}.`);
+                    this.logger.warn(`Received 429 (Too Many Requests). Retrying in ${retryDelayOnRateLimitError}s. Attempt ${i + 1} of ${maxRetriesOnErrors}.`);
                     await wait(delayMs);
                 } else if (retryDelayOnOtherErrors < 0) {
                     // Other errors should not retried because of the setting
                     throw error;
                 } else {
                     const delayMs = retryDelayOnOtherErrors * 1000;
-                    console.warn(`Request failed: ${message}. Retrying in ${retryDelayOnOtherErrors}s. Attempt ${i + 1} of ${maxRetriesOnErrors}.`);
+                    this.logger.warn(`Request failed: ${message}. Retrying in ${retryDelayOnOtherErrors}s. Attempt ${i + 1} of ${maxRetriesOnErrors}.`);
                     await wait(delayMs);
                 }
                 // -> reiterate the loop for the next attempt

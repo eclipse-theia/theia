@@ -16,10 +16,14 @@
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { injectable } from 'inversify';
+import { Emitter, Event } from '../common/event';
 import { ClipboardService } from '../browser/clipboard-service';
 
 @injectable()
 export class ElectronClipboardService implements ClipboardService {
+
+    protected readonly onDidWriteTextEmitter = new Emitter<string>();
+    readonly onDidWriteText: Event<string> = this.onDidWriteTextEmitter.event;
 
     readText(): string {
         return window.electronTheiaCore.readClipboard();
@@ -27,6 +31,7 @@ export class ElectronClipboardService implements ClipboardService {
 
     writeText(value: string): void {
         window.electronTheiaCore.writeClipboard(value);
+        this.onDidWriteTextEmitter.fire(value);
     }
 
 }

@@ -142,7 +142,8 @@ describe('BackendApplication', () => {
             const container = createTestContainer();
             const cleanupError = new Error('cleanup boom');
             sandbox.stub(container, 'unbindAllAsync').rejects(cleanupError);
-            const warnStub = sandbox.stub(console, 'warn');
+            const mockLogger = container.get(ILogger) as ILogger;
+            const warnStub = sandbox.stub(mockLogger, 'warn');
 
             const app = container.get(TestBackendApplication);
 
@@ -157,7 +158,8 @@ describe('BackendApplication', () => {
             const clock = sandbox.useFakeTimers();
             const container = createTestContainer();
             sandbox.stub(container, 'unbindAllAsync').returns(new Promise<void>(() => { /* never */ }));
-            const warnStub = sandbox.stub(console, 'warn');
+            const mockLogger = container.get(ILogger) as ILogger;
+            const warnStub = sandbox.stub(mockLogger, 'warn');
 
             const app = container.get(TestBackendApplication);
 
@@ -220,7 +222,8 @@ describe('BackendApplication', () => {
                 onStop: () => new Promise<void>(() => { /* never */ })
             });
             const unbindSpy = sandbox.spy(container, 'unbindAllAsync');
-            const warnStub = sandbox.stub(console, 'warn');
+            const mockLogger = container.get(ILogger) as ILogger;
+            const warnStub = sandbox.stub(mockLogger, 'warn');
 
             const app = container.get(TestBackendApplication);
             const shutdownPromise = app.invokeGracefulShutdown();

@@ -157,6 +157,8 @@
 
 .theia-view-container-part-title {
   display: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .theia-view-container-part-title.menu-open,

@@ -18,6 +18,9 @@
       "path": "../../packages/ai-chat-ui"
     },
     {
+      "path": "../../packages/ai-chatgpt"
+    },
+    {
       "path": "../../packages/ai-claude-code"
     },
     {
@@ -37,6 +40,9 @@
     },
     {
       "path": "../../packages/ai-editor"
+    },
+    {
+      "path": "../../packages/ai-external-api"
     },
     {
       "path": "../../packages/ai-google"
@@ -78,6 +84,9 @@
       "path": "../../packages/ai-terminal"
     },
     {
+      "path": "../../packages/ai-tool-sketchpad"
+    },
+    {
       "path": "../../packages/bulk-edit"
     },
     {
@@ -103,6 +112,9 @@
     },
     {
       "path": "../../packages/editor-preview"
+    },
+    {
+      "path": "../../packages/external-api"
     },
     {
       "path": "../../packages/file-search"
@@ -180,9 +192,6 @@
       "path": "../../packages/scm"
     },
     {
-      "path": "../../packages/scm-extra"
-    },
-    {
       "path": "../../packages/search-in-workspace"
     },
     {
@@ -190,6 +199,9 @@
     },
     {
       "path": "../../packages/task"
+    },
+    {
+      "path": "../../packages/telemetry"
     },
     {
       "path": "../../packages/terminal"

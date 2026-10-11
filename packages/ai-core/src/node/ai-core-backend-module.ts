@@ -40,10 +40,14 @@ import {
     LanguageModelRegistryClient,
     TokenUsageService,
     TokenUsageServiceClient,
-    TOKEN_USAGE_SERVICE_PATH
+    TOKEN_USAGE_SERVICE_PATH,
+    ToolCallExecutor,
+    ToolCallExecutorImpl
 } from '../common';
 import { BackendLanguageModelRegistryImpl } from './backend-language-model-registry';
 import { TokenUsageServiceImpl } from './token-usage-service-impl';
+import { ModelSnapshotStore, ModelSnapshotStoreImpl } from './model-snapshot-store';
+import { ModelDiscoveryFetcher, ModelDiscoveryFetcherImpl } from './model-discovery-fetcher';
 import { AgentSettingsPreferenceSchema } from '../common/agent-preferences';
 import { bindAICorePreferences } from '../common/ai-core-preferences';
 
@@ -112,5 +116,13 @@ const aiCoreConnectionModule = ConnectionContainerModule.create(({ bind, bindBac
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: AgentSettingsPreferenceSchema });
     bindAICorePreferences(bind);
+    bind(ToolCallExecutorImpl).toSelf().inSingletonScope();
+    bind(ToolCallExecutor).toService(ToolCallExecutorImpl);
+    // Bound in the root container: the snapshots are per provider, not per frontend connection,
+    // and the provider managers resolving them live in connection-scoped child containers.
+    bind(ModelSnapshotStoreImpl).toSelf().inSingletonScope();
+    bind(ModelSnapshotStore).toService(ModelSnapshotStoreImpl);
+    bind(ModelDiscoveryFetcherImpl).toSelf().inSingletonScope();
+    bind(ModelDiscoveryFetcher).toService(ModelDiscoveryFetcherImpl);
     bind(ConnectionContainerModule).toConstantValue(aiCoreConnectionModule);
 });

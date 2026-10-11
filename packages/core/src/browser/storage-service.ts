@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct, named } from 'inversify';
 import { ILogger } from '../common/logger';
 import { MessageService } from '../common/message-service';
 import { WindowService } from './window/window-service';
@@ -47,7 +47,9 @@ interface LocalStorage {
 export class LocalStorageService implements StorageService {
     private storage: LocalStorage;
 
-    @inject(ILogger) protected logger: ILogger;
+    @inject(ILogger) @named('core:LocalStorageService')
+    protected readonly logger: ILogger;
+
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(WindowService) protected readonly windowService: WindowService;
 

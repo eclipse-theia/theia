@@ -16,8 +16,9 @@
 
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { BackendApplicationConfigProvider } from '@theia/core/lib/node/backend-application-config-provider';
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { MiniBrowserEndpoint } from '../common/mini-browser-endpoint';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class MiniBrowserBackendSecurityWarnings implements BackendApplicationContribution {
@@ -26,13 +27,16 @@ export class MiniBrowserBackendSecurityWarnings implements BackendApplicationCon
         this.checkHostPattern();
     }
 
+    @inject(ILogger) @named('mini-browser:MiniBrowserBackendSecurityWarnings')
+    protected readonly logger: ILogger;
+
     protected async checkHostPattern(): Promise<void> {
         if (BackendApplicationConfigProvider.get()['warnOnPotentiallyInsecureHostPattern'] === false) {
             return;
         }
         const envHostPattern = process.env[MiniBrowserEndpoint.HOST_PATTERN_ENV];
         if (envHostPattern && envHostPattern !== MiniBrowserEndpoint.HOST_PATTERN_DEFAULT) {
-            console.warn(`\
+            this.logger.warn(`\
 MINI BROWSER SECURITY WARNING
 
     Changing the @theia/mini-browser host pattern can lead to security vulnerabilities.

@@ -13,6 +13,9 @@
       "path": "../ai-core"
     },
     {
+      "path": "../ai-core-ui"
+    },
+    {
       "path": "../core"
     },
     {

@@ -13,13 +13,13 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct, named } from 'inversify';
 import { SecondaryWindow, SecondaryWindowService } from './secondary-window-service';
 import { WindowService } from './window-service';
 import { ExtractableWidget, Widget } from '../widgets';
 import { ApplicationShell } from '../shell';
 import { Saveable } from '../saveable';
-import { Emitter, environment, Event, PreferenceService } from '../../common';
+import { Emitter, environment, Event, PreferenceService, ILogger } from '../../common';
 import { SaveableService } from '../saveable-service';
 import { getAllWidgetsFromSecondaryWindow, getDefaultRestoreArea } from '../secondary-window-handler';
 import { WindowFocusService } from './window-focus-service';
@@ -28,6 +28,8 @@ import { WindowFocusService } from './window-focus-service';
 export class DefaultSecondaryWindowService implements SecondaryWindowService {
     protected readonly onWindowOpenedEmitter = new Emitter<Window>;
     readonly onWindowOpened: Event<Window> = this.onWindowOpenedEmitter.event;
+    protected readonly onWindowLoadedEmitter = new Emitter<Window>;
+    readonly onWindowLoaded: Event<Window> = this.onWindowLoadedEmitter.event;
     protected readonly onWindowClosedEmitter = new Emitter<Window>;
     readonly onWindowClosed: Event<Window> = this.onWindowClosedEmitter.event;
     protected readonly beforeWidgetRestoreEmitter = new Emitter<[Widget, Window]>;
@@ -57,17 +59,20 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
     @inject(WindowFocusService)
     protected readonly windowFocusService: WindowFocusService;
 
+    @inject(ILogger) @named('core:DefaultSecondaryWindowService')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     init(): void {
         // Set up messaging with secondary windows
         window.addEventListener('message', (event: MessageEvent) => {
-            console.trace('Message on main window', event);
+            this.logger.trace('Message on main window', event);
             if (event.data.fromSecondary) {
-                console.trace('Message comes from secondary window');
+                this.logger.trace('Message comes from secondary window');
                 return;
             }
             if (event.data.fromMain) {
-                console.trace('Message has mainWindow marker, therefore ignore it');
+                this.logger.trace('Message has mainWindow marker, therefore ignore it');
                 return;
             }
 
@@ -78,7 +83,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                 return;
             }
 
-            console.trace('Delegate main window message to secondary windows', event);
+            this.logger.trace('Delegate main window message to secondary windows', event);
             this.secondaryWindows.forEach(secondaryWindow => {
                 if (!secondaryWindow.window.closed) {
                     secondaryWindow.window.postMessage({ ...event.data, fromMain: true }, '*');
@@ -110,6 +115,10 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
             this.secondaryWindows.push(newWindow);
             this.onWindowOpenedEmitter.fire(newWindow);
             newWindow.addEventListener('DOMContentLoaded', () => {
+                // This fires for the final secondary-window.html document, not for the initial
+                // about:blank document the window starts out with, so onWindowLoaded listeners
+                // can safely modify the document.
+                this.onWindowLoadedEmitter.fire(newWindow);
                 const focusRegistration = this.windowFocusService.registerWindow(newWindow);
                 newWindow.addEventListener('beforeunload', evt => {
                     const widgets = getAllWidgetsFromSecondaryWindow(newWindow) ?? [widget];
@@ -124,7 +133,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                     }
                 }, { capture: true });
 
-                newWindow.addEventListener('unload', () => {
+                newWindow.addEventListener('pagehide', () => {
                     focusRegistration.dispose();
                     const extIndex = this.secondaryWindows.indexOf(newWindow);
                     if (extIndex > -1) {
@@ -140,7 +149,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
     }
 
     protected windowCreated(newWindow: Window, widget: ExtractableWidget, shell: ApplicationShell): void {
-        newWindow.addEventListener('unload', () => {
+        newWindow.addEventListener('pagehide', () => {
             this.restoreWidgets(newWindow, widget, shell);
         });
     }

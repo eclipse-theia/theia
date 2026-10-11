@@ -59,7 +59,7 @@ import { Profiles, terminalAnsiColorMap, TerminalPreferences } from '../common/t
 import { ShellTerminalProfile } from './shell-terminal-profile';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { Color } from '@theia/core/lib/common/color';
-import { ContributionProvider } from '@theia/core';
+import { ContributionProvider, ILogger } from '@theia/core';
 import { TerminalCreationHandler } from './terminal-creation-handler';
 
 export namespace TerminalMenus {
@@ -252,6 +252,9 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     @inject(ContributionProvider) @named(TerminalCreationHandler)
     protected readonly terminalCreationHandlers: ContributionProvider<TerminalCreationHandler>;
 
+    @inject(ILogger) @named('terminal:TerminalFrontendContribution')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     protected init(): void {
         this.shell.onDidChangeCurrentWidget(() => this.updateCurrentTerminal());
@@ -341,7 +344,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             // to the bottom panel without expanding it on startup.
             this.shell.addWidget(termWidget, { area: 'bottom' });
         } catch (error) {
-            console.error('Failed to initialize terminal in default layout', error);
+            this.logger.error('Failed to initialize terminal in default layout', error);
         }
     }
 
@@ -946,8 +949,13 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             keybinding: 'ctrlcmd+k',
             when: 'terminalFocus'
         });
+        // A passthrough binding claims ctrlcmd+v for the terminal (winning over the global
+        // CommonCommands.PASTE binding via the local terminalFocus context) but runs no command,
+        // letting the keystroke reach xterm's native paste event. That avoids the permission-gated
+        // Clipboard API (navigator.clipboard.readText) that the PASTE_TERMINAL command requires, while
+        // preserving bracketed paste. terminal.enablePaste is enforced in TerminalWidgetImpl.customKeyHandler.
         keybindings.registerKeybinding({
-            command: TerminalCommands.PASTE_TERMINAL.id,
+            command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
             keybinding: 'ctrlcmd+v',
             when: 'terminalFocus'
         });

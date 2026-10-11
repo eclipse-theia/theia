@@ -15,14 +15,14 @@
 // *****************************************************************************
 
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { PluginDeployer } from '../../common/plugin-protocol';
 import { ILogger } from '@theia/core';
 
 @injectable()
 export class PluginDeployerContribution implements BackendApplicationContribution {
 
-    @inject(ILogger)
+    @inject(ILogger) @named('plugin-ext:PluginDeployerContribution')
     protected readonly logger: ILogger;
 
     @inject(PluginDeployer)

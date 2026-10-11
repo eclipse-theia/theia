@@ -17,7 +17,7 @@
 import React = require('@theia/core/shared/react');
 import debounce = require('@theia/core/shared/lodash.debounce');
 import * as fuzzy from '@theia/core/shared/fuzzy';
-import { injectable, inject, postConstruct, unmanaged } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, unmanaged, named } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CommandRegistry, Command } from '@theia/core/lib/common/command';
 import { Keybinding } from '@theia/core/lib/common/keybinding';
@@ -29,7 +29,7 @@ import {
 } from '@theia/core/lib/browser';
 import { KeymapsService } from './keymaps-service';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
-import { DisposableCollection, Disposable, isOSX, isObject } from '@theia/core';
+import { DisposableCollection, Disposable, isOSX, isObject, ILogger } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
 
 /**
@@ -101,6 +101,9 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
 
     @inject(ContextMenuRenderer)
     protected readonly contextMenuRenderer: ContextMenuRenderer;
+
+    @inject(ILogger) @named('keymaps:KeybindingWidget')
+    protected readonly logger: ILogger;
 
     static readonly ID = 'keybindings.view.widget';
     static readonly LABEL = nls.localizeByDefault('Keyboard Shortcuts');
@@ -559,7 +562,7 @@ export class KeybindingWidget extends ReactWidget implements StatefulWidget {
             });
         }
 
-        console.warn('Unexpectedly encountered a keybinding without segment divisions');
+        this.logger.warn('Unexpectedly encountered a keybinding without segment divisions');
         return keybinding.labels.keybinding.value;
     }
 

@@ -45,7 +45,7 @@ export class TaskServerImpl implements TaskServer, Disposable {
     // Currently there is only one property ('isActive'), but in the future we may want to store more properties
     protected readonly backgroundTaskStatusMap = new Map<number, { 'isActive': boolean }>();
 
-    @inject(ILogger) @named('task')
+    @inject(ILogger) @named('task:TaskServerImpl')
     protected readonly logger: ILogger;
 
     @inject(TaskManager)

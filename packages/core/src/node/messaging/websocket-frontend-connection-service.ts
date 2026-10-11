@@ -15,7 +15,7 @@
 
 import { Channel, WriteBuffer } from '../../common/message-rpc';
 import { MessagingService } from './messaging-service';
-import { inject, injectable, interfaces } from 'inversify';
+import { inject, injectable, interfaces, named } from 'inversify';
 import { Socket } from 'socket.io';
 import { ConnectionHandlers, MessagingContainer } from './default-messaging-service';
 import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer';
@@ -25,7 +25,7 @@ import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/messag
 import { BackendApplicationConfigProvider } from '../backend-application-config-provider';
 import { WebsocketEndpoint } from './websocket-endpoint';
 import { ConnectionManagementMessages } from '../../common/messaging/connection-management';
-import { Disposable, DisposableCollection } from '../../common';
+import { Disposable, DisposableCollection, ILogger } from '../../common';
 
 @injectable()
 export class WebsocketFrontendConnectionService implements FrontendConnectionService {
@@ -35,6 +35,9 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
 
     @inject(MessagingContainer)
     protected readonly container: interfaces.Container;
+
+    @inject(ILogger) @named('core:WebsocketFrontendConnectionService')
+    protected readonly logger: ILogger;
 
     protected readonly wsHandlers = new ConnectionHandlers();
     protected readonly connectionsByFrontend = new Map<string, ReconnectableSocketChannel>();
@@ -65,7 +68,7 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
             socket.off(ConnectionManagementMessages.RECONNECT, reconnectListener);
             const channel = this.connectionsByFrontend.get(frontEndId);
             if (channel) {
-                console.info(`Reconnecting to front end ${frontEndId}`);
+                this.logger.info(`Reconnecting to front end ${frontEndId}`);
                 socket.emit(ConnectionManagementMessages.RECONNECT, true);
                 channel.connect(socket);
                 this.handleSocketDisconnect(socket, channel, frontEndId);
@@ -73,7 +76,7 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
                 clearTimeout(pendingTimeout);
                 this.closeTimeouts.delete(frontEndId);
             } else {
-                console.info(`Reconnecting failed for ${frontEndId}`);
+                this.logger.info(`Reconnecting failed for ${frontEndId}`);
                 socket.emit(ConnectionManagementMessages.RECONNECT, false);
             }
         };
@@ -82,7 +85,7 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
     }
 
     protected closeConnection(frontEndId: string, reason: string): void {
-        console.info(`closing connection for ${frontEndId}`);
+        this.logger.info(`closing connection for ${frontEndId}`);
         const connection = this.connectionsByFrontend.get(frontEndId)!; // not called when no connection is present
 
         this.connectionsByFrontend.delete(frontEndId);
@@ -97,7 +100,7 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
     }
 
     protected createConnection(socket: Socket, frontEndId: string): ReconnectableSocketChannel {
-        console.info(`creating connection for ${frontEndId}`);
+        this.logger.info(`creating connection for ${frontEndId}`);
         const channel = this.container.get(ReconnectableSocketChannel);
         channel.connect(socket);
 
@@ -107,7 +110,7 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
 
     handleSocketDisconnect(socket: Socket, channel: ReconnectableSocketChannel, frontEndId: string): void {
         socket.on('disconnect', evt => {
-            console.info('socket closed');
+            this.logger.info('socket closed');
             channel.disconnect();
 
             const timeout = this.frontendConnectionTimeout();
@@ -115,7 +118,7 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
             if (timeout === 0 || isMarkedForClose) {
                 this.closeConnection(frontEndId, evt);
             } else if (timeout > 0) {
-                console.info(`setting close timeout for id ${frontEndId} to ${timeout}`);
+                this.logger.info(`setting close timeout for id ${frontEndId} to ${timeout}`);
                 const handle = setTimeout(() => {
                     this.closeConnection(frontEndId, evt);
                 }, timeout);

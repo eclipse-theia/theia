@@ -46,6 +46,12 @@ The project maintains the following source code repositories:
 
 This project leverages the following third party content.
 
+API type declarations mirrored from project github/copilot-sdk (1.0.9)
+
+* License: MIT
+* Project: <https://github.com/github/copilot-sdk>
+* Source: <https://github.com/github/copilot-sdk>
+
 chalk (2.4.1)
 
 * License: MIT

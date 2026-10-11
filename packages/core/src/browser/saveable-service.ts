@@ -16,7 +16,7 @@
 
 import type { ApplicationShell } from './shell';
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, UNTITLED_SCHEME, URI, Disposable, DisposableCollection, Emitter, Event } from '../common';
+import { ContributionProvider, UNTITLED_SCHEME, URI, Disposable, DisposableCollection, Emitter, Event, ILogger } from '../common';
 import { Navigatable, NavigatableWidget } from './navigatable-types';
 import { AutoSaveMode, Saveable, SaveableSource, SaveableWidget, SaveOptions, SaveReason, setDirty, close, PostCreationSaveableWidget, ShouldSaveDialog } from './saveable';
 import { waitForClosed, Widget } from './widgets';
@@ -52,6 +52,9 @@ export class SaveableService implements FrontendApplicationContribution {
 
     @inject(WindowFocusService)
     protected readonly windowFocusService: WindowFocusService;
+
+    @inject(ILogger) @named('core:SaveableService')
+    protected readonly logger: ILogger;
 
     protected saveThrottles = new Map<Widget, AutoSaveThrottle>();
     protected saveMode: AutoSaveMode = 'off';
@@ -284,7 +287,7 @@ export class SaveableService implements FrontendApplicationContribution {
         }
         const saveable = Saveable.get(widget);
         if (!saveable) {
-            console.warn('Saveable.get returned undefined on a known saveable widget. This is unexpected.');
+            this.logger.warn('Saveable.get returned undefined on a known saveable widget. This is unexpected.');
         }
         // Enter branch if saveable absent since we cannot check autosaveability more definitely.
         if (this.autoSave !== 'off' && (!saveable || this.shouldAutoSave(widget, saveable))) {

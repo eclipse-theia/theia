@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import {
-    ipcMain, BrowserWindow, Menu, MenuItemConstructorOptions, webContents, WebContents, session, shell, clipboard, IpcMainEvent
+    ipcMain, BrowserWindow, Menu, MenuItemConstructorOptions, webContents, WebContents, session, shell, clipboard, IpcMainEvent,
+    app, JumpListCategory, JumpListItem
 } from '@theia/electron/shared/electron';
 import * as nativeKeymap from '@theia/electron/shared/native-keymap';
 
@@ -57,11 +58,15 @@ import {
     CHANNEL_OPEN_WITH_SYSTEM_APP,
     CHANNEL_OPEN_URL,
     CHANNEL_SET_THEME,
-    CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW
+    CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW,
+    CHANNEL_UPDATE_RECENT_WORKSPACES,
+    CHANNEL_SET_AUTO_HIDE_MENU_BAR
 } from '../electron-common/electron-api';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
-import { Disposable, DisposableCollection, isOSX, MaybePromise } from '../common';
+import { Disposable, DisposableCollection, isOSX, isWindows, MaybePromise, URI } from '../common';
+import { FileUri } from '../node';
 import { createDisposableListener } from './event-utils';
+import * as path from 'node:path';
 
 @injectable()
 export class TheiaMainApi implements ElectronMainApplicationContribution {
@@ -72,7 +77,13 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
 
     onStart(application: ElectronMainApplication): MaybePromise<void> {
         ipcMain.on(CHANNEL_WC_METADATA, event => {
-            event.returnValue = event.sender.id.toString();
+            // Answered synchronously, so the window has its metadata — including the parsed options
+            // of a forwarded launch — before any frontend code runs. The window is identified by the
+            // IPC sender, so it can only ever read its own.
+            event.returnValue = {
+                webcontentId: event.sender.id.toString(),
+                launchArgs: application.getLaunchArgs(event.sender.id)
+            };
         });
 
         // electron security token
@@ -115,6 +126,20 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
                 electronWindow.setMenuBarVisibility(visible);
             } else {
                 console.warn(`There is no known secondary window '${windowName}'. Thus, the menu bar could not be made visible.`);
+            }
+        });
+
+        ipcMain.on(CHANNEL_SET_AUTO_HIDE_MENU_BAR, (event, enabled: boolean, windowName: string | undefined) => {
+            let electronWindow;
+            if (windowName) {
+                electronWindow = BrowserWindow.getAllWindows().find(win => win.webContents.mainFrame.name === windowName);
+            } else {
+                electronWindow = BrowserWindow.fromWebContents(event.sender);
+            }
+            if (electronWindow) {
+                electronWindow.autoHideMenuBar = enabled;
+            } else {
+                console.warn(`There is no known secondary window '${windowName}'. Thus, autoHideMenuBar could not be set.`);
             }
         });
 
@@ -263,6 +288,55 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             };
             for (const webContent of webContents.getAllWebContents()) {
                 webContent.send('keyboardLayoutChanged', newLayout);
+            }
+        });
+
+        ipcMain.on(CHANNEL_UPDATE_RECENT_WORKSPACES, (_event, workspaces: string[], categoryName: string) => {
+            if (!isWindows) {
+                return;
+            }
+
+            const jumpListSettings = app.getJumpListSettings();
+            const isDev = !app.isPackaged;
+            const appPath = app.getAppPath();
+
+            const items: JumpListItem[] = workspaces
+                .filter(w => new URI(w).scheme === 'file')
+                .map(workspace => {
+                    const uri = new URI(workspace);
+                    const wspathPretty = uri.path.fsPath();
+                    const wspath = FileUri.fsPath(uri);
+                    const item: JumpListItem = {
+                        type: 'task',
+                        // Windows is picky about the length of some attributes. See: https://github.com/microsoft/vscode/issues/111177#issuecomment-739942612
+                        title: uri.path.base.substring(0, 255),
+                        description: wspathPretty.substring(0, 255),
+                        program: process.execPath,
+                        args: isDev ? `"${path.resolve(appPath, 'theia-electron-main.js')}" "${wspath}"` : `"${wspath}"`,
+                        iconPath: process.execPath,
+                        iconIndex: 0
+                    };
+
+                    // We need to remove items that the user has explicitly removed from the jump list. Otherwise
+                    // Windows will not show our custom category at all.
+                    if (jumpListSettings.removedItems.some(removedItem => removedItem.args === item.args)) {
+                        return undefined;
+                    }
+
+                    return item;
+                })
+                .filter(item => !!item);
+
+            const jumpList: JumpListCategory[] = [{
+                type: 'custom',
+                name: categoryName || 'Recent Workspaces',
+                items
+            }];
+
+            const result = app.setJumpList(jumpList);
+
+            if (result !== 'ok') {
+                console.warn(`Could not set Jump List with recent workspaces (result = "${result}")`);
             }
         });
     }

@@ -292,6 +292,9 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
         onSignInPromptCancel?: (message: ProgressMessage) => void;
     }): TestMcpFrontendApplicationContribution {
         const contribution = new TestMcpFrontendApplicationContribution();
+
+        (contribution as unknown as { logger: MockLogger }).logger = new MockLogger();
+
         const runningServers = [...(options.runningServers ?? [])];
         // Default active set = running set. Tests that exercise in-flight (Starting/Connecting/
         // AuthenticationRequired) behavior pass `activeServers` explicitly.
@@ -424,46 +427,43 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
 
     describe('enqueueServerChanges', () => {
         it('surfaces preference-change failures via the message service and keeps the queue healthy', async () => {
-            // Without messageService.warn, a failed preference apply only writes to console.error and the
+            // Without messageService.warn, a failed preference apply only writes to the log and the
             // user has no UI signal that their edit did not land. The queue must also stay healthy so a
             // subsequent successful edit applies; pinning both invariants here.
-            const originalConsoleError = console.error;
-            console.error = () => { /* suppress expected diagnostic */ };
-            try {
-                const contribution = new TestMcpFrontendApplicationContribution();
-                const warnings: string[] = [];
-                (contribution as unknown as { messageService: Partial<MessageService> }).messageService = {
-                    warn: async (message: string) => { warnings.push(message); return undefined; }
-                };
-                let addCallCount = 0;
-                (contribution as unknown as { manager: Partial<MCPServerManager> }).manager = {
-                    addOrUpdateServer: async () => {
-                        addCallCount++;
-                        if (addCallCount === 1) {
-                            throw new Error('first apply fails');
-                        }
-                    },
-                    removeServer: async () => { /* not used */ }
-                };
-                (contribution as unknown as { frontendMCPService: Partial<MCPFrontendService> }).frontendMCPService = {
-                    getStartedServers: async () => []
-                };
-                (contribution as unknown as { workspaceTrustService: Partial<WorkspaceTrustService> }).workspaceTrustService = {
-                    getWorkspaceTrust: async () => true,
-                    refreshRestrictedModeIndicator: () => { /* tracked elsewhere */ }
-                };
+            const contribution = new TestMcpFrontendApplicationContribution();
 
-                await contribution.testEnqueueServerChanges({ asana: { command: 'node' } });
+            (contribution as unknown as { logger: MockLogger }).logger = new MockLogger();
 
-                expect(warnings).to.have.length(1);
-                expect(warnings[0]).to.contain('first apply fails');
+            const warnings: string[] = [];
+            (contribution as unknown as { messageService: Partial<MessageService> }).messageService = {
+                warn: async (message: string) => { warnings.push(message); return undefined; }
+            };
+            let addCallCount = 0;
+            (contribution as unknown as { manager: Partial<MCPServerManager> }).manager = {
+                addOrUpdateServer: async () => {
+                    addCallCount++;
+                    if (addCallCount === 1) {
+                        throw new Error('first apply fails');
+                    }
+                },
+                removeServer: async () => { /* not used */ }
+            };
+            (contribution as unknown as { frontendMCPService: Partial<MCPFrontendService> }).frontendMCPService = {
+                getStartedServers: async () => []
+            };
+            (contribution as unknown as { workspaceTrustService: Partial<WorkspaceTrustService> }).workspaceTrustService = {
+                getWorkspaceTrust: async () => true,
+                refreshRestrictedModeIndicator: () => { /* tracked elsewhere */ }
+            };
 
-                // Queue still healthy: a second enqueue applies (addCallCount increments to 2 without throwing).
-                await contribution.testEnqueueServerChanges({ asana: { command: 'node' } });
-                expect(addCallCount).to.equal(2);
-            } finally {
-                console.error = originalConsoleError;
-            }
+            await contribution.testEnqueueServerChanges({ asana: { command: 'node' } });
+
+            expect(warnings).to.have.length(1);
+            expect(warnings[0]).to.contain('first apply fails');
+
+            // Queue still healthy: a second enqueue applies (addCallCount increments to 2 without throwing).
+            await contribution.testEnqueueServerChanges({ asana: { command: 'node' } });
+            expect(addCallCount).to.equal(2);
         });
     });
 
@@ -644,6 +644,55 @@ describe('McpFrontendApplicationContribution workspace-trust handlers', () => {
     });
 });
 
+describe('McpFrontendApplicationContribution convertToMap', () => {
+
+    // `convertToMap` is a pure projection of the preference value, so no injected collaborators are needed.
+    let contribution: TestMcpFrontendApplicationContribution;
+
+    beforeEach(() => {
+        contribution = new TestMcpFrontendApplicationContribution();
+    });
+
+    it('carries cwd, pluginRoot and pluginData through to the local server description', () => {
+        const result = contribution.testConvertToMap({
+            validator: {
+                command: './bin/validator',
+                args: ['--data', '/home/alex/.agents/plugins/data/devtools/validator'],
+                cwd: '/home/alex/.agents/plugins/devtools',
+                pluginRoot: '/home/alex/.agents/plugins/devtools',
+                pluginData: '/home/alex/.agents/plugins/data/devtools'
+            }
+        });
+
+        expect(result.get('validator')).to.deep.equal({
+            name: 'validator',
+            command: './bin/validator',
+            args: ['--data', '/home/alex/.agents/plugins/data/devtools/validator'],
+            cwd: '/home/alex/.agents/plugins/devtools',
+            pluginRoot: '/home/alex/.agents/plugins/devtools',
+            pluginData: '/home/alex/.agents/plugins/data/devtools',
+            autostart: true
+        });
+    });
+
+    it('omits cwd, pluginRoot and pluginData when the preference entry does not set them', () => {
+        const result = contribution.testConvertToMap({ plain: { command: 'npx' } });
+
+        expect(result.get('plain')).to.deep.equal({ name: 'plain', command: 'npx', autostart: true });
+    });
+
+    it('carries a registryMetadata block that identifies an Agent Plugin instead of a registry server', () => {
+        const result = contribution.testConvertToMap({
+            'plugin-server': {
+                command: 'npx',
+                registryMetadata: { pluginId: 'io.github.acme/devtools', version: '1.0.0' }
+            }
+        });
+
+        expect(result.get('plugin-server')?.registryMetadata).to.deep.equal({ pluginId: 'io.github.acme/devtools', version: '1.0.0' });
+    });
+});
+
 class TestMcpFrontendApplicationContribution extends McpFrontendApplicationContribution {
     refreshCalls = 0;
 
@@ -674,6 +723,10 @@ class TestMcpFrontendApplicationContribution extends McpFrontendApplicationContr
     testEnqueueServerChanges(newServers: MCPServersPreference): Promise<void> {
         this.enqueueServerChanges(newServers);
         return this.serverChangeQueue;
+    }
+
+    testConvertToMap(servers: MCPServersPreference): Map<string, MCPServerDescription> {
+        return this.convertToMap(servers);
     }
 
     protected override updateBlockedServersStatusBar(): void {

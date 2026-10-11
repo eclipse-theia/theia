@@ -16,11 +16,12 @@
 
 import { PluginDeployerFileHandler, PluginDeployerEntry, PluginDeployerFileHandlerContext } from '@theia/plugin-ext';
 import * as filenamify from 'filenamify';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as fs from '@theia/core/shared/fs-extra';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { unpackToDeploymentDir } from './plugin-vscode-utils';
+import { ILogger } from '@theia/core';
 
 export const isVSCodePluginFile = (pluginPath?: string) => Boolean(pluginPath && (pluginPath.endsWith('.vsix') || pluginPath.endsWith('.tgz')));
 
@@ -28,6 +29,9 @@ export const isVSCodePluginFile = (pluginPath?: string) => Boolean(pluginPath &&
 export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
     @inject(PluginVSCodeEnvironment)
     protected readonly environment: PluginVSCodeEnvironment;
+
+    @inject(ILogger) @named('plugin-ext-vscode:PluginVsCodeFileHandler')
+    protected readonly logger: ILogger;
 
     async accept(resolvedPlugin: PluginDeployerEntry): Promise<boolean> {
         return resolvedPlugin.isFile().then(file => {
@@ -42,7 +46,7 @@ export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
         const id = this.getNormalizedExtensionId(context.pluginEntry().id());
         const extensionDeploymentDir = await unpackToDeploymentDir(this.environment, context.pluginEntry().path(), id);
         context.pluginEntry().updatePath(extensionDeploymentDir);
-        console.log(`root path: ${context.pluginEntry().rootPath}`);
+        this.logger.info(`root path: ${context.pluginEntry().rootPath}`);
         const originalPath = context.pluginEntry().originalPath();
         if (originalPath && originalPath !== extensionDeploymentDir) {
             const tempDirUri = await this.environment.getTempDirUri();
@@ -50,7 +54,7 @@ export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
                 try {
                     await fs.remove(FileUri.fsPath(originalPath));
                 } catch (e) {
-                    console.error(`[${id}]: failed to remove temporary files: "${originalPath}"`, e);
+                    this.logger.error(`[${id}]: failed to remove temporary files: "${originalPath}"`, e);
                 }
             }
         }

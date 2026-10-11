@@ -124,7 +124,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
     @inject(FrontendApplication)
     protected readonly app: FrontendApplication;
 
-    @inject(ILogger) @named('task')
+    @inject(ILogger) @named('task:TaskFrontendContribution')
     protected readonly logger: ILogger;
 
     @inject(WidgetManager)

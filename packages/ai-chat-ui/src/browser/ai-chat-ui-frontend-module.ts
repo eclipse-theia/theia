@@ -17,6 +17,7 @@
 import '../../src/browser/style/index.css';
 import '../../src/browser/style/tool-call-rendering.css';
 import '../../src/browser/style/mermaid-rendering.css';
+import '../../src/browser/style/mcp-app-frame.css';
 import { bindRootContributionProvider, CommandContribution, MenuContribution } from '@theia/core';
 import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, KeybindingContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -52,6 +53,9 @@ import {
     TypeDocSymbolSelectionResolver,
 } from './chat-response-renderer/ai-selection-resolver';
 import { QuestionPartRenderer } from './chat-response-renderer/question-part-renderer';
+import { ExternalResourceAllowlistContribution } from './chat-response-renderer/external-resource-allowlist-contribution';
+import { ChatFindContribution } from './chat-find/chat-find-contribution';
+import { ChatFindMatcher } from './chat-find/chat-find-matcher';
 import { createChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { ChatViewMenuContribution } from './chat-view-contribution';
@@ -104,6 +108,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(CommandContribution).toService(ChatFocusContribution);
     bind(KeybindingContribution).toService(ChatFocusContribution);
 
+    bind(ChatFindContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(ChatFindContribution);
+    bind(KeybindingContribution).toService(ChatFindContribution);
+
     bind(ChatCapabilitiesServiceImpl).toSelf().inSingletonScope();
     bind(ChatCapabilitiesService).toService(ChatCapabilitiesServiceImpl);
 
@@ -142,6 +150,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         createWidget: () => container.get(AIChatInputWidget)
     })).inSingletonScope();
 
+    bind(ChatFindMatcher).toSelf().inSingletonScope();
     bind(ChatViewTreeWidget).toDynamicValue(ctx =>
         createChatViewTreeWidget(ctx.container)
     );
@@ -216,6 +225,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(TabBarToolbarContribution).toService(ChatViewWidgetToolbarContribution);
 
     bind(FrontendApplicationContribution).to(ChatViewLanguageContribution).inSingletonScope();
+    bind(ExternalResourceAllowlistContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ExternalResourceAllowlistContribution);
     bind(ChangeSetActionService).toSelf().inSingletonScope();
     bind(ChangeSetAcceptAction).toSelf().inSingletonScope();
     bind(ChangeSetActionRenderer).toService(ChangeSetAcceptAction);

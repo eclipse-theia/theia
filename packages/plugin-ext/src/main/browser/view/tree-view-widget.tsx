@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { TreeViewsExt, TreeViewItemCollapsibleState, TreeViewItem, TreeViewItemReference, ThemeIcon, DataTransferFileDTO } from '../../../common/plugin-api-rpc';
 import { Command } from '../../../common/plugin-api-rpc-model';
 import {
@@ -53,6 +53,7 @@ import { CancellationTokenSource, CancellationToken, Mutable } from '@theia/core
 import { mixin } from '../../../common/types';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { DnDFileContentStore } from './dnd-file-content-store';
+import { ILogger } from '@theia/core';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
@@ -183,6 +184,9 @@ export class PluginTree extends TreeImpl {
     @inject(MessageService)
     protected readonly notification: MessageService;
 
+    @inject(ILogger) @named('plugin-ext:PluginTree')
+    protected override readonly logger: ILogger;
+
     protected readonly onDidChangeWelcomeStateEmitter: Emitter<void> = new Emitter<void>();
     readonly onDidChangeWelcomeState = this.onDidChangeWelcomeStateEmitter.event;
 
@@ -235,7 +239,7 @@ export class PluginTree extends TreeImpl {
             return children || [];
         } catch (e) {
             if (e) {
-                console.error(`Failed to fetch children for '${this.options.id}'`, e);
+                this.logger.error(`Failed to fetch children for '${this.options.id}'`, e);
                 const label = this._viewInfo ? this._viewInfo.name : this.options.id;
                 this.notification.error(`${label}: ${e.message}`);
             }
@@ -473,6 +477,9 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     @inject(DnDFileContentStore)
     protected readonly dndFileContentStore: DnDFileContentStore;
 
+    @inject(ILogger) @named('plugin-ext:TreeViewWidget')
+    protected readonly logger: ILogger;
+
     protected treeDragType: string;
     protected readonly expansionTimeouts: Map<string, number> = new Map();
 
@@ -633,17 +640,17 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     handleDragLeave(node: TreeViewNode, event: React.DragEvent<HTMLElement>): void {
         const timeout = this.expansionTimeouts.get(node.id);
         if (typeof timeout !== 'undefined') {
-            console.debug(`dragleave ${node.id} canceling timeout`);
+            this.logger.debug(`dragleave ${node.id} canceling timeout`);
             clearTimeout(timeout);
             this.expansionTimeouts.delete(node.id);
         }
     }
     handleDragEnter(node: TreeViewNode, event: React.DragEvent<HTMLElement>): void {
-        console.debug(`dragenter ${node.id}`);
+        this.logger.debug(`dragenter ${node.id}`);
         if (ExpandableTreeNode.is(node)) {
-            console.debug(`dragenter ${node.id} starting timeout`);
+            this.logger.debug(`dragenter ${node.id} starting timeout`);
             this.expansionTimeouts.set(node.id, window.setTimeout(() => {
-                console.debug(`dragenter ${node.id} timeout reached`);
+                this.logger.debug(`dragenter ${node.id} timeout reached`);
                 this.model.expandNode(node);
             }, 500));
         }
@@ -870,7 +877,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
             const allResolved = Promise.all(treeNodes.map(maybeNeedsResolve => {
                 if (!maybeNeedsResolve.command && maybeNeedsResolve instanceof ResolvableTreeViewNode && !maybeNeedsResolve.resolved) {
                     return maybeNeedsResolve.resolve(cancellationToken).catch(err => {
-                        console.error(`Failed to resolve tree item '${maybeNeedsResolve.id}'`, err);
+                        this.logger.error(`Failed to resolve tree item '${maybeNeedsResolve.id}'`, err);
                     });
                 }
                 return Promise.resolve(maybeNeedsResolve);

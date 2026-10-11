@@ -65,17 +65,23 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
             Object.entries(sshConfig.compute(host2[0])).map(([k, v]) => [k.toLowerCase(), v])
         );
 
-        // Generate a regexp to find wildcards and process the hostname with the wildcards
-        if (record.host) {
-            const checkHost = new RegExp('^' + (<string>record.host)
-                .replace(/([^\w\*\?])/g, '\\$1')
-                .replace(/([\?]+)/g, (...m) => '(' + '.'.repeat(m[1].length) + ')')
-                .replace(/\*/g, '(.+)') + '$');
+        const hostArray = typeof record.host === 'string' ? [record.host] : record.host;
 
-            const match = host2[0].match(checkHost);
-            if (match) {
-                if (record.hostname) {
-                    record.hostname = (<string>record.hostname).replace('%h', match[1]);
+        // Generate a regexp to find wildcards and process the hostname with the wildcards
+        if (hostArray) {
+            for (const hostPattern of hostArray) {
+                const checkHost = new RegExp('^' + hostPattern
+                    .replace(/([^\w\*\?])/g, '\\$1')
+                    .replace(/([\?]+)/g, (...m) => '(' + '.'.repeat(m[1].length) + ')')
+                    .replace(/\*/g, '(.+)') + '$');
+
+                const match = host2[0].match(checkHost);
+                if (match) {
+                    record.host = host2[0];
+                    if (record.hostname) {
+                        record.hostname = (<string>record.hostname).replace('%h', match[1]);
+                    }
+                    break;
                 }
             }
 

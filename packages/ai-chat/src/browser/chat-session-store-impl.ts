@@ -51,7 +51,7 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     @inject(StorageService)
     protected readonly storageService: StorageService;
 
-    @inject(ILogger) @named('ChatSessionStore')
+    @inject(ILogger) @named('ai-chat:ChatSessionStoreImpl')
     protected readonly logger: ILogger;
 
     @inject(PreferenceService)
@@ -116,6 +116,8 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
                     title: session.title,
                     pinnedAgentId: session.pinnedAgentId,
                     saveDate: session.saveDate,
+                    rootSessionId: session.rootSessionId,
+                    parentSessionId: session.parentSessionId,
                     model: modelData
                 };
                 this.logger.debug('Writing session to file', {

@@ -18,6 +18,7 @@ import { NativeKeyboardLayout } from '../common/keyboard/keyboard-layout-provide
 import { Disposable } from '../common';
 import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
 import { ThemeMode } from '../common/theme';
+import { LaunchArguments } from '../common/launch-arguments';
 
 export type MenuRole = ('undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll' | 'about' | 'services' | 'hide' | 'hideOthers' | 'unhide' | 'quit');
 
@@ -44,11 +45,21 @@ export type WindowEvent = 'maximize' | 'unmaximize' | 'focus';
 export interface TheiaCoreAPI {
     WindowMetadata: {
         webcontentId: string;
+        /**
+         * The parsed CLI options of a *forwarded* launch (see the `second-instance` handling in
+         * `ElectronMainApplication`), or `undefined` for a cold-start window. Provided synchronously
+         * by the preload script, so a frontend contribution can act on it from the first paint.
+         * The options never ride on the window URL; see `LaunchArgsStore` for the rationale.
+         *
+         * @experimental
+         */
+        launchArgs?: LaunchArguments;
     }
     getSecurityToken: () => string;
     attachSecurityToken: (endpoint: string) => Promise<void>;
 
     setMenuBarVisible(visible: boolean, windowName?: string): void;
+    setAutoHideMenuBar(enabled: boolean, windowName?: string): void;
     setMenu(menu: MenuDto[] | undefined): void;
 
     popup(menu: MenuDto[], x: number, y: number, onClosed: () => void, windowName?: string): Promise<number>;
@@ -104,6 +115,8 @@ export interface TheiaCoreAPI {
     sendData(data: Uint8Array): void;
     onData(handler: (data: Uint8Array) => void): Disposable;
     useNativeElements: boolean;
+
+    updateRecentWorkspaces(workspaceUris: string[], categoryName: string): void;
 }
 
 declare global {
@@ -115,6 +128,7 @@ declare global {
 export const CHANNEL_WC_METADATA = 'WebContentMetadata';
 export const CHANNEL_SET_MENU = 'SetMenu';
 export const CHANNEL_SET_MENU_BAR_VISIBLE = 'SetMenuBarVisible';
+export const CHANNEL_SET_AUTO_HIDE_MENU_BAR = 'SetAutoHideMenuBar';
 export const CHANNEL_INVOKE_MENU = 'InvokeMenu';
 export const CHANNEL_OPEN_POPUP = 'OpenPopup';
 export const CHANNEL_ON_CLOSE_POPUP = 'OnClosePopup';
@@ -162,3 +176,5 @@ export const CHANNEL_WRITE_CLIPBOARD = 'WriteClipboard';
 
 export const CHANNEL_KEYBOARD_LAYOUT_CHANGED = 'KeyboardLayoutChanged';
 export const CHANNEL_IPC_CONNECTION = 'IpcConnection';
+
+export const CHANNEL_UPDATE_RECENT_WORKSPACES = 'UpdateRecentWorkspaces';

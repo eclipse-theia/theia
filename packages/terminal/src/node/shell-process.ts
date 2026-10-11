@@ -64,7 +64,8 @@ export class ShellProcess extends TerminalProcess {
         @inject(ShellProcessOptions) options: ShellProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(MultiRingBuffer) ringBuffer: MultiRingBuffer,
-        @inject(ILogger) @named('terminal') logger: ILogger,
+        @inject(ILogger) @named('terminal:ShellProcess')
+        protected override readonly logger: ILogger,
         @inject(EnvironmentUtils) environmentUtils: EnvironmentUtils,
     ) {
         const env = { 'COLORTERM': 'truecolor' };

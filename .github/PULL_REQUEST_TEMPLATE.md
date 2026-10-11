@@ -25,6 +25,8 @@ vulnerabilities.
 
 - [ ] This PR introduces breaking changes and requires careful review. If yes, the breaking changes section in the [changelog](https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md) has been updated.
 
+<!-- Only breaking changes need a manual changelog entry. Non-breaking changes do not need an entry, they are collected at release time. See https://github.com/eclipse-theia/theia/blob/master/doc/pull-requests.md#changelog-entry -->
+
 #### Attribution
 
 <!-- If the changelog entry for this change should contain an attribution at the end (e.g. Contributed on behalf of x) add it in this section -->

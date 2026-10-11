@@ -22,20 +22,35 @@ import {
     RequestNode,
     ResponseNode
 } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
+import { Emitter, PreferenceService } from '@theia/core/lib/common';
 import { interfaces } from '@theia/core/shared/inversify';
+import { SAMPLE_CHAT_NODE_TOOLBAR_ENABLED_PREF } from './sample-chat-node-toolbar-preferences';
 
 export function bindChatNodeToolbarActionContribution(bind: interfaces.Bind): void {
-    bind(ChatNodeToolbarActionContribution).toDynamicValue(context => ({
-        getToolbarActions: (args: RequestNode | ResponseNode) => {
-            if (isResponseNode(args)) {
-                return [{
-                    commandId: 'sample-command',
-                    icon: 'codicon codicon-feedback',
-                    tooltip: 'API Samples: Example command'
-                }];
-            } else {
+    bind(ChatNodeToolbarActionContribution).toDynamicValue(context => {
+        const preferences = context.container.get<PreferenceService>(PreferenceService);
+        // Fire `onDidChange` when the gating setting is toggled, so the chat view re-renders its node
+        // toolbars live (rather than only picking up the change on the next response).
+        const onDidChangeEmitter = new Emitter<void>();
+        preferences.onPreferenceChanged(event => {
+            if (event.preferenceName === SAMPLE_CHAT_NODE_TOOLBAR_ENABLED_PREF) {
+                onDidChangeEmitter.fire();
+            }
+        });
+        return {
+            onDidChange: onDidChangeEmitter.event,
+            getToolbarActions: (args: RequestNode | ResponseNode) => {
+                // Gated by a contributed setting (surfaced in the AI Configuration view): when disabled, the
+                // sample action is not rendered on response nodes.
+                if (isResponseNode(args) && preferences.get<boolean>(SAMPLE_CHAT_NODE_TOOLBAR_ENABLED_PREF, true)) {
+                    return [{
+                        commandId: 'sample-command',
+                        icon: 'codicon codicon-feedback',
+                        tooltip: 'API Samples: Example command'
+                    }];
+                }
                 return [];
             }
-        }
-    }));
+        };
+    });
 }

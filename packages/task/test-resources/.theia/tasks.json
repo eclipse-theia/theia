@@ -1,5 +1,23 @@
 {
     // comment
+    "inputs": [
+        {
+            "id": "task-argument",
+            "type": "promptString",
+            "description": "Enter the second task argument",
+            "default": "b"
+        },
+        {
+            "id": "task-argument-choice",
+            "type": "pickString",
+            "description": "Choose the third task argument",
+            "options": [
+                "c",
+                "not-c"
+            ],
+            "default": "c"
+        }
+    ],
     "tasks": [
         {
             "label": "test task",
@@ -54,6 +72,48 @@
                     "/c",
                     "dir"
                 ]
+            }
+        },
+        {
+            "label": "task with input variables",
+            "type": "shell",
+            "command": "node",
+            "args": [
+                "test-arguments-0.js",
+                "Unexpected task arguments:",
+                "a",
+                "${input:task-argument}",
+                "${input:task-argument-choice}"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "task with custom problem matcher",
+            "type": "shell",
+            "command": "node",
+            "args": [
+                "test-arguments-0.js",
+                "test-arguments-0.js:1:1: error:",
+                "invalid"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": {
+                "owner": "task-test",
+                "source": "task-test",
+                "fileLocation": "relative",
+                "pattern": {
+                    "regexp": "^(.+):(\\d+):(\\d+):\\s+(error|warning|info):\\s+(.+)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
             }
         }
     ]

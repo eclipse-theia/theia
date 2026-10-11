@@ -101,33 +101,43 @@ const terminalFocusKey = this.contextKeyService.createKey<boolean>('terminalFocu
 
 * [1.](#interfaces-no-i-prefix) Do not use `I` prefix for interfaces. Use `Impl` suffix for implementation of interfaces with the same name. See [624](https://github.com/theia-ide/theia/issues/624) for the discussion on this.
 <a name="classes-over-interfaces"></a>
-* [2.](#classes-over-interfaces) Use classes instead of interfaces + symbols when possible to avoid boilerplate.
+<a name="interfaces-over-classes"></a>
+* [2.](#interfaces-over-classes) For services that are meant to be replaceable — which is most public services in Theia — declare an interface + symbol and export a default implementation. This lets adopters choose between *subclassing* the default and providing a *completely independent* implementation. Using a class as both the injection token and the type forces adopters to subclass, because they can only rebind to a type assignable to that class.
+
+> Why? A class with any `private` or `protected` member is typed nominally, so a structurally-identical independent class is *not* assignable to it — only a subclass is. An interface + symbol removes that constraint: the adopter can subclass the default impl *or* implement the interface from scratch. Testing is also easier: a test double can satisfy the interface directly, whereas a class token forces tests to subclass the real implementation (and drag in its dependencies) just to provide a mock.
 
 ```ts
-// bad
+// good - interface + symbol + default implementation
 export const TaskDefinitionRegistry = Symbol('TaskDefinitionRegistry');
 export interface TaskDefinitionRegistry {
     register(definition: TaskDefinition): void;
 }
+
+@injectable()
 export class TaskDefinitionRegistryImpl implements TaskDefinitionRegistry {
-    register(definition: TaskDefinition): void {
+    register(definition: TaskDefinition): void {
     }
 }
 bind(TaskDefinitionRegistryImpl).toSelf().inSingletonScope();
 bind(TaskDefinitionRegistry).toService(TaskDefinitionRegistryImpl);
 
-// good
-export class TaskDefinitionRegistry {
-    register(definition: TaskDefinition): void {
-    }
-}
-bind(TaskDefinitionRegistry).toSelf().inSingletonScope();
+// adopters can now do either of the following:
+rebind(TaskDefinitionRegistry).to(MyRegistryFromScratch);      // independent implementation
+rebind(TaskDefinitionRegistry).to(MyRegistryExtendingDefault); // subclass of TaskDefinitionRegistryImpl
 ```
 
 **Exceptions**
-<a name="remote-interfaces"></a>
+<a name="class-token-internal"></a>
 
-* [2.1](#remote-interfaces) Remote services should be declared as an interface + a symbol in order to be used in the frontend and backend.
+* [2.1](#class-token-internal) For services that are genuinely internal and not intended as extension points, a plain class used as both token and type is fine to avoid the interface + symbol ceremony. Keep injected fields `protected` so that subclassing remains possible even in this case.
+
+```ts
+@injectable()
+export class InternalCache {
+    protected readonly entries = new Map<string, unknown>();
+}
+bind(InternalCache).toSelf().inSingletonScope();
+```
 
 ## Comments
 
@@ -246,6 +256,26 @@ Learn more in the [documentation](https://theia-ide.org/docs/).
 
 > [!NOTE]
 > When Markdown is not suitable and HTML must be used, ensure content is sanitized with `DOMPurify.sanitize()` before rendering with `dangerouslySetInnerHTML`.
+
+<a name="nls-preload"></a>
+
+* [4.](#nls-preload) Do not read a localized string while a module of the preload phase is being loaded, that is at the top level of the module rather than from a function called later. The localization data is only available once the `Preloader` has run, so a string read before that stays in English for the rest of the session.
+
+> This applies to the modules that a preload entry point imports as well, which is why such an entry point should import the symbols it needs from the modules that declare them rather than through a barrel such as `@theia/core/lib/common`. The `@theia/preload-localization-check` ESLint rule reports both cases.
+
+```ts
+// bad - evaluated when the module is loaded
+export namespace ProgressMessage {
+    export const Cancel = nls.localizeByDefault('Cancel');
+}
+
+// good - evaluated when the string is needed
+export namespace ProgressMessage {
+    export function cancel(): string {
+        return nls.localizeByDefault('Cancel');
+    }
+}
+```
 
 ## Style
 
@@ -536,6 +566,11 @@ See: <https://github.com/eclipse-theia/theia/issues/10877#issuecomment-110700022
 * [1.](#theming-no-css-color-variables) Do not introduce CSS color variables. Implement `ColorContribution` and use `ColorRegistry.register` to register new colors.
 <a name="theming-no-css-color-values"></a>
 * [2.](#theming-no-css-color-values) Do not introduce hard-coded color values in CSS. Instead, refer to [VS Code colors](https://code.visualstudio.com/api/references/theme-color) in CSS by prefixing them with `--theia` and replacing all dots with dashes. For example `widget.shadow` color can be referred to in CSS with `var(--theia-widget-shadow)`.
+
+> [!NOTE]
+> `ColorApplicationContribution` sets every registered color on the document element under both the `--theia-` and the `--vscode-` prefix, so that VS Code extensions referencing `--vscode-` prefixed color variables (e.g. in inline styles of rendered HTML) work in Theia.
+> Theia's own code should always use the `--theia-` prefix; do not add ad-hoc `--vscode-` aliases in CSS files.
+
 <a name="theming-derive-colors-from-vscode"></a>
 * [3.](#theming-derive-colors-from-vscode) Always derive new colors from existing [VS Code colors](https://code.visualstudio.com/api/references/theme-color). New colors can be derived from an existing color by plain reference, e.g. `dark: 'widget.shadow'`, or transformation, e.g. `dark: Color.lighten('widget.shadow', 0.4)`.
 
@@ -558,9 +593,32 @@ See: <https://github.com/eclipse-theia/theia/issues/10877#issuecomment-110700022
 
 ## React
 
+<a name="no-react-import-for-jsx"></a>
+
+* [1.](#no-react-import-for-jsx) Do not import React just to write JSX. All Theia packages are compiled with React's automatic JSX runtime, so the compiler emits the runtime import itself. Only import React where `React.*` types or APIs are used, and always from the shared re-export so that a single React instance is used.
+
+```tsx
+// bad - the import is unused, `noUnusedLocals` will report it
+import * as React from '@theia/core/shared/react';
+
+export const Hint = () => <div className='hint' />;
+
+// good - no import needed for plain JSX
+export const Hint = () => <div className='hint' />;
+
+// good - React is imported because `React.ReactNode` is used
+import * as React from '@theia/core/shared/react';
+
+export class MyWidget extends ReactWidget {
+  render(): React.ReactNode {
+    return <div className='hint' />;
+  }
+}
+```
+
 <a name="no-bind-fn-in-event-handlers"></a>
 
-* [1.](#no-bind-fn-in-event-handlers) Do not bind functions in event handlers.
+* [2.](#no-bind-fn-in-event-handlers) Do not bind functions in event handlers.
   * Extract a React component if you want to pass state to an event handler function.
 
 > Why? Because doing so creates a new instance of the event handler function on each render and breaks React element caching leading to re-rendering and bad performance.
@@ -659,6 +717,27 @@ pathString.substring(absolutePathString.length + 1)
 // good
 new Path(absolutePathString).relative(pathString)
 ```
+
+## Bundled Resources
+
+<a name="bundled-resource-provider"></a>
+
+* [1.](#bundled-resource-provider) Resolve resources that ship with the application through `BundledResourceProvider` (`@theia/core/lib/node`) before handing their path to a process outside of the application, e.g. a shell, a debug adapter or another tool.
+
+> Why? An Electron application packaged with `asar: true` keeps its resources in an archive. Paths into that archive can only be read through Electron's patched `fs` module, so an external process fails to read them. The provider returns the resource at a location outside of the archive, extracting it if the packaging step did not unpack it.
+
+```ts
+// bad - the path points into `app.asar` in a packaged application
+const scriptPath = path.join(__dirname, 'scripts', 'setup.sh');
+spawn(shell, [scriptPath]);
+
+// good
+const scriptPath = await this.bundledResourceProvider.resolveExternalPath(path.join(__dirname, 'scripts'));
+spawn(shell, [path.join(scriptPath, 'setup.sh')]);
+```
+
+> [!NOTE]
+> Resolve the directory that a script needs rather than the single file, so that files referring to each other stay together.
 
 ## Logging
 

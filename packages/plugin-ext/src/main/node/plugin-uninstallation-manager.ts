@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Emitter, Event } from '@theia/core';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { Emitter, Event, ILogger } from '@theia/core';
+import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { PluginIdentifiers } from '../../common';
 import { SettingService } from '@theia/core/lib/node';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -26,6 +26,9 @@ export class PluginUninstallationManager {
 
     @inject(SettingService)
     protected readonly settingService: SettingService;
+
+    @inject(ILogger) @named('plugin-ext:PluginUninstallationManager')
+    protected readonly logger: ILogger;
 
     protected readonly onDidChangeUninstalledPluginsEmitter = new Emitter<readonly PluginIdentifiers.VersionedId[]>();
     onDidChangeUninstalledPlugins: Event<readonly PluginIdentifiers.VersionedId[]> = this.onDidChangeUninstalledPluginsEmitter.event;
@@ -46,12 +49,12 @@ export class PluginUninstallationManager {
     protected async load(): Promise<void> {
         try {
             const disabled: (PluginIdentifiers.VersionedId | PluginIdentifiers.UnversionedId)[] =
-               JSON.parse(await this.settingService.get(PluginUninstallationManager.DISABLED_PLUGINS) || '[]');
+                JSON.parse(await this.settingService.get(PluginUninstallationManager.DISABLED_PLUGINS) || '[]');
 
             disabled.forEach(id => this.disabledPlugins.add(PluginIdentifiers.toUnversioned(id)));
         } catch (e) {
             // settings may be corrupt; just carry on
-            console.warn(e);
+            this.logger.warn(e);
         }
     }
 

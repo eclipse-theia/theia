@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import {
-    createToolCallError,
     ImageContent,
     ImageMimeType,
     LanguageModel,
@@ -28,15 +27,18 @@ import {
     LanguageModelTextResponse,
     ReasoningApi,
     ReasoningSupport,
+    resolveCompactionTokenThreshold,
     resolveServerSideCompaction,
     ServerToolCallResponsePart,
     ServerToolDescriptor,
     ToolCallContent,
     ToolCallResult,
-    ToolInvocationContext,
+    ToolCallExecutor,
+    createToolCallError,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken, isArray, nls } from '@theia/core';
+import { CancellationToken, ILogger, isArray, nls } from '@theia/core';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlockParam, ToolResultBlockParam } from '@anthropic-ai/sdk/resources';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
@@ -59,6 +61,24 @@ interface ToolCallback {
     args: string;
 }
 
+/**
+ * Anthropic rejects replayed thinking blocks without content ('each thinking block must contain thinking')
+ * or without a signature. Both can reach us from API-compatible endpoints that omit thinking text or
+ * signature deltas, and from streams cancelled before the signature arrived.
+ */
+const isReplayableThinking = (thinking: string | undefined, signature: string | undefined): boolean =>
+    !!thinking?.trim() && !!signature;
+
+/** The tool loop replays streamed messages raw (bypassing {@link createMessageContent}); drop thinking blocks Anthropic would reject. */
+const dropUnreplayableThinking = (content: Message['content']): Message['content'] =>
+    content.filter(block => {
+        if (block.type === 'thinking' && !isReplayableThinking(block.thinking, block.signature)) {
+            console.debug('Anthropic: dropping thinking block from tool loop replay that cannot be replayed (missing thinking text or signature)');
+            return false;
+        }
+        return true;
+    });
+
 const createMessageContent = (message: LanguageModelMessage, compactionEnabled: boolean): MessageParam['content'] => {
     if (LanguageModelMessage.isCompactionMessage(message)) {
         // Only replay our own provider's compaction blocks, and only when the request will use the beta endpoint.
@@ -71,6 +91,11 @@ const createMessageContent = (message: LanguageModelMessage, compactionEnabled: 
     } else if (LanguageModelMessage.isTextMessage(message)) {
         return [{ type: 'text', text: message.text }];
     } else if (LanguageModelMessage.isThinkingMessage(message)) {
+        // Returning [] drops an unreplayable thinking block so the surrounding history still replays.
+        if (!isReplayableThinking(message.thinking, message.signature)) {
+            console.debug('Anthropic: dropping thinking block from history that cannot be replayed (missing thinking text or signature)');
+            return [];
+        }
         return [{ signature: message.signature, thinking: message.thinking, type: 'thinking' }];
     } else if (LanguageModelMessage.isToolUseMessage(message)) {
         return [{ id: message.id, input: message.input, name: message.name, type: 'tool_use' }];
@@ -262,6 +287,8 @@ function formatToolCallResult(result: ToolCallResult): ToolResultBlockParam['con
                 return { type: 'text', text: content.text };
             } else if (content.type === 'image') {
                 return { type: 'image', source: { type: 'base64', data: content.base64data, media_type: mimeTypeToMediaType(content.mimeType) } };
+            } else if (content.type === 'html') {
+                return { type: 'text', text: `[interactive app displayed to the user${content.title ? ': ' + content.title : ''}]` };
             } else {
                 return { type: 'text', text: content.data };
             }
@@ -278,6 +305,33 @@ function formatToolCallResult(result: ToolCallResult): ToolResultBlockParam['con
 
     return result;
 }
+
+export interface AnthropicModelParams {
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    useCaching: boolean;
+    apiKey: () => string | undefined;
+    url: string | undefined;
+    maxTokens?: number;
+    maxRetries?: number;
+    proxy?: string;
+    reasoningSupport?: ReasoningSupport;
+    reasoningApi?: ReasoningApi;
+    maxInputTokens?: number;
+    serverTools?: ServerToolDescriptor[];
+    serverSideCompactionSupport?: boolean;
+    serverSideCompactionEnabledByDefault?: boolean;
+    serverSideCompactionTokenThresholdByDefault?: number;
+    headers?: Record<string, string>;
+    released?: number;
+}
+
+export const AnthropicModelParams = Symbol('AnthropicModelParams');
+
+export const AnthropicLanguageModelFactory = Symbol('AnthropicLanguageModelFactory');
+export type AnthropicLanguageModelFactory = (params: AnthropicModelParams) => AnthropicModel;
 
 /**
  * Builds a finished server tool call stream part from a provider result block. The raw block is stored on
@@ -304,39 +358,102 @@ function buildServerToolResultPart(
     };
 }
 
+/** Options for {@link createAnthropicClient}. */
+export interface AnthropicClientOptions {
+    /** The key to authenticate with. A custom endpoint may need none. */
+    readonly apiKey: string | undefined;
+    /** Base URL of a custom endpoint; the SDK's own default is used without one. */
+    readonly baseURL?: string;
+    readonly proxyUrl?: string;
+    /** Additional HTTP headers sent with every request, e.g. headers required by a gateway in front of the API. */
+    readonly headers?: Record<string, string>;
+}
+
+/**
+ * The single place an Anthropic SDK client is built, so that a chat request, a model lookup and the
+ * model discovery all reach the provider the same way: through the configured proxy, and with a key
+ * the SDK accepts.
+ */
+export function createAnthropicClient(options: AnthropicClientOptions): Anthropic {
+    return new Anthropic({
+        // The SDK refuses to be constructed without a key, so an endpoint that needs none still gets one.
+        apiKey: options.apiKey ?? 'no-key',
+        baseURL: options.baseURL,
+        fetch: createProxyFetch(options.proxyUrl),
+        defaultHeaders: options.headers
+    });
+}
+
 /**
  * Implements the Anthropic language model integration for Theia. Reasoning-level
  * translation lives in {@link anthropicReasoningFor}.
  */
+@injectable()
 export class AnthropicModel implements LanguageModel {
+
+    id: string;
+    model: string;
+    status: LanguageModelStatus;
+    enableStreaming: boolean;
+    useCaching: boolean;
+    apiKey: () => string | undefined;
+    url: string | undefined;
+    maxTokens: number;
+    maxRetries: number;
+    proxy?: string;
+    reasoningSupport?: ReasoningSupport;
+    reasoningApi?: ReasoningApi;
+    maxInputTokens?: number;
+    serverTools?: ServerToolDescriptor[];
+    serverSideCompactionSupport: boolean;
+    serverSideCompactionEnabledByDefault: boolean;
+    serverSideCompactionTokenThresholdByDefault?: number;
+    headers?: Record<string, string>;
+    released?: number;
 
     /** Provider identifier, used to key per-provider settings (e.g. server tool selections) and the capabilities UI. */
     readonly vendor = 'anthropic';
 
-    constructor(
-        public readonly id: string,
-        public model: string,
-        public status: LanguageModelStatus,
-        public enableStreaming: boolean,
-        public useCaching: boolean,
-        public apiKey: () => string | undefined,
-        public url: string | undefined,
-        public maxTokens: number = DEFAULT_MAX_TOKENS,
-        public maxRetries: number = 3,
-        public proxy?: string,
-        public reasoningSupport?: ReasoningSupport,
-        public reasoningApi?: ReasoningApi,
-        public supportsXHighEffort?: boolean,
-        public maxInputTokens?: number,
-        public serverTools?: ServerToolDescriptor[],
-        public serverSideCompactionSupport: boolean = false,
-        public serverSideCompactionEnabledByDefault: boolean = false
-    ) { }
+    @inject(AnthropicModelParams)
+    protected readonly params: AnthropicModelParams;
+
+    @inject(ToolCallExecutor)
+    protected readonly toolCallExecutor: ToolCallExecutor;
+
+    @inject(ILogger) @named('ai-anthropic:AnthropicModel')
+    protected readonly logger: ILogger;
+
+    @postConstruct()
+    protected init(): void {
+        const params = this.params;
+        this.id = params.id;
+        this.model = params.model;
+        this.status = params.status;
+        this.enableStreaming = params.enableStreaming;
+        this.useCaching = params.useCaching;
+        this.apiKey = params.apiKey;
+        this.url = params.url;
+        this.maxTokens = params.maxTokens ?? DEFAULT_MAX_TOKENS;
+        this.maxRetries = params.maxRetries ?? 3;
+        this.proxy = params.proxy;
+        this.reasoningSupport = params.reasoningSupport;
+        this.reasoningApi = params.reasoningApi;
+        this.maxInputTokens = params.maxInputTokens;
+        this.serverTools = params.serverTools;
+        this.serverSideCompactionSupport = params.serverSideCompactionSupport ?? false;
+        this.serverSideCompactionEnabledByDefault = params.serverSideCompactionEnabledByDefault ?? false;
+        this.serverSideCompactionTokenThresholdByDefault = params.serverSideCompactionTokenThresholdByDefault;
+        this.headers = params.headers;
+        this.released = params.released;
+    }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
+        const level = request.reasoning && this.reasoningSupport
+            ? ReasoningSupport.clampLevel(this.reasoningSupport, request.reasoning.level)
+            : undefined;
         return {
             ...request.settings,
-            ...anthropicReasoningFor(request.reasoning?.level, this.reasoningApi, this.supportsXHighEffort)
+            ...anthropicReasoningFor(level, this.reasoningApi)
         };
     }
 
@@ -354,8 +471,14 @@ export class AnthropicModel implements LanguageModel {
             return params;
         }
         const betaParams = params as T & Anthropic.Beta.Messages.MessageCreateParams;
+        const tokenThreshold = resolveCompactionTokenThreshold(this.serverSideCompactionTokenThresholdByDefault, request.compaction);
         betaParams.betas = ['compact-2026-01-12'];
-        betaParams.context_management = { edits: [{ type: 'compact_20260112' }] };
+        betaParams.context_management = {
+            edits: [{
+                type: 'compact_20260112',
+                ...(tokenThreshold !== undefined && { trigger: { type: 'input_tokens', value: tokenThreshold } })
+            }]
+        };
         return betaParams;
     }
 
@@ -395,7 +518,7 @@ export class AnthropicModel implements LanguageModel {
 
         const tools = this.createTools(request);
         if (request.deferredToolIds?.length && tools) {
-            console.debug('Anthropic: converted tools for deferred loading:', tools.map(tool => ({
+            this.logger.debug('Anthropic: converted tools for deferred loading:', tools.map(tool => ({
                 name: 'name' in tool ? tool.name : undefined,
                 type: 'type' in tool ? tool.type : 'custom',
                 defer_loading: 'defer_loading' in tool ? tool.defer_loading : undefined
@@ -575,16 +698,11 @@ export class AnthropicModel implements LanguageModel {
                     }
                 }
                 if (toolCalls.length > 0) {
-                    const toolResult = await Promise.all(toolCalls.map(async tc => {
-                        const tool = request.tools?.find(t => t.name === tc.name);
-                        const argsObject = tc.args.length === 0 ? '{}' : tc.args;
-                        const handlerResult = tool
-                            ? await tool.handler(argsObject, ToolInvocationContext.create(tc.id))
-                            : createToolCallError(`Tool '${tc.name}' not found in the available tools for this request.`, 'tool-not-available');
-
-                        return { name: tc.name, result: handlerResult, id: tc.id, arguments: argsObject };
-
-                    }));
+                    const toolResult = await that.toolCallExecutor.executeToolCalls(
+                        toolCalls.map(tc => ({ id: tc.id, name: tc.name, arguments: tc.args.length === 0 ? '{}' : tc.args })),
+                        request.tools,
+                        { cancellationToken }
+                    );
 
                     const calls = toolResult.map(tr => ({ finished: true, id: tr.id, result: tr.result, function: { name: tr.name, arguments: tr.arguments } }));
                     yield { tool_calls: calls };
@@ -603,7 +721,8 @@ export class AnthropicModel implements LanguageModel {
                         cancellationToken,
                         [
                             ...(toolMessages ?? []),
-                            ...currentMessages.map(m => ({ role: m.role, content: m.content })),
+                            ...currentMessages.map(m => ({ role: m.role, content: dropUnreplayableThinking(m.content) }))
+                                .filter(m => m.content.length > 0),
                             toolResponseMessage
                         ]
                     );
@@ -615,7 +734,7 @@ export class AnthropicModel implements LanguageModel {
         };
 
         stream.on('error', (error: Error) => {
-            console.error('Error in Anthropic streaming:', error);
+            this.logger.error('Error in Anthropic streaming:', error);
         });
 
         return { stream: asyncIterator };
@@ -677,8 +796,6 @@ export class AnthropicModel implements LanguageModel {
             const response = useCompaction
                 ? await anthropic.beta.messages.create(params as Anthropic.Beta.Messages.MessageCreateParamsNonStreaming)
                 : await anthropic.messages.create(params);
-            const textContent = response.content[0];
-
             const usage = response.usage ? {
                 input_tokens: response.usage.input_tokens,
                 output_tokens: response.usage.output_tokens,
@@ -686,11 +803,9 @@ export class AnthropicModel implements LanguageModel {
                 cache_read_input_tokens: response.usage.cache_read_input_tokens || undefined,
             } : undefined;
 
-            if (textContent?.type === 'text') {
-                return { text: textContent.text, usage };
-            }
-
-            return { text: '', usage };
+            // Thinking and other non-text blocks precede the answer, so collect every text block rather than reading content[0].
+            const text = response.content.flatMap(block => block.type === 'text' ? [block.text] : []).join('');
+            return { text, usage };
         } catch (error) {
             throw new Error(`Failed to get response from Anthropic API: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
@@ -702,9 +817,6 @@ export class AnthropicModel implements LanguageModel {
             throw new Error('Please provide ANTHROPIC_API_KEY in preferences or via environment variable');
         }
 
-        // We need to hand over "some" key, even if a custom url is not key protected as otherwise the Anthropic client will throw an error
-        const key = apiKey ?? 'no-key';
-
-        return new Anthropic({ apiKey: key, baseURL: this.url, fetch: createProxyFetch(this.proxy) });
+        return createAnthropicClient({ apiKey, baseURL: this.url, proxyUrl: this.proxy, headers: this.headers });
     }
 }

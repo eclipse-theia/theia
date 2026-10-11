@@ -35,8 +35,8 @@ export class UntitledWorkspaceExitDialog extends AbstractDialog<UntitledWorkspac
         this.contentNode.appendChild(messageNode);
         this.dontSaveButton = this.createButton(nls.localizeByDefault(UntitledWorkspaceExitDialog.Values["Don't Save"]));
         this.dontSaveButton.classList.add('secondary');
-        this.controlPanel.appendChild(this.dontSaveButton);
         this.appendCloseButton(Dialog.CANCEL);
+        this.controlPanel.appendChild(this.dontSaveButton);
         this.appendAcceptButton(nls.localizeByDefault(UntitledWorkspaceExitDialog.Values.Save));
     }
 

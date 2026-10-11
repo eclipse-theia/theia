@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import debounce from 'p-debounce';
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, Event, Emitter, deepClone, nls } from '@theia/core/lib/common';
+import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
+import { Disposable, DisposableCollection, Event, Emitter, deepClone, nls, ILogger } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { DebugSession, DebugState } from '../debug-session';
 import { DebugSessionManager } from '../debug-session-manager';
@@ -78,6 +78,9 @@ export class DebugViewModel implements Disposable {
 
     @inject(DebugWatchManager)
     protected readonly watch: DebugWatchManager;
+
+    @inject(ILogger) @named('debug:DebugViewModel')
+    protected readonly logger: ILogger;
 
     get sessions(): IterableIterator<DebugSession> {
         return this.manager.sessions[Symbol.iterator]();
@@ -247,7 +250,7 @@ export class DebugViewModel implements Disposable {
             try {
                 await Promise.all(Array.from(this.watchExpressions).map(expr => expr.evaluate()));
             } catch (e) {
-                console.error('Failed to refresh watch expressions: ', e);
+                this.logger.error('Failed to refresh watch expressions: ', e);
             }
         });
     }, 50);

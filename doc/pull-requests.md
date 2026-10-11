@@ -32,6 +32,12 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 
 - [4.](#fixups) Changes done _after_ the PR has been opened should be kept in separate commits until the review process is finished. This allows reviewers to re-review only the updated parts of the PR and to determine what needs to be tested again. The "fixup" commits must be squashed before merging in order to keep a clean history.
 
+<a name="changelog-entry"></a>
+
+- [5.](#changelog-entry) A changelog entry is only mandatory for [breaking changes](#checklist-breaking-changes), which are declared in the `Breaking changes` section of the PR description. PRs with non-breaking changes should _not_ add an entry to [CHANGELOG.md](https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md); their entries are collected at [release time](Publishing.md#15-update-changelog).
+
+  > Why? It avoids the frequent merge conflicts in `CHANGELOG.md` that a manual entry per PR causes.
+
 ## Requesting a Review
 
 <a name="review-reqs"></a>
@@ -55,6 +61,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 - [2.](#checklist-project-org) The new code is aligned with the [project organization](code-organization.md) and [coding conventions](coding-guidelines.md).
 <a name="checklist-breaking-changes"></a>
 - [3.](#checklist-breaking-changes) Breaking changes are justified and recorded in the [changelog](https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md).
+  - Whether a PR is breaking is declared in the `Breaking changes` section of its description. Non-breaking changes need no changelog entry, see [the changelog rule](#changelog-entry): a missing entry is not a review finding, and an entry added for a non-breaking change should be dropped.
 <a name="checklist-dependencies"></a>
 - [4.](#checklist-dependencies) New dependencies are justified and [verified](https://github.com/eclipse-theia/theia/wiki/Registering-CQs#wip---new-ecd-theia-intellectual-property-clearance-approach-experimental).
   - For newly added dependencies, we run the [license check workflow](../.github/workflows/license-check.yml), but not in review mode.

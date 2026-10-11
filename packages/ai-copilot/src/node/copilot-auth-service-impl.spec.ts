@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2026 EclipseSource and others.
+// Copyright (C) 2026 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,235 +15,150 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { Container } from '@theia/core/shared/inversify';
-import { KeyStoreService } from '@theia/core/lib/common/key-store';
-import { CopilotOAuthConfig, DEFAULT_COPILOT_OAUTH_CONFIG } from '../common/copilot-oauth-config';
-import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
-import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { CopilotAuthState } from '../common/copilot-auth-service';
+import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
 
-describe('CopilotAuthServiceImpl', () => {
+interface Stubs {
+    /** Whether the sign-in of the previous integration had to be discarded. */
+    legacyRemoved: boolean;
+    /** How long that cleanup takes, to model a slow keychain. */
+    legacyDelay: number;
+    authState: CopilotAuthState;
+    authStateCalls: number;
+    configuredPath: string | undefined;
+    deleted: number;
+}
 
-    let authService: CopilotAuthServiceImpl;
-    let keyStoreService: KeyStoreService;
-    let getPasswordStub: sinon.SinonStub;
+class TestableCopilotAuthServiceImpl extends CopilotAuthServiceImpl {
 
-    beforeEach(() => {
-        const container = new Container();
+    readonly stubs: Stubs = {
+        legacyRemoved: false,
+        legacyDelay: 0,
+        authState: { isAuthenticated: false },
+        authStateCalls: 0,
+        configuredPath: undefined,
+        deleted: 0
+    };
 
-        getPasswordStub = sinon.stub();
-        keyStoreService = {
-            setPassword: sinon.stub().resolves() as KeyStoreService['setPassword'],
-            getPassword: getPasswordStub.resolves(undefined) as KeyStoreService['getPassword'],
-            deletePassword: sinon.stub().resolves(true) as KeyStoreService['deletePassword'],
-            findPassword: sinon.stub().resolves(undefined) as KeyStoreService['findPassword'],
-            findCredentials: sinon.stub().resolves([]) as KeyStoreService['findCredentials'],
-            keys: sinon.stub().resolves([]) as KeyStoreService['keys']
-        };
+    constructor() {
+        super();
+        const stubs = this.stubs;
+        Object.assign(this, {
+            logger: new MockLogger(),
+            credentialStore: {
+                deleteLegacy: async () => {
+                    await new Promise(resolve => setTimeout(resolve, stubs.legacyDelay));
+                    return stubs.legacyRemoved;
+                }
+            },
+            cliLocator: { setConfiguredPath: (path: string | undefined) => { stubs.configuredPath = path; } },
+            cliAuthProvider: {
+                getAuthState: async () => {
+                    stubs.authStateCalls++;
+                    return stubs.authState;
+                },
+                signOut: async () => {
+                    stubs.deleted++;
+                    stubs.authState = { isAuthenticated: false };
+                },
+                waitForLogin: async () => true
+            }
+        });
+    }
 
-        container.bind(KeyStoreService).toConstantValue(keyStoreService);
-        container.bind(CopilotOAuthConfig).toConstantValue(DEFAULT_COPILOT_OAUTH_CONFIG);
-        container.bind(CopilotAuthServiceImpl).toSelf().inSingletonScope();
-        container.bind(ILogger).to(MockLogger).inSingletonScope();
+    /** Runs what `@postConstruct` runs in production. */
+    start(): void {
+        this.init();
+    }
+}
 
-        authService = container.get(CopilotAuthServiceImpl);
+describe('CopilotAuthServiceImpl - migration of the previous sign-in', () => {
+
+    it('should report that a new sign-in is required, even when asked before the cleanup finished', async () => {
+        const service = new TestableCopilotAuthServiceImpl();
+        service.stubs.legacyRemoved = true;
+        // The frontend evaluates the flag once at startup, so a state cached without it loses it.
+        service.stubs.legacyDelay = 20;
+        service.start();
+        expect(await service.getAuthState()).to.deep.include({ isAuthenticated: false, migrationRequired: true });
     });
 
-    afterEach(() => {
-        sinon.restore();
+    it('should not claim a migration when there was nothing to discard', async () => {
+        const service = new TestableCopilotAuthServiceImpl();
+        service.start();
+        expect(await service.getAuthState()).to.not.have.property('migrationRequired');
     });
 
-    describe('getAccessToken', () => {
-
-        it('should return undefined when no credentials are stored', async () => {
-            getPasswordStub.resolves(undefined);
-
-            const token = await authService.getAccessToken();
-            expect(token).to.be.undefined;
-        });
-
-        it('should return the stored access token directly', async () => {
-            const oauthToken = 'ghu_test_token';
-
-            getPasswordStub.resolves(JSON.stringify({
-                accessToken: oauthToken,
-                accountLabel: 'testuser'
-            }));
-
-            const token = await authService.getAccessToken();
-            expect(token).to.equal(oauthToken);
-        });
-
-        it('should return undefined when stored data is malformed', async () => {
-            getPasswordStub.resolves('not-valid-json');
-
-            const token = await authService.getAccessToken();
-            expect(token).to.be.undefined;
-        });
+    it('should not claim a migration for a user who is signed in', async () => {
+        const service = new TestableCopilotAuthServiceImpl();
+        service.stubs.legacyRemoved = true;
+        service.stubs.authState = { isAuthenticated: true, accountLabel: 'octocat' };
+        service.start();
+        expect(await service.getAuthState()).to.not.have.property('migrationRequired');
     });
 
-    describe('getAuthState', () => {
-
-        it('should return not authenticated when no credentials are stored', async () => {
-            getPasswordStub.resolves(undefined);
-
-            const state = await authService.getAuthState();
-            expect(state.isAuthenticated).to.be.false;
-            expect(state.accountLabel).to.be.undefined;
-        });
-
-        it('should return authenticated with account label when credentials exist', async () => {
-            getPasswordStub.resolves(JSON.stringify({
-                accessToken: 'gho_test',
-                accountLabel: 'testuser',
-                enterpriseUrl: undefined
-            }));
-
-            const state = await authService.getAuthState();
-            expect(state.isAuthenticated).to.be.true;
-            expect(state.accountLabel).to.equal('testuser');
-        });
-
-        it('should return enterprise URL when stored', async () => {
-            getPasswordStub.resolves(JSON.stringify({
-                accessToken: 'gho_test',
-                accountLabel: 'testuser',
-                enterpriseUrl: 'github.mycompany.com'
-            }));
-
-            const state = await authService.getAuthState();
-            expect(state.isAuthenticated).to.be.true;
-            expect(state.enterpriseUrl).to.equal('github.mycompany.com');
-        });
-
-        it('should clear outdated non-gho_ token and flag migration', async () => {
-            getPasswordStub.resolves(JSON.stringify({
-                accessToken: 'ghu_old_token',
-                accountLabel: 'testuser'
-            }));
-
-            const state = await authService.getAuthState();
-            expect(state.isAuthenticated).to.be.false;
-            expect(state.migrationRequired).to.be.true;
-            expect((keyStoreService.deletePassword as sinon.SinonStub).calledOnce).to.be.true;
-        });
-
-        it('should cache the auth state after first retrieval', async () => {
-            getPasswordStub.resolves(JSON.stringify({
-                accessToken: 'gho_test',
-                accountLabel: 'testuser'
-            }));
-
-            const state1 = await authService.getAuthState();
-            const state2 = await authService.getAuthState();
-
-            expect(state1).to.equal(state2);
-            expect(getPasswordStub.calledOnce).to.be.true;
-        });
-    });
-
-    describe('signOut', () => {
-
-        it('should clear cached auth state on sign out', async () => {
-            getPasswordStub.resolves(JSON.stringify({
-                accessToken: 'gho_test',
-                accountLabel: 'testuser'
-            }));
-
-            const stateBefore = await authService.getAuthState();
-            expect(stateBefore.isAuthenticated).to.be.true;
-
-            await authService.signOut();
-
-            // After sign out, cached state should be cleared
-            // getAuthState should now return the new state without hitting keystore cache
-            const stateAfter = await authService.getAuthState();
-            expect(stateAfter.isAuthenticated).to.be.false;
-        });
-
-        it('should fire auth state changed event on sign out', async () => {
-            const stateChanges: { isAuthenticated: boolean }[] = [];
-            authService.onAuthStateChanged(state => stateChanges.push(state));
-
-            await authService.signOut();
-
-            expect(stateChanges).to.have.lengthOf(1);
-            expect(stateChanges[0].isAuthenticated).to.be.false;
-        });
-
-        it('should delete credentials from keystore on sign out', async () => {
-            await authService.signOut();
-            expect((keyStoreService.deletePassword as sinon.SinonStub).calledOnce).to.be.true;
-        });
-
-        it('should notify client on sign out', async () => {
-            const client = { onAuthStateChanged: sinon.stub() };
-            authService.setClient(client);
-
-            await authService.signOut();
-
-            expect(client.onAuthStateChanged.calledOnce).to.be.true;
-            expect(client.onAuthStateChanged.firstCall.args[0].isAuthenticated).to.be.false;
-        });
+    it('should survive a keychain that cannot be read', async () => {
+        const service = new TestableCopilotAuthServiceImpl();
+        Object.assign(service, { credentialStore: { deleteLegacy: async () => { throw new Error('keychain unavailable'); } } });
+        service.start();
+        expect(await service.getAuthState()).to.deep.equal({ isAuthenticated: false });
     });
 });
 
-describe('CopilotAuthServiceImpl with custom CopilotOAuthConfig', () => {
+describe('CopilotAuthServiceImpl - state', () => {
 
-    const customConfig: CopilotOAuthConfig = {
-        clientId: 'CustomClientId',
-        userAgent: 'MyApp/1.0.0',
-        keystoreService: 'myapp-copilot',
-        keystoreAccount: 'myapp-github'
-    };
-
-    let authService: CopilotAuthServiceImpl;
-    let getPasswordStub: sinon.SinonStub;
-    let deletePasswordStub: sinon.SinonStub;
-
-    beforeEach(() => {
-        const container = new Container();
-
-        container.bind(ILogger).to(MockLogger).inSingletonScope();
-
-        getPasswordStub = sinon.stub().resolves(undefined);
-        deletePasswordStub = sinon.stub().resolves(true);
-        const keyStoreService: KeyStoreService = {
-            setPassword: sinon.stub().resolves() as KeyStoreService['setPassword'],
-            getPassword: getPasswordStub as KeyStoreService['getPassword'],
-            deletePassword: deletePasswordStub as KeyStoreService['deletePassword'],
-            findPassword: sinon.stub().resolves(undefined) as KeyStoreService['findPassword'],
-            findCredentials: sinon.stub().resolves([]) as KeyStoreService['findCredentials'],
-            keys: sinon.stub().resolves([]) as KeyStoreService['keys']
-        };
-
-        container.bind(KeyStoreService).toConstantValue(keyStoreService);
-        container.bind(CopilotOAuthConfig).toConstantValue(customConfig);
-        container.bind(CopilotAuthServiceImpl).toSelf().inSingletonScope();
-
-        authService = container.get(CopilotAuthServiceImpl);
+    it('should ask the provider once and serve the cached state afterwards', async () => {
+        const service = new TestableCopilotAuthServiceImpl();
+        service.start();
+        await service.getAuthState();
+        await service.getAuthState();
+        expect(service.stubs.authStateCalls).to.equal(1);
     });
 
-    afterEach(() => {
-        sinon.restore();
+    it('should report the new state after a sign-in', async () => {
+        const service = new TestableCopilotAuthServiceImpl();
+        service.start();
+        await service.getAuthState();
+        service.stubs.authState = { isAuthenticated: true, accountLabel: 'octocat' };
+
+        const reported: CopilotAuthState[] = [];
+        service.onAuthStateChanged(state => reported.push(state));
+        expect(await service.waitForSignIn()).to.be.true;
+
+        expect(reported).to.deep.equal([{ isAuthenticated: true, accountLabel: 'octocat' }]);
+        expect(await service.getAuthState()).to.deep.equal({ isAuthenticated: true, accountLabel: 'octocat' });
     });
 
-    it('should read credentials from the custom keystore service and account', async () => {
-        getPasswordStub.resolves(JSON.stringify({
-            accessToken: 'gho_custom_token',
-            accountLabel: 'customuser'
-        }));
+    it('should report the new state after signing out', async () => {
+        const service = new TestableCopilotAuthServiceImpl();
+        service.stubs.authState = { isAuthenticated: true, accountLabel: 'octocat' };
+        service.start();
+        await service.getAuthState();
 
-        const token = await authService.getAccessToken();
+        const reported: CopilotAuthState[] = [];
+        service.onAuthStateChanged(state => reported.push(state));
+        await service.signOut();
 
-        expect(token).to.equal('gho_custom_token');
-        expect(getPasswordStub.calledOnceWith(customConfig.keystoreService, customConfig.keystoreAccount)).to.be.true;
+        expect(service.stubs.deleted).to.equal(1);
+        expect(reported).to.deep.equal([{ isAuthenticated: false }]);
+    });
+});
+
+describe('CopilotAuthServiceImpl - executable path', () => {
+
+    it('should hand the configured location to the lookup, which cannot read preferences itself', async () => {
+        const service = new TestableCopilotAuthServiceImpl();
+        service.start();
+        await service.setExecutablePath('/opt/copilot/copilot');
+        expect(service.stubs.configuredPath).to.equal('/opt/copilot/copilot');
     });
 
-    it('should delete credentials from the custom keystore service and account on sign out', async () => {
-        await authService.signOut();
-
-        expect(deletePasswordStub.calledOnceWith(customConfig.keystoreService, customConfig.keystoreAccount)).to.be.true;
+    it('should hand on that nothing is configured, so that the CLI is searched for', async () => {
+        const service = new TestableCopilotAuthServiceImpl();
+        service.start();
+        await service.setExecutablePath('/opt/copilot/copilot');
+        await service.setExecutablePath(undefined);
+        expect(service.stubs.configuredPath).to.be.undefined;
     });
 });

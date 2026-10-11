@@ -14,15 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
+import { bindRootContributionProvider } from '@theia/core/lib/common';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { ConnectionHandler, RpcConnectionHandler, bindRootContributionProvider } from '@theia/core/lib/common';
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { TelemetrySink } from '@theia/telemetry/lib/node';
+import { ExtensionMetricsContribution } from './extensions-metrics-contribution';
+import { MeasurementMetricsBackendContribution } from './measurement-metrics-contribution';
+import { MeasurementTelemetryContribution } from './measurement-telemetry-contribution';
+import { MetricsBackendApplicationContribution } from './metrics-backend-application-contribution';
 import { MetricsContribution } from './metrics-contribution';
 import { NodeMetricsContribution } from './node-metrics-contribution';
-import { ExtensionMetricsContribution } from './extensions-metrics-contribution';
-import { MetricsBackendApplicationContribution } from './metrics-backend-application-contribution';
-import { measurementNotificationServicePath } from '../common';
-import { MeasurementMetricsBackendContribution } from './measurement-metrics-contribution';
 
 export default new ContainerModule(bind => {
     bindRootContributionProvider(bind, MetricsContribution);
@@ -31,10 +32,9 @@ export default new ContainerModule(bind => {
 
     bind(MeasurementMetricsBackendContribution).toSelf().inSingletonScope();
     bind(MetricsContribution).toService(MeasurementMetricsBackendContribution);
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new RpcConnectionHandler(measurementNotificationServicePath,
-            () => ctx.container.get(MeasurementMetricsBackendContribution)));
+    bind(TelemetrySink).toService(MeasurementMetricsBackendContribution);
 
     bind(BackendApplicationContribution).to(MetricsBackendApplicationContribution).inSingletonScope();
+    bind(BackendApplicationContribution).to(MeasurementTelemetryContribution).inSingletonScope();
 
 });

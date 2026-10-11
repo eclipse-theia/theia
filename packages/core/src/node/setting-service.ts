@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { promises as fs } from 'fs';
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct, named } from 'inversify';
 import { ILogger, URI } from '../common';
 import { EnvVariablesServer } from '../common/env-variables';
 import { Deferred } from '../common/promise-util';
@@ -32,7 +32,7 @@ export interface SettingService {
 
 @injectable()
 export class SettingServiceImpl implements SettingService {
-    @inject(ILogger)
+    @inject(ILogger) @named('core:SettingServiceImpl')
     protected readonly logger: ILogger;
 
     @inject(EnvVariablesServer)

@@ -101,5 +101,48 @@ export class MarkdownRendererImpl implements MarkdownRenderer {
                 return `<i class="${codicon(chunk.name)} ${chunk.animation ? `fa-${chunk.animation}` : ''} icon-inline"></i>`;
             }).join('');
         };
+
+        // Support VS Code's `![alt](src|width=W,height=H)` image sizing syntax, which markdown-it
+        // would otherwise fold into the `src` attribute, yielding a broken image.
+        const renderImage = this.markdownIt.renderer.rules.image;
+        this.markdownIt.renderer.rules.image = (tokens, idx, options, env, self) => {
+            const token = tokens[idx];
+            const srcIndex = token.attrIndex('src');
+            if (srcIndex >= 0 && token.attrs) {
+                const src = token.attrs[srcIndex][1];
+                // markdown-it percent-encodes the link destination, so the separator may have
+                // become `%7C` by the time the token reaches the renderer.
+                const separator = /(?:\||%7c)(?![\s\S]*(?:\||%7c))/i.exec(src);
+                if (separator) {
+                    const dimensions = this.parseImageDimensions(src.substring(separator.index + separator[0].length));
+                    if (dimensions) {
+                        token.attrs[srcIndex][1] = src.substring(0, separator.index);
+                        for (const [name, value] of Object.entries(dimensions)) {
+                            token.attrSet(name, value);
+                        }
+                    }
+                }
+            }
+            return renderImage ? renderImage(tokens, idx, options, env, self) : self.renderToken(tokens, idx, options);
+        };
+    }
+
+    /**
+     * Parses the `width=W,height=H` parameter list of an image's sizing suffix.
+     *
+     * @returns the recognized dimensions, or `undefined` if the suffix is not a well-formed
+     * parameter list — in which case it is left as part of the `src`, since it may be a literal
+     * `|` in the URL.
+     */
+    protected parseImageDimensions(params: string): { width?: string, height?: string } | undefined {
+        const dimensions: { width?: string, height?: string } = {};
+        for (const param of params.split(',')) {
+            const match = /^\s*(width|height)\s*=\s*(\d+)\s*$/.exec(param);
+            if (!match) {
+                return undefined;
+            }
+            dimensions[match[1] as 'width' | 'height'] = match[2];
+        }
+        return Object.keys(dimensions).length > 0 ? dimensions : undefined;
     }
 }

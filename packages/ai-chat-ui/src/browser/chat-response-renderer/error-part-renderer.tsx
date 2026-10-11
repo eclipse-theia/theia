@@ -19,7 +19,6 @@ import { injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, ErrorChatResponseContent, formatProviderError } from '@theia/ai-chat/lib/common';
 import { nls } from '@theia/core/lib/common/nls';
 import { ReactNode } from '@theia/core/shared/react';
-import * as React from '@theia/core/shared/react';
 
 @injectable()
 export class ErrorPartRenderer implements ChatResponsePartRenderer<ErrorChatResponseContent> {

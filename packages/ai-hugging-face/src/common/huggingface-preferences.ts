@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { AI_CORE_PREFERENCES_TITLE, MODEL_PROVIDER_TYPE_DETAIL, ModelProviderTypeDetail } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { LINUX_ENV_HINT, nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.huggingFace.apiKey';
@@ -24,6 +24,7 @@ export const HuggingFacePreferencesSchema: PreferenceSchema = {
     properties: {
         [API_KEY_PREF]: {
             type: 'string',
+            typeDetails: { [MODEL_PROVIDER_TYPE_DETAIL]: { label: 'Hugging Face' } satisfies ModelProviderTypeDetail },
             markdownDescription: nls.localize('theia/ai/huggingFace/apiKey/mdDescription',
                 'Enter an API Key for your Hugging Face Account. **Please note:** By using this preference the Hugging Face API key will be stored in clear text\
             on the machine running Theia. Use the environment variable `HUGGINGFACE_API_KEY` to set the key securely.') + LINUX_ENV_HINT,

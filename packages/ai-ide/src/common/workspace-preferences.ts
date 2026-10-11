@@ -24,6 +24,7 @@ export const PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF = 'ai-features.promptTem
 export const PROMPT_TEMPLATE_WORKSPACE_FILES_PREF = 'ai-features.promptTemplates.WorkspaceTemplateFiles';
 export const TASK_CONTEXT_STORAGE_DIRECTORY_PREF = 'ai-features.promptTemplates.taskContextStorageDirectory';
 export const FILE_CONTENT_MAX_SIZE_KB_PREF = 'ai-features.workspaceFunctions.fileContentMaxSizeKB';
+export const WRITE_CONTENT_MAX_SIZE_KB_PREF = 'ai-features.workspaceFunctions.writeContentMaxSizeKB';
 export const ALLOWED_EXTERNAL_PATHS_PREF = 'ai-features.workspaceFunctions.allowedExternalPaths';
 
 const CONFLICT_RESOLUTION_DESCRIPTION = 'When templates with the same ID (filename) exist in multiple locations, conflicts are resolved by priority: specific template files \
@@ -104,13 +105,22 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
             default: 256,
             minimum: 1
         },
+        [WRITE_CONTENT_MAX_SIZE_KB_PREF]: {
+            type: 'number',
+            title: nls.localize('theia/ai/workspace/writeContentMaxSizeKB/title', 'Write Content Max Size (KB)'),
+            description: nls.localize('theia/ai/workspace/writeContentMaxSizeKB/description',
+                'Maximum size in kilobytes of the content accepted by the whole-file write tools (writeFileContent and suggestFileContent). ' +
+                'Larger writes are rejected with a hint to use the replacement-based tools instead.'),
+            default: 256,
+            minimum: 1
+        },
         [ALLOWED_EXTERNAL_PATHS_PREF]: {
             type: 'array',
             title: nls.localize('theia/ai/workspace/allowedExternalPaths/title', 'Allowed External Paths'),
             description: nls.localize('theia/ai/workspace/allowedExternalPaths/description',
-                'List of absolute paths or file URIs (directories or files) outside the workspace that AI tools may read. ' +
+                'List of absolute paths or file URIs (directories or files) outside the workspace that AI tools may access. ' +
                 'Supports `~` to refer to the user home directory. Empty by default; opt-in only. ' +
-                'Honored by getFileContent, findFilesByPattern, getWorkspaceFileList, and getWorkspaceDirectoryStructure. ' +
+                'Honored by every tool that takes a path, including the tools that write files. ' +
                 'Workspace-scoped values are ignored when the workspace is not trusted. ' +
                 'Symbolic links inside allow-listed directories are followed and may point to files outside the allow-list; ' +
                 'only add directories whose contents you trust.'),

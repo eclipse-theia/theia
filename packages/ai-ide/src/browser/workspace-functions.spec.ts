@@ -20,8 +20,9 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { CancellationTokenSource, OS, PreferenceService } from '@theia/core';
+import { CancellationTokenSource, OS, PreferenceService, ILogger } from '@theia/core';
 import {
+    AccessibleRootContribution,
     GetWorkspaceDirectoryStructure,
     FileContentFunction,
     GetWorkspaceFileList,
@@ -29,6 +30,7 @@ import {
     WorkspaceFunctionScope,
     FindFilesByPattern
 } from './workspace-functions';
+import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { AiConfigurationService, ToolInvocationContext } from '@theia/ai-core';
 import { Container } from '@theia/core/shared/inversify';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -41,6 +43,7 @@ import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-mo
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { Minimatch } from 'minimatch';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 const makeFileSearchService = (
     impl?: (searchPattern: string, options: FileSearchService.Options) => Promise<string[]>
@@ -164,6 +167,7 @@ describe('Workspace Functions Cancellation Tests', () => {
         } as unknown as MonacoTextModelService;
 
         // Register mocks in the container
+        container.bind(ILogger).to(MockLogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -289,6 +293,7 @@ describe('FileContentFunction.getArgumentsShortLabel', () => {
             getTextDocument: () => undefined
         } as unknown as MonacoWorkspace;
 
+        container.bind(ILogger).to(MockLogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -407,6 +412,7 @@ describe('FileContentFunction handler', () => {
             getTextDocument: () => undefined
         } as unknown as MonacoWorkspace;
 
+        container.bind(ILogger).to(MockLogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -772,6 +778,7 @@ describe('FindFilesByPattern.getArgumentsShortLabel', () => {
             get: <T>(_path: string, defaultValue: T) => defaultValue
         };
 
+        container.bind(ILogger).to(MockLogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -820,6 +827,15 @@ describe('FindFilesByPattern.findFiles', () => {
     before(() => { disableJSDOMInner = enableJSDOM(); });
     after(() => { disableJSDOMInner(); });
 
+    // External hits are rendered with `Path.fsPath()`, which branches on the backend OS, so the POSIX
+    // fixtures below pin it instead of inheriting the OS the tests happen to run on.
+    let originalIsWindows: boolean;
+    beforeEach(() => {
+        originalIsWindows = OS.backend.isWindows;
+        OS.backend.isWindows = false;
+    });
+    afterEach(() => { OS.backend.isWindows = originalIsWindows; });
+
     beforeEach(() => {
         container = new Container();
         searchResults = [];
@@ -855,6 +871,7 @@ describe('FindFilesByPattern.findFiles', () => {
 
         fileSearchService = makeFileSearchService(async () => searchResults);
 
+        container.bind(ILogger).to(MockLogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -951,6 +968,19 @@ describe('FindFilesByPattern.findFiles', () => {
         expect(result.error).to.be.undefined;
         expect(result.files).to.deep.equal(['/external/data/x.ts']);
     });
+
+    describe('on Windows', () => {
+        // The tool promises the returned paths can be passed back to the file tools, so an external
+        // hit must be rendered as a native path and not as the URI-style `/c:/...`.
+        it('returns native paths for an allow-listed external searchRoot', async () => {
+            OS.backend.isWindows = true;
+            allowedExternal = ['C:\\external\\data'];
+            searchResults = ['file:///c%3A/external/data/x.ts'];
+            const result = JSON.parse(await call({ pattern: '**/*.ts', searchRoot: 'C:\\external\\data' }));
+            expect(result.error).to.be.undefined;
+            expect(result.files).to.deep.equal(['C:\\external\\data\\x.ts']);
+        });
+    });
 });
 
 describe('WorkspaceFunctionScope gitignore caching', () => {
@@ -992,6 +1022,7 @@ describe('WorkspaceFunctionScope gitignore caching', () => {
                 (path === 'ai-features.workspaceFunctions.considerGitIgnore' ? (true as unknown as T) : defaultValue)
         };
 
+        container.bind(ILogger).to(MockLogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -1061,6 +1092,7 @@ describe('GetWorkspaceFileList resolves the target directory once', () => {
 
         const mockPreferenceService = { get: <T>(_path: string, def: T) => def };
 
+        container.bind(ILogger).to(MockLogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -1124,6 +1156,7 @@ describe('GetWorkspaceDirectoryStructure preserves empty folders', () => {
                 (path === 'ai-features.workspaceFunctions.userExcludes' ? (['node_modules'] as unknown as T) : def)
         };
 
+        container.bind(ILogger).to(MockLogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -1195,6 +1228,7 @@ describe('FileContentFunction external paths', () => {
             onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
         } as unknown as AiConfigurationService;
 
+        container.bind(ILogger).to(MockLogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -1241,7 +1275,7 @@ describe('FileContentFunction external paths', () => {
         allowedPaths = ['/external/configs'];
         const result = await callTool('/external/configs/../secrets.txt');
         const parsed = JSON.parse(result);
-        expect(parsed.error).to.include('Invalid file path');
+        expect(parsed.error).to.include('Invalid path');
     });
 
     it('expands ~ in allow-list entries', async () => {
@@ -1266,7 +1300,7 @@ describe('FileContentFunction external paths', () => {
         allowedPaths = ['/home/test/configs'];
         const result = await callTool('~/configs/../secrets.txt');
         const parsed = JSON.parse(result);
-        expect(parsed.error).to.include('Invalid file path');
+        expect(parsed.error).to.include('Invalid path');
     });
 
     it('still allows workspace-relative paths', async () => {
@@ -1298,6 +1332,105 @@ describe('FileContentFunction external paths', () => {
         const result = await callTool('/external/configs/myapp.json');
         const parsed = JSON.parse(result);
         expect(parsed.error).to.include('not allowed');
+    });
+});
+
+describe('WorkspaceFunctionScope accessible root contributions', () => {
+    let container: Container;
+    let fileContentFunction: FileContentFunction;
+    let contributedRoots: URI[];
+    let contributionFails: boolean;
+    let rootQueries: number;
+
+    let disableJSDOMInner: () => void;
+    before(() => { disableJSDOMInner = enableJSDOM(); });
+    after(() => { disableJSDOMInner(); });
+
+    beforeEach(() => {
+        container = new Container();
+        container.bind(ILogger).to(MockLogger);
+        contributedRoots = [];
+        contributionFails = false;
+        rootQueries = 0;
+
+        const mockWorkspaceService = {
+            roots: [{ resource: new URI('file:///workspace') }],
+            tryGetRoots: () => [{ resource: new URI('file:///workspace') }],
+            onWorkspaceChanged: () => ({ dispose: () => { } })
+        } as unknown as WorkspaceService;
+
+        const mockFileService = {
+            exists: async () => true,
+            resolve: async (uri: URI) => ({ isFile: true, isDirectory: false, size: 1024, resource: uri }),
+            read: async (uri: URI) => ({ value: `content-of-${uri.path.toString()}` })
+        } as unknown as FileService;
+
+        const contribution: AccessibleRootContribution = {
+            getRoots: async () => {
+                rootQueries++;
+                if (contributionFails) {
+                    throw new Error('cannot resolve roots');
+                }
+                return contributedRoots;
+            }
+        };
+
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(PreferenceService).toConstantValue({ get: <T>(_path: string, defaultValue: T) => defaultValue });
+        container.bind(MonacoWorkspace).toConstantValue({ getTextDocument: () => undefined } as unknown as MonacoWorkspace);
+        container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
+        container.bind(EnvVariablesServer).toConstantValue(makeEnvVariablesServer());
+        bindRootContributionProvider(container, AccessibleRootContribution);
+        container.bind(AccessibleRootContribution).toConstantValue(contribution);
+        container.bind(WorkspaceFunctionScope).toSelf();
+        container.bind(FileContentFunction).toSelf();
+
+        fileContentFunction = container.get(FileContentFunction);
+    });
+
+    const callTool = (file: string) =>
+        fileContentFunction.getTool().handler(JSON.stringify({ file }), undefined) as Promise<string>;
+
+    it('allows a file under a contributed root although the allow-list is empty', async () => {
+        contributedRoots = [new URI('file:///config/workspace-metadata/uuid/memory')];
+        const result = await callTool('/config/workspace-metadata/uuid/memory/wiki/index.md');
+        expect(result).to.equal('content-of-/config/workspace-metadata/uuid/memory/wiki/index.md');
+    });
+
+    it('rejects a sibling that only shares the contributed root\'s prefix', async () => {
+        contributedRoots = [new URI('file:///config/memory')];
+        const parsed = JSON.parse(await callTool('/config/memory-other/wiki/index.md'));
+        expect(parsed.error).to.include('not allowed');
+    });
+
+    it('matches a contributed root that carries a trailing separator', async () => {
+        contributedRoots = [new URI('file:///config/memory/')];
+        const result = await callTool('/config/memory/wiki/index.md');
+        expect(result).to.equal('content-of-/config/memory/wiki/index.md');
+    });
+
+    it('re-queries the contributions, so a root that moves needs no invalidation', async () => {
+        contributedRoots = [new URI('file:///config/first/memory')];
+        expect(await callTool('/config/first/memory/notes.md')).to.match(/^content-of-/);
+
+        contributedRoots = [new URI('file:///config/second/memory')];
+        expect(JSON.parse(await callTool('/config/first/memory/notes.md')).error).to.include('not allowed');
+        expect(await callTool('/config/second/memory/notes.md')).to.match(/^content-of-/);
+        expect(rootQueries).to.equal(3);
+    });
+
+    it('keeps checking the other sources when a contribution fails', async () => {
+        contributionFails = true;
+        const parsed = JSON.parse(await callTool('/config/memory/wiki/index.md'));
+        expect(parsed.error).to.include('not allowed');
+        // The workspace itself is unaffected by the broken contribution.
+        expect(await callTool('src/index.ts')).to.equal('content-of-/workspace/src/index.ts');
+    });
+
+    it('is not consulted for paths inside the workspace', async () => {
+        expect(await callTool('src/index.ts')).to.equal('content-of-/workspace/src/index.ts');
+        expect(rootQueries).to.equal(0);
     });
 });
 
@@ -1363,6 +1496,7 @@ describe('GetWorkspaceFileList / GetWorkspaceDirectoryStructure with external pa
             onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
         } as unknown as AiConfigurationService;
 
+        container.bind(ILogger).to(MockLogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -1427,6 +1561,15 @@ describe('FindFilesByPattern with searchRoot', () => {
     before(() => { disableJSDOMInner = enableJSDOM(); });
     after(() => { disableJSDOMInner(); });
 
+    // External hits are rendered with `Path.fsPath()`, which branches on the backend OS, so the POSIX
+    // fixtures below pin it instead of inheriting the OS the tests happen to run on.
+    let originalIsWindows: boolean;
+    beforeEach(() => {
+        originalIsWindows = OS.backend.isWindows;
+        OS.backend.isWindows = false;
+    });
+    afterEach(() => { OS.backend.isWindows = originalIsWindows; });
+
     beforeEach(() => {
         container = new Container();
         allowedPaths = [];
@@ -1453,6 +1596,7 @@ describe('FindFilesByPattern with searchRoot', () => {
             onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
         } as unknown as AiConfigurationService;
 
+        container.bind(ILogger).to(MockLogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -1548,6 +1692,7 @@ describe('WorkspaceFunctionScope path-traversal hardening', () => {
             onDidChangeTrust: () => ({ dispose: () => { /* noop */ } })
         } as unknown as AiConfigurationService;
 
+        container.bind(ILogger).to(MockLogger);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
@@ -1683,18 +1828,16 @@ describe('WorkspaceFunctionScope path-traversal hardening', () => {
         });
     });
 
-    // Item 6 — `ensureWithinWorkspace` is the gate used by getFileDiagnostics
-    // for relative path inputs. A sibling that merely shares the workspace
-    // root's string prefix must not pass.
+    // getFileDiagnostics goes through the same `resolveAccessiblePath` gate as every other tool, so a
+    // sibling that merely shares the workspace root's string prefix must not pass.
     it('FileDiagnosticProvider rejects sibling-prefix path outside the workspace', async () => {
         const diag = container.get(FileDiagnosticProvider);
         const handler = diag.getTool().handler;
-        // Workspace root is file:///workspace/project. With a raw string-prefix
-        // check the resolved URI file:///workspace/project-other/file.txt
-        // would be (incorrectly) admitted.
+        // Workspace root is file:///workspace/project, so file:///workspace/project-other/file.txt is
+        // outside it — and a `..` segment is refused before it can even be resolved.
         const result = await handler(JSON.stringify({ file: '../project-other/file.txt' }), undefined);
         const parsed = JSON.parse(result as string);
-        expect(parsed.error).to.include('outside of the workspace');
+        expect(parsed.error).to.include('Invalid path');
     });
 });
 
@@ -1714,6 +1857,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
 
     beforeEach(() => {
         container = new Container();
+        container.bind(ILogger).to(MockLogger);
     });
 
     describe('getRootMapping', () => {
@@ -2035,6 +2179,13 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 const result = workspaceScope.resolveRelativePath('app/src/index.ts');
                 expect(result.toString()).to.equal('file:///workspace/a/app/src/index.ts');
             });
+
+            // The forms the external file change notice names files by: a root name for the mapped root, a uri for the other.
+            it('resolves a uri for the unmapped root', async () => {
+                workspaceScope = createScope(['file:///workspace/a/app', 'file:///workspace/b/app']);
+                const unmapped = 'file:///workspace/b/app/src/index.ts';
+                expect((await workspaceScope.resolveAccessiblePath(unmapped)).toString()).to.equal(unmapped);
+            });
         });
     });
 
@@ -2068,6 +2219,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 onWorkspaceChanged: () => ({ dispose: () => { } })
             } as unknown as WorkspaceService;
 
+            container2.bind(ILogger).to(MockLogger);
             container2.bind(WorkspaceService).toConstantValue(mockWorkspaceServiceB);
             container2.bind(FileService).toConstantValue({} as FileService);
             container2.bind(PreferenceService).toConstantValue({ get: () => false });
@@ -2189,5 +2341,6 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 expect(resolved.toString()).to.equal(fileUri.toString());
             }
         });
+
     });
 });

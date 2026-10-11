@@ -76,7 +76,6 @@ export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
                 languageModelRequest.reasoning = { level: languageModel.reasoningSupport.defaultLevel };
             }
         }
-
         return super.sendRequest(languageModel, languageModelRequest);
     }
 }

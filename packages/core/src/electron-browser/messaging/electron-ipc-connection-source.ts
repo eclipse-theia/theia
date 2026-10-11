@@ -15,12 +15,15 @@
 // *****************************************************************************
 
 import { injectable, interfaces } from 'inversify';
-import { RpcProxy } from '../../common/messaging';
-import { AbstractChannel, Channel, Emitter, Event, MaybePromise, WriteBuffer } from '../../common';
+import { RpcProxy } from '../../common/messaging/proxy-factory';
+import { AbstractChannel, Channel } from '../../common/message-rpc/channel';
+import { WriteBuffer } from '../../common/message-rpc/message-buffer';
+import { Emitter, Event } from '../../common/event';
+import { MaybePromise } from '../../common/types';
 import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
 import { ServiceConnectionProvider } from '../../browser/messaging/service-connection-provider';
 import { ConnectionSource } from '../../browser/messaging/connection-source';
-import { FrontendApplicationContribution } from '../../browser';
+import { FrontendApplicationContribution } from '../../browser/frontend-application-contribution';
 
 export interface ElectronIpcOptions {
 }

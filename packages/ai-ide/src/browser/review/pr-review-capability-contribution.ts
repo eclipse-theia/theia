@@ -99,7 +99,7 @@ Completeness is critical. Every review comment and every changed file must be in
     }
 
     protected buildLocalCheckoutTemplate(): string {
-        const name = nls.localize('theia/ai/ide/prReview/capability/localCheckout/name', 'Checkout');
+        const name = nls.localizeByDefault('Checkout');
         const description = nls.localize('theia/ai/ide/prReview/capability/localCheckout/description',
             'Checks out the pull request locally and protects existing worktree changes.');
 

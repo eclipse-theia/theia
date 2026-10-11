@@ -21,6 +21,10 @@ import { TreeImpl, CompositeTreeNode, TreeNode } from './tree';
 import { TreeModel } from './tree-model';
 import { ExpandableTreeNode } from './tree-expansion';
 import { TreeLabelProvider } from './tree-label-provider';
+import { MockTreeModel } from './test/mock-tree-model';
+import { MockLogger } from '../../common/test/mock-logger';
+import { ILogger } from '../../common';
+import { Deferred, timeout } from '../../common/promise-util';
 
 @injectable()
 class ConsistencyTestTree extends TreeImpl {
@@ -69,6 +73,48 @@ function createConsistencyTestRoot(rootName: string): CompositeTreeNode {
     return root;
 }
 
+/**
+ * A `TreeImpl` whose `resolveChildren` can be stalled or overridden per node id, to
+ * simulate slow child resolution (e.g. a file system request) in tests.
+ */
+@injectable()
+class StallingTestTree extends TreeImpl {
+
+    protected readonly stalled = new Map<string, Deferred<TreeNode[]>>();
+    protected readonly overrides = new Map<string, () => TreeNode[]>();
+
+    /**
+     * Stall the *next* `resolveChildren` for `id` on the returned deferred. Later
+     * resolutions for the same id proceed normally, so the stall cannot leak into
+     * unrelated refreshes (e.g. the cascade of a newly set root).
+     */
+    stallNextResolve(id: string): Deferred<TreeNode[]> {
+        const gate = new Deferred<TreeNode[]>();
+        this.stalled.set(id, gate);
+        return gate;
+    }
+
+    /** Make the *next* `resolveChildren` for `id` return `children()` instead of the current child nodes. */
+    overrideNextResolve(id: string, children: () => TreeNode[]): void {
+        this.overrides.set(id, children);
+    }
+
+    protected override resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+        const gate = this.stalled.get(parent.id);
+        if (gate) {
+            this.stalled.delete(parent.id);
+            return gate.promise;
+        }
+        const override = this.overrides.get(parent.id);
+        if (override) {
+            this.overrides.delete(parent.id);
+            return Promise.resolve(override());
+        }
+        return super.resolveChildren(parent);
+    }
+
+}
+
 describe('Tree Consistency', () => {
 
     it('setting different tree roots should finish', async () => {
@@ -100,6 +146,79 @@ describe('Tree Consistency', () => {
             resolveCounter = tree.resolveCounter;
         }
         assert.ok(false, 'Resolving does not stop, attempts: ' + tree.resolveCounter);
+    });
+
+    describe('stale refreshes', () => {
+
+        let tree: StallingTestTree;
+        let model: TreeModel;
+        let loggedErrors: unknown[][];
+
+        beforeEach(async () => {
+            const container = createTreeTestContainer();
+            container.bind(StallingTestTree).toSelf();
+            container.rebind(TreeImpl).toService(StallingTestTree);
+            tree = container.get(StallingTestTree);
+            model = container.get<TreeModel>(TreeModel);
+            loggedErrors = [];
+            const logger = container.get<MockLogger>(ILogger);
+            logger.error = async (...args: unknown[]) => { loggedErrors.push(args); };
+            model.root = MockTreeModel.HIERARCHICAL_MOCK_ROOT();
+            // let the refresh cascade triggered by setting the root settle
+            await timeout(0);
+        });
+
+        it('drops an in-flight refresh when the root is replaced meanwhile', async () => {
+            const stale = model.getNode('1.2') as CompositeTreeNode;
+            const gate = tree.stallNextResolve('1.2');
+            const pendingRefresh = tree.refresh(stale);
+
+            model.root = MockTreeModel.HIERARCHICAL_MOCK_ROOT();
+            gate.resolve(Array.from(stale.children));
+
+            assert.strictEqual(await pendingRefresh, undefined);
+            assert.deepStrictEqual(loggedErrors, []);
+            const fresh = model.getNode('1.2');
+            assert.ok(fresh);
+            assert.notStrictEqual(fresh, stale);
+        });
+
+        it('does not resurrect a removed subtree when a stale refresh completes', async () => {
+            const target = model.getNode('1.2') as CompositeTreeNode;
+            const gate = tree.stallNextResolve('1.2');
+            const pendingRefresh = tree.refresh(target);
+
+            CompositeTreeNode.removeChild(target.parent as CompositeTreeNode, target, tree);
+            assert.strictEqual(model.getNode('1.2'), undefined);
+            gate.resolve(Array.from(target.children));
+
+            assert.strictEqual(await pendingRefresh, undefined);
+            assert.strictEqual(model.getNode('1.2'), undefined);
+            assert.strictEqual(model.getNode('1.2.1'), undefined);
+        });
+
+        it('does not re-index a node object that a concurrent ancestor refresh replaced', async () => {
+            const stale = model.getNode('1.2') as CompositeTreeNode;
+            const gate = tree.stallNextResolve('1.2');
+            const pendingRefresh = tree.refresh(stale);
+
+            // an ancestor refresh yields a *fresh* object for the same id, as trees whose
+            // `resolveChildren` builds new nodes do
+            const parent = model.getNode('1') as CompositeTreeNode;
+            const replacement: CompositeTreeNode = { id: '1.2', name: '1.2', parent, children: [] };
+            tree.overrideNextResolve('1', () => parent.children.map(child => child.id === '1.2' ? replacement : child));
+            await tree.refresh(parent);
+            assert.strictEqual(model.getNode('1.2'), replacement);
+
+            gate.resolve(Array.from(stale.children));
+
+            assert.strictEqual(await pendingRefresh, undefined);
+            assert.deepStrictEqual(loggedErrors, []);
+            // the stale object must not take the replacement's place in the index, nor bring its children back
+            assert.strictEqual(model.getNode('1.2'), replacement);
+            assert.strictEqual(model.getNode('1.2.1'), undefined);
+        });
+
     });
 
 });

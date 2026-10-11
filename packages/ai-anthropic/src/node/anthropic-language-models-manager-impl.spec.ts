@@ -15,21 +15,49 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import { APIConnectionError } from '@anthropic-ai/sdk';
 import type { ModelInfo } from '@anthropic-ai/sdk/resources/models';
-import { ReasoningApi } from '@theia/ai-core';
+import { DiscoveredModel, ReasoningApi } from '@theia/ai-core';
 import { AnthropicLanguageModelsManagerImpl } from './anthropic-language-models-manager-impl';
 import { AnthropicModelDescription } from '../common';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { TestModelDiscoveryFetcher } from '@theia/ai-core/lib/node/test/test-model-discovery-fetcher';
 
 class TestableAnthropicManager extends AnthropicLanguageModelsManagerImpl {
     public retrieveCalls: string[] = [];
     public stubbedInfo: ModelInfo | Error | undefined;
+    public stubbedModels: ModelInfo[] = [];
+    public listCalls = 0;
+    /** Throw {@link failWith} for the first `failTimes` list calls, then return {@link stubbedModels}. */
+    public failTimes = 0;
+    public failWith: Error = new Error('boom');
+    /** The real discovery fetcher, snapshotting in memory and retrying without waiting. */
+    public readonly testFetcher = new TestModelDiscoveryFetcher();
+    protected override readonly discoveryFetcher = this.testFetcher;
+
+    /** In-memory stand-in for the on-disk snapshot. */
+    public get snapshot(): DiscoveredModel[] | undefined {
+        return this.testFetcher.snapshot;
+    }
+
+    public set snapshot(models: DiscoveredModel[] | undefined) {
+        this.testFetcher.snapshot = models;
+    }
+
+    protected override async listModels(_apiKey: string, _proxyUrl: string | undefined): Promise<ModelInfo[]> {
+        this.listCalls++;
+        if (this.listCalls <= this.failTimes) {
+            throw this.failWith;
+        }
+        return this.stubbedModels;
+    }
 
     public callDeriveReasoningApi(info: ModelInfo | undefined): ReasoningApi | undefined {
         return this.deriveReasoningApi(info);
     }
 
-    public callDeriveSupportsXHighEffort(info: ModelInfo | undefined): boolean | undefined {
-        return this.deriveSupportsXHighEffort(info);
+    public callResolveMetadata(desc: AnthropicModelDescription, apiKey?: string): ReturnType<AnthropicLanguageModelsManagerImpl['resolveMetadata']> {
+        return this.resolveMetadata(desc, apiKey, undefined);
     }
 
     public callDeriveServerSideCompactionSupport(desc: AnthropicModelDescription): boolean {
@@ -86,6 +114,7 @@ describe('AnthropicLanguageModelsManagerImpl - metadata derivation', () => {
 
     beforeEach(() => {
         manager = new TestableAnthropicManager();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
     });
 
     describe('deriveReasoningApi', () => {
@@ -143,24 +172,105 @@ describe('AnthropicLanguageModelsManagerImpl - metadata derivation', () => {
         });
     });
 
-    describe('deriveSupportsXHighEffort', () => {
-        it('returns undefined when info is missing', () => {
-            expect(manager.callDeriveSupportsXHighEffort(undefined)).to.equal(undefined);
-        });
-
-        it('returns undefined when effort capability is absent', () => {
-            expect(manager.callDeriveSupportsXHighEffort(modelInfo())).to.equal(undefined);
-        });
-
-        it('reflects the supported flag when effort.xhigh is reported', () => {
-            const supported = modelInfo({
-                capabilities: { effort: { xhigh: { supported: true } } }
+    describe('resolveMetadata reasoning support', () => {
+        for (const model of ['claude-opus-5', 'claude-sonnet-4-6', 'claude-mythos-preview', 'custom-model']) {
+            it(`does not fabricate reasoning support for ${model} without model metadata`, async () => {
+                const metadata = await manager.callResolveMetadata(description(model));
+                expect(metadata.reasoningApi).to.equal(undefined);
+                expect(metadata.reasoningSupport).to.equal(undefined);
+                expect(manager.retrieveCalls).to.deep.equal([]);
+            });
+            it(`does not fabricate reasoning support for ${model} when endpoint capabilities are missing`, async () => {
+                manager.stubbedInfo = modelInfo();
+                const metadata = await manager.callResolveMetadata(description(model), 'key');
+                expect(metadata.reasoningApi).to.equal(undefined);
+                expect(metadata.reasoningSupport).to.equal(undefined);
+            });
+        }
+        for (const model of ['claude-opus-5', 'claude-sonnet-4-6', 'claude-mythos-preview', 'custom-model']) {
+            for (const xhigh of [false, true]) {
+                for (const max of [false, true]) {
+                    it(`uses endpoint flags for ${model} with xhigh=${xhigh}, max=${max}`, async () => {
+                        manager.stubbedInfo = modelInfo({
+                            capabilities: {
+                                thinking: { supported: true, types: { adaptive: { supported: true } } },
+                                effort: {
+                                    supported: true, low: { supported: true }, medium: { supported: true }, high: { supported: true },
+                                    xhigh: { supported: xhigh }, max: { supported: max }
+                                }
+                            }
+                        } as Partial<ModelInfo>);
+                        const metadata = await manager.callResolveMetadata(description(model), 'key');
+                        expect(metadata.reasoningApi).to.equal('effort');
+                        expect(metadata.reasoningSupport).to.deep.equal({
+                            supportedLevels: ['off', 'low', 'medium', 'high', ...(xhigh ? ['xhigh'] : []), ...(max ? ['max'] : []), 'auto'],
+                            defaultLevel: 'auto'
+                        });
+                        await manager.callResolveMetadata(description(model), 'key');
+                        expect(manager.retrieveCalls).to.deep.equal([`::${model}`]);
+                    });
+                }
+            }
+        }
+        for (const level of ['low', 'medium', 'high', 'xhigh', 'max'] as const) {
+            it(`omits explicitly unsupported ${level} from adaptive levels`, async () => {
+                manager.stubbedInfo = modelInfo({
+                    capabilities: {
+                        thinking: { supported: true, types: { adaptive: { supported: true } } },
+                        effort: {
+                            supported: true,
+                            low: { supported: level !== 'low' }, medium: { supported: level !== 'medium' }, high: { supported: level !== 'high' },
+                            xhigh: { supported: level !== 'xhigh' }, max: { supported: level !== 'max' }
+                        }
+                    }
+                } as Partial<ModelInfo>);
+                const metadata = await manager.callResolveMetadata(description('custom-model'), 'key');
+                expect(metadata.reasoningSupport?.supportedLevels).to.deep.equal([
+                    'off', ...['low', 'medium', 'high', 'xhigh', 'max'].filter(value => value !== level), 'auto'
+                ]);
+            });
+        }
+        it('honors overall effort unsupported even if individual flags are true', async () => {
+            manager.stubbedInfo = modelInfo({
+                capabilities: {
+                    thinking: { supported: true, types: { adaptive: { supported: true } } },
+                    effort: { supported: false, xhigh: { supported: true }, max: { supported: true } }
+                }
             } as Partial<ModelInfo>);
-            const unsupported = modelInfo({
-                capabilities: { effort: { xhigh: { supported: false } } }
+            const metadata = await manager.callResolveMetadata(description('claude-opus-5'), 'key');
+            expect(metadata.reasoningSupport?.supportedLevels).to.deep.equal(['off', 'auto']);
+        });
+        it('honors disabled endpoint thinking for a familiar model', async () => {
+            manager.stubbedInfo = modelInfo({
+                capabilities: {
+                    thinking: { supported: false, types: { adaptive: { supported: false }, enabled: { supported: false } } }
+                }
             } as Partial<ModelInfo>);
-            expect(manager.callDeriveSupportsXHighEffort(supported)).to.equal(true);
-            expect(manager.callDeriveSupportsXHighEffort(unsupported)).to.equal(false);
+            const metadata = await manager.callResolveMetadata(description('claude-opus-5'), 'key');
+            expect(metadata.reasoningApi).to.equal(undefined);
+            expect(metadata.reasoningSupport).to.equal(undefined);
+        });
+        it('keeps adaptive base levels when effort metadata is missing', async () => {
+            manager.stubbedInfo = modelInfo({
+                capabilities: {
+                    thinking: { supported: true, types: { adaptive: { supported: true } } }
+                }
+            } as Partial<ModelInfo>);
+            const metadata = await manager.callResolveMetadata(description('custom-model'), 'key');
+            expect(metadata.reasoningSupport?.supportedLevels).to.deep.equal(['off', 'low', 'medium', 'high', 'auto']);
+        });
+        it('preserves budget-only levels even when extended effort capabilities are reported', async () => {
+            manager.stubbedInfo = modelInfo({
+                capabilities: {
+                    thinking: { supported: true, types: { adaptive: { supported: false }, enabled: { supported: true } } },
+                    effort: { xhigh: { supported: true }, max: { supported: true } }
+                }
+            } as Partial<ModelInfo>);
+            const metadata = await manager.callResolveMetadata(description('claude-sonnet-4-20250514'), 'key');
+            expect(metadata.reasoningApi).to.equal('budget');
+            expect(metadata.reasoningSupport).to.deep.equal({
+                supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'], defaultLevel: 'auto'
+            });
         });
     });
 
@@ -187,6 +297,12 @@ describe('AnthropicLanguageModelsManagerImpl - metadata derivation', () => {
         it('returns false for claude-sonnet-4-5 (older minor version, sonnet variant)', () => {
             expect(capabilityFor('claude-sonnet-4-5')).to.equal(false);
         });
+        it('returns true for claude-opus-5 (dateless major release, no minor segment)', () => {
+            expect(capabilityFor('claude-opus-5')).to.equal(true);
+        });
+        it('returns true for claude-sonnet-5 (dateless major release, no minor segment)', () => {
+            expect(capabilityFor('claude-sonnet-5')).to.equal(true);
+        });
         it('returns true for claude-opus-5-0 (newer major version)', () => {
             expect(capabilityFor('claude-opus-5-0')).to.equal(true);
         });
@@ -205,11 +321,151 @@ describe('AnthropicLanguageModelsManagerImpl - metadata derivation', () => {
     });
 });
 
+describe('AnthropicLanguageModelsManagerImpl - fetchAvailableModels', () => {
+    let manager: TestableAnthropicManager;
+
+    beforeEach(() => {
+        manager = new TestableAnthropicManager();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
+        manager.setApiKey('key');
+    });
+
+    it('returns an empty result and skips the network when no API key is set', async () => {
+        const previous = process.env.ANTHROPIC_API_KEY;
+        delete process.env.ANTHROPIC_API_KEY;
+        try {
+            manager.setApiKey(undefined);
+            const result = await manager.fetchAvailableModels();
+            expect(result).to.deep.equal({ models: [], fromCache: false });
+            expect(manager.listCalls).to.equal(0);
+        } finally {
+            if (previous !== undefined) { process.env.ANTHROPIC_API_KEY = previous; }
+        }
+    });
+
+    it('reports the models the endpoint listed, with their display names, and caches them', async () => {
+        manager.stubbedModels = [
+            modelInfo({ id: 'claude-opus-4-9', display_name: 'Claude Opus 4.9', created_at: '2026-03-01T00:00:00Z' }),
+            modelInfo({ id: 'claude-opus-4-8', display_name: 'Claude Opus 4.8' }),
+            // A duplicate entry must not produce a duplicate model.
+            modelInfo({ id: 'claude-opus-4-9', display_name: 'Claude Opus 4.9' })
+        ];
+        const result = await manager.fetchAvailableModels();
+        expect(result.fromCache).to.equal(false);
+        expect(result.models.map(model => model.id)).to.deep.equal(['claude-opus-4-9', 'claude-opus-4-8']);
+        expect(result.models[0].label).to.equal('Claude Opus 4.9');
+        expect(result.models[0].released).to.equal(Date.parse('2026-03-01T00:00:00Z'));
+        expect(manager.listCalls).to.equal(1);
+        expect(manager.snapshot).to.deep.equal(result.models);
+    });
+
+    it('adds the undated alias of each release-pinned model, keeping the releases themselves', async () => {
+        manager.stubbedModels = [
+            modelInfo({ id: 'claude-opus-5-20260401', display_name: 'Claude Opus 5' }),
+            modelInfo({ id: 'claude-opus-5-20251120', display_name: 'Claude Opus 5' }),
+            modelInfo({ id: 'claude-haiku-4-5-20251001', display_name: 'Claude Haiku 4.5' })
+        ];
+        const result = await manager.fetchAvailableModels();
+        // The aliases are what the model pickers offer; the releases stay available to be pinned.
+        expect(result.models.map(model => model.id)).to.deep.equal([
+            'claude-opus-5',
+            'claude-haiku-4-5',
+            'claude-opus-5-20260401',
+            'claude-opus-5-20251120',
+            'claude-haiku-4-5-20251001'
+        ]);
+    });
+
+    it('retries transient connection errors and then succeeds', async () => {
+        manager.stubbedModels = [modelInfo({ id: 'claude-opus-4-8' })];
+        manager.failTimes = 2;
+        manager.failWith = new APIConnectionError({ message: 'network down' });
+        const result = await manager.fetchAvailableModels();
+        expect(result.models.map(model => model.id)).to.deep.equal(['claude-opus-4-8']);
+        expect(result.fromCache).to.equal(false);
+        expect(manager.listCalls).to.equal(3);
+    });
+
+    it('falls back to the cached snapshot when the fetch keeps failing', async () => {
+        manager.snapshot = [{ id: 'claude-opus-4-8', label: 'Claude Opus 4.8' }];
+        manager.failTimes = 99;
+        manager.failWith = new APIConnectionError({ message: 'still down' });
+        const result = await manager.fetchAvailableModels();
+        expect(result.models).to.deep.equal([{ id: 'claude-opus-4-8', label: 'Claude Opus 4.8' }]);
+        expect(result.fromCache).to.equal(true);
+        expect(result.error).to.equal('still down');
+        // 3 attempts against the retryable error.
+        expect(manager.listCalls).to.equal(3);
+    });
+
+    it('throws when the fetch fails and there is no cached snapshot', async () => {
+        manager.failTimes = 99;
+        manager.failWith = new APIConnectionError({ message: 'no cache here' });
+        let threw = false;
+        try {
+            await manager.fetchAvailableModels();
+        } catch (error) {
+            threw = true;
+            expect((error as Error).message).to.equal('no cache here');
+        }
+        expect(threw).to.be.true;
+    });
+
+    it('does not retry non-connection errors (e.g. auth failures)', async () => {
+        manager.failTimes = 99;
+        manager.failWith = new Error('401 unauthorized');
+        let threw = false;
+        try {
+            await manager.fetchAvailableModels();
+        } catch {
+            threw = true;
+        }
+        expect(threw).to.be.true;
+        expect(manager.listCalls).to.equal(1);
+    });
+});
+
+describe('AnthropicLanguageModelsManagerImpl - getApiKeySource', () => {
+    let manager: TestableAnthropicManager;
+
+    beforeEach(() => {
+        manager = new TestableAnthropicManager();
+    });
+
+    it('reports "preference" when a key was set explicitly', async () => {
+        manager.setApiKey('key');
+        expect(await manager.getApiKeySource()).to.equal('preference');
+    });
+
+    it('reports "environment" when only the env var is present', async () => {
+        const previous = process.env.ANTHROPIC_API_KEY;
+        process.env.ANTHROPIC_API_KEY = 'env-key';
+        try {
+            manager.setApiKey(undefined);
+            expect(await manager.getApiKeySource()).to.equal('environment');
+        } finally {
+            if (previous !== undefined) { process.env.ANTHROPIC_API_KEY = previous; } else { delete process.env.ANTHROPIC_API_KEY; }
+        }
+    });
+
+    it('reports "none" when neither is present', async () => {
+        const previous = process.env.ANTHROPIC_API_KEY;
+        delete process.env.ANTHROPIC_API_KEY;
+        try {
+            manager.setApiKey(undefined);
+            expect(await manager.getApiKeySource()).to.equal('none');
+        } finally {
+            if (previous !== undefined) { process.env.ANTHROPIC_API_KEY = previous; }
+        }
+    });
+});
+
 describe('AnthropicLanguageModelsManagerImpl - fetchModelInfo cache', () => {
     let manager: TestableAnthropicManager;
 
     beforeEach(() => {
         manager = new TestableAnthropicManager();
+        (manager as unknown as { logger: MockLogger }).logger = new MockLogger();
     });
 
     it('returns undefined and skips the network when no API key is provided', async () => {
@@ -281,5 +537,36 @@ describe('AnthropicLanguageModelsManagerImpl - fetchModelInfo cache', () => {
         expect(r1).to.equal(expectedInfo);
         expect(r2).to.equal(expectedInfo);
         expect(manager.retrieveCalls).to.deep.equal(['::claude-x']);
+    });
+});
+
+describe('AnthropicLanguageModelsManagerImpl - environment API key consent', () => {
+
+    it('leaves an environment key unused until it is allowed, wherever a key would be read', async () => {
+        const previous = { ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY };
+        delete process.env.ANTHROPIC_API_KEY;
+        process.env.ANTHROPIC_API_KEY = 'from-the-environment';
+        try {
+            const manager = new TestableAnthropicManager();
+            // The gate sits on the key, so a custom endpoint or a configured model cannot reach past it either.
+            expect(manager.apiKey).to.equal(undefined);
+            // Discovery still needs to know the key is there, in order to ask for it.
+            expect(await manager.getApiKeySource()).to.equal('environment');
+
+            manager.setAllowEnvironmentApiKey(true);
+            expect(manager.apiKey).to.equal('from-the-environment');
+
+            // Withdrawing the consent stops it being used at once.
+            manager.setAllowEnvironmentApiKey(false);
+            expect(manager.apiKey).to.equal(undefined);
+        } finally {
+            if (previous.ANTHROPIC_API_KEY !== undefined) { process.env.ANTHROPIC_API_KEY = previous.ANTHROPIC_API_KEY; } else { delete process.env.ANTHROPIC_API_KEY; }
+        }
+    });
+
+    it('uses a key set in the preferences whatever the environment says', () => {
+        const manager = new TestableAnthropicManager();
+        manager.setApiKey('from-the-preference');
+        expect(manager.apiKey).to.equal('from-the-preference');
     });
 });

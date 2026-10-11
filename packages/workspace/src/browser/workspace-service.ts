@@ -68,8 +68,8 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     @inject(WindowService)
     protected readonly windowService: WindowService;
 
-    @inject(ILogger)
-    protected logger: ILogger;
+    @inject(ILogger) @named('workspace:WorkspaceService')
+    protected readonly logger: ILogger;
 
     @inject(WorkspacePreferences)
     protected preferences: WorkspacePreferences;

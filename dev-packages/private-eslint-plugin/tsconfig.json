@@ -4,7 +4,8 @@
     "composite": true
   },
   "include": [
-    "rules"
+    "rules",
+    "util"
   ],
   "references": [
     {

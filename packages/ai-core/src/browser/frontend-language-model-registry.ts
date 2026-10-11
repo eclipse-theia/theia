@@ -13,11 +13,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CancellationToken } from '@theia/core';
+import { CancellationToken, ILogger } from '@theia/core';
 import {
     inject,
     injectable,
     postConstruct,
+    named,
 } from '@theia/core/shared/inversify';
 import {
     OutputChannel,
@@ -142,13 +143,16 @@ export class FrontendLanguageModelRegistryImpl
     @inject(AISettingsService)
     protected settingsService: AISettingsService;
 
+    @inject(ILogger) @named('ai-core:FrontendLanguageModelRegistryImpl')
+    protected override readonly logger: ILogger;
+
     private static requestCounter: number = 0;
 
     override addLanguageModels(models: LanguageModelMetaData[] | LanguageModel[]): void {
         let modelAdded = false;
         for (const model of models) {
             if (this.languageModels.find(m => m.id === model.id)) {
-                console.warn(`Tried to add an existing model ${model.id}`);
+                this.logger.warn(`Tried to add an existing model ${model.id}`);
                 continue;
             }
             if (LanguageModel.is(model)) {

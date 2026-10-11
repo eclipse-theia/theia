@@ -21,11 +21,14 @@
 // code copied and modified from https://github.com/microsoft/vscode/blob/1.55.2/src/vs/platform/native/electron-main/nativeHostMainService.ts#L679-L771
 
 import { KeyStoreService } from '../common/key-store';
-import { injectable } from 'inversify';
-import { isWindows } from '../common';
+import { injectable, inject, named } from 'inversify';
+import { isWindows, ILogger } from '../common';
 
 @injectable()
 export class KeyStoreServiceImpl implements KeyStoreService {
+
+    @inject(ILogger) @named('core:KeyStoreServiceImpl')
+    protected readonly logger: ILogger;
 
     private static readonly MAX_PASSWORD_LENGTH = 2500;
     private static readonly PASSWORD_CHUNK_SIZE = KeyStoreServiceImpl.MAX_PASSWORD_LENGTH - 100;
@@ -108,7 +111,7 @@ export class KeyStoreServiceImpl implements KeyStoreService {
             await this.keytarImplementation.findCredentials('test-keytar-loads');
         } catch (err) {
             this.keytarImplementation = new InMemoryCredentialsProvider();
-            console.warn('OS level credential store could not be accessed. Using in-memory credentials provider', err);
+            this.logger.warn('OS level credential store could not be accessed. Using in-memory credentials provider', err);
         }
         return this.keytarImplementation;
     }

@@ -59,7 +59,7 @@ export class ProcessTask extends Task {
 
     constructor(
         @inject(TaskManager) taskManager: TaskManager,
-        @inject(ILogger) @named('task') logger: ILogger,
+        @inject(ILogger) @named('task:ProcessTask') logger: ILogger,
         @inject(TaskProcessOptions) protected override readonly options: TaskProcessOptions
     ) {
         super(taskManager, logger, options);

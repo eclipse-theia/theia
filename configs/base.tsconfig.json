@@ -19,7 +19,8 @@
     "module": "CommonJS",
     "moduleResolution": "Node",
     "target": "ES2023",
-    "jsx": "react",
+    "jsx": "react-jsx",
+    "jsxImportSource": "@theia/core/shared/react",
     "lib": [
       "ES2023",
       "DOM",

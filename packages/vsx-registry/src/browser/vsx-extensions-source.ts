@@ -15,12 +15,13 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core/lib/common/logger';
 import { TreeElement, TreeSource } from '@theia/core/lib/browser/source-tree';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { FuzzySearch } from '@theia/core/lib/common/fuzzy-search';
 import { VSXExtensionsModel } from './vsx-extensions-model';
-import { ExtensionsSourceContribution, SearchContext } from './extensions-source-contribution';
+import { ExtensionsSourceContribution, SearchContext, SearchResult } from './extensions-source-contribution';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
@@ -54,6 +55,9 @@ export class VSXExtensionsSource extends TreeSource {
     @inject(FuzzySearch)
     protected readonly fuzzySearch: FuzzySearch;
 
+    @inject(ILogger) @named('vsx-registry:VSXExtensionsSource')
+    protected readonly logger: ILogger;
+
     @postConstruct()
     protected init(): void {
         this.fireDidChange();
@@ -82,9 +86,12 @@ export class VSXExtensionsSource extends TreeSource {
             return this.collectSearchResults(enabled);
         }
 
+        // Resolve concurrently and isolate each contribution: a section is shared between all of
+        // them, so one that is slow (e.g. waiting on a remote registry) must not hold up the
+        // others, and one that rejects must not empty the whole section.
+        const resolved = await Promise.all(enabled.map(contribution => this.safeResolveForSection(contribution)));
         const entries: TreeElement[] = [];
-        for (const contribution of enabled) {
-            const iter = await this.resolveForSection(contribution);
+        for (const iter of resolved) {
             if (!iter) {
                 continue;
             }
@@ -107,7 +114,7 @@ export class VSXExtensionsSource extends TreeSource {
         const ctx: SearchContext = {
             verifiedOnly: this.preferenceService.get<boolean>('extensions.onlyShowVerifiedExtensions', false)
         };
-        const results = await Promise.all(contributions.map(c => c.resolveSearchResults?.(freeText, ctx) ?? []));
+        const results = await Promise.all(contributions.map(c => this.safeResolveSearchResults(c, freeText, ctx)));
         const all = results.flatMap(r => [...r]);
         const trimmed = freeText.trim();
         if (!trimmed || all.length <= 1) {
@@ -119,6 +126,24 @@ export class VSXExtensionsSource extends TreeSource {
             transform: r => r.searchableText
         });
         return matches.map(m => m.item.element).values();
+    }
+
+    protected async safeResolveForSection(contribution: ExtensionsSourceContribution): Promise<Iterable<TreeElement> | undefined> {
+        try {
+            return await this.resolveForSection(contribution);
+        } catch (error) {
+            this.logger.warn(`Failed to resolve '${this.options.id}' entries of contribution '${contribution.type}'.`, error);
+            return undefined;
+        }
+    }
+
+    protected async safeResolveSearchResults(contribution: ExtensionsSourceContribution, query: string, context: SearchContext): Promise<Iterable<SearchResult>> {
+        try {
+            return await (contribution.resolveSearchResults?.(query, context) ?? []);
+        } catch (error) {
+            this.logger.warn(`Failed to resolve search results of contribution '${contribution.type}'.`, error);
+            return [];
+        }
     }
 
     protected async resolveForSection(contribution: ExtensionsSourceContribution): Promise<Iterable<TreeElement> | undefined> {

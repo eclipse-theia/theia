@@ -14,14 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ApplicationShell, FocusTracker, Widget } from '@theia/core/lib/browser';
+import { ApplicationShell, FocusTracker, Widget, WidgetContextKeyContribution } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { CustomEditorWidget } from '../custom-editors/custom-editor-widget';
+import { CodeEditorWidgetUtil } from '../menus/vscode-theia-menu-mappings';
 import { WebviewWidget } from './webview';
 
+const ACTIVE_WEBVIEW_PANEL_ID = 'activeWebviewPanelId';
+const ACTIVE_CUSTOM_EDITOR_ID = 'activeCustomEditorId';
+
 @injectable()
-export class WebviewContextKeys {
+export class WebviewContextKeys implements WidgetContextKeyContribution {
 
     /**
      * Context key representing the `viewType` of the active `WebviewWidget`, if any.
@@ -41,9 +45,21 @@ export class WebviewContextKeys {
 
     @postConstruct()
     protected init(): void {
-        this.activeWebviewPanelId = this.contextKeyService.createKey('activeWebviewPanelId', '');
-        this.activeCustomEditorId = this.contextKeyService.createKey('activeCustomEditorId', '');
+        this.activeWebviewPanelId = this.contextKeyService.createKey(ACTIVE_WEBVIEW_PANEL_ID, '');
+        this.activeCustomEditorId = this.contextKeyService.createKey(ACTIVE_CUSTOM_EDITOR_ID, '');
         this.applicationShell.onDidChangeCurrentWidget(this.handleDidChangeCurrentWidget, this);
+    }
+
+    getContextKeyValues(widget: Widget): Iterable<[string, unknown]> | undefined {
+        // A view toolbar item may key on the *active* editor, so only the editor-like widgets these keys can
+        // describe get an answer; everything else keeps the ambient value.
+        if (!CodeEditorWidgetUtil.is(widget)) {
+            return undefined;
+        }
+        return [
+            [ACTIVE_CUSTOM_EDITOR_ID, widget instanceof CustomEditorWidget ? widget.viewType : ''],
+            [ACTIVE_WEBVIEW_PANEL_ID, widget instanceof WebviewWidget ? widget.viewType : '']
+        ];
     }
 
     protected handleDidChangeCurrentWidget(change: FocusTracker.IChangedArgs<Widget>): void {

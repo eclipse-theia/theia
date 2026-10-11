@@ -105,10 +105,10 @@ describe('parseShellExecutionInput', () => {
             expect(result.command).to.equal('echo "hello"');
         });
 
-        it('should handle incomplete command with backslash', () => {
-            // During streaming, we get partial content - the regex stops at first unescaped quote
+        it('should unescape a quote in an incomplete command', () => {
+            // During streaming, we get partial content - the escaped quote is part of the command, not its end
             const result = parseShellExecutionInput('{"command": "echo \\"hello');
-            expect(result.command).to.equal('echo \\');
+            expect(result.command).to.equal('echo "hello');
         });
 
         it('should handle command with pipes and redirects', () => {

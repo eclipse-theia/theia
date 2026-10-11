@@ -342,6 +342,8 @@
   min-height: var(--theia-horizontal-toolbar-height);
   background-color: var(--theia-sideBar-background);
   overflow: hidden;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .theia-sidepanel-toolbar .theia-sidepanel-title {

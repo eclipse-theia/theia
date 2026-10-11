@@ -16,11 +16,14 @@
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { MessageService, PreferenceService } from '@theia/core';
+import { ILogger, MessageService, PreferenceService } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { MCPFrontendService } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { MCPServerEditor, MCPServerEditorImpl, MCPServerEditDialogFactory } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
+import { AUTO_UPDATE_OVERRIDES_PREF } from '../../common/ai-registry-preferences';
 import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
+import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from '../auto-update/registry-auto-update-policy';
 import { MCPInstallService, MCPInstallServiceImpl } from './mcp-install-service';
 
 class FakePreferenceService {
@@ -359,6 +362,7 @@ describe('MCPInstallService actions', () => {
         const container = new Container();
         prefs = new FakePreferenceService();
         container.bind(PreferenceService).toConstantValue(prefs);
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
         // Stubs for the editor's deps - we only exercise installFromEntry which uses
         // PreferenceService; MessageService and MCPFrontendService are referenced by other
         // editor methods that the install path doesn't touch.
@@ -370,6 +374,8 @@ describe('MCPInstallService actions', () => {
         });
         container.bind(MCPServerEditorImpl).toSelf().inSingletonScope();
         container.bind(MCPServerEditor).toService(MCPServerEditorImpl);
+        container.bind(RegistryAutoUpdatePolicyImpl).toSelf().inSingletonScope();
+        container.bind(RegistryAutoUpdatePolicy).toService(RegistryAutoUpdatePolicyImpl);
         container.bind(MCPInstallServiceImpl).toSelf().inSingletonScope();
         container.bind(MCPInstallService).toService(MCPInstallServiceImpl);
         service = container.get(MCPInstallService);
@@ -431,6 +437,33 @@ describe('MCPInstallService actions', () => {
         });
     });
 
+    it('uninstall drops the server auto-update override so it does not linger in the settings', async () => {
+        await prefs.set(MCP_SERVERS_PREF, {
+            example: {
+                command: 'npx',
+                args: ['-y', 'example-mcp'],
+                registryMetadata: { serverId: 'io.github.example/example-mcp' }
+            }
+        });
+        await prefs.set(AUTO_UPDATE_OVERRIDES_PREF, {
+            'mcp:io.github.example/example-mcp': 'on',
+            'mcp:io.github.other/other-mcp': 'off'
+        });
+
+        await service.uninstall('example');
+
+        expect(prefs.snapshot(AUTO_UPDATE_OVERRIDES_PREF)).to.deep.equal({ 'mcp:io.github.other/other-mcp': 'off' });
+    });
+
+    it('uninstall leaves the overrides untouched for a server that was never linked to the registry', async () => {
+        await prefs.set(MCP_SERVERS_PREF, { example: { command: 'npx', args: ['-y', 'example-mcp'] } });
+        await prefs.set(AUTO_UPDATE_OVERRIDES_PREF, { 'mcp:io.github.other/other-mcp': 'off' });
+
+        await service.uninstall('example');
+
+        expect(prefs.snapshot(AUTO_UPDATE_OVERRIDES_PREF)).to.deep.equal({ 'mcp:io.github.other/other-mcp': 'off' });
+    });
+
     it('unlink removes the registryMetadata block while leaving the server config intact', async () => {
         await prefs.set(MCP_SERVERS_PREF, {
             example: {
@@ -456,6 +489,24 @@ describe('MCPInstallService actions', () => {
                 autostart: true
             }
         });
+    });
+
+    it('unlink drops the server auto-update override, since the server stops being registry-managed', async () => {
+        await prefs.set(MCP_SERVERS_PREF, {
+            example: {
+                command: 'npx',
+                args: ['-y', 'example-mcp'],
+                registryMetadata: { serverId: 'io.github.example/example-mcp' }
+            }
+        });
+        await prefs.set(AUTO_UPDATE_OVERRIDES_PREF, {
+            'mcp:io.github.example/example-mcp': 'on',
+            'mcp:io.github.other/other-mcp': 'off'
+        });
+
+        await service.unlink('example');
+
+        expect(prefs.snapshot(AUTO_UPDATE_OVERRIDES_PREF)).to.deep.equal({ 'mcp:io.github.other/other-mcp': 'off' });
     });
 
     it('unlink is a no-op on entries that have no registryMetadata block', async () => {

@@ -21,6 +21,7 @@ import { interfaces } from '@theia/core/shared/inversify';
 export const CHAT_VIEW_TOKEN_USAGE_ENABLED = 'ai-features.chat.tokenUsageIndicator.enabled';
 export const CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED = 'ai-features.chat.tokenUsageWarning.enabled';
 export const CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE = 'ai-features.chat.tokenUsageWarning.defaultThresholdPercentage';
+export const CHAT_VIEW_ALLOWED_RESOURCE_URLS = 'ai-features.chat.allowedResourceUrls';
 
 export const CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE_DEFAULT = 80;
 
@@ -58,6 +59,20 @@ export const chatViewPreferenceSchema: PreferenceSchema = {
                 'Currently resolves against an assumed 200k context window; will use the real per-model context size once available.'
             ),
             tags: ['experimental']
+        },
+        [CHAT_VIEW_ALLOWED_RESOURCE_URLS]: {
+            type: 'array',
+            items: {
+                type: 'string'
+            },
+            default: [],
+            description: nls.localize(
+                'theia/ai/chat-ui/allowedResourceUrls',
+                'External resources (images, stylesheets, media, etc.) referenced in AI chat responses are blocked by default and ' +
+                'replaced with a placeholder until explicitly allowed. Resources whose URL starts with one of the configured prefixes ' +
+                'are rendered directly without being blocked. Include the full origin with a trailing slash (e.g. "https://example.com/") ' +
+                'to avoid unintended matches. Only add sources you fully trust.'
+            )
         }
     }
 };
@@ -66,6 +81,7 @@ export interface ChatViewConfiguration {
     [CHAT_VIEW_TOKEN_USAGE_ENABLED]: boolean;
     [CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED]: boolean;
     [CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE]: number;
+    [CHAT_VIEW_ALLOWED_RESOURCE_URLS]: string[];
 }
 
 export const ChatViewPreferenceContribution = Symbol('ChatViewPreferenceContribution');
