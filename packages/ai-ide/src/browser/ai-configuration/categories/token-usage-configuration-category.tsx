@@ -20,7 +20,7 @@ import { codicon } from '@theia/core/lib/browser';
 import { DisposableCollection } from '@theia/core/lib/common';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
 import {
     AiConfigurationCategory,
     AiConfigurationCategoryId,
@@ -93,7 +93,7 @@ export class TokenUsageConfigurationCategory extends SinglePageCategoryRenderer 
     }
 
     protected formatDate(date?: Date): string {
-        return date ? formatDistanceToNow(date, { addSuffix: true }) : nls.localizeByDefault('Never');
+        return date ? formatTimeAgo(date.getTime()) : nls.localizeByDefault('Never');
     }
 
     protected hasCacheData(): boolean {
