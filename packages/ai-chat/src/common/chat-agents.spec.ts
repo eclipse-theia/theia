@@ -19,7 +19,7 @@ import 'reflect-metadata';
 import { expect } from 'chai';
 import {
     getTextOfResponse, LanguageModel, LanguageModelMessage, LanguageModelRegistry, LanguageModelRequirement, LanguageModelResponse,
-    LanguageModelSelector, LanguageModelService, LanguageModelStreamResponsePart, ServerToolDescriptor, UserRequest
+    LanguageModelSelector, LanguageModelService, LanguageModelStreamResponsePart, ReasoningSettings, ServerToolDescriptor, UserRequest
 } from '@theia/ai-core';
 import { AbstractChatAgent, AbstractStreamParsingChatAgent, ChatAgentLocation } from './chat-agents';
 import {
@@ -275,6 +275,46 @@ describe('AbstractChatAgent.sendLlmRequest server tools', () => {
         const model = createModel('anthropic', ANTHROPIC_SERVER_TOOLS);
         const { captured } = setup(model, undefined);
         expect(captured()!.serverTools).to.equal(undefined);
+    });
+});
+
+describe('AbstractChatAgent.sendLlmRequest reasoning', () => {
+
+    function setup(requestReasoning?: ReasoningSettings, sessionReasoning?: ReasoningSettings): () => UserRequest | undefined {
+        const agent = new TestChatAgent();
+        let capturedRequest: UserRequest | undefined;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (agent as any).languageModelService = {
+            sessions: [],
+            onSessionChanged: () => ({ dispose: () => { } }),
+            async sendRequest(_model: LanguageModel, sentRequest: UserRequest): Promise<LanguageModelResponse> {
+                capturedRequest = sentRequest;
+                return { text: '' };
+            }
+        } as unknown as LanguageModelService;
+
+        const chatModel = new MutableChatModel(ChatAgentLocation.Panel);
+        if (sessionReasoning) {
+            chatModel.setSettings({ commonSettings: { reasoning: sessionReasoning } });
+        }
+        const request = chatModel.addRequest(createParsedRequest('Hello', { reasoning: requestReasoning }));
+        agent.exposeSendLlmRequest(request, { id: 'test/model', status: { status: 'ready' } } as unknown as LanguageModel);
+        return () => capturedRequest;
+    }
+
+    it('sends the reasoning level recorded on the request', () => {
+        const captured = setup({ level: 'high' });
+        expect(captured()!.reasoning).to.deep.equal({ level: 'high' });
+    });
+
+    it('prefers the level recorded on the request over the session setting', () => {
+        const captured = setup({ level: 'low' }, { level: 'high' });
+        expect(captured()!.reasoning).to.deep.equal({ level: 'low' });
+    });
+
+    it('falls back to the session setting for a request that records no level', () => {
+        const captured = setup(undefined, { level: 'high' });
+        expect(captured()!.reasoning).to.deep.equal({ level: 'high' });
     });
 });
 
