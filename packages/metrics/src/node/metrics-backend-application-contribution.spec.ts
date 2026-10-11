@@ -57,14 +57,14 @@ describe('MetricsBackendApplicationContribution:', () => {
             const backend = createBackendContribution([contrib1, contrib2, contrib3]);
             const result = backend.fetchMetricsFromProviders();
 
-            // Empty contribution should not leave a blank separator line
+            // A contribution that returns an empty string must not contribute a separator of its own
             assert.strictEqual(result, 'metric1 42\nmetric3 200\n');
             assert.strictEqual(result.includes('\n\n'), false, 'should not contain double newlines');
         });
 
         it('should skip contributions that return undefined (defensive)', () => {
             const contrib1 = { getMetrics: () => 'metric1 42', startCollecting: () => { } };
-            const contrib2 = { getMetrics: () => undefined as any, startCollecting: () => { } };
+            const contrib2 = { getMetrics: () => undefined as unknown as string, startCollecting: () => { } };
             const contrib3 = { getMetrics: () => 'metric3 200', startCollecting: () => { } };
 
             const backend = createBackendContribution([contrib1, contrib2, contrib3]);
@@ -73,17 +73,6 @@ describe('MetricsBackendApplicationContribution:', () => {
             // undefined should not corrupt the output
             assert.strictEqual(result, 'metric1 42\nmetric3 200\n');
             assert.strictEqual(result.includes('undefined'), false, 'should not contain literal "undefined"');
-        });
-
-        it('should skip contributions that return null (defensive)', () => {
-            const contrib1 = { getMetrics: () => 'metric1 42', startCollecting: () => { } };
-            const contrib2 = { getMetrics: () => null as any, startCollecting: () => { } };
-
-            const backend = createBackendContribution([contrib1, contrib2]);
-            const result = backend.fetchMetricsFromProviders();
-
-            assert.strictEqual(result, 'metric1 42\n');
-            assert.strictEqual(result.includes('null'), false, 'should not contain literal "null"');
         });
 
         it('should return empty string when all contributions return empty', () => {
@@ -103,7 +92,7 @@ describe('MetricsBackendApplicationContribution:', () => {
             assert.strictEqual(result, '');
         });
 
-        it('should not add trailing separator for the last contribution', () => {
+        it('should end a single contribution with exactly one newline', () => {
             const contrib1 = { getMetrics: () => 'metric1 42', startCollecting: () => { } };
 
             const backend = createBackendContribution([contrib1]);

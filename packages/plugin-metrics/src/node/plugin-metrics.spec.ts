@@ -18,26 +18,32 @@ import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { PluginMetricsContribution } from './plugin-metrics';
 import { PluginMetricsContributor } from './metrics-contributor';
 import { PluginMetricStringGenerator } from './metric-string-generator';
+import { METRICS_TIMEOUT } from '../common/metrics-protocol';
 import * as assert from 'assert';
+import * as sinon from 'sinon';
+
+const COLLECTED_METRICS = 'test_metric 42\n';
 
 describe('PluginMetricsContribution:', () => {
     let testContainer: Container;
     let contribution: PluginMetricsContribution;
+    let clock: sinon.SinonFakeTimers;
 
     beforeEach(() => {
+        clock = sinon.useFakeTimers();
         testContainer = new Container();
 
         // Stub dependencies
-        const stubContributor = {
+        const stubContributor: Partial<PluginMetricsContributor> = {
             reconcile: () => ({})
         };
-        const stubGenerator = {
-            getMetricsString: () => 'test_metric 42\n'
+        const stubGenerator: Partial<PluginMetricStringGenerator> = {
+            getMetricsString: () => COLLECTED_METRICS
         };
 
         const module = new ContainerModule(bind => {
-            bind(PluginMetricsContributor).toConstantValue(stubContributor as any);
-            bind(PluginMetricStringGenerator).toConstantValue(stubGenerator as any);
+            bind(PluginMetricsContributor).toConstantValue(stubContributor as unknown as PluginMetricsContributor);
+            bind(PluginMetricStringGenerator).toConstantValue(stubGenerator as unknown as PluginMetricStringGenerator);
             bind(PluginMetricsContribution).toSelf().inSingletonScope();
         });
 
@@ -45,7 +51,11 @@ describe('PluginMetricsContribution:', () => {
         contribution = testContainer.get(PluginMetricsContribution);
     });
 
-    describe('getMetrics before first interval:', () => {
+    afterEach(() => {
+        clock.restore();
+    });
+
+    describe('getMetrics:', () => {
         it('should return empty string instead of undefined before startCollecting runs', () => {
             // When getMetrics is called before the interval has collected any data
             const metrics = contribution.getMetrics();
@@ -55,13 +65,16 @@ describe('PluginMetricsContribution:', () => {
             assert.strictEqual(typeof metrics, 'string');
         });
 
-        it('should return empty string before the first setInterval callback fires', () => {
-            // When startCollecting is called but the interval has not yet ticked
+        it('should return the collected metrics once the collection interval has elapsed', () => {
             contribution.startCollecting();
-            const metricsBeforeInterval = contribution.getMetrics();
 
-            // Then it still returns an empty string (the interval is 10 seconds)
-            assert.strictEqual(metricsBeforeInterval, '');
+            // The interval has not yet fired, so nothing has been collected
+            assert.strictEqual(contribution.getMetrics(), '');
+
+            clock.tick(METRICS_TIMEOUT);
+
+            // The interval has fired, so the generated metrics string is returned
+            assert.strictEqual(contribution.getMetrics(), COLLECTED_METRICS);
         });
     });
 });
