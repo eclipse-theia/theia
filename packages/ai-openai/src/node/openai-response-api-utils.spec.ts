@@ -63,6 +63,173 @@ describe('OpenAiResponseApiUtils', () => {
         utils = createTestUtils();
     });
 
+    describe('provider failure diagnostics', () => {
+        let logger: MockLogger;
+        let log: sinon.SinonSpy;
+
+        beforeEach(() => {
+            logger = new MockLogger();
+            log = sinon.spy(logger, 'error');
+            utils = createTestUtils(logger);
+        });
+
+        async function captureError(run: () => Promise<unknown>): Promise<unknown> {
+            try {
+                await run();
+            } catch (error) {
+                return error;
+            }
+            throw new Error('Expected provider failure');
+        }
+
+        async function consume(stream: AsyncIterable<unknown>): Promise<void> {
+            for await (const _part of stream) {
+                // Drain the stream to observe terminal errors.
+            }
+        }
+
+        for (const streaming of [false, true]) {
+            it(`logs only SDK diagnostic metadata and preserves the original error (${streaming ? 'stream' : 'send'})`, async () => {
+                const error = new OpenAI.BadRequestError(400, {
+                    message: 'Server tool rejected', code: 'unsupported_tool', type: 'invalid_request_error', param: 'tools',
+                    body: 'secret-body'
+                }, 'Server tool rejected', new Headers({ 'x-request-id': 'req-123', authorization: 'secret-token' }));
+                Object.assign(error, {
+                    request_id: 'req-123', input: 'secret-prompt', encrypted_content: 'secret-encrypted', arguments: 'secret-arguments', output: 'secret-result'
+                });
+                const run = streaming
+                    ? () => consume(utils.streamWithReasoningSummaryFallback({}, 'chatgpt/gpt-5', async function* (): AsyncIterable<never> { throw error; }))
+                    : () => utils.sendWithReasoningSummaryFallback({}, 'chatgpt/gpt-5', async () => { throw error; });
+
+                expect(await captureError(run)).to.equal(error);
+                expect(log.calledOnce).to.equal(true);
+                expect(log.firstCall.args).to.deep.equal(['Response API provider failure:', {
+                    modelId: 'chatgpt/gpt-5', provider: 'openai-responses', name: error.name, message: error.message,
+                    status: 400, code: 'unsupported_tool', type: 'invalid_request_error', param: 'tools', request_id: 'req-123'
+                }]);
+                expect(JSON.stringify(log.firstCall.args)).to.not.contain('secret-');
+            });
+        }
+
+        it('preserves gateway error types and messages when normalizing failed response events', async () => {
+            const openai = {
+                maxRetries: 0,
+                responses: {
+                    create: async () => toStream([{
+                        type: 'response.failed', response: { error: { type: 'overloaded_error', message: 'Capacity limit' } }
+                    }])
+                }
+            };
+            const error = await captureError(() => consume(utils.streamResponse(openai as never, { model: 'gpt-5', stream: true })));
+            expect(error).to.be.instanceOf(Error).with.property('message', 'Capacity limit');
+            expect(error).to.have.property('type', 'overloaded_error');
+        });
+
+        for (const withTools of [false, true]) {
+            for (const eventType of ['error', 'response.failed']) {
+                it(`propagates and logs ${eventType} ${withTools ? 'with server tools' : 'without tools'}`, async () => {
+                    const event = eventType === 'error'
+                        ? { type: 'error', message: 'Search unavailable', code: 'server_error', param: 'tools', sequence_number: 7, body: 'secret-body' }
+                        : {
+                            type: 'response.failed', response: {
+                                id: 'resp-123', error: { code: 'server_error', message: 'Search unavailable', body: 'secret-body' },
+                                input: 'secret-prompt', output: [{ encrypted_content: 'secret-encrypted' }]
+                            }
+                        };
+                    const openai = {
+                        maxRetries: 0,
+                        responses: {
+                            create: async () => toStream([
+                                ...(withTools ? [{
+                                    type: 'response.output_item.added',
+                                    item: { type: 'web_search_call', id: 'ws-1', action: { query: 'secret-query' }, status: 'in_progress' }
+                                }] : []),
+                                event
+                            ])
+                        }
+                    };
+                    const request: UserRequest = {
+                        sessionId: 'session-1', requestId: 'request-1',
+                        messages: [{ actor: 'user', type: 'text', text: 'secret-prompt' }],
+                        serverTools: withTools ? [OPENAI_WEB_SEARCH] : undefined
+                    };
+                    const response = await utils.handleRequest(
+                        openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer', 'chatgpt/gpt-5', true
+                    );
+                    expect('stream' in response).to.equal(true);
+                    const error = await captureError(() => consume((response as { stream: AsyncIterable<unknown> }).stream));
+                    expect(error).to.be.instanceOf(Error);
+                    expect((error as Error).message).to.contain('Search unavailable');
+                    expect(log.calledOnce).to.equal(true);
+                    const metadata = log.firstCall.args[1];
+                    expect(metadata).to.include({ modelId: 'chatgpt/gpt-5', provider: 'openai-responses', code: 'server_error', event_type: eventType });
+                    if (eventType === 'error') {
+                        expect(metadata).to.include({ param: 'tools', sequence_number: 7 });
+                    } else {
+                        expect(metadata).to.include({ response_id: 'resp-123' });
+                    }
+                    if (withTools) {
+                        expect(metadata.serverToolTypes).to.deep.equal(['web_search_call']);
+                    }
+                    expect(JSON.stringify(log.firstCall.args)).to.not.contain('secret-');
+                });
+            }
+        }
+
+        for (const streaming of [false, true]) {
+            it(`logs a failed summary retry once (${streaming ? 'stream' : 'send'})`, async () => {
+                const rejection = new OpenAI.BadRequestError(400, { param: 'reasoning.summary' }, 'Verification required', new Headers());
+                const failure = new Error('Retry failed');
+                const settings = { reasoning: { summary: 'auto', effort: 'medium' } };
+                const sent: Record<string, unknown>[] = [];
+                const fail = (params: Record<string, unknown>): never => {
+                    sent.push(params);
+                    throw sent.length === 1 ? rejection : failure;
+                };
+                const run = streaming
+                    ? () => consume(utils.streamWithReasoningSummaryFallback(settings, 'openai/gpt-5', async function* (params): AsyncIterable<never> { fail(params); }))
+                    : () => utils.sendWithReasoningSummaryFallback(settings, 'openai/gpt-5', async params => fail(params));
+
+                expect(await captureError(run)).to.equal(failure);
+                expect(sent).to.deep.equal([settings, { reasoning: { effort: 'medium' } }]);
+                expect(log.calledOnce).to.equal(true);
+                expect(log.firstCall.args[1].message).to.equal('Retry failed');
+            });
+        }
+
+        it('does not retry after a stream has emitted an event', async () => {
+            const rejection = new OpenAI.BadRequestError(400, { param: 'reasoning.summary' }, 'Verification required', new Headers());
+            const open = sinon.spy(async function* (): AsyncIterable<ResponseStreamEvent> {
+                yield { type: 'response.output_text.delta', delta: 'Partial', content_index: 0, item_id: 'msg-1', logprobs: [], output_index: 0, sequence_number: 1 };
+                throw rejection;
+            });
+            expect(await captureError(() => consume(utils.streamWithReasoningSummaryFallback(
+                { reasoning: { summary: 'auto' } }, 'openai/gpt-5', open
+            )))).to.equal(rejection);
+            expect(open.calledOnce).to.equal(true);
+            expect(log.calledOnce).to.equal(true);
+        });
+
+        it('does not log aborts or token cancellation as provider failures', async () => {
+            const abort = new OpenAI.APIUserAbortError();
+            expect(await captureError(() => utils.sendWithReasoningSummaryFallback({}, 'openai/gpt-5', async () => { throw abort; }))).to.equal(abort);
+            expect(await captureError(() => consume(utils.streamWithReasoningSummaryFallback({}, 'openai/gpt-5', async function* (): AsyncIterable<never> {
+                throw abort;
+            })))).to.equal(abort);
+            const source = new CancellationTokenSource();
+            const failure = new Error('Cancelled operation');
+            expect(await captureError(() => utils.sendWithReasoningSummaryFallback({}, 'openai/gpt-5', async () => {
+                source.cancel();
+                throw failure;
+            }, source.token))).to.equal(failure);
+            expect(await captureError(() => consume(utils.streamWithReasoningSummaryFallback({}, 'openai/gpt-5', async function* (): AsyncIterable<ResponseStreamEvent> {
+                yield { type: 'error', message: 'Cancelled', code: 'server_error', param: 'tools', sequence_number: 1 };
+            }, source.token)))).to.be.instanceOf(CancellationError);
+            source.dispose();
+            expect(log.called).to.equal(false);
+        });
+    });
+
     it('passes tool parameters through unchanged in non-strict mode', () => {
         const parameters = {
             type: 'object' as const,
@@ -725,7 +892,9 @@ describe('OpenAiResponseApiUtils', () => {
                     const error = await consume;
                     expect(error).to.be.instanceOf(Error).with.property('code', 'server_error');
                     expect(create.callCount).to.equal(2);
-                    expect(logError.calledOnceWithExactly('Response API error:', error)).to.equal(true);
+                    expect(logError.calledOnce).to.equal(true);
+                    expect(logError.firstCall.args[0]).to.equal('Response API provider failure:');
+                    expect(logError.firstCall.args[1]).to.include({ code: 'server_error', event_type: event.type, modelId: 'openai/gpt-5' });
                 });
             }
 
@@ -1204,7 +1373,7 @@ describe('OpenAiResponseApiUtils', () => {
         });
     });
 
-    for (const nameSource of ['added', 'done', 'arguments'] as const) {
+    for (const nameSource of ['added', 'done', 'arguments', 'done-only'] as const) {
         it(`preserves the streamed function name from the ${nameSource} event`, async () => {
             const item = { id: 'item-1', call_id: 'call-1', type: 'function_call' as const, name: 'lookup', arguments: '{"query":"test"}' };
             const argumentsDone = {
@@ -1215,7 +1384,7 @@ describe('OpenAiResponseApiUtils', () => {
             const streams = [
                 [
                     ...(nameSource === 'added' ? [{ type: 'response.output_item.added', output_index: 0, item: { ...item, arguments: '' } }] : []),
-                    nameSource === 'arguments' ? { ...argumentsDone, name: item.name } : argumentsDone,
+                    ...(nameSource === 'done-only' ? [] : [nameSource === 'arguments' ? { ...argumentsDone, name: item.name } : argumentsDone]),
                     { type: 'response.output_item.done', output_index: 0, item },
                     { type: 'response.completed', response: {} }
                 ],

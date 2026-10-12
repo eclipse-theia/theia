@@ -130,6 +130,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
                 reasoning: commonSettings?.reasoning,
                 agentId: this.id,
                 sessionId: request.session.id,
+                parentSessionId: request.session.parentSessionId,
                 requestId: request.id,
                 subRequestId: subRequestId,
                 cancellationToken: request.response.cancellationToken,
