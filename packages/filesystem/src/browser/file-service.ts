@@ -201,7 +201,7 @@ export const FileServiceContribution = Symbol('FileServiceContribution');
  *         });
  *
  *     }
- *```
+ * ```
  */
 export interface FileServiceContribution {
     /**

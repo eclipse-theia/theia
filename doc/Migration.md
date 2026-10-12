@@ -180,7 +180,7 @@ When adopting TypeScript 6 or replicating Theia's `configs/base.tsconfig.json` s
 
 To make the IDE use the workspace compiler, add `"typescript.tsdk": "node_modules/typescript/lib"` to workspace settings when the IDE's bundled TypeScript is older than 6. Otherwise the editor can report configuration errors for `moduleResolution: bundler` with CommonJS even though the workspace compiler accepts it.
 
-The shared ESLint configuration no longer uses `@typescript-eslint/eslint-plugin-tslint`, `tslint`, or `eslint-plugin-deprecation`. Adopters extending `configs/*.eslintrc.json` need typescript-eslint v8, `@stylistic/eslint-plugin` v3, `eslint-plugin-jsdoc`, and the `@theia/eslint-plugin` `file-header` rule. The former TSLint `typedef: call-signature` check is now the `@theia/explicit-return-type` rule of `@theia/eslint-plugin`. A file that intentionally uses a different license header must place `/* eslint-disable @theia/file-header */` on line 1 because the rule reports at line 1.
+The shared ESLint configuration no longer uses `@typescript-eslint/eslint-plugin-tslint`, `tslint`, or `eslint-plugin-deprecation`. Adopters extending `configs/*.eslintrc.json` need typescript-eslint v8, `@stylistic/eslint-plugin` v3, `eslint-plugin-jsdoc`, and the `@theia/eslint-plugin` `file-header` rule. The former TSLint `typedef: call-signature` check is now the `@theia/explicit-return-type` rule of `@theia/eslint-plugin`, and the space-after-asterisk part of TSLint `jsdoc-format` is now its `@theia/jsdoc-space-after-asterisk` rule. A file that intentionally uses a different license header must place `/* eslint-disable @theia/file-header */` on line 1 because the rule reports at line 1.
 
 ### v1.76.0
 

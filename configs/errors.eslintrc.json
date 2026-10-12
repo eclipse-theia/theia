@@ -112,6 +112,7 @@
     "@stylistic/comma-spacing": "error",
     "@stylistic/keyword-spacing": "error",
     "@stylistic/semi-spacing": "error",
+    "@stylistic/space-before-blocks": "error",
     "@stylistic/space-infix-ops": "error",
     "@theia/explicit-return-type": "error",
     "@theia/file-header": [
@@ -120,6 +121,7 @@
         "match": "SPDX-License-Identifier: EPL-2\\.0 OR GPL-2\\.0-only WITH Classpath-exception-2\\.0"
       }
     ],
+    "@theia/jsdoc-space-after-asterisk": "error",
     "jsdoc/check-alignment": "error",
     "jsdoc/multiline-blocks": [
       "error",

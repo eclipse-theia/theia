@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// Plugins that require('node-pty') must receive the real module object, not the interop namespace copy.
-import nodePty from 'node-pty';
+// node-pty sets __esModule, so a namespace import already yields the real module object (a default import would be undefined).
+import * as nodePty from 'node-pty';
 
 const overrides = [
     {
