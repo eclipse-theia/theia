@@ -613,6 +613,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 compaction: commonSettings?.compaction,
                 agentId: this.id,
                 sessionId: request.session.id,
+                parentSessionId: request.session.parentSessionId,
                 requestId: request.id,
                 cancellationToken: request.response.cancellationToken,
                 promptVariantId,

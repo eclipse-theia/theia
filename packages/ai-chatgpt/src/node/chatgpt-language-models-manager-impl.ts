@@ -15,12 +15,11 @@
 // *****************************************************************************
 
 import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
-import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { ILogger, nls } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
 import { getOpenAiModelDefaults } from '@theia/ai-openai/lib/node/openai-model-defaults';
-import { CHATGPT_RESPONSES_BASE_URL, ChatGptLanguageModelsManager, ChatGptModelDescription } from '../common';
+import { ChatGptAuthenticationMode, ChatGptLanguageModelsManager, ChatGptModelDescription } from '../common';
 import { ChatGptBackendAuthService } from './chatgpt-auth-service';
 import { ChatGptModel } from './chatgpt-language-model';
 import { ChatGptModelCatalog } from './chatgpt-model-catalog';
@@ -53,13 +52,17 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
         this.proxyUrl = proxyUrl || undefined;
     }
 
+    setAuthenticationMode(mode: ChatGptAuthenticationMode): Promise<void> {
+        return this.authService.setAuthenticationMode(mode);
+    }
+
     getAvailableModels(): Promise<string[]> {
         return this.modelCatalog.getAvailableModels();
     }
 
     async createOrUpdateLanguageModels(...modelDescriptions: ChatGptModelDescription[]): Promise<void> {
         const status = await this.calculateStatus();
-        const proxy = getProxyUrl(CHATGPT_RESPONSES_BASE_URL, this.proxyUrl);
+        const proxy = this.proxyUrl;
         for (const description of modelDescriptions) {
             // The ChatGPT plan serves OpenAI models, so their published capabilities apply.
             const defaults = getOpenAiModelDefaults(description.model);
@@ -85,7 +88,7 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
                         description.id,
                         description.model,
                         status,
-                        () => this.authService.getCredentials(),
+                        (clientId, sessionId) => this.authService.getCredentials(clientId, sessionId),
                         this.responseApiUtils,
                         this.modelUtils,
                         description.maxRetries,
@@ -101,9 +104,13 @@ export class ChatGptLanguageModelsManagerImpl implements ChatGptLanguageModelsMa
     }
 
     protected async calculateStatus(): Promise<LanguageModelStatus> {
-        return (await this.authService.getAuthState()).isAuthenticated
+        const state = await this.authService.getAuthState();
+        if (!state.isAuthenticated) {
+            return { status: 'unavailable', message: nls.localize('theia/ai/chatgpt/notSignedIn', 'Not signed in with ChatGPT') };
+        }
+        return state.canUseChatGptPlan !== false
             ? { status: 'ready' }
-            : { status: 'unavailable', message: nls.localize('theia/ai/chatgpt/notSignedIn', 'Not signed in with ChatGPT') };
+            : { status: 'unavailable', message: nls.localize('theia/ai/chatgpt/sharingDisabled', 'ChatGPT token sharing is not enabled') };
     }
 
     removeLanguageModels(...modelIds: string[]): void {

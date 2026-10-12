@@ -17,99 +17,97 @@
 import { expect } from 'chai';
 import { createHash } from 'crypto';
 import {
-    buildAuthorizationUrl,
-    createPkcePair,
-    decodeChatGptIdentity,
-    parseAuthorizationInput,
-    CHATGPT_CLIENT_ID,
-    CHATGPT_ORIGINATOR,
-    CHATGPT_REDIRECT_URI
+    buildAuthorizationUrl, createPkcePair, parseAuthorizationInput, CHATGPT_CLIENT_ID, CHATGPT_SCOPE, CHATGPT_REDIRECT_URI, CHATGPT_RESOURCE, CHATGPT_TOKEN_URL
 } from './chatgpt-oauth';
-
-function encodeJwt(payload: Record<string, unknown>): string {
-    return `header.${Buffer.from(JSON.stringify(payload)).toString('base64url')}.signature`;
-}
+import { DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG } from './chatgpt-auth-service';
 
 describe('ChatGPT OAuth helpers', () => {
+    it('creates independent PKCE S256 pairs', () => {
+        const { verifier, challenge } = createPkcePair();
+        expect(challenge).to.equal(createHash('sha256').update(verifier).digest('base64url'));
+        expect(createPkcePair().verifier).not.to.equal(verifier);
+    });
 
-    describe('createPkcePair', () => {
-        it('derives the challenge as the base64url encoded SHA-256 of the verifier', () => {
-            const { verifier, challenge } = createPkcePair();
-            expect(challenge).to.equal(createHash('sha256').update(verifier).digest('base64url'));
-        });
-
-        it('creates a new verifier on each call', () => {
-            expect(createPkcePair().verifier).to.not.equal(createPkcePair().verifier);
+    it('uses the OSS bootstrap, sharing scopes, host and application metadata with nonce', () => {
+        const config = DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG;
+        const url = new URL(buildAuthorizationUrl('challenge', 'state', {
+            ...config, nonce: 'nonce', hostId: 'urn:uuid:76b748d4-539f-4b65-94e1-7d96f7f00b38'
+        }));
+        expect(url.origin + url.pathname).to.equal('https://auth.openai.com/api/accounts/authorize');
+        expect(CHATGPT_CLIENT_ID).to.equal('dynamic_agent_client');
+        expect(CHATGPT_TOKEN_URL).to.equal('https://auth.openai.com/api/accounts/oauth/token');
+        expect(CHATGPT_SCOPE).to.equal('openid profile email offline_access resource.invoke chatgpt.tokens.use.direct');
+        expect(Object.fromEntries(url.searchParams)).to.deep.equal({
+            response_type: 'code', client_id: CHATGPT_CLIENT_ID, redirect_uri: CHATGPT_REDIRECT_URI,
+            scope: CHATGPT_SCOPE, ext_agent_host_id: 'urn:uuid:76b748d4-539f-4b65-94e1-7d96f7f00b38',
+            resource: CHATGPT_RESOURCE,
+            code_challenge: 'challenge', code_challenge_method: 'S256', state: 'state', nonce: 'nonce',
+            agent_name_hint: 'Theia'
         });
     });
 
-    describe('buildAuthorizationUrl', () => {
-        it('requests an authorization code for the ChatGPT client using PKCE', () => {
-            const url = new URL(buildAuthorizationUrl('challenge', 'state'));
-            expect(url.origin + url.pathname).to.equal('https://auth.openai.com/oauth/authorize');
-            expect(url.searchParams.get('response_type')).to.equal('code');
-            expect(url.searchParams.get('client_id')).to.equal(CHATGPT_CLIENT_ID);
-            expect(url.searchParams.get('redirect_uri')).to.equal(CHATGPT_REDIRECT_URI);
-            expect(url.searchParams.get('scope')).to.equal('openid profile email offline_access');
-            expect(url.searchParams.get('code_challenge')).to.equal('challenge');
-            expect(url.searchParams.get('code_challenge_method')).to.equal('S256');
-            expect(url.searchParams.get('state')).to.equal('state');
-        });
-
-        it('identifies Theia as the client instead of an OpenAI first party client', () => {
-            const url = new URL(buildAuthorizationUrl('challenge', 'state'));
-            expect(CHATGPT_ORIGINATOR).to.equal('theia');
-            expect(url.searchParams.get('originator')).to.equal(CHATGPT_ORIGINATOR);
-            expect(url.searchParams.has('codex_cli_simplified_flow')).to.be.false;
-        });
+    it('reuses a concrete registered client when reconnecting', () => {
+        const url = new URL(buildAuthorizationUrl('challenge', 'state', {
+            ...DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG, hostId: 'urn:uuid:76b748d4-539f-4b65-94e1-7d96f7f00b38', nonce: 'nonce',
+            clientId: 'dynamic_agent_client_saved', redirectUri: 'http://127.0.0.1:2468/custom', idTokenHint: 'verified-id-token'
+        }));
+        expect(url.searchParams.get('client_id')).to.equal('dynamic_agent_client_saved');
+        expect(url.searchParams.get('redirect_uri')).to.equal('http://127.0.0.1:2468/custom');
+        expect(url.searchParams.get('id_token_hint')).to.equal('verified-id-token');
+        expect(url.searchParams.has('agent_name_hint')).to.equal(false);
+        expect(url.searchParams.get('resource')).to.equal('https://api.openai.com/v1');
     });
 
-    describe('parseAuthorizationInput', () => {
-        it('accepts a bare authorization code', () => {
-            expect(parseAuthorizationInput('  the-code  ', 'state')).to.equal('the-code');
-        });
-
-        it('extracts the code from a redirect URL', () => {
-            expect(parseAuthorizationInput(`${CHATGPT_REDIRECT_URI}?code=the-code&state=state`, 'state')).to.equal('the-code');
-        });
-
-        it('rejects a redirect URL with a mismatching state', () => {
-            expect(() => parseAuthorizationInput(`${CHATGPT_REDIRECT_URI}?code=the-code&state=other`, 'state')).to.throw(/state/);
-        });
-
-        it('rejects a redirect URL without a state', () => {
-            expect(() => parseAuthorizationInput(`${CHATGPT_REDIRECT_URI}?code=the-code`, 'state')).to.throw(/state/);
-        });
-
-        it('rejects a URL that is not the sign in callback', () => {
-            expect(() => parseAuthorizationInput('https://evil.example.com/auth?code=the-code&state=state', 'state')).to.throw(/callback/);
-        });
-
-        it('rejects a redirect URL without a code', () => {
-            expect(() => parseAuthorizationInput(`${CHATGPT_REDIRECT_URI}?state=state`, 'state')).to.throw(/authorization code/);
-        });
-
-        it('rejects empty input', () => {
-            expect(() => parseAuthorizationInput('   ', 'state')).to.throw(/authorization code/);
-        });
+    it('extracts the callback code and concrete client id', () => {
+        expect(parseAuthorizationInput(`${CHATGPT_REDIRECT_URI}?code=code&state=state&client_id=dynamic_agent_client_saved`, 'state'))
+            .to.deep.equal({ code: 'code', clientId: 'dynamic_agent_client_saved' });
     });
 
-    describe('decodeChatGptIdentity', () => {
-        it('reads the account, plan and email from the token claims', () => {
-            const identity = decodeChatGptIdentity(encodeJwt({
-                exp: 1700000000,
-                'https://api.openai.com/auth': { chatgpt_account_id: 'account-id', chatgpt_plan_type: 'plus' },
-                'https://api.openai.com/profile': { email: 'user@example.com' }
-            }));
-            expect(identity.accountId).to.equal('account-id');
-            expect(identity.planType).to.equal('plus');
-            expect(identity.email).to.equal('user@example.com');
-            expect(identity.expiresAt).to.equal(1700000000000);
+    for (const input of [
+        'code', '', `${CHATGPT_REDIRECT_URI}?code=code&state=state`,
+        `${CHATGPT_REDIRECT_URI}?code=code&state=wrong&client_id=dynamic_agent_client_saved`,
+        `${CHATGPT_REDIRECT_URI}?code=code&client_id=dynamic_agent_client_saved`,
+        `${CHATGPT_REDIRECT_URI}?state=state&client_id=dynamic_agent_client_saved`,
+        `${CHATGPT_REDIRECT_URI}?code=code&state=state&client_id=dynamic`,
+        `${CHATGPT_REDIRECT_URI}?code=code&state=state&client_id=dynamic_agent_client`,
+        `${CHATGPT_REDIRECT_URI}?code=code&state=state&client_id=bad%20client`,
+        `${CHATGPT_REDIRECT_URI}?code=code&state=state&state=state&client_id=dynamic_agent_client_saved`,
+        'https://evil.example/auth/callback?code=code&state=state&client_id=dynamic_agent_client_saved',
+        'http://127.0.0.1:2468/auth/callback?code=code&state=state&client_id=dynamic_agent_client_saved'
+    ]) {
+        it(`rejects invalid authorization input: ${input}`, () => {
+            expect(() => parseAuthorizationInput(input, 'state')).to.throw();
         });
+    }
 
-        it('returns an empty identity for tokens that are no readable JWT', () => {
-            expect(decodeChatGptIdentity('not-a-jwt')).to.deep.equal({});
-            expect(decodeChatGptIdentity('header.not-json.signature')).to.deep.equal({});
-        });
+    it('uses the saved client id when a reauthorization callback omits it', () => {
+        expect(parseAuthorizationInput(`${CHATGPT_REDIRECT_URI}?code=code&state=state`, 'state', CHATGPT_REDIRECT_URI, 'saved-client-id'))
+            .to.deep.equal({ code: 'code', clientId: 'saved-client-id' });
+    });
+
+    it('accepts an opaque server-issued concrete client id without assuming a prefix', () => {
+        expect(parseAuthorizationInput(`${CHATGPT_REDIRECT_URI}?code=code&state=state&client_id=app_issued`, 'state')?.clientId)
+            .to.equal('app_issued');
+    });
+
+    it('accepts only state-verified access_denied callbacks', () => {
+        expect(parseAuthorizationInput(`${CHATGPT_REDIRECT_URI}?error=access_denied&state=state`, 'state')).to.equal(undefined);
+        for (const query of [
+            'error=access_denied&state=wrong', 'error=access_denied', 'error=access_denied&state=state&state=state',
+            'error=access_denied&state=state&error=access_denied', 'error=access_denied&state=state&code=code',
+            'error=server_error&state=state'
+        ]) {
+            expect(() => parseAuthorizationInput(`${CHATGPT_REDIRECT_URI}?${query}`, 'state')).to.throw();
+        }
+    });
+
+    it('rejects repeated client ids even during reconnect', () => {
+        expect(() => parseAuthorizationInput(`${CHATGPT_REDIRECT_URI}?code=code&state=state&client_id=one&client_id=two`,
+            'state', CHATGPT_REDIRECT_URI, 'one')).to.throw(/client_id/);
+    });
+
+    it('rejects a callback which would reconnect a different client', () => {
+        expect(() => parseAuthorizationInput(`${CHATGPT_REDIRECT_URI}?code=code&state=state&client_id=dynamic_agent_client_other`,
+            'state', CHATGPT_REDIRECT_URI, 'dynamic_agent_client_saved')).to.throw(/client id/);
     });
 });

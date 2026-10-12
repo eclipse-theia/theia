@@ -14,23 +14,47 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { ChatGptAuthenticationMode } from '../common';
 import { LanguageModelMessage } from '@theia/ai-core';
+import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { DeveloperMessageSettings } from '@theia/ai-openai/lib/node/openai-language-model';
 import { OpenAiResponseApiUtils } from '@theia/ai-openai/lib/node/openai-response-api-utils';
-import type { ResponseInputItem } from 'openai/resources/responses/responses';
+import type { ResponseInputItem, ResponseStreamEvent } from 'openai/resources/responses/responses';
 
-/** Used when a request carries no system message, which the ChatGPT endpoint rejects with `Instructions are required`. */
+/** Default instructions for requests without a system message. */
 export const DEFAULT_CHATGPT_INSTRUCTIONS = 'You are a helpful assistant.';
 
 /**
- * Adapts the OpenAI Response API request to the additional constraints of the ChatGPT endpoint.
+ * Adapts the shared Responses handling to the ChatGPT token-sharing connection.
  * Bound under its own symbol so the plain OpenAI models keep using {@link OpenAiResponseApiUtils}.
  */
 @injectable()
 export class ChatGptResponseApiUtils extends OpenAiResponseApiUtils {
 
-    override readonly compactionProvider = 'chatgpt-responses';
+    // Encrypted context from the legacy private endpoint must not reach the public API.
+    override readonly compactionProvider: string = 'chatgpt-oss-responses';
+
+    forAuthenticationMode(mode: ChatGptAuthenticationMode): ChatGptResponseApiUtils {
+        // Request-local receiver retains injected dependencies without changing the shared singleton.
+        return mode === 'oss' ? this : Object.assign(Object.create(this), { compactionProvider: 'chatgpt-responses' });
+    }
+
+    override async *streamWithReasoningSummaryFallback(
+        settings: Record<string, unknown>,
+        modelId: string,
+        open: (settings: Record<string, unknown>) => AsyncIterable<ResponseStreamEvent>,
+        cancellationToken?: CancellationToken
+    ): AsyncIterable<ResponseStreamEvent> {
+        for await (const event of super.streamWithReasoningSummaryFallback(settings, modelId, open, cancellationToken)) {
+            if (event.type === 'response.failed' || event.type === 'response.incomplete') {
+                const detail = event.type === 'response.failed' ? event.response.error?.code : event.response.incomplete_details?.reason;
+                const code = typeof detail === 'string' && /^[a-z0-9_]{1,80}$/.test(detail) ? ` (${detail})` : '';
+                throw new Error(`ChatGPT response ${event.type === 'response.failed' ? 'failed' : 'was incomplete'}${code}.`);
+            }
+            yield event;
+        }
+    }
 
     override processMessages(
         messages: LanguageModelMessage[],

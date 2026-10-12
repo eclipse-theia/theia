@@ -114,6 +114,20 @@ describe('StreamingAsyncIterator', () => {
         expect(second.value).to.be.undefined;
     });
 
+    it('repairs Copilot function calls without changing custom tool calls', () => {
+        iterator = createIterator();
+        const functionCall: { id: string; type?: string; function: { name: string; arguments: string } } = {
+            id: 'function-1', function: { name: 'lookup', arguments: '{}' }
+        };
+        const customCall = { id: 'custom-1', type: 'custom', custom: { name: 'custom', input: 'text' } };
+        const snapshot = { choices: [{ message: { tool_calls: [functionCall, customCall] } }] };
+
+        mockStream.emit('chunk', { choices: [{ delta: {} }] }, snapshot);
+
+        expect(functionCall.type).to.equal('function');
+        expect(customCall.type).to.equal('custom');
+    });
+
     it('should handle the end event correctly', async () => {
         iterator = createIterator();
 

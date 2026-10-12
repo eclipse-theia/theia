@@ -17,29 +17,26 @@
 import {
     LanguageModel, LanguageModelResponse, LanguageModelStatus, ReasoningSupport, UserRequest
 } from '@theia/ai-core';
-import { createProxyFetch } from '@theia/ai-core/lib/node';
-import { CancellationToken, generateUuid } from '@theia/core';
+import { createProxyFetch, getProxyUrl } from '@theia/ai-core/lib/node';
+import { CancellationToken } from '@theia/core';
 import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
 import { applyResponseApiCompaction, getOpenAiRequestSettings } from '@theia/ai-openai/lib/node/openai-request-settings';
 import { OPENAI_SERVER_TOOLS } from '@theia/ai-openai/lib/node/openai-server-tools';
 import { OpenAI } from 'openai';
-import { CHATGPT_RESPONSES_BASE_URL, ChatGptCredentials } from '../common';
-import { CHATGPT_ORIGINATOR } from './chatgpt-oauth';
+import { CHATGPT_CODEX_RESPONSES_BASE_URL, CHATGPT_RESPONSES_BASE_URL, ChatGptCredentials } from '../common';
+import { CHATGPT_ORIGINATOR } from './chatgpt-codex-oauth';
 import { ChatGptResponseApiUtils } from './chatgpt-response-api-utils';
 
 /**
- * A model served by the ChatGPT subscription of the signed in user. The endpoint only implements the streaming
- * Response API, so unlike the plain OpenAI model there is no Chat Completions path and no fallback to one.
+ * A subscription model served through the selected Codex or OSS Responses endpoint with its account's OAuth
+ * access token; there is no Chat Completions fallback or API-key authentication.
  */
 export class ChatGptModel implements LanguageModel {
 
     readonly vendor = 'chatgpt';
     readonly serverSideCompactionSupport = true;
 
-    /**
-     * The endpoint serves Codex, which offers the same server-side web search, so it is offered for every model
-     * rather than derived from the endpoint the way the plain OpenAI model does.
-     */
+    /** Token sharing supports server-side web search for the granted Codex models. */
     readonly serverTools = OPENAI_SERVER_TOOLS;
 
     /**
@@ -52,7 +49,7 @@ export class ChatGptModel implements LanguageModel {
         public readonly id: string,
         public model: string,
         public status: LanguageModelStatus,
-        public credentials: () => Promise<ChatGptCredentials | undefined>,
+        public credentials: (clientId?: string, sessionId?: string) => Promise<ChatGptCredentials | undefined>,
         public responseApiUtils: ChatGptResponseApiUtils,
         public modelUtils: OpenAiModelUtils,
         public maxRetries: number = 3,
@@ -64,20 +61,21 @@ export class ChatGptModel implements LanguageModel {
     ) { }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
-        const openai = await this.initializeOpenAi();
+        const openai = await this.initializeOpenAi(request);
         const settings = {
             ...applyResponseApiCompaction(getOpenAiRequestSettings(request, true, !!this.reasoningSupport), request, this),
-            // The endpoint rejects anything else with 400 'Store must be set to false' / 'Stream must be set to true'.
+            // Keep subscription conversations stateless and use the existing streaming UI.
             store: false,
             stream: true
         };
-        return this.responseApiUtils.handleRequest(
+        const mode = openai.baseURL === CHATGPT_CODEX_RESPONSES_BASE_URL ? 'codex' : 'oss';
+        return this.responseApiUtils.forAuthenticationMode(mode).handleRequest(
             openai,
             request,
             settings,
             this.model,
             this.modelUtils,
-            // System messages have to become the top level `instructions`, which only this setting preserves them for.
+            // Preserve system messages as the top-level instructions.
             'developer',
             this.id,
             true,
@@ -85,23 +83,46 @@ export class ChatGptModel implements LanguageModel {
         );
     }
 
-    protected async initializeOpenAi(): Promise<OpenAI> {
+    protected async initializeOpenAi(request: UserRequest): Promise<OpenAI> {
         const credentials = await this.credentials();
         if (!credentials) {
             throw new Error('Not signed in with ChatGPT. Use the "ChatGPT: Sign in" command to use your ChatGPT subscription.');
         }
+        const getCredentials = async (): Promise<ChatGptCredentials> => {
+            const current = await this.credentials(credentials.clientId, credentials.sessionId);
+            if (!current || current.clientId !== credentials.clientId || current.sessionId !== credentials.sessionId
+                || current.authenticationMode !== credentials.authenticationMode || current.accountId !== credentials.accountId) {
+                throw new Error('The ChatGPT account changed or disconnected. Please send the request again.');
+            }
+            return current;
+        };
+        const codex = credentials.authenticationMode === 'codex';
+        if (codex && !credentials.accountId) {
+            throw new Error('The Codex session has no ChatGPT account ID. Please sign in again.');
+        }
+        const baseURL = codex ? CHATGPT_CODEX_RESPONSES_BASE_URL : CHATGPT_RESPONSES_BASE_URL;
+        const proxyFetch = createProxyFetch(getProxyUrl(baseURL, this.proxy)) ?? fetch;
         return new OpenAI({
-            // The function form is invoked before each request, including the SDK's own retries, so an access token
-            // that expires mid-conversation is refreshed transparently.
-            apiKey: async () => (await this.credentials())?.accessToken ?? '',
-            baseURL: CHATGPT_RESPONSES_BASE_URL,
+            apiKey: async () => (await getCredentials()).accessToken,
+            baseURL,
             maxRetries: this.maxRetries,
-            fetch: createProxyFetch(this.proxy),
             defaultHeaders: {
-                'chatgpt-account-id': credentials.accountId,
-                'OpenAI-Beta': 'responses=experimental',
-                originator: CHATGPT_ORIGINATOR,
-                session_id: generateUuid()
+                ...(codex ? {
+                    'chatgpt-account-id': credentials.accountId,
+                    'OpenAI-Beta': 'responses=experimental',
+                    originator: CHATGPT_ORIGINATOR,
+                    session_id: request.parentSessionId ?? request.sessionId
+                } : {}),
+                'session-id': request.parentSessionId ?? request.sessionId,
+                'thread-id': request.sessionId,
+                'x-client-request-id': request.subRequestId ?? request.requestId
+            },
+            fetch: async (input, init) => {
+                // Resolve the selected session's OAuth bearer immediately before sending, including SDK retries.
+                const current = await getCredentials();
+                const headers = new Headers(init?.headers);
+                headers.set('Authorization', `Bearer ${current.accessToken}`);
+                return proxyFetch(input, { ...init, headers });
             }
         });
     }

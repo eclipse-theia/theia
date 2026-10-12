@@ -20,21 +20,36 @@ export const CHATGPT_AUTH_SERVICE_PATH = '/services/chatgpt/auth';
 export const ChatGptAuthService = Symbol('ChatGptAuthService');
 export const ChatGptAuthServiceClient = Symbol('ChatGptAuthServiceClient');
 
-/** Endpoint serving OpenAI models to ChatGPT subscribers. It only implements the Response API. */
-export const CHATGPT_RESPONSES_BASE_URL = 'https://chatgpt.com/backend-api/codex';
+/** Public OpenAI API endpoint used with token-sharing credentials. */
+export const CHATGPT_RESPONSES_BASE_URL = 'https://api.openai.com/v1';
+export const CHATGPT_CODEX_RESPONSES_BASE_URL = 'https://chatgpt.com/backend-api/codex';
+export type ChatGptAuthenticationMode = 'codex' | 'oss';
 
 /** Current sign in state of the ChatGPT subscription. */
 export interface ChatGptAuthState {
-    /** Whether credentials for a ChatGPT subscription are available. */
+    /** Whether an account has a connected token-sharing session. */
     isAuthenticated: boolean;
-    /** The email of the signed in account, if it is part of the token claims. */
+    /** The label of the verified signed in account, if available. */
     accountLabel?: string;
     /** The ChatGPT plan of the signed in account, e.g. `plus` or `pro`. */
     planType?: string;
+    /** Login alone does not imply permission to use the ChatGPT plan. */
+    canUseChatGptPlan?: boolean;
+    clientId?: string;
+}
+
+/** Non-secret account registration retained even after disconnecting. */
+export interface ChatGptAccount {
+    clientId: string;
+    accountLabel?: string;
+    isAuthenticated: boolean;
+    canUseChatGptPlan: boolean;
 }
 
 /** Information the user needs to complete the browser based sign in. */
 export interface ChatGptLoginSession {
+    /** Non-secret identity of this login attempt; required by all subsequent login RPC operations. */
+    loginId: string;
     /** The URL the user has to open to authorize Theia. */
     authorizationUrl: string;
     /**
@@ -46,9 +61,14 @@ export interface ChatGptLoginSession {
 
 /** Credentials used to talk to the ChatGPT endpoint on behalf of the signed in user. */
 export interface ChatGptCredentials {
+    /** OAuth access token authorized for inference by the returned resource and direct-use scopes. */
     accessToken: string;
-    /** Sent as the `chatgpt-account-id` header, which the endpoint requires. */
-    accountId: string;
+    authenticationMode?: ChatGptAuthenticationMode;
+    /** Legacy Codex account routing; never sent to the public API. */
+    accountId?: string;
+    clientId: string;
+    /** Backend session identity, stable through rotation and replaced on reconnect. */
+    sessionId?: string;
 }
 
 export interface ChatGptAuthServiceClient {
@@ -61,30 +81,34 @@ export interface ChatGptAuthServiceClient {
  */
 export interface ChatGptAuthService {
     /**
-     * Starts a new login attempt. Cancels a login attempt that is still pending.
+     * Starts a new login or reconnects a saved client id. Cancels a login attempt that is still pending.
      * @returns the URL the user has to open and whether the local callback listener is available
      */
-    startLogin(): Promise<ChatGptLoginSession>;
+    startLogin(clientId?: string): Promise<ChatGptLoginSession>;
+
+    getAccounts(): Promise<ChatGptAccount[]>;
+
+    selectAccount(clientId: string): Promise<void>;
 
     /**
      * Waits for the browser to deliver the authorization code to the local callback listener.
      * @returns `true` if the sign in completed, `false` if it was cancelled or timed out
      */
-    waitForLogin(): Promise<boolean>;
+    waitForLogin(loginId: string): Promise<boolean>;
 
     /**
-     * Completes the pending login with a manually provided authorization code or the full redirect URL.
+     * Completes the pending login with the full callback URL, including its concrete client id.
      * @returns `true` if the sign in completed
      */
-    completeLogin(codeOrRedirectUrl: string): Promise<boolean>;
+    completeLogin(codeOrRedirectUrl: string, loginId: string): Promise<boolean>;
 
-    /** Cancels the pending login attempt, if any. */
-    cancelLogin(): Promise<void>;
+    /** Cancels only the matching pending login attempt. Missing or stale ids have no effect. */
+    cancelLogin(loginId: string): Promise<void>;
 
     /** Returns the current sign in state. */
     getAuthState(): Promise<ChatGptAuthState>;
 
-    /** Removes the stored credentials. */
+    /** Revokes and removes the active token set, retaining the account registration. */
     signOut(): Promise<void>;
 
     /** Emitted whenever the sign in state changes. */

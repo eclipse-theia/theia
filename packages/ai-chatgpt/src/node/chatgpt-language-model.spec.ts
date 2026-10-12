@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import {
     isCompactionResponsePart, isTextResponsePart, LanguageModelMessage, LanguageModelResponse, LanguageModelStreamResponsePart, ReasoningSupport,
     ToolCallExecutor, ToolCallExecutorImpl, UserRequest
@@ -22,11 +23,10 @@ import {
 import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
 import { OPENAI_WEB_SEARCH } from '@theia/ai-openai/lib/node/openai-server-tools';
 import { OpenAI } from 'openai';
-import { ILogger } from '@theia/core';
+import { CancellationTokenSource, ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Container } from '@theia/core/shared/inversify';
-import { CHATGPT_RESPONSES_BASE_URL, ChatGptCredentials } from '../common';
-import { CHATGPT_ORIGINATOR } from './chatgpt-oauth';
+import { CHATGPT_CODEX_RESPONSES_BASE_URL, CHATGPT_RESPONSES_BASE_URL, ChatGptCredentials } from '../common';
 import { ChatGptModel } from './chatgpt-language-model';
 import { ChatGptResponseApiUtils, DEFAULT_CHATGPT_INSTRUCTIONS } from './chatgpt-response-api-utils';
 
@@ -57,7 +57,7 @@ class CapturingResponseApiUtils extends ChatGptResponseApiUtils {
     }
 }
 
-const CREDENTIALS: ChatGptCredentials = { accessToken: 'access-token', accountId: 'account-id' };
+const CREDENTIALS: ChatGptCredentials = { accessToken: 'access-token', clientId: 'dynamic_agent_client_test' };
 
 const GPT5_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
@@ -79,7 +79,7 @@ function createRequest(settings?: Record<string, unknown>, messages: LanguageMod
     return { messages, settings, sessionId: 'session', requestId: 'request' };
 }
 
-function defaultHeadersOf(openai: OpenAI): Record<string, string> {
+function defaultHeadersOf(openai: OpenAI): Record<string, string> | undefined {
     return (openai as unknown as { _options: { defaultHeaders: Record<string, string> } })._options.defaultHeaders;
 }
 
@@ -197,10 +197,120 @@ describe('ChatGptModel', () => {
         const openai = utils.captured!.openai;
         expect(openai.baseURL).to.equal(CHATGPT_RESPONSES_BASE_URL);
         const headers = defaultHeadersOf(openai);
-        expect(headers['chatgpt-account-id']).to.equal('account-id');
-        expect(headers['OpenAI-Beta']).to.equal('responses=experimental');
-        expect(headers.originator).to.equal(CHATGPT_ORIGINATOR);
-        expect(headers.session_id).to.have.length.greaterThan(0);
+        expect(headers).to.deep.equal({
+            'session-id': 'session',
+            'thread-id': 'session',
+            'x-client-request-id': 'request'
+        });
+    });
+
+    it('uses Codex routing and legacy headers without changing the OSS receiver', async () => {
+        const { model, utils } = createModel(async () => ({ ...CREDENTIALS, authenticationMode: 'codex', accountId: 'legacy-account' }));
+        const select = sinon.spy(utils, 'forAuthenticationMode');
+        await model.request({ ...createRequest(), parentSessionId: 'parent' });
+        const codexUtils = select.returnValues[0] as CapturingResponseApiUtils;
+        expect(codexUtils).not.to.equal(utils);
+        expect(codexUtils.compactionProvider).to.equal('chatgpt-responses');
+        expect(utils.compactionProvider).to.equal('chatgpt-oss-responses');
+        expect(codexUtils.captured!.openai.baseURL).to.equal(CHATGPT_CODEX_RESPONSES_BASE_URL);
+        expect(defaultHeadersOf(codexUtils.captured!.openai)).to.deep.equal({
+            'chatgpt-account-id': 'legacy-account', 'OpenAI-Beta': 'responses=experimental', originator: 'theia',
+            session_id: 'parent', 'session-id': 'parent', 'thread-id': 'session', 'x-client-request-id': 'request'
+        });
+    });
+
+    it('refuses a mode change before SDK transport without sending either token', async () => {
+        const fetchStub = sinon.stub(globalThis, 'fetch').resolves(new Response('{}'));
+        let credentials: ChatGptCredentials = { ...CREDENTIALS, authenticationMode: 'codex', accountId: 'account' };
+        try {
+            const { model, utils } = createModel(async () => credentials);
+            const select = sinon.spy(utils, 'forAuthenticationMode');
+            await model.request(createRequest());
+            const receiver = select.returnValues[0] as CapturingResponseApiUtils;
+            const transport = (receiver.captured!.openai as unknown as { _options: { fetch: typeof fetch } })._options.fetch;
+            credentials = { ...CREDENTIALS, authenticationMode: 'oss' };
+            let error: unknown;
+            try { await transport(`${CHATGPT_CODEX_RESPONSES_BASE_URL}/responses`); } catch (caught) { error = caught; }
+            expect((error as Error).message).to.contain('account changed or disconnected');
+            expect(fetchStub.called).to.equal(false);
+        } finally { fetchStub.restore(); }
+    });
+
+    it('shares cache affinity with the immediate parent while retaining the child thread', async () => {
+        const { model, utils } = createModel();
+        await model.request({ ...createRequest(), sessionId: 'child', parentSessionId: 'parent' });
+        expect(defaultHeadersOf(utils.captured!.openai)).to.deep.equal({
+            'session-id': 'parent',
+            'thread-id': 'child',
+            'x-client-request-id': 'request'
+        });
+    });
+
+    it('uses the subrequest identifier for request tracing when available', async () => {
+        const { model, utils } = createModel();
+        await model.request({ ...createRequest(), subRequestId: 'subrequest' });
+        expect(defaultHeadersOf(utils.captured!.openai)!['x-client-request-id']).to.equal('subrequest');
+    });
+
+    it('keeps cache affinity stable across turns while updating request tracing', async () => {
+        const { model, utils } = createModel();
+        await model.request(createRequest());
+        const firstHeaders = defaultHeadersOf(utils.captured!.openai);
+        await model.request({ ...createRequest(), requestId: 'next-request' });
+        expect(defaultHeadersOf(utils.captured!.openai)).to.deep.equal({
+            'session-id': 'session',
+            'thread-id': 'session',
+            'x-client-request-id': 'next-request'
+        });
+        expect(firstHeaders).to.deep.equal({
+            'session-id': 'session',
+            'thread-id': 'session',
+            'x-client-request-id': 'request'
+        });
+    });
+
+    it('keeps headers isolated when another chat uses the same model', async () => {
+        const { model, utils } = createModel();
+        await model.request({ ...createRequest(), sessionId: 'child', parentSessionId: 'parent' });
+        const childHeaders = defaultHeadersOf(utils.captured!.openai);
+        await model.request({ ...createRequest(), sessionId: 'unrelated', requestId: 'other-request' });
+        expect(defaultHeadersOf(utils.captured!.openai)).to.deep.equal({
+            'session-id': 'unrelated',
+            'thread-id': 'unrelated',
+            'x-client-request-id': 'other-request'
+        });
+        expect(childHeaders).to.deep.equal({
+            'session-id': 'parent',
+            'thread-id': 'child',
+            'x-client-request-id': 'request'
+        });
+    });
+
+    it('sends stable cache headers through SDK retries while renewing the OAuth bearer', async () => {
+        let credentials = { ...CREDENTIALS };
+        const fetchStub = sinon.stub(globalThis, 'fetch').callsFake(async () => {
+            if (fetchStub.callCount === 1) {
+                credentials = { ...CREDENTIALS, accessToken: 'renewed-oauth' };
+                return new Response('{}', { status: 429, headers: { 'retry-after-ms': '1' } });
+            }
+            const event = { type: 'response.completed', response: { id: 'response', object: 'response', status: 'completed', output: [] } };
+            return new Response(`data: ${JSON.stringify(event)}\n\ndata: [DONE]\n\n`, { headers: { 'Content-Type': 'text/event-stream' } });
+        });
+        try {
+            const { model, utils } = createModel(async () => credentials);
+            model.maxRetries = 1;
+            await model.request({ ...createRequest(), sessionId: 'child', parentSessionId: 'parent' });
+            const stream = await utils.captured!.openai.responses.create({ model: 'gpt-5.5', input: 'Hello', store: false, stream: true });
+            for await (const _event of stream) { /* Consume the successful streamed response. */ }
+            expect(fetchStub.calledTwice).to.equal(true);
+            for (const [index, call] of fetchStub.getCalls().entries()) {
+                const headers = new Headers(call.args[1]?.headers);
+                expect(headers.get('session-id')).to.equal('parent');
+                expect(headers.get('thread-id')).to.equal('child');
+                expect(headers.get('x-client-request-id')).to.equal('request');
+                expect(headers.get('Authorization')).to.equal(`Bearer ${index === 0 ? 'access-token' : 'renewed-oauth'}`);
+            }
+        } finally { fetchStub.restore(); }
     });
 
     it('offers the server-side web search of the endpoint', () => {
@@ -208,9 +318,58 @@ describe('ChatGptModel', () => {
         expect(model.serverTools.map(tool => tool.id)).to.include(OPENAI_WEB_SEARCH);
     });
 
+    it('rejects credentials from a different account during an SDK request', async () => {
+        let clientId = 'dynamic_agent_client_test';
+        const { model, utils } = createModel(async () => ({ accessToken: 'token', clientId }));
+        await model.request(createRequest());
+        clientId = 'dynamic_agent_client_other';
+        const apiKey = (utils.captured!.openai as unknown as { _options: { apiKey: () => Promise<string> } })._options.apiKey;
+        let error: unknown;
+        try { await apiKey(); } catch (caught) { error = caught; }
+        expect((error as Error).message).to.contain('account changed or disconnected');
+    });
+
+    it('rejects a reconnected session even when its client id is unchanged', async () => {
+        let sessionId = 'original';
+        const { model, utils } = createModel(async () => ({ ...CREDENTIALS, sessionId }));
+        await model.request(createRequest());
+        sessionId = 'replacement';
+        const apiKey = (utils.captured!.openai as unknown as { _options: { apiKey: () => Promise<string> } })._options.apiKey;
+        let error: unknown;
+        try { await apiKey(); } catch (caught) { error = caught; }
+        expect((error as Error).message).to.contain('account changed or disconnected');
+    });
+
+    it('rejects a disconnected session instead of sending an empty credential', async () => {
+        let connected = true;
+        const { model, utils } = createModel(async () => connected ? CREDENTIALS : undefined);
+        await model.request(createRequest());
+        connected = false;
+        const apiKey = (utils.captured!.openai as unknown as { _options: { apiKey: () => Promise<string> } })._options.apiKey;
+        let error: unknown;
+        try { await apiKey(); } catch (caught) { error = caught; }
+        expect((error as Error).message).to.contain('account changed or disconnected');
+    });
+
+    it('renews the OAuth bearer before sending HTTP', async () => {
+        const fetchStub = sinon.stub(globalThis, 'fetch').resolves(new Response('{}'));
+        let credentials: ChatGptCredentials = { ...CREDENTIALS };
+        try {
+            const { model, utils } = createModel(async () => credentials);
+            await model.request(createRequest());
+            credentials = { ...CREDENTIALS, accessToken: 'renewed-oauth' };
+            const transport = (utils.captured!.openai as unknown as { _options: { fetch: typeof fetch } })._options.fetch;
+            await transport('https://api.openai.com/v1/responses', { headers: { Authorization: 'Bearer stale-oauth', Accept: 'application/json' } });
+            const headers = new Headers(fetchStub.firstCall.args[1]?.headers);
+            expect(headers.get('Authorization')).to.equal('Bearer renewed-oauth');
+            expect(headers.get('Accept')).to.equal('application/json');
+            expect(headers.has('chatgpt-account-id')).to.equal(false);
+        } finally { fetchStub.restore(); }
+    });
+
     it('resolves the access token per request, so a refreshed token is picked up', async () => {
         const tokens = ['first-token', 'second-token'];
-        const { model, utils } = createModel(async () => ({ accessToken: tokens.shift() ?? 'exhausted', accountId: 'account-id' }));
+        const { model, utils } = createModel(async () => ({ accessToken: tokens.shift() ?? 'exhausted', clientId: 'dynamic_agent_client_test' }));
         await model.request(createRequest());
 
         const apiKey = (utils.captured!.openai as unknown as { _options: { apiKey: () => Promise<string> } })._options.apiKey;
@@ -222,8 +381,34 @@ describe('ChatGptResponseApiUtils', () => {
 
     const utils = new ChatGptResponseApiUtils();
 
-    for (const withTools of [false, true]) {
-        it(`streams and replays encrypted compaction through the ChatGPT model ${withTools ? 'with client tools' : 'without tools'}`, async () => {
+    it('does not log a provider failure when a ChatGPT stream is cancelled', async () => {
+        const container = new Container();
+        container.bind(ILogger).to(MockLogger).inSingletonScope();
+        container.bind(ToolCallExecutor).to(ToolCallExecutorImpl).inSingletonScope();
+        container.bind(ChatGptResponseApiUtils).toSelf();
+        const responseUtils = container.get(ChatGptResponseApiUtils);
+        const logError = sinon.spy(container.get<ILogger>(ILogger), 'error');
+        const cancellation = new CancellationTokenSource();
+        const providerError = new Error('Cancelled provider request');
+        cancellation.cancel();
+        try {
+            let error: unknown;
+            try {
+                const stream = responseUtils.streamWithReasoningSummaryFallback({}, 'chatgpt/gpt-5.5', async function* (): AsyncIterable<never> {
+                    throw providerError;
+                }, cancellation.token);
+                for await (const _event of stream) { /* Consume until the provider throws. */ }
+            } catch (caught) { error = caught; }
+            expect(error).to.equal(providerError);
+            expect(logError.called).to.equal(false);
+        } finally {
+            logError.restore();
+            cancellation.dispose();
+        }
+    });
+
+    for (const [mode, withTools] of (['oss', 'codex'] as const).flatMap(selectedMode => [false, true].map(toolsEnabled => [selectedMode, toolsEnabled] as const))) {
+        it(`streams and replays encrypted compaction through ${mode} ${withTools ? 'with client tools' : 'without tools'}`, async () => {
             const container = new Container();
             container.bind(ILogger).to(MockLogger);
             container.bind(ToolCallExecutor).to(ToolCallExecutorImpl).inSingletonScope();
@@ -231,6 +416,7 @@ describe('ChatGptResponseApiUtils', () => {
             const responseUtils = container.get(ChatGptResponseApiUtils);
             const payloads: Record<string, unknown>[] = [];
             const openai = {
+                baseURL: mode === 'codex' ? CHATGPT_CODEX_RESPONSES_BASE_URL : CHATGPT_RESPONSES_BASE_URL,
                 responses: {
                     stream: (payload: Record<string, unknown>) => {
                         payloads.push(payload);
@@ -261,7 +447,9 @@ describe('ChatGptResponseApiUtils', () => {
                 for await (const part of response.stream) { parts.push(part); }
             }
             const compaction = parts.filter(isCompactionResponsePart);
-            expect(compaction).to.deep.equal([{ compaction: { provider: 'chatgpt-responses', data: { id: 'c1', encrypted_content: 'encrypted' } } }]);
+            expect(compaction).to.deep.equal([{
+                compaction: { provider: mode === 'codex' ? 'chatgpt-responses' : 'chatgpt-oss-responses', data: { id: 'c1', encrypted_content: 'encrypted' } }
+            }]);
             const replay = await model.request({
                 ...request,
                 messages: [
@@ -287,6 +475,68 @@ describe('ChatGptResponseApiUtils', () => {
         });
     }
 
+    for (const withTools of [false, true]) {
+        for (const eventType of ['response.failed', 'response.incomplete'] as const) {
+            it(`propagates ${eventType} ${withTools ? 'with tools' : 'without tools'}`, async () => {
+                const container = new Container();
+                container.bind(ILogger).to(MockLogger);
+                container.bind(ToolCallExecutor).to(ToolCallExecutorImpl).inSingletonScope();
+                container.bind(ChatGptResponseApiUtils).toSelf();
+                const responseUtils = container.get(ChatGptResponseApiUtils);
+                const openai = {
+                    responses: {
+                        stream: () => (async function* (): AsyncIterable<unknown> {
+                            yield { type: 'response.output_text.delta', delta: 'Partial text' };
+                            yield {
+                                type: eventType, response: {
+                                    error: { code: 'usage_limit_reached', message: 'usage_limit_reached' }, incomplete_details: { reason: 'max_output_tokens' }
+                                }
+                            };
+                        })()
+                    }
+                } as unknown as OpenAI;
+                const request: UserRequest = {
+                    ...createRequest(),
+                    tools: withTools ? [{ id: 'lookup', name: 'lookup', parameters: { type: 'object', properties: {} }, handler: async () => 'result' }] : undefined
+                };
+                const response = await responseUtils.handleRequest(openai, request, {}, 'gpt-5.5', new OpenAiModelUtils(),
+                    'developer', 'chatgpt/gpt-5.5', true);
+                let error: unknown;
+                try {
+                    if ('stream' in response) {
+                        for await (const _part of response.stream) { /* Consume until the terminal event. */ }
+                    }
+                } catch (caught) { error = caught; }
+                expect((error as Error).message).to.contain(eventType === 'response.failed' ? 'usage_limit_reached' : 'max_output_tokens');
+            });
+        }
+    }
+
+    it('keeps concurrent mode receivers isolated and never replays OSS context through Codex', () => {
+        const codexUtils = utils.forAuthenticationMode('codex');
+        const ossUtils = utils.forAuthenticationMode('oss');
+        expect(codexUtils.compactionProvider).to.equal('chatgpt-responses');
+        expect(ossUtils.compactionProvider).to.equal('chatgpt-oss-responses');
+        const { input } = codexUtils.processMessages([
+            { actor: 'user', type: 'text', text: 'Old turn' },
+            { actor: 'ai', type: 'compaction', provider: 'chatgpt-oss-responses', data: { encrypted_content: 'public' } },
+            { actor: 'user', type: 'text', text: 'Next turn' }
+        ], 'developer', 'gpt-5.5');
+        expect(input).to.have.lengthOf(2);
+        expect(input.every(item => item.type === 'message')).to.equal(true);
+        expect(utils.compactionProvider).to.equal('chatgpt-oss-responses');
+    });
+
+    it('ignores legacy private-endpoint compaction without dropping history', () => {
+        const { input } = utils.processMessages([
+            { actor: 'user', type: 'text', text: 'Old turn' },
+            { actor: 'ai', type: 'compaction', provider: 'chatgpt-responses', data: { encrypted_content: 'private' } },
+            { actor: 'user', type: 'text', text: 'Next turn' }
+        ], 'developer', 'gpt-5.5');
+        expect(input).to.have.lengthOf(2);
+        expect(input.every(item => item.type === 'message')).to.equal(true);
+    });
+
     it('ignores OpenAI compaction without dropping earlier conversation history', () => {
         const { input } = utils.processMessages([
             { actor: 'user', type: 'text', text: 'Old turn' },
@@ -302,10 +552,10 @@ describe('ChatGptResponseApiUtils', () => {
     it('replays only the latest ChatGPT compaction among mixed provider markers', () => {
         const { input } = utils.processMessages([
             { actor: 'user', type: 'text', text: 'Old turn' },
-            { actor: 'ai', type: 'compaction', provider: 'chatgpt-responses', data: { id: 'c1', encrypted_content: 'old' } },
+            { actor: 'ai', type: 'compaction', provider: 'chatgpt-oss-responses', data: { id: 'c1', encrypted_content: 'old' } },
             { actor: 'ai', type: 'compaction', provider: 'openai-responses', data: { encrypted_content: 'foreign1' } },
             { actor: 'user', type: 'text', text: 'Middle turn' },
-            { actor: 'ai', type: 'compaction', provider: 'chatgpt-responses', data: { id: 'c2', encrypted_content: 'latest' } },
+            { actor: 'ai', type: 'compaction', provider: 'chatgpt-oss-responses', data: { id: 'c2', encrypted_content: 'latest' } },
             { actor: 'ai', type: 'compaction', provider: 'openai-responses', data: { encrypted_content: 'foreign2' } },
             { actor: 'user', type: 'text', text: 'Next turn' }
         ], 'developer', 'gpt-5.5');

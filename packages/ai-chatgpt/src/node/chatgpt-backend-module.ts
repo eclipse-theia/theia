@@ -27,6 +27,9 @@ import {
 } from '../common';
 import { ChatGptAuthServiceImpl, createRemoteAuthService } from './chatgpt-auth-service-impl';
 import { ChatGptAuthServiceConfig, ChatGptBackendAuthService, DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG } from './chatgpt-auth-service';
+import { ChatGptAuthServiceRouter } from './chatgpt-auth-service-router';
+import { ChatGptCodexAuthService, ChatGptCodexAuthServiceConfig } from './chatgpt-codex-auth-service';
+import { CHATGPT_CLIENT_ID as CODEX_CLIENT_ID } from './chatgpt-codex-oauth';
 import { ChatGptLanguageModelsManagerImpl } from './chatgpt-language-models-manager-impl';
 import { ChatGptModelCatalog } from './chatgpt-model-catalog';
 import { ChatGptResponseApiUtils } from './chatgpt-response-api-utils';
@@ -53,7 +56,13 @@ export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: ChatGptPreferencesSchema });
     bind(ChatGptAuthServiceConfig).toConstantValue(DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG);
     bind(ChatGptAuthServiceImpl).toSelf().inSingletonScope();
-    bind(ChatGptBackendAuthService).toService(ChatGptAuthServiceImpl);
+    bind(ChatGptCodexAuthServiceConfig).toDynamicValue(ctx => {
+        const config = ctx.container.get<ChatGptAuthServiceConfig>(ChatGptAuthServiceConfig);
+        return { ...config, clientId: CODEX_CLIENT_ID, callbackHost: 'localhost', keyStoreAccount: `${config.keyStoreAccount}:codex` };
+    }).inSingletonScope();
+    bind(ChatGptCodexAuthService).toSelf().inSingletonScope();
+    bind(ChatGptAuthServiceRouter).toSelf().inSingletonScope();
+    bind(ChatGptBackendAuthService).toService(ChatGptAuthServiceRouter);
     bind(ChatGptAuthService).toService(ChatGptBackendAuthService);
     // Owned by the backend container as well, so all frontends share one listing of the account's models.
     bind(ChatGptModelCatalog).toSelf().inSingletonScope();

@@ -27,7 +27,8 @@ import {
 } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { ModelDiscoveryStatusService } from '@theia/ai-core/lib/browser/model-discovery-status-service';
 import {
-    CHATGPT_ENABLED_PREF, ChatGptAuthService, ChatGptAuthState, ChatGptLanguageModelsManager, ChatGptModelDescription, ChatGptPreferencesSchema, MODELS_PREF,
+    CHATGPT_AUTHENTICATION_MODE_PREF, ChatGptAuthenticationMode, CHATGPT_ENABLED_PREF, ChatGptAuthService, ChatGptAuthState,
+    ChatGptLanguageModelsManager, ChatGptModelDescription, ChatGptPreferencesSchema, MODELS_PREF,
     SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF
 } from '../common';
 import { CHATGPT_DISCOVERY_PROVIDER_ID, ChatGptFrontendApplicationContribution } from './chatgpt-frontend-application-contribution';
@@ -36,6 +37,10 @@ import { ChatGptCommands } from './chatgpt-command-contribution';
 disableJSDOM();
 
 class FakeManager implements ChatGptLanguageModelsManager {
+    readonly modes: ChatGptAuthenticationMode[] = [];
+    async setAuthenticationMode(mode: ChatGptAuthenticationMode): Promise<void> {
+        this.modes.push(mode);
+    }
     readonly created: ChatGptModelDescription[][] = [];
     readonly removed: string[][] = [];
     proxyUrl: string | undefined;
@@ -141,6 +146,38 @@ describe('ChatGptFrontendApplicationContribution', () => {
         discoveryStatus = container.get(ModelDiscoveryStatusService);
     });
 
+    it('propagates Codex by default and switches modes before the next model discovery', async () => {
+        manager.available = ['gpt-5.5'];
+        await start();
+        expect(manager.modes).to.deep.equal(['codex']);
+        preferences.set(CHATGPT_AUTHENTICATION_MODE_PREF, 'oss');
+        expect(manager.modes).to.deep.equal(['codex', 'oss']);
+        await flush();
+        expect(manager.removed.flat()).to.include('chatgpt/gpt-5.5');
+        expect(registeredIds(manager.created[manager.created.length - 1])).to.deep.equal(['chatgpt/gpt-5.5']);
+    });
+
+    it('changes backend modes immediately even while an older discovery is pending', async () => {
+        manager.available = ['codex-model'];
+        await start();
+        let finish: (models: string[]) => void = () => { };
+        let discovering = false;
+        manager.getAvailableModels = async () => {
+            discovering = true;
+            return new Promise<string[]>(resolve => { finish = resolve; });
+        };
+        preferences.set(MODELS_PREF, []);
+        await flush();
+        expect(discovering).to.equal(true);
+        preferences.set(CHATGPT_AUTHENTICATION_MODE_PREF, 'oss');
+        expect(manager.modes).to.deep.equal(['codex', 'oss']);
+        manager.getAvailableModels = async () => ['oss-model'];
+        finish(['stale-codex-model']);
+        await flush();
+        expect(manager.created.flat().map(model => model.model)).not.to.include('stale-codex-model');
+        expect(registeredIds(manager.created[manager.created.length - 1])).to.deep.equal(['chatgpt/oss-model']);
+    });
+
     describe('discovery status', () => {
 
         function status(): ReturnType<ModelDiscoveryStatusService['getStatus']> {
@@ -208,6 +245,38 @@ describe('ChatGptFrontendApplicationContribution', () => {
             expect(status()?.state).to.equal('error');
             expect(status()?.message).to.equal('connection lost');
         });
+    });
+
+    for (const configured of [[], ['gpt-5.5']]) {
+        it(`does not register ${configured.length ? 'configured' : 'discovered'} models without sharing permission`, async () => {
+            authState = { isAuthenticated: true, canUseChatGptPlan: false };
+            preferences.values.set(MODELS_PREF, configured);
+            await start();
+            expect(manager.created).to.be.empty;
+            expect(manager.availableCalls).to.equal(0);
+            expect(discoveryStatus.getStatus(CHATGPT_DISCOVERY_PROVIDER_ID)?.stateLabel).to.equal('Token sharing disabled');
+            expect(discoveryStatus.getStatus(CHATGPT_DISCOVERY_PROVIDER_ID)?.action?.commandId).to.equal(ChatGptCommands.SIGN_IN.id);
+        });
+    }
+
+    it('removes models immediately when token sharing is withdrawn', async () => {
+        preferences.values.set(MODELS_PREF, ['gpt-5.5']);
+        await start();
+        setAuthState({ isAuthenticated: true, canUseChatGptPlan: false });
+        expect(manager.removed).to.deep.equal([['chatgpt/gpt-5.5']]);
+        await flush();
+        expect(manager.created).to.have.lengthOf(1);
+    });
+
+    it('replaces the model list when switching active accounts', async () => {
+        authState = { isAuthenticated: true, clientId: 'dynamic_agent_client_first' };
+        manager.available = ['gpt-5.5'];
+        await start();
+        manager.available = ['gpt-5.6-sol'];
+        setAuthState({ isAuthenticated: true, clientId: 'dynamic_agent_client_other' });
+        expect(manager.removed).to.deep.equal([['chatgpt/gpt-5.5']]);
+        await flush();
+        expect(registeredIds(manager.created[1])).to.deep.equal(['chatgpt/gpt-5.6-sol']);
     });
 
     it('registers the configured models on startup while signed in', async () => {

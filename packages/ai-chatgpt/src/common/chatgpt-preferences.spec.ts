@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import {
-    CHATGPT_ENABLED_PREF, ChatGptPreferencesSchema, MODELS_PREF,
+    CHATGPT_AUTHENTICATION_MODE_PREF, CHATGPT_ENABLED_PREF, ChatGptPreferencesSchema, MODELS_PREF,
     SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF
 } from './chatgpt-preferences';
 
@@ -29,6 +29,12 @@ describe('ChatGptPreferencesSchema', () => {
         for (const [name, property] of Object.entries(properties)) {
             expect(property.tags, name).to.deep.equal(['experimental']);
         }
+    });
+
+    it('offers both authentication modes and defaults to Codex', () => {
+        const property = ChatGptPreferencesSchema.properties[CHATGPT_AUTHENTICATION_MODE_PREF];
+        expect(property.enum).to.deep.equal(['codex', 'oss']);
+        expect(property.default).to.equal('codex');
     });
 
     it('uses the model overrides preference key with an empty default', () => {

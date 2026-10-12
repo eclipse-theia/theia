@@ -15,14 +15,15 @@
 // *****************************************************************************
 
 import { Disposable } from '@theia/core';
-import { ChatGptAuthService, ChatGptAuthServiceClient, ChatGptCredentials } from '../common';
-import { CHATGPT_CALLBACK_HOST, CHATGPT_CALLBACK_PATH, CHATGPT_CALLBACK_PORT, CHATGPT_CLIENT_ID } from './chatgpt-oauth';
+import { ChatGptAuthenticationMode, ChatGptAuthService, ChatGptAuthServiceClient, ChatGptCredentials } from '../common';
+import { CHATGPT_CALLBACK_HOST, CHATGPT_CALLBACK_PATH, CHATGPT_CALLBACK_PORT } from './chatgpt-oauth';
 
 export const ChatGptBackendAuthService = Symbol('ChatGptBackendAuthService');
 
 /** Backend-only service. Credentials and client registration must never be exposed through RPC. */
 export interface ChatGptBackendAuthService extends ChatGptAuthService {
-    getCredentials(): Promise<ChatGptCredentials | undefined>;
+    setAuthenticationMode(mode: ChatGptAuthenticationMode): Promise<void>;
+    getCredentials(clientId?: string, sessionId?: string): Promise<ChatGptCredentials | undefined>;
     addClient(client: ChatGptAuthServiceClient): Disposable;
 }
 
@@ -30,7 +31,8 @@ export const ChatGptAuthServiceConfig = Symbol('ChatGptAuthServiceConfig');
 
 /** Application-level backend configuration, not user preferences. */
 export interface ChatGptAuthServiceConfig {
-    readonly clientId: string;
+    readonly agentName: string;
+    /** OpenAI OSS authorization requires the literal HTTP loopback host 127.0.0.1. */
     readonly callbackHost: string;
     readonly callbackPort: number;
     readonly callbackPath: string;
@@ -39,7 +41,7 @@ export interface ChatGptAuthServiceConfig {
 }
 
 export const DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG: ChatGptAuthServiceConfig = {
-    clientId: CHATGPT_CLIENT_ID,
+    agentName: 'Theia',
     callbackHost: CHATGPT_CALLBACK_HOST,
     callbackPort: CHATGPT_CALLBACK_PORT,
     callbackPath: CHATGPT_CALLBACK_PATH,
