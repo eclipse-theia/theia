@@ -55,7 +55,7 @@ describe('formatTimeAgo', () => {
     });
 
     it('renders the present timestamp as 0 seconds ago', () => {
-        expect(formatTimeAgo(Date.now())).to.equal(reference.format(0, 'second'));
+        expect(formatTimeAgo(Date.now())).to.equal(reference.format(-0, 'second'));
     });
 
     it('renders future timestamps as "in ..."', () => {
