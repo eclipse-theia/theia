@@ -71,5 +71,5 @@ export function formatTimeAgo(timestamp: number): string {
             return getRelativeTimeFormat().format(direction * Math.floor(duration / unitLength), unit);
         }
     }
-    return getRelativeTimeFormat().format(0, 'second');
+    return getRelativeTimeFormat().format(-0, 'second');
 }
