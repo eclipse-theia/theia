@@ -16,38 +16,33 @@
 
 import { createHash, randomBytes } from 'crypto';
 
-/** Public OAuth client id of OpenAI's Codex CLI, used by default to authenticate with a ChatGPT subscription. */
-export const CHATGPT_CLIENT_ID = 'app_EMoamEEZ73f0CkXaXp7hrann';
-export const CHATGPT_AUTHORIZE_URL = 'https://auth.openai.com/oauth/authorize';
-export const CHATGPT_TOKEN_URL = 'https://auth.openai.com/oauth/token';
-export const CHATGPT_SCOPE = 'openid profile email offline_access';
-/**
- * Default callback registered with the OAuth application. Custom clients must use their registered callback.
- */
+export const CHATGPT_CLIENT_ID = 'dynamic_agent_client';
+export const CHATGPT_AUTHORIZE_URL = 'https://auth.openai.com/api/accounts/authorize';
+export const CHATGPT_TOKEN_URL = 'https://auth.openai.com/api/accounts/oauth/token';
+export const CHATGPT_RESOURCE = 'https://api.openai.com/v1';
+export const CHATGPT_SCOPE = 'openid profile email offline_access resource.invoke chatgpt.tokens.use.direct';
 export const CHATGPT_CALLBACK_PORT = 1455;
-export const CHATGPT_CALLBACK_HOST = 'localhost';
+export const CHATGPT_CALLBACK_HOST = '127.0.0.1';
 export const CHATGPT_CALLBACK_PATH = '/auth/callback';
 export const CHATGPT_REDIRECT_URI = `http://${CHATGPT_CALLBACK_HOST}:${CHATGPT_CALLBACK_PORT}${CHATGPT_CALLBACK_PATH}`;
-/** Identifies Theia as the client of the ChatGPT endpoint. */
-export const CHATGPT_ORIGINATOR = 'theia';
-/** Version of this client. The endpoint requires the model listing to state one, the completion endpoint does not. */
-export const CHATGPT_CLIENT_VERSION = '1.0.0';
-
-/** Claim namespaces used by OpenAI to convey the ChatGPT account of the signed in user. */
-const AUTH_CLAIM = 'https://api.openai.com/auth';
-const PROFILE_CLAIM = 'https://api.openai.com/profile';
 
 export interface PkcePair {
     verifier: string;
     challenge: string;
 }
 
-export interface ChatGptIdentity {
-    accountId?: string;
-    planType?: string;
-    email?: string;
-    /** Expiration of the token in epoch milliseconds. */
-    expiresAt?: number;
+export interface AuthorizationOptions {
+    nonce: string;
+    hostId: string;
+    agentName: string;
+    redirectUri?: string;
+    clientId?: string;
+    idTokenHint?: string;
+}
+
+export interface AuthorizationCode {
+    code: string;
+    clientId: string;
 }
 
 export function createPkcePair(): PkcePair {
@@ -59,85 +54,77 @@ export function createLoginState(): string {
     return randomBytes(16).toString('hex');
 }
 
-export function buildAuthorizationUrl(challenge: string, state: string, redirectUri: string = CHATGPT_REDIRECT_URI, clientId: string = CHATGPT_CLIENT_ID): string {
+export function isConcreteClientId(value: unknown): value is string {
+    return typeof value === 'string' && value !== CHATGPT_CLIENT_ID && value !== 'dynamic' && /^[A-Za-z0-9._-]{1,256}$/.test(value);
+}
+
+export function buildAuthorizationUrl(challenge: string, state: string, options: AuthorizationOptions): string {
     const url = new URL(CHATGPT_AUTHORIZE_URL);
-    url.searchParams.set('response_type', 'code');
-    url.searchParams.set('client_id', clientId);
-    url.searchParams.set('redirect_uri', redirectUri);
-    url.searchParams.set('scope', CHATGPT_SCOPE);
-    url.searchParams.set('code_challenge', challenge);
-    url.searchParams.set('code_challenge_method', 'S256');
-    url.searchParams.set('state', state);
-    url.searchParams.set('id_token_add_organizations', 'true');
-    url.searchParams.set('originator', CHATGPT_ORIGINATOR);
+    url.search = new URLSearchParams({
+        response_type: 'code',
+        client_id: options.clientId ?? CHATGPT_CLIENT_ID,
+        redirect_uri: options.redirectUri ?? CHATGPT_REDIRECT_URI,
+        scope: CHATGPT_SCOPE,
+        ext_agent_host_id: options.hostId,
+        resource: CHATGPT_RESOURCE,
+        code_challenge: challenge,
+        code_challenge_method: 'S256',
+        state,
+        nonce: options.nonce
+    }).toString();
+    if (!options.clientId) {
+        url.searchParams.set('agent_name_hint', options.agentName);
+    }
+    if (options.idTokenHint) {
+        url.searchParams.set('id_token_hint', options.idTokenHint);
+    }
     return url.toString();
 }
 
-/**
- * Extracts the authorization code from user input, which is either the bare code or the full redirect URL
- * the browser was sent to.
- *
- * @throws if no code can be extracted, if the redirect URL is not the sign in callback or if its state does not match
- */
-export function parseAuthorizationInput(input: string, expectedState: string, callbackPath: string = CHATGPT_CALLBACK_PATH): string {
-    const trimmed = input.trim();
-    if (!trimmed) {
-        throw new Error('No authorization code provided.');
-    }
-    if (/^https?:\/\//i.test(trimmed)) {
-        const url = new URL(trimmed);
-        if (url.pathname !== callbackPath) {
-            throw new Error('The provided URL is not the sign in callback URL.');
-        }
-        // The state correlates the redirect with this login attempt, so it is required rather than merely compared.
-        if (url.searchParams.get('state') !== expectedState) {
-            throw new Error('The state of the provided redirect URL does not match the pending sign in.');
-        }
-        const code = url.searchParams.get('code');
-        if (!code) {
-            throw new Error('The provided redirect URL does not contain an authorization code.');
-        }
-        return code;
-    }
-    return trimmed;
-}
-
-/**
- * Reads the ChatGPT account information from the claims of an OpenAI access token.
- * Returns an empty identity if the token is not a readable JWT.
- */
-export function decodeChatGptIdentity(accessToken: string): ChatGptIdentity {
-    const payload = decodeJwtPayload(accessToken);
-    if (!payload) {
-        return {};
-    }
-    const auth = asRecord(payload[AUTH_CLAIM]);
-    const profile = asRecord(payload[PROFILE_CLAIM]);
-    const expiration = typeof payload.exp === 'number' ? payload.exp * 1000 : undefined;
-    return {
-        accountId: asNonEmptyString(auth?.chatgpt_account_id),
-        planType: asNonEmptyString(auth?.chatgpt_plan_type),
-        email: asNonEmptyString(profile?.email) ?? asNonEmptyString(payload.email),
-        expiresAt: expiration
-    };
-}
-
-function decodeJwtPayload(token: string): Record<string, unknown> | undefined {
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-        return undefined;
-    }
+/** A bare code is insufficient. A state-verified access_denied callback returns undefined. */
+export function parseAuthorizationInput(input: string, expectedState: string, redirectUri: string = CHATGPT_REDIRECT_URI,
+    expectedClientId?: string): AuthorizationCode | undefined {
+    let url: URL;
     try {
-        return asRecord(JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8')));
+        url = new URL(input.trim());
     } catch {
+        throw new Error('Provide the full authorization callback URL, not a bare authorization code.');
+    }
+    const expected = new URL(redirectUri);
+    if (url.origin !== expected.origin || url.pathname !== expected.pathname || url.username || url.password || url.hash) {
+        throw new Error('The provided URL is not the sign in callback URL.');
+    }
+    if (url.searchParams.getAll('state').length !== 1) {
+        throw new Error('The authorization callback must contain exactly one state.');
+    }
+    if (url.searchParams.get('state') !== expectedState) {
+        throw new Error('The state of the provided redirect URL does not match the pending sign in.');
+    }
+    if (url.searchParams.getAll('client_id').length > 1) {
+        throw new Error('The authorization callback must not repeat client_id.');
+    }
+    const explicitClientId = url.searchParams.get('client_id');
+    if (url.searchParams.has('client_id')
+        && (!isConcreteClientId(explicitClientId) || (expectedClientId && expectedClientId !== explicitClientId))) {
+        throw new Error('The callback client id does not match the pending sign in.');
+    }
+    if (url.searchParams.has('error')) {
+        if (url.searchParams.getAll('error').length !== 1 || url.searchParams.has('code')
+            || url.searchParams.get('error') !== 'access_denied') {
+            throw new Error('The authorization callback contains an invalid error response.');
+        }
         return undefined;
     }
-}
-
-function asRecord(value: unknown): Record<string, unknown> | undefined {
-    return typeof value === 'object' && value ? value as Record<string, unknown> : undefined;
-}
-
-function asNonEmptyString(value: unknown): string | undefined {
-    return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+    if (url.searchParams.getAll('code').length !== 1) {
+        throw new Error('The authorization callback must contain exactly one code.');
+    }
+    const code = url.searchParams.get('code')?.trim();
+    const clientId = explicitClientId ?? expectedClientId;
+    if (!code) {
+        throw new Error('The provided redirect URL does not contain an authorization code.');
+    }
+    if (!isConcreteClientId(clientId) || (expectedClientId && expectedClientId !== clientId)) {
+        throw new Error('The callback client id does not match the pending sign in.');
+    }
+    return { code, clientId };
 }
