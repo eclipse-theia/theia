@@ -282,6 +282,21 @@ describe('AgentGenericCapabilitiesSettings', () => {
         return Array.from(container.querySelectorAll<HTMLElement>('.theia-GenericCapabilities-TreeItem')).find(candidate => candidate.textContent === name)!;
     }
 
+    function isChecked(container: HTMLElement, name: string): boolean {
+        return item(container, name).querySelector<HTMLInputElement>('input')!.checked;
+    }
+
+    /**
+     * Waits until `condition` holds. Rereading the stored selections updates the state outside `flushSync`,
+     * so React commits it in a task of its own and a single `setTimeout(0)` does not reliably wait for it.
+     */
+    async function waitUntil(condition: () => boolean, timeout = 2000): Promise<void> {
+        const deadline = Date.now() + timeout;
+        while (!condition() && Date.now() < deadline) {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        }
+    }
+
     it('offers no editor when there is nothing to choose from', () => {
         const { container, dispose } = render({ skills: ['skill-a'] }, undefined);
         try {
@@ -454,7 +469,7 @@ describe('AgentGenericCapabilitiesSettings', () => {
             flushSync(() => item(container, 'skill-b').click());
             expect(item(container, 'skill-b').querySelector<HTMLInputElement>('input')!.checked).to.equal(true);
             await finishWrite(0, false);
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await waitUntil(() => !isChecked(container, 'skill-b'));
             expect(item(container, 'skill-b').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
             expect(item(container, 'skill-a').querySelector<HTMLInputElement>('input')!.checked).to.equal(true);
         } finally {
@@ -472,7 +487,7 @@ describe('AgentGenericCapabilitiesSettings', () => {
             await new Promise(resolve => setTimeout(resolve, 0));
             expect(item(container, 'skill-b').querySelector<HTMLInputElement>('input')!.checked).to.equal(true);
             await finishWrite(1, false);
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await waitUntil(() => !isChecked(container, 'skill-b'));
             expect(item(container, 'skill-a').querySelector<HTMLInputElement>('input')!.checked).to.equal(true);
             expect(item(container, 'skill-b').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
             flushSync(() => item(container, 'skill-a').click());
@@ -492,16 +507,16 @@ describe('AgentGenericCapabilitiesSettings', () => {
             await new Promise(resolve => setTimeout(resolve, 0));
             setStored({ skills: ['skill-b'] });
             reload({ skills: ['skill-b'] });
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await waitUntil(() => !isChecked(container, 'skill-a'));
             expect(item(container, 'skill-a').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
             setStored({ skills: ['skill-a'] });
             reload({ skills: ['skill-a'] });
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await waitUntil(() => isChecked(container, 'skill-a') && !isChecked(container, 'skill-b'));
             expect(item(container, 'skill-a').querySelector<HTMLInputElement>('input')!.checked).to.equal(true);
             expect(item(container, 'skill-b').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
             setStored(undefined);
             reload(undefined);
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await waitUntil(() => !isChecked(container, 'skill-a'));
             expect(item(container, 'skill-a').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
         } finally {
             dispose();
@@ -516,7 +531,7 @@ describe('AgentGenericCapabilitiesSettings', () => {
             await new Promise(resolve => setTimeout(resolve, 0));
             setStored(undefined);
             reload(undefined);
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await waitUntil(() => !isChecked(container, 'skill-a'));
             expect(item(container, 'skill-a').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
         } finally {
             dispose();
@@ -536,7 +551,7 @@ describe('AgentGenericCapabilitiesSettings', () => {
             await new Promise(resolve => setTimeout(resolve, 0));
             expect(item(container, 'skill-b').querySelector<HTMLInputElement>('input')!.checked).to.equal(true);
             await finishWrite(1, false);
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await waitUntil(() => !isChecked(container, 'skill-a') && !isChecked(container, 'skill-b'));
             expect(item(container, 'skill-a').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
             expect(item(container, 'skill-b').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
         } finally {
@@ -595,7 +610,7 @@ describe('AgentGenericCapabilitiesSettings', () => {
             reload({ skills: ['skill-b'] });
             await new Promise(resolve => setTimeout(resolve, 0));
             staleRead.resolve({ skills: ['skill-a'] });
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await waitUntil(() => isChecked(container, 'skill-b'));
             expect(item(container, 'skill-a').querySelector<HTMLInputElement>('input')!.checked).to.equal(false);
             expect(item(container, 'skill-b').querySelector<HTMLInputElement>('input')!.checked).to.equal(true);
         } finally {
