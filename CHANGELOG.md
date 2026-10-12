@@ -4,11 +4,18 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## 1.77.0 - NOT YET RELEASED
+## 1.77.0 - tbd
 
 <a name="breaking_changes_1.77.0">[Breaking Changes:](#breaking_changes_1.77.0)</a>
 
+- [ai-anthropic, ai-google, ai-ollama, ai-openai] `AnthropicModel`, `GoogleModel`, `OllamaModel` and `OpenAiModel` no longer take constructor arguments; they are `@injectable`, configured by an injected `<provider>ModelParams`, and created via `<provider>LanguageModelFactory` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-ollama, ai-openai] removed the unused `OllamaModelFactory` and `OpenAiModelFactory` symbols; use `OllamaLanguageModelFactory` and `OpenAiLanguageModelFactory` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-openai] moved `OpenAiModelUtils` from `openai-language-model.ts` to `openai-model-utils.ts` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-openai] replaced the SDK `runTools` runner: `OpenAiModel.createTools()` returns `ChatCompletionTool[]`, and `OpenAiModel.runnerOptions` and the `runnerOptions` parameter of `OpenAiResponseApiUtils.handleRequest` were removed [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-openai] removed the `openAiModelUtils` and `responseApiUtils` fields of `OpenAiLanguageModelsManagerImpl` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
 - [core] upgraded to TypeScript 6.0.x: `configs/base.tsconfig.json` now enables `esModuleInterop`, uses `moduleResolution: bundler`, and declares global `types` explicitly. Published extensions that emit import helpers must declare `tslib`; consumers compiling Theia's declarations need `esModuleInterop`, `allowSyntheticDefaultImports`, or `skipLibCheck`. `TreeProps.viewProps` and `TreeWidget.ViewProps` no longer accept the inherited HTML `width`, `height`, or `rows` properties, and `@theia/localization-manager` now depends on TypeScript 6. See the [migration guide](doc/Migration.md) [#18100](https://github.com/eclipse-theia/theia/pull/18100) - Contributed on behalf of STMicroelectronics
+- [core] `TreeSelectionState` keeps the ids of the selected nodes rather than the nodes themselves, so that it does not retain nodes the tree has replaced. `selectionStack` became a getter that resolves those ids against the tree and leaves out the nodes it no longer holds, so it can no longer be redeclared as a property by a subclass [#18111](https://github.com/eclipse-theia/theia/pull/18111)
+- [debug] `DebugConsoleSession.debugSession` is now a read-only `DebugSession | undefined`, as the console releases the session once it terminates. The setter is replaced by `startFor(session)`, the new `label` and `configurationName` describe a session that has already ended, and `id` is now generated, so a console is no longer found by `ConsoleSessionManager.get(session.id)` [#18111](https://github.com/eclipse-theia/theia/pull/18111)
 
 ## 1.76.0 - 9/24/2026
 

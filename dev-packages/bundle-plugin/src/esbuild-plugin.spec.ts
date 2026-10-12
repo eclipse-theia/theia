@@ -117,7 +117,7 @@ describe('nativeDependenciesPlugin', () => {
 
     describe('@vscode/ripgrep replacement', () => {
 
-        async function resolveRgPath(platform: 'win32' | 'linux', dirname: string): Promise<string> {
+        async function resolveRgPath(platform: 'win32' | 'linux', dirname: string, existingPaths: string[] = []): Promise<string> {
             const { build, resolvers } = createFakeBuild();
             const plugin = nativeDependenciesPlugin({
                 trash: false,
@@ -136,9 +136,10 @@ describe('nativeDependenciesPlugin', () => {
             // Evaluate the replacement module as it would run in the bundle, on the given platform.
             const { code } = transformSync(contents, { format: 'cjs', loader: 'js' });
             const pathModule = platform === 'win32' ? path.win32 : path.posix;
+            const fsModule = { existsSync: (candidate: string) => existingPaths.includes(candidate) };
             const module = { exports: {} as { rgPath?: string } };
             new Function('module', 'exports', 'require', '__dirname', 'process', code)(
-                module, module.exports, () => pathModule, dirname, { platform }
+                module, module.exports, (id: string) => id === 'fs' ? fsModule : pathModule, dirname, { platform }
             );
             return module.exports.rgPath!;
         }
@@ -148,13 +149,20 @@ describe('nativeDependenciesPlugin', () => {
             expect(await resolveRgPath('win32', 'C:\\app\\lib\\backend')).to.equal('C:\\app\\lib\\backend\\native\\rg.exe');
         });
 
-        it('points to `app.asar.unpacked` when the bundle is packaged into an asar archive', async () => {
+        it('points to `app.asar.unpacked` when the binary was unpacked from the asar archive', async () => {
             // `child_process.spawn` is not redirected into asar archives by Electron, so the binary
-            // has to be extracted (`asarUnpack`) and spawned from the unpacked directory.
-            expect(await resolveRgPath('linux', '/opt/app/resources/app.asar/lib/backend'))
+            // is spawned from the unpacked directory if the packaging extracted it (`asarUnpack`).
+            expect(await resolveRgPath('linux', '/opt/app/resources/app.asar/lib/backend', ['/opt/app/resources/app.asar.unpacked/lib/backend/native/rg']))
                 .to.equal('/opt/app/resources/app.asar.unpacked/lib/backend/native/rg');
-            expect(await resolveRgPath('win32', 'C:\\Program Files\\app\\resources\\app.asar\\lib\\backend'))
+            expect(await resolveRgPath('win32', 'C:\\Program Files\\app\\resources\\app.asar\\lib\\backend',
+                ['C:\\Program Files\\app\\resources\\app.asar.unpacked\\lib\\backend\\native\\rg.exe']))
                 .to.equal('C:\\Program Files\\app\\resources\\app.asar.unpacked\\lib\\backend\\native\\rg.exe');
+        });
+
+        it('points into the asar archive when the binary was not unpacked', async () => {
+            // The `BundledResourceProvider` extracts the binary from the archive before it is spawned.
+            expect(await resolveRgPath('linux', '/opt/app/resources/app.asar/lib/backend'))
+                .to.equal('/opt/app/resources/app.asar/lib/backend/native/rg');
         });
 
         it('does not rewrite a path that already points to `app.asar.unpacked`', async () => {
@@ -163,7 +171,7 @@ describe('nativeDependenciesPlugin', () => {
         });
 
         it('only rewrites the `app.asar` archive, not other `.asar` segments in the path', async () => {
-            expect(await resolveRgPath('linux', '/opt/x.asar/resources/app.asar/lib/backend'))
+            expect(await resolveRgPath('linux', '/opt/x.asar/resources/app.asar/lib/backend', ['/opt/x.asar/resources/app.asar.unpacked/lib/backend/native/rg']))
                 .to.equal('/opt/x.asar/resources/app.asar.unpacked/lib/backend/native/rg');
         });
     });

@@ -148,7 +148,7 @@ export class OpenAiFrontendApplicationContribution extends DiscoveringProviderCo
         const modelId = model.id;
         const id = `${OPENAI_PROVIDER_ID}/${modelId}`;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
-        const useResponseApi = this.preferenceService.get<boolean>(USE_RESPONSE_API_PREF, false);
+        const useResponseApi = this.preferenceService.get<boolean>(USE_RESPONSE_API_PREF, true);
         const globalCompaction = this.preferenceService.get<boolean>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true);
         const compactionOverride = this.preferenceService.get<ServerSideCompactionSetting>(SERVER_SIDE_COMPACTION_PREF, 'default');
         const serverSideCompactionEnabledByDefault = resolveCompactionDefault(globalCompaction, compactionOverride);

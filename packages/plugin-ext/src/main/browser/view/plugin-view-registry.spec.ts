@@ -23,7 +23,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { Disposable } from '@theia/core/lib/common';
+import { Command, Disposable } from '@theia/core/lib/common';
 import { PluginViewRegistry, ViewContainerInfo, PLUGIN_VIEW_DATA_FACTORY_ID } from './plugin-view-registry';
 import type { ViewWelcome } from '../../../common';
 
@@ -54,7 +54,6 @@ describe('PluginViewRegistry - view menu labels', () => {
     let registry: PluginViewRegistry;
     let menus: RecordingMenuModelRegistry;
 
-    const toggleCommandId = (id: string): string => `plugin.view-container.${id}.toggle`;
     const internals = (): {
         viewContainers: Map<string, ViewContainerInfo>;
         registerViewMenuAction(containerId: string, label: string): Disposable;
@@ -76,21 +75,21 @@ describe('PluginViewRegistry - view menu labels', () => {
 
     it('uses the plain label for a single container', () => {
         registerContainer('a', 'Claude Code', 'left');
-        expect(menus.actions.get(toggleCommandId('a'))?.label).to.equal('Claude Code');
+        expect(menus.actions.get('a')?.label).to.equal('Claude Code');
     });
 
     it('leaves distinct labels unsuffixed', () => {
         registerContainer('a', 'Explorer', 'left');
         registerContainer('b', 'Claude Code', 'right');
-        expect(menus.actions.get(toggleCommandId('a'))?.label).to.equal('Explorer');
-        expect(menus.actions.get(toggleCommandId('b'))?.label).to.equal('Claude Code');
+        expect(menus.actions.get('a')?.label).to.equal('Explorer');
+        expect(menus.actions.get('b')?.label).to.equal('Claude Code');
     });
 
     it('suffixes the location when two containers share a label', () => {
         registerContainer('a', 'Claude Code', 'left');
         registerContainer('b', 'Claude Code', 'right');
-        expect(menus.actions.get(toggleCommandId('a'))?.label).to.equal('Claude Code (Side Bar)');
-        expect(menus.actions.get(toggleCommandId('b'))?.label).to.equal('Claude Code (Secondary Side Bar)');
+        expect(menus.actions.get('a')?.label).to.equal('Claude Code (Side Bar)');
+        expect(menus.actions.get('b')?.label).to.equal('Claude Code (Secondary Side Bar)');
     });
 
     it('drops the suffix from the remaining container once the duplicate is removed', () => {
@@ -99,8 +98,8 @@ describe('PluginViewRegistry - view menu labels', () => {
 
         disposeB.dispose();
 
-        expect(menus.actions.get(toggleCommandId('a'))?.label).to.equal('Claude Code');
-        expect(menus.actions.has(toggleCommandId('b'))).to.equal(false);
+        expect(menus.actions.get('a')?.label).to.equal('Claude Code');
+        expect(menus.actions.has('b')).to.equal(false);
     });
 
 });
@@ -168,6 +167,49 @@ describe('PluginViewRegistry - welcome-only views', () => {
 
         expect(widget).to.equal(undefined);
         expect(getOrCreateCalls).to.have.lengthOf(0);
+    });
+
+});
+
+describe('PluginViewRegistry - VS Code view commands', () => {
+
+    let registry: PluginViewRegistry;
+    let commands: Map<string, Command>;
+
+    const internals = (): {
+        doRegisterViewContainer(id: string, location: string, options: { label: string }): Disposable;
+    } => registry as unknown as {
+        doRegisterViewContainer(id: string, location: string, options: { label: string }): Disposable;
+    };
+
+    beforeEach(() => {
+        registry = new PluginViewRegistry();
+        commands = new Map();
+        (registry as unknown as { commands: unknown }).commands = {
+            registerCommand: (command: Command) => {
+                commands.set(command.id, command);
+                return Disposable.create(() => commands.delete(command.id));
+            }
+        };
+        (registry as unknown as { menus: unknown }).menus = new RecordingMenuModelRegistry();
+        (registry as unknown as { quickView: unknown }).quickView = { registerItem: () => Disposable.NULL };
+    });
+
+    it('registers the container id and the view focus and open commands once a view is added', () => {
+        const containerId = 'workbench.view.extension.sample';
+        internals().doRegisterViewContainer(containerId, 'left', { label: 'Sample' });
+        expect(commands.has(containerId)).to.equal(false);
+
+        const disposeView = registry.registerView('sample', { id: 'sample.view', name: 'Sample View' });
+
+        expect(commands.get(containerId)).to.include({ label: 'Toggle Sample', category: 'View' });
+        expect(commands.get('plugin.view-container.workbench.view.extension.sample.toggle')?.label).to.equal(undefined);
+        expect(commands.get('sample.view.focus')).to.include({ label: 'Focus on Sample View View', category: 'Sample' });
+        expect(commands.has('sample.view.open')).to.equal(true);
+
+        disposeView.dispose();
+        expect(commands.has('sample.view.focus')).to.equal(false);
+        expect(commands.has('sample.view.open')).to.equal(false);
     });
 
 });

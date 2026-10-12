@@ -96,6 +96,13 @@ export class URI extends CodeURI implements theia.Uri {
     }
 
     /**
+     * Override to create the correct class.
+     */
+    static override from(components: { scheme: string; authority?: string; path?: string; query?: string; fragment?: string }): URI {
+        return new URI(CodeURI.from(components));
+    }
+
+    /**
      * There is quite some magic in to vscode URI class related to
      * transferring via JSON.stringify(). Making the CodeURI instance
      * makes sure we transfer this object as a vscode-uri URI.

@@ -733,6 +733,12 @@ export class DebugSession implements CompositeTreeElement {
         const { uri, sourceModified } = options;
         await this.deferredOnDidConfigureCapabilities.promise;
         for (const affectedUri of this.getAffectedUris(uri)) {
+            if (this.connection.closed) {
+                // The session ended while the breakpoints were being sent, which happens because ending one session
+                // updates the breakpoints of all of them. There is nothing left to send them to, and reporting them
+                // as unverified would outlive the session they failed for.
+                return;
+            }
             if (affectedUri.toString() === BreakpointManager.EXCEPTION_URI.toString()) {
                 await this.sendExceptionBreakpoints();
             } else if (affectedUri.toString() === BreakpointManager.FUNCTION_URI.toString()) {
