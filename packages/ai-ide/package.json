@@ -39,7 +39,7 @@
     "ignore": "^6.0.2",
     "minimatch": "^10.2.6",
     "puppeteer-core": "^25.1.0",
-    "simple-git": "^3.36.0"
+    "simple-git": "^4.0.2"
   },
   "publishConfig": {
     "access": "public"
