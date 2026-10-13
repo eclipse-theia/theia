@@ -106,9 +106,6 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         return instance;
     }
 
-    /** Whether showing the editor should focus it. Embedded editors can opt out. */
-    focusOnShow = true;
-
     /** Whether hiding the editor should detach its model and save its view state for restoration on show. */
     detachModelOnHide = true;
 
@@ -278,9 +275,6 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
             }
             if (this.detachModelOnHide) {
                 this.baseEditor.restoreViewState(this.savedViewState);
-            }
-            if (this.focusOnShow) {
-                this.baseEditor.focus();
             }
         } else if (this.detachModelOnHide) {
             this.savedViewState = this.baseEditor.saveViewState();

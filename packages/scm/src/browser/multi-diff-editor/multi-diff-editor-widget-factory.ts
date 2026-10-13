@@ -70,7 +70,6 @@ export class MultiDiffEditorWidgetFactory {
     protected configureEmbeddedEditor(editorWidget: EditorWidget): void {
         const monacoEditor = MonacoEditor.get(editorWidget);
         if (monacoEditor) {
-            monacoEditor.focusOnShow = false;
             monacoEditor.detachModelOnHide = false;
         }
         if (monacoEditor instanceof MonacoDiffEditor) {

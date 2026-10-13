@@ -746,7 +746,6 @@ describe('Multi-Diff Editor — widgets', () => {
             factory.configure({ editor: diff } as EditorWidget);
             factory.configure({ editor: code } as EditorWidget);
             for (const editor of [diff, code]) {
-                expect(editor.focusOnShow).to.be.false;
                 expect(editor.detachModelOnHide).to.be.false;
             }
             expect(updateDiffOptions.firstCall.args[0]).to.deep.equal({
