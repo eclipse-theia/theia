@@ -40,7 +40,7 @@ export class HuggingFaceFrontendApplicationContribution implements FrontendAppli
             const proxyUri = this.preferenceService.get<string>('http.proxy');
             this.manager.setProxyUrl(proxyUri);
 
-            const models = this.preferenceService.get<string>(MODELS_PREF, []);
+            const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createHuggingFaceModelDescription(modelId)));
             this.prevModels = [...models];
 
@@ -50,7 +50,7 @@ export class HuggingFaceFrontendApplicationContribution implements FrontendAppli
                     this.manager.setApiKey(newApiKey);
                     this.updateAllModels();
                 } else if (event.preferenceName === MODELS_PREF) {
-                    this.handleModelChanges(this.preferenceService.get<string>(MODELS_PREF, []));
+                    this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
                 } else if (event.preferenceName === 'http.proxy') {
                     this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy'));
                     this.updateAllModels();

@@ -66,7 +66,7 @@ function staleFileError(path: string): string {
 const DEFAULT_WRITE_CONTENT_MAX_SIZE_KB = 256;
 
 function getWriteContentMaxSizeKB(preferenceService: PreferenceService): number {
-    return preferenceService.get<number>(WRITE_CONTENT_MAX_SIZE_KB_PREF, DEFAULT_WRITE_CONTENT_MAX_SIZE_KB);
+    return preferenceService.get(WRITE_CONTENT_MAX_SIZE_KB_PREF, DEFAULT_WRITE_CONTENT_MAX_SIZE_KB);
 }
 
 /**

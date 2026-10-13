@@ -506,7 +506,7 @@ export class WorkspaceFunctionScope {
 
     async shouldExclude(stat: FileStat): Promise<boolean> {
         const shouldConsiderGitIgnore = this.preferences.get(CONSIDER_GITIGNORE_PREF, false);
-        const userExcludePatterns = this.preferences.get<string>(USER_EXCLUDE_PATTERN_PREF, []);
+        const userExcludePatterns = this.preferences.get<string[]>(USER_EXCLUDE_PATTERN_PREF, []);
 
         if (this.isUserExcluded(stat.resource.path.base, userExcludePatterns)) {
             return true;

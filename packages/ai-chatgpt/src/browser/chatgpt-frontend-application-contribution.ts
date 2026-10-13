@@ -168,7 +168,7 @@ export class ChatGptFrontendApplicationContribution implements FrontendApplicati
     }
 
     protected isEnabled(): boolean {
-        return this.preferenceService.get<boolean>(CHATGPT_ENABLED_PREF, true);
+        return this.preferenceService.get(CHATGPT_ENABLED_PREF, true);
     }
 
     protected removeRegisteredModels(): void {
@@ -234,7 +234,7 @@ export class ChatGptFrontendApplicationContribution implements FrontendApplicati
             model: modelId,
             maxRetries: this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3,
             serverSideCompactionEnabledByDefault: resolveCompactionDefault(
-                this.preferenceService.get<boolean>(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true),
+                this.preferenceService.get(PREFERENCE_NAME_SERVER_SIDE_COMPACTION, true),
                 this.preferenceService.get<ServerSideCompactionSetting>(SERVER_SIDE_COMPACTION_PREF, 'default')
             ),
             serverSideCompactionTokenThresholdByDefault: resolveCompactionTokenThresholdDefault(

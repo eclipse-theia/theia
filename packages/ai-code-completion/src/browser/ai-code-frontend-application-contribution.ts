@@ -100,7 +100,7 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
             return Disposable.NULL;
         }
         const automatic = this.preferenceService.get(PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE, true);
-        const excludedExtensions = this.preferenceService.get<string>(PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS, []);
+        const excludedExtensions = this.preferenceService.get<string[]>(PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS, []);
 
         return monaco.languages.registerInlineCompletionsProvider(
             { scheme: 'file' },

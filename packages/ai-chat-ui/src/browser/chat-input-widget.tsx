@@ -347,7 +347,7 @@ export class AIChatInputWidget extends ReactWidget {
         if (!this.preferenceService || !this.currentLanguageModelId) {
             return undefined;
         }
-        const entries = this.preferenceService.get<ReasoningPreferenceEntry>(PREFERENCE_NAME_REASONING, []);
+        const entries = this.preferenceService.get<ReasoningPreferenceEntry[]>(PREFERENCE_NAME_REASONING, []);
         const [providerId, modelId] = this.currentLanguageModelId.split('/');
         return mergeReasoningSettings(entries, modelId, providerId, this.receivingAgent?.agentId)?.reasoning?.level;
     }
