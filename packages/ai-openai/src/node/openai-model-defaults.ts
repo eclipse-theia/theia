@@ -18,7 +18,7 @@ import { ReasoningSupport } from '@theia/ai-core';
 import { DeveloperMessageSettings } from './openai-language-model';
 
 /**
- * Per-model defaults inferred from the OpenAI model id. Sourced from
+ * Family-level defaults inferred from the OpenAI model id. Sourced from
  * https://developers.openai.com/api/docs/models. The `/v1/models/{id}` endpoint does not expose
  * this data, so it is maintained client-side. User overrides on the model description take
  * precedence over these values.
@@ -32,7 +32,7 @@ export interface OpenAiModelDefaults {
 }
 
 const GPT5_REASONING_SUPPORT: ReasoningSupport = {
-    supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
+    supportedLevels: ['off', 'none', 'low', 'medium', 'high', 'xhigh', 'auto'],
     defaultLevel: 'auto'
 };
 
@@ -41,10 +41,13 @@ const O_SERIES_REASONING_SUPPORT: ReasoningSupport = {
     defaultLevel: 'auto'
 };
 
-// GPT-6 Astra reasons at every setting: it dropped the `none`/`minimal` efforts of the GPT-5 family.
-// Its `xhigh`/`max` efforts have no representation in ReasoningLevel, so we expose the mappable subset.
 const GPT6_REASONING_SUPPORT: ReasoningSupport = {
-    supportedLevels: ['low', 'medium', 'high', 'auto'],
+    supportedLevels: ['off', 'none', 'low', 'medium', 'high', 'xhigh', 'max', 'auto'],
+    defaultLevel: 'auto'
+};
+
+const GPT6_ASTRA_SOL_REASONING_SUPPORT: ReasoningSupport = {
+    supportedLevels: ['off', 'low', 'medium', 'high', 'xhigh', 'max', 'auto'],
     defaultLevel: 'auto'
 };
 
@@ -54,8 +57,10 @@ const GPT6_REASONING_SUPPORT: ReasoningSupport = {
  * (e.g. `gpt-4o-2024-08-06` matches `gpt-4o`).
  */
 const OPENAI_MODEL_FAMILIES: ReadonlyArray<readonly [prefix: string, defaults: OpenAiModelDefaults]> = [
+    ['gpt-6-astra', { contextWindow: 1_050_000, reasoningSupport: GPT6_ASTRA_SOL_REASONING_SUPPORT }],
+    ['gpt-6.1-sol', { contextWindow: 1_050_000, reasoningSupport: GPT6_ASTRA_SOL_REASONING_SUPPORT }],
     ['gpt-6', { contextWindow: 1_050_000, reasoningSupport: GPT6_REASONING_SUPPORT }],
-    ['gpt-5.6', { contextWindow: 1_050_000, reasoningSupport: GPT5_REASONING_SUPPORT }],
+    ['gpt-5.6', { contextWindow: 1_050_000, reasoningSupport: GPT6_REASONING_SUPPORT }],
     ['gpt-5.5', { contextWindow: 1_050_000, reasoningSupport: GPT5_REASONING_SUPPORT }],
     ['gpt-5.4-mini', { contextWindow: 400_000, reasoningSupport: GPT5_REASONING_SUPPORT }],
     ['gpt-5.4-nano', { contextWindow: 400_000, reasoningSupport: GPT5_REASONING_SUPPORT }],

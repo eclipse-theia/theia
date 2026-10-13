@@ -14,8 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolRequest } from '@theia/ai-core';
-import { OllamaModel } from './node/ollama-language-model';
+import { ToolCall, ToolCallExecutor, ToolCallExecutorImpl, ToolInvocationContext, ToolRequest } from '@theia/ai-core';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import { Container, injectable } from '@theia/core/shared/inversify';
+import { CancellationToken, CancellationTokenSource, ILogger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { OllamaModel, OllamaModelParams } from './node/ollama-language-model';
 import { Tool } from 'ollama';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
@@ -24,7 +28,7 @@ describe('ai-ollama package', () => {
 
     it('Transform to Ollama tools', () => {
         const req: ToolRequest = createToolRequest();
-        const model = new OllamaModelUnderTest();
+        const model = createModel();
         const ollamaTool = model.toOllamaTool(req);
 
         expect(ollamaTool.function.name).equals('example-tool');
@@ -37,8 +41,64 @@ describe('ai-ollama package', () => {
         expect(ollamaTool.function.parameters?.required).to.deep.equal(['question']);
     });
 
+    it('executes tool calls of a turn concurrently and preserves input order', async () => {
+        const model = createModel();
+        // `a` only completes once `b` has started: a sequential implementation would deadlock here.
+        const bStarted = new Deferred<void>();
+        const chatRequest = {
+            messages: [],
+            tools: [
+                { function: { name: 'a' }, handler: async () => { await bStarted.promise; return 'a-result'; } },
+                { function: { name: 'b' }, handler: async () => { bStarted.resolve(); return 'b-result'; } }
+            ]
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
+        const toolCalls: ToolCall[] = [
+            { id: '1', function: { name: 'a', arguments: '{}' } },
+            { id: '2', function: { name: 'b', arguments: '{}' } }
+        ];
+
+        const result = await model.runProcessToolCalls(toolCalls, chatRequest);
+
+        expect(result.map(r => r.result)).to.deep.equal(['a-result', 'b-result']);
+        expect(chatRequest.messages.map((m: { content: string }) => m.content)).to.deep.equal([
+            'Tool call a returned: a-result',
+            'Tool call b returned: b-result'
+        ]);
+    });
+
+    it('reports a missing tool with the legacy error string', async () => {
+        const model = createModel();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const chatRequest = { messages: [], tools: [] } as any;
+        const result = await model.runProcessToolCalls([{ id: '1', function: { name: 'missing', arguments: '{}' } }], chatRequest);
+        expect(result[0].result).to.equal('error: Tool not found');
+    });
+
+    it('forwards the request cancellation token into the tool invocation context', async () => {
+        const model = createModel();
+        const source = new CancellationTokenSource();
+        let observedToken: CancellationToken | undefined;
+        const chatRequest = {
+            messages: [],
+            tools: [{
+                function: { name: 'a' },
+                handler: async (_argString: string, ctx?: ToolInvocationContext) => {
+                    observedToken = ToolInvocationContext.getCancellationToken(ctx);
+                    return 'a-result';
+                }
+            }]
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
+        const toolCalls: ToolCall[] = [{ id: '1', function: { name: 'a', arguments: '{}' } }];
+
+        await model.runProcessToolCalls(toolCalls, chatRequest, source.token);
+
+        expect(observedToken).to.equal(source.token);
+    });
+
     it('resolves anyOf directly on an items schema', () => {
-        const model = new OllamaModelUnderTest();
+        const model = createModel();
         const result = model.toOllamaTool(createToolRequest({
             tags: { type: 'array', description: 'list of tags', items: { anyOf: [{ type: 'string' }, { type: 'null' }], description: 'a tag' } }
         }));
@@ -47,7 +107,7 @@ describe('ai-ollama package', () => {
     });
 
     it('passes enum values through to output', () => {
-        const model = new OllamaModelUnderTest();
+        const model = createModel();
         const result = model.toOllamaTool(createToolRequest({
             status: { type: 'string', description: 'task status', enum: ['pending', 'in-progress', 'done'] }
         }));
@@ -56,7 +116,7 @@ describe('ai-ollama package', () => {
     });
 
     it('passes required and nested properties through array items (todoWrite schema)', () => {
-        const model = new OllamaModelUnderTest();
+        const model = createModel();
         const result = model.toOllamaTool(createToolRequest({
             todos: {
                 type: 'array',
@@ -83,7 +143,7 @@ describe('ai-ollama package', () => {
     });
 
     it('passes through a type-less property unchanged', () => {
-        const model = new OllamaModelUnderTest();
+        const model = createModel();
         const result = model.toOllamaTool(createToolRequest({
             status: { enum: ['a', 'b'], description: 'no explicit type' }
         }));
@@ -93,7 +153,7 @@ describe('ai-ollama package', () => {
     });
 
     it('resolves anyOf on a top-level property preserving branch content', () => {
-        const model = new OllamaModelUnderTest();
+        const model = createModel();
         const result = model.toOllamaTool(createToolRequest({
             tags: { anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }], description: 'optional tags' }
         }));
@@ -105,7 +165,7 @@ describe('ai-ollama package', () => {
     });
 
     it('resolves anyOf inside array items sub-properties', () => {
-        const model = new OllamaModelUnderTest();
+        const model = createModel();
         const result = model.toOllamaTool(createToolRequest({
             arr: {
                 type: 'array',
@@ -124,7 +184,7 @@ describe('ai-ollama package', () => {
     });
 
     it('passes items schema through for a simple array property', () => {
-        const model = new OllamaModelUnderTest();
+        const model = createModel();
         const result = model.toOllamaTool(createToolRequest({
             tags: { type: 'array', description: 'list of tags', items: { type: 'string' } }
         }));
@@ -133,7 +193,7 @@ describe('ai-ollama package', () => {
     });
 
     it('passes through a type-less item schema unchanged', () => {
-        const model = new OllamaModelUnderTest();
+        const model = createModel();
         const result = model.toOllamaTool(createToolRequest({
             tags: { type: 'array', description: 'list of tags', items: { enum: ['a', 'b'] } }
         }));
@@ -142,7 +202,7 @@ describe('ai-ollama package', () => {
     });
 
     it('preserves top-level $defs alongside a $ref property', () => {
-        const model = new OllamaModelUnderTest();
+        const model = createModel();
         const tool: ToolRequest = {
             ...createToolRequest(),
             parameters: {
@@ -160,7 +220,7 @@ describe('ai-ollama package', () => {
     });
 
     it('resolves anyOf on items schema preserving branch content', () => {
-        const model = new OllamaModelUnderTest();
+        const model = createModel();
         const result = model.toOllamaTool(createToolRequest({
             records: {
                 type: 'array',
@@ -182,13 +242,33 @@ describe('ai-ollama package', () => {
     });
 });
 
+function createModel(): OllamaModelUnderTest {
+    const parent = new Container();
+    parent.bind(ToolCallExecutor).to(ToolCallExecutorImpl);
+    parent.bind(ILogger).to(MockLogger);
+    parent.bind(OllamaModelUnderTest).toSelf().inTransientScope();
+
+    const child = new Container();
+    child.parent = parent;
+    child.bind(OllamaModelParams).toConstantValue({
+        id: 'id',
+        model: 'model',
+        status: { status: 'ready' },
+        host: () => ''
+    });
+    return child.get(OllamaModelUnderTest);
+}
+
+@injectable()
 class OllamaModelUnderTest extends OllamaModel {
-    constructor() {
-        super('id', 'model', { status: 'ready' }, () => '');
+    override toOllamaTool(tool: ToolRequest): Tool & { handler: (arg_string: string, ctx?: ToolInvocationContext) => Promise<unknown> } {
+        return super.toOllamaTool(tool);
     }
 
-    override toOllamaTool(tool: ToolRequest): Tool & { handler: (arg_string: string) => Promise<unknown> } {
-        return super.toOllamaTool(tool);
+    // Exposes the protected processToolCalls for testing concurrent tool execution and cancellation forwarding.
+    runProcessToolCalls(toolCalls: ToolCall[], chatRequest: unknown, cancellation?: CancellationToken): Promise<ToolCall[]> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return this.processToolCalls(toolCalls, chatRequest as any, cancellation);
     }
 }
 function createToolRequest(properties?: ToolRequest['parameters']['properties']): ToolRequest {

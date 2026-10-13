@@ -203,7 +203,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
     markdownRenderer
 }) => {
     const { confirmationState, rejectionReason } = useToolConfirmationState(response, confirmationMode);
-    const summaryRef = React.useRef<HTMLElement | undefined>(undefined);
+    const finishedLabelRef = React.useRef<HTMLElement | undefined>(undefined);
     const pendingRef = React.useRef<HTMLElement | undefined>(undefined);
     const allowedRef = React.useRef<HTMLElement | undefined>(undefined);
 
@@ -251,12 +251,15 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
                 </span>
             ) : response.finished ? (
                 <details className='theia-toolCall-finished'>
-                    <summary
-                        ref={(el: HTMLElement | null) => { summaryRef.current = el ?? undefined; }}
-                        onMouseEnter={() => showArgsTooltip(response, summaryRef.current)}
-                    >
-                        {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name}
-                        (<span className='theia-toolCall-args-label'>{argsLabel}</span>)
+                    <summary>
+                        {/* anchor the tooltip to the inline label, not the full-width summary, so it opens next to the text */}
+                        <span
+                            ref={(el: HTMLElement | null) => { finishedLabelRef.current = el ?? undefined; }}
+                            onMouseEnter={() => showArgsTooltip(response, finishedLabelRef.current)}
+                        >
+                            {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name}
+                            (<span className='theia-toolCall-args-label'>{argsLabel}</span>)
+                        </span>
                     </summary>
                     <div className='theia-toolCall-response-result'>
                         {responseRenderer(response)}

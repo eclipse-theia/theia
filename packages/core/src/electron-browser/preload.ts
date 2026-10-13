@@ -232,8 +232,8 @@ const api: TheiaCoreAPI = {
         ipcRenderer.send(CHANNEL_APP_STATE_CHANGED, state);
     },
 
-    readClipboard(): string {
-        return ipcRenderer.sendSync(CHANNEL_READ_CLIPBOARD);
+    readClipboard(): Promise<string> {
+        return ipcRenderer.invoke(CHANNEL_READ_CLIPBOARD);
     },
 
     writeClipboard(text): void {

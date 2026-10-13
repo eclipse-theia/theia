@@ -118,6 +118,12 @@ export class DebugVariablesWidget extends SourceTreeWidget {
 
     protected handleDidDestroyDebugSession(session: DebugSession): void {
         this.statePerSession.delete(session.id);
+        if (this.stackFrame?.session.id === session.id) {
+            // Release the frame, which holds its session: this widget outlives every session, and no stack frame is
+            // focused when the session it belongs to is gone. `onDidFocusStackFrame` does not announce that, as the
+            // session manager stops forwarding the event as soon as the session is no longer the current one.
+            this.stackFrame = undefined;
+        }
     }
 
     protected override handleContextMenuEvent(node: TreeNode | undefined, event: MouseEvent<HTMLElement>): void {
