@@ -37,7 +37,7 @@ export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
 /**
  * Constant indent guide padding value.
  */
-const INDENT_GUIDE_PADDING = 6;
+const INDENT_GUIDE_PADDING = 8;
 
 @injectable()
 export class FileTreeWidget extends CompressedTreeWidget {
