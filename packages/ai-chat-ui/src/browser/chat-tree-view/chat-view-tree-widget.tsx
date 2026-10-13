@@ -35,7 +35,9 @@ import {
     codicon,
     CompositeTreeNode,
     ContextMenuRenderer,
+    DISABLED_CLASS,
     HoverService,
+    isActivationKey,
     Key,
     KeyCode,
     Message,
@@ -166,6 +168,9 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     protected readonly chatInputs: Map<string, AIChatTreeInputWidget> = new Map();
 
+    /** Ids of the request and response nodes whose message the user has collapsed. */
+    protected readonly collapsedNodeIds = new Set<string>();
+
     protected _shouldScrollToEnd = true;
 
     protected isEnabled = false;
@@ -295,8 +300,20 @@ export class ChatViewTreeWidget extends TreeWidget {
         if (row === undefined) {
             return;
         }
+        // A collapsed message does not render its content: expand it and wait until the match is rendered,
+        // at most about half a second at 60 Hz.
+        const expanded = (isRequestNode(row.node) || isResponseNode(row.node)) && this.isCollapsed(row.node);
+        if (expanded) {
+            this.collapsedNodeIds.delete(match.nodeId);
+            this.update();
+        }
+        let framesLeft = expanded ? 30 : 0;
         const settle = (): void => {
             this.findHighlighter.refresh();
+            if (!this.findHighlighter.hasCurrentTarget && framesLeft-- > 0) {
+                requestAnimationFrame(settle);
+                return;
+            }
             this.findHighlighter.scrollCurrentIntoView(this.node);
         };
         if (this.findHighlighter.findRow(this.node, match.nodeId)) {
@@ -578,7 +595,7 @@ export class ChatViewTreeWidget extends TreeWidget {
                 onContextMenu={e => this.handleContextMenu(node, e)}
             >
                 {this.renderAgent(node)}
-                {this.renderDetail(node)}
+                {!this.isCollapsed(node) && this.renderDetail(node)}
             </div>
         </React.Fragment>;
     }
@@ -601,6 +618,7 @@ export class ChatViewTreeWidget extends TreeWidget {
 
         return <React.Fragment>
             <div className='theia-ChatNodeHeader'>
+                {this.renderCollapseToggle(node)}
                 <div className={`theia-AgentAvatar ${this.getAgentIconClassName(node)}`}></div>
                 <h3 ref={agentLabel}
                     className='theia-AgentLabel'
@@ -681,6 +699,66 @@ export class ChatViewTreeWidget extends TreeWidget {
                     </div>}
             </div>
         </React.Fragment>;
+    }
+
+    /** The toggle stays in place while the message cannot be collapsed, so that the header does not shift. */
+    protected renderCollapseToggle(node: RequestNode | ResponseNode): React.ReactNode {
+        const enabled = this.canCollapse(node);
+        const collapsed = this.isCollapsed(node);
+        const label = collapsed
+            ? nls.localize('theia/ai/chat-ui/expandMessage', 'Expand Message')
+            : nls.localize('theia/ai/chat-ui/collapseMessage', 'Collapse Message');
+        return <span
+            className={`theia-ChatNodeToggle ${codicon(collapsed ? 'chevron-right' : 'chevron-down', true)}${enabled ? '' : ' ' + DISABLED_CLASS}`}
+            title={label}
+            aria-label={label}
+            aria-expanded={!collapsed}
+            aria-disabled={!enabled}
+            tabIndex={enabled ? 0 : -1}
+            onClick={e => {
+                e.stopPropagation();
+                this.toggleCollapsed(node);
+            }}
+            onKeyDown={e => {
+                if (isActivationKey(e)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.toggleCollapsed(node);
+                }
+            }}
+            role='button'
+        ></span>;
+    }
+
+    /**
+     * A request being edited and a response in progress always show their content: hiding it would cancel the edit, or
+     * hide pending interactions such as tool confirmations and questions, including those of delegated agents.
+     */
+    protected canCollapse(node: RequestNode | ResponseNode): boolean {
+        return isRequestNode(node) ? !EditableChatRequestModel.isEditing(node.request) : node.response.isComplete;
+    }
+
+    protected isCollapsed(node: RequestNode | ResponseNode): boolean {
+        return this.collapsedNodeIds.has(node.id) && this.canCollapse(node);
+    }
+
+    protected toggleCollapsed(node: RequestNode | ResponseNode): void {
+        if (!this.canCollapse(node)) {
+            return;
+        }
+        if (this.collapsedNodeIds.delete(node.id)) {
+            this.update();
+            return;
+        }
+        this.collapsedNodeIds.add(node.id);
+        // When the message starts above the viewport, its header is pinned to the top. Collapsing it would leave
+        // it out of view, so scroll to its start instead.
+        const row = this.rows.get(node.id);
+        const element = this.findHighlighter.findRow(this.node, node.id);
+        if (row && element && element.getBoundingClientRect().top < this.node.getBoundingClientRect().top) {
+            this.view?.list?.scrollToIndex({ index: row.index, align: 'start' });
+        }
+        this.update();
     }
 
     protected getAgentLabel(node: RequestNode | ResponseNode): string {
