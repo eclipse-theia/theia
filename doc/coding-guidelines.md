@@ -429,15 +429,13 @@ export interface MyCompositeTreeNode extends CompositeTreeNode {
 
 * [4.3](#di-auxiliary-function-export) Auxiliary functions which are called from the customizable context can be exported in the corresponding namespace.
 
-```ts
-export const DirtyDiffModel = Symbol('DirtyDiffModel');
-export interface DirtyDiffModel {
-    ...
-}
+> [!NOTE]
+> A namespace that exports functions cannot share its name with a `const` symbol, so this pattern applies to services whose class is also the injection token (see [Interfaces/Symbols 2.1](#class-token-internal)).
 
+```ts
 @injectable()
-export class DirtyDiffModelImpl implements DirtyDiffModel {
-    // This method can be overridden. Subclasses and independent implementations have access to `DirtyDiffModel.documentContentLines`.
+export class DirtyDiffModel {
+    // This method can be overridden. Subclasses have access to `DirtyDiffModel.documentContentLines`.
     protected handleDocumentChanged(document: TextEditorDocument): void {
         this.currentContent = DirtyDiffModel.documentContentLines(document);
         this.update();
