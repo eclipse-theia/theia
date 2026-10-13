@@ -57,6 +57,10 @@ export class BinaryMessagePipe implements Disposable {
     }
 
     protected handleNewMessage(chunk: Uint8Array): void {
+        if (this.cachedMessageData.partialMessageStart) {
+            chunk = Buffer.concat([this.cachedMessageData.partialMessageStart, chunk]);
+            this.cachedMessageData.partialMessageStart = undefined;
+        }
         if (chunk.byteLength < this.messageStartByteLength) {
             // The chunk only contains a part of the encoded message start
             this.cachedMessageData.partialMessageStart = chunk;
@@ -137,10 +141,7 @@ export class BinaryMessagePipe implements Disposable {
      * @throws An error if the message start can not be read successfully.
      */
     protected readMessageStart(chunk: Uint8Array): number {
-        const messageData = this.cachedMessageData.partialMessageStart ? Buffer.concat([this.cachedMessageData.partialMessageStart, chunk]) : chunk;
-        this.cachedMessageData.partialMessageStart = undefined;
-
-        const reader = new Uint8ArrayReadBuffer(messageData);
+        const reader = new Uint8ArrayReadBuffer(chunk);
         const identifier = reader.readString();
 
         if (identifier !== BinaryMessagePipe.MESSAGE_START_IDENTIFIER) {

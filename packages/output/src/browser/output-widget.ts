@@ -194,7 +194,11 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
         this.onStateChangedEmitter.fire(this._state);
     }
 
-    protected async refreshEditorWidget({ preserveFocus }: { preserveFocus: boolean } = { preserveFocus: false }): Promise<void> {
+    /**
+     * Only an explicit `OutputChannel.show()` activates the widget: channel selection, creation and
+     * deletion refresh it in the background, and a selection change precedes even a `preserveFocus` show.
+     */
+    protected async refreshEditorWidget({ preserveFocus }: { preserveFocus: boolean } = { preserveFocus: true }): Promise<void> {
         const { selectedChannel } = this;
         const editorWidget = this.editorWidget;
         if (selectedChannel && editorWidget) {

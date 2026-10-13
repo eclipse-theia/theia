@@ -40,6 +40,7 @@ ensureFrontendConfig();
 import { Walkthrough } from '../common/walkthrough-types';
 import { WalkthroughCommands } from '../common/walkthrough-commands';
 import { GettingStartedContribution } from './getting-started-contribution';
+import { GettingStartedWidget } from './getting-started-widget';
 
 describe('GettingStartedContribution', () => {
 
@@ -141,6 +142,41 @@ describe('GettingStartedContribution', () => {
 
             expect(reportedInfos).to.have.lengthOf(1);
             expect(resetCalls).to.be.empty;
+        });
+    });
+
+    describe('startup editor', () => {
+        /** Runs `onStart` with `workbench.startupEditor: welcomePage` and the given restored editors. */
+        async function startWith(restored: { textEditors?: number, mainAreaWidgetIds?: string[] }): Promise<void> {
+            (contribution as any).stateService = { reachedState: () => Promise.resolve() };
+            (contribution as any).preferenceService = { ready: Promise.resolve(), get: () => 'welcomePage' };
+            (contribution as any).editorManager = { all: new Array(restored.textEditors ?? 0).fill({}) };
+            (contribution as any).shell = {
+                getWidgets: (area: string) => area === 'main' ? (restored.mainAreaWidgetIds ?? []).map(id => ({ id })) : []
+            };
+            await contribution.onStart({} as any);
+            // Let the continuations of `reachedState` and `preferenceService.ready` run.
+            await new Promise(resolve => setTimeout(resolve, 0));
+        }
+
+        it('should open the Welcome page when nothing was restored', async () => {
+            await startWith({});
+            expect(openedView).to.be.true;
+        });
+
+        it('should not open the Welcome page when a text editor was restored', async () => {
+            await startWith({ textEditors: 1, mainAreaWidgetIds: ['code-editor-opener:file:///project/a.ts'] });
+            expect(openedView).to.be.false;
+        });
+
+        it('should not open the Welcome page when another kind of editor was restored', async () => {
+            await startWith({ mainAreaWidgetIds: ['plugin-custom-editor-sample:file:///project/a.flow'] });
+            expect(openedView).to.be.false;
+        });
+
+        it('should reveal the Welcome page when it is the only restored editor', async () => {
+            await startWith({ mainAreaWidgetIds: [GettingStartedWidget.ID] });
+            expect(openedView).to.be.true;
         });
     });
 

@@ -4,6 +4,20 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.77.0 - tbd
+
+<a name="breaking_changes_1.77.0">[Breaking Changes:](#breaking_changes_1.77.0)</a>
+
+- [ai-anthropic, ai-google, ai-ollama, ai-openai] `AnthropicModel`, `GoogleModel`, `OllamaModel` and `OpenAiModel` no longer take constructor arguments; they are `@injectable`, configured by an injected `<provider>ModelParams`, and created via `<provider>LanguageModelFactory` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-ollama, ai-openai] removed the unused `OllamaModelFactory` and `OpenAiModelFactory` symbols; use `OllamaLanguageModelFactory` and `OpenAiLanguageModelFactory` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-openai] moved `OpenAiModelUtils` from `openai-language-model.ts` to `openai-model-utils.ts` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-openai] replaced the SDK `runTools` runner: `OpenAiModel.createTools()` returns `ChatCompletionTool[]`, and `OpenAiModel.runnerOptions` and the `runnerOptions` parameter of `OpenAiResponseApiUtils.handleRequest` were removed [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [ai-openai] removed the `openAiModelUtils` and `responseApiUtils` fields of `OpenAiLanguageModelsManagerImpl` [#17623](https://github.com/eclipse-theia/theia/pull/17623)
+- [core] `TreeSelectionState` keeps the ids of the selected nodes rather than the nodes themselves, so that it does not retain nodes the tree has replaced. `selectionStack` became a getter that resolves those ids against the tree and leaves out the nodes it no longer holds, so it can no longer be redeclared as a property by a subclass [#18111](https://github.com/eclipse-theia/theia/pull/18111)
+- [debug] removed the `copyValue`, `valueRef` and `setValueRef` members from `DebugVariable` and `DebugWatchExpression`; adopters that use these public members need to update their integrations [#18132](https://github.com/eclipse-theia/theia/pull/18132)
+- [debug] `DebugConsoleSession.debugSession` is now a read-only `DebugSession | undefined`, as the console releases the session once it terminates. The setter is replaced by `startFor(session)`, the new `label` and `configurationName` describe a session that has already ended, and `id` is now generated, so a console is no longer found by `ConsoleSessionManager.get(session.id)` [#18111](https://github.com/eclipse-theia/theia/pull/18111)
+- [electron] upgraded Electron from 42.8.1 to 44.4.5. Downstream Electron applications must update their `electron` devDependency to `44.4.5`. Electron 44 requires macOS 13 (Ventura) or later and ships only 64-bit (x64/arm64) builds, and its clipboard module was rearchitected to the async W3C Clipboard API and is no longer exposed to the renderer process. As a result the `TheiaCoreAPI` preload method `readClipboard()` now returns `Promise<string>` (backed by `ipcRenderer.invoke`/`ipcMain.handle` instead of synchronous IPC) and `ElectronClipboardService.readText()` now returns a `Promise<string>`; adopters with a custom Electron preload script must return a promise from `readClipboard()`. Rebuilding native modules for Electron 44 requires GCC 13 or later, or Clang; on Ubuntu 22.04, whose GCC is older, build with Clang, e.g. `CC=clang CXX=clang++`. See the Electron breaking changes for [43.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-430) and [44.0](https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-440). [#18150](https://github.com/eclipse-theia/theia/pull/18150)
+
 ## 1.76.0 - 9/24/2026
 
 - [ai] added gpt-6-astra, claude-fable-5-1 and gemini-3.8-flash to the default models [#18033](https://github.com/eclipse-theia/theia/pull/18033)

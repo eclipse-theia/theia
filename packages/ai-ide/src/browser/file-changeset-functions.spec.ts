@@ -48,6 +48,7 @@ import { ChangeSetElementArgs, ChangeSetFileElementFactory, ChangeSetFileElement
 import { URI } from '@theia/core/lib/common/uri';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { withWorkspaceServiceDefaults } from '@theia/workspace/lib/browser/test/with-workspace-service-defaults';
+import { WRITE_CONTENT_MAX_SIZE_KB_PREF } from '../common/workspace-preferences';
 
 disableJSDOM();
 
@@ -55,6 +56,8 @@ describe('File Changeset Functions Cancellation Tests', () => {
     let cancellationTokenSource: CancellationTokenSource;
     let mockCtx: ChatToolContext;
     let container: Container;
+    let preferenceValues: Record<string, unknown>;
+    let createdElements: ChangeSetElementArgs[];
     before(() => {
         disableJSDOM = enableJSDOM();
     });
@@ -64,6 +67,8 @@ describe('File Changeset Functions Cancellation Tests', () => {
     });
     beforeEach(() => {
         cancellationTokenSource = new CancellationTokenSource();
+        preferenceValues = {};
+        createdElements = [];
 
         // Create a mock change set that doesn't do anything
         const mockChangeSet: Partial<ChangeSet> = {
@@ -100,17 +105,23 @@ describe('File Changeset Functions Cancellation Tests', () => {
             read: async () => ({ value: { toString: () => 'test content' } })
         } as unknown as FileService;
 
-        const mockFileChangeFactory: ChangeSetFileElementFactory = () => ({
-            uri: new URI('file:///workspace/test.txt'),
-            type: 'modify',
-            state: 'pending',
-            targetState: 'new content',
-            apply: async () => { },
-        } as ChangeSetFileElement);
+        const mockFileChangeFactory: ChangeSetFileElementFactory = (elementArgs: ChangeSetElementArgs) => {
+            createdElements.push(elementArgs);
+            return {
+                uri: new URI('file:///workspace/test.txt'),
+                type: 'modify',
+                state: 'pending',
+                targetState: 'new content',
+                apply: async () => { },
+            } as ChangeSetFileElement;
+        };
 
         // Register mocks in the container
         container.bind(WorkspaceFunctionScope).toConstantValue(mockWorkspaceScope);
         container.bind(ILogger).to(MockLogger).inSingletonScope();
+        container.bind(PreferenceService).toConstantValue({
+            get: <T>(preferenceName: string, defaultValue: T) => (preferenceValues[preferenceName] ?? defaultValue) as T
+        } as unknown as PreferenceService);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(ChangeSetFileElementFactory).toConstantValue(mockFileChangeFactory);
         container.bind(FileChangeSetTitleProvider).to(DefaultFileChangeSetTitleProvider).inSingletonScope();
@@ -314,6 +325,76 @@ describe('File Changeset Functions Cancellation Tests', () => {
 
             const result = await handler(JSON.stringify({ path: 'test.txt', content: 'new content' }), mockCtx);
             expect(result).to.equal('Successfully wrote content to file test.txt.');
+        });
+    });
+
+    describe('write content size guard', () => {
+        it('WriteFileContent rejects content exceeding the maximum write size', async () => {
+            preferenceValues[WRITE_CONTENT_MAX_SIZE_KB_PREF] = 1;
+            const handler = container.get(WriteFileContent).getTool().handler;
+
+            const result = await handler(JSON.stringify({ path: 'test.txt', content: 'x'.repeat(2048) }), mockCtx);
+
+            const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
+            expect(jsonResponse.error).to.match(/maximum write size/);
+            expect(jsonResponse.error).to.include('writeFileReplacements');
+            expect(createdElements).to.be.empty;
+        });
+
+        it('SuggestFileContent rejects content exceeding the maximum write size', async () => {
+            preferenceValues[WRITE_CONTENT_MAX_SIZE_KB_PREF] = 1;
+            const handler = container.get(SuggestFileContent).getTool().handler;
+
+            const result = await handler(JSON.stringify({ path: 'test.txt', content: 'x'.repeat(2048) }), mockCtx);
+
+            const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
+            expect(jsonResponse.error).to.match(/maximum write size/);
+            expect(jsonResponse.error).to.include('suggestFileReplacements');
+            expect(createdElements).to.be.empty;
+        });
+
+        it('WriteFileContent steers an oversized new file to creating it smaller first', async () => {
+            preferenceValues[WRITE_CONTENT_MAX_SIZE_KB_PREF] = 1;
+            container.rebind(FileService).toConstantValue({ exists: async () => false } as unknown as FileService);
+            const handler = container.get(WriteFileContent).getTool().handler;
+
+            const result = await handler(JSON.stringify({ path: 'test.txt', content: 'x'.repeat(2048) }), mockCtx);
+
+            const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
+            expect(jsonResponse.error).to.include('Create the file with a smaller initial part, then add the rest with writeFileReplacements');
+            expect(createdElements).to.be.empty;
+        });
+
+        it('tool descriptions state the current maximum write size', () => {
+            const writeTool = container.get(WriteFileContent).getTool();
+            const suggestTool = container.get(SuggestFileContent).getTool();
+            expect(writeTool.description).to.include('larger than 256KB');
+
+            preferenceValues[WRITE_CONTENT_MAX_SIZE_KB_PREF] = 64;
+
+            expect(writeTool.description).to.include('larger than 64KB');
+            expect(suggestTool.description).to.include('larger than 64KB');
+        });
+
+        it('WriteFileContent accepts content within the limit', async () => {
+            preferenceValues[WRITE_CONTENT_MAX_SIZE_KB_PREF] = 1;
+            const handler = container.get(WriteFileContent).getTool().handler;
+
+            const result = await handler(JSON.stringify({ path: 'test.txt', content: 'small content' }), mockCtx);
+
+            expect(result).to.equal('Successfully wrote content to file test.txt.');
+            expect(createdElements).to.have.length(1);
+        });
+
+        it('WriteFileContent still allows deleting a file (empty content)', async () => {
+            preferenceValues[WRITE_CONTENT_MAX_SIZE_KB_PREF] = 1;
+            const handler = container.get(WriteFileContent).getTool().handler;
+
+            const result = await handler(JSON.stringify({ path: 'test.txt', content: '' }), mockCtx);
+
+            expect(result).to.equal('Successfully wrote content to file test.txt.');
+            expect(createdElements).to.have.length(1);
+            expect(createdElements[0].type).to.equal('delete');
         });
     });
 });

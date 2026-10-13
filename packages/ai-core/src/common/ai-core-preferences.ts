@@ -240,11 +240,14 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
                 + ' `#ai-features.modelSettings.requestSettings#` for the same fields.\n\n'
                 + 'Each entry consists of:\n'
                 + '- `scope`: Defines when the setting applies (`modelId`, `providerId`, `agentId`).\n'
-                + '- `reasoning.level`: One of `off`, `minimal`, `low`, `medium`, `high`, `auto`.\n\n'
+                + '- `reasoning.level`: One of `off`, `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, `auto`.\n'
+                + 'Supported levels depend on the model. `none` explicitly requests no reasoning; `off` disables thinking'
+                + ' on Ollama. For other providers, `off` omits explicit reasoning effort, allowing provider defaults'
+                + ' or raw request settings to apply. `auto` uses the provider default.\n\n'
                 + 'Precedence at runtime (highest first): session override via the selector → this preference →'
                 + ' the model\'s declared default. Whichever the selector displays is what gets sent. To override'
                 + ' a provider\'s reasoning field manually via `#ai-features.modelSettings.requestSettings#`, set'
-                + ' `reasoning.level` to `off` here so the level-based translation is disabled.\n\n'
+                + ' `reasoning.level` to `off` here so the level-based translation is disabled (except on Ollama).\n\n'
                 + 'Entries are matched based on scope specificity (agent: 100, model: 10, provider: 1 points).\n\n'
                 + 'Example:\n'
                 + '```json\n'
@@ -272,7 +275,7 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
                         properties: {
                             level: {
                                 type: 'string',
-                                enum: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
+                                enum: ['off', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'auto'],
                                 default: 'auto'
                             }
                         },
