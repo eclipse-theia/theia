@@ -19,7 +19,7 @@ const path = require('path');
 const chalk = require('chalk');
 const cp = require('child_process');
 const fs = require('fs');
-const https = require('https');
+const { fetchVersion } = require('./npm-registry');
 
 /*
  * Usage: node scripts/check-publish.js [--summary-file <path>]
@@ -32,9 +32,6 @@ const https = require('https');
 const summaryFileIndex = process.argv.indexOf('--summary-file');
 const summaryFile = summaryFileIndex >= 0 ? process.argv[summaryFileIndex + 1] : undefined;
 
-/** The registry the packages were published to. */
-const registry = (process.env.npm_config_registry || 'https://registry.npmjs.org/').replace(/\/+$/, '');
-
 /**
  * How long to wait for packages that are not available yet, in milliseconds.
  * npm scans every new version for malware before it releases it, and until then answers 404 for
@@ -44,8 +41,6 @@ const timeout = 30 * 60 * 1000;
 
 /** The delay between two lookups of the packages that are not available yet, in milliseconds. */
 const interval = 30 * 1000;
-
-const agent = new https.Agent({ keepAlive: true, maxSockets: 10 });
 
 checkPublish(summaryFile).catch(error => {
     console.error(error);
@@ -161,44 +156,4 @@ function writeSummary(total, pending) {
             ...pending.map(spec => `- \`${spec.name}@${spec.version}\``));
     }
     fs.appendFileSync(summaryPath, lines.join('\n') + '\n');
-}
-
-/**
- * Asks the registry for a single version of a package.
- *
- * This deliberately does not shell out to `npm view`: that downloads the full packument and
- * caches it for the `max-age=300` the registry sends with it, so every lookup within five
- * minutes would be answered from the local cache with the same stale data. The per-version
- * endpoint used here is not cached.
- *
- * @param {string} name the package name, e.g. `@theia/core`
- * @param {string} version an exact version, e.g. `1.76.0`
- * @returns {Promise<string | undefined>} the published version, or `undefined` if the registry does not know it
- */
-function fetchVersion(name, version) {
-    const url = `${registry}/${name.replace('/', '%2f')}/${encodeURIComponent(version)}`;
-
-    return new Promise((resolve, reject) => {
-        const request = https.get(url, { agent, headers: { accept: 'application/json' } }, response => {
-            const { statusCode } = response;
-            let body = '';
-            response.setEncoding('utf8');
-            response.on('data', chunk => body += chunk);
-            response.on('end', () => {
-                if (statusCode === 404) {
-                    resolve(undefined);
-                } else if (statusCode !== 200) {
-                    reject(new Error(`${url} responded with ${statusCode}`));
-                } else {
-                    try {
-                        resolve(JSON.parse(body).version);
-                    } catch (error) {
-                        reject(new Error(`${url} responded with unparseable JSON: ${error.message}`));
-                    }
-                }
-            });
-        });
-        request.setTimeout(30000, () => request.destroy(new Error(`${url} timed out`)));
-        request.on('error', reject);
-    });
 }
