@@ -34,6 +34,11 @@ export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
 export const DIR_NODE_CLASS = 'theia-DirNode';
 export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
 
+/**
+ * Constant indent guide padding value.
+ */
+const INDENT_GUIDE_PADDING = 6;
+
 @injectable()
 export class FileTreeWidget extends CompressedTreeWidget {
 
@@ -264,9 +269,9 @@ export class FileTreeWidget extends CompressedTreeWidget {
     protected override getPaddingLeft(node: TreeNode, props: NodeProps): number {
         if (this.hidesExplorerArrows) {
             // additional left padding instead of top-level expansion toggle
-            return super.getPaddingLeft(node, props) + this.props.leftPadding;
+            return this.getDepthPadding(props.depth) + this.props.leftPadding;
         }
-        return super.getPaddingLeft(node, props);
+        return this.getDepthPadding(props.depth);
     }
 
     protected override needsExpansionTogglePadding(node: TreeNode): boolean {
@@ -325,6 +330,10 @@ export class FileTreeWidget extends CompressedTreeWidget {
 
     protected override getDepthPadding(depth: number): number {
         // add additional depth so file nodes are rendered with padding in relation to the top level root node.
-        return super.getDepthPadding(depth + 1);
+        return (depth) * this.treeIndent + this.props.leftPadding ;
+    }
+
+    protected override getIndentGuidePadding(depth: number): number {
+        return this.getDepthPadding(depth - 1) + INDENT_GUIDE_PADDING;
     }
 }
