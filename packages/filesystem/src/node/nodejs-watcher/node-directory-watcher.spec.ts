@@ -1258,6 +1258,27 @@ describe('node-directory-watcher', function (): void {
                 provider.unwatch(1);
             }
         });
+
+        it('opens no second handle on a directory when a file request for it is merged', async () => {
+            const provider = new DirectoryWatcherProvider(NO_LOGGING, box, TIMINGS, box.host);
+            const opened: string[] = [];
+            const watch = box.host.watch.bind(box.host);
+            box.host.watch = (directory, listener) => {
+                opened.push(directory);
+                return watch(directory, listener);
+            };
+            try {
+                await provider.watch(0, box.directory());
+                await provider.watch(1, box.file(box.path('later.txt'), 2));
+                box.write('later.txt');
+
+                await box.expect(2, 'added later.txt');
+                assert.deepStrictEqual(opened.filter(directory => directory === box.root).length, 1);
+            } finally {
+                provider.unwatch(0);
+                provider.unwatch(1);
+            }
+        });
     });
 
     describe('disposal', () => {

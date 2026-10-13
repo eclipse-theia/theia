@@ -88,6 +88,8 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
     protected children = new Set<string>();
     /** Set once a start recorded the children. Until then, what clients saw of them is unknown. */
     private started = false;
+    /** The directory that {@link children} list, which a re-key can move {@link watchedDirectory} away from. */
+    private childrenDirectory: string;
     /** The children clients last saw. Kept until a restart reports its diff, so a superseded restart passes it on. */
     private restartBaseline: Set<string> | undefined;
     /** Set once the watched path is found missing or reported deleted, until a start reports it added. */
@@ -133,6 +135,7 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
         this.scheduleFlush = throttle(() => this.flush(), timings.changeDelay, { leading: false });
         this.watchedDirectory = target;
         this.watchPath = target;
+        this.childrenDirectory = target;
         this.announcedDirectory = target;
         // Queued, as a restart is, so that events flushed during the first read wait for its snapshot.
         this.changeQueue = this.whenStarted = this.start(this.attempt.token)
@@ -209,6 +212,10 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
         if (token.isCancellationRequested) {
             return;
         }
+        if (!this.host.samePath(this.watchedDirectory, this.childrenDirectory)) {
+            // The baseline lists another directory's children, so skip its diff.
+            this.restartBaseline = undefined;
+        }
         const children = await this.readChildren(this.restartBaseline ?? new Set());
         if (this.isDisposed) {
             return;
@@ -220,18 +227,9 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
         }
         // Batches now resolve against this snapshot, so even a superseded start reports it.
         this.children = children;
+        this.childrenDirectory = this.watchedDirectory;
         this.started = true;
         this.debug('STARTED', this.watchedDirectory);
-        if (!this.host.samePath(this.watchedDirectory, this.announcedDirectory)) {
-            // The baseline lists another directory's children, so skip its diff.
-            this.restartBaseline = undefined;
-            this.announcedDirectory = this.watchedDirectory;
-            this.directoryResolvedEmitter.fire();
-            if (this.isDisposed) {
-                // Merged into the watcher already on the directory, which reports to the requests instead.
-                return;
-            }
-        }
         // After a reported loss, file requests hear of their file here, so the diff skips them.
         const lossReported = this.watchedPathMissing;
         if (lossReported) {
@@ -251,6 +249,15 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
             if (!await this.host.exists(this.watchPath) || !await this.resolveWatchedDirectory()) {
                 this.markMissing();
             } else {
+                if (!this.host.samePath(this.watchedDirectory, this.announcedDirectory)) {
+                    // Announced before the handle opens, so a merge spares the directory a second handle.
+                    this.announcedDirectory = this.watchedDirectory;
+                    this.directoryResolvedEmitter.fire();
+                    if (this.isDisposed) {
+                        // Merged into the watcher already on the directory, which reports to the requests instead.
+                        return;
+                    }
+                }
                 // Read before the handle opens, so a replacement after this point shows as another identity.
                 const identity = await this.host.readIdentity(this.watchedDirectory);
                 if (identity && !token.isCancellationRequested) {
