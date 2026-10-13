@@ -576,7 +576,7 @@ export class WorkspaceFunctionScope {
 
     async shouldExclude(stat: FileStat): Promise<boolean> {
         const shouldConsiderGitIgnore = this.preferences.get(CONSIDER_GITIGNORE_PREF, false);
-        const userExcludePatterns = this.preferences.get<string>(USER_EXCLUDE_PATTERN_PREF, []);
+        const userExcludePatterns = this.preferences.get<string[]>(USER_EXCLUDE_PATTERN_PREF, []);
 
         if (this.isUserExcluded(stat.resource.path.base, userExcludePatterns)) {
             return true;
@@ -1384,7 +1384,7 @@ export class FindFilesByPattern implements ToolProvider {
         try {
             const maxResults = 200;
             const useGitIgnore = this.preferences.get(CONSIDER_GITIGNORE_PREF, true);
-            const userExcludes = this.preferences.get<string>(USER_EXCLUDE_PATTERN_PREF, []);
+            const userExcludes = this.preferences.get<string[]>(USER_EXCLUDE_PATTERN_PREF, []);
             const excludes = [...userExcludes, ...(excludePatterns ?? [])];
 
             // Resolve the set of roots to search and how each root's results should be rendered.

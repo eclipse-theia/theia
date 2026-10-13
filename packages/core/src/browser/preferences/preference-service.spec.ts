@@ -386,14 +386,14 @@ describe('Preference Service', () => {
 
         it('returns the array default when no value is stored', () => {
             setupSchema();
-            const value: string[] = prefService.get<string>('test.array', ['a', 'b']);
+            const value: string[] = prefService.get<string[]>('test.array', ['a', 'b']);
             expect(value).to.deep.equal(['a', 'b']);
         });
 
         it('returns the stored array value over the default', () => {
             setupSchema();
             getProvider(PreferenceScope.User).setPreference('test.array', ['x', 'y']);
-            const value: string[] = prefService.get<string>('test.array', []);
+            const value: string[] = prefService.get<string[]>('test.array', []);
             expect(value).to.deep.equal(['x', 'y']);
         });
 

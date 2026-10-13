@@ -28,7 +28,7 @@ export class MockPreferenceService implements PreferenceService {
     get(preferenceName: string, defaultValue: string): string;
     get(preferenceName: string, defaultValue: number): number;
     get(preferenceName: string, defaultValue: boolean): boolean;
-    get<T>(preferenceName: string, defaultValue: T[]): T[];
+    get<T extends unknown[]>(preferenceName: string, defaultValue: T): T;
     get<T>(preferenceName: string, options: PreferenceGetOptions<T> & { fallback: T }): T;
     get<T>(preferenceName: string, options?: PreferenceGetOptions<T>): T | undefined;
     get<T>(): T | undefined {

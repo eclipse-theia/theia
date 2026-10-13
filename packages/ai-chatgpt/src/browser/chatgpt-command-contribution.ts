@@ -93,13 +93,13 @@ export class ChatGptCommandContribution implements CommandContribution, Disposab
         registry.registerCommand(ChatGptCommands.SIGN_IN, {
             execute: () => this.signIn(),
             isEnabled: () => !this.authState.isAuthenticated,
-            isVisible: () => this.activationService.isActive && this.preferenceService.get<boolean>(CHATGPT_ENABLED_PREF, true)
+            isVisible: () => this.activationService.isActive && this.preferenceService.get(CHATGPT_ENABLED_PREF, true)
         });
 
         registry.registerCommand(ChatGptCommands.SIGN_OUT, {
             execute: () => this.signOut(),
             isEnabled: () => this.authState.isAuthenticated,
-            isVisible: () => this.activationService.isActive && this.preferenceService.get<boolean>(CHATGPT_ENABLED_PREF, true)
+            isVisible: () => this.activationService.isActive && this.preferenceService.get(CHATGPT_ENABLED_PREF, true)
         });
     }
 

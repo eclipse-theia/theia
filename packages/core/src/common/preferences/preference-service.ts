@@ -31,13 +31,9 @@ import { deepFreeze } from '../objects';
 import { unreachable } from '../types';
 import { ILogger } from '../logger';
 
-/**
- * Options for {@link PreferenceService.get()}.
- */
-
 type AtLeastOneKey<T> = {
     [K in keyof T]: Pick<T, K> & Partial<Omit<T, K>>
-  }[keyof T];
+}[keyof T];
 
 interface PreferenceGetOptionsRaw<T> {
     /** Value to return when no stored value exists for the preference. */
@@ -48,6 +44,9 @@ interface PreferenceGetOptionsRaw<T> {
     override: string | undefined;
 }
 
+/**
+ * Options for {@link PreferenceService.get()}. At least one of the keys has to be present.
+ */
 export type PreferenceGetOptions<T> = AtLeastOneKey<PreferenceGetOptionsRaw<T>>;
 
 /**
@@ -129,7 +128,8 @@ export interface PreferenceService extends Disposable {
     get(preferenceName: string, defaultValue: string): string;
     get(preferenceName: string, defaultValue: number): number;
     get(preferenceName: string, defaultValue: boolean): boolean;
-    get<T>(preferenceName: string, defaultValue: T[]): T[];
+    get<T extends string | number | boolean>(preferenceName: string, defaultValue: T): T;
+    get<T extends unknown[]>(preferenceName: string, defaultValue: T): T;
     get<T>(preferenceName: string, options: PreferenceGetOptions<T> & { fallback: T }): T;
     get<T>(preferenceName: string, options?: PreferenceGetOptions<T>): T | undefined;
     /**
@@ -173,8 +173,8 @@ export interface PreferenceService extends Disposable {
      *
      * @param preferenceName the preference identifier.
      * @param resourceUri the uri of the resource for which the preference is stored.
-     * @param overrideIdentifier the identifier of the override to use.
-     * Otherwise, values for the override will be returned where defined, and values from the base preference will be returned otherwise.
+     * @param overrideIdentifier @param overrideIdentifier the identifier of the override to use.
+     * Values for the override are returned where defined, values of the base preference otherwise.
      *
      * @return an object containing the value of the given preference for all scopes.
      */
@@ -391,13 +391,14 @@ export class PreferenceServiceImpl implements PreferenceService {
     }
 
     has(preferenceName: string, resourceUri?: string, overrideIdentifier?: string): boolean {
-        return this.get(preferenceName, { resource: resourceUri, override: overrideIdentifier}) !== undefined;
+        return this.get(preferenceName, { resource: resourceUri, override: overrideIdentifier }) !== undefined;
     }
 
     get(preferenceName: string, defaultValue: string): string;
     get(preferenceName: string, defaultValue: number): number;
     get(preferenceName: string, defaultValue: boolean): boolean;
-    get<T>(preferenceName: string, defaultValue: T[]): T[];
+    get<T extends string | number | boolean>(preferenceName: string, defaultValue: T): T;
+    get<T extends unknown[]>(preferenceName: string, defaultValue: T): T;
     get<T>(preferenceName: string, options: PreferenceGetOptions<T> & { fallback: T }): T;
     get<T>(preferenceName: string, options?: PreferenceGetOptions<T>): T | undefined;
     get<T>(preferenceName: string, optionsOrFallback?: PreferenceGetOptions<T> | string | number | boolean | T[]): T | undefined {

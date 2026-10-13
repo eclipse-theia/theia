@@ -15,8 +15,6 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { ILogger } from '../logger';
-import { MockLogger } from '../test/mock-logger';
 import { SessionPreferenceProvider } from './session-preference-provider';
 import { PreferenceScope } from './preference-scope';
 
@@ -26,7 +24,6 @@ describe('SessionPreferenceProvider', () => {
 
     beforeEach(() => {
         provider = new SessionPreferenceProvider();
-        (provider as unknown as { logger: ILogger }).logger = new MockLogger();
         // PostConstruct emulation
         (provider as unknown as { init(): void }).init();
     });
