@@ -331,18 +331,36 @@ describe('node-directory-watcher', function (): void {
         it('still confirms a deletion when another one on its timer is called off', async () => {
             box.write('a.txt');
             box.write('b.txt');
-            await box.watching(box.root, box.directory());
+            // A long grace period, so the deletions wait for the second batch on a slow host.
+            const watcher = new NodeDirectoryWatcher(box.root, NO_LOGGING, box, { ...TIMINGS, deleteDelay: 1000 }, box.host);
+            watcher.addRequest(0, box.directory());
+            await watcher.whenStarted;
+            const lookedUp = new Deferred<void>();
+            const childLookup = box.host.childLookup.bind(box.host);
+            box.host.childLookup = directory => {
+                const storedName = childLookup(directory);
+                return async fileName => {
+                    const stored = await storedName(fileName);
+                    if (fileName === 'b.txt') {
+                        lookedUp.resolve();
+                    }
+                    return stored;
+                };
+            };
+            try {
+                box.remove('a.txt');
+                box.remove('b.txt');
+                box.fire('rename', 'a.txt');
+                box.fire('rename', 'b.txt');
+                // The batch looked up both names, so it found a.txt missing.
+                await lookedUp.promise;
+                box.write('a.txt');
+                box.fire('rename', 'a.txt');
 
-            box.remove('a.txt');
-            box.remove('b.txt');
-            box.fire('rename', 'a.txt');
-            box.fire('rename', 'b.txt');
-            // After the batch resolved, within the grace period.
-            await wait(TIMINGS.changeDelay * 2);
-            box.write('a.txt');
-            box.fire('rename', 'a.txt');
-
-            await box.expect(1, 'updated a.txt', 'deleted b.txt');
+                await box.expect(1, 'updated a.txt', 'deleted b.txt');
+            } finally {
+                watcher.dispose();
+            }
         });
 
         it('reports a file that appears and vanishes within the grace period as both', async () => {
@@ -1269,8 +1287,11 @@ describe('node-directory-watcher', function (): void {
             };
             try {
                 await provider.watch(0, box.directory());
+                // Started before the file appears, so only its event reports the file.
+                await (provider['watcherFor'](0) as NodeDirectoryWatcher).whenStarted;
                 await provider.watch(1, box.file(box.path('later.txt'), 2));
                 box.write('later.txt');
+                box.fire('rename', 'later.txt');
 
                 await box.expect(2, 'added later.txt');
                 assert.deepStrictEqual(opened.filter(directory => directory === box.root).length, 1);
