@@ -927,6 +927,55 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     /**
+     * Resolves a path that contains the basename of a workspace root, preceded by nothing or by the
+     * trailing segments of the root's parent path, e.g. `bob/app/src` for the root `/home/bob/app`.
+     * Unlike {@link resolveRootPrefixedPath}, this does not depend on the current root names, so it
+     * also resolves paths that were prefixed with a root name before the workspace roots changed.
+     *
+     * @returns the distinct candidates in workspace order, which are several if the path is ambiguous,
+     * or none if the path is absolute, leaves its root or does not contain the basename of a root.
+     */
+    resolveSupraRelativePath(supraRelativePath: string): URI[] {
+        const path = new Path(Path.normalizePathSeparator(supraRelativePath)).normalize();
+        const segments = path.toString().split('/').filter(segment => segment.length > 0);
+        if (path.isAbsolute || Path.isDrive(segments[0] ?? '') || segments.includes('..')) {
+            return [];
+        }
+        const candidates: URI[] = [];
+        for (const root of this.tryGetRoots()) {
+            const candidate = this.resolveSupraRelativeSegments(root.resource, segments);
+            if (candidate && !candidates.some(other => other.isEqual(candidate))) {
+                candidates.push(candidate);
+            }
+        }
+        return candidates;
+    }
+
+    /**
+     * Resolves `segments` against the given root as described in {@link resolveSupraRelativePath}.
+     */
+    protected resolveSupraRelativeSegments(rootUri: URI, segments: string[]): URI | undefined {
+        const rootBasename = rootUri.path.base;
+        const rootPathSegments = rootUri.path.toString().split('/').filter(segment => segment.length > 0);
+        const rootPrecedingSegments = rootPathSegments.slice(0, rootPathSegments.length - 1);
+        for (let i = 0; i < segments.length; i++) {
+            if (segments[i] !== rootBasename) {
+                continue;
+            }
+            const pathPrecedingSegments = segments.slice(0, i);
+            if (pathPrecedingSegments.length > rootPrecedingSegments.length) {
+                continue;
+            }
+            const rootTail = rootPrecedingSegments.slice(rootPrecedingSegments.length - pathPrecedingSegments.length);
+            if (pathPrecedingSegments.every((segment, j) => segment === rootTail[j])) {
+                const rest = segments.slice(i + 1).join('/');
+                return rest ? rootUri.resolve(rest) : rootUri;
+            }
+        }
+        return undefined;
+    }
+
+    /**
      * Splits a `/`-separated path that starts with a root name, as in {@link getRootPrefixedPath}, into
      * that root and the rest of the path, which is empty for a bare root name. The rest is not normalized,
      * so it may as well be a glob. If more than one root name is a prefix of the path, the longest one wins.

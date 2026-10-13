@@ -173,7 +173,6 @@ export class WorkspaceFunctionScope {
     resolveRelativePath(relativePath: string): URI {
         const normalizedPath = new Path(Path.normalizePathSeparator(relativePath)).normalize().toString();
         const roots = this.getAllRootUris();
-        const segments = normalizedPath.split('/');
 
         // Phase 1 — Root+relative check:
         const rootRelative = this.workspaceService.resolveRootPrefixedPath(normalizedPath);
@@ -182,17 +181,11 @@ export class WorkspaceFunctionScope {
         }
 
         // Phase 2 — Supra-relative check:
-        const candidates = new Map<string, URI>();
-        for (const rootUri of roots) {
-            const candidate = this.resolveSupraRelativePath(rootUri, segments);
-            if (candidate) {
-                candidates.set(candidate.toString(), candidate);
-            }
+        const candidates = this.workspaceService.resolveSupraRelativePath(normalizedPath);
+        if (candidates.length === 1) {
+            return candidates[0];
         }
-        if (candidates.size === 1) {
-            return candidates.values().next().value!;
-        }
-        if (candidates.size > 1) {
+        if (candidates.length > 1) {
             throw new Error(
                 `Path '${relativePath}' is ambiguous in this multi-root workspace. ` +
                 `Prefix it with one of the workspace root names: ${this.describeRoots()}`
@@ -209,31 +202,6 @@ export class WorkspaceFunctionScope {
             `Could not resolve path '${relativePath}'. In a multi-root workspace, prefix paths with the workspace root name ` +
             `(e.g., 'rootName/path/to/file'). Available roots: ${this.describeRoots()}`
         );
-    }
-
-    /**
-     * Resolves `segments` if they contain the basename of `rootUri`, preceded by nothing or by the
-     * trailing segments of the root's parent path, e.g. `bob/app/src` for the root `/home/bob/app`.
-     */
-    protected resolveSupraRelativePath(rootUri: URI, segments: string[]): URI | undefined {
-        const rootBasename = rootUri.path.base;
-        const rootPathSegments = rootUri.path.toString().split('/').filter(s => s.length > 0);
-        const rootPrecedingSegments = rootPathSegments.slice(0, rootPathSegments.length - 1);
-        for (let i = 0; i < segments.length; i++) {
-            if (segments[i] !== rootBasename) {
-                continue;
-            }
-            const pathPrecedingSegments = segments.slice(0, i);
-            if (pathPrecedingSegments.length > rootPrecedingSegments.length) {
-                continue;
-            }
-            const rootTail = rootPrecedingSegments.slice(rootPrecedingSegments.length - pathPrecedingSegments.length);
-            if (pathPrecedingSegments.every((segment, j) => segment === rootTail[j])) {
-                const restOfPath = segments.slice(i + 1).join('/');
-                return restOfPath ? rootUri.resolve(restOfPath) : rootUri;
-            }
-        }
-        return undefined;
     }
 
     /**

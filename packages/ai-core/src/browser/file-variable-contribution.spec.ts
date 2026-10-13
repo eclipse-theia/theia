@@ -43,6 +43,7 @@ describe('FileVariableContribution path resolution', () => {
     const ROOTS = ['file:///alice/app', 'file:///bob/app', 'file:///ws/theia'];
     const FILES = ['file:///alice/app/src/a.ts', 'file:///bob/app/src/a.ts', 'file:///bob/app/src/only-bob.ts', 'file:///ws/theia/README.md'];
 
+    let roots: string[];
     let workspaceService: WorkspaceService;
     let contribution: TestFileVariableContribution;
 
@@ -54,10 +55,11 @@ describe('FileVariableContribution path resolution', () => {
     });
 
     beforeEach(() => {
+        roots = ROOTS;
         const container = new Container();
         const fileService = { exists: async (uri: URI) => FILES.includes(uri.toString()) } as unknown as FileService;
         workspaceService = withWorkspaceServiceDefaults({
-            tryGetRoots: () => ROOTS.map(root => ({ resource: new URI(root), isDirectory: true }))
+            tryGetRoots: () => roots.map(root => ({ resource: new URI(root), isDirectory: true }))
         });
         container.bind(WorkspaceService).toConstantValue(workspaceService);
         container.bind(FileService).toConstantValue(fileService);
@@ -81,6 +83,12 @@ describe('FileVariableContribution path resolution', () => {
 
     it('does not resolve a path prefixed with a basename shared by several roots that contain the file', async () => {
         expect(await resolve('app/src/a.ts')).to.be.undefined;
+    });
+
+    it('resolves a path prefixed with a root name that the roots no longer assign', async () => {
+        // Saved as `alice/app/...` while `/bob/app` was open, too; now the root is just named `app`.
+        roots = ['file:///alice/app', 'file:///ws/theia'];
+        expect(await resolve('alice/app/src/a.ts')).to.equal('file:///alice/app/src/a.ts');
     });
 
     it('resolves a path without a root name, as saved by earlier versions', async () => {

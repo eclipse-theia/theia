@@ -34,8 +34,8 @@ export class WorkspaceRelativePathResolver {
     /**
      * Resolves a relative path to an existing file or folder in the workspace. Besides the format of
      * {@link WorkspaceService.getRootPrefixedPath}, it accepts the formats of paths saved by earlier versions,
-     * e.g. in chat sessions: prefixed with the basename of a root, if only one of the roots with that basename
-     * contains the file, or relative to any root.
+     * e.g. in chat sessions, or before the workspace roots changed: in the format of
+     * {@link WorkspaceService.resolveSupraRelativePath}, if only one of the roots contains the file, or relative to any root.
      *
      * @returns `undefined` if the path is absolute, leaves its root or does not resolve to an existing file or folder.
      */
@@ -50,20 +50,16 @@ export class WorkspaceRelativePathResolver {
         if (rootPrefixed && await this.fileService.exists(rootPrefixed)) {
             return rootPrefixed;
         }
-        const roots = this.workspaceService.tryGetRoots();
-        const basenamePrefixed: URI[] = [];
-        for (const root of roots) {
-            if (root.resource.path.base === segments[0]) {
-                const rest = segments.slice(1).join('/');
-                const uri = rest ? root.resource.resolve(rest) : root.resource;
-                if (!basenamePrefixed.some(other => other.isEqual(uri)) && await this.fileService.exists(uri)) {
-                    basenamePrefixed.push(uri);
-                }
+        const supraRelative: URI[] = [];
+        for (const uri of this.workspaceService.resolveSupraRelativePath(normalizedPath)) {
+            if (await this.fileService.exists(uri)) {
+                supraRelative.push(uri);
             }
         }
-        if (basenamePrefixed.length === 1) {
-            return basenamePrefixed[0];
+        if (supraRelative.length === 1) {
+            return supraRelative[0];
         }
+        const roots = this.workspaceService.tryGetRoots();
         for (const root of roots) {
             const uri = root.resource.resolve(segments.join('/'));
             if (await this.fileService.exists(uri)) {

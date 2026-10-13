@@ -160,6 +160,37 @@ describe('WorkspaceService root names', () => {
         });
     });
 
+    describe('resolveSupraRelativePath', () => {
+
+        const resolve = (service: WorkspaceService, path: string): string[] => service.resolveSupraRelativePath(path).map(uri => uri.toString());
+
+        it('resolves a path that starts with the basename of a root', () => {
+            const service = workspaceWith('file:///home/user/frontend', 'file:///home/user/backend');
+            expect(resolve(service, 'backend/src/index.ts')).to.deep.equal(['file:///home/user/backend/src/index.ts']);
+            expect(resolve(service, 'backend')).to.deep.equal(['file:///home/user/backend']);
+        });
+
+        it('resolves a path prefixed with more of the root path than its name', () => {
+            const service = workspaceWith('file:///alice/app');
+            expect(resolve(service, 'alice/app/src/index.ts')).to.deep.equal(['file:///alice/app/src/index.ts']);
+            expect(resolve(service, 'bob/app/src/index.ts')).to.deep.equal([]);
+        });
+
+        it('resolves a basename shared by several roots in each of them', () => {
+            const service = workspaceWith('file:///alice/app', 'file:///bob/app');
+            expect(resolve(service, 'app/src/index.ts')).to.deep.equal(['file:///alice/app/src/index.ts', 'file:///bob/app/src/index.ts']);
+            expect(resolve(service, 'bob/app/src/index.ts')).to.deep.equal(['file:///bob/app/src/index.ts']);
+        });
+
+        it('does not resolve absolute paths, paths leaving the root or paths without a root basename', () => {
+            const service = workspaceWith('file:///home/user/backend');
+            expect(resolve(service, '/home/user/backend/a.ts')).to.deep.equal([]);
+            expect(resolve(service, 'C:\\backend\\a.ts')).to.deep.equal([]);
+            expect(resolve(service, '../backend/a.ts')).to.deep.equal([]);
+            expect(resolve(service, 'src/index.ts')).to.deep.equal([]);
+        });
+    });
+
     describe('splitRootPrefixedPath', () => {
 
         const split = (service: WorkspaceService, path: string): { rootName: string; rootUri: string; rest: string } | undefined => {
