@@ -25,11 +25,12 @@ import 'reflect-metadata';
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { Event } from '@theia/core';
+import { Event, SelectionService } from '@theia/core';
 import { ApplicationShell, BaseWidget, lock, Widget } from '@theia/core/lib/browser';
+import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { TabBar } from '@theia/core/shared/@lumino/widgets';
 import URI from '@theia/core/lib/common/uri';
-import { EditorManager } from '@theia/editor/lib/browser';
+import { EditorManager, EditorWidget, TextEditor } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { OpenEditorsVariableContribution, OPEN_EDITORS_VARIABLE } from './open-editors-variable-contribution';
 
@@ -71,9 +72,30 @@ class TestEditor extends BaseWidget {
 
 const workspaceRoots = [new URI('file:///project'), new URI('memfs:///project')];
 
+function diffEditor(left: string, right: string): EditorWidget {
+    const editor = {
+        uri: DiffUris.encode(new URI(left), new URI(right)),
+        node: document.createElement('div'),
+        document: { dirty: false, onDirtyChanged: Event.None },
+        getResourceUri: () => new URI(right),
+        onSelectionChanged: Event.None,
+        onFocusChanged: Event.None,
+        onDidChangeReadOnly: Event.None,
+        dispose: () => { }
+    } as unknown as TextEditor;
+    return new EditorWidget(editor, {} as SelectionService);
+}
+
+/**
+ * Creates a tab bar and shows its current widget, like the dock panel does.
+ */
 function tabBar(widgets: Widget[], current?: Widget): TabBar<Widget> {
     const titles = widgets.map(widget => widget.title);
-    return { titles, currentTitle: current?.title ?? titles[0] } as unknown as TabBar<Widget>;
+    const currentTitle = current?.title ?? titles[0];
+    if (currentTitle && !currentTitle.owner.isAttached) {
+        Widget.attach(currentTitle.owner, document.body);
+    }
+    return { titles, currentTitle } as unknown as TabBar<Widget>;
 }
 
 describe('OpenEditorsVariableContribution', () => {
@@ -109,6 +131,10 @@ describe('OpenEditorsVariableContribution', () => {
         bottomAreaTabBars = [];
         currentWidget = undefined;
         textEditors = [];
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = '';
     });
 
     it('lists editors in tab order with their state', async () => {
@@ -151,6 +177,25 @@ describe('OpenEditorsVariableContribution', () => {
         textEditors = [main, secondaryWindow];
 
         expect(await resolve()).to.equal("'project/main.ts' (visible), 'project/bottom.ts' (visible), 'project/secondary.ts'");
+    });
+
+    it('does not list editors of a collapsed panel as visible', async () => {
+        const main = new TestEditor('file:///project/main.ts');
+        const bottom = new TestEditor('file:///project/bottom.ts');
+        mainAreaTabBars = [tabBar([main])];
+        bottomAreaTabBars = [tabBar([bottom])];
+        bottom.hide();
+
+        expect(await resolve()).to.equal("'project/main.ts' (visible), 'project/bottom.ts'");
+    });
+
+    it('skips diff editors that compare a file', async () => {
+        const diff = diffEditor('git:///project/a.ts?HEAD', 'file:///project/a.ts');
+        const other = new TestEditor('file:///project/b.ts');
+        mainAreaTabBars = [tabBar([diff, other], other)];
+        textEditors = [diff];
+
+        expect(await resolve()).to.equal("'project/b.ts' (visible)");
     });
 
     it('skips widgets that are not editors of a file', async () => {

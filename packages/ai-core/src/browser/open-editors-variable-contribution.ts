@@ -16,6 +16,7 @@
 
 import { MaybePromise, nls, UNTITLED_SCHEME } from '@theia/core';
 import { ApplicationShell, isLocked, NavigatableWidget, Saveable, Widget } from '@theia/core/lib/browser';
+import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -46,7 +47,7 @@ export interface OpenEditorInfo {
     kind?: string;
     /** The editor is the current editor of the main area. */
     active: boolean;
-    /** The editor is the selected tab of its tab bar, e.g. the other side of a split. */
+    /** The editor is the selected tab of its tab bar and is shown, e.g. the other side of a split. */
     visible: boolean;
     dirty: boolean;
     readOnly: boolean;
@@ -115,7 +116,7 @@ export class OpenEditorsVariableContribution implements AIVariableContribution, 
         const currentWidget = this.shell.getCurrentWidget('main');
         for (const tabBar of [...this.shell.mainAreaTabBars, ...this.shell.bottomAreaTabBars]) {
             for (const title of tabBar.titles) {
-                add(title.owner, title.owner === currentWidget, title === tabBar.currentTitle);
+                add(title.owner, title.owner === currentWidget, title === tabBar.currentTitle && title.owner.isVisible);
             }
         }
         for (const editor of this.editorManager.all) {
@@ -126,7 +127,7 @@ export class OpenEditorsVariableContribution implements AIVariableContribution, 
 
     protected createOpenEditorInfo(widget: Widget, active: boolean, visible: boolean): OpenEditorInfo | undefined {
         const uri = NavigatableWidget.getUri(widget);
-        if (!uri || !this.isListedUri(uri)) {
+        if (!uri || !this.isListedUri(uri) || this.isDiffEditor(widget)) {
             return undefined;
         }
         return {
@@ -145,6 +146,13 @@ export class OpenEditorsVariableContribution implements AIVariableContribution, 
      */
     protected isListedUri(uri: URI): boolean {
         return uri.scheme === 'file' || uri.scheme === UNTITLED_SCHEME || !!this.workspaceService.getWorkspaceRootUri(uri);
+    }
+
+    /**
+     * A diff editor reports the URI of its modified side, which is a file if it compares the working tree.
+     */
+    protected isDiffEditor(widget: Widget): boolean {
+        return widget instanceof EditorWidget && DiffUris.isDiffUri(widget.editor.uri);
     }
 
     /**
