@@ -28,6 +28,7 @@ import { MultiDiffEditorResourcePair, MultiDiffEditorUriData } from './multi-dif
 const EMBEDDED_EDITOR_OPTIONS: monaco.editor.IEditorOptions = {
     folding: false,
     codeLens: false,
+    scrollBeyondLastLine: false,
     stickyScroll: { enabled: false },
     minimap: { enabled: false }
 };

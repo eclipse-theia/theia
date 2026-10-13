@@ -151,11 +151,11 @@ describe('Multi-Diff Editor — widgets', () => {
             }
         });
 
-        it('should clamp setHeight between MIN_ENTRY_HEIGHT and MAX_ENTRY_HEIGHT', () => {
+        it('should fit short content and cap height before the viewport size is known', () => {
             const { entry } = createEntry();
             try {
                 entry.setHeight(50);
-                expect(entry.node.style.height).to.equal(`${MIN_ENTRY_HEIGHT}px`);
+                expect(entry.node.style.height).to.equal('50px');
 
                 entry.setHeight(10_000);
                 expect(entry.node.style.height).to.equal(`${MAX_ENTRY_HEIGHT}px`);
@@ -351,6 +351,7 @@ describe('Multi-Diff Editor — widgets', () => {
             const monacoEditor = Object.create(MonacoDiffEditor.prototype);
             Object.defineProperty(monacoEditor, 'diffEditor', {
                 value: {
+                    updateOptions: sinon.spy(),
                     getOriginalEditor: () => ({ getContentHeight: () => originalHeight, onDidContentSizeChange: originalChanged.event }),
                     getModifiedEditor: () => ({ getContentHeight: () => modifiedHeight, onDidContentSizeChange: modifiedChanged.event })
                 }
@@ -382,6 +383,104 @@ describe('Multi-Diff Editor — widgets', () => {
                 modifiedChanged.dispose();
             }
         });
+    });
+
+    describe('content-fit sizing and inner scrolling', () => {
+        for (const isDiff of [false, true]) {
+            it(`should size ${isDiff ? 'diff' : 'code'} content including borders and toggle scrolling on content changes and resizes`, () => {
+                const changed = new Emitter<void>();
+                const originalChanged = new Emitter<void>();
+                let contentHeight = 20;
+                let originalHeight = 10;
+                const updateOptions = sinon.spy((_options: unknown) => changed.fire());
+                const control = {
+                    getContentHeight: () => contentHeight,
+                    onDidContentSizeChange: changed.event,
+                    updateOptions
+                };
+                const monacoEditor = Object.create(isDiff ? MonacoDiffEditor.prototype : MonacoEditor.prototype);
+                if (isDiff) {
+                    Object.defineProperty(monacoEditor, 'diffEditor', {
+                        value: {
+                            getOriginalEditor: () => ({ getContentHeight: () => originalHeight, onDidContentSizeChange: originalChanged.event }),
+                            getModifiedEditor: () => control,
+                            updateOptions
+                        }
+                    });
+                } else {
+                    monacoEditor.getControl = () => control;
+                }
+                const widget = new Widget() as EditorWidget;
+                Object.defineProperty(widget, 'editor', { value: monacoEditor });
+                const entry = new DiffEntryWidget(sampleResource, new DiffEntryHeaderWidget(sampleResource, mockLabelProvider));
+                entry.node.style.border = '1px solid black';
+                Widget.attach(entry, document.body);
+                const chrome = HEADER_HEIGHT + 2;
+                const expectScrolling = (enabled: boolean) => expect(updateOptions.lastCall.args[0]).to.deep.equal({
+                    scrollbar: { vertical: enabled ? 'auto' : 'hidden', handleMouseWheel: enabled }
+                });
+                try {
+                    entry.setAvailableHeight(250, false);
+                    entry.setEditor(widget);
+                    expect(entry.node.style.height).to.equal(`${20 + chrome}px`);
+                    expectScrolling(false);
+                    expect(updateOptions.callCount).to.equal(1);
+                    changed.fire();
+                    expect(updateOptions.callCount).to.equal(1);
+
+                    contentHeight = 400;
+                    changed.fire();
+                    expect(entry.node.style.height).to.equal('250px');
+                    expectScrolling(true);
+                    expect(updateOptions.callCount).to.equal(2);
+
+                    entry.setAvailableHeight(600, false);
+                    expect(entry.node.style.height).to.equal(`${400 + chrome}px`);
+                    expectScrolling(false);
+                    entry.setAvailableHeight(200, false);
+                    expectScrolling(true);
+                    contentHeight = 200 - chrome;
+                    changed.fire();
+                    expect(entry.node.style.height).to.equal('200px');
+                    expectScrolling(false);
+
+                    entry.setCollapsed(true);
+                    expect(entry.node.style.height).to.equal(`${chrome}px`);
+                    entry.setAvailableHeight(100, false);
+                    contentHeight = 20;
+                    changed.fire();
+                    expect(entry.node.style.height).to.equal(`${chrome}px`);
+                    entry.setCollapsed(false);
+                    expect(entry.node.style.height).to.equal(`${20 + chrome}px`);
+                    expectScrolling(false);
+
+                    if (isDiff) {
+                        originalHeight = 500;
+                        originalChanged.fire();
+                        expect(entry.node.style.height).to.equal('100px');
+                        expectScrolling(true);
+                        originalHeight = 10;
+                        originalChanged.fire();
+                        expect(entry.node.style.height).to.equal(`${20 + chrome}px`);
+                        expectScrolling(false);
+                    }
+                    entry.setAvailableHeight(500);
+                    expect(entry.node.style.height).to.equal('500px');
+                    expectScrolling(false);
+                    contentHeight = 600;
+                    changed.fire();
+                    expect(entry.node.style.height).to.equal('500px');
+                    expectScrolling(true);
+                    entry.setAvailableHeight(700);
+                    expect(entry.node.style.height).to.equal('700px');
+                    expectScrolling(false);
+                } finally {
+                    entry.dispose();
+                    changed.dispose();
+                    originalChanged.dispose();
+                }
+            });
+        }
     });
 
     describe('DiffEntryLoadingWidget / DiffEntryErrorWidget', () => {
@@ -616,8 +715,12 @@ describe('Multi-Diff Editor — widgets', () => {
                 MessageLoop.sendMessage(editor, new Widget.ResizeMessage(1000, 800));
                 for (const entry of editor.entries) {
                     entry.setHeight(1000);
-                    expect(entry.node.style.height).to.equal(`${MAX_ENTRY_HEIGHT}px`);
+                    expect(entry.node.style.height).to.equal('800px');
                 }
+                MessageLoop.sendMessage(editor, new Widget.ResizeMessage(1000, 300));
+                expect(editor.entries[0].node.style.height).to.equal('300px');
+                editor.entries[1].setHeight(60);
+                expect(editor.entries[1].node.style.height).to.equal('60px');
             } finally {
                 editor.dispose();
             }
@@ -647,7 +750,7 @@ describe('Multi-Diff Editor — widgets', () => {
                 expect(editor.detachModelOnHide).to.be.false;
             }
             expect(updateDiffOptions.firstCall.args[0]).to.deep.equal({
-                folding: false, codeLens: false, stickyScroll: { enabled: false }, minimap: { enabled: false }, hideUnchangedRegions: { enabled: true }
+                folding: false, codeLens: false, scrollBeyondLastLine: false, stickyScroll: { enabled: false }, minimap: { enabled: false }, hideUnchangedRegions: { enabled: true }
             });
             expect(updateCodeOptions.firstCall.args[0]).not.to.have.property('hideUnchangedRegions');
         });
