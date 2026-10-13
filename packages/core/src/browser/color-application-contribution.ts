@@ -73,6 +73,13 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
         this.onDidChangeEmitter.fire();
     }
 
+    /**
+     * The CSS variables currently applied to the document element of a window. Used to only remove
+     * those that the current theme does not provide anymore, instead of removing and re-applying all
+     * of them on every update.
+     */
+    protected readonly appliedCssVariables = new WeakMap<Window, ReadonlySet<string>>();
+
     protected readonly toUpdate = new DisposableCollection();
     protected update(): void {
         this.toUpdate.dispose();
@@ -88,14 +95,19 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
 
         const documentElement = win.document.documentElement;
         if (documentElement) {
+            const applied = new Set<string>();
             for (const id of this.colors.getColors()) {
-                const variable = this.colors.getCurrentCssVariable(id);
-                if (variable) {
-                    const { name, value } = variable;
+                for (const { name, value } of this.colors.getCurrentCssVariables(id)) {
                     documentElement.style.setProperty(name, value);
-                    this.toUpdate.push(Disposable.create(() => documentElement.style.removeProperty(name)));
+                    applied.add(name);
                 }
             }
+            for (const name of this.appliedCssVariables.get(win) ?? []) {
+                if (!applied.has(name)) {
+                    documentElement.style.removeProperty(name);
+                }
+            }
+            this.appliedCssVariables.set(win, applied);
         }
     }
 

@@ -17,7 +17,7 @@
 import { nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
 import { compareModelsByRecency, LanguageModel } from '@theia/ai-core/lib/common';
 import { FavoriteModelsService } from '@theia/ai-core/lib/browser';
 import { DiscoveredModel, ModelDiscoveryAction, ModelDiscoveryStatus } from '@theia/ai-core/lib/common/model-discovery-status';
@@ -265,7 +265,7 @@ const ModelRows: React.FC<{ rows: ModelRow[]; favorites: FavoriteModelsService }
             {/* Names the order the list is in, which is otherwise a claim the user cannot check. */}
             {row.released !== undefined && <span className='ai-configuration-item-row-detail'>
                 {nls.localize('theia/ai/ide/modelsConfiguration/released', 'released {0}',
-                    formatDistanceToNow(row.released, { addSuffix: true }))}
+                    formatTimeAgo(row.released))}
             </span>}
             <ShowInChatButton row={row} favorites={favorites} />
         </>}
@@ -331,7 +331,7 @@ function genericStatusBadge(status: ModelDiscoveryStatus): AiConfigurationItemSt
             return {
                 kind: 'on',
                 label: status.lastFetch
-                    ? nls.localize('theia/ai/ide/modelsConfiguration/updated', 'Updated {0}', formatDistanceToNow(status.lastFetch, { addSuffix: true }))
+                    ? nls.localize('theia/ai/ide/modelsConfiguration/updated', 'Updated {0}', formatTimeAgo(status.lastFetch))
                     : nls.localize('theia/ai/ide/modelsConfiguration/ready', 'Ready'),
                 tooltip: status.message
             };

@@ -270,7 +270,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         });
         registry.registerCommand(ChatCommands.AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION, {
             execute: async () => {
-                const id = await this.summarizeActiveSession();
+                const id = await this.summarizeActiveSession(false);
                 if (!id) { return; }
                 await this.taskContextService.open(id);
             },
@@ -675,10 +675,14 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         return !chatView.secondaryWindow;
     }
 
-    protected async summarizeActiveSession(): Promise<string | undefined> {
+    /**
+     * Summarizes the active session and returns the summary ID.
+     * @param override Whether to regenerate the summary if one already exists for the session.
+     */
+    protected async summarizeActiveSession(override = true): Promise<string | undefined> {
         const activeSession = this.chatService.getActiveSession();
         if (!activeSession) { return; }
-        return this.taskContextService.summarize(activeSession).catch(err => {
+        return this.taskContextService.summarize(activeSession, undefined, undefined, override).catch(err => {
             this.logger.warn('Error while summarizing session:', err);
             this.messageService.error(nls.localize('theia/ai/chat-ui/unableToSummarizeCurrentSession',
                 'Unable to summarize current session. Please confirm that the summary agent is not disabled.'));

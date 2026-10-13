@@ -65,6 +65,31 @@ describe('API Type Implementations:', () => {
                 types.URI.joinPath(types.URI.from({ scheme: 'myScheme', authority: 'authority', path: '/path', query: 'query', fragment: 'fragment' }), '/file.js').toString(),
                 'myScheme://authority/path/file.js?query#fragment');
         });
+
+        // Issue: #14976
+        it('should return an instance of the API URI class from every factory', () => {
+            const components = { scheme: 'file', authority: '', path: '/foo/bar.js', query: '', fragment: '' };
+            assert.ok(types.URI.parse('file:///foo/bar.js') instanceof types.URI, 'parse');
+            assert.ok(types.URI.file('/foo/bar.js') instanceof types.URI, 'file');
+            assert.ok(types.URI.revive(components) instanceof types.URI, 'revive');
+            assert.ok(types.URI.from(components) instanceof types.URI, 'from');
+            assert.ok(types.URI.joinPath(types.URI.file('/foo'), 'bar.js') instanceof types.URI, 'joinPath');
+            assert.ok(types.URI.file('/foo/bar.js').with({ fragment: 'baz' }) instanceof types.URI, 'with');
+        });
+
+        it('should build an equivalent URI with from()', () => {
+            const uriString = 'scheme://authority.com/foo/bar/zoz?query#fragment';
+            const uri = types.URI.parse(uriString);
+            const from = types.URI.from({
+                scheme: uri.scheme,
+                authority: uri.authority,
+                path: uri.path,
+                query: uri.query,
+                fragment: uri.fragment
+            });
+
+            assert.strictEqual(from.toString(), uriString);
+        });
     });
 
     describe('RelativePattern:', () => {

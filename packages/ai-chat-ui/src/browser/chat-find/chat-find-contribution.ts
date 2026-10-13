@@ -15,8 +15,9 @@
 // *****************************************************************************
 
 import { Command, CommandContribution, CommandRegistry } from '@theia/core';
-import { ApplicationShell, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
+import { ApplicationShell, CommonCommands, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { ChatInputFocusService } from '../chat-input-focus-service';
 import { ChatCommands } from '../chat-view-commands';
 import { ChatViewWidget } from '../chat-view-widget';
 
@@ -32,17 +33,27 @@ export const CHAT_FIND_HIDE_COMMAND = Command.toLocalizedCommand({
     label: 'Hide Find in Chat'
 }, 'theia/ai/chat-ui/findHide', ChatCommands.CHAT_CATEGORY_KEY);
 
+/** Monaco's find action, bound to Ctrl+F while any editor is open and run on the focused or last active editor. */
+const MONACO_FIND_ACTION_ID = 'actions.find';
+
 /**
- * Ctrl+F in the chat response tree opens the find bar over it; in the chat input, Ctrl+F keeps its default
- * behavior. The binding is only enabled while the session has content to search. It takes precedence over core's
- * `CommonCommands.FIND` and Monaco's `actions.find` because it is registered later within the default scope,
- * the same mechanism `ChatInputPasteContribution` relies on for Ctrl+V.
+ * Ctrl+F in the chat view opens the find bar over the response tree (or refocuses it) while the session has content
+ * to search; in a chat input it does nothing.
+ *
+ * Besides its own binding, the contribution registers handlers for core's `CommonCommands.FIND` and Monaco's
+ * `actions.find` that are enabled while the focus is in a chat view or a chat input, so that Ctrl+F never falls
+ * through to Monaco's find there: that would open the find widget inside the chat input or in the editor of the main
+ * area. Handlers are used rather than keybindings because the latter lose to Monaco's binding in the chat input
+ * (`KeybindingRegistry.selectBindingByLocalContext`), whereas the most recently registered enabled handler runs.
  */
 @injectable()
 export class ChatFindContribution implements CommandContribution, KeybindingContribution {
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
+
+    @inject(ChatInputFocusService)
+    protected readonly chatInputFocusService: ChatInputFocusService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(CHAT_FIND_COMMAND, {
@@ -53,19 +64,41 @@ export class ChatFindContribution implements CommandContribution, KeybindingCont
             isEnabled: () => this.findActiveChatViewWidget()?.treeWidget.isFindVisible === true,
             execute: () => this.findActiveChatViewWidget()?.treeWidget.hideFind()
         });
+        const findHandler = {
+            isEnabled: () => this.isChatInputFocused() || this.findActiveChatViewWidget() !== undefined,
+            execute: () => this.find()
+        };
+        commands.registerHandler(CommonCommands.FIND.id, findHandler);
+        commands.registerHandler(MONACO_FIND_ACTION_ID, findHandler);
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: CHAT_FIND_COMMAND.id,
             keybinding: 'ctrlcmd+f',
-            when: 'chatResponseFocus'
+            // A request's edit box is a chat input inside the response tree.
+            when: 'chatResponseFocus && !chatInputFocus'
         });
         keybindings.registerKeybinding({
             command: CHAT_FIND_HIDE_COMMAND.id,
             keybinding: 'esc',
             when: 'chatFindVisible && chatResponseFocus'
         });
+    }
+
+    /** Opens or refocuses the find bar of the focused chat view; does nothing in a chat input or without content to search. */
+    protected find(): void {
+        if (this.isChatInputFocused()) {
+            return;
+        }
+        const treeWidget = this.findActiveChatViewWidget()?.treeWidget;
+        if (treeWidget?.canFind) {
+            treeWidget.showFind();
+        }
+    }
+
+    protected isChatInputFocused(): boolean {
+        return this.chatInputFocusService.getFocused() !== undefined;
     }
 
     protected findActiveChatViewWidget(): ChatViewWidget | undefined {
