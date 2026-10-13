@@ -958,7 +958,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 } else {
                     classNames.push(renderIndentGuides === 'onHover' ? 'hover' : 'always');
                 }
-                const paddingLeft = this.getDepthPadding(depth);
+                const paddingLeft = this.getIndentGuidePadding(depth);
                 indentDivs.unshift(<div key={depth} className={classNames.join(' ')} style={{
                     paddingLeft: `${paddingLeft}px`
                 }} />);
@@ -1563,6 +1563,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             return this.props.leftPadding;
         }
         return depth * this.treeIndent;
+    }
+    protected getIndentGuidePadding(depth: number): number {
+        return this.getDepthPadding(depth);
     }
 }
 export namespace TreeWidget {
