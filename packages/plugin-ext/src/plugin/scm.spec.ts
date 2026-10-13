@@ -22,9 +22,15 @@
  */
 
 import * as assert from 'assert';
+import * as theia from '@theia/plugin';
 import { Emitter } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { ScmCommandArg, ScmHistoryItemCommandArg } from '../common/plugin-api-rpc';
+import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { Plugin, ScmCommandArg, ScmHistoryItemCommandArg, ScmMain, ScmRawResourceSplices } from '../common/plugin-api-rpc';
+import { ProxyIdentifier, RPCProtocol } from '../common/rpc-protocol';
+import { CommandRegistryImpl, Handler } from './command-registry';
+import { ScmExtImpl } from './scm';
+import { URI } from './types-impl';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -613,3 +619,210 @@ describe('SCM history command arg type guards and processors', () => {
     });
 });
 
+/**
+ * Records the handles that the plugin side sends to the main side, so that tests can
+ * address source controls, groups and resources the way the main side does over RPC.
+ */
+interface RecordingScmMain extends ScmMain {
+    sourceControlHandle: number | undefined;
+    groupHandle: number | undefined;
+    resourceHandle: number | undefined;
+}
+
+function createRecordingScmMain(): RecordingScmMain {
+    const recordResources = (target: RecordingScmMain, splices: ScmRawResourceSplices[]): void => {
+        for (const { handle, splices: resourceSplices } of splices) {
+            target.groupHandle = handle;
+            for (const { rawResources } of resourceSplices) {
+                for (const { handle: resourceHandle } of rawResources) {
+                    target.resourceHandle = resourceHandle;
+                }
+            }
+        }
+    };
+    const recorder: RecordingScmMain = {
+        sourceControlHandle: undefined,
+        groupHandle: undefined,
+        resourceHandle: undefined,
+        $registerSourceControl(sourceControlHandle: number): Promise<void> {
+            recorder.sourceControlHandle = sourceControlHandle;
+            return Promise.resolve();
+        },
+        $updateSourceControl(): Promise<void> {
+            return Promise.resolve();
+        },
+        $unregisterSourceControl(): Promise<void> {
+            return Promise.resolve();
+        },
+        $registerGroups(_sourceControlHandle: number, _groups: unknown[], splices: ScmRawResourceSplices[]) {
+            recordResources(recorder, splices);
+        },
+        $updateGroup() { },
+        $updateGroupLabel() { },
+        $unregisterGroup() { },
+        $spliceResourceStates(_sourceControlHandle: number, splices: ScmRawResourceSplices[]) {
+            recordResources(recorder, splices);
+        },
+        $setInputBoxValue() { },
+        $setInputBoxPlaceholder() { },
+        $setInputBoxVisible() { },
+        $setInputBoxEnabled() { },
+        $setActionButton() { },
+        $onDidChangeCurrentHistoryItemRefs() { },
+        $onDidChangeHistoryItemRefs() { }
+    };
+    return recorder;
+}
+
+function createMockRpc(scmMain: ScmMain): RPCProtocol {
+    const proxy = {
+        ...scmMain,
+        $registerCommand(): void { },
+        $unregisterCommand(): void { },
+        $registerHandler(): void { },
+        $unregisterHandler(): void { }
+    };
+    return {
+        getProxy<T>(_proxyId: ProxyIdentifier<T>): T {
+            return proxy as unknown as T;
+        },
+        set<T, R extends T>(_identifier: ProxyIdentifier<T>, instance: R): R {
+            return instance;
+        },
+        dispose(): void { }
+    } as RPCProtocol;
+}
+
+function createMockPlugin(): Plugin {
+    return {
+        pluginPath: '/test',
+        pluginFolder: '/test',
+        pluginUri: 'file:///test',
+        model: { id: 'test.plugin' } as Plugin['model'],
+        rawModel: {} as Plugin['rawModel'],
+        lifecycle: {} as Plugin['lifecycle'],
+        isUnderDevelopment: false
+    };
+}
+
+const asHandler = (handler: (...args: any[]) => unknown): Handler => handler as Handler;
+
+describe('ScmExtImpl resource commands and quick diff (plugin side)', () => {
+    const resourceCommandId = 'scm.spec.resourceCommand';
+    let scmMain: RecordingScmMain;
+    let commands: CommandRegistryImpl;
+    let scmExt: ScmExtImpl;
+    let sourceControl: theia.SourceControl;
+    let disposables: DisposableCollection;
+
+    beforeEach(() => {
+        disposables = new DisposableCollection();
+        scmMain = createRecordingScmMain();
+        const rpc = createMockRpc(scmMain);
+        commands = new CommandRegistryImpl(rpc);
+        scmExt = new ScmExtImpl(rpc, commands);
+        sourceControl = scmExt.createSourceControl(createMockPlugin(), 'test', 'Test', URI.file('/workspace'));
+        disposables.push(sourceControl);
+    });
+
+    afterEach(() => {
+        disposables.dispose();
+    });
+
+    const addResource = (): { sourceControlHandle: number, groupHandle: number, resourceHandle: number } => {
+        const group = sourceControl.createResourceGroup('changes', 'Changes');
+        disposables.push(group);
+        group.resourceStates = [{
+            resourceUri: URI.file('/workspace/file.txt'),
+            command: { command: resourceCommandId, title: 'Open', arguments: ['first', 'second'] }
+        }];
+        assert.notStrictEqual(scmMain.sourceControlHandle, undefined);
+        assert.notStrictEqual(scmMain.groupHandle, undefined);
+        assert.notStrictEqual(scmMain.resourceHandle, undefined);
+        return {
+            sourceControlHandle: scmMain.sourceControlHandle!,
+            groupHandle: scmMain.groupHandle!,
+            resourceHandle: scmMain.resourceHandle!
+        };
+    };
+
+    describe('$executeResourceCommand', () => {
+        it('settles after executing the resource command with its arguments', async () => {
+            const receivedArgs: unknown[][] = [];
+            disposables.push(commands.registerCommand({ id: resourceCommandId }, asHandler((...args: unknown[]) => {
+                receivedArgs.push(args);
+            })));
+            const { sourceControlHandle, groupHandle, resourceHandle } = addResource();
+            await scmExt.$executeResourceCommand(sourceControlHandle, groupHandle, resourceHandle);
+            assert.deepStrictEqual(receivedArgs, [['first', 'second']]);
+        });
+
+        it('settles only once the resource command has completed', async () => {
+            let finishCommand: () => void = () => { };
+            disposables.push(commands.registerCommand({ id: resourceCommandId }, asHandler(() => new Promise<void>(resolve => {
+                finishCommand = resolve;
+            }))));
+            const { sourceControlHandle, groupHandle, resourceHandle } = addResource();
+            let settled = false;
+            const execution = scmExt.$executeResourceCommand(sourceControlHandle, groupHandle, resourceHandle).then(() => {
+                settled = true;
+            });
+            await Promise.resolve();
+            assert.strictEqual(settled, false, 'must not settle before the command completes');
+            finishCommand();
+            await execution;
+            assert.strictEqual(settled, true);
+        });
+
+        it('rejects when the resource command fails', async () => {
+            disposables.push(commands.registerCommand({ id: resourceCommandId }, asHandler(() => {
+                throw new Error('command failed');
+            })));
+            const { sourceControlHandle, groupHandle, resourceHandle } = addResource();
+            await assert.rejects(scmExt.$executeResourceCommand(sourceControlHandle, groupHandle, resourceHandle), /command failed/);
+        });
+
+        it('resolves for unknown handles', async () => {
+            const { sourceControlHandle, groupHandle, resourceHandle } = addResource();
+            assert.strictEqual(await scmExt.$executeResourceCommand(sourceControlHandle + 1000, groupHandle, resourceHandle), undefined);
+            assert.strictEqual(await scmExt.$executeResourceCommand(sourceControlHandle, groupHandle + 1000, resourceHandle), undefined);
+            assert.strictEqual(await scmExt.$executeResourceCommand(sourceControlHandle, groupHandle, resourceHandle + 1000), undefined);
+        });
+    });
+
+    describe('$provideOriginalResource', () => {
+        const originalResource = URI.file('/workspace/.git/file.txt');
+        it('resolves with the resource of the quick diff provider', async () => {
+            const receivedArgs: unknown[][] = [];
+            sourceControl.quickDiffProvider = {
+                provideOriginalResource: (uri: theia.Uri, token: theia.CancellationToken) => {
+                    receivedArgs.push([uri, token]);
+                    return originalResource;
+                }
+            };
+
+            const result = await scmExt.$provideOriginalResource(scmMain.sourceControlHandle!, '/workspace/file.txt', CancellationToken.None);
+            assert.strictEqual(result, originalResource);
+            assert.strictEqual(receivedArgs.length, 1);
+            assert.strictEqual((receivedArgs[0][0] as theia.Uri).path, '/workspace/file.txt');
+            assert.strictEqual(receivedArgs[0][1], CancellationToken.None);
+        });
+
+        it('resolves with undefined when the quick diff provider returns no resource', async () => {
+            // eslint-disable-next-line no-null/no-null
+            sourceControl.quickDiffProvider = { provideOriginalResource: () => null };
+            const result = await scmExt.$provideOriginalResource(scmMain.sourceControlHandle!, '/workspace/file.txt', CancellationToken.None);
+            assert.strictEqual(result, undefined);
+        });
+
+        it('resolves with undefined without a quick diff provider', async () => {
+            const result = await scmExt.$provideOriginalResource(scmMain.sourceControlHandle!, '/workspace/file.txt', CancellationToken.None);
+            assert.strictEqual(result, undefined);
+        });
+
+        it('rejects when the quick diff provider fails', async () => {
+            sourceControl.quickDiffProvider = { provideOriginalResource: () => Promise.reject(new Error('provider failed')) };
+            await assert.rejects(scmExt.$provideOriginalResource(scmMain.sourceControlHandle!, '/workspace/file.txt', CancellationToken.None), /provider failed/);
+        });
+    });
+});
