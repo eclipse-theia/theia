@@ -69,6 +69,7 @@ export class ProcessUtils {
      */
     protected winTaskkillTrees(pids: number[]): void {
         const pidArgs = pids.flatMap(pid => ['/pid', pid.toString(10)]);
+        // Not `this.spawnSync`, which throws on a non-zero exit code that is expected here.
         const result = cp.spawnSync('taskkill.exe', ['/f', '/t', ...pidArgs], { encoding: 'utf8' });
         if (result.error) {
             throw result.error;
@@ -82,13 +83,16 @@ export class ProcessUtils {
 
     /**
      * @returns the PIDs of the direct children of the given process, except for the PowerShell
-     * process that lists them, which is a child of the current process and exits right after.
+     * process that lists them, which is a child of the current process and exits right after,
+     * and for the console host (`conhost.exe`) that Windows attaches to a process launched without
+     * a console, which `taskkill` may fail to kill.
      */
     protected winGetChildPids(ppid: number): number[] {
         const { stdout } = this.spawnSync(this.winGetPowerShellPath(), [
             '-NoLogo', '-NoProfile', '-NonInteractive', '-Command',
             `Get-CimInstance -ClassName Win32_Process -Filter 'ParentProcessId=${ppid.toString(10)}'`
-            + ' | Where-Object { $_.ProcessId -ne $PID } | ForEach-Object { $_.ProcessId }'
+            + " | Where-Object { $_.ProcessId -ne $PID -and $_.Name -ne 'conhost.exe' }"
+            + ' | ForEach-Object { $_.ProcessId }'
         ], { windowsHide: true, timeout: WIN_LIST_CHILDREN_TIMEOUT_MS });
         return stdout
             .split(/\s+/)

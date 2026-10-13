@@ -168,6 +168,14 @@ describe('ProcessUtils', () => {
             expect(options.timeout).to.be.greaterThan(0);
         });
 
+        it('excludes the PowerShell process itself and the console host', () => {
+            coreProcessManager['winGetChildPids'](42);
+            const command: string = spawnSyncStub.firstCall.args[1].at(-1);
+            expect(command).to.contain('ParentProcessId=42');
+            expect(command).to.contain('$_.ProcessId -ne $PID');
+            expect(command).to.contain("$_.Name -ne 'conhost.exe'");
+        });
+
         it('runs PowerShell from the PATH when the Windows directory is unknown', () => {
             delete process.env.SystemRoot;
             coreProcessManager['winGetChildPids'](42);
