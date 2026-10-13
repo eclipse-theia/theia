@@ -17,7 +17,7 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter, Event, nls, URI } from '@theia/core';
 import {
-    ApplicationShell, BaseWidget, BoxLayout, codicon, Key, LabelProvider, LabelProviderContribution,
+    addEventListener, ApplicationShell, BaseWidget, BoxLayout, codicon, Key, LabelProvider, LabelProviderContribution,
     Message, MessageLoop, Navigatable, NavigatableWidgetOpenHandler, Panel, PanelLayout, StatefulWidget,
     Widget, WidgetOpenerOptions
 } from '@theia/core/lib/browser';
@@ -145,8 +145,8 @@ export class DiffEntryErrorWidget extends BaseWidget {
  * A single diff entry combining a header and a content area that transitions through
  * loading, editor, and error states. The entry's outer height is controlled via
  * {@link DiffEntryWidget.setHeight} and, once the editor is loaded, tracks the
- * editor's content size up to the viewport height. The entry can be collapsed
- * (showing only the header) via {@link DiffEntryWidget.setCollapsed}.
+ * editor's content size up to 5000 pixels. A single entry fills the viewport.
+ * Entries can be collapsed (showing only the header) via {@link DiffEntryWidget.setCollapsed}.
  */
 export class DiffEntryWidget extends BaseWidget {
 
@@ -286,12 +286,12 @@ export class DiffEntryWidget extends BaseWidget {
     }
 
     /**
-     * Fit the entry to its content, capped by the viewport height. While collapsed,
+     * Fit multiple entries to their content, capped at 5000 pixels; a single entry fills the viewport. While collapsed,
      * remember the requested height for expansion.
      */
     setHeight(height: number): void {
         this.requestedHeight = height;
-        const limit = this.availableHeight ?? MAX_ENTRY_HEIGHT;
+        const limit = this.fillViewport ? (this.availableHeight ?? MAX_ENTRY_HEIGHT) : 5000;
         const clamped = Math.max(this.getNonContentHeight(), this.fillViewport ? limit : Math.min(limit, height));
         this.lastExpandedHeight = clamped;
         if (!this._isCollapsed) {
@@ -300,7 +300,7 @@ export class DiffEntryWidget extends BaseWidget {
         this.updateInnerScrolling();
     }
 
-    /** Cap entries at the viewport height; a single entry fills it. */
+    /** Update the viewport height, used when a single entry fills it. */
     setAvailableHeight(height: number, fillViewport = true): void {
         this.availableHeight = Math.max(this.getNonContentHeight(), height);
         this.fillViewport = fillViewport;
@@ -323,7 +323,9 @@ export class DiffEntryWidget extends BaseWidget {
         // Set this before updating Monaco options, which can emit content-size events synchronously.
         this.innerScrolling = scrolling;
         const editor = MonacoEditor.get(this._editorWidget);
-        const options = { scrollbar: { vertical: scrolling ? 'auto' as const : 'hidden' as const, handleMouseWheel: scrolling } };
+        const options = {
+            scrollbar: { vertical: scrolling ? 'auto' as const : 'hidden' as const, handleMouseWheel: scrolling, alwaysConsumeMouseWheel: false }
+        };
         if (editor instanceof MonacoDiffEditor) {
             editor.diffEditor.updateOptions(options);
         } else {
@@ -362,6 +364,20 @@ export class DiffEntryWidget extends BaseWidget {
         if (!monacoEditor) {
             return;
         }
+        const control = monacoEditor instanceof MonacoDiffEditor ? monacoEditor.diffEditor.getModifiedEditor() : monacoEditor.getControl();
+        this.toDispose.push(addEventListener(editorWidget.node, 'wheel', event => {
+            if (!this.innerScrolling || event.ctrlKey || event.shiftKey || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
+                return;
+            }
+            const scrollTop = control.getScrollTop();
+            const atBoundary = event.deltaY < 0
+                ? scrollTop <= 0
+                : scrollTop >= control.getScrollHeight() - control.getLayoutInfo().height;
+            if (atBoundary) {
+                // Monaco does not apply alwaysConsumeMouseWheel changes to an existing scrollbar.
+                event.stopPropagation();
+            }
+        }, true));
         const getContentHeight = (): number => {
             if (monacoEditor instanceof MonacoDiffEditor) {
                 return Math.max(

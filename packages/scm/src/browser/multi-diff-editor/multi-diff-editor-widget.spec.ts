@@ -34,7 +34,6 @@ import {
     DiffEntryLoadingWidget,
     DiffEntryWidget,
     HEADER_HEIGHT,
-    MAX_ENTRY_HEIGHT,
     MIN_ENTRY_HEIGHT,
     MultiDiffEditor,
     MultiDiffEditorData,
@@ -151,14 +150,14 @@ describe('Multi-Diff Editor — widgets', () => {
             }
         });
 
-        it('should fit short content and cap height before the viewport size is known', () => {
+        it('should fit short content and cap large entries before the viewport size is known', () => {
             const { entry } = createEntry();
             try {
                 entry.setHeight(50);
                 expect(entry.node.style.height).to.equal('50px');
 
                 entry.setHeight(10_000);
-                expect(entry.node.style.height).to.equal(`${MAX_ENTRY_HEIGHT}px`);
+                expect(entry.node.style.height).to.equal('5000px');
 
                 entry.setHeight(MIN_ENTRY_HEIGHT + 42);
                 expect(entry.node.style.height).to.equal(`${MIN_ENTRY_HEIGHT + 42}px`);
@@ -387,6 +386,67 @@ describe('Multi-Diff Editor — widgets', () => {
 
     describe('content-fit sizing and inner scrolling', () => {
         for (const isDiff of [false, true]) {
+            it(`should release vertical wheel events at ${isDiff ? 'diff' : 'code'} boundaries without preventing outer scrolling`, () => {
+                const changed = new Emitter<void>();
+                let scrollTop = 0;
+                let contentHeight = 6000;
+                const control = {
+                    getContentHeight: () => contentHeight,
+                    onDidContentSizeChange: changed.event,
+                    updateOptions: sinon.spy(),
+                    getScrollTop: () => scrollTop,
+                    getScrollHeight: () => 6000,
+                    getLayoutInfo: () => ({ height: 1000 })
+                };
+                const monacoEditor = Object.create(isDiff ? MonacoDiffEditor.prototype : MonacoEditor.prototype);
+                if (isDiff) {
+                    Object.defineProperty(monacoEditor, 'diffEditor', {
+                        value: { getOriginalEditor: () => control, getModifiedEditor: () => control, updateOptions: control.updateOptions }
+                    });
+                } else {
+                    monacoEditor.getControl = () => control;
+                }
+                const widget = new Widget() as EditorWidget;
+                Object.defineProperty(widget, 'editor', { value: monacoEditor });
+                const entry = new DiffEntryWidget(sampleResource, new DiffEntryHeaderWidget(sampleResource, mockLabelProvider));
+                const targets = Array.from({ length: isDiff ? 2 : 1 }, () => {
+                    const node = document.createElement('div');
+                    widget.node.appendChild(node);
+                    node.addEventListener('wheel', event => event.preventDefault());
+                    return node;
+                });
+                const wheel = (target: HTMLElement, deltaY: number, options: WheelEventInit = {}) => {
+                    const event = new window.WheelEvent('wheel', { deltaY, bubbles: true, cancelable: true, ...options });
+                    target.dispatchEvent(event);
+                    return event.defaultPrevented;
+                };
+                try {
+                    entry.setEditor(widget);
+                    for (const target of targets) {
+                        scrollTop = 0;
+                        expect(wheel(target, -100)).to.be.false;
+                        expect(wheel(target, 100)).to.be.true;
+                        scrollTop = 2500;
+                        expect(wheel(target, -100)).to.be.true;
+                        expect(wheel(target, 100)).to.be.true;
+                        scrollTop = 5000;
+                        expect(wheel(target, 100)).to.be.false;
+                        expect(wheel(target, -100)).to.be.true;
+                        expect(wheel(target, 100, { deltaX: 200 })).to.be.true;
+                        expect(wheel(target, 100, { ctrlKey: true })).to.be.true;
+                        expect(wheel(target, 100, { shiftKey: true })).to.be.true;
+                    }
+                    contentHeight = 20;
+                    changed.fire();
+                    expect(wheel(targets[0], 100)).to.be.true;
+                    entry.dispose();
+                    expect(wheel(targets[0], 100)).to.be.true;
+                } finally {
+                    entry.dispose();
+                    changed.dispose();
+                }
+            });
+
             it(`should size ${isDiff ? 'diff' : 'code'} content including borders and toggle scrolling on content changes and resizes`, () => {
                 const changed = new Emitter<void>();
                 const originalChanged = new Emitter<void>();
@@ -417,7 +477,7 @@ describe('Multi-Diff Editor — widgets', () => {
                 Widget.attach(entry, document.body);
                 const chrome = HEADER_HEIGHT + 2;
                 const expectScrolling = (enabled: boolean) => expect(updateOptions.lastCall.args[0]).to.deep.equal({
-                    scrollbar: { vertical: enabled ? 'auto' : 'hidden', handleMouseWheel: enabled }
+                    scrollbar: { vertical: enabled ? 'auto' : 'hidden', handleMouseWheel: enabled, alwaysConsumeMouseWheel: false }
                 });
                 try {
                     entry.setAvailableHeight(250, false);
@@ -428,21 +488,31 @@ describe('Multi-Diff Editor — widgets', () => {
                     changed.fire();
                     expect(updateOptions.callCount).to.equal(1);
 
-                    contentHeight = 400;
+                    contentHeight = 6000;
                     changed.fire();
-                    expect(entry.node.style.height).to.equal('250px');
+                    expect(entry.node.style.height).to.equal('5000px');
                     expectScrolling(true);
                     expect(updateOptions.callCount).to.equal(2);
 
                     entry.setAvailableHeight(600, false);
+                    expect(entry.node.style.height).to.equal('5000px');
+                    expectScrolling(true);
+                    expect(updateOptions.callCount).to.equal(2);
+                    contentHeight = 400;
+                    changed.fire();
                     expect(entry.node.style.height).to.equal(`${400 + chrome}px`);
                     expectScrolling(false);
                     entry.setAvailableHeight(200, false);
-                    expectScrolling(true);
-                    contentHeight = 200 - chrome;
-                    changed.fire();
-                    expect(entry.node.style.height).to.equal('200px');
+                    expect(entry.node.style.height).to.equal(`${400 + chrome}px`);
                     expectScrolling(false);
+                    contentHeight = 5000 - chrome;
+                    changed.fire();
+                    expect(entry.node.style.height).to.equal('5000px');
+                    expectScrolling(false);
+                    contentHeight++;
+                    changed.fire();
+                    expect(entry.node.style.height).to.equal('5000px');
+                    expectScrolling(true);
 
                     entry.setCollapsed(true);
                     expect(entry.node.style.height).to.equal(`${chrome}px`);
@@ -457,8 +527,8 @@ describe('Multi-Diff Editor — widgets', () => {
                     if (isDiff) {
                         originalHeight = 500;
                         originalChanged.fire();
-                        expect(entry.node.style.height).to.equal('100px');
-                        expectScrolling(true);
+                        expect(entry.node.style.height).to.equal(`${500 + chrome}px`);
+                        expectScrolling(false);
                         originalHeight = 10;
                         originalChanged.fire();
                         expect(entry.node.style.height).to.equal(`${20 + chrome}px`);
@@ -715,10 +785,12 @@ describe('Multi-Diff Editor — widgets', () => {
                 MessageLoop.sendMessage(editor, new Widget.ResizeMessage(1000, 800));
                 for (const entry of editor.entries) {
                     entry.setHeight(1000);
-                    expect(entry.node.style.height).to.equal('800px');
+                    expect(entry.node.style.height).to.equal('1000px');
+                    entry.setHeight(10_000);
+                    expect(entry.node.style.height).to.equal('5000px');
                 }
                 MessageLoop.sendMessage(editor, new Widget.ResizeMessage(1000, 300));
-                expect(editor.entries[0].node.style.height).to.equal('300px');
+                expect(editor.entries[0].node.style.height).to.equal('5000px');
                 editor.entries[1].setHeight(60);
                 expect(editor.entries[1].node.style.height).to.equal('60px');
             } finally {

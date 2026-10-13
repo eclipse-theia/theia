@@ -33,7 +33,7 @@
 
 /* Override Lumino default: children use normal flow instead of absolute positioning.
  * The inline `height` is set dynamically by DiffEntryWidget.setHeight based on the
- * embedded editor content, capped at the viewport height. */
+ * embedded editor content, capped at 5000px for multiple entries. */
 .theia-multi-diff-editor .multi-diff-editor-entries>.multi-diff-entry {
     position: relative;
     width: 100%;
