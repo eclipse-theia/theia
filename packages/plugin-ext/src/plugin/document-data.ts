@@ -59,7 +59,6 @@ export class DocumentDataExt {
 
         // Update my lines
         const changes = e.changes;
-        // tslint:disable-next-line:one-variable-per-declaration
         for (let i = 0, len = changes.length; i < len; i++) {
             const change = changes[i];
             this.acceptDeleteRange(change.range);

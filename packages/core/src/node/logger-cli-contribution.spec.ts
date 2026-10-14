@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import * as yargs from 'yargs';
+import yargs from 'yargs';
 import * as temp from 'temp';
 import * as fs from 'fs';
 import { ContainerModule, Container } from 'inversify';

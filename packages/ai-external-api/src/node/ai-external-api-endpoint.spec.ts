@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Emitter } from '@theia/core';
-import * as express from '@theia/core/shared/express';
+import express from '@theia/core/shared/express';
 import { ExternalApiRouter } from '@theia/external-api/lib/node/external-api-router';
 import { ExternalApiTestSupport } from '@theia/external-api/lib/node/test/external-api-test-support';
 import { expect } from 'chai';

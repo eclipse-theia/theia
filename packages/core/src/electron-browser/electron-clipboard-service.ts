@@ -25,7 +25,7 @@ export class ElectronClipboardService implements ClipboardService {
     protected readonly onDidWriteTextEmitter = new Emitter<string>();
     readonly onDidWriteText: Event<string> = this.onDidWriteTextEmitter.event;
 
-    readText(): string {
+    readText(): Promise<string> {
         return window.electronTheiaCore.readClipboard();
     }
 

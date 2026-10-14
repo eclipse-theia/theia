@@ -20,7 +20,7 @@ let disableJSDOM = enableJSDOM();
 FrontendApplicationConfigProvider.set({});
 
 import { AIVariableResolutionRequest } from '@theia/ai-core';
-import { Event } from '@theia/core';
+import { CancellationTokenSource, Event } from '@theia/core';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import {
@@ -477,6 +477,122 @@ describe('AgentDelegationTool', () => {
             expect(logger.error.calledOnce).to.be.true;
             expect(logger.warn.called).to.be.false;
         });
+    });
+
+    describe('cancelDelegation()', () => {
+        it('ignores unknown tool calls', () => {
+            const chatService = makeChatService(makeNewSession());
+            const tool = makeAgentDelegationTool(makeChatAgentService(), chatService);
+
+            tool.cancelDelegation('unknown');
+
+            expect((chatService.cancelRequest as sinon.SinonStub).called).to.be.false;
+        });
+
+        it('cancels the delegated request once its model is available', async () => {
+            const chatService = makeChatService(makeNewSession());
+            let completeResponse: (value: unknown) => void = () => { };
+            const responseCompleted = new Promise(resolve => { completeResponse = resolve; });
+            (chatService.sendRequest as sinon.SinonStub).resolves({
+                requestCompleted: Promise.resolve({ id: 'request-id', session: { id: 'new-session-id' } }),
+                responseCompleted
+            });
+            (chatService.onSessionEvent as sinon.SinonStub).returns({ dispose: sinon.stub() });
+            const tool = makeAgentDelegationTool(makeChatAgentService(), chatService);
+            const ctx = { ...makeChatContext(), toolCallId: 'tool-call-id' };
+            const result = tool.getTool().handler(JSON.stringify({ agentId: 'test-agent', prompt: 'work' }), ctx);
+            await Promise.resolve();
+            await Promise.resolve();
+
+            tool.cancelDelegation('tool-call-id');
+            await Promise.resolve();
+
+            expect((chatService.cancelRequest as sinon.SinonStub).calledOnceWithExactly('new-session-id', 'request-id')).to.be.true;
+            completeResponse({ isCanceled: true, response: { content: [] } });
+            expect(await result).to.equal("Delegation to agent 'test-agent' was cancelled by the user.\n\n[delegation sessionId: new-session-id]");
+            expect((chatService.deleteSession as sinon.SinonStub).called).to.be.false;
+        });
+    });
+
+    describe('delegateToAgent() — cancellation results', () => {
+        it('keeps the restored session id and disposes bubbling when canceled before sending', async () => {
+            const cancellation = new CancellationTokenSource();
+            const existingSession = makeExistingSession();
+            const chatService = makeChatService(makeNewSession());
+            (chatService.getOrRestoreSession as sinon.SinonStub).callsFake(async () => {
+                cancellation.cancel();
+                return existingSession;
+            });
+            const tool = makeAgentDelegationTool(makeChatAgentService(), chatService);
+            try {
+                const result = await tool.getTool().handler(JSON.stringify({
+                    agentId: 'test-agent', prompt: 'work', sessionId: existingSession.id
+                }), { ...makeChatContext(), cancellationToken: cancellation.token });
+
+                expect(result).to.equal('Operation cancelled by user\n\n[delegation sessionId: existing-session-id]');
+                expect((chatService.sendRequest as sinon.SinonStub).called).to.be.false;
+                expect(existingSession.model.onDidChange.firstCall.returnValue.dispose.calledOnce).to.be.true;
+                expect(existingSession.model.changeSet.onDidChange.firstCall.returnValue.dispose.calledOnce).to.be.true;
+            } finally {
+                cancellation.dispose();
+            }
+        });
+
+        it('preserves partial text and the session id while filtering internal content', async () => {
+            const chatService = makeChatService(makeNewSession());
+            (chatService.sendRequest as sinon.SinonStub).resolves({
+                responseCompleted: Promise.resolve({
+                    isCanceled: true,
+                    response: {
+                        content: [
+                            new ThinkingChatResponseContentImpl('internal thinking', 'sig'),
+                            new ToolCallChatResponseContentImpl('call-1', 'someTool', '{}'),
+                            new TextChatResponseContentImpl('partial answer')
+                        ]
+                    }
+                })
+            });
+            const tool = makeAgentDelegationTool(makeChatAgentService(), chatService);
+
+            const result = await tool.getTool().handler(JSON.stringify({ agentId: 'test-agent', prompt: 'work' }), makeChatContext());
+
+            expect(result).to.equal("partial answer\n\nDelegation to agent 'test-agent' was cancelled by the user.\n\n[delegation sessionId: new-session-id]");
+        });
+
+        for (const rejectsCompletion of [false, true]) {
+            it(`preserves the session id when parent cancellation ${rejectsCompletion ? 'rejects' : 'resolves'} completion`, async () => {
+                const cancellation = new CancellationTokenSource();
+                const chatService = makeChatService(makeNewSession());
+                let finishResponse: () => void = () => { };
+                const responseCompleted = new Promise((resolve, reject) => {
+                    finishResponse = () => rejectsCompletion
+                        ? reject(new Error('Operation cancelled'))
+                        : resolve({ isCanceled: true, response: { content: [] } });
+                });
+                const cancel = sinon.stub().callsFake(finishResponse);
+                (chatService.sendRequest as sinon.SinonStub).resolves({
+                    requestCompleted: Promise.resolve({ cancel }),
+                    responseCompleted
+                });
+                const tool = makeAgentDelegationTool(makeChatAgentService(), chatService);
+                const ctx = { ...makeChatContext(), cancellationToken: cancellation.token };
+                try {
+                    const result = tool.getTool().handler(JSON.stringify({ agentId: 'test-agent', prompt: 'work' }), ctx);
+                    await Promise.resolve();
+                    await Promise.resolve();
+
+                    cancellation.cancel();
+
+                    expect(await result).to.equal(rejectsCompletion
+                        ? 'Operation cancelled by user\n\n[delegation sessionId: new-session-id]'
+                        : "Delegation to agent 'test-agent' was cancelled by the user.\n\n[delegation sessionId: new-session-id]");
+                    expect(cancel.calledOnce).to.be.true;
+                    expect((chatService.deleteSession as sinon.SinonStub).called).to.be.false;
+                } finally {
+                    cancellation.dispose();
+                }
+            });
+        }
     });
 
     describe('delegateToAgent() — session persistence', () => {

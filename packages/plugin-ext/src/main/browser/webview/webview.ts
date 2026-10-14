@@ -415,7 +415,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
     }
 
     setContentOptions(contentOptions: WebviewContentOptions): void {
-        if (JSONExt.deepEqual(<any>this.contentOptions, <any>contentOptions)) {
+        if (JSONExt.deepEqual(this.contentOptions as any, contentOptions as any)) {
             return;
         }
         this._contentOptions = contentOptions;

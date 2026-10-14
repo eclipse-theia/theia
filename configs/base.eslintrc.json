@@ -8,12 +8,12 @@
     }
   },
   "plugins": [
+    "@stylistic",
     "@theia",
     "@typescript-eslint",
-    "@typescript-eslint/tslint",
     "import",
+    "jsdoc",
     "no-null",
-    "eslint-plugin-deprecation",
     "eslint-plugin-react",
     "eslint-plugin-no-unsanitized"
   ],

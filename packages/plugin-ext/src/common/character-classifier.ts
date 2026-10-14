@@ -65,7 +65,7 @@ export class CharacterClassifier<T extends number> {
 
     public get(charCode: number): T {
         if (charCode >= 0 && charCode < 256) {
-            return <T>this._asciiMap[charCode];
+            return this._asciiMap[charCode] as T;
         } else {
             return <T>(this._map.get(charCode) || this._defaultValue);
         }

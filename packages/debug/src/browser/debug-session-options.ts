@@ -113,7 +113,7 @@ export namespace InternalDebugSessionOptions {
     }
 
     /** @deprecated Please use `JSON.parse` to restore previously serialized debug session options. */
-    // eslint-disable-next-line deprecation/deprecation
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     export function parseValue(value: string): DebugSessionOptionsData {
         const split = value.split(SEPARATOR);
         if (split.length === 5) {

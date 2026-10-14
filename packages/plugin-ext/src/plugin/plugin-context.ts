@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* tslint:disable:typedef */
+/* eslint-disable @theia/explicit-return-type */
 
 import type * as theia from '@theia/plugin';
 import { CommandRegistryImpl } from './command-registry';
@@ -1698,7 +1698,7 @@ export class Plugin<T> implements theia.Plugin<T> {
     }
 
     get exports(): T {
-        return <T>this.#pluginManager.getPluginExport(this.id);
+        return this.#pluginManager.getPluginExport(this.id) as T;
     }
 
     activate(): PromiseLike<T> {
@@ -1729,7 +1729,7 @@ export class PluginExt<T> extends Plugin<T> implements ExtensionPlugin<T> {
     }
 
     override get exports(): T {
-        return <T>this.#pluginManager.getPluginExport(this.id);
+        return this.#pluginManager.getPluginExport(this.id) as T;
     }
 
     override activate(): PromiseLike<T> {

@@ -266,6 +266,10 @@ Template`;
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 return (this as any).provenanceLabel(sourceUri);
             }
+
+            public useSourceMaps(active: Map<string, FragmentEntry>, all: Map<string, FragmentEntry>): void {
+                Object.assign(this, { activeCustomizations: active, allCustomizations: all });
+            }
         }
 
         let service: TestableCustomizationService;
@@ -360,6 +364,26 @@ Template`;
             const idxC = entry.template.indexOf('Content C');
             expect(idxA).to.be.lessThan(idxB);
             expect(idxB).to.be.lessThan(idxC);
+        });
+
+        it('reports every source and marks all equal-priority merged sources active', () => {
+            service.testAddTemplate(activeMap, 'project-info', 'Shared instructions',
+                'file:///config/project-info.prompttemplate', allMap, 1, CustomizationSource.CUSTOMIZED);
+            service.testAddTemplate(activeMap, 'project-info', 'Root A instructions',
+                'file:///rootA/.prompts/project-info.prompttemplate', allMap, 2, CustomizationSource.FOLDER);
+            service.testAddTemplate(activeMap, 'project-info', 'Root B instructions',
+                'file:///rootB/.prompts/project-info.prompttemplate', allMap, 2, CustomizationSource.FOLDER);
+            service.testAddTemplate(activeMap, 'other-fragment', 'Unrelated',
+                'file:///config/other.prompttemplate', allMap, 1, CustomizationSource.CUSTOMIZED);
+            service.useSourceMaps(activeMap, allMap);
+
+            expect(service.getPromptFragmentCustomizationSources('project-info').map(source => ({
+                path: source.uri.path.toString(), template: source.template, active: source.active
+            }))).to.deep.equal([
+                { path: '/config/project-info.prompttemplate', template: 'Shared instructions', active: false },
+                { path: '/rootA/.prompts/project-info.prompttemplate', template: 'Root A instructions', active: true },
+                { path: '/rootB/.prompts/project-info.prompttemplate', template: 'Root B instructions', active: true }
+            ]);
         });
 
         it('provenanceLabel extracts grandparent directory name from URI', () => {

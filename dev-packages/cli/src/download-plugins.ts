@@ -17,8 +17,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { OVSXApiFilterImpl, OVSXClient, VSXTargetPlatform } from '@theia/ovsx-client';
-import * as chalk from 'chalk';
-import * as decompress from 'decompress';
+import chalk from 'chalk';
+import decompress from 'decompress';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as temp from 'temp';
