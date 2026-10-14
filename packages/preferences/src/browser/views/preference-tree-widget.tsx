@@ -22,9 +22,9 @@ import {
     TreeWidget,
     TREE_NODE_CONTENT_CLASS,
 } from '@theia/core/lib/browser';
-import React = require('@theia/core/shared/react');
-import { PreferenceTreeModel, PreferenceTreeNodeRow, PreferenceTreeNodeProps } from '../preference-tree-model';
-import { Preference } from '../util/preference-types';
+import * as React from '@theia/core/shared/react';
+import { PreferenceTreeModel, PreferenceTreeNodeRow, PreferenceTreeNodeProps } from '../preference-tree-model.js';
+import { Preference } from '../util/preference-types.js';
 
 @injectable()
 export class PreferencesTreeWidget extends TreeWidget {

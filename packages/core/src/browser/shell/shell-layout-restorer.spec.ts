@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 const disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
@@ -23,8 +23,8 @@ import {
     ShellLayoutRestorer,
     PersistedPerspectiveData,
     PERSPECTIVE_LAYOUTS_STORAGE_KEY
-} from './shell-layout-restorer';
-import { ApplicationShell } from './application-shell';
+} from './shell-layout-restorer.js';
+import { ApplicationShell } from './application-shell.js';
 disableJSDOM();
 
 describe('ShellLayoutRestorer - Perspective Support', () => {

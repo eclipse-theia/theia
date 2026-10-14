@@ -21,10 +21,10 @@ import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { TypeBadge } from '@theia/vsx-registry/lib/browser/type-badge';
 import { ExtensionCard } from '@theia/vsx-registry/lib/browser/extension-card';
-import { RegistryArtifactKind } from '../../common/ai-registry-preferences';
-import { InstalledSkillInfo, ResolvedSkillEntry, SkillClassificationResult } from '../../common/skill/skill-registry-types';
-import { RegistryEntryContext } from '../registry-entry-context';
-import { RegistryEntryGear, RegistryEntryMenuEvent, showEntryMenu } from '../registry-entry-menu';
+import { RegistryArtifactKind } from '../../common/ai-registry-preferences.js';
+import { InstalledSkillInfo, ResolvedSkillEntry, SkillClassificationResult } from '../../common/skill/skill-registry-types.js';
+import { RegistryEntryContext } from '../registry-entry-context.js';
+import { RegistryEntryGear, RegistryEntryMenuEvent, showEntryMenu } from '../registry-entry-menu.js';
 
 /**
  * Per-entry action callbacks provided by the contribution. Entries close over these so

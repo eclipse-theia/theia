@@ -22,7 +22,7 @@ import { ContentReplacerV2Impl } from '@theia/core/lib/common/content-replacer-v
 import { URI } from '@theia/core/lib/common/uri';
 import { inject, injectable, named, optional } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { WorkspaceFunctionScope } from './workspace-functions';
+import { WorkspaceFunctionScope } from './workspace-functions.js';
 
 import { nls, ILogger, PreferenceService } from '@theia/core';
 import { extractJsonStringField } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/toolcall-utils';
@@ -35,8 +35,8 @@ import {
     WRITE_FILE_REPLACEMENTS_ID,
     SUGGEST_FILE_REPLACEMENTS_SIMPLE_ID,
     WRITE_FILE_REPLACEMENTS_SIMPLE_ID
-} from '../common/file-changeset-function-ids';
-import { WRITE_CONTENT_MAX_SIZE_KB_PREF } from '../common/workspace-preferences';
+} from '../common/file-changeset-function-ids.js';
+import { WRITE_CONTENT_MAX_SIZE_KB_PREF } from '../common/workspace-preferences.js';
 
 /**
  * Description of the `path` parameter shared by all file changeset tools, so that they advertise the

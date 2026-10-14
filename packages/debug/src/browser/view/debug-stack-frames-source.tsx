@@ -17,9 +17,9 @@
 import * as React from '@theia/core/shared/react';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { TreeSource, TreeElement } from '@theia/core/lib/browser/source-tree';
-import { DebugThread } from '../model/debug-thread';
-import { DebugViewModel } from './debug-view-model';
-import debounce = require('p-debounce');
+import { DebugThread } from '../model/debug-thread.js';
+import { DebugViewModel } from './debug-view-model.js';
+import debounce from 'p-debounce';
 import { nls } from '@theia/core';
 
 @injectable()

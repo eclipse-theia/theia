@@ -17,10 +17,10 @@
 import * as assert from 'assert';
 import * as React from 'react';
 import { createRoot, Root } from 'react-dom/client';
-import { enableJSDOM } from '../test/jsdom';
-import { Markdown, LocalizedMarkdown } from './markdown';
-import { MarkdownRenderer } from './markdown-renderer';
-import { MarkdownString, MarkdownStringImpl } from '../../common/markdown-rendering/markdown-string';
+import { enableJSDOM } from '../test/jsdom.js';
+import { Markdown, LocalizedMarkdown } from './markdown.js';
+import { MarkdownRenderer } from './markdown-renderer.js';
+import { MarkdownString, MarkdownStringImpl } from '../../common/markdown-rendering/markdown-string.js';
 
 let disableJSDOM: () => void;
 

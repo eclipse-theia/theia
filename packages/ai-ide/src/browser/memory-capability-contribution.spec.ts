@@ -22,10 +22,10 @@ import {
     FIND_FILES_BY_PATTERN_FUNCTION_ID,
     GET_WORKSPACE_FILE_LIST_FUNCTION_ID,
     SEARCH_IN_WORKSPACE_FUNCTION_ID
-} from '../common/workspace-functions';
-import { WRITE_FILE_CONTENT_ID, WRITE_FILE_REPLACEMENTS_ID } from '../common/file-changeset-function-ids';
-import { MEMORY_DIRECTORY_VARIABLE } from './memory-directory-variable-contribution';
-import { MemoryCapabilityContribution } from './memory-capability-contribution';
+} from '../common/workspace-functions.js';
+import { WRITE_FILE_CONTENT_ID, WRITE_FILE_REPLACEMENTS_ID } from '../common/file-changeset-function-ids.js';
+import { MEMORY_DIRECTORY_VARIABLE } from './memory-directory-variable-contribution.js';
+import { MemoryCapabilityContribution } from './memory-capability-contribution.js';
 
 const registerFragment = (): { id: string, template: string } => {
     const fragments: Array<{ id: string, template: string }> = [];

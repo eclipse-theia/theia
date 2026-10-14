@@ -21,7 +21,7 @@ import { open, OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { ChatService } from '../common';
+import { ChatService } from '../common/index.js';
 
 export const VARIABLE_ADD_CONTEXT_COMMAND: Command = Command.toLocalizedCommand({
     id: 'add-context-variable',

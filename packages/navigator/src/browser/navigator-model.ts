@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import URI from '@theia/core/lib/common/uri';
 import { FileNode, FileTreeModel } from '@theia/filesystem/lib/browser';
 import { OpenerService, open, TreeNode, ExpandableTreeNode, CompositeTreeNode, SelectableTreeNode } from '@theia/core/lib/browser';
-import { FileNavigatorTree, WorkspaceRootNode, WorkspaceNode } from './navigator-tree';
+import { FileNavigatorTree, WorkspaceRootNode, WorkspaceNode } from './navigator-tree.js';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { ProgressService } from '@theia/core/lib/common/progress-service';

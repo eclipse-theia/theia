@@ -42,10 +42,10 @@ import type {
     ResponseToolSearchOutputItem
 } from 'openai/resources/responses/responses';
 import type { ResponsesModel } from 'openai/resources/shared';
-import { DeveloperMessageSettings } from './openai-language-model';
-import type { OpenAiModelUtils } from './openai-model-utils';
-import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools';
-import { AbstractStreamingResponseIterator } from './streaming-response-iterator';
+import { DeveloperMessageSettings } from './openai-language-model.js';
+import type { OpenAiModelUtils } from './openai-model-utils.js';
+import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools.js';
+import { AbstractStreamingResponseIterator } from './streaming-response-iterator.js';
 
 export const OPENAI_FUNCTION_CALL_REASONING_DATA_KEY = 'openAiFunctionCallReasoning';
 

@@ -18,13 +18,13 @@ import { join } from 'path';
 import { homedir } from 'os';
 import { injectable, inject, named } from 'inversify';
 import * as drivelist from 'drivelist';
-import { pathExists, mkdir } from 'fs-extra';
-import { EnvVariable, EnvVariablesServer } from '../../common/env-variables';
-import { isWindows } from '../../common/os';
-import { FileUri } from '../../common/file-uri';
-import { BackendApplicationPath } from '../backend-application';
-import { BackendApplicationConfigProvider } from '../backend-application-config-provider';
-import { ILogger } from '../../common/logger';
+import { pathExists, mkdir } from '../../../shared/fs-extra/index.cjs';
+import { EnvVariable, EnvVariablesServer } from '../../common/env-variables/index.js';
+import { isWindows } from '../../common/os.js';
+import { FileUri } from '../../common/file-uri.js';
+import { BackendApplicationPath } from '../backend-application.js';
+import { BackendApplicationConfigProvider } from '../backend-application-config-provider.js';
+import { ILogger } from '../../common/logger.js';
 
 @injectable()
 export class EnvVariablesServerImpl implements EnvVariablesServer {

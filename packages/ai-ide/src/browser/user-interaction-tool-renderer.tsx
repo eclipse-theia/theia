@@ -35,7 +35,7 @@ import {
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { PendingToolConfirmationTracker } from '@theia/ai-chat/lib/browser/pending-tool-confirmation-tracker';
 import { ToolInvocationRegistry } from '@theia/ai-core';
-import { UserInteractionTool } from './user-interaction-tool';
+import { UserInteractionTool } from './user-interaction-tool.js';
 import {
     USER_INTERACTION_FUNCTION_ID,
     UserInteractionArgs,
@@ -49,7 +49,7 @@ import {
     parseUserInteractionInput,
     parseUserInteractionResult,
     resolveContentRef,
-} from '../common/user-interaction-tool';
+} from '../common/user-interaction-tool.js';
 
 interface StepState {
     value?: string;

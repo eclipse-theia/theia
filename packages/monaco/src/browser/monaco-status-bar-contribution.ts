@@ -18,7 +18,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { DisposableCollection, nls } from '@theia/core';
 import { StatusBar, StatusBarAlignment, Widget, WidgetStatusBarContribution } from '@theia/core/lib/browser';
 import { EditorCommands, EditorWidget } from '@theia/editor/lib/browser';
-import { MonacoEditor } from './monaco-editor';
+import { MonacoEditor } from './monaco-editor.js';
 import * as monaco from '@theia/monaco-editor-core';
 
 export const EDITOR_STATUS_TABBING_CONFIG = 'editor-status-tabbing-config';

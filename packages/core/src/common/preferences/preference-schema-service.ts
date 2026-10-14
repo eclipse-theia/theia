@@ -15,16 +15,16 @@
 // *****************************************************************************
 
 import { inject, injectable, named, postConstruct } from 'inversify';
-import { Disposable } from '../disposable';
-import { Emitter } from '../event';
-import { IJSONSchema } from '../json-schema';
+import { Disposable } from '../disposable.js';
+import { Emitter } from '../event.js';
+import { IJSONSchema } from '../json-schema.js';
 import { JSONObject, JSONValue } from '@lumino/coreutils';
-import { PreferenceDataProperty, PreferenceSchema, PreferenceSchemaService, DefaultValueChangedEvent, PreferenceContribution } from './preference-schema';
-import { PreferenceScope, ValidPreferenceScopes } from './preference-scope';
-import { PreferenceUtils } from './preference-provider';
-import { ContributionProvider } from '../contribution-provider';
-import { Deferred } from '../promise-util';
-import { ILogger } from '../logger';
+import { PreferenceDataProperty, PreferenceSchema, PreferenceSchemaService, DefaultValueChangedEvent, PreferenceContribution } from './preference-schema.js';
+import { PreferenceScope, ValidPreferenceScopes } from './preference-scope.js';
+import { PreferenceUtils } from './preference-provider.js';
+import { ContributionProvider } from '../contribution-provider.js';
+import { Deferred } from '../promise-util.js';
+import { ILogger } from '../logger.js';
 
 export const NO_OVERRIDE = {};
 export const OVERRIDE_PROPERTY = '\\[(.*)\\]$';

@@ -29,7 +29,7 @@ import {
     FileDiagnosticProvider,
     WorkspaceFunctionScope,
     FindFilesByPattern
-} from './workspace-functions';
+} from './workspace-functions.js';
 import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { AiConfigurationService, ToolInvocationContext } from '@theia/ai-core';
 import { Container } from '@theia/core/shared/inversify';

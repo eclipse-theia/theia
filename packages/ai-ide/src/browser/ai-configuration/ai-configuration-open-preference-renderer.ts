@@ -20,7 +20,7 @@ import { AI_CONFIGURATION_OPEN_PREFERENCE_ID } from '@theia/ai-core/lib/browser'
 import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from '@theia/preferences/lib/browser/views/components/preference-node-renderer';
 import { PreferenceLeafNodeRendererContribution } from '@theia/preferences/lib/browser/views/components/preference-node-renderer-creator';
 import { Preference } from '@theia/preferences/lib/browser/util/preference-types';
-import { OPEN_AI_CONFIG_VIEW } from './ai-configuration-view-contribution';
+import { OPEN_AI_CONFIG_VIEW } from './ai-configuration-view-contribution.js';
 
 /**
  * Renders the {@link AI_CONFIGURATION_OPEN_PREFERENCE_ID} placeholder (shown where the AI

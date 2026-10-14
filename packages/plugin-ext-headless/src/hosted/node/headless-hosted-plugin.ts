@@ -22,7 +22,7 @@
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { getPluginId, DeployedPlugin, HostedPluginServer, PluginDeployer } from '@theia/plugin-ext/lib/common/plugin-protocol';
-import { setUpPluginApi } from '../../main/node/main-context';
+import { setUpPluginApi } from '../../main/node/main-context.js';
 import { RPCProtocol, RPCProtocolImpl } from '@theia/plugin-ext/lib/common/rpc-protocol';
 import { ContributionProvider, Disposable, DisposableCollection, ILogger, nls } from '@theia/core';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
@@ -30,10 +30,10 @@ import { IPCChannel } from '@theia/core/lib/node';
 import { BackendApplicationConfigProvider } from '@theia/core/lib/node/backend-application-config-provider';
 import { HostedPluginProcess } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin-process';
 import { IShellTerminalServer } from '@theia/terminal/lib/common/shell-terminal-protocol';
-import { HeadlessPluginManagerExt, HEADLESSMAIN_RPC_CONTEXT } from '../../common/headless-plugin-rpc';
+import { HeadlessPluginManagerExt, HEADLESSMAIN_RPC_CONTEXT } from '../../common/headless-plugin-rpc.js';
 import { AbstractHostedPluginSupport, PluginContributions } from '@theia/plugin-ext/lib/hosted/common/hosted-plugin';
-import { TheiaHeadlessPluginScanner } from './scanners/scanner-theia-headless';
-import { SupportedHeadlessActivationEvents } from '../../common/headless-plugin-protocol';
+import { TheiaHeadlessPluginScanner } from './scanners/scanner-theia-headless.js';
+import { SupportedHeadlessActivationEvents } from '../../common/headless-plugin-protocol.js';
 import { PluginDeployerImpl } from '@theia/plugin-ext/lib/main/node/plugin-deployer-impl';
 
 import URI from '@theia/core/lib/common/uri';

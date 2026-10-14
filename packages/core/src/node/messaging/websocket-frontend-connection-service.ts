@@ -13,19 +13,19 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 
-import { Channel, WriteBuffer } from '../../common/message-rpc';
-import { MessagingService } from './messaging-service';
+import { Channel, WriteBuffer } from '../../common/message-rpc/index.js';
+import { MessagingService } from './messaging-service.js';
 import { inject, injectable, interfaces, named } from 'inversify';
 import { Socket } from 'socket.io';
-import { ConnectionHandlers, MessagingContainer } from './default-messaging-service';
-import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer';
-import { FrontendConnectionService } from './frontend-connection-service';
-import { AbstractChannel } from '../../common/message-rpc/channel';
-import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
-import { BackendApplicationConfigProvider } from '../backend-application-config-provider';
-import { WebsocketEndpoint } from './websocket-endpoint';
-import { ConnectionManagementMessages } from '../../common/messaging/connection-management';
-import { Disposable, DisposableCollection, ILogger } from '../../common';
+import { ConnectionHandlers, MessagingContainer } from './default-messaging-service.js';
+import { SocketWriteBuffer } from '../../common/messaging/socket-write-buffer.js';
+import { FrontendConnectionService } from './frontend-connection-service.js';
+import { AbstractChannel } from '../../common/message-rpc/channel.js';
+import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer.js';
+import { BackendApplicationConfigProvider } from '../backend-application-config-provider.js';
+import { WebsocketEndpoint } from './websocket-endpoint.js';
+import { ConnectionManagementMessages } from '../../common/messaging/connection-management.js';
+import { Disposable, DisposableCollection, ILogger } from '../../common/index.js';
 
 @injectable()
 export class WebsocketFrontendConnectionService implements FrontendConnectionService {

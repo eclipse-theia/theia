@@ -16,8 +16,8 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { ApplicationShellLayoutMigration, WidgetDescription } from '@theia/core/lib/browser/shell/shell-layout-restorer';
-import { PROBLEM_KIND } from '../../common/problem-marker';
-import { PROBLEMS_WIDGET_ID } from './problem-widget';
+import { PROBLEM_KIND } from '../../common/problem-marker.js';
+import { PROBLEMS_WIDGET_ID } from './problem-widget.js';
 
 @injectable()
 export class ProblemLayoutVersion3Migration implements ApplicationShellLayoutMigration {

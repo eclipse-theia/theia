@@ -20,10 +20,10 @@ import { TreeElement, TreeSource } from '@theia/core/lib/browser/source-tree';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { FuzzySearch } from '@theia/core/lib/common/fuzzy-search';
-import { VSXExtensionsModel } from './vsx-extensions-model';
-import { ExtensionsSourceContribution, SearchContext, SearchResult } from './extensions-source-contribution';
-import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import { VSXExtensionsModel } from './vsx-extensions-model.js';
+import { ExtensionsSourceContribution, SearchContext, SearchResult } from './extensions-source-contribution.js';
+import { VSXExtensionsSearchModel } from './vsx-extensions-search-model.js';
+import debounce from '@theia/core/shared/lodash.debounce';
 
 @injectable()
 export class VSXExtensionsSourceOptions {

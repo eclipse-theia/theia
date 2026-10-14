@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as theia from '@theia/plugin';
-import * as types from '../types-impl';
+import * as types from '../types-impl.js';
 
 export function isLocationArray(array: unknown): array is types.Location[] {
     return Array.isArray(array) && array.length > 0 && array[0] instanceof types.Location;

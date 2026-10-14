@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { nls } from './nls';
-import { isOSX } from './os';
-import { isObject } from './types';
+import { nls } from './nls.js';
+import { isOSX } from './os.js';
+import { isObject } from './types.js';
 
 export type KeySequence = KeyCode[];
 export namespace KeySequence {

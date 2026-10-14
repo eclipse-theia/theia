@@ -22,10 +22,10 @@ import { BaseWidget, PanelLayout, Widget, Message, MessageLoop, StatefulWidget, 
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import URI from '@theia/core/lib/common/uri';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
-import { ConsoleHistory } from './console-history';
-import { ConsoleContentWidget } from './console-content-widget';
-import { ConsoleSession } from './console-session';
-import { ConsoleSessionManager } from './console-session-manager';
+import { ConsoleHistory } from './console-history.js';
+import { ConsoleContentWidget } from './console-content-widget.js';
+import { ConsoleSession } from './console-session.js';
+import { ConsoleSessionManager } from './console-session-manager.js';
 import * as monaco from '@theia/monaco-editor-core';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { EditorManager } from '@theia/editor/lib/browser';

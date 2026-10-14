@@ -26,7 +26,7 @@ import { flushSync } from '@theia/core/shared/react-dom';
 import { createRoot } from '@theia/core/shared/react-dom/client';
 import { ReasoningSupport } from '@theia/ai-core/lib/common';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
-import { ReasoningRow } from './language-model-renderer';
+import { ReasoningRow } from './language-model-renderer.js';
 
 disableJSDOM();
 

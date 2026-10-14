@@ -16,9 +16,9 @@
 
 import { createTreeContainer, TreeProps } from '@theia/core/lib/browser';
 import { interfaces } from '@theia/core/shared/inversify';
-import { ChatFindHighlighter } from '../chat-find/chat-find-highlighter';
-import { ChatFindWidget } from '../chat-find/chat-find-widget';
-import { ChatViewTreeWidget } from './chat-view-tree-widget';
+import { ChatFindHighlighter } from '../chat-find/chat-find-highlighter.js';
+import { ChatFindWidget } from '../chat-find/chat-find-widget.js';
+import { ChatViewTreeWidget } from './chat-view-tree-widget.js';
 
 const CHAT_VIEW_TREE_PROPS = {
     multiSelect: false,

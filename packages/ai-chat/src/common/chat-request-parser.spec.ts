@@ -15,15 +15,15 @@
 // *****************************************************************************
 
 import * as sinon from 'sinon';
-import { ChatAgentServiceImpl } from './chat-agent-service';
-import { ChatRequestParserImpl } from './chat-request-parser';
-import { ChatAgent, ChatAgentLocation } from './chat-agents';
-import { ChatContext, ChatRequest } from './chat-model';
+import { ChatAgentServiceImpl } from './chat-agent-service.js';
+import { ChatRequestParserImpl } from './chat-request-parser.js';
+import { ChatAgent, ChatAgentLocation } from './chat-agents.js';
+import { ChatContext, ChatRequest } from './chat-model.js';
 import { expect } from 'chai';
 import { AIVariable, DefaultAIVariableService, PromptService, ResolvedAIVariable, ToolInvocationRegistryImpl, ToolRequest } from '@theia/ai-core';
 import { ILogger, Logger } from '@theia/core';
-import { ParsedChatRequestAgentPart, ParsedChatRequestFunctionPart, ParsedChatRequestTextPart, ParsedChatRequestVariablePart } from './parsed-chat-request';
-import { AgentDelegationTool } from '../browser/agent-delegation-tool';
+import { ParsedChatRequestAgentPart, ParsedChatRequestFunctionPart, ParsedChatRequestTextPart, ParsedChatRequestVariablePart } from './parsed-chat-request.js';
+import { AgentDelegationTool } from '../browser/agent-delegation-tool.js';
 
 describe('ChatRequestParserImpl', () => {
     /** Command names the stubbed `PromptService` knows about. Anything else is not a command. */

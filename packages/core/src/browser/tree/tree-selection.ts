@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { TreeNode } from './tree';
-import { Event, Disposable, isObject, SelectionProvider } from '../../common';
+import { TreeNode } from './tree.js';
+import { Event, Disposable, isObject, SelectionProvider } from '../../common/index.js';
 
 /**
  * The tree selection service.

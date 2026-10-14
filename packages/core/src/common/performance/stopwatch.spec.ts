@@ -16,10 +16,10 @@
 
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Deferred } from '../promise-util';
-import { Measurement, MeasurementOptions } from './measurement';
-import { MeasurementContext } from './stopwatch';
-import { SimpleStopwatch } from './simple-stopwatch';
+import { Deferred } from '../promise-util.js';
+import { Measurement, MeasurementOptions } from './measurement.js';
+import { MeasurementContext } from './stopwatch.js';
+import { SimpleStopwatch } from './simple-stopwatch.js';
 
 /**
  * A fake {@link Measurement} whose log methods are sinon spies, with a

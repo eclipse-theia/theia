@@ -16,8 +16,8 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging';
-import { ShellExecutionServer, shellExecutionPath } from '../common/shell-execution-server';
-import { ShellExecutionServerImpl } from './shell-execution-server-impl';
+import { ShellExecutionServer, shellExecutionPath } from '../common/shell-execution-server.js';
+import { ShellExecutionServerImpl } from './shell-execution-server-impl.js';
 
 export default new ContainerModule(bind => {
     bind(ShellExecutionServerImpl).toSelf().inSingletonScope();

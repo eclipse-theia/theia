@@ -20,13 +20,13 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 const disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 import * as monaco from '@theia/monaco-editor-core';
-import { mainWindow } from '@theia/monaco-editor-core/esm/vs/base/browser/window';
+import { mainWindow } from '@theia/monaco-editor-core/esm/vs/base/browser/window.js';
 import { URI } from '@theia/core/lib/common/uri';
 import { expectThrowsAsync } from '@theia/core/lib/common/test/expect';
 import { CellEditType, CellUri } from '@theia/notebook/lib/common';
 import { CellEditOperation } from '@theia/notebook/lib/browser/notebook-types';
 import type { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
-import { LanguagesMainImpl } from './languages-main';
+import { LanguagesMainImpl } from './languages-main.js';
 
 after(() => disableJSDOM());
 

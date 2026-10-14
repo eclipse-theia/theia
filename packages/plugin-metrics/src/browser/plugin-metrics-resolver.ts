@@ -17,8 +17,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { PluginMetricsCreator } from './plugin-metrics-creator';
-import { createRequestData } from '../common/plugin-metrics-types';
+import { PluginMetricsCreator } from './plugin-metrics-creator.js';
+import { createRequestData } from '../common/plugin-metrics-types.js';
 
 /**
  * This class helps resolve language server requests into successes or failures

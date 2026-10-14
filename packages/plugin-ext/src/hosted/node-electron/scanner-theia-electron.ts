@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import * as path from 'path';
-import { TheiaPluginScanner } from '../node/scanners/scanner-theia';
+import { TheiaPluginScanner } from '../node/scanners/scanner-theia.js';
 import { injectable } from '@theia/core/shared/inversify';
-import { PluginPackage, PluginModel } from '../../common/plugin-protocol';
+import { PluginPackage, PluginModel } from '../../common/plugin-protocol.js';
 
 @injectable()
 export class TheiaPluginScannerElectron extends TheiaPluginScanner {

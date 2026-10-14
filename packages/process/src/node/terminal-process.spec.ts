@@ -16,9 +16,9 @@
 import * as chai from 'chai';
 import * as process from 'process';
 import * as stream from 'stream';
-import { createProcessTestContainer } from './test/process-test-container';
-import { TerminalProcessFactory } from './terminal-process';
-import { IProcessExitEvent, ProcessErrorEvent } from './process';
+import { createProcessTestContainer } from './test/process-test-container.js';
+import { TerminalProcessFactory } from './terminal-process.js';
+import { IProcessExitEvent, ProcessErrorEvent } from './process.js';
 import { isWindows } from '@theia/core/lib/common/os';
 
 /**
@@ -70,7 +70,7 @@ describe('TerminalProcess', function (): void {
 
     it('test error on trying to execute a directory', async function (): Promise<void> {
         const error = await new Promise<ProcessErrorEvent | IProcessExitEvent>((resolve, reject) => {
-            const proc = terminalProcessFactory({ command: __dirname });
+            const proc = terminalProcessFactory({ command: import.meta.dirname });
             proc.onError(resolve);
             proc.onExit(resolve);
         });

@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { Disposable, DisposableCollection } from '../disposable';
-import { Emitter, Event } from '../event';
-import { ReadBuffer, WriteBuffer } from './message-buffer';
+import { Disposable, DisposableCollection } from '../disposable.js';
+import { Emitter, Event } from '../event.js';
+import { ReadBuffer, WriteBuffer } from './message-buffer.js';
 
 /**
  * A channel is a bidirectional communications channel with lifecycle and

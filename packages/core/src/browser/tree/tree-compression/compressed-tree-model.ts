@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { injectable, inject } from 'inversify';
-import { CompressionToggle, TreeCompressionService } from './tree-compression-service';
-import { CompositeTreeNode, TreeNode } from '../tree';
-import { TreeModelImpl } from '../tree-model';
-import { SelectableTreeNode, TreeSelection } from '../tree-selection';
-import { ExpandableTreeNode } from '../tree-expansion';
-import { TopDownTreeIterator, TreeIterator } from '../tree-iterator';
+import { CompressionToggle, TreeCompressionService } from './tree-compression-service.js';
+import { CompositeTreeNode, TreeNode } from '../tree.js';
+import { TreeModelImpl } from '../tree-model.js';
+import { SelectableTreeNode, TreeSelection } from '../tree-selection.js';
+import { ExpandableTreeNode } from '../tree-expansion.js';
+import { TopDownTreeIterator, TreeIterator } from '../tree-iterator.js';
 
 export class TopDownCompressedTreeIterator extends TopDownTreeIterator {
 

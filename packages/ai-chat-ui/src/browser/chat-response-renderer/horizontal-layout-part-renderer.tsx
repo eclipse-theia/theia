@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
+import { ChatResponsePartRenderer } from '../chat-response-part-renderer.js';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import {
     ChatResponseContent,
@@ -22,7 +22,7 @@ import {
 } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import { ContributionProvider } from '@theia/core';
-import { ResponseNode } from '../chat-tree-view/chat-view-tree-widget';
+import { ResponseNode } from '../chat-tree-view/chat-view-tree-widget.js';
 
 @injectable()
 export class HorizontalLayoutPartRenderer

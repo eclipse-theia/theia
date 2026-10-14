@@ -21,9 +21,9 @@ import { getProxyUrl, ModelDiscoveryFetcher } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { APIConnectionError } from '@anthropic-ai/sdk';
 import type { ModelInfo } from '@anthropic-ai/sdk/resources/models';
-import { AnthropicLanguageModelFactory, AnthropicModel, createAnthropicClient, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
-import { ANTHROPIC_SERVER_TOOLS } from './anthropic-server-tools';
-import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
+import { AnthropicLanguageModelFactory, AnthropicModel, createAnthropicClient, DEFAULT_MAX_TOKENS } from './anthropic-language-model.js';
+import { ANTHROPIC_SERVER_TOOLS } from './anthropic-server-tools.js';
+import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common/index.js';
 import { ILogger } from '@theia/core';
 
 const ANTHROPIC_DEFAULT_BASE_URL = 'https://api.anthropic.com';

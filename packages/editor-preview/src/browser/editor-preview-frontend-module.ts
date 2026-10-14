@@ -17,14 +17,14 @@
 import '../../src/browser/style/index.css';
 import { FrontendApplicationContribution, KeybindingContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindEditorPreviewPreferences } from '../common/editor-preview-preferences';
-import { EditorPreviewManager } from './editor-preview-manager';
+import { bindEditorPreviewPreferences } from '../common/editor-preview-preferences.js';
+import { EditorPreviewManager } from './editor-preview-manager.js';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { EditorPreviewWidgetFactory } from './editor-preview-widget-factory';
-import { EditorPreviewContribution } from './editor-preview-contribution';
+import { EditorPreviewWidgetFactory } from './editor-preview-widget-factory.js';
+import { EditorPreviewContribution } from './editor-preview-contribution.js';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { OpenEditorsTreeDecorator } from '@theia/navigator/lib/browser/open-editors-widget/navigator-open-editors-decorator-service';
-import { EditorPreviewTreeDecorator } from './editor-preview-tree-decorator';
+import { EditorPreviewTreeDecorator } from './editor-preview-tree-decorator.js';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 

@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 // only type imports are allowed here since this runs in an iframe. All other code is not accessible
-import type * as webviewCommunication from './webview-communication';
+import type * as webviewCommunication from './webview-communication.js';
 import type * as rendererApi from 'vscode-notebook-renderer';
 import type { Disposable, Event } from '@theia/core';
 

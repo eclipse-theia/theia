@@ -14,33 +14,33 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import PerfectScrollbar from 'perfect-scrollbar';
+import { PerfectScrollbar } from '../widgets/perfect-scrollbar.js';
 import { TabBar, Title, Widget } from '@lumino/widgets';
 import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@lumino/virtualdom';
-import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, nls, ArrayUtils } from '../../common';
-import { ContextMenuRenderer } from '../context-menu-renderer';
+import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, nls, ArrayUtils } from '../../common/index.js';
+import { ContextMenuRenderer } from '../context-menu-renderer.js';
 import { Signal, Slot } from '@lumino/signaling';
 import { Message } from '@lumino/messaging';
 import { ArrayExt } from '@lumino/algorithm';
 import { ElementExt } from '@lumino/domutils';
-import { TabBarToolbarRegistry, TabBarToolbar } from './tab-bar-toolbar';
-import { TheiaDockPanel, MAIN_AREA_ID, BOTTOM_AREA_ID } from './theia-dock-panel';
-import { WidgetDecoration } from '../widget-decoration';
-import { TabBarDecoratorService } from './tab-bar-decorator';
-import { IconThemeService } from '../icon-theme-service';
-import { BreadcrumbsRenderer, BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
-import { NavigatableWidget } from '../navigatable-types';
+import { TabBarToolbarRegistry, TabBarToolbar } from './tab-bar-toolbar/index.js';
+import { TheiaDockPanel, MAIN_AREA_ID, BOTTOM_AREA_ID } from './theia-dock-panel.js';
+import { WidgetDecoration } from '../widget-decoration.js';
+import { TabBarDecoratorService } from './tab-bar-decorator.js';
+import { IconThemeService } from '../icon-theme-service.js';
+import { BreadcrumbsRenderer, BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer.js';
+import { NavigatableWidget } from '../navigatable-types.js';
 import { Drag } from '@lumino/dragdrop';
-import { LOCKED_CLASS, PINNED_CLASS } from '../widgets/widget';
-import { CorePreferences } from '../../common/core-preferences';
-import { HoverService } from '../hover-service';
+import { LOCKED_CLASS, PINNED_CLASS } from '../widgets/widget.js';
+import { CorePreferences } from '../../common/core-preferences.js';
+import { HoverService } from '../hover-service.js';
 import { Root, createRoot } from 'react-dom/client';
-import { SelectComponent } from '../widgets/select-component';
+import { SelectComponent } from '../widgets/select-component.js';
 import { createElement } from 'react';
-import { PreviewableWidget } from '../widgets/previewable-widget';
-import { EnhancedPreviewWidget } from '../widgets/enhanced-preview-widget';
-import { isContextMenuEvent } from '../browser';
-import { ContextKeyService } from '../context-key-service';
+import { PreviewableWidget } from '../widgets/previewable-widget.js';
+import { EnhancedPreviewWidget } from '../widgets/enhanced-preview-widget.js';
+import { isContextMenuEvent } from '../browser.js';
+import { ContextKeyService } from '../context-key-service.js';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';

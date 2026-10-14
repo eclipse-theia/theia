@@ -16,8 +16,8 @@
 
 import { ResourceLabelFormatter } from '@theia/plugin';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { LabelServiceExt, LabelServiceMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
-import { RPCProtocol } from '../common/rpc-protocol';
+import { LabelServiceExt, LabelServiceMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
 
 export class LabelServiceExtImpl implements LabelServiceExt {
     private handle: number = 0;

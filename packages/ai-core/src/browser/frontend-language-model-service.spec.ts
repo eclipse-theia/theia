@@ -20,9 +20,9 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { LanguageModel, ReasoningSettings, ReasoningSupport, UserRequest } from '../common';
-import { PREFERENCE_NAME_REASONING, ReasoningPreferenceEntry } from '../common/ai-core-preferences';
-import { FrontendLanguageModelServiceImpl } from './frontend-language-model-service';
+import { LanguageModel, ReasoningSettings, ReasoningSupport, UserRequest } from '../common/index.js';
+import { PREFERENCE_NAME_REASONING, ReasoningPreferenceEntry } from '../common/ai-core-preferences.js';
+import { FrontendLanguageModelServiceImpl } from './frontend-language-model-service.js';
 
 disableJSDOM();
 

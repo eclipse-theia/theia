@@ -22,10 +22,10 @@ import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { TypeBadge } from '@theia/vsx-registry/lib/browser/type-badge';
 import { ExtensionCard, ExtensionCardTrust } from '@theia/vsx-registry/lib/browser/extension-card';
 import { MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manager';
-import { RegistryArtifactKind } from '../../common/ai-registry-preferences';
-import { ClassificationResult, ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
-import { RegistryEntryContext } from '../registry-entry-context';
-import { RegistryEntryGear, RegistryEntryMenuEvent, showEntryMenu } from '../registry-entry-menu';
+import { RegistryArtifactKind } from '../../common/ai-registry-preferences.js';
+import { ClassificationResult, ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types.js';
+import { RegistryEntryContext } from '../registry-entry-context.js';
+import { RegistryEntryGear, RegistryEntryMenuEvent, showEntryMenu } from '../registry-entry-menu.js';
 
 /**
  * Per-entry action callbacks provided by the contribution. Entries close over

@@ -29,7 +29,7 @@ import { SinglePageCategoryRenderer } from '@theia/ai-core-ui/lib/browser/ai-con
 import { AiConfigurationSection } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-primitives';
 import { AiSettingsRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
-import { SAMPLE_CHAT_NODE_TOOLBAR_ENABLED_PREF } from '../chat/sample-chat-node-toolbar-preferences';
+import { SAMPLE_CHAT_NODE_TOOLBAR_ENABLED_PREF } from '../chat/sample-chat-node-toolbar-preferences.js';
 
 /**
  * Sample `single-page` AI configuration category contributed by `@theia/api-samples`. It sets

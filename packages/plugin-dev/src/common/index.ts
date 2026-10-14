@@ -16,6 +16,6 @@
 
 // Exports contribution point for uri postprocessor of hosted plugin manager.
 // This could be used to alter hosted instance uri, for example, change port.
-export * from '../node/hosted-plugin-uri-postprocessor';
+export * from '../node/hosted-plugin-uri-postprocessor.js';
 
-export * from './plugin-dev-protocol';
+export * from './plugin-dev-protocol.js';

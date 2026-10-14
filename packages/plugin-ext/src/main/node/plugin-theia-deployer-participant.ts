@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { PluginTheiaEnvironment } from '../common/plugin-theia-environment';
-import { PluginDeployerParticipant, PluginDeployerStartContext } from '../../common/plugin-protocol';
+import { PluginTheiaEnvironment } from '../common/plugin-theia-environment.js';
+import { PluginDeployerParticipant, PluginDeployerStartContext } from '../../common/plugin-protocol.js';
 
 @injectable()
 export class PluginTheiaDeployerParticipant implements PluginDeployerParticipant {

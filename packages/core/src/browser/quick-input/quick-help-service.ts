@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { CancellationToken } from '../../common';
-import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from './quick-access';
-import { QuickInputService, QuickPickItem, QuickPickSeparator } from './quick-input-service';
+import { CancellationToken } from '../../common/index.js';
+import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from './quick-access.js';
+import { QuickInputService, QuickPickItem, QuickPickSeparator } from './quick-input-service.js';
 
 @injectable()
 export class QuickHelpService implements QuickAccessProvider, QuickAccessContribution {

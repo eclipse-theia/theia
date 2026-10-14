@@ -23,7 +23,7 @@ import {
     MutableChatResponseModel,
     QuestionResponseContentImpl,
     ToolCallChatResponseContentImpl
-} from './chat-model';
+} from './chat-model.js';
 
 describe('MutableChatResponseModel', () => {
     describe('content change propagation', () => {

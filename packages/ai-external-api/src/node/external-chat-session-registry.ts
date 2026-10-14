@@ -21,7 +21,7 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import {
     ExternalChatPrompt, ExternalChatPromptResult, ExternalChatSessionCreateRequest, ExternalChatSessionCreateResult,
     ExternalChatSessionDetail, ExternalChatSessionProvider, ExternalChatSessionSummary
-} from '../common/external-chat-session-provider';
+} from '../common/external-chat-session-provider.js';
 
 /**
  * Aggregates the {@link ExternalChatSessionProvider}s of all connected frontends.

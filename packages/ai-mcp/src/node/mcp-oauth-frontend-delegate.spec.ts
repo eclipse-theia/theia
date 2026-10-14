@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { MCPOAuthFrontendDelegateClient } from '../common/mcp-oauth';
-import { MCPOAuthCallbackEndpoint } from './mcp-oauth-callback-endpoint';
-import { MCPOAuthFrontendDelegateImpl } from './mcp-oauth-frontend-delegate';
+import { MCPOAuthFrontendDelegateClient } from '../common/mcp-oauth.js';
+import { MCPOAuthCallbackEndpoint } from './mcp-oauth-callback-endpoint.js';
+import { MCPOAuthFrontendDelegateImpl } from './mcp-oauth-frontend-delegate.js';
 
 class TestOAuthFrontendDelegateClient implements MCPOAuthFrontendDelegateClient {
     prepareAuthorizationCalls = 0;

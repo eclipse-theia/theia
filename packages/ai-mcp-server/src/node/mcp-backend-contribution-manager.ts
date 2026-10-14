@@ -18,7 +18,7 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { MCPBackendContribution } from './mcp-theia-server';
+import { MCPBackendContribution } from './mcp-theia-server.js';
 
 /**
  * Manages the registration of backend MCP contributions

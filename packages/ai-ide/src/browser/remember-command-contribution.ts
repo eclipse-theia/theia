@@ -19,8 +19,8 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { PromptService } from '@theia/ai-core/lib/common';
 import { nls } from '@theia/core';
 import { AGENT_DELEGATION_FUNCTION_ID, AGENTS_MD_FILE_NAME } from '@theia/ai-core';
-import { ArchitectAgentId } from './architect-agent';
-import { CoderAgentId } from './coder-agent';
+import { ArchitectAgentId } from './architect-agent.js';
+import { CoderAgentId } from './coder-agent.js';
 
 /**
  * Contribution that registers the `/remember` slash command for AI chat agents.

@@ -25,7 +25,7 @@ import { AbstractToolbarContribution } from '@theia/toolbar/lib/browser/abstract
 import { ToolbarMenus, ReactInteraction } from '@theia/toolbar/lib/browser/toolbar-constants';
 import { ToolbarContribution } from '@theia/toolbar/lib/browser/toolbar-interfaces';
 import { ToolbarDefaultsFactory } from '@theia/toolbar/lib/browser/toolbar-defaults';
-import { SampleToolbarDefaultsOverride } from './sample-toolbar-defaults-override';
+import { SampleToolbarDefaultsOverride } from './sample-toolbar-defaults-override.js';
 import '../../../src/browser/toolbar/sample-toolbar-contribution.css';
 
 export const bindSampleToolbarContribution = (bind: interfaces.Bind, rebind: interfaces.Rebind) => {

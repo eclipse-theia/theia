@@ -16,15 +16,15 @@
 
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { Command, CommandContribution, CommandHandler, CommandRegistry } from '@theia/core/lib/common/command';
-import { DebugSessionManager } from './debug-session-manager';
-import { DebugConfigurationManager } from './debug-configuration-manager';
-import { DebugCommands } from './debug-commands';
-import { DebugSessionOptions } from './debug-session-options';
+import { DebugSessionManager } from './debug-session-manager.js';
+import { DebugConfigurationManager } from './debug-configuration-manager.js';
+import { DebugCommands } from './debug-commands.js';
+import { DebugSessionOptions } from './debug-session-options.js';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry, QuickInputService, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
-import { DebugPreferences } from '../common/debug-preferences';
+import { DebugPreferences } from '../common/debug-preferences.js';
 import { filterItems, QuickPickItemOrSeparator, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
 import { CancellationToken, nls } from '@theia/core/lib/common';
 

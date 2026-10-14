@@ -22,10 +22,10 @@ import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { TypeBadge } from '@theia/vsx-registry/lib/browser/type-badge';
 import { ExtensionCard } from '@theia/vsx-registry/lib/browser/extension-card';
-import { RegistryArtifactKind } from '../../common/ai-registry-preferences';
-import { InstalledPluginInfo, PluginClassificationResult, ResolvedPluginEntry } from '../../common/plugin/plugin-registry-types';
-import { RegistryEntryContext } from '../registry-entry-context';
-import { RegistryEntryGear, RegistryEntryMenuEvent, showEntryMenu } from '../registry-entry-menu';
+import { RegistryArtifactKind } from '../../common/ai-registry-preferences.js';
+import { InstalledPluginInfo, PluginClassificationResult, ResolvedPluginEntry } from '../../common/plugin/plugin-registry-types.js';
+import { RegistryEntryContext } from '../registry-entry-context.js';
+import { RegistryEntryGear, RegistryEntryMenuEvent, showEntryMenu } from '../registry-entry-menu.js';
 
 export const AGENT_PLUGINS_LABEL = nls.localizeByDefault('Agent Plugins');
 

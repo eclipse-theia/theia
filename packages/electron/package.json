@@ -2,6 +2,7 @@
   "name": "@theia/electron",
   "version": "1.76.0",
   "description": "Theia - Electron utility package",
+  "type": "module",
   "dependencies": {
     "electron-store": "^8.2.0",
     "fix-path": "^4.0.0",
@@ -54,5 +55,14 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json",
+    "./shared/fix-path": "./shared/fix-path/index.js",
+    "./shared/*": "./shared/*/index.cjs",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

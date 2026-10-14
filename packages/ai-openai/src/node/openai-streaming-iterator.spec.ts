@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { StreamingAsyncIterator } from './openai-streaming-iterator';
+import { StreamingAsyncIterator } from './openai-streaming-iterator.js';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
 import { CancellationTokenSource, CancellationError } from '@theia/core';
 import { LanguageModelStreamResponsePart, isTextResponsePart, isToolCallResponsePart } from '@theia/ai-core';

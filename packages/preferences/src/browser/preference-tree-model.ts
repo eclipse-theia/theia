@@ -26,13 +26,13 @@ import {
     SelectableTreeNode,
 } from '@theia/core/lib/browser';
 import { Emitter, PreferenceDataProperty, PreferenceSchemaService, PreferenceService } from '@theia/core';
-import { PreferencesSearchbarWidget } from './views/preference-searchbar-widget';
-import { PreferenceTreeGenerator } from './util/preference-tree-generator';
+import { PreferencesSearchbarWidget } from './views/preference-searchbar-widget.js';
+import { PreferenceTreeGenerator } from './util/preference-tree-generator.js';
 import * as fuzzy from '@theia/core/shared/fuzzy';
-import { PreferencesScopeTabBar } from './views/preference-scope-tabbar-widget';
-import { Preference } from './util/preference-types';
+import { PreferencesScopeTabBar } from './views/preference-scope-tabbar-widget.js';
+import { Preference } from './util/preference-types.js';
 import { Event } from '@theia/core/lib/common';
-import { COMMONLY_USED_SECTION_PREFIX } from './util/preference-layout';
+import { COMMONLY_USED_SECTION_PREFIX } from './util/preference-layout.js';
 
 /** Node id of the 'Commonly Used' group, see `PreferenceTreeGenerator`. */
 const COMMONLY_USED_NODE_ID = `${COMMONLY_USED_SECTION_PREFIX}@${COMMONLY_USED_SECTION_PREFIX}`;

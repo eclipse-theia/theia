@@ -15,9 +15,9 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { Argv, Arguments } from 'yargs';
-import { CliContribution } from '../../node';
-import { MaybePromise } from '../../common';
+import { Argv, Arguments } from '../../../shared/yargs/index.cjs';
+import { CliContribution } from '../../node/index.js';
+import { MaybePromise } from '../../common/index.js';
 
 @injectable()
 export class ElectronCliContribution implements CliContribution {

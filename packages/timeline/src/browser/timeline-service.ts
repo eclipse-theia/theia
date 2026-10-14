@@ -24,7 +24,7 @@ import {
     TimelineProvider,
     TimelineProvidersChangeEvent,
     TimelineSource
-} from '../common/timeline-model';
+} from '../common/timeline-model.js';
 
 @injectable()
 export class TimelineService {

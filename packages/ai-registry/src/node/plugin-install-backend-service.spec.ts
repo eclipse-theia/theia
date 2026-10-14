@@ -19,12 +19,12 @@ import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 import { ILogger } from '@theia/core';
-import { computeContentHash } from '../common/content-hash';
-import { AgentPluginManifestReader } from '../common/plugin/agent-plugin-manifest';
-import { PluginDirectoryNamingImpl } from '../common/plugin/plugin-directory-naming';
-import { ResolvedPluginEntry } from '../common/plugin/plugin-registry-types';
-import { ExtractedPluginTree, GitHubTarballSource, PluginTarballRequest } from './github-tarball-source';
-import { PluginInstallBackendServiceImpl } from './plugin-install-backend-service';
+import { computeContentHash } from '../common/content-hash.js';
+import { AgentPluginManifestReader } from '../common/plugin/agent-plugin-manifest.js';
+import { PluginDirectoryNamingImpl } from '../common/plugin/plugin-directory-naming.js';
+import { ResolvedPluginEntry } from '../common/plugin/plugin-registry-types.js';
+import { ExtractedPluginTree, GitHubTarballSource, PluginTarballRequest } from './github-tarball-source.js';
+import { PluginInstallBackendServiceImpl } from './plugin-install-backend-service.js';
 
 const REGISTRY_METADATA_FILE = '.registry.json';
 const DIRECTORY_NAME = 'io.github.example_demo-plugin';

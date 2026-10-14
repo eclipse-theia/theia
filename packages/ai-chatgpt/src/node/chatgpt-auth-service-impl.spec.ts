@@ -16,6 +16,7 @@
 
 import { expect } from 'chai';
 import http from 'http';
+import { syncBuiltinESMExports } from 'module';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
@@ -142,6 +143,7 @@ describe('ChatGptAuthServiceImpl', () => {
         // Abandoned login attempts keep a timer alive.
         await authService.cancelLogin();
         sinon.restore();
+        syncBuiltinESMExports();
     });
 
     describe('custom backend configuration', () => {
@@ -201,7 +203,10 @@ describe('ChatGptAuthServiceImpl', () => {
                 close: sinon.stub(),
                 closeAllConnections: sinon.stub()
             };
+            // The named exports of ES modules cannot be stubbed, but those of built-in modules can be synchronized
+            // with changes of the module object, which is their default export.
             sinon.stub(http, 'createServer').returns(server as unknown as http.Server);
+            syncBuiltinESMExports();
             container.bind(ChatGptAuthServiceImpl).toSelf().inSingletonScope();
             const service = container.get(ChatGptAuthServiceImpl);
             try {

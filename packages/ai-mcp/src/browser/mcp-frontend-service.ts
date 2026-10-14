@@ -16,7 +16,7 @@
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { MessageService, nls, ILogger } from '@theia/core';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
-import { isRemoteMCPServerDescription, MCPFrontendService, MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common/mcp-server-manager';
+import { isRemoteMCPServerDescription, MCPFrontendService, MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common/mcp-server-manager.js';
 import { ToolInvocationRegistry, ToolRequest, PromptService, ToolCallContent, ToolCallContentResult, isToolCallHtmlAppResult } from '@theia/ai-core';
 import { ListToolsResult, TextContent } from '@modelcontextprotocol/sdk/types';
 

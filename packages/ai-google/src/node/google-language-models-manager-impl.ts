@@ -20,9 +20,9 @@ import {
 import { ModelDiscoveryFetcher } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Model } from '@google/genai';
-import { createGoogleClient, GoogleLanguageModelFactory, GoogleModel } from './google-language-model';
-import { GOOGLE_SERVER_TOOLS } from './google-server-tools';
-import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
+import { createGoogleClient, GoogleLanguageModelFactory, GoogleModel } from './google-language-model.js';
+import { GOOGLE_SERVER_TOOLS } from './google-server-tools.js';
+import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common/index.js';
 import { ILogger } from '@theia/core';
 
 const GOOGLE_SNAPSHOT_FILE = 'google-models.json';

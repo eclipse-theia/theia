@@ -21,11 +21,11 @@ import { join } from 'path';
 import { inject, injectable, named, preDestroy } from '@theia/core/shared/inversify';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ILogger, nls } from '@theia/core';
-import { CopilotAuthState, DeviceCodeResponse } from '../common/copilot-auth-service';
-import { CopilotCliLocator } from './copilot-cli-locator';
-import { CopilotCredentialStore } from './copilot-credential-store';
-import { CopilotRuntimeEnv } from './copilot-runtime-env';
-import { CopilotSdkClientProvider } from './copilot-sdk-client-provider';
+import { CopilotAuthState, DeviceCodeResponse } from '../common/copilot-auth-service.js';
+import { CopilotCliLocator } from './copilot-cli-locator.js';
+import { CopilotCredentialStore } from './copilot-credential-store.js';
+import { CopilotRuntimeEnv } from './copilot-runtime-env.js';
+import { CopilotSdkClientProvider } from './copilot-sdk-client-provider.js';
 
 /**
  * Time after which a login that never reports a code is given up on.

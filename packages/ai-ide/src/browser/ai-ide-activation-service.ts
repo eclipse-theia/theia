@@ -18,7 +18,7 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { DisposableCollection, Emitter, MaybePromise, Event, PreferenceService } from '@theia/core';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { AIActivationService, ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser/ai-activation-service';
-import { PREFERENCE_NAME_ENABLE_AI } from '../common/ai-ide-preferences';
+import { PREFERENCE_NAME_ENABLE_AI } from '../common/ai-ide-preferences.js';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
 
 /**

@@ -22,13 +22,13 @@ import { EditorDecoration, EditorWidget, MinimapPosition, OverviewRulerLane, Pos
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoToProtocolConverter } from '@theia/monaco/lib/browser/monaco-to-protocol-converter';
 import { Selection } from '@theia/monaco-editor-core';
-import { MergeEditorPaneHeader, MergeEditorPaneToolbarItem } from './merge-editor-pane-header';
-import { MergeEditor } from '../../merge-editor';
-import { MergeRange } from '../../model/merge-range';
-import { DetailedLineRangeMapping } from '../../model/range-mapping';
-import { LineRange } from '../../model/line-range';
-import { RangeUtils } from '../../model/range-utils';
-import { ScmColors } from '../../../scm-colors';
+import { MergeEditorPaneHeader, MergeEditorPaneToolbarItem } from './merge-editor-pane-header.js';
+import { MergeEditor } from '../../merge-editor.js';
+import { MergeRange } from '../../model/merge-range.js';
+import { DetailedLineRangeMapping } from '../../model/range-mapping.js';
+import { LineRange } from '../../model/line-range.js';
+import { RangeUtils } from '../../model/range-utils.js';
+import { ScmColors } from '../../../scm-colors.js';
 
 @injectable()
 export abstract class MergeEditorPane extends BoxPanel {

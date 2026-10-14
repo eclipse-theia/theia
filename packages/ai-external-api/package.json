@@ -2,6 +2,7 @@
   "name": "@theia/ai-external-api",
   "version": "1.76.0",
   "description": "Theia - AI External API",
+  "type": "module",
   "dependencies": {
     "@theia/ai-chat": "1.76.0",
     "@theia/core": "1.76.0",
@@ -35,6 +36,16 @@
     "src"
   ],
   "main": "lib/common",
+  "exports": {
+    ".": "./lib/common/index.js",
+    "./package.json": "./package.json",
+    "./lib/browser": "./lib/browser/index.js",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/node": "./lib/node/index.js",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "scripts": {
     "build": "theiaext build",
     "clean": "theiaext clean",

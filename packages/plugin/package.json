@@ -2,7 +2,17 @@
   "name": "@theia/plugin",
   "version": "1.76.0",
   "description": "Theia - Plugin API",
+  "type": "module",
   "types": "./src/theia.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/theia.d.ts"
+    },
+    "./package.json": "./package.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "publishConfig": {
     "access": "public"
   },

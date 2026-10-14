@@ -2,6 +2,7 @@
   "name": "@theia/variable-resolver",
   "version": "1.76.0",
   "description": "Theia - Variable Resolver Extension",
+  "type": "module",
   "dependencies": {
     "@theia/core": "1.76.0",
     "tslib": "^2.8.1"
@@ -50,5 +51,12 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/browser": "./lib/browser/index.js",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

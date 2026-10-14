@@ -24,9 +24,9 @@ import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { markMarkdownLinksWired } from '@theia/core/lib/browser/markdown-rendering/markdown-link-handler';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import URI from '@theia/core/lib/common/uri';
-import { ScmHistoryItem } from './scm-provider';
-import { HistoryGraphEntry } from './scm-history-graph-model';
-import { buildHtmlTooltip, buildProviderTooltip, HistoryTooltipActions } from './scm-history-graph-tooltip';
+import { ScmHistoryItem } from './scm-provider.js';
+import { HistoryGraphEntry } from './scm-history-graph-model.js';
+import { buildHtmlTooltip, buildProviderTooltip, HistoryTooltipActions } from './scm-history-graph-tooltip.js';
 
 disableJSDOM();
 

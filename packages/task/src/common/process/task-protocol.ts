@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { TaskConfiguration, TaskInfo } from '../task-protocol';
+import { TaskConfiguration, TaskInfo } from '../task-protocol.js';
 import { ApplicationError } from '@theia/core/lib/common/application-error';
 
 export type ProcessType = 'shell' | 'process';

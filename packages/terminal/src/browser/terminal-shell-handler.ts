@@ -17,9 +17,9 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ViewColumn } from '@theia/core/lib/common';
 import { ApplicationShell, WidgetOpenerOptions } from '@theia/core/lib/browser';
-import { TerminalCreationHandler } from './terminal-creation-handler';
-import { TerminalWidget, TerminalLocation } from './base/terminal-widget';
-import { TerminalService } from './base/terminal-service';
+import { TerminalCreationHandler } from './terminal-creation-handler.js';
+import { TerminalWidget, TerminalLocation } from './base/terminal-widget.js';
+import { TerminalService } from './base/terminal-service.js';
 
 /**
  * Default {@link TerminalCreationHandler} that places terminals into the

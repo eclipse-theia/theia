@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core/lib/common/nls';
-import { ReasoningLevel } from '../common/language-model';
+import { ReasoningLevel } from '../common/language-model.js';
 
 export function reasoningLevelLabel(level: ReasoningLevel): string {
     switch (level) {

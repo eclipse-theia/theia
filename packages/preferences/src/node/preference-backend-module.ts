@@ -17,14 +17,14 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-contribution';
-import { PreferenceCliContribution } from './preference-cli-contribution';
+import { PreferenceCliContribution } from './preference-cli-contribution.js';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
-import { CliPreferences, CliPreferencesPath } from '../common/cli-preferences';
-import { bindPreferenceProviders } from './preference-bindings';
-import { PreferenceStorageFactory } from '../common/abstract-resource-preference-provider';
+import { CliPreferences, CliPreferencesPath } from '../common/cli-preferences.js';
+import { bindPreferenceProviders } from './preference-bindings.js';
+import { PreferenceStorageFactory } from '../common/abstract-resource-preference-provider.js';
 import { PreferenceScope, URI } from '@theia/core';
-import { BackendPreferenceStorage } from './backend-preference-storage';
-import { JSONCEditor } from '../common/jsonc-editor';
+import { BackendPreferenceStorage } from './backend-preference-storage.js';
+import { JSONCEditor } from '../common/jsonc-editor.js';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { DiskFileSystemProvider } from '@theia/filesystem/lib/node/disk-file-system-provider';
 

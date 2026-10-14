@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as assert from 'assert';
-import { Path } from './path';
+import { Path } from './path.js';
 import { expect } from 'chai';
 
 describe('Path', () => {

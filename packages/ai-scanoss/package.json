@@ -2,6 +2,7 @@
   "name": "@theia/ai-scanoss",
   "version": "1.76.0",
   "description": "Theia - SCANOSS AI Integration",
+  "type": "module",
   "dependencies": {
     "@theia/ai-chat": "1.76.0",
     "@theia/ai-chat-ui": "1.76.0",
@@ -38,6 +39,12 @@
     "src"
   ],
   "main": "lib/common",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "scripts": {
     "build": "theiaext build",
     "clean": "theiaext clean",

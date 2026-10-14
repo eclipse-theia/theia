@@ -16,12 +16,15 @@
 
 import * as React from '@theia/core/shared/react';
 import { DisposableCollection } from '@theia/core';
-import { NotificationManager, NotificationUpdateEvent } from './notifications-manager';
-import { NotificationComponent } from './notification-component';
+import { NotificationManager, NotificationUpdateEvent } from './notifications-manager.js';
+import { NotificationComponent } from './notification-component.js';
 import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
+import ReactPerfectScrollbarModule from 'react-perfect-scrollbar';
 
-const PerfectScrollbar = require('react-perfect-scrollbar');
+// The types of `react-perfect-scrollbar` declare an ES module default export, but its CommonJS entry point assigns the component
+// to `module.exports`, which is what a default import from an ES module provides at runtime.
+const PerfectScrollbar = ReactPerfectScrollbarModule as unknown as typeof ReactPerfectScrollbarModule.default;
 
 export interface NotificationCenterComponentProps {
     readonly manager: NotificationManager;

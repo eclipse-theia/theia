@@ -25,7 +25,7 @@ import {
     ResolvedAIVariable,
     createAIResolveVariableCache,
     AIVariableArg
-} from './variable-service';
+} from './variable-service.js';
 
 describe('DefaultAIVariableService', () => {
     let variableService: DefaultAIVariableService;

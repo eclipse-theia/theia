@@ -14,17 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import debounce = require('p-debounce');
+import debounce from 'p-debounce';
 import { injectable } from 'inversify';
 import { JSONObject } from '@lumino/coreutils';
-import URI from '../uri';
-import { Emitter, Event } from '../event';
-import { Deferred } from '../promise-util';
-import { PreferenceScope } from './preference-scope';
-import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult } from './preference-provider';
-import { DisposableCollection } from '../disposable';
-import { PreferenceLanguageOverrideService } from './preference-language-override-service';
-import { isObject } from '../types';
+import URI from '../uri.js';
+import { Emitter, Event } from '../event.js';
+import { Deferred } from '../promise-util.js';
+import { PreferenceScope } from './preference-scope.js';
+import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult } from './preference-provider.js';
+import { DisposableCollection } from '../disposable.js';
+import { PreferenceLanguageOverrideService } from './preference-language-override-service.js';
+import { isObject } from '../types.js';
 
 export abstract class PreferenceProviderBase {
 

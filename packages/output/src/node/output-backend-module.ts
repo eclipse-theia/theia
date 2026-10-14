@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindOutputPreferences } from '../common/output-preferences';
+import { bindOutputPreferences } from '../common/output-preferences.js';
 
 export default new ContainerModule(bind => {
     bindOutputPreferences(bind);

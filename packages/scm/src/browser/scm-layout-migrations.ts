@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { ApplicationShellLayoutMigration, WidgetDescription, ApplicationShellLayoutMigrationContext } from '@theia/core/lib/browser/shell/shell-layout-restorer';
-import { SCM_VIEW_CONTAINER_TITLE_OPTIONS, SCM_VIEW_CONTAINER_ID, SCM_WIDGET_FACTORY_ID } from './scm-contribution';
+import { SCM_VIEW_CONTAINER_TITLE_OPTIONS, SCM_VIEW_CONTAINER_ID, SCM_WIDGET_FACTORY_ID } from './scm-contribution.js';
 
 @injectable()
 export class ScmLayoutVersion3Migration implements ApplicationShellLayoutMigration {

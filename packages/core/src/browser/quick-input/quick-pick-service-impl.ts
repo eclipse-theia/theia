@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable, inject, optional } from 'inversify';
-import { Emitter } from '../../common/event';
-import { QuickPickSeparator, QuickPickService } from '../../common/quick-pick-service';
-import { QuickInputService, QuickPickItem, QuickInputButtonHandle, QuickPick, QuickPickOptions } from './quick-input-service';
+import { Emitter } from '../../common/event.js';
+import { QuickPickSeparator, QuickPickService } from '../../common/quick-pick-service.js';
+import { QuickInputService, QuickPickItem, QuickInputButtonHandle, QuickPick, QuickPickOptions } from './quick-input-service.js';
 
 @injectable()
 export class QuickPickServiceImpl implements QuickPickService {

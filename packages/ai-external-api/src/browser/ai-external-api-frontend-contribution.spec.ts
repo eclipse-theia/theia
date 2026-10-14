@@ -23,7 +23,7 @@ import { ChatChangeEvent } from '@theia/ai-chat/lib/common/chat-model';
 import { ChatService, ChatSession } from '@theia/ai-chat/lib/common/chat-service';
 import { Emitter } from '@theia/core';
 import { expect } from 'chai';
-import { AIExternalApiFrontendContribution } from './ai-external-api-frontend-contribution';
+import { AIExternalApiFrontendContribution } from './ai-external-api-frontend-contribution.js';
 
 disableJSDOM();
 

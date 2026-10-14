@@ -18,11 +18,11 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { PreferenceService } from '@theia/core/lib/common';
 import { Emitter } from '@theia/core';
-import { NotebookPreferences, notebookPreferenceSchema } from '../../common/notebook-preferences';
+import { NotebookPreferences, notebookPreferenceSchema } from '../../common/notebook-preferences.js';
 import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
-import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo';
-import { createBareFontInfoFromRawSettings } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfoFromSettings';
-import { PixelRatio } from '@theia/monaco-editor-core/esm/vs/base/browser/pixelRatio';
+import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo.js';
+import { createBareFontInfoFromRawSettings } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfoFromSettings.js';
+import { PixelRatio } from '@theia/monaco-editor-core/esm/vs/base/browser/pixelRatio.js';
 
 const notebookOutputOptionsRelevantPreferences = [
     'editor.fontSize',

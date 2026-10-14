@@ -23,26 +23,26 @@ import {
     FrontendApplicationContribution,
     ApplicationShellLayoutMigration
 } from '@theia/core/lib/browser';
-import { FileNavigatorWidget, FILE_NAVIGATOR_ID } from './navigator-widget';
-import { FileNavigatorContribution } from './navigator-contribution';
-import { createFileNavigatorWidget } from './navigator-container';
+import { FileNavigatorWidget, FILE_NAVIGATOR_ID } from './navigator-widget.js';
+import { FileNavigatorContribution } from './navigator-contribution.js';
+import { createFileNavigatorWidget } from './navigator-container.js';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
-import { bindFileNavigatorPreferences } from '../common/navigator-preferences';
-import { FileNavigatorFilter } from './navigator-filter';
-import { NavigatorContextKeyService } from './navigator-context-key-service';
+import { bindFileNavigatorPreferences } from '../common/navigator-preferences.js';
+import { FileNavigatorFilter } from './navigator-filter.js';
+import { NavigatorContextKeyService } from './navigator-context-key-service.js';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { NavigatorDiff } from './navigator-diff';
-import { NavigatorLayoutVersion3Migration, NavigatorLayoutVersion5Migration } from './navigator-layout-migrations';
-import { NavigatorTabBarDecorator } from './navigator-tab-bar-decorator';
+import { NavigatorDiff } from './navigator-diff.js';
+import { NavigatorLayoutVersion3Migration, NavigatorLayoutVersion5Migration } from './navigator-layout-migrations.js';
+import { NavigatorTabBarDecorator } from './navigator-tab-bar-decorator.js';
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
-import { NavigatorWidgetFactory } from './navigator-widget-factory';
+import { NavigatorWidgetFactory } from './navigator-widget-factory.js';
 import { bindRootContributionProvider } from '@theia/core/lib/common';
-import { OpenEditorsTreeDecorator } from './open-editors-widget/navigator-open-editors-decorator-service';
-import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget';
-import { NavigatorTreeDecorator } from './navigator-decorator-service';
-import { NavigatorDeletedEditorDecorator } from './open-editors-widget/navigator-deleted-editor-decorator';
-import { NavigatorSymlinkDecorator } from './navigator-symlink-decorator';
-import { NavigatorFileClipboard } from './navigator-file-clipboard';
+import { OpenEditorsTreeDecorator } from './open-editors-widget/navigator-open-editors-decorator-service.js';
+import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget.js';
+import { NavigatorTreeDecorator } from './navigator-decorator-service.js';
+import { NavigatorDeletedEditorDecorator } from './open-editors-widget/navigator-deleted-editor-decorator.js';
+import { NavigatorSymlinkDecorator } from './navigator-symlink-decorator.js';
+import { NavigatorFileClipboard } from './navigator-file-clipboard.js';
 import { FileTreeDecoratorAdapter } from '@theia/filesystem/lib/browser';
 
 export default new ContainerModule(bind => {

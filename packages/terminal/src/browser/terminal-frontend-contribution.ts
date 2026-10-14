@@ -39,12 +39,14 @@ import {
 } from '@theia/core/lib/browser';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl, nextTerminalCreationToken } from './terminal-widget-impl';
-import { TerminalService } from './base/terminal-service';
-import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
-import { ContributedTerminalProfileStore, NULL_PROFILE, TerminalProfile, TerminalProfileService, TerminalProfileStore, UserTerminalProfileStore } from './terminal-profile-service';
+import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl, nextTerminalCreationToken } from './terminal-widget-impl.js';
+import { TerminalService } from './base/terminal-service.js';
+import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget.js';
+import {
+    ContributedTerminalProfileStore, NULL_PROFILE, TerminalProfile, TerminalProfileService, TerminalProfileStore, UserTerminalProfileStore
+} from './terminal-profile-service.js';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
-import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
+import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol.js';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -52,15 +54,15 @@ import { ColorContribution } from '@theia/core/lib/browser/color-application-con
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler';
-import { TerminalWatcher } from '../common/terminal-watcher';
+import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler.js';
+import { TerminalWatcher } from '../common/terminal-watcher.js';
 import { nls } from '@theia/core/lib/common/nls';
-import { Profiles, terminalAnsiColorMap, TerminalPreferences } from '../common/terminal-preferences';
-import { ShellTerminalProfile } from './shell-terminal-profile';
+import { Profiles, terminalAnsiColorMap, TerminalPreferences } from '../common/terminal-preferences.js';
+import { ShellTerminalProfile } from './shell-terminal-profile.js';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { Color } from '@theia/core/lib/common/color';
 import { ContributionProvider, ILogger } from '@theia/core';
-import { TerminalCreationHandler } from './terminal-creation-handler';
+import { TerminalCreationHandler } from './terminal-creation-handler.js';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];

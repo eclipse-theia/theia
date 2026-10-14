@@ -2,8 +2,17 @@
   "name": "@theia/plugin-ext-headless",
   "version": "1.76.0",
   "description": "Theia - Headless (Backend-only) Plugin Extension",
+  "type": "module",
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
+  "exports": {
+    ".": "./lib/common/index.js",
+    "./package.json": "./package.json",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "dependencies": {
     "@theia/core": "1.76.0",
     "@theia/plugin-ext": "1.76.0",

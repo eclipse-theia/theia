@@ -24,7 +24,7 @@ import { expect } from 'chai';
 import { LanguageModel } from '@theia/ai-core/lib/common/language-model';
 import { LanguageModelAlias } from '@theia/ai-core/lib/common/language-model-alias';
 import { AiConfigurationCategoryId } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
-import { ModelAliasesConfigurationCategory } from './model-aliases-configuration-category';
+import { ModelAliasesConfigurationCategory } from './model-aliases-configuration-category.js';
 
 disableJSDOM();
 

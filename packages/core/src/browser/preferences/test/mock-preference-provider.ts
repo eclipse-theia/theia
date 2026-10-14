@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { interfaces } from 'inversify';
-import { PreferenceProviderImpl, PreferenceScope, PreferenceProvider } from '../../../common/preferences';
+import { PreferenceProviderImpl, PreferenceScope, PreferenceProvider } from '../../../common/preferences/index.js';
 
 export class MockPreferenceProvider extends PreferenceProviderImpl {
     readonly prefs: { [p: string]: any } = {};

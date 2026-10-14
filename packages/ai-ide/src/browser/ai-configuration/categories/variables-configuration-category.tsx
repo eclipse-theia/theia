@@ -30,7 +30,7 @@ import {
     AiConfigurationSearchProvider
 } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
 import { SinglePageCategoryRenderer } from '@theia/ai-core-ui/lib/browser/ai-configuration/renderers/single-page-category-renderer';
-import { AgentChip } from './agent-chips';
+import { AgentChip } from './agent-chips.js';
 import {
     CollapsibleGroup,
     CollapsibleList,

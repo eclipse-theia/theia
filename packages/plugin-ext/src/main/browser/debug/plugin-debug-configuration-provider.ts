@@ -19,7 +19,7 @@ import {
     DebugConfigurationProviderDescriptor,
     DebugConfigurationProviderTriggerKind,
     DebugExt
-} from '../../../common/plugin-api-rpc';
+} from '../../../common/plugin-api-rpc.js';
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
 
 export class PluginDebugConfigurationProvider implements DebugConfigurationProvider {

@@ -19,8 +19,8 @@ import { FileTree, DirNode } from '@theia/filesystem/lib/browser';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import URI from '@theia/core/lib/common/uri';
 import { TreeNode, CompositeTreeNode, SelectableTreeNode, CompressionToggle } from '@theia/core/lib/browser';
-import { FileNavigatorFilter } from './navigator-filter';
-import { EXPLORER_COMPACT_FOLDERS, FileNavigatorPreferences } from '../common/navigator-preferences';
+import { FileNavigatorFilter } from './navigator-filter.js';
+import { EXPLORER_COMPACT_FOLDERS, FileNavigatorPreferences } from '../common/navigator-preferences.js';
 
 @injectable()
 export class FileNavigatorTree extends FileTree {

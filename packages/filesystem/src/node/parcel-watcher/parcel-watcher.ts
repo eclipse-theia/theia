@@ -21,7 +21,7 @@ import { FileUri } from '@theia/core/lib/common/file-uri';
 import { FileChangeType, FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol';
 import { FileChangeCollection } from '../file-change-collection';
 import { timeout } from '@theia/core/lib/common/promise-util';
-import { subscribe, Options, AsyncSubscription, Event } from '@theia/core/shared/@parcel/watcher';
+import parcelWatcher, { Options, AsyncSubscription, Event } from '@theia/core/shared/@parcel/watcher';
 import { isOSX, isWindows } from '@theia/core';
 import { AbstractFileSystemWatcher, AbstractWatcherProvider, ResolvedWatchOptions, WatcherLogger, WatchRequest } from '../filesystem-watcher';
 
@@ -282,7 +282,8 @@ export class ParcelWatcher extends AbstractFileSystemWatcher {
         if ((await fsp.stat(fsPath)).isFile()) {
             fsPath = path.dirname(fsPath);
         }
-        return subscribe(fsPath, (err, events) => {
+        // Called through the module object, so that tests can stub `subscribe`.
+        return parcelWatcher.subscribe(fsPath, (err, events) => {
             if (err) {
                 if (err.message && err.message.includes('File system must be re-scanned')) {
                     console.log(`FS Events were dropped on watcher ${fsPath}`);

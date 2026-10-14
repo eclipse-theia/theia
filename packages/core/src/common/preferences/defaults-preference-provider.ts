@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 
 import { JSONObject, JSONValue } from '@lumino/coreutils';
-import { PreferenceScope } from './preference-scope';
-import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult } from './preference-provider';
+import { PreferenceScope } from './preference-scope.js';
+import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult } from './preference-provider.js';
 import { inject, injectable, postConstruct } from 'inversify';
-import { PreferenceSchemaService } from './preference-schema';
-import { Deferred } from '../promise-util';
-import { PreferenceLanguageOverrideService } from './preference-language-override-service';
-import { PreferenceProviderBase } from './preference-provider-impl';
+import { PreferenceSchemaService } from './preference-schema.js';
+import { Deferred } from '../promise-util.js';
+import { PreferenceLanguageOverrideService } from './preference-language-override-service.js';
+import { PreferenceProviderBase } from './preference-provider-impl.js';
 
 // *****************************************************************************
 

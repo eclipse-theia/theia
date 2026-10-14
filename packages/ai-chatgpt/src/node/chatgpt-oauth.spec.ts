@@ -24,7 +24,7 @@ import {
     CHATGPT_CLIENT_ID,
     CHATGPT_ORIGINATOR,
     CHATGPT_REDIRECT_URI
-} from './chatgpt-oauth';
+} from './chatgpt-oauth.js';
 
 function encodeJwt(payload: Record<string, unknown>): string {
     return `header.${Buffer.from(JSON.stringify(payload)).toString('base64url')}.signature`;

@@ -24,8 +24,8 @@ FrontendApplicationConfigProvider.set({});
 import { ChatResponseContent, ThinkingChatResponseContent } from '@theia/ai-chat';
 import { expect } from 'chai';
 import * as React from '@theia/core/shared/react';
-import { ResponseNode } from '../chat-tree-view';
-import { ThinkingPartRenderer } from './thinking-part-renderer';
+import { ResponseNode } from '../chat-tree-view/index.js';
+import { ThinkingPartRenderer } from './thinking-part-renderer.js';
 
 const thinking = (content: string): ThinkingChatResponseContent => ({
     kind: 'thinking',

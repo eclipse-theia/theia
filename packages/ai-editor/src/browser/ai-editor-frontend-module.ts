@@ -19,15 +19,15 @@ import { FrontendApplicationContribution, KeybindingContribution } from '@theia/
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import '../../style/ask-ai-input.css';
-import { AICodeActionProvider } from './ai-code-action-provider';
-import { AiEditorCommandContribution } from './ai-editor-command-contribution';
-import { EditorContextVariableContribution } from './ai-editor-context-variable';
+import { AICodeActionProvider } from './ai-code-action-provider.js';
+import { AiEditorCommandContribution } from './ai-editor-command-contribution.js';
+import { EditorContextVariableContribution } from './ai-editor-context-variable.js';
 import {
     AskAIInputArgs,
     AskAIInputConfiguration,
     AskAIInputFactory,
     AskAIInputWidget
-} from './ask-ai-input-widget';
+} from './ask-ai-input-widget.js';
 
 export default new ContainerModule(bind => {
     bind(AiEditorCommandContribution).toSelf().inSingletonScope();

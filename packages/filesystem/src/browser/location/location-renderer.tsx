@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import URI from '@theia/core/lib/common/uri';
-import { LocationService } from './location-service';
+import { LocationService } from './location-service.js';
 import * as React from '@theia/core/shared/react';
-import { FileService } from '../file-service';
+import { FileService } from '../file-service.js';
 import { DisposableCollection, Emitter, Path } from '@theia/core/lib/common';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { FileDialogModel } from '../file-dialog/file-dialog-model';
+import { FileDialogModel } from '../file-dialog/file-dialog-model.js';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { ReactRenderer } from '@theia/core/lib/browser/widgets/react-renderer';
 import { codicon } from '@theia/core/lib/browser';

@@ -16,8 +16,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { LoggerMain, LogLevel, PLUGIN_RPC_CONTEXT } from '../common';
-import { RPCProtocol } from '../common/rpc-protocol';
+import { LoggerMain, LogLevel, PLUGIN_RPC_CONTEXT } from '../common/index.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
 
 export class PluginLogger {
 

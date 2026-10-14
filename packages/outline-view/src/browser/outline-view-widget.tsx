@@ -27,7 +27,7 @@ import {
     ExpandableTreeNode,
     codicon
 } from '@theia/core/lib/browser';
-import { OutlineViewTreeModel } from './outline-view-tree-model';
+import { OutlineViewTreeModel } from './outline-view-tree-model.js';
 import { Message } from '@theia/core/shared/@lumino/messaging';
 import { Emitter, Event, isObject, Mutable, UriSelection } from '@theia/core';
 import * as React from '@theia/core/shared/react';

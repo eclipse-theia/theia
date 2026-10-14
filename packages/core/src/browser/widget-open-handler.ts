@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { inject, postConstruct, injectable } from 'inversify';
-import URI from '../common/uri';
-import { MaybePromise, Emitter, Event } from '../common';
-import { BaseWidget } from './widgets';
-import { ApplicationShell } from './shell';
-import { OpenHandler, OpenerOptions } from './opener-service';
-import { WidgetManager } from './widget-manager';
+import URI from '../common/uri.js';
+import { MaybePromise, Emitter, Event } from '../common/index.js';
+import { BaseWidget } from './widgets/index.js';
+import { ApplicationShell } from './shell/index.js';
+import { OpenHandler, OpenerOptions } from './opener-service.js';
+import { WidgetManager } from './widget-manager.js';
 
 export type WidgetOpenMode = 'open' | 'reveal' | 'activate';
 /**

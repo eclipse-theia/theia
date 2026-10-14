@@ -27,7 +27,7 @@ import { Agent } from '@theia/ai-core';
 import { GENERIC_CAPABILITIES_AGENT_DELEGATION_PROMPT_ID } from '@theia/ai-core/lib/common';
 import { PromptFragment } from '@theia/ai-core/lib/common/prompt-service';
 import { AiConfigurationCategoryId } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
-import { PromptSnippetEntry, PromptSnippetsConfiguration, PromptSnippetsConfigurationCategory } from './prompt-snippets-configuration-category';
+import { PromptSnippetEntry, PromptSnippetsConfiguration, PromptSnippetsConfigurationCategory } from './prompt-snippets-configuration-category.js';
 
 disableJSDOM();
 

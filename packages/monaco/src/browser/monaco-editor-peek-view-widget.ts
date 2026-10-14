@@ -16,19 +16,19 @@
 
 import { Position, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { DisposableCollection } from '@theia/core';
-import { MonacoEditor } from './monaco-editor';
+import { MonacoEditor } from './monaco-editor.js';
 import * as monaco from '@theia/monaco-editor-core';
-import { PeekViewWidget, IPeekViewOptions, IPeekViewStyles } from '@theia/monaco-editor-core/esm/vs/editor/contrib/peekView/browser/peekView';
-import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
-import { ActionBar } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/actionbar/actionbar';
-import { Action } from '@theia/monaco-editor-core/esm/vs/base/common/actions';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
-import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
-import { Color } from '@theia/monaco-editor-core/esm/vs/base/common/color';
+import { PeekViewWidget, IPeekViewOptions, IPeekViewStyles } from '@theia/monaco-editor-core/esm/vs/editor/contrib/peekView/browser/peekView.js';
+import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser.js';
+import { ActionBar } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/actionbar/actionbar.js';
+import { Action } from '@theia/monaco-editor-core/esm/vs/base/common/actions.js';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation.js';
+import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService.js';
+import { Color } from '@theia/monaco-editor-core/esm/vs/base/common/color.js';
 
 export { peekViewBorder, peekViewTitleBackground, peekViewTitleForeground, peekViewTitleInfoForeground }
-    from '@theia/monaco-editor-core/esm/vs/editor/contrib/peekView/browser/peekView';
+    from '@theia/monaco-editor-core/esm/vs/editor/contrib/peekView/browser/peekView.js';
 
 export namespace MonacoEditorPeekViewWidget {
     export interface Styles {

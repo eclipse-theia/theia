@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, named, postConstruct } from 'inversify';
-import { ContributionProvider } from '../common';
+import { ContributionProvider } from '../common/index.js';
 
 export const UndoRedoHandler = Symbol('UndoRedoHandler');
 

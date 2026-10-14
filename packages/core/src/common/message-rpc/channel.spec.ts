@@ -14,11 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { assert, expect, spy, use } from 'chai';
+// `spy` is added to `chai` by the `chai-spies` plugin at runtime, so it is not a named export of the module.
+import chai, { assert, expect, use } from 'chai';
 import spies from 'chai-spies';
-import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from './uint8-array-message-buffer';
-import { ChannelMultiplexer, ForwardingChannel, MessageProvider } from './channel';
-import { RpcProtocol } from './rpc-protocol';
+import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from './uint8-array-message-buffer.js';
+import { ChannelMultiplexer, ForwardingChannel, MessageProvider } from './channel.js';
+import { RpcProtocol } from './rpc-protocol.js';
 
 use(spies);
 
@@ -48,7 +49,7 @@ describe('Message Channel', () => {
 
             const leftMultiplexer = new ChannelMultiplexer(pipe.left);
             const rightMultiplexer = new ChannelMultiplexer(pipe.right);
-            const openChannelSpy = spy(() => {
+            const openChannelSpy = chai.spy(() => {
             });
 
             rightMultiplexer.onDidOpenChannel(openChannelSpy);
@@ -63,14 +64,14 @@ describe('Message Channel', () => {
             assert.isNotNull(rightFirst);
             assert.isNotNull(rightSecond);
 
-            const leftSecondSpy = spy((buf: MessageProvider) => {
+            const leftSecondSpy = chai.spy((buf: MessageProvider) => {
                 const message = buf().readString();
                 expect(message).equal('message for second');
             });
 
             leftSecond.onMessage(leftSecondSpy);
 
-            const rightFirstSpy = spy((buf: MessageProvider) => {
+            const rightFirstSpy = chai.spy((buf: MessageProvider) => {
                 const message = buf().readString();
                 expect(message).equal('message for first');
             });
@@ -115,7 +116,7 @@ describe('Message Channel', () => {
             const rightChannel = rightMultiplexer.getOpenChannel('test');
             assert.isDefined(rightChannel);
 
-            const leftCloseSpy = spy(() => { });
+            const leftCloseSpy = chai.spy(() => { });
             leftChannel.onClose(leftCloseSpy);
 
             // Close the underlying channel from the remote side
@@ -129,7 +130,7 @@ describe('Message Channel', () => {
         it('should not deliver onClose after close() has been called', () => {
             const channel = new ForwardingChannel('test', () => { }, () => new Uint8ArrayWriteBuffer());
 
-            const closeSpy = spy(() => { });
+            const closeSpy = chai.spy(() => { });
             channel.onClose(closeSpy);
 
             // Bug pattern: close() first (disposes emitters), then fire (no-op)
@@ -143,7 +144,7 @@ describe('Message Channel', () => {
         it('should deliver onClose when fired before close()', () => {
             const channel = new ForwardingChannel('test', () => { }, () => new Uint8ArrayWriteBuffer());
 
-            const closeSpy = spy(() => { });
+            const closeSpy = chai.spy(() => { });
             channel.onClose(closeSpy);
 
             // Correct pattern: fire first, then close

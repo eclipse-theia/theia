@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { SettingsContribution } from './cli-enhancing-creation-contributions';
+import { SettingsContribution } from './cli-enhancing-creation-contributions.js';
 import { RemoteCliContext } from '@theia/core/lib/node/remote/remote-cli-contribution';
 import { OS } from '@theia/core/lib/common/os';
 import * as Docker from 'dockerode';

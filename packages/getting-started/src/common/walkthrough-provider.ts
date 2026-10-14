@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Event } from '@theia/core/lib/common/event';
-import { WalkthroughDefinition } from './walkthrough-types';
+import { WalkthroughDefinition } from './walkthrough-types.js';
 
 /**
  * Contribution point for walkthroughs provided by a Theia extension, next to the walkthroughs that plugins

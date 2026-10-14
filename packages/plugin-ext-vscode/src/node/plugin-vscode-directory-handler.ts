@@ -24,7 +24,7 @@ import {
     PluginDeployerEntryType, PluginPackage, PluginIdentifiers
 } from '@theia/plugin-ext';
 import { PluginCliContribution } from '@theia/plugin-ext/lib/main/node/plugin-cli-contribution';
-import { TMP_DIR_PREFIX } from './plugin-vscode-utils';
+import { TMP_DIR_PREFIX } from './plugin-vscode-utils.js';
 
 /** Fields read while resolving a VS Code extension directory */
 type PluginPackageResolveInput = Partial<Pick<PluginPackage, 'name' | 'version' | 'publisher' | 'engines'>>;

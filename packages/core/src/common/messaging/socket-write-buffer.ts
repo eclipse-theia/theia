@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { WebSocket } from './web-socket-channel';
+import { WebSocket } from './web-socket-channel.js';
 
 @injectable()
 export class SocketWriteBuffer {

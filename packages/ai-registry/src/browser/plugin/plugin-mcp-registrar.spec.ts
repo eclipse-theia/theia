@@ -17,8 +17,8 @@
 import { expect } from 'chai';
 import { PreferenceService } from '@theia/core';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
-import { InstalledPluginInfo } from '../../common/plugin/plugin-registry-types';
-import { PluginMcpRegistrarImpl } from './plugin-mcp-registrar';
+import { InstalledPluginInfo } from '../../common/plugin/plugin-registry-types.js';
+import { PluginMcpRegistrarImpl } from './plugin-mcp-registrar.js';
 
 /** Minimal preference double: the registrar only reads and writes the MCP servers preference. */
 class FakePreferenceService {

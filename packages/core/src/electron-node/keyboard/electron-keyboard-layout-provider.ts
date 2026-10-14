@@ -16,7 +16,7 @@
 
 import * as nativeKeymap from '@theia/electron/shared/native-keymap';
 import { injectable } from 'inversify';
-import { KeyboardLayoutProvider, NativeKeyboardLayout } from '../../common/keyboard/keyboard-layout-provider';
+import { KeyboardLayoutProvider, NativeKeyboardLayout } from '../../common/keyboard/keyboard-layout-provider.js';
 
 @injectable()
 export class ElectronKeyboardLayoutProvider implements KeyboardLayoutProvider {

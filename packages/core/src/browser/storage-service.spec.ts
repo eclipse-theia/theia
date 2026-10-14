@@ -15,14 +15,14 @@
 // *****************************************************************************
 
 import { Container } from 'inversify';
-import { WindowService } from './window/window-service';
-import { MockWindowService } from './window/test/mock-window-service';
-import { LocalStorageService, StorageService } from './storage-service';
+import { WindowService } from './window/window-service.js';
+import { MockWindowService } from './window/test/mock-window-service.js';
+import { LocalStorageService, StorageService } from './storage-service.js';
 import { expect } from 'chai';
-import { ILogger } from '../common/logger';
-import { MockLogger } from '../common/test/mock-logger';
+import { ILogger } from '../common/logger.js';
+import { MockLogger } from '../common/test/mock-logger.js';
 import * as sinon from 'sinon';
-import { MessageService, MessageClient } from '../common/';
+import { MessageService, MessageClient } from '../common/index.js';
 
 let storageService: StorageService;
 

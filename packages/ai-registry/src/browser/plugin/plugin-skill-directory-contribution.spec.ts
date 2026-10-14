@@ -28,9 +28,9 @@ try {
 import { expect } from 'chai';
 import { ILogger } from '@theia/core';
 import { Path } from '@theia/core/lib/common/path';
-import { InstalledPluginInfo } from '../../common/plugin/plugin-registry-types';
-import { PluginInstallService } from './plugin-install-service';
-import { PluginSkillDirectoryContribution } from './plugin-skill-directory-contribution';
+import { InstalledPluginInfo } from '../../common/plugin/plugin-registry-types.js';
+import { PluginInstallService } from './plugin-install-service.js';
+import { PluginSkillDirectoryContribution } from './plugin-skill-directory-contribution.js';
 
 after(() => disableJSDOM());
 

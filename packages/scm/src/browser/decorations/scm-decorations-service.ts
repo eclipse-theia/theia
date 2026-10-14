@@ -16,13 +16,13 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { DisposableCollection, Emitter, Event, ResourceProvider } from '@theia/core';
-import { DirtyDiffDecorator, DirtyDiffUpdate } from '../dirty-diff/dirty-diff-decorator';
-import { DiffComputer } from '../dirty-diff/diff-computer';
-import { ContentLines } from '../dirty-diff/content-lines';
+import { DirtyDiffDecorator, DirtyDiffUpdate } from '../dirty-diff/dirty-diff-decorator.js';
+import { DiffComputer } from '../dirty-diff/diff-computer.js';
+import { ContentLines } from '../dirty-diff/content-lines.js';
 import { EditorManager, EditorWidget, TextEditor } from '@theia/editor/lib/browser';
-import { ScmService } from '../scm-service';
+import { ScmService } from '../scm-service.js';
 
-import throttle = require('@theia/core/shared/lodash.throttle');
+import throttle from '@theia/core/shared/lodash.throttle';
 
 @injectable()
 export class ScmDecorationsService {

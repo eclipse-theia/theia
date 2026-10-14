@@ -17,9 +17,9 @@
 import { Emitter, LogLevel, MeasurementResult, Stopwatch } from '@theia/core';
 import { BACKEND_TELEMETRY_SESSION, TelemetryEvent, TelemetryService } from '@theia/telemetry/lib/common';
 import { expect } from 'chai';
-import { MEASUREMENT_TELEMETRY_TOPIC, reportMeasurement } from '../common';
-import { MeasurementMetricsBackendContribution } from './measurement-metrics-contribution';
-import { MeasurementTelemetryContribution } from './measurement-telemetry-contribution';
+import { MEASUREMENT_TELEMETRY_TOPIC, reportMeasurement } from '../common/index.js';
+import { MeasurementMetricsBackendContribution } from './measurement-metrics-contribution.js';
+import { MeasurementTelemetryContribution } from './measurement-telemetry-contribution.js';
 
 const storedResult: MeasurementResult = {
     name: 'startup',

@@ -15,15 +15,15 @@
 // *****************************************************************************
 
 import { injectable, interfaces } from 'inversify';
-import { RpcProxy } from '../../common/messaging/proxy-factory';
-import { AbstractChannel, Channel } from '../../common/message-rpc/channel';
-import { WriteBuffer } from '../../common/message-rpc/message-buffer';
-import { Emitter, Event } from '../../common/event';
-import { MaybePromise } from '../../common/types';
-import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer';
-import { ServiceConnectionProvider } from '../../browser/messaging/service-connection-provider';
-import { ConnectionSource } from '../../browser/messaging/connection-source';
-import { FrontendApplicationContribution } from '../../browser/frontend-application-contribution';
+import { RpcProxy } from '../../common/messaging/proxy-factory.js';
+import { AbstractChannel, Channel } from '../../common/message-rpc/channel.js';
+import { WriteBuffer } from '../../common/message-rpc/message-buffer.js';
+import { Emitter, Event } from '../../common/event.js';
+import { MaybePromise } from '../../common/types.js';
+import { Uint8ArrayReadBuffer, Uint8ArrayWriteBuffer } from '../../common/message-rpc/uint8-array-message-buffer.js';
+import { ServiceConnectionProvider } from '../../browser/messaging/service-connection-provider.js';
+import { ConnectionSource } from '../../browser/messaging/connection-source.js';
+import { FrontendApplicationContribution } from '../../browser/frontend-application-contribution.js';
 
 export interface ElectronIpcOptions {
 }

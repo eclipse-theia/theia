@@ -19,7 +19,7 @@
 import { inject, injectable, postConstruct } from 'inversify';
 import { isOSX, MAIN_MENU_BAR, MenuNode, CompoundMenuNode, Group, RenderedMenuNode, CommandMenu, AcceleratorSource, MenuPath, PreferenceService } from '../../common';
 import { CommonCommands } from '../../browser';
-import debounce = require('lodash.debounce');
+import debounce from '../../../shared/lodash.debounce/index.cjs';
 import { BrowserMainMenuFactory } from '../../browser/menu/browser-menu-plugin';
 import { ContextMatcher } from '../../browser/context-key-service';
 import { electronMenuAcceleratorMetadata, MenuDto, MenuRole } from '../../electron-common/electron-api';

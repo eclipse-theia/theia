@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export { WorkspaceMetadataStore, WorkspaceMetadataStoreImpl } from './workspace-metadata-store';
+export { WorkspaceMetadataStore, WorkspaceMetadataStoreImpl } from './workspace-metadata-store.js';
 export {
     WorkspaceMetadataStorageService,
     WorkspaceMetadataStorageServiceImpl,
     WorkspaceMetadataIndex,
     WorkspaceMetadataStoreFactory
-} from './workspace-metadata-storage-service';
+} from './workspace-metadata-storage-service.js';

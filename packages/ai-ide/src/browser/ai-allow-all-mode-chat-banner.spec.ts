@@ -26,7 +26,7 @@ import {
     TOOL_CONFIRMATION_PREFERENCE,
     ToolConfirmationMode
 } from '@theia/ai-chat/lib/common/chat-tool-preferences';
-import { AiAllowAllModeChatBanner } from './ai-allow-all-mode-chat-banner';
+import { AiAllowAllModeChatBanner } from './ai-allow-all-mode-chat-banner.js';
 disableJSDOM();
 
 /**

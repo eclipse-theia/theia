@@ -17,8 +17,8 @@
 import { expect } from 'chai';
 import type { Model } from '@google/genai';
 import { DiscoveredModel, ReasoningApi } from '@theia/ai-core';
-import { GoogleLanguageModelsManagerImpl, reasoningApiFromModelId } from './google-language-models-manager-impl';
-import { GoogleModelDescription } from '../common';
+import { GoogleLanguageModelsManagerImpl, reasoningApiFromModelId } from './google-language-models-manager-impl.js';
+import { GoogleModelDescription } from '../common/index.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { TestModelDiscoveryFetcher } from '@theia/ai-core/lib/node/test/test-model-discovery-fetcher';
 

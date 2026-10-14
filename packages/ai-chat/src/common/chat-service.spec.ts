@@ -22,14 +22,14 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
-import { ChatServiceImpl } from './chat-service';
-import { ChatAgentService } from './chat-agent-service';
-import { ChatSessionStore } from './chat-session-store';
-import { ChatContentDeserializerRegistry } from './chat-content-deserializer';
-import { ChangeSetElementDeserializerRegistry } from './change-set-element-deserializer';
+import { ChatServiceImpl } from './chat-service.js';
+import { ChatAgentService } from './chat-agent-service.js';
+import { ChatSessionStore } from './chat-session-store.js';
+import { ChatContentDeserializerRegistry } from './chat-content-deserializer.js';
+import { ChangeSetElementDeserializerRegistry } from './change-set-element-deserializer.js';
 import { ToolInvocationRegistry, AIVariableService } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
-import { ChatRequestParser } from './chat-request-parser';
+import { ChatRequestParser } from './chat-request-parser.js';
 
 disableJSDOM();
 

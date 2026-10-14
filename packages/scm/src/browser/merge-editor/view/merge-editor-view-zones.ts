@@ -19,11 +19,11 @@ import { Disposable } from '@theia/core';
 import { Autorun, Observable } from '@theia/core/lib/common/observable';
 import * as monaco from '@theia/monaco-editor-core';
 import { MonacoEditorViewZone } from '@theia/monaco/lib/browser/monaco-editor-zone-widget';
-import { MergeEditor } from '../merge-editor';
-import { MergeRange } from '../model/merge-range';
-import { MergeRangeAction, MergeRangeActions } from './merge-range-actions';
-import { MergeEditorPane } from './merge-editor-panes';
-import { DiffSpacers, DiffSpacerService } from './diff-spacers';
+import { MergeEditor } from '../merge-editor.js';
+import { MergeRange } from '../model/merge-range.js';
+import { MergeRangeAction, MergeRangeActions } from './merge-range-actions.js';
+import { MergeEditorPane } from './merge-editor-panes/index.js';
+import { DiffSpacers, DiffSpacerService } from './diff-spacers.js';
 
 export interface MergeEditorViewZone {
     create(ctx: MergeEditorViewZone.CreationContext): void;

@@ -18,9 +18,9 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Mutex } from 'async-mutex';
 import { ILogger, nls } from '@theia/core';
 import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
-import { PluginDeployOptions, PluginIdentifiers, PluginServer, PluginStorageKind, PluginType } from '../../common';
-import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
-import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
+import { PluginDeployOptions, PluginIdentifiers, PluginServer, PluginStorageKind, PluginType } from '../../common/index.js';
+import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types.js';
+import { PluginPathsService } from '../../main/common/plugin-paths-protocol.js';
 
 const GLOBAL_STORAGE_KEY = 'plugin-storage:global';
 const WORKSPACE_STORAGE_KEY_PREFIX = 'plugin-storage:workspace:';

@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
-import { Event, Emitter, WaitUntilEvent } from './event';
-import { Disposable, DisposableCollection } from './disposable';
-import { ContributionProvider } from './contribution-provider';
-import { nls } from './nls';
-import debounce = require('p-debounce');
-import { isObject } from './types';
-import { ILogger } from './logger';
+import { Event, Emitter, WaitUntilEvent } from './event.js';
+import { Disposable, DisposableCollection } from './disposable.js';
+import { ContributionProvider } from './contribution-provider.js';
+import { nls } from './nls.js';
+import debounce from 'p-debounce';
+import { isObject } from './types.js';
+import { ILogger } from './logger.js';
 
 /**
  * A command is a unique identifier of a function

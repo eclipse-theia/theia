@@ -17,9 +17,9 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { RPCProtocol } from '@theia/plugin-ext/lib/common/rpc-protocol';
 import { Plugin } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
-import type * as gotd from '../gotd';
-import { GreetingKind, GreetingExt, MAIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
-import { GreetingExtImpl } from './greeting-ext-impl';
+import type * as gotd from '../gotd.js';
+import { GreetingKind, GreetingExt, MAIN_RPC_CONTEXT } from '../common/plugin-api-rpc.js';
+import { GreetingExtImpl } from './greeting-ext-impl.js';
 import { Disposable, DisposableCollection } from '@theia/core';
 import { PluginContainerModule } from '@theia/plugin-ext/lib/plugin/node/plugin-container-module';
 

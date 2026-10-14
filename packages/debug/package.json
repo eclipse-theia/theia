@@ -2,6 +2,7 @@
   "name": "@theia/debug",
   "version": "1.76.0",
   "description": "Theia - Debug Extension",
+  "type": "module",
   "dependencies": {
     "@theia/console": "1.76.0",
     "@theia/core": "1.76.0",
@@ -64,5 +65,11 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

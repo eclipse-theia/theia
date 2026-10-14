@@ -20,8 +20,8 @@ import * as os from 'os';
 import { join } from 'path';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { DeviceCodeResponse } from '../common/copilot-auth-service';
-import { CopilotCliAuthProvider } from './copilot-cli-auth-provider';
+import { DeviceCodeResponse } from '../common/copilot-auth-service.js';
+import { CopilotCliAuthProvider } from './copilot-cli-auth-provider.js';
 
 class TestableCopilotCliAuthProvider extends CopilotCliAuthProvider {
     constructor() {

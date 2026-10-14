@@ -24,8 +24,8 @@ import {
     CommentThread,
     CommentThreadChangedEvent,
     CommentThreadChangedEventMain
-} from '../../../common/plugin-api-rpc-model';
-import { CommentController } from './comments-main';
+} from '../../../common/plugin-api-rpc-model.js';
+import { CommentController } from './comments-main.js';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { ILogger } from '@theia/core';
 

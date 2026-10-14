@@ -15,21 +15,21 @@
 // *****************************************************************************
 
 import * as theia from '@theia/plugin';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { CommandRegistryImpl } from './command-registry';
-import { UriComponents } from '../common/uri-components';
-import { CommentThreadCollapsibleState, CommentThreadState, URI } from './types-impl';
+import { RPCProtocol } from '../common/rpc-protocol.js';
+import { CommandRegistryImpl } from './command-registry.js';
+import { UriComponents } from '../common/uri-components.js';
+import { CommentThreadCollapsibleState, CommentThreadState, URI } from './types-impl.js';
 import {
     Range,
     Comment,
     CommentThreadState as CommentThreadStateModel,
     CommentThreadCollapsibleState as CommentThreadCollapsibleStateModel,
     CommentOptions
-} from '../common/plugin-api-rpc-model';
-import { DocumentsExtImpl } from './documents';
+} from '../common/plugin-api-rpc-model.js';
+import { DocumentsExtImpl } from './documents.js';
 import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { fromMarkdown, fromRange, toRange } from './type-converters';
+import { fromMarkdown, fromRange, toRange } from './type-converters.js';
 import {
     CommentsCommandArg, CommentsContextCommandArg, CommentsEditCommandArg,
     CommentsExt,
@@ -37,8 +37,8 @@ import {
     CommentThreadChanges,
     Plugin as InternalPlugin,
     PLUGIN_RPC_CONTEXT
-} from '../common/plugin-api-rpc';
-import { isArray } from '../common/types';
+} from '../common/plugin-api-rpc.js';
+import { isArray } from '../common/types.js';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.

@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution } from '../frontend-application-contribution';
-import { ApplicationShell } from './application-shell';
+import { FrontendApplicationContribution } from '../frontend-application-contribution.js';
+import { ApplicationShell } from './application-shell.js';
 import { injectable, inject } from 'inversify';
-import { DisposableCollection, Disposable } from '../../common/disposable';
-import { Emitter, Event } from '../../common/event';
+import { DisposableCollection, Disposable } from '../../common/disposable.js';
+import { Emitter, Event } from '../../common/event.js';
 import { FocusTracker, PanelLayout, SplitPanel } from '@lumino/widgets';
-import { addEventListener, Widget } from '../widgets';
+import { addEventListener, Widget } from '../widgets/index.js';
 /**
  * Contribution that tracks `mouseup` and `mousedown` events.
  *

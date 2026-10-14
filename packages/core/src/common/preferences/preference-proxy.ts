@@ -16,14 +16,14 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { PreferenceService } from './preference-service';
-import { PreferenceScope } from './preference-scope';
-import { IJSONSchema } from '../json-schema';
-import { isThenable } from '../promise-util';
-import { OverridePreferenceName } from './preference-language-override-service';
-import { isObject, MaybePromise } from '../types';
-import { Event } from '../event';
-import { Disposable } from '../disposable';
+import { PreferenceService } from './preference-service.js';
+import { PreferenceScope } from './preference-scope.js';
+import { IJSONSchema } from '../json-schema.js';
+import { isThenable } from '../promise-util.js';
+import { OverridePreferenceName } from './preference-language-override-service.js';
+import { isObject, MaybePromise } from '../types.js';
+import { Event } from '../event.js';
+import { Disposable } from '../disposable.js';
 
 /**
  * It is worth explaining the type for `PreferenceChangeEvent`:

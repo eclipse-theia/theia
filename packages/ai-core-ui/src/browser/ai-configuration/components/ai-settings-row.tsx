@@ -16,10 +16,10 @@
 
 import { nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
-import { AiConfigurationScope } from '../ai-configuration-category';
-import { AiSettingsControl, AiSettingsRowService } from './ai-settings-row-service';
-import { AiArrayInput, AiEditInSettingsButton, AiEnumSelect, AiNumberStepper, AiTextInput, AiToggleSwitch } from './ai-configuration-controls';
-import { AiConfigurationSettingRow } from './ai-configuration-setting-row';
+import { AiConfigurationScope } from '../ai-configuration-category.js';
+import { AiSettingsControl, AiSettingsRowService } from './ai-settings-row-service.js';
+import { AiArrayInput, AiEditInSettingsButton, AiEnumSelect, AiNumberStepper, AiTextInput, AiToggleSwitch } from './ai-configuration-controls.js';
+import { AiConfigurationSettingRow } from './ai-configuration-setting-row.js';
 
 export interface AiSettingsRowProps {
     /** Service wrapping preference read/write and markdown rendering (injected by the owning widget). */

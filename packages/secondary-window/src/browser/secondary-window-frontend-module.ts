@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { SecondaryWindowContribution } from './secondary-window-frontend-contribution';
+import { SecondaryWindowContribution } from './secondary-window-frontend-contribution.js';
 import { CommandContribution } from '@theia/core/lib/common/command';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 

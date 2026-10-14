@@ -19,9 +19,9 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { ApplicationShell } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
-import { TerminalFrontendContribution } from '../browser/terminal-frontend-contribution';
-import { TerminalWidgetOptions, TerminalWidget } from '../browser/base/terminal-widget';
-import { TerminalProfile } from '../browser/terminal-profile-service';
+import { TerminalFrontendContribution } from '../browser/terminal-frontend-contribution.js';
+import { TerminalWidgetOptions, TerminalWidget } from '../browser/base/terminal-widget.js';
+import { TerminalProfile } from '../browser/terminal-profile-service.js';
 
 /**
  * A browser-only application has no backend to run a shell in, so it can't open terminals.

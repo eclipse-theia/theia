@@ -20,6 +20,7 @@ import os = require('os');
 import path = require('path');
 import semver = require('semver');
 import yargs = require('yargs');
+import ts = require('typescript');
 import { parseModule } from './utility';
 import { ReExport, PackageReExports } from './package-re-exports';
 type EOL = '\r\n' | '\n' | '\r';
@@ -39,15 +40,34 @@ yargs
             }
             const packageReExports = await PackageReExports.FromPackage(packageName);
             const writer = new FileWriter(findEol(await readFile(packageReExports.resolvePath('package.json'))));
+            // Modules declared with `export =` cannot be re-exported from an ES module without losing their types,
+            // so they are always re-exported from a CommonJS module, which also loads the CommonJS entry point of dual packages.
+            const commonJsReExports = packageReExports.all.filter(reExport => reExport.reExportStyle === '='
+                || isCommonJsModule(reExport.internalImport, packageReExports.packageRoot));
+            const exportNames = collectExportNames(commonJsReExports.map(reExport => reExport.internalImport), packageReExports.packageRoot);
             await Promise.all(packageReExports.all.map(async reExport => {
                 const reExportPath = packageReExports.resolvePath(reExport.reExportDir, reExport.moduleName, 'index');
-                await writer.write(`${reExportPath}.js`, `module.exports = require('${reExport.internalImport}');\n`);
-                if (reExport.reExportStyle === '*') {
+                if (commonJsReExports.includes(reExport)) {
+                    // A CommonJS module is re-exported from a CommonJS module, which behaves exactly like the original module.
+                    // Node detects the named exports of a CommonJS module imported from an ES module by static analysis,
+                    // which fails for modules that create their exports dynamically, so they are listed explicitly.
+                    const names = exportNames.get(reExport.internalImport) ?? [];
+                    let content = `module.exports = require('${reExport.internalImport}');\n`;
+                    if (names.length) {
+                        content += '// Lets Node detect the named exports when this module is imported from an ES module.\n'
+                            + `0 && (module.exports = { ${names.join(', ')} });\n`;
+                    }
+                    await writer.write(`${reExportPath}.cjs`, content);
+                    const declaration = reExport.reExportStyle === '='
+                        ? `import ${reExport.exportNamespace} = require('${reExport.internalImport}');\nexport = ${reExport.exportNamespace};\n`
+                        : `export * from '${reExport.internalImport}';\n`;
+                    await writer.write(`${reExportPath}.d.cts`, declaration);
+                    await writer.remove(`${reExportPath}.js`, `${reExportPath}.d.ts`);
+                } else if (reExport.reExportStyle === '*') {
                     const content = `export * from '${reExport.internalImport}';\n`;
+                    await writer.write(`${reExportPath}.js`, content);
                     await writer.write(`${reExportPath}.d.ts`, content);
-                } else if (reExport.reExportStyle === '=') {
-                    const content = `import ${reExport.exportNamespace} = require('${reExport.internalImport}');\nexport = ${reExport.exportNamespace};\n`;
-                    await writer.write(`${reExportPath}.d.ts`, content);
+                    await writer.remove(`${reExportPath}.cjs`, `${reExportPath}.d.cts`);
                 } else {
                     console.warn('unexpected re-export');
                 }
@@ -157,4 +177,101 @@ class FileWriter {
         await fs.promises.mkdir(dirPath, { recursive: true });
         await fs.promises.writeFile(filePath, convertEol(this.eol, content));
     }
+    async remove(...filePaths: string[]): Promise<void> {
+        await Promise.all(filePaths.map(filePath => fs.promises.rm(filePath, { force: true })));
+    }
+}
+
+/**
+ * Collects the names of the values exported by the given CommonJS modules from their type declarations.
+ */
+function collectExportNames(moduleNames: string[], fromDir: string): Map<string, string[]> {
+    const result = new Map<string, string[]>();
+    if (moduleNames.length === 0) {
+        return result;
+    }
+    // A virtual CommonJS module that requires all modules, so that they are resolved like the generated re-exports.
+    // TypeScript uses forward slashes in file names on all platforms.
+    const fileName = path.join(fromDir, '__theia_re_exports__.cts').replace(/\\/g, '/');
+    const content = moduleNames.map((moduleName, index) => `import m${index} = require('${moduleName}');\nexport { m${index} };\n`).join('');
+    const options: ts.CompilerOptions = {
+        module: ts.ModuleKind.NodeNext,
+        moduleResolution: ts.ModuleResolutionKind.NodeNext,
+        esModuleInterop: true,
+        skipLibCheck: true,
+        noEmit: true,
+        types: []
+    };
+    const host = ts.createCompilerHost(options);
+    const getSourceFile = host.getSourceFile;
+    host.getSourceFile = (name, languageVersion, ...rest) => name === fileName
+        ? ts.createSourceFile(name, content, languageVersion)
+        : getSourceFile.call(host, name, languageVersion, ...rest);
+    const fileExists = host.fileExists;
+    host.fileExists = name => name === fileName || fileExists.call(host, name);
+    const program = ts.createProgram([fileName], options, host);
+    const checker = program.getTypeChecker();
+    const sourceFile = program.getSourceFile(fileName)!;
+    sourceFile.statements.filter(ts.isImportEqualsDeclaration).forEach((statement, index) => {
+        const reference = statement.moduleReference;
+        const moduleSymbol = ts.isExternalModuleReference(reference) ? checker.getSymbolAtLocation(reference.expression) : undefined;
+        if (!moduleSymbol) {
+            console.warn(`cannot resolve the types of '${moduleNames[index]}'`);
+            return;
+        }
+        // eslint-disable-next-line no-bitwise
+        const isValue = (symbol: ts.Symbol) => ((symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol).flags & ts.SymbolFlags.Value) !== 0;
+        const symbols = checker.getExportsOfModule(moduleSymbol).filter(isValue);
+        // The properties of the value of an `export =` declaration are named exports, too.
+        const exportEquals = moduleSymbol.exports?.get(ts.InternalSymbolName.ExportEquals);
+        if (exportEquals) {
+            symbols.push(...checker.getTypeOfSymbolAtLocation(exportEquals, statement).getProperties());
+        }
+        const names = symbols
+            .map(symbol => symbol.name)
+            .filter(name => name !== 'default' && name !== '__esModule' && /^[A-Za-z_$][\w$]*$/.test(name) && !RESERVED_WORDS.has(name));
+        result.set(moduleNames[index], Array.from(new Set(names)).sort());
+    });
+    return result;
+}
+
+const RESERVED_WORDS = new Set(['break', 'case', 'catch', 'class', 'const', 'continue', 'debugger', 'default', 'delete', 'do', 'else', 'enum', 'export', 'extends',
+    'false', 'finally', 'for', 'function', 'if', 'import', 'in', 'instanceof', 'new', 'null', 'return', 'super', 'switch', 'this', 'throw', 'true', 'try', 'typeof',
+    'var', 'void', 'while', 'with', 'yield', 'let', 'static', 'implements', 'interface', 'package', 'private', 'protected', 'public', 'await']);
+
+/**
+ * Determines whether `moduleName` is loaded as a CommonJS module when imported from an ES module in `fromDir`.
+ */
+function isCommonJsModule(moduleName: string, fromDir: string): boolean {
+    const [packageName, subModuleName] = parseModule(moduleName);
+    let resolved: string;
+    try {
+        resolved = require.resolve(moduleName, { paths: [fromDir] });
+    } catch {
+        return false;
+    }
+    if (resolved.endsWith('.cjs')) {
+        return true;
+    }
+    if (resolved.endsWith('.mjs')) {
+        return false;
+    }
+    // Find the `package.json` of the package that `moduleName` belongs to.
+    let packageRoot = path.dirname(resolved);
+    while (!fs.existsSync(path.join(packageRoot, 'package.json'))
+        || JSON.parse(fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8')).name !== packageName) {
+        if (packageRoot === path.dirname(packageRoot)) {
+            return true;
+        }
+        packageRoot = path.dirname(packageRoot);
+    }
+    const packageJson = JSON.parse(fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8'));
+    // A dual package provides a separate entry point for the `import` condition, which is an ES module.
+    const exportsEntry = typeof packageJson.exports === 'object' && packageJson.exports
+        ? packageJson.exports[subModuleName ? `./${subModuleName}` : '.']
+        : undefined;
+    if (typeof exportsEntry === 'object' && exportsEntry && 'import' in exportsEntry) {
+        return false;
+    }
+    return packageJson.type !== 'module';
 }

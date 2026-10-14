@@ -22,11 +22,11 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { MessageService } from '@theia/core';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
-import { PromptService, ToolCallContentResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
-import { MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common/mcp-server-manager';
-import type { MCPFrontendServiceImpl } from './mcp-frontend-service';
-const { MCPFrontendServiceImpl: MCPFrontendServiceImplConstructor, mapCallContent } = require('./mcp-frontend-service') as
-    { MCPFrontendServiceImpl: new () => MCPFrontendServiceImpl, mapCallContent: (callContent: Record<string, unknown>) => ToolCallContentResult };
+import { PromptService, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
+import { MCPServerDescription, MCPServerManager, MCPServerStatus } from '../common/mcp-server-manager.js';
+import type { MCPFrontendServiceImpl } from './mcp-frontend-service.js';
+// Loaded after the frontend application config has been set above, as imports are evaluated first.
+const { MCPFrontendServiceImpl: MCPFrontendServiceImplConstructor, mapCallContent } = await import('./mcp-frontend-service.js');
 
 disableJSDOM();
 

@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { OVSXClientProvider, OVSXUrlResolver } from '../common';
+import { OVSXClientProvider, OVSXUrlResolver } from '../common/index.js';
 import { RequestService } from '@theia/core/shared/@theia/request';
 import {
     ExtensionIdMatchesFilterFactory, OVSXApiFilter, OVSXApiFilterImpl, OVSXApiFilterProvider, OVSXClient, OVSXHttpClient, OVSXRouterClient, RequestContainsFilterFactory
 } from '@theia/ovsx-client';
-import { VSXEnvironment } from './vsx-environment';
+import { VSXEnvironment } from './vsx-environment.js';
 import { RateLimiter } from 'limiter';
 
 export default new ContainerModule(bind => {

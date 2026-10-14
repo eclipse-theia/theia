@@ -20,12 +20,11 @@ import { RequestContext, RequestService, RequestOptions } from '@theia/core/shar
 import decompress from 'decompress';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { DependencyDownload, DirectoryDependencyDownload, RemoteNativeDependencyContribution } from './remote-native-dependency-contribution';
+import { DependencyDownload, DirectoryDependencyDownload, RemoteNativeDependencyContribution } from './remote-native-dependency-contribution.js';
 import { RemotePlatform } from '@theia/core/lib/node/remote/remote-cli-contribution';
-
-const decompressTar = require('decompress-tar');
-const decompressTargz = require('decompress-targz');
-const decompressUnzip = require('decompress-unzip');
+import decompressTar from 'decompress-tar';
+import decompressTargz from 'decompress-targz';
+import decompressUnzip from 'decompress-unzip';
 
 export const DEFAULT_HTTP_OPTIONS = {
     method: 'GET',

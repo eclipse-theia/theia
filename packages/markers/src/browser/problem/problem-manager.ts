@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { MarkerManager } from '../marker-manager';
-import { PROBLEM_KIND } from '../../common/problem-marker';
+import { MarkerManager } from '../marker-manager.js';
+import { PROBLEM_KIND } from '../../common/problem-marker.js';
 import { Diagnostic } from '@theia/core/shared/vscode-languageserver-protocol';
 
 export interface ProblemStat {

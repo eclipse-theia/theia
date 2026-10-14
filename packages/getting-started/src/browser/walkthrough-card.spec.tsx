@@ -20,8 +20,8 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
-import { Walkthrough, WalkthroughStep } from '../common/walkthrough-types';
-import { WalkthroughCard } from './walkthrough-card';
+import { Walkthrough, WalkthroughStep } from '../common/walkthrough-types.js';
+import { WalkthroughCard } from './walkthrough-card.js';
 
 function createMockStep(overrides?: Partial<WalkthroughStep>): WalkthroughStep {
     return {

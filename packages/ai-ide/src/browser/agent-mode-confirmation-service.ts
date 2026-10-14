@@ -22,7 +22,7 @@ import {
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { nls, PreferenceScope, PreferenceService } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { PREFERENCE_NAME_AGENT_MODE_ENABLED } from '../common/ai-ide-preferences';
+import { PREFERENCE_NAME_AGENT_MODE_ENABLED } from '../common/ai-ide-preferences.js';
 
 export const AgentModeConfirmationService = Symbol('AgentModeConfirmationService');
 export interface AgentModeConfirmationService {

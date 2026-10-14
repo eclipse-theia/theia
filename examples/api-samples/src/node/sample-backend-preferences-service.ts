@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
-import { SampleBackendPreferencesService } from '../common/preference-protocol';
+import { SampleBackendPreferencesService } from '../common/preference-protocol.js';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { PreferenceInspection, PreferenceLanguageOverrideService, PreferenceScope, PreferenceService } from '@theia/core';
 

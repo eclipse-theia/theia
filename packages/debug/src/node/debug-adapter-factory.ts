@@ -37,10 +37,10 @@ import {
     DebugAdapterFactory,
     DebugAdapterForkExecutable,
     DebugAdapter
-} from '../common/debug-model';
-import { DebugAdapterSessionImpl } from '../common/debug-adapter-session';
+} from '../common/debug-model.js';
+import { DebugAdapterSessionImpl } from '../common/debug-adapter-session.js';
 import { environment } from '@theia/core/shared/@theia/application-package';
-import { ProcessDebugAdapter, SocketDebugAdapter } from './stream-debug-adapter';
+import { ProcessDebugAdapter, SocketDebugAdapter } from './stream-debug-adapter.js';
 import { isObject } from '@theia/core/lib/common';
 
 /**

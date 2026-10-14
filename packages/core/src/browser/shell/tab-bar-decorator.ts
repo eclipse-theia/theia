@@ -14,15 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import debounce = require('lodash.debounce');
+import debounce from '../../../shared/lodash.debounce/index.cjs';
 import { Title, Widget } from '@lumino/widgets';
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, Emitter, Event } from '../../common';
-import { ColorRegistry } from '../color-registry';
-import { Decoration, DecorationsService, DecorationsServiceImpl } from '../decorations-service';
-import { FrontendApplicationContribution } from '../frontend-application-contribution';
-import { Navigatable } from '../navigatable-types';
-import { WidgetDecoration } from '../widget-decoration';
+import { ContributionProvider, Emitter, Event } from '../../common/index.js';
+import { ColorRegistry } from '../color-registry.js';
+import { Decoration, DecorationsService, DecorationsServiceImpl } from '../decorations-service.js';
+import { FrontendApplicationContribution } from '../frontend-application-contribution.js';
+import { Navigatable } from '../navigatable-types.js';
+import { WidgetDecoration } from '../widget-decoration.js';
 
 export const TabBarDecorator = Symbol('TabBarDecorator');
 

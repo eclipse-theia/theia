@@ -17,9 +17,9 @@ import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core/lib/common';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { ManagedProcessManager, ManagedProcess } from '../common/process-manager-types';
+import { ManagedProcessManager, ManagedProcess } from '../common/process-manager-types.js';
 import { MAX_SAFE_INTEGER } from '@theia/core/lib/common/numbers';
-import { Process } from './process';
+import { Process } from './process.js';
 
 @injectable()
 export class ProcessManager implements ManagedProcessManager, BackendApplicationContribution {

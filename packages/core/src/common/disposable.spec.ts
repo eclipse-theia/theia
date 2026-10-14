@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { expect, spy, use } from 'chai';
-import { DisposableCollection, Disposable } from './disposable';
+// `spy` is added to `chai` by the `chai-spies` plugin at runtime, so it is not a named export of the module.
+import chai, { expect, use } from 'chai';
+import { DisposableCollection, Disposable } from './disposable.js';
 import spies from 'chai-spies';
 
 use(spies);
@@ -31,7 +32,7 @@ describe('Disposables', () => {
     });
 
     it('Collection is auto-pruned when an element is disposed', () => {
-        const onDispose = spy(() => { });
+        const onDispose = chai.spy(() => { });
         const elementDispose = () => { };
 
         const collection = new DisposableCollection();
@@ -64,8 +65,8 @@ describe('Disposables', () => {
     });
 
     it('onDispose is only called once on actual disposal of elements', () => {
-        const onDispose = spy(() => { });
-        const elementDispose = spy(() => { });
+        const onDispose = chai.spy(() => { });
+        const elementDispose = chai.spy(() => { });
 
         const collection = new DisposableCollection();
         collection.onDispose(onDispose);

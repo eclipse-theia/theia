@@ -16,12 +16,12 @@
 
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as theia from '@theia/plugin';
-import { DocumentsExtImpl } from '../documents';
-import * as types from '../types-impl';
-import * as Converter from '../type-converters';
-import { Position } from '../../common/plugin-api-rpc';
-import { Definition, LocationLink, Location } from '../../common/plugin-api-rpc-model';
-import { isDefinitionLinkArray, isLocationArray } from './util';
+import { DocumentsExtImpl } from '../documents.js';
+import * as types from '../types-impl.js';
+import * as Converter from '../type-converters.js';
+import { Position } from '../../common/plugin-api-rpc.js';
+import { Definition, LocationLink, Location } from '../../common/plugin-api-rpc-model.js';
+import { isDefinitionLinkArray, isLocationArray } from './util.js';
 
 export class DefinitionAdapter {
 

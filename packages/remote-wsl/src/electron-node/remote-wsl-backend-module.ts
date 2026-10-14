@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { RemoteWslConnectionProviderImpl } from './remote-wsl-connection-provider';
-import { RemoteWslConnectionProvider, RemoteWslConnectionProviderPath } from '../electron-common/remote-wsl-connection-provider';
+import { RemoteWslConnectionProviderImpl } from './remote-wsl-connection-provider.js';
+import { RemoteWslConnectionProvider, RemoteWslConnectionProviderPath } from '../electron-common/remote-wsl-connection-provider.js';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
-import { WslWorkspaceHandler } from './wsl-workspace-handler';
+import { WslWorkspaceHandler } from './wsl-workspace-handler.js';
 import { WorkspaceHandlerContribution } from '@theia/workspace/lib/node/default-workspace-server';
 
 export const wslRemoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {

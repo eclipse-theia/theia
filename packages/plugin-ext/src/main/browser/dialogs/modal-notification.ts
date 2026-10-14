@@ -18,7 +18,7 @@ import { Message } from '@theia/core/shared/@lumino/messaging';
 import { codiconArray, Key } from '@theia/core/lib/browser';
 import { AbstractDialog } from '@theia/core/lib/browser/dialogs';
 import '../../../../src/main/browser/dialogs/style/modal-notification.css';
-import { MainMessageItem, MainMessageOptions } from '../../../common/plugin-api-rpc';
+import { MainMessageItem, MainMessageOptions } from '../../../common/plugin-api-rpc.js';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { nls } from '@theia/core/lib/common/nls';
 

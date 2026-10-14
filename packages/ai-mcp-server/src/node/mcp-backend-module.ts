@@ -21,12 +21,12 @@ import { ConnectionHandler, RpcConnectionHandler, bindRootContributionProvider, 
 import {
     MCPTheiaServer,
     MCPBackendContribution
-} from './mcp-theia-server';
-import { MCPToolFrontendDelegate, MCPToolDelegateClient, mcpToolDelegatePath } from '../common/mcp-tool-delegate';
-import { MCPTheiaServerImpl } from './mcp-theia-server-impl';
-import { MCPBackendContributionManager } from './mcp-backend-contribution-manager';
-import { MCPFrontendContributionManager } from './mcp-frontend-contribution-manager';
-import { MCPToolFrontendDelegateImpl } from './mcp-tool-frontend-delegate';
+} from './mcp-theia-server.js';
+import { MCPToolFrontendDelegate, MCPToolDelegateClient, mcpToolDelegatePath } from '../common/mcp-tool-delegate.js';
+import { MCPTheiaServerImpl } from './mcp-theia-server-impl.js';
+import { MCPBackendContributionManager } from './mcp-backend-contribution-manager.js';
+import { MCPFrontendContributionManager } from './mcp-frontend-contribution-manager.js';
+import { MCPToolFrontendDelegateImpl } from './mcp-tool-frontend-delegate.js';
 
 const mcpConnectionModule = ConnectionContainerModule.create(({ bind }) => {
     bind(MCPToolFrontendDelegateImpl).toSelf().inSingletonScope();

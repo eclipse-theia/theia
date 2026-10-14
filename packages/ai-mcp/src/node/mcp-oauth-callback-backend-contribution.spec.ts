@@ -16,8 +16,8 @@
 
 import { expect } from 'chai';
 import * as express from '@theia/core/shared/express';
-import { MCPOAuthCallbackBackendContribution } from './mcp-oauth-callback-backend-contribution';
-import { MCPOAuthCallbackResponder, MCPOAuthCallbackQuery, MCPOAuthCallbackResponse } from './mcp-oauth-callback-responder';
+import { MCPOAuthCallbackBackendContribution } from './mcp-oauth-callback-backend-contribution.js';
+import { MCPOAuthCallbackResponder, MCPOAuthCallbackQuery, MCPOAuthCallbackResponse } from './mcp-oauth-callback-responder.js';
 
 class TestResponse {
     statusCode = 200;

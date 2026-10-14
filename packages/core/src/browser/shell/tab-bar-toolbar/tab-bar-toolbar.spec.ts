@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../../test/jsdom';
+import { enableJSDOM } from '../../test/jsdom.js';
 
 let disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
@@ -22,17 +22,17 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import {
     CommandMenu, CommandRegistry, CompoundMenuNode, Group, GroupImpl, MenuAction, MenuModelRegistry, MenuNode, MenuNodeFactory, MutableCompoundMenuNode,
     Submenu, SubmenuImpl, SubMenuLink
-} from '../../../common';
-import { ContextKeyServiceDummyImpl, ContextMatcher } from '../../context-key-service';
-import { ContextMenuRenderer } from '../../context-menu-renderer';
-import { Widget } from '../../widgets';
-import URI from '../../../common/uri';
-import { ResourceContextKey } from '../../resource-context-key';
-import { WidgetContextKeyContribution } from '../../widget-context-key-contribution';
-import { TabBarToolbar } from './tab-bar-toolbar';
-import { TOOLBAR_WRAPPER_ID_SUFFIX } from './tab-bar-toolbar-menu-adapters';
-import { TabBarToolbarRegistry } from './tab-bar-toolbar-registry';
-import { TAB_BAR_TOOLBAR_CONTEXT_MENU, TabBarToolbarAction } from './tab-bar-toolbar-types';
+} from '../../../common/index.js';
+import { ContextKeyServiceDummyImpl, ContextMatcher } from '../../context-key-service.js';
+import { ContextMenuRenderer } from '../../context-menu-renderer.js';
+import { Widget } from '../../widgets/index.js';
+import URI from '../../../common/uri.js';
+import { ResourceContextKey } from '../../resource-context-key.js';
+import { WidgetContextKeyContribution } from '../../widget-context-key-contribution.js';
+import { TabBarToolbar } from './tab-bar-toolbar.js';
+import { TOOLBAR_WRAPPER_ID_SUFFIX } from './tab-bar-toolbar-menu-adapters.js';
+import { TabBarToolbarRegistry } from './tab-bar-toolbar-registry.js';
+import { TAB_BAR_TOOLBAR_CONTEXT_MENU, TabBarToolbarAction } from './tab-bar-toolbar-types.js';
 
 disableJSDOM();
 

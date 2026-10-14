@@ -16,11 +16,11 @@
 
 import * as theia from '@theia/plugin';
 import { Event, Emitter } from '@theia/core/lib/common/event';
-import { convertDiagnosticToMarkerData } from '../type-converters';
-import { DiagnosticSeverity, MarkerSeverity } from '../types-impl';
-import { MarkerData } from '../../common/plugin-api-rpc-model';
-import { RPCProtocol } from '../../common/rpc-protocol';
-import { PLUGIN_RPC_CONTEXT, LanguagesMain } from '../../common/plugin-api-rpc';
+import { convertDiagnosticToMarkerData } from '../type-converters.js';
+import { DiagnosticSeverity, MarkerSeverity } from '../types-impl.js';
+import { MarkerData } from '../../common/plugin-api-rpc-model.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
+import { PLUGIN_RPC_CONTEXT, LanguagesMain } from '../../common/plugin-api-rpc.js';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { generateUuid } from '@theia/core/lib/common/uuid';
 

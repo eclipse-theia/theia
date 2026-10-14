@@ -17,7 +17,7 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     LanguageModelFrontendDelegateImpl,
     LanguageModelRegistryFrontendDelegateImpl,
-} from './language-model-frontend-delegate';
+} from './language-model-frontend-delegate.js';
 import {
     ConnectionHandler,
     PreferenceContribution,
@@ -43,13 +43,13 @@ import {
     TOKEN_USAGE_SERVICE_PATH,
     ToolCallExecutor,
     ToolCallExecutorImpl
-} from '../common';
-import { BackendLanguageModelRegistryImpl } from './backend-language-model-registry';
-import { TokenUsageServiceImpl } from './token-usage-service-impl';
-import { ModelSnapshotStore, ModelSnapshotStoreImpl } from './model-snapshot-store';
-import { ModelDiscoveryFetcher, ModelDiscoveryFetcherImpl } from './model-discovery-fetcher';
-import { AgentSettingsPreferenceSchema } from '../common/agent-preferences';
-import { bindAICorePreferences } from '../common/ai-core-preferences';
+} from '../common/index.js';
+import { BackendLanguageModelRegistryImpl } from './backend-language-model-registry.js';
+import { TokenUsageServiceImpl } from './token-usage-service-impl.js';
+import { ModelSnapshotStore, ModelSnapshotStoreImpl } from './model-snapshot-store.js';
+import { ModelDiscoveryFetcher, ModelDiscoveryFetcherImpl } from './model-discovery-fetcher.js';
+import { AgentSettingsPreferenceSchema } from '../common/agent-preferences.js';
+import { bindAICorePreferences } from '../common/ai-core-preferences.js';
 
 // We use a connection module to handle AI services separately for each frontend.
 const aiCoreConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {

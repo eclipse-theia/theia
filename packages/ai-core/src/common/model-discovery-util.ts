@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DiscoveredModel } from './model-discovery-status';
+import { DiscoveredModel } from './model-discovery-status.js';
 
 /**
  * Helpers for the dated model ids that provider list endpoints report. Providers call these from

@@ -38,13 +38,12 @@ import { MockLogger } from '../common/test/mock-logger';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { ContextKeyService, ContextKeyServiceDummyImpl, ContextMatcher } from './context-key-service';
 import { CorePreferences } from '../common/core-preferences';
-import * as os from '../common/os';
 import * as chai from 'chai';
-import * as sinon from 'sinon';
 import { Emitter, Event } from '../common/event';
 import { bindPreferenceService } from './frontend-application-bindings';
 import { MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from './markdown-rendering/markdown-renderer';
 import { StatusBar } from './status-bar';
+import { OSStub, stubOS } from '../common/test/stub-os';
 
 disableJSDOM();
 
@@ -75,7 +74,7 @@ let keybindingRegistry: KeybindingRegistry;
 let commandRegistry: CommandRegistry;
 let testContainer: Container;
 
-let stub: sinon.SinonStub;
+let stub: OSStub;
 const preferenceChanged = new Emitter<{ preferenceName: string }>();
 const corePreferences = {
     'keyboard.dispatch': 'code',
@@ -164,7 +163,7 @@ beforeEach(async function (): Promise<void> {
         disableJSDOM();
         disableJSDOM = enableJSDOM();
     }
-    stub = sinon.stub(os, 'isOSX').value(false);
+    stub = stubOS('isOSX', false);
     keybindingRegistry = testContainer.get<KeybindingRegistry>(KeybindingRegistry);
     (corePreferences as unknown as Record<string, unknown>)['keyboard.dispatch'] = 'code';
     await keybindingRegistry.onStart();
@@ -590,7 +589,7 @@ describe('keybindings', () => {
     });
 
     it('should preserve authored modifiers when dispatching commands through normalized Windows layout modifier data', async () => {
-        const windows = sinon.stub(os, 'isWindows').value(true);
+        const windows = stubOS('isWindows', true);
         testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
         const dispatch = sinon.spy(keybindingRegistry, 'dispatchNormalizedKeyDown');
         const target = document.createElement('div');
@@ -831,7 +830,7 @@ describe('keybindings', () => {
         const binding = { command: TEST_COMMAND_SHADOW.id, keybinding: 'alt+[' };
         const execute = sinon.spy();
         const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
-        const windows = sinon.stub(os, 'isWindows').value(false);
+        const windows = stubOS('isWindows', false);
         const dispatch = async (input: NormalizedKeyboardInput) => {
             keybindingRegistry.dispatchNormalizedKeyDown(input, new EventTarget());
             await new Promise(resolve => setTimeout(resolve, 0));
@@ -873,7 +872,7 @@ describe('keybindings', () => {
         const typed = { command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND, keybinding: '[' };
         const execute = sinon.spy();
         const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
-        const windows = sinon.stub(os, 'isWindows').value(true);
+        const windows = stubOS('isWindows', true);
         const match = sinon.spy(keybindingRegistry, 'matchKeybinding');
         const dispatch = async (input: NormalizedKeyboardInput) => {
             keybindingRegistry.dispatchNormalizedKeyDown(input, new EventTarget());
@@ -905,7 +904,7 @@ describe('keybindings', () => {
     });
 
     it('should route Windows Ctrl+Alt candidates through the registry with and without reported AltGraph', () => {
-        const windows = sinon.stub(os, 'isWindows').value(true);
+        const windows = stubOS('isWindows', true);
         try {
             testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
             const match = sinon.spy(keybindingRegistry, 'matchKeybinding');
@@ -1057,7 +1056,7 @@ describe('keybindings', () => {
     });
 
     it('should record legacy Windows AltGraph input as its logical character', () => {
-        const windows = sinon.stub(os, 'isWindows').value(true);
+        const windows = stubOS('isWindows', true);
         try {
             testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
 

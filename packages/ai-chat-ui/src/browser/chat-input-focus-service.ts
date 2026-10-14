@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import type { AIChatInputWidget } from './chat-input-widget';
+import type { AIChatInputWidget } from './chat-input-widget.js';
 
 /**
  * Tracks the currently focused AIChatInputWidget instance.

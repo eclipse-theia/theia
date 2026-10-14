@@ -29,15 +29,15 @@ import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
-import { ShellExecutionTool } from './shell-execution-tool';
-import { ShellCommandPermissionService } from './shell-command-permission-service';
+import { ShellExecutionTool } from './shell-execution-tool.js';
+import { ShellCommandPermissionService } from './shell-command-permission-service.js';
 import {
     SHELL_EXECUTION_FUNCTION_ID,
     ShellExecutionToolResult,
     ShellExecutionCanceledResult
-} from '../common/shell-execution-server';
-import { parseShellExecutionInput, ShellExecutionInput } from '../common/shell-execution-input-parser';
-import { generateCommandPatterns, flattenSuggestions, PatternSuggestion } from '../common/shell-command-patterns';
+} from '../common/shell-execution-server.js';
+import { parseShellExecutionInput, ShellExecutionInput } from '../common/shell-execution-input-parser.js';
+import { generateCommandPatterns, flattenSuggestions, PatternSuggestion } from '../common/shell-command-patterns.js';
 import { ILogger } from '@theia/core';
 
 @injectable()

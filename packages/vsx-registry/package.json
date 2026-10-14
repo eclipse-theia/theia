@@ -2,6 +2,7 @@
   "name": "@theia/vsx-registry",
   "version": "1.76.0",
   "description": "Theia - VSX Registry",
+  "type": "module",
   "dependencies": {
     "@theia/core": "1.76.0",
     "@theia/filesystem": "1.76.0",
@@ -64,5 +65,12 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

@@ -15,17 +15,17 @@
 // *****************************************************************************
 
 import { ContributionProvider, MaybePromise, URI, ILogger } from '@theia/core';
-import { VariableContext } from './devcontainer-contributions/variable-resolver-contribution';
+import { VariableContext } from './devcontainer-contributions/variable-resolver-contribution.js';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as Docker from 'dockerode';
-import { ContainerConnectionOptions } from '../electron-common/remote-container-connection-provider';
-import { DevContainerConfiguration, NonComposeContainerBase } from './devcontainer-file';
-import { DevContainerFileService } from './dev-container-file-service';
-import { ContainerOutputProvider } from '../electron-common/container-output-provider';
-import { RemoteDockerContainerConnection } from './remote-docker-container-connection';
-import { DockerComposeService } from './docker-compose/compose-service';
+import { ContainerConnectionOptions } from '../electron-common/remote-container-connection-provider.js';
+import { DevContainerConfiguration, NonComposeContainerBase } from './devcontainer-file.js';
+import { DevContainerFileService } from './dev-container-file-service.js';
+import { ContainerOutputProvider } from '../electron-common/container-output-provider.js';
+import { RemoteDockerContainerConnection } from './remote-docker-container-connection.js';
+import { DockerComposeService } from './docker-compose/compose-service.js';
 
 export const ContainerCreationContribution = Symbol('ContainerCreationContributions');
 

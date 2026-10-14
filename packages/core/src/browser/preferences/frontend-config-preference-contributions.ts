@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { injectable, named, inject } from 'inversify';
-import { PreferenceContribution, PreferenceSchema, PreferenceSchemaService } from '../../common/preferences/preference-schema';
-import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
-import { FrontendApplicationPreferenceConfig } from './preference-contribution';
-import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service';
-import { PreferenceScope } from '../../common/preferences';
+import { PreferenceContribution, PreferenceSchema, PreferenceSchemaService } from '../../common/preferences/preference-schema.js';
+import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider.js';
+import { FrontendApplicationPreferenceConfig } from './preference-contribution.js';
+import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service.js';
+import { PreferenceScope } from '../../common/preferences/index.js';
 import { DefaultTheme } from '@theia/application-package/lib/application-props';
-import { ILogger } from '../../common/logger';
+import { ILogger } from '../../common/logger.js';
 
 @injectable()
 export class FrontendConfigPreferenceContribution implements PreferenceContribution {

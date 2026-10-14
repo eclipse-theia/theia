@@ -24,13 +24,13 @@ import {
     CODEX_SERVICE_PATH,
     CodexClient,
     CodexService
-} from '../common/codex-service';
-import { CodexPreferencesSchema } from '../common/codex-preferences';
-import { CodexChatAgent } from './codex-chat-agent';
-import { CodexClientImpl, CodexFrontendService } from './codex-frontend-service';
-import { CommandExecutionRenderer } from './renderers/command-execution-renderer';
-import { TodoListRenderer } from './renderers/todo-list-renderer';
-import { WebSearchRenderer } from './renderers/web-search-renderer';
+} from '../common/codex-service.js';
+import { CodexPreferencesSchema } from '../common/codex-preferences.js';
+import { CodexChatAgent } from './codex-chat-agent.js';
+import { CodexClientImpl, CodexFrontendService } from './codex-frontend-service.js';
+import { CommandExecutionRenderer } from './renderers/command-execution-renderer.js';
+import { TodoListRenderer } from './renderers/todo-list-renderer.js';
+import { WebSearchRenderer } from './renderers/web-search-renderer.js';
 import '../../src/browser/style/codex-tool-renderers.css';
 
 export default new ContainerModule(bind => {

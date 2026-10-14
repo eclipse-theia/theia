@@ -16,10 +16,10 @@
 
 import { MessageService, nls, Progress } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { InstalledPluginInfo, ResolvedPluginEntry, StagedPluginInstall } from '../../common/plugin/plugin-registry-types';
-import { PluginHashMismatchDialogFactory, PluginInstallDialogFactory } from './plugin-install-dialog';
-import { PluginInstallService } from './plugin-install-service';
-import { PluginMcpRegistrar } from './plugin-mcp-registrar';
+import { InstalledPluginInfo, ResolvedPluginEntry, StagedPluginInstall } from '../../common/plugin/plugin-registry-types.js';
+import { PluginHashMismatchDialogFactory, PluginInstallDialogFactory } from './plugin-install-dialog.js';
+import { PluginInstallService } from './plugin-install-service.js';
+import { PluginMcpRegistrar } from './plugin-mcp-registrar.js';
 
 export interface PluginInstallOptions {
     /** True for update and fix, where the existing root is removed before the staged download lands. */

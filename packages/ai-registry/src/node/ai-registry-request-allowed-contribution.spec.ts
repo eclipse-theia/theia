@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { AIRegistryConfiguration } from '../common/ai-registry-configuration';
-import { AIRegistryRequestAllowedContribution } from './ai-registry-request-allowed-contribution';
+import { AIRegistryConfiguration } from '../common/ai-registry-configuration.js';
+import { AIRegistryRequestAllowedContribution } from './ai-registry-request-allowed-contribution.js';
 
 describe('AIRegistryRequestAllowedContribution', () => {
 

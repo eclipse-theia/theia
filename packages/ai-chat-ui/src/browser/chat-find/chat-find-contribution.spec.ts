@@ -22,10 +22,10 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { CommandContribution, CommandRegistry, ContributionProvider } from '@theia/core';
 import { CommonCommands } from '@theia/core/lib/browser';
-import { ChatInputFocusService } from '../chat-input-focus-service';
-import type { AIChatInputWidget } from '../chat-input-widget';
-import type { ChatViewWidget } from '../chat-view-widget';
-import { ChatFindContribution } from './chat-find-contribution';
+import { ChatInputFocusService } from '../chat-input-focus-service.js';
+import type { AIChatInputWidget } from '../chat-input-widget.js';
+import type { ChatViewWidget } from '../chat-view-widget.js';
+import { ChatFindContribution } from './chat-find-contribution.js';
 
 disableJSDOM();
 

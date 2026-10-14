@@ -17,7 +17,7 @@
 import { expect } from 'chai';
 import { rejects } from 'assert';
 import { promises as fs } from 'fs';
-import { deepClone, isENOENT, isObject, isStringArray } from './utils';
+import { deepClone, isENOENT, isObject, isStringArray } from './utils.js';
 
 describe('utils', () => {
 
@@ -63,7 +63,7 @@ describe('utils', () => {
         });
 
         it('returns false for other errno codes', async () => {
-            await rejects(fs.readdir(__filename), reason => !isENOENT(reason));
+            await rejects(fs.readdir(import.meta.filename), reason => !isENOENT(reason));
         });
     });
 

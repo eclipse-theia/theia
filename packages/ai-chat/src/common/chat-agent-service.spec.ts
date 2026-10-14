@@ -21,10 +21,10 @@ import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
 import { ContributionProvider, Emitter, ILogger, PreferenceService } from '@theia/core';
 import { AgentService, AISettings, AISettingsService } from '@theia/ai-core';
-import { ChatAgent, ChatAgentLocation } from './chat-agents';
-import { ChatAgentService, ChatAgentServiceImpl, DefaultChatAgentId, FallbackChatAgentId } from './chat-agent-service';
-import { ParsedChatRequest, ParsedChatRequestAgentPart, ParsedChatRequestTextPart } from './parsed-chat-request';
-import { DEFAULT_CHAT_AGENT_PREF } from './ai-chat-preferences';
+import { ChatAgent, ChatAgentLocation } from './chat-agents.js';
+import { ChatAgentService, ChatAgentServiceImpl, DefaultChatAgentId, FallbackChatAgentId } from './chat-agent-service.js';
+import { ParsedChatRequest, ParsedChatRequestAgentPart, ParsedChatRequestTextPart } from './parsed-chat-request.js';
+import { DEFAULT_CHAT_AGENT_PREF } from './ai-chat-preferences.js';
 
 describe('ChatAgentServiceImpl', () => {
 

@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { NativeKeyboardLayout } from '../common/keyboard/keyboard-layout-provider';
-import { Disposable } from '../common';
-import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
-import { ThemeMode } from '../common/theme';
-import { LaunchArguments } from '../common/launch-arguments';
+import { NativeKeyboardLayout } from '../common/keyboard/keyboard-layout-provider.js';
+import { Disposable } from '../common/index.js';
+import { FrontendApplicationState, StopReason } from '../common/frontend-application-state.js';
+import { ThemeMode } from '../common/theme.js';
+import { LaunchArguments } from '../common/launch-arguments.js';
 
 export type MenuRole = ('undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll' | 'about' | 'services' | 'hide' | 'hideOthers' | 'unhide' | 'quit');
 

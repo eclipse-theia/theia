@@ -16,17 +16,17 @@
 
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT, Plugin, TerminalOptions } from '../common/plugin-api-rpc';
-import { RPCProtocol } from '../common/rpc-protocol';
+import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT, Plugin, TerminalOptions } from '../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { MultiKeyMap } from '@theia/core/lib/common/collections';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as theia from '@theia/plugin';
-import * as Converter from './type-converters';
-import { Disposable, EnvironmentVariableMutatorType, TerminalExitReason, ThemeIcon } from './types-impl';
+import * as Converter from './type-converters.js';
+import { Disposable, EnvironmentVariableMutatorType, TerminalExitReason, ThemeIcon } from './types-impl.js';
 import { NO_ROOT_URI, SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/shell-terminal-protocol';
-import { ProvidedTerminalLink } from '../common/plugin-api-rpc-model';
-import { PluginIconPath } from './plugin-icon-path';
+import { ProvidedTerminalLink } from '../common/plugin-api-rpc-model.js';
+import { PluginIconPath } from './plugin-icon-path.js';
 
 /**
  * Provides high level terminal plugin api to use in the Theia plugins.

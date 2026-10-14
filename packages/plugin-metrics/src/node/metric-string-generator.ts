@@ -13,9 +13,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { PluginMetricTimeCount } from './metric-output/plugin-metrics-time-count';
-import { PluginMetricTimeSum } from './metric-output/plugin-metrics-time-sum';
-import { MetricsMap } from '../common/plugin-metrics-types';
+import { PluginMetricTimeCount } from './metric-output/plugin-metrics-time-count.js';
+import { PluginMetricTimeSum } from './metric-output/plugin-metrics-time-sum.js';
+import { MetricsMap } from '../common/plugin-metrics-types.js';
 import { injectable, inject } from '@theia/core/shared/inversify';
 
 @injectable()

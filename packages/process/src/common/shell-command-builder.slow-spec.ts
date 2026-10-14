@@ -52,7 +52,7 @@ function debug(...parts: any[]): void {
     }
 }
 
-const testResources = join(__dirname, '../../src/common/tests');
+const testResources = join(import.meta.dirname, '../../src/common/tests');
 const spawnOptions: SpawnOptions = {
     // We do our own quoting, don't rely on the one done by NodeJS:
     windowsVerbatimArguments: true,

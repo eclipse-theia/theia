@@ -20,8 +20,8 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 import { nls } from '@theia/core/lib/common/nls';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { MiniBrowserEndpoint } from '../common/mini-browser-endpoint';
-import { MiniBrowserEnvironment } from './environment/mini-browser-environment';
+import { MiniBrowserEndpoint } from '../common/mini-browser-endpoint.js';
+import { MiniBrowserEnvironment } from './environment/mini-browser-environment.js';
 
 @injectable()
 export class MiniBrowserFrontendSecurityWarnings implements FrontendApplicationContribution {

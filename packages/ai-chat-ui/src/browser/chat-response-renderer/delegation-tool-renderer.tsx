@@ -22,15 +22,15 @@ import { PendingToolConfirmationTracker } from '@theia/ai-chat/lib/browser/pendi
 import { AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-core/lib/common/tool-constants';
 import { ToolInvocationRegistry } from '@theia/ai-core';
 import { AgentDelegationTool } from '@theia/ai-chat/lib/browser/agent-delegation-tool';
-import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
-import { ResponseNode } from '../chat-tree-view';
-import { SubChatWidgetFactory } from '../chat-tree-view/sub-chat-widget';
-import { ToolConfirmationKeybindingHints, withToolCallConfirmation } from './tool-confirmation';
+import { ChatResponsePartRenderer } from '../chat-response-part-renderer.js';
+import { ResponseNode } from '../chat-tree-view/index.js';
+import { SubChatWidgetFactory } from '../chat-tree-view/sub-chat-widget.js';
+import { ToolConfirmationKeybindingHints, withToolCallConfirmation } from './tool-confirmation.js';
 import {
     APPROVE_LATEST_TOOL_CONFIRMATION_COMMAND,
     DENY_LATEST_TOOL_CONFIRMATION_COMMAND
-} from '../tool-confirmation-keybinding-contribution';
-import { extractJsonStringField } from './toolcall-utils';
+} from '../tool-confirmation-keybinding-contribution.js';
+import { extractJsonStringField } from './toolcall-utils.js';
 import { CompositeTreeNode, ContextMenuRenderer, KeybindingRegistry, MarkdownRenderer, OpenerService } from '@theia/core/lib/browser';
 import { ContributionProvider, DisposableCollection, nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';

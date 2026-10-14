@@ -17,7 +17,7 @@
 import { Command, CommandContribution, CommandRegistry } from '@theia/core';
 import { ApplicationShell, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { AIChatInputWidget } from './chat-input-widget';
+import { AIChatInputWidget } from './chat-input-widget.js';
 
 export const CHAT_INPUT_TOGGLE_CAPABILITIES_COMMAND = Command.toLocalizedCommand({
     id: 'chat-input:toggle-capabilities',

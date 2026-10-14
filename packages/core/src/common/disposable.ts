@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Event, Emitter } from './event';
-import { isFunction, isObject } from './types';
+import { Event, Emitter } from './event.js';
+import { isFunction, isObject } from './types.js';
 
 export interface Disposable {
     /**
