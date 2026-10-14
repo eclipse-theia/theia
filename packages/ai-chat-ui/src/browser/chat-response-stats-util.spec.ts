@@ -22,7 +22,7 @@ import {
     formatResponseTime,
     formatStatTokens,
     formatTokensPerSecond
-} from './chat-response-stats-util';
+} from './chat-response-stats-util.js';
 
 function createResponse(overrides: {
     tokenUsage?: ResponseTokenUsage;
