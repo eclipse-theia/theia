@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/* eslint-disable max-len, @typescript-eslint/indent */
+/* eslint-disable max-len, @stylistic/indent */
 
 import debounce = require('lodash.debounce');
 import { injectable, inject, optional } from 'inversify';

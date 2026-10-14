@@ -9,7 +9,8 @@
     "@theia/core": "1.76.0",
     "@theia/monaco": "1.76.0",
     "@theia/monaco-editor-core": "1.108.201",
-    "@theia/scanoss": "1.76.0"
+    "@theia/scanoss": "1.76.0",
+    "tslib": "^2.8.1"
   },
   "publishConfig": {
     "access": "public"

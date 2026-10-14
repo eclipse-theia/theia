@@ -24,25 +24,28 @@ import {
     UserRequest,
     LanguageModelStatus,
     ReasoningSupport,
-    resolveCompactionTokenThreshold,
-    resolveServerSideCompaction,
     ServerToolDescriptor
 } from '@theia/ai-core';
 import { OpenAiModelUtils } from './openai-model-utils';
-import { CancellationToken, ILogger, isObject } from '@theia/core';
+import { CancellationToken, ILogger } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { OpenAI, AzureOpenAI } from 'openai';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources';
 import { StreamingAsyncIterator } from './openai-streaming-iterator';
 import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream';
 import { OPENAI_PROVIDER_ID } from '../common';
-import type { FinalRequestOptions } from 'openai/internal/request-options';
 import { OpenAiResponseApiUtils } from './openai-response-api-utils';
-import { openAiReasoningFor } from './openai-reasoning';
+import { applyResponseApiCompaction, getOpenAiRequestSettings } from './openai-request-settings';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 
+// The SDK finalizes method and path before this hook; its equivalent internal type is not exported.
+type FinalizedOpenAIRequestOptions = OpenAI.RequestOptions & {
+    method: NonNullable<OpenAI.RequestOptions['method']>;
+    path: string;
+};
+
 export class MistralFixedOpenAI extends OpenAI {
-    protected override async prepareOptions(options: FinalRequestOptions): Promise<void> {
+    protected override async prepareOptions(options: OpenAI.RequestOptions): Promise<void> {
         // Every request the client issues passes through here, including the body-less `GET /models`
         // that model discovery runs, so the body cannot be assumed to exist, let alone to carry messages.
         const messages = (options.body as { messages?: Array<ChatCompletionMessageParam> } | undefined)?.messages;
@@ -62,7 +65,7 @@ export class MistralFixedOpenAI extends OpenAI {
                 }
             });
         }
-        return super.prepareOptions(options);
+        return super.prepareOptions(options as FinalizedOpenAIRequestOptions);
     };
 }
 
@@ -199,18 +202,14 @@ export class OpenAiModel implements LanguageModel {
     }
 
     /**
-     * Reasoning-level translation lives in {@link openAiReasoningFor}. On the Responses API, user-configured `reasoning`
+     * Reasoning settings are resolved by {@link getOpenAiRequestSettings}. On the Responses API, user-configured `reasoning`
      * fields from the request settings (e.g. `summary`) are kept; the selected level still decides `effort`.
      */
     protected getSettings(request: LanguageModelRequest, forResponseApi: boolean = false): Record<string, unknown> {
-        const reasoning = openAiReasoningFor(request.reasoning?.level, forResponseApi, !!this.reasoningSupport);
-        const ours = reasoning.reasoning;
-        const theirs = request.settings?.reasoning;
-        if (isObject(ours) && isObject(theirs)) {
-            const effort = (ours as { effort?: string }).effort;
-            return { ...request.settings, reasoning: { ...ours, ...theirs, ...(effort !== undefined && { effort }) } };
-        }
-        return { ...request.settings, ...reasoning };
+        const level = request.reasoning && this.reasoningSupport
+            ? ReasoningSupport.clampLevel(this.reasoningSupport, request.reasoning.level)
+            : undefined;
+        return getOpenAiRequestSettings({ ...request, reasoning: level !== undefined ? { level } : undefined }, forResponseApi, !!this.reasoningSupport);
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -344,17 +343,7 @@ export class OpenAiModel implements LanguageModel {
      * given request. When disabled, the settings are returned unchanged so the default path is byte-for-byte identical.
      */
     protected applyResponseApiCompaction(settings: Record<string, unknown>, request: LanguageModelRequest): Record<string, unknown> {
-        if (resolveServerSideCompaction(this.serverSideCompactionSupport, this.serverSideCompactionEnabledByDefault, request.compaction)) {
-            const tokenThreshold = resolveCompactionTokenThreshold(this.serverSideCompactionTokenThresholdByDefault, request.compaction);
-            return {
-                ...settings,
-                context_management: [{
-                    type: 'compaction',
-                    ...(tokenThreshold !== undefined && { compact_threshold: tokenThreshold })
-                }]
-            };
-        }
-        return settings;
+        return applyResponseApiCompaction(settings, request, this);
     }
 
     protected async handleResponseApiRequest(openai: OpenAI, request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {

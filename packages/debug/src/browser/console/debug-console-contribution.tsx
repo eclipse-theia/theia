@@ -92,23 +92,18 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
             this.debugSessionManager.onDidCreateDebugSession(session => {
                 const consoleParent = session.findConsoleParent();
                 if (consoleParent) {
-                    const parentConsoleSession = this.consoleSessionManager.get(consoleParent.id);
-                    if (parentConsoleSession instanceof DebugConsoleSession) {
-                        session.on('output', event => parentConsoleSession.logOutput(parentConsoleSession.debugSession, event));
+                    const parentConsoleSession = this.findConsoleSession(consoleParent);
+                    if (parentConsoleSession) {
+                        // Log against the session the output came from, so that variable references resolve on its adapter.
+                        session.on('output', event => parentConsoleSession.logOutput(session, event));
                     }
                 } else {
-                    const consoleSession = this.debugConsoleSessionFactory(session);
-                    this.consoleSessionManager.add(consoleSession);
+                    const consoleSession = this.getOrCreateConsoleSession(session);
                     session.on('output', event => consoleSession.logOutput(session, event));
                 }
             }),
             this.debugSessionManager.onDidChangeActiveDebugSession(event => this.handleActiveDebugSessionChanged(event)),
-            this.debugSessionManager.onDidDestroyDebugSession(session => {
-                const consoleSession = this.consoleSessionManager.get(session.id);
-                if (consoleSession instanceof DebugConsoleSession) {
-                    consoleSession.markTerminated();
-                }
-            }),
+            this.debugSessionManager.onDidDestroyDebugSession(session => this.handleDebugSessionDestroyed(session)),
             this.consoleSessionManager.onDidChangeSelectedSession(() => {
                 const session = this.consoleSessionManager.selectedSession;
                 if (session && this.filterInputRef) {
@@ -121,12 +116,56 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         ]);
     }
 
+    /**
+     * Returns the console of the given session, if it still belongs to one.
+     *
+     * A console keeps the id it was created with even when it is reused by a restarted session, so it cannot be
+     * looked up by the session id.
+     */
+    protected findConsoleSession(debugSession: DebugSession): DebugConsoleSession | undefined {
+        return this.consoleSessionManager.all.find((candidate): candidate is DebugConsoleSession =>
+            candidate instanceof DebugConsoleSession && candidate.debugSession?.id === debugSession.id);
+    }
+
+    /**
+     * Returns the console for a newly created session.
+     *
+     * A session reuses the console of a terminated session started from the same configuration, so that restarting
+     * does not leave a stopped console behind on every run.
+     */
+    protected getOrCreateConsoleSession(debugSession: DebugSession): DebugConsoleSession {
+        const reusable = this.consoleSessionManager.all.find((candidate): candidate is DebugConsoleSession =>
+            candidate instanceof DebugConsoleSession && candidate.isReusableBy(debugSession));
+        if (reusable) {
+            reusable.startFor(debugSession);
+            return reusable;
+        }
+        const consoleSession = this.debugConsoleSessionFactory(debugSession);
+        this.consoleSessionManager.add(consoleSession);
+        return consoleSession;
+    }
+
+    /**
+     * Terminates the console of the given session once no session runs in it any more.
+     *
+     * A child session merged into its parent's console may outlive the parent if its lifecycle is not managed by the
+     * parent, and it still needs the console to evaluate expressions while it runs.
+     */
+    protected handleDebugSessionDestroyed(debugSession: DebugSession): void {
+        const consoleOwner = debugSession.findConsoleParent() ?? debugSession;
+        const consoleSession = this.findConsoleSession(consoleOwner);
+        if (consoleSession && !this.debugSessionManager.sessions.some(candidate =>
+            candidate.id === consoleOwner.id || candidate.findConsoleParent()?.id === consoleOwner.id)) {
+            consoleSession.markTerminated();
+        }
+    }
+
     protected handleActiveDebugSessionChanged(event: DidChangeActiveDebugSession): void {
         if (!event.current) {
             return;
         } else {
             const topSession = event.current.findConsoleParent() || event.current;
-            const consoleSession = topSession ? this.consoleSessionManager.get(topSession.id) : undefined;
+            const consoleSession = topSession ? this.findConsoleSession(topSession) : undefined;
             this.consoleSessionManager.selectedSession = consoleSession;
             const consoleSelector = document.getElementById('debugConsoleSelector');
             if (consoleSession && consoleSelector instanceof HTMLSelectElement) {
@@ -217,7 +256,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         bind(DebugConsoleSession).toSelf().inRequestScope();
         bind(DebugConsoleSessionFactory).toFactory(context => (session: DebugSession) => {
             const consoleSession = context.container.get(DebugConsoleSession);
-            consoleSession.debugSession = session;
+            consoleSession.startFor(session);
             return consoleSession;
         });
         bind(ConsoleSessionManager).toSelf().inSingletonScope();
@@ -271,7 +310,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
             });
 
         sortedSessions.forEach(session => {
-            let label = session.debugSession.label;
+            let label = session.label;
             if (session.terminated) {
                 label = `${label} (${nls.localizeByDefault('Stopped')})`;
             }

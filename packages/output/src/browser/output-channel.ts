@@ -202,7 +202,7 @@ export class OutputChannel implements Disposable {
     protected readonly contentChangeEmitter = new Emitter<void>();
     protected readonly visibilityChangeEmitter = new Emitter<{ isVisible: boolean, preserveFocus?: boolean }>();
     protected readonly disposedEmitter = new Emitter<void>();
-    protected readonly textModifyQueue = new PQueue({ autoStart: true, concurrency: 1 });
+    protected readonly textModifyQueue: PQueue = new PQueue({ autoStart: true, concurrency: 1 });
     protected readonly toDispose = new DisposableCollection(
         Disposable.create(() => this.textModifyQueue.clear()),
         this.contentChangeEmitter,

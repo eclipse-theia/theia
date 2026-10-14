@@ -166,8 +166,7 @@ class CallbackList implements Iterable<Callback> {
         }
     }
 
-    // tslint:disable-next-line:typedef
-    public [Symbol.iterator]() {
+    public [Symbol.iterator](): IterableIterator<Callback> {
         if (!this._callbacks) {
             return [][Symbol.iterator]();
         }

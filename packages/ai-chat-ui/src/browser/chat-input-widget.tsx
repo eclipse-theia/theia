@@ -26,6 +26,7 @@ import {
     PREFERENCE_NAME_REASONING, ReasoningPreferenceEntry, ServerToolDescriptor
 } from '@theia/ai-core';
 import { mergeReasoningSettings } from '@theia/ai-core/lib/browser/frontend-language-model-service';
+import { reasoningLevelDescription, reasoningLevelLabel } from '@theia/ai-core/lib/browser/reasoning-labels';
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { AI_SHOW_SETTINGS_COMMAND, AIActivationService, FavoriteModelsService, FrontendVariableService } from '@theia/ai-core/lib/browser';
@@ -516,6 +517,28 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     /**
+     * Re-reads persisted capability overrides, adopting them only when there are no unsaved local edits.
+     * Always updates the saved baseline so change detection reflects the stored settings.
+     */
+    protected async refreshSavedCapabilityOverrides(agentId: string | undefined): Promise<void> {
+        if (!agentId || agentId !== this.receivingAgent?.agentId) {
+            return;
+        }
+        const receivingAgent = this.receivingAgent;
+        const chatModel = this._chatModel;
+        const saved = (await this.aiSettingsService.getAgentSettings(agentId))?.capabilityOverrides;
+        if (receivingAgent !== this.receivingAgent || chatModel !== this._chatModel) {
+            return;
+        }
+        const adoptable = !this.hasCapabilityChangesFromSaved();
+        this.savedCapabilityOverrides = saved ? { ...saved } : undefined;
+        if (adoptable) {
+            this.userCapabilityOverrides = new Map(Object.entries(saved ?? {}));
+        }
+        this.update();
+    }
+
+    /**
      * Re-reads the persisted server tool selections, which the agent detail can change too. Adopts them into
      * the live selection only while the user has none of their own pending here, so an external change never
      * discards edits that are waiting to be saved; the baseline is updated either way, so the "unsaved
@@ -530,6 +553,23 @@ export class AIChatInputWidget extends ReactWidget {
         this.savedServerToolSelections = saved ? { ...saved } : undefined;
         if (adoptable) {
             this.serverToolSelections = saved ? { ...saved } : {};
+            this.update();
+        }
+    }
+
+    /**
+     * Re-reads the persisted generic capability selections, which the agent detail can change too, adopting
+     * them the same way {@link refreshSavedServerTools} does.
+     */
+    protected async refreshSavedGenericCapabilities(agentId: string | undefined): Promise<void> {
+        if (!agentId) {
+            return;
+        }
+        const saved = (await this.aiSettingsService.getAgentSettings(agentId))?.genericCapabilitySelections;
+        const adoptable = !this.hasGenericCapabilityChangesFromSaved();
+        this.savedGenericCapabilitySelections = saved ? { ...saved } : undefined;
+        if (adoptable) {
+            this.genericCapabilitySelections = saved ? { ...saved } : {};
             this.update();
         }
     }
@@ -644,10 +684,14 @@ export class AIChatInputWidget extends ReactWidget {
 
     /** Builds the props for the per-session model selector. */
     protected getModelSelectorProps(): ModelSelectorWidgetProps {
+        const agent = this.receivingAgent
+            ? this.chatAgentService.getAgent(this.receivingAgent.agentId, true)
+            : undefined;
         const currentModelId = this.getSessionModelOverride();
         const defaultLabel = this.resolvedDefaultLabel
             ?? nls.localize('theia/ai/chat-ui/agentDefaultModel', 'agent default');
         return {
+            show: (agent?.languageModelRequirements?.length ?? 0) > 0,
             models: this.getSelectableModels(currentModelId),
             currentModelId,
             defaultLabel,
@@ -661,17 +705,7 @@ export class AIChatInputWidget extends ReactWidget {
             return;
         }
 
-        const mcpFunctions = await this.genericCapabilitiesService.getAvailableMCPFunctions();
-
-        this.availableGenericCapabilities = {
-            skills: this.genericCapabilitiesService.getAvailableSkills(),
-            mcpFunctions,
-            functions: this.genericCapabilitiesService.getAvailableFunctions(),
-            promptFragments: this.genericCapabilitiesService.getAvailablePromptFragments(),
-            agentDelegation: this.genericCapabilitiesService.getAvailableAgents(this.receivingAgent?.agentId),
-            variables: this.genericCapabilitiesService.getAvailableVariables()
-        };
-
+        this.availableGenericCapabilities = await this.genericCapabilitiesService.getAvailableCapabilities(this.receivingAgent?.agentId);
         this.update();
     }
 
@@ -1163,7 +1197,9 @@ export class AIChatInputWidget extends ReactWidget {
             // The level itself is persisted per agent and also editable outside chat (the agent detail's
             // Reasoning row), so re-read it rather than only refreshing which levels the model supports.
             this.refreshSavedReasoning(this.receivingAgent?.agentId);
+            this.refreshSavedCapabilityOverrides(this.receivingAgent?.agentId);
             this.refreshSavedServerTools(this.receivingAgent?.agentId);
+            this.refreshSavedGenericCapabilities(this.receivingAgent?.agentId);
         }));
         this.loadAvailableModels().then(() => this.update());
         this.updateResolvedDefaultModel();
@@ -1508,7 +1544,7 @@ export class AIChatInputWidget extends ReactWidget {
     protected override onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.editorReady.promise.then(() => {
-            if (this.editorRef) {
+            if (this.editorRef && this.isEnabled) {
                 this.editorRef.focus();
             }
         });
@@ -1883,6 +1919,7 @@ export class AIChatInputWidget extends ReactWidget {
 
 /** Props for the per-session language model selector. */
 interface ModelSelectorWidgetProps {
+    show: boolean;
     /** Models available to switch to. */
     models: LanguageModel[];
     /** The session's current model override id, if any (undefined = use the agent default). */
@@ -1982,6 +2019,32 @@ const hasTaskContext = (chatModel: ChatModel): boolean => chatModel.context.getV
     variable.variable?.id === TASK_CONTEXT_VARIABLE.id
 );
 
+const aiDisabledLabel = () => nls.localize('theia/ai/chat-ui/aiDisabled', 'AI features are disabled');
+
+/**
+ * Aligns the input editor with the enabled state of the widget. A disabled editor neither accepts text nor focus:
+ * it is read-only, removed from the tab order, and gives up the focus it may still hold from before being disabled.
+ * Should an edit still be attempted, Monaco reports why the input is disabled instead of its generic read-only wording.
+ */
+export const applyEditorEnabledState = (editor: SimpleMonacoEditor | undefined, isEnabled: boolean | undefined): void => {
+    const control = editor?.getControl();
+    if (!control) {
+        return;
+    }
+    control.updateOptions({
+        readOnly: !isEnabled,
+        domReadOnly: !isEnabled,
+        tabIndex: isEnabled ? 0 : -1,
+        readOnlyMessage: isEnabled ? undefined : { value: aiDisabledLabel() }
+    });
+    if (!isEnabled && control.hasTextFocus()) {
+        const focused = control.getDomNode()?.ownerDocument.activeElement;
+        if (focused instanceof HTMLElement) {
+            focused.blur();
+        }
+    }
+};
+
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
     const onDeleteChangeSet = () => props.onDeleteChangeSet(props.chatModel.id);
     const onDeleteChangeSetElement = (uri: URI) => props.onDeleteChangeSetElement(props.chatModel.id, uri);
@@ -2006,6 +2069,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const editorRef = React.useRef<SimpleMonacoEditor | undefined>(undefined);
     // eslint-disable-next-line no-null/no-null
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const isEnabledRef = React.useRef(props.isEnabled);
 
     // On the first request of the chat, if the chat has a task context and a pinned
     // agent, show a "Perform this task." placeholder which is the message to send by default
@@ -2016,13 +2080,18 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     // Update placeholder text when focus state or other dependencies change
     React.useEffect(() => {
         const newPlaceholderText = !props.isEnabled
-            ? nls.localize('theia/ai/chat-ui/aiDisabled', 'AI features are disabled')
+            ? aiDisabledLabel()
             : shouldUseTaskPlaceholder
                 ? taskPlaceholder
                 : nls.localize('theia/ai/chat-ui/askQuestion', 'Ask a question') +
                 (props.hasPromptHistory && isInputFocused ? nls.localizeByDefault(' ({0} for history)', '⇅') : '');
         setPlaceholderText(newPlaceholderText);
     }, [props.isEnabled, shouldUseTaskPlaceholder, taskPlaceholder, props.hasPromptHistory, isInputFocused]);
+
+    React.useEffect(() => {
+        isEnabledRef.current = props.isEnabled;
+        applyEditorEnabledState(editorRef.current, props.isEnabled);
+    }, [props.isEnabled]);
 
     // Handle paste events on the container
     const handlePaste = React.useCallback((event: ClipboardEvent) => {
@@ -2142,6 +2211,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             editor.getControl().onDidChangeCursorPosition(e => revealCursor(e.position));
 
             editorRef.current = editor;
+            // The enabled state may have changed while the editor was being created asynchronously.
+            applyEditorEnabledState(editor, isEnabledRef.current);
             props.setEditorRef(editor);
 
             if (props.initialValue) {
@@ -2237,7 +2308,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     }, [props.genericCapabilitiesProps.serverToolSelections]);
 
     // Without user input, if we can default to "Perform this task.", do so
-    const submit = React.useCallback(function submit(value: string): void {
+    const submit = React.useCallback(function submitCallback(value: string): void {
         let effectiveValue = value;
         if ((!value || value.trim().length === 0) && shouldUseTaskPlaceholder) {
             effectiveValue = taskPlaceholder;
@@ -2636,7 +2707,7 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
                         hoverService={hoverService}
                     />
                 )}
-                {(modelSelectorProps.models.length > 0 || modelSelectorProps.currentModelId) && (
+                {modelSelectorProps.show && (modelSelectorProps.models.length > 0 || modelSelectorProps.currentModelId) && (
                     <ChatModelSelector
                         models={modelSelectorProps.models}
                         currentModelId={modelSelectorProps.currentModelId}
@@ -2918,22 +2989,13 @@ interface ReasoningSelectorProps {
     hoverService: HoverService;
 }
 
-const reasoningLevelLabel = (level: ReasoningLevel): string => {
-    switch (level) {
-        case 'off': return nls.localizeByDefault('Off');
-        case 'minimal': return nls.localizeByDefault('Minimal');
-        case 'low': return nls.localizeByDefault('Low');
-        case 'medium': return nls.localizeByDefault('Medium');
-        case 'high': return nls.localizeByDefault('High');
-        case 'auto': return nls.localizeByDefault('Auto');
-    }
-};
-
 const ReasoningSelector: React.FunctionComponent<ReasoningSelectorProps> = React.memo(({
     reasoningSupport, currentLevel, onReasoningChange, disabled, hoverService
 }) => {
     const options: SelectOption[] = React.useMemo(
-        () => reasoningSupport.supportedLevels.map(level => ({ value: level, label: reasoningLevelLabel(level) })),
+        () => reasoningSupport.supportedLevels.map(level => ({
+            value: level, label: reasoningLevelLabel(level), description: reasoningLevelDescription(level)
+        })),
         [reasoningSupport]
     );
 

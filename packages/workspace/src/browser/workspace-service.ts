@@ -25,7 +25,7 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { ILogger, Disposable, DisposableCollection, Emitter, environment, Event, MaybePromise, MessageService, nls, ContributionProvider } from '@theia/core';
 import { WorkspacePreferences } from '../common/workspace-preferences';
 import * as jsoncparser from 'jsonc-parser';
-import * as Ajv from '@theia/core/shared/ajv';
+import Ajv from '@theia/core/shared/ajv';
 import { FileStat, BaseStat } from '@theia/filesystem/lib/common/files';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WindowTitleService } from '@theia/core/lib/browser/window/window-title-service';

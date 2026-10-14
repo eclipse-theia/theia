@@ -20,11 +20,11 @@ import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import {
     ANTHROPIC_RESULT_BLOCK_DATA_KEY, AnthropicModel, AnthropicModelParams, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage,
-    mergeConsecutiveSameRoleMessages, transformToAnthropicParams
+    createAnthropicClient, mergeConsecutiveSameRoleMessages, transformToAnthropicParams
 } from './anthropic-language-model';
 import {
     CompactionMessage, isServerToolCallResponsePart, isUsageResponsePart, LanguageModelMessage, LanguageModelRequest,
-    LanguageModelStreamResponsePart, LanguageModelTextResponse, ReasoningApi, ReasoningSupport, ToolCallExecutor, ToolCallExecutorImpl,
+    LanguageModelStreamResponsePart, LanguageModelTextResponse, ReasoningApi, ReasoningLevel, ReasoningSupport, ToolCallExecutor, ToolCallExecutorImpl,
     UserRequest
 } from '@theia/ai-core';
 import type { Anthropic } from '@anthropic-ai/sdk';
@@ -62,12 +62,15 @@ function buildModel<T extends AnthropicModel>(modelType: new (...args: never[]) 
 }
 
 function createReasoningModel(
-    modelId: string, reasoningApi: ReasoningApi, supportsXHighEffort: boolean = false
+    modelId: string, reasoningApi: ReasoningApi,
+    reasoningSupport: ReasoningSupport = reasoningApi === 'budget' ? REASONING_SUPPORT : {
+        supportedLevels: ['off', 'low', 'medium', 'high', 'xhigh', 'max', 'auto'], defaultLevel: 'auto'
+    }
 ): TestableAnthropicModel {
     return buildModel(TestableAnthropicModel, {
         id: 'test-id', model: modelId, status: { status: 'ready' }, enableStreaming: true, useCaching: false,
         apiKey: () => 'test-key', url: undefined, maxTokens: DEFAULT_MAX_TOKENS,
-        maxRetries: 3, reasoningSupport: REASONING_SUPPORT, reasoningApi, supportsXHighEffort
+        maxRetries: 3, reasoningSupport, reasoningApi
     });
 }
 
@@ -343,20 +346,28 @@ describe('AnthropicModel', () => {
                 .filter(block => block.type === 'thinking');
         }
 
-        it('drops a thinking block with empty thinking text, which Anthropic rejects on replay', () => {
+        it('keeps a signed thinking block with empty thinking text by default, as returned by the official API', () => {
             const messages = [userText('do something'), thinkingMessage('', 'signature'), userText('continue')];
 
             const { messages: result } = transformToAnthropicParams(messages, false);
+
+            expect(thinkingBlocks(result)).to.deep.equal([{ type: 'thinking', thinking: '', signature: 'signature' }]);
+        });
+
+        it('drops a signed thinking block with empty thinking text when requested, as stripping gateways produce', () => {
+            const messages = [userText('do something'), thinkingMessage('', 'signature'), userText('continue')];
+
+            const { messages: result } = transformToAnthropicParams(messages, false, false, true);
 
             expect(thinkingBlocks(result)).to.be.empty;
             expect(JSON.stringify(result)).to.contain('do something');
             expect(JSON.stringify(result)).to.contain('continue');
         });
 
-        it('drops a thinking block whose thinking text is only whitespace', () => {
+        it('drops a thinking block whose thinking text is only whitespace when requested', () => {
             const messages = [thinkingMessage('  \n', 'signature'), userText('continue')];
 
-            const { messages: result } = transformToAnthropicParams(messages, false);
+            const { messages: result } = transformToAnthropicParams(messages, false, false, true);
 
             expect(thinkingBlocks(result)).to.be.empty;
         });
@@ -382,11 +393,47 @@ describe('AnthropicModel', () => {
             const logged: string[] = [];
             console.debug = (...args: unknown[]) => { logged.push(args.map(String).join(' ')); };
             try {
-                transformToAnthropicParams([thinkingMessage('', 'signature'), userText('continue')], false);
+                transformToAnthropicParams([thinkingMessage('some reasoning', ''), userText('continue')], false);
             } finally {
                 console.debug = originalDebug;
             }
             expect(logged.some(line => line.includes('thinking'))).to.be.true;
+        });
+    });
+
+    describe('isCustomEndpoint', () => {
+        let originalBaseUrl: string | undefined;
+
+        beforeEach(() => {
+            originalBaseUrl = process.env.ANTHROPIC_BASE_URL;
+            delete process.env.ANTHROPIC_BASE_URL;
+        });
+
+        afterEach(() => {
+            if (originalBaseUrl === undefined) {
+                delete process.env.ANTHROPIC_BASE_URL;
+            } else {
+                process.env.ANTHROPIC_BASE_URL = originalBaseUrl;
+            }
+        });
+
+        function isCustomEndpoint(baseURL?: string): boolean {
+            const model = createReasoningModel('claude-opus-4-5', 'budget');
+            return model['isCustomEndpoint'](createAnthropicClient({ apiKey: 'test-key', baseURL }));
+        }
+
+        it('is false for the official API', () => {
+            expect(isCustomEndpoint()).to.be.false;
+            expect(isCustomEndpoint('https://api.anthropic.com/')).to.be.false;
+        });
+
+        it('is true for a configured custom url', () => {
+            expect(isCustomEndpoint('https://gateway.example.com')).to.be.true;
+        });
+
+        it('is true for a custom url set through ANTHROPIC_BASE_URL', () => {
+            process.env.ANTHROPIC_BASE_URL = 'https://gateway.example.com';
+            expect(isCustomEndpoint()).to.be.true;
         });
     });
 
@@ -395,11 +442,13 @@ describe('AnthropicModel', () => {
          * Mock client whose first stream() call yields the given events and whose follow-up calls yield none.
          * All params passed to stream() are captured so the tool loop's follow-up request can be inspected.
          */
-        function createToolLoopModel(firstCallEvents: object[], capturedParams: Anthropic.MessageCreateParams[]): AnthropicModel {
+        function createToolLoopModel(firstCallEvents: object[], capturedParams: Anthropic.MessageCreateParams[], url?: string): AnthropicModel {
             let call = 0;
             const ModelClass = injectable()(class extends AnthropicModel {
                 protected override initializeAnthropic(): Anthropic {
                     return {
+                        // Mirrors how the SDK resolves the base URL when none is configured.
+                        baseURL: url ?? 'https://api.anthropic.com',
                         messages: {
                             stream: (params: Anthropic.MessageCreateParams) => {
                                 capturedParams.push(params);
@@ -420,7 +469,7 @@ describe('AnthropicModel', () => {
             });
             return buildModel(ModelClass, {
                 id: 'test-id', model: 'claude-opus-4-5', status: { status: 'ready' }, enableStreaming: true, useCaching: false,
-                apiKey: () => 'test-key', url: undefined
+                apiKey: () => 'test-key', url
             });
         }
 
@@ -447,9 +496,9 @@ describe('AnthropicModel', () => {
             ];
         }
 
-        async function runToolLoop(firstCallEvents: object[]): Promise<Anthropic.MessageCreateParams[]> {
+        async function runToolLoop(firstCallEvents: object[], url?: string): Promise<Anthropic.MessageCreateParams[]> {
             const capturedParams: Anthropic.MessageCreateParams[] = [];
-            const model = createToolLoopModel(firstCallEvents, capturedParams);
+            const model = createToolLoopModel(firstCallEvents, capturedParams, url);
             const request: UserRequest = {
                 messages: [{ actor: 'user', type: 'text', text: 'do something' }],
                 tools: [{ id: 'myTool', name: 'myTool', parameters: { type: 'object', properties: {} }, handler: async () => 'ok' }],
@@ -484,6 +533,23 @@ describe('AnthropicModel', () => {
             expect(params).to.have.lengthOf(2);
             const thinking = contentBlocks(params[1]).find(block => block.type === 'thinking');
             expect(thinking).to.deep.equal({ type: 'thinking', thinking: 'some reasoning', signature: 'sig' });
+        });
+
+        it('replays a signed thinking block with empty text unchanged for the official API', async () => {
+            const params = await runToolLoop(toolLoopEvents({ type: 'thinking', thinking: '', signature: 'sig' }));
+
+            expect(params).to.have.lengthOf(2);
+            const thinking = contentBlocks(params[1]).find(block => block.type === 'thinking');
+            expect(thinking).to.deep.equal({ type: 'thinking', thinking: '', signature: 'sig' });
+        });
+
+        it('drops a signed thinking block with empty text for a custom endpoint', async () => {
+            const params = await runToolLoop(toolLoopEvents({ type: 'thinking', thinking: '', signature: 'sig' }), 'https://gateway.example.com');
+
+            expect(params).to.have.lengthOf(2);
+            const blocks = contentBlocks(params[1]);
+            expect(blocks.some(block => block.type === 'thinking')).to.be.false;
+            expect(blocks.some(block => block.type === 'tool_use' && block.id === 'call_1')).to.be.true;
         });
 
         it('drops a message left empty after filtering its only (unreplayable) thinking block', async () => {
@@ -807,25 +873,47 @@ describe('AnthropicModel', () => {
             expect(result.thinking).to.deep.equal({ type: 'adaptive', display: 'summarized' });
             expect(result.output_config).to.deep.equal({ effort: 'low' });
         });
-        it('maps level=low to effort=medium', () => {
-            const model = createReasoningModel('claude-opus-4-6', 'effort');
-            const result = model.callGetSettings({ messages: [], reasoning: { level: 'low' } });
-            expect(result.output_config).to.deep.equal({ effort: 'medium' });
-        });
-        it('maps level=medium to effort=high on models without xhigh', () => {
-            const model = createReasoningModel('claude-opus-4-6', 'effort');
-            const result = model.callGetSettings({ messages: [], reasoning: { level: 'medium' } });
-            expect(result.output_config).to.deep.equal({ effort: 'high' });
-        });
-        it('maps level=medium to effort=xhigh on models that support xhigh (Opus 4.7)', () => {
-            const model = createReasoningModel('claude-opus-4-7', 'effort', true);
-            const result = model.callGetSettings({ messages: [], reasoning: { level: 'medium' } });
-            expect(result.output_config).to.deep.equal({ effort: 'xhigh' });
-        });
-        it('maps level=high to effort=max', () => {
-            const model = createReasoningModel('claude-opus-4-6', 'effort');
+        for (const level of ['low', 'medium', 'high', 'xhigh', 'max'] as const) {
+            it(`transmits native level=${level} literally`, () => {
+                const model = createReasoningModel('claude-opus-4-7', 'effort');
+                const result = model.callGetSettings({ messages: [], reasoning: { level } });
+                expect(result.output_config).to.deep.equal({ effort: level });
+            });
+        }
+        for (const supportedLevels of [
+            ['off', 'low', 'medium', 'high', 'auto'],
+            ['off', 'low', 'medium', 'high', 'xhigh', 'auto'],
+            ['off', 'low', 'medium', 'high', 'max', 'auto'],
+            ['off', 'low', 'medium', 'high', 'xhigh', 'max', 'auto']
+        ] satisfies ReasoningLevel[][]) {
+            for (const level of ['xhigh', 'max'] as const) {
+                it(`clamps ${level} against supported levels ${supportedLevels.join(', ')}`, () => {
+                    const support: ReasoningSupport = { supportedLevels, defaultLevel: 'auto' };
+                    const model = createReasoningModel('custom-model', 'effort', support);
+                    const result = model.callGetSettings({ messages: [], reasoning: { level } });
+                    const effort = level === 'xhigh'
+                        ? supportedLevels.includes('xhigh') ? 'xhigh' : supportedLevels.includes('max') ? 'max' : 'high'
+                        : supportedLevels.includes('max') ? 'max' : supportedLevels.includes('xhigh') ? 'xhigh' : 'high';
+                    expect(result.output_config).to.deep.equal({ effort });
+                });
+            }
+        }
+        it('clamps base efforts as well as extended efforts for direct backend requests', () => {
+            const model = createReasoningModel('custom-model', 'effort', { supportedLevels: ['low', 'max', 'auto'], defaultLevel: 'auto' });
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'high' } });
             expect(result.output_config).to.deep.equal({ effort: 'max' });
+        });
+        it('does not generate reasoning when the shared clamp resolves to off', () => {
+            const model = createReasoningModel('custom-model', 'effort', { supportedLevels: ['off', 'auto'], defaultLevel: 'auto' });
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'max' } });
+            expect(result.thinking).to.equal(undefined);
+            expect(result.output_config).to.equal(undefined);
+        });
+        it('uses the provider default when auto is the only supported level', () => {
+            const model = createReasoningModel('custom-model', 'effort', { supportedLevels: ['auto'], defaultLevel: 'auto' });
+            const result = model.callGetSettings({ messages: [], reasoning: { level: 'max' } });
+            expect(result.thinking).to.deep.equal({ type: 'adaptive', display: 'summarized' });
+            expect(result.output_config).to.equal(undefined);
         });
         it('omits output_config on level=auto so the provider default applies', () => {
             const model = createReasoningModel('claude-opus-4-6', 'effort');
@@ -834,13 +922,39 @@ describe('AnthropicModel', () => {
             expect(result.output_config).to.equal(undefined);
         });
         it('omits thinking entirely when level=off', () => {
-            const model = createReasoningModel('claude-opus-4-7', 'effort', true);
+            const model = createReasoningModel('claude-opus-4-7', 'effort');
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'off' } });
             expect(result.thinking).to.equal(undefined);
+        });
+        it('preserves raw request settings when level=off', () => {
+            const model = createReasoningModel('claude-opus-4-7', 'effort');
+            const settings = { thinking: { type: 'disabled' }, output_config: { effort: 'low' } };
+            expect(model.callGetSettings({ messages: [], settings, reasoning: { level: 'off' } })).to.deep.equal(settings);
+        });
+        it('omits generated settings when no reasoning level is requested', () => {
+            const model = createReasoningModel('claude-opus-4-7', 'effort');
+            expect(model.callGetSettings({ messages: [] })).to.deep.equal({});
         });
     });
 
     describe('getSettings budget API (legacy extended thinking)', () => {
+        const budgets: [ReasoningLevel, number][] = [['minimal', 1024], ['low', 4096], ['medium', 16000], ['high', 32000], ['auto', 8000]];
+        for (const [level, budget_tokens] of budgets) {
+            it(`preserves the legacy budget for ${level}`, () => {
+                const model = createReasoningModel('claude-sonnet-4-20250514', 'budget');
+                const result = model.callGetSettings({ messages: [], reasoning: { level } });
+                expect(result.thinking).to.deep.equal({ type: 'enabled', budget_tokens });
+                expect(result.output_config).to.equal(undefined);
+            });
+        }
+        for (const level of ['xhigh', 'max'] as const) {
+            it(`clamps ${level} to the highest legacy budget instead of using the auto budget`, () => {
+                const model = createReasoningModel('claude-sonnet-4-20250514', 'budget');
+                const result = model.callGetSettings({ messages: [], reasoning: { level } });
+                expect(result.thinking).to.deep.equal({ type: 'enabled', budget_tokens: 32000 });
+                expect(result.output_config).to.equal(undefined);
+            });
+        }
         it('emits thinking.type="enabled" with budget_tokens for level=medium', () => {
             const model = createReasoningModel('claude-sonnet-4-20250514', 'budget');
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'medium' } });
@@ -866,6 +980,12 @@ describe('AnthropicModel', () => {
     });
 
     describe('non-reasoning models', () => {
+        it('does not generate reasoning settings when only the reasoning API is known', () => {
+            const model = createNonReasoningModel('custom-model');
+            model.reasoningApi = 'effort';
+            const settings = { output_config: { effort: 'medium' } };
+            expect(model.callGetSettings({ messages: [], settings, reasoning: { level: 'max' } })).to.deep.equal(settings);
+        });
         it('ignores reasoning settings when the model has no reasoningSupport', () => {
             const model = createNonReasoningModel('claude-3-5-sonnet-20241022');
             const result = model.callGetSettings({ messages: [], reasoning: { level: 'high' } });

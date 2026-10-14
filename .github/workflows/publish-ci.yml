@@ -33,6 +33,9 @@ jobs:
     env:
       RELEASE_TYPE: ${{ inputs.release_type || 'next' }}
       IS_PATCH_TO_PREVIOUS: ${{ inputs.is_patch_to_previous || false }}
+      # GCC before 13 (ubuntu-22.04 ships 11 and 12) cannot compile the V8 headers of Electron 44
+      CC: clang-15
+      CXX: clang++-15
     steps:
       - name: Validate Inputs
         shell: bash
@@ -77,8 +80,10 @@ jobs:
       # exact versions it published to `lerna-publish-summary.json`, which the verification checks.
       # lerna resolves the summary path against the working directory, so it is written there and
       # moved out of the repository before the PR step commits the working tree.
+      # The publish steps may fail, the step publishing the missing packages decides whether the job does.
       - name: Publish to NPM (Latest)
         id: publish-latest
+        continue-on-error: true
         # We only publish minor or patch releases for the current version as latest, never for older patches or next versions.
         if: ${{ (env.RELEASE_TYPE == 'patch' || env.RELEASE_TYPE == 'minor') && env.IS_PATCH_TO_PREVIOUS == 'false' }}
         shell: bash
@@ -91,6 +96,7 @@ jobs:
 
       - name: Publish to NPM (Patch - To Previous Version)
         id: publish-patch
+        continue-on-error: true
         if: ${{ env.RELEASE_TYPE == 'patch' && env.IS_PATCH_TO_PREVIOUS == 'true' }}
         shell: bash
         run: |
@@ -102,13 +108,40 @@ jobs:
 
       - name: Publish to NPM (Next)
         id: publish-next
+        continue-on-error: true
         if: ${{ env.RELEASE_TYPE == 'next' }}
         shell: bash
         run: |
-          npm run publish:next -- --summary-file lerna-publish-summary.json
+          npm run publish:next -- --summary-file lerna-publish-summary.json 2>&1 | tee -a "$RUNNER_TEMP/lerna-publish.log"
           # lerna writes no summary when there was nothing to publish, e.g. on a re-run
           if [ -f lerna-publish-summary.json ]; then mv lerna-publish-summary.json "$RUNNER_TEMP/"; fi
         env:
+          NPM_CONFIG_PROVENANCE: "true"
+
+      # `npm publish --provenance` signs every package with Sigstore before uploading it. When the
+      # transparency log answers slowly, the signing repeats its request, and if the first one got
+      # through after all, the repetition fails with a 409 (TLOG_CREATE_ENTRY_ERROR). The package is
+      # then never uploaded and lerna stops, see https://github.com/npm/cli/issues/10078.
+      # A failed publish leaves its versions in the package.json files, so the missing packages can be
+      # published from there. Only those are signed again, which a re-run of lerna would not ensure.
+      - name: Publish missing packages
+        id: publish-missing
+        if: ${{ !cancelled() && (steps.publish-latest.outcome == 'failure' || steps.publish-patch.outcome == 'failure' || steps.publish-next.outcome == 'failure') }}
+        shell: bash
+        run: |
+          if git diff --quiet HEAD -- packages dev-packages; then
+            echo "::error::The publish failed before lerna updated the versions, there is nothing to publish"
+            exit 1
+          fi
+          for attempt in 1 2 3; do
+            echo "Attempt ${attempt}"
+            node scripts/publish-missing.js --tag "$DIST_TAG" --published-log "$RUNNER_TEMP/lerna-publish.log" \
+              --summary-file "$RUNNER_TEMP/lerna-publish-summary.json" 2>&1 | tee -a "$RUNNER_TEMP/lerna-publish.log" && exit 0
+            sleep 60
+          done
+          exit 1
+        env:
+          DIST_TAG: ${{ env.RELEASE_TYPE == 'next' && 'next' || (env.IS_PATCH_TO_PREVIOUS == 'true' && 'patch' || 'latest') }}
           NPM_CONFIG_PROVENANCE: "true"
 
       # Also runs when the publish failed part way, e.g. on a Sigstore error: every version the
@@ -118,11 +151,11 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PUBLISH_FAILED: ${{ steps.publish-latest.outcome == 'failure' || steps.publish-patch.outcome == 'failure' }}
+          PUBLISH_FAILED: ${{ steps.publish-missing.outcome == 'failure' }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           # A version bump is only worth a PR if the registry accepted at least one package of it.
-          if ! grep -q 'lerna success published @' "$RUNNER_TEMP/lerna-publish.log"; then
+          if ! grep -qE '(lerna|publish-missing) success published @' "$RUNNER_TEMP/lerna-publish.log"; then
             echo "::warning::lerna did not publish any package, not submitting a PR for package updates"
             exit 0
           fi
@@ -202,7 +235,7 @@ jobs:
       # packages that are still not available as a warning, since nothing is left to do but wait.
       # A canary publish that did not complete has no summary and no version to check against.
       - name: Verify NPM publication
-        if: ${{ !cancelled() && (steps.publish-latest.outcome != 'skipped' || steps.publish-patch.outcome != 'skipped' || steps.publish-next.outcome == 'success') }}
+        if: ${{ !cancelled() && (steps.publish-latest.outcome != 'skipped' || steps.publish-patch.outcome != 'skipped' || steps.publish-next.outcome != 'skipped') }}
         continue-on-error: true
         shell: bash
         run: |

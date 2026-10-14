@@ -65,7 +65,7 @@ For more information also look at:
 - @doc/coding-guidelines.md
 - @doc/Testing.md
 - @doc/Plugin-API.md (VS Code extension plugin API)
-- @.prompts/project-info.prompttemplate (practical patterns for contributions, widgets, commands, preferences, plugin API, styling)
+- @AGENTS.md (practical patterns for contributions, widgets, commands, preferences, plugin API, styling)
 
 Read on demand (not auto-loaded) — consult when the task calls for it:
 - [doc/code-organization.md](doc/code-organization.md) — platform import rules; consult when adding cross-platform imports.
@@ -106,7 +106,7 @@ Read on demand (not auto-loaded) — consult when the task calls for it:
 ## Technical Requirements
 
 - Node.js ≥24 (per `package.json` `engines`)
-- TypeScript ~5.9.3 with strict settings (target ES2023, module CommonJS)
+- TypeScript ~6.0.3 with explicit `strict: false` plus selected strictness flags (target ES2023, module CommonJS, module resolution bundler)
 - React 19 for UI components, compiled with the automatic JSX runtime (`jsx: react-jsx`, `jsxImportSource: @theia/core/shared/react`), so JSX files only need to import React when they use `React.*` types or APIs. `@theia/core` cannot import its own re-export, so `packages/core/tsconfig.json` intentionally overrides `jsxImportSource` with `react` (the same module) — don't "align" it with the base config
 - Monaco Editor for code editing
 

@@ -16,7 +16,7 @@
 
 import { ApplicationShell, FrontendApplication, QuickPickValue, WidgetManager, WidgetOpenMode } from '@theia/core/lib/browser';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
-import { CommandService, ILogger, nls } from '@theia/core/lib/common';
+import { CommandService, ILogger, isCancelled, nls } from '@theia/core/lib/common';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { QuickPickItemOrSeparator, QuickPickService } from '@theia/core/lib/common/quick-pick-service';
@@ -383,7 +383,7 @@ export class TaskService implements TaskConfigurationClient {
     async getConfiguredTasks(token: number): Promise<TaskConfiguration[]> {
         const invalidTaskConfig = this.taskConfigurations.getInvalidTaskConfigurations()[0];
         if (invalidTaskConfig) {
-            const widget = <ProblemWidget>await this.widgetManager.getOrCreateWidget(PROBLEMS_WIDGET_ID);
+            const widget = await this.widgetManager.getOrCreateWidget(PROBLEMS_WIDGET_ID) as ProblemWidget;
             const isProblemsWidgetVisible = widget && widget.isVisible;
             const currentEditorUri = this.editorManager.currentEditor && this.editorManager.currentEditor.editor.getResourceUri();
             let isInvalidTaskConfigFileOpen = false;
@@ -862,6 +862,9 @@ export class TaskService implements TaskConfigurationClient {
             await this.removeProblemMarkers(option);
             return this.runResolvedTask(taskToRun, option);
         } catch (error) {
+            if (isCancelled(error)) {
+                return undefined;
+            }
             const errMessage = `Error resolving task '${task.label}': ${error}`;
             this.logger.error(errMessage);
         }
@@ -1083,7 +1086,7 @@ export class TaskService implements TaskConfigurationClient {
         const selectedText: string = this.editorManager.currentEditor.editor.document.getText(selectedRange).trimRight() + '\n';
         let terminal = this.terminalService.lastUsedTerminal;
         if (!terminal || terminal.kind !== 'user' || (await terminal.hasChildProcesses())) {
-            terminal = <TerminalWidget>await this.terminalService.newTerminal(<TerminalWidgetFactoryOptions>{ created: nextTerminalCreationToken() });
+            terminal = await this.terminalService.newTerminal(<TerminalWidgetFactoryOptions>{ created: nextTerminalCreationToken() }) as TerminalWidget;
             await terminal.start();
             this.terminalService.open(terminal);
         }

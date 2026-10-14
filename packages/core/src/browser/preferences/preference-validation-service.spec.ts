@@ -16,7 +16,7 @@
 
 import { Container } from 'inversify';
 import { PreferenceValidationService } from './preference-validation-service';
-import * as assert from 'assert';
+import assert from 'assert';
 import { JSONValue } from '@lumino/coreutils';
 import { IJSONSchema, JsonType } from '../../common/json-schema';
 import {

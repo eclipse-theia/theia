@@ -63,7 +63,7 @@ export class DebugWatchExpression extends ExpressionItem {
         return <div className='theia-debug-console-variable theia-debug-watch-expression'>
             <div className={TREE_NODE_SEGMENT_GROW_CLASS}>
                 <span title={this.type || this._expression} className='name'>{this._expression}:</span>
-                <span title={this._value} ref={this.setValueRef} className={valueClass}>{this._value}</span>
+                <span title={this._value} className={valueClass}>{this._value}</span>
             </div>
             <div className={codicon('close', true)} title={nls.localizeByDefault('Remove Expression')} onClick={this.options.remove} />
         </div>;
@@ -93,16 +93,10 @@ export class DebugWatchExpression extends ExpressionItem {
     }
 
     get supportCopyValue(): boolean {
-        return !!this.valueRef && document.queryCommandSupported('copy');
+        return this.available;
     }
-    copyValue(): void {
-        const selection = document.getSelection();
-        if (this.valueRef && selection) {
-            selection.selectAllChildren(this.valueRef);
-            document.execCommand('copy');
-        }
+    async getValueToCopy(): Promise<string> {
+        return this.evaluateForClipboard(this.expression, 'watch', this.value);
     }
-    protected valueRef: HTMLSpanElement | undefined;
-    protected setValueRef = (valueRef: HTMLSpanElement | null): void => { this.valueRef = valueRef || undefined; };
 
 }

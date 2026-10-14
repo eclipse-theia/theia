@@ -16,7 +16,7 @@
 
 import { expect, spy, use } from 'chai';
 import { DisposableCollection, Disposable } from './disposable';
-import * as spies from 'chai-spies';
+import spies from 'chai-spies';
 
 use(spies);
 

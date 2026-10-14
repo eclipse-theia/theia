@@ -60,7 +60,7 @@ export class QuickHelpService implements QuickAccessProvider, QuickAccessContrib
 
             for (const helpEntry of provider.helpEntries) {
                 const prefix = helpEntry.prefix || provider.prefix;
-                const label = prefix || '\u2026' /* ... */;
+                const label = prefix || '\u2026'; // ...
 
                 (helpEntry.needsEditor ? editorProviders : globalProviders).push({
                     label,
