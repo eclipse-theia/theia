@@ -274,12 +274,20 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             event.returnValue = BrowserWindow.fromWebContents(event.sender)?.isFullScreen();
         });
 
-        ipcMain.handle(CHANNEL_READ_CLIPBOARD, () => clipboard.readText().catch(error => {
-            console.warn('Could not read from the clipboard', error);
-            return '';
-        }));
+        ipcMain.handle(CHANNEL_READ_CLIPBOARD, () => {
+            try {
+                return clipboard.readText();
+            } catch (error) {
+                console.warn('Could not read from the clipboard', error);
+                return '';
+            }
+        });
         ipcMain.on(CHANNEL_WRITE_CLIPBOARD, (event, text) => {
-            clipboard.writeText(text).catch(error => console.warn('Could not write to the clipboard', error));
+            try {
+                clipboard.writeText(text);
+            } catch (error) {
+                console.warn('Could not write to the clipboard', error);
+            }
         });
 
         nativeKeymap.onDidChangeKeyboardLayout(() => {

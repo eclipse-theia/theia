@@ -26,14 +26,19 @@
     // TS 6 defaults this to true; Theia imports CSS for side effects without module declarations.
     "noUncheckedSideEffectImports": false,
     "module": "CommonJS",
-    // `node`/`node10` resolution is deprecated in TS 6; `bundler` + CommonJS is the recommended successor.
-    "moduleResolution": "bundler",
+    // `moduleResolution: "bundler"` is only valid with `module` set to `preserve`/`es2015`+ (TS5095).
+    // Theia emits real CommonJS for the Node backend, so pair CommonJS with `node10` resolution.
+    // TS 6 flags `node10` as deprecated (TS5107) and treats it as a build error; silence it until the
+    // resolution strategy is migrated.
+    "ignoreDeprecations": "6.0",
+    "moduleResolution": "node10",
     "target": "ES2023",
     "jsx": "react-jsx",
     "jsxImportSource": "@theia/core/shared/react",
     "lib": [
       "ES2023",
       "DOM",
+      "DOM.Iterable",
       "DOM.AsyncIterable"
     ],
     "sourceMap": true
