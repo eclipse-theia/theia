@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import * as path from 'path';
-import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { ConnectionHandler, RpcConnectionHandler, ILogger } from '@theia/core/lib/common';
+import { ContainerModule, injectable, interfaces } from '@theia/core/shared/inversify';
+import { ConnectionHandler, Disposable, DisposableCollection, RpcConnectionHandler, ILogger } from '@theia/core/lib/common';
 import { FileSystemWatcherServer, FileSystemWatcherService } from '../common/filesystem-watcher-protocol';
 import { FileSystemWatcherServerClient } from './filesystem-watcher-client';
 import { ParcelFileSystemWatcherService, ParcelFileSystemWatcherServerOptions } from './parcel-watcher/parcel-filesystem-service';
@@ -47,6 +47,26 @@ export interface FileSystemWatcherServiceProcessOptions {
     entryPoint: string;
 }
 
+@injectable()
+export class FileSystemWatcherProcessLifecycle implements BackendApplicationContribution {
+
+    protected readonly listeners = new DisposableCollection();
+    protected stopped = false;
+
+    register(listener: Disposable): void {
+        if (this.stopped) {
+            listener.dispose();
+        } else {
+            this.listeners.push(listener);
+        }
+    }
+
+    onStop(): void {
+        this.stopped = true;
+        this.listeners.dispose();
+    }
+}
+
 export default new ContainerModule(bind => {
     bind(EncodingService).toSelf().inSingletonScope();
     bindFileSystemWatcherServer(bind);
@@ -68,6 +88,9 @@ export default new ContainerModule(bind => {
 });
 
 export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
+    bind(FileSystemWatcherProcessLifecycle).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toService(FileSystemWatcherProcessLifecycle);
+
     bind<ParcelWatcherOptions>(ParcelWatcherOptions).toConstantValue({});
 
     bind(FileSystemWatcherServiceDispatcher).toSelf().inSingletonScope();
@@ -118,6 +141,7 @@ export function spawnParcelFileSystemWatcherServiceProcess(ctx: interfaces.Conte
     const logger = ctx.container.get<ILogger>(ILogger);
     const watcherOptions = ctx.container.get<ParcelWatcherOptions>(ParcelWatcherOptions);
     const ipcConnectionProvider = ctx.container.get<IPCConnectionProvider>(IPCConnectionProvider);
+    const lifecycle = ctx.container.get<FileSystemWatcherProcessLifecycle>(FileSystemWatcherProcessLifecycle);
     const proxyFactory = new RpcProxyFactory<FileSystemWatcherService>();
     const serverProxy = proxyFactory.createProxy();
     // We need to call `.setClient` before listening, else the JSON-RPC calls won't go through.
@@ -128,7 +152,7 @@ export function spawnParcelFileSystemWatcherServiceProcess(ctx: interfaces.Conte
     if (WATCHER_VERBOSE) {
         args.push('--verbose');
     }
-    ipcConnectionProvider.listen({
+    lifecycle.register(ipcConnectionProvider.listen({
         serverName,
         entryPoint: options.entryPoint,
         errorHandler: new ConnectionErrorHandler({
@@ -137,6 +161,6 @@ export function spawnParcelFileSystemWatcherServiceProcess(ctx: interfaces.Conte
         }),
         env: process.env,
         args,
-    }, connection => proxyFactory.listen(connection));
+    }, connection => proxyFactory.listen(connection)));
     return serverProxy;
 }
