@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { AIRegistryConfiguration } from '../ai-registry-configuration';
-import { RegistryApproval, RegistryInstallConfig, RegistryMCPServer, ResolvedRegistryEntry } from './mcp-registry-types';
+import { AIRegistryConfiguration } from '../ai-registry-configuration.js';
+import { RegistryApproval, RegistryInstallConfig, RegistryMCPServer, ResolvedRegistryEntry } from './mcp-registry-types.js';
 import { ILogger } from '@theia/core';
 
 export const MCPRegistryEntryResolver = Symbol('MCPRegistryEntryResolver');

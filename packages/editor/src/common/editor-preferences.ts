@@ -27,7 +27,7 @@ import {
 } from '@theia/core/lib/common/preferences';
 import { nls } from '@theia/core/lib/common/nls';
 import { environment } from '@theia/core';
-import { editorGeneratedPreferenceProperties, GeneratedEditorPreferences } from './editor-generated-preference-schema';
+import { editorGeneratedPreferenceProperties, GeneratedEditorPreferences } from './editor-generated-preference-schema.js';
 
 /* eslint-disable max-len,no-null/no-null */
 // #region src/vs/workbench/contrib/codeActions/browser/codeActionsContribution.ts

@@ -17,8 +17,8 @@
 import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
 import { getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { OllamaLanguageModelFactory, OllamaModel } from './ollama-language-model';
-import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
+import { OllamaLanguageModelFactory, OllamaModel } from './ollama-language-model.js';
+import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common/index.js';
 import { ILogger } from '@theia/core';
 
 @injectable()

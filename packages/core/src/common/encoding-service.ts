@@ -21,12 +21,15 @@
 
 /* eslint-disable no-null/no-null */
 
-import * as iconv from 'iconv-lite';
-import { Buffer } from 'safer-buffer';
+// CommonJS modules whose exports cannot be detected statically, so they are imported as a whole.
+import iconv from 'iconv-lite';
+import saferBuffer from 'safer-buffer';
 import { injectable } from 'inversify';
-import { BinaryBuffer, BinaryBufferReadableStream, BinaryBufferReadable } from './buffer';
-import { UTF8, UTF8_with_bom, UTF16be, UTF16le, UTF16be_BOM, UTF16le_BOM, UTF8_BOM } from './encodings';
-import { newWriteableStream, ReadableStream, Readable } from './stream';
+import { BinaryBuffer, BinaryBufferReadableStream, BinaryBufferReadable } from './buffer.js';
+import { UTF8, UTF8_with_bom, UTF16be, UTF16le, UTF16be_BOM, UTF16le_BOM, UTF8_BOM } from './encodings.js';
+import { newWriteableStream, ReadableStream, Readable } from './stream.js';
+
+const { Buffer } = saferBuffer;
 
 const ZERO_BYTE_DETECTION_BUFFER_MAX_LEN = 512;   // number of bytes to look at to decide about a file being binary or not
 const NO_ENCODING_GUESS_MIN_BYTES = 512;          // when not auto guessing the encoding, small number of bytes are enough

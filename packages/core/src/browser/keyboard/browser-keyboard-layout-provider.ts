@@ -23,6 +23,53 @@ import {
     NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator, KeyValidationInput, KeyboardLayoutSource
 } from '../../common/keyboard/keyboard-layout-provider';
 import { LocalStorageService } from '../storage-service';
+import enUSPc from '../../common/keyboard/layouts/en-US-pc.json' with { type: 'json' };
+import enUSMac from '../../common/keyboard/layouts/en-US-mac.json' with { type: 'json' };
+import enDvorakPc from '../../common/keyboard/layouts/en-Dvorak-pc.json' with { type: 'json' };
+import enDvorakMac from '../../common/keyboard/layouts/en-Dvorak-mac.json' with { type: 'json' };
+import enDvorakLefthandedPc from '../../common/keyboard/layouts/en-Dvorak_Lefthanded-pc.json' with { type: 'json' };
+import enDvorakLefthandedMac from '../../common/keyboard/layouts/en-Dvorak_Lefthanded-mac.json' with { type: 'json' };
+import enDvorakRighthandedPc from '../../common/keyboard/layouts/en-Dvorak_Righthanded-pc.json' with { type: 'json' };
+import enDvorakRighthandedMac from '../../common/keyboard/layouts/en-Dvorak_Righthanded-mac.json' with { type: 'json' };
+import enColemakMac from '../../common/keyboard/layouts/en-Colemak-mac.json' with { type: 'json' };
+import enBritishPc from '../../common/keyboard/layouts/en-British-pc.json' with { type: 'json' };
+import enBritishMac from '../../common/keyboard/layouts/en-British-mac.json' with { type: 'json' };
+import deGermanPc from '../../common/keyboard/layouts/de-German-pc.json' with { type: 'json' };
+import deGermanMac from '../../common/keyboard/layouts/de-German-mac.json' with { type: 'json' };
+import deSwissGermanPc from '../../common/keyboard/layouts/de-Swiss_German-pc.json' with { type: 'json' };
+import deSwissGermanMac from '../../common/keyboard/layouts/de-Swiss_German-mac.json' with { type: 'json' };
+import frFrenchPc from '../../common/keyboard/layouts/fr-French-pc.json' with { type: 'json' };
+import frFrenchMac from '../../common/keyboard/layouts/fr-French-mac.json' with { type: 'json' };
+import frCanadianFrenchPc from '../../common/keyboard/layouts/fr-Canadian_French-pc.json' with { type: 'json' };
+import frCanadianFrenchMac from '../../common/keyboard/layouts/fr-Canadian_French-mac.json' with { type: 'json' };
+import frSwissFrenchPc from '../../common/keyboard/layouts/fr-Swiss_French-pc.json' with { type: 'json' };
+import frSwissFrenchMac from '../../common/keyboard/layouts/fr-Swiss_French-mac.json' with { type: 'json' };
+import frBepoPc from '../../common/keyboard/layouts/fr-Bepo-pc.json' with { type: 'json' };
+import ptPortuguesePc from '../../common/keyboard/layouts/pt-Portuguese-pc.json' with { type: 'json' };
+import ptPortugueseMac from '../../common/keyboard/layouts/pt-Portuguese-mac.json' with { type: 'json' };
+import ptBrazilianMac from '../../common/keyboard/layouts/pt-Brazilian-mac.json' with { type: 'json' };
+import plPolishPc from '../../common/keyboard/layouts/pl-Polish-pc.json' with { type: 'json' };
+import plPolishMac from '../../common/keyboard/layouts/pl-Polish-mac.json' with { type: 'json' };
+import nlDutchPc from '../../common/keyboard/layouts/nl-Dutch-pc.json' with { type: 'json' };
+import nlDutchMac from '../../common/keyboard/layouts/nl-Dutch-mac.json' with { type: 'json' };
+import esSpanishPc from '../../common/keyboard/layouts/es-Spanish-pc.json' with { type: 'json' };
+import esSpanishMac from '../../common/keyboard/layouts/es-Spanish-mac.json' with { type: 'json' };
+import itItalianPc from '../../common/keyboard/layouts/it-Italian-pc.json' with { type: 'json' };
+import itItalianMac from '../../common/keyboard/layouts/it-Italian-mac.json' with { type: 'json' };
+import svSwedishPc from '../../common/keyboard/layouts/sv-Swedish-pc.json' with { type: 'json' };
+import svSwedishMac from '../../common/keyboard/layouts/sv-Swedish-mac.json' with { type: 'json' };
+import trTurkishQPc from '../../common/keyboard/layouts/tr-Turkish_Q-pc.json' with { type: 'json' };
+import trTurkishQMac from '../../common/keyboard/layouts/tr-Turkish_Q-mac.json' with { type: 'json' };
+import csCzechPc from '../../common/keyboard/layouts/cs-Czech-pc.json' with { type: 'json' };
+import csCzechMac from '../../common/keyboard/layouts/cs-Czech-mac.json' with { type: 'json' };
+import roRomanianPc from '../../common/keyboard/layouts/ro-Romanian-pc.json' with { type: 'json' };
+import roRomanianMac from '../../common/keyboard/layouts/ro-Romanian-mac.json' with { type: 'json' };
+import daDanishPc from '../../common/keyboard/layouts/da-Danish-pc.json' with { type: 'json' };
+import daDanishMac from '../../common/keyboard/layouts/da-Danish-mac.json' with { type: 'json' };
+import nbNorwegianPc from '../../common/keyboard/layouts/nb-Norwegian-pc.json' with { type: 'json' };
+import nbNorwegianMac from '../../common/keyboard/layouts/nb-Norwegian-mac.json' with { type: 'json' };
+import huHungarianPc from '../../common/keyboard/layouts/hu-Hungarian-pc.json' with { type: 'json' };
+import huHungarianMac from '../../common/keyboard/layouts/hu-Hungarian-mac.json' with { type: 'json' };
 
 export type { KeyboardLayoutSource } from '../../common/keyboard/keyboard-layout-provider';
 
@@ -399,15 +446,13 @@ function getLayoutId(layout: KeyboardLayoutData): string {
  * - `name`:     Display name of the keyboard layout (without dashes)
  * - `hardware`: `pc` or `mac`
  */
-function loadLayout(fileName: string): KeyboardLayoutData {
+function loadLayout(fileName: string, raw: object): KeyboardLayoutData {
     const [language, name, hardware] = fileName.split('-');
     return {
         name: name.replace('_', ' '),
         hardware: hardware as 'pc' | 'mac',
         language,
-        // Webpack knows what to do here and it should bundle all files under `../../../src/common/keyboard/layouts/`
-        // eslint-disable-next-line import/no-dynamic-require
-        raw: require('../../../src/common/keyboard/layouts/' + fileName + '.json')
+        raw: raw as KeyboardLayoutData['raw']
     };
 }
 
@@ -418,52 +463,52 @@ function loadAllLayouts(): KeyboardLayoutData[] {
     // in the respective country (taken from the Stack Overflow Developer Survey),
     // but keeping all layouts of the same language together.
     return [
-        'en-US-pc',
-        'en-US-mac',
-        'en-Dvorak-pc',
-        'en-Dvorak-mac',
-        'en-Dvorak_Lefthanded-pc',
-        'en-Dvorak_Lefthanded-mac',
-        'en-Dvorak_Righthanded-pc',
-        'en-Dvorak_Righthanded-mac',
-        'en-Colemak-mac',
-        'en-British-pc',
-        'en-British-mac',
-        'de-German-pc',
-        'de-German-mac',
-        'de-Swiss_German-pc',
-        'de-Swiss_German-mac',
-        'fr-French-pc',
-        'fr-French-mac',
-        'fr-Canadian_French-pc',
-        'fr-Canadian_French-mac',
-        'fr-Swiss_French-pc',
-        'fr-Swiss_French-mac',
-        'fr-Bepo-pc',
-        'pt-Portuguese-pc',
-        'pt-Portuguese-mac',
-        'pt-Brazilian-mac',
-        'pl-Polish-pc',
-        'pl-Polish-mac',
-        'nl-Dutch-pc',
-        'nl-Dutch-mac',
-        'es-Spanish-pc',
-        'es-Spanish-mac',
-        'it-Italian-pc',
-        'it-Italian-mac',
-        'sv-Swedish-pc',
-        'sv-Swedish-mac',
-        'tr-Turkish_Q-pc',
-        'tr-Turkish_Q-mac',
-        'cs-Czech-pc',
-        'cs-Czech-mac',
-        'ro-Romanian-pc',
-        'ro-Romanian-mac',
-        'da-Danish-pc',
-        'da-Danish-mac',
-        'nb-Norwegian-pc',
-        'nb-Norwegian-mac',
-        'hu-Hungarian-pc',
-        'hu-Hungarian-mac'
-    ].map(loadLayout);
+        loadLayout('en-US-pc', enUSPc),
+        loadLayout('en-US-mac', enUSMac),
+        loadLayout('en-Dvorak-pc', enDvorakPc),
+        loadLayout('en-Dvorak-mac', enDvorakMac),
+        loadLayout('en-Dvorak_Lefthanded-pc', enDvorakLefthandedPc),
+        loadLayout('en-Dvorak_Lefthanded-mac', enDvorakLefthandedMac),
+        loadLayout('en-Dvorak_Righthanded-pc', enDvorakRighthandedPc),
+        loadLayout('en-Dvorak_Righthanded-mac', enDvorakRighthandedMac),
+        loadLayout('en-Colemak-mac', enColemakMac),
+        loadLayout('en-British-pc', enBritishPc),
+        loadLayout('en-British-mac', enBritishMac),
+        loadLayout('de-German-pc', deGermanPc),
+        loadLayout('de-German-mac', deGermanMac),
+        loadLayout('de-Swiss_German-pc', deSwissGermanPc),
+        loadLayout('de-Swiss_German-mac', deSwissGermanMac),
+        loadLayout('fr-French-pc', frFrenchPc),
+        loadLayout('fr-French-mac', frFrenchMac),
+        loadLayout('fr-Canadian_French-pc', frCanadianFrenchPc),
+        loadLayout('fr-Canadian_French-mac', frCanadianFrenchMac),
+        loadLayout('fr-Swiss_French-pc', frSwissFrenchPc),
+        loadLayout('fr-Swiss_French-mac', frSwissFrenchMac),
+        loadLayout('fr-Bepo-pc', frBepoPc),
+        loadLayout('pt-Portuguese-pc', ptPortuguesePc),
+        loadLayout('pt-Portuguese-mac', ptPortugueseMac),
+        loadLayout('pt-Brazilian-mac', ptBrazilianMac),
+        loadLayout('pl-Polish-pc', plPolishPc),
+        loadLayout('pl-Polish-mac', plPolishMac),
+        loadLayout('nl-Dutch-pc', nlDutchPc),
+        loadLayout('nl-Dutch-mac', nlDutchMac),
+        loadLayout('es-Spanish-pc', esSpanishPc),
+        loadLayout('es-Spanish-mac', esSpanishMac),
+        loadLayout('it-Italian-pc', itItalianPc),
+        loadLayout('it-Italian-mac', itItalianMac),
+        loadLayout('sv-Swedish-pc', svSwedishPc),
+        loadLayout('sv-Swedish-mac', svSwedishMac),
+        loadLayout('tr-Turkish_Q-pc', trTurkishQPc),
+        loadLayout('tr-Turkish_Q-mac', trTurkishQMac),
+        loadLayout('cs-Czech-pc', csCzechPc),
+        loadLayout('cs-Czech-mac', csCzechMac),
+        loadLayout('ro-Romanian-pc', roRomanianPc),
+        loadLayout('ro-Romanian-mac', roRomanianMac),
+        loadLayout('da-Danish-pc', daDanishPc),
+        loadLayout('da-Danish-mac', daDanishMac),
+        loadLayout('nb-Norwegian-pc', nbNorwegianPc),
+        loadLayout('nb-Norwegian-mac', nbNorwegianMac),
+        loadLayout('hu-Hungarian-pc', huHungarianPc),
+        loadLayout('hu-Hungarian-mac', huHungarianMac)
+    ];
 }

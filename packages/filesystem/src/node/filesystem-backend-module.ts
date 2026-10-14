@@ -77,7 +77,7 @@ export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
     bind(FileSystemWatcherServer).toService(FileSystemWatcherServerClient);
 
     bind<FileSystemWatcherServiceProcessOptions>(FileSystemWatcherServiceProcessOptions).toDynamicValue(ctx => ({
-        entryPoint: path.join(__dirname, 'parcel-watcher'),
+        entryPoint: path.join(import.meta.dirname, 'parcel-watcher'),
     })).inSingletonScope();
     bind<ParcelFileSystemWatcherServerOptions>(ParcelFileSystemWatcherServerOptions).toDynamicValue(ctx => {
         const logger = ctx.container.get<ILogger>(ILogger);

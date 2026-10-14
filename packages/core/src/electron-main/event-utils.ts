@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable, DisposableCollection } from '../common';
+import { Disposable, DisposableCollection } from '../common/index.js';
 
 /**
  * @param collection If a collection is passed in, the new disposable is added to that collection. Otherwise, the new disposable is returned.

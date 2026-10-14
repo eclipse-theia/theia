@@ -17,13 +17,13 @@
 import { FrontendIdProvider } from '@theia/core/lib/browser/messaging/frontend-id-provider';
 import { ILogger } from '@theia/core/lib/common';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { TelemetryConsentProvider } from '../common/telemetry-consent-provider';
+import { TelemetryConsentProvider } from '../common/telemetry-consent-provider.js';
 import {
     TelemetryRpc, createTelemetryEvent, describeTelemetryTopic, isValidTelemetryEvent, snapshotTelemetryEvent
-} from '../common/telemetry-protocol';
-import { TelemetryService } from '../common/telemetry-service';
-import { matchesTelemetryTopic } from '../common/telemetry-topic';
-import { TelemetryData, TelemetryReportOptions, isKindAllowedByLevel } from '../common/telemetry-types';
+} from '../common/telemetry-protocol.js';
+import { TelemetryService } from '../common/telemetry-service.js';
+import { matchesTelemetryTopic } from '../common/telemetry-topic.js';
+import { TelemetryData, TelemetryReportOptions, isKindAllowedByLevel } from '../common/telemetry-types.js';
 
 @injectable()
 export class BrowserTelemetryService implements TelemetryService {

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { extractJsonStringField } from './toolcall-utils';
+import { extractJsonStringField } from './toolcall-utils.js';
 
 describe('extractJsonStringField', () => {
     describe('complete JSON', () => {

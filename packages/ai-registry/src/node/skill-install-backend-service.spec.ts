@@ -17,6 +17,7 @@
 import { expect } from 'chai';
 // The default import keeps the CommonJS object writable for the rename monkeypatch below.
 import fs from 'fs/promises';
+import { syncBuiltinESMExports } from 'module';
 import * as os from 'os';
 import * as path from 'path';
 import { PreferenceService } from '@theia/core';
@@ -262,19 +263,20 @@ describe('SkillInstallBackendService', () => {
         };
         const stagingPaths = new Set<string>();
         const original = fs.rename;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (fs as any).rename = async (from: string, to: string) => {
+        // The exports of ES modules are read-only, but those of built-in modules follow their module object when synchronized.
+        fs.rename = async (from, to) => {
             stagingPaths.add(String(from));
             return original(from, to);
         };
+        syncBuiltinESMExports();
         try {
             const files = [{ relativePath: 'SKILL.md', content: Buffer.from(SKILL_MD) }];
             await svc.writeSkill(entry, files, false);
             await fs.rm(path.join(root, 'example-skill'), { recursive: true, force: true });
             await svc.writeSkill(entry, files, false);
         } finally {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (fs as any).rename = original;
+            fs.rename = original;
+            syncBuiltinESMExports();
         }
         expect(stagingPaths.size).to.equal(2);
     });

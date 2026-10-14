@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { DefaultShellCommandAnalyzer } from './shell-command-analyzer';
+import { DefaultShellCommandAnalyzer } from './shell-command-analyzer.js';
 
 describe('shell-command-analyzer', () => {
     let analyzer: DefaultShellCommandAnalyzer;

@@ -13,6 +13,6 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './mcp-server-manager';
-export * from './mcp-oauth';
-export * from './mcp-server-preference-validator';
+export * from './mcp-server-manager.js';
+export * from './mcp-oauth.js';
+export * from './mcp-server-preference-validator.js';

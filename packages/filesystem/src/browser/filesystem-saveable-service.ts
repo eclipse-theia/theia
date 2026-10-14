@@ -19,8 +19,8 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Navigatable, Saveable, SaveableSource, SaveOptions, Widget, open, OpenerService, ConfirmDialog, CommonCommands, LabelProvider } from '@theia/core/lib/browser';
 import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 import URI from '@theia/core/lib/common/uri';
-import { FileService } from './file-service';
-import { FileDialogService } from './file-dialog';
+import { FileService } from './file-service.js';
+import { FileDialogService } from './file-dialog/index.js';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 
 @injectable()

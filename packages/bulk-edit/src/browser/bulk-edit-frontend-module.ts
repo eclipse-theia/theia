@@ -15,11 +15,11 @@
 // *****************************************************************************
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
-import { BulkEditTreeWidget, BULK_EDIT_TREE_WIDGET_ID, createBulkEditTreeWidget } from './bulk-edit-tree';
+import { BulkEditTreeWidget, BULK_EDIT_TREE_WIDGET_ID, createBulkEditTreeWidget } from './bulk-edit-tree/index.js';
 import { FrontendApplicationContribution, LabelProviderContribution, bindViewContribution } from '@theia/core/lib/browser';
-import { BulkEditContribution } from './bulk-edit-contribution';
+import { BulkEditContribution } from './bulk-edit-contribution.js';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { BulkEditTreeLabelProvider } from './bulk-edit-tree-label-provider';
+import { BulkEditTreeLabelProvider } from './bulk-edit-tree-label-provider.js';
 import '../../src/browser/style/bulk-edit.css';
 
 export default new ContainerModule(bind => {

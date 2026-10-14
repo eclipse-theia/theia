@@ -18,7 +18,7 @@ import {
     LanguageModelResponse,
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
-} from './language-model';
+} from './language-model.js';
 
 /**
  * A session tracking raw exchanges with language models, organized into exchange units.

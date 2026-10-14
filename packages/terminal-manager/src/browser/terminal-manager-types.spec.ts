@@ -20,7 +20,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { TerminalManagerTreeTypes } from './terminal-manager-types';
+import { TerminalManagerTreeTypes } from './terminal-manager-types.js';
 
 describe('TerminalManagerTreeTypes', () => {
     after(() => {

@@ -17,12 +17,12 @@
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { KeybindingContribution } from '@theia/core/lib/browser';
-import { FileSearchService } from '../common/file-search-service';
-import { FileSearchServiceImpl } from './file-search-service-impl';
+import { FileSearchService } from '../common/file-search-service.js';
+import { FileSearchServiceImpl } from './file-search-service-impl.js';
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access';
-import { QuickFileOpenFrontendContribution } from '../browser/quick-file-open-contribution';
-import { QuickFileOpenService } from '../browser/quick-file-open';
-import { QuickFileSelectService } from '../browser/quick-file-select-service';
+import { QuickFileOpenFrontendContribution } from '../browser/quick-file-open-contribution.js';
+import { QuickFileOpenService } from '../browser/quick-file-open.js';
+import { QuickFileSelectService } from '../browser/quick-file-select-service.js';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bind(FileSearchService).to(FileSearchServiceImpl).inSingletonScope();

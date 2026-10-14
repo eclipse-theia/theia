@@ -18,7 +18,7 @@ The `@theia/toolbar` extension contributes a global toolbar to the application s
 
 When a new item is added to the toolbar, a dialog appears showing all installed icons. This feature allows users to easily select a suitable icon for their toolbar item without needing to know the icon names in advance. The dialog visually displays available icons from both the FontAwesome and Codicons libraries.
 
-The `update-icons.js` script collects the icon strings for FontAwesome and Codicons from the currently installed dependencies and saves them to temporary JSON files. The content is then copied to `codicon.ts` and `font-awesome-icons.ts` to update the icon lists.
+The `update-icons.cjs` script collects the icon strings for FontAwesome and Codicons from the currently installed dependencies and saves them to temporary JSON files. The content is then copied to `codicon.ts` and `font-awesome-icons.ts` to update the icon lists.
 A util npm script is available: `npm run update:icons`.
 
 ## Additional Information

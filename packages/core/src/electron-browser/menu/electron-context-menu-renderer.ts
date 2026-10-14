@@ -20,13 +20,13 @@ import { inject, injectable, postConstruct } from 'inversify';
 import {
     ContextMenuRenderer, ContextMenuAccess, FrontendApplicationContribution, CommonCommands, coordinateFromAnchor,
     Anchor
-} from '../../browser';
-import { ElectronMainMenuFactory } from './electron-main-menu-factory';
-import { ContextMenuContext } from '../../browser/menu/context-menu-context';
-import { BrowserContextMenuAccess, BrowserContextMenuRenderer } from '../../browser/menu/browser-context-menu-renderer';
-import { MenuPath, MenuContribution, MenuModelRegistry, CompoundMenuNode } from '../../common/menu';
-import { ContextKeyService, ContextMatcher } from '../../browser/context-key-service';
-import { PreferenceService } from '../../common/preferences';
+} from '../../browser/index.js';
+import { ElectronMainMenuFactory } from './electron-main-menu-factory.js';
+import { ContextMenuContext } from '../../browser/menu/context-menu-context.js';
+import { BrowserContextMenuAccess, BrowserContextMenuRenderer } from '../../browser/menu/browser-context-menu-renderer.js';
+import { MenuPath, MenuContribution, MenuModelRegistry, CompoundMenuNode } from '../../common/menu/index.js';
+import { ContextKeyService, ContextMatcher } from '../../browser/context-key-service.js';
+import { PreferenceService } from '../../common/preferences/index.js';
 
 export class ElectronContextMenuAccess extends ContextMenuAccess {
     constructor(readonly menuHandle: Promise<number>) {

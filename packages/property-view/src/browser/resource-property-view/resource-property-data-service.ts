@@ -20,7 +20,7 @@ import { FileSelection } from '@theia/filesystem/lib/browser/file-selection';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { PropertyDataService } from '../property-data-service';
+import { PropertyDataService } from '../property-data-service.js';
 
 /**
  * This data service provides property data for {@link FileSelection}s and selections of {@link Navigatable}s.

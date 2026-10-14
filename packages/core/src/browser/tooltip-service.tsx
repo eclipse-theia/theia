@@ -16,10 +16,14 @@
 
 import { injectable, inject, optional, postConstruct } from 'inversify';
 import * as React from 'react';
-import ReactTooltip from 'react-tooltip';
-import { ReactRenderer, RendererHost } from './widgets/react-renderer';
-import { generateUuid } from '../common/uuid';
-import { CorePreferences } from '../common/core-preferences';
+import ReactTooltipModule from 'react-tooltip';
+import { ReactRenderer, RendererHost } from './widgets/react-renderer.js';
+import { generateUuid } from '../common/uuid.js';
+import { CorePreferences } from '../common/core-preferences.js';
+
+// The types of `react-tooltip` declare an ES module default export, but its CommonJS entry point assigns the component to
+// `module.exports`, which is what a default import from an ES module provides at runtime.
+const ReactTooltip = ReactTooltipModule as unknown as typeof ReactTooltipModule.default;
 
 export const TooltipService = Symbol('TooltipService');
 

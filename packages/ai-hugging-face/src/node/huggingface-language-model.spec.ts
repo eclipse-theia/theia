@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { LanguageModelMessage } from '@theia/ai-core';
-import { HuggingFaceModel } from './huggingface-language-model';
+import { HuggingFaceModel } from './huggingface-language-model.js';
 
 /**
  * Tests cover the message-conversion path that runs before the request leaves Theia.

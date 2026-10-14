@@ -26,9 +26,9 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import { ContextMenuRenderer, TreeProps } from '@theia/core/lib/browser';
 import { FileStatNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { FileNavigatorWidget } from './navigator-widget';
-import { FileNavigatorModel } from './navigator-model';
-import { NavigatorFileClipboard } from './navigator-file-clipboard';
+import { FileNavigatorWidget } from './navigator-widget.js';
+import { FileNavigatorModel } from './navigator-model.js';
+import { NavigatorFileClipboard } from './navigator-file-clipboard.js';
 
 disableJSDOM();
 

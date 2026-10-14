@@ -21,8 +21,8 @@ import { codicon } from '@theia/core/lib/browser';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
-import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
-import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
+import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content.js';
+import { CollapsibleToolRenderer } from './collapsible-tool-renderer.js';
 import { nls, ILogger } from '@theia/core';
 
 interface BashToolInput {

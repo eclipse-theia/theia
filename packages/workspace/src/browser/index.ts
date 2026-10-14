@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './workspace-commands';
-export * from './workspace-service';
-export * from './canonical-uri-service';
-export * from './workspace-frontend-contribution';
-export * from './workspace-frontend-module';
-export * from './workspace-trust-service';
-export * from './metadata-storage';
-export * from './workspace-search-filter-service';
+export * from './workspace-commands.js';
+export * from './workspace-service.js';
+export * from './canonical-uri-service.js';
+export * from './workspace-frontend-contribution.js';
+export * from './workspace-frontend-module.js';
+export * from './workspace-trust-service.js';
+export * from './metadata-storage/index.js';
+export * from './workspace-search-filter-service.js';

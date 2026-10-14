@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import * as assert from 'assert';
-import * as Converter from './type-converters';
+import * as Converter from './type-converters.js';
 import * as theia from '@theia/plugin';
-import * as types from './types-impl';
-import * as model from '../common/plugin-api-rpc-model';
-import { MarkdownString } from './markdown-string';
+import * as types from './types-impl.js';
+import * as model from '../common/plugin-api-rpc-model.js';
+import { MarkdownString } from './markdown-string.js';
 import { MarkdownString as MarkdownStringInterface } from '@theia/core/lib/common/markdown-rendering';
-import { TaskDto } from '../common/plugin-api-rpc';
+import { TaskDto } from '../common/plugin-api-rpc.js';
 
 describe('Type converters:', () => {
 

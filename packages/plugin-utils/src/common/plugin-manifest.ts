@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { UNPUBLISHED, VSCODE_BUILTIN_NAME_PREFIX } from './constants';
-import type { PluginManifest } from './manifest-types';
-import { updateActivationEvents } from './plugin-activation-events';
+import { UNPUBLISHED, VSCODE_BUILTIN_NAME_PREFIX } from './constants.js';
+import type { PluginManifest } from './manifest-types.js';
+import { updateActivationEvents } from './plugin-activation-events.js';
 
 export interface PrepareLoadedManifestOptions {
     /** @default true */

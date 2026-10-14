@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { isThenable } from '../common/promise-util';
-import { CancellationToken, CancellationTokenSource, Disposable, Emitter, Event } from '../common';
-import { TernarySearchTree } from '../common/ternary-search-tree';
-import URI from '../common/uri';
-import debounce = require('lodash.debounce');
+import { isThenable } from '../common/promise-util.js';
+import { CancellationToken, CancellationTokenSource, Disposable, Emitter, Event } from '../common/index.js';
+import { TernarySearchTree } from '../common/ternary-search-tree.js';
+import URI from '../common/uri.js';
+import debounce from '../../shared/lodash.debounce/index.cjs';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.

@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { SessionPreferenceProvider } from './session-preference-provider';
-import { PreferenceScope } from './preference-scope';
+import { SessionPreferenceProvider } from './session-preference-provider.js';
+import { PreferenceScope } from './preference-scope.js';
 
 describe('SessionPreferenceProvider', () => {
 

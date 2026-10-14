@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { ProgressLocationService } from './progress-location-service';
-import { CancellationTokenSource } from '../common';
+import { ProgressLocationService } from './progress-location-service.js';
+import { CancellationTokenSource } from '../common/index.js';
 
 describe('progress-location-service', () => {
 

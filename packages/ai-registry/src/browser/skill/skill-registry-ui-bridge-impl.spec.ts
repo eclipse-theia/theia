@@ -28,11 +28,11 @@ import { expect } from 'chai';
 import { Event, ILogger } from '@theia/core';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { Skill } from '@theia/ai-core/lib/common/skill';
-import { RegistryFetchService } from '../../common/registry-fetch-service';
-import { InstalledSkillInfo, ResolvedSkillEntry } from '../../common/skill/skill-registry-types';
-import { SkillInstallService } from './skill-install-service';
-import { SkillInstallClientImpl } from './skill-install-client';
-import { SkillRegistryUiBridgeImpl } from './skill-registry-ui-bridge-impl';
+import { RegistryFetchService } from '../../common/registry-fetch-service.js';
+import { InstalledSkillInfo, ResolvedSkillEntry } from '../../common/skill/skill-registry-types.js';
+import { SkillInstallService } from './skill-install-service.js';
+import { SkillInstallClientImpl } from './skill-install-client.js';
+import { SkillRegistryUiBridgeImpl } from './skill-registry-ui-bridge-impl.js';
 
 after(() => disableJSDOM());
 

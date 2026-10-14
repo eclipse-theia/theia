@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable, interfaces } from 'inversify';
-import { ColorTheme, CssStyleCollector, StylingParticipant } from './styling-service';
-import { isHighContrast } from '../common/theme';
+import { ColorTheme, CssStyleCollector, StylingParticipant } from './styling-service.js';
+import { isHighContrast } from '../common/theme.js';
 
 export function bindCommonStylingParticipants(bind: interfaces.Bind): void {
     for (const participant of [

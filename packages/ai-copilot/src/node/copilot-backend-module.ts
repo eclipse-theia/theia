@@ -23,14 +23,14 @@ import {
     CopilotAuthService,
     COPILOT_AUTH_SERVICE_PATH,
     CopilotAuthServiceClient
-} from '../common';
-import { CopilotLanguageModelsManagerImpl } from './copilot-language-models-manager-impl';
-import { CopilotSdkClientProvider } from './copilot-sdk-client-provider';
-import { CopilotSdkLoader } from './copilot-sdk-loader';
-import { CopilotCliAuthProvider } from './copilot-cli-auth-provider';
-import { CopilotCliLocator } from './copilot-cli-locator';
-import { CopilotCredentialStore } from './copilot-credential-store';
-import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
+} from '../common/index.js';
+import { CopilotLanguageModelsManagerImpl } from './copilot-language-models-manager-impl.js';
+import { CopilotSdkClientProvider } from './copilot-sdk-client-provider.js';
+import { CopilotSdkLoader } from './copilot-sdk-loader.js';
+import { CopilotCliAuthProvider } from './copilot-cli-auth-provider.js';
+import { CopilotCliLocator } from './copilot-cli-locator.js';
+import { CopilotCredentialStore } from './copilot-credential-store.js';
+import { CopilotAuthServiceImpl } from './copilot-auth-service-impl.js';
 
 const copilotConnectionModule = ConnectionContainerModule.create(({ bind }) => {
     bind(CopilotCliLocator).toSelf().inSingletonScope();

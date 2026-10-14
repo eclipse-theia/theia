@@ -29,8 +29,8 @@ import {
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { Color } from '@theia/core/lib/common/color';
-import { ScmColors } from '../scm-colors';
-import { MergeEditor, MergeEditorSettings } from './merge-editor';
+import { ScmColors } from '../scm-colors.js';
+import { MergeEditor, MergeEditorSettings } from './merge-editor.js';
 
 export namespace MergeEditorCommands {
     export const MERGE_EDITOR_CATEGORY = 'Merge Editor';

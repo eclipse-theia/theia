@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import * as theia from '@theia/plugin';
-import { DocumentsExtImpl } from '../documents';
-import * as Converter from '../type-converters';
+import { DocumentsExtImpl } from '../documents.js';
+import * as Converter from '../type-converters.js';
 import { URI } from '@theia/core/shared/vscode-uri';
-import { FormattingOptions, TextEdit } from '../../common/plugin-api-rpc-model';
+import { FormattingOptions, TextEdit } from '../../common/plugin-api-rpc-model.js';
 
 export class DocumentFormattingAdapter {
 

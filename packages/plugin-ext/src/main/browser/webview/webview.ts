@@ -20,7 +20,8 @@
 // copied and modified from https://github.com/microsoft/vscode/blob/ba40bd16433d5a817bfae15f3b4350e18f144af4/src/vs/workbench/contrib/webview/browser/baseWebviewElement.ts
 // copied and modified from https://github.com/microsoft/vscode/blob/ba40bd16433d5a817bfae15f3b4350e18f144af4/src/vs/workbench/contrib/webview/browser/webviewElement.ts#
 
-import * as mime from 'mime';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import mime from 'mime';
 import { JSONExt } from '@theia/core/shared/@lumino/coreutils';
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { WebviewPanelOptions, WebviewPortMapping } from '@theia/plugin';

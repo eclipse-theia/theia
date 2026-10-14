@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Event } from '@theia/core/lib/common/event';
-import { MCPInstallEntry } from './mcp-server-editor';
+import { MCPInstallEntry } from './mcp-server-editor.js';
 
 export const MCPRegistryUiBridge = Symbol('MCPRegistryUiBridge');
 

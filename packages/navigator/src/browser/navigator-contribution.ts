@@ -50,31 +50,31 @@ import {
     WorkspaceCommands,
     WorkspaceService
 } from '@theia/workspace/lib/browser';
-import { EXPLORER_VIEW_CONTAINER_ID, EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS } from './navigator-widget-factory';
-import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
-import { FileNavigatorPreferences } from '../common/navigator-preferences';
-import { FileNavigatorFilter } from './navigator-filter';
-import { WorkspaceNode } from './navigator-tree';
-import { NavigatorContextKeyService } from './navigator-context-key-service';
+import { EXPLORER_VIEW_CONTAINER_ID, EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS } from './navigator-widget-factory.js';
+import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget.js';
+import { FileNavigatorPreferences } from '../common/navigator-preferences.js';
+import { FileNavigatorFilter } from './navigator-filter.js';
+import { WorkspaceNode } from './navigator-tree.js';
+import { NavigatorContextKeyService } from './navigator-context-key-service.js';
 import {
     RenderedToolbarAction,
     TabBarToolbarContribution,
     TabBarToolbarRegistry
 } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
-import { NavigatorDiff, NavigatorDiffCommands } from './navigator-diff';
+import { NavigatorDiff, NavigatorDiffCommands } from './navigator-diff.js';
 import { DirNode, FileNode } from '@theia/filesystem/lib/browser';
-import { FileNavigatorModel } from './navigator-model';
-import { NavigatorFileClipboard } from './navigator-file-clipboard';
+import { FileNavigatorModel } from './navigator-model.js';
+import { NavigatorFileClipboard } from './navigator-file-clipboard.js';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
-import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget';
-import { OpenEditorsContextMenu } from './open-editors-widget/navigator-open-editors-menus';
-import { OpenEditorsCommands } from './open-editors-widget/navigator-open-editors-commands';
+import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget.js';
+import { OpenEditorsContextMenu } from './open-editors-widget/navigator-open-editors-menus.js';
+import { OpenEditorsCommands } from './open-editors-widget/navigator-open-editors-commands.js';
 import { nls } from '@theia/core/lib/common/nls';
 import URI from '@theia/core/lib/common/uri';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
-import { FileNavigatorCommands } from './file-navigator-commands';
+import { FileNavigatorCommands } from './file-navigator-commands.js';
 import { WorkspacePreferences } from '@theia/workspace/lib/common';
 export { FileNavigatorCommands };
 

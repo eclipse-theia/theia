@@ -16,7 +16,7 @@
 
 /* eslint-disable max-len, @stylistic/indent */
 
-import debounce = require('lodash.debounce');
+import debounce from '../../shared/lodash.debounce/index.cjs';
 import { injectable, inject, optional } from 'inversify';
 import { MAIN_MENU_BAR, MANAGE_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU, CompoundMenuNode, CommandMenu, Group, Submenu } from '../common/menu';
 import { CommonMenus } from './common-menus';

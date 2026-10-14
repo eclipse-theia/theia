@@ -21,7 +21,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { FileReadTracker } from '../common/file-read-tracker';
+import { FileReadTracker } from '../common/file-read-tracker.js';
 
 /** The content an agent saw, and whether anything has since signalled a possible change. */
 interface TrackedFile {

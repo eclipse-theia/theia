@@ -21,9 +21,9 @@ import { ThemeService } from '@theia/core/lib/browser/theming';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ReactNode } from '@theia/core/shared/react';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
-import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
-import { ResponseNode } from '../chat-tree-view/chat-view-tree-widget';
-import { MermaidViewer } from './mermaid-rendering';
+import { ChatResponsePartRenderer } from '../chat-response-part-renderer.js';
+import { ResponseNode } from '../chat-tree-view/chat-view-tree-widget.js';
+import { MermaidViewer } from './mermaid-rendering.js';
 
 /** Priority returned by {@link MermaidPartRenderer.canHandle}. Must exceed the {@link CodePartRenderer} priority (10). */
 const MERMAID_RENDERER_PRIORITY = 15;

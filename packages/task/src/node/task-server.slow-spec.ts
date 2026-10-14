@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import 'reflect-metadata';
-import { createTaskTestContainer } from './test/task-test-container';
+import { createTaskTestContainer } from './test/task-test-container.js';
 import { BackendApplication } from '@theia/core/lib/node/backend-application';
-import { TaskExitedEvent, TaskInfo, TaskServer, TaskWatcher, TaskConfiguration } from '../common';
-import { ProcessType, ProcessTaskConfiguration } from '../common/process/task-protocol';
+import { TaskExitedEvent, TaskInfo, TaskServer, TaskWatcher, TaskConfiguration } from '../common/index.js';
+import { ProcessType, ProcessTaskConfiguration } from '../common/process/task-protocol.js';
 import * as http from 'http';
 import * as https from 'https';
 import { isWindows, isOSX } from '@theia/core/lib/common/os';
@@ -53,7 +53,7 @@ const script2 = './test-arguments-2.js';
 
 // we use test-resources subfolder ('<theia>/packages/task/test-resources/'),
 // as workspace root, for these tests
-const wsRootUri: URI = FileUri.create(__dirname).resolve('../../test-resources');
+const wsRootUri: URI = FileUri.create(import.meta.dirname).resolve('../../test-resources');
 const wsRoot: string = FileUri.fsPath(wsRootUri);
 
 describe('Task server / back-end', function (): void {

@@ -25,7 +25,7 @@ import { AiSettingsControl, AiSettingsRowService } from '@theia/ai-core-ui/lib/b
 import { AiConfigurationCategoryId } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
 import { ModelDiscoveryStatusService } from '@theia/ai-core/lib/browser';
 import { ModelDiscoveryStatus } from '@theia/ai-core/lib/common/model-discovery-status';
-import { ModelsConfigurationCategory } from './models-configuration-category';
+import { ModelsConfigurationCategory } from './models-configuration-category.js';
 
 disableJSDOM();
 

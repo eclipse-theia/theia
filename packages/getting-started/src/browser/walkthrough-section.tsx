@@ -21,10 +21,10 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { nls } from '@theia/core/lib/common/nls';
 import * as React from '@theia/core/shared/react';
-import { Walkthrough } from '../common/walkthrough-types';
-import { WalkthroughService } from './walkthrough-service';
-import { WalkthroughCard } from './walkthrough-card';
-import { WalkthroughDetail } from './walkthrough-detail';
+import { Walkthrough } from '../common/walkthrough-types.js';
+import { WalkthroughService } from './walkthrough-service.js';
+import { WalkthroughCard } from './walkthrough-card.js';
+import { WalkthroughDetail } from './walkthrough-detail.js';
 
 export interface WalkthroughSectionProps {
     walkthroughService: WalkthroughService;

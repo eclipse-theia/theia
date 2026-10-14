@@ -16,9 +16,9 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { LogLevel } from '../logger';
-import { Measurement, MeasurementOptions } from './measurement';
-import { Stopwatch } from './stopwatch';
+import { LogLevel } from '../logger.js';
+import { Measurement, MeasurementOptions } from './measurement.js';
+import { Stopwatch } from './stopwatch.js';
 
 /**
  * A simple {@link Stopwatch} that uses a caller-supplied time function and logs

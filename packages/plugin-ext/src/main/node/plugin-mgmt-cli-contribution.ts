@@ -17,8 +17,8 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Argv, Arguments } from '@theia/core/shared/yargs';
 import { CliContribution } from '@theia/core/lib/node/cli';
-import { PluginDeployerHandlerImpl } from '../../hosted/node/plugin-deployer-handler-impl';
-import { PluginType } from '../../common';
+import { PluginDeployerHandlerImpl } from '../../hosted/node/plugin-deployer-handler-impl.js';
+import { PluginType } from '../../common/index.js';
 
 @injectable()
 export class PluginMgmtCliContribution implements CliContribution {

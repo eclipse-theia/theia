@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { isValidTodoItem } from '../common/todo-tool';
+import { isValidTodoItem } from '../common/todo-tool.js';
 
 describe('isValidTodoItem', () => {
     it('should accept a minimal valid item', () => {

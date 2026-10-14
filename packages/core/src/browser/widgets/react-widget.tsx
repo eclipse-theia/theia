@@ -16,8 +16,8 @@
 
 import * as React from 'react';
 import { injectable, unmanaged } from 'inversify';
-import { Disposable } from '../../common';
-import { BaseWidget, Message } from './widget';
+import { Disposable } from '../../common/index.js';
+import { BaseWidget, Message } from './widget.js';
 import { Widget } from '@lumino/widgets';
 import { createRoot, Root } from 'react-dom/client';
 

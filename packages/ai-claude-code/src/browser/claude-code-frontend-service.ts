@@ -31,8 +31,8 @@ import {
     SDKMessage,
     StreamMessage,
     ToolApprovalResponseMessage
-} from '../common/claude-code-service';
-import { CLAUDE_CODE_EXECUTABLE_PATH_PREF, CLAUDE_CODE_API_KEY_PREF } from '../common/claude-code-preferences';
+} from '../common/claude-code-service.js';
+import { CLAUDE_CODE_EXECUTABLE_PATH_PREF, CLAUDE_CODE_API_KEY_PREF } from '../common/claude-code-preferences.js';
 
 @injectable()
 export class ClaudeCodeClientImpl implements ClaudeCodeClient {

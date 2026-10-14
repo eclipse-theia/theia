@@ -16,9 +16,9 @@
 
 import { interfaces, Container } from '@theia/core/shared/inversify';
 import { CompressedExpansionService, CompressionToggle, createTreeContainer, TreeCompressionService, TreeContainerProps } from '@theia/core/lib/browser';
-import { FileTree } from './file-tree';
-import { FileTreeModel } from './file-tree-model';
-import { FileTreeWidget } from './file-tree-widget';
+import { FileTree } from './file-tree.js';
+import { FileTreeModel } from './file-tree-model.js';
+import { FileTreeWidget } from './file-tree-widget.js';
 
 const fileTreeDefaults: Partial<TreeContainerProps> = {
     tree: FileTree,

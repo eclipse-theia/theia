@@ -24,8 +24,8 @@ import {
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, ILogger } from '@theia/core';
-import type { BlobMessageAttachment, CopilotClient, CopilotSession, PermissionHandler, Tool } from './copilot-sdk-types';
-import { buildSdkPrompt, buildSdkSystemMessage } from './copilot-sdk-mappers';
+import type { BlobMessageAttachment, CopilotClient, CopilotSession, PermissionHandler, Tool } from './copilot-sdk-types.js';
+import { buildSdkPrompt, buildSdkSystemMessage } from './copilot-sdk-mappers.js';
 
 /**
  * Answers the permission requests of the CLI for the tools of a request.

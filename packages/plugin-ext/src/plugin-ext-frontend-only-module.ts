@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { HostedPluginServer, PluginServer } from './common/plugin-protocol';
-import { BrowserOnlyHostedPluginServer } from './hosted/browser-only/browser-only-hosted-plugin-server';
-import { PluginPathsService } from './main/common/plugin-paths-protocol';
-import { BrowserOnlyPluginPathsService } from './hosted/browser-only/browser-only-plugin-paths-service';
-import { BrowserOnlyPluginServer } from './hosted/browser-only/browser-only-plugin-server';
-import { BrowserOnlyPluginFileServiceContribution, BrowserOnlyPluginFileSystemProvider } from './hosted/browser-only/browser-only-plugin-file-system-provider';
+import { HostedPluginServer, PluginServer } from './common/plugin-protocol.js';
+import { BrowserOnlyHostedPluginServer } from './hosted/browser-only/browser-only-hosted-plugin-server.js';
+import { PluginPathsService } from './main/common/plugin-paths-protocol.js';
+import { BrowserOnlyPluginPathsService } from './hosted/browser-only/browser-only-plugin-paths-service.js';
+import { BrowserOnlyPluginServer } from './hosted/browser-only/browser-only-plugin-server.js';
+import { BrowserOnlyPluginFileServiceContribution, BrowserOnlyPluginFileSystemProvider } from './hosted/browser-only/browser-only-plugin-file-system-provider.js';
 import { FileServiceContribution } from '@theia/filesystem/lib/browser/file-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {

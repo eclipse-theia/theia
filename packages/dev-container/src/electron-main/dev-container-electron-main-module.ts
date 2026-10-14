@@ -16,7 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
-import { DevContainerClaimContribution } from './dev-container-claim-contribution';
+import { DevContainerClaimContribution } from './dev-container-claim-contribution.js';
 
 export default new ContainerModule(bind => {
     bind(DevContainerClaimContribution).toSelf().inSingletonScope();

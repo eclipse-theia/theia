@@ -21,13 +21,13 @@ import { Resource, ResourceResolver } from '@theia/core/lib/common/resource';
 import { Emitter, Event, Disposable, DisposableCollection, ILogger } from '@theia/core';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
-import { OutputUri } from '../common/output-uri';
-import { OutputResource } from '../browser/output-resource';
-import { OutputPreferences } from '../common/output-preferences';
-import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
+import { OutputUri } from '../common/output-uri.js';
+import { OutputResource } from '../browser/output-resource.js';
+import { OutputPreferences } from '../common/output-preferences.js';
+import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle.js';
 import * as monaco from '@theia/monaco-editor-core';
 import PQueue from 'p-queue';
-import { parseAnsi, AnsiState, AnsiSegment } from './output-ansi-parser';
+import { parseAnsi, AnsiState, AnsiSegment } from './output-ansi-parser.js';
 
 @injectable()
 export class OutputChannelManager implements Disposable, ResourceResolver {

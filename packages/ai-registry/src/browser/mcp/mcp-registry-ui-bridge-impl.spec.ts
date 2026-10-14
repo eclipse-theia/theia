@@ -29,10 +29,10 @@ import { Container } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core';
 import { VSXExtensionsContribution } from '@theia/vsx-registry/lib/browser/vsx-extensions-contribution';
 import { VSXExtensionsSearchModel } from '@theia/vsx-registry/lib/browser/vsx-extensions-search-model';
-import { RegistryFetchService } from '../../common/registry-fetch-service';
-import { RegistrySearchFilter } from '../../common/registry-search-filter';
-import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
-import { MCPRegistryUiBridgeImpl } from './mcp-registry-ui-bridge-impl';
+import { RegistryFetchService } from '../../common/registry-fetch-service.js';
+import { RegistrySearchFilter } from '../../common/registry-search-filter.js';
+import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types.js';
+import { MCPRegistryUiBridgeImpl } from './mcp-registry-ui-bridge-impl.js';
 
 after(() => disableJSDOM());
 

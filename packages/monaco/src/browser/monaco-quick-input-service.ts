@@ -44,12 +44,17 @@ import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor
 import { ILayoutService } from '@theia/monaco-editor-core/esm/vs/platform/layout/browser/layoutService';
 import { IHoverDelegate, IHoverDelegateOptions } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hoverDelegate';
 import { IHoverWidget } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hover';
-import MonacoSeverity from '@theia/monaco-editor-core/esm/vs/base/common/severity';
+import MonacoSeverityModule from '@theia/monaco-editor-core/esm/vs/base/common/severity';
 import { Severity } from '@theia/core/lib/common/severity';
 import { IStorageService } from '@theia/monaco-editor-core/esm/vs/platform/storage/common/storage';
 import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
 import { WindowFocusService } from '@theia/core/lib/browser/window/window-focus-service';
 import { SecondaryWindowService } from '@theia/core/lib/browser/window/secondary-window-service';
+
+// `@theia/monaco-editor-core` ships ES modules without declaring `"type": "module"`, so the compiler assumes CommonJS semantics
+// for their default exports. At runtime, the default export is the `Severity` enum.
+const MonacoSeverity = MonacoSeverityModule as unknown as typeof MonacoSeverityModule.default;
+type MonacoSeverity = MonacoSeverityModule.default;
 
 /**
  * Converts Theia's {@link Severity} to Monaco's {@link MonacoSeverity}.

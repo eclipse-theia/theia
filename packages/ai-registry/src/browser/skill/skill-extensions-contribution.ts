@@ -20,12 +20,12 @@ import { ContextMenuRenderer, HoverService } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { ExtensionsSourceContribution, SearchContext, SearchResult } from '@theia/vsx-registry/lib/browser/extensions-source-contribution';
-import { RegistryFetchService } from '../../common/registry-fetch-service';
-import { ResolvedSkillEntry } from '../../common/skill/skill-registry-types';
-import { RegistrySearchFilter } from '../../common/registry-search-filter';
-import { SkillInstallService } from './skill-install-service';
-import { SkillInstallClientImpl } from './skill-install-client';
-import { SkillEntryHandlers, SkillInstalledEntry, SkillSearchResultEntry } from './skill-entries';
+import { RegistryFetchService } from '../../common/registry-fetch-service.js';
+import { ResolvedSkillEntry } from '../../common/skill/skill-registry-types.js';
+import { RegistrySearchFilter } from '../../common/registry-search-filter.js';
+import { SkillInstallService } from './skill-install-service.js';
+import { SkillInstallClientImpl } from './skill-install-client.js';
+import { SkillEntryHandlers, SkillInstalledEntry, SkillSearchResultEntry } from './skill-entries.js';
 
 @injectable()
 export class SkillExtensionsContribution implements ExtensionsSourceContribution, Disposable {

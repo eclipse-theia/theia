@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { postConstruct, injectable, inject } from '@theia/core/shared/inversify';
-import throttle = require('@theia/core/shared/lodash.throttle');
+import throttle from '@theia/core/shared/lodash.throttle';
 import deepEqual from 'fast-deep-equal';
 import {
     CompositeTreeNode,
@@ -29,12 +29,12 @@ import {
     PreferenceProviderProvider, PreferenceSchemaService, PreferenceService, unreachable
 } from '@theia/core';
 import { BaseWidget, DEFAULT_SCROLL_OPTIONS } from '@theia/core/lib/browser/widgets/widget';
-import { PreferenceTreeModel, PreferenceFilterChangeEvent, PreferenceFilterChangeSource } from '../preference-tree-model';
-import { PreferenceNodeRendererFactory, GeneralPreferenceNodeRenderer } from './components/preference-node-renderer';
-import { Preference } from '../util/preference-types';
-import { PreferencesScopeTabBar } from './preference-scope-tabbar-widget';
-import { PreferenceNodeRendererCreatorRegistry } from './components/preference-node-renderer-creator';
-import { COMMONLY_USED_SECTION_PREFIX } from '../util/preference-layout';
+import { PreferenceTreeModel, PreferenceFilterChangeEvent, PreferenceFilterChangeSource } from '../preference-tree-model.js';
+import { PreferenceNodeRendererFactory, GeneralPreferenceNodeRenderer } from './components/preference-node-renderer.js';
+import { Preference } from '../util/preference-types.js';
+import { PreferencesScopeTabBar } from './preference-scope-tabbar-widget.js';
+import { PreferenceNodeRendererCreatorRegistry } from './components/preference-node-renderer-creator.js';
+import { COMMONLY_USED_SECTION_PREFIX } from '../util/preference-layout.js';
 
 @injectable()
 export class PreferencesEditorWidget extends BaseWidget {

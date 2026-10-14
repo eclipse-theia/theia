@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { MockLogger } from './test/mock-logger';
-import { setRootLogger, unsetRootLogger, Logger, LogLevel, Log } from './logger';
-import { DefaultLoggerSanitizer, LoggerSanitizer } from './logger-sanitizer';
+import { MockLogger } from './test/mock-logger.js';
+import { setRootLogger, unsetRootLogger, Logger, LogLevel, Log } from './logger.js';
+import { DefaultLoggerSanitizer, LoggerSanitizer } from './logger-sanitizer.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-null/no-null */

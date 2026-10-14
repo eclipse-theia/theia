@@ -17,10 +17,10 @@
 import { injectable, inject, optional, named } from '@theia/core/shared/inversify';
 import { QuickPickItem, LabelProvider, QuickInputService, QuickInputButton, QuickPickSeparator } from '@theia/core/lib/browser';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { WorkspaceOpenHandlerContribution, WorkspaceService } from './workspace-service';
+import { WorkspaceOpenHandlerContribution, WorkspaceService } from './workspace-service.js';
 import URI from '@theia/core/lib/common/uri';
 import { ContributionProvider, nls, Path } from '@theia/core/lib/common';
-import { UntitledWorkspaceService } from '../common/untitled-workspace-service';
+import { UntitledWorkspaceService } from '../common/untitled-workspace-service.js';
 
 interface RecentlyOpenedPick extends QuickPickItem {
     resource?: URI

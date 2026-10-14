@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { expect } from 'chai';
-import { ToolRequest } from '../common/language-model';
+import { ToolRequest } from '../common/language-model.js';
 
 describe('isToolRequestParameters', () => {
     it('should return true for valid ToolRequestParameters', () => {

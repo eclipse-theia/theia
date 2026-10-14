@@ -23,9 +23,9 @@ import {
     QuickInputService
 } from '@theia/core/lib/browser';
 import { CancellationToken, CommandContribution, CommandRegistry, CommandService, nls } from '@theia/core/lib/common';
-import { TerminalWidget } from './base/terminal-widget';
-import { TerminalService } from './base/terminal-service';
-import { TerminalCommands } from './terminal-frontend-contribution';
+import { TerminalWidget } from './base/terminal-widget.js';
+import { TerminalService } from './base/terminal-service.js';
+import { TerminalCommands } from './terminal-frontend-contribution.js';
 import { filterItems, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
 
 @injectable()

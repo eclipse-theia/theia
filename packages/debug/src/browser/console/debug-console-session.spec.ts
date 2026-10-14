@@ -24,10 +24,10 @@ FrontendApplicationConfigProvider.set({});
 import 'reflect-metadata';
 
 import { expect } from 'chai';
-import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
-import { ExpressionContainer } from './debug-console-items';
-import { DebugConsoleSession } from './debug-console-session';
-import { DebugSession } from '../debug-session';
+import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol.js';
+import { ExpressionContainer } from './debug-console-items.js';
+import { DebugConsoleSession } from './debug-console-session.js';
+import { DebugSession } from '../debug-session.js';
 
 disableJSDOM();
 

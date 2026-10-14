@@ -16,15 +16,15 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ResponseError } from '../message-rpc/rpc-message-encoder';
-import { ApplicationError } from '../application-error';
-import { Disposable } from '../disposable';
-import { Emitter, Event } from '../event';
-import { Channel } from '../message-rpc/channel';
-import { RequestHandler, RpcProtocol } from '../message-rpc/rpc-protocol';
-import { ConnectionHandler } from './handler';
-import { Deferred } from '../promise-util';
-import { decorate, injectable, unmanaged } from '../../../shared/inversify';
+import { ResponseError } from '../message-rpc/rpc-message-encoder.js';
+import { ApplicationError } from '../application-error.js';
+import { Disposable } from '../disposable.js';
+import { Emitter, Event } from '../event.js';
+import { Channel } from '../message-rpc/channel.js';
+import { RequestHandler, RpcProtocol } from '../message-rpc/rpc-protocol.js';
+import { ConnectionHandler } from './handler.js';
+import { Deferred } from '../promise-util.js';
+import { decorate, injectable, unmanaged } from '../../../shared/inversify/index.js';
 
 export type RpcServer<Client> = Disposable & {
     /**

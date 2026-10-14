@@ -16,10 +16,10 @@
 
 import { CancellationToken } from '@theia/core';
 import { SaveOptions, SaveReason } from '@theia/core/lib/browser';
-import { MonacoEditor } from './monaco-editor';
-import { SaveParticipant, SAVE_PARTICIPANT_DEFAULT_ORDER } from './monaco-editor-provider';
+import { MonacoEditor } from './monaco-editor.js';
+import { SaveParticipant, SAVE_PARTICIPANT_DEFAULT_ORDER } from './monaco-editor-provider.js';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { MonacoCodeActionService } from './monaco-code-action-service';
+import { MonacoCodeActionService } from './monaco-code-action-service.js';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.

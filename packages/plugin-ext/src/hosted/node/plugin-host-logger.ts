@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LogLevel } from '../../common/plugin-api-rpc';
-import { RPCProtocol } from '../../common/rpc-protocol';
-import { PluginLogger } from '../../plugin/logger';
+import { LogLevel } from '../../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
+import { PluginLogger } from '../../plugin/logger.js';
 import { format } from 'util';
 
 export function setupPluginHostLogger(rpc: RPCProtocol): void {

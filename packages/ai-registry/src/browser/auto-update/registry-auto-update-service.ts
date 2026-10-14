@@ -18,13 +18,13 @@ import { CommandService, ILogger, MessageService, nls } from '@theia/core';
 import { AI_SHOW_SETTINGS_COMMAND } from '@theia/ai-core/lib/browser';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { VSXExtensionsCommands } from '@theia/vsx-registry/lib/browser/vsx-extension-commands';
-import { AUTO_UPDATE_PREF, AutoUpdateMode, RegistryArtifactKind } from '../../common/ai-registry-preferences';
-import { RegistryFetchService } from '../../common/registry-fetch-service';
-import { MCPInstallService } from '../mcp/mcp-install-service';
-import { PluginInstallService } from '../plugin/plugin-install-service';
-import { PluginInstaller } from '../plugin/plugin-installer';
-import { SkillInstallService } from '../skill/skill-install-service';
-import { RegistryAutoUpdatePolicy } from './registry-auto-update-policy';
+import { AUTO_UPDATE_PREF, AutoUpdateMode, RegistryArtifactKind } from '../../common/ai-registry-preferences.js';
+import { RegistryFetchService } from '../../common/registry-fetch-service.js';
+import { MCPInstallService } from '../mcp/mcp-install-service.js';
+import { PluginInstallService } from '../plugin/plugin-install-service.js';
+import { PluginInstaller } from '../plugin/plugin-installer.js';
+import { SkillInstallService } from '../skill/skill-install-service.js';
+import { RegistryAutoUpdatePolicy } from './registry-auto-update-policy.js';
 
 /** A single artifact that has a newer registry entry and is not opted out of updating. */
 export interface PendingUpdate {

@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
+import { ChatResponsePartRenderer } from '../chat-response-part-renderer.js';
 import { injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, ProgressChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
-import { ProgressMessage } from '../chat-progress-message';
+import { ProgressMessage } from '../chat-progress-message.js';
 
 @injectable()
 export class ProgressPartRenderer implements ChatResponsePartRenderer<ProgressChatResponseContent> {

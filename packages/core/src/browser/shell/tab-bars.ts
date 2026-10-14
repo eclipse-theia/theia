@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import PerfectScrollbar from 'perfect-scrollbar';
+import { PerfectScrollbar } from '../widgets/perfect-scrollbar';
 import { TabBar, Title, Widget } from '@lumino/widgets';
 import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@lumino/virtualdom';
 import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, nls, ArrayUtils } from '../../common';

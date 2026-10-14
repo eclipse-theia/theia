@@ -21,20 +21,20 @@
  *--------------------------------------------------------------------------------------------*/
 
 import Ajv from '@theia/core/shared/ajv';
-import debounce = require('p-debounce');
+import debounce from 'p-debounce';
 import { postConstruct, injectable, inject } from '@theia/core/shared/inversify';
 import { JsonSchemaContribution, JsonSchemaDataStore, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
 import { deepClone, Emitter, nls } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { inputsSchema } from '@theia/variable-resolver/lib/browser/variable-input-schema';
 import URI from '@theia/core/lib/common/uri';
-import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
-import { TaskDefinitionRegistry } from './task-definition-registry';
-import { TaskServer, asVariableName } from '../common';
+import { ProblemMatcherRegistry } from './task-problem-matcher-registry.js';
+import { TaskDefinitionRegistry } from './task-definition-registry.js';
+import { TaskServer, asVariableName } from '../common/index.js';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
-import { taskSchemaId } from '../common/task-preferences';
+import { taskSchemaId } from '../common/task-preferences.js';
 
 @injectable()
 export class TaskSchemaUpdater implements JsonSchemaContribution {

@@ -23,7 +23,7 @@ import { DEDICATED_EDITOR_TYPE_DETAIL } from '@theia/ai-core/lib/common/ai-core-
 import { PreferencesCommands } from '@theia/preferences/lib/browser/util/preference-types';
 import { AiConfigurationService } from '@theia/ai-core/lib/common/ai-configuration-service';
 import { expect } from 'chai';
-import { AiSettingsRowService } from './ai-settings-row-service';
+import { AiSettingsRowService } from './ai-settings-row-service.js';
 
 disableJSDOM();
 

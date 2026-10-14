@@ -17,10 +17,10 @@
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { OpenerService, OpenerOptions, open } from '@theia/core/lib/browser/opener-service';
-import { EditorOpenerOptions } from '../editor-manager';
-import { NavigationLocationUpdater } from './navigation-location-updater';
-import { NavigationLocationSimilarity } from './navigation-location-similarity';
-import { NavigationLocation, Range, ContentChangeLocation, RecentlyClosedEditor } from './navigation-location';
+import { EditorOpenerOptions } from '../editor-manager.js';
+import { NavigationLocationUpdater } from './navigation-location-updater.js';
+import { NavigationLocationSimilarity } from './navigation-location-similarity.js';
+import { NavigationLocation, Range, ContentChangeLocation, RecentlyClosedEditor } from './navigation-location.js';
 import URI from '@theia/core/lib/common/uri';
 
 /**

@@ -23,7 +23,7 @@ import { Container } from '@theia/core/shared/inversify';
 import { type FileStat } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { expect } from 'chai';
-import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider';
+import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider.js';
 
 disableJSDOM();
 

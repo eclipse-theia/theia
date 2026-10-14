@@ -30,7 +30,7 @@ import {
     AiConfigurationRenderContext,
     AiConfigurationTools
 } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
-import { ToolsConfigurationCategory } from './tools-configuration-category';
+import { ToolsConfigurationCategory } from './tools-configuration-category.js';
 
 disableJSDOM();
 

@@ -48,7 +48,7 @@ import {
     LanguageModelStreamResponsePart,
     ToolCallResult,
     ToolInvocationContext
-} from '../common';
+} from '../common/index.js';
 
 @injectable()
 export class LanguageModelDelegateClientImpl

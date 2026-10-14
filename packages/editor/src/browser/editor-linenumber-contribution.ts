@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { EditorManager } from './editor-manager';
-import { EditorMouseEvent, MouseTargetType, Position, TextEditor } from './editor';
+import { EditorManager } from './editor-manager.js';
+import { EditorMouseEvent, MouseTargetType, Position, TextEditor } from './editor.js';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, ContextMenuRenderer, isContextMenuEvent } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { Disposable, DisposableCollection, MenuPath } from '@theia/core';
-import { EditorWidget } from './editor-widget';
+import { EditorWidget } from './editor-widget.js';
 
 export const EDITOR_LINENUMBER_CONTEXT_MENU: MenuPath = ['editor_linenumber_context_menu'];
 

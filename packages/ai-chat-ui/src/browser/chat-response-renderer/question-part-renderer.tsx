@@ -19,9 +19,9 @@ import { codicon, OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
-import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
-import { ResponseNode } from '../chat-tree-view';
-import { useMarkdownRendering } from './markdown-part-renderer';
+import { ChatResponsePartRenderer } from '../chat-response-part-renderer.js';
+import { ResponseNode } from '../chat-tree-view/index.js';
+import { useMarkdownRendering } from './markdown-part-renderer.js';
 
 @injectable()
 export class QuestionPartRenderer

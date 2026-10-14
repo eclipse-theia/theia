@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Event, PreferenceScope } from '@theia/core';
-import { TextEditor } from './editor';
+import { TextEditor } from './editor.js';
 
 export const FormatterService = Symbol('FormatterService');
 

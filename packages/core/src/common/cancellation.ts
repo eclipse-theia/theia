@@ -18,9 +18,9 @@
  *  Licensed under the MIT License. See https://github.com/Microsoft/vscode/blob/master/LICENSE.txt for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Event, Emitter } from './event';
-import { isBoolean, isObject } from './types';
-import { Disposable } from './disposable';
+import { Event, Emitter } from './event.js';
+import { isBoolean, isObject } from './types.js';
+import { Disposable } from './disposable.js';
 
 export interface CancellationToken {
     readonly isCancellationRequested: boolean;
@@ -44,7 +44,10 @@ export namespace CancellationToken {
 
     export const None: CancellationToken = Object.freeze({
         isCancellationRequested: false,
-        onCancellationRequested: Event.None
+        // A getter, as `event.ts` imports this module: depending on which one is loaded first, `Event` is not initialized yet.
+        get onCancellationRequested(): Event<void> {
+            return Event.None;
+        }
     });
 
     export const Cancelled: CancellationToken = Object.freeze({

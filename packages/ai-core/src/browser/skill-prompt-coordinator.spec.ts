@@ -26,10 +26,10 @@ try {
 
 import { expect } from 'chai';
 import { Emitter } from '@theia/core';
-import { CustomizedPromptFragment, PromptService } from '../common/prompt-service';
-import { Skill } from '../common/skill';
-import { SkillPromptCoordinator } from './skill-prompt-coordinator';
-import { SkillService } from './skill-service';
+import { CustomizedPromptFragment, PromptService } from '../common/prompt-service.js';
+import { Skill } from '../common/skill.js';
+import { SkillPromptCoordinator } from './skill-prompt-coordinator.js';
+import { SkillService } from './skill-service.js';
 
 after(() => disableJSDOM());
 

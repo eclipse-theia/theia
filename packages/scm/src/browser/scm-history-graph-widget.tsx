@@ -22,10 +22,10 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { HoverService } from '@theia/core/lib/browser/hover-service';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
-import { ScmHistoryGraphModel, HistoryGraphEntry } from './scm-history-graph-model';
-import { ScmHistoryItemRef, ScmHistoryItemChange } from './scm-provider';
-import { ScmService } from './scm-service';
-import { GraphRow } from './scm-history-graph-lanes';
+import { ScmHistoryGraphModel, HistoryGraphEntry } from './scm-history-graph-model.js';
+import { ScmHistoryItemRef, ScmHistoryItemChange } from './scm-provider.js';
+import { ScmService } from './scm-service.js';
+import { GraphRow } from './scm-history-graph-lanes.js';
 import URI from '@theia/core/lib/common/uri';
 import { nls } from '@theia/core/lib/common/nls';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
@@ -36,15 +36,15 @@ import { MenuPath } from '@theia/core/lib/common/menu/menu-types';
 import { ContextMenuRenderer } from '@theia/core/lib/browser/context-menu-renderer';
 import { OpenerService, open } from '@theia/core/lib/browser/opener-service';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
-import { ScmContextKeyService } from './scm-context-key-service';
-import { ScmPreferences } from '../common/scm-preferences';
+import { ScmContextKeyService } from './scm-context-key-service.js';
+import { ScmPreferences } from '../common/scm-preferences.js';
 import {
     laneColor, filterRefsForBadges, getChangeStatus, getFileName, getFilePath, getRepoRelativePath,
     getRefBadgeClass, getRefBadgePresentation, isTagRef, isRemoteRef, deduplicateRefs, DeduplicatedRef,
     buildChangeTreeRows, ChangeTreeFolderRow
-} from './scm-history-graph-helpers';
+} from './scm-history-graph-helpers.js';
 import { ILogger } from '@theia/core';
-import { buildHtmlTooltip, buildProviderTooltip } from './scm-history-graph-tooltip';
+import { buildHtmlTooltip, buildProviderTooltip } from './scm-history-graph-tooltip.js';
 
 /** Menu path matching the VS Code 'scm/history/title' contribution point (graph section toolbar). */
 export const SCM_HISTORY_TITLE_MENU: MenuPath = ['plugin_scm/history/title'];

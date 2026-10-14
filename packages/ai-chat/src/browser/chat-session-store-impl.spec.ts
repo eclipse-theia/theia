@@ -22,7 +22,7 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
-import { ChatSessionStoreImpl } from './chat-session-store-impl';
+import { ChatSessionStoreImpl } from './chat-session-store-impl.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService, WorkspaceMetadataStorageService, WorkspaceMetadataStore } from '@theia/workspace/lib/browser';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -30,13 +30,13 @@ import { PreferenceService } from '@theia/core/lib/common';
 import { StorageService } from '@theia/core/lib/browser';
 import { URI, Emitter, ILogger } from '@theia/core';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import { ChatSessionIndex, ChatSessionMetadata } from '../common/chat-session-store';
+import { ChatSessionIndex, ChatSessionMetadata } from '../common/chat-session-store.js';
 import {
     PERSISTED_SESSION_LIMIT_PREF,
     SESSION_STORAGE_PREF,
     SessionStorageScope
-} from '../common/ai-chat-preferences';
-import { ChatAgentLocation } from '../common/chat-agents';
+} from '../common/ai-chat-preferences.js';
+import { ChatAgentLocation } from '../common/chat-agents.js';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 
 disableJSDOM();

@@ -16,9 +16,9 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { CommandContribution } from '@theia/core';
-import { PluginVscodeCommandsContribution } from './plugin-vscode-commands-contribution';
-import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
-import { PluginVSCodeContribution } from './plugin-vscode-contribution';
+import { PluginVscodeCommandsContribution } from './plugin-vscode-commands-contribution.js';
+import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment.js';
+import { PluginVSCodeContribution } from './plugin-vscode-contribution.js';
 import { FileServiceContribution } from '@theia/filesystem/lib/browser/file-service';
 
 export default new ContainerModule(bind => {

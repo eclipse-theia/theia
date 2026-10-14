@@ -80,11 +80,11 @@ export class FrontendGenerator extends AbstractGenerator {
     protected compileIndexJs(frontendModules: Map<string, string>, frontendPreloadModules: Map<string, string>): string {
         return `\
 // @ts-check
-require('reflect-metadata');
+import 'reflect-metadata';
+import { Container } from '@theia/core/shared/inversify';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 ${this.emitStartupLogger('Frontend', 'frontend page start')}
 ${this.emitStartupLog('loading modules...')}
-const { Container } = require('@theia/core/shared/inversify');
-const { FrontendApplicationConfigProvider } = require('@theia/core/lib/browser/frontend-application-config-provider');
 
 FrontendApplicationConfigProvider.set(${this.prettyStringify(this.pck.props.frontend.config)});
 
@@ -103,8 +103,8 @@ function load(container, jsModule) {
 async function preload(container) {
     try {
 ${Array.from(frontendPreloadModules.values(), jsModulePath => `\
-        await load(container, ${this.importOrRequire()}('${jsModulePath}'));`).join(EOL)}
-        const { Preloader } = require('@theia/core/lib/browser/preload/preloader');
+        await load(container, import('${jsModulePath}'));`).join(EOL)}
+        const { Preloader } = await import('@theia/core/lib/browser/preload/preloader');
         const preloader = container.get(Preloader);
         await preloader.initialize();
     } catch (reason) {
@@ -115,13 +115,13 @@ ${Array.from(frontendPreloadModules.values(), jsModulePath => `\
     }
 }
 
-module.exports = (async () => {
-    const { messagingFrontendModule } = require('@theia/core/lib/${this.pck.isBrowser() || this.pck.isBrowserOnly()
+export default (async () => {
+    const { messagingFrontendModule } = await import('@theia/core/lib/${this.pck.isBrowser() || this.pck.isBrowserOnly()
                 ? 'browser/messaging/messaging-frontend-module'
                 : 'electron-browser/messaging/electron-messaging-frontend-module'}');
     const container = new Container();
     container.load(messagingFrontendModule);
-    ${this.ifBrowserOnly(`const { messagingFrontendOnlyModule } = require('@theia/core/lib/browser-only/messaging/messaging-frontend-only-module');
+    ${this.ifBrowserOnly(`const { messagingFrontendOnlyModule } = await import('@theia/core/lib/browser-only/messaging/messaging-frontend-only-module');
     container.load(messagingFrontendOnlyModule);`)}
 
     ${this.emitStartupLog('container created')}
@@ -130,26 +130,26 @@ module.exports = (async () => {
     ${this.emitStartupLog('preloaded')}
 
     ${this.ifMonaco(() => `
-    const { MonacoInit } = require('@theia/monaco/lib/browser/monaco-init');
+    const { MonacoInit } = await import('@theia/monaco/lib/browser/monaco-init');
     `)};
 
-    const { FrontendApplication } = require('@theia/core/lib/browser');
-    const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');
-    const { loggerFrontendModule } = require('@theia/core/lib/browser/logger-frontend-module');
+    const { FrontendApplication } = await import('@theia/core/lib/browser');
+    const { frontendApplicationModule } = await import('@theia/core/lib/browser/frontend-application-module');
+    const { loggerFrontendModule } = await import('@theia/core/lib/browser/logger-frontend-module');
 
     container.load(frontendApplicationModule);
-    ${this.pck.ifBrowserOnly(`const { frontendOnlyApplicationModule } = require('@theia/core/lib/browser-only/frontend-only-application-module');
+    ${this.pck.ifBrowserOnly(`const { frontendOnlyApplicationModule } = await import('@theia/core/lib/browser-only/frontend-only-application-module');
     container.load(frontendOnlyApplicationModule);`)}
 
     container.load(loggerFrontendModule);
-    ${this.ifBrowserOnly(`const { loggerFrontendOnlyModule } = require('@theia/core/lib/browser-only/logger-frontend-only-module');
+    ${this.ifBrowserOnly(`const { loggerFrontendOnlyModule } = await import('@theia/core/lib/browser-only/logger-frontend-only-module');
     container.load(loggerFrontendOnlyModule);`)}
 
     ${this.emitStartupLog('core modules loaded')}
 
     try {
 ${Array.from(frontendModules.values(), jsModulePath => `\
-        await load(container, ${this.importOrRequire()}('${jsModulePath}'));`).join(EOL)}
+        await load(container, import('${jsModulePath}'));`).join(EOL)}
         ${this.ifMonaco(() => `
         MonacoInit.init(container);
         `)};
@@ -171,10 +171,6 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
     }
 })();
 `;
-    }
-
-    protected importOrRequire(): string {
-        return this.options.mode !== 'production' ? 'import' : 'require';
     }
 
     /** HTML for secondary windows that contain an extracted widget. */
@@ -217,23 +213,26 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
     protected compileSecondaryIndexJs(secondaryWindowModules: Map<string, string>): string {
         return `\
 // @ts-check
-require('reflect-metadata');
-const { Container } = require('@theia/core/shared/inversify');
+import 'reflect-metadata';
+import { Container } from '@theia/core/shared/inversify';
 
-module.exports = Promise.resolve().then(() => {
-    const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');
+export default (async () => {
+    const { frontendApplicationModule } = await import('@theia/core/lib/browser/frontend-application-module');
     const container = new Container();
     container.load(frontendApplicationModule);
 ${Array.from(secondaryWindowModules.values(), jsModulePath => `\
-    container.load(require('${jsModulePath}').default);`).join(EOL)}
-});
+    container.load((await import('${jsModulePath}')).default);`).join(EOL)}
+})();
 `;
     }
 
     compilePreloadJs(): string {
+        const preloadModules = Array.from(this.pck.preloadModules.values());
         return `\
 // @ts-check
-${Array.from(this.pck.preloadModules.values(), path => `require('${path}').preload();`).join(EOL)}
+${preloadModules.map((path, index) => `import { preload as preload${index} } from '${path}';`).join(EOL)}
+
+${preloadModules.map((_, index) => `preload${index}();`).join(EOL)}
 `;
     }
 }
