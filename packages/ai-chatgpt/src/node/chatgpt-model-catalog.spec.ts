@@ -23,7 +23,6 @@ import { Container } from '@theia/core/shared/inversify';
 import { CHATGPT_FALLBACK_MODELS, ChatGptAuthState, ChatGptCredentials } from '../common';
 import { ChatGptBackendAuthService } from './chatgpt-auth-service';
 import { ChatGptModelCatalog } from './chatgpt-model-catalog';
-import { CHATGPT_ORIGINATOR } from './chatgpt-oauth';
 
 function listing(payload: Record<string, unknown>, status: number = 200): Response {
     return {
@@ -36,11 +35,11 @@ function listing(payload: Record<string, unknown>, status: number = 200): Respon
 
 const MODELS = {
     models: [
-        { slug: 'gpt-5.6-sol', supported_in_api: true, visibility: 'list' },
-        { slug: 'gpt-5.5', supported_in_api: true, visibility: 'list' },
-        { slug: 'gpt-5.5-internal', supported_in_api: true, visibility: 'hidden' },
-        { slug: 'gpt-image-2', supported_in_api: false, visibility: 'list' },
-        { supported_in_api: true, visibility: 'list' }
+        { slug: 'gpt-5.6-sol', family: 'codex_models', visibility: 'list' },
+        { slug: 'gpt-5.5', family: 'codex_models', visibility: 'list' },
+        { slug: 'gpt-5.5-internal', family: 'codex_models', visibility: 'hidden' },
+        { slug: 'gpt-image-2', family: 'image_models', visibility: 'hidden' },
+        { family: 'codex_models', visibility: 'list' }
     ]
 };
 
@@ -59,7 +58,7 @@ describe('ChatGptModelCatalog', () => {
     let fetchStub: sinon.SinonStub;
 
     beforeEach(() => {
-        credentials = { accessToken: 'the-token', accountId: 'account-id' };
+        credentials = { accessToken: 'the-token', clientId: 'dynamic_agent_client_test' };
         credentialsError = undefined;
         authStateEmitter = new Emitter<ChatGptAuthState>();
 
@@ -91,18 +90,49 @@ describe('ChatGptModelCatalog', () => {
         expect(await catalog.getAvailableModels()).to.deep.equal(['gpt-5.6-sol', 'gpt-5.5']);
     });
 
-    it('identifies the client and the account of the listing request', async () => {
+    it('lists public models with only the OAuth bearer credential', async () => {
         fetchStub.resolves(listing(MODELS));
         await catalog.getAvailableModels();
 
         const url = new URL(fetchStub.firstCall.args[0]);
-        expect(url.origin + url.pathname).to.equal('https://chatgpt.com/backend-api/codex/models');
-        expect(url.searchParams.get('client_version')).to.have.length.greaterThan(0);
+        expect(url.toString()).to.equal('https://api.openai.com/v1/models');
+        const { headers, redirect } = fetchStub.firstCall.args[1];
+        expect(headers).to.deep.equal({ Authorization: 'Bearer the-token' });
+        expect(redirect).to.equal('error');
+    });
 
-        const { headers } = fetchStub.firstCall.args[1];
-        expect(headers.Authorization).to.equal('Bearer the-token');
-        expect(headers['chatgpt-account-id']).to.equal('account-id');
-        expect(headers.originator).to.equal(CHATGPT_ORIGINATOR);
+    it('routes Codex discovery and filters the legacy API capability field', async () => {
+        credentials = { accessToken: 'codex-token', clientId: 'codex-client', authenticationMode: 'codex', accountId: 'account' };
+        fetchStub.resolves(listing({
+            models: [
+                { slug: 'codex-visible', visibility: 'list', supported_in_api: true },
+                { slug: 'not-supported', visibility: 'list', supported_in_api: false },
+                { slug: 'no-capability', visibility: 'list' },
+                { slug: 'hidden', visibility: 'hidden', supported_in_api: true }
+            ]
+        }));
+        expect(await catalog.getAvailableModels()).to.deep.equal(['codex-visible']);
+        const url = new URL(fetchStub.firstCall.args[0]);
+        expect(url.origin + url.pathname).to.equal('https://chatgpt.com/backend-api/codex/models');
+        expect(url.searchParams.get('client_version')).to.equal('1.0.0');
+        expect(fetchStub.firstCall.args[1].headers).to.deep.equal({
+            Authorization: 'Bearer codex-token', 'chatgpt-account-id': 'account', originator: 'theia'
+        });
+    });
+
+    it('discards a Codex listing while switching to the OSS account', async () => {
+        credentials = { accessToken: 'codex-token', clientId: 'codex-client', authenticationMode: 'codex', accountId: 'account' };
+        let finish: (response: Response) => void = () => { };
+        fetchStub.returns(new Promise<Response>(resolve => { finish = resolve; }));
+        const result = catalog.getAvailableModels();
+        await waitFor(() => fetchStub.called);
+        credentials = { accessToken: 'oss-token', clientId: 'oss-client', authenticationMode: 'oss' };
+        authStateEmitter.fire({ isAuthenticated: false });
+        fetchStub.resolves(listing({ models: [{ slug: 'oss-model', visibility: 'list' }] }));
+        finish(listing({ models: [{ slug: 'codex-model', visibility: 'list', supported_in_api: true }] }));
+        expect(await result).to.deep.equal(['oss-model']);
+        expect(fetchStub.secondCall.args[0]).to.equal('https://api.openai.com/v1/models');
+        expect(fetchStub.secondCall.args[1].headers).to.deep.equal({ Authorization: 'Bearer oss-token' });
     });
 
     it('offers no models while nobody is signed in', async () => {
@@ -154,6 +184,51 @@ describe('ChatGptModelCatalog', () => {
         expect(fetchStub.called).to.equal(false);
     });
 
+    it('does not manufacture models from an empty successful listing', async () => {
+        fetchStub.resolves(listing({ models: [] }));
+        expect(await catalog.getAvailableModels()).to.deep.equal([]);
+        fetchStub.resolves(listing(MODELS));
+        expect(await catalog.getAvailableModels()).to.deep.equal(['gpt-5.6-sol', 'gpt-5.5']);
+    });
+
+    for (const status of [401, 403, 429]) {
+        it(`does not offer fallback models after HTTP ${status}`, async () => {
+            fetchStub.resolves(listing({ error: 'unavailable' }, status));
+            expect(await catalog.getAvailableModels()).to.deep.equal([]);
+            fetchStub.resolves(listing(MODELS));
+            expect(await catalog.getAvailableModels()).to.deep.equal(['gpt-5.6-sol', 'gpt-5.5']);
+        });
+    }
+
+    it('offers no models for an identity-only session', async () => {
+        Object.assign(catalog, {
+            authService: {
+                getAuthState: async () => ({ isAuthenticated: true, canUseChatGptPlan: false }),
+                getCredentials: async () => credentials
+            }
+        });
+        expect(await catalog.getAvailableModels()).to.deep.equal([]);
+        expect(fetchStub.called).to.equal(false);
+    });
+
+    it('preserves the displayed catalog order without requiring family metadata and removes duplicate slugs', async () => {
+        fetchStub.resolves(listing({
+            models: [
+                ...MODELS.models, { slug: 'gpt-5.5', family: 'codex_models', visibility: 'list' },
+                { slug: 'gpt-other', family: 'text_models', visibility: 'list' }
+            ]
+        }));
+        expect(await catalog.getAvailableModels()).to.deep.equal(['gpt-5.6-sol', 'gpt-5.5', 'gpt-other']);
+    });
+
+    it('selects displayed models without requiring undocumented capability fields', async () => {
+        fetchStub.resolves(listing({
+            models: [{ slug: 'gpt-5.5', visibility: 'list' }, { slug: 'gpt-hidden', visibility: 'hidden' },
+            { slug: 'gpt-unspecified' }, { slug: 'gpt-unknown', visibility: 'unknown' }]
+        }));
+        expect(await catalog.getAvailableModels()).to.deep.equal(['gpt-5.5']);
+    });
+
     it('requests the listing once and serves it to later callers', async () => {
         fetchStub.resolves(listing(MODELS));
 
@@ -167,7 +242,7 @@ describe('ChatGptModelCatalog', () => {
         fetchStub.resolves(listing(MODELS));
         await catalog.getAvailableModels();
 
-        fetchStub.resolves(listing({ models: [{ slug: 'gpt-5.5-pro', supported_in_api: true, visibility: 'list' }] }));
+        fetchStub.resolves(listing({ models: [{ slug: 'gpt-5.5-pro', family: 'codex_models', visibility: 'list' }] }));
         authStateEmitter.fire({ isAuthenticated: true, accountLabel: 'other@example.com' });
 
         expect(await catalog.getAvailableModels()).to.deep.equal(['gpt-5.5-pro']);
@@ -180,7 +255,7 @@ describe('ChatGptModelCatalog', () => {
         const listed = catalog.getAvailableModels();
         await waitFor(() => fetchStub.called);
         authStateEmitter.fire({ isAuthenticated: true, accountLabel: 'other@example.com' });
-        fetchStub.resolves(listing({ models: [{ slug: 'gpt-5.5-pro', supported_in_api: true, visibility: 'list' }] }));
+        fetchStub.resolves(listing({ models: [{ slug: 'gpt-5.5-pro', family: 'codex_models', visibility: 'list' }] }));
         respond(listing(MODELS));
 
         expect(await listed).to.deep.equal(['gpt-5.5-pro']);

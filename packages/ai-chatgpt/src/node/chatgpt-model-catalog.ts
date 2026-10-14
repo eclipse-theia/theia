@@ -17,17 +17,16 @@
 import { ILogger } from '@theia/core';
 import { createProxyFetch, getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { CHATGPT_FALLBACK_MODELS, CHATGPT_RESPONSES_BASE_URL } from '../common';
+import { CHATGPT_CODEX_RESPONSES_BASE_URL, CHATGPT_FALLBACK_MODELS, CHATGPT_RESPONSES_BASE_URL } from '../common';
+import { CHATGPT_CLIENT_VERSION, CHATGPT_ORIGINATOR } from './chatgpt-codex-oauth';
 import { ChatGptBackendAuthService } from './chatgpt-auth-service';
-import { CHATGPT_CLIENT_VERSION, CHATGPT_ORIGINATOR } from './chatgpt-oauth';
 
-/** Lists the models the endpoint serves to the signed in account. The client version is required. */
-const CHATGPT_MODELS_URL = `${CHATGPT_RESPONSES_BASE_URL}/models?client_version=${encodeURIComponent(CHATGPT_CLIENT_VERSION)}`;
+/** Lists the models granted to the selected token-sharing account. */
+const CHATGPT_MODELS_URL = `${CHATGPT_RESPONSES_BASE_URL}/models`;
 
 /**
- * The models a ChatGPT plan grants, as reported by the endpoint. The listing is not part of OpenAI's documented
- * API, so the result is treated as a hint: whenever it cannot be obtained, {@link CHATGPT_FALLBACK_MODELS} is
- * served instead for authenticated discovery failures. Without credentials no models are offered.
+ * Lists subscription models through the selected mode's API. Transient discovery failures offer the built-in models;
+ * signed-out accounts and identity-only sessions never offer a fallback.
  */
 @injectable()
 export class ChatGptModelCatalog {
@@ -65,6 +64,9 @@ export class ChatGptModelCatalog {
                 continue;
             }
             if (discovered !== undefined) {
+                if (!discovered.length && this.discovery === discovery) {
+                    this.discovery = undefined;
+                }
                 return discovered;
             }
             // Nothing was learned, so the next call retries instead of serving the fallback for good. A listing
@@ -74,28 +76,45 @@ export class ChatGptModelCatalog {
             }
             break;
         }
-        return (await this.authService.getAuthState()).isAuthenticated ? [...CHATGPT_FALLBACK_MODELS] : [];
+        const state = await this.authService.getAuthState();
+        return state.isAuthenticated && state.canUseChatGptPlan !== false ? [...CHATGPT_FALLBACK_MODELS] : [];
     }
 
     protected async discoverModels(): Promise<string[] | undefined> {
         try {
-            const credentials = await this.authService.getCredentials();
+            const state = await this.authService.getAuthState();
+            if (!state.isAuthenticated || state.canUseChatGptPlan === false) {
+                return [];
+            }
+            const credentials = await this.authService.getCredentials(state.clientId);
             if (!credentials) {
                 return [];
             }
-            const proxyFetch = createProxyFetch(getProxyUrl(CHATGPT_MODELS_URL)) ?? fetch;
-            const response = await proxyFetch(CHATGPT_MODELS_URL, {
-                headers: {
-                    Authorization: `Bearer ${credentials.accessToken}`,
-                    'chatgpt-account-id': credentials.accountId,
-                    originator: CHATGPT_ORIGINATOR
-                }
+            const codex = credentials.authenticationMode === 'codex';
+            if (codex && !credentials.accountId) {
+                return [];
+            }
+            const url = codex ? `${CHATGPT_CODEX_RESPONSES_BASE_URL}/models?client_version=${CHATGPT_CLIENT_VERSION}` : CHATGPT_MODELS_URL;
+            const headers: Record<string, string> = { Authorization: `Bearer ${credentials.accessToken}` };
+            if (codex) {
+                headers['chatgpt-account-id'] = credentials.accountId!;
+                headers.originator = CHATGPT_ORIGINATOR;
+            }
+            const proxyFetch = createProxyFetch(getProxyUrl(url)) ?? fetch;
+            const response = await proxyFetch(url, {
+                headers,
+                redirect: 'error',
+                signal: AbortSignal.timeout(30_000)
             });
             if (!response.ok) {
-                throw new Error(`The model listing failed with status ${response.status}: ${await response.text()}`);
+                // Permission and exhausted-budget responses are not evidence that the fallback is available.
+                if ([401, 403, 429].includes(response.status)) {
+                    return [];
+                }
+                throw new Error(`The model listing failed with status ${response.status}.`);
             }
-            const models = toModelSlugs(await response.json());
-            return models.length ? models : undefined;
+            const models = toModelSlugs(await response.json(), codex);
+            return models;
         } catch (error) {
             this.logger.warn('Could not list the models of the ChatGPT plan, offering the built-in models instead:', error);
             return undefined;
@@ -104,13 +123,14 @@ export class ChatGptModelCatalog {
 }
 
 /** Keeps the models that are offered for selection and can actually be requested through the API. */
-function toModelSlugs(payload: unknown): string[] {
+function toModelSlugs(payload: unknown, codex = false): string[] | undefined {
     const models = (payload as { models?: unknown } | undefined)?.models;
     if (!Array.isArray(models)) {
-        return [];
+        return undefined;
     }
-    return models
-        .filter((model: { supported_in_api?: unknown, visibility?: unknown }) => model?.supported_in_api === true && model.visibility === 'list')
+    return [...new Set(models
+        .filter((model: { visibility?: unknown; supported_in_api?: unknown }) => model && model.visibility === 'list'
+            && (!codex || model.supported_in_api === true))
         .map((model: { slug?: unknown }) => typeof model.slug === 'string' ? model.slug.trim() : '')
-        .filter(slug => slug.length > 0);
+        .filter(slug => slug.length > 0))];
 }

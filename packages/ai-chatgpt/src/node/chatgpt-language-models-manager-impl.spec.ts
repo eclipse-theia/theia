@@ -76,7 +76,7 @@ describe('ChatGptLanguageModelsManagerImpl', () => {
         container.bind(LanguageModelRegistry).toConstantValue(registry);
         container.bind(ChatGptBackendAuthService).toConstantValue({
             getAuthState: async () => authState,
-            getCredentials: async () => ({ accessToken: 'token', accountId: 'account-id' })
+            getCredentials: async () => ({ accessToken: 'token', clientId: 'dynamic_agent_client_test' })
         } as unknown as ChatGptBackendAuthService);
         container.bind(ToolCallExecutor).to(ToolCallExecutorImpl).inSingletonScope();
         container.bind(ChatGptResponseApiUtils).toSelf().inSingletonScope();
@@ -105,6 +105,14 @@ describe('ChatGptLanguageModelsManagerImpl', () => {
         await manager.createOrUpdateLanguageModels({ id: 'chatgpt/gpt-5.5', model: 'gpt-5.5', maxRetries: 3 });
 
         expect((registry.models.get('chatgpt/gpt-5.5') as ChatGptModel).status).to.deep.equal({ status: 'ready' });
+    });
+
+    it('does not mark an identity-only session ready', async () => {
+        authState = { isAuthenticated: true, canUseChatGptPlan: false };
+        await manager.createOrUpdateLanguageModels({ id: 'chatgpt/gpt-5.5', model: 'gpt-5.5', maxRetries: 3 });
+        expect((registry.models.get('chatgpt/gpt-5.5') as ChatGptModel).status).to.deep.equal({
+            status: 'unavailable', message: 'ChatGPT token sharing is not enabled'
+        });
     });
 
     it('flips the status of the already registered models on sign out instead of removing them', async () => {

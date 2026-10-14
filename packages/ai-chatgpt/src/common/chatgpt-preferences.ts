@@ -20,6 +20,7 @@ import {
 import { SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_MINIMUM } from '@theia/ai-core/lib/common/language-model';
 import { nls, PreferenceSchema } from '@theia/core';
 
+export const CHATGPT_AUTHENTICATION_MODE_PREF = 'ai-features.chatGpt.authenticationMode';
 export const CHATGPT_ENABLED_PREF = 'ai-features.chatGpt.enabled';
 export const MODELS_PREF = 'ai-features.chatGpt.modelOverrides';
 export const SERVER_SIDE_COMPACTION_PREF = 'ai-features.chatGpt.serverSideCompaction';
@@ -42,6 +43,16 @@ Leave this empty to offer the models your ChatGPT plan actually grants, which ar
 
 export const ChatGptPreferencesSchema: PreferenceSchema = {
     properties: {
+        [CHATGPT_AUTHENTICATION_MODE_PREF]: {
+            type: 'string',
+            enum: ['codex', 'oss'],
+            default: 'codex',
+            markdownDescription: nls.localize('theia/ai/chatgpt/authenticationMode/description',
+                'Select legacy Codex authentication or official OpenAI OSS token sharing. Each mode keeps separate credentials. ' +
+                'Changing modes cancels pending sign-in and invalidates requests; all frontends on the backend share the selected mode.'),
+            tags: ['experimental'],
+            title: AI_CORE_PREFERENCES_TITLE
+        },
         [CHATGPT_ENABLED_PREF]: {
             type: 'boolean',
             typeDetails: { [MODEL_PROVIDER_TYPE_DETAIL]: { label: 'ChatGPT' } satisfies ModelProviderTypeDetail },

@@ -25,41 +25,58 @@ import { QuickInputService } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { CHATGPT_ENABLED_PREF, ChatGptAuthService, ChatGptAuthState, ChatGptLoginSession, ChatGptPreferencesSchema } from '../common';
+import { CHATGPT_ENABLED_PREF, ChatGptAccount, ChatGptAuthService, ChatGptAuthState, ChatGptLoginSession, ChatGptPreferencesSchema } from '../common';
 import { ChatGptCommandContribution, ChatGptCommands } from './chatgpt-command-contribution';
 
 disableJSDOM();
 
 class FakeAuthService implements ChatGptAuthService {
     authState: ChatGptAuthState = { isAuthenticated: false };
-    session: ChatGptLoginSession = { authorizationUrl: 'https://auth.openai.com/oauth/authorize?code_challenge=x', callbackListening: true };
+    session: ChatGptLoginSession = { loginId: 'login', authorizationUrl: 'https://auth.openai.com/oauth/authorize?code_challenge=x', callbackListening: true };
     readonly login = new Deferred<boolean>();
     readonly completed: string[] = [];
+    readonly completedLoginIds: string[] = [];
+    readonly cancelledLoginIds: string[] = [];
+    readonly waitedLoginIds: string[] = [];
     startLoginError: Error | undefined;
     cancelledLogins = 0;
     signOuts = 0;
+    accounts: ChatGptAccount[] = [];
+    readonly loginClientIds: (string | undefined)[] = [];
+    readonly selectedClientIds: string[] = [];
 
     protected readonly emitter = new Emitter<ChatGptAuthState>();
     readonly onAuthStateChanged: Event<ChatGptAuthState> = this.emitter.event;
 
-    async startLogin(): Promise<ChatGptLoginSession> {
+    async startLogin(clientId?: string): Promise<ChatGptLoginSession> {
+        this.loginClientIds.push(clientId);
         if (this.startLoginError) {
             throw this.startLoginError;
         }
         return this.session;
     }
-    waitForLogin(): Promise<boolean> {
+    waitForLogin(loginId: string): Promise<boolean> {
+        this.waitedLoginIds.push(loginId);
         return this.login.promise;
     }
-    async completeLogin(codeOrRedirectUrl: string): Promise<boolean> {
+    async completeLogin(codeOrRedirectUrl: string, loginId: string): Promise<boolean> {
         this.completed.push(codeOrRedirectUrl);
+        this.completedLoginIds.push(loginId);
         return true;
     }
-    async cancelLogin(): Promise<void> {
+    async cancelLogin(loginId: string): Promise<void> {
         this.cancelledLogins++;
+        this.cancelledLoginIds.push(loginId);
     }
     async getAuthState(): Promise<ChatGptAuthState> {
         return this.authState;
+    }
+    async getAccounts(): Promise<ChatGptAccount[]> {
+        return this.accounts;
+    }
+    async selectAccount(clientId: string): Promise<void> {
+        this.selectedClientIds.push(clientId);
+        this.fireAuthStateChanged(this.accounts.find(account => account.clientId === clientId)!);
     }
     async signOut(): Promise<void> {
         this.signOuts++;
@@ -79,6 +96,7 @@ describe('ChatGptCommandContribution', () => {
     let errorMessages: string[];
     let quickInput: string | undefined;
     let quickInputRequests: number;
+    let pickedIndex: number | undefined;
 
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -95,6 +113,7 @@ describe('ChatGptCommandContribution', () => {
         errorMessages = [];
         quickInput = undefined;
         quickInputRequests = 0;
+        pickedIndex = undefined;
 
         const messageService = {
             // An action message stays open until the user picks one, which the tests model as a pending promise.
@@ -112,7 +131,8 @@ describe('ChatGptCommandContribution', () => {
             input: () => {
                 quickInputRequests++;
                 return Promise.resolve(quickInput);
-            }
+            },
+            showQuickPick: (items: unknown[]) => Promise.resolve(pickedIndex === undefined ? undefined : items[pickedIndex])
         } as unknown as QuickInputService;
         const activationService = { isActive: true } as unknown as AIActivationService;
 
@@ -239,23 +259,24 @@ describe('ChatGptCommandContribution', () => {
 
             expect(handlers.get(ChatGptCommands.SIGN_IN.id)!.isEnabled!()).to.equal(true);
             expect(handlers.get(ChatGptCommands.SIGN_OUT.id)!.isEnabled!()).to.equal(false);
-            expect(infoMessages.some(message => message.includes('Signed in to ChatGPT'))).to.equal(false);
+            expect(infoMessages.some(message => message.includes('Connected to ChatGPT'))).to.equal(false);
         });
     }
 
-    it('asks for the authorization code when the callback listener is not reachable', async () => {
-        authService.session = { authorizationUrl: 'https://auth.openai.com/oauth/authorize', callbackListening: false };
-        quickInput = 'the-code';
+    it('asks for the full callback URL when the listener is not reachable', async () => {
+        authService.session = { loginId: 'login', authorizationUrl: 'https://auth.openai.com/oauth/authorize', callbackListening: false };
+        quickInput = 'http://127.0.0.1:1455/auth/callback?code=the-code&state=state&client_id=dynamic_agent_client_test';
 
         const handlers = registerCommands();
         await handlers.get(ChatGptCommands.SIGN_IN.id)!.execute();
 
         expect(quickInputRequests).to.equal(1);
-        expect(authService.completed).to.deep.equal(['the-code']);
+        expect(authService.completed).to.deep.equal([quickInput]);
+        expect(authService.completedLoginIds).to.deep.equal(['login']);
     });
 
     it('abandons the sign in when the authorization code input is dismissed', async () => {
-        authService.session = { authorizationUrl: 'https://auth.openai.com/oauth/authorize', callbackListening: false };
+        authService.session = { loginId: 'login', authorizationUrl: 'https://auth.openai.com/oauth/authorize', callbackListening: false };
         quickInput = undefined;
 
         const handlers = registerCommands();
@@ -266,14 +287,160 @@ describe('ChatGptCommandContribution', () => {
         expect(infoMessages).to.be.empty;
     });
 
-    it('cancels the sign in and reports the reason when it fails', async () => {
+    it('reuses the current registration when reconnecting', async () => {
+        authService.fireAuthStateChanged({ isAuthenticated: false, clientId: 'dynamic_agent_client_saved' });
+        authService.login.resolve(false);
+        await registerCommands().get(ChatGptCommands.SIGN_IN.id)!.execute();
+        expect(authService.loginClientIds).to.deep.equal(['dynamic_agent_client_saved']);
+    });
+
+    it('allows reconnecting when authenticated without token sharing', async () => {
+        authService.fireAuthStateChanged({ isAuthenticated: true, canUseChatGptPlan: false });
+        const handlers = registerCommands();
+        expect(handlers.get(ChatGptCommands.SIGN_IN.id)!.isEnabled!()).to.equal(true);
+        expect(handlers.get(ChatGptCommands.SIGN_OUT.id)!.isEnabled!()).to.equal(true);
+    });
+
+    it('reports identity-only login without claiming plan access', async () => {
+        authService.authState = { isAuthenticated: true, canUseChatGptPlan: false };
+        authService.login.resolve(true);
+        await registerCommands().get(ChatGptCommands.SIGN_IN.id)!.execute();
+        expect(infoMessages.pop()).to.contain('token sharing is not enabled');
+    });
+
+    it('switches to a connected account without starting another login', async () => {
+        authService.accounts = [{
+            clientId: 'dynamic_agent_client_other', accountLabel: 'other@example.com',
+            isAuthenticated: true, canUseChatGptPlan: true
+        }];
+        pickedIndex = 0;
+        await registerCommands().get(ChatGptCommands.SELECT_ACCOUNT.id)!.execute();
+        expect(authService.selectedClientIds).to.deep.equal(['dynamic_agent_client_other']);
+        expect(authService.loginClientIds).to.be.empty;
+    });
+
+    it('reconnects a retained disconnected account with its existing client id', async () => {
+        authService.accounts = [{ clientId: 'dynamic_agent_client_saved', isAuthenticated: false, canUseChatGptPlan: false }];
+        authService.login.resolve(false);
+        pickedIndex = 0;
+        await registerCommands().get(ChatGptCommands.SELECT_ACCOUNT.id)!.execute();
+        expect(authService.loginClientIds).to.deep.equal(['dynamic_agent_client_saved']);
+    });
+
+    it('connects another account without reusing the active client id', async () => {
+        authService.fireAuthStateChanged({ isAuthenticated: true, clientId: 'dynamic_agent_client_active' });
+        authService.login.resolve(false);
+        pickedIndex = 0;
+        await registerCommands().get(ChatGptCommands.SELECT_ACCOUNT.id)!.execute();
+        expect(authService.loginClientIds).to.deep.equal([undefined]);
+    });
+
+    it('does not switch accounts after dismissing the picker', async () => {
+        await registerCommands().get(ChatGptCommands.SELECT_ACCOUNT.id)!.execute();
+        expect(authService.selectedClientIds).to.be.empty;
+        expect(authService.loginClientIds).to.be.empty;
+    });
+
+    it('discards a picker result after a newer auth event', async () => {
+        const selected = new Deferred<{ label: string } | undefined>();
+        Object.assign(contribution, { quickInputService: { showQuickPick: () => selected.promise } });
+        const selecting = registerCommands().get(ChatGptCommands.SELECT_ACCOUNT.id)!.execute();
+        await Promise.resolve();
+        authService.fireAuthStateChanged({ isAuthenticated: false });
+        selected.resolve({ label: 'Connect another account' });
+        await selecting;
+        expect(authService.selectedClientIds).to.be.empty;
+        expect(authService.loginClientIds).to.be.empty;
+    });
+
+    it('does not cancel a replacement when an older startup rejects', async () => {
+        const first = new Deferred<ChatGptLoginSession>();
+        let starts = 0;
+        authService.startLogin = () => ++starts === 1 ? first.promise : Promise.resolve({ ...authService.session, loginId: 'new' });
+        const execute = registerCommands().get(ChatGptCommands.SIGN_IN.id)!.execute;
+        const oldLogin = execute();
+        const newLogin = execute();
+        await Promise.resolve();
+        first.reject(new Error('The old sign in was cancelled.'));
+        await oldLogin;
+        expect(authService.cancelledLoginIds).to.be.empty;
+        expect(errorMessages).to.be.empty;
+        expect(authService.waitedLoginIds).to.deep.equal(['new']);
+        authService.login.resolve(false);
+        await newLogin;
+    });
+
+    it('cancels only an older listener when its startup finishes after a replacement', async () => {
+        const first = new Deferred<ChatGptLoginSession>();
+        let starts = 0;
+        authService.startLogin = () => ++starts === 1 ? first.promise : Promise.resolve({ ...authService.session, loginId: 'new' });
+        const execute = registerCommands().get(ChatGptCommands.SIGN_IN.id)!.execute;
+        const oldLogin = execute();
+        const newLogin = execute();
+        await Promise.resolve();
+        first.resolve({ ...authService.session, loginId: 'old' });
+        await oldLogin;
+        expect(authService.cancelledLoginIds).to.deep.equal(['old']);
+        expect(openedUrls).to.have.lengthOf(1);
+        authService.login.resolve(false);
+        await newLogin;
+    });
+
+    for (const input of [undefined, 'http://127.0.0.1:1455/auth/callback?code=old']) {
+        it(`ignores a replaced manual dialog returning ${input === undefined ? 'dismissal' : 'a callback'}`, async () => {
+            const manual = new Deferred<string | undefined>();
+            Object.assign(contribution, { quickInputService: { input: () => manual.promise } });
+            let starts = 0;
+            authService.startLogin = async () => {
+                starts++;
+                return { ...authService.session, loginId: starts === 1 ? 'old' : 'new', callbackListening: starts !== 1 };
+            };
+            const execute = registerCommands().get(ChatGptCommands.SIGN_IN.id)!.execute;
+            const oldLogin = execute();
+            await Promise.resolve();
+            const newLogin = execute();
+            await Promise.resolve();
+            manual.resolve(input);
+            await oldLogin;
+            expect(authService.cancelledLoginIds).to.be.empty;
+            expect(authService.completedLoginIds).to.be.empty;
+            authService.login.resolve(false);
+            await newLogin;
+        });
+    }
+
+    it('targets the original attempt when another frontend replaces a manual login', async () => {
+        const manual = new Deferred<string | undefined>();
+        Object.assign(contribution, { quickInputService: { input: () => manual.promise } });
+        authService.session = { ...authService.session, loginId: 'original', callbackListening: false };
+        const signingIn = registerCommands().get(ChatGptCommands.SIGN_IN.id)!.execute();
+        await Promise.resolve();
+        // Another frontend changes the backend attempt without changing this contribution's local generation.
+        authService.session = { ...authService.session, loginId: 'replacement' };
+        manual.resolve(undefined);
+        await signingIn;
+        expect(authService.cancelledLoginIds).to.deep.equal(['original']);
+    });
+
+    it('cancels a late owned listener after disposal without opening its authorization page', async () => {
+        const session = new Deferred<ChatGptLoginSession>();
+        authService.startLogin = () => session.promise;
+        const signingIn = registerCommands().get(ChatGptCommands.SIGN_IN.id)!.execute();
+        contribution.dispose();
+        session.resolve({ ...authService.session, loginId: 'late' });
+        await signingIn;
+        expect(openedUrls).to.be.empty;
+        expect(authService.cancelledLoginIds).to.deep.equal(['late']);
+    });
+
+    it('reports a startup failure without cancelling an unrelated attempt', async () => {
         authService.startLoginError = new Error('the port is in use');
 
         const handlers = registerCommands();
         await handlers.get(ChatGptCommands.SIGN_IN.id)!.execute();
 
         expect(errorMessages.pop()).to.contain('the port is in use');
-        expect(authService.cancelledLogins).to.equal(1);
+        expect(authService.cancelledLogins).to.equal(0);
     });
 
 });

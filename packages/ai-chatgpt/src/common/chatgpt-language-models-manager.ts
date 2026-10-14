@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { ChatGptAuthenticationMode } from './chatgpt-auth-service';
+
 export const CHATGPT_LANGUAGE_MODELS_MANAGER_PATH = '/services/chatgpt/language-model-manager';
 export const ChatGptLanguageModelsManager = Symbol('ChatGptLanguageModelsManager');
 
@@ -37,6 +39,7 @@ export interface ChatGptModelDescription {
 }
 
 export interface ChatGptLanguageModelsManager {
+    setAuthenticationMode(mode: ChatGptAuthenticationMode): Promise<void>;
     setProxyUrl(proxyUrl: string | undefined): void;
     /**
      * The models the signed in ChatGPT plan grants. Falls back to a built-in list while they cannot be determined,
