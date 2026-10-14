@@ -16,10 +16,10 @@
 
 import * as React from '@theia/core/shared/react';
 import * as DOMPurify from '@theia/core/shared/dompurify';
-import { NotificationManager, Notification } from './notifications-manager';
+import { NotificationManager, Notification } from './notifications-manager.js';
 import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
-import { NOTIFICATION_CONTEXT_MENU } from './notifications-commands';
+import { NOTIFICATION_CONTEXT_MENU } from './notifications-commands.js';
 
 export interface NotificationComponentProps {
     readonly manager: NotificationManager;

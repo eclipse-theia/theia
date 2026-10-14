@@ -19,7 +19,7 @@ import {
     Widget, BaseWidget, Message, Saveable, SaveableSource, Navigatable, StatefulWidget, lock, TabBar, TabBarTracker, unlock, ExtractableWidget
 } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
-import { TextEditor } from './editor';
+import { TextEditor } from './editor.js';
 
 export class EditorWidget extends BaseWidget implements SaveableSource, Navigatable, StatefulWidget, ExtractableWidget {
 

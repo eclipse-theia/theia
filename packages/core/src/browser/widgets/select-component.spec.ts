@@ -14,14 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 let disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
 import * as React from 'react';
 import * as sinon from 'sinon';
-import * as browser from '../browser';
-import { SelectComponent, SelectOption } from './select-component';
+import { SelectComponent, SelectOption } from './select-component.js';
 
 disableJSDOM();
 
@@ -40,8 +39,10 @@ describe('SelectComponent dropdown width', () => {
     after(() => disableJSDOM());
 
     beforeEach(() => {
-        textWidth = sinon.stub(browser, 'measureTextWidth').returns(84);
         sinon.stub(document.documentElement, 'getBoundingClientRect').returns(new DOMRect(0, 0, 800, 600));
+        // `measureTextWidth` measures the bounding rectangle of an element; ES module exports cannot be stubbed.
+        // Stubbed after the document element, which would otherwise inherit the stub.
+        textWidth = sinon.stub(Element.prototype, 'getBoundingClientRect').returns(new DOMRect(0, 0, 84, 0));
     });
 
     afterEach(() => {
@@ -63,7 +64,7 @@ describe('SelectComponent dropdown width', () => {
     });
 
     it('keeps enough space for labels wider than the description minimum', () => {
-        textWidth.returns(384);
+        textWidth.returns(new DOMRect(0, 0, 384, 0));
         expect(dropdown([{ label: 'A long label', description: 'Description' }]).props.style.width).to.equal(400);
     });
 

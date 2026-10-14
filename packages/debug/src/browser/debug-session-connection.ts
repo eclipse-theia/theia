@@ -21,7 +21,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Event, Emitter, DisposableCollection, Disposable, MaybePromise } from '@theia/core';
 import { OutputChannel } from '@theia/output/lib/browser/output-channel';
 
-import { DebugChannel } from '../common/debug-service';
+import { DebugChannel } from '../common/debug-service.js';
 
 export type DebugRequestHandler = (request: DebugProtocol.Request) => MaybePromise<any>;
 

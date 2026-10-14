@@ -19,11 +19,11 @@
 *--------------------------------------------------------------------------------------------*/
 // some of the code is copied and modified from https://github.com/microsoft/vscode/blob/e1f0f8f51390dea5df9096718fb6b647ed5a9534/src/vs/workbench/api/common/extHostWebviewView.ts
 
-import { Disposable } from './types-impl';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { PLUGIN_RPC_CONTEXT, WebviewViewsMain, WebviewViewsExt, Plugin } from '../common/plugin-api-rpc';
+import { Disposable } from './types-impl.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
+import { PLUGIN_RPC_CONTEXT, WebviewViewsMain, WebviewViewsExt, Plugin } from '../common/plugin-api-rpc.js';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
-import { WebviewImpl, WebviewsExtImpl } from './webviews';
+import { WebviewImpl, WebviewsExtImpl } from './webviews.js';
 import { WebviewViewProvider } from '@theia/plugin';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import * as theia from '@theia/plugin';

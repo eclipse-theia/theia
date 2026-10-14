@@ -15,15 +15,15 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { PreloadContribution, Preloader } from './preloader';
-import { bindRootContributionProvider } from '../../common/contribution-provider';
-import { I18nPreloadContribution } from './i18n-preload-contribution';
-import { OSPreloadContribution } from './os-preload-contribution';
-import { ThemePreloadContribution } from './theme-preload-contribution';
-import { LocalizationServer, LocalizationServerPath } from '../../common/i18n/localization-server';
-import { ServiceConnectionProvider } from '../messaging/service-connection-provider';
-import { OSBackendProvider, OSBackendProviderPath } from '../../common/os';
-import { TextReplacementContribution } from './text-replacement-contribution';
+import { PreloadContribution, Preloader } from './preloader.js';
+import { bindRootContributionProvider } from '../../common/contribution-provider.js';
+import { I18nPreloadContribution } from './i18n-preload-contribution.js';
+import { OSPreloadContribution } from './os-preload-contribution.js';
+import { ThemePreloadContribution } from './theme-preload-contribution.js';
+import { LocalizationServer, LocalizationServerPath } from '../../common/i18n/localization-server.js';
+import { ServiceConnectionProvider } from '../messaging/service-connection-provider.js';
+import { OSBackendProvider, OSBackendProviderPath } from '../../common/os.js';
+import { TextReplacementContribution } from './text-replacement-contribution.js';
 
 export default new ContainerModule(bind => {
     bind(Preloader).toSelf().inSingletonScope();

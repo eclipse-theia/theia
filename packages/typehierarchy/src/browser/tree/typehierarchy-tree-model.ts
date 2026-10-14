@@ -17,8 +17,8 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TreeNode } from '@theia/core/lib/browser/tree/tree';
 import { TreeModelImpl } from '@theia/core/lib/browser/tree/tree-model';
-import { TypeHierarchyRegistry, TypeHierarchyDirection, TypeHierarchyParams } from '../typehierarchy-provider';
-import { TypeHierarchyTree } from './typehierarchy-tree';
+import { TypeHierarchyRegistry, TypeHierarchyDirection, TypeHierarchyParams } from '../typehierarchy-provider.js';
+import { TypeHierarchyTree } from './typehierarchy-tree.js';
 
 @injectable()
 export class TypeHierarchyTreeModel extends TreeModelImpl {

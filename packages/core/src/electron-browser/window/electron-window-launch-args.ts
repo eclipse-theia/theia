@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { LaunchArguments } from '../../common/launch-arguments';
-import { WindowLaunchArgs } from '../../browser/window/window-launch-args';
+import { LaunchArguments } from '../../common/launch-arguments.js';
+import { WindowLaunchArgs } from '../../browser/window/window-launch-args.js';
 
 /**
  * Electron implementation of {@link WindowLaunchArgs}. Reads the options the main process attached

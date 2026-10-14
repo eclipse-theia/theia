@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Range } from '../navigation-location';
-import { NavigationLocationUpdater } from '../navigation-location-updater';
+import { Range } from '../navigation-location.js';
+import { NavigationLocationUpdater } from '../navigation-location-updater.js';
 
 /**
  * Navigation location updater with increased method visibility for testing.

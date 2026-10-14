@@ -19,7 +19,7 @@ import * as path from 'path';
 import filenamify from 'filenamify';
 import { FileUri } from '@theia/core/lib/node';
 import * as fs from '@theia/core/shared/fs-extra';
-import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
+import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment.js';
 import { PluginIdentifiers, PluginPackage } from '@theia/plugin-ext/lib/common/plugin-protocol';
 
 /**

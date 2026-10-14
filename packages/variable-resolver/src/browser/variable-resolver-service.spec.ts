@@ -17,8 +17,8 @@
 import * as chai from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { cancelled } from '@theia/core/lib/common';
-import { VariableRegistry } from './variable';
-import { VariableResolverService } from './variable-resolver-service';
+import { VariableRegistry } from './variable.js';
+import { VariableResolverService } from './variable-resolver-service.js';
 import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 

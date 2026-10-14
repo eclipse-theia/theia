@@ -25,7 +25,7 @@ import { PreferenceScope, PreferenceService } from '@theia/core/lib/common';
 import { PreferencesCommands } from '@theia/preferences/lib/browser/util/preference-types';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { githubTemplate, REQUIRED_GITHUB_MCP_SERVERS } from './github-prompt-template';
+import { githubTemplate, REQUIRED_GITHUB_MCP_SERVERS } from './github-prompt-template.js';
 
 export const GitHubChatAgentId = 'GitHub';
 

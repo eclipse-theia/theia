@@ -17,10 +17,10 @@
 import { Event, Emitter, Resource, ResourceReadOptions, ResourceResolver, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
-import { CellUri } from '../common';
-import { NotebookService } from './service/notebook-service';
-import { NotebookCellModel } from './view-model/notebook-cell-model';
-import { NotebookModel } from './view-model/notebook-model';
+import { CellUri } from '../common/index.js';
+import { NotebookService } from './service/notebook-service.js';
+import { NotebookCellModel } from './view-model/notebook-cell-model.js';
+import { NotebookModel } from './view-model/notebook-model.js';
 
 export class NotebookCellResource implements Resource {
 

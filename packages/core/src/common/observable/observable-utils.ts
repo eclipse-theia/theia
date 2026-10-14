@@ -20,11 +20,11 @@
 // copied and modified from https://github.com/microsoft/vscode/blob/1.96.3/src/vs/base/common/observableInternal/utils.ts,
 // https://github.com/microsoft/vscode/blob/1.96.3/src/vs/base/common/observableInternal/utilsCancellation.ts
 
-import { CancellationError, CancellationToken } from '../cancellation';
-import { Disposable, DisposableCollection } from '../disposable';
-import { Observable } from './observable-base';
-import { DerivedObservable } from './derived-observable';
-import { Autorun } from './autorun';
+import { CancellationError, CancellationToken } from '../cancellation.js';
+import { Disposable, DisposableCollection } from '../disposable.js';
+import { Observable } from './observable-base.js';
+import { DerivedObservable } from './derived-observable.js';
+import { Autorun } from './autorun.js';
 
 export namespace ObservableUtils {
 

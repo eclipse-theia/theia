@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core';
-import { ImageContextVariable } from '../common/image-context-variable';
+import { ImageContextVariable } from '../common/image-context-variable.js';
 
 /**
  * Data stored for a pending image attachment.

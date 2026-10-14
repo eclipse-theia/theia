@@ -23,10 +23,10 @@ import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { nls } from '@theia/core/lib/common/nls';
 import { Path } from '@theia/core/lib/common/path';
 import URI from '@theia/core/lib/common/uri';
-import { ScmService } from './scm-service';
-import { ScmRepository } from './scm-repository';
-import { ScmCommand } from './scm-provider';
-import { ScmContextKeyService } from './scm-context-key-service';
+import { ScmService } from './scm-service.js';
+import { ScmRepository } from './scm-repository.js';
+import { ScmCommand } from './scm-provider.js';
+import { ScmContextKeyService } from './scm-context-key-service.js';
 
 /** Menu path matching the VS Code 'scm/title' contribution point (git actions: Pull, Push, etc.). */
 export const SCM_TITLE_MENU: MenuPath = ['plugin_scm/title'];

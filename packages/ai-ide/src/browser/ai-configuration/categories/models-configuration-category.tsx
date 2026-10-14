@@ -34,7 +34,7 @@ import { CollectionCategoryRenderer } from '@theia/ai-core-ui/lib/browser/ai-con
 import { AiSettingsRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row';
 import { LanguageModel, LanguageModelRegistry } from '@theia/ai-core/lib/common';
 import { FavoriteModelsService, ModelDiscoveryStatusService } from '@theia/ai-core/lib/browser';
-import { ProviderModelDiscoverySection } from './provider-model-discovery-section';
+import { ProviderModelDiscoverySection } from './provider-model-discovery-section.js';
 
 /** Prefix shared by every AI preference. */
 const AI_FEATURES_PREFIX = 'ai-features.';

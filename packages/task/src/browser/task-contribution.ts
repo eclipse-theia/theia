@@ -16,7 +16,7 @@
 
 import { injectable, postConstruct, inject, named } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { TaskConfiguration } from '../common/task-protocol';
+import { TaskConfiguration } from '../common/task-protocol.js';
 import { WaitUntilEvent, Emitter } from '@theia/core/lib/common/event';
 import { ILogger } from '@theia/core';
 

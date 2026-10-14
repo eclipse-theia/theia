@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import * as assert from 'assert';
-import { KnownCommands } from './known-commands';
-import { Position, URI } from './types-impl';
-import { fromPosition } from './type-converters';
+import { KnownCommands } from './known-commands.js';
+import { Position, URI } from './types-impl.js';
+import { fromPosition } from './type-converters.js';
 
 describe('Known Command Conversions', () => {
 

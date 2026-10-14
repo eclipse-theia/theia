@@ -30,10 +30,10 @@ try { FrontendApplicationConfigProvider.set({}); } catch { /* already set by a s
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core';
-import { VSXExtension } from './vsx-extension';
-import { VSXExtensionsModel } from './vsx-extensions-model';
-import { VSXExtensionsContributionAdapter } from './vsx-extensions-contribution-adapter';
-import { SearchResult } from './extensions-source-contribution';
+import { VSXExtension } from './vsx-extension.js';
+import { VSXExtensionsModel } from './vsx-extensions-model.js';
+import { VSXExtensionsContributionAdapter } from './vsx-extensions-contribution-adapter.js';
+import { SearchResult } from './extensions-source-contribution.js';
 
 after(() => disableJSDOM());
 

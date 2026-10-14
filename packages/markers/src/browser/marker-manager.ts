@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Event, Emitter } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { Marker } from '../common/marker';
+import { Marker } from '../common/marker.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
 

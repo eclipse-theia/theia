@@ -43,30 +43,30 @@ import * as React from '@theia/core/shared/react';
 import { IMouseEvent, IPosition } from '@theia/monaco-editor-core';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
-import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service';
-import { ChatInputAgentSuggestions } from './chat-input-agent-suggestions';
-import { computeRevealScrollDelta } from './chat-input-scroll-util';
-import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
-import { ContextVariablePicker } from './context-variable-picker';
+import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service.js';
+import { ChatInputAgentSuggestions } from './chat-input-agent-suggestions.js';
+import { computeRevealScrollDelta } from './chat-input-scroll-util.js';
+import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution.js';
+import { ContextVariablePicker } from './context-variable-picker.js';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
-import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
-import { SuggestController } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggestController';
-import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-history';
+import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions.js';
+import { SuggestController } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggestController.js';
+import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-history.js';
 import { ContextFileValidationService, FileValidationResult, FileValidationState } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { PendingImageRegistry } from '@theia/ai-chat/lib/browser/pending-image-registry';
-import { ChatCapabilitiesService } from './chat-capabilities-service';
-import { CapabilityChip, CapabilityChipsRow } from './chat-capabilities-panel';
-import { ChatInputFocusService } from './chat-input-focus-service';
-import { AvailableGenericCapabilities, GenericCapabilitiesService } from './generic-capabilities-service';
-import { GenericCapabilitiesSection } from './generic-capabilities-section';
-import { ServerToolsSection } from './generic-capabilities-tree';
+import { ChatCapabilitiesService } from './chat-capabilities-service.js';
+import { CapabilityChip, CapabilityChipsRow } from './chat-capabilities-panel.js';
+import { ChatInputFocusService } from './chat-input-focus-service.js';
+import { AvailableGenericCapabilities, GenericCapabilitiesService } from './generic-capabilities-service.js';
+import { GenericCapabilitiesSection } from './generic-capabilities-section.js';
+import { ServerToolsSection } from './generic-capabilities-tree.js';
 import { PreferenceService } from '@theia/core/lib/common/preferences';
 import {
     CHAT_VIEW_TOKEN_USAGE_ENABLED,
     CHAT_VIEW_TOKEN_USAGE_WARNING_ENABLED,
     CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE,
     CHAT_VIEW_TOKEN_USAGE_WARNING_THRESHOLD_PERCENTAGE_DEFAULT
-} from './chat-view-preferences';
+} from './chat-view-preferences.js';
 import {
     buildBarTooltip,
     CHAT_CONTEXT_WINDOW_SIZE_FALLBACK,
@@ -74,8 +74,8 @@ import {
     decideTokenUsageWarning,
     getLatestTokenUsage,
     getUsageColorClass
-} from './chat-token-usage-indicator-util';
-import { AI_CHAT_HOME, ChatCommands } from './chat-view-commands';
+} from './chat-token-usage-indicator-util.js';
+import { AI_CHAT_HOME, ChatCommands } from './chat-view-commands.js';
 
 type Query = (query: string, mode?: string, capabilityOverrides?: Record<string, boolean>, genericCapabilitySelections?: GenericCapabilitySelections,
     serverToolSelections?: Record<string, string[]>) => Promise<void>;

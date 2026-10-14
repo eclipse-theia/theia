@@ -20,10 +20,10 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 const disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
-import { InstalledPluginInfo, ResolvedPluginEntry, StagedPluginInstall } from '../../common/plugin/plugin-registry-types';
-import { PluginInstallService } from './plugin-install-service';
-import { PluginMcpRegistrar } from './plugin-mcp-registrar';
-import { PluginInstallerImpl } from './plugin-installer';
+import { InstalledPluginInfo, ResolvedPluginEntry, StagedPluginInstall } from '../../common/plugin/plugin-registry-types.js';
+import { PluginInstallService } from './plugin-install-service.js';
+import { PluginMcpRegistrar } from './plugin-mcp-registrar.js';
+import { PluginInstallerImpl } from './plugin-installer.js';
 
 disableJSDOM();
 

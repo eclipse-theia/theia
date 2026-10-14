@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { postConstruct, injectable } from 'inversify';
-import { KeyboardLayoutChangeNotifier, NativeKeyboardLayout } from '../../common/keyboard/keyboard-layout-provider';
-import { Emitter, Event } from '../../common/event';
+import { KeyboardLayoutChangeNotifier, NativeKeyboardLayout } from '../../common/keyboard/keyboard-layout-provider.js';
+import { Emitter, Event } from '../../common/event.js';
 
 /**
  * Keyboard layout changes are detected by the native-keymap package. This must happen in the

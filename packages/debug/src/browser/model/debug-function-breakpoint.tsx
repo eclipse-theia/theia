@@ -16,9 +16,9 @@
 
 import * as React from '@theia/core/shared/react';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
-import { FunctionBreakpoint } from '../breakpoint/breakpoint-marker';
-import { BreakpointManager } from '../breakpoint/breakpoint-manager';
-import { DebugBreakpoint, DebugBreakpointOptions, DebugBreakpointDecoration } from './debug-breakpoint';
+import { FunctionBreakpoint } from '../breakpoint/breakpoint-marker.js';
+import { BreakpointManager } from '../breakpoint/breakpoint-manager.js';
+import { DebugBreakpoint, DebugBreakpointOptions, DebugBreakpointDecoration } from './debug-breakpoint.js';
 import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
 import { nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';

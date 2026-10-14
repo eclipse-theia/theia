@@ -17,12 +17,12 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
-import { ToolConfirmationManager } from './chat-tool-preference-bindings';
+import { ToolConfirmationManager } from './chat-tool-preference-bindings.js';
 import {
     DEFAULT_TOOL_CONFIRMATION_PREFERENCE,
     TOOL_CONFIRMATION_PREFERENCE,
     ToolConfirmationMode
-} from '../common/chat-tool-preferences';
+} from '../common/chat-tool-preferences.js';
 import { AiConfigurationService, ToolRequest } from '@theia/ai-core';
 
 interface InspectResult<T> {

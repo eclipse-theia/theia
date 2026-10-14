@@ -2,6 +2,7 @@
   "name": "@theia/ai-tool-sketchpad",
   "version": "1.76.0",
   "description": "Theia - AI Tool Sketchpad for defining ad-hoc LLM tools",
+  "type": "module",
   "dependencies": {
     "@theia/ai-core": "1.76.0",
     "@theia/core": "1.76.0",
@@ -10,6 +11,16 @@
     "tslib": "^2.6.2"
   },
   "main": "lib/common",
+  "exports": {
+    ".": "./lib/common/index.js",
+    "./package.json": "./package.json",
+    "./lib/browser": "./lib/browser/index.js",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "publishConfig": {
     "access": "public"
   },

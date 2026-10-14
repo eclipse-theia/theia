@@ -28,32 +28,32 @@ import { MCPRegistryUiBridge } from '@theia/ai-mcp/lib/browser/mcp-registry-ui-b
 import { AgentPluginUiBridge } from '@theia/ai-core/lib/browser/agent-plugin-ui-bridge';
 import { SkillRegistryUiBridge } from '@theia/ai-core/lib/browser/skill-registry-ui-bridge';
 import { SkillDirectoryContribution } from '@theia/ai-core/lib/browser/skill-service';
-import { AIRegistryConfiguration } from '../common/ai-registry-configuration';
-import { AIRegistryPreferencesSchema } from '../common/ai-registry-preferences';
-import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from '../common/mcp/mcp-registry-entry-resolver';
-import { RegistryFetchService, RegistryFetchServiceImpl } from '../common/registry-fetch-service';
-import { RegistrySearchFilter } from '../common/registry-search-filter';
-import { SkillRegistryEntryResolver, SkillRegistryEntryResolverImpl } from '../common/skill/skill-registry-entry-resolver';
-import { PluginRegistryEntryResolver, PluginRegistryEntryResolverImpl } from '../common/plugin/plugin-registry-entry-resolver';
-import { SkillInstallBackendService, SkillInstallBackendServicePath, SkillInstallClient } from '../common/skill/skill-install-protocol';
-import { SkillRegistryPreferencesSchema } from '../common/skill/skill-registry-preferences';
-import { MCPInstallService, MCPInstallServiceImpl } from './mcp/mcp-install-service';
-import { MCPExtensionsContribution } from './mcp/mcp-extensions-contribution';
-import { MCPRegistryUiBridgeImpl } from './mcp/mcp-registry-ui-bridge-impl';
-import { SkillInstallService, SkillInstallServiceImpl } from './skill/skill-install-service';
-import { SkillInstallClientImpl } from './skill/skill-install-client';
-import { SkillExtensionsContribution } from './skill/skill-extensions-contribution';
-import { InstallSkillUriConfiguration } from './skill/install-skill-uri-configuration';
-import { InstallSkillUriHandler } from './skill/install-skill-uri-handler';
+import { AIRegistryConfiguration } from '../common/ai-registry-configuration.js';
+import { AIRegistryPreferencesSchema } from '../common/ai-registry-preferences.js';
+import { MCPRegistryEntryResolver, MCPRegistryEntryResolverImpl } from '../common/mcp/mcp-registry-entry-resolver.js';
+import { RegistryFetchService, RegistryFetchServiceImpl } from '../common/registry-fetch-service.js';
+import { RegistrySearchFilter } from '../common/registry-search-filter.js';
+import { SkillRegistryEntryResolver, SkillRegistryEntryResolverImpl } from '../common/skill/skill-registry-entry-resolver.js';
+import { PluginRegistryEntryResolver, PluginRegistryEntryResolverImpl } from '../common/plugin/plugin-registry-entry-resolver.js';
+import { SkillInstallBackendService, SkillInstallBackendServicePath, SkillInstallClient } from '../common/skill/skill-install-protocol.js';
+import { SkillRegistryPreferencesSchema } from '../common/skill/skill-registry-preferences.js';
+import { MCPInstallService, MCPInstallServiceImpl } from './mcp/mcp-install-service.js';
+import { MCPExtensionsContribution } from './mcp/mcp-extensions-contribution.js';
+import { MCPRegistryUiBridgeImpl } from './mcp/mcp-registry-ui-bridge-impl.js';
+import { SkillInstallService, SkillInstallServiceImpl } from './skill/skill-install-service.js';
+import { SkillInstallClientImpl } from './skill/skill-install-client.js';
+import { SkillExtensionsContribution } from './skill/skill-extensions-contribution.js';
+import { InstallSkillUriConfiguration } from './skill/install-skill-uri-configuration.js';
+import { InstallSkillUriHandler } from './skill/install-skill-uri-handler.js';
 import {
     PluginInstallBackendService,
     PluginInstallBackendServicePath,
     PluginInstallClient
-} from '../common/plugin/plugin-install-protocol';
-import { PluginDirectoryNaming, PluginDirectoryNamingImpl } from '../common/plugin/plugin-directory-naming';
-import { PluginInstallService, PluginInstallServiceImpl } from './plugin/plugin-install-service';
-import { PluginInstallClientImpl } from './plugin/plugin-install-client';
-import { PluginExtensionsContribution } from './plugin/plugin-extensions-contribution';
+} from '../common/plugin/plugin-install-protocol.js';
+import { PluginDirectoryNaming, PluginDirectoryNamingImpl } from '../common/plugin/plugin-directory-naming.js';
+import { PluginInstallService, PluginInstallServiceImpl } from './plugin/plugin-install-service.js';
+import { PluginInstallClientImpl } from './plugin/plugin-install-client.js';
+import { PluginExtensionsContribution } from './plugin/plugin-extensions-contribution.js';
 import {
     PluginHashMismatchDialog,
     PluginHashMismatchDialogFactory,
@@ -61,20 +61,20 @@ import {
     PluginInstallDialog,
     PluginInstallDialogFactory,
     PluginInstallDialogOptions
-} from './plugin/plugin-install-dialog';
-import { PluginInstaller, PluginInstallerImpl } from './plugin/plugin-installer';
-import { PluginMcpRegistrar, PluginMcpRegistrarImpl } from './plugin/plugin-mcp-registrar';
-import { PluginMcpReconciler } from './plugin/plugin-mcp-reconciler';
-import { PluginSkillDirectoryContribution } from './plugin/plugin-skill-directory-contribution';
-import { AgentPluginUiBridgeImpl } from './plugin/agent-plugin-ui-bridge-impl';
-import { SkillRegistryUiBridgeImpl } from './skill/skill-registry-ui-bridge-impl';
-import { InstallPluginUriConfiguration } from './plugin/install-plugin-uri-configuration';
-import { InstallPluginUriHandler } from './plugin/install-plugin-uri-handler';
-import { AIRegistryToolbarContribution } from './ai-registry-toolbar-contribution';
-import { AIRegistryMenuContribution } from './ai-registry-menu-contribution';
-import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from './auto-update/registry-auto-update-policy';
-import { RegistryAutoUpdateService } from './auto-update/registry-auto-update-service';
-import { RegistryAutoUpdateContribution } from './auto-update/registry-auto-update-contribution';
+} from './plugin/plugin-install-dialog.js';
+import { PluginInstaller, PluginInstallerImpl } from './plugin/plugin-installer.js';
+import { PluginMcpRegistrar, PluginMcpRegistrarImpl } from './plugin/plugin-mcp-registrar.js';
+import { PluginMcpReconciler } from './plugin/plugin-mcp-reconciler.js';
+import { PluginSkillDirectoryContribution } from './plugin/plugin-skill-directory-contribution.js';
+import { AgentPluginUiBridgeImpl } from './plugin/agent-plugin-ui-bridge-impl.js';
+import { SkillRegistryUiBridgeImpl } from './skill/skill-registry-ui-bridge-impl.js';
+import { InstallPluginUriConfiguration } from './plugin/install-plugin-uri-configuration.js';
+import { InstallPluginUriHandler } from './plugin/install-plugin-uri-handler.js';
+import { AIRegistryToolbarContribution } from './ai-registry-toolbar-contribution.js';
+import { AIRegistryMenuContribution } from './ai-registry-menu-contribution.js';
+import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from './auto-update/registry-auto-update-policy.js';
+import { RegistryAutoUpdateService } from './auto-update/registry-auto-update-service.js';
+import { RegistryAutoUpdateContribution } from './auto-update/registry-auto-update-contribution.js';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(AIRegistryConfiguration).toSelf().inSingletonScope();

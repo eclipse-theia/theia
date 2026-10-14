@@ -22,13 +22,13 @@ import * as React from '@theia/core/shared/react';
 import { DebugSession, DebugState } from '@theia/debug/lib/browser/debug-session';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import Long from 'long';
-import { MemoryProviderService } from '../memory-provider/memory-provider-service';
-import { Recents } from '../utils/memory-recents';
-import { MWInput, MWInputWithSelect, MWSelect } from '../utils/memory-widget-components';
-import { Constants, Interfaces, MemoryWidgetOptions, Utils } from '../utils/memory-widget-utils';
-import { VariableRange } from '../utils/memory-widget-variable-utils';
-import { MWMultiSelect, SingleSelectItemProps } from '../utils/multi-select-bar';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import { MemoryProviderService } from '../memory-provider/memory-provider-service.js';
+import { Recents } from '../utils/memory-recents.js';
+import { MWInput, MWInputWithSelect, MWSelect } from '../utils/memory-widget-components.js';
+import { Constants, Interfaces, MemoryWidgetOptions, Utils } from '../utils/memory-widget-utils.js';
+import { VariableRange } from '../utils/memory-widget-variable-utils.js';
+import { MWMultiSelect, SingleSelectItemProps } from '../utils/multi-select-bar.js';
+import debounce from '@theia/core/shared/lodash.debounce';
 
 export const EMPTY_MEMORY: Interfaces.MemoryReadResult = deepFreeze({
     bytes: new Uint8Array(),

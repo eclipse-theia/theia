@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { ElectronCliContribution } from './electron-cli-contribution';
-import { CliContribution } from '../../node';
+import { ElectronCliContribution } from './electron-cli-contribution.js';
+import { CliContribution } from '../../node/index.js';
 
 export default new ContainerModule(bind => {
     bind(ElectronCliContribution).toSelf().inSingletonScope();

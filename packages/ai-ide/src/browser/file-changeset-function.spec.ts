@@ -22,7 +22,7 @@ FrontendApplicationConfigProvider.set({});
 import { ChatToolContext, MutableChatRequestModel, MutableChatResponseModel } from '@theia/ai-chat';
 import { Container } from '@theia/core/shared/inversify';
 import { expect } from 'chai';
-import { DefaultFileChangeSetTitleProvider } from './file-changeset-functions';
+import { DefaultFileChangeSetTitleProvider } from './file-changeset-functions.js';
 
 disableJSDOM();
 

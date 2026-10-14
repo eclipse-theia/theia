@@ -18,7 +18,7 @@
 
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { UserPreferenceProvider, UserPreferenceProviderFactory } from '../common/user-preference-provider';
+import { UserPreferenceProvider, UserPreferenceProviderFactory } from '../common/user-preference-provider.js';
 import { PreferenceProviderImpl, PreferenceConfigurations, PreferenceResolveResult, PreferenceUtils, ILogger } from '@theia/core';
 
 export const UserStorageLocationProvider = Symbol('UserStorageLocationProvider');

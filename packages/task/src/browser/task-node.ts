@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { TaskConfiguration } from '../common';
+import { TaskConfiguration } from '../common/index.js';
 
 export class TaskNode {
 

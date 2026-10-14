@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './navigator-model';
-export * from './navigator-widget';
-export * from './navigator-widget-factory';
-export * from './navigator-decorator-service';
+export * from './navigator-model.js';
+export * from './navigator-widget.js';
+export * from './navigator-widget-factory.js';
+export * from './navigator-decorator-service.js';

@@ -13,10 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export { AbstractChannel, Channel, ChannelCloseEvent, MessageProvider } from './channel';
-export { ReadBuffer, WriteBuffer } from './message-buffer';
-export { RequestHandler, RpcProtocol, RpcProtocolOptions } from './rpc-protocol';
+export { AbstractChannel, Channel, ChannelCloseEvent, MessageProvider } from './channel.js';
+export { ReadBuffer, WriteBuffer } from './message-buffer.js';
+export { RequestHandler, RpcProtocol, RpcProtocolOptions } from './rpc-protocol.js';
 
-import { registerMsgPackExtensions } from './rpc-message-encoder';
+import { registerMsgPackExtensions } from './rpc-message-encoder.js';
 
 registerMsgPackExtensions();

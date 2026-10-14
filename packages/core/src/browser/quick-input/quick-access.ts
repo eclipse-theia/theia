@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CancellationToken, Disposable } from '../../common';
-import { QuickPicks } from './quick-input-service';
+import { CancellationToken, Disposable } from '../../common/index.js';
+import { QuickPicks } from './quick-input-service.js';
 
 export const QuickAccessContribution = Symbol('QuickAccessContribution');
 /**

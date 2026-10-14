@@ -16,8 +16,8 @@
 
 import * as assert from 'assert';
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { FileChangeCollection } from './file-change-collection';
-import { FileChangeType } from '../common/files';
+import { FileChangeCollection } from './file-change-collection.js';
+import { FileChangeType } from '../common/files.js';
 
 describe('FileChangeCollection', () => {
 

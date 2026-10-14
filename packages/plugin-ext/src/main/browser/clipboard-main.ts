@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { ClipboardMain } from '../../common';
+import { ClipboardMain } from '../../common/index.js';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 
 export class ClipboardMainImpl implements ClipboardMain {

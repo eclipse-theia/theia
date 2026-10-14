@@ -16,8 +16,8 @@
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Emitter, Event, ILogger } from '@theia/core/lib/common';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { Task } from './task';
-import { ManagedTaskManager } from '../common';
+import { Task } from './task.js';
+import { ManagedTaskManager } from '../common/index.js';
 
 // inspired by process-manager.ts
 

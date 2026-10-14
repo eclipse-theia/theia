@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { MockTreeModel } from './test/mock-tree-model';
-import { createTreeTestContainer } from './test/tree-test-container';
-import { TreeModel } from './tree-model';
-import { SelectableTreeNode, TreeSelection } from './tree-selection';
-import { TreeSelectionState } from './tree-selection-state';
+import { MockTreeModel } from './test/mock-tree-model.js';
+import { createTreeTestContainer } from './test/tree-test-container.js';
+import { TreeModel } from './tree-model.js';
+import { SelectableTreeNode, TreeSelection } from './tree-selection.js';
+import { TreeSelectionState } from './tree-selection-state.js';
 
 namespace TreeSelectionState {
 

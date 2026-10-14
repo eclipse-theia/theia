@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { escapeRegExpCharacters } from '../strings';
-import { UriComponents } from '../uri';
-import { escapeIcons } from './icon-utilities';
-import { isObject, isString } from '../types';
+import { escapeRegExpCharacters } from '../strings.js';
+import { UriComponents } from '../uri.js';
+import { escapeIcons } from './icon-utilities.js';
+import { isObject, isString } from '../types.js';
 
 export interface MarkdownStringTrustedOptions {
     readonly enabledCommands: readonly string[];

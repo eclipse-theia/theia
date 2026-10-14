@@ -19,9 +19,9 @@ let disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 import { Container, injectable } from '@theia/core/shared/inversify';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
-import { CodeWrapperEditors } from '../chat-response-renderer/code-wrapper-editors';
-import { ChatFindHighlighter, ChatFindHighlightRegistry } from './chat-find-highlighter';
-import { ChatFindMatch, ChatFindMatcher } from './chat-find-matcher';
+import { CodeWrapperEditors } from '../chat-response-renderer/code-wrapper-editors.js';
+import { ChatFindHighlighter, ChatFindHighlightRegistry } from './chat-find-highlighter.js';
+import { ChatFindMatch, ChatFindMatcher } from './chat-find-matcher.js';
 disableJSDOM();
 
 class FakeRegistry implements ChatFindHighlightRegistry {

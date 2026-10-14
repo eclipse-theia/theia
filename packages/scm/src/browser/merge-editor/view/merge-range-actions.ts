@@ -20,8 +20,8 @@
 // copied and modified from https://github.com/microsoft/vscode/blob/1.96.3/src/vs/workbench/contrib/mergeEditor/browser/view/conflictActions.ts
 
 import { DerivedObservable, ObservableUtils } from '@theia/core/lib/common/observable';
-import { MergeRange, MergeRangeAcceptedState, MergeSide } from '../model/merge-range';
-import { MergeEditor } from '../merge-editor';
+import { MergeRange, MergeRangeAcceptedState, MergeSide } from '../model/merge-range.js';
+import { MergeEditor } from '../merge-editor.js';
 import { nls } from '@theia/core';
 
 export interface MergeRangeAction {

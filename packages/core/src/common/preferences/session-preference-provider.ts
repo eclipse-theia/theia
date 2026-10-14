@@ -16,9 +16,9 @@
 
 import { JSONObject, JSONValue } from '@lumino/coreutils';
 import { injectable, postConstruct } from 'inversify';
-import { PreferenceProvider, PreferenceProviderDataChange } from './preference-provider';
-import { PreferenceProviderImpl } from './preference-provider-impl';
-import { PreferenceScope } from './preference-scope';
+import { PreferenceProvider, PreferenceProviderDataChange } from './preference-provider.js';
+import { PreferenceProviderImpl } from './preference-provider-impl.js';
+import { PreferenceScope } from './preference-scope.js';
 
 /**
  * In-memory preference provider used for process-lifetime overrides such as those

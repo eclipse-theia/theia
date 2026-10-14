@@ -40,9 +40,9 @@ import {
     GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality, FunctionResponse, ToolConfig, Tool, UrlContextMetadata, GroundingMetadata
 } from '@google/genai';
 import { wait } from '@theia/core/lib/common/promise-util';
-import { GoogleLanguageModelRetrySettings } from './google-language-models-manager-impl';
-import { googleReasoningFor } from './google-reasoning';
-import { GOOGLE_GOOGLE_SEARCH, GOOGLE_URL_CONTEXT } from './google-server-tools';
+import { GoogleLanguageModelRetrySettings } from './google-language-models-manager-impl.js';
+import { googleReasoningFor } from './google-reasoning.js';
+import { GOOGLE_GOOGLE_SEARCH, GOOGLE_URL_CONTEXT } from './google-server-tools.js';
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
 
 interface ToolCallback {

@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
-import { FrontendApplicationContribution } from './frontend-application-contribution';
-import { ContributionProvider } from '../common/contribution-provider';
-import { IconThemeService, IconTheme } from './icon-theme-service';
-import { MaybePromise } from '../common/types';
-import { Disposable } from '../common/disposable';
+import { FrontendApplicationContribution } from './frontend-application-contribution.js';
+import { ContributionProvider } from '../common/contribution-provider.js';
+import { IconThemeService, IconTheme } from './icon-theme-service.js';
+import { MaybePromise } from '../common/types.js';
+import { Disposable } from '../common/disposable.js';
 
 export const IconThemeContribution = Symbol('IconThemeContribution');
 export interface IconThemeContribution {

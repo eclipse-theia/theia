@@ -20,7 +20,7 @@ import { isArray, isObject, nls } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import URI from '@theia/core/lib/common/uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { WorkspaceFileService } from '../common';
+import { WorkspaceFileService } from '../common/index.js';
 
 export interface SchemaUpdateMessage {
     key: string,

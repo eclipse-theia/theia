@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import * as chai from 'chai';
-import { SelectionService } from './selection-service';
-import { MaybeArray } from './types';
-import URI from './uri';
-import { UriAwareCommandHandler, UriCommandHandler } from './uri-command-handler';
+import { SelectionService } from './selection-service.js';
+import { MaybeArray } from './types.js';
+import URI from './uri.js';
+import { UriAwareCommandHandler, UriCommandHandler } from './uri-command-handler.js';
 
 const expect = chai.expect;
 

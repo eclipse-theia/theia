@@ -18,9 +18,8 @@ import { enableJSDOM } from '../../browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
 import { KeyCode, Key, KeyModifier, KeySequence, NormalizedKeyboardInput, normalizeKeyboardInput, readAltGraph } from './keys';
-import * as os from '../../common/os';
 import * as chai from 'chai';
-import * as sinon from 'sinon';
+import { stubOS } from '../../common/test/stub-os';
 
 disableJSDOM();
 
@@ -50,7 +49,7 @@ describe('keys api', () => {
     });
 
     it('should parse a string containing special modifiers to a KeyCode correctly', () => {
-        const stub = sinon.stub(os, 'isOSX').value(false);
+        const stub = stubOS('isOSX', false);
         const keycode = KeyCode.parse('ctrl+b');
         expect(keycode.ctrl).to.be.true;
         expect(keycode.key).is.equal(Key.KEY_B);
@@ -70,7 +69,7 @@ describe('keys api', () => {
 
     it('should parse a string containing special modifiers to a KeyCode correctly (macOS)', () => {
         KeyCode.resetKeyBindings();
-        const stub = sinon.stub(os, 'isOSX').value(true);
+        const stub = stubOS('isOSX', true);
         const keycode = KeyCode.parse('ctrl+b');
         expect(keycode.ctrl).to.be.true;
         expect(keycode.key).is.equal(Key.KEY_B);
@@ -92,14 +91,14 @@ describe('keys api', () => {
     });
 
     it('should serialize a keycode properly with BACKQUOTE + M1', () => {
-        const stub = sinon.stub(os, 'isOSX').value(true);
+        const stub = stubOS('isOSX', true);
         let keyCode = KeyCode.createKeyCode({ first: Key.BACKQUOTE, modifiers: [KeyModifier.CtrlCmd] });
         let keyCodeString = keyCode.toString();
         expect(keyCodeString).to.be.equal('meta+`');
         let parsedKeyCode = KeyCode.parse(keyCodeString);
         expect(equalKeyCode(parsedKeyCode, keyCode)).to.be.true;
 
-        sinon.stub(os, 'isOSX').value(false);
+        stubOS('isOSX', false);
         keyCode = KeyCode.createKeyCode({ first: Key.BACKQUOTE, modifiers: [KeyModifier.CtrlCmd] });
         keyCodeString = keyCode.toString();
         expect(keyCodeString).to.be.equal('ctrl+`');
@@ -272,9 +271,9 @@ describe('keys api', () => {
             code: Key.BACKQUOTE.code,
             ctrlKey: true,
         });
-        const stub = sinon.stub(os, 'isOSX').value(true);
+        const stub = stubOS('isOSX', true);
         expect(KeyCode.createKeyCode(event).toString()).to.be.equal('ctrl+`');
-        sinon.stub(os, 'isOSX').value(false);
+        stubOS('isOSX', false);
         expect(KeyCode.createKeyCode(event).toString()).to.be.equal('ctrl+`');
         stub.restore();
     });
@@ -289,7 +288,7 @@ describe('keys api', () => {
     });
 
     it('should serialize a keycode properly with a + M4', () => {
-        const stub = sinon.stub(os, 'isOSX').value(true);
+        const stub = stubOS('isOSX', true);
         const keyCode = KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.MacCtrl] });
         const keyCodeString = keyCode.toString();
         expect(keyCodeString).to.be.equal('ctrl+a');

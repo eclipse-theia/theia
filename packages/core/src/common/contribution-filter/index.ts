@@ -14,6 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './contribution-filter';
-export * from './contribution-filter-registry';
-export * from './filter';
+export * from './contribution-filter.js';
+export * from './contribution-filter-registry.js';
+export * from './filter.js';

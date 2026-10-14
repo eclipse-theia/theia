@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { HUGGINGFACE_LANGUAGE_MODELS_MANAGER_PATH, HuggingFaceLanguageModelsManager } from '../common/huggingface-language-models-manager';
+import { HUGGINGFACE_LANGUAGE_MODELS_MANAGER_PATH, HuggingFaceLanguageModelsManager } from '../common/huggingface-language-models-manager.js';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
-import { HuggingFaceLanguageModelsManagerImpl } from './huggingface-language-models-manager-impl';
-import { HuggingFacePreferencesSchema } from '../common/huggingface-preferences';
+import { HuggingFaceLanguageModelsManagerImpl } from './huggingface-language-models-manager-impl.js';
+import { HuggingFacePreferencesSchema } from '../common/huggingface-preferences.js';
 
 export const HuggingFaceModelFactory = Symbol('HuggingFaceModelFactory');
 

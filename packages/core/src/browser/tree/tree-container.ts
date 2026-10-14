@@ -15,19 +15,19 @@
 // *****************************************************************************
 
 import { interfaces, Container } from 'inversify';
-import { TreeWidget, TreeProps, defaultTreeProps } from './tree-widget';
-import { TreeModelImpl, TreeModel } from './tree-model';
-import { TreeImpl, Tree } from './tree';
-import { TreeSelectionService } from './tree-selection';
-import { TreeSelectionServiceImpl } from './tree-selection-impl';
-import { TreeExpansionService, TreeExpansionServiceImpl } from './tree-expansion';
-import { TreeNavigationService } from './tree-navigation';
-import { TreeDecoratorService, NoopTreeDecoratorService } from './tree-decorator';
-import { TreeSearch } from './tree-search';
-import { FuzzySearch } from './fuzzy-search';
-import { SearchBox, SearchBoxFactory } from './search-box';
-import { SearchBoxDebounce } from './search-box-debounce';
-import { TreeFocusService, TreeFocusServiceImpl } from './tree-focus-service';
+import { TreeWidget, TreeProps, defaultTreeProps } from './tree-widget.js';
+import { TreeModelImpl, TreeModel } from './tree-model.js';
+import { TreeImpl, Tree } from './tree.js';
+import { TreeSelectionService } from './tree-selection.js';
+import { TreeSelectionServiceImpl } from './tree-selection-impl.js';
+import { TreeExpansionService, TreeExpansionServiceImpl } from './tree-expansion.js';
+import { TreeNavigationService } from './tree-navigation.js';
+import { TreeDecoratorService, NoopTreeDecoratorService } from './tree-decorator.js';
+import { TreeSearch } from './tree-search.js';
+import { FuzzySearch } from './fuzzy-search.js';
+import { SearchBox, SearchBoxFactory } from './search-box.js';
+import { SearchBoxDebounce } from './search-box-debounce.js';
+import { TreeFocusService, TreeFocusServiceImpl } from './tree-focus-service.js';
 
 export function isTreeServices(candidate?: Partial<TreeProps> | Partial<TreeContainerProps>): candidate is TreeContainerProps {
     if (candidate) {

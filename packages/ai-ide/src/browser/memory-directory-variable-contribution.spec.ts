@@ -19,7 +19,7 @@ import { URI } from '@theia/core';
 import { Container } from '@theia/core/shared/inversify';
 import { WorkspaceMetadataStorageService, WorkspaceMetadataStore } from '@theia/workspace/lib/browser/metadata-storage';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { MEMORY_DIRECTORY_VARIABLE, MEMORY_METADATA_STORE_KEY, MemoryDirectoryVariableContribution } from './memory-directory-variable-contribution';
+import { MEMORY_DIRECTORY_VARIABLE, MEMORY_METADATA_STORE_KEY, MemoryDirectoryVariableContribution } from './memory-directory-variable-contribution.js';
 
 describe('MemoryDirectoryVariableContribution', () => {
 

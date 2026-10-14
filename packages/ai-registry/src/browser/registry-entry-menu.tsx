@@ -18,7 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core';
 import { Anchor, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { buttonKeyboardProps, isActivationKey } from '@theia/core/lib/browser/keyboard/keyboard-utils';
-import { AI_REGISTRY_ENTRY_CONTEXT_MENU, RegistryEntryContext } from './registry-entry-context';
+import { AI_REGISTRY_ENTRY_CONTEXT_MENU, RegistryEntryContext } from './registry-entry-context.js';
 
 /** The pointer or keyboard interaction that opens the entry context menu. */
 export type RegistryEntryMenuEvent = React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>;

@@ -58,13 +58,13 @@ import {
     ViewContainer,
     ViewWelcome,
     WalkthroughContribution,
-} from '../../../common/plugin-protocol';
+} from '../../../common/plugin-protocol.js';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as jsoncparser from 'jsonc-parser';
-import { GrammarsReader } from './grammars-reader';
+import { GrammarsReader } from './grammars-reader.js';
 import { isENOENT } from '@theia/plugin-utils/lib/common/utils';
-import { PluginUriFactory } from './plugin-uri-factory';
+import { PluginUriFactory } from './plugin-uri-factory.js';
 import { ILogger } from '@theia/core';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
@@ -173,7 +173,7 @@ export abstract class AbstractPluginScanner implements PluginScanner {
     getLifecycle(plugin: PluginPackage): PluginLifecycle {
         const result = buildLifecycle(plugin, 'theiaPlugin');
         if (this._backendInitPath) {
-            result.backendInitPath = path.join(__dirname, this._backendInitPath);
+            result.backendInitPath = path.join(import.meta.dirname, this._backendInitPath);
         }
         return result;
     }

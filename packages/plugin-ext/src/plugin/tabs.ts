@@ -16,8 +16,8 @@
 
 import * as theia from '@theia/plugin';
 import { Emitter } from '@theia/core';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { PLUGIN_RPC_CONTEXT, TabDto, TabGroupDto, TabInputKind, TabModelOperationKind, TabOperation, TabsExt, TabsMain } from '../common/plugin-api-rpc';
+import { RPCProtocol } from '../common/rpc-protocol.js';
+import { PLUGIN_RPC_CONTEXT, TabDto, TabGroupDto, TabInputKind, TabModelOperationKind, TabOperation, TabsExt, TabsMain } from '../common/plugin-api-rpc.js';
 import {
     CustomEditorTabInput,
     InteractiveWindowInput,
@@ -29,10 +29,10 @@ import {
     TextTabInput,
     URI,
     WebviewEditorTabInput
-} from './types-impl';
-import { assertIsDefined } from '../common/types';
-import { diffSets } from '../common/collections';
-import { ViewColumn } from './type-converters';
+} from './types-impl.js';
+import { assertIsDefined } from '../common/types.js';
+import { diffSets } from '../common/collections.js';
+import { ViewColumn } from './type-converters.js';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.

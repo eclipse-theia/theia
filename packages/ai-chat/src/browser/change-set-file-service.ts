@@ -21,7 +21,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { ChangeSetFileElement } from './change-set-file-element';
+import { ChangeSetFileElement } from './change-set-file-element.js';
 
 @injectable()
 export class ChangeSetFileService {

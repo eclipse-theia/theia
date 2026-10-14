@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { PluginPackageGrammarsContribution, GrammarsContribution } from '../../../common';
+import { PluginPackageGrammarsContribution, GrammarsContribution } from '../../../common/index.js';
 import { readGrammarFromDisk } from '@theia/plugin-utils/lib/node/read-grammars';
 import type { NormalizeContributionsContext } from '@theia/plugin-utils/lib/common/contribution-types';
 

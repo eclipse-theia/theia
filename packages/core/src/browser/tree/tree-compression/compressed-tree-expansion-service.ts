@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable, inject } from 'inversify';
-import { CompressionToggle, TreeCompressionService } from './tree-compression-service';
-import { ExpandableTreeNode, TreeExpansionServiceImpl } from '../tree-expansion';
+import { CompressionToggle, TreeCompressionService } from './tree-compression-service.js';
+import { ExpandableTreeNode, TreeExpansionServiceImpl } from '../tree-expansion.js';
 
 @injectable()
 export class CompressedExpansionService extends TreeExpansionServiceImpl {

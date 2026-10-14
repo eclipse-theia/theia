@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreloadContribution } from './preloader';
-import { DEFAULT_BACKGROUND_COLOR_STORAGE_KEY } from '../frontend-application-config-provider';
+import { PreloadContribution } from './preloader.js';
+import { DEFAULT_BACKGROUND_COLOR_STORAGE_KEY } from '../frontend-application-config-provider.js';
 import { injectable } from 'inversify';
 import { DefaultTheme } from '@theia/application-package/lib/application-props';
 

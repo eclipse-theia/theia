@@ -16,7 +16,7 @@
 
 import { LanguageModelRequest, resolveCompactionTokenThreshold, resolveServerSideCompaction } from '@theia/ai-core';
 import { isObject } from '@theia/core';
-import { openAiReasoningFor } from './openai-reasoning';
+import { openAiReasoningFor } from './openai-reasoning.js';
 
 /** Merges request settings with reasoning defaults, preserving user fields while the selected level determines effort. */
 export function getOpenAiRequestSettings(request: LanguageModelRequest, forResponseApi: boolean, supportsReasoning: boolean): Record<string, unknown> {

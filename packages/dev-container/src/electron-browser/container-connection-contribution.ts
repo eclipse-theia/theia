@@ -19,18 +19,18 @@ import { AbstractRemoteRegistryContribution, RemoteRegistry } from '@theia/remot
 import {
     DevContainerFile, LastContainerInfo, RemoteContainerConnectionProvider,
     RunningContainerInfo, WorkspaceCandidate
-} from '../electron-common/remote-container-connection-provider';
+} from '../electron-common/remote-container-connection-provider.js';
 import { WorkspaceStorageService } from '@theia/workspace/lib/browser/workspace-storage-service';
 import { Command, ILogger, MaybePromise, MessageService, nls, QuickInputService, URI } from '@theia/core';
 import { WorkspaceInput, WorkspaceOpenHandlerContribution, WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { ContainerOutputProvider } from './container-output-provider';
+import { ContainerOutputProvider } from './container-output-provider.js';
 import { RemoteCliArgsCollector } from '@theia/remote/lib/electron-browser/remote-cli-args-collector';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
-import { DEV_CONTAINER_PATH_QUERY, DEV_CONTAINER_WORKSPACE_SCHEME } from '../electron-common/dev-container-workspaces';
+import { DEV_CONTAINER_PATH_QUERY, DEV_CONTAINER_WORKSPACE_SCHEME } from '../electron-common/dev-container-workspaces.js';
 import { RemotePreferences } from '@theia/remote/lib/electron-common/remote-preferences';
 import { LocalStorageService } from '@theia/core/lib/browser';
 import { ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
-import { DevContainerPreferences } from '../electron-common/dev-container-preferences';
+import { DevContainerPreferences } from '../electron-common/dev-container-preferences.js';
 
 export namespace RemoteContainerCommands {
     export const REOPEN_IN_CONTAINER = Command.toLocalizedCommand({

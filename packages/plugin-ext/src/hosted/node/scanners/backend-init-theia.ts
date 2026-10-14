@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { register } from 'node:module';
+import Module, { register } from 'node:module';
 import * as theia from '@theia/plugin';
-import { BackendInitializationFn } from '../../../common/plugin-protocol';
-import { PluginAPIFactory, Plugin, emptyPlugin } from '../../../common/plugin-api-rpc';
+import { BackendInitializationFn } from '../../../common/plugin-protocol.js';
+import { PluginAPIFactory, Plugin, emptyPlugin } from '../../../common/plugin-api-rpc.js';
 
 const pluginsApiImpl = new Map<string, typeof theia>();
 const plugins = new Array<Plugin>();
@@ -41,7 +41,8 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
 };
 
 function overrideInternalLoad(): void {
-    const module = require('module');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const module: any = Module;
     // save original load method
     const internalLoad = module._load;
 

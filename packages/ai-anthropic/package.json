@@ -2,6 +2,7 @@
   "name": "@theia/ai-anthropic",
   "version": "1.76.0",
   "description": "Theia - Anthropic Integration",
+  "type": "module",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.93.0",
     "@theia/ai-core": "1.76.0",
@@ -47,5 +48,13 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

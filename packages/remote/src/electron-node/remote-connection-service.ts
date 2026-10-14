@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { RemoteConnection } from './remote-types';
+import { RemoteConnection } from './remote-types.js';
 import { Disposable } from '@theia/core';
-import { RemoteCopyService } from './setup/remote-copy-service';
+import { RemoteCopyService } from './setup/remote-copy-service.js';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { RemoteSetupService } from './setup/remote-setup-service';
+import { RemoteSetupService } from './setup/remote-setup-service.js';
 
 @injectable()
 export class RemoteConnectionService implements BackendApplicationContribution {

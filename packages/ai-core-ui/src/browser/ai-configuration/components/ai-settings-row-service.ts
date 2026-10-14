@@ -20,7 +20,7 @@ import { PreferenceScope } from '@theia/core/lib/common';
 import { PreferenceDataProperty, PreferenceSchemaService } from '@theia/core/lib/common/preferences/preference-schema';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { PreferencesCommands } from '@theia/preferences/lib/browser/util/preference-types';
-import { AI_CONFIGURATION_SETTING_CONTEXT_MENU, AiConfigurationSettingCommandArgs } from '../ai-configuration-setting-commands';
+import { AI_CONFIGURATION_SETTING_CONTEXT_MENU, AiConfigurationSettingCommandArgs } from '../ai-configuration-setting-commands.js';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import type { SelectOption } from '@theia/core/lib/browser/widgets/select-component';
@@ -28,7 +28,7 @@ import {
     AI_CORE_PREFERENCES_TITLE, DEDICATED_EDITOR_TYPE_DETAIL, MODEL_PROVIDER_TYPE_DETAIL, ModelProviderTypeDetail
 } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { AiConfigurationService } from '@theia/ai-core/lib/common/ai-configuration-service';
-import { AiConfigurationScope } from '../ai-configuration-category';
+import { AiConfigurationScope } from '../ai-configuration-category.js';
 
 /** Describes which control an `AiSettingsRow` renders for a preference value. */
 export type AiSettingsControl =

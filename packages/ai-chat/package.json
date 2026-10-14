@@ -2,6 +2,7 @@
   "name": "@theia/ai-chat",
   "version": "1.76.0",
   "description": "Theia - AI Chat Extension",
+  "type": "module",
   "dependencies": {
     "@theia/ai-core": "1.76.0",
     "@theia/core": "1.76.0",
@@ -18,6 +19,15 @@
     "access": "public"
   },
   "main": "lib/common",
+  "exports": {
+    ".": "./lib/common/index.js",
+    "./package.json": "./package.json",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "theiaExtensions": [
     {
       "frontend": "lib/browser/ai-chat-frontend-module",

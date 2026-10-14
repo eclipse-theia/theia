@@ -15,27 +15,27 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { OpenHandler } from '../../browser';
-import { ClipboardService } from '../../browser/clipboard-service';
-import { FrontendApplicationContribution } from '../../browser/frontend-application-contribution';
-import { FrontendApplicationStateService } from '../../browser/frontend-application-state';
-import { SecondaryWindowService } from '../../browser/window/secondary-window-service';
-import { WindowService } from '../../browser/window/window-service';
-import { ElectronMainWindowService, electronMainWindowServicePath } from '../../electron-common/electron-main-window-service';
-import { ElectronClipboardService } from '../electron-clipboard-service';
-import { ElectronIpcConnectionProvider } from '../messaging/electron-ipc-connection-source';
-import { ElectronFrontendApplicationStateService } from './electron-frontend-application-state';
-import { ElectronSecondaryWindowService } from './electron-secondary-window-service';
-import { bindWindowPreferences } from '../../electron-common/electron-window-preferences';
-import { ElectronWindowService } from './electron-window-service';
-import { ExternalAppOpenHandler } from './external-app-open-handler';
-import { ElectronUriHandlerContribution } from '../electron-uri-handler';
-import { bindRootContributionProvider } from '../../common';
-import { WindowTitleContribution } from '../../browser/window/window-title-service';
-import { WindowFocusService } from '../../browser/window/window-focus-service';
-import { WindowLaunchArgs } from '../../browser/window/window-launch-args';
-import { ElectronWindowLaunchArgs } from './electron-window-launch-args';
-import { WindowZoomStatusBarItem } from './window-zoom-status-bar-item';
+import { OpenHandler } from '../../browser/index.js';
+import { ClipboardService } from '../../browser/clipboard-service.js';
+import { FrontendApplicationContribution } from '../../browser/frontend-application-contribution.js';
+import { FrontendApplicationStateService } from '../../browser/frontend-application-state.js';
+import { SecondaryWindowService } from '../../browser/window/secondary-window-service.js';
+import { WindowService } from '../../browser/window/window-service.js';
+import { ElectronMainWindowService, electronMainWindowServicePath } from '../../electron-common/electron-main-window-service.js';
+import { ElectronClipboardService } from '../electron-clipboard-service.js';
+import { ElectronIpcConnectionProvider } from '../messaging/electron-ipc-connection-source.js';
+import { ElectronFrontendApplicationStateService } from './electron-frontend-application-state.js';
+import { ElectronSecondaryWindowService } from './electron-secondary-window-service.js';
+import { bindWindowPreferences } from '../../electron-common/electron-window-preferences.js';
+import { ElectronWindowService } from './electron-window-service.js';
+import { ExternalAppOpenHandler } from './external-app-open-handler.js';
+import { ElectronUriHandlerContribution } from '../electron-uri-handler.js';
+import { bindRootContributionProvider } from '../../common/index.js';
+import { WindowTitleContribution } from '../../browser/window/window-title-service.js';
+import { WindowFocusService } from '../../browser/window/window-focus-service.js';
+import { WindowLaunchArgs } from '../../browser/window/window-launch-args.js';
+import { ElectronWindowLaunchArgs } from './electron-window-launch-args.js';
+import { WindowZoomStatusBarItem } from './window-zoom-status-bar-item.js';
 import '../../../src/electron-browser/style/window-zoom-action-bar.css';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {

@@ -19,8 +19,8 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
-import { WebviewExternalEndpoint } from '../../common/webview-protocol';
-import { PLUGIN_HOST_FRONTEND } from '../../../common/plugin-protocol';
+import { WebviewExternalEndpoint } from '../../common/webview-protocol.js';
+import { PLUGIN_HOST_FRONTEND } from '../../../common/plugin-protocol.js';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 
 @injectable()

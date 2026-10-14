@@ -19,9 +19,9 @@ import { Container } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core';
 import { CommandRegistry, MenuModelRegistry } from '@theia/core/lib/common';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { ExtensionsSourceContribution } from './extensions-source-contribution';
-import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
-import { VSXExtensionsFilterContribution } from './vsx-extensions-filter-contribution';
+import { ExtensionsSourceContribution } from './extensions-source-contribution.js';
+import { VSXExtensionsSearchModel } from './vsx-extensions-search-model.js';
+import { VSXExtensionsFilterContribution } from './vsx-extensions-filter-contribution.js';
 
 class StubContribution implements ExtensionsSourceContribution {
     readonly onDidChange = new Emitter<void>().event;

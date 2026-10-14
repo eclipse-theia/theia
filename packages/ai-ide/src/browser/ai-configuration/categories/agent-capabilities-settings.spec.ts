@@ -21,7 +21,6 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { PreferenceUtils } from '@theia/core/lib/common/preferences/preference-provider';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as React from '@theia/core/shared/react';
@@ -30,9 +29,9 @@ import { createRoot } from '@theia/core/shared/react-dom/client';
 import { AISettingsService, GenericCapabilitySelections, ServerToolDescriptor } from '@theia/ai-core/lib/common';
 import { HoverService } from '@theia/core/lib/browser';
 import { AvailableGenericCapabilities } from '@theia/ai-chat-ui/lib/browser/generic-capabilities-service';
-import * as GenericCapabilitiesTreeModule from '@theia/ai-chat-ui/lib/browser/generic-capabilities-tree';
+import type * as GenericCapabilitiesTreeModule from '@theia/ai-chat-ui/lib/browser/generic-capabilities-tree';
 import { AiSettingsRowService } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row-service';
-import { AgentGenericCapabilitiesSettings, AgentServerToolsSettings } from './agent-capabilities-settings';
+import { AgentGenericCapabilitiesSettings, AgentServerToolsSettings } from './agent-capabilities-settings.js';
 
 disableJSDOM();
 
@@ -199,7 +198,8 @@ describe('AgentGenericCapabilitiesSettings', () => {
     function render(
         savedSelections: GenericCapabilitySelections | undefined,
         availableCapabilities: AvailableGenericCapabilities | undefined,
-        deferWrites = false
+        deferWrites = false,
+        capabilitiesTree?: React.ComponentType<GenericCapabilitiesTreeModule.GenericCapabilitiesTreeProps>
     ): Rendered {
         const updates: Array<Record<string, unknown>> = [];
         let stored = savedSelections;
@@ -247,7 +247,8 @@ describe('AgentGenericCapabilitiesSettings', () => {
             aiSettingsService,
             settingsRowService: { openResetMenu: () => { } } as unknown as AiSettingsRowService,
             hoverService: { requestHover: () => { } } as unknown as HoverService,
-            onOpenPromptSnippet: () => { }
+            onOpenPromptSnippet: () => { },
+            capabilitiesTree
         })));
         reload(savedSelections);
         return {
@@ -431,11 +432,11 @@ describe('AgentGenericCapabilitiesSettings', () => {
 
     it('preserves a rejected save promise without poisoning later queued writes', async () => {
         let change!: GenericCapabilitiesTreeModule.GenericCapabilitiesTreeProps['onGenericCapabilityChange'];
-        const tree = sinon.stub(GenericCapabilitiesTreeModule, 'GenericCapabilitiesTree').callsFake(props => {
+        const tree = (props: GenericCapabilitiesTreeModule.GenericCapabilitiesTreeProps) => {
             change = props.onGenericCapabilityChange;
             return React.createElement('div');
-        });
-        const { container, updates, rejectWrite, finishWrite, getStored, dispose } = render(undefined, available, true);
+        };
+        const { container, updates, rejectWrite, finishWrite, getStored, dispose } = render(undefined, available, true, tree);
         try {
             flushSync(() => container.querySelector<HTMLButtonElement>('button[aria-label="Edit generic capabilities"]')!.click());
             let failed!: Promise<void>;
@@ -458,7 +459,6 @@ describe('AgentGenericCapabilitiesSettings', () => {
             expect(container.querySelector('.ai-configuration-item-list')!.textContent).to.include('skill-a, skill-b');
         } finally {
             dispose();
-            tree.restore();
         }
     });
 

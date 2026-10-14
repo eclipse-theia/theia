@@ -16,8 +16,8 @@
 
 import { nls } from '@theia/core/lib/common/nls';
 import * as React from '@theia/core/shared/react';
-import { Walkthrough } from '../common/walkthrough-types';
-import { WalkthroughIcon } from './walkthrough-icon';
+import { Walkthrough } from '../common/walkthrough-types.js';
+import { WalkthroughIcon } from './walkthrough-icon.js';
 
 export interface WalkthroughCardProps {
     walkthrough: Walkthrough;

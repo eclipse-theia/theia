@@ -14,15 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { GettingStartedContribution } from './getting-started-contribution';
+import { GettingStartedContribution } from './getting-started-contribution.js';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { GettingStartedWidget } from './getting-started-widget';
+import { GettingStartedWidget } from './getting-started-widget.js';
 import { WidgetFactory, FrontendApplicationContribution, bindViewContribution, noopWidgetStatusBarContribution, WidgetStatusBarContribution } from '@theia/core/lib/browser';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { bindRootContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { bindGettingStartedPreferences } from '../common/getting-started-preferences';
-import { WalkthroughProvider } from '../common/walkthrough-provider';
-import { WalkthroughPluginSupport, WalkthroughService, WalkthroughViewEventSource } from './walkthrough-service';
+import { bindGettingStartedPreferences } from '../common/getting-started-preferences.js';
+import { WalkthroughProvider } from '../common/walkthrough-provider.js';
+import { WalkthroughPluginSupport, WalkthroughService, WalkthroughViewEventSource } from './walkthrough-service.js';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin';
 import { PluginViewRegistry } from '@theia/plugin-ext/lib/main/browser/view/plugin-view-registry';
 import '../../src/browser/style/index.css';

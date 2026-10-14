@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution, OpenerService } from '../browser';
+import { FrontendApplicationContribution, OpenerService } from '../browser/index.js';
 
 import { injectable, inject } from 'inversify';
-import { URI } from '../common';
+import { URI } from '../common/index.js';
 
 @injectable()
 export class ElectronUriHandlerContribution implements FrontendApplicationContribution {

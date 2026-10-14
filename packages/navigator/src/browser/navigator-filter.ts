@@ -22,7 +22,7 @@ import { FileStatNode } from '@theia/filesystem/lib/browser';
 import { FileSystemPreferences, FileSystemConfiguration } from '@theia/filesystem/lib/common/filesystem-preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { Minimatch } from 'minimatch';
-import { FileNavigatorPreferences, FileNavigatorConfiguration } from '../common/navigator-preferences';
+import { FileNavigatorPreferences, FileNavigatorConfiguration } from '../common/navigator-preferences.js';
 
 /**
  * Filter for omitting elements from the navigator. For more details on the exclusion patterns,

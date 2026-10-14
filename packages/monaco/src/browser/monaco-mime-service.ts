@@ -14,14 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import debounce = require('@theia/core/shared/lodash.debounce');
+import debounce from '@theia/core/shared/lodash.debounce';
 import { injectable } from '@theia/core/shared/inversify';
 import { MimeAssociation, MimeService } from '@theia/core/lib/browser/mime-service';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language.js';
 import * as monaco from '@theia/monaco-editor-core';
-import { clearConfiguredLanguageAssociations, registerConfiguredLanguageAssociation } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languagesAssociations';
-import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageService';
+import { clearConfiguredLanguageAssociations, registerConfiguredLanguageAssociation } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languagesAssociations.js';
+import { LanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageService.js';
 
 @injectable()
 export class MonacoMimeService extends MimeService {

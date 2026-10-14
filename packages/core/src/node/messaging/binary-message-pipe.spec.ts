@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { PassThrough } from 'stream';
-import { BinaryMessagePipe } from './binary-message-pipe';
+import { BinaryMessagePipe } from './binary-message-pipe.js';
 
 class TestBinaryMessagePipe extends BinaryMessagePipe {
     override encodeMessageStart(message: Uint8Array): Uint8Array {

@@ -22,7 +22,7 @@ import { injectable, inject, postConstruct, named } from '@theia/core/shared/inv
 import { FileUri, BackendApplicationContribution } from '@theia/core/lib/node';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { WorkspaceServer, UntitledWorkspaceService } from '../common';
+import { WorkspaceServer, UntitledWorkspaceService } from '../common/index.js';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
 import { ContributionProvider, notEmpty } from '@theia/core';

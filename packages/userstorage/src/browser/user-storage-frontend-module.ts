@@ -16,7 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { FileServiceContribution } from '@theia/filesystem/lib/browser/file-service';
-import { UserStorageContribution } from './user-storage-contribution';
+import { UserStorageContribution } from './user-storage-contribution.js';
 
 export default new ContainerModule(bind => {
     bind(UserStorageContribution).toSelf().inSingletonScope();

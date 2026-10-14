@@ -16,8 +16,8 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AiConfigurationService } from '@theia/ai-core';
-import { SHELL_COMMAND_ALLOWLIST_PREFERENCE, SHELL_COMMAND_DENYLIST_PREFERENCE } from '../common/shell-command-preferences';
-import { ShellCommandAnalyzer } from '../common/shell-command-analyzer';
+import { SHELL_COMMAND_ALLOWLIST_PREFERENCE, SHELL_COMMAND_DENYLIST_PREFERENCE } from '../common/shell-command-preferences.js';
+import { ShellCommandAnalyzer } from '../common/shell-command-analyzer.js';
 
 export interface CommandCheckResult {
     allowed: boolean;

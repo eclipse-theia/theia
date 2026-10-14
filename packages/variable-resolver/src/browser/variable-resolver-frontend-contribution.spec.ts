@@ -25,9 +25,9 @@ import * as chai from 'chai';
 import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { ILogger, bindContributionProvider } from '@theia/core/lib/common';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { VariableContribution, VariableRegistry } from './variable';
-import { VariableQuickOpenService } from './variable-quick-open-service';
-import { VariableResolverFrontendContribution } from './variable-resolver-frontend-contribution';
+import { VariableContribution, VariableRegistry } from './variable.js';
+import { VariableQuickOpenService } from './variable-quick-open-service.js';
+import { VariableResolverFrontendContribution } from './variable-resolver-frontend-contribution.js';
 
 disableJSDOM();
 

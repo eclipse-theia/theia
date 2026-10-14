@@ -20,7 +20,7 @@ import {
     SearchInWorkspaceClient,
     SearchInWorkspaceResult,
     SearchInWorkspaceOptions
-} from '../common/search-in-workspace-interface';
+} from '../common/search-in-workspace-interface.js';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ILogger } from '@theia/core';
 

@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from './test/jsdom';
+import { enableJSDOM } from './test/jsdom.js';
 let disableJSDOM = enableJSDOM();
 
-import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider.js';
 FrontendApplicationConfigProvider.set({});
 
 // jsdom does not implement queryCommandSupported, which common-frontend-contribution
@@ -25,13 +25,13 @@ FrontendApplicationConfigProvider.set({});
 document.queryCommandSupported = () => false;
 
 import * as chai from 'chai';
-import { Emitter } from '../common/event';
+import { Emitter } from '../common/event.js';
 // Initialize the common barrel before common-frontend-contribution: its import graph contains
 // cycles through the barrel (e.g. shell/tab-bar-toolbar) that leave injection tokens undefined
 // when the contribution module itself is the entry point.
-import '../common';
-import { CLASSNAME_OS_LINUX, CLASSNAME_OS_MAC, CLASSNAME_OS_WINDOWS, CommonFrontendContribution } from './common-frontend-contribution';
-import { SecondaryWindowService } from './window/secondary-window-service';
+import '../common/index.js';
+import { CLASSNAME_OS_LINUX, CLASSNAME_OS_MAC, CLASSNAME_OS_WINDOWS, CommonFrontendContribution } from './common-frontend-contribution.js';
+import { SecondaryWindowService } from './window/secondary-window-service.js';
 
 disableJSDOM();
 

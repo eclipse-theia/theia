@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { DiffNavigator } from '@theia/editor/lib/browser';
-import { IDiffEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
+import { IDiffEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser.js';
 
 @injectable()
 export class MonacoDiffNavigatorFactory {

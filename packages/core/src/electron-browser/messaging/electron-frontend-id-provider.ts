@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { FrontendIdProvider } from '../../browser/messaging/frontend-id-provider';
+import { FrontendIdProvider } from '../../browser/messaging/frontend-id-provider.js';
 
 @injectable()
 export class ElectronFrontendIdProvider implements FrontendIdProvider {

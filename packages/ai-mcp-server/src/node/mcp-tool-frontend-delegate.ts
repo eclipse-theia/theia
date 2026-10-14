@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { Tool, Resource, ResourceContents, Prompt, PromptMessage } from '@modelcontextprotocol/sdk/types.js';
-import { MCPToolFrontendDelegate, MCPToolDelegateClient } from '../common/mcp-tool-delegate';
+import { MCPToolFrontendDelegate, MCPToolDelegateClient } from '../common/mcp-tool-delegate.js';
 
 @injectable()
 export class MCPToolFrontendDelegateImpl implements MCPToolFrontendDelegate {

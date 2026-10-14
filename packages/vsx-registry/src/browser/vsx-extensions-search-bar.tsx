@@ -20,10 +20,10 @@ import { ReactWidget, Message, codicon } from '@theia/core/lib/browser/widgets';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
-import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
-import { VSXExtensionsModel } from './vsx-extensions-model';
-import { ExtensionsSourceContribution } from './extensions-source-contribution';
-import { EXTENSIONS_FILTER_BY_TYPE_MENU } from './vsx-extensions-filter-contribution';
+import { VSXExtensionsSearchModel } from './vsx-extensions-search-model.js';
+import { VSXExtensionsModel } from './vsx-extensions-model.js';
+import { ExtensionsSourceContribution } from './extensions-source-contribution.js';
+import { EXTENSIONS_FILTER_BY_TYPE_MENU } from './vsx-extensions-filter-contribution.js';
 import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()

@@ -16,7 +16,7 @@
 
 import { ContributionProvider, Emitter, Event } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { AiConfigurationCategory, AiConfigurationSearchItem } from './ai-configuration-category';
+import { AiConfigurationCategory, AiConfigurationSearchItem } from './ai-configuration-category.js';
 
 /**
  * Collects all contributed {@link AiConfigurationCategory} instances and exposes

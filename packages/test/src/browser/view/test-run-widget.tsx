@@ -20,11 +20,11 @@ import { ContextMenuRenderer, codicon } from '@theia/core/lib/browser';
 import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { TestController, TestExecutionState, TestFailure, TestItem, TestMessage, TestOutputItem, TestRun, TestService } from '../test-service';
+import { TestController, TestExecutionState, TestFailure, TestItem, TestMessage, TestOutputItem, TestRun, TestService } from '../test-service.js';
 import * as React from '@theia/core/shared/react';
 import { Disposable, DisposableCollection, Event, nls } from '@theia/core';
-import { TestExecutionStateManager } from './test-execution-state-manager';
-import { TestOutputUIModel } from './test-output-ui-model';
+import { TestExecutionStateManager } from './test-execution-state-manager.js';
+import { TestOutputUIModel } from './test-output-ui-model.js';
 
 class TestRunNode implements TreeNode, SelectableTreeNode {
     constructor(readonly counter: number, readonly id: string, readonly run: TestRun, readonly parent: CompositeTreeNode) { }

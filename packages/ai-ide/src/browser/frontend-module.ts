@@ -19,9 +19,9 @@ import '../../src/browser/style/index.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ChatAgent, ChatAgentRecommendationService } from '@theia/ai-chat/lib/common';
 import { Agent, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
-import { ArchitectAgent } from './architect-agent';
-import { CoderAgent } from './coder-agent';
-import { SummarizeSessionCommandContribution } from './summarize-session-command-contribution';
+import { ArchitectAgent } from './architect-agent.js';
+import { CoderAgent } from './coder-agent.js';
+import { SummarizeSessionCommandContribution } from './summarize-session-command-contribution.js';
 import {
     AccessibleRootContribution,
     FileContentFunction,
@@ -30,9 +30,9 @@ import {
     GetWorkspaceDirectoryStructure,
     GetWorkspaceFileList,
     WorkspaceFunctionScope
-} from './workspace-functions';
-import { WorkspaceSearchProvider } from './workspace-search-provider';
-import { MemoryDirectoryVariableContribution } from './memory-directory-variable-contribution';
+} from './workspace-functions.js';
+import { WorkspaceSearchProvider } from './workspace-search-provider.js';
+import { MemoryDirectoryVariableContribution } from './memory-directory-variable-contribution.js';
 import {
     FrontendApplicationContribution,
     WidgetFactory,
@@ -40,13 +40,13 @@ import {
     RemoteConnectionProvider,
     ServiceConnectionProvider
 } from '@theia/core/lib/browser';
-import { TaskListProvider, TaskRunnerProvider } from './workspace-task-provider';
+import { TaskListProvider, TaskRunnerProvider } from './workspace-task-provider.js';
 import {
     LaunchListProvider,
     LaunchRunnerProvider,
     LaunchStopProvider,
-} from './workspace-launch-provider';
-import { WorkspacePreferencesSchema } from '../common/workspace-preferences';
+} from './workspace-launch-provider.js';
+import { WorkspacePreferencesSchema } from '../common/workspace-preferences.js';
 import {
     ClearFileChanges,
     GetProposedFileState,
@@ -62,101 +62,101 @@ import {
     FileChangeSetTitleProvider,
     DefaultFileChangeSetTitleProvider,
     ReplaceContentInFileFunctionHelperV2
-} from './file-changeset-functions';
-import { OrchestratorChatAgent } from '../common/orchestrator-chat-agent';
-import { UniversalChatAgent } from '../common/universal-chat-agent';
-import { AppTesterChatAgent } from './app-tester-chat-agent';
-import { GitHubChatAgent } from './github-chat-agent';
-import { CommandChatAgent } from '../common/command-chat-agents';
-import { ListChatContext, ResolveChatContext, AddFileToChatContext } from './context-functions';
-import { AgentsConfigurationCategory } from './ai-configuration/categories/agents-configuration-category';
-import { GeneralConfigurationCategory } from './ai-configuration/categories/general-configuration-category';
-import { ModelsConfigurationCategory } from './ai-configuration/categories/models-configuration-category';
-import { ModelAliasesConfigurationCategory } from './ai-configuration/categories/model-aliases-configuration-category';
-import { VariablesConfigurationCategory } from './ai-configuration/categories/variables-configuration-category';
-import { TokenUsageConfigurationCategory } from './ai-configuration/categories/token-usage-configuration-category';
-import { ToolsConfigurationCategory } from './ai-configuration/categories/tools-configuration-category';
-import { PromptsAndSkillsConfigurationCategory } from './ai-configuration/categories/prompts-and-skills-configuration-category';
-import { PromptSnippetsConfigurationCategory } from './ai-configuration/categories/prompt-snippets-configuration-category';
-import { AiConfigurationOpenPreferenceRenderer, AiConfigurationOpenPreferenceRendererContribution } from './ai-configuration/ai-configuration-open-preference-renderer';
+} from './file-changeset-functions.js';
+import { OrchestratorChatAgent } from '../common/orchestrator-chat-agent.js';
+import { UniversalChatAgent } from '../common/universal-chat-agent.js';
+import { AppTesterChatAgent } from './app-tester-chat-agent.js';
+import { GitHubChatAgent } from './github-chat-agent.js';
+import { CommandChatAgent } from '../common/command-chat-agents.js';
+import { ListChatContext, ResolveChatContext, AddFileToChatContext } from './context-functions.js';
+import { AgentsConfigurationCategory } from './ai-configuration/categories/agents-configuration-category.js';
+import { GeneralConfigurationCategory } from './ai-configuration/categories/general-configuration-category.js';
+import { ModelsConfigurationCategory } from './ai-configuration/categories/models-configuration-category.js';
+import { ModelAliasesConfigurationCategory } from './ai-configuration/categories/model-aliases-configuration-category.js';
+import { VariablesConfigurationCategory } from './ai-configuration/categories/variables-configuration-category.js';
+import { TokenUsageConfigurationCategory } from './ai-configuration/categories/token-usage-configuration-category.js';
+import { ToolsConfigurationCategory } from './ai-configuration/categories/tools-configuration-category.js';
+import { PromptsAndSkillsConfigurationCategory } from './ai-configuration/categories/prompts-and-skills-configuration-category.js';
+import { PromptSnippetsConfigurationCategory } from './ai-configuration/categories/prompt-snippets-configuration-category.js';
+import { AiConfigurationOpenPreferenceRenderer, AiConfigurationOpenPreferenceRendererContribution } from './ai-configuration/ai-configuration-open-preference-renderer.js';
 import { PreferenceNodeRendererContribution } from '@theia/preferences/lib/browser/views/components/preference-node-renderer-creator';
-import { AiConfigurationBreadcrumbsContribution } from './ai-configuration/ai-configuration-breadcrumbs-contribution';
+import { AiConfigurationBreadcrumbsContribution } from './ai-configuration/ai-configuration-breadcrumbs-contribution.js';
 import { BreadcrumbsContribution } from '@theia/core/lib/browser/breadcrumbs/breadcrumbs-constants';
-import { AiConfigurationLabelProviderContribution } from './ai-configuration/ai-configuration-label-provider-contribution';
+import { AiConfigurationLabelProviderContribution } from './ai-configuration/ai-configuration-label-provider-contribution.js';
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import { AiConfigurationCategory } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
-import { AIConfigurationSelectionService } from './ai-configuration/ai-configuration-service';
-import { AIConfigurationViewContribution } from './ai-configuration/ai-configuration-view-contribution';
-import { AIConfigurationContainerWidget } from './ai-configuration/ai-configuration-widget';
-import { AiConfigurationDetailWidget } from './ai-configuration/ai-configuration-detail-widget';
-import { AiConfigurationTreeWidget, createAiConfigurationTreeContainer } from './ai-configuration/ai-configuration-tree-widget';
-import { AiConfigurationSearchWidget } from './ai-configuration/ai-configuration-search-widget';
-import { ContextFilesVariableContribution } from '../common/context-files-variable';
+import { AIConfigurationSelectionService } from './ai-configuration/ai-configuration-service.js';
+import { AIConfigurationViewContribution } from './ai-configuration/ai-configuration-view-contribution.js';
+import { AIConfigurationContainerWidget } from './ai-configuration/ai-configuration-widget.js';
+import { AiConfigurationDetailWidget } from './ai-configuration/ai-configuration-detail-widget.js';
+import { AiConfigurationTreeWidget, createAiConfigurationTreeContainer } from './ai-configuration/ai-configuration-tree-widget.js';
+import { AiConfigurationSearchWidget } from './ai-configuration/ai-configuration-search-widget.js';
+import { ContextFilesVariableContribution } from '../common/context-files-variable.js';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { TemplatePreferenceContribution } from './template-preference-contribution';
+import { TemplatePreferenceContribution } from './template-preference-contribution.js';
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { WalkthroughProvider } from '@theia/getting-started/lib/common/walkthrough-provider';
-import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
-import { AiGettingStartedWalkthroughProvider } from './ai-getting-started-walkthrough';
-import { AiGettingStartedContribution } from './ai-getting-started-contribution';
-import { AiWalkthroughContextKeys } from './ai-walkthrough-context-keys';
-import { ChatSessionsWelcomeMessageProvider } from './chat-sessions-welcome-message-provider';
-import { ChatSessionItemActionContribution, DefaultChatSessionItemActionContribution } from './chat-session-item-action-contribution';
-import { AiAllowAllModeChatBanner } from './ai-allow-all-mode-chat-banner';
+import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider.js';
+import { AiGettingStartedWalkthroughProvider } from './ai-getting-started-walkthrough.js';
+import { AiGettingStartedContribution } from './ai-getting-started-contribution.js';
+import { AiWalkthroughContextKeys } from './ai-walkthrough-context-keys.js';
+import { ChatSessionsWelcomeMessageProvider } from './chat-sessions-welcome-message-provider.js';
+import { ChatSessionItemActionContribution, DefaultChatSessionItemActionContribution } from './chat-session-item-action-contribution.js';
+import { AiAllowAllModeChatBanner } from './ai-allow-all-mode-chat-banner.js';
 import { ChatBannerProvider } from '@theia/ai-chat-ui/lib/browser/chat-banner-provider';
-import { DefaultChatAgentRecommendationService } from './default-chat-agent-recommendation-service';
-import { TaskContextSummaryVariableContribution } from './task-background-summary-variable';
-import { GitHubRepoVariableContribution } from './github-repo-variable-contribution';
-import { TaskContextFileStorageService } from './task-context-file-storage-service';
+import { DefaultChatAgentRecommendationService } from './default-chat-agent-recommendation-service.js';
+import { TaskContextSummaryVariableContribution } from './task-background-summary-variable.js';
+import { GitHubRepoVariableContribution } from './github-repo-variable-contribution.js';
+import { TaskContextFileStorageService } from './task-context-file-storage-service.js';
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { bindRootContributionProvider, CommandContribution, PreferenceContribution } from '@theia/core';
-import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
-import { GitHubRepoService, githubRepoServicePath } from '../common/github-repo-protocol';
-import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions';
-import { GetSkillFileContent, ListSkills } from './skill-file-functions';
-import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
+import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol.js';
+import { GitHubRepoService, githubRepoServicePath } from '../common/github-repo-protocol.js';
+import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions.js';
+import { GetSkillFileContent, ListSkills } from './skill-file-functions.js';
+import { aiIdePreferenceSchema } from '../common/ai-ide-preferences.js';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
-import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
-import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
+import { AIIdeActivationServiceImpl } from './ai-ide-activation-service.js';
+import { AiConfigurationPreferences } from '../common/ai-configuration-preferences.js';
 import { WorkspaceRestrictionContribution } from '@theia/workspace/lib/browser/workspace-trust-service';
-import { AIWorkspaceRestrictionContribution } from './ai-workspace-restriction-contribution';
+import { AIWorkspaceRestrictionContribution } from './ai-workspace-restriction-contribution.js';
 
-import { AgentsMdAgent } from './agents-md-agent';
-import { CreateSkillAgent } from './create-skill-agent';
-import { SuggestTerminalCommand } from './ai-terminal-functions';
-import { TodoWriteTool } from './todo-tool';
-import { TodoToolRenderer } from './todo-tool-renderer';
-import { UserInteractionTool } from './user-interaction-tool';
-import { UserInteractionToolRenderer } from './user-interaction-tool-renderer';
+import { AgentsMdAgent } from './agents-md-agent.js';
+import { CreateSkillAgent } from './create-skill-agent.js';
+import { SuggestTerminalCommand } from './ai-terminal-functions.js';
+import { TodoWriteTool } from './todo-tool.js';
+import { TodoToolRenderer } from './todo-tool-renderer.js';
+import { UserInteractionTool } from './user-interaction-tool.js';
+import { UserInteractionToolRenderer } from './user-interaction-tool-renderer.js';
 import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
 import { ContextFileValidationService } from '@theia/ai-chat/lib/browser/context-file-validation-service';
-import { ContextFileValidationServiceImpl } from './context-file-validation-service-impl';
-import { RememberCommandContribution } from './remember-command-contribution';
-import { CreateTaskContextFunction, GetTaskContextFunction, EditTaskContextFunction, ListTaskContextsFunction, RewriteTaskContextFunction } from './task-context-functions';
-import { FixGitHubTicketCommandContribution } from './implement-gh-ticket-command-contribution';
-import { AnalyzesGhTicketCommandContribution } from './analyze-gh-ticket-command-contribution';
-import { AddressGhReviewCommandContribution } from './address-pr-review-command-contribution';
-import { AppTesterCapabilityContribution } from './apptester-capability-contribution';
-import { GitHubCapabilityContribution } from './github-capability-contribution';
-import { ShellExecutionCapabilityContribution } from './shell-execution-capability-contribution';
-import { MemoryCapabilityContribution } from './memory-capability-contribution';
-import { OpenEditorsHintContribution } from './open-editors-hint-contribution';
-import { AgentModeConfirmationService, AgentModeConfirmationServiceImpl } from './agent-mode-confirmation-service';
-import { ExploreAgent } from './explore-agent';
-import { CodeReviewerAgent } from './code-reviewer-agent';
-import { CodeReviewCapabilityContribution } from './code-review-capability-contribution';
-import { PRReviewAgent } from './review/pr-review-agent';
-import { PRReviewCapabilityContribution } from './review/pr-review-capability-contribution';
+import { ContextFileValidationServiceImpl } from './context-file-validation-service-impl.js';
+import { RememberCommandContribution } from './remember-command-contribution.js';
+import { CreateTaskContextFunction, GetTaskContextFunction, EditTaskContextFunction, ListTaskContextsFunction, RewriteTaskContextFunction } from './task-context-functions.js';
+import { FixGitHubTicketCommandContribution } from './implement-gh-ticket-command-contribution.js';
+import { AnalyzesGhTicketCommandContribution } from './analyze-gh-ticket-command-contribution.js';
+import { AddressGhReviewCommandContribution } from './address-pr-review-command-contribution.js';
+import { AppTesterCapabilityContribution } from './apptester-capability-contribution.js';
+import { GitHubCapabilityContribution } from './github-capability-contribution.js';
+import { ShellExecutionCapabilityContribution } from './shell-execution-capability-contribution.js';
+import { MemoryCapabilityContribution } from './memory-capability-contribution.js';
+import { OpenEditorsHintContribution } from './open-editors-hint-contribution.js';
+import { AgentModeConfirmationService, AgentModeConfirmationServiceImpl } from './agent-mode-confirmation-service.js';
+import { ExploreAgent } from './explore-agent.js';
+import { CodeReviewerAgent } from './code-reviewer-agent.js';
+import { CodeReviewCapabilityContribution } from './code-review-capability-contribution.js';
+import { PRReviewAgent } from './review/pr-review-agent.js';
+import { PRReviewCapabilityContribution } from './review/pr-review-capability-contribution.js';
 import { PerspectiveContribution } from '@theia/core/lib/browser/perspective-service';
-import { AIFirstPerspectiveContribution } from './ai-first-perspective-contribution';
-import { ChatSessionListService } from './chat-session-list-service';
-import { AISessionsWidget } from './ai-sessions-widget';
-import { AISessionsViewContribution } from './ai-sessions-view-contribution';
-import { CommitMessageAgent } from './commit-message-agent';
-import { CommitMessageRunner } from './commit-message-runner';
-import { CommitMessageCommandContribution } from './commit-message-command-contribution';
-import { GetGitChangesTool } from './git-changes-tool';
-import { AiAwareScmCommitWidget } from './ai-aware-scm-commit-widget';
+import { AIFirstPerspectiveContribution } from './ai-first-perspective-contribution.js';
+import { ChatSessionListService } from './chat-session-list-service.js';
+import { AISessionsWidget } from './ai-sessions-widget.js';
+import { AISessionsViewContribution } from './ai-sessions-view-contribution.js';
+import { CommitMessageAgent } from './commit-message-agent.js';
+import { CommitMessageRunner } from './commit-message-runner.js';
+import { CommitMessageCommandContribution } from './commit-message-command-contribution.js';
+import { GetGitChangesTool } from './git-changes-tool.js';
+import { AiAwareScmCommitWidget } from './ai-aware-scm-commit-widget.js';
 import { ScmCommitWidget } from '@theia/scm/lib/browser/scm-commit-widget';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {

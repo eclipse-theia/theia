@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { ColorContribution } from './color-application-contribution';
-import { ColorRegistry } from './color-registry';
+import { ColorContribution } from './color-application-contribution.js';
+import { ColorRegistry } from './color-registry.js';
 
 @injectable()
 export class SymbolIconColorContribution implements ColorContribution {

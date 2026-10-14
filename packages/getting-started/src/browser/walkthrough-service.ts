@@ -29,10 +29,10 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { URI } from '@theia/core/lib/common/uri';
-import { Walkthrough, WalkthroughDefinition, WalkthroughStep, WalkthroughStepDefinition } from '../common/walkthrough-types';
-import { WalkthroughProvider } from '../common/walkthrough-provider';
-import { GettingStartedPreferences } from '../common/getting-started-preferences';
-import { WalkthroughCommands } from '../common/walkthrough-commands';
+import { Walkthrough, WalkthroughDefinition, WalkthroughStep, WalkthroughStepDefinition } from '../common/walkthrough-types.js';
+import { WalkthroughProvider } from '../common/walkthrough-provider.js';
+import { GettingStartedPreferences } from '../common/getting-started-preferences.js';
+import { WalkthroughCommands } from '../common/walkthrough-commands.js';
 
 export const WalkthroughViewEventSource = Symbol('WalkthroughViewEventSource');
 export interface WalkthroughViewEventSource {

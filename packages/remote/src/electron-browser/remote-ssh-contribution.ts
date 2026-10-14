@@ -17,10 +17,13 @@
 import { Command, MessageService, nls, QuickInputService, QuickPickInput } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
-import { RemoteSSHConnectionProvider } from '../electron-common/remote-ssh-connection-provider';
-import { AbstractRemoteRegistryContribution, RemoteRegistry } from './remote-registry-contribution';
-import { RemotePreferences } from '../electron-common/remote-preferences';
-import SSHConfig, { Directive } from 'ssh-config';
+import { RemoteSSHConnectionProvider } from '../electron-common/remote-ssh-connection-provider.js';
+import { AbstractRemoteRegistryContribution, RemoteRegistry } from './remote-registry-contribution.js';
+import { RemotePreferences } from '../electron-common/remote-preferences.js';
+import SSHConfigModule, { Directive } from 'ssh-config';
+
+// `ssh-config` is a CommonJS module that provides the class as `default` export of `module.exports`.
+const SSHConfig = SSHConfigModule.default;
 
 export namespace RemoteSSHCommands {
     export const CONNECT: Command = Command.toLocalizedCommand({

@@ -17,10 +17,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { JSONObject, JSONValue } from '@lumino/coreutils';
-import { IJSONSchema } from '../json-schema';
-import { PreferenceScope } from './preference-scope';
-import { Event } from '../event';
-import { Disposable } from '../disposable';
+import { IJSONSchema } from '../json-schema.js';
+import { PreferenceScope } from './preference-scope.js';
+import { Event } from '../event.js';
+import { Disposable } from '../disposable.js';
 
 export const PreferenceContribution = Symbol('PreferenceContribution');
 /**

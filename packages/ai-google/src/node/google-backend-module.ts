@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { Container, ContainerModule } from '@theia/core/shared/inversify';
-import { GOOGLE_LANGUAGE_MODELS_MANAGER_PATH, GoogleLanguageModelsManager } from '../common/google-language-models-manager';
+import { GOOGLE_LANGUAGE_MODELS_MANAGER_PATH, GoogleLanguageModelsManager } from '../common/google-language-models-manager.js';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
-import { GoogleLanguageModelsManagerImpl } from './google-language-models-manager-impl';
-import { GoogleLanguageModelFactory, GoogleModel, GoogleModelParams } from './google-language-model';
+import { GoogleLanguageModelsManagerImpl } from './google-language-models-manager-impl.js';
+import { GoogleLanguageModelFactory, GoogleModel, GoogleModelParams } from './google-language-model.js';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
-import { GooglePreferencesSchema } from '../common/google-preferences';
+import { GooglePreferencesSchema } from '../common/google-preferences.js';
 
 // We use a connection module to handle AI services separately for each frontend.
 const geminiConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {

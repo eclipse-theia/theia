@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { removeAnsiEscapeCodes } from './process-task';
+import { removeAnsiEscapeCodes } from './process-task.js';
 
 describe('removeAnsiEscapeCodes function', () => {
     it('should remove all end line and color codes', () => {

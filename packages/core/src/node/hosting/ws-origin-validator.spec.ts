@@ -16,8 +16,8 @@
 
 import { expect } from 'chai';
 import * as http from 'http';
-import { WsOriginValidator } from './ws-origin-validator';
-import { BackendApplicationHosts } from './backend-application-hosts';
+import { WsOriginValidator } from './ws-origin-validator.js';
+import { BackendApplicationHosts } from './backend-application-hosts.js';
 
 describe('WsOriginValidator', () => {
 

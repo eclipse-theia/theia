@@ -18,8 +18,8 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { DebugVariable } from '@theia/debug/lib/browser/console/debug-console-items';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
 import { DebugProtocol } from '@vscode/debugprotocol';
-import { Interfaces } from '../utils/memory-widget-utils';
-import { VariableRange } from '../utils/memory-widget-variable-utils';
+import { Interfaces } from '../utils/memory-widget-utils.js';
+import { VariableRange } from '../utils/memory-widget-variable-utils.js';
 import Long from 'long';
 import { ILogger } from '@theia/core';
 

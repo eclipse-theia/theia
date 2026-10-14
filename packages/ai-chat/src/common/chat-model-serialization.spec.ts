@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { ChatAgentLocation } from './chat-agents';
-import { MutableChatModel } from './chat-model';
-import { ParsedChatRequest, ParsedChatRequestTextPart, ParsedChatRequestVariablePart, ParsedChatRequestFunctionPart, ParsedChatRequestAgentPart } from './parsed-chat-request';
+import { ChatAgentLocation } from './chat-agents.js';
+import { MutableChatModel } from './chat-model.js';
+import { ParsedChatRequest, ParsedChatRequestTextPart, ParsedChatRequestVariablePart, ParsedChatRequestFunctionPart, ParsedChatRequestAgentPart } from './parsed-chat-request.js';
 import { ToolRequest } from '@theia/ai-core';
-import { SerializableTextPart, SerializableVariablePart, SerializableFunctionPart, SerializableAgentPart } from './chat-model-serialization';
+import { SerializableTextPart, SerializableVariablePart, SerializableFunctionPart, SerializableAgentPart } from './chat-model-serialization.js';
 
 describe('ChatModel Serialization and Restoration', () => {
 

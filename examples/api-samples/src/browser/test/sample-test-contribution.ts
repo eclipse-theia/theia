@@ -23,7 +23,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { FileStatWithMetadata } from '@theia/filesystem/lib/common/files';
-import { TestControllerImpl, TestItemImpl, TestRunImpl } from './test-controller';
+import { TestControllerImpl, TestItemImpl, TestRunImpl } from './test-controller.js';
 
 function stringifyTransformer(key: string, value: any): any {
     if (value instanceof URI) {

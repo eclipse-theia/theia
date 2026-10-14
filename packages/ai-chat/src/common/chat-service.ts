@@ -23,8 +23,8 @@ import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariab
 import { Emitter, Event, ILogger, URI, generateUuid } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional, named } from '@theia/core/shared/inversify';
-import { ChatAgentService, DefaultChatAgentId, FallbackChatAgentId } from './chat-agent-service';
-import { ChatAgent, ChatAgentLocation, ChatSessionContext } from './chat-agents';
+import { ChatAgentService, DefaultChatAgentId, FallbackChatAgentId } from './chat-agent-service.js';
+import { ChatAgent, ChatAgentLocation, ChatSessionContext } from './chat-agents.js';
 import {
     ChangeSetElement,
     ChangeSetImpl,
@@ -36,15 +36,15 @@ import {
     ErrorChatResponseModel,
     MutableChatModel,
     MutableChatRequestModel,
-} from './chat-model';
-import { ChatRequestParser } from './chat-request-parser';
-import { ChatSessionNamingService } from './chat-session-naming-service';
-import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
-import { ChatSessionIndex, ChatSessionStore } from './chat-session-store';
-import { ChatContentDeserializerRegistry } from './chat-content-deserializer';
-import { ChangeSetDeserializationContext, ChangeSetElementDeserializerRegistry } from './change-set-element-deserializer';
-import { SerializableChangeSetElement, SerializedChatModel, SerializableParsedRequest } from './chat-model-serialization';
-import debounce = require('@theia/core/shared/lodash.debounce');
+} from './chat-model.js';
+import { ChatRequestParser } from './chat-request-parser.js';
+import { ChatSessionNamingService } from './chat-session-naming-service.js';
+import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request.js';
+import { ChatSessionIndex, ChatSessionStore } from './chat-session-store.js';
+import { ChatContentDeserializerRegistry } from './chat-content-deserializer.js';
+import { ChangeSetDeserializationContext, ChangeSetElementDeserializerRegistry } from './change-set-element-deserializer.js';
+import { SerializableChangeSetElement, SerializedChatModel, SerializableParsedRequest } from './chat-model-serialization.js';
+import debounce from '@theia/core/shared/lodash.debounce';
 
 // Re-export for backward compatibility
 export { DefaultChatAgentId, FallbackChatAgentId };

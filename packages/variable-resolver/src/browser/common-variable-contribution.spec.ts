@@ -31,9 +31,9 @@ import { Container } from '@theia/core/shared/inversify';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import URI from '@theia/core/lib/common/uri';
-import { CommonVariableContribution } from './common-variable-contribution';
-import { VariableInput } from './variable-input';
-import { VariableRegistry } from './variable';
+import { CommonVariableContribution } from './common-variable-contribution.js';
+import { VariableInput } from './variable-input.js';
+import { VariableRegistry } from './variable.js';
 
 disableJSDOM();
 

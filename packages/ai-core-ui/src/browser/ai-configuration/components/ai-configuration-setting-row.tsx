@@ -17,7 +17,7 @@
 import { nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
-import { AiMarkdownDescription } from './ai-configuration-primitives';
+import { AiMarkdownDescription } from './ai-configuration-primitives.js';
 
 export interface AiConfigurationSettingRowProps {
     /**

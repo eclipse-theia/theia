@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { CancellationToken, Disposable } from '../../common';
-import { ContextKeyService } from '../context-key-service';
-import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from './quick-access';
-import { filterItems, QuickPickItem, QuickPicks } from './quick-input-service';
+import { CancellationToken, Disposable } from '../../common/index.js';
+import { ContextKeyService } from '../context-key-service.js';
+import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from './quick-access.js';
+import { filterItems, QuickPickItem, QuickPicks } from './quick-input-service.js';
 
 export interface QuickViewItem {
     readonly label: string;

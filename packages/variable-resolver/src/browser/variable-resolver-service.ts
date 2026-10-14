@@ -17,9 +17,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { VariableRegistry } from './variable';
+import { VariableRegistry } from './variable.js';
 import URI from '@theia/core/lib/common/uri';
-import { CommandIdVariables } from '../common/variable-types';
+import { CommandIdVariables } from '../common/variable-types.js';
 import { isCancelled } from '@theia/core';
 
 export interface VariableResolveOptions {

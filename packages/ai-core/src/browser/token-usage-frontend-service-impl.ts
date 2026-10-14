@@ -16,9 +16,9 @@
 
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { Emitter, ILogger } from '@theia/core';
-import { ModelTokenUsageData, TokenUsageFrontendService } from './token-usage-frontend-service';
-import { TokenUsage, TokenUsageService } from '../common/token-usage-service';
-import { TokenUsageServiceClient } from '../common/protocol';
+import { ModelTokenUsageData, TokenUsageFrontendService } from './token-usage-frontend-service.js';
+import { TokenUsage, TokenUsageService } from '../common/token-usage-service.js';
+import { TokenUsageServiceClient } from '../common/protocol.js';
 
 @injectable()
 export class TokenUsageServiceClientImpl implements TokenUsageServiceClient {

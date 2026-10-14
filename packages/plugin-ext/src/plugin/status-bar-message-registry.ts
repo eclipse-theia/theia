@@ -13,16 +13,16 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { Disposable, StatusBarAlignment } from './types-impl';
+import { Disposable, StatusBarAlignment } from './types-impl.js';
 import { CancellationToken, ProviderResult, StatusBarItem } from '@theia/plugin';
 import {
     PLUGIN_RPC_CONTEXT as Ext, StatusBarMessageRegistryMain,
     StatusBarMessageRegistryExt
-} from '../common/plugin-api-rpc';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { StatusBarItemImpl } from './status-bar/status-bar-item';
-import { CommandRegistryImpl } from './command-registry';
-import { MarkdownString } from '../common/plugin-api-rpc-model';
+} from '../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
+import { StatusBarItemImpl } from './status-bar/status-bar-item.js';
+import { CommandRegistryImpl } from './command-registry.js';
+import { MarkdownString } from '../common/plugin-api-rpc-model.js';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.

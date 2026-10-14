@@ -33,10 +33,10 @@ window.matchMedia = () => ({
 
 import { expect } from 'chai';
 import { Disposable } from '@theia/core';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
-import { InstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiationService';
-import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation.js';
+import { InstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiationService.js';
+import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection.js';
 
 disableJSDOM();
 

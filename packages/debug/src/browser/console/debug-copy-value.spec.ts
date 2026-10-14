@@ -21,9 +21,9 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import { DebugProtocol } from '@vscode/debugprotocol';
-import { DebugSession } from '../debug-session';
-import { DebugWatchExpression } from '../view/debug-watch-expression';
-import { DebugVariable, ExpressionContainer } from './debug-console-items';
+import { DebugSession } from '../debug-session.js';
+import { DebugWatchExpression } from '../view/debug-watch-expression.js';
+import { DebugVariable, ExpressionContainer } from './debug-console-items.js';
 
 disableJSDOM();
 

@@ -26,7 +26,7 @@ import { Container } from '@theia/core/shared/inversify';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { UntitledWorkspaceService, WorkspaceFileService } from '@theia/workspace/lib/common';
-import { BrowserOnlyPluginPathsService } from './browser-only-plugin-paths-service';
+import { BrowserOnlyPluginPathsService } from './browser-only-plugin-paths-service.js';
 
 disableJSDOM();
 

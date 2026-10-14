@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import * as path from 'path';
-import { URI } from './types-impl';
-import { IconUrl, PluginPackage } from '../common/plugin-protocol';
-import { Plugin } from '../common/plugin-api-rpc';
+import { URI } from './types-impl.js';
+import { IconUrl, PluginPackage } from '../common/plugin-protocol.js';
+import { Plugin } from '../common/plugin-api-rpc.js';
 
 export type PluginIconPath = string | URI | {
     light: string | URI,

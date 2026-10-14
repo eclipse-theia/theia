@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { PLUGIN_COPY_IGNORE } from './constants';
+import { PLUGIN_COPY_IGNORE } from './constants.js';
 
 describe('constants', () => {
 

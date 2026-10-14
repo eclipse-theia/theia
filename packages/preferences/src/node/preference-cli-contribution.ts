@@ -18,7 +18,7 @@ import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { Argv } from '@theia/core/shared/yargs';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { RemoteCliContext, RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-contribution';
-import { CliPreferences, CliPreferenceEntry } from '../common/cli-preferences';
+import { CliPreferences, CliPreferenceEntry } from '../common/cli-preferences.js';
 import { ILogger } from '@theia/core';
 
 @injectable()

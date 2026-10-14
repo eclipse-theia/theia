@@ -37,12 +37,12 @@ import URI from '@theia/core/lib/common/uri';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-working-directory-provider';
-import { FileChangeType, FileChangesEvent, FileOperation } from '../common/files';
-import { FileDialogService, SaveFileDialogProps } from './file-dialog';
-import { FileSelection } from './file-selection';
-import { FileService, UserFileOperationEvent } from './file-service';
-import { FileSystemPreferences } from '../common/filesystem-preferences';
-import { FileUploadService } from '../common/upload/file-upload';
+import { FileChangeType, FileChangesEvent, FileOperation } from '../common/files.js';
+import { FileDialogService, SaveFileDialogProps } from './file-dialog/index.js';
+import { FileSelection } from './file-selection.js';
+import { FileService, UserFileOperationEvent } from './file-service.js';
+import { FileSystemPreferences } from '../common/filesystem-preferences.js';
+import { FileUploadService } from '../common/upload/file-upload.js';
 
 export namespace FileSystemCommands {
 

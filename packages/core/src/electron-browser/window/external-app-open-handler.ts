@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { OpenHandler } from '../../browser/opener-service';
-import URI from '../../common/uri';
-import { HttpOpenHandler } from '../../browser/http-open-handler';
+import { OpenHandler } from '../../browser/opener-service.js';
+import URI from '../../common/uri.js';
+import { HttpOpenHandler } from '../../browser/http-open-handler.js';
 
 export interface ExternalAppOpenHandlerOptions {
     openExternalApp?: boolean

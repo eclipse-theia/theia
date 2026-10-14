@@ -26,10 +26,10 @@ import 'reflect-metadata';
 import { expect } from 'chai';
 import { Emitter } from '@theia/core/lib/common/event';
 import { ConsoleSessionManager } from '@theia/console/lib/browser/console-session-manager';
-import { DebugConsoleContribution } from './debug-console-contribution';
-import { DebugConsoleSession } from './debug-console-session';
-import { DebugSession } from '../debug-session';
-import { DidChangeActiveDebugSession } from '../debug-session-manager';
+import { DebugConsoleContribution } from './debug-console-contribution.js';
+import { DebugConsoleSession } from './debug-console-session.js';
+import { DebugSession } from '../debug-session.js';
+import { DidChangeActiveDebugSession } from '../debug-session-manager.js';
 
 disableJSDOM();
 

@@ -2,6 +2,7 @@
   "name": "@theia/external-api",
   "version": "1.76.0",
   "description": "Theia - External API",
+  "type": "module",
   "dependencies": {
     "@theia/core": "1.76.0",
     "tslib": "^2.8.1"
@@ -32,6 +33,17 @@
     "src"
   ],
   "main": "lib/common",
+  "exports": {
+    ".": "./lib/common/index.js",
+    "./package.json": "./package.json",
+    "./lib/browser": "./lib/browser/index.js",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/node": "./lib/node/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "scripts": {
     "build": "theiaext build",
     "clean": "theiaext clean",

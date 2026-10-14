@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { TelemetryService } from '../common/telemetry-service';
-import { BrowserOnlyTelemetryService } from './browser-only-telemetry-service';
+import { TelemetryService } from '../common/telemetry-service.js';
+import { BrowserOnlyTelemetryService } from './browser-only-telemetry-service.js';
 
 export default new ContainerModule((bind, _unbind, isBound, rebind) => {
     bind(BrowserOnlyTelemetryService).toSelf().inSingletonScope();

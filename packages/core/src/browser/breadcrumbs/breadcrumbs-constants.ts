@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MaybePromise, Event } from '../../common';
-import { Disposable } from '../../../shared/vscode-languageserver-protocol';
-import URI from '../../common/uri';
+import { MaybePromise, Event } from '../../common/index.js';
+import { Disposable } from '../../../shared/vscode-languageserver-protocol/index.cjs';
+import URI from '../../common/uri.js';
 
 export namespace Styles {
     export const BREADCRUMBS = 'theia-breadcrumbs';

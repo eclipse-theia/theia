@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import React = require('react');
-import { codicon } from './widget';
+import * as React from 'react';
+import { codicon } from './widget.js';
 
 export type MessageType = keyof AlertMessageIcon;
 

@@ -16,7 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ApplicationShell, UndoRedoHandler } from '@theia/core/lib/browser';
-import { CustomEditorWidget } from './custom-editor-widget';
+import { CustomEditorWidget } from './custom-editor-widget.js';
 
 @injectable()
 export class CustomEditorUndoRedoHandler implements UndoRedoHandler<CustomEditorWidget> {

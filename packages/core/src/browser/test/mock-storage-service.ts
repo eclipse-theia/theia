@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { StorageService } from '../storage-service';
+import { StorageService } from '../storage-service.js';
 import { injectable } from 'inversify';
 
 /**

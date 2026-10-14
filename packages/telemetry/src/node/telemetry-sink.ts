@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { MaybePromise } from '@theia/core/lib/common';
-import { TelemetryEvent } from '../common/telemetry-protocol';
+import { TelemetryEvent } from '../common/telemetry-protocol.js';
 
 /** @experimental */
 export const TelemetrySink = Symbol('TelemetrySink');

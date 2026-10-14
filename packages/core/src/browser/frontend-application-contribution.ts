@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import type { FrontendApplication } from './frontend-application';
-import { MaybePromise, isObject } from '../common/types';
-import { StopReason } from '../common/frontend-application-state';
+import type { FrontendApplication } from './frontend-application.js';
+import { MaybePromise, isObject } from '../common/types.js';
+import { StopReason } from '../common/frontend-application-state.js';
 import { injectable } from 'inversify';
 
 /**

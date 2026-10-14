@@ -18,8 +18,8 @@ import { interfaces } from 'inversify';
 import {
     ConnectionHandler, DefaultBackendStopwatch, BackendStopwatch, RpcConnectionHandler,
     Stopwatch, stopwatchPath
-} from '../../common';
-import { NodeStopwatch } from './node-stopwatch';
+} from '../../common/index.js';
+import { NodeStopwatch } from './node-stopwatch.js';
 
 export function bindNodeStopwatch(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<Stopwatch> {
     return bind(Stopwatch).to(NodeStopwatch).inSingletonScope();

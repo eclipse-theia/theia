@@ -17,4 +17,4 @@
 /**
  * @deprecated since 1.20.0. Import from `@theia/core/lib/common/keys` instead.
  */
-export * from '../../common/keys';
+export * from '../../common/keys.js';

@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core';
-import { SkillInstallClient } from '../../common/skill/skill-install-protocol';
+import { SkillInstallClient } from '../../common/skill/skill-install-protocol.js';
 
 /**
  * Frontend endpoint for the backend's skill-folder watcher. The backend invokes

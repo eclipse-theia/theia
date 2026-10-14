@@ -16,7 +16,7 @@
 
 import type { CallToolResult, ListResourcesResult, ListToolsResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types';
 import { Event } from '@theia/core/lib/common/event';
-import { MCPOAuthConfig } from './mcp-oauth';
+import { MCPOAuthConfig } from './mcp-oauth.js';
 
 export const MCPFrontendService = Symbol('MCPFrontendService');
 export interface MCPFrontendService {

@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { CustomEditorPriority, type GrammarsContribution, type PluginUiTheme, type WalkthroughContribution } from '../common/contribution-types';
-import { PreferenceScope } from '../common/protocol-shims';
+import { CustomEditorPriority, type GrammarsContribution, type PluginUiTheme, type WalkthroughContribution } from '../common/contribution-types.js';
+import { PreferenceScope } from '../common/protocol-shims.js';
 import {
     deriveDefaultForType,
     extractPluginViewsIds,
@@ -47,9 +47,9 @@ import {
     readWalkthroughs,
     toSchema,
     transformIconUrl
-} from './normalize-contributions';
-import { createNormalizeCtx, manifest } from '../common/test-helpers';
-import type { PluginManifest } from '../common/manifest-types';
+} from './normalize-contributions.js';
+import { createNormalizeCtx, manifest } from '../common/test-helpers.js';
+import type { PluginManifest } from '../common/manifest-types.js';
 
 describe('normalize-contributions', () => {
 

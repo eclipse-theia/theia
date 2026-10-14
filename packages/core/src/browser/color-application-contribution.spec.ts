@@ -14,14 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from './test/jsdom';
+import { enableJSDOM } from './test/jsdom.js';
 let disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
-import './shell/application-shell'; // load first to avoid a circular import failure via `SecondaryWindowHandler`
-import { ColorApplicationContribution } from './color-application-contribution';
-import { ColorRegistry } from './color-registry';
-import { ThemeService } from './theming';
+import './shell/application-shell.js'; // load first to avoid a circular import failure via `SecondaryWindowHandler`
+import { ColorApplicationContribution } from './color-application-contribution.js';
+import { ColorRegistry } from './color-registry.js';
+import { ThemeService } from './theming.js';
 disableJSDOM();
 
 class TestColorRegistry extends ColorRegistry {

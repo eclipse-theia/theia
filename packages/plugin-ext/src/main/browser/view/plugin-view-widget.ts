@@ -20,7 +20,7 @@ import { MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { Message } from '@theia/core/shared/@lumino/messaging';
-import { TreeViewWidget } from './tree-view-widget';
+import { TreeViewWidget } from './tree-view-widget.js';
 import { DescriptionWidget, DynamicToolbarWidget } from '@theia/core/lib/browser/view-container';
 import { DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';

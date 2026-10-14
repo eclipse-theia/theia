@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { GreetingKind, GreeterData, GreetingExt, GreetingMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
+import { GreetingKind, GreeterData, GreetingExt, GreetingMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc.js';
 import { RPCProtocol } from '@theia/plugin-ext/lib/common/rpc-protocol';
 import { Event, Emitter } from '@theia/core';
 

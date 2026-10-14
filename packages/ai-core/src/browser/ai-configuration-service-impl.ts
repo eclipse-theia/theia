@@ -19,8 +19,8 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { PreferenceInspection, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
-import { AiConfigurationChange, AiConfigurationInspection, AiConfigurationService } from '../common/ai-configuration-service';
-import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
+import { AiConfigurationChange, AiConfigurationInspection, AiConfigurationService } from '../common/ai-configuration-service.js';
+import { TrustAwarePreferenceReader } from './trust-aware-preference-reader.js';
 
 /**
  * Prefix shared by all AI-related preference keys. Only changes to keys under this namespace are

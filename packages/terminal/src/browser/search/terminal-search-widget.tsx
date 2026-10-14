@@ -18,7 +18,8 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import * as React from '@theia/core/shared/react';
 import '../../../src/browser/style/terminal-search.css';
-import { Terminal } from 'xterm';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import xterm, { type Terminal } from 'xterm';
 import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
 import { codicon, Key } from '@theia/core/lib/browser';
 import { nls } from '@theia/core';
@@ -35,7 +36,7 @@ export class TerminalSearchWidget extends ReactWidget {
     private searchOptions: ISearchOptions = {};
     private searchAddon: SearchAddon;
 
-    @inject(Terminal)
+    @inject(xterm.Terminal)
     protected terminal: Terminal;
 
     @postConstruct()

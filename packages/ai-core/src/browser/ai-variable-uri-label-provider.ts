@@ -17,8 +17,8 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { URI } from '@theia/core';
 import { LabelProvider, LabelProviderContribution } from '@theia/core/lib/browser';
-import { AI_VARIABLE_RESOURCE_SCHEME, AIVariableResourceResolver } from '../common/ai-variable-resource';
-import { AIVariableResolutionRequest, AIVariableService } from '../common/variable-service';
+import { AI_VARIABLE_RESOURCE_SCHEME, AIVariableResourceResolver } from '../common/ai-variable-resource.js';
+import { AIVariableResolutionRequest, AIVariableService } from '../common/variable-service.js';
 
 @injectable()
 export class AIVariableUriLabelProvider implements LabelProviderContribution {

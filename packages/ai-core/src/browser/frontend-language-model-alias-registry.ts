@@ -16,11 +16,11 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter, Event, nls } from '@theia/core';
-import { LanguageModelAlias, LanguageModelAliasRegistry } from '../common/language-model-alias';
+import { LanguageModelAlias, LanguageModelAliasRegistry } from '../common/language-model-alias.js';
 import { PreferenceScope } from '@theia/core/lib/common';
-import { LANGUAGE_MODEL_ALIASES_PREFERENCE } from '../common/ai-core-preferences';
+import { LANGUAGE_MODEL_ALIASES_PREFERENCE } from '../common/ai-core-preferences.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { AiConfigurationService } from '../common/ai-configuration-service';
+import { AiConfigurationService } from '../common/ai-configuration-service.js';
 
 @injectable()
 export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegistry {

@@ -18,7 +18,7 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { PromptService } from '@theia/ai-core';
 import { nls } from '@theia/core';
-import { AppTesterChatAgentId } from './app-tester-chat-agent';
+import { AppTesterChatAgentId } from './app-tester-chat-agent.js';
 
 @injectable()
 export class AppTesterCapabilityContribution implements FrontendApplicationContribution {

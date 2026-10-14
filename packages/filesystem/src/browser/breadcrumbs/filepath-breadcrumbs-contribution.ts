@@ -18,11 +18,11 @@ import { Disposable, Emitter, Event } from '@theia/core';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Breadcrumb, BreadcrumbsContribution, CompositeTreeNode, LabelProvider, SelectableTreeNode, Widget } from '@theia/core/lib/browser';
-import { FilepathBreadcrumb } from './filepath-breadcrumb';
-import { BreadcrumbsFileTreeWidget } from './filepath-breadcrumbs-container';
-import { DirNode } from '../file-tree';
-import { FileService } from '../file-service';
-import { FileStat } from '../../common/files';
+import { FilepathBreadcrumb } from './filepath-breadcrumb.js';
+import { BreadcrumbsFileTreeWidget } from './filepath-breadcrumbs-container.js';
+import { DirNode } from '../file-tree/index.js';
+import { FileService } from '../file-service.js';
+import { FileStat } from '../../common/files.js';
 
 export const FilepathBreadcrumbType = Symbol('FilepathBreadcrumb');
 

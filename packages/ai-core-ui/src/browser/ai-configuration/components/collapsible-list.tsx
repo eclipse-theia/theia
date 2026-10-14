@@ -16,8 +16,8 @@
 
 import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
-import { AiConfigurationEmptyState, AiConfigurationFilterInput, AiConfigurationSection } from './ai-configuration-primitives';
-import { AiConfigurationOrigin, AiConfigurationOriginBadges } from './ai-configuration-origin-badge';
+import { AiConfigurationEmptyState, AiConfigurationFilterInput, AiConfigurationSection } from './ai-configuration-primitives.js';
+import { AiConfigurationOrigin, AiConfigurationOriginBadges } from './ai-configuration-origin-badge.js';
 
 /** One expandable row of a {@link CollapsibleList}. */
 export interface CollapsibleRow {

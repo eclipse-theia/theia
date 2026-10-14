@@ -19,7 +19,7 @@ import {
     ToolConfirmationMode,
     TOOL_CONFIRMATION_PREFERENCE,
     DEFAULT_TOOL_CONFIRMATION_PREFERENCE
-} from '../common/chat-tool-preferences';
+} from '../common/chat-tool-preferences.js';
 import { AiConfigurationService, ToolRequest } from '@theia/ai-core';
 
 /**

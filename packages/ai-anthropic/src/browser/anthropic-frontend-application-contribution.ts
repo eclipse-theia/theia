@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
+import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common/index.js';
 import {
     ALLOW_ENV_API_KEY_PREF, API_KEY_PREF, MODEL_OVERRIDES_PREF, CUSTOM_ENDPOINTS_PREF, SERVER_SIDE_COMPACTION_PREF, SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD_PREF
-} from '../common/anthropic-preferences';
+} from '../common/anthropic-preferences.js';
 import {
     AICorePreferences, PREFERENCE_NAME_MAX_RETRIES, PREFERENCE_NAME_SERVER_SIDE_COMPACTION,
     PREFERENCE_NAME_SERVER_SIDE_COMPACTION_TOKEN_THRESHOLD

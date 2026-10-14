@@ -22,9 +22,9 @@ import {
     IBaseTerminalClient,
     TerminalProcessInfo,
     TerminalExitReason
-} from '../common/base-terminal-protocol';
+} from '../common/base-terminal-protocol.js';
 import { TerminalProcess, ProcessManager, TaskTerminalProcess } from '@theia/process/lib/node';
-import { ShellProcess } from './shell-process';
+import { ShellProcess } from './shell-process.js';
 
 @injectable()
 export abstract class BaseTerminalServer implements IBaseTerminalServer {

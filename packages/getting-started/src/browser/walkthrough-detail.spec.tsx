@@ -25,8 +25,8 @@ import { ThemeService } from '@theia/core/lib/browser/theming';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { ThemeType } from '@theia/core/lib/common/theme';
-import { Walkthrough, WalkthroughStep } from '../common/walkthrough-types';
-import { WalkthroughDetail } from './walkthrough-detail';
+import { Walkthrough, WalkthroughStep } from '../common/walkthrough-types.js';
+import { WalkthroughDetail } from './walkthrough-detail.js';
 
 function createMockStep(overrides?: Partial<WalkthroughStep>): WalkthroughStep {
     return {

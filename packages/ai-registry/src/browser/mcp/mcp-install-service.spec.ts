@@ -21,10 +21,10 @@ import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { MCPFrontendService } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { MCPServerEditor, MCPServerEditorImpl, MCPServerEditDialogFactory } from '@theia/ai-mcp/lib/browser/mcp-server-editor';
-import { AUTO_UPDATE_OVERRIDES_PREF } from '../../common/ai-registry-preferences';
-import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
-import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from '../auto-update/registry-auto-update-policy';
-import { MCPInstallService, MCPInstallServiceImpl } from './mcp-install-service';
+import { AUTO_UPDATE_OVERRIDES_PREF } from '../../common/ai-registry-preferences.js';
+import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types.js';
+import { RegistryAutoUpdatePolicy, RegistryAutoUpdatePolicyImpl } from '../auto-update/registry-auto-update-policy.js';
+import { MCPInstallService, MCPInstallServiceImpl } from './mcp-install-service.js';
 
 class FakePreferenceService {
     private readonly store = new Map<string, unknown>();

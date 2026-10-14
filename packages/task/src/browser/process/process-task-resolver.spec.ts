@@ -30,10 +30,10 @@ import URI from '@theia/core/lib/common/uri';
 import { Variable, VariableRegistry } from '@theia/variable-resolver/lib/browser/variable';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { TaskDefinitionRegistry } from '../task-definition-registry';
-import { TaskScope } from '../../common/task-protocol';
-import { ProcessTaskConfiguration } from '../../common/process/task-protocol';
-import { ProcessTaskResolver } from './process-task-resolver';
+import { TaskDefinitionRegistry } from '../task-definition-registry.js';
+import { TaskScope } from '../../common/task-protocol.js';
+import { ProcessTaskConfiguration } from '../../common/process/task-protocol.js';
+import { ProcessTaskResolver } from './process-task-resolver.js';
 
 disableJSDOM();
 

@@ -20,7 +20,7 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { addClipboardListener } from '@theia/core/lib/browser/widgets';
 import { ILogger, nls } from '@theia/core';
-import type { FileDownloadData, FileDownloadService } from '../../common/download/file-download';
+import type { FileDownloadData, FileDownloadService } from '../../common/download/file-download.js';
 
 @injectable()
 export class FileDownloadServiceImpl implements FileDownloadService {

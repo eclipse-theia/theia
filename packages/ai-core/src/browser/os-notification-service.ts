@@ -17,7 +17,7 @@
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { nls } from '@theia/core/lib/common/nls';
 import { environment, ILogger } from '@theia/core';
-import { AgentNotificationKind, AGENT_NOTIFICATION_KIND_INPUT_NEEDED } from '../common/notification-types';
+import { AgentNotificationKind, AGENT_NOTIFICATION_KIND_INPUT_NEEDED } from '../common/notification-types.js';
 
 /**
  * Configuration options for OS notifications

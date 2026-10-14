@@ -19,7 +19,7 @@ import {
     filterValidValues,
     isHttpOrHttpsUrl,
     MCPServersPreference
-} from './mcp-server-preference-validator';
+} from './mcp-server-preference-validator.js';
 
 /**
  * Captures the diagnostic that `filterValidValues` writes to `console.warn` for a single probe entry.

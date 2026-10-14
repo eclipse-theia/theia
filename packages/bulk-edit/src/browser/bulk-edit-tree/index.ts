@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './bulk-edit-tree';
-export * from './bulk-edit-tree-model';
-export * from './bulk-edit-node-selection';
-export * from './bulk-edit-tree-widget';
-export * from './bulk-edit-tree-container';
+export * from './bulk-edit-tree.js';
+export * from './bulk-edit-tree-model.js';
+export * from './bulk-edit-node-selection.js';
+export * from './bulk-edit-tree-widget.js';
+export * from './bulk-edit-tree-container.js';

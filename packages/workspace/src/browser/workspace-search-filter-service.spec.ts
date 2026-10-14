@@ -18,7 +18,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Emitter } from '@theia/core';
 import { ContributionProvider } from '@theia/core/lib/common';
-import { WorkspaceSearchFilterProvider, WorkspaceSearchFilterService } from './workspace-search-filter-service';
+import { WorkspaceSearchFilterProvider, WorkspaceSearchFilterService } from './workspace-search-filter-service.js';
 
 class MockProvider implements WorkspaceSearchFilterProvider {
     protected readonly onExclusionGlobsChangedEmitter = new Emitter<void>();

@@ -25,8 +25,8 @@ import {
     hasToolCallError,
     isToolNotAvailableError,
     isToolCallContent
-} from './language-model';
-import { ToolCallExecutor, ToolCallExecutorImpl, ToolCallOutcome } from './tool-call-execution';
+} from './language-model.js';
+import { ToolCallExecutor, ToolCallExecutorImpl, ToolCallOutcome } from './tool-call-execution.js';
 
 /** Builds a minimal {@link ToolRequest} whose handler delegates to `handler`. */
 function tool(name: string, handler: ToolRequest['handler']): ToolRequest {

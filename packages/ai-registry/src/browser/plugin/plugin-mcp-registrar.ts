@@ -18,8 +18,8 @@ import { PreferenceScope, PreferenceService } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { MCPInstallEntryConfig, MCPRegistryMetadata } from '@theia/ai-mcp/lib/common/mcp-server-manager';
-import { ResolvedPluginServer } from '../../common/plugin/agent-plugin-manifest';
-import { InstalledPluginInfo } from '../../common/plugin/plugin-registry-types';
+import { ResolvedPluginServer } from '../../common/plugin/agent-plugin-manifest.js';
+import { InstalledPluginInfo } from '../../common/plugin/plugin-registry-types.js';
 
 /** One entry of the `ai-features.mcp.mcpServers` preference, as this registrar writes it. */
 type StoredEntry = MCPInstallEntryConfig & {

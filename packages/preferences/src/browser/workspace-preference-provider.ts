@@ -20,7 +20,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import URI from '@theia/core/lib/common/uri';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { WorkspaceFilePreferenceProviderFactory, WorkspaceFilePreferenceProvider } from './workspace-file-preference-provider';
+import { WorkspaceFilePreferenceProviderFactory, WorkspaceFilePreferenceProvider } from './workspace-file-preference-provider.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Emitter, Event, PreferenceProvider, PreferenceProviderDataChanges, PreferenceProviderProvider, PreferenceScope } from '@theia/core';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';

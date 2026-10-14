@@ -25,7 +25,7 @@ import {
 } from '@theia/ai-core/lib/common';
 import { LanguageModelService } from '@theia/ai-core/lib/browser';
 import { generateUuid, ILogger, nls } from '@theia/core';
-import { terminalPrompts } from './ai-terminal-prompt-template';
+import { terminalPrompts } from './ai-terminal-prompt-template.js';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { z } from 'zod';
 

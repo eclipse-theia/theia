@@ -21,15 +21,15 @@ import { StreamableHTTPClientTransport, StreamableHTTPClientTransportOptions, St
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import {
     isLocalMCPServerDescription, isRemoteMCPServerDescription, LocalMCPServerDescription, MCPServerDescription, MCPServerStatus, ToolInformation
-} from '../common';
+} from '../common/index.js';
 import { Emitter } from '@theia/core/lib/common/event.js';
 import { nls } from '@theia/core/lib/common/nls';
 import { CallToolResult, CallToolResultSchema, ListResourcesResult, ListRootsRequestSchema, ListRootsResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
-import { MCPOAuthClientProvider } from './mcp-oauth-client-provider';
-import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-factory';
-import { MCPOAuthAuthorizationRequiredError, MCPOAuthAuthorizationServerError } from './mcp-oauth-errors';
-import { MCPOAuthCancelledError } from './mcp-oauth-callback-service';
+import { MCPOAuthClientProvider } from './mcp-oauth-client-provider.js';
+import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-factory.js';
+import { MCPOAuthAuthorizationRequiredError, MCPOAuthAuthorizationServerError } from './mcp-oauth-errors.js';
+import { MCPOAuthCancelledError } from './mcp-oauth-callback-service.js';
 
 const HTTP_STATUS_UNAUTHORIZED = 401;
 

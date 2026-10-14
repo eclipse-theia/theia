@@ -16,21 +16,21 @@
 
 import { ContainerModule } from 'inversify';
 import { performance } from 'perf_hooks';
-import { generateUuid } from '../common/uuid';
-import { bindRootContributionProvider } from '../common/contribution-provider';
-import { Stopwatch, SimpleStopwatch } from '../common/performance';
-import { RpcConnectionHandler } from '../common/messaging/proxy-factory';
-import { ElectronSecurityToken } from '../electron-common/electron-token';
-import { ElectronMainWindowService, electronMainWindowServicePath } from '../electron-common/electron-main-window-service';
-import { ElectronMainApplication, ElectronMainApplicationContribution, ElectronMainProcessArgv } from './electron-main-application';
-import { LaunchArgsStore } from './launch-args-store';
-import { ElectronMainWindowServiceImpl } from './electron-main-window-service-impl';
-import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory, WindowApplicationConfig } from './theia-electron-window';
-import { TheiaMainApi } from './electron-api-main';
-import { ElectronMessagingContribution } from './messaging/electron-messaging-contribution';
-import { ElectronSecurityTokenService } from './electron-security-token-service';
-import { ElectronMessagingService } from './messaging/electron-messaging-service';
-import { ElectronConnectionHandler } from './messaging/electron-connection-handler';
+import { generateUuid } from '../common/uuid.js';
+import { bindRootContributionProvider } from '../common/contribution-provider.js';
+import { Stopwatch, SimpleStopwatch } from '../common/performance/index.js';
+import { RpcConnectionHandler } from '../common/messaging/proxy-factory.js';
+import { ElectronSecurityToken } from '../electron-common/electron-token.js';
+import { ElectronMainWindowService, electronMainWindowServicePath } from '../electron-common/electron-main-window-service.js';
+import { ElectronMainApplication, ElectronMainApplicationContribution, ElectronMainProcessArgv } from './electron-main-application.js';
+import { LaunchArgsStore } from './launch-args-store.js';
+import { ElectronMainWindowServiceImpl } from './electron-main-window-service-impl.js';
+import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory, WindowApplicationConfig } from './theia-electron-window.js';
+import { TheiaMainApi } from './electron-api-main.js';
+import { ElectronMessagingContribution } from './messaging/electron-messaging-contribution.js';
+import { ElectronSecurityTokenService } from './electron-security-token-service.js';
+import { ElectronMessagingService } from './messaging/electron-messaging-service.js';
+import { ElectronConnectionHandler } from './messaging/electron-connection-handler.js';
 
 const electronSecurityToken: ElectronSecurityToken = { value: generateUuid() };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

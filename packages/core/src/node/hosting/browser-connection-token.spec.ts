@@ -16,13 +16,13 @@
 
 import { expect } from 'chai';
 import * as http from 'http';
-import { environment } from '../../common';
+import { environment } from '../../common/index.js';
 import {
     BrowserConnectionToken,
     BrowserConnectionTokenBackendContribution,
     BROWSER_TOKEN_COOKIE_NAME,
     createBrowserConnectionToken
-} from './browser-connection-token';
+} from './browser-connection-token.js';
 
 describe('BrowserConnectionToken', () => {
 

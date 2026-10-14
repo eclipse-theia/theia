@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import { BackendRequestService, RequestConfiguration, RequestContext, RequestOptions, RequestService, CancellationToken } from '@theia/request';
-import { PreferenceService } from '../../common';
+import { PreferenceService } from '../../common/index.js';
 
 @injectable()
 export abstract class AbstractBrowserRequestService implements RequestService {

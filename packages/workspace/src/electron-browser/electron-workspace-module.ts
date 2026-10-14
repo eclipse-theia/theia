@@ -16,7 +16,7 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { ElectronWorkspaceContribution } from './electron-workspace-contribution';
+import { ElectronWorkspaceContribution } from './electron-workspace-contribution.js';
 
 export default new ContainerModule(bind => {
     bind(ElectronWorkspaceContribution).toSelf().inSingletonScope();

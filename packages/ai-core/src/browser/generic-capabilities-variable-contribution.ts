@@ -29,10 +29,10 @@ import {
     AgentService,
     AgentsVariableContribution,
     ToolInvocationRegistry
-} from '../common';
-import { PromptVariableContribution } from './prompt-variable-contribution';
-import { SkillService } from './skill-service';
-import { SkillsVariableContribution } from './skills-variable-contribution';
+} from '../common/index.js';
+import { PromptVariableContribution } from './prompt-variable-contribution.js';
+import { SkillService } from './skill-service.js';
+import { SkillsVariableContribution } from './skills-variable-contribution.js';
 
 /**
  * Variable IDs for generic capability selections.

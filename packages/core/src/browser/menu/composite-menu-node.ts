@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CompoundMenuNode, ContextExpressionMatcher, Group, MenuNode, MenuPath, Submenu } from '../../common/menu/menu-types';
-import { Event } from '../../common';
-import { combineWhenExpressions } from './utils';
+import { CompoundMenuNode, ContextExpressionMatcher, Group, MenuNode, MenuPath, Submenu } from '../../common/menu/menu-types.js';
+import { Event } from '../../common/index.js';
+import { combineWhenExpressions } from './utils.js';
 
 export class SubMenuLink implements CompoundMenuNode {
     constructor(private readonly delegate: Submenu, private readonly _sortString?: string, private readonly _when?: string) { }

@@ -17,7 +17,7 @@
 import { MaybePromise, nls } from '@theia/core';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { injectable } from '@theia/core/shared/inversify';
-import { AIVariable, AIVariableContribution, AIVariableContext, AIVariableResolutionRequest, AIVariableResolver, AIVariableService, ResolvedAIVariable } from '../common';
+import { AIVariable, AIVariableContribution, AIVariableContext, AIVariableResolutionRequest, AIVariableResolver, AIVariableService, ResolvedAIVariable } from '../common/index.js';
 
 export const PRODUCT_NAME_VARIABLE: AIVariable = {
     id: 'product-name-provider',

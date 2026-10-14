@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ExternalApiDelivery } from './external-api-preferences';
+import { ExternalApiDelivery } from './external-api-preferences.js';
 
 /** RPC path on which frontends push the external API configuration to the backend. */
 export const EXTERNAL_API_CONFIG_SERVICE_PATH = '/services/external-api-config';

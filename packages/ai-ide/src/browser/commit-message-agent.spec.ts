@@ -18,8 +18,8 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
 import { LanguageModel, LanguageModelRegistry, LanguageModelService, PromptService, UserRequest } from '@theia/ai-core';
-import { CommitMessageAgent } from './commit-message-agent';
-import { COMMIT_MESSAGE_SYSTEM_PROMPT_ID, COMMIT_MESSAGE_USER_PROMPT_ID } from './commit-message-prompt-template';
+import { CommitMessageAgent } from './commit-message-agent.js';
+import { COMMIT_MESSAGE_SYSTEM_PROMPT_ID, COMMIT_MESSAGE_USER_PROMPT_ID } from './commit-message-prompt-template.js';
 
 describe('CommitMessageAgent', () => {
 

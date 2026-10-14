@@ -24,14 +24,14 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { AbstractResourcePreferenceProvider, FileContentStatus, PreferenceStorage, PreferenceStorageFactory } from './abstract-resource-preference-provider';
+import { AbstractResourcePreferenceProvider, FileContentStatus, PreferenceStorage, PreferenceStorageFactory } from './abstract-resource-preference-provider.js';
 import { bindPreferenceService } from '@theia/core/lib/browser/frontend-application-bindings';
 import { bindMockPreferenceProviders } from '@theia/core/lib/browser/preferences/test';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Listener, MessageService, PreferenceSchemaService } from '@theia/core/lib/common';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { PreferenceTransactionFactory } from '../browser/preference-transaction-manager';
+import { PreferenceTransactionFactory } from '../browser/preference-transaction-manager.js';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';

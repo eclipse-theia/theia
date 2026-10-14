@@ -18,8 +18,8 @@ import { DefaultUriLabelProviderContribution, URIIconReference } from '@theia/co
 import URI from '@theia/core/lib/common/uri';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { WorkspaceService } from './workspace-service';
-import { WorkspaceVariableContribution } from './workspace-variable-contribution';
+import { WorkspaceService } from './workspace-service.js';
+import { WorkspaceVariableContribution } from './workspace-variable-contribution.js';
 
 @injectable()
 export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProviderContribution {

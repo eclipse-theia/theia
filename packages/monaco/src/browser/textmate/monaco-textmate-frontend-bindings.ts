@@ -17,20 +17,21 @@
 import { interfaces } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, isBasicWasmSupported } from '@theia/core/lib/browser';
 import { bindRootContributionProvider } from '@theia/core';
-import { TextmateRegistry } from './textmate-registry';
-import { LanguageGrammarDefinitionContribution } from './textmate-contribution';
-import { MonacoTextmateService } from './monaco-textmate-service';
-import { MonacoThemeRegistry } from './monaco-theme-registry';
-import { loadWASM, createOnigScanner, OnigScanner, createOnigString, OnigString } from 'vscode-oniguruma';
-import { IOnigLib, IRawGrammar, parseRawGrammar, Registry } from 'vscode-textmate';
-import { OnigasmProvider, TextmateRegistryFactory, ThemeMix } from './monaco-theme-types';
+import { TextmateRegistry } from './textmate-registry.js';
+import { LanguageGrammarDefinitionContribution } from './textmate-contribution.js';
+import { MonacoTextmateService } from './monaco-textmate-service.js';
+import { MonacoThemeRegistry } from './monaco-theme-registry.js';
+// CommonJS modules whose exports cannot be detected statically, so they are imported as a whole.
+import vscodeOniguruma, { type OnigScanner, type OnigString } from 'vscode-oniguruma';
+import vscodeTextmate, { type IOnigLib, type IRawGrammar } from 'vscode-textmate';
+import { OnigasmProvider, TextmateRegistryFactory, ThemeMix } from './monaco-theme-types.js';
 
 export class OnigasmLib implements IOnigLib {
     createOnigScanner(sources: string[]): OnigScanner {
-        return createOnigScanner(sources);
+        return vscodeOniguruma.createOnigScanner(sources);
     }
     createOnigString(sources: string): OnigString {
-        return createOnigString(sources);
+        return vscodeOniguruma.createOnigString(sources);
     }
 }
 
@@ -45,7 +46,7 @@ export default (bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: inter
     bind(TextmateRegistryFactory).toFactory(({ container }) => (theme?: ThemeMix) => {
         const onigProvider = container.get<OnigasmProvider>(OnigasmProvider);
         const textmateRegistry = container.get(TextmateRegistry);
-        return new Registry({
+        return new vscodeTextmate.Registry({
             onigLib: onigProvider(),
             theme,
             loadGrammar: async (scopeName: string) => {
@@ -54,7 +55,7 @@ export default (bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: inter
                     const definition = await provider.getGrammarDefinition();
                     let rawGrammar: IRawGrammar;
                     if (typeof definition.content === 'string') {
-                        rawGrammar = parseRawGrammar(definition.content, definition.format === 'json' ? 'grammar.json' : 'grammar.plist');
+                        rawGrammar = vscodeTextmate.parseRawGrammar(definition.content, definition.format === 'json' ? 'grammar.json' : 'grammar.plist');
                     } else {
                         rawGrammar = definition.content as IRawGrammar;
                     }
@@ -78,13 +79,14 @@ export async function createOnigasmLib(): Promise<IOnigLib> {
         throw new Error('wasm not supported');
     }
     const wasm = await fetchOnigasm();
-    await loadWASM(wasm);
+    await vscodeOniguruma.loadWASM(wasm);
     return new OnigasmLib();
 }
 
 export async function fetchOnigasm(): Promise<ArrayBuffer> {
-    // Using Webpack's wasm loader should give us a URL to fetch the resource from:
-    const onigasmPath: string = require('vscode-oniguruma/release/onig.wasm');
-    const response = await fetch(onigasmPath, { method: 'GET' });
+    // The bundler's loader for `.wasm` files gives us a URL to fetch the resource from.
+    // It is imported when needed, as Node would load it as a WebAssembly module.
+    const { default: onigasmUrl } = await import('vscode-oniguruma/release/onig.wasm');
+    const response = await fetch(onigasmUrl, { method: 'GET' });
     return response.arrayBuffer();
 }

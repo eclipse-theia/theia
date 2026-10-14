@@ -13,15 +13,15 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { TextEditorConfiguration, TextEditorsMain, TextEditorConfigurationUpdate, SingleEditOperation } from '../common/plugin-api-rpc';
-import { Range as ApiRange } from '../common/plugin-api-rpc-model';
-import { Selection, Range, TextEditorLineNumbersStyle, SnippetString, Position, TextEditorRevealType, EndOfLine } from './types-impl';
+import { TextEditorConfiguration, TextEditorsMain, TextEditorConfigurationUpdate, SingleEditOperation } from '../common/plugin-api-rpc.js';
+import { Range as ApiRange } from '../common/plugin-api-rpc-model.js';
+import { Selection, Range, TextEditorLineNumbersStyle, SnippetString, Position, TextEditorRevealType, EndOfLine } from './types-impl.js';
 import * as theia from '@theia/plugin';
-import { DocumentDataExt } from './document-data';
-import { readonly, illegalArgument } from '../common/errors';
-import { TextEditorCursorStyle } from '../common/editor-options';
-import { ok } from '../common/assert';
-import * as Converter from './type-converters';
+import { DocumentDataExt } from './document-data.js';
+import { readonly, illegalArgument } from '../common/errors.js';
+import { TextEditorCursorStyle } from '../common/editor-options.js';
+import { ok } from '../common/assert.js';
+import * as Converter from './type-converters.js';
 
 export class TextEditorExt implements theia.TextEditor {
     private _viewColumn: theia.ViewColumn | undefined;

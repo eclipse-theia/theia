@@ -19,7 +19,7 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
-import { DevContainerAttachScreen } from './dev-container-attach-screen';
+import { DevContainerAttachScreen } from './dev-container-attach-screen.js';
 
 disableJSDOM();
 

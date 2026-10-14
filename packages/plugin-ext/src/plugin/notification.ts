@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PLUGIN_RPC_CONTEXT, NotificationExt, NotificationMain } from '../common/plugin-api-rpc';
+import { PLUGIN_RPC_CONTEXT, NotificationExt, NotificationMain } from '../common/plugin-api-rpc.js';
 import { CancellationToken, Progress, ProgressOptions } from '@theia/plugin';
-import { RPCProtocol } from '../common/rpc-protocol';
+import { RPCProtocol } from '../common/rpc-protocol.js';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
-import { ProgressLocation } from './types-impl';
+import { ProgressLocation } from './types-impl.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export class NotificationExtImpl implements NotificationExt {

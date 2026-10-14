@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ScanOSSPreferencesSchema } from '../common/scanoss-preferences';
+import { ScanOSSPreferencesSchema } from '../common/scanoss-preferences.js';
 import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
-import { SCANOSS_SERVICE_PATH, ScanOSSService } from '../common';
+import { SCANOSS_SERVICE_PATH, ScanOSSService } from '../common/index.js';
 import { PreferenceContribution } from '@theia/core/lib/common/preferences/preference-schema';
 
 export default new ContainerModule(bind => {

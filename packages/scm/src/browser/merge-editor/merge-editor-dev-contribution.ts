@@ -19,7 +19,7 @@ import { Command, CommandContribution, CommandRegistry, DisposableCollection, ge
 import { ApplicationShell, open, OpenerService } from '@theia/core/lib/browser';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
-import { MergeEditor, MergeEditorOpenerOptions, MergeEditorUri } from './merge-editor';
+import { MergeEditor, MergeEditorOpenerOptions, MergeEditorUri } from './merge-editor.js';
 
 export namespace MergeEditorDevCommands {
     export const MERGE_EDITOR_DEV_CATEGORY = 'Merge Editor (Dev)';

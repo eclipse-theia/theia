@@ -23,12 +23,12 @@ import {
     TaskConfigurationScope,
     TaskScope,
     asVariableName
-} from '../common';
-import { TaskDefinitionRegistry } from './task-definition-registry';
-import { ProvidedTaskConfigurations } from './provided-task-configurations';
-import { TaskConfigurationManager, TasksChange } from './task-configuration-manager';
-import { TaskSchemaUpdater } from './task-schema-updater';
-import { TaskSourceResolver } from './task-source-resolver';
+} from '../common/index.js';
+import { TaskDefinitionRegistry } from './task-definition-registry.js';
+import { ProvidedTaskConfigurations } from './provided-task-configurations.js';
+import { TaskConfigurationManager, TasksChange } from './task-configuration-manager.js';
+import { TaskSchemaUpdater } from './task-schema-updater.js';
+import { TaskSourceResolver } from './task-source-resolver.js';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
 import { FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { WorkspaceService } from '@theia/workspace/lib/browser';

@@ -16,8 +16,8 @@
 
 import { ContributionProvider, Disposable, Emitter, Event, Prioritizeable, ILogger } from '@theia/core';
 import { inject, injectable, interfaces, named } from '@theia/core/shared/inversify';
-import { Preference } from '../../util/preference-types';
-import { PreferenceHeaderRenderer, PreferenceNodeRenderer } from './preference-node-renderer';
+import { Preference } from '../../util/preference-types.js';
+import { PreferenceHeaderRenderer, PreferenceNodeRenderer } from './preference-node-renderer.js';
 
 export const PreferenceNodeRendererCreatorRegistry = Symbol('PreferenceNodeRendererCreatorRegistry');
 export interface PreferenceNodeRendererCreatorRegistry {

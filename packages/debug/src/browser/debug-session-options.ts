@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { Emitter } from '@theia/core';
-import { DebugConfiguration } from '../common/debug-common';
-import { DebugCompound } from '../common/debug-compound';
+import { DebugConfiguration } from '../common/debug-common.js';
+import { DebugCompound } from '../common/debug-compound.js';
 
 export class DebugCompoundRoot {
     private stopped = false;

@@ -17,9 +17,9 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from 'inversify';
-import { ProcessUtils } from './process-utils';
-import { ILogger } from '../common';
-import { MockLogger } from '../common/test/mock-logger';
+import { ProcessUtils } from './process-utils.js';
+import { ILogger } from '../common/index.js';
+import { MockLogger } from '../common/test/mock-logger.js';
 
 /** PPID, PID */
 const mockPsOutput = `\

@@ -24,7 +24,7 @@ import { expect } from 'chai';
 import { URI } from '@theia/core';
 import { Agent, AgentService, CustomAgentsLocation } from '@theia/ai-core/lib/common';
 import { AiConfigurationCategoryId } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
-import { AgentsConfigurationCategory } from './agents-configuration-category';
+import { AgentsConfigurationCategory } from './agents-configuration-category.js';
 
 disableJSDOM();
 

@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { LanguageModelStreamResponsePart } from '@theia/ai-core';
-import { AbstractStreamingResponseIterator } from './streaming-response-iterator';
+import { AbstractStreamingResponseIterator } from './streaming-response-iterator.js';
 
 class TestIterator extends AbstractStreamingResponseIterator {
     push(part: LanguageModelStreamResponsePart): void {

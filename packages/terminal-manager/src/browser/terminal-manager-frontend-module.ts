@@ -22,12 +22,12 @@ import {
     FrontendApplicationContribution,
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { TerminalManagerWidget } from './terminal-manager-widget';
-import { TerminalManagerFrontendViewContribution } from './terminal-manager-frontend-view-contribution';
-import { TerminalManagerFrontendContribution } from './terminal-manager-frontend-contribution';
-import { TerminalManagerPreferenceContribution, TerminalManagerPreferences, TerminalManagerPreferenceSchema } from './terminal-manager-preferences';
-import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget';
-import { TerminalManagerCreationHandler } from './terminal-manager-creation-handler';
+import { TerminalManagerWidget } from './terminal-manager-widget.js';
+import { TerminalManagerFrontendViewContribution } from './terminal-manager-frontend-view-contribution.js';
+import { TerminalManagerFrontendContribution } from './terminal-manager-frontend-contribution.js';
+import { TerminalManagerPreferenceContribution, TerminalManagerPreferences, TerminalManagerPreferenceSchema } from './terminal-manager-preferences.js';
+import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget.js';
+import { TerminalManagerCreationHandler } from './terminal-manager-creation-handler.js';
 import { TerminalCreationHandler } from '@theia/terminal/lib/browser/terminal-creation-handler';
 import '../../src/browser/terminal-manager.css';
 import { PreferenceContribution, PreferenceProxyFactory } from '@theia/core';

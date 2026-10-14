@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { PluginMetrics } from '../common/metrics-protocol';
+import { PluginMetrics } from '../common/metrics-protocol.js';
 
 @injectable()
 export class PluginMetricsImpl implements PluginMetrics {

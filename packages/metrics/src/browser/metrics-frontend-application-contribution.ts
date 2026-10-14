@@ -17,7 +17,7 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { ILogger, LogLevel, MeasurementResult, Stopwatch } from '@theia/core';
 import { TelemetryService } from '@theia/telemetry/lib/common';
-import { reportMeasurement } from '../common';
+import { reportMeasurement } from '../common/index.js';
 
 @injectable()
 export class MetricsFrontendApplicationContribution implements FrontendApplicationContribution {

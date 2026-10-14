@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { PluginContribution, Keybinding as PluginKeybinding } from '../../../common';
+import { PluginContribution, Keybinding as PluginKeybinding } from '../../../common/index.js';
 import { Keybinding } from '@theia/core/lib/common/keybinding';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { OS } from '@theia/core/lib/common/os';

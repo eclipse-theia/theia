@@ -14,18 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { KeyCode as MonacoKeyCode } from '@theia/monaco-editor-core/esm/vs/base/common/keyCodes';
+import { KeyCode as MonacoKeyCode } from '@theia/monaco-editor-core/esm/vs/base/common/keyCodes.js';
 import {
     ResolvedKeybinding, ResolvedChord, SingleModifierChord, KeyCodeChord, Chord
-} from '@theia/monaco-editor-core/esm/vs/base/common/keybindings';
-import { ElectronAcceleratorLabelProvider, UILabelProvider, UserSettingsLabelProvider } from '@theia/monaco-editor-core/esm/vs/base/common/keybindingLabels';
-import { USLayoutResolvedKeybinding } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/usLayoutResolvedKeybinding';
-import * as MonacoPlatform from '@theia/monaco-editor-core/esm/vs/base/common/platform';
+} from '@theia/monaco-editor-core/esm/vs/base/common/keybindings.js';
+import { ElectronAcceleratorLabelProvider, UILabelProvider, UserSettingsLabelProvider } from '@theia/monaco-editor-core/esm/vs/base/common/keybindingLabels.js';
+import { USLayoutResolvedKeybinding } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/usLayoutResolvedKeybinding.js';
+import * as MonacoPlatform from '@theia/monaco-editor-core/esm/vs/base/common/platform.js';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { KeyCode, KeySequence, Keystroke, Key, KeyModifier } from '@theia/core/lib/browser/keys';
 import { layoutModifiersIncludeShift } from '@theia/core/lib/common/keys';
 import { isOSX } from '@theia/core/lib/common/os';
-import { KEY_CODE_MAP } from './monaco-keycode-map';
+import { KEY_CODE_MAP } from './monaco-keycode-map.js';
 
 export class MonacoResolvedKeybinding extends ResolvedKeybinding {
 

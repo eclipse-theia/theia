@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { getOpenAiModelDefaults } from './openai-model-defaults';
+import { getOpenAiModelDefaults } from './openai-model-defaults.js';
 
 describe('getOpenAiModelDefaults', () => {
     it('returns empty defaults for unknown models', () => {

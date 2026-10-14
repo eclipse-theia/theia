@@ -16,8 +16,8 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { OutputChannelRegistryMainImpl } from '@theia/plugin-ext/lib/main/browser/output-channel-registry-main';
-import { PluginMetricsCreator } from './plugin-metrics-creator';
-import { createDefaultRequestData } from '../common/plugin-metrics-types';
+import { PluginMetricsCreator } from './plugin-metrics-creator.js';
+import { createDefaultRequestData } from '../common/plugin-metrics-types.js';
 import { PluginInfo } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 
 @injectable()

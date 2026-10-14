@@ -16,16 +16,16 @@
 
 import { injectable, inject, named, postConstruct } from 'inversify';
 import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
-import URI from '../common/uri';
-import { ContributionProvider } from './contribution-provider';
-import { Event, Emitter } from './event';
-import { Disposable } from './disposable';
-import { MaybePromise } from './types';
-import { CancellationToken } from './cancellation';
-import { ApplicationError } from './application-error';
-import { ReadableStream, Readable } from './stream';
-import { SyncReferenceCollection, Reference } from './reference';
-import { MarkdownString } from './markdown-rendering';
+import URI from '../common/uri.js';
+import { ContributionProvider } from './contribution-provider.js';
+import { Event, Emitter } from './event.js';
+import { Disposable } from './disposable.js';
+import { MaybePromise } from './types.js';
+import { CancellationToken } from './cancellation.js';
+import { ApplicationError } from './application-error.js';
+import { ReadableStream, Readable } from './stream.js';
+import { SyncReferenceCollection, Reference } from './reference.js';
+import { MarkdownString } from './markdown-rendering/index.js';
 
 export interface ResourceVersion {
 }

@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
-import { TreeViewsExt, TreeViewItemCollapsibleState, TreeViewItem, TreeViewItemReference, ThemeIcon, DataTransferFileDTO } from '../../../common/plugin-api-rpc';
-import { Command } from '../../../common/plugin-api-rpc-model';
+import { TreeViewsExt, TreeViewItemCollapsibleState, TreeViewItem, TreeViewItemReference, ThemeIcon, DataTransferFileDTO } from '../../../common/plugin-api-rpc.js';
+import { Command } from '../../../common/plugin-api-rpc-model.js';
 import {
     TreeNode,
     NodeProps,
@@ -37,11 +37,11 @@ import {
 } from '@theia/core/lib/browser';
 import { MenuPath, MenuModelRegistry, CommandMenu, AcceleratorSource } from '@theia/core/lib/common/menu';
 import * as React from '@theia/core/shared/react';
-import { PluginSharedStyle } from '../plugin-shared-style';
+import { PluginSharedStyle } from '../plugin-shared-style.js';
 import { ACTION_ITEM, Widget } from '@theia/core/lib/browser/widgets/widget';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { View } from '../../../common/plugin-protocol';
+import { View } from '../../../common/plugin-protocol.js';
 import { URI } from '@theia/core/lib/common/uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
@@ -50,9 +50,9 @@ import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { DecoratedTreeNode } from '@theia/core/lib/browser/tree/tree-decorator';
 import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
 import { CancellationTokenSource, CancellationToken, Mutable } from '@theia/core/lib/common';
-import { mixin } from '../../../common/types';
+import { mixin } from '../../../common/types.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { DnDFileContentStore } from './dnd-file-content-store';
+import { DnDFileContentStore } from './dnd-file-content-store.js';
 import { ILogger } from '@theia/core';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';

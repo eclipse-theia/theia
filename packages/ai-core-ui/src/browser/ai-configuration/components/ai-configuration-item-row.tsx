@@ -17,10 +17,10 @@
 import { nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
-import { AiConfigurationItemStatus } from '../ai-configuration-category';
-import { AiConfigurationKindBadge, AiConfigurationStatusBadge } from './ai-configuration-primitives';
-import { AiConfigurationOrigin, AiConfigurationOriginBadges } from './ai-configuration-origin-badge';
-import { AiSettingGearButton } from './ai-configuration-setting-row';
+import { AiConfigurationItemStatus } from '../ai-configuration-category.js';
+import { AiConfigurationKindBadge, AiConfigurationStatusBadge } from './ai-configuration-primitives.js';
+import { AiConfigurationOrigin, AiConfigurationOriginBadges } from './ai-configuration-origin-badge.js';
+import { AiSettingGearButton } from './ai-configuration-setting-row.js';
 
 /** A classifying label on an item row, with a tooltip of its own where the label alone is too short to explain itself. */
 export interface AiConfigurationRowTag {

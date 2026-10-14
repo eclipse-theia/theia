@@ -17,7 +17,7 @@
 import { type RpcServer } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { Browser, launch, Page } from 'puppeteer-core';
-import type { BrowserAutomation, BrowserAutomationClient, LaunchResult } from '../../common/browser-automation-protocol';
+import type { BrowserAutomation, BrowserAutomationClient, LaunchResult } from '../../common/browser-automation-protocol.js';
 
 const MAX_DOM_LENGTH = 50000;
 

@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CommandRegistry, CommandHandler, Command, CommandContribution } from './command';
-import { ContributionProvider } from './contribution-provider';
+import { CommandRegistry, CommandHandler, Command, CommandContribution } from './command.js';
+import { ContributionProvider } from './contribution-provider.js';
 import * as chai from 'chai';
 
 const expect = chai.expect;

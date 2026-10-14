@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Event } from '../../common';
-import { ApplicationShell } from '../shell';
-import { TheiaDockPanel } from '../shell/theia-dock-panel';
-import { ExtractableWidget, TabBar, Widget } from '../widgets';
+import { Event } from '../../common/index.js';
+import { ApplicationShell } from '../shell/index.js';
+import { TheiaDockPanel } from '../shell/theia-dock-panel.js';
+import { ExtractableWidget, TabBar, Widget } from '../widgets/index.js';
 
 export abstract class SecondaryWindowRootWidget extends Widget {
     secondaryWindow: Window | SecondaryWindow;

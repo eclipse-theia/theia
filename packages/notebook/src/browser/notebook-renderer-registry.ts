@@ -20,7 +20,7 @@
 
 import { Disposable, Path } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
-import { NotebookRendererDescriptor } from '../common/notebook-protocol';
+import { NotebookRendererDescriptor } from '../common/notebook-protocol.js';
 
 export interface NotebookRendererInfo {
     readonly id: string;

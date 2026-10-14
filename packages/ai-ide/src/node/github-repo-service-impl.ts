@@ -16,7 +16,7 @@
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { simpleGit, SimpleGit } from 'simple-git';
-import { GitHubRepoService, GitHubRepoInfo } from '../common/github-repo-protocol';
+import { GitHubRepoService, GitHubRepoInfo } from '../common/github-repo-protocol.js';
 import { ILogger } from '@theia/core';
 
 @injectable()
