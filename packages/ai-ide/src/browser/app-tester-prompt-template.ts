@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/tslint/config, max-len */
+/* eslint-disable max-len, @theia/file-header */
 // *****************************************************************************
 // Copyright (C) 2025 EclipseSource GmbH and others.
 //

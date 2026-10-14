@@ -23,7 +23,7 @@
 
 // /* eslint-disable */
 
-/* tslint:disable:typedef */
+/* eslint-disable @theia/explicit-return-type */
 
 import * as theia from '@theia/plugin';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
@@ -318,7 +318,7 @@ export class TestRun implements theia.TestRun {
         return true;
     }
 
-    private updateTestState<T extends TestStateChangeDTO>(item: theia.TestItem, state: T) {
+    private updateTestState<T extends TestStateChangeDTO>(item: theia.TestItem, state: T): void {
         if (this.checkNotEnded(item)) {
             this.testStateDeltas.set(item, state);
             this.changeBatcher.changeOccurred();

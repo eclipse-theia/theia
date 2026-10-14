@@ -17,7 +17,7 @@
 import { ContributionProvider, DisposableCollection } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import * as express from '@theia/core/shared/express';
+import express from '@theia/core/shared/express';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as crypto from 'crypto';
 import * as http from 'http';

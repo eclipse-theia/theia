@@ -17,7 +17,7 @@
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { PreferenceTreeModel } from '../../preference-tree-model';
 import { PreferenceTreeLabelProvider } from '../../util/preference-tree-label-provider';
-import * as markdownit from '@theia/core/shared/markdown-it';
+import markdownit from '@theia/core/shared/markdown-it';
 import * as markdownitemoji from '@theia/core/shared/markdown-it-emoji';
 import { CommandRegistry, ILogger } from '@theia/core';
 

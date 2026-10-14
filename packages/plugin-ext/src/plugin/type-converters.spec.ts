@@ -150,7 +150,7 @@ describe('Type converters:', () => {
 
             it('should convert array of markups to model markdown', () => {
                 // given
-                // eslint-disable-next-line deprecation/deprecation
+                // eslint-disable-next-line @typescript-eslint/no-deprecated
                 const markups: (theia.MarkdownString | theia.MarkedString)[] = [
                     pluginMarkdown,
                     aStringWithMarkdown,

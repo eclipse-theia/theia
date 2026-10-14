@@ -16,7 +16,7 @@
 
 import { Disposable } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import * as express from '@theia/core/shared/express';
+import express from '@theia/core/shared/express';
 import { expect } from 'chai';
 import * as http from 'http';
 import * as net from 'net';
