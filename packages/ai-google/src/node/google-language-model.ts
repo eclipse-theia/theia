@@ -32,7 +32,6 @@ import {
     TokenUsageParams,
     ToolCallResult,
     ToolCallExecutor,
-    ToolInvocationContext,
     UserRequest,
     extractErrorMessageWithCause
 } from '@theia/ai-core';

@@ -35,7 +35,6 @@ import {
     ToolCallResult,
     ToolCallExecutor,
     createToolCallError,
-    ToolInvocationContext,
     UserRequest,
     extractErrorMessageWithCause
 } from '@theia/ai-core';
