@@ -49,6 +49,7 @@ export interface OllamaLanguageModelsManager {
     host: string | undefined;
     setHost(host: string | undefined): Promise<void>;
     setProxyUrl(proxyUrl: string | undefined): void;
+    setRequestTimeout(requestTimeout: number | undefined): void;
     createOrUpdateLanguageModels(...models: OllamaModelDescription[]): Promise<void>;
     removeLanguageModels(...modelIds: string[]): void;
 }

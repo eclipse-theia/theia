@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { getProxyUrl } from './proxy-util';
+import { createTimeoutFetch, getProxyUrl } from './proxy-util';
 
 describe('getProxyUrl', () => {
     const savedEnv: Record<string, string | undefined> = {};
@@ -139,5 +139,27 @@ describe('getProxyUrl', () => {
     it('should bypass proxy with NO_PROXY (uppercase) when settingsProxy is provided', () => {
         process.env.NO_PROXY = 'example.com';
         expect(getProxyUrl('http://example.com', 'http://settings-proxy:8080')).to.be.undefined;
+    });
+});
+
+describe('createTimeoutFetch', () => {
+    it('should return undefined when neither a proxy nor a timeout is configured', () => {
+        expect(createTimeoutFetch(undefined, undefined)).to.be.undefined;
+    });
+
+    it('should return a fetch function when only a timeout is configured', () => {
+        expect(createTimeoutFetch(undefined, 60000)).to.be.a('function');
+    });
+
+    it('should return a fetch function when the timeout is 0 (disabled)', () => {
+        expect(createTimeoutFetch(undefined, 0)).to.be.a('function');
+    });
+
+    it('should return a fetch function when only a proxy is configured', () => {
+        expect(createTimeoutFetch('http://proxy:3128', undefined)).to.be.a('function');
+    });
+
+    it('should return a fetch function when both a proxy and a timeout are configured', () => {
+        expect(createTimeoutFetch('http://proxy:3128', 120000)).to.be.a('function');
     });
 });
