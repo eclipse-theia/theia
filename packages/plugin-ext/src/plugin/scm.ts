@@ -448,14 +448,14 @@ class ScmResourceGroupImpl implements theia.SourceControlResourceGroup {
         return this.resourceStatesMap.get(handle);
     }
 
-    executeResourceCommand(handle: number): Promise<void> {
+    async executeResourceCommand(handle: number): Promise<void> {
         const command = this.resourceStatesCommandsMap.get(handle);
 
         if (!command) {
-            return Promise.resolve(undefined);
+            return;
         }
 
-        return new Promise(() => this.commands.executeCommand(command.command!, ...(command.arguments || [])));
+        await this.commands.executeCommand(command.command!, ...(command.arguments || []));
     }
 
     takeResourceStateSnapshot(): ScmRawResourceSplice[] {
@@ -1015,15 +1015,15 @@ export class ScmExtImpl implements ScmExt {
         return sourceControl && sourceControl.inputBox;
     }
 
-    $provideOriginalResource(sourceControlHandle: number, uriComponents: string, token: theia.CancellationToken): Promise<UriComponents | undefined> {
-        const sourceControl = this.sourceControls.get(sourceControlHandle);
+    async $provideOriginalResource(sourceControlHandle: number, uriComponents: string, token: theia.CancellationToken): Promise<UriComponents | undefined> {
+        const quickDiffProvider = this.sourceControls.get(sourceControlHandle)?.quickDiffProvider;
 
-        if (!sourceControl || !sourceControl.quickDiffProvider || !sourceControl.quickDiffProvider.provideOriginalResource) {
-            return Promise.resolve(undefined);
+        if (!quickDiffProvider?.provideOriginalResource) {
+            return undefined;
         }
 
-        return new Promise<UriComponents | undefined>(() => sourceControl.quickDiffProvider!.provideOriginalResource!(URI.file(uriComponents), token))
-            .then<UriComponents | undefined>(r => r || undefined);
+        const result = await quickDiffProvider.provideOriginalResource(URI.file(uriComponents), token);
+        return result || undefined;
     }
 
     $onInputBoxValueChange(sourceControlHandle: number, value: string): Promise<void> {
