@@ -301,6 +301,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
             iconClass: monaco.languages.SymbolKind[symbol.kind].toString().toLowerCase(),
             name: this.getName(symbol),
             detail: this.getDetail(symbol),
+            deprecated: this.isDeprecated(symbol),
             parent,
             uri,
             range: this.getNameRange(symbol),
@@ -322,6 +323,10 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
 
     protected getDetail(symbol: monaco.languages.DocumentSymbol): string {
         return symbol.detail;
+    }
+
+    protected isDeprecated(symbol: monaco.languages.DocumentSymbol): boolean {
+        return !!symbol.tags?.includes(monaco.languages.SymbolTag.Deprecated);
     }
 
     protected createId(name: string, ids: Map<string, number>): string {
@@ -370,6 +375,8 @@ export interface MonacoOutlineSymbolInformationNode extends OutlineSymbolInforma
     range: Range;
     fullRange: Range;
     detail?: string;
+    /** Whether the symbol is tagged as deprecated. */
+    deprecated?: boolean;
     parent: MonacoOutlineSymbolInformationNode | undefined;
     children: MonacoOutlineSymbolInformationNode[];
 }

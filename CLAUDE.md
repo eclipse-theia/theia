@@ -65,7 +65,7 @@ For more information also look at:
 - @doc/coding-guidelines.md
 - @doc/Testing.md
 - @doc/Plugin-API.md (VS Code extension plugin API)
-- @.prompts/project-info.prompttemplate (practical patterns for contributions, widgets, commands, preferences, plugin API, styling)
+- @AGENTS.md (practical patterns for contributions, widgets, commands, preferences, plugin API, styling)
 
 Read on demand (not auto-loaded) — consult when the task calls for it:
 - [doc/code-organization.md](doc/code-organization.md) — platform import rules; consult when adding cross-platform imports.
