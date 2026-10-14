@@ -595,7 +595,8 @@ describe('keybindings', () => {
         const dispatch = sinon.spy(keybindingRegistry, 'dispatchNormalizedKeyDown');
         const target = document.createElement('div');
         const cases = [
-            { keybinding: 'ctrl+[', ctrlKey: true, altKey: false },
+            { keybinding: '[', ctrlKey: false, altKey: false },
+            { keybinding: 'ctrl+[', ctrlKey: true, altKey: false, inactive: true },
             { keybinding: 'alt+[', ctrlKey: false, altKey: true, inactive: true },
             { keybinding: 'ctrl+alt+[', ctrlKey: true, altKey: true, inactive: true }
         ];
@@ -612,7 +613,7 @@ describe('keybindings', () => {
                     await new Promise(resolve => setTimeout(resolve, 0));
 
                     if (testCase.inactive) {
-                        // Windows consumes Alt for AltGraph, so command Alt cannot accompany an AltGraph character.
+                        // Windows reports AltGr as Ctrl+Alt, so neither command Ctrl nor Alt can accompany an AltGraph character.
                         expect(keybindingRegistry.isKeybindingInactive(binding)).to.be.true;
                         expect(dispatch.called).to.be.false;
                         expect(execute.called).to.be.false;
@@ -849,43 +850,44 @@ describe('keybindings', () => {
         }
     });
 
-    it('should route Windows command and layout modifier candidates through the registry', () => {
+    it('should mark command Ctrl plus AltGraph character bindings inactive on Windows', async () => {
+        const notifier = testContainer.get(MockKeyboardLayoutChangeNotifier);
+        const binding = { command: TEST_COMMAND_SHADOW.id, keybinding: 'ctrl+[' };
+        const typed = { command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND, keybinding: '[' };
+        const execute = sinon.spy();
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
         const windows = sinon.stub(os, 'isWindows').value(true);
+        const match = sinon.spy(keybindingRegistry, 'matchKeybinding');
+        const dispatch = async (input: NormalizedKeyboardInput) => {
+            keybindingRegistry.dispatchNormalizedKeyDown(input, new EventTarget());
+            await new Promise(resolve => setTimeout(resolve, 0));
+        };
+
         try {
-            testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
-            const match = sinon.spy(keybindingRegistry, 'matchKeybinding');
-            const logicalBinding = {
-                command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
-                keybinding: 'ctrl+[',
-                resolved: [new KeyCode({ key: Key.DIGIT8, ctrl: true, character: '[', layoutModifiers: 'altGraph' })]
-            };
-            keybindingRegistry.setKeymap(KeybindingScope.USER, [logicalBinding]);
+            notifier.emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
+            keybindingRegistry.setKeymap(KeybindingScope.USER, [binding, typed]);
+            expect(keybindingRegistry.getKeybindingInactiveReason(binding)).to.be.a('string');
+            expect(keybindingRegistry.acceleratorForCommand(TEST_COMMAND_SHADOW.id, undefined, 'physical')).to.deep.equal([]);
+            // Chromium reports Ctrl+AltGr+8 on Windows exactly like AltGr+8, so the input types `[`.
+            await dispatch({ key: '[', code: 'Digit8', ctrlKey: true, altKey: true, altGraph: true });
+            expect(execute.called).to.be.false;
+            const fullMatches = match.returnValues.filter(result => result?.kind === 'full').map(result => result!.runtime.binding.keybinding);
+            expect(fullMatches).to.deep.equal(['[']);
 
-            keybindingRegistry.dispatchNormalizedKeyDown({
-                key: '[', code: 'Digit8', ctrlKey: true, altKey: true, altGraph: false
-            }, new EventTarget());
-
-            expect(match.callCount).to.equal(2);
-            expect(match.secondCall.returnValue?.kind).to.equal('full');
-            expect(match.secondCall.returnValue?.runtime.binding.keybinding).to.equal('ctrl+[');
-
-            match.resetHistory();
-            keybindingRegistry.setKeymap(KeybindingScope.USER, [
-                logicalBinding,
-                { command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND, keybinding: 'ctrl+alt+8' }
-            ]);
-            keybindingRegistry.dispatchNormalizedKeyDown({
-                key: '[', code: 'Digit8', ctrlKey: true, altKey: true, altGraph: false
-            }, new EventTarget());
-
-            expect(match.callCount).to.equal(2);
-            expect(match.firstCall.returnValue?.runtime.binding.keybinding).to.equal('ctrl+alt+8');
+            windows.value(false);
+            notifier.emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
+            keybindingRegistry.setKeymap(KeybindingScope.USER, [binding]);
+            expect(keybindingRegistry.getKeybindingInactiveReason(binding)).to.be.undefined;
+            await dispatch({ key: '[', code: 'Digit8', ctrlKey: true, altGraph: true });
+            expect(execute.calledOnce).to.be.true;
         } finally {
             windows.restore();
+            handler.dispose();
+            notifier.emitter.fire(require('../../src/common/keyboard/layouts/en-US-pc.json'));
         }
     });
 
-    it('should route legacy Windows AltGraph candidates through the registry', () => {
+    it('should route Windows Ctrl+Alt candidates through the registry with and without reported AltGraph', () => {
         const windows = sinon.stub(os, 'isWindows').value(true);
         try {
             testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
@@ -895,27 +897,26 @@ describe('keybindings', () => {
                 keybinding: '[',
                 resolved: [new KeyCode({ key: Key.DIGIT8, character: '[', layoutModifiers: 'altGraph' })]
             };
-            keybindingRegistry.setKeymap(KeybindingScope.USER, [logicalBinding]);
+            for (const altGraph of [true, false]) {
+                const input = { key: '[', code: 'Digit8', ctrlKey: true, altKey: true, altGraph };
+                match.resetHistory();
+                keybindingRegistry.setKeymap(KeybindingScope.USER, [logicalBinding]);
+                keybindingRegistry.dispatchNormalizedKeyDown(input, new EventTarget());
 
-            keybindingRegistry.dispatchNormalizedKeyDown({
-                key: '[', code: 'Digit8', ctrlKey: true, altKey: true, altGraph: true
-            }, new EventTarget());
+                expect(match.callCount).to.equal(2);
+                expect(match.secondCall.returnValue?.kind).to.equal('full');
+                expect(match.secondCall.returnValue?.runtime.binding.keybinding).to.equal('[');
 
-            expect(match.callCount).to.equal(2);
-            expect(match.secondCall.returnValue?.kind).to.equal('full');
-            expect(match.secondCall.returnValue?.runtime.binding.keybinding).to.equal('[');
+                match.resetHistory();
+                keybindingRegistry.setKeymap(KeybindingScope.USER, [
+                    logicalBinding,
+                    { command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND, keybinding: 'ctrl+alt+8' }
+                ]);
+                keybindingRegistry.dispatchNormalizedKeyDown(input, new EventTarget());
 
-            match.resetHistory();
-            keybindingRegistry.setKeymap(KeybindingScope.USER, [
-                logicalBinding,
-                { command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND, keybinding: 'ctrl+alt+8' }
-            ]);
-            keybindingRegistry.dispatchNormalizedKeyDown({
-                key: '[', code: 'Digit8', ctrlKey: true, altKey: true, altGraph: true
-            }, new EventTarget());
-
-            expect(match.callCount).to.equal(2);
-            expect(match.firstCall.returnValue?.runtime.binding.keybinding).to.equal('ctrl+alt+8');
+                expect(match.callCount).to.equal(2);
+                expect(match.firstCall.returnValue?.runtime.binding.keybinding).to.equal('ctrl+alt+8');
+            }
         } finally {
             windows.restore();
         }
@@ -1043,9 +1044,11 @@ describe('keybindings', () => {
         try {
             testContainer.get(MockKeyboardLayoutChangeNotifier).emitter.fire(require('../../src/common/keyboard/layouts/de-German-pc.json'));
 
-            expect(keybindingRegistry.authoredKeyCodeForKeyboardInput({
-                key: '[', code: 'Digit8', ctrlKey: true, altKey: true, altGraph: true
-            })?.toString()).to.equal('[');
+            for (const altGraph of [true, false]) {
+                expect(keybindingRegistry.authoredKeyCodeForKeyboardInput({
+                    key: '[', code: 'Digit8', ctrlKey: true, altKey: true, altGraph
+                })?.toString()).to.equal('[');
+            }
         } finally {
             windows.restore();
         }
@@ -1190,6 +1193,17 @@ describe('keybindings', () => {
             keybindingRegistry.dispatchNormalizedKeyDown({ key: 'ü', code: 'BracketLeft', ctrlKey: true }, new EventTarget());
             await new Promise(resolve => setTimeout(resolve, 0));
             expect(execute.calledOnce).to.be.true;
+
+            notifier.emitter.fire({
+                info: { id: 'altgraph-letters', lang: 'pl' },
+                mapping: { KeyL: { value: 'l', withShift: 'L', withAltGr: 'ł', withShiftAltGr: 'Ł' } }
+            });
+            expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: 'Ł', code: 'KeyL', ctrlKey: true, altGraph: true }))
+                .to.equal('ctrl+ł');
+
+            stub.value(true);
+            notifier.emitter.fire(require('../../src/common/keyboard/layouts/de-German-mac.json'));
+            expect(keybindingRegistry.authoredKeybindingStringForKeyboardInput({ key: 'Å', code: 'KeyA', altKey: true })).to.equal('alt+a');
         } finally {
             handler.dispose();
             notifier.emitter.fire(require('../../src/common/keyboard/layouts/en-US-pc.json'));

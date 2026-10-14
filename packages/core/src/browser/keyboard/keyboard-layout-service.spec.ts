@@ -464,6 +464,33 @@ describe('keyboard layout service', function (): void {
         chai.expect(capsBase[0].dispatchString()).to.equal('ctrl+[');
     });
 
+    it('normalizes the character to the macOS Option layer when Caps Lock inverts the case', async () => {
+        const service = await setup(require('../../../src/common/keyboard/layouts/en-US-mac.json'), 'mac');
+        const capsOption = service.getKeyCodeInterpretations({ key: 'Å', code: 'KeyA', altKey: true }, 'code');
+        chai.expect(capsOption.map(candidate => candidate.character)).to.deep.equal(['a', 'å']);
+        chai.expect(capsOption.map(candidate => candidate.dispatchString())).to.deep.equal(['alt+a', 'a@altgraph']);
+
+        const capsShiftOption = service.getKeyCodeInterpretations({ key: 'å', code: 'KeyA', altKey: true, shiftKey: true }, 'code');
+        chai.expect(capsShiftOption[0].character).to.equal('A');
+        chai.expect(capsShiftOption[0].dispatchString()).to.equal('shift+alt+a');
+    });
+
+    it('normalizes the character to the Linux AltGraph layer when Caps Lock inverts the case', async () => {
+        const layout: NativeKeyboardLayout = {
+            info: { id: 'altgraph-letters', lang: 'pl' },
+            mapping: { KeyL: { value: 'l', withShift: 'L', withAltGr: 'ł', withShiftAltGr: 'Ł' } }
+        };
+        const service = await setup(layout, 'linux');
+        const capsAltGraph = service.getKeyCodeInterpretations({ key: 'Ł', code: 'KeyL', altGraph: true }, 'code');
+        chai.expect(capsAltGraph).to.have.length(1);
+        chai.expect(capsAltGraph[0].character).to.equal('ł');
+        chai.expect(capsAltGraph[0].dispatchString()).to.equal('l@altgraph');
+
+        const capsShiftAltGraph = service.getKeyCodeInterpretations({ key: 'ł', code: 'KeyL', shiftKey: true, altGraph: true }, 'code');
+        chai.expect(capsShiftAltGraph).to.have.length(1);
+        chai.expect(capsShiftAltGraph[0].character).to.equal('Ł');
+    });
+
     it('does not add an AltGraph layer to Linux Alt+Shift input', async () => {
         const service = await setup(require('../../../src/common/keyboard/layouts/en-US-pc.json'), 'linux');
         chai.expect(service.getKeyCodeInterpretations({ key: 'P', code: 'KeyP', shiftKey: true, altKey: true }, 'code')
@@ -540,7 +567,7 @@ describe('keyboard layout service', function (): void {
         }, 'code');
         chai.expect(interpretations.map(code => code.interpretation)).to.deep.equal(['commandModifiers', 'layoutModifiers']);
         chai.expect(interpretations[0].dispatchString()).to.equal('alt+ctrl+8');
-        chai.expect(interpretations[1].dispatchString()).to.equal('ctrl+8@altgraph');
+        chai.expect(interpretations[1].dispatchString()).to.equal('8@altgraph');
 
         const intentional = service.getKeyCodeInterpretations({
             key: 'f', code: 'KeyF', ctrlKey: true, altKey: true, altGraph: false

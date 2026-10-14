@@ -316,11 +316,15 @@ export class KeybindingRegistry {
             return nls.localize('theia/core/keybinding/shiftedAltGraphCharacterUnavailable',
                 'The logical character and Shift command modifier cannot be produced together on the current keyboard layout.');
         }
-        // On macOS, Option selects the AltGraph layer; on Windows, Alt is consumed by AltGraph. Linux keeps Alt and AltGraph distinct.
-        if ((isOSX || isWindows) && sequence.some(code => code.alt && layoutModifiersIncludeAltGraph(code.layoutModifiers))) {
-            return nls.localize('theia/core/keybinding/altAltGraphCharacterUnavailable',
+        // On macOS, Option selects the AltGraph layer. On Windows, AltGr is reported as Ctrl+Alt, so both Ctrl and Alt are
+        // consumed by the layout layer. Linux keeps Alt and AltGraph distinct.
+        const altGraphCodes = isOSX || isWindows ? sequence.filter(code => layoutModifiersIncludeAltGraph(code.layoutModifiers)) : [];
+        const consumedModifier = altGraphCodes.some(code => code.alt) ? (isOSX ? 'Option' : 'Alt')
+            : isWindows && altGraphCodes.some(code => code.ctrl) ? 'Ctrl' : undefined;
+        if (consumedModifier) {
+            return nls.localize('theia/core/keybinding/commandModifierAltGraphCharacterUnavailable',
                 'The logical character and the {0} command modifier cannot be produced together on the current keyboard layout.',
-                isOSX ? 'Option' : 'Alt');
+                consumedModifier);
         }
         if (sequence.some(code => !code.supportedByLayout)) {
             return nls.localize('theia/core/keybinding/unavailableCharacter', 'The key is not available on the current keyboard layout.');

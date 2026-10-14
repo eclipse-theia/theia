@@ -157,17 +157,20 @@ export class KeyboardLayoutService {
             return undefined;
         }
         const altGraphActive = this.isAltGraphActive(input);
-        if (input.shiftKey && altGraphActive && mapping.withShiftAltGr === input.key && !mapping.withShiftAltGrIsDeadKey) {
+        // Caps Lock can invert the case of the produced character, so layers are compared case-insensitively.
+        const key = input.key.toLocaleLowerCase();
+        const producedBy = (character: string | undefined, isDeadKey: boolean | undefined): boolean =>
+            !!character && !isDeadKey && character.toLocaleLowerCase() === key;
+        if (input.shiftKey && altGraphActive && producedBy(mapping.withShiftAltGr, mapping.withShiftAltGrIsDeadKey)) {
             return 'shiftAltGraph';
         }
-        if (input.shiftKey && altGraphActive && !mapping.withShiftAltGr && mapping.withAltGr === input.key && !mapping.withAltGrIsDeadKey) {
+        if (input.shiftKey && altGraphActive && !mapping.withShiftAltGr && producedBy(mapping.withAltGr, mapping.withAltGrIsDeadKey)) {
             return 'shiftAltGraph';
         }
-        if (!input.shiftKey && altGraphActive && mapping.withAltGr === input.key && !mapping.withAltGrIsDeadKey) {
+        if (!input.shiftKey && altGraphActive && producedBy(mapping.withAltGr, mapping.withAltGrIsDeadKey)) {
             return 'altGraph';
         }
-        if (input.shiftKey && mapping.withShift && !mapping.withShiftIsDeadKey
-            && mapping.withShift.toLocaleLowerCase() === input.key.toLocaleLowerCase()) {
+        if (input.shiftKey && producedBy(mapping.withShift, mapping.withShiftIsDeadKey)) {
             return 'shift';
         }
         return undefined;
@@ -178,8 +181,8 @@ export class KeyboardLayoutService {
     }
 
     /**
-     * Return the character committed by the detected layout layer when the input differs from it only by case, e.g. because
-     * Caps Lock inverted the case of the produced character. Returns `undefined` when the input character is already exact.
+     * Return the character committed by the detected layout layer, which can differ from the input by case, e.g. because
+     * Caps Lock inverted the case of the produced character. Returns `undefined` when the layer character is unknown.
      */
     protected layerCharacter(input: NormalizedKeyboardInput, layoutModifiers: LayoutModifiers | undefined): string | undefined {
         if (!input.code || !this.shouldIncludeKey(input.code) || !isPrintableCharacter(input.key)) {
@@ -191,6 +194,12 @@ export class KeyboardLayoutService {
         }
         if (layoutModifiers === 'shift') {
             return mapping.withShift && !mapping.withShiftIsDeadKey ? mapping.withShift : undefined;
+        }
+        if (layoutModifiers === 'shiftAltGraph' && mapping.withShiftAltGr) {
+            return !mapping.withShiftAltGrIsDeadKey ? mapping.withShiftAltGr : undefined;
+        }
+        if (layoutModifiers === 'altGraph' || layoutModifiers === 'shiftAltGraph') {
+            return mapping.withAltGr && !mapping.withAltGrIsDeadKey ? mapping.withAltGr : undefined;
         }
         if (layoutModifiers === undefined && !input.shiftKey && !this.isAltGraphActive(input) && mapping.value && !mapping.valueIsDeadKey
             && mapping.value.toLocaleLowerCase() === input.key.toLocaleLowerCase()) {
@@ -238,22 +247,15 @@ export class KeyboardLayoutService {
         if (!layoutModifiersIncludeAltGraph(layoutModifiers)) {
             return this.shiftLayerInterpretations(keyCode, layoutModifiers);
         }
-        if (input.altGraph) {
-            // Explicit AltGraph identifies both Ctrl and Alt as legacy artifacts. Without it, only Alt can be safely consumed,
-            // preserving Ctrl as a possible authored command modifier for Ctrl+Alt-emulated AltGraph.
-            if (input.ctrlKey && input.altKey) {
-                return [
-                    new KeyCode({ ...keyCode, interpretation: 'commandModifiers' }),
-                    this.toLayoutModifiersKeyCode(keyCode, layoutModifiers, { ctrl: true, alt: true })
-                ];
-            }
-            return [this.toLayoutModifiersKeyCode(keyCode, layoutModifiers)];
-        }
         if (input.ctrlKey && input.altKey) {
+            // Windows reports AltGr as Ctrl+Alt. A real Ctrl cannot be distinguished from it, so both are layout artifacts.
             return [
                 new KeyCode({ ...keyCode, interpretation: 'commandModifiers' }),
-                this.toLayoutModifiersKeyCode(keyCode, layoutModifiers, { alt: true })
+                this.toLayoutModifiersKeyCode(keyCode, layoutModifiers, { ctrl: true, alt: true })
             ];
+        }
+        if (input.altGraph) {
+            return [this.toLayoutModifiersKeyCode(keyCode, layoutModifiers)];
         }
         return [keyCode];
     }
