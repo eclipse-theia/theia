@@ -553,6 +553,8 @@ export interface DocumentSymbol {
 
 export interface WorkspaceRootsChangeEvent {
     roots: string[];
+    /** The names given to the roots in the workspace file, keyed by root. */
+    names?: { [root: string]: string };
 }
 
 export interface WorkspaceFolder {

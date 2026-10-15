@@ -44,6 +44,11 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
     }
 
     override getName(element: URI | URIIconReference | FileStat): string | undefined {
+        const uri = this.getUri(element);
+        const rootName = uri && this.workspaceService.getWorkspaceRootName(uri);
+        if (rootName) {
+            return rootName;
+        }
         return super.getName(this.asURIIconReference(element));
     }
 

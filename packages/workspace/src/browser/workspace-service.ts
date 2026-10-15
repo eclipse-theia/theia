@@ -57,6 +57,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     protected _workspace: FileStat | undefined;
 
     protected _roots: FileStat[] = [];
+    protected rootNames = new Map<string, string>();
     protected deferredRoots = new Deferred<FileStat[]>();
 
     @inject(FileService)
@@ -299,7 +300,9 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
 
     protected async updateRoots(): Promise<void> {
         const newRoots = await this.computeRoots();
-        let rootsChanged = false;
+        const newRootNames = await this.computeRootNames();
+        let rootsChanged = !this.areRootNamesEqual(this.rootNames, newRootNames);
+        this.rootNames = newRootNames;
         if (newRoots.length !== this._roots.length || newRoots.length === 0) {
             rootsChanged = true;
         } else {
@@ -339,6 +342,27 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
             }
         }
         return roots;
+    }
+
+    /**
+     * Computes the names given to the workspace roots by the `name` property of the folders in the workspace file,
+     * keyed by the normalized URI of the root.
+     */
+    protected async computeRootNames(): Promise<Map<string, string>> {
+        const names = new Map<string, string>();
+        if (this._workspace && !this._workspace.isDirectory) {
+            const workspaceData = await this.getWorkspaceDataFromFile();
+            for (const { path, name } of workspaceData?.folders ?? []) {
+                if (name) {
+                    names.set(WorkspaceData.normalizeFolderUri(path), name);
+                }
+            }
+        }
+        return names;
+    }
+
+    protected areRootNamesEqual(names: Map<string, string>, otherNames: Map<string, string>): boolean {
+        return names.size === otherNames.size && Array.from(names).every(([root, name]) => otherNames.get(root) === name);
     }
 
     protected async getWorkspaceDataFromFile(): Promise<WorkspaceData | undefined> {
@@ -801,6 +825,15 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     /**
+     * Returns the name given to the workspace root by the `name` property of its folder entry in the workspace file.
+     * @param rootUri URI of the workspace root
+     * @returns the name of the root, or `undefined` if the root has no name or is not a workspace root
+     */
+    getWorkspaceRootName(rootUri: URI): string | undefined {
+        return this.rootNames.get(WorkspaceData.normalizeFolderUri(rootUri.toString()));
+    }
+
+    /**
      * Returns the relative path of the given file to the workspace root.
      * @param uri URI of the file
      * @see getWorkspaceRootUri(uri)
@@ -898,6 +931,16 @@ export namespace WorkspaceData {
         return !!validateSchema(data);
     }
 
+    /**
+     * Normalizes the given folder URI the same way as the URIs of the workspace roots, so that they can be compared.
+     */
+    export function normalizeFolderUri(folderUri: string): string {
+        return new URI(folderUri.endsWith('/') ? folderUri.slice(0, -1) : folderUri).normalizePath().toString();
+    }
+
+    /**
+     * Builds the workspace data for the given folders. The `name` of a folder entry in `additionalFields.folders` is kept for the same folder.
+     */
     export function buildWorkspaceData(folders: string[] | FileStat[], additionalFields?: Partial<WorkspaceData>): WorkspaceData {
         const roots = new Set<string>();
         if (folders.length > 0) {
@@ -907,8 +950,17 @@ export namespace WorkspaceData {
                 (<string[]>folders).forEach(folder => roots.add(folder));
             }
         }
+        const names = new Map<string, string>();
+        for (const { path, name } of additionalFields?.folders ?? []) {
+            if (name) {
+                names.set(normalizeFolderUri(path), name);
+            }
+        }
         const data: WorkspaceData = {
-            folders: Array.from(roots, folder => ({ path: folder }))
+            folders: Array.from(roots, folder => {
+                const name = names.get(normalizeFolderUri(folder));
+                return name ? { path: folder, name } : { path: folder };
+            })
         };
         if (additionalFields) {
             delete additionalFields.folders;
@@ -918,36 +970,31 @@ export namespace WorkspaceData {
     }
 
     export function transformToRelative(data: WorkspaceData, workspaceFile?: FileStat): WorkspaceData {
-        const folderUris: string[] = [];
+        const folders: WorkspaceData['folders'] = [];
         const workspaceFileUri = new URI(workspaceFile ? workspaceFile.resource.toString() : '').withScheme('file');
-        for (const { path } of data.folders) {
+        for (const { path, name } of data.folders) {
             const folderUri = new URI(path).withScheme('file');
             const rel = workspaceFileUri.parent.relative(folderUri);
-            if (rel) {
-                folderUris.push(rel.toString());
-            } else {
-                folderUris.push(folderUri.toString());
-            }
+            folders.push({ path: rel ? rel.toString() : folderUri.toString(), name });
         }
-        return buildWorkspaceData(folderUris, data);
+        return buildWorkspaceData(folders.map(folder => folder.path), { ...data, folders });
     }
 
     export function transformToAbsolute(data: WorkspaceData, workspaceFile?: BaseStat): WorkspaceData {
         if (workspaceFile) {
-            const folders: string[] = [];
-            for (const folder of data.folders) {
-                const path = folder.path;
+            const folders: WorkspaceData['folders'] = [];
+            for (const { path, name } of data.folders) {
                 if (path.startsWith('file:///')) {
-                    folders.push(path);
+                    folders.push({ path, name });
                 } else {
                     const absolutePath = workspaceFile.resource.withScheme('file').parent.resolveToAbsolute(path)?.toString();
                     if (absolutePath) {
-                        folders.push(absolutePath.toString());
+                        folders.push({ path: absolutePath.toString(), name });
                     }
                 }
 
             }
-            return Object.assign(data, buildWorkspaceData(folders, data));
+            return Object.assign(data, buildWorkspaceData(folders.map(folder => folder.path), { ...data, folders }));
         }
         return data;
     }

@@ -119,6 +119,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
     $onWorkspaceFoldersChanged(event: WorkspaceRootsChangeEvent): void {
         const newRoots = event.roots || [];
+        const names = event.names || {};
         const oldFoldersByUri = new Map<string, theia.WorkspaceFolder>();
         if (this.folders) {
             for (const folder of this.folders) {
@@ -128,12 +129,12 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         const newFolders = newRoots.map((root, index) => {
             const existing = oldFoldersByUri.get(root);
             if (existing) {
-                // Preserve object identity even if the index changed,
+                // Preserve object identity even if the index or name changed,
                 // since extensions may use folder objects as Map keys.
-                Object.assign(existing, { index });
+                Object.assign(existing, { index, name: names[root] ?? new Path(existing.uri.path).base });
                 return existing;
             }
-            return this.toWorkspaceFolder(root, index);
+            return this.toWorkspaceFolder(root, index, names[root]);
         });
         const delta = this.deltaFolders(this.folders, newFolders);
 
@@ -190,12 +191,12 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return folder1.filter(folder => map.has(folder.uri.toString()));
     }
 
-    private toWorkspaceFolder(root: string, index: number): theia.WorkspaceFolder {
+    private toWorkspaceFolder(root: string, index: number, name?: string): theia.WorkspaceFolder {
         const uri = URI.parse(root);
         const path = new Path(uri.path);
         return {
             uri: uri,
-            name: path.base,
+            name: name ?? path.base,
             index: index
         };
     }

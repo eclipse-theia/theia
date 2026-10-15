@@ -54,6 +54,8 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
     private roots: string[];
 
+    private rootNames: { [root: string]: string };
+
     private resourceResolver: TextContentResourceResolver;
 
     private pluginServer: PluginServer;
@@ -121,11 +123,13 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
     }
 
     protected async processWorkspaceFoldersChanged(roots: string[]): Promise<void> {
-        if (this.isAnyRootChanged(roots) === false) {
+        const names = this.getRootNames(roots);
+        if (this.isAnyRootChanged(roots) === false && this.isAnyRootNameChanged(names) === false) {
             return;
         }
         this.roots = roots;
-        this.proxy.$onWorkspaceFoldersChanged({ roots });
+        this.rootNames = names;
+        this.proxy.$onWorkspaceFoldersChanged({ roots, names });
 
         const keyValueStorageWorkspacesData = await this.pluginServer.getAllStorageValues({
             workspace: this.workspaceService.workspace?.resource.toString(),
@@ -141,6 +145,22 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         }
 
         return this.roots.some((root, index) => root !== roots[index]);
+    }
+
+    protected getRootNames(roots: string[]): { [root: string]: string } {
+        const names: { [root: string]: string } = {};
+        for (const root of roots) {
+            const name = this.workspaceService.getWorkspaceRootName(new URI(root));
+            if (name) {
+                names[root] = name;
+            }
+        }
+        return names;
+    }
+
+    private isAnyRootNameChanged(names: { [root: string]: string }): boolean {
+        const roots = Object.keys(names);
+        return !this.rootNames || roots.length !== Object.keys(this.rootNames).length || roots.some(root => this.rootNames[root] !== names[root]);
     }
 
     async $getWorkspace(): Promise<FileStat | undefined> {
@@ -163,7 +183,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
             const items = this.roots.map(root => {
                 const rootUri = Uri.parse(root);
-                const rootPathName = rootUri.path.substring(rootUri.path.lastIndexOf('/') + 1);
+                const rootPathName = this.workspaceService.getWorkspaceRootName(new URI(root)) ?? rootUri.path.substring(rootUri.path.lastIndexOf('/') + 1);
                 return {
                     label: rootPathName,
                     detail: rootUri.path,
