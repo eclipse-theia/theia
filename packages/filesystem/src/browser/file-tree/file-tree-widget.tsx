@@ -269,9 +269,9 @@ export class FileTreeWidget extends CompressedTreeWidget {
     protected override getPaddingLeft(node: TreeNode, props: NodeProps): number {
         if (this.hidesExplorerArrows) {
             // additional left padding instead of top-level expansion toggle
-            return this.getDepthPadding(props.depth) + this.props.leftPadding;
+            return super.getPaddingLeft(node, props) + this.props.leftPadding;
         }
-        return this.getDepthPadding(props.depth);
+        return super.getPaddingLeft(node, props);
     }
 
     protected override needsExpansionTogglePadding(node: TreeNode): boolean {
