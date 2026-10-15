@@ -330,7 +330,7 @@ export class FileTreeWidget extends CompressedTreeWidget {
 
     protected override getDepthPadding(depth: number): number {
         // add additional depth so file nodes are rendered with padding in relation to the top level root node.
-        return depth * this.treeIndent + this.props.leftPadding ;
+        return depth * this.treeIndent + this.props.leftPadding;
     }
 
     protected override getIndentGuidePadding(depth: number): number {
