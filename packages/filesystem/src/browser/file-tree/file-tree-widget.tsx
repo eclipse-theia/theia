@@ -334,6 +334,9 @@ export class FileTreeWidget extends CompressedTreeWidget {
     }
 
     protected override getIndentGuidePadding(depth: number): number {
+        if (this.hidesExplorerArrows) {
+            return this.getDepthPadding(depth - 1) + this.props.leftPadding + INDENT_GUIDE_PADDING;
+        }
         return this.getDepthPadding(depth - 1) + INDENT_GUIDE_PADDING;
     }
 }
