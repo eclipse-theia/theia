@@ -25,7 +25,7 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import { Command, Disposable } from '@theia/core/lib/common';
 import { PluginViewRegistry, ViewContainerInfo, PLUGIN_VIEW_DATA_FACTORY_ID } from './plugin-view-registry';
-import type { ViewWelcome } from '../../../common';
+import { PluginViewType, ViewWelcome } from '../../../common';
 
 disableJSDOM();
 
@@ -104,6 +104,8 @@ describe('PluginViewRegistry - view menu labels', () => {
 
 });
 
+const welcome = (view: string): ViewWelcome => ({ view, content: `[Hi](command:${view}.hi)`, order: 0 });
+
 describe('PluginViewRegistry - welcome-only views', () => {
 
     interface FakeTreeViewWidget {
@@ -115,8 +117,6 @@ describe('PluginViewRegistry - welcome-only views', () => {
     let registry: PluginViewRegistry;
     let createdWidget: FakeTreeViewWidget;
     let getOrCreateCalls: Array<{ factoryId: string; options: unknown }>;
-
-    const welcome = (view: string): ViewWelcome => ({ view, content: `[Hi](command:${view}.hi)`, order: 0 });
 
     const internals = (): {
         views: Map<string, [string, { type?: unknown }]>;
@@ -167,6 +167,137 @@ describe('PluginViewRegistry - welcome-only views', () => {
 
         expect(widget).to.equal(undefined);
         expect(getOrCreateCalls).to.have.lengthOf(0);
+    });
+
+});
+
+describe('PluginViewRegistry - welcome-only views on expand', () => {
+
+    const noop = () => Disposable.NULL;
+
+    let registry: PluginViewRegistry;
+    let view: { widgets: unknown[] };
+    let prepared: unknown[];
+
+    const internals = (): {
+        views: Map<string, [string, { type?: unknown }]>;
+        viewDataProviders: Map<string, unknown>;
+        viewsWelcome: Map<string, ViewWelcome[]>;
+        onDidExpandViewEmitter: { fire(viewId: string): void };
+        init(): void;
+    } => registry as unknown as {
+        views: Map<string, [string, { type?: unknown }]>;
+        viewDataProviders: Map<string, unknown>;
+        viewsWelcome: Map<string, ViewWelcome[]>;
+        onDidExpandViewEmitter: { fire(viewId: string): void };
+        init(): void;
+    };
+
+    async function expand(viewId: string): Promise<void> {
+        internals().onDidExpandViewEmitter.fire(viewId);
+        await new Promise(resolve => setTimeout(resolve));
+    }
+
+    beforeEach(() => {
+        registry = new PluginViewRegistry();
+        view = { widgets: [] };
+        prepared = [];
+        Object.assign(registry, {
+            shell: { activeWidget: undefined, onDidChangeActiveWidget: noop, initialized: new Promise(() => { }) },
+            viewContextKeys: { focusedView: { reset: () => { } } },
+            contextKeyService: { onDidChange: noop },
+            widgetManager: { onWillCreateWidget: noop, onDidCreateWidget: noop, getWidget: async () => view },
+            prepareView: async (widget: unknown) => { prepared.push(widget); }
+        });
+        internals().init();
+        internals().views.set('actions', ['container', {}]);
+        internals().viewsWelcome.set('actions', [welcome('actions')]);
+    });
+
+    it('prepares an empty welcome-only view when it is expanded, as after restoring a saved layout', async () => {
+        await expand('actions');
+
+        expect(prepared).to.deep.equal([view]);
+    });
+
+    it('leaves a view with a data provider to the provider', async () => {
+        internals().viewDataProviders.set('actions', () => undefined);
+
+        await expand('actions');
+
+        expect(prepared).to.have.lengthOf(0);
+    });
+
+    it('leaves a view that already has content alone', async () => {
+        view.widgets.push({});
+
+        await expand('actions');
+
+        expect(prepared).to.have.lengthOf(0);
+    });
+
+    it('leaves a view without welcomes alone', async () => {
+        internals().viewsWelcome.delete('actions');
+
+        await expand('actions');
+
+        expect(prepared).to.have.lengthOf(0);
+    });
+
+    it('leaves a webview view alone', async () => {
+        internals().views.set('actions', ['container', { type: PluginViewType.Webview }]);
+
+        await expand('actions');
+
+        expect(prepared).to.have.lengthOf(0);
+    });
+
+});
+
+describe('PluginViewRegistry - prepareView', () => {
+
+    interface FakeViewWidget {
+        options: { viewId: string };
+        title: { label: string };
+        widgets: unknown[];
+        isDisposed: boolean;
+        addWidget(widget: unknown): void;
+    }
+
+    let registry: PluginViewRegistry;
+    let view: FakeViewWidget;
+    let dataWidget: { isDisposed: boolean; dispose(): void };
+
+    beforeEach(() => {
+        registry = new PluginViewRegistry();
+        view = {
+            options: { viewId: 'actions' },
+            title: { label: '' },
+            widgets: [],
+            isDisposed: false,
+            addWidget(widget: unknown): void {
+                this.widgets.push(widget);
+            }
+        };
+        dataWidget = { isDisposed: false, dispose: () => { } };
+        (registry as unknown as { views: Map<string, unknown> }).views.set('actions', ['container', { id: 'actions', name: 'Actions' }]);
+        (registry as unknown as { createViewDataWidget: unknown }).createViewDataWidget = async () => dataWidget;
+    });
+
+    const prepareView = (): Promise<void> => (registry as unknown as { prepareView(widget: FakeViewWidget): Promise<void> }).prepareView(view);
+
+    it('adds the created data widget to the view', async () => {
+        await prepareView();
+
+        expect(view.widgets).to.deep.equal([dataWidget]);
+    });
+
+    it('leaves the view empty when its data widget was disposed before it could be added', async () => {
+        dataWidget.isDisposed = true;
+
+        await prepareView();
+
+        expect(view.widgets).to.have.lengthOf(0);
     });
 
 });
