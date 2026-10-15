@@ -107,8 +107,8 @@ export class WatchRequestRouter {
     }
 
     /** The requests that `include` accepts. */
-    matching(include: (request: DirectoryWatchRequest) => boolean): DirectoryWatchRequest[] {
-        return Array.from(this.requests.values()).filter(include);
+    matching(include: (request: DirectoryWatchRequest, watcherId: number) => boolean): DirectoryWatchRequest[] {
+        return Array.from(this.requests).filter(([watcherId, request]) => include(request, watcherId)).map(([, request]) => request);
     }
 
     /** @returns `true` if the request is for the watched directory, rather than for one file in it. */

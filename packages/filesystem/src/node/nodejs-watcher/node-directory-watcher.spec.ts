@@ -1300,6 +1300,22 @@ describe('node-directory-watcher', function (): void {
                 provider.unwatch(1);
             }
         });
+
+        it('does not tell a directory request joining a re-keyed file watcher that its directory was added', async () => {
+            const provider = new DirectoryWatcherProvider(NO_LOGGING, box, TIMINGS, box.host);
+            try {
+                await provider.watch(0, box.file(box.path('later.txt')));
+                // Joins after the re-key to the directory, while the file watcher reads its children.
+                box.host.duringNextRead = () => provider.watch(1, box.directory(box.root, 2));
+                box.write('later.txt');
+
+                await box.expect(1, 'added later.txt');
+                await box.expect(2);
+            } finally {
+                provider.unwatch(0);
+                provider.unwatch(1);
+            }
+        });
     });
 
     describe('disposal', () => {

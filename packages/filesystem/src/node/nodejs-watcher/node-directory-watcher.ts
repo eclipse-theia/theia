@@ -94,6 +94,8 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
     private restartBaseline: Set<string> | undefined;
     /** Set once the watched path is found missing or reported deleted, until a start reports it added. */
     private watchedPathMissing = false;
+    /** Requests that joined once the missing path was found. They never took it for missing, so the start skips them. */
+    private joinedOnceFound: Set<number> | undefined;
     /** The directory last announced through {@link onDidResolveDirectory}, which the provider keys the watcher by. */
     private announcedDirectory: string;
 
@@ -178,6 +180,7 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
 
     addRequest(watcherId: number, request: DirectoryWatchRequest): void {
         this.router.add(watcherId, request);
+        this.joinedOnceFound?.add(watcherId);
         clearTimeout(this.disposalTimer);
         this.debug('REQUEST++', `watcherId=${watcherId}, requests=${this.router.size}`);
     }
@@ -233,9 +236,11 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
         // After a reported loss, file requests hear of their file here, so the diff skips them.
         const lossReported = this.watchedPathMissing;
         if (lossReported) {
-            this.router.reportWatchedPath(FileChangeType.ADDED, this.router.matching(request => this.router.knows(request, children)));
+            this.router.reportWatchedPath(FileChangeType.ADDED,
+                this.router.matching((request, watcherId) => !this.joinedOnceFound?.has(watcherId) && this.router.knows(request, children)));
             this.watchedPathMissing = false;
         }
+        this.joinedOnceFound = undefined;
         if (this.restartBaseline) {
             this.router.report(this.diff(this.restartBaseline, children), request => !lossReported || this.router.watchesDirectory(request));
             this.restartBaseline = undefined;
@@ -249,6 +254,7 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
             if (!await this.host.exists(this.watchPath) || !await this.resolveWatchedDirectory()) {
                 this.markMissing();
             } else {
+                this.joinedOnceFound ??= new Set();
                 if (!this.host.samePath(this.watchedDirectory, this.announcedDirectory)) {
                     // Announced before the handle opens, so a merge spares the directory a second handle.
                     this.announcedDirectory = this.watchedDirectory;
@@ -280,6 +286,7 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
         } else {
             this.watchedPathMissing = true;
         }
+        this.joinedOnceFound = undefined;
     }
 
     /** Reports the watched path deleted, once. A file request hears it if its file was a known child, or no start recorded the children yet. */
