@@ -17,6 +17,8 @@
 import * as chai from 'chai';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { URI } from './types-impl';
+import { WorkspaceExtImpl } from './workspace';
 
 const expect = chai.expect;
 
@@ -150,5 +152,51 @@ describe('WorkspaceExtImpl trust change logic', () => {
 
         handler.$onWorkspaceTrustChanged(undefined);
         expect(handler.trusted).to.equal(false); // undefined coerced to false
+    });
+});
+
+describe('WorkspaceExtImpl workspace folders', () => {
+
+    let workspace: WorkspaceExtImpl;
+
+    beforeEach(() => {
+        workspace = new WorkspaceExtImpl();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (workspace as any).proxy = { $getWorkspace: async () => undefined };
+    });
+
+    it('uses the names of the roots for the workspace folders', () => {
+        workspace.$onWorkspaceFoldersChanged({
+            roots: ['file:///project/backend', 'file:///project/frontend'],
+            names: { 'file:///project/backend': 'API Server' }
+        });
+        expect(workspace.workspaceFolders?.map(folder => folder.name)).to.deep.equal(['API Server', 'frontend']);
+    });
+
+    it('updates the name of an existing workspace folder in place', () => {
+        workspace.$onWorkspaceFoldersChanged({ roots: ['file:///project/backend'] });
+        const folder = workspace.workspaceFolders![0];
+        expect(folder.name).to.equal('backend');
+
+        workspace.$onWorkspaceFoldersChanged({ roots: ['file:///project/backend'], names: { 'file:///project/backend': 'API Server' } });
+        expect(workspace.workspaceFolders![0]).to.equal(folder);
+        expect(folder.name).to.equal('API Server');
+
+        workspace.$onWorkspaceFoldersChanged({ roots: ['file:///project/backend'] });
+        expect(folder.name).to.equal('backend');
+    });
+
+    it('sends the names of the folders to add to the main side', () => {
+        const calls: unknown[][] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (workspace as any).proxy = { $getWorkspace: async () => undefined, $updateWorkspaceFolders: async (...args: unknown[]) => { calls.push(args); } };
+        workspace.$onWorkspaceFoldersChanged({ roots: ['file:///project/backend'] });
+
+        const result = workspace.updateWorkspaceFolders(1, 0,
+            { uri: URI.parse('file:///project/frontend'), name: 'Web Client' },
+            { uri: URI.parse('file:///project/shared') }
+        );
+        expect(result).to.be.true;
+        expect(calls).to.deep.equal([[1, 0, { uri: 'file:///project/frontend', name: 'Web Client' }, { uri: 'file:///project/shared', name: undefined }]]);
     });
 });

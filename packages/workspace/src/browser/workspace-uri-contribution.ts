@@ -29,7 +29,10 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
 
     @postConstruct()
     override init(): void {
-        // no-op, backward compatibility
+        // Labels depend on the workspace roots and their names.
+        this.workspaceService.onWorkspaceChanged(() => this.onDidChangeEmitter.fire({
+            affects: element => this.canHandle(element) > 0
+        }));
     }
 
     override canHandle(element: object): number {
@@ -44,6 +47,11 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
     }
 
     override getName(element: URI | URIIconReference | FileStat): string | undefined {
+        const uri = this.getUri(element);
+        const rootName = uri && this.workspaceService.getWorkspaceRootName(uri);
+        if (rootName) {
+            return rootName;
+        }
         return super.getName(this.asURIIconReference(element));
     }
 

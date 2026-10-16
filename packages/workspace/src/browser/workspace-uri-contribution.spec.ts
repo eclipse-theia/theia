@@ -138,6 +138,23 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
             const name = labelProvider.getName(file);
             expect(name).eq('jacques.doc');
         });
+
+        it('should return the name given to a workspace root in the workspace file', () => {
+            const workspaceService = container.get(WorkspaceService);
+            sinon.stub(workspaceService, 'getWorkspaceRootName').callsFake(uri => uri.isEqual(new URI('file:///workspace')) ? 'My Workspace' : undefined);
+            expect(labelProvider.getName(new URI('file:///workspace'))).eq('My Workspace');
+            expect(labelProvider.getName(FileStat.dir('file:///workspace'))).eq('My Workspace');
+            expect(labelProvider.getName(new URI('file:///workspace/jacques.doc'))).eq('jacques.doc');
+        });
+
+        it('should fire onDidChange when the workspace changes', () => {
+            const workspaceService = container.get(WorkspaceService);
+            const events: boolean[] = [];
+            labelProvider.onDidChange(event => events.push(event.affects(new URI('file:///workspace'))));
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (workspaceService as any).onWorkspaceChangeEmitter.fire(roots);
+            expect(events).deep.eq([true]);
+        });
     });
 
     describe('getLongName()', () => {
