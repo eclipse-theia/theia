@@ -41,7 +41,7 @@ import {
 import { CancellationToken, ILogger } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall } from 'ollama';
-import { createProxyFetch } from '@theia/ai-core/lib/node';
+import { createTimeoutFetch } from '@theia/ai-core/lib/node';
 import { ollamaThinkParamFor } from './ollama-reasoning';
 
 export const OllamaModelIdentifier = Symbol('OllamaModelIdentifier');
@@ -52,6 +52,11 @@ export interface OllamaModelParams {
     status: LanguageModelStatus;
     host: () => string | undefined;
     proxy?: string;
+    /**
+     * The undici request timeout in milliseconds applied to the Ollama client's fetch. `0` disables
+     * the timeout; `undefined` keeps undici's defaults. See {@link createTimeoutFetch}.
+     */
+    requestTimeout?: number;
     reasoningSupport?: ReasoningSupport;
 }
 
@@ -77,6 +82,7 @@ export class OllamaModel implements LanguageModel {
     status: LanguageModelStatus;
     protected host: () => string | undefined;
     proxy?: string;
+    requestTimeout?: number;
     reasoningSupport?: ReasoningSupport;
 
     @inject(OllamaModelParams)
@@ -96,6 +102,7 @@ export class OllamaModel implements LanguageModel {
         this.status = params.status;
         this.host = params.host;
         this.proxy = params.proxy;
+        this.requestTimeout = params.requestTimeout;
         this.reasoningSupport = params.reasoningSupport;
     }
 
@@ -438,7 +445,7 @@ export class OllamaModel implements LanguageModel {
         if (!host) {
             throw new Error('Please provide OLLAMA_HOST in preferences or via environment variable');
         }
-        return new Ollama({ host: host, fetch: createProxyFetch(this.proxy) });
+        return new Ollama({ host: host, fetch: createTimeoutFetch(this.proxy, this.requestTimeout) });
     }
 
     protected toOllamaTool(tool: ToolRequest): ToolWithHandler {

@@ -17,7 +17,7 @@
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OLLAMA_REASONING_SUPPORT, OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
-import { HOST_PREF, MODELS_PREF } from '../common/ollama-preferences';
+import { HOST_PREF, MODELS_PREF, REQUEST_TIMEOUT_PREF } from '../common/ollama-preferences';
 import { PreferenceService } from '@theia/core';
 
 const OLLAMA_PROVIDER_ID = 'ollama';
@@ -40,6 +40,9 @@ export class OllamaFrontendApplicationContribution implements FrontendApplicatio
             const proxyUri = this.preferenceService.get<string>('http.proxy', undefined);
             this.manager.setProxyUrl(proxyUri);
 
+            const requestTimeout = this.preferenceService.get<number>(REQUEST_TIMEOUT_PREF);
+            this.manager.setRequestTimeout(requestTimeout);
+
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOllamaModelDescription(modelId)));
             this.prevModels = [...models];
@@ -52,6 +55,9 @@ export class OllamaFrontendApplicationContribution implements FrontendApplicatio
                     this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
                 } else if (event.preferenceName === 'http.proxy') {
                     this.manager.setProxyUrl(this.preferenceService.get<string>('http.proxy', undefined));
+                    this.updateAllModels();
+                } else if (event.preferenceName === REQUEST_TIMEOUT_PREF) {
+                    this.manager.setRequestTimeout(this.preferenceService.get<number>(REQUEST_TIMEOUT_PREF));
                     this.updateAllModels();
                 }
             });
