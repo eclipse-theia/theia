@@ -475,6 +475,39 @@ describe('keyboard layout service', function (): void {
         chai.expect(capsShiftOption[0].dispatchString()).to.equal('shift+alt+a');
     });
 
+    it('attributes Shift to the Shift layer when input reports the base character', async () => {
+        // Test automation such as Puppeteer can report the base character while Shift is held.
+        const us = require('../../../src/common/keyboard/layouts/en-US-pc.json');
+        const service = await setup(us, 'linux');
+        const input: NormalizedKeyboardInput = { key: '`', code: 'Backquote', ctrlKey: true, shiftKey: true };
+
+        chai.expect(service.detectLayoutModifiers(input)).to.equal('shift');
+        const interpretations = service.getKeyCodeInterpretations(input, 'code');
+        chai.expect(interpretations.map(keyCode => keyCode.interpretation)).to.deep.equal(['commandModifiers', 'layoutModifiers']);
+        chai.expect(interpretations.map(keyCode => keyCode.dispatchString())).to.deep.equal(['shift+ctrl+`', 'ctrl+`@shift']);
+        chai.expect(interpretations[1].dispatchString()).to.equal(service.resolveKeyCode(KeyCode.parse('ctrl+shift+`')).dispatchString());
+    });
+
+    it('does not attribute base-character input to the Shift layer when AltGraph is active or the Shift layer is dead', async () => {
+        const layout: NativeKeyboardLayout = {
+            info: { id: 'dead-shift', lang: 'en' },
+            mapping: {
+                Backquote: {
+                    value: '`', valueIsDeadKey: false, withShift: '~', withShiftIsDeadKey: false,
+                    withAltGr: '', withAltGrIsDeadKey: false, withShiftAltGr: '', withShiftAltGrIsDeadKey: false
+                },
+                Equal: {
+                    value: '=', valueIsDeadKey: false, withShift: '^', withShiftIsDeadKey: true,
+                    withAltGr: '', withAltGrIsDeadKey: false, withShiftAltGr: '', withShiftAltGrIsDeadKey: false
+                }
+            }
+        };
+        const service = await setup(layout, 'linux');
+
+        chai.expect(service.detectLayoutModifiers({ key: '`', code: 'Backquote', shiftKey: true, altGraph: true })).to.be.undefined;
+        chai.expect(service.detectLayoutModifiers({ key: '=', code: 'Equal', shiftKey: true })).to.be.undefined;
+    });
+
     it('normalizes the character to the Linux AltGraph layer when Caps Lock inverts the case', async () => {
         const layout: NativeKeyboardLayout = {
             info: { id: 'altgraph-letters', lang: 'pl' },
