@@ -155,9 +155,9 @@ export class WatchRequestRouter {
                 }
                 continue;
             }
-            const fileName = this.childName(request);
+            const ownName = this.childName(request);
             // Excludes filter children, never the path a client explicitly asked to watch.
-            for (const { type, pathRemains } of fileName === undefined ? [] : changesByKey.get(this.host.pathKey(fileName)) ?? []) {
+            for (const { type, pathRemains } of ownName === undefined ? [] : changesByKey.get(this.host.pathKey(ownName)) ?? []) {
                 this.tell(reported, watcherId, pathRemains ? FileChangeType.UPDATED : type);
             }
         }
