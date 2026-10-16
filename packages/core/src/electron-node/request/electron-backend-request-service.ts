@@ -18,6 +18,7 @@ import { decorate, injectable, inject, named } from 'inversify';
 import { NodeRequestOptions, NodeRequestService } from '@theia/request/lib/node-request-service';
 import { ElectronSecurityToken } from '../../electron-common/electron-token';
 import { ILogger } from '../../common';
+import { session } from '../../../electron-shared/electron';
 
 decorate(injectable(), NodeRequestService);
 
@@ -44,8 +45,28 @@ export class ElectronBackendRequestService extends NodeRequestService {
     }
 
     override async resolveProxy(url: string): Promise<string | undefined> {
-        // TODO: Implement IPC to the backend to access the Electron proxy resolver
-        return undefined;
+        if (!process.send) {
+            // Running in --no-cluster mode (in the Electron main process): call session directly.
+            return session.defaultSession.resolveProxy(url);
+        }
+        // Running as a forked child process: ask the main process via Node IPC.
+        return new Promise<string | undefined>(resolve => {
+            const id = Math.random().toString(36).slice(2);
+            const timer = setTimeout(() => {
+                process.off('message', handler);
+                resolve(undefined);
+            }, 5000);
+            const handler = (msg: unknown) => {
+                const response = msg as { type: string, id: string, result: string };
+                if (response?.type === 'resolve-proxy-response' && response.id === id) {
+                    clearTimeout(timer);
+                    process.off('message', handler);
+                    resolve(response.result);
+                }
+            };
+            process.on('message', handler);
+            process.send!({ type: 'resolve-proxy', id, url });
+        });
     }
 
     protected buildProxyUrl(url: string, proxyHost: string): string {

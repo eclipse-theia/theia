@@ -17,7 +17,7 @@
 import { inject, injectable, named } from 'inversify';
 import {
     screen, app, BrowserWindow, WebContents, Event as ElectronEvent, BrowserWindowConstructorOptions, nativeImage,
-    nativeTheme, shell, dialog
+    nativeTheme, shell, dialog, session
 } from '../../electron-shared/electron';
 import * as path from 'path';
 import { Argv } from 'yargs';
@@ -845,9 +845,17 @@ export class ElectronMainApplication {
                 await this.getForkOptions(),
             );
             return new Promise((resolve, reject) => {
-                // The backend server main file is also supposed to send the resolved http(s) server port via IPC.
-                backendProcess.on('message', (address: AddressInfo) => {
-                    resolve(address.port);
+                backendProcess.on('message', (msg: AddressInfo | { type: string, id: string, url: string }) => {
+                    // The backend server main file is supposed to send the resolved proxy via IPC.
+                    if (msg && typeof msg === 'object' && 'type' in msg && msg.type === 'resolve-proxy') {
+                        session.defaultSession.resolveProxy(msg.url).then(
+                            result => backendProcess.send({ type: 'resolve-proxy-response', id: msg.id, result }),
+                            () => backendProcess.send({ type: 'resolve-proxy-response', id: msg.id, result: undefined })
+                        );
+                        return;
+                    }
+                    // The backend server main file is also supposed to send the resolved http(s) server port via IPC.
+                    resolve((msg as AddressInfo).port);
                 });
                 backendProcess.on('error', error => {
                     reject(error);
