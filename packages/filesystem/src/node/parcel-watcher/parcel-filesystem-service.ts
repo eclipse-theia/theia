@@ -219,14 +219,11 @@ export class ParcelWatcher {
     }
 
     /**
-     * When starting a watcher, we'll first check and wait for the path to exists
-     * before running a parcel watcher.
+     * When starting a watcher, resolve the nearest existing directory to use as
+     * the Parcel watch root.
      */
     protected async start(): Promise<void> {
-        while (await fsp.stat(this.fsPath).then(() => false, () => true)) {
-            await timeout(500);
-            this.assertNotDisposed();
-        }
+        const watchRoot = await this.resolveWatchRoot();
         this.assertNotDisposed();
         // This race is specific to Linux/inotify: parcel-watcher's inotify backend walks
         // the tree and then calls inotify_add_watch on every subdirectory. If a subdirectory
@@ -240,12 +237,12 @@ export class ParcelWatcher {
         let attempt = 0;
         while (true) {
             try {
-                watcher = await this.createWatcher();
+                watcher = await this.createWatcher(watchRoot);
                 break;
             } catch (error) {
                 const message: string = (error && error.message) || '';
                 const isTransientEnoent = message.includes('No such file or directory')
-                    && await fsp.stat(this.fsPath).then(() => true, () => false);
+                    && await fsp.stat(watchRoot).then(() => true, () => false);
                 if (!isTransientEnoent || attempt >= 4) {
                     throw error;
                 }
@@ -274,17 +271,35 @@ export class ParcelWatcher {
             .then(status => this.debug('STOPPED', status));
     }
 
-    protected async createWatcher(): Promise<AsyncSubscription> {
-        let fsPath = await fsp.realpath(this.fsPath);
-        if ((await fsp.stat(fsPath)).isFile()) {
-            fsPath = path.dirname(fsPath);
+    protected async resolveWatchRoot(): Promise<string> {
+        let fsPath = this.fsPath;
+        while (true) {
+            try {
+                const realPath = await fsp.realpath(fsPath);
+                if ((await fsp.stat(realPath)).isDirectory()) {
+                    return realPath;
+                }
+                return path.dirname(realPath);
+            } catch (error) {
+                if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+                    throw error;
+                }
+                const parentPath = path.dirname(fsPath);
+                if (parentPath === fsPath) {
+                    throw error;
+                }
+                fsPath = parentPath;
+            }
         }
-        return subscribe(fsPath, (err, events) => {
+    }
+
+    protected async createWatcher(watchRoot: string): Promise<AsyncSubscription> {
+        return subscribe(watchRoot, (err, events) => {
             if (err) {
                 if (err.message && err.message.includes('File system must be re-scanned')) {
                     console.log(`FS Events were dropped on watcher ${fsp}`);
                 } else {
-                    console.error(`Watcher service error on "${fsPath}":`, err);
+                    console.error(`Watcher service error for "${this.fsPath}" (watch root "${watchRoot}"):`, err);
                     this._dispose();
                     this.fireError();
                     return;
