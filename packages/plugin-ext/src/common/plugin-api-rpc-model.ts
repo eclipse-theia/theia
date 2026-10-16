@@ -557,6 +557,11 @@ export interface WorkspaceRootsChangeEvent {
     names?: { [root: string]: string };
 }
 
+export interface WorkspaceFolderToAdd {
+    uri: string;
+    name?: string;
+}
+
 export interface WorkspaceFolder {
     uri: UriComponents;
     name: string;

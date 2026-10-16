@@ -414,12 +414,12 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     }
 
     updateWorkspaceFolders(start: number, deleteCount: number, ...workspaceFoldersToAdd: { uri: theia.Uri, name?: string }[]): boolean {
-        const rootsToAdd = new Set<string>();
+        const rootsToAdd = new Map<string, string | undefined>();
         if (Array.isArray(workspaceFoldersToAdd)) {
             workspaceFoldersToAdd.forEach(folderToAdd => {
                 const uri = URI.isUri(folderToAdd.uri) && folderToAdd.uri.toString();
                 if (uri && !rootsToAdd.has(uri)) {
-                    rootsToAdd.add(uri);
+                    rootsToAdd.set(uri, folderToAdd.name);
                 }
             });
         }
@@ -439,7 +439,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
         // Simulate the updateWorkspaceFolders method on our data to do more validation
         const newWorkspaceFolders = currentWorkspaceFolders.slice(0);
-        newWorkspaceFolders.splice(start, deleteCount, ...[...rootsToAdd].map(uri => ({ uri: URI.parse(uri), name: undefined!, index: undefined! })));
+        newWorkspaceFolders.splice(start, deleteCount, ...[...rootsToAdd.keys()].map(uri => ({ uri: URI.parse(uri), name: undefined!, index: undefined! })));
 
         for (let i = 0; i < newWorkspaceFolders.length; i++) {
             const folder = newWorkspaceFolders[i];
@@ -454,7 +454,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         }
 
         // Trigger on main side
-        this.proxy.$updateWorkspaceFolders(start, deleteCount, ...rootsToAdd).then(undefined, error =>
+        this.proxy.$updateWorkspaceFolders(start, deleteCount, ...Array.from(rootsToAdd, ([uri, name]) => ({ uri, name }))).then(undefined, error =>
             this.messageService.showMessage(MainMessageType.Error, `Failed to update workspace folders: ${error}`)
         );
 

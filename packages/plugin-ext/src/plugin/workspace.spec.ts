@@ -17,6 +17,7 @@
 import * as chai from 'chai';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { URI } from './types-impl';
 import { WorkspaceExtImpl } from './workspace';
 
 const expect = chai.expect;
@@ -183,5 +184,19 @@ describe('WorkspaceExtImpl workspace folders', () => {
 
         workspace.$onWorkspaceFoldersChanged({ roots: ['file:///project/backend'] });
         expect(folder.name).to.equal('backend');
+    });
+
+    it('sends the names of the folders to add to the main side', () => {
+        const calls: unknown[][] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (workspace as any).proxy = { $getWorkspace: async () => undefined, $updateWorkspaceFolders: async (...args: unknown[]) => { calls.push(args); } };
+        workspace.$onWorkspaceFoldersChanged({ roots: ['file:///project/backend'] });
+
+        const result = workspace.updateWorkspaceFolders(1, 0,
+            { uri: URI.parse('file:///project/frontend'), name: 'Web Client' },
+            { uri: URI.parse('file:///project/shared') }
+        );
+        expect(result).to.be.true;
+        expect(calls).to.deep.equal([[1, 0, { uri: 'file:///project/frontend', name: 'Web Client' }, { uri: 'file:///project/shared', name: undefined }]]);
     });
 });

@@ -299,10 +299,9 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     protected async updateRoots(): Promise<void> {
+        const oldRootNames = this.rootNames;
         const newRoots = await this.computeRoots();
-        const newRootNames = await this.computeRootNames();
-        let rootsChanged = !this.areRootNamesEqual(this.rootNames, newRootNames);
-        this.rootNames = newRootNames;
+        let rootsChanged = !this.areRootNamesEqual(oldRootNames, this.rootNames);
         if (newRoots.length !== this._roots.length || newRoots.length === 0) {
             rootsChanged = true;
         } else {
@@ -322,43 +321,35 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         }
     }
 
+    /**
+     * Computes the workspace roots. Also updates the names given to the roots in the workspace file, see `getWorkspaceRootName`.
+     */
     protected async computeRoots(): Promise<FileStat[]> {
         const roots: FileStat[] = [];
+        const rootNames = new Map<string, string>();
         if (this._workspace) {
             if (this._workspace.isDirectory) {
+                this.rootNames = rootNames;
                 return [this._workspace];
             }
 
             const workspaceData = await this.getWorkspaceDataFromFile();
             if (workspaceData) {
-                for (const { path } of workspaceData.folders) {
+                for (const { path, name } of workspaceData.folders) {
                     const valid = await this.toValidRoot(path);
                     if (valid) {
                         roots.push(valid);
                     } else {
                         roots.push(FileStat.dir(path));
                     }
+                    if (name) {
+                        rootNames.set(WorkspaceData.normalizeFolderUri(path), name);
+                    }
                 }
             }
         }
+        this.rootNames = rootNames;
         return roots;
-    }
-
-    /**
-     * Computes the names given to the workspace roots by the `name` property of the folders in the workspace file,
-     * keyed by the normalized URI of the root.
-     */
-    protected async computeRootNames(): Promise<Map<string, string>> {
-        const names = new Map<string, string>();
-        if (this._workspace && !this._workspace.isDirectory) {
-            const workspaceData = await this.getWorkspaceDataFromFile();
-            for (const { path, name } of workspaceData?.folders ?? []) {
-                if (name) {
-                    names.set(WorkspaceData.normalizeFolderUri(path), name);
-                }
-            }
-        }
-        return names;
     }
 
     protected areRootNamesEqual(names: Map<string, string>, otherNames: Map<string, string>): boolean {
@@ -559,7 +550,12 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         }
     }
 
-    async spliceRoots(start: number, deleteCount?: number, ...rootsToAdd: URI[]): Promise<URI[]> {
+    /**
+     * Removes `deleteCount` roots starting at `start` and inserts the given roots there, and writes the result to the workspace file.
+     * A root to add can be given a name, which is written to the workspace file as the `name` of its folder entry.
+     * @returns the URIs of the removed roots
+     */
+    async spliceRoots(start: number, deleteCount?: number, ...rootsToAdd: (URI | WorkspaceRootToAdd)[]): Promise<URI[]> {
         if (!this._workspace || this._workspace.isDirectory) {
             const untitledWorkspace = await this.getUntitledWorkspace();
             await this.save(untitledWorkspace);
@@ -570,11 +566,16 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         const dedup = new Set<string>();
         const roots = this._roots.map(root => (dedup.add(root.resource.toString()), root.resource.toString()));
         const toAdd: string[] = [];
+        const namesToAdd = new Map<string, string>();
         for (const root of rootsToAdd) {
-            const uri = root.toString();
-            if (!dedup.has(uri)) {
-                dedup.add(uri);
-                toAdd.push(uri);
+            const { uri, name } = root instanceof URI ? { uri: root, name: undefined } : root;
+            const uriString = uri.toString();
+            if (!dedup.has(uriString)) {
+                dedup.add(uriString);
+                toAdd.push(uriString);
+                if (name) {
+                    namesToAdd.set(uriString, name);
+                }
             }
         }
         const toRemove = roots.splice(start, deleteCount || 0, ...toAdd);
@@ -583,7 +584,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         }
 
         const currentData = await this.getWorkspaceDataFromFile();
-        const newData = WorkspaceData.buildWorkspaceData(roots, currentData);
+        const newData = WorkspaceData.buildWorkspaceData(roots.map(path => ({ path, name: namesToAdd.get(path) })), currentData);
         await this.writeWorkspaceFile(this._workspace, newData);
         await this.updateWorkspace();
         return toRemove.map(root => new URI(root));
@@ -830,6 +831,9 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
      * @returns the name of the root, or `undefined` if the root has no name or is not a workspace root
      */
     getWorkspaceRootName(rootUri: URI): string | undefined {
+        if (this.rootNames.size === 0) {
+            return undefined;
+        }
         return this.rootNames.get(WorkspaceData.normalizeFolderUri(rootUri.toString()));
     }
 
@@ -918,6 +922,12 @@ export interface WorkspaceInput {
 
 }
 
+export interface WorkspaceRootToAdd {
+    uri: URI;
+    /** The name of the root, written to the workspace file as the `name` of its folder entry. */
+    name?: string;
+}
+
 export interface WorkspaceData {
     folders: Array<{ path: string, name?: string }>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -939,28 +949,26 @@ export namespace WorkspaceData {
     }
 
     /**
-     * Builds the workspace data for the given folders. The `name` of a folder entry in `additionalFields.folders` is kept for the same folder.
+     * Builds the workspace data for the given folders. A folder given as an entry with a `name` keeps that name,
+     * any other folder keeps the `name` of its entry in `additionalFields.folders`.
      */
-    export function buildWorkspaceData(folders: string[] | FileStat[], additionalFields?: Partial<WorkspaceData>): WorkspaceData {
-        const roots = new Set<string>();
-        if (folders.length > 0) {
-            if (typeof folders[0] !== 'string') {
-                (<FileStat[]>folders).forEach(folder => roots.add(folder.resource.toString()));
-            } else {
-                (<string[]>folders).forEach(folder => roots.add(folder));
-            }
-        }
-        const names = new Map<string, string>();
+    export function buildWorkspaceData(folders: string[] | FileStat[] | WorkspaceData['folders'], additionalFields?: Partial<WorkspaceData>): WorkspaceData {
+        const currentNames = new Map<string, string>();
         for (const { path, name } of additionalFields?.folders ?? []) {
             if (name) {
-                names.set(normalizeFolderUri(path), name);
+                currentNames.set(normalizeFolderUri(path), name);
+            }
+        }
+        const roots = new Map<string, string | undefined>();
+        for (const folder of folders) {
+            const path = typeof folder === 'string' ? folder : FileStat.is(folder) ? folder.resource.toString() : folder.path;
+            if (!roots.has(path)) {
+                const name = typeof folder === 'string' || FileStat.is(folder) ? undefined : folder.name;
+                roots.set(path, name ?? currentNames.get(normalizeFolderUri(path)));
             }
         }
         const data: WorkspaceData = {
-            folders: Array.from(roots, folder => {
-                const name = names.get(normalizeFolderUri(folder));
-                return name ? { path: folder, name } : { path: folder };
-            })
+            folders: Array.from(roots, ([path, name]) => name ? { path, name } : { path })
         };
         if (additionalFields) {
             delete additionalFields.folders;
@@ -977,7 +985,7 @@ export namespace WorkspaceData {
             const rel = workspaceFileUri.parent.relative(folderUri);
             folders.push({ path: rel ? rel.toString() : folderUri.toString(), name });
         }
-        return buildWorkspaceData(folders.map(folder => folder.path), { ...data, folders });
+        return buildWorkspaceData(folders, { ...data, folders: [] });
     }
 
     export function transformToAbsolute(data: WorkspaceData, workspaceFile?: BaseStat): WorkspaceData {
@@ -994,7 +1002,7 @@ export namespace WorkspaceData {
                 }
 
             }
-            return Object.assign(data, buildWorkspaceData(folders.map(folder => folder.path), { ...data, folders }));
+            return Object.assign(data, buildWorkspaceData(folders, { ...data, folders: [] }));
         }
         return data;
     }

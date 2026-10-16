@@ -29,7 +29,10 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
 
     @postConstruct()
     override init(): void {
-        // no-op, backward compatibility
+        // Labels depend on the workspace roots and their names.
+        this.workspaceService.onWorkspaceChanged(() => this.onDidChangeEmitter.fire({
+            affects: element => this.canHandle(element) > 0
+        }));
     }
 
     override canHandle(element: object): number {

@@ -17,7 +17,7 @@
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 const disableJSDOM = enableJSDOM();
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-FrontendApplicationConfigProvider.set({});
+try { FrontendApplicationConfigProvider.set({}); } catch { /* already set by a sibling spec */ }
 
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
@@ -40,6 +40,17 @@ describe('WorkspaceData', () => {
             expect(data.folders).to.deep.equal([
                 { path: 'file:///home/user/project/backend', name: 'API Server' },
                 { path: 'file:///home/user/project/frontend' }
+            ]);
+        });
+
+        it('should use the name of a folder entry and fall back to the current name', () => {
+            const data = WorkspaceData.buildWorkspaceData(
+                [{ path: 'file:///home/user/project/backend' }, { path: 'file:///home/user/project/frontend', name: 'Web Client' }],
+                { folders: [{ path: 'file:///home/user/project/backend', name: 'API Server' }, { path: 'file:///home/user/project/frontend', name: 'Old Name' }] }
+            );
+            expect(data.folders).to.deep.equal([
+                { path: 'file:///home/user/project/backend', name: 'API Server' },
+                { path: 'file:///home/user/project/frontend', name: 'Web Client' }
             ]);
         });
     });
@@ -70,17 +81,34 @@ describe('WorkspaceData', () => {
 
 describe('WorkspaceService', () => {
 
+    const backend = 'file:///home/user/project/backend';
+    const frontend = 'file:///home/user/project/frontend';
+    const shared = 'file:///home/user/shared';
+
     class TestWorkspaceService extends WorkspaceService {
         computedRoots: FileStat[] = [];
         names = new Map<string, string>();
+        fileData: WorkspaceData | undefined;
+        writtenData: WorkspaceData | undefined;
         protected override async computeRoots(): Promise<FileStat[]> {
+            this.rootNames = this.names;
             return this.computedRoots;
         }
-        protected override async computeRootNames(): Promise<Map<string, string>> {
-            return this.names;
+        protected override async getWorkspaceDataFromFile(): Promise<WorkspaceData | undefined> {
+            return this.fileData;
+        }
+        protected override async writeWorkspaceFile(workspaceFile: FileStat | undefined, workspaceData: WorkspaceData): Promise<FileStat | undefined> {
+            this.writtenData = workspaceData;
+            return workspaceFile;
+        }
+        protected override async updateWorkspace(): Promise<void> {
         }
         override updateRoots(): Promise<void> {
             return super.updateRoots();
+        }
+        setWorkspaceFile(workspaceFile: FileStat, roots: FileStat[]): void {
+            this._workspace = workspaceFile;
+            this._roots = roots;
         }
     }
 
@@ -89,7 +117,7 @@ describe('WorkspaceService', () => {
 
     beforeEach(() => {
         service = new TestWorkspaceService();
-        service.computedRoots = [FileStat.dir('file:///home/user/project/backend')];
+        service.computedRoots = [FileStat.dir(backend)];
         changeEvents = 0;
         service.onWorkspaceChanged(() => changeEvents++);
     });
@@ -97,15 +125,15 @@ describe('WorkspaceService', () => {
     describe('getWorkspaceRootName()', () => {
 
         it('should return the name of a root', async () => {
-            service.names = new Map([['file:///home/user/project/backend', 'API Server']]);
+            service.names = new Map([[backend, 'API Server']]);
             await service.updateRoots();
-            expect(service.getWorkspaceRootName(new URI('file:///home/user/project/backend'))).to.equal('API Server');
-            expect(service.getWorkspaceRootName(new URI('file:///home/user/project/backend/'))).to.equal('API Server');
+            expect(service.getWorkspaceRootName(new URI(backend))).to.equal('API Server');
+            expect(service.getWorkspaceRootName(new URI(`${backend}/`))).to.equal('API Server');
         });
 
         it('should return undefined for a root without a name', async () => {
             await service.updateRoots();
-            expect(service.getWorkspaceRootName(new URI('file:///home/user/project/backend'))).to.be.undefined;
+            expect(service.getWorkspaceRootName(new URI(backend))).to.be.undefined;
         });
     });
 
@@ -115,18 +143,41 @@ describe('WorkspaceService', () => {
             await service.updateRoots();
             expect(changeEvents).to.equal(1);
 
-            service.names = new Map([['file:///home/user/project/backend', 'API Server']]);
+            service.names = new Map([[backend, 'API Server']]);
             await service.updateRoots();
             expect(changeEvents).to.equal(2);
-            expect(service.getWorkspaceRootName(new URI('file:///home/user/project/backend'))).to.equal('API Server');
+            expect(service.getWorkspaceRootName(new URI(backend))).to.equal('API Server');
         });
 
         it('should not fire onWorkspaceChanged when neither the roots nor their names change', async () => {
-            service.names = new Map([['file:///home/user/project/backend', 'API Server']]);
+            service.names = new Map([[backend, 'API Server']]);
             await service.updateRoots();
-            service.names = new Map([['file:///home/user/project/backend', 'API Server']]);
+            service.names = new Map([[backend, 'API Server']]);
             await service.updateRoots();
             expect(changeEvents).to.equal(1);
+        });
+    });
+
+    describe('writing the workspace file', () => {
+
+        beforeEach(() => {
+            service.setWorkspaceFile(FileStat.file('file:///home/user/project/project.theia-workspace'), [FileStat.dir(backend), FileStat.dir(frontend)]);
+            service.fileData = { folders: [{ path: backend, name: 'API Server' }, { path: frontend }] };
+        });
+
+        it('should keep the names of the roots and write the name of an added root', async () => {
+            await service.spliceRoots(2, 0, { uri: new URI(shared), name: 'Shared' }, new URI('file:///home/user/other'));
+            expect(service.writtenData?.folders).to.deep.equal([
+                { path: backend, name: 'API Server' },
+                { path: frontend },
+                { path: shared, name: 'Shared' },
+                { path: 'file:///home/user/other' }
+            ]);
+        });
+
+        it('should keep the names of the remaining roots when removing a root', async () => {
+            await service.removeRoots([new URI(frontend)]);
+            expect(service.writtenData?.folders).to.deep.equal([{ path: backend, name: 'API Server' }]);
         });
     });
 });
