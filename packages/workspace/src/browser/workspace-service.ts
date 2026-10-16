@@ -115,6 +115,14 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         return this._ready.promise;
     }
 
+    protected _isReady = false;
+    get isReady(): boolean {
+        return this._isReady;
+    }
+
+    protected pendingWorkspaceChange = false;
+    protected pendingWorkspaceLocationChange = false;
+
     @postConstruct()
     protected init(): void {
         this.doInit();
@@ -143,6 +151,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
                     }
                 }
                 if (handled) {
+                    this._isReady = true;
                     this._ready.resolve();
                     return;
                 }
@@ -175,7 +184,17 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
                 this.refreshRootWatchers();
             }
         });
+        this._isReady = true;
         this._ready.resolve();
+        await this.ready;
+        if (this.pendingWorkspaceLocationChange) {
+            this.pendingWorkspaceLocationChange = false;
+            this.onWorkspaceLocationChangedEmitter.fire(this._workspace);
+        }
+        if (this.pendingWorkspaceChange) {
+            this.pendingWorkspaceChange = false;
+            this.onWorkspaceChangeEmitter.fire(this._roots);
+        }
     }
 
     /**
@@ -279,7 +298,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
             const uri = this._workspace.resource;
             if (this._workspace.isFile) {
                 this.toDisposeOnWorkspace.push(this.fileService.watch(uri));
-                this.onWorkspaceLocationChangedEmitter.fire(this._workspace);
+                this.fireWorkspaceLocationChanged(this._workspace);
             }
             this.setURLFragment(this.getWorkspacePath(uri));
         } else {
@@ -315,7 +334,23 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
             this.deferredRoots.resolve(this._roots); // in order to resolve first
             this.deferredRoots = new Deferred<FileStat[]>();
             this.deferredRoots.resolve(this._roots);
-            this.onWorkspaceChangeEmitter.fire(this._roots);
+            this.fireWorkspaceChanged(this._roots);
+        }
+    }
+
+    protected fireWorkspaceChanged(roots: FileStat[]): void {
+        if (!this._isReady) {
+            this.pendingWorkspaceChange = true;
+        } else {
+            this.onWorkspaceChangeEmitter.fire(roots);
+        }
+    }
+
+    protected fireWorkspaceLocationChanged(stat: FileStat | undefined): void {
+        if (!this._isReady) {
+            this.pendingWorkspaceLocationChange = true;
+        } else {
+            this.onWorkspaceLocationChangedEmitter.fire(stat);
         }
     }
 
