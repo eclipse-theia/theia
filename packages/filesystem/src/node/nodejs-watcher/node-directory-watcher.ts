@@ -284,20 +284,33 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
         if (this.restartBaseline) {
             this.reportLoss();
         } else {
+            this.reportLossToJoined();
             this.watchedPathMissing = true;
         }
-        this.joinedOnceFound = undefined;
     }
 
     /** Reports the watched path deleted, once. A file request hears it if its file was a known child, or no start recorded the children yet. */
     private reportLoss(): void {
         if (this.watchedPathMissing) {
+            this.reportLossToJoined();
             return;
         }
         this.watchedPathMissing = true;
+        // They hear it below with every other request.
+        this.joinedOnceFound = undefined;
         this.router.reportWatchedPath(FileChangeType.DELETED, this.router.matching(request => !this.started || this.router.watchesDirectory(request)));
         if (this.started) {
             this.router.report(this.diff(this.children, new Set()), request => !this.router.watchesDirectory(request));
+        }
+    }
+
+    /** Reports the watched path deleted to the requests that joined once it was found, if the others already take it for missing. */
+    private reportLossToJoined(): void {
+        const joined = this.joinedOnceFound;
+        this.joinedOnceFound = undefined;
+        if (joined && this.watchedPathMissing) {
+            this.router.reportWatchedPath(FileChangeType.DELETED,
+                this.router.matching((request, watcherId) => joined.has(watcherId) && (!this.started || this.router.knows(request, this.children))));
         }
     }
 

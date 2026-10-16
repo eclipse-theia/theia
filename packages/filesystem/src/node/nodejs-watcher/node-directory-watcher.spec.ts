@@ -901,6 +901,37 @@ describe('node-directory-watcher', function (): void {
             await box.expect(1, 'deleted ws', 'added ws', 'added ws/a.txt');
         });
 
+        it('tells a request that joined during a start it was added again once the start saw it replaced', async () => {
+            const watcher = box.starting(box.root, box.directory());
+            box.host.duringNextRead = () => {
+                // Joins once the path was found, then the start finds the directory replaced.
+                watcher.addRequest(1, box.directory(box.root, 2));
+                box.host.fakeIdentity = { dev: 1, ino: 2, birthtimeMs: 3 };
+            };
+
+            await box.expect(1, 'deleted .', 'added .');
+            await box.expect(2, 'deleted .', 'added .');
+        });
+
+        it('tells a request that joined once it appeared that it went again before the start finished', async () => {
+            const target = box.path('later');
+            box.host.expectMissing(target);
+            const watcher = box.starting(target, box.directory(target));
+            await box.host.whenMissing;
+            box.host.duringNextRead = () => {
+                // Joins once the path was found, then the path goes before the start reports it.
+                watcher.addRequest(1, box.directory(target, 2));
+                box.remove('later');
+            };
+            fs.mkdirSync(target);
+            await box.expect(2, 'deleted later');
+
+            fs.mkdirSync(target);
+
+            await box.expect(1, 'added later');
+            await box.expect(2, 'deleted later', 'added later');
+        });
+
         it('is not lost when an event names it, as macOS reports any change inside it', async () => {
             box.write('a.txt');
             await box.watching(box.root, box.directory());
