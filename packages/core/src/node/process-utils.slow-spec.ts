@@ -20,7 +20,7 @@ import { Container } from 'inversify';
 import { ILogger } from '../common/logger';
 import { MockLogger } from '../common/test/mock-logger';
 import { ProcessUtils } from './process-utils';
-import { EXITING_BACKEND_EXIT_CODE, EXITING_BACKEND_NO_POWERSHELL } from './test/exiting-backend';
+import { EXITING_BACKEND_EXIT_CODE, EXITING_BACKEND_GRACEFUL, EXITING_BACKEND_NO_POWERSHELL } from './test/exiting-backend';
 
 interface ExitingProcessResult {
     exitCode: number | null;
@@ -92,6 +92,11 @@ describe('ProcessUtils (real processes)', function (): void {
         await expectTerminatedTree({ detached: true }, EXITING_BACKEND_EXIT_CODE);
     });
 
+    it('kills the children of the backend on graceful shutdown', async () => {
+        // `BackendApplication.gracefulShutdown` exits with code 1 on purpose.
+        await expectTerminatedTree({ env: { [EXITING_BACKEND_GRACEFUL]: 'true' } }, 1);
+    });
+
     (process.platform === 'win32' ? it : it.skip)('kills the whole tree of the backend when PowerShell cannot be run', async () => {
         // Only PowerShell is made unrunnable: breaking the environment, e.g. `SystemRoot`, would
         // break `taskkill.exe` as well. The fallback kills the backend too, with exit code 1.
@@ -108,9 +113,10 @@ describe('ProcessUtils (real processes)', function (): void {
         await Promise.all(children.map(child => new Promise(resolve => child.on('spawn', resolve))));
         childPids.push(...children.map(child => child.pid!));
 
-        const listedPids = processUtils['winGetChildPids'](process.pid);
-        expect(listedPids).to.include.members(childPids);
-        // The PowerShell process that lists the children has exited by now, so it must not be listed.
-        expect(listedPids.filter(pid => !isAlive(pid)), 'only live processes should be listed').to.be.empty;
+        for (const listedPids of [processUtils['winGetChildPids'](process.pid), await processUtils['winGetChildPidsAsync'](process.pid)]) {
+            expect(listedPids).to.include.members(childPids);
+            // The PowerShell process that lists the children has exited by now, so it must not be listed.
+            expect(listedPids.filter(pid => !isAlive(pid)), 'only live processes should be listed').to.be.empty;
+        }
     });
 });

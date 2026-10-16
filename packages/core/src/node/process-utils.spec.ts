@@ -51,6 +51,33 @@ describe('ProcessUtils', () => {
         expect(Array.from(pids)).members([40, 5, 6, 7]);
     });
 
+    describe('#unixTerminateChildProcessTrees', () => {
+        let killStub: sinon.SinonStub;
+
+        beforeEach(() => {
+            coreProcessManager['execFile'] = async () => ({ stdout: mockPsOutput, stderr: '' });
+            killStub = sinon.stub();
+            coreProcessManager['unixKill'] = killStub;
+        });
+
+        afterEach(() => {
+            sinon.restore();
+        });
+
+        it('kills all descendants but not the process itself', async () => {
+            await coreProcessManager['unixTerminateChildProcessTrees'](2);
+            expect(killStub.args.map(([pid]) => pid)).members([40, 5, 6, 7]);
+        });
+
+        it('rejects when the processes cannot be listed', async () => {
+            coreProcessManager['execFile'] = async () => { throw new Error('ps not found'); };
+            let error: unknown;
+            await coreProcessManager['unixTerminateChildProcessTrees'](2).catch(e => error = e);
+            expect(error).to.be.instanceOf(Error);
+            expect(killStub.called).to.be.false;
+        });
+    });
+
     describe('#unixTerminateProcessTree', () => {
         let originalKill: typeof process.kill;
         let errorStub: sinon.SinonStub;
@@ -138,14 +165,50 @@ describe('ProcessUtils', () => {
         });
     });
 
+    describe('#winTerminateChildProcessTrees', () => {
+        let taskkillStub: sinon.SinonStub;
+
+        beforeEach(() => {
+            taskkillStub = sinon.stub();
+            coreProcessManager['winTaskkillTrees'] = taskkillStub;
+        });
+
+        afterEach(() => {
+            sinon.restore();
+        });
+
+        it('kills the trees of the children of the process', async () => {
+            coreProcessManager['winGetChildPidsAsync'] = async () => [424244, 424245];
+            await coreProcessManager['winTerminateChildProcessTrees'](process.pid);
+            expect(taskkillStub.calledOnceWithExactly([424244, 424245])).to.be.true;
+        });
+
+        it('does not run taskkill when the process has no children', async () => {
+            coreProcessManager['winGetChildPidsAsync'] = async () => [];
+            await coreProcessManager['winTerminateChildProcessTrees'](process.pid);
+            expect(taskkillStub.called).to.be.false;
+        });
+
+        it('rejects when the children cannot be listed', async () => {
+            coreProcessManager['winGetChildPidsAsync'] = async () => { throw new Error('powershell.exe not found'); };
+            let error: unknown;
+            await coreProcessManager['winTerminateChildProcessTrees'](process.pid).catch(e => error = e);
+            expect(error).to.be.instanceOf(Error);
+            expect(taskkillStub.called).to.be.false;
+        });
+    });
+
     describe('#winGetChildPids', () => {
         let originalSystemRoot: string | undefined;
         let spawnSyncStub: sinon.SinonStub;
+        let execFileStub: sinon.SinonStub;
 
         beforeEach(() => {
             originalSystemRoot = process.env.SystemRoot;
             spawnSyncStub = sinon.stub().returns({ stdout: '1234\r\n5678\r\n\r\n' });
             coreProcessManager['spawnSync'] = spawnSyncStub;
+            execFileStub = sinon.stub().resolves({ stdout: '1234\r\n5678\r\n\r\n', stderr: '' });
+            coreProcessManager['execFile'] = execFileStub;
         });
 
         afterEach(() => {
@@ -160,20 +223,33 @@ describe('ProcessUtils', () => {
             expect(coreProcessManager['winGetChildPids'](42)).to.deep.equal([1234, 5678]);
         });
 
-        it('runs PowerShell from the Windows directory with a timeout', () => {
-            process.env.SystemRoot = 'C:\\Windows';
-            coreProcessManager['winGetChildPids'](42);
-            const [file, , options] = spawnSyncStub.firstCall.args;
-            expect(file).to.equal('C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe');
-            expect(options.timeout).to.be.greaterThan(0);
+        it('parses the PowerShell output asynchronously', async () => {
+            expect(await coreProcessManager['winGetChildPidsAsync'](42)).to.deep.equal([1234, 5678]);
+            expect(spawnSyncStub.called).to.be.false;
         });
 
-        it('excludes the PowerShell process itself and the console host', () => {
+        it('runs PowerShell from the Windows directory with a timeout', async () => {
+            process.env.SystemRoot = 'C:\\Windows';
             coreProcessManager['winGetChildPids'](42);
-            const command: string = spawnSyncStub.firstCall.args[1].at(-1);
-            expect(command).to.contain('ParentProcessId=42');
-            expect(command).to.contain('$_.ProcessId -ne $PID');
-            expect(command).to.contain("$_.Name -ne 'conhost.exe'");
+            await coreProcessManager['winGetChildPidsAsync'](42);
+            for (const stub of [spawnSyncStub, execFileStub]) {
+                const [file, , options] = stub.firstCall.args;
+                expect(file).to.equal('C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe');
+                expect(options.timeout).to.be.greaterThan(0);
+            }
+        });
+
+        it('excludes the PowerShell process itself, the console host and the children of a previous process with the same PID', async () => {
+            coreProcessManager['winGetChildPids'](42);
+            await coreProcessManager['winGetChildPidsAsync'](42);
+            for (const stub of [spawnSyncStub, execFileStub]) {
+                const command: string = stub.firstCall.args[1].at(-1);
+                expect(command).to.contain("Get-CimInstance -ClassName Win32_Process -Filter 'ProcessId=42'");
+                expect(command).to.contain('ParentProcessId=42');
+                expect(command).to.contain('$_.ProcessId -ne $PID');
+                expect(command).to.contain("$_.Name -ne 'conhost.exe'");
+                expect(command).to.contain('$_.CreationDate -ge $parent.CreationDate');
+            }
         });
 
         it('runs PowerShell from the PATH when the Windows directory is unknown', () => {

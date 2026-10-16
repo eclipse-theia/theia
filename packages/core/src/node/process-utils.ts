@@ -25,6 +25,11 @@ import { ILogger } from '../common/logger';
 const WIN_LIST_CHILDREN_TIMEOUT_MS = 5000;
 
 /**
+ * Options for running PowerShell to list child processes.
+ */
+const WIN_LIST_CHILDREN_OPTIONS = { windowsHide: true, timeout: WIN_LIST_CHILDREN_TIMEOUT_MS };
+
+/**
  * `@theia/core` service with some process-related utilities.
  */
 @injectable()
@@ -33,11 +38,32 @@ export class ProcessUtils {
     @inject(ILogger) @named('core:ProcessUtils')
     protected readonly logger: ILogger;
 
+    /**
+     * Kills the given process together with all of its descendants.
+     *
+     * This blocks the event loop, so that it can run in an `exit` handler, where the loop is no longer
+     * available. Prefer {@link terminateChildProcessTrees} while the event loop is running, as listing
+     * the descendants of a process can be slow, in particular on Windows.
+     */
     terminateProcessTree(ppid: number): void {
         if (process.platform === 'win32') {
             this.winTerminateProcessTree(ppid);
         } else {
             this.unixTerminateProcessTree(ppid);
+        }
+    }
+
+    /**
+     * Kills all of the descendants of the given process, but not the process itself, without blocking
+     * the event loop.
+     *
+     * @throws if the descendants of the process cannot be listed
+     */
+    async terminateChildProcessTrees(ppid: number): Promise<void> {
+        if (process.platform === 'win32') {
+            await this.winTerminateChildProcessTrees(ppid);
+        } else {
+            await this.unixTerminateChildProcessTrees(ppid);
         }
     }
 
@@ -64,6 +90,14 @@ export class ProcessUtils {
         }
     }
 
+    protected async winTerminateChildProcessTrees(ppid: number): Promise<void> {
+        const childPids = await this.winGetChildPidsAsync(ppid);
+        if (childPids.length > 0) {
+            // `taskkill` is quick, unlike PowerShell, so running it synchronously is fine here too.
+            this.winTaskkillTrees(childPids);
+        }
+    }
+
     /**
      * Forcefully kills the given processes together with all of their descendants.
      */
@@ -82,19 +116,46 @@ export class ProcessUtils {
     }
 
     /**
-     * @returns the PIDs of the direct children of the given process, except for the PowerShell
-     * process that lists them, which is a child of the current process and exits right after,
-     * and for the console host (`conhost.exe`) that Windows attaches to a process launched without
-     * a console, which `taskkill` may fail to kill.
+     * @returns the PIDs of the direct children of the given process, see {@link winGetChildPidsArgs}
      */
     protected winGetChildPids(ppid: number): number[] {
-        const { stdout } = this.spawnSync(this.winGetPowerShellPath(), [
+        const { stdout } = this.spawnSync(this.winGetPowerShellPath(), this.winGetChildPidsArgs(ppid), WIN_LIST_CHILDREN_OPTIONS);
+        return this.winParsePids(stdout);
+    }
+
+    /**
+     * @returns the PIDs of the direct children of the given process, see {@link winGetChildPidsArgs}
+     */
+    protected async winGetChildPidsAsync(ppid: number): Promise<number[]> {
+        const { stdout } = await this.execFile(this.winGetPowerShellPath(), this.winGetChildPidsArgs(ppid), WIN_LIST_CHILDREN_OPTIONS);
+        return this.winParsePids(stdout);
+    }
+
+    /**
+     * @returns the arguments of a PowerShell command that prints the PIDs of the direct children of the
+     * given process, one per line, except for:
+     * - the PowerShell process that lists them, which is a child of the current process and exits right after
+     * - the console host (`conhost.exe`) that Windows attaches to a process launched without a console,
+     *   which `taskkill` may fail to kill
+     * - processes created before the given process: Windows does not update the parent of a process
+     *   when the parent exits and reuses PIDs, so these are the orphans of a previous process with the same PID
+     */
+    protected winGetChildPidsArgs(ppid: number): string[] {
+        const pid = ppid.toString(10);
+        return [
             '-NoLogo', '-NoProfile', '-NonInteractive', '-Command',
-            `Get-CimInstance -ClassName Win32_Process -Filter 'ParentProcessId=${ppid.toString(10)}'`
-            + " | Where-Object { $_.ProcessId -ne $PID -and $_.Name -ne 'conhost.exe' }"
+            `$parent = Get-CimInstance -ClassName Win32_Process -Filter 'ProcessId=${pid}';`
+            + ` Get-CimInstance -ClassName Win32_Process -Filter 'ParentProcessId=${pid}'`
+            + " | Where-Object { $_.ProcessId -ne $PID -and $_.Name -ne 'conhost.exe' -and $_.CreationDate -ge $parent.CreationDate }"
             + ' | ForEach-Object { $_.ProcessId }'
-        ], { windowsHide: true, timeout: WIN_LIST_CHILDREN_TIMEOUT_MS });
-        return stdout
+        ];
+    }
+
+    /**
+     * @param output the output of the command of {@link winGetChildPidsArgs}
+     */
+    protected winParsePids(output: string): number[] {
+        return output
             .split(/\s+/)
             .filter(token => /^\d+$/.test(token))
             .map(token => Number.parseInt(token, 10));
@@ -130,6 +191,16 @@ export class ProcessUtils {
         this.unixKill(ppid);
     }
 
+    protected async unixTerminateChildProcessTrees(ppid: number): Promise<void> {
+        const { stdout } = await this.execFile('ps', ['ax', '-o', 'ppid=,pid=']);
+        for (const pid of this.unixParseChildrenRecursive(stdout, ppid)) {
+            // Prevent killing the current process:
+            if (pid !== process.pid) {
+                this.unixKill(pid);
+            }
+        }
+    }
+
     protected unixKill(pid: number): void {
         try {
             process.kill(pid);
@@ -149,9 +220,17 @@ export class ProcessUtils {
 
     protected unixGetChildrenRecursive(ppid: number): Set<number> {
         const { stdout } = this.spawnSync('ps', ['ax', '-o', 'ppid=,pid=']);
+        return this.unixParseChildrenRecursive(stdout, ppid);
+    }
+
+    /**
+     * @param psOutput the output of `ps ax -o ppid=,pid=`
+     * @returns the PIDs of all of the descendants of the given process
+     */
+    protected unixParseChildrenRecursive(psOutput: string, ppid: number): Set<number> {
         const pids = new Set<number>([ppid]);
         const matcher = /(\d+)\s+(\d+)/;
-        const psList = stdout
+        const psList = psOutput
             .trim()
             .split('\n')
             .map(line => {
@@ -173,6 +252,23 @@ export class ProcessUtils {
         // Exclude the requested parent id:
         pids.delete(ppid);
         return pids;
+    }
+
+    /**
+     * Runs the given executable without blocking the event loop.
+     *
+     * @throws if the executable cannot be run or exits with a non-zero code, or on timeout
+     */
+    protected execFile(file: string, argv: string[], options?: cp.ExecFileOptions): Promise<{ stdout: string, stderr: string }> {
+        return new Promise((resolve, reject) => {
+            cp.execFile(file, argv, { ...options, encoding: 'utf8' }, (error, stdout, stderr) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve({ stdout, stderr });
+                }
+            });
+        });
     }
 
     protected spawnSync(file: string, argv: string[], options?: cp.SpawnSyncOptions): cp.SpawnSyncReturns<string> {

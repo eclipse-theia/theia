@@ -19,6 +19,7 @@
  * child process, prints the PID of the child and exits with code {@link EXITING_BACKEND_EXIT_CODE}.
  * The `exit` handler of the `BackendApplication` then terminates the process tree.
  * Set {@link EXITING_BACKEND_NO_POWERSHELL} to make the listing of the children of the process fail.
+ * Set {@link EXITING_BACKEND_GRACEFUL} to shut down as on `SIGTERM` instead, which exits with code 1.
  */
 
 import 'reflect-metadata';
@@ -39,6 +40,11 @@ export const EXITING_BACKEND_EXIT_CODE = 3;
  */
 export const EXITING_BACKEND_NO_POWERSHELL = 'THEIA_TEST_EXITING_BACKEND_NO_POWERSHELL';
 
+/**
+ * Environment variable that makes the script shut down gracefully, as on `SIGTERM`, rather than exit abruptly.
+ */
+export const EXITING_BACKEND_GRACEFUL = 'THEIA_TEST_EXITING_BACKEND_GRACEFUL';
+
 class NoPowerShellProcessUtils extends ProcessUtils {
     protected override winGetPowerShellPath(): string {
         return 'C:\\does-not-exist\\powershell.exe';
@@ -58,5 +64,12 @@ if (require.main === module) {
     container.get(BackendApplication);
 
     const child = cp.spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' });
-    child.on('spawn', () => process.stdout.write(`${child.pid}\n`, () => process.exit(EXITING_BACKEND_EXIT_CODE)));
+    child.on('spawn', () => process.stdout.write(`${child.pid}\n`, () => {
+        if (process.env[EXITING_BACKEND_GRACEFUL]) {
+            // Signals cannot be sent to a process on Windows, so invoke the handler of the `BackendApplication` directly.
+            process.emit('SIGTERM', 'SIGTERM');
+        } else {
+            process.exit(EXITING_BACKEND_EXIT_CODE);
+        }
+    }));
 }
