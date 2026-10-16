@@ -281,7 +281,8 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
 
     /** Tells each request where its own path differs from what the watcher last found, whenever it joined. */
     private reconcile(): void {
-        this.router.reconcile(request => !this.watchedPathMissing && this.router.knows(request, this.children));
+        const knows = this.router.knows(this.children);
+        this.router.reconcile(request => !this.watchedPathMissing && knows(request));
     }
 
     /**
@@ -484,15 +485,17 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
      */
     private deleteScheduler(): (fileName: string) => void {
         let timer: NodeJS.Timeout | undefined;
+        const scheduled: string[] = [];
         return fileName => {
             if (this.isDisposed || this.pendingDeletes.has(fileName)) {
                 return;
             }
             if (!timer) {
-                const created = setTimeout(() => this.enqueue(() => this.confirmDeletes(created)), this.timings.deleteDelay);
+                const created = setTimeout(() => this.enqueue(() => this.confirmDeletes(created, scheduled)), this.timings.deleteDelay);
                 timer = created;
             }
             this.pendingDeletes.set(fileName, timer);
+            scheduled.push(fileName);
         };
     }
 
@@ -506,11 +509,12 @@ export class NodeDirectoryWatcher extends AbstractFileSystemWatcher {
         this.pendingDeletes.clear();
     }
 
-    /** Confirms the deletions still waiting on `timer`. A deletion cancelled meanwhile is no longer on it. */
-    protected async confirmDeletes(timer: NodeJS.Timeout): Promise<ResolvedChange[]> {
-        const fileNames = Array.from(this.pendingDeletes)
-            .filter(([, pending]) => pending === timer)
-            .map(([fileName]) => fileName);
+    /**
+     * Confirms the deletions of `scheduled` still waiting on `timer`. A deletion cancelled meanwhile is no longer on
+     * it. Only the names this timer scheduled are checked, so each confirmation costs its own batch, not every pending one.
+     */
+    protected async confirmDeletes(timer: NodeJS.Timeout, scheduled: readonly string[]): Promise<ResolvedChange[]> {
+        const fileNames = scheduled.filter(fileName => this.pendingDeletes.get(fileName) === timer);
         fileNames.forEach(fileName => this.pendingDeletes.delete(fileName));
         const storedName = this.host.childLookup(this.watchedDirectory);
         const changes: ResolvedChange[] = [];

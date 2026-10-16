@@ -95,9 +95,21 @@ export class WatchRequestRouter {
         this.adopted.clear();
     }
 
-    /** @returns `true` if the request's path is the watched directory or one of `children`. */
-    knows(request: DirectoryWatchRequest, children: ReadonlySet<string>): boolean {
-        return this.watchesDirectory(request) || Array.from(children).some(fileName => this.resolveChildPath(request, fileName));
+    /** @returns a test of whether a request's path is the watched directory or one of `children`. */
+    knows(children: ReadonlySet<string>): (request: DirectoryWatchRequest) => boolean {
+        let childKeys: Set<string> | undefined;
+        return request => {
+            if (this.watchesDirectory(request)) {
+                return true;
+            }
+            const fileName = this.childName(request);
+            if (fileName === undefined || children.has(fileName)) {
+                return fileName !== undefined;
+            }
+            // Keyed at most once per call, and only when a name ignoring case can differ from the stored one.
+            childKeys ??= this.host.caseInsensitiveFileNames ? new Set(Array.from(children, child => this.host.pathKey(child))) : new Set();
+            return childKeys.has(this.host.pathKey(fileName));
+        };
     }
 
     /** @returns `true` if every request is for `fsPath` itself rather than for something inside it. */
@@ -122,16 +134,31 @@ export class WatchRequestRouter {
 
     /** Reports changes to direct children, mapped and filtered per request. */
     report(changes: readonly ResolvedChange[]): void {
+        // Keyed once per batch, so a file request looks up its own changes rather than comparing against each one.
+        const changesByKey = new Map<string, ResolvedChange[]>();
+        for (const change of changes) {
+            const key = this.host.pathKey(change.fileName);
+            let changesToChild = changesByKey.get(key);
+            if (!changesToChild) {
+                changesByKey.set(key, changesToChild = []);
+            }
+            changesToChild.push(change);
+        }
         const reported: ReportedChange[] = [];
         for (const [watcherId, request] of this.requests) {
-            for (const { fileName, type, pathRemains } of changes) {
-                const childPath = this.resolveChildPath(request, fileName);
-                if (childPath === request.path) {
-                    this.tell(reported, watcherId, pathRemains ? FileChangeType.UPDATED : type);
-                } else if (childPath && !this.isIgnored(request, childPath)) {
-                    // Excludes filter children, never the path a client explicitly asked to watch.
-                    reported.push({ clientId: request.clientId, filePath: childPath, type });
+            if (this.watchesDirectory(request)) {
+                for (const { fileName, type } of changes) {
+                    const childPath = path.resolve(request.path, fileName);
+                    if (!this.isIgnored(request, childPath)) {
+                        reported.push({ clientId: request.clientId, filePath: childPath, type });
+                    }
                 }
+                continue;
+            }
+            const fileName = this.childName(request);
+            // Excludes filter children, never the path a client explicitly asked to watch.
+            for (const { type, pathRemains } of fileName === undefined ? [] : changesByKey.get(this.host.pathKey(fileName)) ?? []) {
+                this.tell(reported, watcherId, pathRemains ? FileChangeType.UPDATED : type);
             }
         }
         this.emit(reported);
@@ -177,12 +204,10 @@ export class WatchRequestRouter {
         }
     }
 
-    /** The path a request reports a child change under, or `undefined` if the request does not cover the child. */
-    protected resolveChildPath(request: DirectoryWatchRequest, fileName: string): string | undefined {
-        if (this.watchesDirectory(request)) {
-            return path.resolve(request.path, fileName);
-        }
-        return this.host.samePath(path.resolve(this.watchedDirectory(), fileName), request.realPath) ? request.path : undefined;
+    /** The name of the child a file request is for, or `undefined` if its path is not in the watched directory. */
+    protected childName(request: DirectoryWatchRequest): string | undefined {
+        const fileName = this.host.normalizeFileName(path.basename(request.realPath));
+        return this.host.samePath(path.resolve(this.watchedDirectory(), fileName), request.realPath) ? fileName : undefined;
     }
 
     protected isIgnored(request: DirectoryWatchRequest, changed: string): boolean {

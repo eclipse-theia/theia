@@ -442,6 +442,45 @@ describe('node-directory-watcher', function (): void {
 
     describe('routing', () => {
 
+        it('checks file requests against the children without a pass per child on every batch', async () => {
+            for (let i = 0; i < 1000; i++) {
+                box.write(`file-${i}.txt`);
+            }
+            const requests = Array.from({ length: 10 }, (_, i) => box.file(box.path(`file-${i}.txt`)));
+            await box.watching(box.root, ...requests);
+            let comparisons = 0;
+            const samePath = box.host.samePath.bind(box.host);
+            box.host.samePath = (expected, actual) => {
+                comparisons++;
+                return samePath(expected, actual);
+            };
+
+            box.fire('change', 'file-0.txt');
+            await box.expect(1, 'updated file-0.txt');
+            assert.ok(comparisons < 1000, `${comparisons} path comparisons for one change`);
+        });
+
+        it('routes a batch to file requests without a comparison per change', async () => {
+            for (let i = 0; i < 1000; i++) {
+                box.write(`file-${i}.txt`);
+            }
+            const requests = Array.from({ length: 10 }, (_, i) => box.file(box.path(`file-${i}.txt`)));
+            await box.watching(box.root, ...requests);
+            let comparisons = 0;
+            const samePath = box.host.samePath.bind(box.host);
+            box.host.samePath = (expected, actual) => {
+                comparisons++;
+                return samePath(expected, actual);
+            };
+
+            for (let i = 0; i < 1000; i++) {
+                box.fire('change', `file-${i}.txt`);
+            }
+            await box.expect(1, ...requests.map((_, i) => `updated file-${i}.txt`));
+            // One per event tells it from the watched directory itself, but none may pair a request with a change.
+            assert.ok(comparisons < requests.length * 1000, `${comparisons} path comparisons for one batch`);
+        });
+
         it('tells a file request about its own file only', async () => {
             await box.watching(box.root, box.file(box.path('wanted.txt')));
 
