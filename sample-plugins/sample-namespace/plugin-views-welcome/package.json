@@ -1,0 +1,55 @@
+{
+  "private": true,
+  "name": "plugin-views-welcome",
+  "version": "1.76.0",
+  "main": "extension.js",
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+  "publisher": "sample-namespace",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "engines": {
+    "vscode": "^1.125.0"
+  },
+  "activationEvents": [
+    "onCommand:plugin-views-welcome.hello"
+  ],
+  "devDependencies": {
+    "@types/vscode": "^1.125.0"
+  },
+  "scripts": {
+    "build": "npx @vscode/vsce@3 package --no-dependencies"
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "plugin-views-welcome",
+          "title": "Views Welcome Sample",
+          "icon": "$(rocket)"
+        }
+      ]
+    },
+    "views": {
+      "plugin-views-welcome": [
+        {
+          "id": "plugin-views-welcome.actions",
+          "name": "Actions"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "plugin-views-welcome.actions",
+        "contents": "This view has welcome content and no tree data provider.\n[Say Hello](command:plugin-views-welcome.hello)"
+      }
+    ],
+    "commands": [
+      {
+        "command": "plugin-views-welcome.hello",
+        "title": "Hello from plugin-views-welcome"
+      }
+    ]
+  }
+}

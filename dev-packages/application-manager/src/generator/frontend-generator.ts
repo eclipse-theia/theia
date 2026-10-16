@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/* eslint-disable @typescript-eslint/indent */
+/* eslint-disable @stylistic/indent */
 
 import { EOL } from 'os';
 import { AbstractGenerator, GeneratorOptions } from './abstract-generator';

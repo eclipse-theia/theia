@@ -66,7 +66,7 @@ export class RawProcess extends Process {
     readonly errorStream: stream.Readable;
     readonly inputStream: stream.Writable;
 
-    constructor( // eslint-disable-next-line @typescript-eslint/indent
+    constructor( // eslint-disable-next-line @stylistic/indent
         @inject(RawProcessOptions) options: RawProcessOptions | RawForkOptions,
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(ILogger) @named('process:RawProcess')

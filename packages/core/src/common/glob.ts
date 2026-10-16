@@ -127,11 +127,8 @@ function parseRegExp(pattern: string): string {
     // Special case where we only have globstars
     if (segments.every(s => s === GLOBSTAR)) {
         regEx = '.*';
-    }
-
-    // Build regex over segments
-    // tslint:disable-next-line:one-line
-    else {
+    } else {
+        // Build regex over segments
         let previousSegmentWasGlobStar = false;
         segments.forEach((segment, index) => {
 
@@ -171,24 +168,15 @@ function parseRegExp(pattern: string): string {
                     // range operator
                     if (char === '-') {
                         res = char;
-                    }
-
-                    // negation operator (only valid on first index in bracket)
-                    // tslint:disable-next-line:one-line
-                    else if ((char === '^' || char === '!') && !bracketVal) {
+                    } else if ((char === '^' || char === '!') && !bracketVal) {
+                        // negation operator (only valid on first index in bracket)
                         res = '^';
-                    }
-
-                    // glob split matching is not allowed within character ranges
-                    // see http://man7.org/linux/man-pages/man7/glob.7.html
-                    // tslint:disable-next-line:one-line
-                    else if (char === GLOB_SPLIT) {
+                    } else if (char === GLOB_SPLIT) {
+                        // glob split matching is not allowed within character ranges
+                        // see http://man7.org/linux/man-pages/man7/glob.7.html
                         res = '';
-                    }
-
-                    // anything else gets escaped
-                    // tslint:disable-next-line:one-line
-                    else {
+                    } else {
+                        // anything else gets escaped
                         res = strings.escapeRegExpCharacters(char);
                     }
 
@@ -270,7 +258,7 @@ export type ParsedPattern = (path: string, basename?: string) => boolean;
 
 // The ParsedExpression returns a Promise iff hasSibling returns a Promise.
 // eslint-disable-next-line max-len
-export type ParsedExpression = (path: string, basename?: string, hasSibling?: (name: string) => boolean | Promise<boolean>) => string | Promise<string> /* the matching pattern */;
+export type ParsedExpression = (path: string, basename?: string, hasSibling?: (name: string) => boolean | Promise<boolean>) => string | Promise<string>; // the matching pattern
 
 export interface IGlobOptions {
     /**
@@ -341,11 +329,8 @@ function parsePattern(arg1: string | IRelativePattern, options: IGlobOptions): P
         parsedPattern = trivia4and5(match[1].substring(1), pattern, true);
     } else if (match = T5.exec(trimForExclusions(pattern, options))!) { // common pattern: something/else just need equals check
         parsedPattern = trivia4and5(match[1], pattern, false);
-    }
-
-    // Otherwise convert to pattern
-    // tslint:disable-next-line:one-line
-    else {
+    } else {
+        // Otherwise convert to pattern
         parsedPattern = toRegExp(pattern);
     }
 
@@ -461,7 +446,7 @@ function toRegExp(pattern: string): ParsedStringPattern {
  * - character ranges (using [...])
  */
 export function match(pattern: string | IRelativePattern, path: string): boolean;
-export function match(expression: IExpression, path: string, hasSibling?: (name: string) => boolean): string /* the matching pattern */;
+export function match(expression: IExpression, path: string, hasSibling?: (name: string) => boolean): string; // the matching pattern
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function match(arg1: string | IExpression | IRelativePattern, path: string, hasSibling?: (name: string) => boolean): any {
     if (!arg1 || !path) {
@@ -593,7 +578,6 @@ function parsedExpression(expression: IExpression, options: IGlobOptions): Parse
         // eslint-disable-next-line @typescript-eslint/no-shadow
         const resultExpression: ParsedStringPattern = function (path: string, basename: string): string | Promise<string> {
             // eslint-disable-next-line @typescript-eslint/no-shadow
-            // tslint:disable-next-line:one-variable-per-declaration
             for (let i = 0, n = parsedPatterns.length; i < n; i++) {
                 // Pattern matches path
                 const result = (<ParsedStringPattern>parsedPatterns[i])(path, basename);
@@ -707,7 +691,6 @@ function aggregateBasenameMatches(parsedPatterns: (ParsedStringPattern | ParsedE
     let patterns: string[];
     if (result) {
         patterns = [];
-        // tslint:disable-next-line:one-variable-per-declaration
         for (let i = 0, n = basenames.length; i < n; i++) {
             patterns.push(result);
         }

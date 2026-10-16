@@ -72,6 +72,13 @@ export interface ContextKeyService extends ContextMatcher {
     with<T>(values: Record<string, unknown>, callback: () => T): T;
 
     /**
+     * Evaluates {@link callback} against the context of the given element or context object
+     * rather than the context of the currently focused element.
+     * {@link callback | The callback} must be synchronous.
+     */
+    withContext<T>(context: HTMLElement | Context, callback: () => T): T;
+
+    /**
      * Creates a child service with a separate context scoped to the HTML element passed in.
      * Useful for e.g. setting the {view} context value for particular widgets.
      */
@@ -135,6 +142,14 @@ export class ContextKeyServiceDummyImpl implements ContextKeyService {
      * Callback must be synchronous.
      */
     with<T>(values: Record<string, unknown>, callback: () => T): T {
+        return callback();
+    }
+
+    /**
+     * Details should be implemented by an extension, e.g. by the monaco extension.
+     * Callback must be synchronous.
+     */
+    withContext<T>(context: HTMLElement | Context, callback: () => T): T {
         return callback();
     }
 

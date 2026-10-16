@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { PluginDeployerFileHandler, PluginDeployerEntry, PluginDeployerFileHandlerContext } from '@theia/plugin-ext';
-import * as filenamify from 'filenamify';
+import filenamify from 'filenamify';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as fs from '@theia/core/shared/fs-extra';
 import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';

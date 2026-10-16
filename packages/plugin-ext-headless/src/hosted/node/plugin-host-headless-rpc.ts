@@ -25,7 +25,7 @@ import { AbstractPluginHostRPC, ExtInterfaces } from '@theia/plugin-ext/lib/host
 import { PluginModel } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { ExtPluginApi, ExtPluginApiHeadlessInitializationFn } from '../../common/plugin-ext-headless-api-contribution';
 
-type HeadlessExtInterfaces = Pick<ExtInterfaces, 'envExt'|'localizationExt'>;
+type HeadlessExtInterfaces = Pick<ExtInterfaces, 'envExt' | 'localizationExt'>;
 
 /**
  * The RPC handler for headless plugins.

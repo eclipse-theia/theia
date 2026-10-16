@@ -106,6 +106,9 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         return instance;
     }
 
+    /** Whether hiding the editor should detach its model and save its view state for restoration on show. */
+    detachModelOnHide = true;
+
     protected readonly toDispose = new DisposableCollection();
 
     protected readonly autoSizing: boolean;
@@ -265,12 +268,15 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     }
 
     handleVisibilityChanged(nowVisible: boolean): void {
+        this._stagedForPreview = false;
         if (nowVisible) {
-            this._stagedForPreview = false;
-            this.baseEditor.setModel(this.baseModel);
-            this.baseEditor.restoreViewState(this.savedViewState);
-        } else {
-            this._stagedForPreview = false;
+            if (this.detachModelOnHide || !this.baseEditor.getModel()) {
+                this.baseEditor.setModel(this.baseModel);
+            }
+            if (this.detachModelOnHide) {
+                this.baseEditor.restoreViewState(this.savedViewState);
+            }
+        } else if (this.detachModelOnHide) {
             this.savedViewState = this.baseEditor.saveViewState();
 
             // eslint-disable-next-line no-null/no-null

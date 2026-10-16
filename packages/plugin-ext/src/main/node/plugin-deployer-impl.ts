@@ -22,7 +22,8 @@ import {
     PluginDeployerResolver, PluginDeployerFileHandler, PluginDeployerDirectoryHandler,
     PluginDeployerEntry, PluginDeployer, PluginDeployerParticipant, PluginDeployerStartContext,
     PluginDeployerResolverInit,
-    PluginDeployerEntryType, PluginDeployerHandler, PluginType, UnresolvedPluginEntry, PluginIdentifiers, PluginDeployOptions
+    PluginDeployerEntryType, PluginDeployerHandler, PluginType, UnresolvedPluginEntry, PluginIdentifiers, PluginDeployOptions,
+    DuplicateExtensionError
 } from '../../common/plugin-protocol';
 import { PluginDeployerEntryImpl } from './plugin-deployer-entry-impl';
 import {
@@ -215,7 +216,11 @@ export class PluginDeployerImpl implements PluginDeployer {
                         }
                     }
                 } catch (e) {
-                    this.logger.error(`Failed to resolve plugins from '${entry.id}'`, e);
+                    if (DuplicateExtensionError.is(e)) {
+                        this.logger.info(`Skipping '${entry.id}': ${e.message}`);
+                    } else {
+                        this.logger.error(`Failed to resolve plugins from '${entry.id}'`, e);
+                    }
                     errors.push(e instanceof Error ? e : new Error(String(e)));
                 }
             }));

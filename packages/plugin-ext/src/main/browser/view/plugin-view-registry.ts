@@ -160,6 +160,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
         this.updateFocusedView();
         this.shell.onDidChangeActiveWidget(() => this.updateFocusedView());
+        this.onDidExpandView(viewId => this.prepareWelcomeOnlyView(viewId).catch(e => this.logger.error(e)));
 
         this.widgetManager.onWillCreateWidget(({ factoryId, widget, waitUntil }) => {
             if (factoryId === EXPLORER_VIEW_CONTAINER_ID && widget instanceof ViewContainerWidget) {
@@ -786,7 +787,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const currentDataWidget = widget.widgets[0];
         const webviewId = currentDataWidget instanceof WebviewWidget ? currentDataWidget.identifier?.id : undefined;
         const viewDataWidget = await this.createViewDataWidget(view.id, webviewId);
-        if (widget.isDisposed) {
+        // `onDidInitializeLayout` can dispose the data widget before it is added here.
+        if (widget.isDisposed || viewDataWidget?.isDisposed) {
             viewDataWidget?.dispose();
             return;
         }
@@ -1029,8 +1031,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     /**
-     * retrieve restored layout state from previous user session but close widgets
-     * widgets should be opened only when view data providers are registered
+     * Retrieves the restored state of the data widgets and disposes them: a view gets a new data widget
+     * once its data provider registers or, for a view with only welcome content, once it is expanded.
      */
     onDidInitializeLayout(): void {
         const widgets = this.widgetManager.getWidgets(PLUGIN_VIEW_DATA_FACTORY_ID);
@@ -1106,6 +1108,21 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             this.viewDataState.delete(viewId);
         }
         return widget;
+    }
+
+    /**
+     * Gives an expanded view that has `viewsWelcome` content but neither a data provider nor a
+     * content widget its welcome widget, which `onDidInitializeLayout` disposes when it was restored.
+     */
+    protected async prepareWelcomeOnlyView(viewId: string): Promise<void> {
+        if (this.views.get(viewId)?.[1]?.type === PluginViewType.Webview
+            || this.viewDataProviders.has(viewId) || !this.getViewWelcomes(viewId).length) {
+            return;
+        }
+        const view = await this.getView(viewId);
+        if (view && !view.widgets.length) {
+            await this.prepareView(view);
+        }
     }
 
     protected async createViewWelcomeWidget(viewId: string): Promise<TreeViewWidget> {

@@ -26,7 +26,7 @@ export type JsonType = 'string' | 'array' | 'number' | 'integer' | 'object' | 'b
 // copied from https://github.com/Microsoft/vscode/blob/d4edb9abcc261846cabee6702715fe2914ae42cb/src/vs/base/common/jsonSchema.ts
 
 // Keep tab indent for easier comparison with the original file.
-/* eslint-disable @typescript-eslint/indent */
+/* eslint-disable @stylistic/indent */
 
 /**
  * extended JSON schema

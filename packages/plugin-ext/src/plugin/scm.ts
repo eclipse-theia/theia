@@ -68,6 +68,10 @@ function getIconResource(decorations?: theia.SourceControlResourceThemableDecora
 }
 
 function comparePaths(one: string, other: string, caseSensitive = false): number {
+    if (one === other) {
+        return 0;
+    }
+
     const oneParts = one.split(sep);
     const otherParts = other.split(sep);
 
@@ -220,6 +224,17 @@ function compareCommands(a: theia.Command, b: theia.Command): number {
 
 function compareResourceStates(a: theia.SourceControlResourceState, b: theia.SourceControlResourceState): number {
     let result = comparePaths(a.resourceUri.fsPath, b.resourceUri.fsPath, true);
+
+    if (result !== 0) {
+        return result;
+    }
+
+    result = (a.multiDiffEditorOriginalUri?.toString() ?? '').localeCompare(b.multiDiffEditorOriginalUri?.toString() ?? '');
+    if (result !== 0) {
+        return result;
+    }
+
+    result = (a.multiFileDiffEditorModifiedUri?.toString() ?? '').localeCompare(b.multiFileDiffEditorModifiedUri?.toString() ?? '');
 
     if (result !== 0) {
         return result;
@@ -494,7 +509,9 @@ class ScmResourceGroupImpl implements theia.SourceControlResourceGroup {
                 const rawResource = {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     handle, sourceUri, letter: (r as any).letter, colorId: (r as any).color?.id, icons,
-                    tooltip, strikeThrough, faded, contextValue, command
+                    tooltip, strikeThrough, faded, contextValue, command,
+                    multiDiffEditorOriginalUri: r.multiDiffEditorOriginalUri,
+                    multiDiffEditorModifiedUri: r.multiFileDiffEditorModifiedUri
                 } as ScmRawResource;
 
                 return { rawResource, handle };

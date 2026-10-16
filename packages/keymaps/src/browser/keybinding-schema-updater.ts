@@ -60,7 +60,11 @@ export const keybindingSchema = {
     title: 'Keybinding Configuration File',
     default: [],
     definitions: {
-        key: { type: 'string', description: nls.localizeByDefault('Key or key sequence (separated by space)') },
+        key: {
+            type: 'string',
+            description: nls.localize('theia/keymaps/keybindingDescription',
+                'Logical key or key sequence separated by spaces. Use [ScanCode] for a physical key and [char:0x...] for reserved Unicode characters.')
+        },
     },
     items: {
         type: 'object',
