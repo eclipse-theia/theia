@@ -757,6 +757,23 @@ describe('keybindings', () => {
         }
     });
 
+    it('should dispatch a Shift+punctuation binding from input that reports the base character', async () => {
+        keybindingRegistry.setKeymap(KeybindingScope.USER, [{ command: TEST_COMMAND_SHADOW.id, keybinding: 'ctrl+shift+`' }]);
+        const execute = sinon.spy();
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
+
+        try {
+            keybindingRegistry.dispatchNormalizedKeyDown({
+                key: '`', code: 'Backquote', ctrlKey: true, shiftKey: true
+            }, new EventTarget());
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(execute.calledOnce).to.be.true;
+        } finally {
+            handler.dispose();
+        }
+    });
+
     it('should keep punctuation bindings inactive on a non-Latin layout', () => {
         const binding = { command: TEST_COMMAND.id, keybinding: 'ctrl+[' };
         keybindingRegistry.setKeymap(KeybindingScope.USER, [binding]);
