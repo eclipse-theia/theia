@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import * as http from 'http';
+import http from 'http';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';

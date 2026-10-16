@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { TernarySearchTree, KeySequenceIterator } from './ternary-search-tree';
 import { KeyCode, KeySequence, Key, KeyModifier } from './keys';
 
@@ -68,6 +69,19 @@ describe('KeySequenceIterator', () => {
 
         // Different value should return non-zero
         expect(iterator.cmp('different')).to.not.equal(0);
+    });
+
+    it('should use dispatch identity for values and comparisons', () => {
+        const keyCode = KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.CtrlCmd] });
+        const dispatchString = sinon.stub(keyCode, 'dispatchString').returns('dispatch-a');
+        const toString = sinon.stub(keyCode, 'toString').returns('serialized-a');
+
+        iterator.reset([keyCode]);
+
+        expect(iterator.value()).to.equal('dispatch-a');
+        expect(iterator.cmp('dispatch-a')).to.equal(0);
+        expect(dispatchString.called).to.be.true;
+        expect(toString.called).to.be.false;
     });
 });
 

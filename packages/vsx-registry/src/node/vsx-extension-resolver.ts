@@ -19,7 +19,9 @@ import * as semver from 'semver';
 import * as fs from '@theia/core/shared/fs-extra';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { PluginDeployerHandler, PluginDeployerResolver, PluginDeployerResolverContext, PluginDeployOptions, PluginIdentifiers } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import {
+    DuplicateExtensionError, PluginDeployerHandler, PluginDeployerResolver, PluginDeployerResolverContext, PluginDeployOptions, PluginIdentifiers
+} from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { FileUri } from '@theia/core/lib/node';
 import { VSCodeExtensionUri } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-uri';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
@@ -90,8 +92,7 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
         if (!options?.ignoreOtherVersions) {
             const existingVersion = this.hasSameOrNewerVersion(id.id, extension);
             if (existingVersion) {
-                this.logger.info(`[${id.id}]: is already installed with the same or newer version '${existingVersion}'`);
-                return;
+                throw DuplicateExtensionError.create(`Extension ${id.id} is already installed with the same or newer version '${existingVersion}'.`);
             }
         }
         const downloadDir = await this.getTempDir();

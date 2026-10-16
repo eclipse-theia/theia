@@ -26,7 +26,6 @@ import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream';
 import { getOpenAiModelDefaults } from './openai-model-defaults';
 import { OPENAI_WEB_SEARCH } from './openai-server-tools';
-import type { FinalRequestOptions } from 'openai/internal/request-options';
 
 const LEGACY_GPT5_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],
@@ -297,7 +296,7 @@ describe('OpenAiModel Response API fallback', () => {
 });
 
 class TestableMistralFixedOpenAI extends MistralFixedOpenAI {
-    callPrepareOptions(options: FinalRequestOptions): Promise<void> {
+    callPrepareOptions(options: OpenAI.RequestOptions): Promise<void> {
         return this.prepareOptions(options);
     }
 }
@@ -308,13 +307,13 @@ describe('MistralFixedOpenAI request preparation', () => {
 
     it('leaves a request without a body alone', async () => {
         // `GET /models`, which model discovery issues, carries no body at all.
-        const options = { method: 'get', path: '/models' } as FinalRequestOptions;
+        const options = { method: 'get', path: '/models' } as OpenAI.RequestOptions;
         await client.callPrepareOptions(options);
         expect(options.body).to.equal(undefined);
     });
 
     it('leaves a body without messages alone', async () => {
-        const options = { method: 'post', path: '/embeddings', body: { input: 'hello' } } as FinalRequestOptions;
+        const options = { method: 'post', path: '/embeddings', body: { input: 'hello' } } as OpenAI.RequestOptions;
         await client.callPrepareOptions(options);
         expect(options.body).to.deep.equal({ input: 'hello' });
     });
@@ -329,7 +328,7 @@ describe('MistralFixedOpenAI request preparation', () => {
                     { role: 'assistant', tool_calls: [{ id: 't1' }], refusal: null, parsed: null }
                 ]
             }
-        } as FinalRequestOptions;
+        } as OpenAI.RequestOptions;
         await client.callPrepareOptions(options);
         const message = (options.body as { messages: Array<Record<string, unknown>> }).messages[0];
         expect(message.refusal).to.equal(undefined);

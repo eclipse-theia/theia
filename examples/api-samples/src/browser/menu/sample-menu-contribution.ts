@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ConfirmDialog, Dialog, QuickInputService } from '@theia/core/lib/browser';
+import { AcceleratorForm, ConfirmDialog, Dialog, QuickInputService } from '@theia/core/lib/browser';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import { SelectComponent } from '@theia/core/lib/browser/widgets/select-component';
 import {
@@ -315,7 +315,7 @@ export class PlaceholderMenuNode implements CommandMenu {
     run(effectiveMenuPath: MenuPath, ...args: unknown[]): Promise<void> {
         throw new Error('Should never happen');
     }
-    getAccelerator(context: HTMLElement | undefined): string[] {
+    getAccelerator(context: HTMLElement | undefined, form: AcceleratorForm): string[] {
         return [];
     }
 

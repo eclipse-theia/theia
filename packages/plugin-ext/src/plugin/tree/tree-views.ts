@@ -93,7 +93,7 @@ export class TreeViewsExtImpl implements TreeViewsExt {
         this.treeViews.set(treeViewId, treeView);
 
         return {
-            // tslint:disable:typedef
+            /* eslint-disable @theia/explicit-return-type */
             get onDidExpandElement() {
                 return treeView.onDidExpandElement;
             },
@@ -115,6 +115,7 @@ export class TreeViewsExtImpl implements TreeViewsExt {
             get onDidChangeCheckboxState() {
                 return treeView.onDidChangeCheckboxState;
             },
+            /* eslint-enable @theia/explicit-return-type */
             get message(): string {
                 return treeView.message;
             },

@@ -17,7 +17,7 @@
 import { Disposable, DisposableCollection, MaybePromise } from '@theia/core';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { ILogger } from '@theia/core/lib/common/logger';
-import * as Ajv from '@theia/core/shared/ajv';
+import Ajv from '@theia/core/shared/ajv';
 import * as express from '@theia/core/shared/express';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as http from 'http';

@@ -17,6 +17,9 @@
 import { expect } from 'chai';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmMainImpl } from './scm-main';
+import { ScmRawResource } from '../../common/plugin-api-rpc';
+import URI from '@theia/core/lib/common/uri';
+import { URI as vscodeURI } from '@theia/core/shared/vscode-uri';
 
 interface ScmMainInternals {
     repositories: Map<number, unknown>;
@@ -51,6 +54,35 @@ describe('ScmMainImpl - cascade dispose of children on $unregisterSourceControl'
         // Stub the optional context key dependency used by ScmService.
         (scmService as unknown as Record<string, unknown>).contextKeys = {};
         impl = createScmMainImpl(scmService);
+    });
+
+    it('revives multi-diff URI components and preserves absent added/deleted sides', async () => {
+        await impl.$registerSourceControl(1, 'git', 'Main', undefined);
+        impl.$registerGroups(1, [{ handle: 2, id: 'changes', label: 'Changes', features: { hideWhenEmpty: undefined, contextValue: undefined } }], []);
+        const sourceUri = vscodeURI.file('/repo/file.txt').toJSON();
+        const originalUri = vscodeURI.parse('git:/repo/file.txt?ref=HEAD#original').toJSON();
+        const modifiedUri = vscodeURI.parse('file:///repo/file.txt?working=true#modified').toJSON();
+        const raw: ScmRawResource = {
+            handle: 3, sourceUri, icons: [], tooltip: '', strikeThrough: false, faded: false, contextValue: '', command: undefined
+        };
+        impl.$spliceResourceStates(1, [{
+            handle: 2, splices: [{
+                start: 0, deleteCount: 0, rawResources: [
+                    { ...raw, multiDiffEditorOriginalUri: originalUri },
+                    { ...raw, handle: 4, multiDiffEditorModifiedUri: modifiedUri },
+                    { ...raw, handle: 5 }
+                ]
+            }]
+        }]);
+        const resources = scmService.repositories[0].provider.groups[0].resources;
+        expect(resources[0].multiDiffEditorOriginalUri).to.be.instanceOf(URI);
+        expect(resources[0].multiDiffEditorOriginalUri?.toString()).to.equal(vscodeURI.revive(originalUri).toString());
+        expect(resources[0].multiDiffEditorModifiedUri).to.equal(undefined);
+        expect(resources[1].multiDiffEditorOriginalUri).to.equal(undefined);
+        expect(resources[1].multiDiffEditorModifiedUri).to.be.instanceOf(URI);
+        expect(resources[1].multiDiffEditorModifiedUri?.toString()).to.equal(vscodeURI.revive(modifiedUri).toString());
+        expect(resources[2].multiDiffEditorOriginalUri).to.equal(undefined);
+        expect(resources[2].multiDiffEditorModifiedUri).to.equal(undefined);
     });
 
     it('should unregister worktree children when their parent is unregistered', async () => {

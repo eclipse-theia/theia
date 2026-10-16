@@ -18,7 +18,7 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { PromptService } from '@theia/ai-core/lib/common';
 import { nls } from '@theia/core';
-import { AGENT_DELEGATION_FUNCTION_ID } from '@theia/ai-core';
+import { AGENT_DELEGATION_FUNCTION_ID, AGENTS_MD_FILE_NAME } from '@theia/ai-core';
 import { ArchitectAgentId } from './architect-agent';
 import { CoderAgentId } from './coder-agent';
 
@@ -26,8 +26,8 @@ import { CoderAgentId } from './coder-agent';
  * Contribution that registers the `/remember` slash command for AI chat agents.
  *
  * This command allows Architect and Coder agents to extract important topics
- * from the current conversation and delegate to the ProjectInfo agent to update
- * the persistent project context file.
+ * from the current conversation and delegate to the AgentsMd agent to update
+ * the workspace's `AGENTS.md`.
  */
 @injectable()
 export class RememberCommandContribution implements FrontendApplicationContribution {
@@ -89,9 +89,9 @@ export class RememberCommandContribution implements FrontendApplicationContribut
     - What the user corrected or clarified
     - Why your initial understanding was incomplete
     - The specific project context that was provided
-    3. **Delegate to ProjectInfo agent**: Use the ~{${AGENT_DELEGATION_FUNCTION_ID}} tool to send the extracted information to the ProjectInfo agent:
-    - Agent ID: 'ProjectInfo'
-    - Prompt: Ask the ProjectInfo agent to review the extracted information and update the project information file
+    3. **Delegate to the AgentsMd agent**: Use the ~{${AGENT_DELEGATION_FUNCTION_ID}} tool to send the extracted information to the AgentsMd agent:
+    - Agent ID: 'AgentsMd'
+    - Prompt: Ask the AgentsMd agent to review the extracted information and update the project context file
 
     ## Example Delegation
     \`\`\`
@@ -99,7 +99,7 @@ export class RememberCommandContribution implements FrontendApplicationContribut
 
     [Your extracted corrections and user-provided context here]
 
-    Update /.prompts/project-info.prompttemplate by adding this information to the appropriate sections. Focus on information that prevents future misunderstandings.
+    Update ${AGENTS_MD_FILE_NAME} by adding this information to the appropriate sections. Focus on information that prevents future misunderstandings.
     \`\`\`
 
     Remember: Only extract information that prevents future AI agents from making the same mistakes or assumptions you made that were corrected by the user.`;

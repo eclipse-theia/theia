@@ -16,7 +16,7 @@
 
 import * as path from 'path';
 import * as express from '@theia/core/shared/express';
-import * as escape_html from 'escape-html';
+import escape_html from 'escape-html';
 import { realpath, stat } from 'fs/promises';
 import { ILogger } from '@theia/core';
 import { inject, injectable, optional, multiInject, named } from '@theia/core/shared/inversify';
