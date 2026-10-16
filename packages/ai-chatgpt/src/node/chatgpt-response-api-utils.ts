@@ -15,10 +15,12 @@
 // *****************************************************************************
 
 import { LanguageModelMessage } from '@theia/ai-core';
+import { isObject } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
 import { DeveloperMessageSettings } from '@theia/ai-openai/lib/node/openai-language-model';
 import { OpenAiResponseApiUtils } from '@theia/ai-openai/lib/node/openai-response-api-utils';
-import type { ResponseInputItem } from 'openai/resources/responses/responses';
+import { OpenAI } from 'openai';
+import type { ResponseCreateParamsStreaming, ResponseInputItem, ResponseStreamEvent } from 'openai/resources/responses/responses';
 
 /** Used when a request carries no system message, which the ChatGPT endpoint rejects with `Instructions are required`. */
 export const DEFAULT_CHATGPT_INSTRUCTIONS = 'You are a helpful assistant.';
@@ -31,6 +33,26 @@ export const DEFAULT_CHATGPT_INSTRUCTIONS = 'You are a helpful assistant.';
 export class ChatGptResponseApiUtils extends OpenAiResponseApiUtils {
 
     override readonly compactionProvider = 'chatgpt-responses';
+
+    override async *streamResponse(openai: OpenAI, parameters: ResponseCreateParamsStreaming): AsyncIterable<ResponseStreamEvent> {
+        // ChatGPT emits extra events such as response.metadata that the SDK's response accumulator rejects.
+        const stream = await openai.responses.create(parameters);
+        for await (const event of stream) {
+            const streamEvent: { type: string; response_id?: unknown; sequence_number?: unknown; metadata?: unknown } = event;
+            if (streamEvent.type === 'response.metadata') {
+                this.logger.debug('ChatGPT response metadata:', {
+                    responseId: typeof streamEvent.response_id === 'string' ? streamEvent.response_id.slice(0, 128) : undefined,
+                    sequenceNumber: typeof streamEvent.sequence_number === 'number' ? streamEvent.sequence_number : undefined,
+                    metadataKeys: isObject(streamEvent.metadata) && !Array.isArray(streamEvent.metadata)
+                        ? Object.keys(streamEvent.metadata).slice(0, 10).map(key => key.slice(0, 128)) : []
+                });
+            }
+            if (event.type === 'response.failed') {
+                throw new Error(event.response.error?.message ?? 'ChatGPT response failed.');
+            }
+            yield event;
+        }
+    }
 
     override processMessages(
         messages: LanguageModelMessage[],
