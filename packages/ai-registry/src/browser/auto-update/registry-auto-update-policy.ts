@@ -67,7 +67,7 @@ export class RegistryAutoUpdatePolicyImpl implements RegistryAutoUpdatePolicy {
     }
 
     getDefault(): AutoUpdateMode {
-        const value = this.preferenceService.get<string>(AUTO_UPDATE_PREF, 'ask');
+        const value = this.preferenceService.get(AUTO_UPDATE_PREF, 'ask');
         return AutoUpdateMode.is(value) ? value : 'ask';
     }
 
@@ -111,6 +111,6 @@ export class RegistryAutoUpdatePolicyImpl implements RegistryAutoUpdatePolicy {
     }
 
     protected readOverrides(): Overrides {
-        return this.preferenceService.get<Overrides>(AUTO_UPDATE_OVERRIDES_PREF, {}) ?? {};
+        return this.preferenceService.get<Overrides>(AUTO_UPDATE_OVERRIDES_PREF, {fallback: {}}) ?? {};
     }
 }

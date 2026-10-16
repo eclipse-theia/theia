@@ -218,7 +218,7 @@ export abstract class DiscoveringProviderContribution<T> implements FrontendAppl
     }
 
     protected isEnvironmentApiKeyAllowed(): boolean {
-        return this.preferenceService.get<boolean>(this.allowEnvironmentApiKeyPreference, false);
+        return this.preferenceService.get(this.allowEnvironmentApiKeyPreference, false);
     }
 
     /**

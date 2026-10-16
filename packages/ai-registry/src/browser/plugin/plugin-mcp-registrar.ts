@@ -154,7 +154,7 @@ export class PluginMcpRegistrarImpl implements PluginMcpRegistrar {
     }
 
     protected readServers(): StoredServers {
-        return this.preferenceService.get<StoredServers>(MCP_SERVERS_PREF, {}) ?? {};
+        return this.preferenceService.get<StoredServers>(MCP_SERVERS_PREF, {fallback: {}}) ?? {};
     }
 
     protected async writeServers(next: StoredServers): Promise<void> {

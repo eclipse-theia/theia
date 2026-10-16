@@ -73,7 +73,7 @@ describe('Undo, Redo and Select All', function () {
         } while (true);
     }
 
-    const originalValue = preferenceService.get('files.autoSave', undefined, rootUri.toString());
+    const originalValue = preferenceService.get('files.autoSave', { resource: rootUri.toString() });
     before(async () => {
         await preferenceService.set('files.autoSave', 'off', undefined, rootUri.toString());
         await preferenceService.set('git.autoRepositoryDetection', true);

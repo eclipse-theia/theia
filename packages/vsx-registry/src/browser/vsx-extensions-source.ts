@@ -112,7 +112,7 @@ export class VSXExtensionsSource extends TreeSource {
         // contribution filter, so they would otherwise leak into substring matching.
         const { freeText } = this.searchModel.parseQuery();
         const ctx: SearchContext = {
-            verifiedOnly: this.preferenceService.get<boolean>('extensions.onlyShowVerifiedExtensions', false)
+            verifiedOnly: this.preferenceService.get('extensions.onlyShowVerifiedExtensions', false)
         };
         const results = await Promise.all(contributions.map(c => this.safeResolveSearchResults(c, freeText, ctx)));
         const all = results.flatMap(r => [...r]);

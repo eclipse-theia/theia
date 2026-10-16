@@ -38,27 +38,27 @@ describe('PreferenceCliContribution', () => {
     describe('--set-preference', () => {
         it('parses a single key=value entry as JSON', async () => {
             contribution.setArguments({ setPreference: 'editor.fontSize=14' });
-            expect(await contribution.getPreferences()).to.deep.equal([['editor.fontSize', 14]]);
+            expect(await contribution.getPreferences()).to.deep.equal([{ preferenceName: 'editor.fontSize', value: 14 }]);
             expect(await contribution.getSessionPreferences()).to.deep.equal([]);
         });
 
         it('parses string values quoted as JSON strings', async () => {
             contribution.setArguments({ setPreference: 'workbench.colorTheme="Dark+"' });
-            expect(await contribution.getPreferences()).to.deep.equal([['workbench.colorTheme', 'Dark+']]);
+            expect(await contribution.getPreferences()).to.deep.equal([{ preferenceName: 'workbench.colorTheme', value: 'Dark+' }]);
         });
 
         it('parses object values', async () => {
             contribution.setArguments({ setPreference: 'ai-features.chat.toolConfirmation={"shellExecute":"always_allow"}' });
             expect(await contribution.getPreferences()).to.deep.equal([
-                ['ai-features.chat.toolConfirmation', { shellExecute: 'always_allow' }]
+                { preferenceName: 'ai-features.chat.toolConfirmation', value: { shellExecute: 'always_allow' } }
             ]);
         });
 
         it('accepts an array of entries', async () => {
             contribution.setArguments({ setPreference: ['editor.fontSize=12', 'editor.tabSize=2'] });
             expect(await contribution.getPreferences()).to.deep.equal([
-                ['editor.fontSize', 12],
-                ['editor.tabSize', 2]
+                { preferenceName: 'editor.fontSize', value: 12 },
+                { preferenceName: 'editor.tabSize', value: 2 }
             ]);
         });
 
@@ -67,13 +67,27 @@ describe('PreferenceCliContribution', () => {
             const b64 = Buffer.from(json, 'utf-8').toString('base64');
             contribution.setArguments({ setPreference: `my.pref=base64:${b64}` });
             expect(await contribution.getPreferences()).to.deep.equal([
-                ['my.pref', { nested: true, n: 1 }]
+                { preferenceName: 'my.pref', value: { nested: true, n: 1 } }
             ]);
         });
 
         it('preserves "=" characters inside the value', async () => {
             contribution.setArguments({ setPreference: 'my.pref="a=b=c"' });
-            expect(await contribution.getPreferences()).to.deep.equal([['my.pref', 'a=b=c']]);
+            expect(await contribution.getPreferences()).to.deep.equal([{ preferenceName: 'my.pref', value: 'a=b=c' }]);
+        });
+
+        it('splits an encoded language override into preferenceName and overrideIdentifier', async () => {
+            contribution.setArguments({ setPreference: '[typescript].editor.tabSize=4' });
+            expect(await contribution.getPreferences()).to.deep.equal([
+                { preferenceName: 'editor.tabSize', value: 4, overrideIdentifier: 'typescript' }
+            ]);
+        });
+
+        it('keeps a nested-object [language] key as a literal preferenceName', async () => {
+            contribution.setArguments({ setPreference: '[typescript]={"editor.tabSize":4}' });
+            expect(await contribution.getPreferences()).to.deep.equal([
+                { preferenceName: '[typescript]', value: { 'editor.tabSize': 4 } }
+            ]);
         });
 
         it('skips entries that do not contain "="', async () => {
@@ -84,7 +98,7 @@ describe('PreferenceCliContribution', () => {
             } finally {
                 console.warn = originalWarn;
             }
-            expect(await contribution.getPreferences()).to.deep.equal([['editor.fontSize', 14]]);
+            expect(await contribution.getPreferences()).to.deep.equal([{ preferenceName: 'editor.fontSize', value: 14 }]);
         });
 
         it('skips entries whose value is not valid JSON', async () => {
@@ -95,7 +109,7 @@ describe('PreferenceCliContribution', () => {
             } finally {
                 console.warn = originalWarn;
             }
-            expect(await contribution.getPreferences()).to.deep.equal([['editor.fontSize', 14]]);
+            expect(await contribution.getPreferences()).to.deep.equal([{ preferenceName: 'editor.fontSize', value: 14 }]);
         });
     });
 
@@ -103,7 +117,7 @@ describe('PreferenceCliContribution', () => {
         it('routes entries into the session preferences bucket', async () => {
             contribution.setArguments({ sessionPreference: 'ai-features.chat.defaultToolConfirmation="always_allow"' });
             expect(await contribution.getSessionPreferences()).to.deep.equal([
-                ['ai-features.chat.defaultToolConfirmation', 'always_allow']
+                { preferenceName: 'ai-features.chat.defaultToolConfirmation', value: 'always_allow' }
             ]);
             expect(await contribution.getPreferences()).to.deep.equal([]);
         });
@@ -117,8 +131,15 @@ describe('PreferenceCliContribution', () => {
                 ]
             });
             expect(await contribution.getSessionPreferences()).to.deep.equal([
-                ['ai-features.chat.defaultToolConfirmation', 'always_allow'],
-                ['ai-features.chat.toolConfirmation', { shellExecute: 'always_allow' }]
+                { preferenceName: 'ai-features.chat.defaultToolConfirmation', value: 'always_allow' },
+                { preferenceName: 'ai-features.chat.toolConfirmation', value: { shellExecute: 'always_allow' } }
+            ]);
+        });
+
+        it('splits an encoded language override into preferenceName and overrideIdentifier', async () => {
+            contribution.setArguments({ sessionPreference: '[typescript].editor.tabSize=4' });
+            expect(await contribution.getSessionPreferences()).to.deep.equal([
+                { preferenceName: 'editor.tabSize', value: 4, overrideIdentifier: 'typescript' }
             ]);
         });
 
@@ -127,8 +148,8 @@ describe('PreferenceCliContribution', () => {
                 setPreference: 'editor.fontSize=14',
                 sessionPreference: 'editor.fontSize=20'
             });
-            expect(await contribution.getPreferences()).to.deep.equal([['editor.fontSize', 14]]);
-            expect(await contribution.getSessionPreferences()).to.deep.equal([['editor.fontSize', 20]]);
+            expect(await contribution.getPreferences()).to.deep.equal([{ preferenceName: 'editor.fontSize', value: 14 }]);
+            expect(await contribution.getSessionPreferences()).to.deep.equal([{ preferenceName: 'editor.fontSize', value: 20 }]);
         });
     });
 
@@ -159,6 +180,16 @@ describe('PreferenceCliContribution', () => {
                     expect(decoded).to.deep.equal({ shellExecute: 'always_allow' });
                 }
             }
+        });
+
+        it('re-encodes language overrides as [languageId].preferenceName', () => {
+            contribution.setArguments({ sessionPreference: '[typescript].editor.tabSize=4' });
+            const args = contribution.enhanceArgs(REMOTE_CLI_CONTEXT);
+            expect(args).to.have.lengthOf(1);
+            expect(args[0].startsWith('--session-preference=[typescript].editor.tabSize=base64:')).to.be.true;
+            const rawValue = args[0].substring('--session-preference=[typescript].editor.tabSize='.length);
+            const decoded = JSON.parse(Buffer.from(rawValue.substring('base64:'.length), 'base64').toString('utf-8'));
+            expect(decoded).to.equal(4);
         });
 
         it('does not forward --set-preference values', () => {

@@ -861,7 +861,7 @@ export class FileContentFunction implements ToolProvider {
         }
 
         const openEditorValue = this.monacoWorkspace.getTextDocument(targetUri.toString())?.getText();
-        const maxSizeKB = this.preferences.get<number>(FILE_CONTENT_MAX_SIZE_KB_PREF, 256);
+        const maxSizeKB = this.preferences.get(FILE_CONTENT_MAX_SIZE_KB_PREF, 256);
         const isEditorOpen = openEditorValue !== undefined;
         const isPaginated = offset !== undefined || limit !== undefined;
 

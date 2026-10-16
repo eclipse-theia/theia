@@ -64,7 +64,7 @@ export class CodeCompletionVariableContribution implements FrontendVariableContr
     protected resolvePrefix(context: CodeCompletionVariableContext): ResolvedAIVariable | undefined {
         const position = context.position;
         const model = context.model;
-        const maxContextLines = this.preferences.get<number>(PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES, -1);
+        const maxContextLines = this.preferences.get(PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES, -1);
         let prefixStartLine = 1;
 
         if (maxContextLines === 0) {
@@ -98,7 +98,7 @@ export class CodeCompletionVariableContribution implements FrontendVariableContr
     protected resolveSuffix(context: CodeCompletionVariableContext): ResolvedAIVariable | undefined {
         const position = context.position;
         const model = context.model;
-        const maxContextLines = this.preferences.get<number>(PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES, -1);
+        const maxContextLines = this.preferences.get(PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES, -1);
         let suffixEndLine = model.getLineCount();
 
         if (maxContextLines === 0) {

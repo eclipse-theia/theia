@@ -124,12 +124,12 @@ export class FavoriteModelsService {
 
     /** The ids the user marked explicitly, the ones offered by default excluded. */
     getFavorites(): string[] {
-        return this.preferenceService.get<string[]>(PREFERENCE_NAME_FAVORITE_MODELS, []);
+        return this.preferenceService.get(PREFERENCE_NAME_FAVORITE_MODELS, []);
     }
 
     /** The ids the user took out of the picker, which would otherwise be offered by default. */
     getHidden(): string[] {
-        return this.preferenceService.get<string[]>(PREFERENCE_NAME_HIDDEN_MODELS, []);
+        return this.preferenceService.get(PREFERENCE_NAME_HIDDEN_MODELS, []);
     }
 
     /**

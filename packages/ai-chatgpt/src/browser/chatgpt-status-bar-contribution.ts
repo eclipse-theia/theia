@@ -76,7 +76,7 @@ export class ChatGptStatusBarContribution implements FrontendApplicationContribu
     }
 
     protected updateStatusBar(): void {
-        if (!this.activationService.isActive || !this.preferenceService.get<boolean>(CHATGPT_ENABLED_PREF, true)) {
+        if (!this.activationService.isActive || !this.preferenceService.get(CHATGPT_ENABLED_PREF, true)) {
             this.statusBar.removeElement(CHATGPT_STATUS_BAR_ID);
             return;
         }
