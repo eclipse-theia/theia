@@ -49,7 +49,7 @@ const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
 export const SHELL_TABBAR_CONTEXT_MENU: MenuPath = ['shell-tabbar-context-menu'];
 export const SHELL_TABBAR_CONTEXT_CLOSE: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '0_close'];
 export const SHELL_TABBAR_CONTEXT_COPY: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '1_copy'];
-// Kept here in anticipation of tab pinning behavior implemented in tab-bars.ts
+export const SHELL_TABBAR_CONTEXT_HIDE: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '3_hide'];
 export const SHELL_TABBAR_CONTEXT_PIN: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '4_pin'];
 export const SHELL_TABBAR_CONTEXT_SPLIT: MenuPath = [...SHELL_TABBAR_CONTEXT_MENU, '5_split'];
 
@@ -72,7 +72,9 @@ export interface SideBarRenderData extends TabBar.IRenderData<Widget> {
     iconSize?: SizeData;
     paddingTop?: number;
     paddingBottom?: number;
-    visible?: boolean
+    visible?: boolean;
+    /** Leaves the tab out of the side bar while keeping its DOM position aligned with its title index. */
+    hidden?: boolean;
 }
 
 export interface ScrollableRenderData extends TabBar.IRenderData<Widget> {
@@ -222,6 +224,9 @@ export class TabBarRenderer extends TabBar.Renderer {
         let tabClass = super.createTabClass(data);
         if (!(data.visible ?? true)) {
             tabClass += ' lm-mod-invisible';
+        }
+        if (data.hidden) {
+            tabClass += ' lm-mod-hidden';
         }
         return tabClass;
     }
@@ -1104,6 +1109,12 @@ export class SideTabBar extends ScrollableTabBar {
         startIndex: number
     };
 
+    /**
+     * Tabs for which this returns `true` are not rendered in the side bar unless they are current.
+     * Call `update()` after the outcome changes.
+     */
+    shouldHideTitle: (title: Title<Widget>) => boolean = () => false;
+
     constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
         super(options);
 
@@ -1241,7 +1252,7 @@ export class SideTabBar extends ScrollableTabBar {
                 }
                 return;
             }
-            const newOverflowingTabs = this.titles.slice(startIndex);
+            const newOverflowingTabs = this.titles.slice(startIndex).filter(title => !this.isHiddenTab(title));
 
             if (!this.tabsOverflowData) {
                 this.tabsOverflowData = { titles: newOverflowingTabs, startIndex };
@@ -1290,6 +1301,21 @@ export class SideTabBar extends ScrollableTabBar {
     }
 
     /**
+     * Whether the tab of the given title is currently left out of the side bar.
+     */
+    isHiddenTab(title: Title<Widget>): boolean {
+        return title !== this.currentTitle && this.shouldHideTitle(title);
+    }
+
+    /**
+     * Whether the given title can be hidden. The last title that is not hidden stays, so the
+     * side bar never loses every tab.
+     */
+    canHideTitle(title: Title<Widget>): boolean {
+        return !this.shouldHideTitle(title) && this.titles.some(other => other !== title && !this.shouldHideTitle(other));
+    }
+
+    /**
      * Render the tab bar using the given DOM element as host. The optional `renderData` is forwarded
      * to the TabBarRenderer.
      */
@@ -1303,12 +1329,8 @@ export class SideTabBar extends ScrollableTabBar {
             const title = titles[i];
             const current = title === currentTitle;
             const zIndex = current ? n : n - i - 1;
-            let rd: SideBarRenderData;
-            if (renderData && i < renderData.length) {
-                rd = { title, current, zIndex, ...renderData[i] };
-            } else {
-                rd = { title, current, zIndex };
-            }
+            const hidden = this.isHiddenTab(title);
+            const rd: SideBarRenderData = { title, current, zIndex, hidden, ...renderData?.[i] };
             // Based on how renderTabs() is called, assume renderData will be undefined when invoked for this.hiddenContentNode
             content[i] = renderer.renderTab(rd, true, renderData === undefined);
         }
