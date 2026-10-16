@@ -17,7 +17,8 @@ import {
     ChatResponseContent,
     CodeChatResponseContent,
 } from '@theia/ai-chat/lib/common';
-import { ContributionProvider, UntitledResourceResolver, URI } from '@theia/core';
+import { ContributionProvider, UNTITLED_SCHEME, UntitledResourceResolver, URI } from '@theia/core';
+import { generateUuid } from '@theia/core/lib/common/uuid';
 import { ContextMenuRenderer, TreeNode } from '@theia/core/lib/browser';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
@@ -230,7 +231,10 @@ export const CodeWrapper = (props: {
     const editorRef = React.useRef<SimpleMonacoEditor | undefined>(undefined);
 
     const createInputElement = async () => {
-        const resource = await props.untitledResourceResolver.createUntitledResource(undefined, props.language);
+        // Use a unique URI so that a remounted code block cannot reuse the URI of a just disposed one,
+        // whose removal may not have reached the plugin host yet.
+        const uri = new URI().resolve(`Untitled-${generateUuid()}${props.language ?? ''}`).withScheme(UNTITLED_SCHEME);
+        const resource = await props.untitledResourceResolver.createUntitledResource(undefined, props.language, uri);
         const editor = await props.editorProvider.createSimpleInline(resource.uri, ref.current!, {
             readOnly: true,
             autoSizing: true,
