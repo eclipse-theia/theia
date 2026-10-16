@@ -1276,16 +1276,17 @@ export class SideTabBar extends ScrollableTabBar {
         const invisibleClass = 'lm-mod-invisible';
         let startIndex = -1;
         const n = this.contentNode.children.length;
+        const lastShownIndex = ArrayExt.findLastIndex(this.titles, title => !this.isHiddenTab(title));
         for (let i = 0; i < n; i++) {
             const tab = this.contentNode.children[i] as HTMLLIElement;
             if (tab.offsetTop + tab.offsetHeight >= availableHeight) {
                 tab.classList.add(invisibleClass);
                 if (startIndex === -1) {
                     startIndex = i;
-                    /* If only one element is overflowing and the additional menu widget is visible (i.e. this.tabsOverflowData is set)
-                     * there might already be enough space to show the last tab. In this case, we need to include the size of the
-                     * additional menu widget and recheck if the last tab is visible */
-                    if (startIndex === n - 1 && this.tabsOverflowData) {
+                    /* If only the last shown tab is overflowing and the additional menu widget is visible (i.e. this.tabsOverflowData is set)
+                     * there might already be enough space to show it. In this case, we need to include the size of the
+                     * additional menu widget and recheck if the last shown tab is visible */
+                    if (startIndex === lastShownIndex && this.tabsOverflowData) {
                         const additionalViewsMenu = this.node.parentElement?.querySelector('.theia-additional-views-menu') as HTMLDivElement;
                         if (tab.offsetTop + tab.offsetHeight < availableHeight + additionalViewsMenu.offsetHeight) {
                             tab.classList.remove(invisibleClass);

@@ -74,6 +74,12 @@ describe('tab bar', () => {
                 this.hideOverflowingTabs = () => startIndex;
                 this.computeOverflowingTabsData();
             }
+            firstOverflowingIndex(): number {
+                return this.hideOverflowingTabs();
+            }
+            setOverflowData(): void {
+                this.tabsOverflowData = { titles: [], startIndex: 0 };
+            }
         }
 
         function createSideTabBar(hiddenIds: string[]): { bar: TestSideTabBar, titles: Title<Widget>[] } {
@@ -126,6 +132,27 @@ describe('tab bar', () => {
                 window.requestAnimationFrame = requestAnimationFrame;
             }
             expect(overflowing).to.deep.equal([['search']]);
+        });
+
+        it('keeps the last shown tab when it fits beside the overflow menu, even with hidden tabs after it', () => {
+            const { bar, titles } = createSideTabBar(['search']);
+            bar.currentTitle = titles[0];
+            bar.render();
+            const parent = document.createElement('div');
+            const overflowMenu = document.createElement('div');
+            overflowMenu.className = 'theia-additional-views-menu';
+            Object.defineProperty(overflowMenu, 'offsetHeight', { value: 20 });
+            parent.append(bar.node, overflowMenu);
+            Object.defineProperty(bar.node, 'clientHeight', { value: 70 });
+            // explorer and debug stack 40px each; search is hidden, so it measures 0 like a `display: none` tab.
+            const tabs = Array.from(bar.contentNode.children);
+            [[0, 40], [40, 40], [0, 0]].forEach(([offsetTop, offsetHeight], i) => {
+                Object.defineProperty(tabs[i], 'offsetTop', { value: offsetTop });
+                Object.defineProperty(tabs[i], 'offsetHeight', { value: offsetHeight });
+            });
+            bar.setOverflowData();
+
+            expect(bar.firstOverflowingIndex()).to.equal(-1);
         });
     });
 });

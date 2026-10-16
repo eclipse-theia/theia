@@ -30,8 +30,7 @@ import { SidePanelToolbar } from './side-panel-toolbar';
 import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './tab-bar-toolbar';
 import { DisposableCollection, Disposable } from '../../common/disposable';
 import { ContextMenuRenderer } from '../context-menu-renderer';
-import { MenuModelRegistry, MenuPath } from '../../common/menu';
-import { CommandRegistry } from '../../common/command';
+import { CommandMenu, GroupImpl, MenuPath } from '../../common/menu';
 import { SidebarBottomMenuWidget } from './sidebar-bottom-menu-widget';
 import { SidebarTopMenuWidget } from './sidebar-top-menu-widget';
 import { PINNED_CLASS } from '../widgets';
@@ -47,8 +46,6 @@ const COLLAPSED_CLASS = 'theia-mod-collapsed';
 export const SidePanelHandlerFactory = Symbol('SidePanelHandlerFactory');
 
 export const SIDE_PANEL_TOOLBAR_CONTEXT_MENU: MenuPath = ['SIDE_PANEL_TOOLBAR_CONTEXT_MENU'];
-/** The context menu of the empty side bar area, listing one show/hide toggle per item. */
-export const SIDE_PANEL_ITEMS_CONTEXT_MENU: MenuPath = ['SIDE_PANEL_ITEMS_CONTEXT_MENU'];
 
 /**
  * A class which manages a dock panel and a related side bar. This is used for the left and right
@@ -138,14 +135,6 @@ export class SidePanelHandler {
 
     @inject(SidePanelItemVisibility)
     protected readonly itemVisibility: SidePanelItemVisibility;
-
-    @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
-
-    @inject(MenuModelRegistry)
-    protected readonly menuModelRegistry: MenuModelRegistry;
-
-    protected readonly toDisposeOnItemsContextMenu = new DisposableCollection();
 
     /**
      * Create the side bar and dock panel widgets.
@@ -297,29 +286,27 @@ export class SidePanelHandler {
         }
         e.stopPropagation();
         e.preventDefault();
-        this.toDisposeOnItemsContextMenu.dispose();
-        const menuPath = [...SIDE_PANEL_ITEMS_CONTEXT_MENU, this.side];
-        this.tabBar.titles.forEach((title, index) => {
-            // Unlabeled, so the per-item commands stay out of the command palette.
-            const command = { id: `sidePanel.${this.side}.toggleItem.${title.owner.id}` };
-            this.toDisposeOnItemsContextMenu.push(this.commandRegistry.registerCommand(command, {
-                execute: () => this.toggleItem(title),
-                isEnabled: () => this.itemVisibility.isHidden(title.owner.id) || this.tabBar.canHideTitle(title),
-                isToggled: () => !this.itemVisibility.isHidden(title.owner.id)
-            }));
-            this.toDisposeOnItemsContextMenu.push(this.menuModelRegistry.registerMenuAction(menuPath, {
-                commandId: command.id,
-                label: title.label || title.caption,
-                order: index.toString().padStart(4, '0')
-            }));
-        });
+        const menu = new GroupImpl('sidePanelItems');
+        menu.addNode(...this.tabBar.titles.map((title, index) => this.createItemMenuNode(title, index)));
         this.contextMenuRenderer.render({
-            menuPath,
+            menu,
+            menuPath: ['side-panel-items'],
             anchor: e,
-            context: this.tabBar.node,
-            // Deferred so the chosen command still resolves when it runs after the menu closes.
-            onHide: () => setTimeout(() => this.toDisposeOnItemsContextMenu.dispose())
+            context: this.tabBar.node
         });
+    }
+
+    protected createItemMenuNode(title: Title<Widget>, index: number): CommandMenu {
+        const widgetId = title.owner.id;
+        return {
+            id: widgetId,
+            label: title.label || title.caption,
+            sortString: index.toString().padStart(4, '0'),
+            isVisible: () => true,
+            isEnabled: () => this.itemVisibility.isHidden(widgetId) || this.tabBar.canHideTitle(title),
+            isToggled: () => !this.itemVisibility.isHidden(widgetId),
+            run: async () => this.toggleItem(title)
+        };
     }
 
     protected toggleItem(title: Title<Widget>): void {

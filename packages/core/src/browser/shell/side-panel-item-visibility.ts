@@ -38,6 +38,10 @@ export interface SidePanelItemVisibility {
     reset(): void;
 }
 
+/**
+ * To keep the user's choices somewhere other than local storage, override `load()` and `save()`
+ * rather than rebinding `LocalStorageService`, which every other consumer of it shares.
+ */
 @injectable()
 export class SidePanelItemVisibilityImpl implements SidePanelItemVisibility {
 
@@ -94,6 +98,11 @@ export class SidePanelItemVisibilityImpl implements SidePanelItemVisibility {
     /**
      * Whether an item the user has neither hidden nor shown starts hidden. Override this to
      * give an application its own defaults.
+     *
+     * Defaults are not limited to leaving one item visible per side the way the user's choices are,
+     * so an application can start every item on a side hidden. Expanding a side panel without naming
+     * a view can still open a hidden item, through the last active index or the first tab, and its
+     * tab then shows while it is current, the same as opening it by command.
      */
     protected isHiddenByDefault(widgetId: string): boolean {
         return false;
