@@ -289,7 +289,8 @@ describe('File Changeset Functions Cancellation Tests', () => {
                 stale: true,
                 recordRead: async () => { tracker.stale = false; },
                 isStale: async () => tracker.stale,
-                getChangedFiles: async () => []
+                getChangedFiles: async () => [],
+                forceRefresh: async () => { tracker.stale = false; return []; }
             };
             container.bind(FileReadTracker).toConstantValue(tracker);
             return tracker;
