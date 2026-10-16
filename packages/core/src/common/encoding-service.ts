@@ -178,7 +178,7 @@ export class EncodingService {
 
         // Auto guess encoding if configured
         if (autoGuessEncoding && !seemsBinary && !encoding && buffer) {
-            const guessedEncoding = await this.guessEncodingByBuffer(buffer.slice(0, bytesRead));
+            const guessedEncoding = await this.guessEncodingByBuffer(buffer.subarray(0, bytesRead));
             return {
                 seemsBinary: false,
                 encoding: guessedEncoding
@@ -223,7 +223,12 @@ export class EncodingService {
     protected async guessEncodingByBuffer(buffer: Buffer): Promise<string | undefined> {
         const jschardet = await import('jschardet');
 
-        const guessed = jschardet.detect(buffer.slice(0, AUTO_ENCODING_GUESS_MAX_BYTES)); // ensure to limit buffer for guessing due to https://github.com/aadsm/jschardet/issues/53
+        // This `jschardet` call will convert the input to a binary string if it is a Buffer: https://github.com/aadsm/jschardet/blob/v2.1.1/src/index.js#L36-L40
+        // Since we are using `safe-buffer` instead of the global Buffer we convert it before passing it to prevent unwanted issues
+        const guessed = jschardet.detect(
+            // Use `subarray` to ensure to limit buffer for guessing due to https://github.com/aadsm/jschardet/issues/53
+            buffer.subarray(0, AUTO_ENCODING_GUESS_MAX_BYTES).toString('binary')
+        );
         if (!guessed || !guessed.encoding) {
             return undefined;
         }
