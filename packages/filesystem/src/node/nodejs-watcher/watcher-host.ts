@@ -34,6 +34,8 @@ export interface WatchTarget {
     readonly directory: string;
     /** The requested path resolved: `directory` itself, or one file inside it. */
     readonly realPath: string;
+    /** Whether `realPath` exists. */
+    readonly exists: boolean;
 }
 
 /** Every file system and platform rule a watcher needs, in one place a test can substitute. */
@@ -61,7 +63,7 @@ export class WatcherHost {
     async resolveTarget(fsPath: string): Promise<WatchTarget> {
         const realPath = await fs.promises.realpath(fsPath).catch(() => fsPath);
         const stat = await fs.promises.stat(realPath).catch(() => undefined);
-        return { directory: stat && !stat.isDirectory() ? path.dirname(realPath) : realPath, realPath };
+        return { directory: stat && !stat.isDirectory() ? path.dirname(realPath) : realPath, realPath, exists: stat !== undefined };
     }
 
     watch(directory: string, listener: WatchEventListener): fs.FSWatcher {

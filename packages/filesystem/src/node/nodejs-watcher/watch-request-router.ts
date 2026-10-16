@@ -26,6 +26,8 @@ import { WatcherHost } from './watcher-host';
 export interface DirectoryWatchRequest extends WatchRequest {
     /** Where `path` points: the watched directory (every child) or one file in it. Reports use `path`. */
     readonly realPath: string;
+    /** Whether the client takes `path` for existing: read when it asked, then kept to what it was last told. */
+    readonly exists: boolean;
 }
 
 /** A resolved change to a direct child of the watched directory. */
@@ -87,11 +89,8 @@ export class WatchRequestRouter {
         return taken;
     }
 
-    /** Lets the adopted requests hear changes and, if `report` is set, reports their path added where it exists. */
-    admitAdopted(children: ReadonlySet<string>, report: boolean): void {
-        if (report) {
-            this.reportWatchedPath(FileChangeType.ADDED, Array.from(this.adopted.values()).filter(request => this.knows(request, children)));
-        }
+    /** Lets the adopted requests hear changes. */
+    admitAdopted(): void {
         this.adopted.forEach((request, watcherId) => this.requests.set(watcherId, request));
         this.adopted.clear();
     }
@@ -104,11 +103,6 @@ export class WatchRequestRouter {
     /** @returns `true` if every request is for `fsPath` itself rather than for something inside it. */
     allFor(fsPath: string): boolean {
         return [...this.requests.values(), ...this.adopted.values()].every(request => this.host.samePath(request.realPath, fsPath));
-    }
-
-    /** The requests that `include` accepts. */
-    matching(include: (request: DirectoryWatchRequest, watcherId: number) => boolean): DirectoryWatchRequest[] {
-        return Array.from(this.requests).filter(([watcherId, request]) => include(request, watcherId)).map(([, request]) => request);
     }
 
     /** @returns `true` if the request is for the watched directory, rather than for one file in it. */
@@ -126,24 +120,43 @@ export class WatchRequestRouter {
         }
     }
 
-    /** Reports changes to direct children, mapped and filtered per request, to the requests `include` accepts. */
-    report(changes: readonly ResolvedChange[], include: (request: DirectoryWatchRequest) => boolean = () => true): void {
+    /** Reports changes to direct children, mapped and filtered per request. */
+    report(changes: readonly ResolvedChange[]): void {
         const reported: ReportedChange[] = [];
-        for (const request of this.matching(include)) {
+        for (const [watcherId, request] of this.requests) {
             for (const { fileName, type, pathRemains } of changes) {
                 const childPath = this.resolveChildPath(request, fileName);
-                // Excludes filter children, never the path a client explicitly asked to watch.
-                if (childPath && (childPath === request.path || !this.isIgnored(request, childPath))) {
-                    reported.push({ clientId: request.clientId, filePath: childPath, type: pathRemains && !this.watchesDirectory(request) ? FileChangeType.UPDATED : type });
+                if (childPath === request.path) {
+                    this.tell(reported, watcherId, pathRemains ? FileChangeType.UPDATED : type);
+                } else if (childPath && !this.isIgnored(request, childPath)) {
+                    // Excludes filter children, never the path a client explicitly asked to watch.
+                    reported.push({ clientId: request.clientId, filePath: childPath, type });
                 }
             }
         }
         this.emit(reported);
     }
 
-    /** Reports a change to the watched path itself, which each request hears about under its own path. */
-    reportWatchedPath(type: FileChangeType, requests: Iterable<DirectoryWatchRequest> = this.requests.values()): void {
-        this.emit(Array.from(requests, request => ({ clientId: request.clientId, filePath: request.path, type })));
+    /** Tells each request where `exists` differs from what it takes its own path for, so it hears of a loss or a recovery once. */
+    reconcile(exists: (request: DirectoryWatchRequest) => boolean): void {
+        const reported: ReportedChange[] = [];
+        for (const [watcherId, request] of this.requests) {
+            this.tell(reported, watcherId, exists(request) ? FileChangeType.ADDED : FileChangeType.DELETED);
+        }
+        this.emit(reported);
+    }
+
+    /** Adds a change to a request's own path, unless the client already takes the path for what it reports. */
+    private tell(reported: ReportedChange[], watcherId: number, type: FileChangeType): void {
+        const request = this.requests.get(watcherId)!;
+        if (type !== FileChangeType.UPDATED) {
+            const exists = type === FileChangeType.ADDED;
+            if (request.exists === exists) {
+                return;
+            }
+            this.requests.set(watcherId, { ...request, exists });
+        }
+        reported.push({ clientId: request.clientId, filePath: request.path, type });
     }
 
     /** Notifies each client once per watched path, so overlapping requests do not report twice. */

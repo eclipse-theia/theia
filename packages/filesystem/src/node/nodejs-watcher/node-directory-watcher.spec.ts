@@ -151,12 +151,18 @@ class Sandbox extends TempDir implements FileSystemWatcherServiceClient {
      * the path to, which only differs when a symlink is involved.
      */
     directory(directoryPath = this.root, clientId = 1, ignored: string[] = [], realPath = directoryPath): DirectoryWatchRequest {
-        return { clientId, path: directoryPath, ignored, realPath };
+        // Whether the path exists is read when the request is made, as the provider does.
+        return { clientId, path: directoryPath, ignored, realPath, exists: fs.existsSync(directoryPath) };
     }
 
     /** A request for a single file, which resolves to the file rather than to the directory holding it. */
     file(filePath: string, clientId = 1, ignored: string[] = []): DirectoryWatchRequest {
         return { ...this.directory(filePath, clientId, ignored), realPath: filePath };
+    }
+
+    /** The request as a re-key moves it: made while its path was missing, it waits for it. */
+    waiting(request: DirectoryWatchRequest): DirectoryWatchRequest {
+        return { ...request, exists: false };
     }
 
     /** A watcher whose events the test feeds in, already started. */
@@ -803,7 +809,7 @@ describe('node-directory-watcher', function (): void {
             await box.expect(1, 'deleted cfg');
 
             box.host.duringNextRead = () => {
-                watcher.adoptRequests(new Map([[7, box.file(file, 2)]]));
+                watcher.adoptRequests(new Map([[7, box.waiting(box.file(file, 2))]]));
                 box.remove('cfg');
             };
             box.mkdir('cfg');
@@ -930,6 +936,71 @@ describe('node-directory-watcher', function (): void {
 
             await box.expect(1, 'added later');
             await box.expect(2, 'deleted later', 'added later');
+        });
+
+        it('tells a request it went when it goes before the first handle opens', async () => {
+            const target = box.mkdir('ws');
+            box.host.refuseToOpen = true;
+            box.host.expectMissing(target);
+            box.starting(target, box.directory(target));
+            await wait(TIMINGS.existencePollDelay * 2);
+            box.remove('ws');
+            await box.host.whenMissing;
+            await box.expect(1, 'deleted ws');
+
+            box.host.refuseToOpen = false;
+            box.mkdir('ws');
+
+            await box.expect(1, 'deleted ws', 'added ws');
+        });
+
+        it('tells a request it appeared when it appears before the first start finds it', async () => {
+            const target = box.path('ws');
+            const request = box.directory(target);
+            box.mkdir('ws');
+            await box.watching(target, request);
+
+            await box.expect(1, 'added ws');
+        });
+
+        it('tells a file request its file went when it goes before the first read', async () => {
+            const file = box.write('a.txt');
+            box.host.duringNextRead = () => box.remove('a.txt');
+            await box.watching(box.root, box.file(file));
+
+            await box.expect(1, 'deleted a.txt');
+        });
+
+        it('tells a request that joined while it was briefly moved away that it is back, before a change inside it', async () => {
+            const target = box.mkdir('ws');
+            const watcher = await box.watching(target, box.directory(target));
+            fs.renameSync(target, box.path('ws-aside'));
+            watcher.addRequest(1, box.directory(target, 2));
+            fs.renameSync(box.path('ws-aside'), target);
+            box.write('ws', 'a.txt');
+            box.fire('rename', 'a.txt');
+
+            await box.expect(1, 'added ws/a.txt');
+            await box.expect(2, 'added ws', 'added ws/a.txt');
+        });
+
+        it('tells a request that joined while it was taken for missing that it went again', async () => {
+            const target = box.mkdir('ws');
+            const watcher = await box.watching(target, box.directory(target));
+            box.remove('ws');
+            box.fire('rename', 'ws');
+            await box.expect(1, 'deleted ws');
+
+            // Joins while it is back for a moment, before the watcher looks again.
+            box.mkdir('ws');
+            watcher.addRequest(1, box.directory(target, 2));
+            box.remove('ws');
+            await box.expect(2, 'deleted ws');
+
+            box.mkdir('ws');
+
+            await box.expect(1, 'deleted ws', 'added ws');
+            await box.expect(2, 'deleted ws', 'added ws');
         });
 
         it('is not lost when an event names it, as macOS reports any change inside it', async () => {
@@ -1162,7 +1233,7 @@ describe('node-directory-watcher', function (): void {
                 box.fire('rename', 'tmp');
                 box.fire('rename', 'Foo.txt');
 
-                await box.expect(1, 'added foo.txt', 'updated foo.txt');
+                await box.expect(1, 'updated foo.txt');
             } finally {
                 watcher.dispose();
             }
@@ -1179,7 +1250,7 @@ describe('node-directory-watcher', function (): void {
             box.fire('change', null);
             box.fire('change', 'Foo.txt');
 
-            await box.expect(1, 'added foo.txt');
+            await box.expect(1, 'updated foo.txt');
         });
 
         it('tells names that differ only in case apart where a directory does', async function (): Promise<void> {
@@ -1254,7 +1325,7 @@ describe('node-directory-watcher', function (): void {
 
             box.write('x.txt');
             box.fire('rename', 'x.txt');
-            watcher.adoptRequests(new Map([[1, box.file(box.path('x.txt'), 2)]]));
+            watcher.adoptRequests(new Map([[1, box.waiting(box.file(box.path('x.txt'), 2))]]));
 
             await box.expect(1, 'added x.txt');
             await box.expect(2, 'added x.txt');
@@ -1264,7 +1335,7 @@ describe('node-directory-watcher', function (): void {
             const file = box.write('x.txt');
             const watcher = await box.watching(box.root, box.directory());
 
-            watcher.adoptRequests(new Map([[1, box.file(file, 2)], [2, box.file(box.path('missing.txt'), 3)]]));
+            watcher.adoptRequests(new Map([[1, box.waiting(box.file(file, 2))], [2, box.waiting(box.file(box.path('missing.txt'), 3))]]));
 
             await box.expect(2, 'added x.txt');
             await box.expect(3);
