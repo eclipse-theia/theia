@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import {
     CompactionMessage, isCompactionResponsePart, isServerToolCallResponsePart, isTextResponsePart, isThinkingResponsePart, isToolCallResponsePart,
     isUsageResponsePart, LanguageModelMessage, LanguageModelResponse, LanguageModelStreamResponsePart, ToolCallExecutor, ToolCallExecutorImpl, UserRequest
@@ -25,6 +26,7 @@ import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { OpenAiModelUtils } from './openai-model-utils';
 import { OpenAI } from 'openai';
+import type { ResponseStreamEvent } from 'openai/resources/responses/responses';
 import { OPENAI_FUNCTION_CALL_REASONING_DATA_KEY, OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools';
 
@@ -944,6 +946,55 @@ describe('OpenAiResponseApiUtils', () => {
             expect(serialized).to.contain('user C');
         });
     });
+
+    for (const nameSource of ['added', 'done', 'arguments'] as const) {
+        it(`preserves the streamed function name from the ${nameSource} event`, async () => {
+            const item = { id: 'item-1', call_id: 'call-1', type: 'function_call' as const, name: 'lookup', arguments: '{"query":"test"}' };
+            const argumentsDone = {
+                type: 'response.function_call_arguments.done', item_id: item.id,
+                arguments: item.arguments, output_index: 0, sequence_number: 1
+            } satisfies ResponseStreamEvent;
+            const payloads: Record<string, unknown>[] = [];
+            const streams = [
+                [
+                    ...(nameSource === 'added' ? [{ type: 'response.output_item.added', item: { ...item, arguments: '' } }] : []),
+                    nameSource === 'arguments' ? { ...argumentsDone, name: item.name } : argumentsDone,
+                    { type: 'response.output_item.done', item },
+                    { type: 'response.completed', response: {} }
+                ],
+                [{ type: 'response.completed', response: {} }]
+            ];
+            const openai = {
+                responses: {
+                    stream: (payload: Record<string, unknown>) => {
+                        payloads.push(payload);
+                        return toStream(streams.shift() ?? []);
+                    }
+                }
+            };
+            const handler = sinon.stub().resolves('found');
+            const request: UserRequest = {
+                sessionId: 'session-1', requestId: 'request-1',
+                messages: [{ actor: 'user', type: 'text', text: 'hello' }],
+                tools: [{ id: 'lookup', name: 'lookup', parameters: { type: 'object', properties: {} }, handler }]
+            };
+            const response = await utils.handleRequest(openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer', 'openai/gpt-5', true);
+            const parts: LanguageModelStreamResponsePart[] = [];
+            if ('stream' in response) {
+                for await (const part of response.stream) {
+                    parts.push(part);
+                }
+            }
+            sinon.assert.calledOnce(handler);
+            expect(handler.firstCall.args[0]).to.equal(item.arguments);
+            const finished = parts.filter(isToolCallResponsePart).flatMap(part => part.tool_calls).find(call => call.finished);
+            expect(finished?.function?.name).to.equal('lookup');
+            expect(finished?.result).to.equal('found');
+            expect(payloads).to.have.lengthOf(2);
+            expect(payloads[1].input).to.deep.include({ type: 'function_call', call_id: item.call_id, name: item.name, arguments: item.arguments });
+            expect(payloads[1].input).to.deep.include({ type: 'function_call_output', call_id: item.call_id, output: 'found' });
+        });
+    }
 
     it('executes the tool calls of a single turn concurrently', async () => {
         const streams = [
