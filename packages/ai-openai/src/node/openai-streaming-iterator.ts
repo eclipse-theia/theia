@@ -69,8 +69,9 @@ export class StreamingAsyncIterator extends AbstractStreamingResponseIterator {
                 // Ensure tool_calls have type set (required by #emitToolCallDoneEvent and finalizeChatCompletion)
                 if (choice?.message?.tool_calls) {
                     for (const call of choice.message.tool_calls) {
-                        if (call.type === undefined) {
-                            call.type = 'function';
+                        const providerCall: { type?: string; function?: unknown } = call;
+                        if (providerCall.type === undefined && providerCall.function) {
+                            providerCall.type = 'function';
                         }
                     }
                 }

@@ -766,12 +766,13 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
     }
 
     protected async handleFunctionCallArgsDone(event: ResponseFunctionCallArgumentsDoneEvent): Promise<void> {
+        const name = 'name' in event && typeof event.name === 'string' ? event.name : '';
         let toolCall = this.currentToolCalls.get(event.item_id);
         if (!toolCall) {
             // Create if we didn't see the added event
             toolCall = {
                 id: event.item_id,
-                name: event.name || '',
+                name,
                 arguments: event.arguments || '',
                 executed: false,
                 reasoningItems: this.pendingReasoningItems.splice(0)
@@ -783,14 +784,14 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
                     id: event.item_id,
                     finished: false,
                     function: {
-                        name: event.name || '',
+                        name,
                         arguments: event.arguments || ''
                     }
                 }]
             });
         } else {
             // Update with final values
-            toolCall.name = event.name || toolCall.name;
+            toolCall.name = name || toolCall.name;
             toolCall.arguments = event.arguments || toolCall.arguments;
         }
     }
@@ -854,8 +855,12 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
     protected handleFunctionCallDone(functionCall: ResponseFunctionToolCall): void {
         if (!functionCall.id) { this.logger.warn('Unexpected absence of ID for call ID', functionCall.call_id); return; }
         const toolCall = this.currentToolCalls.get(functionCall.id);
-        if (toolCall && !toolCall.call_id && functionCall.call_id) {
-            toolCall.call_id = functionCall.call_id;
+        if (toolCall) {
+            toolCall.name = functionCall.name || toolCall.name;
+            toolCall.arguments = functionCall.arguments || toolCall.arguments;
+            if (!toolCall.call_id && functionCall.call_id) {
+                toolCall.call_id = functionCall.call_id;
+            }
         }
     }
 
