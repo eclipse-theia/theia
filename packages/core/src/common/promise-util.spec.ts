@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import * as assert from 'assert/strict';
-import { Deferred, firstTrue, waitForEvent } from './promise-util';
+import { Deferred, firstTrue, timeout, waitForEvent } from './promise-util';
 import { Emitter } from './event';
-import { CancellationError } from './cancellation';
+import { CancellationError, CancellationToken } from './cancellation';
 
 describe('promise-util', () => {
 
@@ -36,6 +36,22 @@ describe('promise-util', () => {
     });
 
     type ExecutionHandler<T> = (resolve: (value: T) => void, reject: (error: unknown) => void) => void;
+
+    describe('timeout', () => {
+        it('should release its cancellation listener once it elapsed', async () => {
+            let listeners = 0;
+            const token: CancellationToken = {
+                isCancellationRequested: false,
+                onCancellationRequested: () => {
+                    listeners++;
+                    return { dispose: () => listeners-- };
+                }
+            };
+            await timeout(1, token);
+            await timeout(1, token);
+            assert.equal(listeners, 0);
+        });
+    });
 
     describe('firstTrue', () => {
         function createSequentialPromises<T>(...executionHandlers: ExecutionHandler<T>[]): Promise<T>[] {
