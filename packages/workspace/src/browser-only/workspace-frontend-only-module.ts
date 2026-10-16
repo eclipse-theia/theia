@@ -17,6 +17,9 @@
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { BrowserOnlyWorkspaceServer } from './browser-only-workspace-server';
 import { WorkspaceServer } from '../common';
+import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { LocalFolderFrontendContribution } from './local-folder-frontend-contribution';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bind(BrowserOnlyWorkspaceServer).toSelf().inSingletonScope();
@@ -25,4 +28,8 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     } else {
         bind(WorkspaceServer).toService(BrowserOnlyWorkspaceServer);
     }
+    bind(LocalFolderFrontendContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(LocalFolderFrontendContribution);
+    bind(MenuContribution).toService(LocalFolderFrontendContribution);
+    bind(FrontendApplicationContribution).toService(LocalFolderFrontendContribution);
 });
