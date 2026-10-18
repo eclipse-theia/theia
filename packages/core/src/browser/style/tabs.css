@@ -236,8 +236,8 @@
   -ms-user-select: none;
 }
 
-.lm-TabBar.theia-app-centers .lm-TabBar-tab.lm-mod-closable.closeIcon-start > .lm-TabBar-tabCloseIcon,
-.lm-TabBar.theia-app-centers .lm-TabBar-tab.theia-mod-pinned.closeIcon-start > .lm-TabBar-tabCloseIcon {
+.lm-TabBar.theia-app-centers .lm-TabBar-tab.lm-mod-closable.closeIcon-start>.lm-TabBar-tabCloseIcon,
+.lm-TabBar.theia-app-centers .lm-TabBar-tab.theia-mod-pinned.closeIcon-start>.lm-TabBar-tabCloseIcon {
   margin-left: inherit;
   margin-right: 4px;
 }
@@ -287,10 +287,39 @@
   content: "\ebb2";
 }
 
+/*
+ * Shrunk pinned tabs are sticky and aligned on the left edge of the tab bar. Each
+ * pinned tab sticks at its own natural position, carried by the
+ * `--theia-pinned-tab-offset` custom property set by the tab bar, so that the
+ * pinned tabs stack instead of overlapping.
+ */
 .lm-TabBar.theia-app-centers.theia-pinned-tab-shrink .lm-TabBar-tab.theia-mod-pinned {
-  order: -1;
   position: sticky;
+  left: var(--theia-pinned-tab-offset, 0);
+}
+
+/*
+ * While a tab is being dragged, lumino positions the tabs with inline `left`
+ * styles (relative offsets, see `.lm-TabBar.lm-mod-dragging` in lumino's
+ * tabbar.css). The sticky offset must not apply then, and the sticky rule above
+ * has a higher specificity than lumino's dragging rules, so it is overridden
+ * here. The override is deliberately not `!important` so that lumino's inline
+ * drag positions still take precedence, and lumino's `transition: left` slides
+ * the pinned tabs for the rest of the drag.
+ */
+.lm-TabBar.theia-app-centers.theia-pinned-tab-shrink.lm-mod-dragging .lm-TabBar-tab.theia-mod-pinned {
+  position: relative;
   left: 0;
+}
+
+/*
+ * Switching a pinned tab from sticky to relative positioning changes the
+ * meaning of its `left` offset, so the switch itself must not be animated:
+ * otherwise the tab would jump by its sticky offset and slide back. The tab bar
+ * adds this class for the first frame of a drag only.
+ */
+.lm-TabBar.theia-app-centers.theia-pinned-tab-shrink.lm-mod-dragging.theia-pinned-tab-drag-start .lm-TabBar-tab.theia-mod-pinned {
+  transition: none;
 }
 
 .lm-TabBar.theia-app-centers.theia-pinned-tab-shrink .lm-TabBar-tab.theia-mod-pinned>.lm-TabBar-tabCloseIcon {
@@ -438,7 +467,7 @@
   cursor: pointer;
 }
 
-.lm-TabBar-toolbar > :not(.item.enabled) > .action-label {
+.lm-TabBar-toolbar> :not(.item.enabled)>.action-label {
   background: transparent;
   cursor: default;
 }

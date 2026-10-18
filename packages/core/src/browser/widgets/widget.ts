@@ -17,7 +17,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, decorate, unmanaged } from 'inversify';
-import { Title, Widget } from '@lumino/widgets';
+import { DockPanel, TabBar, Title, Widget } from '@lumino/widgets';
+import { find } from '@lumino/algorithm';
 import { Message, MessageLoop } from '@lumino/messaging';
 import { Emitter, Event, Disposable, DisposableCollection, MaybePromise, isObject } from '../../common';
 import { KeyCode, KeysOrKeyCodes } from '../keyboard/keys';
@@ -389,6 +390,38 @@ export function isPinned(title: Title<Widget>): boolean {
     return pinnedState;
 }
 
+/**
+ * Find the tab bar containing the given title, if the title is docked in a dock panel.
+ */
+function findOwningTabBar(title: Title<Widget>): TabBar<Widget> | undefined {
+    let parent = title.owner.parent;
+    while (parent) {
+        if (parent instanceof DockPanel) {
+            return find(parent.tabBars(), bar => bar.titles.includes(title));
+        }
+        parent = parent.parent;
+    }
+    return undefined;
+}
+
+/**
+ * Move the title within its tab bar so that pinned titles precede unpinned ones,
+ * keeping the model order in sync with the visual order of the tab bar.
+ * A pinned title is placed at the end of the pinned group, an unpinned title
+ * at the start of the unpinned group.
+ */
+function moveToPinnedSection(title: Title<Widget>): void {
+    const tabBar = findOwningTabBar(title);
+    if (!tabBar) {
+        return;
+    }
+    const titles = tabBar.titles;
+    const index = isPinned(title)
+        ? titles.findIndex(t => !isPinned(t))
+        : titles.filter(t => isPinned(t)).length;
+    tabBar.insertTab(index === -1 ? titles.length : index, title);
+}
+
 export function pin(title: Title<Widget>): void {
     const l = () => {
         pinnedTitles.delete(title);
@@ -399,6 +432,7 @@ export function pin(title: Title<Widget>): void {
     if (!title.className.includes(PINNED_CLASS)) {
         title.className += ` ${PINNED_CLASS}`;
     }
+    moveToPinnedSection(title);
 }
 
 export function unpin(title: Title<Widget>): void {
@@ -411,6 +445,7 @@ export function unpin(title: Title<Widget>): void {
         title.closable = true;
     }
     title.className = title.className.replace(PINNED_CLASS, '').trim();
+    moveToPinnedSection(title);
 }
 
 export function isLocked(title: Title<Widget>): boolean {
