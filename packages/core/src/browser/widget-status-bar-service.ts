@@ -18,7 +18,7 @@ import { inject, injectable, named } from 'inversify';
 import { Widget } from './widgets';
 import { StatusBar } from './status-bar';
 import { FrontendApplicationContribution } from './frontend-application-contribution';
-import { ContributionProvider } from '../common';
+import { ContributionProvider, Disposable, DisposableCollection } from '../common';
 import { FrontendApplication } from './frontend-application';
 
 export const WidgetStatusBarContribution = Symbol('WidgetStatusBarContribution');
@@ -58,6 +58,8 @@ export class WidgetStatusBarService implements FrontendApplicationContribution {
     @inject(StatusBar)
     protected readonly statusBar: StatusBar;
 
+    protected readonly toDisposeOnShow = new DisposableCollection();
+
     onStart(app: FrontendApplication): void {
         app.shell.onDidChangeCurrentWidget(event => {
             if (event.newValue) {
@@ -71,6 +73,11 @@ export class WidgetStatusBarService implements FrontendApplicationContribution {
         // If any contribution can handle the widget, activate it
         // If none can, keep everything as is
         if (contributions.some(contribution => contribution.canHandle(widget))) {
+            this.toDisposeOnShow.dispose();
+            // Remove the items of a closed widget, as the next current widget might not be handled by any contribution
+            const onDisposed = () => this.hide();
+            widget.disposed.connect(onDisposed);
+            this.toDisposeOnShow.push(Disposable.create(() => widget.disposed.disconnect(onDisposed)));
             for (const contribution of contributions) {
                 // Deactivate all contributions
                 contribution.deactivate(this.statusBar);
@@ -79,6 +86,13 @@ export class WidgetStatusBarService implements FrontendApplicationContribution {
                     contribution.activate(this.statusBar, widget);
                 }
             }
+        }
+    }
+
+    protected hide(): void {
+        this.toDisposeOnShow.dispose();
+        for (const contribution of this.contributionProvider.getContributions()) {
+            contribution.deactivate(this.statusBar);
         }
     }
 }
