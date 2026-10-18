@@ -63,6 +63,20 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
         this._source = this.raw.source && this.session.getSource(this.raw.source);
     }
 
+    /**
+     * Whether the debug adapter supports restarting frames at all.
+     */
+    get supportsRestartFrame(): boolean {
+        return !!this.session.capabilities.supportsRestartFrame;
+    }
+
+    /**
+     * Whether this frame can be restarted. Per the debug protocol, `canRestart` defaults to `true` if the adapter supports restarting frames.
+     */
+    get canRestart(): boolean {
+        return this.supportsRestartFrame && this.raw.canRestart !== false;
+    }
+
     async restart(): Promise<void> {
         await this.session.sendRequest('restartFrame', this.toArgs({
             threadId: this.thread.id
