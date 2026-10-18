@@ -159,8 +159,7 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
                 tabBar.dynamicTabOptions = getDynamicTabOptions();
             }
             if (change.preferenceName === 'workbench.editor.pinnedTabSizing') {
-                tabBar.dynamicTabOptions = getDynamicTabOptions();
-                tabBar.pinnedTabSizingMode = getPinnedTabSizingMode();
+                tabBar.updateTabOptions(getDynamicTabOptions(), getPinnedTabSizingMode());
             }
         });
         tabBar.disposed.connect(() => {

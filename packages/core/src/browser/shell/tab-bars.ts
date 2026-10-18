@@ -786,6 +786,19 @@ export class ScrollableTabBar extends TabBar<Widget> {
         this.updateTabs();
     }
 
+    /**
+     * Updates both dynamic tab options and pinned tab sizing mode with a single tab bar refresh.
+     */
+    updateTabOptions(dynamicTabOptions: ScrollableTabBar.Options | undefined, pinnedTabSizingMode: 'normal' | 'shrink' | undefined): void {
+        this._dynamicTabOptions = dynamicTabOptions;
+        this._pinnedTabSizingMode = pinnedTabSizingMode;
+        this.node.classList.remove('theia-pinned-tab-shrink');
+        if (pinnedTabSizingMode === 'shrink') {
+            this.node.classList.add('theia-pinned-tab-shrink');
+        }
+        this.updateTabs();
+    }
+
     override insertTab(index: number, value: Title<Widget> | Title.IOptions<Widget>): Title<Widget> {
         return super.insertTab(this.adjustIndexForPinnedTabs(index, value), value);
     }
