@@ -70,6 +70,9 @@ class TestTreeWidget extends TreeWidget {
     doUpdateRowsNow(): void {
         this.doUpdateRows();
     }
+    roundTripThroughStorage(node: TreeNode): TreeNode {
+        return this.inflateFromStorage(JSON.parse(JSON.stringify(this.deflateForStorage(node))));
+    }
 }
 
 function createTreeRoot(...children: TreeNode[]): CompositeTreeNode {
@@ -190,6 +193,23 @@ describe('TreeWidget', () => {
 
             render(2);
             expect(widget.scrollToSelectedCount).to.equal(scrollsAfterMount + 1);
+        });
+    });
+
+    describe('storage', () => {
+
+        it('restores the root and its children as tree nodes', () => {
+            const widget = new TestTreeWidget(defaultTreeProps, {} as TreeModel, {} as ContextMenuRenderer);
+            try {
+                const restored = widget.roundTripThroughStorage(createTreeRoot(leaf('a'))) as CompositeTreeNode;
+
+                expect(TreeNode.is(restored)).to.be.true;
+                expect(restored.parent).to.be.undefined;
+                expect(TreeNode.is(restored.children[0])).to.be.true;
+                expect(restored.children[0].parent).to.equal(restored);
+            } finally {
+                widget.dispose();
+            }
         });
     });
 

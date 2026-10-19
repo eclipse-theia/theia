@@ -151,7 +151,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
     protected getRootNames(roots: string[]): { [root: string]: string } {
         const names: { [root: string]: string } = {};
         for (const root of roots) {
-            const name = this.workspaceService.getWorkspaceRootName(new URI(root));
+            const name = this.workspaceService.getConfiguredRootName(new URI(root));
             if (name) {
                 names[root] = name;
             }
@@ -184,7 +184,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
             const items = this.roots.map(root => {
                 const rootUri = Uri.parse(root);
-                const rootPathName = this.workspaceService.getWorkspaceRootName(new URI(root)) ?? rootUri.path.substring(rootUri.path.lastIndexOf('/') + 1);
+                const rootPathName = this.workspaceService.getConfiguredRootName(new URI(root)) ?? rootUri.path.substring(rootUri.path.lastIndexOf('/') + 1);
                 return {
                     label: rootPathName,
                     detail: rootUri.path,

@@ -39,7 +39,7 @@ export class WorkspaceRootNodeLabelProvider implements LabelProviderContribution
 
     /** Returns the name of the root, or `undefined` to fall back to the label of the file tree node. */
     getName(node: WorkspaceRootNode): string | undefined {
-        return this.workspaceService.getWorkspaceRootName(node.uri);
+        return this.workspaceService.getConfiguredRootName(node.uri);
     }
 
 }

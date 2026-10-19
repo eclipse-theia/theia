@@ -173,6 +173,10 @@ export class KeyboardLayoutService {
         if (input.shiftKey && producedBy(mapping.withShift, mapping.withShiftIsDeadKey)) {
             return 'shift';
         }
+        // Synthetic input, e.g. from test automation, can report the base character while Shift is held.
+        if (input.shiftKey && !altGraphActive && producedBy(mapping.value, mapping.valueIsDeadKey) && !!mapping.withShift && !mapping.withShiftIsDeadKey) {
+            return 'shift';
+        }
         return undefined;
     }
 

@@ -1508,9 +1508,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (node.selected) {
             node.selected = false;
         }
-        if (parent) {
-            node.parent = parent;
-        }
+        // Also the root, as a node without a `parent` is not a `TreeNode`.
+        node.parent = parent;
         if (Array.isArray(node.children)) {
             for (const child of node.children as TreeNode[]) {
                 this.inflateFromStorage(child, node);

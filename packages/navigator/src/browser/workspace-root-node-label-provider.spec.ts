@@ -50,7 +50,7 @@ describe('WorkspaceRootNodeLabelProvider', () => {
         Object.assign(labelProvider, {
             fileTreeLabelProvider: { canHandle: () => 101 } as unknown as FileTreeLabelProvider,
             workspaceService: {
-                getWorkspaceRootName: (uri: URI) => uri.isEqual(new URI(backend)) ? 'API Server' : undefined
+                getConfiguredRootName: (uri: URI) => uri.isEqual(new URI(backend)) ? 'API Server' : undefined
             } as unknown as WorkspaceService
         });
     });

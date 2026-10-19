@@ -51,7 +51,7 @@ describe('WorkspaceMainImpl', () => {
                 tryGetRoots: () => roots,
                 onWorkspaceChanged: workspaceChangedEmitter.event,
                 onWorkspaceLocationChanged: new Emitter().event,
-                getWorkspaceRootName: (uri: URI) => names.get(uri.toString())
+                getConfiguredRootName: (uri: URI) => names.get(uri.toString())
             }],
             [WorkspaceTrustService, {
                 getWorkspaceTrust: () => new Promise(() => { }),

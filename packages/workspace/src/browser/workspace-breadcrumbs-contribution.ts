@@ -31,7 +31,7 @@ export class WorkspaceBreadcrumbsContribution extends FilepathBreadcrumbsContrib
         const breadcrumbs = await super.computeBreadcrumbs(uri);
         // Show the name given to the workspace root in the workspace file on its breadcrumb, which is shown in a multi-root workspace
         const workspaceRoot = this.workspaceService.getWorkspaceRootUri(uri);
-        const rootName = workspaceRoot && this.workspaceService.getWorkspaceRootName(workspaceRoot);
+        const rootName = workspaceRoot && this.workspaceService.getConfiguredRootName(workspaceRoot);
         if (!rootName) {
             return breadcrumbs;
         }
