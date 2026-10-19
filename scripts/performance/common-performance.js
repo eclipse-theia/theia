@@ -44,6 +44,8 @@ const { resolve } = require('path');
 
 const performanceTag = braceText('Performance');
 const lcp = 'Largest Contentful Paint (LCP)';
+const workbenchVisible = 'Workbench visible';
+const frontendReady = 'Frontend ready';
 const frontendSettled = 'All frontend contributions settled';
 const backendSettled = 'All backend contributions settled';
 
@@ -72,6 +74,34 @@ function parseStopwatchLog(line) {
     return {
         activity: match[1].replace(LOGGER_PREFIX_RE, '').trim(),
         ms: parseFloat(match[2]),
+        secondsSinceStart: parseFloat(match[3]),
+        origin: match[4]
+    };
+}
+
+// Captures the start-up milestone logs emitted by the generated entry points, of the form
+//   "<component>: <milestone> [4.567 s since {electron main|backend process|frontend page} start]"
+// Group 1: component ("Electron main", "Backend server", "Backend main" or "Frontend")
+// Group 2: milestone description
+// Group 3: seconds since the process/page started
+// Group 4: the origin keyword
+const MILESTONE_LOG_RE = /(Electron main|Backend server|Backend main|Frontend): ([^\[\n]+?)\s+\[([\d.]+)\s*s since ([^\]]+) start\]/;
+
+/**
+ * Parse a single start-up milestone log line emitted by a generated entry point, if it matches the format.
+ *
+ * @param {string} line a log line to parse
+ * @returns {{component: string, milestone: string, secondsSinceStart: number, origin: string} | undefined}
+ *          the parsed milestone, or undefined if the line does not match
+ */
+function parseMilestoneLog(line) {
+    const match = MILESTONE_LOG_RE.exec(line);
+    if (!match) {
+        return undefined;
+    }
+    return {
+        component: match[1],
+        milestone: match[2].trim(),
         secondsSinceStart: parseFloat(match[3]),
         origin: match[4]
     };
@@ -243,6 +273,18 @@ function isLCP(event) {
 }
 
 /**
+ * Create a predicate that selects the user-timing mark of the given `name` in the trace.
+ * Theia's frontend `Stopwatch` emits `<measurement>-start` and `<measurement>-end` marks via
+ * `performance.mark()`, which Chromium records under the `blink.user_timing` category.
+ *
+ * @param {string} name the name of the `performance.mark()` to select
+ * @returns {EventPredicate} a predicate matching the user-timing mark
+ */
+function isUserTimingMark(name) {
+    return event => event.name === name && typeof event.cat === 'string' && event.cat.split(',').includes('blink.user_timing');
+}
+
+/**
  * Compute the duration, in seconds, to an `event` from a start event.
  *
  * @param {TraceEvent} event the duration end event
@@ -376,7 +418,11 @@ async function waitForFileStable(filePath, timeoutMs, pollIntervalMs = 250) {
  * can discover them alongside the predeclared metrics.
  */
 class ContributionCollector {
-    constructor() {
+    /**
+     * @param {string} [kind='Contribution'] the label prefixed to each activity in the summary
+     */
+    constructor(kind = 'Contribution') {
+        this.kind = kind;
         /** @type {Map<string, number[]>} activity -> durations (in seconds) across runs */
         this.observations = new Map();
     }
@@ -415,10 +461,10 @@ class ContributionCollector {
             }
         }
         if (subMillisecond.length > 0) {
-            console.log(`${performanceTag}${braceText(name)} Contributions under 1 ms: ${subMillisecond.sort().join(', ')}`);
+            console.log(`${performanceTag}${braceText(name)} ${this.kind}s under 1 ms: ${subMillisecond.sort().join(', ')}`);
         }
         for (const [activity, values] of significant) {
-            logSummary(name, `Contribution ${activity}`, values);
+            logSummary(name, `${this.kind} ${activity}`, values);
         }
     }
 }
@@ -429,7 +475,7 @@ module.exports = {
     calculateMean, calculateStandardDeviation,
     duration, logDuration, logSummary,
     braceText, delay, waitForFileStable,
-    lcp, frontendSettled, backendSettled,
-    isLCP, parseStopwatchLog,
+    lcp, workbenchVisible, frontendReady, frontendSettled, backendSettled,
+    isLCP, isUserTimingMark, parseStopwatchLog, parseMilestoneLog,
     ContributionCollector
 };
