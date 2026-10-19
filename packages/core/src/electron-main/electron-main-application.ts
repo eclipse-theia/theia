@@ -232,6 +232,11 @@ export class ElectronMainApplication {
 
     /** Used to temporarily store the reference to an early created main window */
     protected initialWindow?: BrowserWindow;
+    /**
+     * Settles once the early main window of `showInitialWindow` has been created, so that the main command,
+     * which no longer waits for the backend and may run first, reuses it instead of opening a second window.
+     */
+    protected initialWindowCreated?: Promise<void>;
 
     get config(): FrontendApplicationConfig {
         if (!this._config) {
@@ -385,7 +390,7 @@ export class ElectronMainApplication {
 
     protected showInitialWindow(urlToOpen: string | undefined): void {
         if (this.isShowWindowEarly() || this.isShowSplashScreen()) {
-            app.whenReady().then(async () => {
+            this.initialWindowCreated = app.whenReady().then(async () => {
                 const options = await this.getLastWindowOptions();
                 // If we want to show a splash screen, don't auto open the main window
                 if (this.isShowSplashScreen()) {
@@ -600,6 +605,10 @@ export class ElectronMainApplication {
     }
 
     protected async reuseOrCreateWindow(asyncOptions: MaybePromise<TheiaBrowserWindowOptions>): Promise<BrowserWindow> {
+        if (this.initialWindowCreated) {
+            await this.initialWindowCreated.catch(error => console.error('Failed to create the initial window.', error));
+            this.initialWindowCreated = undefined;
+        }
         if (!this.initialWindow) {
             return this.createWindow(asyncOptions);
         }
