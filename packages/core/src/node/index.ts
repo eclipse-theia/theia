@@ -23,5 +23,6 @@ export * from './cli';
 export * from './setting-service';
 export { FileSystemLocking } from './filesystem-locking';
 export { BundledResourceProvider } from './bundled-resource-provider';
+export { ProcessEnvironment } from './process-environment';
 export { BackendRequestAllowedContribution } from './request/backend-request-facade';
 export { HttpConnectionValidator } from './hosting/browser-connection-token';

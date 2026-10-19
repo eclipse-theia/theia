@@ -16,7 +16,7 @@
 
 import { join } from 'path';
 import { homedir } from 'os';
-import { injectable, inject, named } from 'inversify';
+import { injectable, inject, named, postConstruct } from 'inversify';
 import * as drivelist from 'drivelist';
 import { pathExists, mkdir } from 'fs-extra';
 import { EnvVariable, EnvVariablesServer } from '../../common/env-variables';
@@ -25,6 +25,7 @@ import { FileUri } from '../../common/file-uri';
 import { BackendApplicationPath } from '../backend-application';
 import { BackendApplicationConfigProvider } from '../backend-application-config-provider';
 import { ILogger } from '../../common/logger';
+import { ProcessEnvironment } from '../process-environment';
 
 @injectable()
 export class EnvVariablesServerImpl implements EnvVariablesServer {
@@ -37,9 +38,22 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
     @inject(ILogger) @named('core:EnvVariablesServerImpl')
     protected readonly logger: ILogger;
 
+    @inject(ProcessEnvironment)
+    protected readonly processEnvironment: ProcessEnvironment;
+
     constructor() {
         this.configDirUri = this.createConfigDirUri();
         this.configDirUri.then(configDirUri => this.logger.info(`Configuration directory URI: '${configDirUri}'`));
+        this.snapshotEnvironment();
+    }
+
+    @postConstruct()
+    protected init(): void {
+        // The environment may be completed with the user's login shell PATH after this process started.
+        this.processEnvironment.ready.then(() => this.snapshotEnvironment());
+    }
+
+    protected snapshotEnvironment(): void {
         const prEnv = process.env;
         Object.keys(prEnv).forEach((key: string) => {
             let keyName = key;
@@ -78,10 +92,12 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
     }
 
     async getVariables(): Promise<EnvVariable[]> {
+        await this.processEnvironment.ready;
         return Object.keys(this.envs).map(key => this.envs[key]);
     }
 
     async getValue(key: string): Promise<EnvVariable | undefined> {
+        await this.processEnvironment.ready;
         if (isWindows) {
             key = key.toLowerCase();
         }

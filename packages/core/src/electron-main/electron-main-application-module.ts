@@ -24,6 +24,7 @@ import { ElectronSecurityToken } from '../electron-common/electron-token';
 import { ElectronMainWindowService, electronMainWindowServicePath } from '../electron-common/electron-main-window-service';
 import { ElectronMainApplication, ElectronMainApplicationContribution, ElectronMainProcessArgv } from './electron-main-application';
 import { LaunchArgsStore } from './launch-args-store';
+import { ShellEnvironment, ShellEnvironmentImpl } from './shell-environment';
 import { ElectronMainWindowServiceImpl } from './electron-main-window-service-impl';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory, WindowApplicationConfig } from './theia-electron-window';
 import { TheiaMainApi } from './electron-api-main';
@@ -38,6 +39,8 @@ const electronSecurityToken: ElectronSecurityToken = { value: generateUuid() };
 
 export default new ContainerModule(bind => {
     bind(Stopwatch).toConstantValue(new SimpleStopwatch('electron main', () => performance.now()));
+    bind(ShellEnvironmentImpl).toSelf().inSingletonScope();
+    bind(ShellEnvironment).toService(ShellEnvironmentImpl);
     bind(LaunchArgsStore).toSelf().inSingletonScope();
     bind(ElectronMainApplication).toSelf().inSingletonScope();
     bind(ElectronMessagingContribution).toSelf().inSingletonScope();

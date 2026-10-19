@@ -49,12 +49,9 @@ if (process.env.LC_ALL) {
 process.env.LC_NUMERIC = 'C';
 
 (async () => {
-    // Useful for Electron/NW.js apps as GUI apps on macOS doesn't inherit the \`$PATH\` define
-    // in your dotfiles (.bashrc/.bash_profile/.zshrc/etc).
-    // https://github.com/electron/electron/issues/550#issuecomment-162037357
-    // https://github.com/eclipse-theia/theia/pull/3534#issuecomment-439689082
-    (await require('@theia/core/electron-shared/fix-path')).default();
-
+    // Note that GUI apps on macOS do not inherit the \`$PATH\` defined in the user's dotfiles
+    // (.bashrc/.bash_profile/.zshrc/etc.). The ShellEnvironment service of the ElectronMainApplication
+    // resolves it in the background, without delaying the start-up, before the backend is forked.
     const { resolve } = require('path');
     const theiaAppProjectPath = resolve(__dirname, '..', '..');
     process.env.THEIA_APP_PROJECT_PATH = theiaAppProjectPath;

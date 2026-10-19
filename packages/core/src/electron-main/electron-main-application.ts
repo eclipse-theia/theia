@@ -24,7 +24,7 @@ import { Argv } from 'yargs';
 import { AddressInfo } from 'net';
 import { promises as fs } from 'fs';
 import { existsSync, mkdirSync } from 'fs-extra';
-import { fork, ForkOptions } from 'child_process';
+import { ChildProcess, fork, ForkOptions } from 'child_process';
 import { DefaultTheme, ElectronFrontendApplicationConfig, FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
 import URI from '../common/uri';
 import { FileUri } from '../common/file-uri';
@@ -40,6 +40,7 @@ import { DEFAULT_WINDOW_HASH, WindowSearchParams } from '../common/window';
 import { LaunchArguments } from '../common/launch-arguments';
 import { LaunchArgvParser } from './launch-argv-parser';
 import { LaunchArgsStore } from './launch-args-store';
+import { ShellEnvironment } from './shell-environment';
 import { TheiaBrowserWindowOptions, TheiaElectronWindow, TheiaElectronWindowFactory } from './theia-electron-window';
 import { ElectronMainApplicationGlobals } from './electron-main-constants';
 import { createDisposableListener } from './event-utils';
@@ -48,6 +49,7 @@ import { StopReason } from '../common/frontend-application-state';
 import { dynamicRequire } from '../node/dynamic-require';
 import { ThemeMode } from '../common/theme';
 import { backendGlobal } from '../node/backend-global';
+import { PROCESS_ENVIRONMENT_PENDING_VARIABLE, ProcessEnvironmentMessage } from '../node/process-environment';
 
 export { ElectronMainApplicationGlobals };
 
@@ -213,6 +215,9 @@ export class ElectronMainApplication {
     @inject(LaunchArgsStore)
     protected readonly launchArgsStore: LaunchArgsStore;
 
+    @inject(ShellEnvironment)
+    protected readonly shellEnvironment: ShellEnvironment;
+
     protected isPortable = this.makePortable();
 
     protected readonly electronStore = new Storage<{
@@ -255,6 +260,10 @@ export class ElectronMainApplication {
     }
 
     async start(config: FrontendApplicationConfig): Promise<void> {
+        // Resolve the PATH of the user's login shell in the background. Neither the windows nor the backend
+        // start wait for it, which can take more than a second: the backend receives the PATH over IPC once it
+        // is known (see `sendProcessEnvironment`) and defers spawning child processes until then.
+        this.shellEnvironment.apply();
         const argv = this.processArgv.getProcessArgvWithoutBin(process.argv);
         createYargs(argv, process.cwd())
             .help(false)
@@ -830,6 +839,8 @@ export class ElectronMainApplication {
         // Otherwise, the forked backend processes will not know that they're serving the electron frontend.
         process.env.THEIA_ELECTRON_VERSION = process.versions.electron;
         if (noBackendFork) {
+            // The backend runs in this process, so its environment must be complete before it starts.
+            await this.shellEnvironment.apply();
             process.env[ElectronSecurityToken] = JSON.stringify(this.electronSecurityToken);
             // The backend server main file is supposed put a promise resolving with the port used by the http(s) server into the global object.
             dynamicRequire(this.globals.THEIA_BACKEND_MAIN_PATH);
@@ -845,9 +856,13 @@ export class ElectronMainApplication {
                 await this.getForkOptions(),
             );
             return new Promise((resolve, reject) => {
-                // The backend server main file is also supposed to send the resolved http(s) server port via IPC.
-                backendProcess.on('message', (address: AddressInfo) => {
-                    resolve(address.port);
+                backendProcess.on('message', (message: AddressInfo | ProcessEnvironmentMessage.Request) => {
+                    if (ProcessEnvironmentMessage.Request.is(message)) {
+                        this.sendProcessEnvironment(backendProcess);
+                    } else {
+                        // The backend server main file is also supposed to send the resolved http(s) server port via IPC.
+                        resolve(message.port);
+                    }
                 });
                 backendProcess.on('error', error => {
                     reject(error);
@@ -886,8 +901,22 @@ export class ElectronMainApplication {
             env: {
                 ...process.env,
                 [ElectronSecurityToken]: JSON.stringify(this.electronSecurityToken),
+                // The backend is forked before the PATH of the user's login shell is known, so that its start
+                // overlaps with the login shell. It requests the environment over IPC, see `sendProcessEnvironment`.
+                [PROCESS_ENVIRONMENT_PENDING_VARIABLE]: 'pending'
             },
         };
+    }
+
+    /**
+     * Answer the backend's request for its environment once the PATH of the user's login shell is known.
+     */
+    protected async sendProcessEnvironment(backendProcess: ChildProcess): Promise<void> {
+        await this.shellEnvironment.apply();
+        if (backendProcess.connected) {
+            const response: ProcessEnvironmentMessage.Response = { type: ProcessEnvironmentMessage.Response.TYPE, env: { PATH: process.env.PATH } };
+            backendProcess.send(response);
+        }
     }
 
     protected async attachElectronSecurityToken(port: number): Promise<void> {

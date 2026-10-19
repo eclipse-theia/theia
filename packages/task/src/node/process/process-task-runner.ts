@@ -22,6 +22,7 @@
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { deepClone, isWindows, isOSX, ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
+import { ProcessEnvironment } from '@theia/core/lib/node/process-environment';
 import {
     RawProcessFactory,
     ProcessErrorEvent,
@@ -60,6 +61,9 @@ export interface ShellSpecificOptions {
 @injectable()
 export class ProcessTaskRunner implements TaskRunner {
 
+    @inject(ProcessEnvironment)
+    protected readonly processEnvironment: ProcessEnvironment;
+
     @inject(ILogger) @named('task:ProcessTaskRunner')
     protected readonly logger: ILogger;
 
@@ -80,6 +84,8 @@ export class ProcessTaskRunner implements TaskRunner {
         if (!taskConfig.command) {
             throw new Error("Process task config must have 'command' property specified");
         }
+        // The task inherits the environment of the backend, which may still be waiting for the PATH of the user's login shell.
+        await this.processEnvironment.ready;
         try {
             // Always spawn a task in a pty, the only difference between shell/process tasks is the
             // way the command is passed:

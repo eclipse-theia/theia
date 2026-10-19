@@ -51,6 +51,7 @@ import { KeyStoreService, keyStoreServicePath } from '../common/key-store';
 import { KeyStoreServiceImpl } from './key-store-server';
 import { ContributionFilterRegistry, ContributionFilterRegistryImpl } from '../common/contribution-filter';
 import { EnvironmentUtils } from './environment-utils';
+import { ProcessEnvironment, ProcessEnvironmentImpl } from './process-environment';
 import { ProcessUtils } from './process-utils';
 import { ProxyCliContribution } from './request/proxy-cli-contribution';
 import { bindNodeStopwatch, bindBackendStopwatchServer } from './performance';
@@ -120,6 +121,10 @@ export const backendApplicationModule = new ContainerModule(bind => {
             ctx.container.get(ApplicationServer)
         )
     ).inSingletonScope();
+
+    bind(ProcessEnvironmentImpl).toSelf().inSingletonScope();
+    bind(ProcessEnvironment).toService(ProcessEnvironmentImpl);
+    bind(BackendApplicationContribution).toService(ProcessEnvironmentImpl);
 
     bind(EnvVariablesServer).to(EnvVariablesServerImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
