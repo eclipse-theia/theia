@@ -36,6 +36,7 @@
 - [core] reworked the preference API to use explicit override identifiers instead of encoding them into preference names (e.g. `[typescript].editor.tabSize`). Adopters that read, write or listen to language-scoped preferences through `PreferenceService`, `PreferenceProvider` or the change events must migrate to the new signatures [#16046](https://github.com/eclipse-theia/theia/issues/16046). Preference change events for
 "override names" like `[typescript].editor.tabSize` will no longer be sent. Listen for the base name (`editor.tabSize`) and check whether the event `affects` your use case.
 The typed getters like `getBoolean(...)` in `PreferenceServiceImpl` have been removed in favor of typed overloads of `get(...)` in the `PreferenceService` interface.
+- [plugin-ext] the plugin host resolves the workspace folders of debug sessions and folder scoped tasks through `WorkspaceExtImpl` instead of creating them. `DebugExtImpl` injects `WorkspaceExtImpl`, `TasksExtImpl` takes it as a third constructor argument, and `TaskProviderAdapter` takes a workspace folder resolver as a second constructor argument. The `toTask` type converter requires a workspace folder resolver and returns `undefined` for a task scoped to a folder that is not a workspace folder; use the new `toTaskDefinition` to convert only the definition [#18186](https://github.com/eclipse-theia/theia/pull/18186)
 
 ## 1.76.0 - 9/24/2026
 
