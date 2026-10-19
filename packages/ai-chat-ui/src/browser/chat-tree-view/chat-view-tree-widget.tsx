@@ -54,7 +54,7 @@ import {
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ChatFindHighlighter } from '../chat-find/chat-find-highlighter';
 import { ChatFindMatch } from '../chat-find/chat-find-matcher';
-import { ChatFindWidget } from '../chat-find/chat-find-widget';
+import { ChatFindState, ChatFindWidget } from '../chat-find/chat-find-widget';
 import { nls } from '@theia/core/lib/common/nls';
 import {
     inject,
@@ -115,6 +115,8 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     static readonly ID = 'chat-tree-widget';
     static readonly CONTEXT_MENU = ['chat-tree-context-menu'];
+    /** How long typing in the find bar must pause before a match in a collapsed message expands it. */
+    protected static readonly FIND_EXPAND_DELAY_MS = 300;
 
     @inject(ContributionProvider) @named(ChatResponsePartRenderer)
     protected readonly chatResponsePartRenderers: ContributionProvider<ChatResponsePartRenderer<ChatResponseContent>>;
@@ -170,6 +172,12 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     /** Ids of the request and response nodes whose message the user has collapsed. */
     protected readonly collapsedNodeIds = new Set<string>();
+
+    /** The query of the find bar with its options, to tell a reveal after typing from a step to another match. */
+    protected findQuery: string | undefined;
+    protected findQueryChanged = false;
+    /** The pending reveal of a match in a collapsed message, see {@link handleFindRevealRequest}. */
+    protected findRevealTimeout: ReturnType<typeof setTimeout> | undefined;
 
     protected _shouldScrollToEnd = true;
 
@@ -229,8 +237,9 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.toDispose.pushAll([
             this.findWidget,
             this.findHighlighter,
-            this.findWidget.onDidChangeState(state => this.findHighlighter.update(this.node, state.regexp, state.matches, state.current)),
-            this.findWidget.onDidRequestReveal(match => this.revealFindMatch(match))
+            this.findWidget.onDidChangeState(state => this.handleFindStateChange(state)),
+            this.findWidget.onDidRequestReveal(match => this.handleFindRevealRequest(match)),
+            Disposable.create(() => clearTimeout(this.findRevealTimeout))
         ]);
 
         this.toDispose.pushAll([
@@ -289,6 +298,40 @@ export class ChatViewTreeWidget extends TreeWidget {
     /** Whether the tracked session has content to search; false while the welcome/session-list screen shows. */
     get canFind(): boolean {
         return this.findWidget.canFind;
+    }
+
+    protected handleFindStateChange(state: ChatFindState): void {
+        // Every reveal follows a state change: with another query, it comes from typing or toggling an option.
+        const query = state.regexp?.toString();
+        this.findQueryChanged = query !== this.findQuery;
+        this.findQuery = query;
+        if (!state.current) {
+            // The bar was closed or the query has no match: a pending reveal no longer applies.
+            clearTimeout(this.findRevealTimeout);
+        }
+        this.findHighlighter.update(this.node, state.regexp, state.matches, state.current);
+    }
+
+    /**
+     * Reveals a match requested by the find bar. While a query is typed or an option toggled, a match in a collapsed
+     * message is only revealed once typing pauses, as expanding the message of each intermediate match would make the
+     * view jump. Stepping to the next or previous match reveals it right away.
+     */
+    protected handleFindRevealRequest(match: ChatFindMatch): void {
+        clearTimeout(this.findRevealTimeout);
+        const row = this.rows.get(match.nodeId);
+        const collapsed = row !== undefined && (isRequestNode(row.node) || isResponseNode(row.node)) && this.isCollapsed(row.node);
+        if (!collapsed || !this.findQueryChanged) {
+            this.revealFindMatch(match);
+            return;
+        }
+        this.findRevealTimeout = setTimeout(() => {
+            const current = this.findWidget.currentMatch;
+            // Skip the reveal when it no longer applies: the bar was closed, or the query has no match there anymore.
+            if (this.isFindVisible && current && ChatFindMatch.key(current) === ChatFindMatch.key(match)) {
+                this.revealFindMatch(match);
+            }
+        }, ChatViewTreeWidget.FIND_EXPAND_DELAY_MS);
     }
 
     /**
@@ -709,7 +752,7 @@ export class ChatViewTreeWidget extends TreeWidget {
             ? nls.localize('theia/ai/chat-ui/expandMessage', 'Expand Message')
             : nls.localize('theia/ai/chat-ui/collapseMessage', 'Collapse Message');
         return <span
-            className={`theia-ChatNodeToggle ${codicon(collapsed ? 'chevron-right' : 'chevron-down', true)}${enabled ? '' : ' ' + DISABLED_CLASS}`}
+            className={`${codicon(collapsed ? 'chevron-right' : 'chevron-down', true)}${enabled ? '' : ' ' + DISABLED_CLASS}`}
             title={label}
             aria-label={label}
             aria-expanded={!collapsed}
