@@ -204,8 +204,9 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
         height: 100% !important;
     }
     </style>
+    <link rel="stylesheet" href="./bundle.css">
     <link rel="stylesheet" href="./secondary-window.css">
-</head>
+    </head>
 
 <body>
     <div id="widget-host"></div>
