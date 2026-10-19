@@ -209,6 +209,11 @@ export class WebSocketConnectionSource implements ConnectionSource {
     protected createWebSocket(url: string): Socket {
         return io(url, {
             path: this.createSocketIoPath(url),
+            // Try the WebSocket first instead of socket.io's default of HTTP long-polling followed by an
+            // upgrade, which costs several round trips before the first message can be sent. Fall back to
+            // long-polling if the WebSocket cannot be established, e.g. because a proxy blocks it.
+            transports: ['websocket', 'polling'],
+            tryAllTransports: true,
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 10000,
