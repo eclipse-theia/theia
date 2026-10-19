@@ -9,6 +9,10 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 
 ### General
 
+_Start-up skeleton in the generated page_:
+
+The generated `index.html` now paints before the frontend bundle and stylesheet have loaded: critical styles are inlined, the default loading indicator is an inline SVG instead of an icon-font glyph, and an inline script draws a skeleton of the workbench parts of the last session (title bar, activity bar, side bars, panel, status bar in the colours and sizes of that session) from a record that `StartupSkeletonContribution` of `@theia/core` keeps in `localStorage` under `theia.startupSkeleton`. Applications that configure a `preloadTemplate` are unchanged: their template is rendered as before, without the skeleton, and the icon-font spinner of `@theia/core`'s stylesheet still applies to it. Applications that styled the default indicator through `.theia-preload::after` should style `.theia-preload-spinner` instead.
+
 _AI Configuration View_:
 
 The AI Configuration view (`@theia/ai-ide`) has been reworked from a tabbed dock panel into a master–detail tree driven by a new public contribution point, `AiConfigurationCategory`.

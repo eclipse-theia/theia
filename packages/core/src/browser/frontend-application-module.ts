@@ -88,6 +88,7 @@ import { ContextMenuContext } from './menu/context-menu-context';
 import { bindResourceProvider, bindMessageService, bindPreferenceService } from './frontend-application-bindings';
 import { ColorRegistry } from './color-registry';
 import { ColorContribution, ColorApplicationContribution } from './color-application-contribution';
+import { StartupSkeletonContribution } from './startup-skeleton';
 import { ExternalUriService } from './external-uri-service';
 import { IconThemeService, NoneIconTheme } from './icon-theme-service';
 import { IconThemeApplicationContribution, IconThemeContribution, DefaultFileIconThemeContribution } from './icon-theme-contribution';
@@ -170,6 +171,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bindRootContributionProvider(bind, ColorContribution);
     bind(ColorApplicationContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ColorApplicationContribution);
+    bind(StartupSkeletonContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(StartupSkeletonContribution);
 
     bind(FrontendApplication).toSelf().inSingletonScope();
     bind(FrontendApplicationStateService).toSelf().inSingletonScope();
