@@ -19,12 +19,27 @@ import { FilepathBreadcrumbClassNameFactory, FilepathBreadcrumbsContribution } f
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { WorkspaceService } from './workspace-service';
 import URI from '@theia/core/lib/common/uri';
+import { Breadcrumb } from '@theia/core/lib/browser/breadcrumbs/breadcrumbs-constants';
 
 @injectable()
 export class WorkspaceBreadcrumbsContribution extends FilepathBreadcrumbsContribution {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    override async computeBreadcrumbs(uri: URI): Promise<Breadcrumb[]> {
+        const breadcrumbs = await super.computeBreadcrumbs(uri);
+        // Show the name given to the workspace root in the workspace file on its breadcrumb, which is shown in a multi-root workspace
+        const workspaceRoot = this.workspaceService.getWorkspaceRootUri(uri);
+        const rootName = workspaceRoot && this.workspaceService.getWorkspaceRootName(workspaceRoot);
+        if (!rootName) {
+            return breadcrumbs;
+        }
+        return breadcrumbs.map(breadcrumb => FilepathBreadcrumb.is(breadcrumb) && breadcrumb.uri.isEqual(workspaceRoot)
+            ? new FilepathBreadcrumb(breadcrumb.uri, rootName, breadcrumb.longLabel, breadcrumb.iconClass, breadcrumb.containerClass)
+            : breadcrumb
+        );
+    }
 
     override getContainerClassCreator(fileURI: URI): FilepathBreadcrumbClassNameFactory {
         const workspaceRoot = this.workspaceService.getWorkspaceRootUri(fileURI);

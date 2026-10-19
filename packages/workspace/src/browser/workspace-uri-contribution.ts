@@ -47,11 +47,6 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
     }
 
     override getName(element: URI | URIIconReference | FileStat): string | undefined {
-        const uri = this.getUri(element);
-        const rootName = uri && this.workspaceService.getWorkspaceRootName(uri);
-        if (rootName) {
-            return rootName;
-        }
         return super.getName(this.asURIIconReference(element));
     }
 
@@ -78,11 +73,19 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
         // Parent in order to omit the name - that's what comes out of `getName`, and `getDetails` should supplement, not duplicate.
         const relativePath = uri && this.workspaceVariable.getWorkspaceRelativePath(uri.parent);
         if (relativePath !== undefined) {
-            const prefix = this.workspaceService.tryGetRoots().length > 1 ? this.getName(this.workspaceVariable.getWorkspaceRootUri(uri)!) : '';
+            const prefix = this.workspaceService.tryGetRoots().length > 1 ? this.getRootName(this.workspaceVariable.getWorkspaceRootUri(uri)!) : '';
             const separator = prefix && relativePath ? ' • ' : '';
             return prefix + separator + relativePath;
         }
         return this.getLongName(uri.parent);
+    }
+
+    /**
+     * Returns the name given to the workspace root in the workspace file, or else its folder name.
+     * Only used where the root is referred to as a root: elsewhere, e.g. in a file dialog, its folder shows its folder name, as in VS Code.
+     */
+    protected getRootName(rootUri: URI): string | undefined {
+        return this.workspaceService.getWorkspaceRootName(rootUri) ?? this.getName(rootUri);
     }
 
     protected asURIIconReference(element: URI | URIIconReference | FileStat): URI | URIIconReference {

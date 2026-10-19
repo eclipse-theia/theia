@@ -139,12 +139,12 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
             expect(name).eq('jacques.doc');
         });
 
-        it('should return the name given to a workspace root in the workspace file', () => {
+        it('should return the folder name of a workspace root that has a name in the workspace file', () => {
+            // The name is only shown where the folder is referred to as a root, e.g. not when browsing its parent in a file dialog.
             const workspaceService = container.get(WorkspaceService);
             sinon.stub(workspaceService, 'getWorkspaceRootName').callsFake(uri => uri.isEqual(new URI('file:///workspace')) ? 'My Workspace' : undefined);
-            expect(labelProvider.getName(new URI('file:///workspace'))).eq('My Workspace');
-            expect(labelProvider.getName(FileStat.dir('file:///workspace'))).eq('My Workspace');
-            expect(labelProvider.getName(new URI('file:///workspace/jacques.doc'))).eq('jacques.doc');
+            expect(labelProvider.getName(new URI('file:///workspace'))).eq('workspace');
+            expect(labelProvider.getName(FileStat.dir('file:///workspace'))).eq('workspace');
         });
 
         it('should fire onDidChange when the workspace changes', () => {
@@ -154,6 +154,16 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (workspaceService as any).onWorkspaceChangeEmitter.fire(roots);
             expect(events).deep.eq([true]);
+        });
+    });
+
+    describe('getDetails()', () => {
+        it('should prefix the details with the name of the workspace root in a multi-root workspace', () => {
+            roots = [FileStat.dir('file:///workspace'), FileStat.dir('file:///other')];
+            const workspaceService = container.get(WorkspaceService);
+            sinon.stub(workspaceService, 'getWorkspaceRootName').callsFake(uri => uri.isEqual(new URI('file:///workspace')) ? 'My Workspace' : undefined);
+            expect(labelProvider.getDetails(new URI('file:///workspace/src/a.ts'))).eq('My Workspace • src');
+            expect(labelProvider.getDetails(new URI('file:///other/src/b.ts'))).eq('other • src');
         });
     });
 

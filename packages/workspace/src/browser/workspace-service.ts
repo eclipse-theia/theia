@@ -323,6 +323,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
 
     /**
      * Computes the workspace roots. Also updates the names given to the roots in the workspace file, see `getWorkspaceRootName`.
+     * An override that does not call `super` has to update `rootNames` itself, otherwise the names of the previous roots remain.
      */
     protected async computeRoots(): Promise<FileStat[]> {
         const roots: FileStat[] = [];
@@ -935,7 +936,19 @@ export interface WorkspaceData {
 }
 
 export namespace WorkspaceData {
-    const validateSchema = new Ajv().compile(workspaceSchema);
+    // The `name` of a folder is not validated when loading, so that a workspace file with an invalid name still loads,
+    // and the folder falls back to its folder name, as in VS Code. The editor still validates it against `workspaceSchema`.
+    const validateSchema = new Ajv().compile(withoutFolderName(workspaceSchema));
+
+    function withoutFolderName(schema: IJSONSchema): IJSONSchema {
+        const copy: IJSONSchema = structuredClone(schema);
+        delete (copy.properties?.folders.items as IJSONSchema | undefined)?.properties?.name;
+        return copy;
+    }
+
+    function isValidFolderName(name: unknown): name is string {
+        return typeof name === 'string' && name.length > 0;
+    }
 
     export function is(data: unknown): data is WorkspaceData {
         return !!validateSchema(data);
@@ -950,12 +963,12 @@ export namespace WorkspaceData {
 
     /**
      * Builds the workspace data for the given folders. A folder given as an entry with a `name` keeps that name,
-     * any other folder keeps the `name` of its entry in `additionalFields.folders`.
+     * any other folder keeps the `name` of its entry in `additionalFields.folders`. Names that are not strings are dropped.
      */
     export function buildWorkspaceData(folders: string[] | FileStat[] | WorkspaceData['folders'], additionalFields?: Partial<WorkspaceData>): WorkspaceData {
         const currentNames = new Map<string, string>();
         for (const { path, name } of additionalFields?.folders ?? []) {
-            if (name) {
+            if (isValidFolderName(name)) {
                 currentNames.set(normalizeFolderUri(path), name);
             }
         }
@@ -964,7 +977,7 @@ export namespace WorkspaceData {
             const path = typeof folder === 'string' ? folder : FileStat.is(folder) ? folder.resource.toString() : folder.path;
             if (!roots.has(path)) {
                 const name = typeof folder === 'string' || FileStat.is(folder) ? undefined : folder.name;
-                roots.set(path, name ?? currentNames.get(normalizeFolderUri(path)));
+                roots.set(path, isValidFolderName(name) ? name : currentNames.get(normalizeFolderUri(path)));
             }
         }
         const data: WorkspaceData = {

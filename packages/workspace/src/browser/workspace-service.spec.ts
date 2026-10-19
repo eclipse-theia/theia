@@ -30,6 +30,21 @@ describe('WorkspaceData', () => {
 
     const workspaceFile = FileStat.file('file:///home/user/project/project.theia-workspace');
 
+    describe('is()', () => {
+
+        it('should accept a workspace file with a folder name that is not a string', () => {
+            // Such a file loads as in VS Code, with the folder falling back to its folder name,
+            // instead of opening without roots and dropping the other contents of the file on the next write.
+            expect(WorkspaceData.is({ folders: [{ path: 'backend', name: 42 }], settings: { 'editor.tabSize': 2 } })).to.be.true;
+            expect(WorkspaceData.is({ folders: [{ path: 'backend', name: {} }] })).to.be.true;
+        });
+
+        it('should still reject a workspace file without valid folders', () => {
+            expect(WorkspaceData.is({ folders: [{ name: 'API Server' }] })).to.be.false;
+            expect(WorkspaceData.is({ settings: {} })).to.be.false;
+        });
+    });
+
     describe('buildWorkspaceData()', () => {
 
         it('should keep the names of the folders that are still present', () => {
@@ -75,6 +90,19 @@ describe('WorkspaceData', () => {
                 { path: 'file:///home/user/project/backend', name: 'API Server' },
                 { path: 'file:///home/user/project/frontend' }
             ]);
+        });
+
+        it('should drop folder names that are not strings and keep the rest of the file', () => {
+            const data = WorkspaceData.transformToAbsolute({
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                folders: [{ path: 'backend', name: 42 as any }, { path: 'frontend', name: {} as any }],
+                settings: { 'editor.tabSize': 2 }
+            }, workspaceFile);
+            expect(data.folders).to.deep.equal([
+                { path: 'file:///home/user/project/backend' },
+                { path: 'file:///home/user/project/frontend' }
+            ]);
+            expect(data.settings).to.deep.equal({ 'editor.tabSize': 2 });
         });
     });
 });
