@@ -373,11 +373,16 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return workspaceFolder;
     }
 
+    /**
+     * Returns the workspace folder whose URI is the given URI, unlike `getWorkspaceFolder` which also returns the folder containing it.
+     */
+    resolveWorkspaceFolder(uri: theia.Uri): theia.WorkspaceFolder | undefined {
+        const uriString = uri.toString();
+        return this.folders?.find(folder => folder.uri.toString() === uriString);
+    }
+
     private hasFolder(uri: URI): boolean {
-        if (!this.folders) {
-            return false;
-        }
-        return this.folders.some(folder => folder.uri.toString() === uri.toString());
+        return !!this.resolveWorkspaceFolder(uri);
     }
 
     getRelativePath(pathOrUri: string | theia.Uri, includeWorkspace?: boolean): string | undefined {

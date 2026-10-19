@@ -16,9 +16,12 @@
 import { Container } from '@theia/core/shared/inversify';
 import { DebugSession } from '@theia/plugin';
 import * as chai from 'chai';
+import { DebugConfigurationProviderTriggerKind } from '../../../common/plugin-api-rpc';
 import { ProxyIdentifier, RPCProtocol } from '../../../common/rpc-protocol';
 
 import { DebugExtImpl } from '../../debug/debug-ext';
+import { URI } from '../../types-impl';
+import { WorkspaceExtImpl } from '../../workspace';
 
 const expect = chai.expect;
 
@@ -40,6 +43,7 @@ describe('Debug API', () => {
 
         const container = new Container();
         container.bind(RPCProtocol).toConstantValue(mockRPCProtocol);
+        container.bind(WorkspaceExtImpl).toConstantValue({} as WorkspaceExtImpl);
         container.bind(DebugExtImpl).toSelf().inSingletonScope();
         const debug = container.get(DebugExtImpl);
 
@@ -93,6 +97,56 @@ describe('Debug API', () => {
             };
             const uri = debug.asDebugSourceUri(source);
             expect(uri.toString(true)).to.be.equal('file:///full/path');
+        });
+    });
+
+    describe('workspace folders', () => {
+
+        const backend = URI.parse('file:///project/backend');
+        const frontend = URI.parse('file:///project/frontend');
+        const workspaceFolders = [{ uri: backend, name: 'API Server', index: 0 }, { uri: frontend, name: 'frontend', index: 1 }];
+
+        const createDebug = (): DebugExtImpl => {
+            const noopProxy = new Proxy({}, { get: () => () => { } });
+            const mockRPCProtocol = {
+                getProxy: () => noopProxy,
+                set: <T, R extends T>(_id: ProxyIdentifier<T>, instance: R): R => instance,
+                dispose: () => { }
+            } as unknown as RPCProtocol;
+            const container = new Container();
+            container.bind(RPCProtocol).toConstantValue(mockRPCProtocol);
+            container.bind(WorkspaceExtImpl).toConstantValue({
+                resolveWorkspaceFolder: (uri: URI) => workspaceFolders.find(folder => folder.uri.toString() === uri.toString())
+            } as WorkspaceExtImpl);
+            container.bind(DebugExtImpl).toSelf().inSingletonScope();
+            return container.get(DebugExtImpl);
+        };
+
+        it('should pass the workspace folder from the workspace to configuration providers', async () => {
+            const debug = createDebug();
+            const folders: unknown[] = [];
+            debug.registerDebugConfigurationProvider('node', {
+                resolveDebugConfiguration: (folder, configuration) => {
+                    folders.push(folder);
+                    return configuration;
+                }
+            }, DebugConfigurationProviderTriggerKind.Initial);
+            await debug.$resolveDebugConfigurationByHandle(0, frontend.toString(), { type: 'node', name: 'Launch', request: 'launch' });
+            expect(folders).to.have.length(1);
+            expect(folders[0]).to.equal(workspaceFolders[1]);
+        });
+
+        it('should pass no folder for a URI that is not a workspace folder', async () => {
+            const debug = createDebug();
+            const folders: unknown[] = [];
+            debug.registerDebugConfigurationProvider('node', {
+                resolveDebugConfiguration: (folder, configuration) => {
+                    folders.push(folder);
+                    return configuration;
+                }
+            }, DebugConfigurationProviderTriggerKind.Initial);
+            await debug.$resolveDebugConfigurationByHandle(0, 'file:///other/shared', { type: 'node', name: 'Launch', request: 'launch' });
+            expect(folders).to.deep.equal([undefined]);
         });
     });
 });
