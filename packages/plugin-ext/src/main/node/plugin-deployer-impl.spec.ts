@@ -15,7 +15,9 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { DuplicateExtensionError, PluginDeployerResolver, PluginType } from '../../common/plugin-protocol';
+import {
+    DeployedPlugin, DuplicateExtensionError, PluginDeployerEntry, PluginDeployerResolver, PluginDeployOptions, PluginIdentifiers, PluginType
+} from '../../common/plugin-protocol';
 import { PluginDeployerImpl } from './plugin-deployer-impl';
 
 describe('PluginDeployerImpl', () => {
@@ -70,6 +72,91 @@ describe('PluginDeployerImpl', () => {
 
             expect(logs.error).to.have.lengthOf(1);
             expect(logs.info).to.be.empty;
+        });
+    });
+
+    describe('resolvePlugins with extension dependencies', () => {
+        const PARENT = 'vscode-extension://vscjava.vscode-java-test';
+        const DEPENDENCY = 'vscode-extension://redhat.java';
+
+        let requests: Map<string, PluginDeployOptions | undefined>;
+        let deployed: DeployedPlugin[];
+        let uninstalled: PluginIdentifiers.VersionedId[];
+
+        function createDependencyDeployer(): PluginDeployerImpl {
+            const resolver: PluginDeployerResolver = {
+                accept: () => true,
+                resolve: async (context, options) => {
+                    requests.set(context.getOriginId(), options);
+                    if (context.getOriginId() === PARENT) {
+                        context.addPlugin('vscjava.vscode-java-test@0.47.0', '/tmp/vscjava.vscode-java-test-0.47.0');
+                    }
+                }
+            };
+            const deployer = new PluginDeployerImpl();
+            Object.assign(deployer, {
+                pluginResolvers: [resolver],
+                pluginDeployerFileHandlers: [],
+                pluginDeployerDirectoryHandlers: [],
+                logger: { info: () => { }, error: () => { } },
+                pluginDeployerHandler: {
+                    getPluginDependencies: async (entry: PluginDeployerEntry) => entry.id() === 'vscjava.vscode-java-test@0.47.0'
+                        ? {
+                            metadata: { model: { publisher: 'vscjava', name: 'vscode-java-test', version: '0.47.0' } },
+                            mapping: new Map([['redhat.java', DEPENDENCY]])
+                        }
+                        : undefined,
+                    getDeployedPluginsById: (id: string) => deployed.filter(plugin => PluginIdentifiers.componentsToUnversionedId(plugin.metadata.model) === id)
+                },
+                uninstallationManager: { isUninstalled: (id: PluginIdentifiers.VersionedId) => uninstalled.includes(id) }
+            });
+            return deployer;
+        }
+
+        function deployedPlugin(publisher: string, name: string, version: string): DeployedPlugin {
+            return { metadata: { model: { publisher, name, version } } } as DeployedPlugin;
+        }
+
+        beforeEach(() => {
+            requests = new Map();
+            deployed = [];
+            uninstalled = [];
+        });
+
+        it('resolves a dependency that is not installed without the options of the plugin that requires it', async () => {
+            const options = { version: '0.47.0', ignoreOtherVersions: true };
+
+            await createDependencyDeployer().resolvePlugins([{ id: PARENT, type: PluginType.User }], options);
+
+            expect(requests.get(PARENT)).to.deep.equal(options);
+            expect(requests.has(DEPENDENCY)).to.be.true;
+            expect(requests.get(DEPENDENCY)).to.be.undefined;
+        });
+
+        it('keeps an installed dependency, whatever its version', async () => {
+            deployed = [deployedPlugin('redhat', 'java', '1.26.0')];
+
+            const entries = await createDependencyDeployer().resolvePlugins([{ id: PARENT, type: PluginType.User }]);
+
+            expect(requests.has(DEPENDENCY)).to.be.false;
+            expect(entries.map(entry => entry.id())).to.deep.equal(['vscjava.vscode-java-test@0.47.0']);
+        });
+
+        it('resolves a dependency whose installed copy is pending uninstall', async () => {
+            deployed = [deployedPlugin('redhat', 'java', '1.26.0')];
+            uninstalled = ['redhat.java@1.26.0'];
+
+            await createDependencyDeployer().resolvePlugins([{ id: PARENT, type: PluginType.User }]);
+
+            expect(requests.has(DEPENDENCY)).to.be.true;
+        });
+
+        it('still resolves an installed plugin that was requested directly', async () => {
+            deployed = [deployedPlugin('redhat', 'java', '1.26.0')];
+
+            await createDependencyDeployer().resolvePlugins([{ id: DEPENDENCY, type: PluginType.User }]);
+
+            expect(requests.has(DEPENDENCY)).to.be.true;
         });
     });
 });
