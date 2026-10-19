@@ -77,6 +77,12 @@ export class FileDialogProps extends DialogProps {
     filters?: FileDialogTreeFilters;
 
     /**
+     * Whether to omit the `All Files` filter that is otherwise offered next to the given `filters`.
+     * Defaults to `false`.
+     */
+    disableAllFilesFilter?: boolean;
+
+    /**
      * Determines if the dialog window should be modal.
      * Defaults to `true`.
      */
@@ -204,7 +210,11 @@ export abstract class FileDialog<T> extends AbstractDialog<T> {
         });
 
         if (this.props.filters) {
-            this.treeFiltersRenderer = this.treeFiltersFactory({ suppliedFilters: this.props.filters, fileDialogTree: this.widget.model.tree });
+            this.treeFiltersRenderer = this.treeFiltersFactory({
+                suppliedFilters: this.props.filters,
+                fileDialogTree: this.widget.model.tree,
+                disableAllFilesFilter: this.props.disableAllFilesFilter
+            });
             const filters = Object.keys(this.props.filters);
             if (filters.length) {
                 this.widget.model.tree.setFilter(this.props.filters[filters[0]]);
