@@ -15,7 +15,6 @@
 // *****************************************************************************
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
-import { Path } from '@theia/core/lib/common/path';
 import * as theia from '@theia/plugin';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { Breakpoint, DebugStackFrameDTO, DebugThreadDTO } from '../../common/plugin-api-rpc-model';
@@ -36,6 +35,7 @@ import { DebugProtocol } from '@vscode/debugprotocol';
 import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
 import { checkTestRunInstance } from '../tests';
 import { PluginLogger } from '../logger';
+import { WorkspaceExtImpl } from '../workspace';
 
 interface ConfigurationProviderRecord {
     handle: number;
@@ -50,6 +50,9 @@ interface ConfigurationProviderRecord {
 export class DebugExtImpl implements DebugExt {
     @inject(RPCProtocol)
     protected readonly rpc: RPCProtocol;
+
+    @inject(WorkspaceExtImpl)
+    protected readonly workspaceExt: WorkspaceExtImpl;
 
     // debug sessions by sessionId
     private sessions = new Map<string, PluginDebugAdapterSession>();
@@ -536,13 +539,8 @@ export class DebugExtImpl implements DebugExt {
             return undefined;
         }
 
-        const uri = URI.parse(folder);
-        const path = new Path(uri.path);
-        return {
-            uri: uri,
-            name: path.base,
-            index: 0
-        };
+        // As in VS Code, a URI that is not a workspace folder results in no folder.
+        return this.workspaceExt.resolveWorkspaceFolder(URI.parse(folder));
     }
 
     private getAdapterCreator(debugConfiguration: theia.DebugConfiguration): PluginDebugAdapterCreator {
