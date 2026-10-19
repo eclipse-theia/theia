@@ -203,7 +203,7 @@ blockquote {
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-position: center;
-    transition: opacity 0.8s;
+    transition: opacity 0.15s;
     display: flex;
     justify-content: center;
     align-items: center;
