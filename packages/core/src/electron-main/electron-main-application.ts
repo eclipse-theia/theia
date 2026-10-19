@@ -466,8 +466,12 @@ export class ElectronMainApplication {
         return splashScreenWindow;
     }
 
+    /**
+     * Whether a splash screen is shown while the frontend loads. Never on macOS, where a separate splash window is
+     * against platform convention and the early main window gives the feedback instead; override to change that.
+     */
     protected isShowSplashScreen(): boolean {
-        return !process.env.THEIA_NO_SPLASH && typeof this.config.electron.splashScreenOptions === 'object' && !!this.config.electron.splashScreenOptions.content;
+        return !isOSX && !process.env.THEIA_NO_SPLASH && typeof this.config.electron.splashScreenOptions === 'object' && !!this.config.electron.splashScreenOptions.content;
     }
 
     protected getSplashScreenOptions(): ElectronFrontendApplicationConfig.SplashScreenOptions | undefined {
