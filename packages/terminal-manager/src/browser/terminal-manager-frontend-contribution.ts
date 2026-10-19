@@ -65,12 +65,15 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
         });
     }
 
-    async initializeLayout(): Promise<void> {
-        await this.preferenceService.ready;
-        if (this.preferences.get('terminal.grouping.mode') !== 'tree') {
-            return;
-        }
-        await this.terminalManagerViewContribution.openView({ activate: false });
+    initializeLayout(): void {
+        // The view is opened in the collapsed bottom panel, where the user cannot see it until the panel
+        // is expanded, so neither the preferences nor the view are awaited: that would delay the reveal
+        // of the workbench.
+        this.preferenceService.ready.then(async () => {
+            if (this.preferences.get('terminal.grouping.mode') === 'tree') {
+                await this.terminalManagerViewContribution.openView({ activate: false });
+            }
+        }).catch(error => this.logger.error('Failed to initialize the terminal manager view in the default layout', error));
     }
 
     protected async handleTabsDisplayChange(newValue: string): Promise<void> {

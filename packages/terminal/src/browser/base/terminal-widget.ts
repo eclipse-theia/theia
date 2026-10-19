@@ -103,6 +103,16 @@ export abstract class TerminalWidget extends BaseWidget {
     abstract start(id?: number): Promise<number>;
 
     /**
+     * Start the terminal (see {@link start}) as soon as the widget is shown, or right away if it is visible already,
+     * so that no process is spawned for a terminal that the user cannot see yet, e.g. in a collapsed panel.
+     * The default implementation starts the terminal right away.
+     * @param id - terminal id.
+     */
+    startWhenShown(id?: number): void {
+        this.start(id);
+    }
+
+    /**
      * Send text to the terminal server.
      * @param text - text content.
      */
