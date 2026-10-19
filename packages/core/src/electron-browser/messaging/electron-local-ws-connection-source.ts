@@ -17,6 +17,7 @@
 import { injectable } from 'inversify';
 import { Endpoint } from '../../browser/endpoint';
 import { WebSocketConnectionSource } from '../../browser/messaging/ws-connection-source';
+import { ElectronBackendPort } from '../electron-backend-port';
 
 export const LOCAL_PORT_PARAM = 'localPort';
 export function getLocalPort(): string | undefined {
@@ -24,10 +25,13 @@ export function getLocalPort(): string | undefined {
     return params.get(LOCAL_PORT_PARAM) ?? undefined;
 }
 
-export const CURRENT_PORT_PARAM = 'port';
+export const CURRENT_PORT_PARAM = ElectronBackendPort.PARAM;
+/**
+ * The port of the backend of this window: the `port` URL parameter if there is one, otherwise the port
+ * resolved from the main process at start-up, see {@link ElectronBackendPort}.
+ */
 export function getCurrentPort(): string | undefined {
-    const params = new URLSearchParams(location.search);
-    return params.get(CURRENT_PORT_PARAM) ?? undefined;
+    return ElectronBackendPort.get();
 }
 
 @injectable()

@@ -80,6 +80,11 @@ export interface TheiaCoreAPI {
     }
     getSecurityToken: () => string;
     attachSecurityToken: (endpoint: string) => Promise<void>;
+    /**
+     * The port of the backend that serves this window. The main process forks the backend while the window
+     * loads, so the promise resolves once the backend is listening and the security token cookie for it is set.
+     */
+    getBackendPort(): Promise<number>;
 
     setMenuBarVisible(visible: boolean, windowName?: string): void;
     setAutoHideMenuBar(enabled: boolean, windowName?: string): void;
@@ -149,6 +154,7 @@ declare global {
 }
 
 export const CHANNEL_WC_METADATA = 'WebContentMetadata';
+export const CHANNEL_GET_BACKEND_PORT = 'GetBackendPort';
 export const CHANNEL_SET_MENU = 'SetMenu';
 export const CHANNEL_SET_MENU_BAR_VISIBLE = 'SetMenuBarVisible';
 export const CHANNEL_SET_AUTO_HIDE_MENU_BAR = 'SetAutoHideMenuBar';

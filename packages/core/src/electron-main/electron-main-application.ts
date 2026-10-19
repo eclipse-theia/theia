@@ -279,14 +279,19 @@ export class ElectronMainApplication {
                     }
                     this.hookApplicationEvents();
                     this.showInitialWindow(argv.includes('--open-url') ? argv[argv.length - 1] : undefined);
-                    const port = await this.stopwatch.startAsync('electron-main-start-backend', 'Starting backend', () => this.startBackend());
-                    this._backendPort.resolve(port);
+                    // The backend starts in the background. The window loads its content meanwhile and asks the
+                    // main process for the port when it is about to connect (see `TheiaMainApi`), which is answered
+                    // once the backend is listening and the security token cookie for it is set.
+                    const backendStarted = this.stopwatch.startAsync('electron-main-start-backend', 'Starting backend', () => this.startBackend())
+                        .then(async port => {
+                            await this.stopwatch.startAsync('electron-main-security-token', 'Attaching security token',
+                                () => this.attachElectronSecurityToken(port));
+                            this._backendPort.resolve(port);
+                        });
+                    backendStarted.catch(error => this._backendPort.reject(error));
                     await app.whenReady();
-                    await this.stopwatch.startAsync('electron-main-security-token', 'Attaching security token',
-                        () => this.attachElectronSecurityToken(port));
                     await this.stopwatch.startAsync('electron-main-start-contributions', 'Starting contributions',
                         () => this.startContributions());
-                    startupMeasurement.info('Startup sequence completed');
 
                     const launchArgs = LaunchArgvParser.parse(argv);
                     this.handleMainCommand({
@@ -295,6 +300,8 @@ export class ElectronMainApplication {
                         secondInstance: false,
                         claimed: await this.isWindowClaimed(launchArgs)
                     });
+                    await backendStarted;
+                    startupMeasurement.info('Startup sequence completed');
                 },
             ).parse();
     }
@@ -673,10 +680,12 @@ export class ElectronMainApplication {
         }
     }
 
+    /**
+     * The URI of the frontend for a window. It carries the port of the backend only if `params` specify one,
+     * as for a window that connects to a remote backend: a window is loaded before the local backend is
+     * listening and resolves its port from the main process, see `ElectronBackendPort` in the frontend.
+     */
     protected async createWindowUri(params: WindowSearchParams = {}): Promise<URI> {
-        if (!('port' in params)) {
-            params.port = (await this.backendPort).toString();
-        }
         const query = Object.entries(params).map(([name, value]) => `${name}=${value}`).join('&');
         return FileUri.create(this.globals.THEIA_FRONTEND_HTML_PATH)
             .withQuery(query);

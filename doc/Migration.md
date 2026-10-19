@@ -9,6 +9,14 @@ Please see the latest version (`master`) for the most up-to-date information. Pl
 
 ### General
 
+_Electron: the window loads before the backend is listening_:
+
+`ElectronMainApplication` no longer waits for the backend port before it loads the frontend into the main window. The backend is forked in the background, the window content loads as soon as the window exists, and the frontend asks the main process for the port right before its first connection, through the new `getBackendPort()` of the preload API (`TheiaCoreAPI`), which resolves once the backend is listening and the security token cookie is set.
+
+- The window URL no longer carries a `?port=` parameter, except for windows that are opened with explicit `WindowSearchParams` (remote backends). Frontend code that read the port from `location.search` should use `getCurrentPort()` from `@theia/core/lib/electron-browser/messaging/electron-local-ws-connection-source` or `ElectronBackendPort.get()`, which fall back to the resolved port; `Endpoint` picks it up automatically.
+- `ElectronMainApplicationContribution.onStart` now runs before the backend has started. A contribution that awaits `application.backendPort` there delays the window until the backend is up; chain on the promise instead, as `@theia/mini-browser` does for its security token cookie.
+- Adopters with a custom preload script must expose `getBackendPort()` on `electronTheiaCore`, forwarding to the `CHANNEL_GET_BACKEND_PORT` IPC channel.
+
 _AI Configuration View_:
 
 The AI Configuration view (`@theia/ai-ide`) has been reworked from a tabbed dock panel into a master–detail tree driven by a new public contribution point, `AiConfigurationCategory`.

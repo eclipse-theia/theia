@@ -30,9 +30,9 @@ export class MiniBrowserElectronMainContribution implements ElectronMainApplicat
     @inject(ElectronSecurityTokenService)
     protected readonly electronSecurityTokenService: ElectronSecurityTokenService;
 
-    async onStart(app: ElectronMainApplication): Promise<void> {
-        const url = this.getMiniBrowserEndpoint(await app.backendPort);
-        await this.electronSecurityTokenService.setElectronSecurityTokenCookie(url);
+    onStart(app: ElectronMainApplication): void {
+        // Contributions start before the backend is listening; the cookie is only needed once a mini-browser loads.
+        app.backendPort.then(port => this.electronSecurityTokenService.setElectronSecurityTokenCookie(this.getMiniBrowserEndpoint(port)));
     }
 
     protected getMiniBrowserEndpoint(port: number): string {
