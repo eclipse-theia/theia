@@ -50,7 +50,8 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
     protected secondaryWindows: Window[] = [];
 
     /**
-     * Whether the main window is shutting down, which closes all secondary windows.
+     * Whether the main window is shutting down, which closes all secondary windows. Such a close is not handled like a close by the user:
+     * the widgets stay in their windows, so that the windows are stored with the layout and restored on the next start.
      */
     protected shuttingDown = false;
 
@@ -116,9 +117,12 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
     }
 
     createSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell, options?: SecondaryWindowOptions): Window | SecondaryWindow | undefined {
-        const [height, width, left, top] = options?.position
+        let [height, width, left, top] = options?.position
             ? [widget.node.clientHeight, widget.node.clientWidth, options.position.x, options.position.y]
             : this.findSecondaryWindowCoordinates(widget);
+        if (options?.size) {
+            ({ width, height } = options.size);
+        }
         let features = `popup=1,width=${width},height=${height},left=${left},top=${top}`;
         if (this.preferenceService.get('window.secondaryWindowAlwaysOnTop')) {
             features += ',alwaysOnTop=true';
@@ -134,6 +138,10 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                 this.onWindowLoadedEmitter.fire(newWindow);
                 const focusRegistration = this.windowFocusService.registerWindow(newWindow);
                 newWindow.addEventListener('beforeunload', evt => {
+                    if (this.shuttingDown) {
+                        // the main window has asked about unsaved changes already
+                        return;
+                    }
                     const widgets = getAllWidgetsFromSecondaryWindow(newWindow) ?? [widget];
                     for (const w of widgets) {
                         const saveable = Saveable.get(w);
@@ -268,11 +276,13 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
      * SecondaryWindowHandler needs to get informated about this.
      */
     protected async restoreWidgets(newWindow: Window, extractableWidget: ExtractableWidget, shell: ApplicationShell): Promise<boolean> {
+        if (this.shuttingDown) {
+            // The widgets stay in the window, so that it is stored with the layout and restored with its widgets on the next start.
+            return true;
+        }
         // copy, as moving a widget back removes it from the secondary window's widgets
         const widgets = [...getAllWidgetsFromSecondaryWindow(newWindow) ?? [extractableWidget]];
-
-        // When the application shuts down, the widgets are moved back so that they are stored with the layout of the main window.
-        const closeWidgets = !this.shuttingDown && this.preferenceService.get('window.secondaryWindowCloseBehavior', 'close') === 'close';
+        const closeWidgets = this.preferenceService.get('window.secondaryWindowCloseBehavior', 'close') === 'close';
         let allMovedOrDisposed = true;
         for (const widget of widgets) {
             if (widget.isDisposed) {

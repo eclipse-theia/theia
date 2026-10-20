@@ -16,10 +16,12 @@
 
 import debounce = require('lodash.debounce');
 import { inject, injectable, named } from 'inversify';
-import { BoxLayout, ExtractableWidget, TabBar, Widget } from './widgets';
+import { toArray } from '@lumino/algorithm';
+import { BoxLayout, DockLayout, DockPanel, ExtractableWidget, TabBar, Widget } from './widgets';
 import { MessageService } from '../common/message-service';
 import { ApplicationShell, DockPanelRenderer, MAIN_AREA_CLASS, MAIN_BOTTOM_AREA_CLASS } from './shell/application-shell';
 import { Emitter } from '../common/event';
+import { environment } from '../common';
 import { isSecondaryWindow, SecondaryWindowOptions, SecondaryWindowRootWidget, SecondaryWindowService } from './window/secondary-window-service';
 import { KeybindingRegistry } from './keybinding';
 import { MAIN_AREA_ID, TheiaDockPanel } from './shell/theia-dock-panel';
@@ -27,12 +29,16 @@ import { ILogger } from '../common/logger';
 import { nls } from '../common/nls';
 import { NativeTabDragService } from './shell/native-tab-drag-service';
 import { WindowService } from './window/window-service';
+import { PreferenceService } from '../common/preferences';
 
 /** Widgets to be contained inside a DockPanel in the secondary window. */
 class SecondaryWindowDockPanelWidget extends SecondaryWindowRootWidget {
 
     protected _widgets: Widget[] = [];
     protected dockPanel: TheiaDockPanel;
+
+    /** The bounds of the window when it was closed */
+    closedBounds: SecondaryWindowHandler.WindowBounds | undefined;
 
     constructor(
         dockPanelFactory: TheiaDockPanel.Factory,
@@ -114,6 +120,24 @@ class SecondaryWindowDockPanelWidget extends SecondaryWindowRootWidget {
     override getTabBar(widget: Widget): TabBar<Widget> | undefined {
         return this.dockPanel.findTabBar(widget.title);
     }
+
+    /**
+     * @returns the widgets in the order of the dock panel's layout
+     */
+    getLayoutWidgets(): Widget[] {
+        return toArray(this.dockPanel.widgets());
+    }
+
+    saveLayout(): DockPanel.ILayoutConfig {
+        return this.dockPanel.saveLayout();
+    }
+
+    /**
+     * Restores the layout of the dock panel. The widgets of the layout must be tracked with {@link track} beforehand.
+     */
+    restoreLayout(config: DockPanel.ILayoutConfig): void {
+        this.dockPanel.restoreLayout(config);
+    }
 }
 
 /**
@@ -169,6 +193,9 @@ export class SecondaryWindowHandler {
 
     @inject(WindowService)
     protected readonly windowService: WindowService;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     /** @returns List of widgets in secondary windows. */
     get widgets(): ReadonlyArray<Widget> {
@@ -230,11 +257,39 @@ export class SecondaryWindowHandler {
 
         // a widget that is moved from one secondary window to another one keeps the area to restore it to
         const previousArea = widget.secondaryWindow ? widget.previousArea : this.applicationShell.getAreaFor(widget);
-        const newWindow = this.secondaryWindowService.createSecondaryWindow(widget, this.applicationShell, options);
+        const opened = this.openSecondaryWindow(widget, options, (newWindow, rootWidget) => {
+            this.onWillAddWidgetEmitter.fire([widget, newWindow]);
 
-        if (!newWindow) {
+            widget.secondaryWindow = newWindow;
+            widget.previousArea = previousArea;
+            rootWidget.defaultRestoreArea = previousArea;
+            rootWidget.addWidget(widget, () => {
+                this.onWidgetRemove(widget, newWindow, rootWidget);
+            });
+            widget.show();
+            widget.update();
+
+            this.addWidget(widget, newWindow);
+            widget.activate();
+        });
+        if (!opened) {
             this.messageService.error('The widget could not be moved to a secondary window because the window creation failed. Please make sure to allow popups.');
-            return;
+        }
+    }
+
+    /**
+     * Opens a secondary window and sets up its root widget once the window has been loaded.
+     *
+     * @param widget the widget the window is created for, its label is used as the window title
+     * @param options the options for the created window, e.g. its bounds
+     * @param populate adds the widgets to the root widget of the loaded window
+     * @returns whether the window has been created
+     */
+    protected openSecondaryWindow(widget: ExtractableWidget, options: SecondaryWindowOptions | undefined,
+        populate: (newWindow: Window, rootWidget: SecondaryWindowDockPanelWidget) => void): boolean {
+        const newWindow = this.secondaryWindowService.createSecondaryWindow(widget, this.applicationShell, options);
+        if (!newWindow) {
+            return false;
         }
 
         const mainWindowTitle = document.title;
@@ -257,30 +312,24 @@ export class SecondaryWindowHandler {
                 return;
             }
 
-            this.onWillAddWidgetEmitter.fire([widget, newWindow]);
-
-            widget.secondaryWindow = newWindow;
-            widget.previousArea = previousArea;
             const rootWidget: SecondaryWindowDockPanelWidget = new SecondaryWindowDockPanelWidget(this.dockPanelFactory, this.dockPanelRendererFactory, this.onTabCloseRequested,
                 newWindow, {
                 canDropWidget: dropped => this.canDropInSecondaryWindow(dropped),
                 onWillDropWidget: dropped => this.onWillDropInSecondaryWindow(dropped),
                 onDidDropWidget: dropped => this.onDidDropInSecondaryWindow(dropped, newWindow, rootWidget)
             });
-            rootWidget.defaultRestoreArea = widget.previousArea;
             rootWidget.addClass('secondary-widget-root');
             rootWidget.addClass('monaco-workbench'); // needed for compatility with VSCode styles
             Widget.attach(rootWidget, element);
             if (isSecondaryWindow(newWindow)) {
                 newWindow.rootWidget = rootWidget;
             }
-            rootWidget.addWidget(widget, () => {
-                this.onWidgetRemove(widget, newWindow, rootWidget);
+            // the window is closed already when the layout is stored on shutdown
+            newWindow.addEventListener('pagehide', () => {
+                rootWidget.closedBounds = this.getWindowBounds(newWindow);
             });
-            widget.show();
-            widget.update();
 
-            this.addWidget(widget, newWindow);
+            populate(newWindow, rootWidget);
 
             // debounce to avoid rapid updates while resizing the secondary window
             const updateWidget = debounce(() => {
@@ -289,8 +338,122 @@ export class SecondaryWindowHandler {
             newWindow.addEventListener('resize', () => {
                 updateWidget();
             });
-            widget.activate();
         });
+        return true;
+    }
+
+    /**
+     * @returns the bounds of the given window, the size as expected by `window.open`
+     */
+    protected getWindowBounds(win: Window): SecondaryWindowHandler.WindowBounds {
+        // Electron applies the size given to `window.open` to the window, browsers apply it to the content
+        return environment.electron.is()
+            ? { x: win.screenX, y: win.screenY, width: win.outerWidth, height: win.outerHeight }
+            : { x: win.screenX, y: win.screenY, width: win.innerWidth, height: win.innerHeight };
+    }
+
+    /**
+     * @returns the data to restore the open secondary windows with their widgets, see {@link setLayoutData}
+     */
+    getLayoutData(): SecondaryWindowHandler.LayoutData[] {
+        const rootWidgets = new Set<SecondaryWindowDockPanelWidget>();
+        for (const widget of this._widgets) {
+            const rootWidget = extractSecondaryWindowRootWidget(widget);
+            if (rootWidget instanceof SecondaryWindowDockPanelWidget) {
+                rootWidgets.add(rootWidget);
+            }
+        }
+        return Array.from(rootWidgets, rootWidget => ({
+            bounds: rootWidget.secondaryWindow.closed ? rootWidget.closedBounds : this.getWindowBounds(rootWidget.secondaryWindow),
+            config: rootWidget.saveLayout(),
+            previousAreas: rootWidget.getLayoutWidgets().map(widget =>
+                (ExtractableWidget.is(widget) ? widget.previousArea : undefined) ?? rootWidget.defaultRestoreArea ?? 'main')
+        }));
+    }
+
+    /**
+     * Opens secondary windows with the widgets of the given layout data, see {@link getLayoutData}.
+     * The widgets are added to the main window instead if the `window.restoreSecondaryWindows` preference is disabled,
+     * or if their window cannot be opened, e.g. because a browser blocks the popup.
+     */
+    async setLayoutData(layoutData: SecondaryWindowHandler.LayoutData[]): Promise<void> {
+        if (!this.applicationShell) {
+            this.logger.error('Secondary windows cannot be restored because the SecondaryWindowHandler has not been initialized.');
+            return;
+        }
+        // the layout may be restored before the preferences have been loaded
+        await this.preferenceService.ready;
+        const openWindows = this.preferenceService.get('window.restoreSecondaryWindows', true);
+        for (const data of layoutData) {
+            this.restoreSecondaryWindow(data, openWindows);
+        }
+    }
+
+    protected restoreSecondaryWindow({ bounds, config, previousAreas }: SecondaryWindowHandler.LayoutData, openWindow: boolean): void {
+        const widgets = this.collectLayoutWidgets(config.main);
+        // the widgets that could not be restored have been removed from the layout already
+        const areas = previousAreas?.length === widgets.length ? previousAreas : undefined;
+        const previousArea = new Map(widgets.map((widget, index) => [widget, areas?.[index] ?? 'main']));
+        // widgets that have been added elsewhere in the meantime are not moved
+        const isAvailable = (widget: Widget) => !widget.parent && !widget.isDisposed;
+
+        const extractable = widgets.find(widget => isAvailable(widget) && ExtractableWidget.is(widget) && widget.isExtractable) as ExtractableWidget | undefined;
+        const options: SecondaryWindowOptions | undefined = bounds && { position: { x: bounds.x, y: bounds.y }, size: { width: bounds.width, height: bounds.height } };
+        const opened = openWindow && extractable && this.openSecondaryWindow(extractable, options, (newWindow, rootWidget) => {
+            this.removeFromLayout(config.main, isAvailable);
+            const windowWidgets = this.collectLayoutWidgets(config.main);
+            if (windowWidgets.length === 0) {
+                newWindow.close();
+                return;
+            }
+            rootWidget.defaultRestoreArea = previousArea.get(windowWidgets[0]);
+            for (const widget of windowWidgets) {
+                this.onWillAddWidgetEmitter.fire([widget, newWindow]);
+                if (ExtractableWidget.is(widget)) {
+                    widget.secondaryWindow = newWindow;
+                    widget.previousArea = previousArea.get(widget);
+                }
+                rootWidget.track(widget, () => {
+                    this.onWidgetRemove(widget, newWindow, rootWidget);
+                });
+            }
+            rootWidget.restoreLayout(config);
+            for (const widget of windowWidgets) {
+                this.addWidget(widget, newWindow);
+            }
+        });
+        if (!opened) {
+            for (const widget of widgets.filter(isAvailable)) {
+                const area = previousArea.get(widget);
+                this.applicationShell.addWidget(widget, { area: area === undefined || area === 'top' || area === 'secondaryWindow' ? 'main' : area });
+            }
+        }
+    }
+
+    protected collectLayoutWidgets(area: DockLayout.AreaConfig | null): Widget[] {
+        if (!area) {
+            return [];
+        }
+        if (area.type === 'tab-area') {
+            return [...area.widgets];
+        }
+        return area.children.flatMap(child => this.collectLayoutWidgets(child));
+    }
+
+    /**
+     * Removes the widgets that do not match the given predicate from the given layout. Empty areas are removed when the layout is restored.
+     */
+    protected removeFromLayout(area: DockLayout.AreaConfig | null, keep: (widget: Widget) => boolean): void {
+        if (!area) {
+            return;
+        }
+        if (area.type === 'tab-area') {
+            const current = area.widgets[area.currentIndex];
+            area.widgets = area.widgets.filter(keep);
+            area.currentIndex = Math.max(0, area.widgets.indexOf(current));
+        } else {
+            area.children.forEach(child => this.removeFromLayout(child, keep));
+        }
     }
 
     protected setupHtmlLanguageAttributes(element: HTMLElement): void {
@@ -472,6 +635,29 @@ export class SecondaryWindowHandler {
         return undefined;
     }
 
+}
+
+export namespace SecondaryWindowHandler {
+    /**
+     * The screen bounds of a secondary window.
+     */
+    export interface WindowBounds {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    }
+
+    /**
+     * Data to save and restore a secondary window with its widgets.
+     */
+    export interface LayoutData {
+        bounds?: WindowBounds;
+        /** The layout of the window's dock panel */
+        config: DockPanel.ILayoutConfig;
+        /** The areas of the main window to move the widgets back to, in the order of the widgets in `config` */
+        previousAreas?: ApplicationShell.Area[];
+    }
 }
 
 export function getDefaultRestoreArea(window: Window): ApplicationShell.Area | undefined {

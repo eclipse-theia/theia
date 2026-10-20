@@ -161,6 +161,12 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: 'close',
             description: nls.localize('theia/core/secondaryWindow/closeBehavior', 'Controls what happens to the views of a secondary window when it is closed.'),
         },
+        'window.restoreSecondaryWindows': {
+            type: 'boolean',
+            default: true,
+            description: nls.localize('theia/core/secondaryWindow/restore',
+                'Controls whether secondary windows are restored on startup. When disabled, their views are restored in the main window instead.'),
+        },
         'http.proxy': {
             type: 'string',
             pattern: '^https?://([^:]*(:[^@]*)?@)?([^:]+|\\[[:0-9a-fA-F]+\\])(:\\d+)?/?$|^$',
@@ -331,6 +337,7 @@ export interface CoreConfiguration {
     'window.titleSeparator': string;
     'window.tabCloseIconPlacement': 'end' | 'start';
     'window.secondaryWindowCloseBehavior': 'close' | 'moveToMainWindow';
+    'window.restoreSecondaryWindows': boolean;
     'workbench.list.openMode': 'singleClick' | 'doubleClick';
     'workbench.commandPalette.history': number;
     'workbench.editor.highlightModifiedTabs': boolean;
