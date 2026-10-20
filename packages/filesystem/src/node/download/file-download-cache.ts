@@ -39,7 +39,7 @@ export class FileDownloadCache {
             downloadInfo.root = encodeURIComponent(downloadInfo.root);
         }
         // expires in 1 minute enough for parallel connections to be connected.
-        downloadInfo.expire = Date.now() + (this.expireTimeInMinutes * 60000);
+        downloadInfo.expire = Date.now() + (this.expireTimeInMinutes * 60 * 1000);
         this.downloads.set(id, downloadInfo);
     }
 
