@@ -73,14 +73,15 @@ export class FrontendGenerator extends AbstractGenerator {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <style>${this.compileIndexCriticalCss()}</style>
-  <link rel="stylesheet" href="./bundle.css">
+  <link rel="preload" as="style" href="./bundle.css" data-theia-stylesheet onload="this.onload=null;this.rel='stylesheet'">
   <title>${this.pck.props.frontend.config.applicationName}</title>`;
     }
 
     /**
      * The styles the page needs before `bundle.css` has loaded: the page background and the loading
-     * indicator, so that the first paint does not wait for the stylesheet, which carries the icon font.
-     * The `.theia-preload` rules match those of `@theia/core`.
+     * indicator. The stylesheet, which carries the icon font, is preloaded rather than linked, so that
+     * neither the first paint nor the inline skeleton script waits for it; the generated `index.js`
+     * waits for it before the application starts. The `.theia-preload` rules match those of `@theia/core`.
      */
     protected compileIndexCriticalCss(): string {
         return `
@@ -193,6 +194,33 @@ function load(container, jsModule) {
         .then(containerModule => container.load(containerModule.default));
 }
 
+/**
+ * The page preloads its stylesheet instead of linking it, so that it paints its loading indicator or skeleton
+ * without waiting for it. The application must not start before the stylesheet applies, though.
+ */
+function stylesheetLoaded() {
+    const link = document.querySelector('link[data-theia-stylesheet]');
+    if (!link) {
+        return Promise.resolve();
+    }
+    if (link.rel !== 'stylesheet') {
+        // Not applied yet (or preloading is unsupported): apply it now, the preload is reused if there is one.
+        link.rel = 'stylesheet';
+    }
+    return new Promise(resolve => {
+        const settle = () => {
+            if (link.sheet || link.rel !== 'stylesheet') {
+                resolve();
+            } else {
+                // The preload finished but the stylesheet is not applied yet; its own load event follows.
+                link.addEventListener('load', settle, { once: true });
+            }
+        };
+        link.addEventListener('error', () => resolve(), { once: true });
+        settle();
+    });
+}
+
 async function preload(container) {
     try {
 ${Array.from(frontendPreloadModules.values(), jsModulePath => `\
@@ -247,6 +275,8 @@ ${Array.from(frontendModules.values(), jsModulePath => `\
         MonacoInit.init(container);
         `)};
         ${this.emitStartupLog('modules loaded')}
+        await stylesheetLoaded();
+        ${this.emitStartupLog('stylesheet loaded')}
         await start();
     } catch (reason) {
         console.error('Failed to start the frontend application.');
