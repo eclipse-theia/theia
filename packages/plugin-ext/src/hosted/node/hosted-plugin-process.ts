@@ -77,8 +77,10 @@ export class HostedPluginProcess implements ServerPluginRunner {
     private client: HostedPluginClient;
 
     private terminatingPluginServer = false;
-    /** Identifies the latest `runPluginServer` request, so that a superseded one does not fork. */
+    /** Identifies the latest `runPluginServer` request, so that a superseded or terminated one does not fork. */
     private runRequest = 0;
+    /** Whether a `runPluginServer` request is waiting for the environment before it forks. */
+    private forkPending = false;
     /** Messages for the plugin host received before it was forked. */
     private pendingMessages: Uint8Array[] = [];
 
@@ -108,12 +110,16 @@ export class HostedPluginProcess implements ServerPluginRunner {
     public onMessage(pluginHostId: string, message: Uint8Array): void {
         if (this.messagePipe) {
             this.messagePipe.send(message);
-        } else if (this.runRequest > 0 && !this.terminatingPluginServer) {
+        } else if (this.forkPending) {
             this.pendingMessages.push(message);
         }
     }
 
     async terminatePluginServer(): Promise<void> {
+        // Cancel a fork that is still waiting for the environment, see `runPluginServer`
+        this.runRequest++;
+        this.forkPending = false;
+        this.pendingMessages = [];
         if (this.childProcess === undefined) {
             return;
         }
@@ -157,6 +163,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
         this.terminatingPluginServer = false;
         this.messagePipe = undefined;
         const request = ++this.runRequest;
+        this.forkPending = true;
         // The plugin host and the processes that plugins spawn (language servers, debug adapters) inherit the
         // environment of the backend, which may still be waiting for the PATH of the user's login shell.
         // Messages for the plugin host that arrive in the meantime are kept and delivered once it runs.
@@ -164,6 +171,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
             if (request !== this.runRequest || this.terminatingPluginServer) {
                 return;
             }
+            this.forkPending = false;
             this.childProcess = this.fork({
                 serverName: serverName ?? 'hosted-plugin',
                 logger: this.logger,

@@ -31,6 +31,8 @@ import { ProcessEnvironment } from '../process-environment';
 export class EnvVariablesServerImpl implements EnvVariablesServer {
 
     protected readonly envs: { [key: string]: EnvVariable } = {};
+    /** Settles once {@link envs} holds the complete environment of the process. */
+    protected snapshot: Promise<void> = Promise.resolve();
     protected readonly homeDirUri = FileUri.create(homedir()).toString();
     protected readonly configDirUri: Promise<string>;
     protected readonly pathExistenceCache: { [key: string]: boolean } = {};
@@ -44,13 +46,12 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
     constructor() {
         this.configDirUri = this.createConfigDirUri();
         this.configDirUri.then(configDirUri => this.logger.info(`Configuration directory URI: '${configDirUri}'`));
-        this.snapshotEnvironment();
     }
 
     @postConstruct()
     protected init(): void {
         // The environment may be completed with the user's login shell PATH after this process started.
-        this.processEnvironment.ready.then(() => this.snapshotEnvironment());
+        this.snapshot = this.processEnvironment.ready.then(() => this.snapshotEnvironment());
     }
 
     protected snapshotEnvironment(): void {
@@ -92,12 +93,12 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
     }
 
     async getVariables(): Promise<EnvVariable[]> {
-        await this.processEnvironment.ready;
+        await this.snapshot;
         return Object.keys(this.envs).map(key => this.envs[key]);
     }
 
     async getValue(key: string): Promise<EnvVariable | undefined> {
-        await this.processEnvironment.ready;
+        await this.snapshot;
         if (isWindows) {
             key = key.toLowerCase();
         }

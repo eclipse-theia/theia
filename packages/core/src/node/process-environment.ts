@@ -18,7 +18,6 @@ import { inject, injectable, named, postConstruct } from 'inversify';
 import { ILogger } from '../common/logger';
 import { Deferred } from '../common/promise-util';
 import { isObject } from '../common/types';
-import { BackendApplicationContribution } from './backend-application';
 
 /**
  * Name of the environment variable with which the parent process announces that it will complete
@@ -74,29 +73,23 @@ export interface ProcessEnvironment {
 }
 
 @injectable()
-export class ProcessEnvironmentImpl implements ProcessEnvironment, BackendApplicationContribution {
+export class ProcessEnvironmentImpl implements ProcessEnvironment {
 
     @inject(ILogger) @named('core:ProcessEnvironmentImpl')
     protected readonly logger: ILogger;
 
     /** How long to wait for the parent process, in milliseconds, before giving up. */
-    protected readonly timeoutMs = 15_000;
+    protected readonly timeoutMs: number = 15_000;
 
     protected readonly readyDeferred = new Deferred<void>();
     readonly ready = this.readyDeferred.promise;
 
-    protected requested = false;
-
     /**
-     * The request is made as soon as the service exists, so that `ready` settles whether or not the backend
-     * application runs its contributions, for example in a test container; `initialize` only makes it eager.
+     * The request is made as soon as the service exists. It is bound as a backend application contribution,
+     * without hooks, only so that it exists from the start of the backend rather than at the first injection.
      */
     @postConstruct()
     protected init(): void {
-        this.request();
-    }
-
-    initialize(): void {
         this.request();
     }
 
@@ -104,11 +97,10 @@ export class ProcessEnvironmentImpl implements ProcessEnvironment, BackendApplic
      * Request the environment from the parent process, if it announced that the environment is pending.
      */
     protected request(): void {
-        if (this.requested) {
-            return;
-        }
-        this.requested = true;
-        if (process.env[PROCESS_ENVIRONMENT_PENDING_VARIABLE] !== 'pending' || typeof process.send !== 'function') {
+        const pending = process.env[PROCESS_ENVIRONMENT_PENDING_VARIABLE] === 'pending';
+        // The announcement is for this process only: child processes must not wait for an answer of their own.
+        delete process.env[PROCESS_ENVIRONMENT_PENDING_VARIABLE];
+        if (!pending || typeof process.send !== 'function') {
             this.readyDeferred.resolve();
             return;
         }
@@ -131,6 +123,5 @@ export class ProcessEnvironmentImpl implements ProcessEnvironment, BackendApplic
 
     protected apply(env: NodeJS.ProcessEnv): void {
         Object.assign(process.env, env);
-        delete process.env[PROCESS_ENVIRONMENT_PENDING_VARIABLE];
     }
 }

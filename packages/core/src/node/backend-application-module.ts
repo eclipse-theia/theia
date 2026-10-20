@@ -124,6 +124,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bind(ProcessEnvironmentImpl).toSelf().inSingletonScope();
     bind(ProcessEnvironment).toService(ProcessEnvironmentImpl);
+    // Bound as a contribution, without hooks, so that it requests the environment at the start of the backend
     bind(BackendApplicationContribution).toService(ProcessEnvironmentImpl);
 
     bind(EnvVariablesServer).to(EnvVariablesServerImpl).inSingletonScope();
