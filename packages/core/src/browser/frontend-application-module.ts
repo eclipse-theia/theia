@@ -135,6 +135,7 @@ import { UserWorkingDirectoryProvider } from './user-working-directory-provider'
 import { WindowTitleService } from './window/window-title-service';
 import { WindowTitleUpdater } from './window/window-title-updater';
 import { TheiaDockPanel } from './shell/theia-dock-panel';
+import { NativeTabDragService } from './shell/native-tab-drag-service';
 import { bindStatusBar } from './status-bar';
 import { CoreMarkdownRenderer, MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from './markdown-rendering/markdown-renderer';
 import { StylingParticipant, StylingService } from './styling-service';
@@ -212,6 +213,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         return renderer;
     });
     bind(DockPanelRenderer).toSelf();
+    bind(NativeTabDragService).toSelf().inSingletonScope();
     bind(TabBarRendererFactory).toFactory(({ container }) => () => {
         const contextMenuRenderer = container.get(ContextMenuRenderer);
         const tabBarDecoratorService = container.get(TabBarDecoratorService);

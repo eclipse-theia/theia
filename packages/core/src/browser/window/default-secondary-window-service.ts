@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { inject, injectable, postConstruct, named } from 'inversify';
-import { SecondaryWindow, SecondaryWindowService } from './secondary-window-service';
+import { SecondaryWindow, SecondaryWindowOptions, SecondaryWindowService } from './secondary-window-service';
 import { WindowService } from './window-service';
 import { ExtractableWidget, Widget } from '../widgets';
 import { ApplicationShell } from '../shell';
@@ -104,13 +104,15 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
         });
     }
 
-    createSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell): Window | SecondaryWindow | undefined {
-        const [height, width, left, top] = this.findSecondaryWindowCoordinates(widget);
-        let options = `popup=1,width=${width},height=${height},left=${left},top=${top}`;
+    createSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell, options?: SecondaryWindowOptions): Window | SecondaryWindow | undefined {
+        const [height, width, left, top] = options?.position
+            ? [widget.node.clientHeight, widget.node.clientWidth, options.position.x, options.position.y]
+            : this.findSecondaryWindowCoordinates(widget);
+        let features = `popup=1,width=${width},height=${height},left=${left},top=${top}`;
         if (this.preferenceService.get('window.secondaryWindowAlwaysOnTop')) {
-            options += ',alwaysOnTop=true';
+            features += ',alwaysOnTop=true';
         }
-        const newWindow = window.open(DefaultSecondaryWindowService.SECONDARY_WINDOW_URL, this.nextWindowId(), options) ?? undefined;
+        const newWindow = window.open(DefaultSecondaryWindowService.SECONDARY_WINDOW_URL, this.nextWindowId(), features) ?? undefined;
         if (newWindow) {
             this.secondaryWindows.push(newWindow);
             this.onWindowOpenedEmitter.fire(newWindow);
@@ -217,12 +219,28 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
         return `${this.prefix}-secondaryWindow-${this.nextId++}`;
     }
 
+    async restoreWidget(widget: Widget, secondaryWindow: Window, shell: ApplicationShell): Promise<void> {
+        const preferredRestoreArea = ExtractableWidget.is(widget) ? widget.previousArea : getDefaultRestoreArea(secondaryWindow);
+        const area = (preferredRestoreArea === undefined || preferredRestoreArea === 'top' || preferredRestoreArea === 'secondaryWindow') ? 'main' : preferredRestoreArea;
+        // fire removed event before adding it to shell
+        this.beforeWidgetRestoreEmitter.fire([widget, secondaryWindow]);
+        // reset ExtractableWidget properties before moving back so that handler evaluation is correct immediately
+        if (ExtractableWidget.is(widget)) {
+            widget.secondaryWindow = undefined;
+            widget.previousArea = undefined;
+        }
+        await shell.addWidget(widget, { area });
+        // Don't wait for the widget to accept focus: while the secondary window is being closed, the main window may not
+        // have focus yet, so waiting would delay closing the window until the activation times out.
+        shell.activateWidget(widget.id);
+    }
+
     /**
      * Restore the widgets back to the main window. SecondaryWindowHandler needs to get informated about this.
      */
     protected async restoreWidgets(newWindow: Window, extractableWidget: ExtractableWidget, shell: ApplicationShell): Promise<boolean> {
-        const widgets = getAllWidgetsFromSecondaryWindow(newWindow) ?? new Set([extractableWidget]);
-        const defaultRestoreArea = getDefaultRestoreArea(newWindow);
+        // copy, as moving a widget back removes it from the secondary window's widgets
+        const widgets = [...getAllWidgetsFromSecondaryWindow(newWindow) ?? [extractableWidget]];
 
         let allMovedOrDisposed = true;
         for (const widget of widgets) {
@@ -230,17 +248,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                 continue;
             }
             try {
-                const preferredRestoreArea = ExtractableWidget.is(widget) ? widget.previousArea : defaultRestoreArea;
-                const area = (preferredRestoreArea === undefined || preferredRestoreArea === 'top' || preferredRestoreArea === 'secondaryWindow') ? 'main' : preferredRestoreArea;
-                // fire removed event before adding it to shell
-                this.beforeWidgetRestoreEmitter.fire([widget, newWindow]);
-                // reset ExtractableWidget properties before moving back so that handler evaluation is correct immediately
-                if (ExtractableWidget.is(widget)) {
-                    widget.secondaryWindow = undefined;
-                    widget.previousArea = undefined;
-                }
-                await shell.addWidget(widget, { area });
-                await shell.activateWidget(widget.id);
+                await this.restoreWidget(widget, newWindow, shell);
             } catch (e) {
                 // we can't move back, close instead
                 // otherwise the window will just stay open with no way to close it

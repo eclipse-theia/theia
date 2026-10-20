@@ -23,6 +23,7 @@ import { ContributionProvider } from '../common/contribution-provider';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { DEFAULT_BACKGROUND_COLOR_STORAGE_KEY } from './frontend-application-config-provider';
 import { SecondaryWindowHandler } from './secondary-window-handler';
+import { SecondaryWindowService } from './window/secondary-window-service';
 
 export const ColorContribution = Symbol('ColorContribution');
 export interface ColorContribution {
@@ -47,6 +48,9 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
     @inject(SecondaryWindowHandler)
     protected readonly secondaryWindowHandler: SecondaryWindowHandler;
 
+    @inject(SecondaryWindowService)
+    protected readonly secondaryWindowService: SecondaryWindowService;
+
     onStart(): void {
         for (const contribution of this.colorContributions.getContributions()) {
             contribution.registerColors(this.colors);
@@ -62,7 +66,8 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
         this.secondaryWindowHandler.onWillAddWidget(([widget, window]) => {
             this.registerWindow(window);
         });
-        this.secondaryWindowHandler.onWillRemoveWidget(([widget, window]) => {
+        // a window may contain several widgets, so it is only unregistered once it is closed
+        this.secondaryWindowService.onWindowClosed(window => {
             this.windows.delete(window);
         });
     }

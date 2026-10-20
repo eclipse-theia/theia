@@ -20,11 +20,13 @@ import { BoxLayout, ExtractableWidget, TabBar, Widget } from './widgets';
 import { MessageService } from '../common/message-service';
 import { ApplicationShell, DockPanelRenderer, MAIN_AREA_CLASS, MAIN_BOTTOM_AREA_CLASS } from './shell/application-shell';
 import { Emitter } from '../common/event';
-import { isSecondaryWindow, SecondaryWindowRootWidget, SecondaryWindowService } from './window/secondary-window-service';
+import { isSecondaryWindow, SecondaryWindowOptions, SecondaryWindowRootWidget, SecondaryWindowService } from './window/secondary-window-service';
 import { KeybindingRegistry } from './keybinding';
 import { MAIN_AREA_ID, TheiaDockPanel } from './shell/theia-dock-panel';
 import { ILogger } from '../common/logger';
 import { nls } from '../common/nls';
+import { NativeTabDragService } from './shell/native-tab-drag-service';
+import { WindowService } from './window/window-service';
 
 /** Widgets to be contained inside a DockPanel in the secondary window. */
 class SecondaryWindowDockPanelWidget extends SecondaryWindowRootWidget {
@@ -36,7 +38,11 @@ class SecondaryWindowDockPanelWidget extends SecondaryWindowRootWidget {
         dockPanelFactory: TheiaDockPanel.Factory,
         dockPanelRendererFactory: (document?: Document | ShadowRoot) => DockPanelRenderer,
         closeHandler: (sender: TabBar<Widget>, args: TabBar.ITabCloseRequestedArgs<Widget>) => boolean,
-        secondaryWindow: Window
+        secondaryWindow: Window,
+        dropOptions?: Pick<TheiaDockPanel.IOptions, 'canDropWidget' | 'onWillDropWidget'> & {
+            /** Called when a widget has been dropped on this window, it must be tracked with {@link track} */
+            onDidDropWidget(widget: Widget): void
+        }
     ) {
         super();
         this.secondaryWindow = secondaryWindow;
@@ -47,12 +53,22 @@ class SecondaryWindowDockPanelWidget extends SecondaryWindowRootWidget {
         renderer.tabBarClasses.push(MAIN_BOTTOM_AREA_CLASS);
         renderer.tabBarClasses.push(MAIN_AREA_CLASS);
         this.dockPanel = dockPanelFactory({
-            disableDragAndDrop: true,
+            disableDragAndDrop: !dropOptions,
             closeHandler,
             mode: 'multiple-document',
             renderer,
+            canDropWidget: dropOptions?.canDropWidget,
+            onWillDropWidget: dropOptions?.onWillDropWidget
         });
         this.dockPanel.id = MAIN_AREA_ID;
+        if (dropOptions) {
+            // widgets added through `addWidget` are tracked already
+            this.dockPanel.widgetAdded.connect((_, widget) => {
+                if (!this._widgets.includes(widget)) {
+                    dropOptions.onDidDropWidget(widget);
+                }
+            });
+        }
         BoxLayout.setStretch(this.dockPanel, 1);
         boxLayout.addWidget(this.dockPanel);
         this.layout = boxLayout;
@@ -63,18 +79,36 @@ class SecondaryWindowDockPanelWidget extends SecondaryWindowRootWidget {
     }
 
     addWidget(widget: Widget, disposeCallback: () => void, options?: TheiaDockPanel.AddOptions): void {
-        this._widgets.push(widget);
+        this.track(widget, disposeCallback);
         this.dockPanel.addWidget(widget, options);
+        this.dockPanel.activateWidget(widget);
+    }
 
-        widget.disposed.connect(() => {
+    /**
+     * Tracks the given widget, which has been added to the dock panel of this window.
+     *
+     * @param disposeCallback called when the widget leaves this window
+     */
+    track(widget: Widget, disposeCallback: () => void): void {
+        this._widgets.push(widget);
+
+        // the widget leaves this window when it is disposed, moved back to the main window or dragged to another window
+        const onRemove = () => {
             const index = this._widgets.indexOf(widget);
             if (index > -1) {
                 this._widgets.splice(index, 1);
+                widget.disposed.disconnect(onRemove);
+                this.dockPanel.widgetRemoved.disconnect(onWidgetRemoved);
+                disposeCallback();
             }
-            disposeCallback();
-        });
-
-        this.dockPanel.activateWidget(widget);
+        };
+        const onWidgetRemoved = (_: TheiaDockPanel, removed: Widget) => {
+            if (removed === widget) {
+                onRemove();
+            }
+        };
+        widget.disposed.connect(onRemove);
+        this.dockPanel.widgetRemoved.connect(onWidgetRemoved);
     }
 
     override getTabBar(widget: Widget): TabBar<Widget> | undefined {
@@ -130,6 +164,12 @@ export class SecondaryWindowHandler {
     @inject(SecondaryWindowService)
     protected readonly secondaryWindowService: SecondaryWindowService;
 
+    @inject(NativeTabDragService)
+    protected readonly nativeTabDragService: NativeTabDragService;
+
+    @inject(WindowService)
+    protected readonly windowService: WindowService;
+
     /** @returns List of widgets in secondary windows. */
     get widgets(): ReadonlyArray<Widget> {
         // Create new array in case the original changes while this is used.
@@ -152,14 +192,33 @@ export class SecondaryWindowHandler {
         this.dockPanelRendererFactory = dockPanelRendererFactory;
 
         this.secondaryWindowService.beforeWidgetRestore(([widget, window]) => this.removeWidget(widget, window));
+        this.nativeTabDragService.onDidDropTab(({ title, window: target }) => this.focusDroppedWidget(title.owner, target));
+    }
+
+    /**
+     * Focuses the window in which a tab has been dropped and the widget of the tab. The drag started in another window,
+     * or outside of the main area, which keeps the focus otherwise.
+     */
+    protected focusDroppedWidget(widget: Widget, target: Window): void {
+        if (widget.isDisposed) {
+            return;
+        }
+        if (target === window) {
+            this.windowService.focus();
+            this.applicationShell.activateWidget(widget.id);
+        } else {
+            this.secondaryWindowService.focus(target);
+            widget.activate();
+        }
     }
 
     /**
      *  Moves the given widget to a new window.
      *
      * @param widget the widget to extract
+     * @param options optional options for the created window, e.g. its screen position
      */
-    moveWidgetToSecondaryWindow(widget: ExtractableWidget): void {
+    moveWidgetToSecondaryWindow(widget: ExtractableWidget, options?: SecondaryWindowOptions): void {
         if (!this.applicationShell) {
             this.logger.error('Widget cannot be extracted because the WidgetExtractionHandler has not been initialized.');
             return;
@@ -169,7 +228,9 @@ export class SecondaryWindowHandler {
             return;
         }
 
-        const newWindow = this.secondaryWindowService.createSecondaryWindow(widget, this.applicationShell);
+        // a widget that is moved from one secondary window to another one keeps the area to restore it to
+        const previousArea = widget.secondaryWindow ? widget.previousArea : this.applicationShell.getAreaFor(widget);
+        const newWindow = this.secondaryWindowService.createSecondaryWindow(widget, this.applicationShell, options);
 
         if (!newWindow) {
             this.messageService.error('The widget could not be moved to a secondary window because the window creation failed. Please make sure to allow popups.');
@@ -180,6 +241,9 @@ export class SecondaryWindowHandler {
 
         newWindow.addEventListener('load', () => {
             this.keybindings.registerEventListeners(newWindow);
+            // tabs dragged from other windows must not be dropped on the default drop targets of this window
+            const tabDragRegistration = this.nativeTabDragService.installWindow(newWindow);
+            newWindow.addEventListener('pagehide', () => tabDragRegistration.dispose());
             // Use the widget's title as the window title
             // Even if the widget's label were malicious, this should be safe against XSS because the HTML standard defines this is inserted via a text node.
             // See https://html.spec.whatwg.org/multipage/dom.html#document.title
@@ -196,9 +260,13 @@ export class SecondaryWindowHandler {
             this.onWillAddWidgetEmitter.fire([widget, newWindow]);
 
             widget.secondaryWindow = newWindow;
-            widget.previousArea = this.applicationShell.getAreaFor(widget);
-            const rootWidget: SecondaryWindowRootWidget = new SecondaryWindowDockPanelWidget(this.dockPanelFactory, this.dockPanelRendererFactory, this.onTabCloseRequested,
-                newWindow);
+            widget.previousArea = previousArea;
+            const rootWidget: SecondaryWindowDockPanelWidget = new SecondaryWindowDockPanelWidget(this.dockPanelFactory, this.dockPanelRendererFactory, this.onTabCloseRequested,
+                newWindow, {
+                canDropWidget: dropped => this.canDropInSecondaryWindow(dropped),
+                onWillDropWidget: dropped => this.onWillDropInSecondaryWindow(dropped),
+                onDidDropWidget: dropped => this.onDidDropInSecondaryWindow(dropped, newWindow, rootWidget)
+            });
             rootWidget.defaultRestoreArea = widget.previousArea;
             rootWidget.addClass('secondary-widget-root');
             rootWidget.addClass('monaco-workbench'); // needed for compatility with VSCode styles
@@ -230,15 +298,68 @@ export class SecondaryWindowHandler {
         nls.setHtmlNoTranslate(element);
     }
 
-    private onWidgetRemove(widget: Widget, newWindow: Window, rootWidget: SecondaryWindowRootWidget): void {
-        // Close the window if the widget is disposed, e.g. by a command closing all widgets.
-        this.onWillRemoveWidgetEmitter.fire([widget, newWindow]);
-        this.removeWidget(widget, newWindow);
-        if (!newWindow.closed && rootWidget.widgets.length === 0) {
-            // no remaining widgets in window -> close the window
-            newWindow.close();
+    /**
+     * Moves the given widget from its secondary window back to the main window.
+     * The secondary window is closed once it does not contain any widgets anymore.
+     *
+     * @param widget the widget to move back
+     */
+    async moveWidgetToMainWindow(widget: Widget): Promise<void> {
+        if (!this.applicationShell) {
+            this.logger.error('Widget cannot be moved back because the WidgetExtractionHandler has not been initialized.');
+            return;
         }
+        const secondaryWindow = extractSecondaryWindow(widget);
+        if (!secondaryWindow) {
+            this.logger.error('Widget is not contained in a secondary window.', widget.id);
+            return;
+        }
+        await this.secondaryWindowService.restoreWidget(widget, secondaryWindow, this.applicationShell);
+    }
 
+    /**
+     * Only widgets that can be moved to secondary windows, or that are in a secondary window already, can be dropped on secondary windows.
+     */
+    protected canDropInSecondaryWindow(widget: Widget): boolean {
+        return ExtractableWidget.is(widget) || this._widgets.includes(widget);
+    }
+
+    protected onWillDropInSecondaryWindow(widget: Widget): void {
+        if (ExtractableWidget.is(widget) && widget.secondaryWindow === undefined) {
+            // the widget is still in the main window
+            widget.previousArea = this.applicationShell.getAreaFor(widget);
+        }
+    }
+
+    protected onDidDropInSecondaryWindow(widget: Widget, secondaryWindow: Window, rootWidget: SecondaryWindowDockPanelWidget): void {
+        if (ExtractableWidget.is(widget)) {
+            widget.secondaryWindow = secondaryWindow;
+        }
+        rootWidget.track(widget, () => {
+            this.onWidgetRemove(widget, secondaryWindow, rootWidget);
+        });
+        this.addWidget(widget, secondaryWindow);
+    }
+
+    private onWidgetRemove(widget: Widget, newWindow: Window, rootWidget: SecondaryWindowRootWidget): void {
+        // Widgets moved back to the main window have already been removed via `beforeWidgetRestore`
+        if (this._widgets.includes(widget)) {
+            this.onWillRemoveWidgetEmitter.fire([widget, newWindow]);
+            this.removeWidget(widget, newWindow);
+        }
+        // A widget dropped on another window is assigned to that window once it has been added there
+        if (ExtractableWidget.is(widget) && widget.secondaryWindow === newWindow) {
+            widget.secondaryWindow = undefined;
+        }
+        // Close the window if the widget is disposed, e.g. by a command closing all widgets, or the last widget was moved away.
+        if (!newWindow.closed && rootWidget.widgets.length === 0) {
+            // Close asynchronously, as the widget may have been dragged away by a drag that started in this window
+            setTimeout(() => {
+                if (!newWindow.closed && rootWidget.widgets.length === 0) {
+                    newWindow.close();
+                }
+            });
+        }
     }
 
     addWidgetToSecondaryWindow(widget: Widget, secondaryWindow: Window, options?: TheiaDockPanel.AddOptions): void {

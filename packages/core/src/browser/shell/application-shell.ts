@@ -29,6 +29,7 @@ import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar
 import { TheiaDockPanel, BOTTOM_AREA_ID, MAIN_AREA_ID } from './theia-dock-panel';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory } from './side-panel-handler';
 import { TabBarRendererFactory, SHELL_TABBAR_CONTEXT_MENU, ScrollableTabBar, ToolbarAwareTabBar } from './tab-bars';
+import { NativeTabDragService } from './native-tab-drag-service';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 import { TabBarToolbarRegistry, TabBarToolbarFactory } from './tab-bar-toolbar';
@@ -97,6 +98,9 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
 
     private readonly onDidCreateTabBarEmitter = new Emitter<TabBar<Widget>>();
 
+    @inject(NativeTabDragService) @optional()
+    protected readonly nativeTabDragService?: NativeTabDragService;
+
     constructor(
         @inject(TabBarRendererFactory) protected readonly tabBarRendererFactory: TabBarRendererFactory,
         @inject(TabBarToolbarRegistry) protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
@@ -140,6 +144,7 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
             getDynamicTabOptions());
         this.tabBarClasses.forEach(c => tabBar.addClass(c));
         renderer.tabBar = tabBar;
+        tabBar.nativeTabDragService = this.nativeTabDragService;
         renderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
         tabBar.currentChanged.connect(this.onCurrentTabChanged, this);
         const prefChangeDisposable = this.corePreferences.onPreferenceChanged(change => {
@@ -488,8 +493,10 @@ export class ApplicationShell extends Widget {
                 && clientX <= offsetLeft + this.options.leftPanel.expandThreshold;
             const expRight = allowExpansion && clientX <= offsetLeft + clientWidth
                 && clientX >= offsetLeft + clientWidth - this.options.rightPanel.expandThreshold;
-            const expBottom = allowExpansion && !expLeft && !expRight && clientY <= offsetTop + clientHeight
-                && clientY >= offsetTop + clientHeight - this.options.bottomPanel.expandThreshold;
+            // The bottom panel is below the main area only, so don't expand it while dragging over an open side panel
+            const mainAreaBounds = this.mainPanel.node.getBoundingClientRect();
+            const expBottom = allowExpansion && !expLeft && !expRight && clientX >= mainAreaBounds.left && clientX <= mainAreaBounds.right
+                && clientY <= offsetTop + clientHeight && clientY >= offsetTop + clientHeight - this.options.bottomPanel.expandThreshold;
             // eslint-disable-next-line no-null/no-null
             if (expLeft && !state.leftExpanded && this.leftPanelHandler.tabBar.currentTitle === null) {
                 // The mouse cursor is moved close to the left border
