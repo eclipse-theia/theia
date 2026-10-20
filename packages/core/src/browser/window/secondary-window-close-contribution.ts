@@ -17,7 +17,6 @@
 import { inject, injectable } from 'inversify';
 import { MaybePromise } from '../../common/types';
 import { Widget } from '../widgets';
-import { Saveable } from '../saveable';
 import { SaveableService } from '../saveable-service';
 
 export const SecondaryWindowCloseContribution = Symbol('SecondaryWindowCloseContribution');
@@ -43,7 +42,6 @@ export class SaveableSecondaryWindowCloseContribution implements SecondaryWindow
     protected readonly saveableService: SaveableService;
 
     shouldRestoreOnClose(widget: Widget): boolean {
-        const saveable = Saveable.get(widget);
-        return !!saveable && saveable.dirty && this.saveableService.autoSave === 'off';
+        return this.saveableService.wouldLoseChangesOnClose(widget);
     }
 }

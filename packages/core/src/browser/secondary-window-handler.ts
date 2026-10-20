@@ -30,6 +30,7 @@ import { nls } from '../common/nls';
 import { NativeTabDragService } from './shell/native-tab-drag-service';
 import { WindowService } from './window/window-service';
 import { PreferenceService } from '../common/preferences';
+import { WindowFocusService } from './window/window-focus-service';
 
 /** Widgets to be contained inside a DockPanel in the secondary window. */
 class SecondaryWindowDockPanelWidget extends SecondaryWindowRootWidget {
@@ -197,6 +198,15 @@ export class SecondaryWindowHandler {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(WindowFocusService)
+    protected readonly windowFocusService: WindowFocusService;
+
+    /**
+     * The secondary windows that are being restored, see {@link setLayoutData}, and have not been loaded yet.
+     * Their widgets are not tracked yet, so they are stored with the layout as they were restored.
+     */
+    protected readonly pendingWindows = new Map<Window, SecondaryWindowHandler.LayoutData>();
+
     /** @returns List of widgets in secondary windows. */
     get widgets(): ReadonlyArray<Widget> {
         // Create new array in case the original changes while this is used.
@@ -283,13 +293,14 @@ export class SecondaryWindowHandler {
      * @param widget the widget the window is created for, its label is used as the window title
      * @param options the options for the created window, e.g. its bounds
      * @param populate adds the widgets to the root widget of the loaded window
-     * @returns whether the window has been created
+     * @param onDidFailToLoad called if the loaded window cannot host widgets, the window is closed then
+     * @returns the created window or `undefined` if it could not be created
      */
     protected openSecondaryWindow(widget: ExtractableWidget, options: SecondaryWindowOptions | undefined,
-        populate: (newWindow: Window, rootWidget: SecondaryWindowDockPanelWidget) => void): boolean {
+        populate: (newWindow: Window, rootWidget: SecondaryWindowDockPanelWidget) => void, onDidFailToLoad?: (newWindow: Window) => void): Window | undefined {
         const newWindow = this.secondaryWindowService.createSecondaryWindow(widget, this.applicationShell, options);
         if (!newWindow) {
-            return false;
+            return undefined;
         }
 
         const mainWindowTitle = document.title;
@@ -309,6 +320,8 @@ export class SecondaryWindowHandler {
             const element = newWindow.document.getElementById('widget-host');
             if (!element) {
                 this.logger.error('Could not find dom element to attach to in secondary window');
+                newWindow.close();
+                onDidFailToLoad?.(newWindow);
                 return;
             }
 
@@ -339,7 +352,7 @@ export class SecondaryWindowHandler {
                 updateWidget();
             });
         });
-        return true;
+        return newWindow;
     }
 
     /**
@@ -363,12 +376,13 @@ export class SecondaryWindowHandler {
                 rootWidgets.add(rootWidget);
             }
         }
-        return Array.from(rootWidgets, rootWidget => ({
+        const openWindows: SecondaryWindowHandler.LayoutData[] = Array.from(rootWidgets, rootWidget => ({
             bounds: rootWidget.secondaryWindow.closed ? rootWidget.closedBounds : this.getWindowBounds(rootWidget.secondaryWindow),
             config: rootWidget.saveLayout(),
-            previousAreas: rootWidget.getLayoutWidgets().map(widget =>
+            restoreAreas: rootWidget.getLayoutWidgets().map(widget =>
                 (ExtractableWidget.is(widget) ? widget.previousArea : undefined) ?? rootWidget.defaultRestoreArea ?? 'main')
         }));
+        return [...openWindows, ...this.pendingWindows.values()];
     }
 
     /**
@@ -389,29 +403,39 @@ export class SecondaryWindowHandler {
         }
     }
 
-    protected restoreSecondaryWindow({ bounds, config, previousAreas }: SecondaryWindowHandler.LayoutData, openWindow: boolean): void {
+    protected restoreSecondaryWindow(data: SecondaryWindowHandler.LayoutData, openWindow: boolean): void {
+        const { bounds, config, restoreAreas } = data;
         const widgets = this.collectLayoutWidgets(config.main);
-        // the widgets that could not be restored have been removed from the layout already
-        const areas = previousAreas?.length === widgets.length ? previousAreas : undefined;
-        const previousArea = new Map(widgets.map((widget, index) => [widget, areas?.[index] ?? 'main']));
+        // widgets that could not be stored or restored are missing from the layout, the areas cannot be matched with the widgets then
+        const previousArea = new Map<Widget, ApplicationShell.Area>();
+        if (restoreAreas?.length === widgets.length) {
+            widgets.forEach((widget, i) => previousArea.set(widget, restoreAreas[i]));
+        }
+        const getPreviousArea = (widget: Widget) => previousArea.get(widget) ?? 'main';
         // widgets that have been added elsewhere in the meantime are not moved
         const isAvailable = (widget: Widget) => !widget.parent && !widget.isDisposed;
+        const addToMainWindow = () => {
+            for (const widget of widgets.filter(isAvailable)) {
+                this.applicationShell.addWidget(widget, { area: SecondaryWindowHandler.getMainWindowArea(getPreviousArea(widget)) });
+            }
+        };
 
         const extractable = widgets.find(widget => isAvailable(widget) && ExtractableWidget.is(widget) && widget.isExtractable) as ExtractableWidget | undefined;
         const options: SecondaryWindowOptions | undefined = bounds && { position: { x: bounds.x, y: bounds.y }, size: { width: bounds.width, height: bounds.height } };
         const opened = openWindow && extractable && this.openSecondaryWindow(extractable, options, (newWindow, rootWidget) => {
+            this.pendingWindows.delete(newWindow);
             this.removeFromLayout(config.main, isAvailable);
             const windowWidgets = this.collectLayoutWidgets(config.main);
             if (windowWidgets.length === 0) {
                 newWindow.close();
                 return;
             }
-            rootWidget.defaultRestoreArea = previousArea.get(windowWidgets[0]);
+            rootWidget.defaultRestoreArea = getPreviousArea(windowWidgets[0]);
             for (const widget of windowWidgets) {
                 this.onWillAddWidgetEmitter.fire([widget, newWindow]);
                 if (ExtractableWidget.is(widget)) {
                     widget.secondaryWindow = newWindow;
-                    widget.previousArea = previousArea.get(widget);
+                    widget.previousArea = getPreviousArea(widget);
                 }
                 rootWidget.track(widget, () => {
                     this.onWidgetRemove(widget, newWindow, rootWidget);
@@ -421,12 +445,23 @@ export class SecondaryWindowHandler {
             for (const widget of windowWidgets) {
                 this.addWidget(widget, newWindow);
             }
+        }, newWindow => {
+            this.pendingWindows.delete(newWindow);
+            addToMainWindow();
         });
-        if (!opened) {
-            for (const widget of widgets.filter(isAvailable)) {
-                const area = previousArea.get(widget);
-                this.applicationShell.addWidget(widget, { area: area === undefined || area === 'top' || area === 'secondaryWindow' ? 'main' : area });
-            }
+        if (opened) {
+            this.pendingWindows.set(opened, data);
+            // the window may be closed before it has been populated, its widgets would not be shown anywhere then
+            const closeListener = this.secondaryWindowService.onWindowClosed(closed => {
+                if (closed === opened) {
+                    closeListener.dispose();
+                    if (this.pendingWindows.delete(opened)) {
+                        addToMainWindow();
+                    }
+                }
+            });
+        } else {
+            addToMainWindow();
         }
     }
 
@@ -507,6 +542,8 @@ export class SecondaryWindowHandler {
     }
 
     protected onDidDropInSecondaryWindow(widget: Widget, secondaryWindow: Window, rootWidget: SecondaryWindowDockPanelWidget): void {
+        // the widget is part of the window's dock panel already, but not tracked yet
+        this.onWillAddWidgetEmitter.fire([widget, secondaryWindow]);
         if (ExtractableWidget.is(widget)) {
             widget.secondaryWindow = secondaryWindow;
         }
@@ -609,7 +646,7 @@ export class SecondaryWindowHandler {
     }
 
     getFocusedWindow(): Window | undefined {
-        return window.document.hasFocus() ? window : this.secondaryWindowService.getWindows().find(candidate => candidate.document.hasFocus());
+        return this.windowFocusService.focusedWindow;
     }
 
     protected addWidget(widget: Widget, win: Window): void {
@@ -655,8 +692,15 @@ export namespace SecondaryWindowHandler {
         bounds?: WindowBounds;
         /** The layout of the window's dock panel */
         config: DockPanel.ILayoutConfig;
-        /** The areas of the main window to move the widgets back to, in the order of the widgets in `config` */
-        previousAreas?: ApplicationShell.Area[];
+        /** The areas of the main window to move the widgets of `config` back to, in the order of the widgets in `config` */
+        restoreAreas?: ApplicationShell.Area[];
+    }
+
+    /**
+     * @returns the area of the main window to move a widget back to whose previous area is the given one
+     */
+    export function getMainWindowArea(previousArea: ApplicationShell.Area | undefined): ApplicationShell.Area {
+        return previousArea === undefined || previousArea === 'top' || previousArea === 'secondaryWindow' ? 'main' : previousArea;
     }
 }
 

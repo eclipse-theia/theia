@@ -390,7 +390,11 @@ export class ApplicationShell extends Widget {
         this.rightPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
 
         this.secondaryWindowHandler.init(this, this.dockPanelRendererFactory);
-        this.secondaryWindowHandler.onDidAddWidget(([widget, window]) => this.fireDidAddWidget(widget));
+        this.secondaryWindowHandler.onDidAddWidget(([widget, window]) => {
+            // widgets restored in secondary windows on startup have never been added to the main window
+            this.track(widget);
+            this.fireDidAddWidget(widget);
+        });
         this.secondaryWindowHandler.onDidRemoveWidget(([widget, window]) => this.fireDidRemoveWidget(widget));
 
         this.layout = this.createLayout();

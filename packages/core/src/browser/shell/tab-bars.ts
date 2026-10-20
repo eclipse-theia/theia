@@ -41,6 +41,7 @@ import { PreviewableWidget } from '../widgets/previewable-widget';
 import { EnhancedPreviewWidget } from '../widgets/enhanced-preview-widget';
 import { isContextMenuEvent } from '../browser';
 import { NativeTabDragService } from './native-tab-drag-service';
+import { TabDropHelper } from './tab-drop-helper';
 import { ContextKeyService } from '../context-key-service';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
@@ -1051,7 +1052,9 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
         switch (event.type) {
             case 'pointerdown':
                 if (this.isTabPress(event as PointerEvent)) {
-                    // Lumino prevents the default action of presses on tabs, which would keep the browser from starting a native drag.
+                    // Lumino prevents the default action of presses on tabs (see `TabBar._evtPointerDown`), which would keep the browser
+                    // from starting a native drag. Lumino offers no hook to skip this, hence the override of `preventDefault` on the event.
+                    // `tab-bars.spec.ts` verifies that Lumino still calls `preventDefault` and that it is skipped.
                     Object.defineProperty(event, 'preventDefault', { value: () => { }, configurable: true });
                 }
                 break;
@@ -1069,10 +1072,17 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
         }
     }
 
+    /**
+     * Whether Lumino handles the given event as a press on a tab that may start a drag, i.e. a left button press that
+     * hits a tab and not its title input. Uses the same hit test as `TabBar._evtPointerDown`.
+     */
     protected isTabPress(event: MouseEvent): boolean {
         // not using `instanceof`, the tab bar may be in a secondary window, i.e. in another JavaScript realm
         const target = event.target as Element | null;
-        return event.button === 0 && !!target?.closest?.('.lm-TabBar-tab') && this.contentNode.contains(target);
+        if (event.button !== 0 || target?.classList?.contains('lm-TabBar-tabInput')) {
+            return false;
+        }
+        return ArrayExt.findFirstIndex(this.contentNode.children, tab => ElementExt.hitTest(tab, event.clientX, event.clientY)) !== -1;
     }
 
     /**
@@ -1192,8 +1202,7 @@ export class SideTabBar extends ScrollableTabBar {
      */
     readonly widgetDropped = new Signal<this, { widget: Widget, index: number }>(this);
 
-    /** The tab marking where a dropped widget is inserted. */
-    protected widgetInsertionMarker?: { tab: Element, className: string };
+    protected readonly widgetDropHelper = new TabDropHelper({ before: 'drop-target-top', after: 'drop-target-bottom' });
 
     protected mouseData?: {
         pressX: number,
@@ -1473,11 +1482,11 @@ export class SideTabBar extends ScrollableTabBar {
                 break;
             case 'lm-dragleave':
                 this.cancelViewContainerDND();
-                this.hideWidgetInsertionMarker();
+                this.widgetDropHelper.hideInsertionMarker();
                 break;
             case 'lm-drop':
                 this.cancelViewContainerDND();
-                this.hideWidgetInsertionMarker();
+                this.widgetDropHelper.hideInsertionMarker();
                 // `lm-drop` is also listened to on the document to clean up dragged view container parts
                 if (event.currentTarget === this.node) {
                     this.onWidgetDrop(event as Drag.Event);
@@ -1561,7 +1570,7 @@ export class SideTabBar extends ScrollableTabBar {
      */
     protected onDragEnter = (event: Drag.Event) => {
         this.cancelViewContainerDND();
-        if (event.mimeData.getData('application/vnd.lumino.view-container-factory') || this.getDraggedWidget(event)) {
+        if (event.mimeData.getData('application/vnd.lumino.view-container-factory') || this.widgetDropHelper.getDraggedWidget(event)) {
             event.preventDefault();
             event.stopPropagation();
         }
@@ -1629,68 +1638,26 @@ export class SideTabBar extends ScrollableTabBar {
      * Handles dragging a widget, e.g. the tab of an editor or of a view in another side panel, over the tab bar.
      */
     protected onWidgetDragOver(event: Drag.Event): void {
-        if (!this.getDraggedWidget(event)) {
+        if (!this.widgetDropHelper.getDraggedWidget(event)) {
             event.dropAction = 'none';
-            this.hideWidgetInsertionMarker();
+            this.widgetDropHelper.hideInsertionMarker();
             return;
         }
         event.preventDefault();
         event.stopPropagation();
         event.dropAction = event.proposedAction;
-        this.showWidgetInsertionMarker(this.findInsertionIndex(event.clientY));
+        this.widgetDropHelper.showInsertionMarker(this, this.widgetDropHelper.findInsertionIndex(this, event.clientX, event.clientY));
     }
 
     protected onWidgetDrop(event: Drag.Event): void {
-        const widget = this.getDraggedWidget(event);
+        const widget = this.widgetDropHelper.getDraggedWidget(event);
         if (!widget) {
             return;
         }
         event.preventDefault();
         event.stopPropagation();
         event.dropAction = event.proposedAction;
-        this.widgetDropped.emit({ widget, index: this.findInsertionIndex(event.clientY) });
-    }
-
-    protected getDraggedWidget(event: Drag.Event): Widget | undefined {
-        const factory = event.mimeData.getData('application/vnd.lumino.widget-factory');
-        const widget = typeof factory === 'function' ? factory() : undefined;
-        return widget instanceof Widget ? widget : undefined;
-    }
-
-    /**
-     * @returns the index of the tab before which a widget dropped at the given position is inserted,
-     * or the number of tabs if it is appended
-     */
-    protected findInsertionIndex(clientY: number): number {
-        const tabs = this.contentNode.children;
-        for (let i = 0; i < tabs.length; i++) {
-            const rect = tabs[i].getBoundingClientRect();
-            if (rect.height > 0 && clientY < rect.top + rect.height / 2) {
-                return i;
-            }
-        }
-        return tabs.length;
-    }
-
-    protected showWidgetInsertionMarker(index: number): void {
-        const tabs = this.contentNode.children;
-        const tab = index < tabs.length ? tabs[index] : tabs[tabs.length - 1];
-        const className = index < tabs.length ? 'drop-target-top' : 'drop-target-bottom';
-        if (this.widgetInsertionMarker?.tab === tab && this.widgetInsertionMarker.className === className) {
-            return;
-        }
-        this.hideWidgetInsertionMarker();
-        if (tab) {
-            tab.classList.add(className);
-            this.widgetInsertionMarker = { tab, className };
-        }
-    }
-
-    protected hideWidgetInsertionMarker(): void {
-        if (this.widgetInsertionMarker) {
-            this.widgetInsertionMarker.tab.classList.remove(this.widgetInsertionMarker.className);
-            this.widgetInsertionMarker = undefined;
-        }
+        this.widgetDropped.emit({ widget, index: this.widgetDropHelper.findInsertionIndex(this, event.clientX, event.clientY) });
     }
 
 }
