@@ -14,36 +14,30 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Endpoint } from '../browser/endpoint';
-
 /**
  * Resolution of the backend port in the Electron frontend.
  *
  * The main process loads the window content as soon as the window exists, while the backend is still
- * starting, so the window URL does not carry the port of the backend. The generated `index.js` resolves
- * it from the main process before the preload phase makes the first connection. A `port` parameter in
- * the URL, as set for windows that connect to a remote backend, takes precedence.
+ * starting, so the URL it loads does not carry the port of the backend. The generated `index.js` resolves
+ * the port from the main process before the preload phase makes the first connection and writes it into
+ * the URL, where `Endpoint` and every other reader of `location.search` find it as before. A `port`
+ * parameter that the URL carries already, as for a window that connects to a remote backend, is kept.
  */
 export namespace ElectronBackendPort {
 
     export const PARAM = 'port';
 
     /**
-     * The port of the backend of this window, from the URL or as resolved from the main process.
-     */
-    export function get(): string {
-        return new URLSearchParams(location.search).get(PARAM) ?? Endpoint.defaultPort;
-    }
-
-    /**
-     * Resolve the port from the main process unless the URL carries one, and make it the default port
-     * of every {@link Endpoint}. Resolves once the backend is listening.
+     * Resolve the port from the main process unless the URL carries one, and put it into the URL.
+     * Resolves once the backend is listening.
      */
     export async function resolve(): Promise<void> {
-        if (new URLSearchParams(location.search).has(PARAM)) {
+        const url = new URL(location.href);
+        if (url.searchParams.has(PARAM)) {
             return;
         }
         const port = await window.electronTheiaCore.getBackendPort();
-        Endpoint.defaultPort = port.toString();
+        url.searchParams.set(PARAM, port.toString());
+        history.replaceState(history.state, '', url);
     }
 }

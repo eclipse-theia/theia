@@ -26,13 +26,6 @@ export class Endpoint {
     static readonly PROTO_WSS: string = 'wss:';
     static readonly PROTO_FILE: string = 'file:';
 
-    /**
-     * The port of the backend when the page is not served by it (the `file:` protocol in Electron) and the
-     * URL carries no `port` parameter. The Electron frontend sets it to the port reported by the main process
-     * before it connects, see `ElectronBackendPort`; the default is the port of the browser example.
-     */
-    static defaultPort = '3000';
-
     constructor(
         protected readonly options: Endpoint.Options = {},
         protected readonly location: Endpoint.Location = self.location
@@ -74,7 +67,7 @@ export class Endpoint {
     }
 
     protected get port(): string {
-        return this.getSearchParam('port', Endpoint.defaultPort);
+        return this.getSearchParam('port', '3000');
     }
 
     protected getSearchParam(name: string, defaultValue: string): string {

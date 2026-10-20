@@ -27,11 +27,13 @@ export function getLocalPort(): string | undefined {
 
 export const CURRENT_PORT_PARAM = ElectronBackendPort.PARAM;
 /**
- * The port of the backend of this window: the `port` URL parameter if there is one, otherwise the port
- * resolved from the main process at start-up, see {@link ElectronBackendPort}.
+ * The port of the backend of this window, from the `port` URL parameter. The main process sets it for a
+ * window that connects to a remote backend; for a local backend, {@link ElectronBackendPort.resolve}
+ * writes it into the URL before the frontend connects.
  */
 export function getCurrentPort(): string | undefined {
-    return ElectronBackendPort.get();
+    const params = new URLSearchParams(location.search);
+    return params.get(CURRENT_PORT_PARAM) ?? undefined;
 }
 
 @injectable()
