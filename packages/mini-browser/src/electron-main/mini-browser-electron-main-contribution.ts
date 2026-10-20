@@ -32,7 +32,9 @@ export class MiniBrowserElectronMainContribution implements ElectronMainApplicat
 
     onStart(app: ElectronMainApplication): void {
         // Contributions start before the backend is listening; the cookie is only needed once a mini-browser loads.
-        app.backendPort.then(port => this.electronSecurityTokenService.setElectronSecurityTokenCookie(this.getMiniBrowserEndpoint(port)));
+        app.backendPort
+            .then(port => this.electronSecurityTokenService.setElectronSecurityTokenCookie(this.getMiniBrowserEndpoint(port)))
+            .catch(error => console.error('Failed to set the security token cookie for the mini-browser.', error));
     }
 
     protected getMiniBrowserEndpoint(port: number): string {
