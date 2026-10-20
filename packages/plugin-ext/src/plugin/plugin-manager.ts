@@ -306,7 +306,7 @@ export abstract class AbstractPluginManagerExtImpl<P extends Record<string, any>
                                     throw new Error(`Dependent plugin '${dependency.model.displayName || dependency.model.id}' failed to activate.`);
                                 }
                             } else {
-                                throw new Error(`Dependent plugin '${dependencyId}' is not installed.`);
+                                throw new Error(`Dependent plugin '${dependencyId}' is not installed or disabled.`);
                             }
                         }
                     }
