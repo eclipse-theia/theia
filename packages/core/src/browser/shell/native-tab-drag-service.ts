@@ -99,6 +99,19 @@ export class NativeTabDragService {
      */
     readonly onDidDropTab: Event<TabDropEvent> = this.onDidDropTabEmitter.event;
 
+    protected readonly onDidStartDragEmitter = new Emitter<DragEvent>();
+    /**
+     * Emitted when a tab drag has started, with its `dragstart` event.
+     */
+    readonly onDidStartDrag: Event<DragEvent> = this.onDidStartDragEmitter.event;
+
+    protected readonly onDidEndDragEmitter = new Emitter<DragEvent>();
+    /**
+     * Emitted when a tab drag has ended, with its `dragend` event, or with the `drop` event of a successful drop.
+     * Native drags end without a `mouseup` event.
+     */
+    readonly onDidEndDrag: Event<DragEvent> = this.onDidEndDragEmitter.event;
+
     @postConstruct()
     protected init(): void {
         this.installWindow(window);
@@ -148,6 +161,7 @@ export class NativeTabDragService {
         this.session = { title, source, mimeData };
         // The native drag cancels the pointer events, so Lumino never sees the release of its press on the tab.
         tabBar.releaseMouse();
+        this.onDidStartDragEmitter.fire(event);
     }
 
     /**
@@ -159,7 +173,8 @@ export class NativeTabDragService {
             return;
         }
         // a successful drop has ended the session already, see `handleDrop`
-        const insideWindows = this.endSession();
+        const insideWindows = this.isInsideWindows(event);
+        this.endSession(event);
         if (!insideWindows && event.dataTransfer?.dropEffect === 'none' && !session.title.owner.isDisposed) {
             this.onDidDropTabOutsideWindowsEmitter.fire({ title: session.title, screenX: event.screenX, screenY: event.screenY });
         }
@@ -217,7 +232,7 @@ export class NativeTabDragService {
         const title = this.session?.title;
         if (action !== 'none' && title) {
             // The drop may close the window the drag started in, e.g. when its last tab has been moved, so `dragend` may never be fired.
-            this.endSession();
+            this.endSession(event);
             this.onDidDropTabEmitter.fire({ title, window: state.window });
         }
     }
@@ -225,16 +240,33 @@ export class NativeTabDragService {
     /**
      * Ends the current drag session and notifies the drop targets under the pointer that the drag has left them.
      *
-     * @returns whether the pointer was over one of the windows
+     * @param event the event that ends the drag, i.e. its `dragend` event or the `drop` event of a successful drop
      */
-    protected endSession(): boolean {
+    protected endSession(event: DragEvent): void {
         this.session = undefined;
-        let insideWindows = false;
         for (const state of this.windows.values()) {
-            insideWindows = insideWindows || state.inside;
             this.resetWindow(state);
         }
-        return insideWindows;
+        this.onDidEndDragEmitter.fire(event);
+    }
+
+    /**
+     * @returns whether the pointer is over one of the windows at the end of the given drag event
+     */
+    protected isInsideWindows(event: DragEvent): boolean {
+        for (const state of this.windows.values()) {
+            // A window is only considered left some time after its last `dragleave` event, see `LEAVE_DELAY`.
+            // If the drag ends in the meantime, the position of the pointer tells whether it has left the window.
+            if (state.inside && (state.leaveTimeout === undefined || this.containsScreenPoint(state.window, event.screenX, event.screenY))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected containsScreenPoint(win: Window, screenX: number, screenY: number): boolean {
+        return !win.closed && screenX >= win.screenX && screenX < win.screenX + win.outerWidth
+            && screenY >= win.screenY && screenY < win.screenY + win.outerHeight;
     }
 
     /**
@@ -305,6 +337,8 @@ export class NativeTabDragService {
     }
 
     protected dispatch(state: WindowDragState, type: LuminoDragEventType, target: Element, event: DragEvent, related: Element | undefined): Drag.Event {
+        // `Drag.Event` is typed to take a `PointerEvent`, but it only copies `MouseEvent` properties (coordinates, button,
+        // modifier keys) into the new event, and does not keep a reference to the given event, so a `DragEvent` does as well.
         const dragEvent = new Drag.Event(event as unknown as PointerEvent, {
             drag: this.getDrag(state),
             // eslint-disable-next-line no-null/no-null

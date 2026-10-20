@@ -146,6 +146,8 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
 
     protected styleSheetContent: string | undefined;
     protected readonly icons = new Set<string>();
+    /** The style elements of the windows that show the icons of this theme, see {@link addStyleElement} */
+    protected readonly styleElements = new Map<Window, Disposable>();
 
     @postConstruct()
     protected init(): void {
@@ -153,6 +155,8 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         this.packageRootUri = new URI(this.packageUri);
         this.locationUri = new URI(this.uri).parent;
         this.toDispose.push(this.secondaryWindowService.onWindowLoaded(win => this.addStyleElement(win)));
+        // the style element of a closed window would keep its document from being garbage collected
+        this.toDispose.push(this.secondaryWindowService.onWindowClosed(win => this.styleElements.get(win)?.dispose()));
     }
 
     dispose(): void {
@@ -189,6 +193,9 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
     }
 
     protected addStyleElement(win: Window): void {
+        // a secondary window that has not been loaded yet when the theme is activated gets its style element once loaded,
+        // which replaces the one that has been added to its initial document
+        this.styleElements.get(win)?.dispose();
         if (this.toDeactivate.disposed || !this.styleSheetContent) {
             return;
         }
@@ -197,7 +204,11 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         styleElement.className = 'theia-icon-theme';
         styleElement.innerText = this.styleSheetContent;
         win.document.head.appendChild(styleElement);
-        const toRemoveStyleElement = Disposable.create(() => styleElement.remove());
+        const toRemoveStyleElement = Disposable.create(() => {
+            styleElement.remove();
+            this.styleElements.delete(win);
+        });
+        this.styleElements.set(win, toRemoveStyleElement);
         this.toDisposeStyleElement.push(toRemoveStyleElement);
         this.toDeactivate.push(toRemoveStyleElement);
     }

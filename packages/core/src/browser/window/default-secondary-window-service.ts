@@ -18,10 +18,9 @@ import { SecondaryWindow, SecondaryWindowOptions, SecondaryWindowService } from 
 import { WindowService } from './window-service';
 import { ExtractableWidget, Widget } from '../widgets';
 import { ApplicationShell } from '../shell';
-import { Saveable } from '../saveable';
 import { Emitter, environment, Event, PreferenceService, ILogger } from '../../common';
 import { SaveableService } from '../saveable-service';
-import { getAllWidgetsFromSecondaryWindow, getDefaultRestoreArea } from '../secondary-window-handler';
+import { getAllWidgetsFromSecondaryWindow, getDefaultRestoreArea, SecondaryWindowHandler } from '../secondary-window-handler';
 import { WindowFocusService } from './window-focus-service';
 import { SecondaryWindowCloseContribution } from './secondary-window-close-contribution';
 import { ContributionProvider } from '../../common/contribution-provider';
@@ -144,9 +143,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                     }
                     const widgets = getAllWidgetsFromSecondaryWindow(newWindow) ?? [widget];
                     for (const w of widgets) {
-                        const saveable = Saveable.get(w);
-                        const wouldLoseState = !!saveable && saveable.dirty && this.saveResourceService.autoSave === 'off';
-                        if (wouldLoseState) {
+                        if (this.saveResourceService.wouldLoseChangesOnClose(w)) {
                             evt.returnValue = '';
                             evt.preventDefault();
                             return 'non-empty';
@@ -239,8 +236,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
     }
 
     async restoreWidget(widget: Widget, secondaryWindow: Window, shell: ApplicationShell): Promise<void> {
-        const preferredRestoreArea = ExtractableWidget.is(widget) ? widget.previousArea : getDefaultRestoreArea(secondaryWindow);
-        const area = (preferredRestoreArea === undefined || preferredRestoreArea === 'top' || preferredRestoreArea === 'secondaryWindow') ? 'main' : preferredRestoreArea;
+        const area = SecondaryWindowHandler.getMainWindowArea(ExtractableWidget.is(widget) ? widget.previousArea : getDefaultRestoreArea(secondaryWindow));
         // fire removed event before adding it to shell
         this.beforeWidgetRestoreEmitter.fire([widget, secondaryWindow]);
         // reset ExtractableWidget properties before moving back so that handler evaluation is correct immediately
@@ -280,8 +276,9 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
             // The widgets stay in the window, so that it is stored with the layout and restored with its widgets on the next start.
             return true;
         }
-        // copy, as moving a widget back removes it from the secondary window's widgets
-        const widgets = [...getAllWidgetsFromSecondaryWindow(newWindow) ?? [extractableWidget]];
+        // Copy, as moving a widget back removes it from the secondary window's widgets.
+        // A window closed before it has been populated has no root widget, its widgets are still where they were.
+        const widgets = [...getAllWidgetsFromSecondaryWindow(newWindow) ?? []];
         const closeWidgets = this.preferenceService.get('window.secondaryWindowCloseBehavior', 'close') === 'close';
         let allMovedOrDisposed = true;
         for (const widget of widgets) {

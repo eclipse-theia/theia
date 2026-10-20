@@ -22,7 +22,7 @@ import { Disposable, DisposableCollection } from '../../common/disposable';
 import { CorePreferences } from '../../common/core-preferences';
 import { Emitter, Event, environment } from '../../common';
 import { ToolbarAwareTabBar } from './tab-bars';
-import { WIDGET_FACTORY_MIME_TYPE } from './native-tab-drag-service';
+import { TabDropHelper } from './tab-drop-helper';
 
 export const ACTIVE_TABBAR_CLASS = 'theia-tabBar-active';
 
@@ -51,8 +51,7 @@ export class TheiaDockPanel extends DockPanel {
     protected readonly onDidChangeCurrentEmitter = new Emitter<Title<Widget> | undefined>();
     protected disableDND: boolean | undefined = false;
     protected tabWithDNDDisabledStyling?: HTMLElement = undefined;
-    /** The tab marking where a dragged tab would be inserted, see {@link showTabInsertionMarker}. */
-    protected tabInsertionMarker?: { tab: Element, className: string };
+    protected readonly tabDropHelper = new TabDropHelper({ before: 'theia-mod-drop-before', after: 'theia-mod-drop-after' });
     protected canDropWidget?: (widget: Widget) => boolean;
     protected onWillDropWidget?: (widget: Widget) => void;
 
@@ -181,24 +180,24 @@ export class TheiaDockPanel extends DockPanel {
     protected handleTabBarDragEvent(event: Drag.Event): boolean {
         if (event.type !== 'lm-dragover' && event.type !== 'lm-drop') {
             if (event.type === 'lm-dragleave' && !(event.relatedTarget && this.node.contains(event.relatedTarget as Node))) {
-                this.hideTabInsertionMarker();
+                this.tabDropHelper.hideInsertionMarker();
             }
             return false;
         }
         const tabBar = this.findTabBarAt(event.clientX, event.clientY);
         const widget = tabBar && this.getDraggedWidget(event);
         if (!tabBar || !widget) {
-            this.hideTabInsertionMarker();
+            this.tabDropHelper.hideInsertionMarker();
             return false;
         }
         event.preventDefault();
         event.stopPropagation();
         this.overlay.hide(0);
-        const index = this.findTabInsertionIndex(tabBar, event.clientX);
+        const index = this.tabDropHelper.findInsertionIndex(tabBar, event.clientX, event.clientY);
         if (event.type === 'lm-dragover') {
-            this.showTabInsertionMarker(tabBar, index);
+            this.tabDropHelper.showInsertionMarker(tabBar, index);
         } else {
-            this.hideTabInsertionMarker();
+            this.tabDropHelper.hideInsertionMarker();
             this.insertTab(tabBar, index, widget);
         }
         event.dropAction = event.proposedAction;
@@ -209,9 +208,8 @@ export class TheiaDockPanel extends DockPanel {
         if (this['_tabsConstrained'] && event.source !== this) {
             return undefined;
         }
-        const factory = event.mimeData.getData(WIDGET_FACTORY_MIME_TYPE);
-        const widget = typeof factory === 'function' ? factory() : undefined;
-        return widget instanceof Widget && !widget.contains(this) ? widget : undefined;
+        const widget = this.tabDropHelper.getDraggedWidget(event);
+        return widget && !widget.contains(this) ? widget : undefined;
     }
 
     protected findTabBarAt(clientX: number, clientY: number): TabBar<Widget> | undefined {
@@ -220,21 +218,6 @@ export class TheiaDockPanel extends DockPanel {
             const contentRect = tabBar.contentNode.getBoundingClientRect();
             return clientX >= barRect.left && clientX < barRect.right && clientY >= contentRect.top && clientY < contentRect.bottom;
         });
-    }
-
-    /**
-     * @returns the index of the tab before which a tab dropped at the given position is inserted,
-     * or the number of tabs if it is appended
-     */
-    protected findTabInsertionIndex(tabBar: TabBar<Widget>, clientX: number): number {
-        const tabs = tabBar.contentNode.children;
-        for (let i = 0; i < tabs.length; i++) {
-            const rect = tabs[i].getBoundingClientRect();
-            if (clientX < rect.left + rect.width / 2) {
-                return i;
-            }
-        }
-        return tabs.length;
     }
 
     protected insertTab(tabBar: TabBar<Widget>, index: number, widget: Widget): void {
@@ -255,27 +238,6 @@ export class TheiaDockPanel extends DockPanel {
             this.addWidget(widget);
         }
         this.activateWidget(widget);
-    }
-
-    protected showTabInsertionMarker(tabBar: TabBar<Widget>, index: number): void {
-        const tabs = tabBar.contentNode.children;
-        const tab = index < tabs.length ? tabs[index] : tabs[tabs.length - 1];
-        const className = index < tabs.length ? 'theia-mod-drop-before' : 'theia-mod-drop-after';
-        if (this.tabInsertionMarker?.tab === tab && this.tabInsertionMarker.className === className) {
-            return;
-        }
-        this.hideTabInsertionMarker();
-        if (tab) {
-            tab.classList.add(className);
-            this.tabInsertionMarker = { tab, className };
-        }
-    }
-
-    protected hideTabInsertionMarker(): void {
-        if (this.tabInsertionMarker) {
-            this.tabInsertionMarker.tab.classList.remove(this.tabInsertionMarker.className);
-            this.tabInsertionMarker = undefined;
-        }
     }
 
     toggleMaximized(): void {

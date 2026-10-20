@@ -193,7 +193,16 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
         StandaloneServices.get(IStandaloneThemeService).onDidColorThemeChange(() => this.controller.applyStyles(this.computeStyles()));
         window.addEventListener('resize', () => this.updateLayout());
         this.secondaryWindowService.onWindowClosed(win => {
-            this.secondaryContainers.get(win)?.scopedContextKeyService.dispose();
+            const secondary = this.secondaryContainers.get(win);
+            if (!secondary) {
+                return;
+            }
+            if (this.controller.container === secondary.container) {
+                // Move the quick input back to the main window, as Monaco does on `onWillUnregisterWindow` for the windows registered with it.
+                this.controller['reparentUI'](this.container);
+                this.updateLayout();
+            }
+            secondary.scopedContextKeyService.dispose();
             this.secondaryContainers.delete(win);
         });
     }
