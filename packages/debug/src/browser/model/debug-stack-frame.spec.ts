@@ -30,9 +30,12 @@ describe('DebugStackFrame', () => {
     before(() => disableJSDOM = enableJSDOM());
     after(() => disableJSDOM());
 
+    let requests: string[];
+
     function createFrame(capabilities: DebugProtocol.Capabilities, canRestart?: boolean): DebugStackFrame {
-        const session = { capabilities } as DebugSession;
-        const frame = new DebugStackFrame({} as DebugThread, session, 'frame');
+        requests = [];
+        const session = { capabilities, sendRequest: async (command: string) => { requests.push(command); } } as unknown as DebugSession;
+        const frame = new DebugStackFrame({ id: 1 } as unknown as DebugThread, session, 'frame');
         frame.update({ raw: { id: 1, name: 'main', line: 1, column: 1, canRestart } });
         return frame;
     }
@@ -40,18 +43,31 @@ describe('DebugStackFrame', () => {
     it('cannot be restarted if the debug adapter does not support restarting frames', () => {
         const frame = createFrame({});
         expect(frame.supportsRestartFrame).to.be.false;
-        expect(frame.canRestart).to.be.false;
+        expect(frame.isRestartable).to.be.false;
     });
 
     it('can be restarted if the debug adapter supports it and the frame does not say otherwise', () => {
         const frame = createFrame({ supportsRestartFrame: true });
         expect(frame.supportsRestartFrame).to.be.true;
-        expect(frame.canRestart).to.be.true;
+        expect(frame.isRestartable).to.be.true;
     });
 
     it('cannot be restarted if the frame is marked as not restartable', () => {
         const frame = createFrame({ supportsRestartFrame: true }, false);
         expect(frame.supportsRestartFrame).to.be.true;
-        expect(frame.canRestart).to.be.false;
+        expect(frame.isRestartable).to.be.false;
+    });
+
+    it('sends a restartFrame request if it can be restarted', async () => {
+        const frame = createFrame({ supportsRestartFrame: true });
+        await frame.restart();
+        expect(requests).to.deep.equal(['restartFrame']);
+    });
+
+    it('does not send a restartFrame request if it cannot be restarted', async () => {
+        await createFrame({}).restart();
+        expect(requests).to.be.empty;
+        await createFrame({ supportsRestartFrame: true }, false).restart();
+        expect(requests).to.be.empty;
     });
 });

@@ -22,6 +22,7 @@ import { DebugStackFramesSource, LoadMoreStackFrames } from './debug-stack-frame
 import { DebugStackFrame } from '../model/debug-stack-frame';
 import { DebugViewModel } from './debug-view-model';
 import { DebugCallStackItemTypeKey } from '../debug-call-stack-item-type-key';
+import { DebugRestartFrameSupportedKey, DebugStackFrameSupportsRestartKey } from '../debug-restart-frame-keys';
 import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
@@ -52,6 +53,12 @@ export class DebugStackFramesWidget extends SourceTreeWidget {
 
     @inject(DebugCallStackItemTypeKey)
     protected readonly debugCallStackItemTypeKey: DebugCallStackItemTypeKey;
+
+    @inject(DebugRestartFrameSupportedKey)
+    protected readonly restartFrameSupportedKey: DebugRestartFrameSupportedKey;
+
+    @inject(DebugStackFrameSupportsRestartKey)
+    protected readonly stackFrameSupportsRestartKey: DebugStackFrameSupportsRestartKey;
 
     @postConstruct()
     protected override init(): void {
@@ -95,6 +102,8 @@ export class DebugStackFramesWidget extends SourceTreeWidget {
                 if (node.element instanceof DebugStackFrame) {
                     node.element.thread.currentFrame = node.element;
                     this.debugCallStackItemTypeKey.set('stackFrame');
+                    this.restartFrameSupportedKey.set(node.element.supportsRestartFrame);
+                    this.stackFrameSupportsRestartKey.set(node.element.isRestartable);
                 }
             }
         } finally {

@@ -278,7 +278,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         registerMenuActions(DebugThreadsWidget.OPEN_MENU, { ...DebugSessionContextCommands.REVEAL, label: nls.localizeByDefault('Reveal') });
 
         registerMenuActions(DebugStackFramesWidget.CONTEXT_MENU,
-            DebugCommands.RESTART_FRAME,
+            // As in VS Code, only offered in the context menu if the debug adapter supports restarting frames
+            { ...DebugCommands.RESTART_FRAME, when: 'restartFrameSupported' },
             DebugCommands.COPY_CALL_STACK
         );
 
@@ -680,8 +681,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
         registry.registerCommand(DebugCommands.RESTART_FRAME, {
             execute: () => this.selectedFrame && this.selectedFrame.restart(),
-            isEnabled: () => !!this.selectedFrame && this.selectedFrame.canRestart,
-            isVisible: () => !!this.selectedFrame && this.selectedFrame.supportsRestartFrame
+            isEnabled: () => !!this.selectedFrame && this.selectedFrame.isRestartable
         });
         registry.registerCommand(DebugCommands.COPY_CALL_STACK, {
             execute: () => {
