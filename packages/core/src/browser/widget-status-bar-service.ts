@@ -73,14 +73,13 @@ export class WidgetStatusBarService implements FrontendApplicationContribution {
         // If any contribution can handle the widget, activate it
         // If none can, keep everything as is
         if (contributions.some(contribution => contribution.canHandle(widget))) {
-            this.toDisposeOnShow.dispose();
+            // Deactivate all contributions
+            this.hide();
             // Remove the items of a closed widget, as the next current widget might not be handled by any contribution
             const onDisposed = () => this.hide();
             widget.disposed.connect(onDisposed);
             this.toDisposeOnShow.push(Disposable.create(() => widget.disposed.disconnect(onDisposed)));
             for (const contribution of contributions) {
-                // Deactivate all contributions
-                contribution.deactivate(this.statusBar);
                 if (contribution.canHandle(widget)) {
                     // Selectively re-activate them
                     contribution.activate(this.statusBar, widget);
