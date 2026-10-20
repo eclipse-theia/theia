@@ -26,13 +26,13 @@ import { ThemeService } from './theming';
 /**
  * What the generated `index.html` draws before the frontend bundle runs: the colours and sizes of the
  * workbench parts of the last session, so that the page looks like the workbench from the first paint
- * instead of a blank page with a spinner. Written at the end of a session and whenever the theme or the
- * layout changes; read by an inline script of the generated page, see `FrontendGenerator`.
+ * instead of a blank page with a spinner. Written once the application is ready, when the theme changes and
+ * at the end of a session; read by an inline script of the generated page, see `FrontendGenerator`.
  */
 export interface StartupSkeletonRecord {
     version: 1;
+    /** The background colours of the parts as painted, i.e. computed from their elements. */
     colors: {
-        background?: string;
         titleBar?: string;
         activityBar?: string;
         sideBar?: string;
@@ -52,9 +52,16 @@ export interface StartupSkeletonRecord {
 }
 
 export namespace StartupSkeleton {
-    /** The `localStorage` key of the {@link StartupSkeletonRecord}; the generated page reads the same key. */
+    /** The `localStorage` key of the {@link StartupSkeletonRecord} of the last session of any workspace. */
     export const STORAGE_KEY = 'theia.startupSkeleton';
     export const VERSION = 1;
+    /**
+     * The key of the record of the workspace that the URL `hash` names, as the generated page reads it:
+     * the layout is kept per workspace, so the record is too. Without a hash, the generic key.
+     */
+    export function storageKey(hash: string): string {
+        return hash ? `${STORAGE_KEY}:${hash}` : STORAGE_KEY;
+    }
 }
 
 /**
@@ -73,18 +80,13 @@ export class StartupSkeletonContribution implements FrontendApplicationContribut
     protected readonly stateService: FrontendApplicationStateService;
 
     protected readonly toDispose = new DisposableCollection();
-    protected storeTimeout: number | undefined;
 
     onStart(app: FrontendApplication): void {
+        // Layout changes are picked up at the end of the session: the shell has no event for them, and the
+        // skeleton only needs to be right for the next start.
         this.stateService.reachedState('ready').then(() => {
             this.store();
-            this.toDispose.push(this.themeService.onDidColorThemeChange(() => this.scheduleStore()));
-            this.toDispose.push(this.shell.onDidChangeCurrentWidget(() => this.scheduleStore()));
-            this.toDispose.push(this.shell.onDidAddWidget(() => this.scheduleStore()));
-            this.toDispose.push(this.shell.onDidRemoveWidget(() => this.scheduleStore()));
-            const onResize = () => this.scheduleStore();
-            window.addEventListener('resize', onResize);
-            this.toDispose.push({ dispose: () => window.removeEventListener('resize', onResize) });
+            this.toDispose.push(this.themeService.onDidColorThemeChange(() => this.store()));
         });
     }
 
@@ -93,21 +95,27 @@ export class StartupSkeletonContribution implements FrontendApplicationContribut
         this.store();
     }
 
-    protected scheduleStore(): void {
-        if (this.storeTimeout !== undefined) {
-            window.clearTimeout(this.storeTimeout);
-        }
-        this.storeTimeout = window.setTimeout(() => {
-            this.storeTimeout = undefined;
-            this.store();
-        }, 1000);
-    }
-
+    /**
+     * Store the record for the current workspace and as the record of the last session of any workspace,
+     * which a window without a workspace in its URL starts from.
+     */
     protected store(): void {
         try {
             const record = this.collect();
             if (record) {
-                window.localStorage.setItem(StartupSkeleton.STORAGE_KEY, JSON.stringify(record));
+                const key = StartupSkeleton.storageKey(window.location.hash);
+                const previous: StartupSkeletonRecord | undefined = JSON.parse(window.localStorage.getItem(key) ?? 'null') ?? undefined;
+                if (previous?.version === StartupSkeleton.VERSION) {
+                    // A colour not measured this time, such as the status bar while offline, keeps its last value.
+                    for (const part of Object.keys(previous.colors) as (keyof StartupSkeletonRecord['colors'])[]) {
+                        record.colors[part] ??= previous.colors[part];
+                    }
+                }
+                const json = JSON.stringify(record);
+                window.localStorage.setItem(StartupSkeleton.STORAGE_KEY, json);
+                if (key !== StartupSkeleton.STORAGE_KEY) {
+                    window.localStorage.setItem(key, json);
+                }
             }
         } catch {
             // Storage unavailable or full: the next start shows the plain loading indicator.
@@ -115,14 +123,21 @@ export class StartupSkeletonContribution implements FrontendApplicationContribut
     }
 
     /**
-     * Measure the workbench as it is on screen. Hidden or collapsed parts measure 0.
+     * Measure the workbench as it is on screen: the sizes of its parts, and their background colours as
+     * painted, which may differ from the theme colours they are usually given, e.g. the status bar without
+     * a workspace or while debugging. The status bar is not measured while the application is offline, which
+     * it is at the end of a session: the next start should assume that the connection succeeds. Hidden or
+     * collapsed parts measure 0, and a colour that is not measured is absent.
      */
     protected collect(): StartupSkeletonRecord | undefined {
         if (!this.shell.isAttached || !this.shell.isVisible) {
             return undefined;
         }
-        const style = window.getComputedStyle(document.documentElement);
-        const color = (name: string): string | undefined => style.getPropertyValue(`--theia-${name}`).trim() || undefined;
+        const color = (selector: string): string | undefined => {
+            const element = document.querySelector(selector);
+            const value = element && window.getComputedStyle(element).backgroundColor;
+            return value && value !== 'transparent' && !/^rgba\(.*,\s*0\)$/.test(value) ? value : undefined;
+        };
         const size = (id: string, dimension: 'width' | 'height'): number => {
             const element = document.getElementById(id);
             return element ? Math.round(element.getBoundingClientRect()[dimension]) : 0;
@@ -134,12 +149,12 @@ export class StartupSkeletonContribution implements FrontendApplicationContribut
         return {
             version: StartupSkeleton.VERSION,
             colors: {
-                background: color('editor-background'),
-                titleBar: color('titleBar-activeBackground'),
-                activityBar: color('activityBar-background'),
-                sideBar: color('sideBar-background'),
-                panel: color('panel-background'),
-                statusBar: color('statusBar-background')
+                titleBar: color('#theia-top-panel'),
+                activityBar: color('#theia-left-content-panel .theia-app-sidebar-container')
+                    ?? color('#theia-right-content-panel .theia-app-sidebar-container'),
+                sideBar: color('#theia-left-side-panel') ?? color('#theia-right-side-panel'),
+                panel: color(`#${BOTTOM_AREA_ID}`),
+                statusBar: document.body.classList.contains('theia-mod-offline') ? undefined : color('#theia-statusBar')
             },
             layout: {
                 top: size('theia-top-panel', 'height'),

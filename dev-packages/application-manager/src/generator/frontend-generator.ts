@@ -107,18 +107,20 @@ export class FrontendGenerator extends AbstractGenerator {
 
     /**
      * Draws the workbench skeleton of the last session, stored by `StartupSkeletonContribution` of `@theia/core`
-     * under the `theia.startupSkeleton` key, in place of the spinner, and applies the last background colour
-     * (`theme.background`, as the theme preload contribution does later) before the bundle runs.
+     * under the `theia.startupSkeleton` key, suffixed with the workspace hash of the URL where there is one,
+     * in place of the spinner, and applies the last background colour (`theme.background`, as the theme
+     * preload contribution does later) before the bundle runs.
      */
     protected compileIndexSkeletonScript(): string {
         return `
     (function () {
         try {
             var storage = window.localStorage;
-            var record = JSON.parse(storage.getItem('theia.startupSkeleton') || 'null');
+            var key = 'theia.startupSkeleton';
+            var record = JSON.parse((location.hash && storage.getItem(key + ':' + location.hash)) || storage.getItem(key) || 'null');
             var colors = record && record.version === 1 && record.colors || {};
             var layout = record && record.version === 1 && record.layout;
-            var background = colors.background || storage.getItem('theme.background')
+            var background = storage.getItem('theme.background')
                 || (window.matchMedia('(prefers-color-scheme: dark)').matches
                     ? '${DefaultTheme.defaultBackgroundColor(true)}' : '${DefaultTheme.defaultBackgroundColor(false)}');
             document.documentElement.style.setProperty('--theia-editor-background', background);
