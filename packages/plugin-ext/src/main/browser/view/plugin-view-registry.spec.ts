@@ -26,6 +26,7 @@ import { expect } from 'chai';
 import { Command, Disposable } from '@theia/core/lib/common';
 import { PluginViewRegistry, ViewContainerInfo, PLUGIN_VIEW_DATA_FACTORY_ID } from './plugin-view-registry';
 import { PluginViewType, ViewWelcome } from '../../../common';
+import { BaseWidget, Panel, Widget } from '@theia/core/lib/browser/widgets/widget';
 
 disableJSDOM();
 
@@ -341,6 +342,97 @@ describe('PluginViewRegistry - VS Code view commands', () => {
         disposeView.dispose();
         expect(commands.has('sample.view.focus')).to.equal(false);
         expect(commands.has('sample.view.open')).to.equal(false);
+    });
+
+});
+
+describe('PluginViewRegistry - webview view resolution', () => {
+
+    class FakeWebviewWidget extends BaseWidget {
+        setContentOptions(): void { }
+    }
+
+    const viewId = 'test.webviewView';
+    let registry: PluginViewRegistry;
+    let webview: FakeWebviewWidget;
+    let resolveCount: number;
+    let disableDom: () => void;
+
+    const createWebviewView = (): Promise<unknown> =>
+        (registry as unknown as { createNewWebviewView(id: string): Promise<unknown> }).createNewWebviewView(viewId);
+    const registerResolver = (): Promise<Disposable> =>
+        registry.registerWebviewView(viewId, { resolve: async () => { resolveCount++; } });
+    const settle = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));
+
+    before(() => disableDom = enableJSDOM());
+    after(() => disableDom());
+
+    beforeEach(() => {
+        registry = new PluginViewRegistry();
+        webview = new FakeWebviewWidget();
+        resolveCount = 0;
+        (registry as unknown as { widgetManager: unknown }).widgetManager = { getOrCreateWidget: async () => webview };
+    });
+
+    afterEach(() => webview.dispose());
+
+    it('does not resolve a webview view that has not been shown', async () => {
+        await createWebviewView();
+        await registerResolver();
+        await settle();
+
+        expect(resolveCount).to.equal(0);
+    });
+
+    it('resolves a webview view once it is shown', async () => {
+        await createWebviewView();
+        await registerResolver();
+        await settle();
+
+        Widget.attach(webview, document.body);
+        await settle();
+
+        expect(resolveCount).to.equal(1);
+    });
+
+    it('resolves a webview view that is shown before its provider is registered', async () => {
+        await createWebviewView();
+        Widget.attach(webview, document.body);
+        await settle();
+
+        await registerResolver();
+        await settle();
+
+        expect(resolveCount).to.equal(1);
+    });
+
+    it('resolves a webview view in a hidden parent only once the parent is shown', async () => {
+        const parent = new Panel();
+        parent.hide();
+        parent.addWidget(webview);
+        Widget.attach(parent, document.body);
+        await createWebviewView();
+        await registerResolver();
+        await settle();
+        expect(resolveCount).to.equal(0);
+
+        parent.show();
+        await settle();
+        parent.hide();
+        parent.show();
+        await settle();
+
+        expect(resolveCount).to.equal(1);
+        parent.dispose();
+    });
+
+    it('does not resolve a webview view that is disposed before it is shown', async () => {
+        await createWebviewView();
+        webview.dispose();
+        await registerResolver();
+        await settle();
+
+        expect(resolveCount).to.equal(0);
     });
 
 });

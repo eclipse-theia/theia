@@ -681,14 +681,24 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             }
         };
 
-        const toDispose = this.onNewResolverRegistered(resolver => {
-            if (resolver.viewType === viewId) {
-                // Potentially re-activate if we have a new resolver
+        // Like VS Code, resolve a webview view only once it is visible: extensions start work in
+        // `resolveWebviewView`, and views that are hidden or never opened should not pay for it.
+        const resolveIfVisible = () => {
+            if (webview.isVisible) {
                 webviewView.resolve();
             }
-        });
+        };
+        const toDispose = new DisposableCollection(
+            this.onNewResolverRegistered(resolver => {
+                if (resolver.viewType === viewId) {
+                    // Potentially re-activate if we have a new resolver
+                    resolveIfVisible();
+                }
+            }),
+            webview.onDidChangeVisibility(resolveIfVisible)
+        );
 
-        webviewView.resolve();
+        resolveIfVisible();
         return webviewView;
     }
 
