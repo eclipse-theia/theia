@@ -304,6 +304,9 @@ export class PreferenceServiceImpl implements PreferenceService {
 
     protected async initializeProviders(): Promise<void> {
         try {
+            // The providers initialize independently of each other: create them all, then wait for all of them,
+            // so that their requests to the backend overlap instead of adding up.
+            const ready: Promise<void>[] = [];
             for (const scope of this.schemaService.validScopes) {
                 const provider = this.providerProvider(scope);
                 if (provider) {
@@ -311,11 +314,12 @@ export class PreferenceServiceImpl implements PreferenceService {
                     this.toDispose.push(provider.onDidPreferencesChanged(changes =>
                         this.reconcilePreferences(changes)
                     ));
-                    await provider.ready;
+                    ready.push(provider.ready);
                 } else {
                     this.logger.warn(`No preference provider bound for ${PreferenceScope[scope]}`);
                 }
             }
+            await Promise.all(ready);
             this._ready.resolve();
             this._isReady = true;
         } catch (e) {
