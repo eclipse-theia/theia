@@ -131,6 +131,7 @@ import { BackendRequestService, RequestService, REQUEST_SERVICE_PATH } from '@th
 import { bindFrontendStopwatch, bindBackendStopwatch } from './performance';
 import { SaveableService, SaveErrorChecker } from './saveable-service';
 import { SecondaryWindowHandler } from './secondary-window-handler';
+import { SaveableSecondaryWindowCloseContribution, SecondaryWindowCloseContribution } from './window/secondary-window-close-contribution';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
 import { WindowTitleService } from './window/window-title-service';
 import { WindowTitleUpdater } from './window/window-title-updater';
@@ -488,6 +489,9 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(FrontendApplicationContribution).toService(StylingService);
 
     bind(SecondaryWindowHandler).toSelf().inSingletonScope();
+    bindRootContributionProvider(bind, SecondaryWindowCloseContribution);
+    bind(SaveableSecondaryWindowCloseContribution).toSelf().inSingletonScope();
+    bind(SecondaryWindowCloseContribution).toService(SaveableSecondaryWindowCloseContribution);
     bind(ViewColumnService).toSelf().inSingletonScope();
 
     bind(UndoRedoHandlerService).toSelf().inSingletonScope();

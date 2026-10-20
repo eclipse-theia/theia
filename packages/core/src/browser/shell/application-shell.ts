@@ -41,7 +41,7 @@ import { BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer'
 import { Deferred } from '../../common/promise-util';
 import { SaveableService } from '../saveable-service';
 import { nls } from '../../common/nls';
-import { extractSecondaryWindow, SecondaryWindowHandler } from '../secondary-window-handler';
+import { extractSecondaryWindow, extractSecondaryWindowRootWidget, SecondaryWindowHandler } from '../secondary-window-handler';
 import URI from '../../common/uri';
 import { OpenerService } from '../opener-service';
 import { PreviewableWidget } from '../widgets/previewable-widget';
@@ -1111,7 +1111,24 @@ export class ApplicationShell extends Widget {
             widgetNode = widgetNode.parentElement;
         }
         if (widgetNode) {
-            return this.findWidgetForNode(widgetNode, this);
+            return this.findWidgetForNode(widgetNode, this) ?? this.findSecondaryWindowWidgetForNode(widgetNode);
+        }
+        return undefined;
+    }
+
+    /**
+     * Widgets in secondary windows are not part of the widget tree of the shell, but of the root widgets of their windows.
+     */
+    private findSecondaryWindowWidgetForNode(widgetNode: HTMLElement): Widget | undefined {
+        if (widgetNode.ownerDocument === this.node.ownerDocument) {
+            return undefined;
+        }
+        const rootWidgets = new Set(this.secondaryWindowHandler.widgets.map(widget => extractSecondaryWindowRootWidget(widget)));
+        for (const rootWidget of rootWidgets) {
+            const result = rootWidget && this.findWidgetForNode(widgetNode, rootWidget);
+            if (result) {
+                return result;
+            }
         }
         return undefined;
     }

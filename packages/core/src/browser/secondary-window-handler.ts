@@ -318,6 +318,18 @@ export class SecondaryWindowHandler {
     }
 
     /**
+     * Moves all widgets of the given secondary window back to the main window, which closes the secondary window.
+     *
+     * @param secondaryWindow the window to move the widgets from
+     */
+    async moveAllWidgetsToMainWindow(secondaryWindow: Window): Promise<void> {
+        // copy, as moving a widget back removes it from the secondary window's widgets
+        for (const widget of [...getAllWidgetsFromSecondaryWindow(secondaryWindow) ?? []]) {
+            await this.moveWidgetToMainWindow(widget);
+        }
+    }
+
+    /**
      * Only widgets that can be moved to secondary windows, or that are in a secondary window already, can be dropped on secondary windows.
      */
     protected canDropInSecondaryWindow(widget: Widget): boolean {
