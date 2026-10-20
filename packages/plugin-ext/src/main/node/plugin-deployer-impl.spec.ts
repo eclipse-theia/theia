@@ -22,7 +22,11 @@ import { PluginDeployerImpl } from './plugin-deployer-impl';
 
 describe('PluginDeployerImpl', () => {
 
-    function createDeployer(resolve: PluginDeployerResolver['resolve'], logs: { info: string[], error: string[] }): PluginDeployerImpl {
+    function createDeployer(
+        resolve: PluginDeployerResolver['resolve'],
+        logs: { info: string[], error: string[] } = { info: [], error: [] },
+        services: object = {}
+    ): PluginDeployerImpl {
         const deployer = new PluginDeployerImpl();
         const resolver: PluginDeployerResolver = { accept: () => true, resolve };
         Object.assign(deployer, {
@@ -32,7 +36,8 @@ describe('PluginDeployerImpl', () => {
             logger: {
                 info: (message: string) => logs.info.push(message),
                 error: (message: string) => logs.error.push(message)
-            }
+            },
+            ...services
         });
         return deployer;
     }
@@ -84,21 +89,13 @@ describe('PluginDeployerImpl', () => {
         let uninstalled: PluginIdentifiers.VersionedId[];
 
         function createDependencyDeployer(): PluginDeployerImpl {
-            const resolver: PluginDeployerResolver = {
-                accept: () => true,
-                resolve: async (context, options) => {
-                    requests.set(context.getOriginId(), options);
-                    if (context.getOriginId() === PARENT) {
-                        context.addPlugin('vscjava.vscode-java-test@0.47.0', '/tmp/vscjava.vscode-java-test-0.47.0');
-                    }
+            const resolve: PluginDeployerResolver['resolve'] = async (context, options) => {
+                requests.set(context.getOriginId(), options);
+                if (context.getOriginId() === PARENT) {
+                    context.addPlugin('vscjava.vscode-java-test@0.47.0', '/tmp/vscjava.vscode-java-test-0.47.0');
                 }
             };
-            const deployer = new PluginDeployerImpl();
-            Object.assign(deployer, {
-                pluginResolvers: [resolver],
-                pluginDeployerFileHandlers: [],
-                pluginDeployerDirectoryHandlers: [],
-                logger: { info: () => { }, error: () => { } },
+            return createDeployer(resolve, undefined, {
                 pluginDeployerHandler: {
                     getPluginDependencies: async (entry: PluginDeployerEntry) => entry.id() === 'vscjava.vscode-java-test@0.47.0'
                         ? {
@@ -110,7 +107,6 @@ describe('PluginDeployerImpl', () => {
                 },
                 uninstallationManager: { isUninstalled: (id: PluginIdentifiers.VersionedId) => uninstalled.includes(id) }
             });
-            return deployer;
         }
 
         function deployedPlugin(publisher: string, name: string, version: string): DeployedPlugin {

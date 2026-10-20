@@ -567,6 +567,9 @@ export interface PluginDeployerHandler {
     getDeployedPluginIds(): Promise<readonly PluginIdentifiers.VersionedId[]>;
 
     getDeployedPlugins(): Promise<DeployedPlugin[]>;
+    /**
+     * Returns the deployed plugins with the given unversioned id (`publisher.name`), matched case-insensitively.
+     */
     getDeployedPluginsById(pluginId: string): DeployedPlugin[];
 
     getDeployedPlugin(pluginId: PluginIdentifiers.VersionedId): DeployedPlugin | undefined;
