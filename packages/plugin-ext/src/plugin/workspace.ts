@@ -438,8 +438,13 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         }
 
         // Simulate the updateWorkspaceFolders method on our data to do more validation
-        const newWorkspaceFolders = currentWorkspaceFolders.slice(0);
-        newWorkspaceFolders.splice(start, deleteCount, ...[...rootsToAdd.keys()].map(uri => ({ uri: URI.parse(uri), name: undefined!, index: undefined! })));
+        const newWorkspaceFolders: { uri: theia.Uri, name: string }[] = currentWorkspaceFolders.map(({ uri, name }) => ({ uri, name }));
+        newWorkspaceFolders.splice(start, deleteCount, ...Array.from(rootsToAdd, ([uri, name]) => {
+            const folderUri = URI.parse(uri);
+            // A folder added without a name keeps its current name, as the main side writes it to the workspace file
+            const currentName = currentWorkspaceFolders.find(folder => folder.uri.toString() === uri)?.name;
+            return { uri: folderUri, name: name || currentName || new Path(folderUri.path).base };
+        }));
 
         for (let i = 0; i < newWorkspaceFolders.length; i++) {
             const folder = newWorkspaceFolders[i];
@@ -448,8 +453,10 @@ export class WorkspaceExtImpl implements WorkspaceExt {
             }
         }
 
-        const { added, removed } = this.deltaFolders(currentWorkspaceFolders, newWorkspaceFolders);
-        if (added.length === 0 && removed.length === 0) {
+        // Like VS Code, compare by URI, name and index, so that renaming a folder counts as a change
+        const changed = newWorkspaceFolders.length !== currentWorkspaceFolders.length || newWorkspaceFolders.some((folder, index) =>
+            folder.uri.toString() !== currentWorkspaceFolders[index].uri.toString() || folder.name !== currentWorkspaceFolders[index].name);
+        if (!changed) {
             return false; // nothing actually changed
         }
 

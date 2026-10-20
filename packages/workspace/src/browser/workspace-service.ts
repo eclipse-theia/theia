@@ -345,7 +345,8 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
                     } else {
                         roots.push(FileStat.dir(path));
                     }
-                    if (name) {
+                    // `getWorkspaceDataFromFile` already drops invalid names, but an override of it may not
+                    if (typeof name === 'string' && name) {
                         rootNames.set(WorkspaceData.normalizeFolderUri(path), name);
                     }
                 }
@@ -566,8 +567,10 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
                 throw new Error('Could not create new untitled workspace');
             }
         }
-        const dedup = new Set<string>();
-        const roots = this._roots.map(root => (dedup.add(root.resource.toString()), root.resource.toString()));
+        const roots = this._roots.map(root => root.resource.toString());
+        const toRemove = roots.splice(start, deleteCount || 0);
+        // Deduplicate against the remaining roots only, so that a root removed by this call can be added again, e.g. to rename it.
+        const dedup = new Set<string>(roots);
         const toAdd: string[] = [];
         const namesToAdd = new Map<string, string>();
         for (const root of rootsToAdd) {
@@ -581,7 +584,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
                 }
             }
         }
-        const toRemove = roots.splice(start, deleteCount || 0, ...toAdd);
+        roots.splice(start, 0, ...toAdd);
         if (!toRemove.length && !toAdd.length) {
             return [];
         }
@@ -840,8 +843,23 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         if (this.configuredRootNames.size === 0) {
             return undefined;
         }
-        return this.configuredRootNames.get(WorkspaceData.normalizeFolderUri(rootUri.toString()));
+        // Called for every file label, e.g. by `getDetails`, so normalize each root URI only once per set of names
+        if (this.configuredRootNamesByUri?.names !== this.configuredRootNames) {
+            this.configuredRootNamesByUri = { names: this.configuredRootNames, byUri: new Map() };
+        }
+        const key = rootUri.toString();
+        const { byUri } = this.configuredRootNamesByUri;
+        if (!byUri.has(key)) {
+            byUri.set(key, this.configuredRootNames.get(WorkspaceData.normalizeFolderUri(key)));
+        }
+        return byUri.get(key);
     }
+
+    /**
+     * The configured root names by the string of a root URI as passed to `getConfiguredRootName`,
+     * for the `configuredRootNames` they were looked up in.
+     */
+    protected configuredRootNamesByUri: { names: Map<string, string>; byUri: Map<string, string | undefined> } | undefined;
 
     /**
      * Returns the relative path of the given file to the workspace root.

@@ -55,7 +55,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
     private roots: string[];
 
-    private rootNames: { [root: string]: string };
+    private configuredRootNames: { [root: string]: string };
 
     private resourceResolver: TextContentResourceResolver;
 
@@ -124,12 +124,12 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
     }
 
     protected async processWorkspaceFoldersChanged(roots: string[]): Promise<void> {
-        const names = this.getRootNames(roots);
+        const names = this.getConfiguredRootNames(roots);
         if (this.isAnyRootChanged(roots) === false && this.isAnyRootNameChanged(names) === false) {
             return;
         }
         this.roots = roots;
-        this.rootNames = names;
+        this.configuredRootNames = names;
         this.proxy.$onWorkspaceFoldersChanged({ roots, names });
 
         const keyValueStorageWorkspacesData = await this.pluginServer.getAllStorageValues({
@@ -148,7 +148,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         return this.roots.some((root, index) => root !== roots[index]);
     }
 
-    protected getRootNames(roots: string[]): { [root: string]: string } {
+    protected getConfiguredRootNames(roots: string[]): { [root: string]: string } {
         const names: { [root: string]: string } = {};
         for (const root of roots) {
             const name = this.workspaceService.getConfiguredRootName(new URI(root));
@@ -161,7 +161,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
     private isAnyRootNameChanged(names: { [root: string]: string }): boolean {
         const roots = Object.keys(names);
-        return !this.rootNames || roots.length !== Object.keys(this.rootNames).length || roots.some(root => this.rootNames[root] !== names[root]);
+        return !this.configuredRootNames || roots.length !== Object.keys(this.configuredRootNames).length || roots.some(root => this.configuredRootNames[root] !== names[root]);
     }
 
     async $getWorkspace(): Promise<FileStat | undefined> {

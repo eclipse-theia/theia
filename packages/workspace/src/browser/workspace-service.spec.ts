@@ -179,6 +179,15 @@ describe('WorkspaceService', () => {
             await service.updateRoots();
             expect(service.getConfiguredRootName(new URI(backend))).to.be.undefined;
         });
+
+        it('should return the current name after the names changed', async () => {
+            service.names = new Map([[backend, 'API Server'], [frontend, 'Web Client']]);
+            await service.updateRoots();
+            expect(service.getConfiguredRootName(new URI(backend))).to.equal('API Server');
+            service.names = new Map([[backend, 'Backend'], [frontend, 'Web Client']]);
+            await service.updateRoots();
+            expect(service.getConfiguredRootName(new URI(backend))).to.equal('Backend');
+        });
     });
 
     describe('updateRoots()', () => {
@@ -221,6 +230,19 @@ describe('WorkspaceService', () => {
 
         it('should keep the names of the remaining roots when removing a root', async () => {
             await service.removeRoots([new URI(frontend)]);
+            expect(service.writtenData?.folders).to.deep.equal([{ path: backend, name: 'API Server' }]);
+        });
+
+        it('should rename a root that is removed and added again in its place', async () => {
+            await service.spliceRoots(1, 1, { uri: new URI(frontend), name: 'Web Client' });
+            expect(service.writtenData?.folders).to.deep.equal([
+                { path: backend, name: 'API Server' },
+                { path: frontend, name: 'Web Client' }
+            ]);
+        });
+
+        it('should not add a root that is not removed by the same call again', async () => {
+            await service.spliceRoots(1, 1, { uri: new URI(backend), name: 'Other' });
             expect(service.writtenData?.folders).to.deep.equal([{ path: backend, name: 'API Server' }]);
         });
     });

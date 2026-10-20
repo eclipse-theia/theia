@@ -199,4 +199,36 @@ describe('WorkspaceExtImpl workspace folders', () => {
         expect(result).to.be.true;
         expect(calls).to.deep.equal([[1, 0, { uri: 'file:///project/frontend', name: 'Web Client' }, { uri: 'file:///project/shared', name: undefined }]]);
     });
+
+    it('renames a folder that is replaced by itself with a new name', () => {
+        const calls: unknown[][] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (workspace as any).proxy = { $getWorkspace: async () => undefined, $updateWorkspaceFolders: async (...args: unknown[]) => { calls.push(args); } };
+        workspace.$onWorkspaceFoldersChanged({ roots: ['file:///project/backend', 'file:///project/frontend'] });
+
+        const result = workspace.updateWorkspaceFolders(1, 1, { uri: URI.parse('file:///project/frontend'), name: 'Web Client' });
+        expect(result).to.be.true;
+        expect(calls).to.deep.equal([[1, 1, { uri: 'file:///project/frontend', name: 'Web Client' }]]);
+    });
+
+    it('does nothing if a folder is replaced by itself with the same name or without a name', () => {
+        const calls: unknown[][] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (workspace as any).proxy = { $getWorkspace: async () => undefined, $updateWorkspaceFolders: async (...args: unknown[]) => { calls.push(args); } };
+        workspace.$onWorkspaceFoldersChanged({ roots: ['file:///project/frontend'], names: { 'file:///project/frontend': 'Web Client' } });
+
+        expect(workspace.updateWorkspaceFolders(0, 1, { uri: URI.parse('file:///project/frontend'), name: 'Web Client' })).to.be.false;
+        expect(workspace.updateWorkspaceFolders(0, 1, { uri: URI.parse('file:///project/frontend') })).to.be.false;
+        expect(calls).to.be.empty;
+    });
+
+    it('does not report a renamed folder as removed and added, like VS Code', () => {
+        workspace.$onWorkspaceFoldersChanged({ roots: ['file:///project/frontend'] });
+        const events: { added: readonly unknown[], removed: readonly unknown[] }[] = [];
+        workspace.onDidChangeWorkspaceFolders(event => events.push(event));
+
+        workspace.$onWorkspaceFoldersChanged({ roots: ['file:///project/frontend'], names: { 'file:///project/frontend': 'Web Client' } });
+        expect(events).to.deep.equal([{ added: [], removed: [] }]);
+        expect(workspace.workspaceFolders![0].name).to.equal('Web Client');
+    });
 });
