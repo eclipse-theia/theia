@@ -24,10 +24,14 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import * as chai from 'chai';
-import { ILogger } from '@theia/core';
+import { ILogger, OS, QuickInputService } from '@theia/core';
+import { OpenHandler, OpenerService } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TerminalWidget } from './base/terminal-widget';
-import { FileLinkProvider } from './terminal-file-link-provider';
+import { FileLinkProvider, LocalFileLinkProvider } from './terminal-file-link-provider';
 
 disableJSDOM();
 
@@ -46,6 +50,48 @@ class TestFileLinkProvider extends FileLinkProvider {
     exposeToURI(match: string, cwd: URI): Promise<URI | undefined> {
         return this.toURI(match, cwd);
     }
+}
+
+class TestLocalFileLinkProvider extends LocalFileLinkProvider {
+    readonly opened: string[] = [];
+    readonly quickInputRequests: string[] = [];
+
+    constructor(workspaceRoot: URI, existingFile: URI) {
+        super();
+        (this as unknown as { logger: ILogger }).logger = {
+            error: (message: unknown) => { this.loggedErrors.push(String(message)); }
+        } as unknown as ILogger;
+        (this as unknown as { workspaceService: WorkspaceService }).workspaceService = {
+            tryGetRoots: () => [{ resource: workspaceRoot }]
+        } as unknown as WorkspaceService;
+        (this as unknown as { searchService: FileSearchService }).searchService = {
+            find: async () => []
+        } as unknown as FileSearchService;
+        (this as unknown as { fileService: FileService }).fileService = {
+            resolve: async (uri: URI) => {
+                if (uri.isEqual(existingFile)) {
+                    return { isDirectory: false };
+                }
+                throw new Error('does not exist');
+            }
+        } as unknown as FileService;
+        const opener: OpenHandler = {
+            id: 'test',
+            canHandle: () => 1,
+            open: async (uri: URI) => {
+                this.opened.push(uri.toString());
+                return undefined;
+            }
+        };
+        (this as unknown as { openerService: OpenerService }).openerService = {
+            getOpener: async () => opener
+        } as unknown as OpenerService;
+        (this as unknown as { quickInputService: QuickInputService }).quickInputService = {
+            open: (match: string) => { this.quickInputRequests.push(match); }
+        } as unknown as QuickInputService;
+    }
+
+    readonly loggedErrors: string[] = [];
 }
 
 function terminalWithCwd(cwd: URI): TerminalWidget {
@@ -90,6 +136,20 @@ describe('FileLinkProvider', () => {
             const links = await provider.provideLinks('open file:///home/user/project/file.ts now', terminalWithCwd(cwd));
             expect(links).to.deep.equal([]);
             expect(provider.loggedErrors).to.deep.equal([]);
+        });
+
+        it('should open an existing absolute workspace path instead of Quick Input', async () => {
+            const workspaceRoot = URI.fromFilePath(OS.backend.isWindows ? 'C:\\workspace' : '/workspace');
+            const fileUri = workspaceRoot.resolve('src/file.ts');
+            const absolutePath = fileUri.path.fsPath();
+            const provider = new TestLocalFileLinkProvider(workspaceRoot, fileUri);
+            const links = await provider.provideLinks(`open ${absolutePath}`, terminalWithCwd(workspaceRoot));
+
+            expect(links).to.have.lengthOf(1);
+            await links[0].handle();
+
+            expect(provider.opened).to.deep.equal([fileUri.toString()]);
+            expect(provider.quickInputRequests).to.deep.equal([]);
         });
     });
 });
