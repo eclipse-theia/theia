@@ -23,6 +23,8 @@ import { Emitter, environment, Event, PreferenceService, ILogger } from '../../c
 import { SaveableService } from '../saveable-service';
 import { getAllWidgetsFromSecondaryWindow, getDefaultRestoreArea } from '../secondary-window-handler';
 import { WindowFocusService } from './window-focus-service';
+import { SecondaryWindowCloseContribution } from './secondary-window-close-contribution';
+import { ContributionProvider } from '../../common/contribution-provider';
 
 @injectable()
 export class DefaultSecondaryWindowService implements SecondaryWindowService {
@@ -47,6 +49,11 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
 
     protected secondaryWindows: Window[] = [];
 
+    /**
+     * Whether the main window is shutting down, which closes all secondary windows.
+     */
+    protected shuttingDown = false;
+
     @inject(WindowService)
     protected readonly windowService: WindowService;
 
@@ -61,6 +68,9 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
 
     @inject(ILogger) @named('core:DefaultSecondaryWindowService')
     protected readonly logger: ILogger;
+
+    @inject(ContributionProvider) @named(SecondaryWindowCloseContribution)
+    protected readonly closeContributions: ContributionProvider<SecondaryWindowCloseContribution>;
 
     @postConstruct()
     init(): void {
@@ -97,6 +107,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
     protected registerShutdownListeners(): void {
         // Close all open windows when the main window is closed.
         this.windowService.onUnload(() => {
+            this.shuttingDown = true;
             // Iterate backwards because calling window.close might remove the window from the array
             for (let i = this.secondaryWindows.length - 1; i >= 0; i--) {
                 this.secondaryWindows[i].close();
@@ -236,19 +247,45 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
     }
 
     /**
-     * Restore the widgets back to the main window. SecondaryWindowHandler needs to get informated about this.
+     * @returns whether the given widget is to be moved back to the main window instead of being closed with its secondary window
+     */
+    protected async shouldRestoreOnClose(widget: Widget): Promise<boolean> {
+        for (const contribution of this.closeContributions.getContributions()) {
+            try {
+                if (await contribution.shouldRestoreOnClose(widget)) {
+                    return true;
+                }
+            } catch (e) {
+                this.logger.error('Failed to determine whether to move a widget back to the main window', e);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Restore the widgets back to the main window, or close them, depending on the `window.secondaryWindowCloseBehavior` preference.
+     * SecondaryWindowHandler needs to get informated about this.
      */
     protected async restoreWidgets(newWindow: Window, extractableWidget: ExtractableWidget, shell: ApplicationShell): Promise<boolean> {
         // copy, as moving a widget back removes it from the secondary window's widgets
         const widgets = [...getAllWidgetsFromSecondaryWindow(newWindow) ?? [extractableWidget]];
 
+        // When the application shuts down, the widgets are moved back so that they are stored with the layout of the main window.
+        const closeWidgets = !this.shuttingDown && this.preferenceService.get('window.secondaryWindowCloseBehavior', 'close') === 'close';
         let allMovedOrDisposed = true;
         for (const widget of widgets) {
             if (widget.isDisposed) {
                 continue;
             }
             try {
-                await this.restoreWidget(widget, newWindow, shell);
+                if (closeWidgets && !await this.shouldRestoreOnClose(widget)) {
+                    await shell.closeWidget(widget.id);
+                }
+                // widgets that are not disposed when closed would be lost with the window
+                if (!widget.isDisposed) {
+                    await this.restoreWidget(widget, newWindow, shell);
+                }
             } catch (e) {
                 // we can't move back, close instead
                 // otherwise the window will just stay open with no way to close it

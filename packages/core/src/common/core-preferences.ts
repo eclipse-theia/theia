@@ -150,6 +150,17 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: false,
             description: nls.localize('theia/core/secondaryWindow/alwaysOnTop', 'When enabled, the secondary window stays above all other windows, including those of different applications.'),
         },
+        'window.secondaryWindowCloseBehavior': {
+            type: 'string',
+            enum: ['close', 'moveToMainWindow'],
+            enumDescriptions: [
+                nls.localize('theia/core/secondaryWindow/closeBehavior/close',
+                    'The views of the secondary window are closed. Views that would lose state, e.g. editors with unsaved changes, are moved back to the main window.'),
+                nls.localize('theia/core/secondaryWindow/closeBehavior/moveToMainWindow', 'All views of the secondary window are moved back to the main window.'),
+            ],
+            default: 'close',
+            description: nls.localize('theia/core/secondaryWindow/closeBehavior', 'Controls what happens to the views of a secondary window when it is closed.'),
+        },
         'http.proxy': {
             type: 'string',
             pattern: '^https?://([^:]*(:[^@]*)?@)?([^:]+|\\[[:0-9a-fA-F]+\\])(:\\d+)?/?$|^$',
@@ -319,6 +330,7 @@ export interface CoreConfiguration {
     'window.title': string;
     'window.titleSeparator': string;
     'window.tabCloseIconPlacement': 'end' | 'start';
+    'window.secondaryWindowCloseBehavior': 'close' | 'moveToMainWindow';
     'workbench.list.openMode': 'singleClick' | 'doubleClick';
     'workbench.commandPalette.history': number;
     'workbench.editor.highlightModifiedTabs': boolean;
