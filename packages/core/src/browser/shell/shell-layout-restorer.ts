@@ -29,6 +29,7 @@ import { WindowService } from '../window/window-service';
 import { StopReason } from '../../common/frontend-application-state';
 import { isFunction, isObject, MaybePromise } from '../../common';
 import { PerspectiveServiceInternal } from '../perspective-service';
+import { SecondaryWindowHandler } from '../secondary-window-handler';
 
 /**
  * A contract for widgets that want to store and restore their inner state, between sessions.
@@ -152,6 +153,9 @@ export class ShellLayoutRestorer implements CommandContribution {
     @inject(PerspectiveServiceInternal)
     protected readonly perspectiveService: PerspectiveServiceInternal;
 
+    @inject(SecondaryWindowHandler)
+    protected readonly secondaryWindowHandler: SecondaryWindowHandler;
+
     constructor(
         @inject(WidgetManager) protected widgetManager: WidgetManager,
         @inject(ILogger) @named('core:ShellLayoutRestorer')
@@ -197,6 +201,10 @@ export class ShellLayoutRestorer implements CommandContribution {
         // Snapshot current shell as the active perspective's layout
         try {
             const currentLayout = app.shell.getLayoutData();
+            const secondaryWindows = this.secondaryWindowHandler.getLayoutData();
+            if (secondaryWindows.length) {
+                currentLayout.secondaryWindows = secondaryWindows;
+            }
             layouts[activeId] = this.deflate(currentLayout);
         } catch (error) {
             this.logger.warn(`Could not deflate layout for active perspective '${activeId}'`, error);
@@ -302,6 +310,7 @@ export class ShellLayoutRestorer implements CommandContribution {
 
         if (activeLayout) {
             await app.shell.setLayoutData(activeLayout);
+            this.restoreSecondaryWindows(activeLayout);
             const restoredId = this.perspectiveService.getActivePerspectiveId();
             this.perspectiveService.onLayoutRestored(restoredId);
             this.logger.info('<<< The layout has been successfully restored.');
@@ -312,6 +321,17 @@ export class ShellLayoutRestorer implements CommandContribution {
         this.perspectiveService.onLayoutRestored(this.perspectiveService.getActivePerspectiveId());
         this.logger.info('<<< Nothing to restore.');
         return false;
+    }
+
+    protected restoreSecondaryWindows(layout: ApplicationShell.LayoutData): void {
+        const { secondaryWindows } = layout;
+        if (secondaryWindows) {
+            // the windows are restored on startup only, not when switching to the perspective later on
+            delete layout.secondaryWindows;
+            this.secondaryWindowHandler.setLayoutData(secondaryWindows).catch(error => {
+                this.logger.warn('Could not restore the secondary windows', error);
+            });
+        }
     }
 
     protected isWidgetProperty(propertyName: string): boolean {

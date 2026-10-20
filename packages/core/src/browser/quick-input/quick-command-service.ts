@@ -23,6 +23,7 @@ import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } fro
 import { filterItems, QuickInputService, QuickPickItem, QuickPicks } from './quick-input-service';
 import { KeySequence } from '../keys';
 import { codiconArray } from '../widgets';
+import { WindowFocusService } from '../window/window-focus-service';
 
 export const quickCommand: Command = {
     id: 'workbench.action.showCommands'
@@ -58,6 +59,9 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
 
     @inject(QuickInputService) @optional()
     protected readonly quickInputService: QuickInputService | undefined;
+
+    @inject(WindowFocusService) @optional()
+    protected readonly windowFocusService: WindowFocusService | undefined;
 
     // The list of exempted commands not to be displayed in the recently used list.
     readonly exemptedCommands: Command[] = [
@@ -146,8 +150,10 @@ export class QuickCommandService implements QuickAccessContribution, QuickAccess
 
     protected updateCommandContextElement(): void {
         // When the palette is opened directly, the picks are computed before the quick input is shown and focused.
-        const element = this.quickInputService?.previousFocusElement ?? window.document.activeElement;
-        this.commandContextElement = element instanceof HTMLElement ? element : undefined;
+        // The palette may be opened in a secondary window, use the active element of the focused window.
+        const element = this.quickInputService?.previousFocusElement ?? (this.windowFocusService?.focusedWindow ?? window).document.activeElement;
+        // not using `instanceof HTMLElement`, the element may have been created in a secondary window, i.e. in another JavaScript realm
+        this.commandContextElement = element && typeof (element as HTMLElement).focus === 'function' ? element as HTMLElement : undefined;
     }
 
     protected withCommandContext<T>(callback: () => T): T {

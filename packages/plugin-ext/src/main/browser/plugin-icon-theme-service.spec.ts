@@ -27,8 +27,10 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
+import { Disposable, Emitter, Event } from '@theia/core/lib/common';
+import { SecondaryWindowService } from '@theia/core/lib/browser/window/secondary-window-service';
 import { PLUGINS_SCHEME } from '@theia/plugin-utils/lib/common/constants';
-import { PluginIconTheme } from './plugin-icon-theme-service';
+import { PluginIconTheme, PluginIconThemeDefinition } from './plugin-icon-theme-service';
 
 disableJSDOM();
 
@@ -49,6 +51,27 @@ class TestablePluginIconTheme extends PluginIconTheme {
 
     callToCSSUrl(iconPath: string | undefined): string | undefined {
         return this.toCSSUrl(iconPath);
+    }
+}
+
+/**
+ * A theme that is active and loaded with the given style sheet, without loading it through the injected services.
+ */
+class ActivePluginIconTheme extends PluginIconTheme {
+
+    constructor(
+        protected override readonly secondaryWindowService: SecondaryWindowService,
+        protected override readonly definition: PluginIconThemeDefinition,
+        styleSheetContent: string
+    ) {
+        super();
+        this.init();
+        this.toDeactivate.push(Disposable.NULL);
+        this.styleSheetContent = styleSheetContent;
+    }
+
+    callAddStyleElement(win: Window): void {
+        this.addStyleElement(win);
     }
 }
 
@@ -96,6 +119,59 @@ describe('PluginIconTheme', () => {
                 packageUri: `${PLUGINS_SCHEME}:/acme_ext/`
             });
             expect(theme.callToCSSUrl(undefined)).to.be.undefined;
+        });
+
+    });
+
+    describe('style elements of secondary windows', () => {
+
+        function createWindow(): Window {
+            const iframe = document.createElement('iframe');
+            document.body.appendChild(iframe);
+            if (!iframe.contentWindow) {
+                throw new Error('The window of the iframe has not been created.');
+            }
+            return iframe.contentWindow;
+        }
+
+        function styleElements(win: Window): Element[] {
+            return Array.from(win.document.head.querySelectorAll('style.theia-icon-theme'));
+        }
+
+        function createTheme(): { theme: ActivePluginIconTheme, onWindowClosed: Emitter<Window> } {
+            const onWindowClosed = new Emitter<Window>();
+            const secondaryWindowService: SecondaryWindowService = {
+                createSecondaryWindow: () => undefined,
+                onWindowOpened: Event.None,
+                onWindowLoaded: Event.None,
+                onWindowClosed: onWindowClosed.event,
+                beforeWidgetRestore: Event.None,
+                restoreWidget: async () => { },
+                focus: () => { },
+                getWindows: () => []
+            };
+            const theme = new ActivePluginIconTheme(secondaryWindowService, {
+                id: 'test', label: 'Test', uri: 'file:///theme/theme.json', pluginId: 'test', packageUri: 'file:///theme/'
+            }, '.icon {}');
+            return { theme, onWindowClosed };
+        }
+
+        it('replaces the style element of a window when it is added again, e.g. once the window has been loaded', () => {
+            const { theme } = createTheme();
+            const win = createWindow();
+            theme.callAddStyleElement(win);
+            theme.callAddStyleElement(win);
+            expect(styleElements(win)).to.have.length(1);
+            theme.dispose();
+        });
+
+        it('removes the style element of a window when the window is closed', () => {
+            const { theme, onWindowClosed } = createTheme();
+            const win = createWindow();
+            theme.callAddStyleElement(win);
+            onWindowClosed.fire(win);
+            expect(styleElements(win)).to.be.empty;
+            theme.dispose();
         });
 
     });

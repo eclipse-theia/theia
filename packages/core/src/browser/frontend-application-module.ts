@@ -131,10 +131,12 @@ import { BackendRequestService, RequestService, REQUEST_SERVICE_PATH } from '@th
 import { bindFrontendStopwatch, bindBackendStopwatch } from './performance';
 import { SaveableService, SaveErrorChecker } from './saveable-service';
 import { SecondaryWindowHandler } from './secondary-window-handler';
+import { SaveableSecondaryWindowCloseContribution, SecondaryWindowCloseContribution } from './window/secondary-window-close-contribution';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
 import { WindowTitleService } from './window/window-title-service';
 import { WindowTitleUpdater } from './window/window-title-updater';
 import { TheiaDockPanel } from './shell/theia-dock-panel';
+import { NativeTabDragService } from './shell/native-tab-drag-service';
 import { bindStatusBar } from './status-bar';
 import { CoreMarkdownRenderer, MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from './markdown-rendering/markdown-renderer';
 import { StylingParticipant, StylingService } from './styling-service';
@@ -209,6 +211,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         return renderer;
     });
     bind(DockPanelRenderer).toSelf();
+    bind(NativeTabDragService).toSelf().inSingletonScope();
     bind(TabBarRendererFactory).toFactory(({ container }) => () => {
         const contextMenuRenderer = container.get(ContextMenuRenderer);
         const tabBarDecoratorService = container.get(TabBarDecoratorService);
@@ -483,6 +486,9 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(FrontendApplicationContribution).toService(StylingService);
 
     bind(SecondaryWindowHandler).toSelf().inSingletonScope();
+    bindRootContributionProvider(bind, SecondaryWindowCloseContribution);
+    bind(SaveableSecondaryWindowCloseContribution).toSelf().inSingletonScope();
+    bind(SecondaryWindowCloseContribution).toService(SaveableSecondaryWindowCloseContribution);
     bind(ViewColumnService).toSelf().inSingletonScope();
 
     bind(UndoRedoHandlerService).toSelf().inSingletonScope();

@@ -17,10 +17,12 @@
 import { find, toArray } from '@lumino/algorithm';
 import { TabBar, Widget, DockPanel, Title } from '@lumino/widgets';
 import { Signal } from '@lumino/signaling';
+import { Drag } from '@lumino/dragdrop';
 import { Disposable, DisposableCollection } from '../../common/disposable';
 import { CorePreferences } from '../../common/core-preferences';
 import { Emitter, Event, environment } from '../../common';
 import { ToolbarAwareTabBar } from './tab-bars';
+import { TabDropHelper } from './tab-drop-helper';
 
 export const ACTIVE_TABBAR_CLASS = 'theia-tabBar-active';
 
@@ -49,6 +51,9 @@ export class TheiaDockPanel extends DockPanel {
     protected readonly onDidChangeCurrentEmitter = new Emitter<Title<Widget> | undefined>();
     protected disableDND: boolean | undefined = false;
     protected tabWithDNDDisabledStyling?: HTMLElement = undefined;
+    protected readonly tabDropHelper = new TabDropHelper({ before: 'theia-mod-drop-before', after: 'theia-mod-drop-after' });
+    protected canDropWidget?: (widget: Widget) => boolean;
+    protected onWillDropWidget?: (widget: Widget) => void;
 
     get onDidChangeCurrent(): Event<Title<Widget> | undefined> {
         return this.onDidChangeCurrentEmitter.event;
@@ -60,6 +65,10 @@ export class TheiaDockPanel extends DockPanel {
     ) {
         super(options);
         this.disableDND = TheiaDockPanel.isTheiaDockPanelIOptions(options) && options.disableDragAndDrop;
+        if (TheiaDockPanel.isTheiaDockPanelIOptions(options)) {
+            this.canDropWidget = options.canDropWidget;
+            this.onWillDropWidget = options.onWillDropWidget;
+        }
         this['_onCurrentChanged'] = (sender: TabBar<Widget>, args: TabBar.ICurrentChangedArgs<Widget>) => {
             this.markAsCurrent(args.currentTitle || undefined);
             super['_onCurrentChanged'](sender, args);
@@ -70,6 +79,9 @@ export class TheiaDockPanel extends DockPanel {
             const tabBar = super['_createTabBar']();
             if (tabBar instanceof ToolbarAwareTabBar) {
                 tabBar.setDockPanel(this);
+                if (!this.disableDND) {
+                    tabBar.enableNativeTabDrag();
+                }
             }
             if (this.disableDND) {
                 tabBar['tabDetachRequested'].disconnect(this['_onTabDetachRequested'], this);
@@ -124,19 +136,108 @@ export class TheiaDockPanel extends DockPanel {
     }
 
     override handleEvent(event: globalThis.Event): void {
-        if (this.disableDND) {
-            switch (event.type) {
-                case 'lm-dragenter':
-                case 'lm-dragleave':
-                case 'lm-dragover':
-                case 'lm-drop':
-                    /* no-op */
-                    break;
-                default:
-                    super.handleEvent(event);
-            }
+        switch (event.type) {
+            case 'lm-dragenter':
+            case 'lm-dragleave':
+            case 'lm-dragover':
+            case 'lm-drop':
+                if (this.disableDND) {
+                    return;
+                }
+                if ((event.type === 'lm-dragenter' || event.type === 'lm-drop') && !this.isDropAllowed(event as Drag.Event)) {
+                    // not accepting the drag enter keeps this panel from becoming the drop target
+                    return;
+                }
+                if (event.type === 'lm-drop') {
+                    this.notifyWillDrop(event as Drag.Event);
+                }
+                if (this.handleTabBarDragEvent(event as Drag.Event)) {
+                    return;
+                }
+                break;
         }
         super.handleEvent(event);
+    }
+
+    protected isDropAllowed(event: Drag.Event): boolean {
+        const widget = this.canDropWidget && this.getDraggedWidget(event);
+        return !widget || this.canDropWidget!(widget);
+    }
+
+    protected notifyWillDrop(event: Drag.Event): void {
+        const widget = this.onWillDropWidget && this.getDraggedWidget(event);
+        if (widget) {
+            this.onWillDropWidget!(widget);
+        }
+    }
+
+    /**
+     * Handles dragging a widget over the tab bars of this panel: the widget is inserted as a tab where it is dropped,
+     * instead of after the current tab of the tab bar as Lumino does.
+     *
+     * @returns `true` if the event has been handled
+     */
+    protected handleTabBarDragEvent(event: Drag.Event): boolean {
+        if (event.type !== 'lm-dragover' && event.type !== 'lm-drop') {
+            if (event.type === 'lm-dragleave' && !(event.relatedTarget && this.node.contains(event.relatedTarget as Node))) {
+                this.tabDropHelper.hideInsertionMarker();
+            }
+            return false;
+        }
+        const tabBar = this.findTabBarAt(event.clientX, event.clientY);
+        const widget = tabBar && this.getDraggedWidget(event);
+        if (!tabBar || !widget) {
+            this.tabDropHelper.hideInsertionMarker();
+            return false;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        this.overlay.hide(0);
+        const index = this.tabDropHelper.findInsertionIndex(tabBar, event.clientX, event.clientY);
+        if (event.type === 'lm-dragover') {
+            this.tabDropHelper.showInsertionMarker(tabBar, index);
+        } else {
+            this.tabDropHelper.hideInsertionMarker();
+            this.insertTab(tabBar, index, widget);
+        }
+        event.dropAction = event.proposedAction;
+        return true;
+    }
+
+    protected getDraggedWidget(event: Drag.Event): Widget | undefined {
+        if (this['_tabsConstrained'] && event.source !== this) {
+            return undefined;
+        }
+        const widget = this.tabDropHelper.getDraggedWidget(event);
+        return widget && !widget.contains(this) ? widget : undefined;
+    }
+
+    protected findTabBarAt(clientX: number, clientY: number): TabBar<Widget> | undefined {
+        return find(this.tabBars(), tabBar => {
+            const barRect = tabBar.node.getBoundingClientRect();
+            const contentRect = tabBar.contentNode.getBoundingClientRect();
+            return clientX >= barRect.left && clientX < barRect.right && clientY >= contentRect.top && clientY < contentRect.bottom;
+        });
+    }
+
+    protected insertTab(tabBar: TabBar<Widget>, index: number, widget: Widget): void {
+        const titles = tabBar.titles;
+        const currentIndex = titles.indexOf(widget.title);
+        if (currentIndex !== -1) {
+            const toIndex = index > currentIndex ? index - 1 : index;
+            if (toIndex !== currentIndex) {
+                tabBar.insertTab(toIndex, widget.title);
+                // `insertTab` does not emit the signal that Lumino emits when a tab is moved with the pointer
+                (tabBar.tabMoved as Signal<TabBar<Widget>, TabBar.ITabMovedArgs<Widget>>).emit({ fromIndex: currentIndex, toIndex, title: widget.title });
+            }
+        } else if (index < titles.length) {
+            this.addWidget(widget, { mode: 'tab-before', ref: titles[index].owner });
+        } else if (titles.length > 0) {
+            this.addWidget(widget, { mode: 'tab-after', ref: titles[titles.length - 1].owner });
+        } else {
+            this.addWidget(widget);
+        }
+        this.activateWidget(widget);
     }
 
     toggleMaximized(): void {
@@ -265,6 +366,16 @@ export namespace TheiaDockPanel {
          * @returns true if the request was handled by this handler, false if the tabbar should handle the request
          */
         closeHandler?: (sender: TabBar<Widget>, args: TabBar.ITabCloseRequestedArgs<Widget>) => boolean;
+
+        /**
+         * Whether the given widget may be dropped on this panel. By default, any widget may be dropped.
+         */
+        canDropWidget?: (widget: Widget) => boolean;
+
+        /**
+         * Called when the given widget is dropped on this panel, before it is added to the panel.
+         */
+        onWillDropWidget?: (widget: Widget) => void;
     }
 
     export function isTheiaDockPanelIOptions(options: DockPanel.IOptions | undefined): options is IOptions {

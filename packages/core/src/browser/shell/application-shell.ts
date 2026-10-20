@@ -29,6 +29,7 @@ import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar
 import { TheiaDockPanel, BOTTOM_AREA_ID, MAIN_AREA_ID } from './theia-dock-panel';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory } from './side-panel-handler';
 import { TabBarRendererFactory, SHELL_TABBAR_CONTEXT_MENU, ScrollableTabBar, ToolbarAwareTabBar } from './tab-bars';
+import { NativeTabDragService } from './native-tab-drag-service';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 import { TabBarToolbarRegistry, TabBarToolbarFactory } from './tab-bar-toolbar';
@@ -40,7 +41,7 @@ import { BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer'
 import { Deferred } from '../../common/promise-util';
 import { SaveableService } from '../saveable-service';
 import { nls } from '../../common/nls';
-import { extractSecondaryWindow, SecondaryWindowHandler } from '../secondary-window-handler';
+import { extractSecondaryWindow, extractSecondaryWindowRootWidget, SecondaryWindowHandler } from '../secondary-window-handler';
 import URI from '../../common/uri';
 import { OpenerService } from '../opener-service';
 import { PreviewableWidget } from '../widgets/previewable-widget';
@@ -97,6 +98,9 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
 
     private readonly onDidCreateTabBarEmitter = new Emitter<TabBar<Widget>>();
 
+    @inject(NativeTabDragService) @optional()
+    protected readonly nativeTabDragService?: NativeTabDragService;
+
     constructor(
         @inject(TabBarRendererFactory) protected readonly tabBarRendererFactory: TabBarRendererFactory,
         @inject(TabBarToolbarRegistry) protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
@@ -140,6 +144,7 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
             getDynamicTabOptions());
         this.tabBarClasses.forEach(c => tabBar.addClass(c));
         renderer.tabBar = tabBar;
+        tabBar.nativeTabDragService = this.nativeTabDragService;
         renderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
         tabBar.currentChanged.connect(this.onCurrentTabChanged, this);
         const prefChangeDisposable = this.corePreferences.onPreferenceChanged(change => {
@@ -385,7 +390,11 @@ export class ApplicationShell extends Widget {
         this.rightPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
 
         this.secondaryWindowHandler.init(this, this.dockPanelRendererFactory);
-        this.secondaryWindowHandler.onDidAddWidget(([widget, window]) => this.fireDidAddWidget(widget));
+        this.secondaryWindowHandler.onDidAddWidget(([widget, window]) => {
+            // widgets restored in secondary windows on startup have never been added to the main window
+            this.track(widget);
+            this.fireDidAddWidget(widget);
+        });
         this.secondaryWindowHandler.onDidRemoveWidget(([widget, window]) => this.fireDidRemoveWidget(widget));
 
         this.layout = this.createLayout();
@@ -488,8 +497,10 @@ export class ApplicationShell extends Widget {
                 && clientX <= offsetLeft + this.options.leftPanel.expandThreshold;
             const expRight = allowExpansion && clientX <= offsetLeft + clientWidth
                 && clientX >= offsetLeft + clientWidth - this.options.rightPanel.expandThreshold;
-            const expBottom = allowExpansion && !expLeft && !expRight && clientY <= offsetTop + clientHeight
-                && clientY >= offsetTop + clientHeight - this.options.bottomPanel.expandThreshold;
+            // The bottom panel is below the main area only, so don't expand it while dragging over an open side panel
+            const mainAreaBounds = this.mainPanel.node.getBoundingClientRect();
+            const expBottom = allowExpansion && !expLeft && !expRight && clientX >= mainAreaBounds.left && clientX <= mainAreaBounds.right
+                && clientY <= offsetTop + clientHeight && clientY >= offsetTop + clientHeight - this.options.bottomPanel.expandThreshold;
             // eslint-disable-next-line no-null/no-null
             if (expLeft && !state.leftExpanded && this.leftPanelHandler.tabBar.currentTitle === null) {
                 // The mouse cursor is moved close to the left border
@@ -1104,7 +1115,24 @@ export class ApplicationShell extends Widget {
             widgetNode = widgetNode.parentElement;
         }
         if (widgetNode) {
-            return this.findWidgetForNode(widgetNode, this);
+            return this.findWidgetForNode(widgetNode, this) ?? this.findSecondaryWindowWidgetForNode(widgetNode);
+        }
+        return undefined;
+    }
+
+    /**
+     * Widgets in secondary windows are not part of the widget tree of the shell, but of the root widgets of their windows.
+     */
+    private findSecondaryWindowWidgetForNode(widgetNode: HTMLElement): Widget | undefined {
+        if (widgetNode.ownerDocument === this.node.ownerDocument) {
+            return undefined;
+        }
+        const rootWidgets = new Set(this.secondaryWindowHandler.widgets.map(widget => extractSecondaryWindowRootWidget(widget)));
+        for (const rootWidget of rootWidgets) {
+            const result = rootWidget && this.findWidgetForNode(widgetNode, rootWidget);
+            if (result) {
+                return result;
+            }
         }
         return undefined;
     }
@@ -2367,6 +2395,11 @@ export namespace ApplicationShell {
         leftPanel?: SidePanel.LayoutData;
         rightPanel?: SidePanel.LayoutData;
         activeWidgetId?: string;
+        /**
+         * The secondary windows to restore on startup. They are not part of perspectives, so they are
+         * stored and restored by the `ShellLayoutRestorer` rather than by `getLayoutData` and `setLayoutData`.
+         */
+        secondaryWindows?: SecondaryWindowHandler.LayoutData[];
     }
 
     /**

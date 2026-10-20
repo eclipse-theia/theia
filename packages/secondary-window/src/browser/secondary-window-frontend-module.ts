@@ -17,11 +17,13 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { SecondaryWindowContribution } from './secondary-window-frontend-contribution';
 import { CommandContribution } from '@theia/core/lib/common/command';
+import { MenuContribution } from '@theia/core/lib/common/menu';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export default new ContainerModule(bind => {
     bind(SecondaryWindowContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(SecondaryWindowContribution);
+    bind(MenuContribution).toService(SecondaryWindowContribution);
     bind(TabBarToolbarContribution).toService(SecondaryWindowContribution);
 });
 

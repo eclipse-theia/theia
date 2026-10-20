@@ -1579,6 +1579,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 description: 'Border to highlight tabs when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
             },
             {
+                id: 'tab.dragAndDropBorder', defaults: {
+                    dark: 'tab.activeForeground',
+                    light: 'tab.activeForeground',
+                    hcDark: 'contrastActiveBorder',
+                    hcLight: 'contrastActiveBorder'
+                }, description: 'Border between tabs to indicate that a tab can be inserted between two tabs. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
                 id: 'tab.unfocusedHoverBorder', defaults: {
                     dark: Color.transparent('tab.hoverBorder', 0.5),
                     light: Color.transparent('tab.hoverBorder', 0.7),

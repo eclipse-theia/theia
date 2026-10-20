@@ -56,6 +56,7 @@ export class ElectronSecondaryWindowService extends DefaultSecondaryWindowServic
     override registerShutdownListeners(): void {
         // Close all open windows when the main window is closed.
         (this.windowService as ElectronWindowService).onWillShutDown(() => {
+            this.shuttingDown = true;
             const promises = [];
             // Iterate backwards because calling window.close might remove the window from the array
             for (let i = this.secondaryWindows.length - 1; i >= 0; i--) {

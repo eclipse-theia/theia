@@ -23,6 +23,8 @@ import { bindRootContributionProvider } from '@theia/core';
 import { KeybindingContribution, WebSocketConnectionProvider, WidgetFactory, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
+import { TerminalSecondaryWindowCloseContribution } from './terminal-secondary-window-close-contribution';
+import { SecondaryWindowCloseContribution } from '@theia/core/lib/browser/window/secondary-window-close-contribution';
 import { TerminalWidgetImpl, TERMINAL_WIDGET_FACTORY_ID } from './terminal-widget-impl';
 import { TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
@@ -88,6 +90,8 @@ export default new ContainerModule(bind => {
     }
 
     bind(TerminalThemeService).toSelf().inSingletonScope();
+    bind(TerminalSecondaryWindowCloseContribution).toSelf().inSingletonScope();
+    bind(SecondaryWindowCloseContribution).toService(TerminalSecondaryWindowCloseContribution);
     bind(TerminalFrontendContribution).toSelf().inSingletonScope();
     bind(TerminalService).toService(TerminalFrontendContribution);
     for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution, ColorContribution]) {

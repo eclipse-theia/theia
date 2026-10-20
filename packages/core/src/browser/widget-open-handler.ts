@@ -14,13 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, postConstruct, injectable } from 'inversify';
+import { inject, optional, postConstruct, injectable } from 'inversify';
 import URI from '../common/uri';
 import { MaybePromise, Emitter, Event } from '../common';
-import { BaseWidget } from './widgets';
+import { BaseWidget, ExtractableWidget } from './widgets';
 import { ApplicationShell } from './shell';
 import { OpenHandler, OpenerOptions } from './opener-service';
 import { WidgetManager } from './widget-manager';
+import { extractSecondaryWindow } from './secondary-window-handler';
+import { WindowFocusService } from './window/window-focus-service';
 
 export type WidgetOpenMode = 'open' | 'reveal' | 'activate';
 /**
@@ -53,6 +55,9 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
 
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
+
+    @inject(WindowFocusService) @optional()
+    protected readonly windowFocusService: WindowFocusService | undefined;
 
     protected readonly onCreatedEmitter = new Emitter<W>();
     /**
@@ -99,13 +104,29 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
             ...options
         };
         if (!widget.isAttached) {
-            await this.shell.addWidget(widget, op.widgetOptions || { area: 'main' });
+            await this.shell.addWidget(widget, op.widgetOptions || this.getDefaultWidgetOptions(widget));
         }
         if (op.mode === 'activate') {
             await this.shell.activateWidget(widget.id);
         } else if (op.mode === 'reveal') {
             await this.shell.revealWidget(widget.id);
         }
+    }
+
+    /**
+     * The options to add a widget with if the opener options don't specify any: widgets are added to the main area,
+     * unless the user works in a secondary window. Then widgets that can be moved to secondary windows are added there,
+     * next to the current widget, like editors are opened in the active editor group in VS Code.
+     *
+     * @param widget the widget to add, if known already
+     */
+    protected getDefaultWidgetOptions(widget?: W): ApplicationShell.WidgetOptions {
+        const current = this.shell.currentWidget;
+        const secondaryWindow = current && extractSecondaryWindow(current);
+        if (secondaryWindow && secondaryWindow === this.windowFocusService?.focusedWindow && (!widget || ExtractableWidget.is(widget))) {
+            return { area: 'secondaryWindow', ref: current };
+        }
+        return { area: 'main' };
     }
 
     /**
