@@ -141,4 +141,48 @@ describe('FileService activateProvider resilience (#17506)', () => {
         fileService.registerProvider(scheme, provider);
         expect(await withinTimeout(retry)).to.equal(provider);
     });
+    it('does not fire the activation listeners again for a scheme that has no provider', async () => {
+        const fileService = new TestFileService(50);
+        const scheme = 'unknown';
+        let fired = 0;
+        fileService.onWillActivateFileSystemProvider(event => {
+            if (event.scheme === scheme) {
+                fired++;
+            }
+        });
+
+        for (let i = 0; i < 3; i++) {
+            await fileService.activateProvider(scheme).then(() => { throw new Error('should have rejected'); }, () => undefined);
+        }
+        expect(fired).to.equal(1);
+    });
+
+    it('does not fire the activation listeners again on retry while the first activation is still in progress', async () => {
+        const fileService = new TestFileService(50);
+        const scheme = 'slow';
+        const provider = createMockProvider();
+        let fired = 0;
+        let registrationError: unknown;
+        fileService.onWillActivateFileSystemProvider(event => {
+            if (event.scheme === scheme) {
+                fired++;
+                event.waitUntil(new Promise<void>(resolve => setTimeout(() => {
+                    try {
+                        fileService.registerProvider(scheme, provider);
+                    } catch (e) {
+                        registrationError = e;
+                    }
+                    resolve();
+                }, 80)));
+            }
+        });
+
+        // First attempt times out before the listener registers the provider.
+        await fileService.activateProvider(scheme).then(() => { throw new Error('should have rejected'); }, () => undefined);
+
+        // The retry reuses the listener still in progress and resolves when it registers the provider.
+        expect(await withinTimeout(fileService.activateProvider(scheme), 300)).to.equal(provider);
+        expect(fired).to.equal(1);
+        expect(registrationError).to.be.undefined;
+    });
 });

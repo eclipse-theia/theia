@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { DeployedPlugin, PluginIdentifiers } from '../../common/plugin-protocol';
 import { AbstractHostedPluginSupport, PluginContributions } from './hosted-plugin';
@@ -123,6 +124,14 @@ class TestHostedPluginSupport extends AbstractHostedPluginSupport<any, any> {
 
     clearDisabledByTrust(): void {
         this._disabledByTrust.clear();
+    }
+
+    addManager(host: string, manager: any): void {
+        this.managers.set(host, manager);
+    }
+
+    replayActivationEvents(): void {
+        this.deferredActivationEventsReplay.resolve();
     }
 
     simulateLoadCycle(): Map<string, PluginContributions[]> {
@@ -376,4 +385,74 @@ describe('AbstractHostedPluginSupport - workspace trust filtering', () => {
         });
     });
 
+});
+
+describe('AbstractHostedPluginSupport - activateByEvent', () => {
+    let support: TestHostedPluginSupport;
+
+    beforeEach(() => {
+        support = new TestHostedPluginSupport();
+    });
+
+    /** Resolve to whether the promise has settled after pending callbacks have run. */
+    async function isSettled(promise: Promise<unknown>): Promise<boolean> {
+        let settled = false;
+        promise.then(() => settled = true, () => settled = true);
+        await new Promise(resolve => setTimeout(resolve, 0));
+        return settled;
+    }
+
+    function createManager(activation: Promise<void>): { manager: any, calls: string[] } {
+        const calls: string[] = [];
+        const manager = {
+            $activateByEvent: (event: string) => {
+                calls.push(event);
+                return activation;
+            }
+        };
+        return { manager, calls };
+    }
+
+    it('does not resolve an event requested before start until the activation events are replayed', async () => {
+        const first = support.activateByEvent('onFileSystem:test');
+        const second = support.activateByEvent('onFileSystem:test');
+
+        expect(await isSettled(first)).to.be.false;
+        expect(await isSettled(second)).to.be.false;
+
+        support.replayActivationEvents();
+
+        expect(await isSettled(first)).to.be.true;
+        expect(await isSettled(second)).to.be.true;
+    });
+
+    it('lets a repeated request for an event wait for the activation in flight', async () => {
+        support.replayActivationEvents();
+        const activation = new Deferred<void>();
+        const { manager, calls } = createManager(activation.promise);
+        support.addManager('main', manager);
+
+        const first = support.activateByEvent('onFileSystem:test');
+        const second = support.activateByEvent('onFileSystem:test');
+
+        expect(calls).to.deep.equal(['onFileSystem:test']);
+        expect(await isSettled(second)).to.be.false;
+
+        activation.resolve();
+
+        expect(await isSettled(first)).to.be.true;
+        expect(await isSettled(second)).to.be.true;
+    });
+
+    it('reports a failed activation only to the first request', async () => {
+        support.replayActivationEvents();
+        const { manager } = createManager(Promise.reject(new Error('activation failed')));
+        support.addManager('main', manager);
+
+        const first = support.activateByEvent('onFileSystem:test');
+        const second = support.activateByEvent('onFileSystem:test');
+
+        await first.then(() => { throw new Error('should have rejected'); }, () => undefined);
+        await second;
+    });
 });

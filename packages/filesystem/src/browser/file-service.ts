@@ -367,6 +367,8 @@ export class FileService {
 
     private readonly providers = new Map<string, FileSystemProvider>();
     private readonly activations = new Map<string, Promise<FileSystemProvider>>();
+    /** In-flight firings of the {@link onWillActivateFileSystemProvider} event, by scheme. */
+    private readonly pendingActivationEvents = new Map<string, Promise<void>>();
 
     /**
      * Registers a new {@link FileSystemProvider} for the given scheme.
@@ -424,19 +426,22 @@ export class FileService {
                 }
             });
             // Backstop: reject the activation if no provider is registered within the timeout, rather than
-            // hanging forever when a listener's `waitUntil` promise never settles. On rejection the scheme is
-            // removed from `activations` so that a later attempt can retry once the connection recovers.
+            // hanging forever when a listener's `waitUntil` promise never settles. Only a timed-out activation
+            // is removed from `activations`, so that a later attempt can retry once the connection recovers.
+            // A scheme for which the listeners completed without registering a provider stays rejected.
             const timeout = setTimeout(() => {
+                this.activations.delete(scheme);
                 const error = new Error();
                 error.name = 'ENOPRO';
                 error.message = `Activation of file system provider for scheme ${scheme} timed out`;
                 deferredActivation.reject(error);
             }, this.getActivationTimeout());
-            deferredActivation.promise.then(
-                () => { registration.dispose(); clearTimeout(timeout); },
-                () => { registration.dispose(); clearTimeout(timeout); this.activations.delete(scheme); }
-            );
-            WaitUntilEvent.fire(this.onWillActivateFileSystemProviderEmitter, { scheme }).then(() => {
+            const cleanUp = () => {
+                registration.dispose();
+                clearTimeout(timeout);
+            };
+            deferredActivation.promise.then(cleanUp, cleanUp);
+            this.fireWillActivateFileSystemProvider(scheme).then(() => {
                 provider = this.providers.get(scheme);
                 if (!provider) {
                     const error = new Error();
@@ -451,6 +456,34 @@ export class FileService {
         return activation;
     }
 
+    /**
+     * Fire the {@link onWillActivateFileSystemProvider} event for the given scheme, unless a previous firing
+     * for the same scheme is still in progress, in which case that is reused. This ensures that retrying a
+     * timed-out activation does not run the activation listeners again while they are still working on
+     * the first attempt, which would, for example, register a second provider for the scheme.
+     *
+     * @param scheme the URI scheme for which to activate a provider
+     * @returns a promise that settles when all listeners of the firing of the event have completed
+     */
+    protected fireWillActivateFileSystemProvider(scheme: string): Promise<void> {
+        let pending = this.pendingActivationEvents.get(scheme);
+        if (!pending) {
+            pending = WaitUntilEvent.fire(this.onWillActivateFileSystemProviderEmitter, { scheme });
+            this.pendingActivationEvents.set(scheme, pending);
+            const done = () => this.pendingActivationEvents.delete(scheme);
+            pending.then(done, done);
+        }
+        return pending;
+    }
+
+    /**
+     * Obtain the time after which {@link activateProvider} gives up waiting for a provider to be registered.
+     * Subclasses may override this to tune the timeout.
+     *
+     * @returns the activation timeout, in milliseconds. When it elapses before a provider is registered for
+     *   the scheme, the activation is rejected with an `ENOPRO` error and forgotten, so that a later call to
+     *   {@link activateProvider} tries again (reusing the activation listeners' work if still in progress)
+     */
     protected getActivationTimeout(): number {
         return DEFAULT_PROVIDER_ACTIVATION_TIMEOUT;
     }

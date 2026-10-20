@@ -83,6 +83,11 @@ export const PluginProgressLocation = 'plugin';
 export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManagerExt, RpcProxy<HostedPluginServer>> {
 
     protected static ADDITIONAL_ACTIVATION_EVENTS_ENV = 'ADDITIONAL_ACTIVATION_EVENTS';
+    /**
+     * How long, in milliseconds, a file system provider activation that is requested before the plugins are started
+     * waits for a provider to be registered, if the plugins are not started in the meantime.
+     */
+    protected static FILE_SYSTEM_ACTIVATION_STARTUP_TIMEOUT = 3000;
     protected static BUILTIN_ACTIVATION_EVENTS = [
         '*',
         'onLanguage',
@@ -492,11 +497,18 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
             // and will be replayed when managers start. This does not depend on
             // layout initialization, so it cannot deadlock.
             await this.willStart;
-            await this.activateByFileSystem(event);
-            if (!this.fileService.hasProvider(event.scheme)) {
-                return waitForEvent(Event.filter(this.fileService.onDidChangeFileSystemProviderRegistrations,
-                    ({ added, scheme }) => added && scheme === event.scheme), 3000);
+            const activation = this.activateByFileSystem(event);
+            if (this.activationEventsReplayed) {
+                // The plugins activated by the event have registered their providers by now
+                return activation;
             }
+            // Before the plugins are started, the activation completes only once they are. But the start of
+            // the plugins waits for services that may themselves need a file system provider, for example
+            // to resolve the workspace roots. So do not wait for the activation longer than for a provider
+            // to be registered by some plugin that is started in the meantime.
+            const registration = waitForEvent(Event.filter(this.fileService.onDidChangeFileSystemProviderRegistrations,
+                ({ added, scheme }) => added && scheme === event.scheme), HostedPluginSupport.FILE_SYSTEM_ACTIVATION_STARTUP_TIMEOUT);
+            return Promise.race([activation, registration.then(() => undefined)]);
         })());
     }
 

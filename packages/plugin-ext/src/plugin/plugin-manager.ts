@@ -114,6 +114,8 @@ export abstract class AbstractPluginManagerExtImpl<P extends Record<string, any>
     private configStorage: ConfigStorage | undefined;
     private readonly registry = new Map<string, Plugin>();
     private readonly activations = new Map<string, (() => Promise<void>)[] | undefined>();
+    /** Activations triggered by each event, so that concurrent requests for the same event can await them. */
+    private readonly pendingActivationsByEvent = new Map<string, Promise<void>>();
     /** promises to whether loading each plugin has been successful */
     private readonly loadedPlugins = new Map<string, Promise<boolean>>();
     private readonly activatedPlugins = new Map<string, ActivatedPlugin>();
@@ -354,17 +356,23 @@ export abstract class AbstractPluginManagerExtImpl<P extends Record<string, any>
         await Promise.all(Array.from(this.activations.keys(), activation => activation.startsWith(baseEvent) && this.activateBySingleEvent(activation)));
     }
 
-    protected async activateBySingleEvent(activationEvent: string): Promise<void> {
+    protected activateBySingleEvent(activationEvent: string): Promise<void> {
         const activations = this.activations.get(activationEvent);
-        if (!activations) {
-            return;
+        if (activations) {
+            this.activations.set(activationEvent, undefined);
+            const pendingActivations = [];
+            while (activations.length) {
+                pendingActivations.push(activations.pop()!());
+            }
+            const activation = Promise.all(pendingActivations).then(() => undefined);
+            // Callers that request the same event while its activation is in flight must wait for it, too.
+            // The recorded promise does not reject, so that a failure is only reported to the first caller.
+            const settled = activation.catch(() => undefined);
+            const previous = this.pendingActivationsByEvent.get(activationEvent);
+            this.pendingActivationsByEvent.set(activationEvent, previous ? Promise.all([previous, settled]).then(() => undefined) : settled);
+            return activation;
         }
-        this.activations.set(activationEvent, undefined);
-        const pendingActivations = [];
-        while (activations.length) {
-            pendingActivations.push(activations.pop()!());
-        }
-        await Promise.all(pendingActivations);
+        return this.pendingActivationsByEvent.get(activationEvent) ?? Promise.resolve();
     }
 
     async $activatePlugin(id: string): Promise<void> {

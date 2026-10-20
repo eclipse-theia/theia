@@ -84,6 +84,12 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
 
     protected readonly activationEvents = new Set<string>();
 
+    /** Activations requested for each activation event, so that repeated requests can await them. */
+    protected readonly activationsByEvent = new Map<string, Promise<void>>();
+
+    /** Resolves when the initial start of the plugin hosts has replayed the activation events requested before it. */
+    protected readonly deferredActivationEventsReplay = new Deferred<void>();
+
     protected workspaceTrusted: boolean = false;
 
     protected readonly _disabledByTrust = new Set<string>();
@@ -151,6 +157,7 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
             // Resolve the startup deferreds so that clients awaiting `willStart` or `didStart`,
             // e.g. file system provider activations, do not hang forever on a failed load.
             this.deferredWillStart.resolve();
+            this.deferredActivationEventsReplay.resolve();
             this.deferredDidStart.resolve();
         }
     }), 50, { leading: true });
@@ -419,6 +426,7 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
         }
 
         await Promise.all(thenable);
+        this.deferredActivationEventsReplay.resolve();
         await this.activateByEvent('onStartupFinished');
         if (toDisconnect.disposed) {
             return;
@@ -438,12 +446,37 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
 
     protected abstract getHostGlobalStoragePath(): Promise<string>;
 
+    /**
+     * Activate the plugins that declare the given activation event.
+     *
+     * @param activationEvent the activation event
+     * @returns a promise that resolves when the plugins activated by the event have finished activating.
+     *   For an event requested before the plugins are started, this is after the plugin hosts have
+     *   replayed it on start, so callers that the start of the plugins depends on must not await it
+     */
     async activateByEvent(activationEvent: string): Promise<void> {
-        if (this.activationEvents.has(activationEvent)) {
-            return;
+        let activation = this.activationsByEvent.get(activationEvent);
+        if (!activation) {
+            this.activationEvents.add(activationEvent);
+            const activations = Array.from(this.managers.values(), manager => manager.$activateByEvent(activationEvent));
+            if (!this.activationEventsReplayed) {
+                // Managers that are not yet started replay the recorded activation events on start
+                activations.push(this.deferredActivationEventsReplay.promise);
+            }
+            const result = Promise.all(activations).then(() => undefined);
+            // Callers that request the same event while its activation is in flight must wait for it, too.
+            // The recorded promise does not reject, so that a failure is only reported to the first caller.
+            this.activationsByEvent.set(activationEvent, result.catch(() => undefined));
+            activation = result;
         }
-        this.activationEvents.add(activationEvent);
-        await Promise.all(Array.from(this.managers.values(), manager => manager.$activateByEvent(activationEvent)));
+        return activation;
+    }
+
+    /**
+     * Whether the activation events requested before the start of the plugins have been replayed in the plugin hosts.
+     */
+    protected get activationEventsReplayed(): boolean {
+        return this.deferredActivationEventsReplay.state !== 'unresolved';
     }
 
     async activatePlugin(id: string): Promise<void> {
