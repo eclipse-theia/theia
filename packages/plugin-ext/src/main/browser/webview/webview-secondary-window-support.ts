@@ -20,28 +20,46 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window-handler';
 import { WebviewWidget } from './webview';
 
+/**
+ * Forwards messages from webviews to their iframes in secondary windows.
+ *
+ * The webview's iframe only accepts messages from its parent window, so the main window posts them to the secondary window,
+ * from where a script forwards them to the iframe of the webview that the message is addressed to.
+ */
 @injectable()
 export class WebviewSecondaryWindowSupport implements FrontendApplicationContribution {
+    protected static readonly SCRIPT_ID = 'theia-webview-message-forwarding';
+
     @inject(SecondaryWindowHandler)
     protected readonly secondaryWindowHandler: SecondaryWindowHandler;
 
     onStart(app: FrontendApplication): MaybePromise<void> {
         this.secondaryWindowHandler.onDidAddWidget(([widget, win]) => {
             if (widget instanceof WebviewWidget) {
-                const script = win.document.createElement('script');
-                script.text = `
-                        window.addEventListener('message', e => {
-                        // Only process messages from Theia main window
-                        if (e.source === window.opener) {
-                            // Delegate message to iframe
-                            const frame = window.document.getElementsByTagName('iframe').item(0);
-                            if (frame) {
-                                frame.contentWindow?.postMessage({ ...e.data }, '*');
-                            }
-                        }
-                        }); `;
-                win.document.head.append(script);
+                this.installMessageForwarding(win);
             }
         });
+    }
+
+    protected installMessageForwarding(win: Window): void {
+        // a window may contain several webviews, but must forward each message once only
+        if (win.document.getElementById(WebviewSecondaryWindowSupport.SCRIPT_ID)) {
+            return;
+        }
+        const script = win.document.createElement('script');
+        script.id = WebviewSecondaryWindowSupport.SCRIPT_ID;
+        script.text = `
+            window.addEventListener('message', e => {
+                // Only process messages from Theia main window that are addressed to a webview
+                if (e.source === window.opener && e.data && typeof e.data.webviewId === 'string') {
+                    const { webviewId, ...message } = e.data;
+                    for (const frame of window.document.getElementsByTagName('iframe')) {
+                        if (frame.dataset.webviewId === webviewId) {
+                            frame.contentWindow?.postMessage(message, '*');
+                        }
+                    }
+                }
+            });`;
+        win.document.head.append(script);
     }
 }

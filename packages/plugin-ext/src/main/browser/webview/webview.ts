@@ -285,6 +285,8 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
             element.setAttribute('allow', 'clipboard-read; clipboard-write; usb; serial; hid;');
         }
         element.setAttribute('src', `${this.externalEndpoint}/index.html?id=${this.identifier.id}`);
+        // identifies the iframe to which messages are forwarded when the webview is in a secondary window
+        element.dataset.webviewId = this.identifier.id;
         element.style.border = 'none';
         element.style.width = '100%';
         element.style.height = '100%';
@@ -643,7 +645,8 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
         if (this.element) {
             this.trace('out', channel, data);
             if (this.secondaryWindow) {
-                this.secondaryWindow.postMessage({ channel, args: data }, '*');
+                // the secondary window forwards the message to the iframe, see `WebviewSecondaryWindowSupport`
+                this.secondaryWindow.postMessage({ channel, args: data, webviewId: this.identifier.id }, '*');
             } else {
                 this.element.contentWindow!.postMessage({ channel, args: data }, '*');
             }

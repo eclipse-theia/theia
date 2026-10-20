@@ -44,6 +44,10 @@ export interface SecondaryWindowOptions {
      * according to the `window.secondaryWindowPlacement` preference.
      */
     position?: { x: number, y: number };
+    /**
+     * The size of the window. If omitted, the size is derived from the widget and the `window.secondaryWindowPlacement` preference.
+     */
+    size?: { width: number, height: number };
 }
 
 export const SecondaryWindowService = Symbol('SecondaryWindowService');

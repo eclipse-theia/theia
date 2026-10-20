@@ -2391,6 +2391,11 @@ export namespace ApplicationShell {
         leftPanel?: SidePanel.LayoutData;
         rightPanel?: SidePanel.LayoutData;
         activeWidgetId?: string;
+        /**
+         * The secondary windows to restore on startup. They are not part of perspectives, so they are
+         * stored and restored by the `ShellLayoutRestorer` rather than by `getLayoutData` and `setLayoutData`.
+         */
+        secondaryWindows?: SecondaryWindowHandler.LayoutData[];
     }
 
     /**
