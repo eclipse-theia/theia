@@ -227,6 +227,8 @@ blockquote {
 
 .theia-preload.theia-hidden {
     opacity: 0;
+    /* The application is ready while the indicator fades out: let clicks reach the workbench underneath. */
+    pointer-events: none;
 }
 
 .theia-icon {
