@@ -16,7 +16,6 @@ _Electron: the window loads before the backend is listening_:
 - The URL that the main process loads into a window no longer carries a `?port=` parameter, except for windows that are opened with explicit `WindowSearchParams` (remote backends). The generated `index.js` resolves the port and writes it into the URL (`ElectronBackendPort.resolve()`) before the preload phase, so `Endpoint`, `getCurrentPort()` and other readers of `location.search` see it as before. Only code that runs earlier than that, in a custom generated entry point, cannot rely on it.
 - `ElectronMainApplicationContribution.onStart` now runs before the backend has started. A contribution that awaits `application.backendPort` there delays the window until the backend is up; chain on the promise instead, as `@theia/mini-browser` does for its security token cookie.
 - Adopters with a custom preload script must expose `getBackendPort()` on `electronTheiaCore`, forwarding to the `CHANNEL_GET_BACKEND_PORT` IPC channel.
-- On macOS, a configured splash screen (`splashScreenOptions`) is no longer shown: a separate splash window is against platform convention there, and the main window, shown early with its loading indicator, gives the feedback instead. Other platforms are unchanged. Override `ElectronMainApplication.isShowSplashScreen()` to restore it.
 
 _AI Configuration View_:
 
