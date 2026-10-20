@@ -30,6 +30,7 @@ import { DocumentDataExt, setWordDefinitionFor } from './document-data';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import * as Converter from './type-converters';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { timeoutReject } from '@theia/core/lib/common/promise-util';
 import { Range, TextDocumentShowOptions } from '../common/plugin-api-rpc-model';
 
 export class DocumentsExtImpl implements DocumentsExt {
@@ -93,6 +94,7 @@ export class DocumentsExtImpl implements DocumentsExt {
         const operations: SingleEditOperation[] = [];
         let didTimeout = false;
         // try to timeout early to squeeze edits at least from some save participants
+        const deadline = Date.now() + saveTimeout - 250;
         const didTimeoutHandle = setTimeout(() => didTimeout = true, saveTimeout - 250);
         try {
             await this._onWillSaveTextDocument.sequence(async fireEvent => {
@@ -105,7 +107,8 @@ export class DocumentsExtImpl implements DocumentsExt {
                         const { document } = documentData;
                         await this.fireTextDocumentWillSaveEvent({
                             document, reason, fireEvent,
-                            accept: operation => operations.push(operation)
+                            accept: operation => operations.push(operation),
+                            timeout: deadline - Date.now()
                         });
                     }
                 } catch (e) {
@@ -121,12 +124,14 @@ export class DocumentsExtImpl implements DocumentsExt {
 
     /* eslint-disable @typescript-eslint/no-explicit-any */
     protected async fireTextDocumentWillSaveEvent({
-        document, reason, fireEvent, accept
+        document, reason, fireEvent, accept, timeout
     }: {
         document: theia.TextDocument,
         reason: theia.TextDocumentSaveReason,
         fireEvent: (e: theia.TextDocumentWillSaveEvent) => any,
-        accept: (operation: SingleEditOperation) => void
+        accept: (operation: SingleEditOperation) => void,
+        /** The time in milliseconds to wait for the promises of the listener, after which its edits are dropped. */
+        timeout?: number
     }): Promise<void> {
 
         const promises: PromiseLike<TextEdit[] | any>[] = [];
@@ -141,7 +146,12 @@ export class DocumentsExtImpl implements DocumentsExt {
         }));
         Object.freeze(promises);
 
-        await Promise.all(promises).then(allEdits => allEdits.forEach(edits => {
+        // Like VS Code, do not wait for a listener whose promises never settle, as the save would wait for it as well
+        const allPromises = Promise.all(promises);
+        await (timeout === undefined ? allPromises : Promise.race([
+            allPromises,
+            timeoutReject<(TextEdit[] | any)[]>(Math.max(timeout, 0), 'Aborted onWillSaveTextDocument-listener after timeout')
+        ])).then(allEdits => allEdits.forEach(edits => {
             if (Array.isArray(edits)) {
                 edits.forEach(edit => {
                     if (TextEdit.isTextEdit(edit)) {
