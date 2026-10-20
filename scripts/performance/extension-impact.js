@@ -49,7 +49,10 @@ function sigintHandler() {
     }
     cancelled = true;
     console.error('\nInterrupted — aborting at the next safe point. Press Ctrl+C again to force-quit.');
-    process.exit(130);
+    // Stop a running backend properly (escalation, port released) before exiting; the exit handler only
+    // gets to send a single signal.
+    const stopped = backendProcess ? stopBackend(backendProcess, BROWSER_PORT) : Promise.resolve();
+    stopped.finally(() => process.exit(130));
 }
 
 /** Whether the run was aborted by a failure; the result tables are not printed then. */
@@ -377,17 +380,27 @@ async function assertPortFree(port) {
 async function measureBrowser() {
     await assertPortFree(BROWSER_PORT);
     const backend = startBrowserBackend();
+    let output;
+    let failure;
     try {
         await waitForBackend(backend, BROWSER_PORT, 60_000);
         const command = `node browser-performance.js --name Browser --folder browser --runs ${runs}${url ? ' --url ' + url : ''}`;
-        return await execCommand(command, { env: env, cwd: __dirname, shell: true });
+        output = await execCommand(command, { env: env, cwd: __dirname, shell: true });
+    } catch (error) {
+        failure = error;
     } finally {
+        // Also when the backend did not come up: `fail()` exits the process, so it must not run before this.
         await stopBackend(backend, BROWSER_PORT);
     }
+    if (failure) {
+        fail(failure.message);
+    }
+    return output;
 }
 
 /**
- * Start the browser example's backend in a process group of its own, so that the whole tree can be stopped later.
+ * Start the browser example's backend so that the whole tree it spawns (npm, the shell, node) can be stopped later:
+ * in a process group of its own on POSIX, through a shell on Windows, where `taskkill` ends the tree by its root.
  * The base application's package.json (`base-package.json`) defines its own `start` script at debug log level.
  * Its output is kept out of the report, except for its errors, which explain a measurement that could not run.
  *
@@ -412,7 +425,8 @@ function startBrowserBackend() {
 }
 
 /**
- * Wait until the backend accepts connections on its `port`, or fail if it exits or does not get there in time.
+ * Wait until the backend accepts connections on its `port`. Rejects if it exits or does not get there in time,
+ * so that the caller can stop what is left of it before failing the run.
  *
  * @param {import('child_process').ChildProcess} backend the backend process
  * @param {number} port the port the backend listens on
@@ -422,14 +436,14 @@ async function waitForBackend(backend, port, timeoutMs) {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
         if (backend.exitCode !== null || backend.signalCode !== null) {
-            fail(`The ${hostApp} example's backend exited with ${backend.exitCode ?? backend.signalCode} before it was listening, see its errors above.`);
+            throw new Error(`The ${hostApp} example's backend exited with ${backend.exitCode ?? backend.signalCode} before it was listening, see its errors above.`);
         }
         if (await canConnect(port)) {
             return;
         }
         await delay(250);
     }
-    fail(`The ${hostApp} example's backend did not listen on port ${port} within ${timeoutMs / 1000} seconds.`);
+    throw new Error(`The ${hostApp} example's backend did not listen on port ${port} within ${timeoutMs / 1000} seconds.`);
 }
 
 /**
@@ -451,14 +465,13 @@ function canConnect(port) {
  * @param {number} port the port the backend listened on
  */
 async function stopBackend(backend, port) {
-    const exited = () => backend.exitCode !== null || backend.signalCode !== null;
-    if (!exited()) {
+    if (isBackendAlive(backend)) {
         killBackend(backend, 'SIGTERM');
         const deadline = Date.now() + 5000;
-        while (!exited() && Date.now() < deadline) {
+        while (isBackendAlive(backend) && Date.now() < deadline) {
             await delay(100);
         }
-        if (!exited()) {
+        if (isBackendAlive(backend)) {
             killBackend(backend, 'SIGKILL');
         }
     }
@@ -472,7 +485,28 @@ async function stopBackend(backend, port) {
 }
 
 /**
- * Send a `signal` to the backend and, where it has a process group of its own, to everything it spawned.
+ * Whether anything of the backend is still running: on POSIX any member of its process group (the npm wrapper
+ * may be gone while the node process it spawned is still shutting down), on Windows the root of the tree.
+ *
+ * @param {import('child_process').ChildProcess} backend the backend process
+ * @returns {boolean} whether the backend, or a process it spawned, is alive
+ */
+function isBackendAlive(backend) {
+    if (process.platform === 'win32') {
+        return backend.exitCode === null && backend.signalCode === null;
+    }
+    try {
+        process.kill(-backend.pid, 0);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Send a `signal` to the backend and to everything it spawned: its process group on POSIX; on Windows, where
+ * signals do not exist and the backend runs under a shell, `taskkill` ends the whole tree below the shell
+ * forcibly, whatever the signal. Synchronous, so that the exit handler can use it as well.
  *
  * @param {import('child_process').ChildProcess | undefined} backend the backend process, if any
  * @param {NodeJS.Signals} signal the signal to send
@@ -483,7 +517,7 @@ function killBackend(backend, signal) {
     }
     try {
         if (process.platform === 'win32') {
-            backend.kill(signal);
+            execSync(`taskkill /pid ${backend.pid} /T /F`, { stdio: 'ignore' });
         } else {
             process.kill(-backend.pid, signal);
         }
