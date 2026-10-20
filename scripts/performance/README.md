@@ -111,6 +111,10 @@ The following parameters are available:
 
 _**Note**: If no extensions are provided all extensions from the `packages` folder will be measured._
 
+_**Note**: The script starts the browser example's backend itself on port 3000 and stops before measuring if that port is in use, e.g. by a backend started by hand for the other scripts._
+
+_**Note**: A build or a measurement that fails aborts the run with a non-zero exit code, restoring the example's `package.json`, instead of continuing with results that cannot be compared._
+
 ### Per-contribution detail output
 
 Alongside the main comparison CSV, whose headline number is the `Workbench visible` metric, `extension-impact.js` emits a detail CSV with one row per (extension, metric) pair.

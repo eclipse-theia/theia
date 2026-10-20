@@ -14,17 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 // @ts-check
-const { execSync, exec } = require('child_process');
+const { execSync, exec, spawn } = require('child_process');
+const net = require('net');
 const { EOL } = require('os');
-const { copyFileSync, readdirSync, writeFileSync, appendFileSync, unlinkSync, readFileSync, rmdirSync } = require('fs');
+const { copyFileSync, readdirSync, writeFileSync, appendFileSync, unlinkSync, readFileSync, rmSync } = require('fs');
 const { ensureFileSync } = require('fs-extra');
 const mkdirp = require('mkdirp');
 const path = require('path');
+/** The port on which the browser example's backend listens by default. */
+const BROWSER_PORT = 3000;
+
 const env = Object.assign({}, process.env);
 env.PATH = path.resolve("../../node_modules/.bin") + path.delimiter + env.PATH;
 let basePackage;
 const { exit } = require('process');
-const { workbenchVisible } = require('./common-performance');
+const { workbenchVisible, delay } = require('./common-performance');
 let runs = 10;
 let baseTime;
 let extensions = [];
@@ -35,6 +39,8 @@ let file = path.resolve('./script.csv');
 let detailFile;
 let hostApp = 'browser';
 let cancelled = false;
+/** The browser example's backend while a measurement is running, so that an exit for any reason can stop it. */
+let backendProcess;
 
 function sigintHandler() {
     if (cancelled) {
@@ -46,9 +52,28 @@ function sigintHandler() {
     process.exit(130);
 }
 
+/** Whether the run was aborted by a failure; the result tables are not printed then. */
+let failed = false;
+
 async function exitHandler() {
+    // Synchronous: the process is exiting, and a detached backend would otherwise keep running and hold its port.
+    killBackend(backendProcess, 'SIGTERM');
     cleanWorkspace();
-    printFile();
+    if (!failed) {
+        printFile();
+    }
+}
+
+/**
+ * Abort the run: a measurement that could not be taken leaves nothing to compare, so carrying on would only
+ * print tables without results.
+ *
+ * @param {string} message what went wrong
+ */
+function fail(message) {
+    failed = true;
+    console.error(message);
+    exit(1);
 }
 
 (async () => {
@@ -222,8 +247,8 @@ function prepareWorkspace() {
 function cleanWorkspace() {
     copyFileSync('./backup-package.json', `../../examples/${hostApp}/package.json`);
     unlinkSync('./backup-package.json');
-    rmdirSync('../../noPlugins');
-    rmdirSync('./theia-config-dir');
+    rmSync('../../noPlugins', { recursive: true, force: true });
+    rmSync('./theia-config-dir', { recursive: true, force: true });
 }
 
 async function getExtensionsFromPackagesDir() {
@@ -273,43 +298,29 @@ async function calculateExtension(extensionQualifier) {
         if (stdout) { console.error(stdout); }
         if (stderr) { console.error(stderr); }
         if (!stdout && !stderr) { console.error(error.message); }
-        log(`${extensionQualifier}, Error while building the package.json, -, -, -`);
-        return;
+        fail(`Could not build the ${hostApp} example with ${extensionQualifier}, see the build output above.`);
     }
 
     logToConsole(`Measuring the startup time with ${extensionQualifier} ${runs} times. This may take a while.`);
-    const appCommand = (app) => {
-        let command;
-        let cwd;
-        switch (app) {
-            case 'browser':
-                command = `concurrently --success first -k -r "cd scripts/performance && node browser-performance.js --name Browser --folder browser --runs ${runs}${url ? ' --url ' + url : ''}" `
-                    // The base application's package.json (base-package.json) defines its own `start` script at debug log level.
-                    + `"npm --prefix examples/browser run -s start | grep -v '.*'"`
-                cwd = path.resolve(__dirname, '../../');
-                break;
-            case 'electron':
-                command = `node electron-performance.js  --name Electron --folder electron --runs ${runs}${workspace ? ' --workspace "' + workspace + '"' : ''}`
-                cwd = __dirname;
-                break;
-            default:
-                console.log('Unknown host app:', hostApp);
-                exit(1);
-                break; // Unreachable
-        }
-        return [command, cwd];
-    };
-    const [command, cwd] = appCommand(hostApp);
-    const output = await execCommand(command, { env: env, cwd: cwd, shell: true });
+    let output;
+    if (hostApp === 'browser') {
+        output = await measureBrowser();
+    } else if (hostApp === 'electron') {
+        const command = `node electron-performance.js  --name Electron --folder electron --runs ${runs}${workspace ? ' --workspace "' + workspace + '"' : ''}`;
+        output = await execCommand(command, { env: env, cwd: __dirname, shell: true });
+    } else {
+        console.log('Unknown host app:', hostApp);
+        exit(1);
+    }
     if (cancelled) {
         return;
     }
 
-    const mean = parseFloat(getMeasurement(output, `[MEAN] ${workbenchVisible}:`));
-    const stdev = parseFloat(getMeasurement(output, `[STDEV] ${workbenchVisible}:`));
+    const mean = getMeasurement(output, `[MEAN] ${workbenchVisible}:`);
+    const stdev = getMeasurement(output, `[STDEV] ${workbenchVisible}:`);
 
     if (isNaN(mean) || isNaN(stdev)) {
-        log(`${extensionQualifier}, Error while measuring with this extension, -, -, -`);
+        fail(`Could not measure the start-up with ${extensionQualifier}: the report of the measurement script has no '${workbenchVisible}' metric, see its output above.`);
     } else {
         const cv = ((stdev / mean) * 100).toFixed(3);
         let diff;
@@ -329,6 +340,155 @@ async function calculateExtension(extensionQualifier) {
         }
         const metricCv = metric.mean > 0 ? ((metric.stdev / metric.mean) * 100).toFixed(3) : '-';
         logToDetailFile(`${extensionQualifier}, ${metric.scenario}, ${metric.mean.toFixed(3)}, ${metric.stdev.toFixed(3)}, ${metricCv}`);
+    }
+}
+
+/**
+ * Whether nothing listens on the given `port` of the loopback address, on which the browser example's backend listens.
+ *
+ * @param {number} port the port to check
+ * @returns {Promise<boolean>} whether the port is free
+ */
+function isPortFree(port) {
+    return new Promise(resolve => {
+        const server = net.createServer();
+        server.once('error', () => resolve(false));
+        server.listen(port, '127.0.0.1', () => server.close(() => resolve(true)));
+    });
+}
+
+/**
+ * Exit with a message if something already listens on the given `port`, which the browser example's backend needs.
+ *
+ * @param {number} port the port to check
+ */
+async function assertPortFree(port) {
+    if (!await isPortFree(port)) {
+        fail(`Port ${port} is in use, probably by a running Theia backend. Stop it before measuring: the browser example cannot start otherwise.`);
+    }
+}
+
+/**
+ * Measure the start-up of the browser example as it is currently built: start its backend, run the
+ * measurement script against it, and stop the backend again, whatever the outcome of the measurement.
+ *
+ * @returns {Promise<string>} the output of the measurement script
+ */
+async function measureBrowser() {
+    await assertPortFree(BROWSER_PORT);
+    const backend = startBrowserBackend();
+    try {
+        await waitForBackend(backend, BROWSER_PORT, 60_000);
+        const command = `node browser-performance.js --name Browser --folder browser --runs ${runs}${url ? ' --url ' + url : ''}`;
+        return await execCommand(command, { env: env, cwd: __dirname, shell: true });
+    } finally {
+        await stopBackend(backend, BROWSER_PORT);
+    }
+}
+
+/**
+ * Start the browser example's backend in a process group of its own, so that the whole tree can be stopped later.
+ * The base application's package.json (`base-package.json`) defines its own `start` script at debug log level.
+ * Its output is kept out of the report, except for its errors, which explain a measurement that could not run.
+ *
+ * @returns {import('child_process').ChildProcess} the backend process
+ */
+function startBrowserBackend() {
+    const windows = process.platform === 'win32';
+    const backend = spawn('npm', ['--prefix', 'examples/browser', 'run', '-s', 'start'], {
+        cwd: path.resolve(__dirname, '../../'),
+        env: env,
+        detached: !windows,
+        shell: windows,
+        stdio: ['ignore', 'pipe', 'pipe']
+    });
+    backendProcess = backend;
+    const relayErrors = chunk => chunk.toString().split('\n')
+        .filter(line => /error|exception|cannot|failed/i.test(line))
+        .forEach(line => console.error(line));
+    backend.stdout.on('data', relayErrors);
+    backend.stderr.on('data', relayErrors);
+    return backend;
+}
+
+/**
+ * Wait until the backend accepts connections on its `port`, or fail if it exits or does not get there in time.
+ *
+ * @param {import('child_process').ChildProcess} backend the backend process
+ * @param {number} port the port the backend listens on
+ * @param {number} timeoutMs how long to wait at most
+ */
+async function waitForBackend(backend, port, timeoutMs) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        if (backend.exitCode !== null || backend.signalCode !== null) {
+            fail(`The ${hostApp} example's backend exited with ${backend.exitCode ?? backend.signalCode} before it was listening, see its errors above.`);
+        }
+        if (await canConnect(port)) {
+            return;
+        }
+        await delay(250);
+    }
+    fail(`The ${hostApp} example's backend did not listen on port ${port} within ${timeoutMs / 1000} seconds.`);
+}
+
+/**
+ * @param {number} port the port to connect to on the loopback address
+ * @returns {Promise<boolean>} whether a connection could be established
+ */
+function canConnect(port) {
+    return new Promise(resolve => {
+        const socket = net.connect({ port, host: '127.0.0.1' });
+        socket.once('connect', () => { socket.destroy(); resolve(true); });
+        socket.once('error', () => resolve(false));
+    });
+}
+
+/**
+ * Stop the backend and everything it spawned, and wait until its port is free again for the next measurement.
+ *
+ * @param {import('child_process').ChildProcess} backend the backend process
+ * @param {number} port the port the backend listened on
+ */
+async function stopBackend(backend, port) {
+    const exited = () => backend.exitCode !== null || backend.signalCode !== null;
+    if (!exited()) {
+        killBackend(backend, 'SIGTERM');
+        const deadline = Date.now() + 5000;
+        while (!exited() && Date.now() < deadline) {
+            await delay(100);
+        }
+        if (!exited()) {
+            killBackend(backend, 'SIGKILL');
+        }
+    }
+    const deadline = Date.now() + 10000;
+    while (!await isPortFree(port) && Date.now() < deadline) {
+        await delay(250);
+    }
+    if (backendProcess === backend) {
+        backendProcess = undefined;
+    }
+}
+
+/**
+ * Send a `signal` to the backend and, where it has a process group of its own, to everything it spawned.
+ *
+ * @param {import('child_process').ChildProcess | undefined} backend the backend process, if any
+ * @param {NodeJS.Signals} signal the signal to send
+ */
+function killBackend(backend, signal) {
+    if (!backend) {
+        return;
+    }
+    try {
+        if (process.platform === 'win32') {
+            backend.kill(signal);
+        } else {
+            process.kill(-backend.pid, signal);
+        }
+    } catch {
+        // already gone
     }
 }
 
@@ -355,10 +515,21 @@ async function execCommand(command, args) {
     });
 }
 
+/**
+ * The last value reported for an `identifier` such as `[MEAN] Workbench visible:` in the `output` of a
+ * measurement script, in seconds, or `NaN` if the output does not report it.
+ *
+ * @param {string} output the output of the measurement script
+ * @param {string} identifier the label of the value, including the trailing colon
+ * @returns {number} the value in seconds, or `NaN`
+ */
 function getMeasurement(output, identifier) {
-    const firstIndex = output.lastIndexOf(identifier) + identifier.length + 1;
-    const lastIndex = output.indexOf("seconds", firstIndex) - 1;
-    return output.toString().substring(firstIndex, lastIndex);
+    const index = output.lastIndexOf(identifier);
+    if (index < 0) {
+        return NaN;
+    }
+    const match = /^\s*([\d.]+) seconds/.exec(output.substring(index + identifier.length));
+    return match ? parseFloat(match[1]) : NaN;
 }
 
 // Matches: "[Performance][<name>][MEAN] <scenario>: X.XXX seconds"
