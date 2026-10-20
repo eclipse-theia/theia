@@ -227,7 +227,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         this.navigationLocationService.startNavigation();
         try {
             if (options?.counter === undefined) {
-                const insertionOptions = this.shell.getInsertionOptions(options?.widgetOptions);
+                const insertionOptions = this.shell.getInsertionOptions(options?.widgetOptions ?? this.getDefaultWidgetOptions());
                 // Definitely creating a new tabbar - no widget can match.
                 if (insertionOptions.addOptions.mode?.startsWith('split')) {
                     return await super.open(uri, { counter: this.nextCounter(), ...options });
