@@ -16,6 +16,7 @@
 
 /* eslint-disable @stylistic/indent */
 
+import { DefaultTheme } from '@theia/application-package/lib/application-props';
 import { EOL } from 'os';
 import { AbstractGenerator, GeneratorOptions } from './abstract-generator';
 import { existsSync, readFileSync } from 'fs';
@@ -83,8 +84,8 @@ export class FrontendGenerator extends AbstractGenerator {
      */
     protected compileIndexCriticalCss(): string {
         return `
-    html, body { margin: 0; height: 100%; background: var(--theia-editor-background, #1e1e1e); }
-    @media (prefers-color-scheme: light) { html, body { background: var(--theia-editor-background, #ffffff); } }
+    html, body { margin: 0; height: 100%; background: var(--theia-editor-background, ${DefaultTheme.defaultBackgroundColor(true)}); }
+    @media (prefers-color-scheme: light) { html, body { background: var(--theia-editor-background, ${DefaultTheme.defaultBackgroundColor(false)}); } }
     .theia-preload { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 50000; background: var(--theia-editor-background); }
     .theia-preload { display: flex; justify-content: center; align-items: center; transition: opacity 0.8s; }
     .theia-preload.theia-hidden { opacity: 0; }
@@ -117,7 +118,8 @@ export class FrontendGenerator extends AbstractGenerator {
             var colors = record && record.version === 1 && record.colors || {};
             var layout = record && record.version === 1 && record.layout;
             var background = colors.background || storage.getItem('theme.background')
-                || (window.matchMedia('(prefers-color-scheme: dark)').matches ? '#1E1E1E' : '#FFFFFF');
+                || (window.matchMedia('(prefers-color-scheme: dark)').matches
+                    ? '${DefaultTheme.defaultBackgroundColor(true)}' : '${DefaultTheme.defaultBackgroundColor(false)}');
             document.documentElement.style.setProperty('--theia-editor-background', background);
             var preload = document.querySelector('.theia-preload.theia-preload-default');
             if (!preload || !layout) {
