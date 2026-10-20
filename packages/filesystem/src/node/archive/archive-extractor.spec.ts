@@ -330,10 +330,27 @@ describe('ArchiveExtractorImpl', () => {
             expect(files.map(file => file.path)).to.deep.equal(['file.txt']);
             expect(warnings.join()).to.contain('link');
         });
+
+        it('reports skipped entries on the console without a logger', async () => {
+            const warn = sinon.stub(console, 'warn');
+            try {
+                await new ArchiveExtractorImpl().extract(await createTestTar([
+                    { name: 'link', type: 'symlink', linkname: '/etc/passwd' },
+                    { name: 'file.txt', data: 'content' }
+                ]), destination);
+                expect(warn.calledOnceWith('Skipped 1 link or special entries of archive: link')).to.be.true;
+            } finally {
+                warn.restore();
+            }
+        });
     });
 
     it('rejects an unsupported format', async () => {
         await expectRejection(extractor.extract(Buffer.from('not an archive'), destination), /Unsupported archive format/);
+    });
+
+    it('rejects a header that only resembles a zip signature', async () => {
+        await expectRejection(extractor.extract(Buffer.from('PK\x03\x06 not an archive', 'latin1'), destination), /Unsupported archive format/);
     });
 
     it('uses the given format instead of detecting it', async () => {

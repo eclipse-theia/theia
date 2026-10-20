@@ -261,7 +261,7 @@ async function downloadPluginAsync(
         return;
     }
     // The buffer is only a string after a transfer to the frontend, which does not happen here.
-    const content = RequestContext.decompress(response).buffer as Uint8Array;
+    const content = response.buffer as Uint8Array;
 
     if ((fileExt === '.vsix' || fileExt === '.theia')) {
         if (packed) {

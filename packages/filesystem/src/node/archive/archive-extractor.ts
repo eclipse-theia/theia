@@ -21,7 +21,7 @@ import { pipeline } from 'stream/promises';
 import { createGunzip } from 'zlib';
 import * as yauzl from 'yauzl';
 import * as tarStream from 'tar-stream';
-import { inject, injectable, named, optional } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 
 export type ArchiveFormat = 'zip' | 'tar' | 'tgz';
@@ -97,8 +97,8 @@ const WRITE_FLAGS = fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.
 @injectable()
 export class ArchiveExtractorImpl implements ArchiveExtractor {
 
-    /** Not available to instances created without dependency injection, which do not report skipped entries. */
-    @inject(ILogger) @named('filesystem:ArchiveExtractorImpl') @optional()
+    /** Not available to instances created without dependency injection, which report skipped entries on the console. */
+    @inject(ILogger) @named('filesystem:ArchiveExtractorImpl')
     protected readonly logger?: ILogger;
 
     async extract(source: ArchiveSource, destination: string, options: ArchiveOptions = {}): Promise<ArchiveEntry[]> {
@@ -168,7 +168,7 @@ export class ArchiveExtractorImpl implements ArchiveExtractor {
      */
     protected async detectFormat(source: ArchiveSource): Promise<ArchiveFormat> {
         const header = await this.readHeader(source, 512);
-        if (header.length >= 4 && header[0] === 0x50 && header[1] === 0x4b && (header[2] === 0x03 || header[2] === 0x05) && (header[3] === 0x04 || header[3] === 0x06)) {
+        if (header.length >= 4 && header[0] === 0x50 && header[1] === 0x4b && ((header[2] === 0x03 && header[3] === 0x04) || (header[2] === 0x05 && header[3] === 0x06))) {
             return 'zip';
         }
         if (header.length >= 2 && header[0] === 0x1f && header[1] === 0x8b) {
@@ -338,7 +338,13 @@ export class ArchiveExtractorImpl implements ArchiveExtractor {
 
     protected reportSkipped(source: ArchiveSource, skipped: string[]): void {
         if (skipped.length > 0) {
-            this.logger?.warn(`Skipped ${skipped.length} link or special entries of archive${typeof source === 'string' ? ` ${source}` : ''}: ${skipped.join(', ')}`);
+            const message = `Skipped ${skipped.length} link or special entries of archive${typeof source === 'string' ? ` ${source}` : ''}: ${skipped.join(', ')}`;
+            if (this.logger) {
+                this.logger.warn(message);
+            } else {
+                // eslint-disable-next-line @theia/named-logger-check
+                console.warn(message);
+            }
         }
     }
 }
