@@ -24,6 +24,7 @@ const env = Object.assign({}, process.env);
 env.PATH = path.resolve("../../node_modules/.bin") + path.delimiter + env.PATH;
 let basePackage;
 const { exit } = require('process');
+const { workbenchVisible } = require('./common-performance');
 let runs = 10;
 let baseTime;
 let extensions = [];
@@ -283,7 +284,8 @@ async function calculateExtension(extensionQualifier) {
         switch (app) {
             case 'browser':
                 command = `concurrently --success first -k -r "cd scripts/performance && node browser-performance.js --name Browser --folder browser --runs ${runs}${url ? ' --url ' + url : ''}" `
-                    + `"npm --prefix examples/browser run -s start -- --log-level=debug | grep -v '.*'"`
+                    // The base application's package.json (base-package.json) defines its own `start` script at debug log level.
+                    + `"npm --prefix examples/browser run -s start | grep -v '.*'"`
                 cwd = path.resolve(__dirname, '../../');
                 break;
             case 'electron':
@@ -303,8 +305,8 @@ async function calculateExtension(extensionQualifier) {
         return;
     }
 
-    const mean = parseFloat(getMeasurement(output, '[MEAN] Largest Contentful Paint (LCP):'));
-    const stdev = parseFloat(getMeasurement(output, '[STDEV] Largest Contentful Paint (LCP):'));
+    const mean = parseFloat(getMeasurement(output, `[MEAN] ${workbenchVisible}:`));
+    const stdev = parseFloat(getMeasurement(output, `[STDEV] ${workbenchVisible}:`));
 
     if (isNaN(mean) || isNaN(stdev)) {
         log(`${extensionQualifier}, Error while measuring with this extension, -, -, -`);
@@ -320,9 +322,9 @@ async function calculateExtension(extensionQualifier) {
         log(`${extensionQualifier}, ${mean.toFixed(3)}, ${stdev.toFixed(3)}, ${cv}, ${diff}`);
     }
 
-    // Emit per-metric breakdowns (everything except the LCP that's already in the main CSV).
+    // Emit per-metric breakdowns (everything except the headline metric that's already in the main CSV).
     for (const metric of parseAllMetrics(output)) {
-        if (metric.scenario === 'Largest Contentful Paint (LCP)') {
+        if (metric.scenario === workbenchVisible) {
             continue;
         }
         const metricCv = metric.mean > 0 ? ((metric.stdev / metric.mean) * 100).toFixed(3) : '-';

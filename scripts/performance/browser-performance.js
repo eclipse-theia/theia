@@ -18,7 +18,7 @@ const puppeteer = require('puppeteer');
 const fsx = require('fs-extra');
 const { resolve } = require('path');
 const {
-    analyzeTrace, ContributionCollector, delay, frontendReady, frontendSettled, githubReporting,
+    analyzeTrace, MeasurementCollector, delay, frontendReady, frontendSettled, githubReporting,
     isLCP, isUserTimingMark, lcp, measureMulti, parseMilestoneLog, parseStopwatchLog, workbenchVisible
 } = require('./common-performance');
 
@@ -113,9 +113,10 @@ async function measurePerformance(name, url, folder, headless, runs) {
     // Collects per-contribution timings from Stopwatch log lines observed in the browser console
     // across all runs, so that consumers like extension-impact.js can break down startup cost
     // by contribution.
-    const contributions = new ContributionCollector();
-    // Collects the start-up milestones logged by the generated frontend entry point, as seconds since page start.
-    const milestones = new ContributionCollector('Frontend milestone');
+    const contributions = new MeasurementCollector();
+    // Collects the start-up milestones logged by the generated frontend entry point, as seconds since page start,
+    // named as in the Electron report.
+    const milestones = new MeasurementCollector('Milestone');
 
     const testScenario = async (runNr) => {
         const browser = await puppeteer.launch({ headless: headless });
@@ -135,7 +136,7 @@ async function measurePerformance(name, url, folder, headless, runs) {
             if (!parsed) {
                 const milestone = parseMilestoneLog(msg.text());
                 if (milestone && milestone.component === 'Frontend') {
-                    milestones.record(milestone.milestone, milestone.secondsSinceStart);
+                    milestones.record(`${milestone.component}: ${milestone.milestone}`, milestone.secondsSinceStart);
                 }
                 return;
             }

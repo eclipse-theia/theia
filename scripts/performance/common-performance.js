@@ -201,20 +201,35 @@ async function measureMulti(name, runs, test, metrics) {
  * @param {string} name the performance script name
  * @param {string} scenario the scenario that was measured
  * @param {number[]} durations the measurements captured for the `scenario`
+ * @param {boolean} [github=true] whether to report the summary as a GitHub performance result, if reporting is enabled
  */
-function logSummary(name, scenario, durations) {
+function logSummary(name, scenario, durations, github = true) {
+    const report = github && githubReporting.enabled;
     if (durations.length > 1) {
         const mean = calculateMean(durations);
         const stdev = calculateStandardDeviation(mean, durations);
         logDuration(name, 'MEAN', scenario, mean);
         logDuration(name, 'STDEV', scenario, stdev);
-        if (githubReporting.enabled) {
-            githubResult({ name, unit: 'seconds', value: prec(mean), range: prec(stdev) });
+        if (report) {
+            githubResult({ name: githubResultName(name, scenario), unit: 'seconds', value: prec(mean), range: prec(stdev) });
         }
-    } else if (githubReporting.enabled) {
+    } else if (report && durations.length === 1) {
         // Only one duration
-        githubResult({ name, unit: 'seconds', value: prec(durations[0]) });
+        githubResult({ name: githubResultName(name, scenario), unit: 'seconds', value: prec(durations[0]) });
     }
+}
+
+/**
+ * The name under which a metric is reported as a GitHub performance result. The LCP keeps the bare
+ * script name, which is the name of its historical series on the benchmark dashboard; every other metric
+ * is qualified by its scenario so that the results can be told apart.
+ *
+ * @param {string} name the performance script name
+ * @param {string} scenario the scenario that was measured
+ * @returns {string} the result name
+ */
+function githubResultName(name, scenario) {
+    return scenario === lcp ? name : `${name}: ${scenario}`;
 }
 
 function prec(value, precision = 3) {
@@ -229,11 +244,11 @@ function prec(value, precision = 3) {
 function githubResult(result) {
     const resultsFile = resolve('../..', 'performance-result.json');
 
-    // We append to any previous results that there may have been from another script
+    // We append to any previous results that there may have been from another script. The file is the
+    // record; re-reading it for every result keeps the entries of the other script and avoids duplicating
+    // our own, which were written to it already.
     const previousResults = fs.existsSync(resultsFile) ? JSON.parse(fs.readFileSync(resultsFile, 'utf-8')) : [];
-    githubReporting.results.push(...previousResults);
-
-    githubReporting.results.push(result);
+    githubReporting.results = [...previousResults, result];
     fs.writeFileSync(resultsFile, JSON.stringify(githubReporting.results, undefined, 2), 'utf-8');
 }
 
@@ -413,24 +428,26 @@ async function waitForFileStable(filePath, timeoutMs, pollIntervalMs = 250) {
 }
 
 /**
- * Collects per-activity durations observed across runs of a performance test, and logs
- * MEAN/STDEV summaries in the same format as {@link logSummary} so that `extension-impact.js`
- * can discover them alongside the predeclared metrics.
+ * Collects per-activity values observed across runs of a performance test, either durations of activities
+ * or timestamps since a process or page start, and logs MEAN/STDEV summaries in the same format as
+ * {@link logSummary} so that `extension-impact.js` can discover them alongside the predeclared metrics.
  */
-class ContributionCollector {
+class MeasurementCollector {
     /**
      * @param {string} [kind='Contribution'] the label prefixed to each activity in the summary
+     * @param {string} [plural=`${kind}s`] the plural of the label, for the summary of the activities under 1 ms
      */
-    constructor(kind = 'Contribution') {
+    constructor(kind = 'Contribution', plural = `${kind}s`) {
         this.kind = kind;
-        /** @type {Map<string, number[]>} activity -> durations (in seconds) across runs */
+        this.plural = plural;
+        /** @type {Map<string, number[]>} activity -> values (in seconds) across runs */
         this.observations = new Map();
     }
     /**
-     * Record one observation of an `activity` taking the given duration.
+     * Record one observation of an `activity` with the given value.
      *
      * @param {string} activity the activity name (e.g. "Frontend FooContribution.onStart")
-     * @param {number} seconds the duration of that activity in seconds
+     * @param {number} seconds the duration of that activity, or the time at which it happened, in seconds
      */
     record(activity, seconds) {
         let arr = this.observations.get(activity);
@@ -445,7 +462,8 @@ class ContributionCollector {
      * so that downstream consumers (e.g. `extension-impact.js`) can scrape it. Activities
      * whose mean falls below the 1 ms measurement threshold are noise; we collapse them
      * into a single header line listing their names instead of emitting per-activity
-     * MEAN/STDEV lines that all read as 0.000 seconds.
+     * MEAN/STDEV lines that all read as 0.000 seconds. The summaries are breakdowns and are
+     * not reported as GitHub performance results.
      *
      * @param {string} name the performance script name
      */
@@ -461,10 +479,10 @@ class ContributionCollector {
             }
         }
         if (subMillisecond.length > 0) {
-            console.log(`${performanceTag}${braceText(name)} ${this.kind}s under 1 ms: ${subMillisecond.sort().join(', ')}`);
+            console.log(`${performanceTag}${braceText(name)} ${this.plural} under 1 ms: ${subMillisecond.sort().join(', ')}`);
         }
         for (const [activity, values] of significant) {
-            logSummary(name, `${this.kind} ${activity}`, values);
+            logSummary(name, `${this.kind} ${activity}`, values, false);
         }
     }
 }
@@ -477,5 +495,5 @@ module.exports = {
     braceText, delay, waitForFileStable,
     lcp, workbenchVisible, frontendReady, frontendSettled, backendSettled,
     isLCP, isUserTimingMark, parseStopwatchLog, parseMilestoneLog,
-    ContributionCollector
+    MeasurementCollector
 };

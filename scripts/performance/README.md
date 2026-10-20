@@ -113,7 +113,7 @@ _**Note**: If no extensions are provided all extensions from the `packages` fold
 
 ### Per-contribution detail output
 
-Alongside the main LCP comparison CSV, `extension-impact.js` emits a detail CSV with one row per (extension, metric) pair.
+Alongside the main comparison CSV, whose headline number is the `Workbench visible` metric, `extension-impact.js` emits a detail CSV with one row per (extension, metric) pair.
 Metrics include the `All frontend/backend contributions settled` aggregate and every per-contribution timing that the Theia Stopwatch emitted during the runs.
 This lets you attribute an extension's startup cost to the specific contribution(s) responsible.
 
@@ -163,4 +163,6 @@ Where these logs are visible:
 | `Milestone <component>: <milestone>`       | Puppeteer page console (frontend only) | Electron child stdout/stderr |
 
 Theia's frontend logger forwards all console output to the backend over RPC, so the Electron child process's stdout/stderr contains both frontend and backend Stopwatch lines.
+
+When the scripts run in a GitHub workflow (`GITHUB_ACTIONS` is set), the predeclared metrics are written to `performance-result.json` for the benchmark action: the LCP under the bare script name, which is the name of its historical series, and every other metric under `<script name>: <metric>`. The log-based breakdowns are not reported there.
 The browser script cannot observe backend logs because the backend runs as a separate process whose stdout is not captured.
