@@ -92,4 +92,15 @@ describe('WidgetStatusBarService', () => {
         first.dispose();
         expect(contribution.active).to.equal(second);
     });
+
+    it('keeps the items of the next widget when the shown widget is closed and the next one becomes current', () => {
+        const first = new HandledWidget();
+        const second = new HandledWidget();
+        // Like the shell's focus tracker, which handles `disposed` before the service and makes the next widget current:
+        // `show(second)` disconnects the service's `disposed` listener of `first` during the emit, so it must not run.
+        first.disposed.connect(() => service.show(second));
+        service.show(first);
+        first.dispose();
+        expect(contribution.active).to.equal(second);
+    });
 });
