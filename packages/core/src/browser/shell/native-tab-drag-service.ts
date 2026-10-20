@@ -138,7 +138,8 @@ export class NativeTabDragService {
         }
         // Only set our own type, so that other applications don't accept the drop.
         event.dataTransfer.setData(NativeTabDragService.MIME_TYPE, title.owner.id);
-        event.dataTransfer.effectAllowed = 'move';
+        // like VS Code, drop targets only ever move tabs, though
+        event.dataTransfer.effectAllowed = 'copyMove';
         const tabRect = tab.getBoundingClientRect();
         event.dataTransfer.setDragImage(tab, event.clientX - tabRect.left, event.clientY - tabRect.top);
 

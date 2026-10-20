@@ -48,6 +48,8 @@ import MonacoSeverity from '@theia/monaco-editor-core/esm/vs/base/common/severit
 import { Severity } from '@theia/core/lib/common/severity';
 import { IStorageService } from '@theia/monaco-editor-core/esm/vs/platform/storage/common/storage';
 import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
+import { WindowFocusService } from '@theia/core/lib/browser/window/window-focus-service';
+import { SecondaryWindowService } from '@theia/core/lib/browser/window/secondary-window-service';
 
 /**
  * Converts Theia's {@link Severity} to Monaco's {@link MonacoSeverity}.
@@ -112,7 +114,25 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     @inject(ThemeService)
     protected readonly themeService: ThemeService;
 
+    @inject(WindowFocusService)
+    protected readonly windowFocusService: WindowFocusService;
+
+    @inject(SecondaryWindowService)
+    protected readonly secondaryWindowService: SecondaryWindowService;
+
+    /**
+     * The container hosting the quick input in the main window.
+     */
     protected container: HTMLElement;
+
+    /**
+     * The containers hosting the quick input in secondary windows, see {@link getContainer}.
+     */
+    protected readonly secondaryContainers = new Map<Window, {
+        container: HTMLElement,
+        scopedContextKeyService: IScopedContextKeyService,
+        scopedInQuickOpen: IContextKey<boolean>
+    }>();
 
     /**
      * The element that had focus when the quick input was shown. Cleared when the quick input is hidden.
@@ -149,25 +169,102 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
         this.scopedInQuickOpen = this.scopedContextKeyService.createKey<boolean>('inQuickOpen', false);
 
         this.controller.onShow(() => {
+            // The controller has moved the quick input to the container of the focused window, see `createLayoutService`.
+            const container = this.controller.container;
             // `onShow` fires before focus moves into the quick input, and again whenever it switches to another picker.
-            const activeElement = document.activeElement;
-            if (activeElement instanceof HTMLElement && !this.container.contains(activeElement)) {
-                this.previousFocusElement = activeElement;
+            const activeElement = container.ownerDocument.activeElement;
+            // not using `instanceof HTMLElement`, the element may have been created in a secondary window, i.e. in another JavaScript realm
+            if (activeElement && typeof (activeElement as HTMLElement).focus === 'function' && !container.contains(activeElement)) {
+                this.previousFocusElement = activeElement as HTMLElement;
             }
-            this.container.style.top = this.shell.mainPanel.node.getBoundingClientRect().top + 'px';
+            container.style.top = container === this.container ? this.shell.mainPanel.node.getBoundingClientRect().top + 'px' : '0px';
             this.inQuickOpen.set(true);
-            this.scopedInQuickOpen.set(true);
+            this.getScopedInQuickOpen(container).set(true);
         });
         this.controller.onHide(() => {
             this.previousFocusElement = undefined;
             this.inQuickOpen.set(false);
             this.scopedInQuickOpen.set(false);
+            this.secondaryContainers.forEach(({ scopedInQuickOpen }) => scopedInQuickOpen.set(false));
         });
 
         this.themeService.initialized.then(() => this.controller.applyStyles(this.computeStyles()));
         // Hook into the theming service of Monaco to ensure that the updates are ready.
         StandaloneServices.get(IStandaloneThemeService).onDidColorThemeChange(() => this.controller.applyStyles(this.computeStyles()));
         window.addEventListener('resize', () => this.updateLayout());
+        this.secondaryWindowService.onWindowClosed(win => {
+            this.secondaryContainers.get(win)?.scopedContextKeyService.dispose();
+            this.secondaryContainers.delete(win);
+        });
+    }
+
+    /**
+     * @returns the container hosting the quick input in the given window, which is created for secondary windows if necessary
+     */
+    protected getContainer(win: Window): HTMLElement {
+        if (win === window) {
+            return this.container;
+        }
+        let secondary = this.secondaryContainers.get(win);
+        if (!secondary) {
+            const container = win.document.createElement('div');
+            container.id = 'quick-input-container';
+            win.document.body.appendChild(container);
+            const scopedContextKeyService = StandaloneServices.get(IContextKeyService).createScoped(container);
+            secondary = { container, scopedContextKeyService, scopedInQuickOpen: scopedContextKeyService.createKey<boolean>('inQuickOpen', false) };
+            this.secondaryContainers.set(win, secondary);
+            win.addEventListener('resize', () => this.updateLayout());
+        }
+        return secondary.container;
+    }
+
+    protected getScopedInQuickOpen(container: HTMLElement): IContextKey<boolean> {
+        for (const secondary of this.secondaryContainers.values()) {
+            if (secondary.container === container) {
+                return secondary.scopedInQuickOpen;
+            }
+        }
+        return this.scopedInQuickOpen;
+    }
+
+    /**
+     * Creates the layout service of the quick input controller. The controller moves the quick input to the `activeContainer`
+     * of the layout service whenever it is shown, which is the container of the focused window, so that the quick input
+     * is shown in secondary windows as well.
+     */
+    protected createLayoutService(delegate: ILayoutService): ILayoutService {
+        const getActiveContainer = () => this.getContainer(this.windowFocusService.focusedWindow ?? window);
+        const getDimension = (container: HTMLElement) => this.getClientDimension(container.ownerDocument.defaultView ?? window);
+        const getMainContainer = () => this.container;
+        const getContainers = () => [this.container, ...Array.from(this.secondaryContainers.values(), secondary => secondary.container)];
+        return {
+            _serviceBrand: undefined,
+            onDidLayoutMainContainer: delegate.onDidLayoutMainContainer,
+            onDidLayoutContainer: delegate.onDidLayoutContainer,
+            onDidLayoutActiveContainer: delegate.onDidLayoutActiveContainer,
+            onDidAddContainer: delegate.onDidAddContainer,
+            onDidChangeActiveContainer: delegate.onDidChangeActiveContainer,
+            get mainContainer(): HTMLElement {
+                return getMainContainer();
+            },
+            get mainContainerDimension(): monaco.editor.IDimension {
+                return getDimension(getMainContainer());
+            },
+            get activeContainer(): HTMLElement {
+                return getActiveContainer();
+            },
+            get activeContainerDimension(): monaco.editor.IDimension {
+                return getDimension(getActiveContainer());
+            },
+            get containers(): Iterable<HTMLElement> {
+                return getContainers();
+            },
+            getContainer: win => this.getContainer(win),
+            whenContainerStylesLoaded: win => delegate.whenContainerStylesLoaded(win),
+            mainContainerOffset: delegate.mainContainerOffset,
+            activeContainerOffset: delegate.activeContainerOffset,
+            focus: () => delegate.focus()
+        };
     }
 
     setContextKey(key: string | undefined): void {
@@ -268,7 +365,7 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     private initController(): void {
         const contextKeyService = StandaloneServices.get(IContextKeyService);
         const instantiationService = StandaloneServices.get(IInstantiationService);
-        const layoutService = StandaloneServices.get(ILayoutService);
+        const layoutService = this.createLayoutService(StandaloneServices.get(ILayoutService));
         const storageService = StandaloneServices.get(IStorageService);
 
         const options: IQuickInputOptions = {
@@ -292,11 +389,11 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     private updateLayout(): void {
         // Initialize the layout using screen dimensions as monaco computes the actual sizing.
         // https://github.com/microsoft/vscode/blob/6261075646f055b99068d3688932416f2346dd3b/src/vs/base/parts/quickinput/browser/quickInput.ts#L1799
-        this.controller.layout(this.getClientDimension(), 0);
+        this.controller.layout(this.getClientDimension(this.controller.container.ownerDocument.defaultView ?? window), 0);
     }
 
-    private getClientDimension(): monaco.editor.IDimension {
-        return { width: window.innerWidth, height: window.innerHeight };
+    private getClientDimension(win: Window): monaco.editor.IDimension {
+        return { width: win.innerWidth, height: win.innerHeight };
     }
 
     /**

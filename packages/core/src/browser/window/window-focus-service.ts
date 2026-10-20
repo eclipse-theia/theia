@@ -126,6 +126,18 @@ export class WindowFocusService implements Disposable {
         return false;
     }
 
+    /**
+     * The registered window that currently has focus, if any.
+     */
+    get focusedWindow(): Window | undefined {
+        for (const win of this.windowStates.keys()) {
+            if (this.windowHasFocus(win)) {
+                return win;
+            }
+        }
+        return undefined;
+    }
+
     protected windowHasFocus(win: Window): boolean {
         try {
             return win.document.hasFocus();
