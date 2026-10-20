@@ -184,6 +184,7 @@ export class SidePanelHandler {
         sideBar.currentChanged.connect(this.onCurrentTabChanged, this);
         sideBar.tabDetachRequested.connect(this.onTabDetachRequested, this);
         sideBar.tabsOverflowChanged.connect(this.onTabsOverflowChanged, this);
+        sideBar.widgetDropped.connect(this.onWidgetDropped, this);
         return sideBar;
     }
 
@@ -652,6 +653,20 @@ export class SidePanelHandler {
             // The promise is resolved when the drag has ended
             tab.classList.remove('lm-mod-hidden');
         });
+    }
+
+    /**
+     * Handle a `widgetDropped` signal from the sidebar. The widget is moved to this side panel, if necessary,
+     * and its tab is moved to the position where it was dropped.
+     */
+    protected onWidgetDropped(sender: SideTabBar, { widget, index }: { widget: Widget, index: number }): void {
+        const previousIndex = this.tabBar.titles.indexOf(widget.title);
+        if (previousIndex === -1) {
+            // inserts the tab according to the widget's rank, see `onWidgetAdded`
+            this.dockPanel.addWidget(widget);
+        }
+        this.tabBar.insertTab(previousIndex !== -1 && index > previousIndex ? index - 1 : index, widget.title);
+        this.activate(widget.id);
     }
 
     protected onTabsOverflowChanged(sender: SideTabBar, event: { titles: Title<Widget>[], startIndex: number }): void {

@@ -38,6 +38,14 @@ export function isSecondaryWindow(window: unknown): window is SecondaryWindow {
     return typeof window === 'object' && 'rootWidget' in window;
 }
 
+export interface SecondaryWindowOptions {
+    /**
+     * The screen position of the top left corner of the window. If omitted, the window is placed
+     * according to the `window.secondaryWindowPlacement` preference.
+     */
+    position?: { x: number, y: number };
+}
+
 export const SecondaryWindowService = Symbol('SecondaryWindowService');
 
 /**
@@ -51,9 +59,10 @@ export interface SecondaryWindowService {
      * The created window is closed automatically when the current theia instance is closed.
      *
      * @param onClose optional callback that is invoked when the secondary window is closed
+     * @param options optional options, e.g. the screen position at which to open the window
      * @returns the created window or `undefined` if it could not be created
      */
-    createSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell): SecondaryWindow | Window | undefined;
+    createSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell, options?: SecondaryWindowOptions): SecondaryWindow | Window | undefined;
     readonly onWindowOpened: Event<Window>;
     /**
      * Emitted once a secondary window's final document has finished loading. Listeners can safely
@@ -64,6 +73,12 @@ export interface SecondaryWindowService {
     readonly onWindowLoaded: Event<Window>;
     readonly onWindowClosed: Event<Window>;
     readonly beforeWidgetRestore: Event<[Widget, Window]>;
+
+    /**
+     * Moves the given widget from the given secondary window back to the application shell.
+     * The secondary window is closed once it does not contain any widgets anymore.
+     */
+    restoreWidget(widget: Widget, secondaryWindow: Window, shell: ApplicationShell): Promise<void>;
 
     /** Handles focussing the given secondary window in the browser and on Electron. */
     focus(win: Window): void;

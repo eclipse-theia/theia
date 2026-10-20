@@ -22,6 +22,7 @@ import { DecorationStyle } from './decoration-style';
 import { FrontendApplicationContribution } from './frontend-application-contribution';
 import { ThemeService } from './theming';
 import { SecondaryWindowHandler } from './secondary-window-handler';
+import { SecondaryWindowService } from './window/secondary-window-service';
 
 export const StylingParticipant = Symbol('StylingParticipant');
 
@@ -55,12 +56,16 @@ export class StylingService implements FrontendApplicationContribution {
     @inject(SecondaryWindowHandler)
     protected readonly secondaryWindowHandler: SecondaryWindowHandler;
 
+    @inject(SecondaryWindowService)
+    protected readonly secondaryWindowService: SecondaryWindowService;
+
     onStart(): void {
         this.registerWindow(window);
         this.secondaryWindowHandler.onWillAddWidget(([widget, window]) => {
             this.registerWindow(window);
         });
-        this.secondaryWindowHandler.onWillRemoveWidget(([widget, window]) => {
+        // a window may contain several widgets, so it is only unregistered once it is closed
+        this.secondaryWindowService.onWindowClosed(window => {
             this.cssElements.delete(window);
         });
 
