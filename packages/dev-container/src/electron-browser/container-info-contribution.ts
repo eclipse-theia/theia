@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { WindowTitleContribution } from '@theia/core/lib/browser/window/window-title-service';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { ILogger } from '@theia/core/lib/common/logger';
+import { WindowTitleContribution, WindowTitleService } from '@theia/core/lib/browser/window/window-title-service';
 import { RemoteStatus, RemoteStatusService } from '@theia/remote/lib/electron-common/remote-status-service';
 import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import type { ContainerInspectInfo } from 'dockerode';
@@ -35,14 +36,29 @@ export class ContainerInfoContribution implements FrontendApplicationContributio
     @inject(RemoteStatusService)
     protected readonly remoteStatusService: RemoteStatusService;
 
+    @inject(WindowTitleService)
+    protected readonly windowTitleService: WindowTitleService;
+
+    @inject(ILogger) @named('dev-container:ContainerInfoContribution')
+    protected readonly logger: ILogger;
+
     protected status: RemoteStatus | undefined;
     protected containerInfo: ContainerInspectInfo | undefined;
     protected containerFilePath: string | undefined;
 
-    async onStart(): Promise<void> {
+    onStart(): void {
+        // Not awaited: two round trips that only decorate the window title and fill the forwarded ports;
+        // the start-up does not wait for them.
+        this.loadContainerInfo().catch(error => this.logger.warn('Could not load the information about the container.', error));
+    }
+
+    protected async loadContainerInfo(): Promise<void> {
         const containerPort = parseInt(new URLSearchParams(location.search).get('port') ?? '0');
-        const containerInfo = await this.connectionProvider.getCurrentContainerInfo(containerPort);
-        this.status = await this.remoteStatusService.getStatus(containerPort);
+        const [containerInfo, status] = await Promise.all([
+            this.connectionProvider.getCurrentContainerInfo(containerPort),
+            this.remoteStatusService.getStatus(containerPort)
+        ]);
+        this.status = status;
 
         this.portForwardingService.forwardedPorts.push(...Object.entries(containerInfo?.NetworkSettings.Ports ?? {}).flatMap(([_, ports]) => (
             ports.map(port => ({
@@ -51,6 +67,8 @@ export class ContainerInfoContribution implements FrontendApplicationContributio
                 localPort: parseInt(port.HostPort ?? '0'),
                 origin: 'container'
             })))));
+        // The title was computed before the status was known.
+        this.windowTitleService.update({});
     }
 
     enhanceTitle(title: string, parts: Map<string, string | undefined>): string {
