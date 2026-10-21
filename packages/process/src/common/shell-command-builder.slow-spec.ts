@@ -21,7 +21,7 @@
 import { spawn, execSync, SpawnOptions, ChildProcess, spawnSync } from 'child_process';
 import { Readable } from 'stream';
 import { join } from 'path';
-import { ShellCommandBuilder, CommandLineOptions, ProcessInfo } from './shell-command-builder';
+import { ShellCommandBuilder, CommandLineOptions, ProcessInfo } from './shell-command-builder.js';
 import chalk from 'chalk';
 
 export interface TestProcessInfo extends ProcessInfo {

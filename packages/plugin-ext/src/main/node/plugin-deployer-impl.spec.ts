@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { DuplicateExtensionError, PluginDeployerResolver, PluginType } from '../../common/plugin-protocol';
-import { PluginDeployerImpl } from './plugin-deployer-impl';
+import { DuplicateExtensionError, PluginDeployerResolver, PluginType } from '../../common/plugin-protocol.js';
+import { PluginDeployerImpl } from './plugin-deployer-impl.js';
 
 describe('PluginDeployerImpl', () => {
 

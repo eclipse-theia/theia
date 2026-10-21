@@ -14,16 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import path = require('path');
+import * as path from 'path';
 import { promises as fsp } from 'fs';
 import { Minimatch } from 'minimatch';
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { FileChangeType, FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol';
-import { FileChangeCollection } from '../file-change-collection';
+import { FileChangeType, FileSystemWatcherServiceClient } from '../../common/filesystem-watcher-protocol.js';
+import { FileChangeCollection } from '../file-change-collection.js';
 import { timeout } from '@theia/core/lib/common/promise-util';
 import parcelWatcher, { Options, AsyncSubscription, Event } from '@theia/core/shared/@parcel/watcher';
 import { isOSX, isWindows } from '@theia/core';
-import { AbstractFileSystemWatcher, AbstractWatcherProvider, ResolvedWatchOptions, WatcherLogger, WatchRequest } from '../filesystem-watcher';
+import { AbstractFileSystemWatcher, AbstractWatcherProvider, ResolvedWatchOptions, WatcherLogger, WatchRequest } from '../filesystem-watcher.js';
 
 /**
  * The excludes of one parcel watch. Not the same as `ParcelWatcherOptions` in `parcel-options.ts`, which is

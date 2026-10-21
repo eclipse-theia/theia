@@ -16,7 +16,7 @@
 
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
-import { WatchOptions } from '../common/filesystem-watcher-protocol';
+import { WatchOptions } from '../common/filesystem-watcher-protocol.js';
 
 /** How a watcher reports what it is doing. */
 export interface WatcherLogger {

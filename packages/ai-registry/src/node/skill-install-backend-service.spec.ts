@@ -22,9 +22,9 @@ import * as os from 'os';
 import * as path from 'path';
 import { PreferenceService } from '@theia/core';
 import { RequestContext, RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
-import { ResolvedSkillEntry } from '../common/skill/skill-registry-types';
-import { computeContentHash } from '../common/content-hash';
-import { SkillInstallBackendServiceImpl } from './skill-install-backend-service';
+import { ResolvedSkillEntry } from '../common/skill/skill-registry-types.js';
+import { computeContentHash } from '../common/content-hash.js';
+import { SkillInstallBackendServiceImpl } from './skill-install-backend-service.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 const REGISTRY_METADATA_FILE = '.registry.json';

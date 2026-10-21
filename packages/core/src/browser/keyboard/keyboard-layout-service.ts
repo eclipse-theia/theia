@@ -16,15 +16,15 @@
 
 import { injectable, inject, optional } from 'inversify';
 import type { IKeyboardLayoutInfo, ILinuxKeyMapping, IMacKeyMapping, IWindowsKeyMapping } from 'native-keymap';
-import { isOSX, isWindows } from '../../common/os';
+import { isOSX, isWindows } from '../../common/os.js';
 import {
     NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator
-} from '../../common/keyboard/keyboard-layout-provider';
-import { Emitter, Event } from '../../common/event';
+} from '../../common/keyboard/keyboard-layout-provider.js';
+import { Emitter, Event } from '../../common/event.js';
 import {
     KeyCode, Key, LayoutModifiers, NormalizedKeyboardInput, isPrintableCharacter, isPrintableKey,
     layoutModifiersIncludeAltGraph, layoutModifiersIncludeShift
-} from './keys';
+} from './keys.js';
 
 /**
  * A physical key and keyboard-layout modifier layer that can produce a logical character.

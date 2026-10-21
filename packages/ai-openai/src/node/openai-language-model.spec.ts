@@ -20,12 +20,12 @@ import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { LanguageModelRequest, LanguageModelResponse, ReasoningSupport, ToolCallExecutor, ToolCallExecutorImpl, UserRequest } from '@theia/ai-core';
 import { OpenAI } from 'openai';
-import { MistralFixedOpenAI, OpenAiModel, OpenAiModelParams } from './openai-language-model';
-import { OpenAiModelUtils } from './openai-model-utils';
-import { OpenAiResponseApiUtils } from './openai-response-api-utils';
-import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream';
-import { getOpenAiModelDefaults } from './openai-model-defaults';
-import { OPENAI_WEB_SEARCH } from './openai-server-tools';
+import { MistralFixedOpenAI, OpenAiModel, OpenAiModelParams } from './openai-language-model.js';
+import { OpenAiModelUtils } from './openai-model-utils.js';
+import { OpenAiResponseApiUtils } from './openai-response-api-utils.js';
+import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream.js';
+import { getOpenAiModelDefaults } from './openai-model-defaults.js';
+import { OPENAI_WEB_SEARCH } from './openai-server-tools.js';
 
 const LEGACY_GPT5_REASONING_SUPPORT: ReasoningSupport = {
     supportedLevels: ['off', 'minimal', 'low', 'medium', 'high', 'auto'],

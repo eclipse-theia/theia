@@ -23,11 +23,11 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { ChatGptAuthState } from '../common';
-import { ChatGptAuthServiceImpl, createRemoteAuthService } from './chatgpt-auth-service-impl';
-import { CHATGPT_REDIRECT_URI } from './chatgpt-oauth';
-import { ChatGptAuthServiceConfig, ChatGptBackendAuthService, DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG } from './chatgpt-auth-service';
-import { ChatGptModelCatalog } from './chatgpt-model-catalog';
+import { ChatGptAuthState } from '../common/index.js';
+import { ChatGptAuthServiceImpl, createRemoteAuthService } from './chatgpt-auth-service-impl.js';
+import { CHATGPT_REDIRECT_URI } from './chatgpt-oauth.js';
+import { ChatGptAuthServiceConfig, ChatGptBackendAuthService, DEFAULT_CHATGPT_AUTH_SERVICE_CONFIG } from './chatgpt-auth-service.js';
+import { ChatGptModelCatalog } from './chatgpt-model-catalog.js';
 
 /** Avoids binding the loopback callback port. The code hand over is exercised through {@link completeLogin} instead. */
 class TestAuthService extends ChatGptAuthServiceImpl {

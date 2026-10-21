@@ -29,21 +29,21 @@ import { BaseWidget, Message, codicon } from '@theia/core/lib/browser/widgets/wi
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-restorer';
-import { WebviewPanelViewState, ThemeIcon as ThemeIconDTO } from '../../../common/plugin-api-rpc';
-import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
-import { IconUrl } from '../../../common/plugin-protocol';
+import { WebviewPanelViewState, ThemeIcon as ThemeIconDTO } from '../../../common/plugin-api-rpc.js';
+import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables.js';
+import { IconUrl } from '../../../common/plugin-protocol.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { WebviewEnvironment } from './webview-environment';
+import { WebviewEnvironment } from './webview-environment.js';
 import URI from '@theia/core/lib/common/uri';
 import { Emitter } from '@theia/core/lib/common/event';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
-import { Schemes } from '../../../common/uri-components';
-import { PluginSharedStyle } from '../plugin-shared-style';
-import { WebviewThemeDataProvider } from './webview-theme-data-provider';
+import { Schemes } from '../../../common/uri-components.js';
+import { PluginSharedStyle } from '../plugin-shared-style.js';
+import { WebviewThemeDataProvider } from './webview-theme-data-provider.js';
 import { ExternalUriService } from '@theia/core/lib/browser/external-uri-service';
 import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
-import { WebviewResourceCache } from './webview-resource-cache';
+import { WebviewResourceCache } from './webview-resource-cache.js';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { isFirefox } from '@theia/core/lib/browser/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -53,8 +53,8 @@ import { ExtractableWidget } from '@theia/core/lib/browser/widgets/extractable-w
 import { MenuPath, ILogger } from '@theia/core';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { PluginViewWidget } from '../view/plugin-view-widget';
-import { WebviewPreferences } from '../../common/webview-preferences';
+import { PluginViewWidget } from '../view/plugin-view-widget.js';
+import { WebviewPreferences } from '../../common/webview-preferences.js';
 import { NormalizedKeyboardInput } from '@theia/core/lib/browser/keyboard/keys';
 
 // Style from core

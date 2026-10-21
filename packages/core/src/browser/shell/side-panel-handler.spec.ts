@@ -14,14 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 let disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
 import { Title, Widget } from '@lumino/widgets';
-import { SidePanelHandler } from './side-panel-handler';
-import { CommandMenu, CompoundMenuNode } from '../../common/menu';
-import { RenderContextMenuOptions } from '../context-menu-renderer';
+import { SidePanelHandler } from './side-panel-handler.js';
+import { CommandMenu, CompoundMenuNode } from '../../common/menu/index.js';
+import { RenderContextMenuOptions } from '../context-menu-renderer.js';
 disableJSDOM();
 
 describe('SidePanelHandler', () => {
