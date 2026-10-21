@@ -106,6 +106,92 @@ describe('OpenAiResponseApiUtils', () => {
         expect(tools?.map(tool => tool.type)).to.deep.equal(['function', 'tool_search', 'web_search']);
     });
 
+    it('preserves required output fields when serializing historical empty tool results', () => {
+        const messages: LanguageModelMessage[] = [
+            { actor: 'user', type: 'tool_result', tool_use_id: 'missing', name: 'lookup' },
+            { actor: 'user', type: 'tool_result', tool_use_id: 'undefined', name: 'lookup', content: undefined },
+            { actor: 'user', type: 'tool_result', tool_use_id: 'empty', name: 'lookup', content: '' },
+            { actor: 'user', type: 'tool_result', tool_use_id: 'text', name: 'lookup', content: 'result' },
+            { actor: 'user', type: 'tool_result', tool_use_id: 'object', name: 'lookup', content: { value: 1 } },
+            { actor: 'user', type: 'tool_result', tool_use_id: 'to-json', name: 'lookup', content: { toJSON: () => undefined } }
+        ];
+        const { input } = utils.processMessages(messages, 'developer', 'gpt-5');
+
+        // Assert the wire representation: JSON serialization must not drop the required output property.
+        expect(JSON.parse(JSON.stringify(input))).to.deep.equal([
+            { type: 'function_call_output', call_id: 'missing', output: '' },
+            { type: 'function_call_output', call_id: 'undefined', output: '' },
+            { type: 'function_call_output', call_id: 'empty', output: '' },
+            { type: 'function_call_output', call_id: 'text', output: 'result' },
+            { type: 'function_call_output', call_id: 'object', output: '{"value":1}' },
+            { type: 'function_call_output', call_id: 'to-json', output: '' }
+        ]);
+    });
+
+    for (const isStreaming of [true, false]) {
+        it(`emits one output per tool call including empty results (${isStreaming ? 'streaming' : 'non-streaming'})`, async () => {
+            const functionCalls = ['void', 'empty', 'object', 'to-json', 'failed', 'missing'].map((name, index) => ({
+                id: `item-${index}`,
+                call_id: `call-${index}`,
+                type: 'function_call',
+                name,
+                arguments: '{}'
+            }));
+            const payloads: Record<string, unknown>[] = [];
+            const recordRequest = (payload: Record<string, unknown>): void => {
+                payloads.push(JSON.parse(JSON.stringify(payload)));
+            };
+            const openai = {
+                responses: {
+                    stream: (payload: Record<string, unknown>) => {
+                        recordRequest(payload);
+                        return toStream(payloads.length === 1
+                            ? functionCalls.map(item => ({ type: 'response.output_item.added', item }))
+                            : [{ type: 'response.output_text.delta', delta: 'done' }]);
+                    },
+                    create: async (payload: Record<string, unknown>) => {
+                        recordRequest(payload);
+                        return { output: payloads.length === 1 ? functionCalls : [], output_text: payloads.length === 1 ? '' : 'done' };
+                    }
+                }
+            };
+            const request: UserRequest = {
+                sessionId: 'session-1',
+                requestId: 'request-1',
+                messages: [{ actor: 'user', type: 'text', text: 'hello' }],
+                tools: [
+                    { id: 'void', name: 'void', parameters: { type: 'object', properties: {} }, handler: async () => undefined },
+                    { id: 'empty', name: 'empty', parameters: { type: 'object', properties: {} }, handler: async () => '' },
+                    { id: 'object', name: 'object', parameters: { type: 'object', properties: {} }, handler: async () => ({ value: 1 }) },
+                    { id: 'to-json', name: 'to-json', parameters: { type: 'object', properties: {} }, handler: async () => ({ toJSON: () => undefined }) },
+                    { id: 'failed', name: 'failed', parameters: { type: 'object', properties: {} }, handler: async () => { throw new Error('failed'); } }
+                ]
+            };
+            const response = await utils.handleRequest(
+                openai as never, request, {}, 'gpt-5', new OpenAiModelUtils(), 'developer', 'openai/gpt-5', isStreaming
+            );
+            if (!('stream' in response)) {
+                throw new Error('Expected the tool loop to return a stream');
+            }
+            const parts: LanguageModelStreamResponsePart[] = [];
+            for await (const part of response.stream) {
+                parts.push(part);
+            }
+
+            expect(parts.filter(isTextResponsePart)).to.deep.equal([{ content: 'done' }]);
+            expect(payloads).to.have.length(2);
+            const input = payloads[1].input as { type?: string; call_id?: string; output?: string }[];
+            expect(input.filter(item => item.type === 'function_call_output')).to.deep.equal([
+                { type: 'function_call_output', call_id: 'call-0', output: '' },
+                { type: 'function_call_output', call_id: 'call-1', output: '' },
+                { type: 'function_call_output', call_id: 'call-2', output: '{"value":1}' },
+                { type: 'function_call_output', call_id: 'call-3', output: '' },
+                { type: 'function_call_output', call_id: 'call-4', output: 'Error: failed' },
+                { type: 'function_call_output', call_id: 'call-5', output: 'Error: Tool missing not found' }
+            ]);
+        });
+    }
+
     it('emits per-iteration usage for Response API tool calls instead of accumulated usage', async () => {
         const streams = [
             [

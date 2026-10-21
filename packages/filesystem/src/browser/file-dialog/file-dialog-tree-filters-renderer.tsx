@@ -44,6 +44,8 @@ export const FileDialogTreeFiltersRendererOptions = Symbol('FileDialogTreeFilter
 export interface FileDialogTreeFiltersRendererOptions {
     suppliedFilters: FileDialogTreeFilters;
     fileDialogTree: FileDialogTree;
+    /** Whether to omit the `All Files` filter. Defaults to `false`. */
+    disableAllFilesFilter?: boolean;
 }
 
 @injectable()
@@ -59,7 +61,7 @@ export class FileDialogTreeFiltersRenderer extends ReactRenderer {
         super();
         this.suppliedFilters = options.suppliedFilters;
         this.fileDialogTree = options.fileDialogTree;
-        this.appliedFilters = { ...this.suppliedFilters, 'All Files': [], };
+        this.appliedFilters = options.disableAllFilesFilter ? { ...this.suppliedFilters } : { ...this.suppliedFilters, 'All Files': [], };
     }
 
     protected readonly handleFilterChanged = (e: React.ChangeEvent<HTMLSelectElement>) => this.onFilterChanged(e);

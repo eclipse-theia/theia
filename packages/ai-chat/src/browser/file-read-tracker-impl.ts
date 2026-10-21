@@ -167,15 +167,7 @@ export class FileReadTrackerImpl implements FileReadTracker {
 
     /** A path the agent can pass back to `getFileContent`, which takes `<rootName>/<relativePath>` as well as a uri. */
     protected getLabel(uri: URI): string {
-        const roots = this.workspaceService.tryGetRoots().map(root => root.resource);
-        for (const root of roots) {
-            const relativePath = root.relative(uri)?.toString();
-            // A basename shared with another root would resolve to that other root.
-            if (relativePath && !roots.some(other => other.path.base === root.path.base && !other.isEqual(root))) {
-                return `${root.path.base}/${relativePath}`;
-            }
-        }
-        return uri.toString();
+        return this.workspaceService.getWorkspaceRootUri(uri) ? this.workspaceService.getRootPrefixedPath(uri) : uri.toString();
     }
 
     protected invalidate(uriString: string): void {

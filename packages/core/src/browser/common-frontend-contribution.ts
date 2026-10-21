@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/* eslint-disable max-len, @typescript-eslint/indent */
+/* eslint-disable max-len, @stylistic/indent */
 
 import debounce = require('lodash.debounce');
 import { injectable, inject, optional } from 'inversify';
@@ -32,7 +32,10 @@ import { SelectionService } from '../common/selection-service';
 import { MessageService } from '../common/message-service';
 import { OpenerService, open } from '../browser/opener-service';
 import { ApplicationShell } from './shell/application-shell';
-import { SHELL_TABBAR_CONTEXT_CLOSE, SHELL_TABBAR_CONTEXT_COPY, SHELL_TABBAR_CONTEXT_PIN, SHELL_TABBAR_CONTEXT_SPLIT } from './shell/tab-bars';
+import {
+    SHELL_TABBAR_CONTEXT_CLOSE, SHELL_TABBAR_CONTEXT_COPY, SHELL_TABBAR_CONTEXT_HIDE, SHELL_TABBAR_CONTEXT_PIN, SHELL_TABBAR_CONTEXT_SPLIT, SideTabBar
+} from './shell/tab-bars';
+import { SidePanelItemVisibility } from './shell/side-panel-item-visibility';
 import { AboutDialog } from './about-dialog';
 import URI from '../common/uri';
 import { ContextKey, ContextKeyService } from './context-key-service';
@@ -88,6 +91,15 @@ export const CLASSNAME_OS_MAC = 'mac';
 export const CLASSNAME_OS_WINDOWS = 'windows';
 export const CLASSNAME_OS_LINUX = 'linux';
 
+/**
+ * Mirrors VS Code's `workbench.action.toggleKeybindingsLog` command. It logs how each key press was interpreted so keyboard-layout problems can be diagnosed on machines where they cannot be reproduced.
+ */
+export const TOGGLE_KEYBOARD_SHORTCUTS_TROUBLESHOOTING = Command.toDefaultLocalizedCommand({
+    id: 'workbench.action.toggleKeybindingsLog',
+    category: 'Developer',
+    label: 'Toggle Keyboard Shortcuts Troubleshooting'
+});
+
 @injectable()
 export class CommonFrontendContribution implements FrontendApplicationContribution, MenuContribution, CommandContribution, KeybindingContribution, ColorContribution {
 
@@ -112,11 +124,17 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
+    @inject(KeybindingRegistry)
+    protected readonly keybindingRegistry: KeybindingRegistry;
+
     @inject(MenuModelRegistry)
     protected readonly menuRegistry: MenuModelRegistry;
 
     @inject(StorageService)
     protected readonly storageService: StorageService;
+
+    @inject(SidePanelItemVisibility)
+    protected readonly sidePanelItemVisibility: SidePanelItemVisibility;
 
     @inject(QuickInputService) @optional()
     protected readonly quickInputService: QuickInputService;
@@ -442,6 +460,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             label: nls.localizeByDefault('Toggle Menu Bar'),
             order: '0'
         });
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_HIDE, {
+            commandId: CommonCommands.HIDE_SIDE_PANEL_ITEM.id,
+            label: nls.localizeByDefault('Hide'),
+            order: '0'
+        });
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_HIDE, {
+            commandId: CommonCommands.KEEP_SIDE_PANEL_ITEM.id,
+            label: nls.localizeByDefault('Keep'),
+            order: '1'
+        });
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_PIN, {
             commandId: CommonCommands.PIN_TAB.id,
             label: nls.localizeByDefault('Pin'),
@@ -495,6 +523,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     registerCommands(commandRegistry: CommandRegistry): void {
+        commandRegistry.registerCommand(TOGGLE_KEYBOARD_SHORTCUTS_TROUBLESHOOTING, {
+            execute: () => this.keybindingRegistry.toggleKeyboardShortcutsTroubleshooting(),
+            isToggled: () => this.keybindingRegistry.isKeyboardShortcutsTroubleshooting()
+        });
         commandRegistry.registerCommand(CommonCommands.OPEN, UriAwareCommandHandler.MultiSelect(this.selectionService, {
             execute: uris => uris.map(uri => open(this.openerService, uri)),
         }));
@@ -777,6 +809,18 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
         commandRegistry.registerCommand(CommonCommands.SELECT_ICON_THEME, {
             execute: () => this.selectIconTheme()
+        });
+        commandRegistry.registerCommand(CommonCommands.HIDE_SIDE_PANEL_ITEM, new CurrentWidgetCommandAdapter(this.shell, {
+            isVisible: (title, tabBar) => Boolean(title && tabBar instanceof SideTabBar && !tabBar.shouldHideTitle(title)),
+            isEnabled: (title, tabBar) => Boolean(title && tabBar instanceof SideTabBar && tabBar.canHideTitle(title)),
+            execute: title => title && this.sidePanelItemVisibility.setHidden(title.owner.id, true),
+        }));
+        commandRegistry.registerCommand(CommonCommands.KEEP_SIDE_PANEL_ITEM, new CurrentWidgetCommandAdapter(this.shell, {
+            isVisible: (title, tabBar) => Boolean(title && tabBar instanceof SideTabBar && tabBar.shouldHideTitle(title)),
+            execute: title => title && this.sidePanelItemVisibility.setHidden(title.owner.id, false),
+        }));
+        commandRegistry.registerCommand(CommonCommands.RESET_HIDDEN_SIDE_PANEL_ITEMS, {
+            execute: () => this.sidePanelItemVisibility.reset()
         });
         commandRegistry.registerCommand(CommonCommands.PIN_TAB, new CurrentWidgetCommandAdapter(this.shell, {
             isEnabled: title => Boolean(title && !isPinned(title)),

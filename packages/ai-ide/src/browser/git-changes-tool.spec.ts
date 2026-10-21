@@ -28,6 +28,7 @@ import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ShellExecutionRequest, ShellExecutionResult, ShellExecutionServer } from '@theia/ai-terminal/lib/common/shell-execution-server';
 import { GET_GIT_CHANGES_FUNCTION_ID, GetGitChangesTool, GitChangesRepositoryError } from './git-changes-tool';
+import { withWorkspaceServiceDefaults } from '@theia/workspace/lib/browser/test/with-workspace-service-defaults';
 
 disableJSDOM();
 
@@ -73,7 +74,7 @@ describe('GetGitChangesTool', () => {
         };
         container.bind(ShellExecutionServer).toConstantValue(shellServer as unknown as ShellExecutionServer);
         container.bind(ScmService).toConstantValue(scmService as unknown as ScmService);
-        container.bind(WorkspaceService).toConstantValue(workspaceService as WorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(workspaceService as WorkspaceService));
         container.bind(GetGitChangesTool).toSelf();
         tool = container.get(GetGitChangesTool);
     });
@@ -140,6 +141,20 @@ describe('GetGitChangesTool', () => {
 
         await tool.getTool().handler(JSON.stringify({ repository: 'frontend/vendor/lib' }));
         expect(cwdOfCall()).to.equal('/work/frontend/vendor/lib');
+    });
+
+    it('labels the repositories of workspace roots sharing a folder name by their unique root names', async () => {
+        const aliceApp = makeRepo('file:///alice/app');
+        const bobApp = makeRepo('file:///bob/app');
+        workspaceRoots = [new URI('file:///alice/app'), new URI('file:///bob/app')];
+        scmService.repositories = [aliceApp, bobApp];
+
+        const result = await tool.getTool().handler(JSON.stringify({ repository: 'app' })) as GitChangesRepositoryError;
+        expect(result.error).to.contain('ambiguous');
+        expect(result.availableRepositories).to.deep.equal(['alice/app', 'bob/app']);
+
+        await tool.getTool().handler(JSON.stringify({ repository: 'bob/app' }));
+        expect(cwdOfCall()).to.equal('/bob/app');
     });
 
     it('prefers an exact label match over a folder name shared with a nested repository', async () => {

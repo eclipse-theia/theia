@@ -136,7 +136,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
                 result.filters.push({ name: label, extensions: extensions });
             }
 
-            if (props.canSelectFiles) {
+            if (props.canSelectFiles && !props.disableAllFilesFilter) {
                 if (filters.length > 0) {
                     result.filters.push({ name: 'All Files', extensions: ['*'] });
                 }

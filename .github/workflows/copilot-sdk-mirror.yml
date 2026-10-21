@@ -48,7 +48,7 @@ jobs:
       # compare the two; the check installs the SDK itself, into a temporary directory.
       - name: Install TypeScript
         shell: bash
-        run: npm install --no-save --no-package-lock typescript@~5.9.3
+        run: npm install --no-save --no-package-lock typescript@~6.0.3
 
       - name: Check the mirrored types
         shell: bash

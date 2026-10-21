@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as http from 'http';
+// Default import so that tests can stub the real module; a namespace import would be an `esModuleInterop` copy.
+import http from 'http';
 import { Disposable, Emitter, Event, ILogger } from '@theia/core';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
 import { Deferred } from '@theia/core/lib/common/promise-util';

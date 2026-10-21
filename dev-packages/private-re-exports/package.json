@@ -35,6 +35,6 @@
     "@types/mocha": "^10.0.10",
     "@types/mustache": "^4.2.6",
     "@types/yargs": "^17.0.35",
-    "typescript": "~5.9.3"
+    "typescript": "~6.0.3"
   }
 }

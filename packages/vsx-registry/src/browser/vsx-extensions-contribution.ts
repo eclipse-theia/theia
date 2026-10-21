@@ -33,6 +33,7 @@ import { FileDialogService, OpenFileDialogProps } from '@theia/filesystem/lib/br
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { VSXExtensionRaw } from '@theia/ovsx-client';
 import { VscodeCommands } from '@theia/plugin-ext-vscode/lib/browser/plugin-vscode-commands-contribution';
+import { DuplicateExtensionError } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { DateTime } from 'luxon';
 import { VSXRegistryService } from '../common/vsx-registry-service';
 import { IGNORE_RECOMMENDATIONS_ID } from '../common/recommended-extensions-preference-contribution';
@@ -293,7 +294,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             await this.commandRegistry.executeCommand(VscodeCommands.INSTALL_EXTENSION_FROM_ID_OR_URI.id, fileURI);
             this.messageService.info(nls.localizeByDefault('Completed installing extension.', extensionName));
         } catch (e) {
-            if (e instanceof Error && e.name === 'DuplicateExtensionError') {
+            if (DuplicateExtensionError.is(e)) {
                 this.messageService.error(
                     nls.localize('theia/vsx-registry/duplicateVSIX',
                         'Failed to install {0} from VSIX. The extension is already installed. Uninstall the existing extension before installing a new version from VSIX.',

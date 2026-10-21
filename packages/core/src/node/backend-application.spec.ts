@@ -52,6 +52,7 @@ type AnyListener = (...args: any[]) => void;
 describe('BackendApplication', () => {
     let sandbox: sinon.SinonSandbox;
     let exitStub: sinon.SinonStub;
+    let terminateChildrenStub: sinon.SinonStub;
     let savedListeners: Partial<Record<ProcessEventName, AnyListener[]>>;
 
     beforeEach(() => {
@@ -66,6 +67,8 @@ describe('BackendApplication', () => {
         }
 
         exitStub = sandbox.stub(process, 'exit');
+        // Never kill the children of the test process.
+        terminateChildrenStub = sandbox.stub(ProcessUtils.prototype, 'terminateChildProcessTrees').resolves();
     });
 
     afterEach(() => {
@@ -158,6 +161,53 @@ describe('BackendApplication', () => {
             const clock = sandbox.useFakeTimers();
             const container = createTestContainer();
             sandbox.stub(container, 'unbindAllAsync').returns(new Promise<void>(() => { /* never */ }));
+            const mockLogger = container.get(ILogger) as ILogger;
+            const warnStub = sandbox.stub(mockLogger, 'warn');
+
+            const app = container.get(TestBackendApplication);
+
+            const shutdownPromise = app.invokeGracefulShutdown();
+
+            await clock.tickAsync(5001);
+            await shutdownPromise;
+
+            expect(exitStub.calledOnceWith(1), 'process.exit(1) was not called after timeout').to.be.true;
+            expect(warnStub.calledOnce, 'a warning should be logged on timeout').to.be.true;
+            expect(warnStub.firstCall.args[0]).to.match(/timed out/);
+        });
+
+        it('kills the child processes after unbinding the container and before exiting', async () => {
+            const container = createTestContainer();
+            const unbindSpy = sandbox.spy(container, 'unbindAllAsync');
+
+            const app = container.get(TestBackendApplication);
+
+            await app.invokeGracefulShutdown();
+
+            expect(terminateChildrenStub.calledOnceWithExactly(process.pid), 'the child processes of the backend should be killed').to.be.true;
+            expect(unbindSpy.calledBefore(terminateChildrenStub), 'the container should be unbound first').to.be.true;
+            expect(terminateChildrenStub.calledBefore(exitStub), 'the child processes should be killed before exiting').to.be.true;
+        });
+
+        it('still exits if killing the child processes rejects', async () => {
+            const container = createTestContainer();
+            terminateChildrenStub.rejects(new Error('powershell boom'));
+            const mockLogger = container.get(ILogger) as ILogger;
+            const warnStub = sandbox.stub(mockLogger, 'warn');
+
+            const app = container.get(TestBackendApplication);
+
+            await app.invokeGracefulShutdown();
+
+            expect(exitStub.calledOnceWith(1), 'process.exit(1) was not called').to.be.true;
+            expect(warnStub.calledOnce, 'a warning should be logged when killing the child processes rejects').to.be.true;
+            expect(warnStub.firstCall.args[0]).to.match(/powershell boom/);
+        });
+
+        it('exits even when killing the child processes hangs past the timeout', async () => {
+            const clock = sandbox.useFakeTimers();
+            const container = createTestContainer();
+            terminateChildrenStub.returns(new Promise<void>(() => { /* never */ }));
             const mockLogger = container.get(ILogger) as ILogger;
             const warnStub = sandbox.stub(mockLogger, 'warn');
 
@@ -277,7 +327,7 @@ describe('BackendApplication', () => {
 
     describe('process exit handler', () => {
 
-        it('does not re-invoke contributions after graceful shutdown ran them', async () => {
+        it('does not re-invoke contributions nor kill the child processes again after graceful shutdown did', async () => {
             const container = createTestContainer();
             const onStopSpy = sandbox.spy();
             container.bind(BackendApplicationContribution).toConstantValue({ onStop: onStopSpy });
@@ -288,11 +338,27 @@ describe('BackendApplication', () => {
 
             await app.invokeGracefulShutdown();
             expect(onStopSpy.callCount, 'contribution onStop should fire from gracefulShutdown').to.equal(1);
+            expect(terminateChildrenStub.callCount, 'the child processes should be killed by gracefulShutdown').to.equal(1);
 
             exitListener();
 
             expect(onStopSpy.callCount, 'contribution onStop should not be invoked a second time').to.equal(1);
-            expect(terminateStub.called, 'terminateProcessTree should be invoked by the exit handler').to.be.true;
+            expect(terminateStub.called, 'terminateProcessTree should not be invoked by the exit handler').to.be.false;
+            expect(terminateChildrenStub.callCount, 'the child processes should not be killed a second time').to.equal(1);
+        });
+
+        it('does not retry killing the child processes in the exit handler when graceful shutdown failed to', async () => {
+            const container = createTestContainer();
+            terminateChildrenStub.rejects(new Error('powershell boom'));
+            const terminateStub = sandbox.stub(ProcessUtils.prototype, 'terminateProcessTree');
+
+            const app = container.get(TestBackendApplication);
+            const exitListener = process.listeners('exit')[0] as () => void;
+
+            await app.invokeGracefulShutdown();
+            exitListener();
+
+            expect(terminateStub.called, 'terminateProcessTree should not be retried by the exit handler').to.be.false;
         });
 
         it('invokes contributions synchronously when graceful shutdown was bypassed', () => {

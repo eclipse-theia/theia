@@ -9,6 +9,10 @@ jobs:
 
     runs-on: ubuntu-22.04
     timeout-minutes: 30
+    env:
+      # GCC before 13 (ubuntu-22.04 ships 11 and 12) cannot compile the V8 headers of Electron 44
+      CC: clang-15
+      CXX: clang++-15
 
     steps:
       - name: Checkout

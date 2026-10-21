@@ -26,7 +26,7 @@ import { RemoteProxyServerProvider } from '@theia/remote/lib/electron-node/remot
 import { RemoteStatusReport } from '@theia/remote/lib/electron-node/remote-types';
 import { RpcServer, ILogger, MessageService, generateUuid, URI } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import * as Docker from 'dockerode';
+import Docker from 'dockerode';
 import { DevContainerFileService } from './dev-container-file-service';
 import { DockerContainerService } from './docker-container-service';
 import { ContainerOutputProvider } from '../electron-common/container-output-provider';

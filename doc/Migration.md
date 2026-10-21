@@ -161,6 +161,51 @@ Use `BundledResourceProvider.resolveExternalPath(path)` for any other bundled fi
 
 If you worked around the ripgrep problem by overriding the `@vscode/ripgrep` replacement in your own esbuild configuration, that override is no longer needed.
 
+### v1.77.0
+
+#### TypeScript 6.0 [#18100](https://github.com/eclipse-theia/theia/pull/18100)
+
+Theia is built with TypeScript 6.0.x. Adopters that only consume Theia's declaration files are not required to upgrade immediately: declarations emitted by TypeScript 6 remain consumable by TypeScript 5.9. Applications and extensions that replicate Theia's `configs/base.tsconfig.json` settings (in particular `moduleResolution: bundler` with CommonJS) must use TypeScript 6, because TypeScript 5.9 rejects that combination. Upgrading is recommended in either case so that applications and extensions use the same compiler behavior as the framework.
+
+When adopting TypeScript 6 or replicating Theia's `configs/base.tsconfig.json` settings, review these compiler changes:
+
+- `moduleResolution` is now `bundler`, which honors package `exports`; deep imports into paths that a dependency does not export will fail. TypeScript 6 deprecates the previous `node` / `node10` resolution mode.
+- TypeScript 6 defaults `types` to an empty array. Add the ambient types your project requires, typically `"types": ["node"]`; Theia's shared configuration includes Node and Mocha because package tests live next to their sources.
+- TypeScript 6 defaults `strict` to `true`. Theia currently sets `strict: false` explicitly and retains its existing individual strictness flags.
+- Remove `downlevelIteration`; TypeScript 6 reports the option as deprecated even when it is disabled.
+- TypeScript 6 defaults `noUncheckedSideEffectImports` to `true`. Theia sets it to `false` because extensions import CSS for side effects without shared module declarations. Adopters can instead declare their side-effect modules, such as `*.css`.
+- `esModuleInterop` is always enabled. Callable or constructable CommonJS modules must use default imports (`import express from 'express'`) rather than namespace imports. The emitted JavaScript uses the `tslib` `__importStar` and `__importDefault` helpers, so every published extension that emits those helpers must declare `tslib` in `dependencies` rather than relying on workspace hoisting.
+- Theia's emitted declarations can now contain default imports of `export =` modules. Consumers need `esModuleInterop`, `allowSyntheticDefaultImports`, or `skipLibCheck` when compiling those declarations.
+- `TreeProps.viewProps` and `TreeWidget.ViewProps` no longer accept the inherited HTML `width`, `height`, or `rows` properties. The tree widget owns those values and the public types now omit them from the forwarded `react-virtuoso` props.
+
+To make the IDE use the workspace compiler, add `"typescript.tsdk": "node_modules/typescript/lib"` to workspace settings when the IDE's bundled TypeScript is older than 6. Otherwise the editor can report configuration errors for `moduleResolution: bundler` with CommonJS even though the workspace compiler accepts it.
+
+The shared ESLint configuration no longer uses `@typescript-eslint/eslint-plugin-tslint`, `tslint`, or `eslint-plugin-deprecation`. Adopters extending `configs/*.eslintrc.json` need typescript-eslint v8, `@stylistic/eslint-plugin` v3, `eslint-plugin-jsdoc`, and the `@theia/eslint-plugin` `file-header` rule. The former TSLint `typedef: call-signature` check is now the `@theia/explicit-return-type` rule of `@theia/eslint-plugin`, and the space-after-asterisk part of TSLint `jsdoc-format` is now its `@theia/jsdoc-space-after-asterisk` rule. A file that intentionally uses a different license header must place `/* eslint-disable @theia/file-header */` on line 1 because the rule reports at line 1.
+
+#### Physical printable-key bindings
+
+##### User keymaps
+
+Printable keybinding tokens now identify logical characters on the active keyboard layout. Existing `keymaps.json` files and keybinding strings remain parseable, so no file-format migration is required. Shift in an authored logical-character stroke is absorbed when it produces the character; otherwise it remains a command modifier.
+
+Latin letters that the active layout does not produce on its base or Shift layer fall back to their US key position, matching VS Code so common shortcuts continue working on non-Latin layouts. This fallback applies to letters only; digits and punctuation always follow the logical character. The recorder stores the Latin fallback letter in this case: pressing Ctrl and the physical `V` key on a Russian layout records `ctrl+v`, not `ctrl+м`.
+
+Bindings that intentionally target a physical position must use explicit scan-code syntax. For example, replace a position-dependent `ctrl+[` binding with `ctrl+[BracketLeft]`. Reserved logical characters can be authored with `[char:0x...]`, such as `ctrl+[char:0x2B]` for logical `+`. The recorder stores non-printable keys, Space and numpad keys by name (for example `delete`, `f1`, `space` and `add`; numpad digits as `1`…`9`, like the top-row digits); `[ScanCode]` is reserved for printable keys without a committed character. On macOS, the recorder stores Option as the `alt` command modifier rather than the character it produces: Option+Shift+P records `shift+alt+p`, not `∏`.
+
+Available printable bindings now follow their logical characters. For example, German `ctrl+[` resolves to physical `Ctrl+AltGr+8` instead of the US `BracketLeft` position. On Windows, AltGr is reported as Ctrl+Alt, so the AltGr layer consumes both Ctrl and Alt: bindings that combine `ctrl` or `alt` with an AltGr-layer character, such as German `ctrl+[`, `ctrl+]` and `ctrl+\` (including Monaco defaults), are inactive. On macOS, the same applies to `alt` (Option) with an Option-layer character: German `cmd+alt+[` and `cmd+alt+]` (Monaco fold/unfold), which previously worked positionally as Cmd+Option+Ü and Cmd+Option++, are inactive. To keep such a shortcut, use `ctrl+[BracketLeft]`, set `"keyboard.dispatch": "keyCode"`, or choose a binding that does not require AltGr. Logical characters unavailable on the active layout remain loaded and visible but inactive; the same applies when authored Shift is a command modifier but the character requires an AltGr layer that consumes Shift. Theia no longer silently maps these bindings to a different key combination.
+
+Set `"keyboard.dispatch": "keyCode"` to restore positional key-code dispatch globally if the logical behavior changes existing shortcuts unexpectedly. Character-only tokens such as `ü` or `[char:0x...]` are inactive in this mode because they have no positional key code. See [`packages/keymaps/README.md`](../packages/keymaps/README.md) for the complete logical-character, scan-code, character-token, inactive-binding, and Windows AltGr recorder grammar.
+
+##### Adopter APIs
+
+- `KeyboardLayout` gained `latinFallbackByCode`; `KeyboardLayoutService.getLatinLetterFallback(key)` exposes it. Subclasses replacing `transformNativeLayout()` must call the protected `KeyboardLayoutService.addMissingLatinLetterCandidates()` method to keep Latin-letter shortcuts working on non-Latin layouts.
+- `isPrintableKey` and `isPrintableCharacter` are exported from `@theia/core/lib/common/keys`; the protected `KeyboardLayoutService` helpers of the same names were removed.
+- Replace consumers of `KeyboardLayout.key2KeyCode` with `candidatesByCharacter` or `candidatesByFoldedCharacter`. Each `KeyboardLayoutCandidate` provides the physical `key`, logical `character`, and required `layoutModifiers`. Subclasses of `KeyboardLayoutService` that overrode the removed protected `transformKeyCode()` or `getCharacterIndex()` methods must move their logic to `resolveKeyCode()` and candidate lookup.
+- Pass the normalized keyboard input as the second argument to `KeyboardLayoutService.validateKeyCode`.
+- Review `KeyCode` consumers: `equals()` requires the same physical key and `dispatchString()`, character-only values are not modifier-only, and `toString()` preserves authored spelling. Use `dispatchString()` when a runtime match identity is required.
+- Update `KeybindingRegistry.matchKeybinding()` consumers from `match.binding` to `match.runtime.binding`; the resolved sequence is available as `match.runtime.sequence`. Pass resolved sequences (`resolveKeybinding(binding)`) or runtime interpretations to `matchKeybinding()`; raw `KeySequence.parse()` output is no longer guaranteed to match under `keyboard.dispatch: 'code'`. Subclasses that override chord handling must replace the protected `keySequence` field with `keySequenceCandidates`. Protected keybinding-tree values are runtime records containing the original scoped binding and its resolved sequence, rather than `ScopedKeybinding[]`.
+- Pass an explicit `'logical'` or `'physical'` form to `AcceleratorSource.getAccelerator`. Browser UI uses logical labels, while Electron native menus require physical accelerators.
+
 ### v1.76.0
 
 #### GitHub Copilot is served through the Copilot CLI
@@ -278,7 +323,6 @@ Adopters do not have to switch, but if you want the same setup in your own exten
 
 - set `jsx` and `jsxImportSource` as above in your `tsconfig.json` (if you use `jsx: "react-jsxdev"`, the `jsx-dev-runtime` re-export is used instead)
 - remove `import * as React from '@theia/core/shared/react'` from files that only needed it for JSX. Keep the import wherever `React.*` types or APIs are used (`React.ReactNode`, `React.FC`, `React.MouseEvent`, hooks, …). With `noUnusedLocals` enabled the compiler reports the now-obsolete imports.
-
 
 #### Removal of the webpack bundler
 

@@ -29,7 +29,7 @@ export class PluginMetricsContribution implements MetricsContribution {
     @inject(PluginMetricStringGenerator)
     protected readonly stringGenerator: PluginMetricStringGenerator;
 
-    private metrics: string;
+    private metrics = '';
 
     getMetrics(): string {
         return this.metrics;

@@ -44,6 +44,7 @@ import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { Minimatch } from 'minimatch';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { withWorkspaceServiceDefaults } from '@theia/workspace/lib/browser/test/with-workspace-service-defaults';
 
 const makeFileSearchService = (
     impl?: (searchPattern: string, options: FileSearchService.Options) => Promise<string[]>
@@ -168,7 +169,7 @@ describe('Workspace Functions Cancellation Tests', () => {
 
         // Register mocks in the container
         container.bind(ILogger).to(MockLogger);
-        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
@@ -294,7 +295,7 @@ describe('FileContentFunction.getArgumentsShortLabel', () => {
         } as unknown as MonacoWorkspace;
 
         container.bind(ILogger).to(MockLogger);
-        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
@@ -413,7 +414,7 @@ describe('FileContentFunction handler', () => {
         } as unknown as MonacoWorkspace;
 
         container.bind(ILogger).to(MockLogger);
-        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
@@ -779,7 +780,7 @@ describe('FindFilesByPattern.getArgumentsShortLabel', () => {
         };
 
         container.bind(ILogger).to(MockLogger);
-        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -872,7 +873,7 @@ describe('FindFilesByPattern.findFiles', () => {
         fileSearchService = makeFileSearchService(async () => searchResults);
 
         container.bind(ILogger).to(MockLogger);
-        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(AiConfigurationService).toConstantValue(trustAwareReader);
@@ -1023,7 +1024,7 @@ describe('WorkspaceFunctionScope gitignore caching', () => {
         };
 
         container.bind(ILogger).to(MockLogger);
-        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -1093,7 +1094,7 @@ describe('GetWorkspaceFileList resolves the target directory once', () => {
         const mockPreferenceService = { get: <T>(_path: string, def: T) => def };
 
         container.bind(ILogger).to(MockLogger);
-        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -1157,7 +1158,7 @@ describe('GetWorkspaceDirectoryStructure preserves empty folders', () => {
         };
 
         container.bind(ILogger).to(MockLogger);
-        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -1229,7 +1230,7 @@ describe('FileContentFunction external paths', () => {
         } as unknown as AiConfigurationService;
 
         container.bind(ILogger).to(MockLogger);
-        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
@@ -1375,7 +1376,7 @@ describe('WorkspaceFunctionScope accessible root contributions', () => {
             }
         };
 
-        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue({ get: <T>(_path: string, defaultValue: T) => defaultValue });
         container.bind(MonacoWorkspace).toConstantValue({ getTextDocument: () => undefined } as unknown as MonacoWorkspace);
@@ -1497,7 +1498,7 @@ describe('GetWorkspaceFileList / GetWorkspaceDirectoryStructure with external pa
         } as unknown as AiConfigurationService;
 
         container.bind(ILogger).to(MockLogger);
-        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(AiConfigurationService).toConstantValue(trustAwareReader);
@@ -1597,7 +1598,7 @@ describe('FindFilesByPattern with searchRoot', () => {
         } as unknown as AiConfigurationService;
 
         container.bind(ILogger).to(MockLogger);
-        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(AiConfigurationService).toConstantValue(trustAwareReader);
@@ -1693,7 +1694,7 @@ describe('WorkspaceFunctionScope path-traversal hardening', () => {
         } as unknown as AiConfigurationService;
 
         container.bind(ILogger).to(MockLogger);
-        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService);
         container.bind(MonacoWorkspace).toConstantValue(mockMonacoWorkspace);
@@ -1867,7 +1868,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 onWorkspaceChanged: () => ({ dispose: () => { } })
             } as unknown as WorkspaceService;
 
-            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
             container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -1890,7 +1891,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 onWorkspaceChanged: () => ({ dispose: () => { } })
             } as unknown as WorkspaceService;
 
-            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
             container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -1905,7 +1906,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             expect(mapping.get('shared')?.toString()).to.equal('file:///home/user/shared');
         });
 
-        it('uses first-wins for duplicate basenames (sorted by URI)', () => {
+        it('names roots sharing a basename as peers', () => {
             const mockWorkspaceService = {
                 tryGetRoots: () => [
                     { resource: new URI('file:///alice/app') },
@@ -1914,7 +1915,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 onWorkspaceChanged: () => ({ dispose: () => { } })
             } as unknown as WorkspaceService;
 
-            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
             container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -1923,10 +1924,9 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             workspaceScope = container.get(WorkspaceFunctionScope);
 
             const mapping = workspaceScope.getRootMapping();
-            // Only one entry for 'app' — the first by URI sort order wins.
-            // The other root is still reachable via resolveRelativePath fallback.
-            expect(mapping.size).to.equal(1);
-            expect(mapping.get('app')?.toString()).to.equal('file:///alice/app');
+            expect(mapping.size).to.equal(2);
+            expect(mapping.get('alice/app')?.toString()).to.equal('file:///alice/app');
+            expect(mapping.get('bob/app')?.toString()).to.equal('file:///bob/app');
         });
     });
 
@@ -1937,7 +1937,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 onWorkspaceChanged: () => ({ dispose: () => { } })
             } as unknown as WorkspaceService;
 
-            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
             container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -1959,7 +1959,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 onWorkspaceChanged: () => ({ dispose: () => { } })
             } as unknown as WorkspaceService;
 
-            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
             container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -1980,7 +1980,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 onWorkspaceChanged: () => ({ dispose: () => { } })
             } as unknown as WorkspaceService;
 
-            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
             container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -1999,7 +1999,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 onWorkspaceChanged: () => ({ dispose: () => { } })
             } as unknown as WorkspaceService;
 
-            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
             container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -2021,7 +2021,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 tryGetRoots: () => rootObjects,
                 onWorkspaceChanged: () => ({ dispose: () => { } })
             } as unknown as WorkspaceService;
-            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
             container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -2152,45 +2152,41 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
         });
 
         describe('duplicate root basenames', () => {
-            it('round-trips the mapped root correctly', () => {
+            it('names all roots sharing a basename as peers and round-trips each of them', () => {
                 workspaceScope = createScope(['file:///workspace/a/app', 'file:///workspace/b/app']);
                 const mapping = workspaceScope.getRootMapping();
-                expect(mapping.size).to.equal(1);
-                expect(mapping.get('app')?.toString()).to.equal('file:///workspace/a/app');
+                expect(Array.from(mapping.keys())).to.deep.equal(['a/app', 'b/app']);
 
-                // Round-trip for the mapped root
-                const uri = mapping.get('app')!.resolve('src/index.ts');
-                const relPath = workspaceScope.toWorkspaceRelativePath(uri)!;
-                expect(relPath).to.equal('app/src/index.ts');
-                const resolved = workspaceScope.resolveRelativePath(relPath);
-                expect(resolved.toString()).to.equal(uri.toString());
+                for (const [name, rootUri] of mapping) {
+                    const uri = rootUri.resolve('src/index.ts');
+                    const relPath = workspaceScope.toWorkspaceRelativePath(uri)!;
+                    expect(relPath).to.equal(`${name}/src/index.ts`);
+                    expect(workspaceScope.resolveRelativePath(relPath).toString()).to.equal(uri.toString());
+                }
             });
 
-            it('unmapped root returns undefined from toWorkspaceRelativePath', () => {
+            it('rejects the shared basename as ambiguous', () => {
                 workspaceScope = createScope(['file:///workspace/a/app', 'file:///workspace/b/app']);
-                const uri = new URI('file:///workspace/b/app/src/index.ts');
-                const relPath = workspaceScope.toWorkspaceRelativePath(uri);
-                expect(relPath).to.be.undefined;
+                expect(() => workspaceScope.resolveRelativePath('app/src/index.ts')).to.throw(/ambiguous.*a\/app.*b\/app/);
             });
 
-            it('resolves app/path to the mapped root (Phase 1)', () => {
+            it('resolves a longer parent-qualified path (Phase 2)', () => {
                 workspaceScope = createScope(['file:///workspace/a/app', 'file:///workspace/b/app']);
-                // 'app' maps to file:///workspace/a/app (first by URI sort)
-                const result = workspaceScope.resolveRelativePath('app/src/index.ts');
-                expect(result.toString()).to.equal('file:///workspace/a/app/src/index.ts');
+                const result = workspaceScope.resolveRelativePath('workspace/b/app/src/index.ts');
+                expect(result.toString()).to.equal('file:///workspace/b/app/src/index.ts');
             });
 
-            // The forms the external file change notice names files by: a root name for the mapped root, a uri for the other.
-            it('resolves a uri for the unmapped root', async () => {
+            // The external file change notice names files by a uri when roots share a basename.
+            it('resolves a uri for a root sharing its basename', async () => {
                 workspaceScope = createScope(['file:///workspace/a/app', 'file:///workspace/b/app']);
-                const unmapped = 'file:///workspace/b/app/src/index.ts';
-                expect((await workspaceScope.resolveAccessiblePath(unmapped)).toString()).to.equal(unmapped);
+                const uri = 'file:///workspace/b/app/src/index.ts';
+                expect((await workspaceScope.resolveAccessiblePath(uri)).toString()).to.equal(uri);
             });
         });
     });
 
     describe('getRootMapping duplicate basename stability', () => {
-        it('assigns the same root to a name regardless of tryGetRoots order', () => {
+        it('assigns the same name to a root regardless of tryGetRoots order', () => {
             // First ordering
             const mockWorkspaceServiceA = {
                 tryGetRoots: () => [
@@ -2200,7 +2196,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 onWorkspaceChanged: () => ({ dispose: () => { } })
             } as unknown as WorkspaceService;
 
-            container.bind(WorkspaceService).toConstantValue(mockWorkspaceServiceA);
+            container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceServiceA));
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
             container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -2220,7 +2216,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             } as unknown as WorkspaceService;
 
             container2.bind(ILogger).to(MockLogger);
-            container2.bind(WorkspaceService).toConstantValue(mockWorkspaceServiceB);
+            container2.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceServiceB));
             container2.bind(FileService).toConstantValue({} as FileService);
             container2.bind(PreferenceService).toConstantValue({ get: () => false });
             container2.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -2229,12 +2225,10 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
             const scopeB = container2.get(WorkspaceFunctionScope);
             const mappingB = scopeB.getRootMapping();
 
-            // Both orderings should produce the same winner for 'app'
-            // (first by URI sort order: file:///workspace/a/app)
-            expect(mappingA.size).to.equal(1);
-            expect(mappingB.size).to.equal(1);
-            expect(mappingA.get('app')?.toString()).to.equal(mappingB.get('app')?.toString());
-            expect(mappingA.get('app')?.toString()).to.equal('file:///workspace/a/app');
+            for (const name of ['a/app', 'b/app']) {
+                expect(mappingA.get(name)?.toString()).to.equal(mappingB.get(name)?.toString());
+            }
+            expect(mappingA.get('a/app')?.toString()).to.equal('file:///workspace/a/app');
         });
     });
 
@@ -2248,7 +2242,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 onWorkspaceChanged: () => ({ dispose: () => { } })
             } as unknown as WorkspaceService;
 
-            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
             container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -2275,7 +2269,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 onWorkspaceChanged: () => ({ dispose: () => { } })
             } as unknown as WorkspaceService;
 
-            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
             container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -2299,7 +2293,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 onWorkspaceChanged: () => ({ dispose: () => { } })
             } as unknown as WorkspaceService;
 
-            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
             container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());
@@ -2323,7 +2317,7 @@ describe('WorkspaceFunctionScope Multi-Root Tests', () => {
                 onWorkspaceChanged: () => ({ dispose: () => { } })
             } as unknown as WorkspaceService;
 
-            container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+            container.bind(WorkspaceService).toConstantValue(withWorkspaceServiceDefaults(mockWorkspaceService));
             container.bind(FileService).toConstantValue({} as FileService);
             container.bind(PreferenceService).toConstantValue({ get: () => false });
             container.bind(AiConfigurationService).toConstantValue(makeTrustAwareReader());

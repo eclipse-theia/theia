@@ -70,7 +70,8 @@ const CONTENT_REF_SCHEMA: ToolRequestParameterProperty = {
     properties: {
         path: {
             type: 'string',
-            description: 'Workspace-relative file path. Required unless "empty" is true.'
+            description: 'File path, in the format of the workspace tools: workspace-relative (\'rootName/path\') or absolute. ' +
+                'Required unless "empty" is true.'
         },
         gitRef: {
             type: 'string',
@@ -308,9 +309,11 @@ export class UserInteractionTool implements ToolProvider {
             }
             const left = resolveContentRef(link.ref) as PathContentRef;
             if (left.gitRef) {
-                const uri = this.resolveUri(left);
+                const uri = await this.resolveUriOrNotFound(left);
                 let targetUri: URI;
-                if (uri === undefined) {
+                if (uri === 'notFound') {
+                    targetUri = this.fileNotFoundUri(left.path);
+                } else if (uri === undefined) {
                     targetUri = this.errorContentUri(left.path, left.gitRef);
                 } else if (await this.canResolveUri(uri)) {
                     targetUri = uri;
@@ -321,8 +324,8 @@ export class UserInteractionTool implements ToolProvider {
                 }
                 await open(this.openerService, targetUri);
             } else {
-                const fileUri = this.workspaceScope.resolveRelativePath(left.path);
-                if (!(await this.canResolveUri(fileUri))) {
+                const fileUri = await this.resolveUriOrNotFound(left);
+                if (fileUri === 'notFound' || fileUri === undefined || !(await this.canResolveUri(fileUri))) {
                     await open(this.openerService, this.fileNotFoundUri(left.path));
                     return;
                 }
@@ -334,10 +337,29 @@ export class UserInteractionTool implements ToolProvider {
         }
     }
 
-    protected resolveUri(
+    /**
+     * Resolves a content reference like {@link resolveUri}, or returns `'notFound'` if its path cannot
+     * be resolved, e.g. because it lacks the root name in a multi-root workspace.
+     */
+    protected async resolveUriOrNotFound(ref: PathContentRef): Promise<URI | undefined | 'notFound'> {
+        try {
+            return await this.resolveUri(ref);
+        } catch (error) {
+            this.logger.warn(`Could not resolve '${ref.path}': ${error.message}`);
+            return 'notFound';
+        }
+    }
+
+    /**
+     * Resolves a content reference with the same parsing and access checks as the workspace tools.
+     *
+     * @returns `undefined` if the reference has a git ref that no SCM repository can resolve.
+     * @throws if the path cannot be resolved or may not be accessed.
+     */
+    protected async resolveUri(
         ref: PathContentRef
-    ): URI | undefined {
-        const fileUri = this.workspaceScope.resolveRelativePath(ref.path);
+    ): Promise<URI | undefined> {
+        const fileUri = await this.workspaceScope.resolveAccessiblePath(ref.path);
         if (ref.gitRef) {
             const repo = this.scmService.findRepository(fileUri);
             if (repo) {
@@ -421,7 +443,10 @@ export class UserInteractionTool implements ToolProvider {
             return this.emptyContentUri(ref.label || '');
         }
         const resolved = resolveContentRef(ref) as PathContentRef;
-        const uri = this.resolveUri(resolved);
+        const uri = await this.resolveUriOrNotFound(resolved);
+        if (uri === 'notFound') {
+            return this.fileNotFoundUri(resolved.path);
+        }
         if (uri === undefined) {
             // No SCM provider could resolve the gitRef — surface as an actionable error.
             return this.errorContentUri(resolved.path, resolved.gitRef!);

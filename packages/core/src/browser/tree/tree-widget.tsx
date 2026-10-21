@@ -120,7 +120,7 @@ export interface TreeProps {
     /**
      * Props that are forwarded to the virtuoso list rendered. Defaults to `{}`.
      */
-    readonly viewProps?: VirtuosoProps<unknown, unknown>;
+    readonly viewProps?: Omit<VirtuosoProps<unknown, unknown>, 'width' | 'height' | 'rows'>;
 }
 
 /**
@@ -1508,9 +1508,8 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (node.selected) {
             node.selected = false;
         }
-        if (parent) {
-            node.parent = parent;
-        }
+        // Also the root, as a node without a `parent` is not a `TreeNode`.
+        node.parent = parent;
         if (Array.isArray(node.children)) {
             for (const child of node.children as TreeNode[]) {
                 this.inflateFromStorage(child, node);
@@ -1602,7 +1601,7 @@ export namespace TreeWidget {
     /**
      * Representation of the tree view properties.
      */
-    export interface ViewProps extends VirtuosoProps<unknown, unknown> {
+    export interface ViewProps extends Omit<VirtuosoProps<unknown, unknown>, 'width' | 'height' | 'rows'> {
         /**
          * The width property.
          */
