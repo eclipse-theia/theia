@@ -26,11 +26,12 @@ import {
     ToolRequest,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken, isObject, nls, unreachable, ILogger } from '@theia/core';
+import { CancellationError, CancellationToken, CancellationTokenSource, isObject, nls, unreachable, ILogger } from '@theia/core';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
 import type {
     FunctionTool,
+    ResponseCreateParamsStreaming,
     Tool,
     ResponseFunctionCallArgumentsDeltaEvent,
     ResponseFunctionCallArgumentsDoneEvent,
@@ -46,6 +47,7 @@ import { DeveloperMessageSettings } from './openai-language-model';
 import type { OpenAiModelUtils } from './openai-model-utils';
 import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools';
 import { AbstractStreamingResponseIterator } from './streaming-response-iterator';
+import { retryOpenAiStream } from './openai-streaming-retry';
 
 export const OPENAI_FUNCTION_CALL_REASONING_DATA_KEY = 'openAiFunctionCallReasoning';
 
@@ -121,12 +123,13 @@ export class OpenAiResponseApiUtils {
         // If no tools are provided, use simple response handling
         if (!tools || tools.length === 0) {
             if (isStreaming) {
-                const stream = this.streamWithReasoningSummaryFallback(effectiveSettings, modelId, sentSettings => openai.responses.stream({
+                const stream = this.streamWithReasoningSummaryFallback(effectiveSettings, modelId, sentSettings => this.streamResponse(openai, {
                     model: model as ResponsesModel,
                     instructions,
                     input,
-                    ...sentSettings
-                }));
+                    ...sentSettings,
+                    stream: true
+                }, cancellationToken));
                 return { stream: this.createSimpleResponseApiStreamIterator(stream, cancellationToken) };
             } else {
                 const response = await this.sendWithReasoningSummaryFallback(effectiveSettings, modelId, sentSettings => openai.responses.create({
@@ -280,6 +283,15 @@ export class OpenAiResponseApiUtils {
         }
     }
 
+    streamResponse(openai: OpenAI, parameters: ResponseCreateParamsStreaming, cancellationToken?: CancellationToken): AsyncIterable<ResponseStreamEvent> {
+        return retryOpenAiStream(
+            async signal => openai.responses.create(parameters, { signal }),
+            openai.maxRetries ?? 3,
+            event => ['response.created', 'response.queued', 'response.in_progress', 'response.metadata'].includes(event.type),
+            cancellationToken
+        );
+    }
+
     protected createSimpleResponseApiStreamIterator(
         stream: AsyncIterable<ResponseStreamEvent>,
         cancellationToken?: CancellationToken
@@ -296,7 +308,7 @@ export class OpenAiResponseApiUtils {
                 try {
                     for await (const event of stream) {
                         if (cancellationToken?.isCancellationRequested) {
-                            break;
+                            throw new CancellationError();
                         }
 
                         if (event.type === 'response.output_text.delta') {
@@ -502,6 +514,7 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
     protected currentResponseText = '';
     protected pendingReasoningItems: ResponseInputItem[] = [];
     protected currentWebSearchReplayItems: ResponseInputItem[] = [];
+    protected readonly streamCancellation = new CancellationTokenSource();
 
     constructor(
         protected readonly openai: OpenAI,
@@ -523,6 +536,13 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
         this.currentInput = input;
         this.tools = utils.convertToolsForResponseApi(request.tools, request.deferredToolIds, request.serverTools);
 
+        this.toDispose.push(this.streamCancellation);
+        if (cancellationToken) {
+            this.toDispose.push(cancellationToken.onCancellationRequested(() => {
+                this.terminalError = new CancellationError();
+                this.dispose();
+            }));
+        }
         // Start the first iteration
         this.startIteration();
     }
@@ -533,6 +553,10 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
                 this.logger.debug(`Starting Response API iteration ${this.iteration} with ${this.currentInput.length} input messages`);
 
                 await this.processStream();
+                if (this.done || this.cancellationToken?.isCancellationRequested) {
+                    this.dispose();
+                    return;
+                }
 
                 // Check if we have tool calls that need execution
                 if (this.currentToolCalls.size === 0) {
@@ -552,8 +576,10 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
             // Cancelled, or abandoned by the consumer.
             this.dispose();
         } catch (error) {
-            this.terminalError = error instanceof Error ? error : new Error(String(error));
-            this.dispose();
+            if (!this.done) {
+                this.terminalError = error instanceof Error ? error : new Error(String(error));
+                this.dispose();
+            }
         }
     }
 
@@ -565,13 +591,14 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
 
         if (this.isStreaming) {
             // Use streaming API
-            const stream = this.utils.streamWithReasoningSummaryFallback(this.settings, this.modelId, settings => this.openai.responses.stream({
+            const stream = this.utils.streamWithReasoningSummaryFallback(this.settings, this.modelId, settings => this.utils.streamResponse(this.openai, {
                 model: this.model as ResponsesModel,
                 instructions: this.instructions,
                 input: this.currentInput,
                 tools: this.tools,
-                ...settings
-            }));
+                ...settings,
+                stream: true
+            }, this.streamCancellation.token));
 
             for await (const event of stream) {
                 if (this.done || this.cancellationToken?.isCancellationRequested) {
