@@ -45,6 +45,8 @@ export const DENY_LATEST_TOOL_CONFIRMATION_COMMAND = Command.toLocalizedCommand(
 export const CHAT_VIEW_WIDGET_MARKER = Symbol.for('theiaChatViewWidget');
 
 export function isChatViewWidget(widget: unknown): widget is import('./chat-view-widget').ChatViewWidget {
-    return typeof widget === 'object' && widget !== null
-        && (widget as { [CHAT_VIEW_WIDGET_MARKER]?: unknown })[CHAT_VIEW_WIDGET_MARKER] === true;
+    if (typeof widget !== 'object' || !widget) {
+        return false;
+    }
+    return (widget as { [CHAT_VIEW_WIDGET_MARKER]?: unknown })[CHAT_VIEW_WIDGET_MARKER] === true;
 }

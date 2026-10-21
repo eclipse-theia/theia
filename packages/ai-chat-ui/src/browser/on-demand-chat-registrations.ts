@@ -30,7 +30,7 @@ import {
     WidgetFactory,
     KeybindingContribution
 } from '@theia/core/lib/browser';
-import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { EditorSelectionResolver } from '@theia/editor/lib/browser/editor-manager';
 import { AIChatContribution } from './ai-chat-ui-contribution';
@@ -93,7 +93,6 @@ import { ChatSessionNotificationContribution } from './chat-session-notification
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
-import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 /**
  * Manually registers contributions whose bindings only appear in the

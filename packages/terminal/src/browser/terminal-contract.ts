@@ -60,8 +60,10 @@ export function nextTerminalCreationToken(): string {
 export const TERMINAL_WIDGET_MARKER = Symbol.for('theiaTerminalWidget');
 
 export function isTerminalWidget(widget: unknown): widget is TerminalWidget {
-    return typeof widget === 'object' && widget !== null
-        && (widget as { [TERMINAL_WIDGET_MARKER]?: unknown })[TERMINAL_WIDGET_MARKER] === true;
+    if (typeof widget !== 'object' || !widget) {
+        return false;
+    }
+    return (widget as { [TERMINAL_WIDGET_MARKER]?: unknown })[TERMINAL_WIDGET_MARKER] === true;
 }
 
 /**

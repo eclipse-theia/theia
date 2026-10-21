@@ -157,7 +157,7 @@ export class TestOutputWidget extends BaseWidget {
         if (this.term) {
             this.openTerm();
         } else {
-            void this.ensureTerm().then(() => this.openTerm());
+            this.ensureTerm().then(() => this.openTerm());
         }
     }
 
