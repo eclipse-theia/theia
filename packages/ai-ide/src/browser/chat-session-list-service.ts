@@ -16,9 +16,9 @@
 
 import { ChatService, ChatSession, ChatSessionMetadata, ChatSessionStatus } from '@theia/ai-chat';
 import { PERSISTED_SESSION_LIMIT_PREF, SESSION_STORAGE_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
-import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
+import { isChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-contract';
 import { DisposableCollection, Emitter, Event, ILogger, PreferenceService } from '@theia/core';
-import { ApplicationShell } from '@theia/core/lib/browser';
+import { ApplicationShell, Widget } from '@theia/core/lib/browser';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { UnreadStateProvider } from './chat-session-item';
 import { SectionedSessions, SessionRow, parentIdOf } from './chat-session-list-components';
@@ -114,7 +114,7 @@ export class ChatSessionListService implements UnreadStateProvider {
             const current = session.model.getRequests();
             if (current.length > state.seenRequests || this.countCompleted(current) > state.seenCompleted) {
                 const activeSession = this.chatService.getActiveSession();
-                const chatViewFocused = ChatViewWidget.findActive(this.shell) !== undefined;
+                const chatViewFocused = this.isChatViewFocused();
                 if (chatViewFocused && activeSession && activeSession.id === session.id) {
                     state.seenRequests = current.length;
                     state.seenCompleted = this.countCompleted(current);
@@ -124,6 +124,29 @@ export class ChatSessionListService implements UnreadStateProvider {
                 }
             }
         }, undefined, state.listener);
+    }
+
+    /**
+     * Whether the chat view is the active widget or holds the current focus
+     * (e.g. inside its input or tree). Equivalent to
+     * `ChatViewWidget.findActive(this.shell) !== undefined`, but based on the
+     * widget marker to avoid a static import of the chat view widget.
+     */
+    protected isChatViewFocused(): boolean {
+        if (isChatViewWidget(this.shell.activeWidget)) {
+            return true;
+        }
+        const activeElement = document.activeElement;
+        if (activeElement instanceof HTMLElement) {
+            let widget: Widget | undefined = this.shell.findWidgetForElement(activeElement);
+            while (widget) {
+                if (isChatViewWidget(widget)) {
+                    return true;
+                }
+                widget = widget.parent ?? undefined;
+            }
+        }
+        return false;
     }
 
     protected markSessionRead(sessionId: string): void {

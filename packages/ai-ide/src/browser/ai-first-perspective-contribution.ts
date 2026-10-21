@@ -20,7 +20,7 @@ import { PerspectiveContribution, PerspectiveChromeOptions, PerspectiveService }
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { EXPLORER_VIEW_CONTAINER_ID } from '@theia/navigator/lib/browser';
 import { SCM_VIEW_CONTAINER_ID } from '@theia/scm/lib/browser/scm-contribution';
-import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
+import { CHAT_VIEW_WIDGET_ID } from '@theia/ai-chat-ui/lib/browser/chat-contract';
 import { AISessionsWidget } from './ai-sessions-widget';
 
 export const AI_FIRST_PERSPECTIVE_ID = 'ai-first';
@@ -36,7 +36,7 @@ export class AIFirstPerspectiveContribution implements PerspectiveContribution {
             id: AI_FIRST_PERSPECTIVE_ID,
             label: nls.localize('theia/ai-ide/perspective/aiFirst', 'AI First'),
             viewPlacements: new Map<string, ApplicationShell.Area>([
-                [ChatViewWidget.ID, 'main'],
+                [CHAT_VIEW_WIDGET_ID, 'main'],
                 [EXPLORER_VIEW_CONTAINER_ID, 'right'],
                 [SCM_VIEW_CONTAINER_ID, 'right'],
                 [AISessionsWidget.ID, 'left']
