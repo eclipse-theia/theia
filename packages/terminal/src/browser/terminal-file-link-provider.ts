@@ -206,16 +206,6 @@ export class LocalFileLinkProvider extends FileLinkProvider {
             return undefined;
         }
         const cwd = await this.getCwd(terminal);
-        const path = new Path(searchTerm);
-        if (path.isAbsolute) {
-            const fileUri = cwd.withPath(path).normalizePath();
-            const isInWorkspace = this.workspaceService.tryGetRoots().some(root =>
-                root.resource.isEqualOrParent(fileUri, !OS.backend.isWindows));
-            if (isInWorkspace && await this.isValidFileURI(fileUri)) {
-                return fileUri;
-            }
-            return undefined;
-        }
         // remove any leading ./, ../ etc. as they can't be searched
         searchTerm = searchTerm.replace(/^(\.+[\\/])+/, '');
         const workspaceRoots = this.workspaceService.tryGetRoots().map(root => root.resource.toString());
