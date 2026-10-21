@@ -161,7 +161,10 @@ export class CollaborationInstance implements Disposable {
             this.messageService.error(message);
             this.dispose();
         });
-        this.yjsProvider = new OpenCollaborationYjsProvider(connection, this.yjs, this.yjsAwareness);
+        // Repairs updates this peer missed; the other Open Collaboration Tools clients use the same interval.
+        this.yjsProvider = new OpenCollaborationYjsProvider(connection, this.yjs, this.yjsAwareness, {
+            resyncTimer: 10_000
+        });
         this.yjsProvider.connect();
         this.toDispose.push(Disposable.create(() => this.yjs.destroy()));
         this.toDispose.push(this.yjsProvider);
