@@ -850,7 +850,10 @@ export class ElectronMainApplication {
                     if (msg && typeof msg === 'object' && 'type' in msg && msg.type === 'resolve-proxy') {
                         session.defaultSession.resolveProxy(msg.url).then(
                             result => backendProcess.send({ type: 'resolve-proxy-response', id: msg.id, result }),
-                            () => backendProcess.send({ type: 'resolve-proxy-response', id: msg.id, result: undefined })
+                            error => {
+                                console.warn(`Proxy resolution failed for ${msg.url}:`, error);
+                                backendProcess.send({ type: 'resolve-proxy-response', id: msg.id, result: undefined });
+                            }
                         );
                         return;
                     }

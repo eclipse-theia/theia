@@ -35,8 +35,15 @@ export class ElectronBackendRequestService extends NodeRequestService {
         try {
             const proxy = await this.resolveProxy(url);
             if (proxy && proxy !== 'DIRECT') {
-                const proxyHost = proxy.split(' ')[1];
-                return this.buildProxyUrl(url, proxyHost);
+                // Handle fallback proxies separated by semicolons, e.g., "PROXY proxy:8080; DIRECT"
+                const firstProxy = proxy.split(';')[0].trim();
+                const proxyType = firstProxy.split(' ')[0];  // e.g., "PROXY", "SOCKS5", "HTTPS"
+                const proxyHost = firstProxy.split(' ')[1];
+                if (!proxyHost) {
+                    // Malformed proxy string, fall back
+                    return super.getProxyUrl(url);
+                }
+                return this.buildProxyUrl(url, proxyHost, proxyType);
             }
         } catch (e) {
             this.logger.error('Could not resolve electron proxy.', e);
@@ -69,16 +76,18 @@ export class ElectronBackendRequestService extends NodeRequestService {
         });
     }
 
-    protected buildProxyUrl(url: string, proxyHost: string): string {
+    protected buildProxyUrl(url: string, proxyHost: string, proxyType: string): string {
         if (proxyHost.startsWith('http://') || proxyHost.startsWith('https://')) {
             return proxyHost;
         }
-        if (url.startsWith('http://')) {
-            return 'http://' + proxyHost;
-        } else if (url.startsWith('https://')) {
+        // Use proxy type to determine the scheme, not the destination URL's scheme
+        if (proxyType === 'HTTPS') {
             return 'https://' + proxyHost;
+        } else if (proxyType === 'SOCKS5') {
+            return 'socks5://' + proxyHost;
         }
-        return proxyHost;
+        // Default to HTTP for "PROXY" type or unknown types
+        return 'http://' + proxyHost;
     }
 
     protected override async processOptions(options: NodeRequestOptions): Promise<NodeRequestOptions> {
