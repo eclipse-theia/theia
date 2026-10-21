@@ -39,7 +39,7 @@ import {
 } from '@theia/core/lib/browser';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl, nextTerminalCreationToken } from './terminal-widget-impl';
+import { TERMINAL_WIDGET_FACTORY_ID, TERMINAL_WIDGET_LABEL, TerminalWidgetFactoryOptions, nextTerminalCreationToken } from './terminal-contract';
 import { TerminalService } from './base/terminal-service';
 import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 import { ContributedTerminalProfileStore, NULL_PROFILE, TerminalProfile, TerminalProfileService, TerminalProfileStore, UserTerminalProfileStore } from './terminal-profile-service';
@@ -776,7 +776,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        menus.registerSubmenu(TerminalMenus.TERMINAL, TerminalWidgetImpl.LABEL);
+        menus.registerSubmenu(TerminalMenus.TERMINAL, TERMINAL_WIDGET_LABEL);
         menus.registerMenuAction(TerminalMenus.TERMINAL_NEW, {
             commandId: TerminalCommands.NEW.id,
             label: nls.localizeByDefault('New Terminal'),

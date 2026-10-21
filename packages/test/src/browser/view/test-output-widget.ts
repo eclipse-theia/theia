@@ -13,8 +13,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { Terminal } from 'xterm';
-import { FitAddon } from 'xterm-addon-fit';
+import type { Terminal } from 'xterm';
+import type { FitAddon } from 'xterm-addon-fit';
 
 import { BaseWidget, Message, Widget, codicon, isFirefox } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
@@ -32,9 +32,10 @@ export class TestOutputWidget extends BaseWidget {
 
     static ID = 'test-output-view';
 
-    protected term: Terminal;
+    protected term: Terminal | undefined;
+    protected fitAddon: FitAddon | undefined;
     protected disposeOnSetInput = new DisposableCollection();
-    protected fitAddon: FitAddon;
+    protected termReady: Promise<void> | undefined;
 
     constructor() {
         super();
@@ -48,80 +49,115 @@ export class TestOutputWidget extends BaseWidget {
 
     @postConstruct()
     init(): void {
-        this.term = new Terminal({
-            disableStdin: true,
-            cursorStyle: 'bar',
-            fontFamily: this.preferences['terminal.integrated.fontFamily'],
-            fontSize: this.preferences['terminal.integrated.fontSize'],
-            fontWeight: this.preferences['terminal.integrated.fontWeight'],
-            fontWeightBold: this.preferences['terminal.integrated.fontWeightBold'],
-            drawBoldTextInBrightColors: this.preferences['terminal.integrated.drawBoldTextInBrightColors'],
-            letterSpacing: this.preferences['terminal.integrated.letterSpacing'],
-            lineHeight: this.preferences['terminal.integrated.lineHeight'],
-            scrollback: this.preferences['terminal.integrated.scrollback'],
-            fastScrollSensitivity: this.preferences['terminal.integrated.fastScrollSensitivity'],
-            theme: this.themeService.theme
-        });
-
-        this.fitAddon = new FitAddon();
-        this.term.loadAddon(this.fitAddon);
         this.setInput(this.uiModel.selectedOutputSource);
         this.uiModel.onDidChangeSelectedOutputSource(source => this.setInput(source));
 
-        this.toDispose.push(Disposable.create(() =>
-            this.term.dispose()
-        ));
+        this.toDispose.push(Disposable.create(() => {
+            this.term?.dispose();
+            this.termReady = undefined;
+        }));
     }
 
-    setInput(selectedOutputSource: TestOutputSource | undefined): void {
+    /**
+     * Lazy xterm initialization: the heavy stack (xterm and its fit addon) is
+     * loaded via dynamic import on first actual use of the test output widget
+     * and stays out of application startup.
+     */
+    protected ensureTerm(): Promise<void> {
+        this.termReady ??= (async () => {
+            const { Terminal } = await import('xterm');
+            const { FitAddon } = await import('xterm-addon-fit');
+            this.term = new Terminal({
+                disableStdin: true,
+                cursorStyle: 'bar',
+                fontFamily: this.preferences['terminal.integrated.fontFamily'],
+                fontSize: this.preferences['terminal.integrated.fontSize'],
+                fontWeight: this.preferences['terminal.integrated.fontWeight'],
+                fontWeightBold: this.preferences['terminal.integrated.fontWeightBold'],
+                drawBoldTextInBrightColors: this.preferences['terminal.integrated.drawBoldTextInBrightColors'],
+                letterSpacing: this.preferences['terminal.integrated.letterSpacing'],
+                lineHeight: this.preferences['terminal.integrated.lineHeight'],
+                scrollback: this.preferences['terminal.integrated.scrollback'],
+                fastScrollSensitivity: this.preferences['terminal.integrated.fastScrollSensitivity'],
+                theme: this.themeService.theme
+            });
+            this.fitAddon = new FitAddon();
+            this.term.loadAddon(this.fitAddon);
+            if (this.node) {
+                this.openTerm();
+            }
+        })();
+        return this.termReady;
+    }
+
+    async setInput(selectedOutputSource: TestOutputSource | undefined): Promise<void> {
+        await this.ensureTerm();
+        const term = this.term;
+        if (!term) {
+            return;
+        }
         this.disposeOnSetInput.dispose();
         this.disposeOnSetInput = new DisposableCollection();
-        this.term.clear();
+        term.clear();
         if (selectedOutputSource) {
             if (selectedOutputSource.output.length === 0 && selectedOutputSource.noOutputMessage) {
-                this.term.writeln(selectedOutputSource.noOutputMessage);
+                term.writeln(selectedOutputSource.noOutputMessage);
             } else {
-                selectedOutputSource.output.forEach(item => this.term.writeln(item.output));
+                selectedOutputSource.output.forEach(item => term.writeln(item.output));
             }
             this.disposeOnSetInput.push(selectedOutputSource.onDidAddTestOutput(items => {
-                items.forEach(item => this.term.writeln(item.output));
+                items.forEach(item => term.writeln(item.output));
             }));
-            this.term.scrollToBottom();
+            term.scrollToBottom();
+        }
+    }
+
+    protected openTerm(): void {
+        const term = this.term;
+        if (!term) {
+            return;
+        }
+        term.open(this.node);
+        this.applyFirefoxWorkarounds(term);
+    }
+
+    protected applyFirefoxWorkarounds(term: Terminal): void {
+        if (!isFirefox) {
+            return;
+        }
+        // monkey patching intersection observer handling for secondary window support
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const renderService: any = (term as any)._core._renderService;
+        const originalFunc: (entry: IntersectionObserverEntry) => void = renderService._onIntersectionChange.bind(renderService);
+        const replacement = function (entry: IntersectionObserverEntry): void {
+            if (entry.target.ownerDocument !== document) {
+                // in Firefox, the intersection observer always reports the widget as non-intersecting if the dom element
+                // is in a different document from when the IntersectionObserver started observing. Since we know
+                // that the widget is always "visible" when in a secondary window, so we mark the entry as "intersecting"
+                const patchedEvent: IntersectionObserverEntry = {
+                    ...entry,
+                    isIntersecting: true,
+                };
+                originalFunc(patchedEvent);
+            } else {
+                originalFunc(entry);
+            }
+        };
+
+        renderService._onIntersectionChange = replacement;
+
+        // The software scrollbars don't work with xterm.js, so we disable the scrollbar if we are on firefox.
+        if (term.element) {
+            (term.element.children.item(0) as HTMLElement).style.overflow = 'hidden';
         }
     }
 
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        this.term.open(this.node);
-
-        if (isFirefox) {
-            // monkey patching intersection observer handling for secondary window support
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const renderService: any = (this.term as any)._core._renderService;
-            const originalFunc: (entry: IntersectionObserverEntry) => void = renderService._onIntersectionChange.bind(renderService);
-            const replacement = function (entry: IntersectionObserverEntry): void {
-                if (entry.target.ownerDocument !== document) {
-                    // in Firefox, the intersection observer always reports the widget as non-intersecting if the dom element
-                    // is in a different document from when the IntersectionObserver started observing. Since we know
-                    // that the widget is always "visible" when in a secondary window, so we mark the entry as "intersecting"
-                    const patchedEvent: IntersectionObserverEntry = {
-                        ...entry,
-                        isIntersecting: true,
-                    };
-                    originalFunc(patchedEvent);
-                } else {
-                    originalFunc(entry);
-                }
-            };
-
-            renderService._onIntersectionChange = replacement;
-        }
-
-        if (isFirefox) {
-            // The software scrollbars don't work with xterm.js, so we disable the scrollbar if we are on firefox.
-            if (this.term.element) {
-                (this.term.element.children.item(0) as HTMLElement).style.overflow = 'hidden';
-            }
+        if (this.term) {
+            this.openTerm();
+        } else {
+            void this.ensureTerm().then(() => this.openTerm());
         }
     }
 
@@ -136,8 +172,8 @@ export class TestOutputWidget extends BaseWidget {
         if (this.isDisposed) {
             return;
         }
-        const geo = this.fitAddon.proposeDimensions();
-        if (geo) {
+        const geo = this.fitAddon?.proposeDimensions();
+        if (geo && this.term) {
             const cols = geo.cols;
             const rows = geo.rows - 1; // subtract one row for margin
             this.term.resize(cols, rows);

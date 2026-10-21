@@ -36,6 +36,7 @@ import {
     TerminalBlock,
     TerminalCommandHistoryState
 } from './base/terminal-widget';
+import { TERMINAL_WIDGET_LABEL, TERMINAL_WIDGET_MARKER, TerminalContribution } from './terminal-contract';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences } from '../common/terminal-preferences';
 import URI from '@theia/core/lib/common/uri';
@@ -57,34 +58,7 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { cleanTerminalTitle, guessShellTypeFromExecutable } from '../common/shell-type';
 import { TerminalCommandHistoryStateFactory } from './terminal-command-history';
 
-export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
-
-export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOptions> {
-    /**
-     * An opaque, unique string per terminal. Historically a date string, but
-     * it should not be interpreted as a date. Callers should use
-     * {@link nextTerminalCreationToken} to obtain a value that is guaranteed
-     * unique within the current process.
-     */
-    created: string
-}
-
-let terminalCreationCounter = 0;
-/**
- * Produce a token suitable for {@link TerminalWidgetFactoryOptions.created}
- * that is guaranteed unique within the current process. Combines the current
- * wall-clock time with a monotonically increasing counter so callers cannot
- * accidentally collide even when constructing terminals within the same
- * millisecond.
- */
-export function nextTerminalCreationToken(): string {
-    return `${Date.now()}-${terminalCreationCounter++}`;
-}
-
-export const TerminalContribution = Symbol('TerminalContribution');
-export interface TerminalContribution {
-    onCreate(term: TerminalWidgetImpl): void;
-}
+export { TerminalContribution } from './terminal-contract';
 
 class TerminalBufferImpl implements TerminalBuffer {
     constructor(private readonly term: Terminal) {
@@ -121,7 +95,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     secondaryWindow: Window | undefined;
     location: TerminalLocationOptions;
 
-    static LABEL = nls.localizeByDefault('Terminal');
+    static LABEL = TERMINAL_WIDGET_LABEL;
+
+    /** Marker enabling `isTerminalWidget` without a static import of this class. */
+    readonly [TERMINAL_WIDGET_MARKER] = true;
 
     exitStatus: TerminalExitStatus | undefined;
 
