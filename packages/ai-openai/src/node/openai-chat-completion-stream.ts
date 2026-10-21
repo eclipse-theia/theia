@@ -15,10 +15,11 @@
 // *****************************************************************************
 
 import { formatToolCallContentForModel, ToolCallExecutor, ToolCallResult, UserRequest } from '@theia/ai-core';
-import { CancellationError, CancellationToken, Disposable, ILogger } from '@theia/core';
+import { CancellationError, CancellationToken, CancellationTokenSource, ILogger } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
 import { AbstractStreamingResponseIterator } from './streaming-response-iterator';
+import { retryOpenAiStream } from './openai-streaming-retry';
 import {
     ChatCompletionAssistantMessageParam,
     ChatCompletionChunk,
@@ -51,7 +52,7 @@ export interface ChatCompletionToolLoopOptions {
     readonly messages: ChatCompletionMessageParam[];
     /** Additional request settings (may include `stream_options`, temperature, etc.). */
     readonly settings: Record<string, unknown>;
-    readonly tools: ChatCompletionTool[];
+    readonly tools?: ChatCompletionTool[];
     readonly maxRetries: number;
     readonly cancellationToken?: CancellationToken;
 }
@@ -70,12 +71,7 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
 
     protected messages: ChatCompletionMessageParam[];
 
-    /**
-     * Aborts the provider request. Its signal is handed to every `create()` call, so that it covers the
-     * request while it is still in flight just as well as the chunk stream that it eventually yields.
-     * The OpenAI SDK forwards the abort to the stream's own controller.
-     */
-    protected readonly abortController = new AbortController();
+    protected readonly streamCancellation = new CancellationTokenSource();
 
     @inject(ChatCompletionToolLoopOptions)
     protected readonly options: ChatCompletionToolLoopOptions;
@@ -91,7 +87,7 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
         this.messages = [...this.options.messages];
         // Abort the provider request whenever the iterator terminates, including when the consumer
         // abandons it (`return()`), so that we never leave a request running for nobody.
-        this.toDispose.push(Disposable.create(() => this.abortController.abort()));
+        this.toDispose.push(this.streamCancellation);
         if (this.options.cancellationToken) {
             this.toDispose.push(this.options.cancellationToken.onCancellationRequested(() => this.cancel()));
         }
@@ -159,13 +155,19 @@ export class ChatCompletionStreamingAsyncIterator extends AbstractStreamingRespo
             messages: this.messages,
             stream: true,
             tools: this.options.tools,
-            tool_choice: 'auto',
+            tool_choice: this.options.tools?.length ? 'auto' : undefined,
             ...this.options.settings
         } as ChatCompletionCreateParamsStreaming;
-        const stream = await this.options.openai.chat.completions.create(body, {
-            maxRetries: this.options.maxRetries,
-            signal: this.abortController.signal
-        }) as unknown as ChatCompletionChunkStream;
+        const stream = retryOpenAiStream(
+            async signal => await this.options.openai.chat.completions.create(body, {
+                maxRetries: this.options.maxRetries,
+                signal
+            }) as unknown as ChatCompletionChunkStream,
+            this.options.maxRetries,
+            chunk => !chunk.usage && chunk.choices.every(choice => !choice.finish_reason
+                && Object.keys(choice.delta ?? {}).every(key => key === 'role')),
+            this.streamCancellation.token
+        );
 
         for await (const chunk of stream) {
             if (this.done || this.cancellationRequested) {
