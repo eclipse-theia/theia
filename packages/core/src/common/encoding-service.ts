@@ -40,6 +40,11 @@ const AUTO_ENCODING_GUESS_MAX_BYTES = 512 * 128;  // set an upper limit for the 
 // - UTF-32: we do not support this encoding in VSCode
 const IGNORE_ENCODINGS = ['ascii', 'utf-16', 'utf-32'];
 
+const JSCHARDET_TO_ICONV_ENCODINGS: { [name: string]: string } = {
+    'ibm866': 'cp866',
+    'big5': 'cp950'
+};
+
 export interface ResourceEncoding {
     encoding: string
     hasBOM: boolean
@@ -67,7 +72,7 @@ export class EncodingService {
     encode(value: string, options?: ResourceEncoding): BinaryBuffer {
         let encoding = options?.encoding;
         const addBOM = options?.hasBOM;
-        encoding = this.toIconvEncoding(encoding);
+        encoding = this.toNodeEncoding(encoding);
         if (encoding === UTF8 && !addBOM) {
             return BinaryBuffer.fromString(value);
         }
@@ -77,20 +82,27 @@ export class EncodingService {
 
     decode(value: BinaryBuffer, encoding?: string): string {
         const buffer = Buffer.from(value.buffer);
-        encoding = this.toIconvEncoding(encoding);
+        encoding = this.toNodeEncoding(encoding);
         return iconv.decode(buffer, encoding);
     }
 
     exists(encoding: string): boolean {
-        encoding = this.toIconvEncoding(encoding);
+        encoding = this.toNodeEncoding(encoding);
         return iconv.encodingExists(encoding);
     }
 
-    toIconvEncoding(encoding?: string): string {
+    toNodeEncoding(encoding?: string): string {
         if (encoding === UTF8_with_bom || !encoding) {
             return UTF8; // iconv does not distinguish UTF 8 with or without BOM, so we need to help it
         }
         return encoding;
+    }
+
+    toIconvLiteEncoding(encodingName: string): string {
+        const normalizedEncodingName = encodingName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        const mapped = JSCHARDET_TO_ICONV_ENCODINGS[normalizedEncodingName];
+
+        return mapped || normalizedEncodingName;
     }
 
     async toResourceEncoding(encoding: string, options: {
@@ -238,7 +250,7 @@ export class EncodingService {
             return undefined; // see comment above why we ignore some encodings
         }
 
-        return this.toIconvEncoding(guessed.encoding);
+        return this.toIconvLiteEncoding(guessed.encoding);
     }
 
     decodeStream(source: BinaryBufferReadableStream, options: DecodeStreamOptions): Promise<DecodeStreamResult> {
@@ -262,7 +274,7 @@ export class EncodingService {
                     detected.encoding = await options.overwriteEncoding(detected.encoding);
 
                     // decode and write buffered content
-                    decoder = iconv.getDecoder(this.toIconvEncoding(detected.encoding));
+                    decoder = iconv.getDecoder(this.toNodeEncoding(detected.encoding));
                     const decoded = decoder.write(Buffer.from(BinaryBuffer.concat(bufferedChunks).buffer));
                     target.write(decoded);
 
@@ -328,7 +340,7 @@ export class EncodingService {
     async encodeStream(value: string | Readable<string> | undefined, options?: ResourceEncoding): Promise<BinaryBuffer | BinaryBufferReadable | undefined> {
         let encoding = options?.encoding;
         const addBOM = options?.hasBOM;
-        encoding = this.toIconvEncoding(encoding);
+        encoding = this.toNodeEncoding(encoding);
         if (encoding === UTF8 && !addBOM) {
             return value === undefined ? undefined : typeof value === 'string' ?
                 BinaryBuffer.fromString(value) : BinaryBufferReadable.fromReadable(value);
