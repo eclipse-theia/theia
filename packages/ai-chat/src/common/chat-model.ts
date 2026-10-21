@@ -699,6 +699,8 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     result?: ToolCallResult;
     /** Timeout in seconds for confirmation dialogs. 0 means no timeout. */
     confirmationTimeout?: number;
+    /** Absolute timestamp in milliseconds when the pending confirmation will time out. */
+    confirmationDeadline?: number;
     confirmed: Promise<boolean>;
     /** Resolves when the tool call requires user confirmation (show Allow/Deny UI). */
     needsUserConfirmation: Promise<void>;
@@ -2612,6 +2614,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _result?: ToolCallResult;
     protected _data?: Record<string, string>;
     protected _confirmationTimeout?: number;
+    confirmationDeadline?: number;
     protected _needsUserConfirmation: Promise<void>;
     protected _needsUserConfirmationResolver?: () => void;
     protected _isAwaitingUserConfirmation = false;
