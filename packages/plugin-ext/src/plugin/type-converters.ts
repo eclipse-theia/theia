@@ -1058,7 +1058,7 @@ export function toTaskDefinition(taskDto: TaskDto): theia.TaskDefinition {
         type: type
     };
 
-    if (executionType === 'customExecution' || types.CustomExecution.is({ command, args, options })) {
+    if (executionType === 'customExecution') {
         // if taskType is customExecution, we need to put all the information into taskDefinition,
         // because some parameters may be in taskDefinition.
         taskDefinition.label = label;
