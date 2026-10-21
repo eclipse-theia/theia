@@ -687,14 +687,14 @@ export class KeybindingRegistry {
 
     /**
      * Get the accelerator of the first keybinding of a command that is enabled in the given context.
-     * If no such keybinding exists, the first enabled keybinding that is only displayed for the command is used,
-     * see {@link common.Keybinding#displayFor}.
+     * If no such keybinding exists and the command is enabled, the first enabled keybinding that is only displayed
+     * for the command is used, see {@link common.Keybinding#displayFor}.
      * Physical accelerators (for native menus) are omitted for inactive keybindings.
      */
     acceleratorForCommand(commandId: string, context: HTMLElement | undefined, form: AcceleratorForm = 'logical'): string[] {
         const isEnabled = (candidate: ScopedKeybinding) => this.isEnabledInScope(candidate, context);
         const binding = this.getKeybindingsForCommand(commandId).find(isEnabled)
-            ?? this.getDisplayKeybindingsForCommand(commandId).find(isEnabled);
+            ?? (this.commandRegistry.isEnabled(commandId) ? this.getDisplayKeybindingsForCommand(commandId).find(isEnabled) : undefined);
         if (!binding) {
             return [];
         }
