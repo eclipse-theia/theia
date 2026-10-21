@@ -42,13 +42,16 @@ import { ChatCompletionStreamingAsyncIterator, ChatCompletionToolLoopOptions } f
 /** A fake of the OpenAI chat-completion stream: async-iterable over chunks and an abortable controller. */
 class FakeStream {
     readonly controller = { abort: sinon.spy() } as unknown as AbortController;
-    constructor(protected readonly chunks: any[], protected readonly gate?: Promise<void>) { }
+    constructor(protected readonly chunks: any[], protected readonly gate?: Promise<void>, protected readonly error?: Error) { }
     async *[Symbol.asyncIterator](): AsyncIterator<any> {
         if (this.gate) {
             await this.gate;
         }
         for (const chunk of this.chunks) {
             yield chunk;
+        }
+        if (this.error) {
+            throw this.error;
         }
     }
 }
@@ -136,7 +139,7 @@ function makeIterator(
         request: overrides.request ?? defaultRequest,
         messages: overrides.messages ?? [{ role: 'user', content: 'hi' }],
         settings: overrides.settings ?? {},
-        tools: overrides.tools ?? [{ type: 'function', function: { name: 'a' } } as any],
+        tools: 'tools' in overrides ? overrides.tools : [{ type: 'function', function: { name: 'a' } } as any],
         maxRetries: overrides.maxRetries ?? 0,
         cancellationToken: overrides.cancellationToken
     };
@@ -199,6 +202,85 @@ describe('ChatCompletionStreamingAsyncIterator', () => {
 
         expect(parts.filter(isTextResponsePart).map(p => p.content)).to.deep.equal(['Hello ', 'world']);
         expect(openai.calls).to.have.lengthOf(1);
+    });
+
+    for (const withTools of [false, true]) {
+        it(`quietly retries a busy stream after a role-only chunk ${withTools ? 'with tools' : 'without tools'}`, async () => {
+            const clock = sinon.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+            try {
+                const busy = Object.assign(new Error('Model too busy'), { code: 'server_error' });
+                const openai = fakeOpenAi([
+                    new FakeStream([{ choices: [{ delta: { role: 'assistant' } }] }], undefined, busy),
+                    new FakeStream([textChunk('success')])
+                ]);
+                const settled = collectUntilSettled(makeIterator(openai, {
+                    maxRetries: 1,
+                    tools: withTools ? [{ type: 'function', function: { name: 'a' } } as any] : undefined
+                }));
+                await clock.tickAsync(1000);
+                const { parts, error } = await settled;
+                expect(error).to.equal(undefined);
+                expect(parts).to.deep.equal([{ content: 'success' }]);
+                expect(openai.calls).to.have.lengthOf(2);
+                if (!withTools) {
+                    for (const body of openai.calls) {
+                        const wireBody = JSON.parse(JSON.stringify(body));
+                        expect(wireBody).not.to.have.property('tools');
+                        expect(wireBody).not.to.have.property('tool_choice');
+                    }
+                }
+            } finally {
+                clock.restore();
+            }
+        });
+    }
+
+    for (const [name, chunk] of [
+        ['text', textChunk('partial')],
+        ['reasoning', { choices: [{ delta: { reasoning_content: 'thinking' } }] }],
+        ['tool ID', toolIdOnlyChunk(0, 'call-a')],
+        ['tool arguments', toolChunk(0, 'call-a', 'a', '{')]
+    ] as const) {
+        it(`does not retry a busy stream after a ${name} delta`, async () => {
+            const busy = Object.assign(new Error('Model too busy'), { code: 'server_error' });
+            const openai = fakeOpenAi([new FakeStream([chunk], undefined, busy), new FakeStream([textChunk('unexpected')])]);
+            const handler = sinon.stub().resolves('a-result');
+            const request: UserRequest = {
+                sessionId: 'session', requestId: 'request', messages: [], tools: [toolRequest('a', handler)]
+            };
+            const { error } = await collectUntilSettled(makeIterator(openai, { request, maxRetries: 1 }));
+            expect(error).to.equal(busy);
+            expect(openai.calls).to.have.lengthOf(1);
+            expect(handler.called).to.equal(false);
+        });
+    }
+
+    it('does not execute completed tools again when retrying a later busy turn', async () => {
+        const clock = sinon.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+        try {
+            const handler = sinon.stub().resolves('a-result');
+            const request: UserRequest = {
+                sessionId: 'session', requestId: 'request', messages: [], tools: [toolRequest('a', handler)]
+            };
+            const busy = Object.assign(new Error('Model too busy'), { code: 'server_error' });
+            const openai = fakeOpenAi([
+                new FakeStream([toolChunk(0, 'call-a', 'a', '{}')]),
+                new FakeStream([{ choices: [{ delta: { role: 'assistant' } }] }], undefined, busy),
+                new FakeStream([textChunk('done')])
+            ]);
+            const settled = collectUntilSettled(makeIterator(openai, { request, maxRetries: 1 }));
+            await clock.tickAsync(1000);
+            const { parts, error } = await settled;
+            expect(error).to.equal(undefined);
+            expect(handler.callCount).to.equal(1);
+            expect(openai.calls).to.have.lengthOf(3);
+            expect(openai.calls[2].messages.filter((message: any) => message.role === 'tool'))
+                .to.deep.equal([{ role: 'tool', tool_call_id: 'call-a', content: 'a-result' }]);
+            expect(parts.filter(isToolCallResponsePart).flatMap(part => part.tool_calls).filter(call => call.finished)).to.have.lengthOf(1);
+            expect(parts.filter(isTextResponsePart)).to.deep.equal([{ content: 'done' }]);
+        } finally {
+            clock.restore();
+        }
     });
 
     it('emits token usage parts', async () => {
