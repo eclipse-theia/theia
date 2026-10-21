@@ -29,27 +29,19 @@ import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
 
 export interface CountdownTimerProps {
     response: ToolCallChatResponseContent;
+    compact?: boolean;
 }
 
-export const CountdownTimer: React.FC<CountdownTimerProps> = ({ response }) => {
-    const timeoutSeconds = response.confirmationTimeout;
-    const effectiveTimeout = timeoutSeconds !== undefined && timeoutSeconds > 0 ? timeoutSeconds : 0;
-    const deadlineRef = React.useRef<number | undefined>(undefined);
-
-    const getRemainingSeconds = (): number => {
-        if (deadlineRef.current === undefined) {
-            return effectiveTimeout;
-        }
-        return Math.max(0, Math.ceil((deadlineRef.current - Date.now()) / 1000));
-    };
-
-    const [remainingSeconds, setRemainingSeconds] = React.useState(effectiveTimeout);
+export const CountdownTimer: React.FC<CountdownTimerProps> = ({ response, compact }) => {
+    const deadline = response.confirmationDeadline;
+    const getRemainingSeconds = (): number => deadline === undefined ? 0 : Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    const [remainingSeconds, setRemainingSeconds] = React.useState(getRemainingSeconds);
 
     React.useEffect(() => {
-        if (effectiveTimeout <= 0) {
+        setRemainingSeconds(getRemainingSeconds());
+        if (deadline === undefined) {
             return;
         }
-        deadlineRef.current = Date.now() + effectiveTimeout * 1000;
         const intervalId = setInterval(() => {
             const remaining = getRemainingSeconds();
             setRemainingSeconds(remaining);
@@ -58,18 +50,19 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ response }) => {
             }
         }, 1000);
         return () => clearInterval(intervalId);
-    }, [effectiveTimeout]);
+    }, [deadline]);
 
     if (remainingSeconds <= 0) {
         // eslint-disable-next-line no-null/no-null
         return null;
     }
 
-    return (
-        <div className='theia-tool-confirmation-countdown'>
-            {nls.localize('theia/ai/chat-ui/toolconfirmation/autoCancel',
-                'Auto-cancels in {0}', `${Math.floor(remainingSeconds / 60)}:${(remainingSeconds % 60).toString().padStart(2, '0')}`)}
-        </div>
+    const time = `${Math.floor(remainingSeconds / 60)}:${(remainingSeconds % 60).toString().padStart(2, '0')}`;
+    const label = nls.localize('theia/ai/chat-ui/toolconfirmation/autoCancel', 'Auto-cancels in {0}', time);
+    return compact ? (
+        <span className='theia-tool-confirmation-countdown' title={label} aria-label={label}>{time}</span>
+    ) : (
+        <div className='theia-tool-confirmation-countdown'>{label}</div>
     );
 };
 

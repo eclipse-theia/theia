@@ -83,13 +83,14 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                                 ? sessionTimeout
                                 : this.preferences[TOOL_CONFIRMATION_TIMEOUT_PREFERENCE];
                             toolCallContent.confirmationTimeout = timeoutSeconds;
+                            const confirmation = raceConfirmationWithTimeout(toolCallContent, timeoutSeconds);
                             toolCallContent.requestUserConfirmation();
                             request.response.fireInteractionNeeded(toolCallContent);
                             // Mark the response as waiting for input so the pending confirmation is
                             // surfaced consistently with agent questions (e.g. in the session overview).
                             request.response.waitForInput();
                             try {
-                                confirmed = await raceConfirmationWithTimeout(toolCallContent, timeoutSeconds);
+                                confirmed = await confirmation;
                             } finally {
                                 request.response.stopWaitingForInput();
                             }

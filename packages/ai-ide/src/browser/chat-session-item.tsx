@@ -15,13 +15,14 @@
 // *****************************************************************************
 
 import {
-    ChatAgentService, ChatService, ChatSession, ChatSessionMetadata, ChatSessionStatus
+    ChatAgentService, ChatService, ChatSession, ChatSessionMetadata, ChatSessionStatus, ToolCallChatResponseContent
 } from '@theia/ai-chat';
 import { DisposableCollection, Event } from '@theia/core';
 import { buttonKeyboardProps, codicon, HoverService, isActivationKey } from '@theia/core/lib/browser';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { nls } from '@theia/core/lib/common/nls';
 import * as React from '@theia/core/shared/react';
+import { CountdownTimer } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-confirmation';
 import { ChatSessionItemAction } from './chat-session-item-action-contribution';
 import { buildRestoredSessionTooltip, buildSessionTooltip } from './chat-session-tooltip';
 
@@ -120,6 +121,7 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
 
     const timeAgo = useTimeAgo(session.saveDate, formatTimeAgo);
     const [status, setStatus] = React.useState<ChatSessionStatus>();
+    const [pendingConfirmation, setPendingConfirmation] = React.useState<ToolCallChatResponseContent>();
     const [hasError, setHasError] = React.useState(session.hasError === true);
     const hasUnread = useUnreadMessages(session.sessionId, unreadState);
 
@@ -140,6 +142,12 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
             const recompute = () => {
                 setStatus(s.model.status);
                 setHasError(s.model.status === 'failed');
+                const pending = s.model.getRequests()
+                    .flatMap(request => request.response.response.content)
+                    .filter(ToolCallChatResponseContent.is)
+                    .filter(content => content.isAwaitingUserConfirmation && content.confirmationDeadline !== undefined)
+                    .sort((a, b) => a.confirmationDeadline! - b.confirmationDeadline!);
+                setPendingConfirmation(pending[0]);
             };
             recompute();
             s.model.onDidChange(recompute, undefined, trash);
@@ -285,6 +293,7 @@ export function ChatSessionItem(props: ChatSessionItemComponentProps): React.Rea
                         <span className="theia-chat-session-item-attention-dot"
                             aria-label={attentionLabel} />
                     )}
+                    {pendingConfirmation && <CountdownTimer key={pendingConfirmation.id} response={pendingConfirmation} compact />}
                 </span>
             </div>
             <div className="theia-chat-session-item-content">

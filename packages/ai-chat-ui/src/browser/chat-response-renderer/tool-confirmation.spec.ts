@@ -17,8 +17,11 @@
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 
 let disableJSDOM = enableJSDOM();
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { ContextMenuRenderer, OpenerService } from '@theia/core/lib/browser';
 import { ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ToolConfirmationMode as ToolConfirmationPreferenceMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
@@ -28,6 +31,7 @@ import { createRoot } from '@theia/core/shared/react-dom/client';
 import * as React from '@theia/core/shared/react';
 import {
     ConfirmationScope,
+    CountdownTimer,
     CountdownTimerProps,
     ToolConfirmationCallbacks,
     ToolConfirmationActionsProps,
@@ -125,6 +129,62 @@ describe('Tool Confirmation Types', () => {
             const response = { kind: 'toolCall' } as ToolCallChatResponseContent;
             const props: CountdownTimerProps = { response };
             expect(props.response.confirmationTimeout).to.be.undefined;
+        });
+    });
+
+    describe('CountdownTimer', () => {
+        let clock: sinon.SinonFakeTimers;
+        let container: HTMLDivElement;
+        let root: ReturnType<typeof createRoot>;
+
+        beforeEach(() => {
+            disableJSDOM = enableJSDOM();
+            clock = sinon.useFakeTimers();
+            container = document.createElement('div');
+            root = createRoot(container);
+        });
+
+        afterEach(async () => {
+            await React.act(async () => root.unmount());
+            clock.restore();
+            disableJSDOM();
+        });
+
+        it('shows elapsed background time on mount and continues from the same deadline after remount', () => {
+            const response = { confirmationTimeout: 30, confirmationDeadline: Date.now() + 30_000 } as ToolCallChatResponseContent;
+            clock.tick(10_000);
+            flushSync(() => root.render(React.createElement(CountdownTimer, { response })));
+            expect(container.textContent).to.equal('Auto-cancels in 0:20');
+
+            flushSync(() => clock.tick(3000));
+            expect(container.textContent).to.equal('Auto-cancels in 0:17');
+            flushSync(() => root.unmount());
+            clock.tick(5000);
+            root = createRoot(container);
+            flushSync(() => root.render(React.createElement(CountdownTimer, { response })));
+            expect(container.textContent).to.equal('Auto-cancels in 0:12');
+        });
+
+        it('renders a compact time with the full accessible label', () => {
+            const response = { confirmationDeadline: Date.now() + 65_000 } as ToolCallChatResponseContent;
+            flushSync(() => root.render(React.createElement(CountdownTimer, { response, compact: true })));
+            const countdown = container.querySelector('span.theia-tool-confirmation-countdown');
+            expect(countdown?.textContent).to.equal('1:05');
+            expect(countdown?.getAttribute('title')).to.equal('Auto-cancels in 1:05');
+            expect(countdown?.getAttribute('aria-label')).to.equal('Auto-cancels in 1:05');
+        });
+
+        it('does not show a countdown without an active deadline', () => {
+            const response = { confirmationTimeout: 30 } as ToolCallChatResponseContent;
+            flushSync(() => root.render(React.createElement(CountdownTimer, { response })));
+            expect(container.textContent).to.equal('');
+        });
+
+        it('hides expired countdowns', () => {
+            const response = { confirmationDeadline: Date.now() + 1000 } as ToolCallChatResponseContent;
+            flushSync(() => root.render(React.createElement(CountdownTimer, { response })));
+            flushSync(() => clock.tick(1000));
+            expect(container.textContent).to.equal('');
         });
     });
 
