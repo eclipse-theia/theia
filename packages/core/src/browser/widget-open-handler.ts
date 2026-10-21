@@ -15,14 +15,14 @@
 // *****************************************************************************
 
 import { inject, optional, postConstruct, injectable } from 'inversify';
-import URI from '../common/uri';
-import { MaybePromise, Emitter, Event } from '../common';
-import { BaseWidget, ExtractableWidget } from './widgets';
-import { ApplicationShell } from './shell';
-import { OpenHandler, OpenerOptions } from './opener-service';
-import { WidgetManager } from './widget-manager';
-import { extractSecondaryWindow } from './secondary-window-handler';
-import { WindowFocusService } from './window/window-focus-service';
+import URI from '../common/uri.js';
+import { MaybePromise, Emitter, Event } from '../common/index.js';
+import { BaseWidget, ExtractableWidget } from './widgets/index.js';
+import { ApplicationShell } from './shell/index.js';
+import { OpenHandler, OpenerOptions } from './opener-service.js';
+import { WidgetManager } from './widget-manager.js';
+import { extractSecondaryWindow } from './secondary-window-handler.js';
+import { WindowFocusService } from './window/window-focus-service.js';
 
 export type WidgetOpenMode = 'open' | 'reveal' | 'activate';
 /**

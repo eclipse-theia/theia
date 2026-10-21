@@ -16,7 +16,7 @@
 
 import { Drag } from '@lumino/dragdrop';
 import { TabBar, Widget } from '@lumino/widgets';
-import { WIDGET_FACTORY_MIME_TYPE } from './native-tab-drag-service';
+import { WIDGET_FACTORY_MIME_TYPE } from './native-tab-drag-service.js';
 
 /**
  * Supports drop targets that insert a dragged widget as a tab of a tab bar where it is dropped:

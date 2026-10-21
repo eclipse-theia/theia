@@ -15,14 +15,14 @@
 // *****************************************************************************
 
 import { injectable, postConstruct, inject, named } from 'inversify';
-import { isOSX } from '../../common/os';
-import { Emitter, Event } from '../../common/event';
-import { ILogger } from '../../common/logger';
-import { Deferred } from '../../common/promise-util';
+import { isOSX } from '../../common/os.js';
+import { Emitter, Event } from '../../common/event.js';
+import { ILogger } from '../../common/logger.js';
+import { Deferred } from '../../common/promise-util.js';
 import {
     NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator, KeyValidationInput, KeyboardLayoutSource
-} from '../../common/keyboard/keyboard-layout-provider';
-import { LocalStorageService } from '../storage-service';
+} from '../../common/keyboard/keyboard-layout-provider.js';
+import { LocalStorageService } from '../storage-service.js';
 import enUSPc from '../../common/keyboard/layouts/en-US-pc.json' with { type: 'json' };
 import enUSMac from '../../common/keyboard/layouts/en-US-mac.json' with { type: 'json' };
 import enDvorakPc from '../../common/keyboard/layouts/en-Dvorak-pc.json' with { type: 'json' };
@@ -71,7 +71,7 @@ import nbNorwegianMac from '../../common/keyboard/layouts/nb-Norwegian-mac.json'
 import huHungarianPc from '../../common/keyboard/layouts/hu-Hungarian-pc.json' with { type: 'json' };
 import huHungarianMac from '../../common/keyboard/layouts/hu-Hungarian-mac.json' with { type: 'json' };
 
-export type { KeyboardLayoutSource } from '../../common/keyboard/keyboard-layout-provider';
+export type { KeyboardLayoutSource } from '../../common/keyboard/keyboard-layout-provider.js';
 
 @injectable()
 export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator {

@@ -18,11 +18,11 @@ import { find, toArray } from '@lumino/algorithm';
 import { TabBar, Widget, DockPanel, Title } from '@lumino/widgets';
 import { Signal } from '@lumino/signaling';
 import { Drag } from '@lumino/dragdrop';
-import { Disposable, DisposableCollection } from '../../common/disposable';
-import { CorePreferences } from '../../common/core-preferences';
-import { Emitter, Event, environment } from '../../common';
-import { ToolbarAwareTabBar } from './tab-bars';
-import { TabDropHelper } from './tab-drop-helper';
+import { Disposable, DisposableCollection } from '../../common/disposable.js';
+import { CorePreferences } from '../../common/core-preferences.js';
+import { Emitter, Event, environment } from '../../common/index.js';
+import { ToolbarAwareTabBar } from './tab-bars.js';
+import { TabDropHelper } from './tab-drop-helper.js';
 
 export const ACTIVE_TABBAR_CLASS = 'theia-tabBar-active';
 

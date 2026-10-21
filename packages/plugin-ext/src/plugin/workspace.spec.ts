@@ -17,8 +17,8 @@
 import * as chai from 'chai';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { URI } from './types-impl';
-import { WorkspaceExtImpl } from './workspace';
+import { URI } from './types-impl.js';
+import { WorkspaceExtImpl } from './workspace.js';
 
 const expect = chai.expect;
 

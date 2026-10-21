@@ -23,8 +23,8 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import { DirNode } from '@theia/filesystem/lib/browser/file-tree/file-tree';
 import { FileTreeLabelProvider } from '@theia/filesystem/lib/browser/file-tree/file-tree-label-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { WorkspaceNode, WorkspaceRootNode } from './navigator-tree';
-import { WorkspaceRootNodeLabelProvider } from './workspace-root-node-label-provider';
+import { WorkspaceNode, WorkspaceRootNode } from './navigator-tree.js';
+import { WorkspaceRootNodeLabelProvider } from './workspace-root-node-label-provider.js';
 
 disableJSDOM();
 

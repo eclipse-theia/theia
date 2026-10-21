@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { EncodingService } from './encoding-service';
+import { EncodingService } from './encoding-service.js';
 
 describe('EncodingService', () => {
 

@@ -16,7 +16,7 @@
 import { DisposableCollection, Emitter, Event, ILogger, RecursiveReadonly } from '@theia/core';
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
-import { AiConfigurationInspection, AiConfigurationService, AISettings, AISettingsService, AgentSettings } from '../common';
+import { AiConfigurationInspection, AiConfigurationService, AISettings, AISettingsService, AgentSettings } from '../common/index.js';
 
 @injectable()
 export class AISettingsServiceImpl implements AISettingsService {

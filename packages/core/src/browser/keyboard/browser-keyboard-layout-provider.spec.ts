@@ -14,20 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 
 let disableJSDOM = enableJSDOM();
 
 import { Container, injectable } from 'inversify';
 import type { IMacKeyboardLayoutInfo } from 'native-keymap';
 import * as chai from 'chai';
-import { ILogger, Loggable } from '../../common/logger';
-import { LocalStorageService } from '../storage-service';
-import { MessageService } from '../../common/message-service';
-import { WindowService } from '../window/window-service';
-import { BrowserKeyboardLayoutProvider, KeyboardLayoutData, KeyboardLayoutSource, KeyboardTester } from './browser-keyboard-layout-provider';
-import { Key } from './keys';
-import { OSStub, stubOS } from '../../common/test/stub-os';
+import { ILogger, Loggable } from '../../common/logger.js';
+import { LocalStorageService } from '../storage-service.js';
+import { MessageService } from '../../common/message-service.js';
+import { WindowService } from '../window/window-service.js';
+import { BrowserKeyboardLayoutProvider, KeyboardLayoutData, KeyboardLayoutSource, KeyboardTester } from './browser-keyboard-layout-provider.js';
+import { Key } from './keys.js';
+import { OSStub, stubOS } from '../../common/test/stub-os.js';
 
 disableJSDOM();
 

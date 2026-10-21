@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { MaybePromise } from '../../common/types';
-import { Widget } from '../widgets';
-import { SaveableService } from '../saveable-service';
+import { MaybePromise } from '../../common/types.js';
+import { Widget } from '../widgets/index.js';
+import { SaveableService } from '../saveable-service.js';
 
 export const SecondaryWindowCloseContribution = Symbol('SecondaryWindowCloseContribution');
 /**

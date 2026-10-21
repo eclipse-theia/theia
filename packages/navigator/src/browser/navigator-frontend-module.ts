@@ -45,7 +45,7 @@ import { NavigatorDeletedEditorDecorator } from './open-editors-widget/navigator
 import { NavigatorSymlinkDecorator } from './navigator-symlink-decorator.js';
 import { NavigatorFileClipboard } from './navigator-file-clipboard.js';
 import { FileTreeDecoratorAdapter } from '@theia/filesystem/lib/browser';
-import { WorkspaceRootNodeLabelProvider } from './workspace-root-node-label-provider';
+import { WorkspaceRootNodeLabelProvider } from './workspace-root-node-label-provider.js';
 
 export default new ContainerModule(bind => {
     bindFileNavigatorPreferences(bind);

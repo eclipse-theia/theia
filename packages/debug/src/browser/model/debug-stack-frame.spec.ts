@@ -19,9 +19,9 @@ let disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
 import { DebugProtocol } from '@vscode/debugprotocol';
-import { DebugSession } from '../debug-session';
-import { DebugStackFrame } from './debug-stack-frame';
-import { DebugThread } from './debug-thread';
+import { DebugSession } from '../debug-session.js';
+import { DebugStackFrame } from './debug-stack-frame.js';
+import { DebugThread } from './debug-thread.js';
 
 disableJSDOM();
 

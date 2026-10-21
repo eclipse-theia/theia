@@ -17,12 +17,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { isOSX, MAIN_MENU_BAR, MenuNode, CompoundMenuNode, Group, RenderedMenuNode, CommandMenu, AcceleratorSource, MenuPath, PreferenceService } from '../../common';
-import { CommonCommands } from '../../browser';
+import { isOSX, MAIN_MENU_BAR, MenuNode, CompoundMenuNode, Group, RenderedMenuNode, CommandMenu, AcceleratorSource, MenuPath, PreferenceService } from '../../common/index.js';
+import { CommonCommands } from '../../browser/index.js';
 import debounce from '../../../shared/lodash.debounce/index.cjs';
-import { BrowserMainMenuFactory } from '../../browser/menu/browser-menu-plugin';
-import { ContextMatcher } from '../../browser/context-key-service';
-import { electronMenuAcceleratorMetadata, MenuDto, MenuRole } from '../../electron-common/electron-api';
+import { BrowserMainMenuFactory } from '../../browser/menu/browser-menu-plugin.js';
+import { ContextMatcher } from '../../browser/context-key-service.js';
+import { electronMenuAcceleratorMetadata, MenuDto, MenuRole } from '../../electron-common/electron-api.js';
 
 /**
  * Representation of possible electron menu options.

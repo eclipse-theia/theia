@@ -32,7 +32,7 @@ import { TabBar } from '@theia/core/shared/@lumino/widgets';
 import URI from '@theia/core/lib/common/uri';
 import { EditorManager, EditorWidget, TextEditor } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { OpenEditorsVariableContribution, OPEN_EDITORS_VARIABLE } from './open-editors-variable-contribution';
+import { OpenEditorsVariableContribution, OPEN_EDITORS_VARIABLE } from './open-editors-variable-contribution.js';
 
 disableJSDOM();
 

@@ -13,15 +13,14 @@ let disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
 import { Key, KeybindingRegistry, KeyCode } from '@theia/core/lib/browser';
-import * as os from '@theia/core/lib/common/os';
 import * as monaco from '@theia/monaco-editor-core';
-import * as MonacoPlatform from '@theia/monaco-editor-core/esm/vs/base/common/platform';
-import { KeyCode as MonacoKeyCode } from '@theia/monaco-editor-core/esm/vs/base/common/keyCodes';
-import { KeyCodeChord } from '@theia/monaco-editor-core/esm/vs/base/common/keybindings';
-import { USLayoutResolvedKeybinding } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/usLayoutResolvedKeybinding';
-import * as sinon from 'sinon';
-import { MonacoKeybindingContribution } from './monaco-keybinding';
-import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
+import * as MonacoPlatform from '@theia/monaco-editor-core/esm/vs/base/common/platform.js';
+import { KeyCode as MonacoKeyCode } from '@theia/monaco-editor-core/esm/vs/base/common/keyCodes.js';
+import { KeyCodeChord } from '@theia/monaco-editor-core/esm/vs/base/common/keybindings.js';
+import { USLayoutResolvedKeybinding } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/usLayoutResolvedKeybinding.js';
+import { OSStub, stubOS } from '@theia/core/lib/common/test/stub-os';
+import { MonacoKeybindingContribution } from './monaco-keybinding.js';
+import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding.js';
 
 class TestMonacoKeybindingContribution extends MonacoKeybindingContribution {
     encode(code: KeyCode): number {
@@ -43,10 +42,15 @@ describe('Monaco keybinding adapter', () => {
 
     beforeEach(() => contribution = new TestMonacoKeybindingContribution());
 
-    afterEach(() => sinon.restore());
+    let platform: OSStub | undefined;
+
+    afterEach(() => {
+        platform?.restore();
+        platform = undefined;
+    });
 
     it('encodes non-macOS Ctrl as Monaco CtrlCmd', () => {
-        sinon.stub(os, 'isOSX').value(false);
+        platform = stubOS('isOSX', false);
 
         const encoded = contribution.encode(new KeyCode({ key: Key.KEY_A, ctrl: true }));
 
@@ -55,7 +59,7 @@ describe('Monaco keybinding adapter', () => {
     });
 
     it('preserves macOS Ctrl and Command encoding', () => {
-        sinon.stub(os, 'isOSX').value(true);
+        platform = stubOS('isOSX', true);
 
         const encoded = contribution.encode(new KeyCode({ key: Key.KEY_A, ctrl: true, meta: true }));
 

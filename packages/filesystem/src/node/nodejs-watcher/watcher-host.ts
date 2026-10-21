@@ -17,7 +17,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { isOSX, isWindows } from '@theia/core';
-import { WatcherLogger } from '../filesystem-watcher';
+import { WatcherLogger } from '../filesystem-watcher.js';
 
 export type WatchEventListener = (eventType: string, fileName: string | null) => void;
 

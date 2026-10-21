@@ -24,12 +24,12 @@
 import * as assert from 'assert';
 import { Emitter } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { ScmCommandArg, ScmHistoryItemCommandArg, ScmMain, ScmRawResourceSplices } from '../common/plugin-api-rpc';
-import { ScmExtImpl } from './scm';
-import { RPCProtocol } from '../common/rpc-protocol';
-import { CommandRegistryImpl } from './command-registry';
-import { Plugin } from '../common';
-import { URI } from './types-impl';
+import { ScmCommandArg, ScmHistoryItemCommandArg, ScmMain, ScmRawResourceSplices } from '../common/plugin-api-rpc.js';
+import { ScmExtImpl } from './scm.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
+import { CommandRegistryImpl } from './command-registry.js';
+import { Plugin } from '../common/index.js';
+import { URI } from './types-impl.js';
 import { SourceControlResourceGroup, SourceControlResourceState } from '@theia/plugin';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

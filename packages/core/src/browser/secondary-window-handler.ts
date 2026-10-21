@@ -17,20 +17,20 @@
 import debounce from '../../shared/lodash.debounce/index.cjs';
 import { inject, injectable, named } from 'inversify';
 import { toArray } from '@lumino/algorithm';
-import { BoxLayout, DockLayout, DockPanel, ExtractableWidget, TabBar, Widget } from './widgets';
-import { MessageService } from '../common/message-service';
-import { ApplicationShell, DockPanelRenderer, MAIN_AREA_CLASS, MAIN_BOTTOM_AREA_CLASS } from './shell/application-shell';
-import { Emitter } from '../common/event';
-import { environment } from '../common';
-import { isSecondaryWindow, SecondaryWindowOptions, SecondaryWindowRootWidget, SecondaryWindowService } from './window/secondary-window-service';
-import { KeybindingRegistry } from './keybinding';
-import { MAIN_AREA_ID, TheiaDockPanel } from './shell/theia-dock-panel';
-import { ILogger } from '../common/logger';
-import { nls } from '../common/nls';
-import { NativeTabDragService } from './shell/native-tab-drag-service';
-import { WindowService } from './window/window-service';
-import { PreferenceService } from '../common/preferences';
-import { WindowFocusService } from './window/window-focus-service';
+import { BoxLayout, DockLayout, DockPanel, ExtractableWidget, TabBar, Widget } from './widgets/index.js';
+import { MessageService } from '../common/message-service.js';
+import { ApplicationShell, DockPanelRenderer, MAIN_AREA_CLASS, MAIN_BOTTOM_AREA_CLASS } from './shell/application-shell.js';
+import { Emitter } from '../common/event.js';
+import { environment } from '../common/index.js';
+import { isSecondaryWindow, SecondaryWindowOptions, SecondaryWindowRootWidget, SecondaryWindowService } from './window/secondary-window-service.js';
+import { KeybindingRegistry } from './keybinding.js';
+import { MAIN_AREA_ID, TheiaDockPanel } from './shell/theia-dock-panel.js';
+import { ILogger } from '../common/logger.js';
+import { nls } from '../common/nls.js';
+import { NativeTabDragService } from './shell/native-tab-drag-service.js';
+import { WindowService } from './window/window-service.js';
+import { PreferenceService } from '../common/preferences/index.js';
+import { WindowFocusService } from './window/window-focus-service.js';
 
 /** Widgets to be contained inside a DockPanel in the secondary window. */
 class SecondaryWindowDockPanelWidget extends SecondaryWindowRootWidget {

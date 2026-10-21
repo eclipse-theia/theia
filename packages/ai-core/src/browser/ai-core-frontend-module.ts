@@ -20,13 +20,13 @@ import {
     ServiceConnectionProvider,
 } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { DefaultLanguageModelAliasRegistry } from './frontend-language-model-alias-registry';
-import { HideAiPreferencesContribution, aiConfigurationOpenPlaceholderSchema } from './hide-ai-preferences-contribution';
-import { ModelDiscoveryStatusService } from './model-discovery-status-service';
-import { FavoriteModelsService } from './favorite-models-service';
-import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
-import { AiConfigurationServiceImpl } from './ai-configuration-service-impl';
-import { LanguageModelAliasRegistry } from '../common/language-model-alias';
+import { DefaultLanguageModelAliasRegistry } from './frontend-language-model-alias-registry.js';
+import { HideAiPreferencesContribution, aiConfigurationOpenPlaceholderSchema } from './hide-ai-preferences-contribution.js';
+import { ModelDiscoveryStatusService } from './model-discovery-status-service.js';
+import { FavoriteModelsService } from './favorite-models-service.js';
+import { TrustAwarePreferenceReader } from './trust-aware-preference-reader.js';
+import { AiConfigurationServiceImpl } from './ai-configuration-service-impl.js';
+import { LanguageModelAliasRegistry } from '../common/language-model-alias.js';
 import {
     AIVariableContribution,
     AIVariableService,
@@ -52,52 +52,52 @@ import {
     Agent,
     FrontendLanguageModelRegistry,
     AiConfigurationService
-} from '../common';
+} from '../common/index.js';
 import {
     FrontendLanguageModelRegistryImpl,
     LanguageModelDelegateClientImpl,
-} from './frontend-language-model-registry';
+} from './frontend-language-model-registry.js';
 import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
-import { AICoreFrontendApplicationContribution } from './ai-core-frontend-application-contribution';
-import { bindAICorePreferences } from '../common/ai-core-preferences';
-import { AISettingsServiceImpl } from './ai-settings-service';
-import { DefaultPromptFragmentCustomizationService } from './frontend-prompt-customization-service';
-import { DefaultFrontendVariableService, FrontendVariableService } from './frontend-variable-service';
-import { PromptTemplateContribution } from './prompttemplate-contribution';
-import { FileVariableContribution } from './file-variable-contribution';
-import { WorkspaceRelativePathResolver } from './workspace-relative-path-resolver';
-import { TheiaVariableContribution } from './theia-variable-contribution';
-import { TodayVariableContribution } from '../common/today-variable-contribution';
-import { AgentsVariableContribution } from '../common/agents-variable-contribution';
-import { OpenEditorsVariableContribution } from './open-editors-variable-contribution';
-import { SkillsVariableContribution } from './skills-variable-contribution';
-import { AIActivationService, AIActivationServiceImpl } from './ai-activation-service';
-import { AgentService, AgentServiceImpl } from '../common/agent-service';
-import { AICommandHandlerFactory } from './ai-command-handler-factory';
-import { AISettingsService } from '../common/settings-service';
-import { DefaultSkillService, SkillDirectoryContribution, SkillService } from './skill-service';
-import { SkillPromptCoordinator } from './skill-prompt-coordinator';
-import { AiCoreCommandContribution } from './ai-core-command-contribution';
-import { PromptVariableContribution } from './prompt-variable-contribution';
-import { ProductNameVariableContribution } from './product-name-variable-contribution';
-import { CapabilityVariableContribution } from '../common/capability-variable-contribution';
-import { GenericCapabilitiesVariableContribution } from './generic-capabilities-variable-contribution';
-import { GenericCapabilitiesPromptFragmentContribution } from './generic-capabilities-prompt-fragment-contribution';
-import { AgentsMdService, DefaultAgentsMdService } from './agents-md-service';
-import { AgentsMdVariableContribution } from './agents-md-variable-contribution';
-import { AgentsMdPromptFragmentContribution } from './agents-md-prompt-fragment-contribution';
-import { AgentsMdMigrationService } from './agents-md-migration-service';
-import { AgentsMdFrontendApplicationContribution } from './agents-md-frontend-application-contribution';
-import { LanguageModelService } from '../common/language-model-service';
-import { FrontendLanguageModelServiceImpl } from './frontend-language-model-service';
-import { TokenUsageFrontendService } from './token-usage-frontend-service';
-import { TokenUsageFrontendServiceImpl, TokenUsageServiceClientImpl } from './token-usage-frontend-service-impl';
-import { AIVariableUriLabelProvider } from './ai-variable-uri-label-provider';
-import { AgentNotificationService } from './agent-notification-service';
-import { OSNotificationService } from './os-notification-service';
-import { WindowBlinkService } from './window-blink-service';
+import { AICoreFrontendApplicationContribution } from './ai-core-frontend-application-contribution.js';
+import { bindAICorePreferences } from '../common/ai-core-preferences.js';
+import { AISettingsServiceImpl } from './ai-settings-service.js';
+import { DefaultPromptFragmentCustomizationService } from './frontend-prompt-customization-service.js';
+import { DefaultFrontendVariableService, FrontendVariableService } from './frontend-variable-service.js';
+import { PromptTemplateContribution } from './prompttemplate-contribution.js';
+import { FileVariableContribution } from './file-variable-contribution.js';
+import { WorkspaceRelativePathResolver } from './workspace-relative-path-resolver.js';
+import { TheiaVariableContribution } from './theia-variable-contribution.js';
+import { TodayVariableContribution } from '../common/today-variable-contribution.js';
+import { AgentsVariableContribution } from '../common/agents-variable-contribution.js';
+import { OpenEditorsVariableContribution } from './open-editors-variable-contribution.js';
+import { SkillsVariableContribution } from './skills-variable-contribution.js';
+import { AIActivationService, AIActivationServiceImpl } from './ai-activation-service.js';
+import { AgentService, AgentServiceImpl } from '../common/agent-service.js';
+import { AICommandHandlerFactory } from './ai-command-handler-factory.js';
+import { AISettingsService } from '../common/settings-service.js';
+import { DefaultSkillService, SkillDirectoryContribution, SkillService } from './skill-service.js';
+import { SkillPromptCoordinator } from './skill-prompt-coordinator.js';
+import { AiCoreCommandContribution } from './ai-core-command-contribution.js';
+import { PromptVariableContribution } from './prompt-variable-contribution.js';
+import { ProductNameVariableContribution } from './product-name-variable-contribution.js';
+import { CapabilityVariableContribution } from '../common/capability-variable-contribution.js';
+import { GenericCapabilitiesVariableContribution } from './generic-capabilities-variable-contribution.js';
+import { GenericCapabilitiesPromptFragmentContribution } from './generic-capabilities-prompt-fragment-contribution.js';
+import { AgentsMdService, DefaultAgentsMdService } from './agents-md-service.js';
+import { AgentsMdVariableContribution } from './agents-md-variable-contribution.js';
+import { AgentsMdPromptFragmentContribution } from './agents-md-prompt-fragment-contribution.js';
+import { AgentsMdMigrationService } from './agents-md-migration-service.js';
+import { AgentsMdFrontendApplicationContribution } from './agents-md-frontend-application-contribution.js';
+import { LanguageModelService } from '../common/language-model-service.js';
+import { FrontendLanguageModelServiceImpl } from './frontend-language-model-service.js';
+import { TokenUsageFrontendService } from './token-usage-frontend-service.js';
+import { TokenUsageFrontendServiceImpl, TokenUsageServiceClientImpl } from './token-usage-frontend-service-impl.js';
+import { AIVariableUriLabelProvider } from './ai-variable-uri-label-provider.js';
+import { AgentNotificationService } from './agent-notification-service.js';
+import { OSNotificationService } from './os-notification-service.js';
+import { WindowBlinkService } from './window-blink-service.js';
 
 export default new ContainerModule(bind => {
     bindRootContributionProvider(bind, Agent);

@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { URI } from '@theia/core';
-import { MultiDiffEditorUri, MultiDiffEditorUriData } from './multi-diff-editor-uri';
+import { MultiDiffEditorUri, MultiDiffEditorUriData } from './multi-diff-editor-uri.js';
 
 describe('MultiDiffEditorUri', () => {
 

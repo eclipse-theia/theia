@@ -14,16 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { inject, injectable, postConstruct, named } from 'inversify';
-import { SecondaryWindow, SecondaryWindowOptions, SecondaryWindowService } from './secondary-window-service';
-import { WindowService } from './window-service';
-import { ExtractableWidget, Widget } from '../widgets';
-import { ApplicationShell } from '../shell';
-import { Emitter, environment, Event, PreferenceService, ILogger } from '../../common';
-import { SaveableService } from '../saveable-service';
-import { getAllWidgetsFromSecondaryWindow, getDefaultRestoreArea, SecondaryWindowHandler } from '../secondary-window-handler';
-import { WindowFocusService } from './window-focus-service';
-import { SecondaryWindowCloseContribution } from './secondary-window-close-contribution';
-import { ContributionProvider } from '../../common/contribution-provider';
+import { SecondaryWindow, SecondaryWindowOptions, SecondaryWindowService } from './secondary-window-service.js';
+import { WindowService } from './window-service.js';
+import { ExtractableWidget, Widget } from '../widgets/index.js';
+import { ApplicationShell } from '../shell/index.js';
+import { Emitter, environment, Event, PreferenceService, ILogger } from '../../common/index.js';
+import { SaveableService } from '../saveable-service.js';
+import { getAllWidgetsFromSecondaryWindow, getDefaultRestoreArea, SecondaryWindowHandler } from '../secondary-window-handler.js';
+import { WindowFocusService } from './window-focus-service.js';
+import { SecondaryWindowCloseContribution } from './secondary-window-close-contribution.js';
+import { ContributionProvider } from '../../common/contribution-provider.js';
 
 @injectable()
 export class DefaultSecondaryWindowService implements SecondaryWindowService {

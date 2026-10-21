@@ -32,16 +32,16 @@ import { QuickOpenTask } from '@theia/task/lib/browser/quick-open-task';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser';
-import { DebugPreferences } from '../common/debug-preferences';
-import { DebugService } from '../common/debug-service';
-import { BreakpointManager } from './breakpoint/breakpoint-manager';
-import { DebugConfigurationManager } from './debug-configuration-manager';
-import { DebugSession, DebugState } from './debug-session';
-import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider';
-import { DebugSessionContributionRegistry, DebugSessionFactory } from './debug-session-contribution';
-import { DebugSessionManager } from './debug-session-manager';
-import { DebugConfigurationSessionOptions } from './debug-session-options';
-import { DebugStackFrame } from './model/debug-stack-frame';
+import { DebugPreferences } from '../common/debug-preferences.js';
+import { DebugService } from '../common/debug-service.js';
+import { BreakpointManager } from './breakpoint/breakpoint-manager.js';
+import { DebugConfigurationManager } from './debug-configuration-manager.js';
+import { DebugSession, DebugState } from './debug-session.js';
+import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider.js';
+import { DebugSessionContributionRegistry, DebugSessionFactory } from './debug-session-contribution.js';
+import { DebugSessionManager } from './debug-session-manager.js';
+import { DebugConfigurationSessionOptions } from './debug-session-options.js';
+import { DebugStackFrame } from './model/debug-stack-frame.js';
 
 disableJSDOM();
 
