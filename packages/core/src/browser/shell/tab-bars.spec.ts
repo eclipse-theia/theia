@@ -19,7 +19,7 @@ let disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 
 import { Title, Widget } from '@lumino/widgets';
-import { TabBarRenderer } from './tab-bars';
+import { SideTabBar, TabBarRenderer } from './tab-bars';
 
 disableJSDOM();
 
@@ -59,5 +59,100 @@ describe('tab bar', () => {
         expect(pathMap.get(tabPaths[4])).to.be.equal('root1/aaa/bbb');
         expect(pathMap.get(tabPaths[5])).to.be.equal('.../ccc');
         expect(pathMap.get(tabPaths[6])).to.be.equal(undefined);
+    });
+
+    describe('side tab bar', () => {
+
+        class TestSideTabBar extends SideTabBar {
+            render(): void {
+                this.renderTabs(this.contentNode);
+            }
+            renderedClasses(): string[] {
+                return Array.from(this.contentNode.children, tab => tab.className);
+            }
+            overflowFrom(startIndex: number): void {
+                this.hideOverflowingTabs = () => startIndex;
+                this.computeOverflowingTabsData();
+            }
+            firstOverflowingIndex(): number {
+                return this.hideOverflowingTabs();
+            }
+            setOverflowData(): void {
+                this.tabsOverflowData = { titles: [], startIndex: 0 };
+            }
+        }
+
+        function createSideTabBar(hiddenIds: string[]): { bar: TestSideTabBar, titles: Title<Widget>[] } {
+            const renderer = new TabBarRenderer();
+            const bar = new TestSideTabBar({ orientation: 'vertical', renderer });
+            const titles = ['explorer', 'debug', 'search'].map(id => {
+                const owner = new Widget();
+                owner.id = id;
+                owner.title.label = id;
+                return bar.addTab(owner.title);
+            });
+            bar.shouldHideTitle = title => hiddenIds.includes(title.owner.id);
+            return { bar, titles };
+        }
+
+        it('keeps a hidden tab in the DOM at its title index, hidden unless it is current', () => {
+            const { bar, titles } = createSideTabBar(['debug']);
+
+            bar.currentTitle = titles[0];
+            bar.render();
+            expect(bar.renderedClasses().map(c => c.includes('lm-mod-hidden'))).to.deep.equal([false, true, false]);
+
+            bar.currentTitle = titles[1];
+            bar.render();
+            expect(bar.renderedClasses().map(c => c.includes('lm-mod-hidden'))).to.deep.equal([false, false, false]);
+            expect(bar.isHiddenTab(titles[1])).to.be.false;
+        });
+
+        it('refuses to hide the last title that is not hidden', () => {
+            const { bar, titles } = createSideTabBar(['debug', 'search']);
+            expect(bar.canHideTitle(titles[0])).to.be.false;
+            expect(bar.canHideTitle(titles[1])).to.be.false;
+            bar.shouldHideTitle = title => title.owner.id === 'debug';
+            expect(bar.canHideTitle(titles[0])).to.be.true;
+        });
+
+        it('leaves hidden tabs out of the overflow menu', () => {
+            const { bar, titles } = createSideTabBar(['debug']);
+            bar.currentTitle = titles[0];
+            const overflowing: string[][] = [];
+            bar.tabsOverflowChanged.connect((_, { titles: overflow }) => overflowing.push(overflow.map(title => title.owner.id)));
+            const requestAnimationFrame = window.requestAnimationFrame;
+            window.requestAnimationFrame = callback => {
+                callback(0);
+                return 0;
+            };
+            try {
+                bar.overflowFrom(1);
+            } finally {
+                window.requestAnimationFrame = requestAnimationFrame;
+            }
+            expect(overflowing).to.deep.equal([['search']]);
+        });
+
+        it('keeps the last shown tab when it fits beside the overflow menu, even with hidden tabs after it', () => {
+            const { bar, titles } = createSideTabBar(['search']);
+            bar.currentTitle = titles[0];
+            bar.render();
+            const parent = document.createElement('div');
+            const overflowMenu = document.createElement('div');
+            overflowMenu.className = 'theia-additional-views-menu';
+            Object.defineProperty(overflowMenu, 'offsetHeight', { value: 20 });
+            parent.append(bar.node, overflowMenu);
+            Object.defineProperty(bar.node, 'clientHeight', { value: 70 });
+            // explorer and debug stack 40px each; search is hidden, so it measures 0 like a `display: none` tab.
+            const tabs = Array.from(bar.contentNode.children);
+            [[0, 40], [40, 40], [0, 0]].forEach(([offsetTop, offsetHeight], i) => {
+                Object.defineProperty(tabs[i], 'offsetTop', { value: offsetTop });
+                Object.defineProperty(tabs[i], 'offsetHeight', { value: offsetHeight });
+            });
+            bar.setOverflowData();
+
+            expect(bar.firstOverflowingIndex()).to.equal(-1);
+        });
     });
 });
