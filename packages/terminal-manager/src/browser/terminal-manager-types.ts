@@ -23,7 +23,8 @@ import {
     ExpandableTreeNode,
     Widget,
 } from '@theia/core/lib/browser';
-import { TerminalWidgetFactoryOptions, TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
+import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-contract';
+import type { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
 
 export namespace TerminalManagerCommands {
     export const MANAGER_NEW_TERMINAL_GROUP = Command.toLocalizedCommand({

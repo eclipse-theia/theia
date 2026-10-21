@@ -26,7 +26,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { TerminalWidgetFactoryOptions, nextTerminalCreationToken } from '@theia/terminal/lib/browser/terminal-widget-impl';
+import { TerminalWidgetFactoryOptions, nextTerminalCreationToken } from '@theia/terminal/lib/browser/terminal-contract';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser';

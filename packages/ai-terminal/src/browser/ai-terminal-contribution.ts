@@ -20,7 +20,8 @@ import { ApplicationShell, codicon, KeybindingContribution, KeybindingRegistry }
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
-import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
+import { isTerminalWidget } from '@theia/terminal/lib/browser/terminal-contract';
+import type { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TerminalPreferences } from '@theia/terminal/lib/common/terminal-preferences';
 import { AiTerminalAgent } from './ai-terminal-agent';
 import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-handler-factory';
@@ -73,9 +74,9 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
         commands.registerCommand(AI_TERMINAL_COMMAND, this.commandHandlerFactory({
             execute: () => {
                 const currentTerminal = this.terminalService.currentTerminal;
-                if (currentTerminal instanceof TerminalWidgetImpl && currentTerminal.kind === 'user') {
+                if (isTerminalWidget(currentTerminal) && currentTerminal.kind === 'user') {
                     new AiTerminalChatWidget(
-                        currentTerminal,
+                        currentTerminal as TerminalWidgetImpl,
                         this.terminalAgent,
                         () => this.terminalPreferences['terminal.integrated.enableCommandHistory'] ?? false
                     );
@@ -84,8 +85,8 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
             isEnabled: () =>
                 // Ensure it is only enabled for terminals explicitly launched by the user, not to terminals created e.g. for running tasks
                 this.agentService.isEnabled(this.terminalAgent.id)
-                && this.shell.currentWidget instanceof TerminalWidgetImpl
-                && (this.shell.currentWidget as TerminalWidgetImpl).kind === 'user'
+                && isTerminalWidget(this.shell.currentWidget)
+                && this.shell.currentWidget.kind === 'user'
         }));
     }
 }
