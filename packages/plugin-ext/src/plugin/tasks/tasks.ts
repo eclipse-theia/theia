@@ -91,7 +91,8 @@ export class TasksExtImpl implements TasksExt {
     $onDidEndTask(id: number): void {
         const taskExecution = this.executions.get(id);
         if (!taskExecution) {
-            throw new Error(`Task execution with id ${id} is not found`);
+            // No start event was fired for this execution, e.g. because its scope is not a workspace folder.
+            return;
         }
 
         this.executions.delete(id);
@@ -119,7 +120,7 @@ export class TasksExtImpl implements TasksExt {
     $onDidEndTaskProcess(exitCode: number, taskId: number): void {
         const taskExecution = this.executions.get(taskId);
         if (!taskExecution) {
-            throw new Error(`Task execution with id ${taskId} is not found`);
+            return;
         }
 
         this.onDidTerminateTaskProcess.fire({
