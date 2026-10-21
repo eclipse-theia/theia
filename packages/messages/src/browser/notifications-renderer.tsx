@@ -17,10 +17,11 @@
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { ApplicationShell, ContextMenuRenderer } from '@theia/core/lib/browser';
+import { SecondaryWindowService } from '@theia/core/lib/browser/window/secondary-window-service';
 import { NotificationManager } from './notifications-manager';
 import { NotificationCenterComponent } from './notification-center-component';
 import { NotificationToastsComponent } from './notification-toasts-component';
-import { CorePreferences } from '@theia/core';
+import { CorePreferences, DisposableCollection } from '@theia/core';
 
 @injectable()
 export class NotificationsRenderer {
@@ -37,12 +38,18 @@ export class NotificationsRenderer {
     @inject(ContextMenuRenderer)
     protected readonly contextMenuRenderer: ContextMenuRenderer;
 
+    @inject(SecondaryWindowService)
+    protected readonly secondaryWindowService: SecondaryWindowService;
+
     protected containerRoot: Root;
+    protected readonly secondaryWindowRoots = new Map<Window, { root: Root; container: HTMLDivElement }>();
+    protected readonly toDispose = new DisposableCollection();
 
     @postConstruct()
     protected init(): void {
         this.createOverlayContainer();
         this.render();
+        this.setupSecondaryWindowSupport();
     }
 
     protected container: HTMLDivElement;
@@ -53,6 +60,36 @@ export class NotificationsRenderer {
             window.document.body.appendChild(this.container);
         }
         this.containerRoot = createRoot(this.container);
+    }
+
+    protected setupSecondaryWindowSupport(): void {
+        this.toDispose.push(this.secondaryWindowService.onWindowLoaded(win => {
+            this.createSecondaryWindowOverlay(win);
+        }));
+        this.toDispose.push(this.secondaryWindowService.onWindowClosed(win => {
+            this.removeSecondaryWindowOverlay(win);
+        }));
+    }
+
+    protected createSecondaryWindowOverlay(win: Window): void {
+        const container = win.document.createElement('div');
+        container.className = 'theia-notifications-overlay';
+        win.document.body.appendChild(container);
+        const root = createRoot(container);
+        root.render(<div>
+            <NotificationToastsComponent manager={this.manager} corePreferences={this.corePreferences} contextMenuRenderer={this.contextMenuRenderer} />
+            <NotificationCenterComponent manager={this.manager} contextMenuRenderer={this.contextMenuRenderer} />
+        </div>);
+        this.secondaryWindowRoots.set(win, { root, container });
+    }
+
+    protected removeSecondaryWindowOverlay(win: Window): void {
+        const entry = this.secondaryWindowRoots.get(win);
+        if (entry) {
+            entry.root.unmount();
+            entry.container.remove();
+            this.secondaryWindowRoots.delete(win);
+        }
     }
 
     protected render(): void {

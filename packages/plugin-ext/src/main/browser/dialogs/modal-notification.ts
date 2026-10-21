@@ -57,23 +57,24 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
     }
 
     protected createMessageNode(messageType: MessageType, text: string, options: MainMessageOptions, actions: MainMessageItem[]): HTMLElement {
-        const messageNode = document.createElement('div');
+        const doc = this.node.ownerDocument;
+        const messageNode = doc.createElement('div');
         messageNode.classList.add(NOTIFICATION);
 
-        const iconContainer = messageNode.appendChild(document.createElement('div'));
+        const iconContainer = messageNode.appendChild(doc.createElement('div'));
         iconContainer.classList.add(ICON);
-        const iconElement = iconContainer.appendChild(document.createElement('i'));
+        const iconElement = iconContainer.appendChild(doc.createElement('i'));
         iconElement.classList.add(...this.toIconClass(messageType), messageType.toString());
 
-        const textContainer = messageNode.appendChild(document.createElement('div'));
+        const textContainer = messageNode.appendChild(doc.createElement('div'));
         textContainer.classList.add(TEXT);
-        const textElement = textContainer.appendChild(document.createElement('p'));
+        const textElement = textContainer.appendChild(doc.createElement('p'));
         textElement.textContent = text;
 
         if (options.detail) {
-            const detailContainer = textContainer.appendChild(document.createElement('div'));
+            const detailContainer = textContainer.appendChild(doc.createElement('div'));
             detailContainer.classList.add(DETAIL);
-            const detailElement = detailContainer.appendChild(document.createElement('p'));
+            const detailElement = detailContainer.appendChild(doc.createElement('p'));
             detailElement.textContent = options.detail;
         }
 

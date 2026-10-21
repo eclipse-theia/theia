@@ -29,6 +29,8 @@ export interface OpenDialogOptions {
     openFolders?: boolean;
     selectMany?: boolean;
     filters?: FileFilter[];
+    /** Name of the target window for parenting the dialog. If omitted, the sender's window is used. */
+    windowName?: string;
 }
 
 export interface SaveDialogOptions {
@@ -38,6 +40,8 @@ export interface SaveDialogOptions {
     buttonLabel?: string,
     modal?: boolean,
     filters?: FileFilter[];
+    /** Name of the target window for parenting the dialog. If omitted, the sender's window is used. */
+    windowName?: string;
 }
 
 export interface TheiaFilesystemAPI {

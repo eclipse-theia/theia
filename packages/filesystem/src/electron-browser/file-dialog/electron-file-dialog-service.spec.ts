@@ -20,8 +20,8 @@ let disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import URI from '@theia/core/lib/common/uri';
-import { OpenFileDialogProps } from '../../browser/file-dialog';
-import { OpenDialogOptions } from '../../electron-common/electron-api';
+import { OpenFileDialogProps, SaveFileDialogProps } from '../../browser/file-dialog';
+import { OpenDialogOptions, SaveDialogOptions } from '../../electron-common/electron-api';
 import { ElectronFileDialogService } from './electron-file-dialog-service';
 
 disableJSDOM();
@@ -29,6 +29,9 @@ disableJSDOM();
 class TestElectronFileDialogService extends ElectronFileDialogService {
     override toOpenDialogOptions(uri: URI, props: OpenFileDialogProps): OpenDialogOptions {
         return super.toOpenDialogOptions(uri, props);
+    }
+    override toSaveDialogOptions(uri: URI, props: SaveFileDialogProps): SaveDialogOptions {
+        return super.toSaveDialogOptions(uri, props);
     }
 }
 
@@ -53,5 +56,29 @@ describe('ElectronFileDialogService', () => {
         expect(options.filters).to.deep.equal([
             { name: 'Theia Workspace', extensions: ['theia-workspace'] }
         ]);
+    });
+
+    describe('windowName forwarding', () => {
+        it('should pass windowName from targetWindow for open dialog', () => {
+            const targetWindow = { name: '123-secondaryWindow-0' } as Window;
+            const options = new TestElectronFileDialogService().toOpenDialogOptions(uri, { title: 'Open', canSelectFiles: true, targetWindow });
+            expect(options.windowName).to.equal('123-secondaryWindow-0');
+        });
+
+        it('should leave windowName undefined when no targetWindow is set for open dialog', () => {
+            const options = new TestElectronFileDialogService().toOpenDialogOptions(uri, { title: 'Open', canSelectFiles: true });
+            expect(options.windowName).to.be.undefined;
+        });
+
+        it('should pass windowName from targetWindow for save dialog', () => {
+            const targetWindow = { name: '123-secondaryWindow-0' } as Window;
+            const options = new TestElectronFileDialogService().toSaveDialogOptions(uri, { title: 'Save', targetWindow });
+            expect(options.windowName).to.equal('123-secondaryWindow-0');
+        });
+
+        it('should leave windowName undefined when no targetWindow is set for save dialog', () => {
+            const options = new TestElectronFileDialogService().toSaveDialogOptions(uri, { title: 'Save' });
+            expect(options.windowName).to.be.undefined;
+        });
     });
 });
