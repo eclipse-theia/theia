@@ -18,7 +18,9 @@ import { inject, injectable, postConstruct } from 'inversify';
 import { DefaultSecondaryWindowService } from '../../browser/window/default-secondary-window-service';
 import { ApplicationShell, ExtractableWidget } from '../../browser';
 import { ElectronWindowService } from './electron-window-service';
+import { createDragPanel, createTitleElement, createWindowControlsContainer, setupMaximizeRestoreToggle } from '../menu/electron-window-title-bar-utils';
 import { Deferred, timeout } from '../../common/promise-util';
+import { isOSX } from '../../common/os';
 import { ElectronWindowPreferences, PREF_WINDOW_ZOOM_LEVEL } from '../../electron-common/electron-window-preferences';
 
 @injectable()
@@ -82,8 +84,31 @@ export class ElectronSecondaryWindowService extends DefaultSecondaryWindowServic
         const currentZoomLevel = this.electronWindowPreferences.get(PREF_WINDOW_ZOOM_LEVEL, 0);
         window.electronTheiaCore.setZoomLevel(currentZoomLevel, newWindow.name);
 
-        // Below code may be used to debug contents of secondary window
-        // window.electronTheiaCore.openDevToolsForWindow(newWindow.name);
+        this.createCustomTitleBarForSecondaryWindow(newWindow, widget);
+    }
+
+    protected async createCustomTitleBarForSecondaryWindow(newWindow: Window, widget: ExtractableWidget): Promise<void> {
+        if (isOSX) {
+            return;
+        }
+        const titleBarStyle = await window.electronTheiaCore.getTitleBarStyleAtStartup();
+        if (titleBarStyle !== 'custom') {
+            return;
+        }
+
+        const topPanel = newWindow.document.getElementById('theia-top-panel');
+        if (!topPanel) {
+            return;
+        }
+
+        const doc = newWindow.document;
+        const windowName = newWindow.name;
+
+        topPanel.appendChild(createDragPanel(doc));
+        topPanel.appendChild(createTitleElement(doc, widget.title.label));
+        topPanel.appendChild(createWindowControlsContainer(doc, windowName));
+
+        setupMaximizeRestoreToggle(doc.body, windowName);
     }
     private async canClose(extractableWidget: ExtractableWidget, shell: ApplicationShell, newWindow: Window): Promise<boolean> {
         return this.restoreWidgets(newWindow, extractableWidget, shell);

@@ -20,7 +20,7 @@ import {
     MenuContribution, Disposable, nls, PreferenceScope, PreferenceService
 } from '../../common';
 import {
-    codicon, ConfirmDialog, KeybindingContribution, KeybindingRegistry, Widget,
+    ConfirmDialog, KeybindingContribution, KeybindingRegistry, Widget,
     FrontendApplication, FrontendApplicationContribution, CommonMenus, CommonCommands, Dialog, Message, ApplicationShell, animationFrame,
 } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
@@ -30,6 +30,7 @@ import { PREF_WINDOW_ZOOM_LEVEL, ZoomLevel } from '../../electron-common/electro
 import { BrowserMenuBarContribution, MenuBarWidget } from '../../browser/menu/browser-menu-plugin';
 import { WindowService } from '../../browser/window/window-service';
 import { WindowTitleService } from '../../browser/window/window-title-service';
+import { createWindowControlsContainer, setupMaximizeRestoreToggle } from './electron-window-title-bar-utils';
 
 import '../../../src/electron-browser/menu/electron-menu-style.css';
 import { ThemeService } from '../../browser/theming';
@@ -240,16 +241,8 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         app.shell.addWidget(dragPanel, { area: 'top' });
         this.appendMenu(app.shell);
         this.createCustomTitleWidget(app);
-        const controls = document.createElement('div');
-        controls.id = 'window-controls';
-        controls.append(
-            this.createControlButton('minimize', () => window.electronTheiaCore.minimize()),
-            this.createControlButton('maximize', () => window.electronTheiaCore.maximize()),
-            this.createControlButton('restore', () => window.electronTheiaCore.unMaximize()),
-            this.createControlButton('close', () => window.electronTheiaCore.close())
-        );
-        app.shell.topPanel.node.append(controls);
-        this.handleWindowControls();
+        app.shell.topPanel.node.append(createWindowControlsContainer(document));
+        setupMaximizeRestoreToggle(document.body);
     }
 
     protected createCustomTitleWidget(app: FrontendApplication): void {
@@ -257,28 +250,6 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         if (titleWidget) {
             app.shell.addWidget(titleWidget, { area: 'top' });
         }
-    }
-
-    protected handleWindowControls(): void {
-        toggleControlButtons();
-        window.electronTheiaCore.onWindowEvent('maximize', toggleControlButtons);
-        window.electronTheiaCore.onWindowEvent('unmaximize', toggleControlButtons);
-
-        function toggleControlButtons(): void {
-            if (window.electronTheiaCore.isMaximized()) {
-                document.body.classList.add('maximized');
-            } else {
-                document.body.classList.remove('maximized');
-            }
-        }
-    }
-
-    protected createControlButton(id: string, handler: () => void): HTMLElement {
-        const button = document.createElement('div');
-        button.id = `${id}-button`;
-        button.className = `control-button ${codicon(`chrome-${id}`)}`;
-        button.addEventListener('click', handler);
-        return button;
     }
 
     protected async handleRequiredRestart(): Promise<void> {

@@ -61,7 +61,9 @@ import {
     CHANNEL_SET_THEME,
     CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW,
     CHANNEL_UPDATE_RECENT_WORKSPACES,
-    CHANNEL_SET_AUTO_HIDE_MENU_BAR
+    CHANNEL_SET_AUTO_HIDE_MENU_BAR,
+    CHANNEL_ON_SECONDARY_WINDOW_EVENT,
+    CHANNEL_SUBSCRIBE_SECONDARY_WINDOW_EVENT
 } from '../electron-common/electron-api';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
 import { Disposable, DisposableCollection, isOSX, isWindows, MaybePromise, URI } from '../common';
@@ -208,24 +210,57 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
 
         ipcMain.on(CHANNEL_SET_THEME, (event, theme) => application.setTheme(theme));
 
-        ipcMain.on(CHANNEL_MINIMIZE, event => {
-            BrowserWindow.fromWebContents(event.sender)?.minimize();
+        ipcMain.on(CHANNEL_MINIMIZE, (event, windowName?: string) => {
+            const win = windowName
+                ? BrowserWindow.getAllWindows().find(w => w.webContents.mainFrame.name === windowName)
+                : BrowserWindow.fromWebContents(event.sender);
+            win?.minimize();
         });
 
-        ipcMain.on(CHANNEL_IS_MAXIMIZED, event => {
-            event.returnValue = BrowserWindow.fromWebContents(event.sender)?.isMaximized();
+        ipcMain.on(CHANNEL_IS_MAXIMIZED, (event, windowName?: string) => {
+            const win = windowName
+                ? BrowserWindow.getAllWindows().find(w => w.webContents.mainFrame.name === windowName)
+                : BrowserWindow.fromWebContents(event.sender);
+            event.returnValue = win?.isMaximized() ?? false;
         });
 
-        ipcMain.on(CHANNEL_MAXIMIZE, event => {
-            BrowserWindow.fromWebContents(event.sender)?.maximize();
+        ipcMain.on(CHANNEL_MAXIMIZE, (event, windowName?: string) => {
+            const win = windowName
+                ? BrowserWindow.getAllWindows().find(w => w.webContents.mainFrame.name === windowName)
+                : BrowserWindow.fromWebContents(event.sender);
+            win?.maximize();
         });
 
-        ipcMain.on(CHANNEL_UNMAXIMIZE, event => {
-            BrowserWindow.fromWebContents(event.sender)?.unmaximize();
+        ipcMain.on(CHANNEL_UNMAXIMIZE, (event, windowName?: string) => {
+            const win = windowName
+                ? BrowserWindow.getAllWindows().find(w => w.webContents.mainFrame.name === windowName)
+                : BrowserWindow.fromWebContents(event.sender);
+            win?.unmaximize();
         });
 
-        ipcMain.on(CHANNEL_CLOSE, event => {
-            BrowserWindow.fromWebContents(event.sender)?.close();
+        ipcMain.on(CHANNEL_CLOSE, (event, windowName?: string) => {
+            const win = windowName
+                ? BrowserWindow.getAllWindows().find(w => w.webContents.mainFrame.name === windowName)
+                : BrowserWindow.fromWebContents(event.sender);
+            win?.close();
+        });
+
+        ipcMain.on(CHANNEL_SUBSCRIBE_SECONDARY_WINDOW_EVENT, (event, windowName: string) => {
+            const targetWindow = BrowserWindow.getAllWindows().find(w => w.webContents.mainFrame.name === windowName);
+            if (targetWindow) {
+                const sender = event.sender;
+                const onMaximize = () => sender.send(CHANNEL_ON_SECONDARY_WINDOW_EVENT, windowName, 'maximize');
+                const onUnmaximize = () => sender.send(CHANNEL_ON_SECONDARY_WINDOW_EVENT, windowName, 'unmaximize');
+                const onFocus = () => sender.send(CHANNEL_ON_SECONDARY_WINDOW_EVENT, windowName, 'focus');
+                targetWindow.on('maximize', onMaximize);
+                targetWindow.on('unmaximize', onUnmaximize);
+                targetWindow.on('focus', onFocus);
+                targetWindow.once('closed', () => {
+                    targetWindow.removeListener('maximize', onMaximize);
+                    targetWindow.removeListener('unmaximize', onUnmaximize);
+                    targetWindow.removeListener('focus', onFocus);
+                });
+            }
         });
 
         ipcMain.on(CHANNEL_RESTART, event => {

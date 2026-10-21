@@ -29,7 +29,8 @@ import {
     CHANNEL_WC_METADATA, CHANNEL_ABOUT_TO_CLOSE, CHANNEL_OPEN_WITH_SYSTEM_APP,
     CHANNEL_OPEN_URL, CHANNEL_SET_THEME, CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW,
     CHANNEL_UPDATE_RECENT_WORKSPACES,
-    CHANNEL_SET_AUTO_HIDE_MENU_BAR
+    CHANNEL_SET_AUTO_HIDE_MENU_BAR,
+    CHANNEL_ON_SECONDARY_WINDOW_EVENT, CHANNEL_SUBSCRIBE_SECONDARY_WINDOW_EVENT
 } from '../electron-common/electron-api';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -128,20 +129,20 @@ const api: TheiaCoreAPI = {
     setTheme: function (theme): void {
         ipcRenderer.send(CHANNEL_SET_THEME, theme);
     },
-    minimize: function (): void {
-        ipcRenderer.send(CHANNEL_MINIMIZE);
+    minimize: function (windowName?: string): void {
+        ipcRenderer.send(CHANNEL_MINIMIZE, windowName);
     },
-    isMaximized: function (): boolean {
-        return ipcRenderer.sendSync(CHANNEL_IS_MAXIMIZED);
+    isMaximized: function (windowName?: string): boolean {
+        return ipcRenderer.sendSync(CHANNEL_IS_MAXIMIZED, windowName);
     },
-    maximize: function (): void {
-        ipcRenderer.send(CHANNEL_MAXIMIZE);
+    maximize: function (windowName?: string): void {
+        ipcRenderer.send(CHANNEL_MAXIMIZE, windowName);
     },
-    unMaximize: function (): void {
-        ipcRenderer.send(CHANNEL_UNMAXIMIZE);
+    unMaximize: function (windowName?: string): void {
+        ipcRenderer.send(CHANNEL_UNMAXIMIZE, windowName);
     },
-    close: function (): void {
-        ipcRenderer.send(CHANNEL_CLOSE);
+    close: function (windowName?: string): void {
+        ipcRenderer.send(CHANNEL_CLOSE, windowName);
     },
 
     onAboutToClose(handler: () => void): Disposable {
@@ -166,6 +167,16 @@ const api: TheiaCoreAPI = {
         };
         ipcRenderer.on(CHANNEL_ON_WINDOW_EVENT, h);
         return Disposable.create(() => ipcRenderer.off(CHANNEL_ON_WINDOW_EVENT, h));
+    },
+    onSecondaryWindowEvent: function (windowName: string, event: WindowEvent, handler: () => void): Disposable {
+        ipcRenderer.send(CHANNEL_SUBSCRIBE_SECONDARY_WINDOW_EVENT, windowName);
+        const h = (_event: unknown, name: string, evt: WindowEvent) => {
+            if (name === windowName && event === evt) {
+                handler();
+            }
+        };
+        ipcRenderer.on(CHANNEL_ON_SECONDARY_WINDOW_EVENT, h);
+        return Disposable.create(() => ipcRenderer.off(CHANNEL_ON_SECONDARY_WINDOW_EVENT, h));
     },
     setCloseRequestHandler: function (handler: (stopReason: StopReason) => Promise<boolean>): void {
         ipcRenderer.on(CHANNEL_REQUEST_CLOSE, async (event: Electron.IpcRendererEvent, stopReason: StopReason, confirmChannel: string, cancelChannel: string) => {

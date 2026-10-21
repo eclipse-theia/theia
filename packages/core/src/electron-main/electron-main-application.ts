@@ -959,10 +959,7 @@ export class ElectronMainApplication {
                 const defaultOptions = this.getDefaultOptions();
                 const options: BrowserWindowConstructorOptions = {
                     ...this.getDefaultTheiaSecondaryWindowBounds(),
-                    // We always need the native window frame for now because the secondary window does not have Theia's title bar by default.
-                    // In 'custom' title bar mode this would leave the window without any window controls (close, min, max)
-                    // TODO set to this.useNativeWindowFrame when secondary windows support a custom title bar.
-                    frame: true,
+                    frame: this.useNativeWindowFrame,
                     minWidth: defaultOptions.minWidth,
                     minHeight: defaultOptions.minHeight,
                     webPreferences: {
@@ -970,12 +967,12 @@ export class ElectronMainApplication {
                     }
                 };
 
-                if (!this.useNativeWindowFrame) {
-                    // If the main window does not have a native window frame, do not show  an icon in the secondary window's native title bar.
-                    // The data url is a 1x1 transparent png
-                    options.icon = nativeImage.createFromDataURL(
-                        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12P4DwQACfsD/WMmxY8AAAAASUVORK5CYII=');
+                const appIcon = this.config.electron?.windowOptions?.icon;
+                if (appIcon) {
+                    const iconPath = path.resolve(this.globals.THEIA_APP_PROJECT_PATH, appIcon as string);
+                    options.icon = nativeImage.createFromPath(iconPath);
                 }
+
                 return {
                     action: 'allow',
                     overrideBrowserWindowOptions: options,

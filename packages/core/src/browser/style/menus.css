@@ -30,7 +30,7 @@
 
 .lm-Widget.lm-MenuBar {
   display: flex;
-  align-items: center; 
+  align-items: center;
   padding-left: 5px;
   font-size: var(--theia-ui-font-size1);
 }
@@ -41,7 +41,7 @@
 
 .lm-MenuBar-content {
   display: flex;
-  align-items: center; 
+  align-items: center;
 }
 
 .lm-MenuBar-item {
@@ -63,10 +63,8 @@
 .lm-MenuBar.lm-mod-active .lm-MenuBar-item.lm-mod-active {
   z-index: calc(var(--theia-menu-z-index) - 1);
   background: var(--theia-menubar-selectionBackground);
-  border-left: var(--theia-border-width) solid
-    var(--theia-menubar-selectionBorder);
-  border-right: var(--theia-border-width) solid
-    var(--theia-menubar-selectionBorder);
+  border-left: var(--theia-border-width) solid var(--theia-menubar-selectionBorder);
+  border-right: var(--theia-border-width) solid var(--theia-menubar-selectionBorder);
 }
 
 .lm-MenuBar-item.lm-mod-disabled {
@@ -77,8 +75,7 @@
   margin: 2px;
   padding: 0;
   border: none;
-  border-left: var(--theia-border-width) solid
-    var(--theia-menu-separatorBackground);
+  border-left: var(--theia-border-width) solid var(--theia-menu-separatorBackground);
 }
 
 .lm-MenuBar-itemMnemonic {
@@ -86,12 +83,14 @@
 }
 
 #theia-top-panel {
+  position: relative;
   background: var(--theia-titleBar-activeBackground);
   color: var(--theia-titleBar-activeForeground);
   display: flex;
   min-height: var(--theia-private-menubar-height);
   border-bottom: 1px solid var(--theia-titleBar-border);
 }
+
 #theia-top-panel:window-inactive,
 #theia-top-panel:-moz-window-inactive {
   background: var(--theia-titleBar-inactiveBackground);
@@ -144,16 +143,16 @@
  * So we apply it to its first and last child
  */
 
-.lm-Menu-item.lm-mod-active > div {
+.lm-Menu-item.lm-mod-active>div {
   background: var(--theia-menu-selectionBackground);
 }
 
-.lm-Menu-item.lm-mod-active > div:first-child {
+.lm-Menu-item.lm-mod-active>div:first-child {
   border-top-left-radius: 4px;
   border-bottom-left-radius: 4px;
 }
 
-.lm-Menu-item.lm-mod-active > div:last-child {
+.lm-Menu-item.lm-mod-active>div:last-child {
   border-top-right-radius: 4px;
   border-bottom-right-radius: 4px;
 }
@@ -185,26 +184,25 @@
   padding: 0px 10px 0px 0px;
 }
 
-.lm-Menu-item[data-type="separator"] > div {
+.lm-Menu-item[data-type="separator"]>div {
   padding: 0;
   height: 9px;
   opacity: 0.36;
 }
 
-.lm-Menu-item[data-type="separator"] > div::after {
+.lm-Menu-item[data-type="separator"]>div::after {
   content: "";
   display: block;
   position: relative;
   top: 4px;
-  border-top: var(--theia-border-width) solid
-    var(--theia-menu-separatorBackground);
+  border-top: var(--theia-border-width) solid var(--theia-menu-separatorBackground);
 }
 
-.lm-Menu-item[data-type="separator"] > div:first-child:after {
+.lm-Menu-item[data-type="separator"]>div:first-child:after {
   margin-left: -4px;
 }
 
-.lm-Menu-item[data-type="separator"] > div:last-child::after {
+.lm-Menu-item[data-type="separator"]>div:last-child::after {
   margin-right: -4px;
 }
 
@@ -223,11 +221,11 @@
   transform: translateY(20%);
 }
 
-.lm-Menu-item.lm-mod-toggled > .lm-Menu-itemIcon::before {
+.lm-Menu-item.lm-mod-toggled>.lm-Menu-itemIcon::before {
   content: "\eab2";
   transform: scale(0.8) translateY(20%);
 }
 
-.lm-Menu-item[data-type="submenu"] > .lm-Menu-itemSubmenuIcon::before {
+.lm-Menu-item[data-type="submenu"]>.lm-Menu-itemSubmenuIcon::before {
   content: "\eab6";
 }
