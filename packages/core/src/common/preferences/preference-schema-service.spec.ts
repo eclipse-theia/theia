@@ -16,12 +16,12 @@
 
 import { expect } from 'chai';
 import { Container } from 'inversify';
-import { bindContributionProvider } from '../contribution-provider';
-import { ILogger } from '../logger';
-import { MockLogger } from '../test/mock-logger';
-import { DefaultValueChangedEvent, PreferenceContribution } from './preference-schema';
-import { PreferenceSchemaServiceImpl } from './preference-schema-service';
-import { PreferenceScope, ValidPreferenceScopes } from './preference-scope';
+import { bindContributionProvider } from '../contribution-provider.js';
+import { ILogger } from '../logger.js';
+import { MockLogger } from '../test/mock-logger.js';
+import { DefaultValueChangedEvent, PreferenceContribution } from './preference-schema.js';
+import { PreferenceSchemaServiceImpl } from './preference-schema-service.js';
+import { PreferenceScope, ValidPreferenceScopes } from './preference-scope.js';
 
 const KEY = 'test.value';
 

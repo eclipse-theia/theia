@@ -24,8 +24,8 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import { Command, Disposable } from '@theia/core/lib/common';
-import { PluginViewRegistry, ViewContainerInfo, PLUGIN_VIEW_DATA_FACTORY_ID } from './plugin-view-registry';
-import { PluginViewType, ViewWelcome } from '../../../common';
+import { PluginViewRegistry, ViewContainerInfo, PLUGIN_VIEW_DATA_FACTORY_ID } from './plugin-view-registry.js';
+import { PluginViewType, ViewWelcome } from '../../../common/index.js';
 import { BaseWidget, Panel, Widget } from '@theia/core/lib/browser/widgets/widget';
 
 disableJSDOM();

@@ -16,7 +16,7 @@
 
 import * as path from 'path';
 import * as fs from '@theia/core/shared/fs-extra';
-import { NodeDirectoryWatcherTimings } from '../nodejs-watcher/node-directory-watcher';
+import { NodeDirectoryWatcherTimings } from '../nodejs-watcher/node-directory-watcher.js';
 
 /** Scaled down so the suite stays quick; only the order of the delays matters. */
 export const WATCHER_TIMINGS: NodeDirectoryWatcherTimings = {

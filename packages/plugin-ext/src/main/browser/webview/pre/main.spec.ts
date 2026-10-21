@@ -9,8 +9,13 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import { readFileSync } from 'fs';
+import { runInNewContext } from 'vm';
 
-const { toNormalizedKeyboardInput } = require('../../../../../src/main/browser/webview/pre/main.js');
+// `main.js` is a classic script of the webview, which exports its functions when it is loaded with a `module` object.
+const mainModule = { exports: {} as { toNormalizedKeyboardInput: (event: object) => unknown } };
+runInNewContext(readFileSync(new URL('../../../../../src/main/browser/webview/pre/main.js', import.meta.url), 'utf8'), { module: mainModule });
+const { toNormalizedKeyboardInput } = mainModule.exports;
 
 describe('webview keyboard transport', () => {
     it('serializes explicit AltGraph and normalized keyboard fields', () => {

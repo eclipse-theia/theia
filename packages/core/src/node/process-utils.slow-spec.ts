@@ -16,11 +16,12 @@
 
 import { expect } from 'chai';
 import * as cp from 'child_process';
+import * as path from 'path';
 import { Container } from 'inversify';
-import { ILogger } from '../common/logger';
-import { MockLogger } from '../common/test/mock-logger';
-import { ProcessUtils } from './process-utils';
-import { EXITING_BACKEND_EXIT_CODE, EXITING_BACKEND_GRACEFUL, EXITING_BACKEND_NO_POWERSHELL } from './test/exiting-backend';
+import { ILogger } from '../common/logger.js';
+import { MockLogger } from '../common/test/mock-logger.js';
+import { ProcessUtils } from './process-utils.js';
+import { EXITING_BACKEND_EXIT_CODE, EXITING_BACKEND_GRACEFUL, EXITING_BACKEND_NO_POWERSHELL } from './test/exiting-backend.js';
 
 interface ExitingProcessResult {
     exitCode: number | null;
@@ -29,7 +30,7 @@ interface ExitingProcessResult {
 
 function runExitingProcess(options: { env?: NodeJS.ProcessEnv, detached?: boolean } = {}): Promise<ExitingProcessResult> {
     return new Promise((resolve, reject) => {
-        const exitingProcess = cp.spawn(process.execPath, [require.resolve('./test/exiting-backend')], {
+        const exitingProcess = cp.spawn(process.execPath, [path.join(import.meta.dirname, 'test', 'exiting-backend.js')], {
             env: { ...process.env, ...options.env },
             detached: options.detached,
             stdio: ['ignore', 'pipe', 'inherit'],

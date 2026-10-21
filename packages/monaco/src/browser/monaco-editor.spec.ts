@@ -21,11 +21,11 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Disposable, Event } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
-import type { MonacoEditor as MonacoEditorType, MonacoEditorServices } from './monaco-editor';
-import type { MonacoEditorModel } from './monaco-editor-model';
-import type { MonacoDiffEditor as MonacoDiffEditorType } from './monaco-diff-editor';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation.js';
+import type { MonacoEditor as MonacoEditorType, MonacoEditorServices } from './monaco-editor.js';
+import type { MonacoEditorModel } from './monaco-editor-model.js';
+import type { MonacoDiffEditor as MonacoDiffEditorType } from './monaco-diff-editor.js';
 
 disableJSDOM();
 
@@ -37,8 +37,8 @@ describe('MonacoEditor visibility', () => {
         disableJSDOM = enableJSDOM();
         // Initialize baseline services before editor imports register additional services requiring browser CSS globals.
         StandaloneServices.get(IInstantiationService);
-        ({ MonacoEditor } = await import('./monaco-editor'));
-        ({ MonacoDiffEditor } = await import('./monaco-diff-editor'));
+        ({ MonacoEditor } = await import('./monaco-editor.js'));
+        ({ MonacoDiffEditor } = await import('./monaco-diff-editor.js'));
     });
     after(() => disableJSDOM());
 

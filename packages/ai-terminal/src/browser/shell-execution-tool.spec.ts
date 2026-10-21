@@ -27,9 +27,9 @@ import { Container } from '@theia/core/shared/inversify';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { withWorkspaceServiceDefaults } from '@theia/workspace/lib/browser/test/with-workspace-service-defaults';
-import { ShellExecutionRequest, ShellExecutionServer } from '../common/shell-execution-server';
-import { ShellCommandPermissionService } from './shell-command-permission-service';
-import { ShellExecutionTool } from './shell-execution-tool';
+import { ShellExecutionRequest, ShellExecutionServer } from '../common/shell-execution-server.js';
+import { ShellCommandPermissionService } from './shell-command-permission-service.js';
+import { ShellExecutionTool } from './shell-execution-tool.js';
 
 disableJSDOM();
 

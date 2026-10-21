@@ -15,23 +15,23 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
-import { isOSX, isWindows } from '../common/os';
-import { Emitter, Event } from '../common/event';
-import { CommandRegistry, Command } from '../common/command';
-import { Disposable, DisposableCollection } from '../common/disposable';
+import { isOSX, isWindows } from '../common/os.js';
+import { Emitter, Event } from '../common/event.js';
+import { CommandRegistry, Command } from '../common/command.js';
+import { Disposable, DisposableCollection } from '../common/disposable.js';
 import {
     KeyCode, KeySequence, Key, NormalizedKeyboardInput, normalizeKeyboardInput,
     layoutModifiersIncludeAltGraph, layoutModifiersIncludeShift
-} from './keyboard/keys';
-import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
-import { ContributionProvider } from '../common/contribution-provider';
-import { ILogger } from '../common/logger';
-import { StatusBarAlignment, StatusBar } from './status-bar/status-bar';
-import { ContextKeyService } from './context-key-service';
-import { CorePreferences } from '../common/core-preferences';
-import * as common from '../common/keybinding';
-import { nls } from '../common/nls';
-import { TernarySearchTree } from '../common/ternary-search-tree';
+} from './keyboard/keys.js';
+import { KeyboardLayoutService } from './keyboard/keyboard-layout-service.js';
+import { ContributionProvider } from '../common/contribution-provider.js';
+import { ILogger } from '../common/logger.js';
+import { StatusBarAlignment, StatusBar } from './status-bar/status-bar.js';
+import { ContextKeyService } from './context-key-service.js';
+import { CorePreferences } from '../common/core-preferences.js';
+import * as common from '../common/keybinding.js';
+import { nls } from '../common/nls.js';
+import { TernarySearchTree } from '../common/ternary-search-tree.js';
 
 export enum KeybindingScope {
     DEFAULT,
