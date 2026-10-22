@@ -335,7 +335,6 @@ describe('ChatGptResponseApiUtils', () => {
             if (withTools) {
                 expect(payloads).to.have.lengthOf(2);
                 expect(payloads[1].input).to.deep.equal([
-                    ...payloads[0].input as unknown[],
                     { type: 'compaction', id: 'c1', encrypted_content: 'encrypted' },
                     { type: 'function_call', id: 'fc1', call_id: 'call1', name: 'lookup', arguments: '{}' },
                     { type: 'function_call_output', call_id: 'call1', output: 'result' }

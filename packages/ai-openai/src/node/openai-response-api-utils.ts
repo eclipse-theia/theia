@@ -29,6 +29,7 @@ import {
 import { CancellationToken, isObject, nls, unreachable, ILogger } from '@theia/core';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
+import { toResponseInputItems } from 'openai/lib/responses/ResponseInputItems';
 import type {
     FunctionTool,
     Tool,
@@ -918,8 +919,14 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
             });
         }
 
-        // Replay native output verbatim; the SDK's output/input unions differ for some hosted tool types.
-        this.currentInput = [...this.currentInput, ...this.currentOutput as ResponseInputItem[], ...toolResults];
+        this.currentInput = [...this.currentInput, ...toResponseInputItems(this.currentOutput), ...toolResults];
+        // The latest compaction item subsumes all preceding input, including earlier compactions.
+        for (let i = this.currentInput.length - 1; i >= 0; i--) {
+            if (this.currentInput[i].type === 'compaction') {
+                this.currentInput = this.currentInput.slice(i);
+                break;
+            }
+        }
     }
 }
 

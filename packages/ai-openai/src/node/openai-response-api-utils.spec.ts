@@ -863,20 +863,26 @@ describe('OpenAiResponseApiUtils', () => {
         const callB = call('b');
         const suffix = [reasoning, search, message('after'), callB];
         const cases = [
-            { name: 'without compaction', output: [callA, ...suffix] },
-            { name: 'with compaction before calls', output: [message('before'), compaction, callA, ...suffix] },
-            { name: 'with compaction between calls', output: [callA, message('before'), compaction, ...suffix] },
-            { name: 'with compaction after calls', output: [callA, ...suffix, compaction] },
+            { name: 'without compaction', output: [callA, ...suffix], replay: [callA, ...suffix] },
+            { name: 'with compaction before calls', output: [message('before'), compaction, callA, ...suffix], replay: [compaction, callA, ...suffix] },
+            { name: 'with compaction between calls', output: [callA, message('before'), compaction, ...suffix], replay: [compaction, ...suffix] },
+            { name: 'with compaction after calls', output: [callA, ...suffix, compaction], replay: [compaction] },
+            {
+                name: 'with output requiring SDK conversion',
+                output: [{ ...callA, created_by: 'provider' }, { type: 'additional_tools', id: 'tools', role: 'assistant', tools: [] }, ...suffix],
+                replay: [callA, ...suffix]
+            },
             {
                 name: 'with multiple compactions',
                 output: [{ ...compaction, id: 'cmp-old' }, callA, { ...reasoning, id: 'reasoning-before' },
-                { ...search, id: 'search-before' }, message('before'), compaction, ...suffix]
+                { ...search, id: 'search-before' }, message('before'), compaction, ...suffix],
+                replay: [compaction, ...suffix]
             }
         ];
 
         for (const isStreaming of [true, false]) {
-            for (const { name, output } of cases) {
-                it(`appends complete output ${name} and paired tool results (${isStreaming ? 'streaming' : 'non-streaming'})`, async () => {
+            for (const { name, output, replay } of cases) {
+                it(`replays input ${name} and paired tool results (${isStreaming ? 'streaming' : 'non-streaming'})`, async () => {
                     const payloads: Record<string, unknown>[] = [];
                     let executions = 0;
                     const responses = [output, [call('c')], [message('done')]];
@@ -932,8 +938,8 @@ describe('OpenAiResponseApiUtils', () => {
                     expect(payloads).to.have.lengthOf(3);
                     expect(payloads[1].instructions).to.equal('Instructions');
                     expect(payloads[1].input).to.deep.equal([
-                        ...payloads[0].input as unknown[],
-                        ...output,
+                        ...(output.some(item => item.type === 'compaction') ? [] : payloads[0].input as unknown[]),
+                        ...replay,
                         { type: 'function_call_output', call_id: 'a', output: 'result' },
                         { type: 'function_call_output', call_id: 'b', output: '' }
                     ]);
@@ -1055,9 +1061,9 @@ describe('OpenAiResponseApiUtils', () => {
             const payloads: Record<string, unknown>[] = [];
             const streams = [
                 [
-                    ...(nameSource === 'added' ? [{ type: 'response.output_item.added', item: { ...item, arguments: '' } }] : []),
+                    ...(nameSource === 'added' ? [{ type: 'response.output_item.added', output_index: 0, item: { ...item, arguments: '' } }] : []),
                     nameSource === 'arguments' ? { ...argumentsDone, name: item.name } : argumentsDone,
-                    { type: 'response.output_item.done', item },
+                    { type: 'response.output_item.done', output_index: 0, item },
                     { type: 'response.completed', response: {} }
                 ],
                 [{ type: 'response.completed', response: {} }]
@@ -1089,7 +1095,7 @@ describe('OpenAiResponseApiUtils', () => {
             expect(finished?.function?.name).to.equal('lookup');
             expect(finished?.result).to.equal('found');
             expect(payloads).to.have.lengthOf(2);
-            expect(payloads[1].input).to.deep.include({ type: 'function_call', call_id: item.call_id, name: item.name, arguments: item.arguments });
+            expect(payloads[1].input).to.deep.include(item);
             expect(payloads[1].input).to.deep.include({ type: 'function_call_output', call_id: item.call_id, output: 'found' });
         });
     }
