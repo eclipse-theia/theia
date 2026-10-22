@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { formatProviderError, formattedProviderErrorToShortString } from './provider-error-formatter';
+import { extractErrorMessageWithCause, formatProviderError, formattedProviderErrorToShortString } from './provider-error-formatter';
 
 describe('formatProviderError', () => {
 
@@ -186,5 +186,153 @@ describe('formattedProviderErrorToShortString', () => {
     it('should return only headline when no status', () => {
         const result = formattedProviderErrorToShortString({ message: 'Something went wrong', raw: '' });
         expect(result).to.equal('Something went wrong');
+    });
+});
+
+describe('formatProviderError network errors', () => {
+
+    it('should explain a bare "fetch failed" error', () => {
+        const result = formatProviderError('fetch failed');
+        expect(result.status).to.be.undefined;
+        expect(result.message).to.match(/Could not reach the AI provider/i);
+        expect(result.details).to.equal('fetch failed');
+    });
+
+    it('should explain a DNS resolution failure (ENOTFOUND)', () => {
+        const result = formatProviderError('fetch failed | getaddrinfo ENOTFOUND api.example.com');
+        expect(result.message).to.match(/could not resolve/i);
+        expect(result.details).to.contain('ENOTFOUND');
+    });
+
+    it('should explain a refused connection (ECONNREFUSED)', () => {
+        const result = formatProviderError('fetch failed | connect ECONNREFUSED 127.0.0.1:11434');
+        expect(result.message).to.match(/connection refused/i);
+        expect(result.message).to.match(/ollama/i);
+    });
+
+    it('should explain a timeout', () => {
+        const result = formatProviderError('fetch failed | ETIMEDOUT');
+        expect(result.message).to.match(/timed out/i);
+    });
+
+    it('should explain a connection reset', () => {
+        const result = formatProviderError('fetch failed | ECONNRESET');
+        expect(result.message).to.match(/reset/i);
+    });
+
+    it('should explain a TLS certificate failure', () => {
+        const result = formatProviderError('fetch failed | self-signed certificate in certificate chain');
+        expect(result.message).to.match(/certificate/i);
+    });
+
+    it('should recognize network codes even without "fetch failed"', () => {
+        const result = formatProviderError('getaddrinfo EAI_AGAIN api.openai.com');
+        expect(result.message).to.match(/could not resolve/i);
+    });
+
+    it('should not treat normal provider errors as network errors', () => {
+        const raw = '401 {"error":{"message":"Invalid API key"}}';
+        const result = formatProviderError(raw);
+        expect(result.status).to.equal('401');
+        expect(result.message).to.equal('Invalid API key');
+    });
+
+    it('should keep a real provider body that merely mentions a TLS keyword', () => {
+        // Gating: a body with an HTTP status and JSON must not be rewritten into a network
+        // explanation just because it contains a network keyword.
+        const raw = '403 {"error":{"message":"Client certificate required"}}';
+        const result = formatProviderError(raw);
+        expect(result.status).to.equal('403');
+        expect(result.message).to.equal('Client certificate required');
+    });
+
+    it('should keep a real provider body that merely mentions EPIPE', () => {
+        const raw = '400 {"error":{"message":"EPIPE is not a supported value"}}';
+        const result = formatProviderError(raw);
+        expect(result.status).to.equal('400');
+        expect(result.message).to.equal('EPIPE is not a supported value');
+    });
+
+    it('should keep a JSON body without a status that mentions a network keyword', () => {
+        const raw = '{"error":{"message":"ECONNRESET is not a valid parameter"}}';
+        const result = formatProviderError(raw);
+        expect(result.message).to.equal('ECONNRESET is not a valid parameter');
+    });
+
+    it('should recognize CERT_HAS_EXPIRED (underscore code)', () => {
+        const result = formatProviderError('fetch failed | CERT_HAS_EXPIRED');
+        expect(result.message).to.match(/certificate/i);
+    });
+
+    it('should recognize UND_ERR_CONNECT_TIMEOUT (underscore code)', () => {
+        const result = formatProviderError('fetch failed | UND_ERR_CONNECT_TIMEOUT');
+        expect(result.message).to.match(/timed out/i);
+    });
+
+    it('should recognize DEPTH_ZERO_SELF_SIGNED_CERT', () => {
+        const result = formatProviderError('fetch failed | DEPTH_ZERO_SELF_SIGNED_CERT');
+        expect(result.message).to.match(/certificate/i);
+    });
+
+    it('should explain the real post-RPC error shape from a backend provider', () => {
+        // What actually reaches the frontend: a plain Error whose message already contains the
+        // flattened cause chain (the backend provider embeds it before crossing RPC, which drops
+        // `cause`). No status, no JSON body -> the network explanation must still kick in.
+        const raw = 'Anthropic API request failed: fetch failed | connect ECONNREFUSED 127.0.0.1:11434';
+        const result = formatProviderError(raw);
+        expect(result.status).to.be.undefined;
+        expect(result.message).to.match(/connection refused/i);
+        expect(result.details).to.equal(raw);
+    });
+
+    it('should explain a Gemini post-RPC DNS failure shape', () => {
+        const raw = 'Gemini API request failed: fetch failed | getaddrinfo ENOTFOUND generativelanguage.googleapis.com';
+        const result = formatProviderError(raw);
+        expect(result.message).to.match(/could not resolve/i);
+    });
+});
+
+describe('extractErrorMessageWithCause', () => {
+
+    it('should return the message for a simple error', () => {
+        expect(extractErrorMessageWithCause(new Error('boom'))).to.equal('boom');
+    });
+
+    it('should append the cause message', () => {
+        const cause = new Error('connect ECONNREFUSED 127.0.0.1:11434');
+        const error = Object.assign(new Error('fetch failed'), { cause });
+        const result = extractErrorMessageWithCause(error);
+        expect(result).to.equal('fetch failed | connect ECONNREFUSED 127.0.0.1:11434');
+    });
+
+    it('should consume a string cause below the top level', () => {
+        // Regression: previously the string branch was only reachable at depth 0, so a string
+        // `cause` on an Error was dropped and only "fetch failed" survived.
+        const error = Object.assign(new Error('fetch failed'), { cause: 'connect ECONNREFUSED 127.0.0.1:11434' });
+        const result = extractErrorMessageWithCause(error);
+        expect(result).to.equal('fetch failed | connect ECONNREFUSED 127.0.0.1:11434');
+    });
+
+    it('should include the code when not present in the cause message', () => {
+        const cause = Object.assign(new Error('getaddrinfo failed'), { code: 'ENOTFOUND' });
+        const error = Object.assign(new Error('fetch failed'), { cause });
+        const result = extractErrorMessageWithCause(error);
+        expect(result).to.equal('fetch failed | getaddrinfo failed: ENOTFOUND');
+    });
+
+    it('should walk nested cause chains and de-duplicate', () => {
+        const inner = Object.assign(new Error('ETIMEDOUT'), { code: 'ETIMEDOUT' });
+        const middle = Object.assign(new Error('fetch failed'), { cause: inner });
+        const outer = Object.assign(new Error('fetch failed'), { cause: middle });
+        const result = extractErrorMessageWithCause(outer);
+        expect(result).to.equal('fetch failed | ETIMEDOUT');
+    });
+
+    it('should tolerate cyclic cause chains', () => {
+        const a = new Error('a') as Error & { cause?: unknown };
+        const b = Object.assign(new Error('b'), { cause: a });
+        a.cause = b;
+        const result = extractErrorMessageWithCause(a);
+        expect(result).to.equal('a | b');
     });
 });
