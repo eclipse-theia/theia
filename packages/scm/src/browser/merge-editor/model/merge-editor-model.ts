@@ -28,14 +28,14 @@ import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoToProtocolConverter } from '@theia/monaco/lib/browser/monaco-to-protocol-converter';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IUndoRedoService, UndoRedoElementType } from '@theia/monaco-editor-core/esm/vs/platform/undoRedo/common/undoRedo';
-import { MergeRange, MergeRangeAcceptedState, MergeRangeResultState, MergeSide } from './merge-range';
-import { DetailedLineRangeMapping, DocumentLineRangeMap, DocumentRangeMap, LineRangeMapping, RangeMapping } from './range-mapping';
-import { LiveDiff, LiveDiffState } from './live-diff';
-import { LineRange } from './line-range';
-import { LineRangeEdit } from './range-editing';
-import { RangeUtils } from './range-utils';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { IUndoRedoService, UndoRedoElementType } from '@theia/monaco-editor-core/esm/vs/platform/undoRedo/common/undoRedo.js';
+import { MergeRange, MergeRangeAcceptedState, MergeRangeResultState, MergeSide } from './merge-range.js';
+import { DetailedLineRangeMapping, DocumentLineRangeMap, DocumentRangeMap, LineRangeMapping, RangeMapping } from './range-mapping.js';
+import { LiveDiff, LiveDiffState } from './live-diff.js';
+import { LineRange } from './line-range.js';
+import { LineRangeEdit } from './range-editing.js';
+import { RangeUtils } from './range-utils.js';
 
 export const MergeEditorModelProps = Symbol('MergeEditorModelProps');
 export interface MergeEditorModelProps {

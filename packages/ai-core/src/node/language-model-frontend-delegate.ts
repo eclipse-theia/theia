@@ -29,8 +29,8 @@ import {
     LanguageModelRegistryClient,
     isLanguageModelParsedResponse,
     UserRequest,
-} from '../common';
-import { BackendLanguageModelRegistryImpl } from './backend-language-model-registry';
+} from '../common/index.js';
+import { BackendLanguageModelRegistryImpl } from './backend-language-model-registry.js';
 
 @injectable()
 export class LanguageModelRegistryFrontendDelegateImpl implements LanguageModelRegistryFrontendDelegate {

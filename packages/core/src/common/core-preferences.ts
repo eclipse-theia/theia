@@ -16,12 +16,12 @@
 
 import { interfaces } from 'inversify';
 import { environment } from '@theia/application-package/lib/environment';
-import { SUPPORTED_ENCODINGS } from './supported-encodings';
-import { isOSX } from '../common/os';
-import { nls } from '../common/nls';
-import { PreferenceContribution, PreferenceSchema } from '../common/preferences/preference-schema';
-import { createPreferenceProxy, PreferenceProxy, PreferenceService } from '../common/preferences';
-import { PreferenceScope } from '../common/preferences/preference-scope';
+import { SUPPORTED_ENCODINGS } from './supported-encodings.js';
+import { isOSX } from '../common/os.js';
+import { nls } from '../common/nls.js';
+import { PreferenceContribution, PreferenceSchema } from '../common/preferences/preference-schema.js';
+import { createPreferenceProxy, PreferenceProxy, PreferenceService } from '../common/preferences/index.js';
+import { PreferenceScope } from '../common/preferences/preference-scope.js';
 
 /* eslint-disable max-len */
 const windowTitleDescription = [

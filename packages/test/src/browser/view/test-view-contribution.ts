@@ -17,11 +17,11 @@
 import { AbstractViewContribution, FrontendApplicationContribution, ViewContainerTitleOptions, Widget, codicon } from '@theia/core/lib/browser';
 import { Command, CommandRegistry, MenuModelRegistry, nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { TestItem, TestRunProfileKind, TestService } from '../test-service';
+import { TestItem, TestRunProfileKind, TestService } from '../test-service.js';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { TestTreeWidget } from './test-tree-widget';
+import { TestTreeWidget } from './test-tree-widget.js';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { TestCommandId } from '../constants';
+import { TestCommandId } from '../constants.js';
 import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
 import { NavigationLocation } from '@theia/editor/lib/browser/navigation/navigation-location';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';

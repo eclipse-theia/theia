@@ -18,7 +18,7 @@ import { expect } from 'chai';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { HostedPluginReader } from './plugin-reader';
+import { HostedPluginReader } from './plugin-reader.js';
 
 class TestHostedPluginReader extends HostedPluginReader {
     resolve(localPath: string, filePath: string): Promise<string | undefined> {

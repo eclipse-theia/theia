@@ -16,9 +16,9 @@
 
 import { expect } from 'chai';
 import { Container, injectable } from 'inversify';
-import { LocalStorageService } from '../storage-service';
-import { MockStorageService } from '../test/mock-storage-service';
-import { SidePanelItemVisibilityImpl } from './side-panel-item-visibility';
+import { LocalStorageService } from '../storage-service.js';
+import { MockStorageService } from '../test/mock-storage-service.js';
+import { SidePanelItemVisibilityImpl } from './side-panel-item-visibility.js';
 
 const STORAGE_KEY = SidePanelItemVisibilityImpl.STORAGE_KEY;
 

@@ -28,12 +28,12 @@ try {
 
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { parseSkillFile, combineSkillDirectories, Skill, SkillDirectoryEntry } from '../common/skill';
+import { parseSkillFile, combineSkillDirectories, Skill, SkillDirectoryEntry } from '../common/skill.js';
 import { Path } from '@theia/core/lib/common/path';
 import { Disposable, Emitter, ILogger, Logger, URI } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
-import { DefaultSkillService, SkillDirectoryContribution } from './skill-service';
+import { DefaultSkillService, SkillDirectoryContribution } from './skill-service.js';
 
 disableJSDOM();
 

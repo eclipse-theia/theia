@@ -1,0 +1,3 @@
+module.exports = require('@theia/electron/shared/electron');
+// Lets Node detect the named exports when this module is imported from an ES module.
+0 && (module.exports = { BaseWindow, BrowserView, BrowserWindow, ClipboardItem, ImageView, IpcMainServiceWorker, Menu, MenuItem, MessageChannelMain, Notification, ShareMenu, TouchBar, Tray, View, WebContentsView, WebSocket, app, autoUpdater, clipboard, contentTracing, contextBridge, crashReporter, desktopCapturer, dialog, globalShortcut, inAppPurchase, ipcMain, ipcRenderer, nativeImage, nativeTheme, net, netLog, parentPort, powerMonitor, powerSaveBlocker, protocol, pushNotifications, safeStorage, screen, session, sharedTexture, shell, systemPreferences, utilityProcess, webContents, webFrame, webFrameMain, webUtils });

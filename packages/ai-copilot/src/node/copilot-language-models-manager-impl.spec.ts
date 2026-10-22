@@ -17,8 +17,8 @@
 import { expect } from 'chai';
 import { LanguageModel, LanguageModelStatus } from '@theia/ai-core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { CopilotAuthState } from '../common/copilot-auth-service';
-import { CopilotLanguageModelsManagerImpl } from './copilot-language-models-manager-impl';
+import { CopilotAuthState } from '../common/copilot-auth-service.js';
+import { CopilotLanguageModelsManagerImpl } from './copilot-language-models-manager-impl.js';
 
 /** A registry that records the models and the patches it received. */
 class FakeRegistry {

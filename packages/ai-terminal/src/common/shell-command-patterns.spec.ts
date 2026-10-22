@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { generateCommandPatterns, flattenSuggestions, PatternSuggestion } from './shell-command-patterns';
+import { generateCommandPatterns, flattenSuggestions, PatternSuggestion } from './shell-command-patterns.js';
 
 /** Helper to extract just the patterns arrays for concise assertions. */
 function patternsOf(suggestions: PatternSuggestion[]): string[][] {

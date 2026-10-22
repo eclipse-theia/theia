@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // copied and modified from https://github.com/microsoft/vscode/blob/1.96.3/src/vs/base/common/observableInternal/base.ts
 
-import { Disposable } from '../disposable';
+import { Disposable } from '../disposable.js';
 
 /**
  * Represents an observable value.

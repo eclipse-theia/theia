@@ -14,5 +14,5 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './markdown-string';
-export * from './icon-utilities';
+export * from './markdown-string.js';
+export * from './icon-utilities.js';

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core';
-import { ToolCallChatResponseContent } from './chat-model';
+import { ToolCallChatResponseContent } from './chat-model.js';
 
 /**
  * Races a tool confirmation against an optional timeout.

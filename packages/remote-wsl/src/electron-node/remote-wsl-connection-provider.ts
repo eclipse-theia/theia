@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { RemoteWslConnectionProvider, WslDistribution, WslConnectionOptions, WslConnectionResult } from '../electron-common/remote-wsl-connection-provider';
+import { RemoteWslConnectionProvider, WslDistribution, WslConnectionOptions, WslConnectionResult } from '../electron-common/remote-wsl-connection-provider.js';
 import { RemoteConnectionService } from '@theia/remote/lib/electron-node/remote-connection-service';
 import { RemoteSetupService } from '@theia/remote/lib/electron-node/setup/remote-setup-service';
 import { exec } from 'child_process';
 import { MessageService, generateUuid, ILogger } from '@theia/core';
-import { RemoteWslConnection } from './remote-wsl-connection';
+import { RemoteWslConnection } from './remote-wsl-connection.js';
 
 @injectable()
 export class RemoteWslConnectionProviderImpl implements RemoteWslConnectionProvider {

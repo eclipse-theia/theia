@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import 'reflect-metadata';
-import { dynamicRequire } from '../dynamic-require';
-import { IPCChannel } from './ipc-channel';
-import { checkParentAlive, IPCEntryPoint } from './ipc-protocol';
+import { dynamicRequire } from '../dynamic-require.js';
+import { IPCChannel } from './ipc-channel.js';
+import { checkParentAlive, IPCEntryPoint } from './ipc-protocol.js';
 
 checkParentAlive();
 

@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { ILogger, MaybePromise } from '@theia/core/lib/common/';
-import { Task, TaskOptions } from '../task';
-import { TaskManager } from '../task-manager';
-import { TaskInfo } from '../../common/task-protocol';
+import { ILogger, MaybePromise } from '@theia/core/lib/common';
+import { Task, TaskOptions } from '../task.js';
+import { TaskManager } from '../task-manager.js';
+import { TaskInfo } from '../../common/task-protocol.js';
 import { Process } from '@theia/process/lib/node';
 
 export const TaskCustomOptions = Symbol('TaskCustomOptions');

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { deepClone, deepFreeze, isEmpty, notEmpty } from './objects';
+import { deepClone, deepFreeze, isEmpty, notEmpty } from './objects.js';
 
 describe('Objects', () => {
 

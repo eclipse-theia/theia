@@ -15,14 +15,14 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct, named } from 'inversify';
-import { Emitter } from '../common/event';
-import { Disposable, DisposableCollection } from '../common/disposable';
-import { LabelProviderContribution, DidChangeLabelEvent } from './label-provider';
-import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
-import debounce = require('lodash.debounce');
-import { PreferenceSchemaService } from '../common/preferences/preference-schema';
-import { PreferenceService } from '../common/preferences';
-import { ILogger } from '../common';
+import { Emitter } from '../common/event.js';
+import { Disposable, DisposableCollection } from '../common/disposable.js';
+import { LabelProviderContribution, DidChangeLabelEvent } from './label-provider.js';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider.js';
+import debounce from '../../shared/lodash.debounce/index.cjs';
+import { PreferenceSchemaService } from '../common/preferences/preference-schema.js';
+import { PreferenceService } from '../common/preferences/index.js';
+import { ILogger } from '../common/index.js';
 
 const ICON_THEME_PREFERENCE_KEY = 'workbench.iconTheme';
 

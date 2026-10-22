@@ -17,7 +17,7 @@
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection, MaybePromise, ILogger } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
-import { CommandIdVariables } from '../common/variable-types';
+import { CommandIdVariables } from '../common/variable-types.js';
 
 /**
  * Variable can be used inside of strings using ${variableName} syntax.

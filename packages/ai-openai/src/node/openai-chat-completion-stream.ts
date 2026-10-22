@@ -18,7 +18,7 @@ import { formatToolCallContentForModel, ToolCallExecutor, ToolCallResult, UserRe
 import { CancellationError, CancellationToken, Disposable, ILogger } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
-import { AbstractStreamingResponseIterator } from './streaming-response-iterator';
+import { AbstractStreamingResponseIterator } from './streaming-response-iterator.js';
 import {
     ChatCompletionAssistantMessageParam,
     ChatCompletionChunk,

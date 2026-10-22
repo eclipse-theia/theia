@@ -1,0 +1,3 @@
+module.exports = require('react');
+// Lets Node detect the named exports when this module is imported from an ES module.
+0 && (module.exports = { Activity, Children, Component, Fragment, Profiler, PureComponent, StrictMode, Suspense, ViewTransition, act, addTransitionType, cache, cacheSignal, captureOwnerStack, cloneElement, createContext, createElement, createRef, forwardRef, isValidElement, lazy, memo, startTransition, use, useActionState, useCallback, useContext, useDebugValue, useDeferredValue, useEffect, useEffectEvent, useId, useImperativeHandle, useInsertionEffect, useLayoutEffect, useMemo, useOptimistic, useReducer, useRef, useState, useSyncExternalStore, useTransition, version });

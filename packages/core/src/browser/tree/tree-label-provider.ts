@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { LabelProviderContribution } from '../label-provider';
-import { TreeNode } from './tree';
+import { LabelProviderContribution } from '../label-provider.js';
+import { TreeNode } from './tree.js';
 
 @injectable()
 export class TreeLabelProvider implements LabelProviderContribution {

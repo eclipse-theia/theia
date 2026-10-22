@@ -15,9 +15,9 @@
 // *****************************************************************************
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core';
-import { Agent } from './agent';
-import { AISettingsService } from './settings-service';
-import { PromptService } from './prompt-service';
+import { Agent } from './agent.js';
+import { AISettingsService } from './settings-service.js';
+import { PromptService } from './prompt-service.js';
 
 export const AgentService = Symbol('AgentService');
 

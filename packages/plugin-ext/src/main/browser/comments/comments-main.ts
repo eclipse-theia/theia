@@ -21,25 +21,25 @@ import {
     CommentOptions,
     CommentThread,
     CommentThreadChangedEvent
-} from '../../../common/plugin-api-rpc-model';
+} from '../../../common/plugin-api-rpc-model.js';
 import { Event, Emitter } from '@theia/core/lib/common/event';
-import { CommentThreadCollapsibleState, CommentThreadState } from '../../../plugin/types-impl';
+import { CommentThreadCollapsibleState, CommentThreadState } from '../../../plugin/types-impl.js';
 import {
     CommentProviderFeatures,
     CommentsExt,
     CommentsMain,
     CommentThreadChanges,
     MAIN_RPC_CONTEXT
-} from '../../../common/plugin-api-rpc';
+} from '../../../common/plugin-api-rpc.js';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { CommentsService, CommentInfoMain } from './comments-service';
-import { UriComponents } from '../../../common/uri-components';
+import { CommentsService, CommentInfoMain } from './comments-service.js';
+import { UriComponents } from '../../../common/uri-components.js';
 import { URI } from '@theia/core/shared/vscode-uri';
 import { CancellationToken } from '@theia/core/lib/common';
-import { RPCProtocol } from '../../../common/rpc-protocol';
+import { RPCProtocol } from '../../../common/rpc-protocol.js';
 import { interfaces } from '@theia/core/shared/inversify';
 import { generateUuid } from '@theia/core/lib/common/uuid';
-import { CommentsContribution } from './comments-contribution';
+import { CommentsContribution } from './comments-contribution.js';
 import { CommentAuthorInformation } from '@theia/plugin';
 
 /*---------------------------------------------------------------------------------------------

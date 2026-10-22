@@ -18,10 +18,10 @@ import * as http from 'http';
 import * as cookie from 'cookie';
 import * as crypto from 'crypto';
 import { injectable, postConstruct, inject, named } from 'inversify';
-import { isObject, isString, MaybePromise } from '../../common';
-import { ElectronSecurityToken } from '../../electron-common/electron-token';
-import { WsRequestValidatorContribution } from '../../node/ws-request-validators';
-import { ILogger } from '../../common/logger';
+import { isObject, isString, MaybePromise } from '../../common/index.js';
+import { ElectronSecurityToken } from '../../electron-common/electron-token.js';
+import { WsRequestValidatorContribution } from '../../node/ws-request-validators.js';
+import { ILogger } from '../../common/logger.js';
 
 /**
  * On Electron, we want to make sure that only Electron's browser-windows access the backend services.

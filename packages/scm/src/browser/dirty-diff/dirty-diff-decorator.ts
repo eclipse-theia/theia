@@ -23,7 +23,7 @@ import {
     TextEditor,
     MinimapPosition
 } from '@theia/editor/lib/browser';
-import { DirtyDiff, LineRange, Change } from './diff-computer';
+import { DirtyDiff, LineRange, Change } from './diff-computer.js';
 import { URI } from '@theia/core';
 
 export enum DirtyDiffDecorationType {

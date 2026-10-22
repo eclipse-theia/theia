@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
-import { AIChatInputWidget, type AIChatInputConfiguration } from '../chat-input-widget';
-import type { EditableRequestNode } from './chat-view-tree-widget';
+import { AIChatInputWidget, type AIChatInputConfiguration } from '../chat-input-widget.js';
+import type { EditableRequestNode } from './chat-view-tree-widget.js';
 import { URI } from '@theia/core';
-import { CHAT_VIEW_LANGUAGE_EXTENSION } from '../chat-view-language-contribution';
+import { CHAT_VIEW_LANGUAGE_EXTENSION } from '../chat-view-language-contribution.js';
 import type { ChatModel, ChatRequestModel, EditableChatRequestModel, ChatHierarchyBranch } from '@theia/ai-chat';
 import type { AIVariableResolutionRequest, GenericCapabilitySelections } from '@theia/ai-core';
 import { Key } from '@theia/core/lib/browser';

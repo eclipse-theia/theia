@@ -17,10 +17,10 @@
 import * as React from '@theia/core/shared/react';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Message } from '@theia/core/shared/@lumino/messaging';
-import { PluginIdentifiers, PluginMetadata } from '../../common/plugin-protocol';
+import { PluginIdentifiers, PluginMetadata } from '../../common/plugin-protocol.js';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
-import { HostedPluginSupport, PluginProgressLocation } from '../../hosted/browser/hosted-plugin';
+import { HostedPluginSupport, PluginProgressLocation } from '../../hosted/browser/hosted-plugin.js';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { codicon } from '@theia/core/lib/browser';

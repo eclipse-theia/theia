@@ -16,14 +16,14 @@
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { AttachContainerArgs, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
+import { AttachContainerArgs, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider.js';
 import { AbstractRemoteRegistryContribution } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
 import { ILogger, MessageService, nls } from '@theia/core';
 import { LaunchArguments } from '@theia/core/lib/common/launch-arguments';
 import { WindowLaunchArgs } from '@theia/core/lib/browser/window/window-launch-args';
 import { RemotePreferences } from '@theia/remote/lib/electron-common/remote-preferences';
-import { ContainerOutputProvider } from './container-output-provider';
-import { DevContainerAttachScreen } from './dev-container-attach-screen';
+import { ContainerOutputProvider } from './container-output-provider.js';
+import { DevContainerAttachScreen } from './dev-container-attach-screen.js';
 import { RemoteCliArgsCollector } from '@theia/remote/lib/electron-browser/remote-cli-args-collector';
 
 @injectable()

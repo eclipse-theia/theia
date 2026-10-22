@@ -29,10 +29,10 @@ import {
     SELECTED_FUNCTIONS_VARIABLE,
     SELECTED_MCP_FUNCTIONS_VARIABLE,
     SELECTED_VARIABLES_VARIABLE
-} from './generic-capabilities-variable-contribution';
-import { CapabilityAwareContext } from '../common/capability-utils';
-import { ToolInvocationRegistry } from '../common/tool-invocation-registry';
-import { ToolRequest } from '../common/language-model';
+} from './generic-capabilities-variable-contribution.js';
+import { CapabilityAwareContext } from '../common/capability-utils.js';
+import { ToolInvocationRegistry } from '../common/tool-invocation-registry.js';
+import { ToolRequest } from '../common/language-model.js';
 
 disableJSDOM();
 

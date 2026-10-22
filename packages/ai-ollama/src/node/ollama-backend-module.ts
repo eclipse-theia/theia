@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { Container, ContainerModule } from '@theia/core/shared/inversify';
-import { OLLAMA_LANGUAGE_MODELS_MANAGER_PATH, OllamaLanguageModelsManager } from '../common/ollama-language-models-manager';
+import { OLLAMA_LANGUAGE_MODELS_MANAGER_PATH, OllamaLanguageModelsManager } from '../common/ollama-language-models-manager.js';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
-import { OllamaLanguageModelsManagerImpl } from './ollama-language-models-manager-impl';
-import { OllamaLanguageModelFactory, OllamaModel, OllamaModelParams } from './ollama-language-model';
+import { OllamaLanguageModelsManagerImpl } from './ollama-language-models-manager-impl.js';
+import { OllamaLanguageModelFactory, OllamaModel, OllamaModelParams } from './ollama-language-model.js';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
-import { OllamaPreferencesSchema } from '../common/ollama-preferences';
+import { OllamaPreferencesSchema } from '../common/ollama-preferences.js';
 
 // We use a connection module to handle AI services separately for each frontend.
 const ollamaConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {

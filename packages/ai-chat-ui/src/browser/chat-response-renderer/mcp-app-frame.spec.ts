@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { buildSrcDoc } from './mcp-app-frame';
+import { buildSrcDoc } from './mcp-app-frame.js';
 
 describe('McpAppFrame buildSrcDoc', () => {
 

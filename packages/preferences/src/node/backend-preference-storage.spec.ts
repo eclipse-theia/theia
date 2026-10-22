@@ -21,8 +21,8 @@ import { Event } from '@theia/core/lib/common/event';
 import { FileChange } from '@theia/filesystem/lib/common/files';
 import { DiskFileSystemProvider } from '@theia/filesystem/lib/node/disk-file-system-provider';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
-import { JSONCEditor } from '../common/jsonc-editor';
-import { BackendPreferenceStorage } from './backend-preference-storage';
+import { JSONCEditor } from '../common/jsonc-editor.js';
+import { BackendPreferenceStorage } from './backend-preference-storage.js';
 
 class MockDiskFileSystemProvider {
     disposed = false;

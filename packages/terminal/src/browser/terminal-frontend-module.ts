@@ -22,33 +22,33 @@ import { CommandContribution, MenuContribution, nls } from '@theia/core/lib/comm
 import { bindRootContributionProvider } from '@theia/core';
 import { KeybindingContribution, WebSocketConnectionProvider, WidgetFactory, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { TerminalFrontendContribution } from './terminal-frontend-contribution';
-import { TerminalWidgetImpl, TERMINAL_WIDGET_FACTORY_ID } from './terminal-widget-impl';
-import { TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget';
-import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
-import { TerminalWatcher } from '../common/terminal-watcher';
-import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
-import { TerminalService } from './base/terminal-service';
-import { bindTerminalPreferences } from '../common/terminal-preferences';
-import { TerminalContribution } from './terminal-contribution';
-import { TerminalCreationHandler } from './terminal-creation-handler';
-import { TerminalShellHandler } from './terminal-shell-handler';
-import { TerminalSearchWidgetFactory } from './search/terminal-search-widget';
-import { TerminalQuickOpenService, TerminalQuickOpenContribution } from './terminal-quick-open-service';
-import { createTerminalSearchFactory } from './search/terminal-search-container';
-import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler';
+import { TerminalFrontendContribution } from './terminal-frontend-contribution.js';
+import { TerminalWidgetImpl, TERMINAL_WIDGET_FACTORY_ID } from './terminal-widget-impl.js';
+import { TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget.js';
+import { ITerminalServer, terminalPath } from '../common/terminal-protocol.js';
+import { TerminalWatcher } from '../common/terminal-watcher.js';
+import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } from '../common/shell-terminal-protocol.js';
+import { TerminalService } from './base/terminal-service.js';
+import { bindTerminalPreferences } from '../common/terminal-preferences.js';
+import { TerminalContribution } from './terminal-contribution.js';
+import { TerminalCreationHandler } from './terminal-creation-handler.js';
+import { TerminalShellHandler } from './terminal-shell-handler.js';
+import { TerminalSearchWidgetFactory } from './search/terminal-search-widget.js';
+import { TerminalQuickOpenService, TerminalQuickOpenContribution } from './terminal-quick-open-service.js';
+import { createTerminalSearchFactory } from './search/terminal-search-container.js';
+import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler.js';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
-import { TerminalThemeService } from './terminal-theme-service';
+import { TerminalThemeService } from './terminal-theme-service.js';
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access';
-import { createXtermLinkFactory, TerminalLinkProvider, TerminalLinkProviderContribution, XtermLinkFactory } from './terminal-link-provider';
-import { UrlLinkProvider } from './terminal-url-link-provider';
-import { FileDiffPostLinkProvider, FileDiffPreLinkProvider, FileLinkProvider, LocalFileLinkProvider } from './terminal-file-link-provider';
-import { FileUriLinkProvider } from './terminal-file-uri-link-provider';
+import { createXtermLinkFactory, TerminalLinkProvider, TerminalLinkProviderContribution, XtermLinkFactory } from './terminal-link-provider.js';
+import { UrlLinkProvider } from './terminal-url-link-provider.js';
+import { FileDiffPostLinkProvider, FileDiffPreLinkProvider, FileLinkProvider, LocalFileLinkProvider } from './terminal-file-link-provider.js';
+import { FileUriLinkProvider } from './terminal-file-uri-link-provider.js';
 import {
     ContributedTerminalProfileStore, DefaultProfileStore, DefaultTerminalProfileService,
     TerminalProfileService, TerminalProfileStore, UserTerminalProfileStore
-} from './terminal-profile-service';
-import { TerminalCommandHistoryStateFactory, TerminalCommandHistoryStateImpl } from './terminal-command-history';
+} from './terminal-profile-service.js';
+import { TerminalCommandHistoryStateFactory, TerminalCommandHistoryStateImpl } from './terminal-command-history.js';
 
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);

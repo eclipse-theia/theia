@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { getWorkspaceMounts, inferWorkspacePath, isWorkspaceMount, MountInfo } from './devcontainer-util';
+import { getWorkspaceMounts, inferWorkspacePath, isWorkspaceMount, MountInfo } from './devcontainer-util.js';
 import type { ContainerInspectInfo } from 'dockerode';
 
 function createContainerInfo(

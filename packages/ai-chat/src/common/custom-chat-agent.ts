@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { CustomAgentPromptVariant, LanguageModelRequirement } from '@theia/ai-core';
-import { AbstractStreamParsingChatAgent } from './chat-agents';
+import { AbstractStreamParsingChatAgent } from './chat-agents.js';
 import { ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 

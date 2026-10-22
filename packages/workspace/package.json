@@ -2,6 +2,7 @@
   "name": "@theia/workspace",
   "version": "1.76.0",
   "description": "Theia - Workspace Extension",
+  "type": "module",
   "dependencies": {
     "@theia/core": "1.76.0",
     "@theia/filesystem": "1.76.0",
@@ -55,5 +56,15 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/browser": "./lib/browser/index.js",
+    "./lib/browser/metadata-storage": "./lib/browser/metadata-storage/index.js",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/node": "./lib/node/index.js",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

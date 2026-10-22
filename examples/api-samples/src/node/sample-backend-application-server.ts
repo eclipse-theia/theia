@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { BackendApplicationServer } from '@theia/core/lib/node';
-import express = require('@theia/core/shared/express');
+import * as express from '@theia/core/shared/express';
 
 @injectable()
 export class SampleBackendApplicationServer implements BackendApplicationServer {

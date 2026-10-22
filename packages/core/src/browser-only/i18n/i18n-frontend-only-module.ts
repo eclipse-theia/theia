@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { AsyncLocalizationProvider, LanguageInfo, Localization } from '../../common/i18n/localization';
-import { LanguageQuickPickService } from '../../browser/i18n/language-quick-pick-service';
+import { AsyncLocalizationProvider, LanguageInfo, Localization } from '../../common/i18n/localization.js';
+import { LanguageQuickPickService } from '../../browser/i18n/language-quick-pick-service.js';
 
 export default new ContainerModule(bind => {
     const i18nMock: AsyncLocalizationProvider = {

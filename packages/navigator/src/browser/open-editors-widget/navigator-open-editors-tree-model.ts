@@ -29,7 +29,7 @@ import {
     TabBar
 } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import debounce from '@theia/core/shared/lodash.debounce';
 import { nls } from '@theia/core/lib/common';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 

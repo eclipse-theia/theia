@@ -30,9 +30,9 @@ import { HoverRequest, HoverService, KeybindingRegistry, OpenerService } from '@
 import { ReactNode } from '@theia/core/shared/react';
 import { flushSync } from '@theia/core/shared/react-dom';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
-import { ResponseNode } from '../chat-tree-view';
-import { ToolCallPartRenderer } from './toolcall-part-renderer';
-import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
+import { ResponseNode } from '../chat-tree-view/index.js';
+import { ToolCallPartRenderer } from './toolcall-part-renderer.js';
+import { condenseArguments, formatArgsForTooltip } from './toolcall-utils.js';
 
 disableJSDOM();
 

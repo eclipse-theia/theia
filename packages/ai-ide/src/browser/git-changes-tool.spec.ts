@@ -27,7 +27,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ShellExecutionRequest, ShellExecutionResult, ShellExecutionServer } from '@theia/ai-terminal/lib/common/shell-execution-server';
-import { GET_GIT_CHANGES_FUNCTION_ID, GetGitChangesTool, GitChangesRepositoryError } from './git-changes-tool';
+import { GET_GIT_CHANGES_FUNCTION_ID, GetGitChangesTool, GitChangesRepositoryError } from './git-changes-tool.js';
 import { withWorkspaceServiceDefaults } from '@theia/workspace/lib/browser/test/with-workspace-service-defaults';
 
 disableJSDOM();

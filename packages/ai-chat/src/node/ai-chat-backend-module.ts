@@ -16,8 +16,8 @@
 
 import { PreferenceContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { aiChatPreferences } from '../common/ai-chat-preferences';
-import { chatToolPreferences } from '../common/chat-tool-preferences';
+import { aiChatPreferences } from '../common/ai-chat-preferences.js';
+import { chatToolPreferences } from '../common/chat-tool-preferences.js';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: aiChatPreferences });

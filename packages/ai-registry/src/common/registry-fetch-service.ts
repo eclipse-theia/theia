@@ -17,13 +17,13 @@
 import { Emitter, Event } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { BackendRequestService, RequestContext, RequestService } from '@theia/core/shared/@theia/request';
-import { AIRegistryConfiguration } from './ai-registry-configuration';
-import { MCPRegistryEntryResolver } from './mcp/mcp-registry-entry-resolver';
-import { RegistryMCPServer, ResolvedRegistryEntry } from './mcp/mcp-registry-types';
-import { PluginRegistryEntryResolver } from './plugin/plugin-registry-entry-resolver';
-import { RegistryPlugin, ResolvedPluginEntry } from './plugin/plugin-registry-types';
-import { SkillRegistryEntryResolver } from './skill/skill-registry-entry-resolver';
-import { RegistrySkill, ResolvedSkillEntry } from './skill/skill-registry-types';
+import { AIRegistryConfiguration } from './ai-registry-configuration.js';
+import { MCPRegistryEntryResolver } from './mcp/mcp-registry-entry-resolver.js';
+import { RegistryMCPServer, ResolvedRegistryEntry } from './mcp/mcp-registry-types.js';
+import { PluginRegistryEntryResolver } from './plugin/plugin-registry-entry-resolver.js';
+import { RegistryPlugin, ResolvedPluginEntry } from './plugin/plugin-registry-types.js';
+import { SkillRegistryEntryResolver } from './skill/skill-registry-entry-resolver.js';
+import { RegistrySkill, ResolvedSkillEntry } from './skill/skill-registry-types.js';
 
 interface RegistryResponse {
     mcp?: RegistryMCPServer[];

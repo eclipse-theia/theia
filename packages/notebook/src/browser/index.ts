@@ -14,16 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './notebook-type-registry';
-export * from './notebook-renderer-registry';
-export * from './notebook-editor-widget';
-export * from './service/notebook-service';
-export * from './service/notebook-editor-widget-service';
-export * from './service/notebook-kernel-service';
-export * from './service/notebook-execution-state-service';
-export * from './service/notebook-model-resolver-service';
-export * from './service/notebook-renderer-messaging-service';
-export * from './service/notebook-cell-editor-service';
-export * from './renderers/cell-output-webview';
-export * from './notebook-types';
-export * from './notebook-editor-split-contribution';
+export * from './notebook-type-registry.js';
+export * from './notebook-renderer-registry.js';
+export * from './notebook-editor-widget.js';
+export * from './service/notebook-service.js';
+export * from './service/notebook-editor-widget-service.js';
+export * from './service/notebook-kernel-service.js';
+export * from './service/notebook-execution-state-service.js';
+export * from './service/notebook-model-resolver-service.js';
+export * from './service/notebook-renderer-messaging-service.js';
+export * from './service/notebook-cell-editor-service.js';
+export * from './renderers/cell-output-webview.js';
+export * from './notebook-types.js';
+export * from './notebook-editor-split-contribution.js';

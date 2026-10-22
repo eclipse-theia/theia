@@ -14,6 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './variable';
-export * from './variable-quick-open-service';
-export * from './variable-resolver-service';
+export * from './variable.js';
+export * from './variable-quick-open-service.js';
+export * from './variable-resolver-service.js';

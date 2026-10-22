@@ -2,6 +2,7 @@
   "name": "@theia/ai-code-completion",
   "version": "1.76.0",
   "description": "Theia - AI Core",
+  "type": "module",
   "dependencies": {
     "@theia/ai-core": "1.76.0",
     "@theia/core": "1.76.0",
@@ -12,6 +13,12 @@
     "tslib": "^2.8.1"
   },
   "main": "lib/common",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "publishConfig": {
     "access": "public"
   },

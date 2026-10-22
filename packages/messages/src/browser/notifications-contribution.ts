@@ -20,10 +20,10 @@ import {
     KeybindingContribution, KeybindingRegistry, StylingParticipant, ColorTheme, CssStyleCollector
 } from '@theia/core/lib/browser';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
-import { NotificationsCommands, NOTIFICATION_CONTEXT_MENU } from './notifications-commands';
+import { NotificationsCommands, NOTIFICATION_CONTEXT_MENU } from './notifications-commands.js';
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core';
-import { Notification, NotificationManager } from './notifications-manager';
-import { NotificationsRenderer } from './notifications-renderer';
+import { Notification, NotificationManager } from './notifications-manager.js';
+import { NotificationsRenderer } from './notifications-renderer.js';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { Color } from '@theia/core/lib/common/color';

@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from './preference-node-renderer';
+import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from './preference-node-renderer.js';
 import { injectable, inject, interfaces } from '@theia/core/shared/inversify';
 import { CommandService, nls } from '@theia/core/lib/common';
-import { Preference, PreferencesCommands } from '../../util/preference-types';
+import { Preference, PreferencesCommands } from '../../util/preference-types.js';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
-import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator';
+import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator.js';
 
 @injectable()
 export class PreferenceJSONLinkRenderer extends PreferenceLeafNodeRenderer<JSONValue, HTMLAnchorElement> {

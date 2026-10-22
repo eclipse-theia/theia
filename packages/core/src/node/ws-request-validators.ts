@@ -16,7 +16,7 @@
 
 import { inject, injectable, named } from 'inversify';
 import * as http from 'http';
-import { ContributionProvider, MaybePromise } from '../common';
+import { ContributionProvider, MaybePromise } from '../common/index.js';
 
 /**
  * Bind components to this symbol to filter WebSocket connections.

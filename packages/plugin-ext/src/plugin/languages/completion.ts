@@ -16,12 +16,12 @@
 
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as theia from '@theia/plugin';
-import { CompletionItemTag, CompletionList, Range, SnippetString } from '../types-impl';
-import { DocumentsExtImpl } from '../documents';
-import * as Converter from '../type-converters';
-import { Position } from '../../common/plugin-api-rpc';
-import { CompletionContext, CompletionResultDto, Completion, CompletionDto, CompletionItemInsertTextRule, ChainedCacheId } from '../../common/plugin-api-rpc-model';
-import { CommandRegistryImpl } from '../command-registry';
+import { CompletionItemTag, CompletionList, Range, SnippetString } from '../types-impl.js';
+import { DocumentsExtImpl } from '../documents.js';
+import * as Converter from '../type-converters.js';
+import { Position } from '../../common/plugin-api-rpc.js';
+import { CompletionContext, CompletionResultDto, Completion, CompletionDto, CompletionItemInsertTextRule, ChainedCacheId } from '../../common/plugin-api-rpc-model.js';
+import { CommandRegistryImpl } from '../command-registry.js';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export class CompletionAdapter {

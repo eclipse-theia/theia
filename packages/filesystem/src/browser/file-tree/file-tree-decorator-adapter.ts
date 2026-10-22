@@ -21,7 +21,7 @@ import { Decoration, DecorationsService } from '@theia/core/lib/browser/decorati
 import { TreeNode, TreeDecoration, TreeDecorator, Tree, TopDownTreeIterator } from '@theia/core/lib/browser';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
-import { FileStatNode } from './file-tree';
+import { FileStatNode } from './file-tree.js';
 
 @injectable()
 export class FileTreeDecoratorAdapter implements TreeDecorator {

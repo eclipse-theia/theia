@@ -16,7 +16,7 @@
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { MiniBrowserEnvironment } from './mini-browser-environment';
+import { MiniBrowserEnvironment } from './mini-browser-environment.js';
 
 export default new ContainerModule(bind => {
     bind(MiniBrowserEnvironment).toSelf().inSingletonScope();

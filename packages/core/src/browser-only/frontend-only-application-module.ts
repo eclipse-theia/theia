@@ -15,15 +15,15 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { BackendStopwatch, CommandRegistry, Emitter, MeasurementOptions, OS } from '../common';
-import { ApplicationInfo, ApplicationServer, ExtensionInfo } from '../common/application-protocol';
-import { EnvVariable, EnvVariablesServer } from './../common/env-variables';
-import { bindMessageService } from '../browser/frontend-application-bindings';
-import { KeyStoreService } from '../common/key-store';
-import { QuickPickService } from '../common/quick-pick-service';
-import { QuickPickServiceImpl } from '../browser/quick-input';
+import { BackendStopwatch, CommandRegistry, Emitter, MeasurementOptions, OS } from '../common/index.js';
+import { ApplicationInfo, ApplicationServer, ExtensionInfo } from '../common/application-protocol.js';
+import { EnvVariable, EnvVariablesServer } from './../common/env-variables/index.js';
+import { bindMessageService } from '../browser/frontend-application-bindings.js';
+import { KeyStoreService } from '../common/key-store.js';
+import { QuickPickService } from '../common/quick-pick-service.js';
+import { QuickPickServiceImpl } from '../browser/quick-input/index.js';
 import { BackendRequestService, RequestService } from '@theia/request';
-import { ConnectionStatus, ConnectionStatusService } from '../browser/connection-status-service';
+import { ConnectionStatus, ConnectionStatusService } from '../browser/connection-status-service.js';
 
 export { bindMessageService };
 

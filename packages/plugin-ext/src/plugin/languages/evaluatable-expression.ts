@@ -16,10 +16,10 @@
 
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as theia from '@theia/plugin';
-import { Position } from '../../common/plugin-api-rpc';
-import { EvaluatableExpression } from '../../common/plugin-api-rpc-model';
-import { DocumentsExtImpl } from '../documents';
-import * as Converter from '../type-converters';
+import { Position } from '../../common/plugin-api-rpc.js';
+import { EvaluatableExpression } from '../../common/plugin-api-rpc-model.js';
+import { DocumentsExtImpl } from '../documents.js';
+import * as Converter from '../type-converters.js';
 
 export class EvaluatableExpressionAdapter {
 

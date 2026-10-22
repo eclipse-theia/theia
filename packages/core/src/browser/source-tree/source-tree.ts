@@ -17,9 +17,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable } from 'inversify';
-import { MaybePromise } from '../../common/types';
-import { TreeImpl, CompositeTreeNode, TreeNode, SelectableTreeNode, ExpandableTreeNode } from '../tree';
-import { TreeElement, CompositeTreeElement, TreeSource } from './tree-source';
+import { MaybePromise } from '../../common/types.js';
+import { TreeImpl, CompositeTreeNode, TreeNode, SelectableTreeNode, ExpandableTreeNode } from '../tree/index.js';
+import { TreeElement, CompositeTreeElement, TreeSource } from './tree-source.js';
 
 @injectable()
 export class SourceTree extends TreeImpl {

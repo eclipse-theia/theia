@@ -15,12 +15,12 @@
 // *****************************************************************************
 import { interfaces } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import * as types from '../../plugin/types-impl';
-import { StatusBarMessageRegistryMain, StatusBarMessageRegistryExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
+import * as types from '../../plugin/types-impl.js';
+import { StatusBarMessageRegistryMain, StatusBarMessageRegistryExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc.js';
 import { StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser/status-bar/status-bar';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
-import { RPCProtocol } from '../../common/rpc-protocol';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
 import { CancellationToken } from '@theia/core';
 
 export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistryMain, Disposable {

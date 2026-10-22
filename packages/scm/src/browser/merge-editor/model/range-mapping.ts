@@ -21,9 +21,9 @@
 
 import { ArrayUtils } from '@theia/core';
 import { Position, Range, TextEditorDocument } from '@theia/editor/lib/browser/editor';
-import { LineRange } from './line-range';
-import { LineRangeEdit } from './range-editing';
-import { PositionUtils, RangeUtils } from './range-utils';
+import { LineRange } from './line-range.js';
+import { LineRangeEdit } from './range-editing.js';
+import { PositionUtils, RangeUtils } from './range-utils.js';
 
 /**
  * Maps a line range in the original text document to a line range in the modified text document.

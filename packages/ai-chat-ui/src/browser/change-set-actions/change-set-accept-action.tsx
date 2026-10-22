@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { injectable } from '@theia/core/shared/inversify';
-import { ChangeSetActionRenderer } from './change-set-action-service';
+import { ChangeSetActionRenderer } from './change-set-action-service.js';
 import { ChangeSet, ChangeSetElement } from '@theia/ai-chat';
 import { nls } from '@theia/core';
 

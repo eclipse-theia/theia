@@ -25,25 +25,25 @@ import {
     MCPServerManager,
     MCPServerManagerPath,
     MCPFrontendNotificationService
-} from '../common/mcp-server-manager';
-import { McpFrontendApplicationContribution } from './mcp-frontend-application-contribution';
-import { MCPFrontendServiceImpl } from './mcp-frontend-service';
-import { MCPFrontendNotificationServiceImpl } from './mcp-frontend-notification-service';
-import { MCPServerManagerServerClientImpl } from './mcp-server-manager-server-client';
-import { MCPServerManagerServer, MCPServerManagerServerClient, MCPServerManagerServerPath } from '../common/mcp-protocol';
-import { MCPOAuthFrontendDelegate, MCPOAuthFrontendDelegateClient, mcpOAuthFrontendDelegatePath } from '../common/mcp-oauth';
-import { MCPOAuthFrontendDelegateClientImpl } from './mcp-oauth-frontend-delegate-client';
+} from '../common/mcp-server-manager.js';
+import { McpFrontendApplicationContribution } from './mcp-frontend-application-contribution.js';
+import { MCPFrontendServiceImpl } from './mcp-frontend-service.js';
+import { MCPFrontendNotificationServiceImpl } from './mcp-frontend-notification-service.js';
+import { MCPServerManagerServerClientImpl } from './mcp-server-manager-server-client.js';
+import { MCPServerManagerServer, MCPServerManagerServerClient, MCPServerManagerServerPath } from '../common/mcp-protocol.js';
+import { MCPOAuthFrontendDelegate, MCPOAuthFrontendDelegateClient, mcpOAuthFrontendDelegatePath } from '../common/mcp-oauth.js';
+import { MCPOAuthFrontendDelegateClientImpl } from './mcp-oauth-frontend-delegate-client.js';
 import { WorkspaceRestrictionContribution } from '@theia/workspace/lib/browser/workspace-trust-service';
 import { GenericCapabilitiesContribution } from '@theia/ai-core';
-import { MCPGenericCapabilitiesContribution } from './mcp-generic-capabilities-contribution';
-import { MCPServerEditor, MCPServerEditorImpl, MCPServerEditDialogFactory, MCPServerEditDialogParameters } from './mcp-server-editor';
-import { MCPServerEditDialog, DEFAULT_MCP_SERVER_FORM_DATA } from './mcp-server-edit-dialog';
-import { MCPServerInstallDialog, MCPServerInstallDialogFactory, MCPServerInstallDialogOptions } from './mcp-server-install-dialog';
-import { McpServersConfigurationCategory } from './mcp-servers-configuration-category';
+import { MCPGenericCapabilitiesContribution } from './mcp-generic-capabilities-contribution.js';
+import { MCPServerEditor, MCPServerEditorImpl, MCPServerEditDialogFactory, MCPServerEditDialogParameters } from './mcp-server-editor.js';
+import { MCPServerEditDialog, DEFAULT_MCP_SERVER_FORM_DATA } from './mcp-server-edit-dialog.js';
+import { MCPServerInstallDialog, MCPServerInstallDialogFactory, MCPServerInstallDialogOptions } from './mcp-server-install-dialog.js';
+import { McpServersConfigurationCategory } from './mcp-servers-configuration-category.js';
 import { AiConfigurationCategory } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
-import { MCPConfigurationCommandContribution } from './mcp-configuration-command-contribution';
-import { MCPInstallUriConfiguration } from './mcp-install-uri-configuration';
-import { InstallMcpUriHandler } from './install-mcp-uri-handler';
+import { MCPConfigurationCommandContribution } from './mcp-configuration-command-contribution.js';
+import { MCPInstallUriConfiguration } from './mcp-install-uri-configuration.js';
+import { InstallMcpUriHandler } from './install-mcp-uri-handler.js';
 
 export default new ContainerModule(bind => {
     bind(McpFrontendApplicationContribution).toSelf().inSingletonScope();

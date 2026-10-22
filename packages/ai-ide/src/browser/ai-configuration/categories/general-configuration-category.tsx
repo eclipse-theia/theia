@@ -46,7 +46,7 @@ import { AiConfigurationSection, AiMarkdownDescription } from '@theia/ai-core-ui
 import { AiConfigurationSettingRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-setting-row';
 import { AiSettingsRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row';
 import { AiConfigurationCategoryRegistry } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category-registry';
-import { PREFERENCE_NAME_ENABLE_AI } from '../../../common/ai-ide-preferences';
+import { PREFERENCE_NAME_ENABLE_AI } from '../../../common/ai-ide-preferences.js';
 
 /** Documentation on Theia's AI capabilities, linked from the hero's cost/data disclosure. */
 const AI_DOCUMENTATION_URL = 'https://theia-ide.org/docs/user_ai/';

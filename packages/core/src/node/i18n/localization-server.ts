@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { Localization } from '../../common/i18n/localization';
-import { LocalizationServer } from '../../common/i18n/localization-server';
-import { nls } from '../../common/nls';
-import { Deferred } from '../../common/promise-util';
-import { BackendApplicationContribution } from '../backend-application';
-import { LocalizationRegistry } from './localization-contribution';
-import { LocalizationProvider } from './localization-provider';
+import { Localization } from '../../common/i18n/localization.js';
+import { LocalizationServer } from '../../common/i18n/localization-server.js';
+import { nls } from '../../common/nls.js';
+import { Deferred } from '../../common/promise-util.js';
+import { BackendApplicationContribution } from '../backend-application.js';
+import { LocalizationRegistry } from './localization-contribution.js';
+import { LocalizationProvider } from './localization-provider.js';
 
 @injectable()
 export class LocalizationServerImpl implements LocalizationServer, BackendApplicationContribution {

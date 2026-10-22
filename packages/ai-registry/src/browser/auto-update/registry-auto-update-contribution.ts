@@ -17,7 +17,7 @@
 import { ILogger, PreferenceService } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { RegistryAutoUpdateService } from './registry-auto-update-service';
+import { RegistryAutoUpdateService } from './registry-auto-update-service.js';
 
 /**
  * Runs the AI registry update check once per window load, after the layout is up so it never

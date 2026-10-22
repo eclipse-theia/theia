@@ -21,8 +21,8 @@
 
 import { Disposable, DisposableCollection } from '@theia/core';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { MergeEditor } from '../merge-editor';
-import { DocumentLineRangeMap } from '../model/range-mapping';
+import { MergeEditor } from '../merge-editor.js';
+import { DocumentLineRangeMap } from '../model/range-mapping.js';
 
 export class MergeEditorScrollSync implements Disposable {
 

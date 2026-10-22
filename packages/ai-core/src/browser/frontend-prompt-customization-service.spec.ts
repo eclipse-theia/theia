@@ -25,11 +25,11 @@ import 'reflect-metadata';
 import { expect } from 'chai';
 import { dump, load } from 'js-yaml';
 import URI from '@theia/core/lib/common/uri';
-import { parseTemplateWithMetadata, ParsedTemplate } from './prompttemplate-parser';
-import { serializeFrontmatter } from '../common/frontmatter';
+import { parseTemplateWithMetadata, ParsedTemplate } from './prompttemplate-parser.js';
+import { serializeFrontmatter } from '../common/frontmatter.js';
 import {
     CustomizationSource, DefaultPromptFragmentCustomizationService, CUSTOM_AGENTS_DIRECTORY, CUSTOM_AGENT_FILE_NAME
-} from './frontend-prompt-customization-service';
+} from './frontend-prompt-customization-service.js';
 
 disableJSDOM();
 

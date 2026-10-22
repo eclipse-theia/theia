@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ContextKeyChangeEvent, ContextKeyService, ContextMatcher, ScopedValueStore } from '@theia/core/lib/browser/context-key-service';
 import { DisposableCollection } from '@theia/core';
-import { NotebookKernelService } from './notebook-kernel-service';
+import { NotebookKernelService } from './notebook-kernel-service.js';
 import {
     NOTEBOOK_CELL_EDITABLE,
     NOTEBOOK_CELL_EXECUTING, NOTEBOOK_CELL_EXECUTION_STATE,
@@ -25,12 +25,12 @@ import {
     NOTEBOOK_CELL_TYPE, NOTEBOOK_HAS_OUTPUTS, NOTEBOOK_KERNEL, NOTEBOOK_KERNEL_SELECTED,
     NOTEBOOK_OUTPUT_INPUT_FOCUSED,
     NOTEBOOK_VIEW_TYPE
-} from '../contributions/notebook-context-keys';
-import { NotebookEditorWidget } from '../notebook-editor-widget';
-import { NotebookCellModel } from '../view-model/notebook-cell-model';
-import { CellKind, NotebookCellsChangeType } from '../../common';
-import { NotebookExecutionStateService } from './notebook-execution-state-service';
-import { NotebookViewModel } from '../view-model/notebook-view-model';
+} from '../contributions/notebook-context-keys.js';
+import { NotebookEditorWidget } from '../notebook-editor-widget.js';
+import { NotebookCellModel } from '../view-model/notebook-cell-model.js';
+import { CellKind, NotebookCellsChangeType } from '../../common/index.js';
+import { NotebookExecutionStateService } from './notebook-execution-state-service.js';
+import { NotebookViewModel } from '../view-model/notebook-view-model.js';
 
 @injectable()
 export class NotebookContextManager {

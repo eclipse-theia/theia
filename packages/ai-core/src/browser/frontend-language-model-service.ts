@@ -18,15 +18,15 @@ import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Prioritizeable } from '@theia/core/lib/common/prioritizeable';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
-import { AiConfigurationService, LanguageModel, LanguageModelResponse, ReasoningSettings, UserRequest } from '../common';
-import { LanguageModelServiceImpl } from '../common/language-model-service';
+import { AiConfigurationService, LanguageModel, LanguageModelResponse, ReasoningSettings, UserRequest } from '../common/index.js';
+import { LanguageModelServiceImpl } from '../common/language-model-service.js';
 import {
     PREFERENCE_NAME_REQUEST_SETTINGS,
     PREFERENCE_NAME_REASONING,
     RequestSetting,
     ReasoningPreferenceEntry,
     getRequestSettingSpecificity
-} from '../common/ai-core-preferences';
+} from '../common/ai-core-preferences.js';
 
 @injectable()
 export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {

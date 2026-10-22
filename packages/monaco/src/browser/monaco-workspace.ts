@@ -23,9 +23,9 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { ILogger } from '@theia/core';
 import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { MonacoTextModelService } from './monaco-text-model-service';
-import { MonacoEditorModel, MonacoModelContentChangedEvent } from './monaco-editor-model';
-import { MonacoEditor } from './monaco-editor';
+import { MonacoTextModelService } from './monaco-text-model-service.js';
+import { MonacoEditorModel, MonacoModelContentChangedEvent } from './monaco-editor-model.js';
+import { MonacoEditor } from './monaco-editor.js';
 import { ProblemManager } from '@theia/markers/lib/browser';
 import { ArrayUtils } from '@theia/core/lib/common/types';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -35,13 +35,13 @@ import {
     IBulkEditOptions,
     IBulkEditResult, ResourceEdit, ResourceFileEdit as MonacoResourceFileEdit,
     ResourceTextEdit as MonacoResourceTextEdit
-} from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService';
-import { IEditorWorkerService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/editorWorker';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
-import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser';
-import { TextEdit } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
-import { SnippetController2 } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetController2';
+} from '@theia/monaco-editor-core/esm/vs/editor/browser/services/bulkEditService.js';
+import { IEditorWorkerService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/editorWorker.js';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/common/model.js';
+import { SnippetParser } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetParser.js';
+import { TextEdit } from '@theia/monaco-editor-core/esm/vs/editor/common/languages.js';
+import { SnippetController2 } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetController2.js';
 import { isObject, MaybePromise, nls } from '@theia/core/lib/common';
 import { SaveableService } from '@theia/core/lib/browser';
 import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';

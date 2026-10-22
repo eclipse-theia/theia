@@ -17,8 +17,8 @@
 import * as os from 'os';
 import * as path from 'path';
 import * as chai from 'chai';
-import { FileUri } from '../common/file-uri';
-import { isWindows } from '../common/os';
+import { FileUri } from '../common/file-uri.js';
+import { isWindows } from '../common/os.js';
 
 const expect = chai.expect;
 

@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { SectionPreferenceProvider } from '../common/section-preference-provider';
+import { SectionPreferenceProvider } from '../common/section-preference-provider.js';
 import { PreferenceScope } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 

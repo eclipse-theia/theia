@@ -25,10 +25,10 @@ import {
     UserRequest
 } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatSession } from './chat-service';
+import { ChatSession } from './chat-service.js';
 import { generateUuid, nls } from '@theia/core';
 
-import { CHAT_SESSION_NAMING_PROMPT } from './chat-session-naming-prompt-template';
+import { CHAT_SESSION_NAMING_PROMPT } from './chat-session-naming-prompt-template.js';
 
 @injectable()
 export class ChatSessionNamingService {

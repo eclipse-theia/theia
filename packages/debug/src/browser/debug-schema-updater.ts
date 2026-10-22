@@ -19,12 +19,12 @@ import { JsonSchemaRegisterContext, JsonSchemaContribution, JsonSchemaDataStore 
 import { deepClone, nls } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import URI from '@theia/core/lib/common/uri';
-import { DebugService } from '../common/debug-service';
-import { debugPreferencesSchema } from '../common/debug-preferences';
+import { DebugService } from '../common/debug-service.js';
+import { debugPreferencesSchema } from '../common/debug-preferences.js';
 import { inputsSchema } from '@theia/variable-resolver/lib/browser/variable-input-schema';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { defaultCompound } from '../common/debug-compound';
-import { launchSchemaId } from '../common/launch-preferences';
+import { defaultCompound } from '../common/debug-compound.js';
+import { launchSchemaId } from '../common/launch-preferences.js';
 
 @injectable()
 export class DebugSchemaUpdater implements JsonSchemaContribution {

@@ -17,8 +17,8 @@
 import { ILogger, PreferenceService } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import debounce = require('@theia/core/shared/lodash.debounce');
-import { ExternalApiConfigService } from '../common/external-api-configuration';
+import debounce from '@theia/core/shared/lodash.debounce';
+import { ExternalApiConfigService } from '../common/external-api-configuration.js';
 import {
     EXTERNAL_API_DEFAULT_HOSTNAME,
     EXTERNAL_API_DELIVERY_PREF,
@@ -26,7 +26,7 @@ import {
     EXTERNAL_API_PORT_PREF,
     EXTERNAL_API_TOKEN_PREF,
     ExternalApiDelivery
-} from '../common/external-api-preferences';
+} from '../common/external-api-preferences.js';
 
 /**
  * Pushes the external API preferences to the backend, initially and on every change,

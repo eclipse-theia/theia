@@ -19,10 +19,10 @@ import {
     Progress,
     ProgressUpdate,
     ProgressMessage
-} from './message-service-protocol';
-import { CancellationTokenSource } from './cancellation';
-import { ProgressClient } from './progress-service-protocol';
-import { MessageService } from './message-service';
+} from './message-service-protocol.js';
+import { CancellationTokenSource } from './cancellation.js';
+import { ProgressClient } from './progress-service-protocol.js';
+import { MessageService } from './message-service.js';
 
 @injectable()
 export class ProgressService {

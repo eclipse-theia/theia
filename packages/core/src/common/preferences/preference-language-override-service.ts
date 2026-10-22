@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { isObject } from '../types';
-import { IndexedAccess, PreferenceSchemaService } from './preference-schema';
-import { escapeRegExpCharacters } from '../strings';
+import { isObject } from '../types.js';
+import { IndexedAccess, PreferenceSchemaService } from './preference-schema.js';
+import { escapeRegExpCharacters } from '../strings.js';
 import { JSONValue } from '@lumino/coreutils';
 
 export interface OverridePreferenceName {

@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { FileSystemWatcherService, FileSystemWatcherServiceClient, WatchOptions } from '../common/filesystem-watcher-protocol';
-import { ResolvedWatchOptions, WatcherLogger, WatcherProvider } from './filesystem-watcher';
-import { DirectoryWatcherProvider } from './nodejs-watcher/node-directory-watcher';
-import { ParcelFileSystemWatcherServerOptions, RecursiveWatcherProvider } from './parcel-watcher/parcel-watcher';
+import { FileSystemWatcherService, FileSystemWatcherServiceClient, WatchOptions } from '../common/filesystem-watcher-protocol.js';
+import { ResolvedWatchOptions, WatcherLogger, WatcherProvider } from './filesystem-watcher.js';
+import { DirectoryWatcherProvider } from './nodejs-watcher/node-directory-watcher.js';
+import { ParcelFileSystemWatcherServerOptions, RecursiveWatcherProvider } from './parcel-watcher/parcel-watcher.js';
 
 /** Routes each request to the first provider that can handle it. The provider picks the watcher that serves it. */
 export class FileSystemWatcherServiceImpl implements FileSystemWatcherService {

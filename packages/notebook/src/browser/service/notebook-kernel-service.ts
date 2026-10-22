@@ -21,9 +21,9 @@
 import { Command, CommandService, Disposable, Emitter, Event, URI } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { StorageService } from '@theia/core/lib/browser';
-import { NotebookKernelSourceAction } from '../../common';
-import { NotebookModel } from '../view-model/notebook-model';
-import { NotebookService } from './notebook-service';
+import { NotebookKernelSourceAction } from '../../common/index.js';
+import { NotebookModel } from '../view-model/notebook-model.js';
+import { NotebookService } from './notebook-service.js';
 
 export interface SelectedNotebookKernelChangeEvent {
     notebook: URI;

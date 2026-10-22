@@ -2,6 +2,7 @@
   "name": "@theia/ai-history",
   "version": "1.76.0",
   "description": "Theia - AI communication history",
+  "type": "module",
   "dependencies": {
     "@theia/ai-chat-ui": "1.76.0",
     "@theia/ai-core": "1.76.0",
@@ -12,6 +13,14 @@
     "tslib": "^2.8.1"
   },
   "main": "lib/common",
+  "exports": {
+    ".": "./lib/common/index.js",
+    "./package.json": "./package.json",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "publishConfig": {
     "access": "public"
   },

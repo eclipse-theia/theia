@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { interfaces } from 'inversify';
-import { nls } from '../common/nls';
-import { isOSX, isWindows } from '../common';
-import { PreferenceContribution, PreferenceSchema } from '../common/preferences/preference-schema';
-import { createPreferenceProxy, PreferenceProxy, PreferenceScope, PreferenceService } from '../common/preferences';
+import { nls } from '../common/nls.js';
+import { isOSX, isWindows } from '../common/index.js';
+import { PreferenceContribution, PreferenceSchema } from '../common/preferences/preference-schema.js';
+import { createPreferenceProxy, PreferenceProxy, PreferenceScope, PreferenceService } from '../common/preferences/index.js';
 
 export namespace ZoomLevel {
     export const DEFAULT = 0;

@@ -24,10 +24,10 @@ import {
     Panel,
     PanelLayout
 } from '@theia/core/lib/browser';
-import { TimelineTreeWidget } from './timeline-tree-widget';
-import { TimelineService, TimelineAggregate } from './timeline-service';
+import { TimelineTreeWidget } from './timeline-tree-widget.js';
+import { TimelineService, TimelineAggregate } from './timeline-service.js';
 import { CommandRegistry, SelectionService } from '@theia/core/lib/common';
-import { TimelineEmptyWidget } from './timeline-empty-widget';
+import { TimelineEmptyWidget } from './timeline-empty-widget.js';
 import { toArray } from '@theia/core/shared/@lumino/algorithm';
 import URI from '@theia/core/lib/common/uri';
 import { URI as CodeURI } from '@theia/core/shared/vscode-uri';

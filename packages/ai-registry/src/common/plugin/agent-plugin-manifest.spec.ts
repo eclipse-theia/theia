@@ -22,7 +22,7 @@ import {
     ResolvedHttpServer,
     ResolvedPluginComponents,
     ResolvedStdioServer
-} from './agent-plugin-manifest';
+} from './agent-plugin-manifest.js';
 
 const PLUGIN_SCHEMA = 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json';
 const MCP_SCHEMA = 'https://agent-plugins.org/schemas/1.0.0/mcp.schema.json';

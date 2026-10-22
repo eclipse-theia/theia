@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { TextEditor } from '../editor';
-import { EditorDecoration } from './editor-decoration';
+import { TextEditor } from '../editor.js';
+import { EditorDecoration } from './editor-decoration.js';
 
 @injectable()
 export abstract class EditorDecorator {

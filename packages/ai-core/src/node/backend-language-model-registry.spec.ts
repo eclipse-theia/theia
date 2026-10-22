@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { BackendLanguageModelRegistryImpl } from './backend-language-model-registry';
-import { LanguageModel, ServerToolDescriptor } from '../common';
+import { BackendLanguageModelRegistryImpl } from './backend-language-model-registry.js';
+import { LanguageModel, ServerToolDescriptor } from '../common/index.js';
 
 describe('BackendLanguageModelRegistryImpl.mapToMetaData', () => {
     it('includes serverTools in the metadata DTO sent to the frontend', () => {

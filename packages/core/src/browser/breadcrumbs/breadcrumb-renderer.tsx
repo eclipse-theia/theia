@@ -16,7 +16,7 @@
 
 import * as React from 'react';
 import { injectable } from 'inversify';
-import { Breadcrumb, Styles } from './breadcrumbs-constants';
+import { Breadcrumb, Styles } from './breadcrumbs-constants.js';
 
 export const BreadcrumbRenderer = Symbol('BreadcrumbRenderer');
 export interface BreadcrumbRenderer {

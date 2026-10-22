@@ -16,7 +16,7 @@
 
 import { OAuthDiscoveryState } from '@modelcontextprotocol/sdk/client/auth.js';
 import { OAuthClientInformationMixed, OAuthTokens } from '@modelcontextprotocol/sdk/shared/auth.js';
-import { MCPOAuthConfig } from '../common/mcp-oauth';
+import { MCPOAuthConfig } from '../common/mcp-oauth.js';
 
 /** Keystore service name under which all MCP OAuth credentials are stored. */
 export const MCP_OAUTH_KEYSTORE_SERVICE = 'theia-ai-mcp-oauth';

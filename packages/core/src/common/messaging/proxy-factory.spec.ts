@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import * as chai from 'chai';
-import { RpcProxyFactory, RpcProxy } from './proxy-factory';
-import { ChannelPipe } from '../message-rpc/channel.spec';
+import { RpcProxyFactory, RpcProxy } from './proxy-factory.js';
+import { ChannelPipe } from '../message-rpc/channel.spec.js';
 
 const expect = chai.expect;
 

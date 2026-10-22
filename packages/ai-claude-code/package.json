@@ -2,6 +2,7 @@
   "name": "@theia/ai-claude-code",
   "version": "1.76.0",
   "description": "Theia - Claude Code Integration",
+  "type": "module",
   "dependencies": {
     "@theia/ai-chat": "1.76.0",
     "@theia/ai-chat-ui": "1.76.0",
@@ -52,5 +53,12 @@
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
   }
 }

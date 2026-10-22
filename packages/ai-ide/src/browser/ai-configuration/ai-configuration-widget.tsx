@@ -18,14 +18,14 @@ import { nls } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { BaseWidget, BoxLayout, codicon, Message, NavigatableWidget, Panel, SplitPanel } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { AI_CONFIGURATION_RESOURCE_URI } from './ai-configuration-resource';
+import { AI_CONFIGURATION_RESOURCE_URI } from './ai-configuration-resource.js';
 import { AiConfigurationCategoryId } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
 import { AiConfigurationCategoryRegistry } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category-registry';
 import { AiConfigurationSelectionModel } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-selection-model';
-import { AIConfigurationSelectionService } from './ai-configuration-service';
-import { AiConfigurationTreeWidget } from './ai-configuration-tree-widget';
-import { AiConfigurationDetailWidget } from './ai-configuration-detail-widget';
-import { AiConfigurationSearchWidget } from './ai-configuration-search-widget';
+import { AIConfigurationSelectionService } from './ai-configuration-service.js';
+import { AiConfigurationTreeWidget } from './ai-configuration-tree-widget.js';
+import { AiConfigurationDetailWidget } from './ai-configuration-detail-widget.js';
+import { AiConfigurationSearchWidget } from './ai-configuration-search-widget.js';
 
 /**
  * Maps the legacy per-tab widget ids (still accepted by the `OPEN_AI_CONFIG_VIEW`

@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { isObject } from './utils';
-import type { NormalizedPluginContribution, PluginManifestContribution } from './contribution-types';
+import { isObject } from './utils.js';
+import type { NormalizedPluginContribution, PluginManifestContribution } from './contribution-types.js';
 
 export const PLUGIN_HOST_BACKEND = 'main' as const;
 export const PLUGIN_HOST_FRONTEND = 'frontend' as const;

@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { ContainerModule, Container } from '@theia/core/shared/inversify';
-import { RawProcess, RawProcessOptions, RawProcessFactory, RawForkOptions } from './raw-process';
-import { TerminalProcess, TerminalProcessOptions, TerminalProcessFactory } from './terminal-process';
-import { TaskTerminalProcess, TaskTerminalProcessFactory } from './task-terminal-process';
+import { RawProcess, RawProcessOptions, RawProcessFactory, RawForkOptions } from './raw-process.js';
+import { TerminalProcess, TerminalProcessOptions, TerminalProcessFactory } from './terminal-process.js';
+import { TaskTerminalProcess, TaskTerminalProcessFactory } from './task-terminal-process.js';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { ProcessManager } from './process-manager';
-import { MultiRingBuffer, MultiRingBufferOptions } from './multi-ring-buffer';
+import { ProcessManager } from './process-manager.js';
+import { MultiRingBuffer, MultiRingBufferOptions } from './multi-ring-buffer.js';
 
 export default new ContainerModule(bind => {
     bind(RawProcess).toSelf().inTransientScope();

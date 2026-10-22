@@ -25,10 +25,10 @@ import { OpenAI } from 'openai';
 import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Container } from '@theia/core/shared/inversify';
-import { CHATGPT_RESPONSES_BASE_URL, ChatGptCredentials } from '../common';
-import { CHATGPT_ORIGINATOR } from './chatgpt-oauth';
-import { ChatGptModel } from './chatgpt-language-model';
-import { ChatGptResponseApiUtils, DEFAULT_CHATGPT_INSTRUCTIONS } from './chatgpt-response-api-utils';
+import { CHATGPT_RESPONSES_BASE_URL, ChatGptCredentials } from '../common/index.js';
+import { CHATGPT_ORIGINATOR } from './chatgpt-oauth.js';
+import { ChatGptModel } from './chatgpt-language-model.js';
+import { ChatGptResponseApiUtils, DEFAULT_CHATGPT_INSTRUCTIONS } from './chatgpt-response-api-utils.js';
 
 interface CapturedRequest {
     openai: OpenAI;

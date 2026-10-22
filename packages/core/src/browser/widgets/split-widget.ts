@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ApplicationShell, StatefulWidget } from '../shell';
-import { BaseWidget, Message, PanelLayout, SplitPanel, Widget } from './widget';
-import { CompositeSaveable, Saveable, SaveableSource } from '../saveable';
-import { Navigatable } from '../navigatable-types';
-import { Emitter, URI } from '../../common';
+import { ApplicationShell, StatefulWidget } from '../shell/index.js';
+import { BaseWidget, Message, PanelLayout, SplitPanel, Widget } from './widget.js';
+import { CompositeSaveable, Saveable, SaveableSource } from '../saveable.js';
+import { Navigatable } from '../navigatable-types.js';
+import { Emitter, URI } from '../../common/index.js';
 
 /**
  * A widget containing a number of panes in a split layout.

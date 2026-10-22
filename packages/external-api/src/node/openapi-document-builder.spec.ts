@@ -16,9 +16,9 @@
 
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { expect } from 'chai';
-import { ExternalApiContribution } from './external-api-contribution';
-import { OpenApiDocument, OpenApiDocumentBuilderImpl, OpenApiDocumentSource } from './openapi-document-builder';
-import { ExternalApiTestSupport } from './test/external-api-test-support';
+import { ExternalApiContribution } from './external-api-contribution.js';
+import { OpenApiDocument, OpenApiDocumentBuilderImpl, OpenApiDocumentSource } from './openapi-document-builder.js';
+import { ExternalApiTestSupport } from './test/external-api-test-support.js';
 
 describe('OpenApiDocumentBuilder', () => {
 

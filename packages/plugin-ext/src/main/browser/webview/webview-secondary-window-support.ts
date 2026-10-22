@@ -18,7 +18,7 @@ import { MaybePromise } from '@theia/core/lib/common';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window-handler';
-import { WebviewWidget } from './webview';
+import { WebviewWidget } from './webview.js';
 
 @injectable()
 export class WebviewSecondaryWindowSupport implements FrontendApplicationContribution {

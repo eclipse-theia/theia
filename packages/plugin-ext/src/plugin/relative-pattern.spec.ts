@@ -20,7 +20,7 @@ import * as path from 'path';
 import { parse } from '@theia/core/lib/common/glob';
 import { isWindows } from '@theia/core/lib/common/os';
 import { URI } from '@theia/core/shared/vscode-uri';
-import { RelativePattern } from './types-impl';
+import { RelativePattern } from './types-impl.js';
 
 // This is the matching a `FileSystemWatcher` performs on every incoming event:
 // `ExtHostFileSystemEventService` builds `parse(globPattern)` once and applies it

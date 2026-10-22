@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ApplicationError } from './application-error';
+import { ApplicationError } from './application-error.js';
 import { expect } from 'chai';
 
 describe('ApplicationError', () => {

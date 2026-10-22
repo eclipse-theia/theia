@@ -14,15 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from './test/jsdom';
+import { enableJSDOM } from './test/jsdom.js';
 let disableJSDOM = enableJSDOM();
 
 import { Container } from 'inversify';
 import { expect } from 'chai';
-import { HoverService } from './hover-service';
-import { PreferenceService } from '../common';
-import { CoreMarkdownRenderer } from './markdown-rendering/markdown-renderer';
-import { OpenerService } from './opener-service';
+import { HoverService } from './hover-service.js';
+import { PreferenceService } from '../common/index.js';
+import { CoreMarkdownRenderer } from './markdown-rendering/markdown-renderer.js';
+import { OpenerService } from './opener-service.js';
 
 disableJSDOM();
 

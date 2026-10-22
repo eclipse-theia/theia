@@ -2,6 +2,7 @@
   "name": "@theia/ai-google",
   "version": "1.76.0",
   "description": "Theia - Google AI Integration",
+  "type": "module",
   "dependencies": {
     "@google/genai": "^1.52.0",
     "@theia/ai-core": "1.76.0",
@@ -49,5 +50,12 @@
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
   }
 }

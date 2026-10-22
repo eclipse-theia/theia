@@ -21,17 +21,17 @@ import { cloneAndChange, URI } from '@theia/core';
 import { CommandContribution, CommandRegistry, CommandHandler } from '@theia/core/lib/common/command';
 import { CommonCommands, QuickInputService, ApplicationShell } from '@theia/core/lib/browser';
 import { EditorCommands, EditorManager, EditorWidget } from '@theia/editor/lib/browser';
-import { MonacoEditor } from './monaco-editor';
-import { MonacoCommandRegistry, MonacoEditorCommandHandler } from './monaco-command-registry';
-import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
+import { MonacoEditor } from './monaco-editor.js';
+import { MonacoCommandRegistry, MonacoEditorCommandHandler } from './monaco-command-registry.js';
+import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter.js';
 import { nls } from '@theia/core/lib/common/nls';
-import { EditorExtensionsRegistry } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorExtensions';
-import { CommandsRegistry, ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
+import { EditorExtensionsRegistry } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorExtensions.js';
+import { CommandsRegistry, ICommandService } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands.js';
 import * as monaco from '@theia/monaco-editor-core';
-import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
-import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
+import { EndOfLineSequence } from '@theia/monaco-editor-core/esm/vs/editor/common/model.js';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation.js';
+import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService.js';
 
 export namespace MonacoCommands {
 

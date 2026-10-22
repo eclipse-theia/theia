@@ -22,11 +22,11 @@ import { ExtensionsSourceContribution, SearchContext, SearchResult } from '@thei
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { MCPServerInstallDialogFactory } from '@theia/ai-mcp/lib/browser/mcp-server-install-dialog';
-import { RegistryFetchService } from '../../common/registry-fetch-service';
-import { RegistrySearchFilter } from '../../common/registry-search-filter';
-import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types';
-import { MCPInstallService } from './mcp-install-service';
-import { MCPEntryHandlers, MCPInstalledEntry, MCPSearchResultEntry } from './mcp-entries';
+import { RegistryFetchService } from '../../common/registry-fetch-service.js';
+import { RegistrySearchFilter } from '../../common/registry-search-filter.js';
+import { ResolvedRegistryEntry } from '../../common/mcp/mcp-registry-types.js';
+import { MCPInstallService } from './mcp-install-service.js';
+import { MCPEntryHandlers, MCPInstalledEntry, MCPSearchResultEntry } from './mcp-entries.js';
 
 @injectable()
 export class MCPExtensionsContribution implements ExtensionsSourceContribution, Disposable {

@@ -14,6 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './sketched-tool-service';
-export * from './sketched-tool-widget';
-export * from './sketched-tool-contribution';
+export * from './sketched-tool-service.js';
+export * from './sketched-tool-widget.js';
+export * from './sketched-tool-contribution.js';

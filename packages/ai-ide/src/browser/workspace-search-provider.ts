@@ -21,10 +21,10 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { SearchInWorkspaceService, SearchInWorkspaceCallbacks } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';
-import { SEARCH_IN_WORKSPACE_FUNCTION_ID } from '../common/workspace-functions';
-import { WorkspaceFunctionScope } from './workspace-functions';
-import { SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF } from '../common/workspace-preferences';
-import { optimizeSearchResults } from '../common/workspace-search-provider-util';
+import { SEARCH_IN_WORKSPACE_FUNCTION_ID } from '../common/workspace-functions.js';
+import { WorkspaceFunctionScope } from './workspace-functions.js';
+import { SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF } from '../common/workspace-preferences.js';
+import { optimizeSearchResults } from '../common/workspace-search-provider-util.js';
 
 @injectable()
 export class WorkspaceSearchProvider implements ToolProvider {

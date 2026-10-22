@@ -29,10 +29,9 @@ import { URI } from '@theia/core/lib/common/uri';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileContent, FileStat, FileStatWithMetadata } from '@theia/filesystem/lib/common/files';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { WorkspaceService } from '../workspace-service';
-import { WorkspaceMetadataStorageServiceImpl, WorkspaceMetadataStoreFactory } from './workspace-metadata-storage-service';
-import { WorkspaceMetadataStoreImpl } from './workspace-metadata-store';
-import * as uuid from '@theia/core/lib/common/uuid';
+import { WorkspaceService } from '../workspace-service.js';
+import { WorkspaceMetadataStorageServiceImpl, WorkspaceMetadataStoreFactory } from './workspace-metadata-storage-service.js';
+import { WorkspaceMetadataStoreImpl } from './workspace-metadata-store.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 disableJSDOM();
@@ -91,7 +90,7 @@ describe('WorkspaceMetadataStorageService', () => {
         service = container.get(WorkspaceMetadataStorageServiceImpl);
 
         // Stub UUID generation
-        generateUuidStub = sinon.stub(uuid, 'generateUuid');
+        generateUuidStub = sinon.stub(service as unknown as { generateWorkspaceKey(): string }, 'generateWorkspaceKey');
 
         // Default file service behavior
         fileService.exists.resolves(false);

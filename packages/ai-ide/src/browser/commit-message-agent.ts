@@ -26,7 +26,7 @@ import {
 import { generateUuid, nls } from '@theia/core';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { commitMessagePrompts, COMMIT_MESSAGE_SYSTEM_PROMPT_ID, COMMIT_MESSAGE_USER_PROMPT_ID } from './commit-message-prompt-template';
+import { commitMessagePrompts, COMMIT_MESSAGE_SYSTEM_PROMPT_ID, COMMIT_MESSAGE_USER_PROMPT_ID } from './commit-message-prompt-template.js';
 
 export const COMMIT_MESSAGE_AGENT_ID = 'Commit Message';
 

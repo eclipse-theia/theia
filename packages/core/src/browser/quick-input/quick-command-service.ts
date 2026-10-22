@@ -15,14 +15,14 @@
 // *****************************************************************************
 
 import { inject, injectable, optional, postConstruct } from 'inversify';
-import { KeybindingRegistry } from '../keybinding';
-import { Disposable, Command, CommandRegistry, CancellationToken, nls } from '../../common';
-import { ContextKeyService } from '../context-key-service';
-import { CorePreferences } from '../../common/core-preferences';
-import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from './quick-access';
-import { filterItems, QuickInputService, QuickPickItem, QuickPicks } from './quick-input-service';
-import { KeySequence } from '../keys';
-import { codiconArray } from '../widgets';
+import { KeybindingRegistry } from '../keybinding.js';
+import { Disposable, Command, CommandRegistry, CancellationToken, nls } from '../../common/index.js';
+import { ContextKeyService } from '../context-key-service.js';
+import { CorePreferences } from '../../common/core-preferences.js';
+import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from './quick-access.js';
+import { filterItems, QuickInputService, QuickPickItem, QuickPicks } from './quick-input-service.js';
+import { KeySequence } from '../keys.js';
+import { codiconArray } from '../widgets/index.js';
 
 export const quickCommand: Command = {
     id: 'workbench.action.showCommands'

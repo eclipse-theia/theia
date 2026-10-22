@@ -16,9 +16,9 @@
 
 import { environment } from '@theia/application-package/lib/environment';
 import { injectable } from 'inversify';
-import { MaybePromise } from '../common/types';
-import URI from '../common/uri';
-import { Endpoint } from './endpoint';
+import { MaybePromise } from '../common/types.js';
+import URI from '../common/uri.js';
+import { Endpoint } from './endpoint.js';
 
 export interface AddressPort {
     address: string

@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { Container } from 'inversify';
-import { ContributionProvider, ILogger } from '../../common';
-import { CorePreferences } from '../../common/core-preferences';
-import { FrontendApplicationContribution } from '../frontend-application-contribution';
-import { DefaultWindowService } from './default-window-service';
-import assert = require('assert');
-import { MockLogger } from '../../common/test/mock-logger';
+import { ContributionProvider, ILogger } from '../../common/index.js';
+import { CorePreferences } from '../../common/core-preferences.js';
+import { FrontendApplicationContribution } from '../frontend-application-contribution.js';
+import { DefaultWindowService } from './default-window-service.js';
+import assert from 'assert';
+import { MockLogger } from '../../common/test/mock-logger.js';
 
 describe('DefaultWindowService', () => {
     class TestFrontendApplicationContribution implements FrontendApplicationContribution {

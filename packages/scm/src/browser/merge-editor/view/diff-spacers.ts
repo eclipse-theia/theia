@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { ArrayUtils } from '@theia/core';
-import { LineRangeMapping } from '../model/range-mapping';
+import { LineRangeMapping } from '../model/range-mapping.js';
 
 export interface DiffSpacers {
     /**

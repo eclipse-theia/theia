@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { AiConfigurationCategoryRenderer, AiConfigurationRenderContext } from '../ai-configuration-category';
+import { AiConfigurationCategoryRenderer, AiConfigurationRenderContext } from '../ai-configuration-category.js';
 
 /**
  * Convenience base for `single-page` categories. Subclasses implement

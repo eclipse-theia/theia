@@ -30,7 +30,7 @@ import { ChatModel } from '@theia/ai-chat';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Message } from '@theia/core/lib/browser';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
-import { AIChatInputWidget, applyEditorEnabledState } from './chat-input-widget';
+import { AIChatInputWidget, applyEditorEnabledState } from './chat-input-widget.js';
 
 disableJSDOM();
 

@@ -35,17 +35,17 @@ import { VSXExtensionRaw } from '@theia/ovsx-client';
 import { VscodeCommands } from '@theia/plugin-ext-vscode/lib/browser/plugin-vscode-commands-contribution';
 import { DuplicateExtensionError } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { DateTime } from 'luxon';
-import { VSXRegistryService } from '../common/vsx-registry-service';
-import { IGNORE_RECOMMENDATIONS_ID } from '../common/recommended-extensions-preference-contribution';
-import { VSXExtension, VSXExtensionsContextMenu } from './vsx-extension';
-import { VSXExtensionsCommands } from './vsx-extension-commands';
-import { VSXExtensionsModel } from './vsx-extensions-model';
-import { BUILTIN_QUERY, INSTALLED_QUERY, RECOMMENDED_QUERY } from './vsx-extensions-search-model';
-import { VSXExtensionsViewContainer } from './vsx-extensions-view-container';
+import { VSXRegistryService } from '../common/vsx-registry-service.js';
+import { IGNORE_RECOMMENDATIONS_ID } from '../common/recommended-extensions-preference-contribution.js';
+import { VSXExtension, VSXExtensionsContextMenu } from './vsx-extension.js';
+import { VSXExtensionsCommands } from './vsx-extension-commands.js';
+import { VSXExtensionsModel } from './vsx-extensions-model.js';
+import { BUILTIN_QUERY, INSTALLED_QUERY, RECOMMENDED_QUERY } from './vsx-extensions-search-model.js';
+import { VSXExtensionsViewContainer } from './vsx-extensions-view-container.js';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { ExtensionsSourceContribution } from './extensions-source-contribution';
-import debounce = require('@theia/core/shared/lodash.debounce');
+import { ExtensionsSourceContribution } from './extensions-source-contribution.js';
+import debounce from '@theia/core/shared/lodash.debounce';
 import { ILogger } from '@theia/core';
 
 export namespace VSXCommands {

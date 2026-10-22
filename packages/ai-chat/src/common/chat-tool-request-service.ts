@@ -16,7 +16,7 @@
 
 import { ToolInvocationContext, ToolRequest } from '@theia/ai-core';
 import { injectable } from '@theia/core/shared/inversify';
-import { MutableChatRequestModel, MutableChatResponseModel } from './chat-model';
+import { MutableChatRequestModel, MutableChatResponseModel } from './chat-model.js';
 
 /**
  * Checks if the given arguments string represents empty tool arguments.

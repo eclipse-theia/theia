@@ -24,7 +24,7 @@ import { FrontendApplication, FrontendApplicationContribution } from '@theia/cor
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
-import { ProviderResult } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
+import { ProviderResult } from '@theia/monaco-editor-core/esm/vs/editor/common/languages.js';
 import { AIChatFrontendContribution, OPEN_FILE_BY_PATH_COMMAND, VARIABLE_ADD_CONTEXT_COMMAND } from '@theia/ai-chat/lib/browser/ai-chat-frontend-contribution';
 import { PendingImageRegistry } from '@theia/ai-chat/lib/browser/pending-image-registry';
 

@@ -26,9 +26,9 @@ import { CancellationToken, ILogger, MessageService } from '@theia/core';
 import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmInput } from '@theia/scm/lib/browser/scm-input';
-import { CommitMessageAgent } from './commit-message-agent';
-import { CommitMessageRunner } from './commit-message-runner';
-import { GetGitChangesTool } from './git-changes-tool';
+import { CommitMessageAgent } from './commit-message-agent.js';
+import { CommitMessageRunner } from './commit-message-runner.js';
+import { GetGitChangesTool } from './git-changes-tool.js';
 
 disableJSDOM();
 

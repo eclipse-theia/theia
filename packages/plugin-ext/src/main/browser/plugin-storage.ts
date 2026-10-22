@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { StorageMain } from '../../common/plugin-api-rpc';
-import { PluginServer, PluginStorageKind } from '../../common/plugin-protocol';
-import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
+import { StorageMain } from '../../common/plugin-api-rpc.js';
+import { PluginServer, PluginStorageKind } from '../../common/plugin-protocol.js';
+import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types.js';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
 export class StorageMainImpl implements StorageMain {

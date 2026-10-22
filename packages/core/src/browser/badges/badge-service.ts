@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { Emitter, Event } from '../../common';
-import { Widget } from '../widgets';
+import { Emitter, Event } from '../../common/index.js';
+import { Widget } from '../widgets/index.js';
 
 export interface Badge {
     value: number;

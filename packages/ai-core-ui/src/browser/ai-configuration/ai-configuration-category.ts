@@ -16,7 +16,7 @@
 
 import { Event } from '@theia/core';
 // Type-only, so this contribution point stays free of a runtime dependency on the rendering component.
-import type { AiConfigurationOrigin } from './components/ai-configuration-origin-badge';
+import type { AiConfigurationOrigin } from './components/ai-configuration-origin-badge.js';
 
 /**
  * Contribution point for a category shown in the AI Configuration view.

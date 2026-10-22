@@ -24,8 +24,8 @@ import { GroupImpl } from '@theia/core/lib/browser/menu/composite-menu-node';
 import { ToolConfirmationMode as ToolConfirmationPreferenceMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { PendingToolConfirmationTracker } from '@theia/ai-chat/lib/browser/pending-tool-confirmation-tracker';
-import { MarkdownRender } from './markdown-part-renderer';
-import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
+import { MarkdownRender } from './markdown-part-renderer.js';
+import { condenseArguments, formatArgsForTooltip } from './toolcall-utils.js';
 
 export interface CountdownTimerProps {
     response: ToolCallChatResponseContent;

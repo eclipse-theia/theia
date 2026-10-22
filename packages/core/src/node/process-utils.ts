@@ -17,7 +17,7 @@
 import * as cp from 'child_process';
 import * as path from 'path';
 import { injectable, inject, named } from 'inversify';
-import { ILogger } from '../common/logger';
+import { ILogger } from '../common/logger.js';
 
 /**
  * How long to wait for PowerShell to list child processes before giving up, in milliseconds.

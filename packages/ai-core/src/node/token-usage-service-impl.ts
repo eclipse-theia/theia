@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { TokenUsage, TokenUsageParams, TokenUsageService } from '../common/token-usage-service';
-import { TokenUsageServiceClient } from '../common/protocol';
+import { TokenUsage, TokenUsageParams, TokenUsageService } from '../common/token-usage-service.js';
+import { TokenUsageServiceClient } from '../common/protocol.js';
 import { ILogger } from '@theia/core';
 
 @injectable()

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { parseFrontmatter, serializeFrontmatter } from './frontmatter';
+import { parseFrontmatter, serializeFrontmatter } from './frontmatter.js';
 
 interface AgentMeta {
     name: string;

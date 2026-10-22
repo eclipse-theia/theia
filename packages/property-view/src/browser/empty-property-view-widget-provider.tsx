@@ -18,8 +18,8 @@ import { nls } from '@theia/core/lib/common/nls';
 import { ReactWidget } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { PropertyViewContentWidget } from './property-view-content-widget';
-import { DefaultPropertyViewWidgetProvider } from './property-view-widget-provider';
+import { PropertyViewContentWidget } from './property-view-content-widget.js';
+import { DefaultPropertyViewWidgetProvider } from './property-view-widget-provider.js';
 
 /**
  * Property view widget that is shown if no property data or selection is available.

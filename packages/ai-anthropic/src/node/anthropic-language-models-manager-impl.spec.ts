@@ -18,8 +18,8 @@ import { expect } from 'chai';
 import { APIConnectionError } from '@anthropic-ai/sdk';
 import type { ModelInfo } from '@anthropic-ai/sdk/resources/models';
 import { DiscoveredModel, ReasoningApi } from '@theia/ai-core';
-import { AnthropicLanguageModelsManagerImpl } from './anthropic-language-models-manager-impl';
-import { AnthropicModelDescription } from '../common';
+import { AnthropicLanguageModelsManagerImpl } from './anthropic-language-models-manager-impl.js';
+import { AnthropicModelDescription } from '../common/index.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { TestModelDiscoveryFetcher } from '@theia/ai-core/lib/node/test/test-model-discovery-fetcher';
 

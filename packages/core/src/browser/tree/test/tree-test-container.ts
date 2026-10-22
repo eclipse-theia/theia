@@ -14,19 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { TreeImpl, Tree } from '../tree';
-import { TreeModel, TreeModelImpl } from '../tree-model';
+import { TreeImpl, Tree } from '../tree.js';
+import { TreeModel, TreeModelImpl } from '../tree-model.js';
 import { Container } from 'inversify';
-import { TreeSelectionServiceImpl } from '../tree-selection-impl';
-import { TreeSelectionService } from '../tree-selection';
-import { TreeExpansionServiceImpl, TreeExpansionService } from '../tree-expansion';
-import { TreeNavigationService } from '../tree-navigation';
-import { TreeSearch } from '../tree-search';
-import { FuzzySearch } from '../fuzzy-search';
-import { MockLogger } from '../../../common/test/mock-logger';
-import { ILogger, bindContributionProvider } from '../../../common';
-import { LabelProviderContribution, LabelProvider } from '../../label-provider';
-import { TreeFocusService, TreeFocusServiceImpl } from '../tree-focus-service';
+import { TreeSelectionServiceImpl } from '../tree-selection-impl.js';
+import { TreeSelectionService } from '../tree-selection.js';
+import { TreeExpansionServiceImpl, TreeExpansionService } from '../tree-expansion.js';
+import { TreeNavigationService } from '../tree-navigation.js';
+import { TreeSearch } from '../tree-search.js';
+import { FuzzySearch } from '../fuzzy-search.js';
+import { MockLogger } from '../../../common/test/mock-logger.js';
+import { ILogger, bindContributionProvider } from '../../../common/index.js';
+import { LabelProviderContribution, LabelProvider } from '../../label-provider.js';
+import { TreeFocusService, TreeFocusServiceImpl } from '../tree-focus-service.js';
 
 export function createTreeTestContainer(): Container {
     const container = new Container({ defaultScope: 'Singleton' });

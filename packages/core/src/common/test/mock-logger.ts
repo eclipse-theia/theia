@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable } from 'inversify';
-import { ILogger, Loggable } from '../logger';
+import { ILogger, Loggable } from '../logger.js';
 
 @injectable()
 export class MockLogger implements ILogger {

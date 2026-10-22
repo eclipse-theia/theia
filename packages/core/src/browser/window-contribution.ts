@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { inject, injectable } from 'inversify';
-import { Command, CommandContribution, CommandRegistry, environment } from '../common';
-import { WindowService } from './window/window-service';
-import { KeybindingContribution, KeybindingRegistry } from './keybinding';
-import { MenuContribution, MenuModelRegistry } from '../common/menu';
-import { CommonMenus } from './common-menus';
+import { Command, CommandContribution, CommandRegistry, environment } from '../common/index.js';
+import { WindowService } from './window/window-service.js';
+import { KeybindingContribution, KeybindingRegistry } from './keybinding.js';
+import { MenuContribution, MenuModelRegistry } from '../common/menu/index.js';
+import { CommonMenus } from './common-menus.js';
 
 export namespace WindowCommands {
 

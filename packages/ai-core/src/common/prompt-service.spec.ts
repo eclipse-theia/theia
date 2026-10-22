@@ -18,10 +18,10 @@ import 'reflect-metadata';
 
 import { expect } from 'chai';
 import { Container } from 'inversify';
-import { CustomAgentDescription, PromptService, PromptServiceImpl } from './prompt-service';
-import { DefaultAIVariableService, AIVariableService } from './variable-service';
-import { ToolInvocationRegistry } from './tool-invocation-registry';
-import { ToolRequest } from './language-model';
+import { CustomAgentDescription, PromptService, PromptServiceImpl } from './prompt-service.js';
+import { DefaultAIVariableService, AIVariableService } from './variable-service.js';
+import { ToolInvocationRegistry } from './tool-invocation-registry.js';
+import { ToolRequest } from './language-model.js';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { ILogger, Logger } from '@theia/core';
 import * as sinon from 'sinon';

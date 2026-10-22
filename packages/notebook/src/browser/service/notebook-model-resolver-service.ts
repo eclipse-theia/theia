@@ -18,11 +18,11 @@ import { Emitter, Resource, ResourceProvider, UNTITLED_SCHEME, URI, ILogger } fr
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { UriComponents } from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { NotebookData } from '../../common';
-import { NotebookModel } from '../view-model/notebook-model';
-import { NotebookService } from './notebook-service';
-import { NotebookTypeRegistry } from '../notebook-type-registry';
-import { NotebookFileSelector } from '../../common/notebook-protocol';
+import { NotebookData } from '../../common/index.js';
+import { NotebookModel } from '../view-model/notebook-model.js';
+import { NotebookService } from './notebook-service.js';
+import { NotebookTypeRegistry } from '../notebook-type-registry.js';
+import { NotebookFileSelector } from '../../common/notebook-protocol.js';
 import { match } from '@theia/core/lib/common/glob';
 
 export interface UntitledResource {

@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { CommandContribution, MenuContribution, MenuNodeFactory } from '../../common';
-import { FrontendApplicationContribution, ContextMenuRenderer, KeybindingContribution, KeybindingContext } from '../../browser';
-import { ElectronMainMenuFactory } from './electron-main-menu-factory';
-import { ElectronContextMenuRenderer, ElectronTextInputContextMenuContribution } from './electron-context-menu-renderer';
-import { CustomTitleWidget, CustomTitleWidgetFactory, ElectronMenuContribution } from './electron-menu-contribution';
-import { BrowserMenuNodeFactory } from '../../browser/menu/browser-menu-node-factory';
-import { BrowserMainMenuFactory } from '../../browser/menu/browser-menu-plugin';
+import { CommandContribution, MenuContribution, MenuNodeFactory } from '../../common/index.js';
+import { FrontendApplicationContribution, ContextMenuRenderer, KeybindingContribution, KeybindingContext } from '../../browser/index.js';
+import { ElectronMainMenuFactory } from './electron-main-menu-factory.js';
+import { ElectronContextMenuRenderer, ElectronTextInputContextMenuContribution } from './electron-context-menu-renderer.js';
+import { CustomTitleWidget, CustomTitleWidgetFactory, ElectronMenuContribution } from './electron-menu-contribution.js';
+import { BrowserMenuNodeFactory } from '../../browser/menu/browser-menu-node-factory.js';
+import { BrowserMainMenuFactory } from '../../browser/menu/browser-menu-plugin.js';
 
 export default new ContainerModule(bind => {
     bind(ElectronMainMenuFactory).toSelf().inSingletonScope();

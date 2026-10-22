@@ -15,15 +15,15 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { Event, Emitter, ILogger } from '../../common';
-import { CorePreferences } from '../../common/core-preferences';
-import { ContributionProvider } from '../../common/contribution-provider';
-import { FrontendApplicationContribution, OnWillStopAction } from '../frontend-application-contribution';
-import { WindowService } from './window-service';
-import { DEFAULT_WINDOW_HASH } from '../../common/window';
-import { confirmExit } from '../dialogs';
-import { StopReason } from '../../common/frontend-application-state';
-import { FrontendApplication } from '../frontend-application';
+import { Event, Emitter, ILogger } from '../../common/index.js';
+import { CorePreferences } from '../../common/core-preferences.js';
+import { ContributionProvider } from '../../common/contribution-provider.js';
+import { FrontendApplicationContribution, OnWillStopAction } from '../frontend-application-contribution.js';
+import { WindowService } from './window-service.js';
+import { DEFAULT_WINDOW_HASH } from '../../common/window.js';
+import { confirmExit } from '../dialogs.js';
+import { StopReason } from '../../common/frontend-application-state.js';
+import { FrontendApplication } from '../frontend-application.js';
 
 @injectable()
 export class DefaultWindowService implements WindowService, FrontendApplicationContribution {

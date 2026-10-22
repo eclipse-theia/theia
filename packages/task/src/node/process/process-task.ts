@@ -20,12 +20,12 @@
 *--------------------------------------------------------------------------------------------*/
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
-import { ILogger } from '@theia/core/lib/common/';
+import { ILogger } from '@theia/core/lib/common';
 import { Process, IProcessExitEvent } from '@theia/process/lib/node';
-import { Task, TaskOptions } from '../task';
-import { TaskManager } from '../task-manager';
-import { ProcessType, ProcessTaskInfo } from '../../common/process/task-protocol';
-import { TaskExitedEvent } from '../../common/task-protocol';
+import { Task, TaskOptions } from '../task.js';
+import { TaskManager } from '../task-manager.js';
+import { ProcessType, ProcessTaskInfo } from '../../common/process/task-protocol.js';
+import { TaskExitedEvent } from '../../common/task-protocol.js';
 
 // copied from https://github.com/microsoft/vscode/blob/1.79.0/src/vs/base/common/strings.ts#L736
 const CSI_SEQUENCE = /(:?\x1b\[|\x9B)[=?>!]?[\d;:]*["$#'* ]?[a-zA-Z@^`{}|~]/g;

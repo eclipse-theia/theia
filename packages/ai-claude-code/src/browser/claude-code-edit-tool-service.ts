@@ -22,7 +22,7 @@ import { URI } from '@theia/core/lib/common/uri';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { FileEditBackupService } from './claude-code-file-edit-backup-service';
+import { FileEditBackupService } from './claude-code-file-edit-backup-service.js';
 import { ILogger, nls } from '@theia/core';
 
 export interface EditToolInput {

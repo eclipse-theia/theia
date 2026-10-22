@@ -16,7 +16,7 @@
 
 import { URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { CollaborationWorkspaceService } from './collaboration-workspace-service';
+import { CollaborationWorkspaceService } from './collaboration-workspace-service.js';
 
 @injectable()
 export class CollaborationUtils {

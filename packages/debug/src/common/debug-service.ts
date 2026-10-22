@@ -18,7 +18,7 @@ import { Channel, Disposable, Emitter, Event } from '@theia/core';
 import { ApplicationError } from '@theia/core/lib/common/application-error';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { CommandIdVariables } from '@theia/variable-resolver/lib/common/variable-types';
-import { DebugConfiguration } from './debug-configuration';
+import { DebugConfiguration } from './debug-configuration.js';
 
 export interface DebuggerDescription {
     type: string

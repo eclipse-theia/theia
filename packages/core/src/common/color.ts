@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { isObject } from './types';
+import { isObject } from './types.js';
 
 /**
  * Either be a reference to an existing color or a color value as a hex string, rgba, or hsla.

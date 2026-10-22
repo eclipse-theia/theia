@@ -23,9 +23,9 @@ import { expect } from 'chai';
 import { PreferenceService } from '@theia/core';
 import { AICorePreferences } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { DiscoveredModel } from '@theia/ai-core/lib/common';
-import { OpenAiModelDescription } from '../common';
-import { OpenAiPreferencesSchema, USE_RESPONSE_API_PREF } from '../common/openai-preferences';
-import { OpenAiFrontendApplicationContribution } from './openai-frontend-application-contribution';
+import { OpenAiModelDescription } from '../common/index.js';
+import { OpenAiPreferencesSchema, USE_RESPONSE_API_PREF } from '../common/openai-preferences.js';
+import { OpenAiFrontendApplicationContribution } from './openai-frontend-application-contribution.js';
 
 disableJSDOM();
 

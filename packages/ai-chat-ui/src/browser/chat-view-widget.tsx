@@ -22,9 +22,9 @@ import { GenericCapabilitySelections, AIVariableResolutionRequest } from '@theia
 import { ApplicationShell, BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { AIChatInputWidget } from './chat-input-widget';
-import { ChatBannerWidget } from './chat-banner-widget';
-import { ChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view/chat-view-tree-widget';
+import { AIChatInputWidget } from './chat-input-widget.js';
+import { ChatBannerWidget } from './chat-banner-widget.js';
+import { ChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view/chat-view-tree-widget.js';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { FrontendVariableService } from '@theia/ai-core/lib/browser';

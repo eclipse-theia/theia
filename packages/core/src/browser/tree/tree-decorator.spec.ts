@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { TreeDecoratorService, AbstractTreeDecoratorService, TreeDecoration } from './tree-decorator';
+import { TreeDecoratorService, AbstractTreeDecoratorService, TreeDecoration } from './tree-decorator.js';
 
 class MockTreeDecoratorService extends AbstractTreeDecoratorService {
 

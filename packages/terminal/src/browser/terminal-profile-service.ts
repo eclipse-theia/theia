@@ -16,8 +16,8 @@
 
 import { Emitter, Event } from '@theia/core';
 import { injectable, unmanaged } from '@theia/core/shared/inversify';
-import { TerminalWidget } from './base/terminal-widget';
-import { ShellTerminalProfile } from './shell-terminal-profile';
+import { TerminalWidget } from './base/terminal-widget.js';
+import { ShellTerminalProfile } from './shell-terminal-profile.js';
 
 export const TerminalProfileService = Symbol('TerminalProfileService');
 export const ContributedTerminalProfileStore = Symbol('ContributedTerminalProfileStore');

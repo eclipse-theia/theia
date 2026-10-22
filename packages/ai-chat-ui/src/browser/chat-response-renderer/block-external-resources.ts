@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core/lib/common/nls';
-import { renderBlockedResourcePlaceholder } from './blocked-resource-placeholder';
+import { renderBlockedResourcePlaceholder } from './blocked-resource-placeholder.js';
 
 export const BLOCKED_RESOURCE_CLASS = 'theia-blocked-resource';
 export const BLOCKED_RESOURCE_ALLOW_CLASS = 'theia-blocked-resource-allow';

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { findSubstringIndex, hasPrefixMatch, hasSubstringMatch, matchRank } from './fuzzy-match-utils';
+import { findSubstringIndex, hasPrefixMatch, hasSubstringMatch, matchRank } from './fuzzy-match-utils.js';
 
 describe('fuzzy-match-utils', () => {
 

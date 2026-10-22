@@ -16,7 +16,7 @@
 
 import { Command, CommandContribution, CommandRegistry } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { MCPServerEditor } from './mcp-server-editor';
+import { MCPServerEditor } from './mcp-server-editor.js';
 
 /**
  * Public command id for opening the "Add MCP Server" dialog. Exposed as a string

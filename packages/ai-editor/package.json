@@ -2,6 +2,7 @@
   "name": "@theia/ai-editor",
   "version": "1.76.0",
   "description": "Theia - AI Editor",
+  "type": "module",
   "dependencies": {
     "@theia/ai-chat": "1.76.0",
     "@theia/ai-chat-ui": "1.76.0",
@@ -15,6 +16,13 @@
     "tslib": "^2.8.1"
   },
   "main": "lib/common",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/browser": "./lib/browser/index.js",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "publishConfig": {
     "access": "public"
   },

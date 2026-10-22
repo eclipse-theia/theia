@@ -23,10 +23,10 @@ import { ILogger } from '@theia/core';
 import { Container } from '@theia/core/shared/inversify';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { OpenAiModelUtils } from './openai-model-utils';
+import { OpenAiModelUtils } from './openai-model-utils.js';
 import { OpenAI } from 'openai';
-import { OPENAI_FUNCTION_CALL_REASONING_DATA_KEY, OpenAiResponseApiUtils } from './openai-response-api-utils';
-import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools';
+import { OPENAI_FUNCTION_CALL_REASONING_DATA_KEY, OpenAiResponseApiUtils } from './openai-response-api-utils.js';
+import { OPENAI_WEB_SEARCH, OPENAI_WEB_SEARCH_REPLAY_DATA_KEY } from './openai-server-tools.js';
 
 async function* toStream(events: unknown[]): AsyncIterable<unknown> {
     for (const event of events) {

@@ -15,19 +15,19 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, MeasurementContext, Stopwatch } from '../common';
-import { MaybePromise } from '../common/types';
-import { KeybindingRegistry } from './keybinding';
-import { Widget } from './widgets';
-import { ApplicationShell } from './shell/application-shell';
-import { ShellLayoutRestorer, ApplicationShellLayoutMigrationError } from './shell/shell-layout-restorer';
-import { FrontendApplicationStateService } from './frontend-application-state';
-import { preventNavigation, parseCssTime, animationFrame } from './browser';
-import { CorePreferences } from '../common/core-preferences';
-import { WindowService } from './window/window-service';
-import { TooltipService } from './tooltip-service';
-import { FrontendApplicationContribution } from './frontend-application-contribution';
-import { ILogger } from '../common/logger';
+import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, MeasurementContext, Stopwatch } from '../common/index.js';
+import { MaybePromise } from '../common/types.js';
+import { KeybindingRegistry } from './keybinding.js';
+import { Widget } from './widgets/index.js';
+import { ApplicationShell } from './shell/application-shell.js';
+import { ShellLayoutRestorer, ApplicationShellLayoutMigrationError } from './shell/shell-layout-restorer.js';
+import { FrontendApplicationStateService } from './frontend-application-state.js';
+import { preventNavigation, parseCssTime, animationFrame } from './browser.js';
+import { CorePreferences } from '../common/core-preferences.js';
+import { WindowService } from './window/window-service.js';
+import { TooltipService } from './tooltip-service.js';
+import { FrontendApplicationContribution } from './frontend-application-contribution.js';
+import { ILogger } from '../common/logger.js';
 
 const TIMER_WARNING_THRESHOLD = 100;
 

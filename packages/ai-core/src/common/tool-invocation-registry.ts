@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, named, postConstruct, interfaces } from '@theia/core/shared/inversify';
-import { ToolRequest } from './language-model';
+import { ToolRequest } from './language-model.js';
 import { ContributionProvider, Emitter, Event, ILogger } from '@theia/core';
 
 export const ToolInvocationRegistry = Symbol('ToolInvocationRegistry');

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { KeyStoreServiceImpl, InMemoryCredentialsProvider } from './key-store-server';
+import { KeyStoreServiceImpl, InMemoryCredentialsProvider } from './key-store-server.js';
 
 describe('KeyStoreServiceImpl', () => {
     let keyStoreService: KeyStoreServiceImpl;

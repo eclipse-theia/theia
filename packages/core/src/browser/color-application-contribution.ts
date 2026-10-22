@@ -15,14 +15,14 @@
 // *****************************************************************************
 
 import { injectable, inject, named } from 'inversify';
-import { ColorRegistry } from './color-registry';
-import { Emitter } from '../common/event';
-import { ThemeService } from './theming';
-import { FrontendApplicationContribution } from './frontend-application-contribution';
-import { ContributionProvider } from '../common/contribution-provider';
-import { Disposable, DisposableCollection } from '../common/disposable';
-import { DEFAULT_BACKGROUND_COLOR_STORAGE_KEY } from './frontend-application-config-provider';
-import { SecondaryWindowHandler } from './secondary-window-handler';
+import { ColorRegistry } from './color-registry.js';
+import { Emitter } from '../common/event.js';
+import { ThemeService } from './theming.js';
+import { FrontendApplicationContribution } from './frontend-application-contribution.js';
+import { ContributionProvider } from '../common/contribution-provider.js';
+import { Disposable, DisposableCollection } from '../common/disposable.js';
+import { DEFAULT_BACKGROUND_COLOR_STORAGE_KEY } from './frontend-application-config-provider.js';
+import { SecondaryWindowHandler } from './secondary-window-handler.js';
 
 export const ColorContribution = Symbol('ColorContribution');
 export interface ColorContribution {

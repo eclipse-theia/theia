@@ -23,19 +23,19 @@
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
-import { CancellationTokenSource } from '@theia/monaco-editor-core/esm/vs/base/common/cancellation';
-import { DEFAULT_WORD_REGEXP } from '@theia/monaco-editor-core/esm/vs/editor/common/core/wordHelper';
-import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
-import { StandardTokenType } from '@theia/monaco-editor-core/esm/vs/editor/common/encodedTokenAttributes';
-import { InlineValueContext } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
-import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
-import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { DebugVariable, ExpressionContainer, ExpressionItem } from '../console/debug-console-items';
-import { DebugPreferences } from '../../common/debug-preferences';
-import { DebugStackFrame } from '../model/debug-stack-frame';
-import { DebugEditorModel } from './debug-editor-model';
-import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
+import { CancellationTokenSource } from '@theia/monaco-editor-core/esm/vs/base/common/cancellation.js';
+import { DEFAULT_WORD_REGEXP } from '@theia/monaco-editor-core/esm/vs/editor/common/core/wordHelper.js';
+import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon.js';
+import { StandardTokenType } from '@theia/monaco-editor-core/esm/vs/editor/common/encodedTokenAttributes.js';
+import { InlineValueContext } from '@theia/monaco-editor-core/esm/vs/editor/common/languages.js';
+import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model.js';
+import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures.js';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { DebugVariable, ExpressionContainer, ExpressionItem } from '../console/debug-console-items.js';
+import { DebugPreferences } from '../../common/debug-preferences.js';
+import { DebugStackFrame } from '../model/debug-stack-frame.js';
+import { DebugEditorModel } from './debug-editor-model.js';
+import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService.js';
 
 // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/browser/debugEditorContribution.ts#L40-L43
 export const INLINE_VALUE_DECORATION_KEY = 'inlinevaluedecoration';

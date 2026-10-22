@@ -16,8 +16,8 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { ProcessTaskRunner } from './process/process-task-runner';
-import { TaskRunner } from './task-runner-protocol';
+import { ProcessTaskRunner } from './process/process-task-runner.js';
+import { TaskRunner } from './task-runner-protocol.js';
 export { TaskRunner };
 
 export const TaskRunnerContribution = Symbol('TaskRunnerContribution');

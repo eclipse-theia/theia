@@ -14,17 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PluginDebugAdapterCreator } from '../../debug/plugin-debug-adapter-creator';
+import { PluginDebugAdapterCreator } from '../../debug/plugin-debug-adapter-creator.js';
 import * as path from 'path';
 import * as theia from '@theia/plugin';
-import { PlatformSpecificAdapterContribution, PluginPackageDebuggersContribution } from '../../../common';
+import { PlatformSpecificAdapterContribution, PluginPackageDebuggersContribution } from '../../../common/index.js';
 import { isWindows, isOSX } from '@theia/core/lib/common/os';
 import * as net from 'net';
 import { ChildProcess, spawn, fork, ForkOptions } from 'child_process';
 import { DebugAdapter } from '@theia/debug/lib/common/debug-model';
-import { DebugAdapterExecutable, DebugAdapterInlineImplementation, DebugAdapterNamedPipeServer, DebugAdapterServer } from '../../types-impl';
+import { DebugAdapterExecutable, DebugAdapterInlineImplementation, DebugAdapterNamedPipeServer, DebugAdapterServer } from '../../types-impl.js';
 import { ProcessDebugAdapter, SocketDebugAdapter } from '@theia/debug/lib/node/stream-debug-adapter';
-const isElectron = require('is-electron');
+import isElectron from 'is-electron';
 
 export class NodeDebugAdapterCreator extends PluginDebugAdapterCreator {
     public override async resolveDebugAdapterExecutable(

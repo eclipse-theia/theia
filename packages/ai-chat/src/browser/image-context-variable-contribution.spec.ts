@@ -27,8 +27,8 @@ import { Container, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceRelativePathResolver } from '@theia/ai-core/lib/browser/workspace-relative-path-resolver';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { ImageContextVariableContribution } from './image-context-variable-contribution';
-import { PendingImageRegistry } from './pending-image-registry';
+import { ImageContextVariableContribution } from './image-context-variable-contribution.js';
+import { PendingImageRegistry } from './pending-image-registry.js';
 
 disableJSDOM();
 

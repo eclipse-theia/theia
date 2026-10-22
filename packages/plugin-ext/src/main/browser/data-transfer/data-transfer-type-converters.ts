@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { IDataTransferItem, IReadonlyVSDataTransfer } from '@theia/monaco-editor-core/esm/vs/base/common/dataTransfer';
-import { DataTransferDTO, DataTransferItemDTO } from '../../../common/plugin-api-rpc-model';
-import { URI } from '../../../plugin/types-impl';
+import { IDataTransferItem, IReadonlyVSDataTransfer } from '@theia/monaco-editor-core/esm/vs/base/common/dataTransfer.js';
+import { DataTransferDTO, DataTransferItemDTO } from '../../../common/plugin-api-rpc-model.js';
+import { URI } from '../../../plugin/types-impl.js';
 
 export namespace DataTransferItem {
     export async function from(mime: string, item: IDataTransferItem): Promise<DataTransferItemDTO> {

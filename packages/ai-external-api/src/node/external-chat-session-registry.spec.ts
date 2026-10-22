@@ -18,8 +18,8 @@ import { ChatSessionStatus } from '@theia/ai-chat/lib/common/chat-model';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { expect } from 'chai';
 import { ExternalApiTestSupport } from '@theia/external-api/lib/node/test/external-api-test-support';
-import { ExternalChatSessionDetail, ExternalChatSessionProvider, ExternalChatSessionSummary } from '../common/external-chat-session-provider';
-import { ExternalChatSessionRegistry } from './external-chat-session-registry';
+import { ExternalChatSessionDetail, ExternalChatSessionProvider, ExternalChatSessionSummary } from '../common/external-chat-session-provider.js';
+import { ExternalChatSessionRegistry } from './external-chat-session-registry.js';
 
 describe('ExternalChatSessionRegistry', () => {
 

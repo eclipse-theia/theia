@@ -21,7 +21,7 @@ import {
     getTextOfResponse, LanguageModel, LanguageModelMessage, LanguageModelRegistry, LanguageModelRequirement, LanguageModelResponse,
     LanguageModelSelector, LanguageModelService, LanguageModelStreamResponsePart, ServerToolDescriptor, UserRequest
 } from '@theia/ai-core';
-import { AbstractChatAgent, AbstractStreamParsingChatAgent, ChatAgentLocation } from './chat-agents';
+import { AbstractChatAgent, AbstractStreamParsingChatAgent, ChatAgentLocation } from './chat-agents.js';
 import {
     ChatResponseContent,
     ErrorChatResponseContent,
@@ -32,10 +32,10 @@ import {
     ChatRequest,
     TextChatResponseContentImpl,
     ThinkingChatResponseContentImpl,
-} from './chat-model';
-import { ParsedChatRequest, ParsedChatRequestTextPart } from './parsed-chat-request';
-import { FileReadTracker } from './file-read-tracker';
-import { ChatToolRequestService } from './chat-tool-request-service';
+} from './chat-model.js';
+import { ParsedChatRequest, ParsedChatRequestTextPart } from './parsed-chat-request.js';
+import { FileReadTracker } from './file-read-tracker.js';
+import { ChatToolRequestService } from './chat-tool-request-service.js';
 import { ILogger } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 

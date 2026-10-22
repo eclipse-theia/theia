@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CHANNEL_SHOW_OPEN, CHANNEL_SHOW_SAVE, OpenDialogOptions, SaveDialogOptions, TheiaFilesystemAPI } from '../electron-common/electron-api';
+import { CHANNEL_SHOW_OPEN, CHANNEL_SHOW_SAVE, OpenDialogOptions, SaveDialogOptions, TheiaFilesystemAPI } from '../electron-common/electron-api.js';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { ipcRenderer, contextBridge } from '@theia/core/electron-shared/electron';

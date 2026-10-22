@@ -20,12 +20,12 @@ import { inject, injectable, named, preDestroy } from '@theia/core/shared/invers
 import { ILogger, nls, URI } from '@theia/core';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import type { CopilotClient, CopilotClientOptions } from './copilot-sdk-types';
-import { CopilotCredentials, CopilotCredentialStore } from './copilot-credential-store';
-import { CopilotCliLocator } from './copilot-cli-locator';
-import { CopilotRuntimeEnv } from './copilot-runtime-env';
-import { CopilotSdkApi, CopilotSdkLoader } from './copilot-sdk-loader';
-import { selectSdkModelIds } from './copilot-sdk-mappers';
+import type { CopilotClient, CopilotClientOptions } from './copilot-sdk-types.js';
+import { CopilotCredentials, CopilotCredentialStore } from './copilot-credential-store.js';
+import { CopilotCliLocator } from './copilot-cli-locator.js';
+import { CopilotRuntimeEnv } from './copilot-runtime-env.js';
+import { CopilotSdkApi, CopilotSdkLoader } from './copilot-sdk-loader.js';
+import { selectSdkModelIds } from './copilot-sdk-mappers.js';
 
 /**
  * Manages the lifecycle of a {@link CopilotClient}, which spawns and talks to the

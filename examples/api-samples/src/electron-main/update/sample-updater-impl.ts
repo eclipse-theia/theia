@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
-import { SampleUpdater, SampleUpdaterClient, UpdateStatus } from '../../common/updater/sample-updater';
+import { SampleUpdater, SampleUpdaterClient, UpdateStatus } from '../../common/updater/sample-updater.js';
 
 @injectable()
 export class SampleUpdaterImpl implements SampleUpdater, ElectronMainApplicationContribution {

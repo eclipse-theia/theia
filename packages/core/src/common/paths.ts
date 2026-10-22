@@ -22,9 +22,9 @@
 /* eslint-disable no-void */
 /* eslint-disable no-null/no-null */
 'use strict';
-import { isWindows } from './os';
-import { startsWithIgnoreCase } from './strings';
-import { CharCode } from './char-code';
+import { isWindows } from './os.js';
+import { startsWithIgnoreCase } from './strings.js';
+import { CharCode } from './char-code.js';
 
 /**
  * The forward slash path separator.

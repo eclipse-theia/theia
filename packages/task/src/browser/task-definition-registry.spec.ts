@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { PanelKind, RevealKind, TaskScope, TaskDefinition } from '../common';
-import { TaskDefinitionRegistry } from './task-definition-registry';
+import { PanelKind, RevealKind, TaskScope, TaskDefinition } from '../common/index.js';
+import { TaskDefinitionRegistry } from './task-definition-registry.js';
 
 describe('TaskDefinitionRegistry', () => {
     let registry: TaskDefinitionRegistry;

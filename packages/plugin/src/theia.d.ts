@@ -21,36 +21,36 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import './theia-extra';
-import './theia.proposed.canonicalUriProvider';
-import './theia.proposed.customEditorMove';
-import './theia.proposed.debugVisualization';
-import './theia.proposed.diffCommand';
-import './theia.proposed.editSessionIdentityProvider';
-import './theia.proposed.editorHoverVerbosityLevel';
-import './theia.proposed.extensionsAny';
-import './theia.proposed.externalUriOpener';
-import './theia.proposed.findTextInFiles';
-import './theia.proposed.fsChunks';
-import './theia.proposed.interactiveWindow';
-import './theia.proposed.mappedEditsProvider';
-import './theia.proposed.multiDocumentHighlightProvider';
-import './theia.proposed.notebookCellExecutionState';
-import './theia.proposed.notebookKernelSource';
-import './theia.proposed.notebookMessaging';
-import './theia.proposed.portsAttributes';
-import './theia.proposed.profileContentHandlers';
-import './theia.proposed.resolvers';
-import './theia.proposed.scmMultiDiffEditor';
-import './theia.proposed.scmProviderOptions';
-import './theia.proposed.scmValidation';
-import './theia.proposed.shareProvider';
-import './theia.proposed.terminalCompletionProvider';
-import './theia.proposed.terminalQuickFixProvider';
-import './theia.proposed.textEditorDiffInformation';
-import './theia.proposed.textSearchProvider';
-import './theia.proposed.timeline';
-import './theia.proposed.statusBarItemTooltip';
+import './theia-extra.js';
+import './theia.proposed.canonicalUriProvider.js';
+import './theia.proposed.customEditorMove.js';
+import './theia.proposed.debugVisualization.js';
+import './theia.proposed.diffCommand.js';
+import './theia.proposed.editSessionIdentityProvider.js';
+import './theia.proposed.editorHoverVerbosityLevel.js';
+import './theia.proposed.extensionsAny.js';
+import './theia.proposed.externalUriOpener.js';
+import './theia.proposed.findTextInFiles.js';
+import './theia.proposed.fsChunks.js';
+import './theia.proposed.interactiveWindow.js';
+import './theia.proposed.mappedEditsProvider.js';
+import './theia.proposed.multiDocumentHighlightProvider.js';
+import './theia.proposed.notebookCellExecutionState.js';
+import './theia.proposed.notebookKernelSource.js';
+import './theia.proposed.notebookMessaging.js';
+import './theia.proposed.portsAttributes.js';
+import './theia.proposed.profileContentHandlers.js';
+import './theia.proposed.resolvers.js';
+import './theia.proposed.scmMultiDiffEditor.js';
+import './theia.proposed.scmProviderOptions.js';
+import './theia.proposed.scmValidation.js';
+import './theia.proposed.shareProvider.js';
+import './theia.proposed.terminalCompletionProvider.js';
+import './theia.proposed.terminalQuickFixProvider.js';
+import './theia.proposed.textEditorDiffInformation.js';
+import './theia.proposed.textSearchProvider.js';
+import './theia.proposed.timeline.js';
+import './theia.proposed.statusBarItemTooltip.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable max-len */

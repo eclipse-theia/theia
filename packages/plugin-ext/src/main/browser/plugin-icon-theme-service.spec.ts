@@ -28,7 +28,7 @@ FrontendApplicationConfigProvider.set({});
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
 import { PLUGINS_SCHEME } from '@theia/plugin-utils/lib/common/constants';
-import { PluginIconTheme } from './plugin-icon-theme-service';
+import { PluginIconTheme } from './plugin-icon-theme-service.js';
 
 disableJSDOM();
 

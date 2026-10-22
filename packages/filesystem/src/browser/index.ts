@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './location';
-export * from './file-tree';
-export * from './file-dialog';
-export * from './file-resource';
+export * from './location/index.js';
+export * from './file-tree/index.js';
+export * from './file-dialog/index.js';
+export * from './file-resource.js';

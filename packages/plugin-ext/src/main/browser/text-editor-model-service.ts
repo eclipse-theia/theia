@@ -18,7 +18,7 @@ import { MonacoEditorModel, WillSaveMonacoModelEvent } from '@theia/monaco/lib/b
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
-import { Schemes } from '../../common/uri-components';
+import { Schemes } from '../../common/uri-components.js';
 import URI from '@theia/core/lib/common/uri';
 import { Reference } from '@theia/core/lib/common/reference';
 

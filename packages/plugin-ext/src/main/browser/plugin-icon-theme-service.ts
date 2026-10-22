@@ -20,11 +20,11 @@
 // some code is copied and modified from:
 // https://github.com/microsoft/vscode/blob/7cf4cca47aa025a590fc939af54932042302be63/src/vs/workbench/services/themes/browser/fileIconThemeData.ts
 
-import debounce = require('@theia/core/shared/lodash.debounce');
+import debounce from '@theia/core/shared/lodash.debounce';
 import * as jsoncparser from 'jsonc-parser';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { IconThemeService, IconTheme, IconThemeDefinition } from '@theia/core/lib/browser/icon-theme-service';
-import { IconThemeContribution, DeployedPlugin, UiTheme, getPluginId } from '../../common/plugin-protocol';
+import { IconThemeContribution, DeployedPlugin, UiTheme, getPluginId } from '../../common/plugin-protocol.js';
 import { PLUGINS_BASE_PATH } from '@theia/plugin-utils/lib/common/constants';
 import { encodePluginAssetPath } from '@theia/plugin-utils/lib/common/plugin-model';
 import URI from '@theia/core/lib/common/uri';
@@ -39,10 +39,10 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat, FileChangeType } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language.js';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
-import { DEFAULT_ICON_SIZE, PLUGIN_FILE_ICON_CLASS } from './plugin-shared-style';
+import { DEFAULT_ICON_SIZE, PLUGIN_FILE_ICON_CLASS } from './plugin-shared-style.js';
 
 export interface PluginIconDefinition {
     iconPath: string;

@@ -2,6 +2,7 @@
   "name": "@theia/task",
   "version": "1.76.0",
   "description": "Theia - Task extension. This extension adds support for executing raw or terminal processes in the backend.",
+  "type": "module",
   "dependencies": {
     "@theia/core": "1.76.0",
     "@theia/editor": "1.76.0",
@@ -58,5 +59,14 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/browser": "./lib/browser/index.js",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/node": "./lib/node/index.js",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

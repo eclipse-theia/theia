@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { isObject, isUndefined, isUndefinedOrNull } from './types';
+import { isObject, isUndefined, isUndefinedOrNull } from './types.js';
 
 export function deepClone<T>(obj: T): T {
     if (!isObject(obj)) {

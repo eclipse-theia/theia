@@ -17,11 +17,11 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { CancellationTokenSource, PreferenceService } from '@theia/core';
-import { WorkspaceSearchProvider } from './workspace-search-provider';
+import { WorkspaceSearchProvider } from './workspace-search-provider.js';
 import { ToolInvocationContext } from '@theia/ai-core';
 import { Container } from '@theia/core/shared/inversify';
 import { SearchInWorkspaceService, SearchInWorkspaceCallbacks } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
-import { WorkspaceFunctionScope } from './workspace-functions';
+import { WorkspaceFunctionScope } from './workspace-functions.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { URI } from '@theia/core/lib/common/uri';
 import { SearchInWorkspaceOptions } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';

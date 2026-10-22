@@ -15,40 +15,40 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { PluginApiContribution } from './plugin-service';
+import { PluginApiContribution } from './plugin-service.js';
 import { BackendApplicationContribution, CliContribution } from '@theia/core/lib/node';
 import { WsRequestValidatorContribution } from '@theia/core/lib/node/ws-request-validators';
-import { PluginsKeyValueStorage } from './plugins-key-value-storage';
-import { PluginDeployerContribution } from './plugin-deployer-contribution';
+import { PluginsKeyValueStorage } from './plugins-key-value-storage.js';
+import { PluginDeployerContribution } from './plugin-deployer-contribution.js';
 import {
     PluginDeployer, PluginDeployerResolver, PluginDeployerFileHandler,
     PluginDeployerDirectoryHandler, PluginServer, pluginServerJsonRpcPath, PluginDeployerParticipant
-} from '../../common/plugin-protocol';
-import { PluginDeployerImpl } from './plugin-deployer-impl';
-import { LocalDirectoryPluginDeployerResolver } from './resolvers/local-directory-plugin-deployer-resolver';
-import { PluginTheiaFileHandler } from './handlers/plugin-theia-file-handler';
-import { PluginTheiaDirectoryHandler } from './handlers/plugin-theia-directory-handler';
-import { GithubPluginDeployerResolver } from './plugin-github-resolver';
-import { HttpPluginDeployerResolver } from './plugin-http-resolver';
+} from '../../common/plugin-protocol.js';
+import { PluginDeployerImpl } from './plugin-deployer-impl.js';
+import { LocalDirectoryPluginDeployerResolver } from './resolvers/local-directory-plugin-deployer-resolver.js';
+import { PluginTheiaFileHandler } from './handlers/plugin-theia-file-handler.js';
+import { PluginTheiaDirectoryHandler } from './handlers/plugin-theia-directory-handler.js';
+import { GithubPluginDeployerResolver } from './plugin-github-resolver.js';
+import { HttpPluginDeployerResolver } from './plugin-http-resolver.js';
 import { ConnectionHandler, RpcConnectionHandler, bindRootContributionProvider } from '@theia/core';
-import { PluginPathsService, pluginPathsServicePath } from '../common/plugin-paths-protocol';
-import { PluginPathsServiceImpl } from './paths/plugin-paths-service';
-import { PluginServerImpl } from './plugin-server-impl';
-import { PluginCliContribution } from './plugin-cli-contribution';
-import { PluginTheiaEnvironment } from '../common/plugin-theia-environment';
-import { PluginTheiaDeployerParticipant } from './plugin-theia-deployer-participant';
-import { WebviewBackendSecurityWarnings } from './webview-backend-security-warnings';
-import { PluginUninstallationManager } from './plugin-uninstallation-manager';
+import { PluginPathsService, pluginPathsServicePath } from '../common/plugin-paths-protocol.js';
+import { PluginPathsServiceImpl } from './paths/plugin-paths-service.js';
+import { PluginServerImpl } from './plugin-server-impl.js';
+import { PluginCliContribution } from './plugin-cli-contribution.js';
+import { PluginTheiaEnvironment } from '../common/plugin-theia-environment.js';
+import { PluginTheiaDeployerParticipant } from './plugin-theia-deployer-participant.js';
+import { WebviewBackendSecurityWarnings } from './webview-backend-security-warnings.js';
+import { PluginUninstallationManager } from './plugin-uninstallation-manager.js';
 import { LocalizationServerImpl } from '@theia/core/lib/node/i18n/localization-server';
-import { PluginLocalizationServer } from './plugin-localization-server';
-import { PluginMgmtCliContribution } from './plugin-mgmt-cli-contribution';
-import { PluginRemoteCliContribution } from './plugin-remote-cli-contribution';
+import { PluginLocalizationServer } from './plugin-localization-server.js';
+import { PluginMgmtCliContribution } from './plugin-mgmt-cli-contribution.js';
+import { PluginRemoteCliContribution } from './plugin-remote-cli-contribution.js';
 import { RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-contribution';
-import { PluginRemoteCopyContribution } from './plugin-remote-copy-contribution';
+import { PluginRemoteCopyContribution } from './plugin-remote-copy-contribution.js';
 import { RemoteCopyContribution } from '@theia/core/lib/node/remote/remote-copy-contribution';
-import { bindWebviewPreferences } from '../common/webview-preferences';
-import { bindPluginHostEnvironmentPreferences } from '../common/plugin-host-environment-preferences';
-import { PluginHostNavigatorStateInitializer } from './plugin-host-navigator-state-initializer';
+import { bindWebviewPreferences } from '../common/webview-preferences.js';
+import { bindPluginHostEnvironmentPreferences } from '../common/plugin-host-environment-preferences.js';
+import { PluginHostNavigatorStateInitializer } from './plugin-host-navigator-state-initializer.js';
 
 export function bindMainBackend(bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind): void {
     bind(PluginApiContribution).toSelf().inSingletonScope();

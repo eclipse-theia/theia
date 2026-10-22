@@ -18,8 +18,8 @@ import { suppressNodeNavigator } from '@theia/plugin-ext/lib/hosted/node/plugin-
 import { Container } from '@theia/core/shared/inversify';
 import { ConnectionClosedError, RPCProtocol } from '@theia/plugin-ext/lib/common/rpc-protocol';
 import { ProcessTerminatedMessage, ProcessTerminateMessage } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin-protocol';
-import { HeadlessPluginHostRPC } from './plugin-host-headless-rpc';
-import pluginHostModule from './plugin-host-headless-module';
+import { HeadlessPluginHostRPC } from './plugin-host-headless-rpc.js';
+import pluginHostModule from './plugin-host-headless-module.js';
 
 // Undefine globalThis.navigator unless opted in, see https://github.com/eclipse-theia/theia/issues/16233
 suppressNodeNavigator();

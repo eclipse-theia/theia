@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { bindFileNavigatorPreferences } from '../common/navigator-preferences';
+import { bindFileNavigatorPreferences } from '../common/navigator-preferences.js';
 
 export default new ContainerModule(bind => {
     bindFileNavigatorPreferences(bind);

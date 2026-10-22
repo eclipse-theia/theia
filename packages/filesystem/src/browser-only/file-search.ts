@@ -89,7 +89,8 @@ export function matchesPattern(text: string, patterns: string[], opts?: Minimatc
  * @returns An object with add and ignores methods
  */
 export function createIgnoreMatcher(): { add: (patterns: string | string[]) => void; ignores: (path: string) => boolean } {
-    const ig = ignore();
+    // `ignore` is a CommonJS module that also provides itself as `default` export.
+    const ig = ignore.default();
 
     return {
         add: (patterns: string | string[]) => ig.add(patterns),

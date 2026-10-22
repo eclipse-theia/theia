@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { WorkspaceService } from '../workspace-service';
+import { WorkspaceService } from '../workspace-service.js';
 
 /**
  * Turns a partial mock of the workspace service into one that falls back to the real

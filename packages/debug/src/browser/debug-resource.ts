@@ -17,8 +17,8 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { Resource, ResourceResolver } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
-import { DebugSessionManager } from './debug-session-manager';
-import { DebugSource } from './model/debug-source';
+import { DebugSessionManager } from './debug-session-manager.js';
+import { DebugSource } from './model/debug-source.js';
 
 export class DebugResource implements Resource {
 

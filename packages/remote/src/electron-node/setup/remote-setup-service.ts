@@ -15,14 +15,14 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { RemoteConnection, RemoteExecResult, RemoteStatusReport } from '../remote-types';
+import { RemoteConnection, RemoteExecResult, RemoteStatusReport } from '../remote-types.js';
 import { RemoteCliContext, RemoteCliContribution, RemotePlatform } from '@theia/core/lib/node/remote/remote-cli-contribution';
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
-import { RemoteCopyService } from './remote-copy-service';
-import { RemoteNativeDependencyService } from './remote-native-dependency-service';
+import { RemoteCopyService } from './remote-copy-service.js';
+import { RemoteNativeDependencyService } from './remote-native-dependency-service.js';
 import { ContributionProvider, OS, THEIA_VERSION } from '@theia/core';
-import { RemoteNodeSetupService } from './remote-node-setup-service';
-import { RemoteSetupScriptService } from './remote-setup-script-service';
+import { RemoteNodeSetupService } from './remote-node-setup-service.js';
+import { RemoteSetupScriptService } from './remote-setup-script-service.js';
 
 export interface RemoteSetupOptions {
     connection: RemoteConnection;

@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CommandHandler } from '../../common';
-import { TabBar, Title, Widget } from '../widgets';
-import { ApplicationShell } from './application-shell';
+import { CommandHandler } from '../../common/index.js';
+import { TabBar, Title, Widget } from '../widgets/index.js';
+import { ApplicationShell } from './application-shell.js';
 
 type CurrentWidgetCommandAdapterBooleanCheck = (event: Event) => boolean;
 type CurrentWidgetCommandHandlerBooleanCheck = (title: Title<Widget> | undefined, tabbar: TabBar<Widget> | undefined, event: Event) => boolean;

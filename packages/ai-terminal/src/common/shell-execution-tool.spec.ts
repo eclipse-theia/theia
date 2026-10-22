@@ -22,7 +22,7 @@ import {
     TAIL_LINES,
     GRACE_LINES,
     MAX_LINE_LENGTH
-} from './shell-execution-server';
+} from './shell-execution-server.js';
 
 describe('Shell Execution Tool', () => {
     describe('combineAndTruncate', () => {

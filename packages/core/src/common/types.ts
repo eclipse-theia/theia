@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export { ArrayUtils } from './array-utils';
-export { Prioritizeable } from './prioritizeable';
+export { ArrayUtils } from './array-utils.js';
+export { Prioritizeable } from './prioritizeable.js';
 
 type UnknownObject<T extends object> = Record<string | number | symbol, unknown> & { [K in keyof T]: unknown };
 

@@ -18,10 +18,10 @@ import { injectable, inject, postConstruct, interfaces, Container } from '@theia
 import { MenuPath } from '@theia/core';
 import { TreeNode, NodeProps, SelectableTreeNode } from '@theia/core/lib/browser';
 import { SourceTreeWidget, TreeElementNode } from '@theia/core/lib/browser/source-tree';
-import { DebugStackFramesSource, LoadMoreStackFrames } from './debug-stack-frames-source';
-import { DebugStackFrame } from '../model/debug-stack-frame';
-import { DebugViewModel } from './debug-view-model';
-import { DebugCallStackItemTypeKey } from '../debug-call-stack-item-type-key';
+import { DebugStackFramesSource, LoadMoreStackFrames } from './debug-stack-frames-source.js';
+import { DebugStackFrame } from '../model/debug-stack-frame.js';
+import { DebugViewModel } from './debug-view-model.js';
+import { DebugCallStackItemTypeKey } from '../debug-call-stack-item-type-key.js';
 import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()

@@ -26,7 +26,7 @@ import { expect } from 'chai';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FrontendApplicationState } from '@theia/core/lib/common/frontend-application-state';
-import { HostedPluginSupport } from './hosted-plugin';
+import { HostedPluginSupport } from './hosted-plugin.js';
 
 disableJSDOM();
 

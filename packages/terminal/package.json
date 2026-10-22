@@ -2,6 +2,7 @@
   "name": "@theia/terminal",
   "version": "1.76.0",
   "description": "Theia - Terminal Extension",
+  "type": "module",
   "dependencies": {
     "@theia/core": "1.76.0",
     "@theia/editor": "1.76.0",
@@ -10,6 +11,7 @@
     "@theia/process": "1.76.0",
     "@theia/variable-resolver": "1.76.0",
     "@theia/workspace": "1.76.0",
+    "p-debounce": "^2.1.0",
     "tslib": "^2.8.1",
     "xterm": "^5.3.0",
     "xterm-addon-fit": "^0.8.0",
@@ -59,5 +61,13 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "21358137e41342742707f660b8e222f940a27652",
+  "exports": {
+    "./package.json": "./package.json",
+    "./lib/browser": "./lib/browser/index.js",
+    "./lib/node": "./lib/node/index.js",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  }
 }

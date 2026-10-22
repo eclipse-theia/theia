@@ -20,8 +20,8 @@ import { WorkspaceStorageService } from '@theia/workspace/lib/browser/workspace-
 import { Command, MessageService, QuickInputService, URI, isWindows, nls } from '@theia/core';
 import { WorkspaceInput, WorkspaceOpenHandlerContribution, WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
-import { RemoteWslConnectionProvider, WslDistribution } from '../electron-common/remote-wsl-connection-provider';
-import { WSL_WORKSPACE_SCHEME } from '../electron-common/wsl-workspaces';
+import { RemoteWslConnectionProvider, WslDistribution } from '../electron-common/remote-wsl-connection-provider.js';
+import { WSL_WORKSPACE_SCHEME } from '../electron-common/wsl-workspaces.js';
 import { RemotePreferences } from '@theia/remote/lib/electron-common/remote-preferences';
 
 export namespace RemoteWslCommands {

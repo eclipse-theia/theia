@@ -15,16 +15,16 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { PreferenceSchema } from './preference-schema';
-import { PreferenceChangeEvent, PreferenceEventEmitter, PreferenceProxy, PreferenceProxyOptions, PreferenceRetrieval } from './preference-proxy';
-import { PreferenceChange, PreferenceChangeImpl, PreferenceChanges, PreferenceService } from './preference-service';
+import { PreferenceSchema } from './preference-schema.js';
+import { PreferenceChangeEvent, PreferenceEventEmitter, PreferenceProxy, PreferenceProxyOptions, PreferenceRetrieval } from './preference-proxy.js';
+import { PreferenceChange, PreferenceChangeImpl, PreferenceChanges, PreferenceService } from './preference-service.js';
 import { JSONValue } from '@lumino/coreutils';
-import { PreferenceProviderDataChange } from './preference-provider';
-import { OverridePreferenceName } from './preference-language-override-service';
-import { isObject, MaybePromise } from '../types';
-import { DisposableCollection } from '../disposable';
-import { Emitter, Event } from '../event';
-import { PreferenceScope } from './preference-scope';
+import { PreferenceProviderDataChange } from './preference-provider.js';
+import { OverridePreferenceName } from './preference-language-override-service.js';
+import { isObject, MaybePromise } from '../types.js';
+import { DisposableCollection } from '../disposable.js';
+import { Emitter, Event } from '../event.js';
+import { PreferenceScope } from './preference-scope.js';
 
 export const PreferenceProxySchema = Symbol('PreferenceProxySchema');
 export interface PreferenceProxyFactory {

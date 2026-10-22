@@ -23,10 +23,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @theia/explicit-return-type */
 
-import URI from './uri';
-import { CharCode } from './char-code';
-import { compareSubstringIgnoreCase, compare, compareSubstring } from './strings';
-import { KeySequence } from './keys';
+import URI from './uri.js';
+import { CharCode } from './char-code.js';
+import { compareSubstringIgnoreCase, compare, compareSubstring } from './strings.js';
+import { KeySequence } from './keys.js';
 
 export interface IKeyIterator<K> {
     reset(key: K): this;

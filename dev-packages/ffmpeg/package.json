@@ -15,6 +15,13 @@
   },
   "homepage": "https://github.com/eclipse-theia/theia",
   "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "files": [
     "binding.gyp",
     "lib",

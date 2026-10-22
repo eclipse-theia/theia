@@ -18,7 +18,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Disposable, environment, isOSX } from '../common';
+import { Disposable, environment, isOSX } from '../common/index.js';
 
 const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
 

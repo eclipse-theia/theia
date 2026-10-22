@@ -14,14 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from './test/jsdom';
+import { enableJSDOM } from './test/jsdom.js';
 let disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
-import { ContributionProvider } from '../common';
-import { StatusBar } from './status-bar';
-import { Widget } from './widgets';
-import { WidgetStatusBarContribution, WidgetStatusBarService } from './widget-status-bar-service';
+import { ContributionProvider } from '../common/index.js';
+import { StatusBar } from './status-bar/index.js';
+import { Widget } from './widgets/index.js';
+import { WidgetStatusBarContribution, WidgetStatusBarService } from './widget-status-bar-service.js';
 
 disableJSDOM();
 

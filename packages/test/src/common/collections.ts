@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Event } from '@theia/core';
-import { CollectionDelta, TreeDeltaBuilder } from './tree-delta';
+import { CollectionDelta, TreeDeltaBuilder } from './tree-delta.js';
 import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

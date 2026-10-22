@@ -14,14 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './copilot-auth-service-impl';
-export * from './copilot-language-models-manager-impl';
-export * from './copilot-cli-auth-provider';
-export * from './copilot-cli-locator';
-export * from './copilot-credential-store';
-export * from './copilot-runtime-env';
-export * from './copilot-sdk-client-provider';
-export * from './copilot-sdk-loader';
-export * from './copilot-sdk-mappers';
-export * from './copilot-sdk-language-model';
-export * from './copilot-sdk-types';
+export * from './copilot-auth-service-impl.js';
+export * from './copilot-language-models-manager-impl.js';
+export * from './copilot-cli-auth-provider.js';
+export * from './copilot-cli-locator.js';
+export * from './copilot-credential-store.js';
+export * from './copilot-runtime-env.js';
+export * from './copilot-sdk-client-provider.js';
+export * from './copilot-sdk-loader.js';
+export * from './copilot-sdk-mappers.js';
+export * from './copilot-sdk-language-model.js';
+export * from './copilot-sdk-types.js';

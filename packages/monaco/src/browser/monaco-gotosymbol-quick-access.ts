@@ -16,13 +16,13 @@
 
 import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input';
 import { injectable } from '@theia/core/shared/inversify';
-import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
-import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
-import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
-import { IOutlineModelService } from '@theia/monaco-editor-core/esm/vs/editor/contrib/documentSymbols/browser/outlineModel';
-import { StandaloneGotoSymbolQuickAccessProvider } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/quickAccess/standaloneGotoSymbolQuickAccess';
-import { IQuickAccessRegistry, Extensions } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess';
-import { Registry } from '@theia/monaco-editor-core/esm/vs/platform/registry/common/platform';
+import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser.js';
+import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService.js';
+import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures.js';
+import { IOutlineModelService } from '@theia/monaco-editor-core/esm/vs/editor/contrib/documentSymbols/browser/outlineModel.js';
+import { StandaloneGotoSymbolQuickAccessProvider } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/quickAccess/standaloneGotoSymbolQuickAccess.js';
+import { IQuickAccessRegistry, Extensions } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess.js';
+import { Registry } from '@theia/monaco-editor-core/esm/vs/platform/registry/common/platform.js';
 
 export class GotoSymbolQuickAccess extends StandaloneGotoSymbolQuickAccessProvider {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

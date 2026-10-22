@@ -20,10 +20,10 @@ import { Emitter } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Container } from '@theia/core/shared/inversify';
-import { CHATGPT_FALLBACK_MODELS, ChatGptAuthState, ChatGptCredentials } from '../common';
-import { ChatGptBackendAuthService } from './chatgpt-auth-service';
-import { ChatGptModelCatalog } from './chatgpt-model-catalog';
-import { CHATGPT_ORIGINATOR } from './chatgpt-oauth';
+import { CHATGPT_FALLBACK_MODELS, ChatGptAuthState, ChatGptCredentials } from '../common/index.js';
+import { ChatGptBackendAuthService } from './chatgpt-auth-service.js';
+import { ChatGptModelCatalog } from './chatgpt-model-catalog.js';
+import { CHATGPT_ORIGINATOR } from './chatgpt-oauth.js';
 
 function listing(payload: Record<string, unknown>, status: number = 200): Response {
     return {

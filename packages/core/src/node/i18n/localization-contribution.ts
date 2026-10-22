@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as fs from 'fs-extra';
+import * as fs from '../../../shared/fs-extra/index.cjs';
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, isObject } from '../../common';
-import { LanguageInfo, Localization } from '../../common/i18n/localization';
-import { LazyLocalization, LocalizationProvider } from './localization-provider';
+import { ContributionProvider, isObject } from '../../common/index.js';
+import { LanguageInfo, Localization } from '../../common/i18n/localization.js';
+import { LazyLocalization, LocalizationProvider } from './localization-provider.js';
 
 export const LocalizationContribution = Symbol('LocalizationContribution');
 

@@ -17,8 +17,8 @@
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ContributionProvider, ILogger } from '@theia/core';
 import { Tool, Resource, ResourceContents, Prompt, PromptMessage } from '@modelcontextprotocol/sdk/types';
-import { MCPToolDelegateClient } from '../common/mcp-tool-delegate';
-import { MCPFrontendContribution } from './mcp-frontend-contribution';
+import { MCPToolDelegateClient } from '../common/mcp-tool-delegate.js';
+import { MCPFrontendContribution } from './mcp-frontend-contribution.js';
 
 /**
  * Frontend client implementation that handles MCP tool delegation requests from the backend.

@@ -18,7 +18,7 @@ import { LogLevelCliContribution } from '@theia/core/lib/node/logger-cli-contrib
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { BACKEND_TELEMETRY_SESSION, TelemetryEvent } from '@theia/telemetry/lib/common';
 import { TelemetrySink } from '@theia/telemetry/lib/node';
-import { MetricsContribution } from './metrics-contribution';
+import { MetricsContribution } from './metrics-contribution.js';
 
 const metricsName = 'theia_measurements';
 const metricsHeader = `# HELP ${metricsName} Theia stopwatch measurement results.\n# TYPE ${metricsName} gauge\n`;

@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 // Here we expose types from @theia/plugin, so it becomes a direct dependency
-export * from './plugin-protocol';
-export * from './plugin-api-rpc';
-export * from './plugin-ext-api-contribution';
+export * from './plugin-protocol.js';
+export * from './plugin-api-rpc.js';
+export * from './plugin-ext-api-contribution.js';
 
-import { registerMsgPackExtensions } from './rpc-protocol';
+import { registerMsgPackExtensions } from './rpc-protocol.js';
 
 registerMsgPackExtensions();

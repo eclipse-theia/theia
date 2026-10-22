@@ -17,9 +17,9 @@
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { EXTERNAL_CHAT_SESSION_PROVIDER_PATH, ExternalChatSessionBackendService, ExternalChatSessionProvider } from '../common/external-chat-session-provider';
-import { AIExternalApiFrontendContribution } from './ai-external-api-frontend-contribution';
-import { FrontendExternalChatSessionProvider } from './frontend-external-chat-session-provider';
+import { EXTERNAL_CHAT_SESSION_PROVIDER_PATH, ExternalChatSessionBackendService, ExternalChatSessionProvider } from '../common/external-chat-session-provider.js';
+import { AIExternalApiFrontendContribution } from './ai-external-api-frontend-contribution.js';
+import { FrontendExternalChatSessionProvider } from './frontend-external-chat-session-provider.js';
 
 export default new ContainerModule(bind => {
     bind(FrontendExternalChatSessionProvider).toSelf().inSingletonScope();

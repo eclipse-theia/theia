@@ -17,9 +17,9 @@
 import { ILogger } from '@theia/core';
 import { createProxyFetch, getProxyUrl } from '@theia/ai-core/lib/node';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { CHATGPT_FALLBACK_MODELS, CHATGPT_RESPONSES_BASE_URL } from '../common';
-import { ChatGptBackendAuthService } from './chatgpt-auth-service';
-import { CHATGPT_CLIENT_VERSION, CHATGPT_ORIGINATOR } from './chatgpt-oauth';
+import { CHATGPT_FALLBACK_MODELS, CHATGPT_RESPONSES_BASE_URL } from '../common/index.js';
+import { ChatGptBackendAuthService } from './chatgpt-auth-service.js';
+import { CHATGPT_CLIENT_VERSION, CHATGPT_ORIGINATOR } from './chatgpt-oauth.js';
 
 /** Lists the models the endpoint serves to the signed in account. The client version is required. */
 const CHATGPT_MODELS_URL = `${CHATGPT_RESPONSES_BASE_URL}/models?client_version=${encodeURIComponent(CHATGPT_CLIENT_VERSION)}`;

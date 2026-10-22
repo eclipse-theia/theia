@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { InstalledSkillInfo, ResolvedSkillEntry } from './skill-registry-types';
+import { InstalledSkillInfo, ResolvedSkillEntry } from './skill-registry-types.js';
 
 export const SkillInstallBackendServicePath = '/services/ai-registry/skill-install';
 

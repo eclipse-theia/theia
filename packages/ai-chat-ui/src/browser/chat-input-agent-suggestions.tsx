@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { DeclaredEventsEventListenerObject, useMarkdownRendering } from './chat-response-renderer/markdown-part-renderer';
+import { DeclaredEventsEventListenerObject, useMarkdownRendering } from './chat-response-renderer/markdown-part-renderer.js';
 import { OpenerService } from '@theia/core/lib/browser';
 import { ChatSuggestion, ChatSuggestionCallback } from '@theia/ai-chat';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';

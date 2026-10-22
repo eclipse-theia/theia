@@ -22,7 +22,7 @@ import {
     GenericCapabilityGroup,
     GenericCapabilityItem
 } from '@theia/ai-core';
-import { MCPFrontendService, MCPFrontendNotificationService } from '../common/mcp-server-manager';
+import { MCPFrontendService, MCPFrontendNotificationService } from '../common/mcp-server-manager.js';
 
 /**
  * Contributes MCP tool functions as generic capabilities for selection in the chat UI.

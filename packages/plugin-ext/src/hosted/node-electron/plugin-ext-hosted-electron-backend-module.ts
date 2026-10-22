@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { bindCommonHostedBackend } from '../node/plugin-ext-hosted-backend-module';
-import { PluginScanner } from '../../common/plugin-protocol';
-import { TheiaPluginScannerElectron } from './scanner-theia-electron';
+import { bindCommonHostedBackend } from '../node/plugin-ext-hosted-backend-module.js';
+import { PluginScanner } from '../../common/plugin-protocol.js';
+import { TheiaPluginScannerElectron } from './scanner-theia-electron.js';
 
 export function bindElectronBackend(bind: interfaces.Bind): void {
     bindCommonHostedBackend(bind);
