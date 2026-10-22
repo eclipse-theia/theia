@@ -55,8 +55,15 @@ class TestCollaborationInstance extends CollaborationInstance {
         return [];
     }
 
+    readonly peerAwarenesses: awarenessProtocol.Awareness[] = [];
+
     open(widget: FakeEditorWidget): void {
         this.registerPresenceUpdate(widget as unknown as EditorWidget);
+        this.activate(widget);
+    }
+
+    /** What the shell's active widget listener does for any editor, shared or not. */
+    activate(widget: FakeEditorWidget): void {
         this.updateEditorPresence(widget as unknown as EditorWidget);
     }
 
@@ -69,6 +76,7 @@ class TestCollaborationInstance extends CollaborationInstance {
      */
     peerView(): () => string | undefined {
         const peer = new awarenessProtocol.Awareness(new Y.Doc());
+        this.peerAwarenesses.push(peer);
         const sync = (clients: number[]) => awarenessProtocol.applyAwarenessUpdate(peer, awarenessProtocol.encodeAwarenessUpdate(this.yjsAwareness, clients), 'test');
         sync([this.yjs.clientID]);
         this.yjsAwareness.on('update', ({ added, updated, removed }: Record<string, number[]>) => sync([...added, ...updated, ...removed]));
@@ -84,7 +92,10 @@ describe('CollaborationInstance', () => {
     after(() => disableJSDOM());
 
     beforeEach(() => instance = new TestCollaborationInstance());
-    afterEach(() => instance['yjsAwareness'].destroy());
+    afterEach(() => {
+        instance['yjsAwareness'].destroy();
+        instance.peerAwarenesses.forEach(peer => peer.destroy());
+    });
 
     it('should stop sharing the selection of an editor when it closes', () => {
         const sharedPath = instance.peerView();
@@ -119,6 +130,19 @@ describe('CollaborationInstance', () => {
         closing.onDidDisposeEmitter.fire();
 
         expect(sharedPath()).to.equal('a.txt');
+    });
+
+    it('should stop sharing the selection when its editor closes after an editor that is not shared was active', () => {
+        const sharedPath = instance.peerView();
+        const shared = new FakeEditorWidget(new URI('file:///a.txt'));
+        const notShared = new FakeEditorWidget(new URI('git:///a.txt'));
+        instance.open(shared);
+        instance.activate(notShared);
+
+        notShared.onDidDisposeEmitter.fire();
+        shared.onDidDisposeEmitter.fire();
+
+        expect(sharedPath()).to.be.undefined;
     });
 
     it('should keep a selection that was shared after the editor', () => {

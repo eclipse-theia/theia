@@ -552,6 +552,9 @@ export class CollaborationInstance implements Disposable {
 
     protected updateEditorPresence(widget: EditorWidget): void {
         const uri = widget.getResourceUri();
+        if (!this.isSharedResource(uri)) {
+            return;
+        }
         const path = this.utils.getProtocolPath(uri);
         if (path) {
             const ytext = this.yjs.getText(path);
