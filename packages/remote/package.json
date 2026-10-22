@@ -9,10 +9,6 @@
     "@theia/variable-resolver": "1.76.0",
     "@theia/workspace": "1.76.0",
     "archiver": "^5.3.2",
-    "decompress": "^4.2.1",
-    "decompress-tar": "^4.1.1",
-    "decompress-targz": "^4.1.1",
-    "decompress-unzip": "^4.0.1",
     "express-http-proxy": "^2.1.2",
     "glob": "^8.1.0",
     "socket.io": "^4.8.4",
@@ -58,7 +54,6 @@
   "devDependencies": {
     "@theia/ext-scripts": "1.76.0",
     "@types/archiver": "^5.3.4",
-    "@types/decompress": "^4.2.7",
     "@types/express-http-proxy": "^1.6.7",
     "@types/glob": "^8.1.0",
     "@types/ssh2": "^1.15.6",

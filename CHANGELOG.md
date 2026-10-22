@@ -6,6 +6,7 @@
 
 ## 1.77.0 - tbd
 
+- [cli, filesystem, plugin-ext, plugin-ext-vscode, remote] replaced the unmaintained `decompress` dependency with an own `ArchiveExtractor` (zip, tar, tgz) in `@theia/filesystem`; entries whose path would leave the destination fail the extraction and links are skipped [#18207](https://github.com/eclipse-theia/theia/pull/18207) - Contributed on behalf of STMicroelectronics
 - [core, keymaps, monaco, plugin-ext] fixed logical-character keybindings on international keyboard layouts, e.g. `ctrl+[` on German layouts, and kept Latin-letter shortcuts working on non-Latin layouts [#17892](https://github.com/eclipse-theia/theia/pull/17892)
 
 <a name="breaking_changes_1.77.0">[Breaking Changes:](#breaking_changes_1.77.0)</a>
