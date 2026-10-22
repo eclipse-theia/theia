@@ -17,6 +17,7 @@ import '@theia/core/shared/reflect-metadata';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { RPCProtocol, RPCProtocolImpl } from '@theia/plugin-ext/lib/common/rpc-protocol';
 import { AbstractPluginHostRPC, PluginContainerModuleLoader } from '@theia/plugin-ext/lib/hosted/node/plugin-host-rpc';
+import { setupPluginHostLogger } from '@theia/plugin-ext/lib/hosted/node/plugin-host-logger';
 import { AbstractPluginManagerExtImpl, MinimalTerminalServiceExt } from '@theia/plugin-ext/lib/plugin/plugin-manager';
 import { HeadlessPluginHostRPC } from './plugin-host-headless-rpc';
 import { HeadlessPluginManagerExtImpl } from '../../plugin/headless-plugin-manager';
@@ -34,7 +35,9 @@ import { Disposable } from '@theia/core';
 
 export default new ContainerModule(bind => {
     const channel = new IPCChannel();
-    bind(RPCProtocol).toConstantValue(new RPCProtocolImpl(channel));
+    const rpc = new RPCProtocolImpl(channel);
+    setupPluginHostLogger(rpc, 'headless-plugin-host');
+    bind(RPCProtocol).toConstantValue(rpc);
 
     bind(PluginContainerModuleLoader).toDynamicValue(({ container }) =>
         (module: ContainerModule) => {
