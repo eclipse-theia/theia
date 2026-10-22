@@ -330,6 +330,9 @@ export class ParcelWatcher {
                 const fileChangeCollection = new FileChangeCollection();
                 for (const event of events) {
                     const filePath = event.path;
+                    if (!this.isWithinWatchPath(filePath)) {
+                        continue;
+                    }
                     if (event.type === 'create') {
                         this.pushFileChange(fileChangeCollection, FileChangeType.ADDED, filePath);
                     } else if (event.type === 'delete') {
@@ -355,6 +358,14 @@ export class ParcelWatcher {
         return path.resolve(directory, file);
     }
 
+    protected isWithinWatchPath(filePath: string): boolean {
+        const relativePath = path.relative(this.fsPath, filePath);
+        return relativePath === '' || (
+            relativePath !== '..'
+            && !relativePath.startsWith(`..${path.sep}`)
+            && !path.isAbsolute(relativePath)
+        );
+    }
     protected pushFileChange(changes: FileChangeCollection, type: FileChangeType, filePath: string): void {
         if (!this.isIgnored(filePath)) {
             const uri = FileUri.create(filePath).toString();

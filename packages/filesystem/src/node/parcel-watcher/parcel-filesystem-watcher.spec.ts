@@ -144,12 +144,15 @@ describe('parcel-filesystem-watcher', function (): void {
             await waitForChange(actualUris, changeListeners, missingFile.toString());
 
             fs.mkdirSync(FileUri.fsPath(missingDirectory));
-            await waitForChange(actualUris, changeListeners, missingDirectory.toString());
             fs.mkdirSync(FileUri.fsPath(nestedDirectory));
-            await waitForChange(actualUris, changeListeners, nestedDirectory.toString());
+
             fs.writeFileSync(FileUri.fsPath(nestedFile), 'settings');
             await waitForChange(actualUris, changeListeners, nestedFile.toString());
+            const unrelatedFile = root.resolve('unrelated.txt');
+            fs.writeFileSync(FileUri.fsPath(unrelatedFile), 'unrelated');
+            await sleep(500);
 
+            expect(actualUris.has(unrelatedFile.toString())).to.be.false;
             expect(actualTypes.get(missingFile.toString())?.has(FileChangeType.ADDED)).to.be.true;
             expect(actualTypes.get(nestedFile.toString())?.has(FileChangeType.ADDED)).to.be.true;
         } finally {
