@@ -203,14 +203,71 @@ describe('NodeRequestService', () => {
             // Just verify configuration doesn't throw
         });
 
-        it('should inject Proxy-Authorization header when authorization is configured', async () => {
+        it('should not send the proxy authorization to the server when no proxy is used', async () => {
             const configuredService = new NodeRequestService();
             await configuredService.configure({
                 proxyAuthorization: 'Basic dGVzdDp0ZXN0'
             });
             const result = await configuredService.request({ url: url('/echo-headers') });
             const headers = RequestContext.asJson<Record<string, string>>(result);
-            expect(headers['proxy-authorization']).to.equal('Basic dGVzdDp0ZXN0');
+            expect(headers['proxy-authorization']).to.be.undefined;
+        });
+    });
+
+    describe('proxy authorization', () => {
+        let proxy: http.Server;
+        let proxyUrl: string;
+        let tunnelAuthorizations: (string | undefined)[];
+
+        before(done => {
+            // a proxy that refuses every tunnel, recording the authorization it was offered
+            proxy = http.createServer();
+            proxy.on('connect', (req: http.IncomingMessage, socket) => {
+                tunnelAuthorizations.push(req.headers['proxy-authorization']);
+                socket.end('HTTP/1.1 407 Proxy Authentication Required\r\n\r\n');
+            });
+            proxy.listen(0, () => {
+                proxyUrl = `http://localhost:${(proxy.address() as { port: number }).port}`;
+                done();
+            });
+        });
+
+        after(done => {
+            proxy.close(done);
+        });
+
+        beforeEach(() => {
+            tunnelAuthorizations = [];
+        });
+
+        async function requestThroughProxy(configuredService: NodeRequestService, proxyAuthorization?: string): Promise<void> {
+            try {
+                await configuredService.request({ url: 'https://example.com/', proxyAuthorization });
+            } catch {
+                return;
+            }
+            throw new Error('expected the proxy to refuse the tunnel');
+        }
+
+        it('should send the configured authorization to the proxy', async () => {
+            const configuredService = new NodeRequestService();
+            await configuredService.configure({ proxyUrl, proxyAuthorization: 'Basic dGVzdDp0ZXN0' });
+            await requestThroughProxy(configuredService);
+            expect(tunnelAuthorizations).to.deep.equal(['Basic dGVzdDp0ZXN0']);
+        });
+
+        it('should send the authorization of the request options to the proxy', async () => {
+            const configuredService = new NodeRequestService();
+            await configuredService.configure({ proxyUrl });
+            await requestThroughProxy(configuredService, 'Basic dGVzdDp0ZXN0');
+            expect(tunnelAuthorizations).to.deep.equal(['Basic dGVzdDp0ZXN0']);
+        });
+
+        it('should prefer credentials in the proxy URL', async () => {
+            const configuredService = new NodeRequestService();
+            await configuredService.configure({ proxyUrl: proxyUrl.replace('http://', 'http://user:pass@'), proxyAuthorization: 'Basic ignored' });
+            await requestThroughProxy(configuredService);
+            expect(tunnelAuthorizations).to.deep.equal([`Basic ${Buffer.from('user:pass').toString('base64')}`]);
         });
     });
 

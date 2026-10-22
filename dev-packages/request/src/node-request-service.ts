@@ -48,18 +48,12 @@ export class NodeRequestService implements RequestService {
         const { strictSSL } = this;
         options.strictSSL = options.strictSSL ?? strictSSL;
         if (!options.dispatcher) {
+            // undici's ProxyAgent rejects a Proxy-Authorization request header, so the authorization goes to the agent
             options.dispatcher = getProxyAgent(options.url || '', process.env, {
                 proxyUrl: await this.getProxyUrl(options.url),
-                strictSSL: options.strictSSL
+                strictSSL: options.strictSSL,
+                proxyAuthorization: options.proxyAuthorization || this.authorization
             });
-        }
-
-        const authorization = options.proxyAuthorization || this.authorization;
-        if (authorization) {
-            options.headers = {
-                ...(options.headers || {}),
-                'Proxy-Authorization': authorization
-            };
         }
 
         return options;
