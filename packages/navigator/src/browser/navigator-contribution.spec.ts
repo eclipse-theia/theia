@@ -21,7 +21,8 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { Widget } from '@theia/core/lib/browser';
+import { BaseWidget, Widget } from '@theia/core/lib/browser';
+import { CommandRegistry } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { WorkspacePreferences } from '@theia/workspace/lib/common';
@@ -30,6 +31,8 @@ import { FileNavigatorContribution } from './navigator-contribution';
 import { FileNavigatorPreferences } from '../common/navigator-preferences';
 import { FileNavigatorFilter } from './navigator-filter';
 import { FileNavigatorWidget } from './navigator-widget';
+import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget';
+import { OpenEditorsCommands } from './open-editors-widget/navigator-open-editors-commands';
 
 disableJSDOM();
 
@@ -155,6 +158,41 @@ describe('FileNavigatorContribution', () => {
             pasteError = new Error('Parent of file has to be a FileStatNode');
             await contribution['pasteIntoNavigator']();
             expect(errorMessages).to.deep.equal(['Parent of file has to be a FileStatNode']);
+        });
+    });
+
+    describe('Open Editors Close All Editors', () => {
+        let closed: string[];
+        let commands: CommandRegistry;
+        let openEditors: OpenEditorsWidget;
+
+        function editor(id: string, pinned = false): BaseWidget {
+            const widget: BaseWidget = Object.create(BaseWidget.prototype);
+            Object.defineProperties(widget, { id: { value: id }, title: { value: { owner: widget, closable: !pinned } } });
+            return widget;
+        }
+
+        beforeEach(() => {
+            closed = [];
+            const editors = [editor('a', true), editor('b'), editor('c')];
+            openEditors = Object.create(OpenEditorsWidget.prototype);
+            Object.defineProperties(openEditors, { id: { value: OpenEditorsWidget.ID }, editorWidgets: { value: editors } });
+            const closeMany = async (targets: Widget[]) => {
+                closed.push(...targets.map(target => target.id));
+                return targets;
+            };
+            Object.assign(contribution, {
+                widgetManager: { tryGetWidget: () => openEditors },
+                shell: { closeMany }
+            });
+            commands = new CommandRegistry({ getContributions: () => [] });
+            contribution.registerCommands(commands);
+        });
+
+        it('should leave pinned editors open when closing all editors', async () => {
+            await commands.executeCommand(OpenEditorsCommands.CLOSE_ALL_TABS_FROM_TOOLBAR.id, openEditors);
+
+            expect(closed).to.deep.equal(['b', 'c']);
         });
     });
 });

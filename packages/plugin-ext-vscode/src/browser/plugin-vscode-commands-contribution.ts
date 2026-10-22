@@ -660,7 +660,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                         return (resourceUri && resourceUri.toString()) === uriString;
                     });
                 }
-                const toClose = this.shell.widgets.filter(widget => widget !== editor && CodeEditorWidgetUtil.is(widget));
+                const toClose = this.shell.widgets.filter(widget => widget !== editor && CodeEditorWidgetUtil.is(widget) && widget.title.closable);
                 await this.shell.closeMany(toClose);
             }
         });
@@ -668,7 +668,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         const performActionOnGroup = (
             cb: (
                 tabBarOrArea: TabBar<Widget> | ApplicationShell.Area,
-                filter?: ((title: Title<Widget>, index: number) => boolean) | undefined
+                filter: (title: Title<Widget>, index: number) => boolean
             ) => void,
             uri?: monaco.Uri
         ): void => {
@@ -692,13 +692,16 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             id: 'workbench.action.closeEditorsInGroup',
             label: nls.localizeByDefault('Close All Editors in Group')
         }, {
-            execute: (uri?: monaco.Uri) => performActionOnGroup(this.shell.closeTabs, uri)
+            execute: (uri?: monaco.Uri) => performActionOnGroup(
+                (tabBar, filter) => this.shell.closeTabs(tabBar, (title, index) => title.closable && filter(title, index)),
+                uri
+            )
         });
         commands.registerCommand({
             id: 'workbench.files.saveAllInGroup',
             label: nls.localizeByDefault('Save All in Group')
         }, {
-            execute: (uri?: monaco.Uri) => performActionOnGroup(this.shell.saveTabs, uri)
+            execute: (uri?: monaco.Uri) => performActionOnGroup((tabBar, filter) => this.shell.saveTabs(tabBar, filter), uri)
         });
         commands.registerCommand({ id: 'workbench.action.closeEditorsInOtherGroups' }, {
             execute: () => {
@@ -708,7 +711,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     for (const tabBar of this.shell.allTabBars) {
                         if (tabBar !== editorTabBar) {
                             this.shell.closeTabs(tabBar,
-                                ({ owner }) => CodeEditorWidgetUtil.is(owner)
+                                ({ owner, closable }) => closable && CodeEditorWidgetUtil.is(owner)
                             );
                         }
                     }
@@ -723,12 +726,12 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     if (tabBar) {
                         let left = true;
                         this.shell.closeTabs(tabBar,
-                            ({ owner }) => {
+                            ({ owner, closable }) => {
                                 if (owner === editor) {
                                     left = false;
                                     return false;
                                 }
-                                return left && CodeEditorWidgetUtil.is(owner);
+                                return left && closable && CodeEditorWidgetUtil.is(owner);
                             }
                         );
                     }
@@ -743,12 +746,12 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     if (tabBar) {
                         let left = true;
                         this.shell.closeTabs(tabBar,
-                            ({ owner }) => {
+                            ({ owner, closable }) => {
                                 if (owner === editor) {
                                     left = false;
                                     return false;
                                 }
-                                return !left && CodeEditorWidgetUtil.is(owner);
+                                return !left && closable && CodeEditorWidgetUtil.is(owner);
                             }
                         );
                     }
@@ -757,7 +760,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         });
         commands.registerCommand({ id: 'workbench.action.closeAllEditors' }, {
             execute: async () => {
-                const toClose = this.shell.widgets.filter(widget => CodeEditorWidgetUtil.is(widget));
+                const toClose = this.shell.widgets.filter(widget => CodeEditorWidgetUtil.is(widget) && widget.title.closable);
                 await this.shell.closeMany(toClose);
             }
         });
