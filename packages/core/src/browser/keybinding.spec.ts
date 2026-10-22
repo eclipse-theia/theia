@@ -1393,13 +1393,19 @@ describe('keybindings', () => {
 
 describe('keybindings displayed for a command', () => {
 
-    it('should show a passthrough keybinding as the accelerator of the command it is displayed for', () => {
-        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute: () => { } });
-        keybindingRegistry.registerKeybinding({
+    let displayedBinding: Keybinding;
+
+    beforeEach(() => {
+        displayedBinding = {
             command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
             keybinding: 'ctrl+v',
             displayFor: TEST_COMMAND_SHADOW.id
-        });
+        };
+        keybindingRegistry.registerKeybinding(displayedBinding);
+    });
+
+    it('should show a passthrough keybinding as the accelerator of the command it is displayed for', () => {
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute: () => { } });
 
         try {
             expect(keybindingRegistry.acceleratorForCommand(TEST_COMMAND_SHADOW.id, undefined)).to.deep.equal(['Ctrl+V']);
@@ -1410,11 +1416,6 @@ describe('keybindings displayed for a command', () => {
 
     it('should not show a displayed keybinding for a disabled command', () => {
         const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute: () => { }, isEnabled: () => false });
-        keybindingRegistry.registerKeybinding({
-            command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
-            keybinding: 'ctrl+v',
-            displayFor: TEST_COMMAND_SHADOW.id
-        });
 
         try {
             expect(keybindingRegistry.acceleratorForCommand(TEST_COMMAND_SHADOW.id, undefined)).to.deep.equal([]);
@@ -1429,11 +1430,6 @@ describe('keybindings displayed for a command', () => {
             command: TEST_COMMAND_SHADOW.id,
             keybinding: 'ctrl+shift+v'
         });
-        keybindingRegistry.registerKeybinding({
-            command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
-            keybinding: 'ctrl+v',
-            displayFor: TEST_COMMAND_SHADOW.id
-        });
 
         try {
             expect(keybindingRegistry.acceleratorForCommand(TEST_COMMAND_SHADOW.id, undefined)).to.deep.equal([]);
@@ -1443,27 +1439,15 @@ describe('keybindings displayed for a command', () => {
     });
 
     it('should not return a displayed keybinding as a keybinding of the command', () => {
-        keybindingRegistry.registerKeybinding({
-            command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
-            keybinding: 'ctrl+v',
-            displayFor: TEST_COMMAND_SHADOW.id
-        });
-
         expect(keybindingRegistry.getKeybindingsForCommand(TEST_COMMAND_SHADOW.id)).to.be.empty;
     });
 
     it('should let the key pass through instead of executing the command it is displayed for', () => {
-        const binding: Keybinding = {
-            command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
-            keybinding: 'ctrl+v',
-            displayFor: TEST_COMMAND_SHADOW.id
-        };
-        keybindingRegistry.registerKeybinding(binding);
         const execute = sinon.spy();
         const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
 
         try {
-            expect(keybindingRegistry.matchKeybinding(keybindingRegistry.resolveKeybinding(binding))?.runtime.binding?.command)
+            expect(keybindingRegistry.matchKeybinding(keybindingRegistry.resolveKeybinding(displayedBinding))?.runtime.binding?.command)
                 .to.equal(KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND);
 
             const event = testKeyboardEvent({ key: 'v', code: 'KeyV', keyCode: 86, ctrlKey: true });
@@ -1482,11 +1466,6 @@ describe('keybindings displayed for a command', () => {
             command: TEST_COMMAND_SHADOW.id,
             keybinding: 'ctrl+shift+v'
         });
-        keybindingRegistry.registerKeybinding({
-            command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
-            keybinding: 'ctrl+v',
-            displayFor: TEST_COMMAND_SHADOW.id
-        });
 
         try {
             expect(keybindingRegistry.acceleratorForCommand(TEST_COMMAND_SHADOW.id, undefined)).to.deep.equal(['Ctrl+Shift+V']);
@@ -1496,17 +1475,17 @@ describe('keybindings displayed for a command', () => {
     });
 
     it('should not show a displayed keybinding that the user disabled', () => {
-        keybindingRegistry.registerKeybinding({
-            command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
-            keybinding: 'ctrl+v',
-            displayFor: TEST_COMMAND_SHADOW.id
-        });
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute: () => { } });
         keybindingRegistry.setKeymap(KeybindingScope.USER, [{
             command: '-' + KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
             keybinding: 'ctrl+v'
         }]);
 
-        expect(keybindingRegistry.acceleratorForCommand(TEST_COMMAND_SHADOW.id, undefined)).to.deep.equal([]);
+        try {
+            expect(keybindingRegistry.acceleratorForCommand(TEST_COMMAND_SHADOW.id, undefined)).to.deep.equal([]);
+        } finally {
+            handler.dispose();
+        }
     });
 });
 
