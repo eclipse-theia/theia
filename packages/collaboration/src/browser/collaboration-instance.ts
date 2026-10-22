@@ -107,6 +107,7 @@ export class CollaborationInstance implements Disposable {
     protected peers = new Map<string, DisposablePeer>();
     protected yjs = new Y.Doc();
     protected yjsAwareness = new awarenessProtocol.Awareness(this.yjs);
+    protected sharedSelectionWidget?: EditorWidget;
     protected yjsProvider: OpenCollaborationYjsProvider;
     protected colorIndex = 0;
     protected editorDecorations = new Map<EditorWidget, string[]>();
@@ -539,11 +540,9 @@ export class CollaborationInstance implements Disposable {
                 widgetDispose.dispose();
                 selectionChange.dispose();
                 // Remove presence information when the editor closes
-                const state = this.yjsAwareness.getLocalState();
-                if (state?.currentSelection?.path === path) {
-                    delete state.currentSelection;
+                if (this.sharedSelectionWidget === widget) {
+                    this.setSharedSelection(undefined);
                 }
-                this.yjsAwareness.setLocalState(state);
             });
             this.toDispose.push(selectionChange);
             this.toDispose.push(widgetDispose);
@@ -553,6 +552,9 @@ export class CollaborationInstance implements Disposable {
 
     protected updateEditorPresence(widget: EditorWidget): void {
         const uri = widget.getResourceUri();
+        if (!this.isSharedResource(uri)) {
+            return;
+        }
         const path = this.utils.getProtocolPath(uri);
         if (path) {
             const ytext = this.yjs.getText(path);
@@ -575,10 +577,12 @@ export class CollaborationInstance implements Disposable {
                 textSelections: [editorSelection]
             };
             this.setSharedSelection(textSelection);
+            this.sharedSelectionWidget = widget;
         }
     }
 
     protected setSharedSelection(selection?: types.ClientSelection): void {
+        this.sharedSelectionWidget = undefined;
         this.yjsAwareness.setLocalStateField('selection', selection);
     }
 
