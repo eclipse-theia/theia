@@ -16,6 +16,7 @@
 
 import { ILogger, generateUuid, nls } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { ProcessEnvironment } from '@theia/core/lib/node/process-environment';
 import { execSync } from 'child_process';
 import { existsSync, realpathSync } from 'fs';
 import * as fs from 'fs/promises';
@@ -36,6 +37,9 @@ interface ToolApprovalResult {
 
 @injectable()
 export class ClaudeCodeServiceImpl implements ClaudeCodeService {
+
+    @inject(ProcessEnvironment)
+    protected readonly processEnvironment: ProcessEnvironment;
 
     @inject(ILogger) @named('ai-claude-code:ClaudeCodeServiceImpl')
     protected readonly logger: ILogger;
@@ -206,6 +210,9 @@ export class ClaudeCodeServiceImpl implements ClaudeCodeService {
      * @returns An object containing the SDK's query function, user message type, and options type.
      */
     protected async importClaudeCodeSDK(customClaudeCodePath?: string): Promise<{ query: unknown; SDKUserMessage: unknown; Options: unknown }> {
+        // The SDK is located through npm on the PATH of the backend, which may still be waiting for that of
+        // the user's login shell, and the SDK spawns the CLI with that environment.
+        await this.processEnvironment.ready;
         let claudeCodePath: string;
 
         if (customClaudeCodePath) {
