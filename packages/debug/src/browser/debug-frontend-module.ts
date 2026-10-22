@@ -44,6 +44,7 @@ import { DebugEditorModelFactory, DebugEditorModel } from './editor/debug-editor
 import { bindDebugPreferences } from '../common/debug-preferences';
 import { DebugSchemaUpdater } from './debug-schema-updater';
 import { DebugCallStackItemTypeKey } from './debug-call-stack-item-type-key';
+import { DebugRestartFrameSupportedKey, DebugStackFrameSupportsRestartKey } from './debug-restart-frame-keys';
 import { bindLaunchPreferences } from '../common/launch-preferences';
 import { DebugPrefixConfiguration } from './debug-prefix-configuration';
 import { CommandContribution } from '@theia/core/lib/common/command';
@@ -74,6 +75,12 @@ export default new ContainerModule((bind: interfaces.Bind) => {
 
     bind(DebugCallStackItemTypeKey).toDynamicValue(({ container }) =>
         container.get<ContextKeyService>(ContextKeyService).createKey('callStackItemType', undefined)
+    ).inSingletonScope();
+    bind(DebugRestartFrameSupportedKey).toDynamicValue(({ container }) =>
+        container.get<ContextKeyService>(ContextKeyService).createKey('restartFrameSupported', false)
+    ).inSingletonScope();
+    bind(DebugStackFrameSupportsRestartKey).toDynamicValue(({ container }) =>
+        container.get<ContextKeyService>(ContextKeyService).createKey('stackFrameSupportsRestart', false)
     ).inSingletonScope();
 
     bindRootContributionProvider(bind, DebugSessionContribution);
