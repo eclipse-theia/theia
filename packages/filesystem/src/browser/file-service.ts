@@ -366,8 +366,9 @@ export class FileService {
     readonly onDidChangeFileSystemProviderReadOnlyMessage = this.onDidChangeFileSystemProviderReadOnlyMessageEmitter.event;
 
     private readonly providers = new Map<string, FileSystemProvider>();
+    /** Activations in flight, by scheme. */
     private readonly activations = new Map<string, Promise<FileSystemProvider>>();
-    /** In-flight firings of the {@link onWillActivateFileSystemProvider} event, by scheme. */
+    /** Firings of the {@link onWillActivateFileSystemProvider} event in flight, by scheme. */
     private readonly pendingActivationEvents = new Map<string, Promise<void>>();
 
     /**
@@ -425,53 +426,54 @@ export class FileService {
                     deferredActivation.resolve(event.provider);
                 }
             });
-            // Backstop: reject the activation if no provider is registered within the timeout, rather than
-            // hanging forever when a listener's `waitUntil` promise never settles. Only a timed-out activation
-            // is removed from `activations`, so that a later attempt can retry once the connection recovers.
-            // A scheme for which the listeners completed without registering a provider stays rejected.
-            const timeout = setTimeout(() => {
-                this.activations.delete(scheme);
-                const error = new Error();
-                error.name = 'ENOPRO';
-                error.message = `Activation of file system provider for scheme ${scheme} timed out`;
-                deferredActivation.reject(error);
-            }, this.getActivationTimeout());
-            const cleanUp = () => {
-                registration.dispose();
-                clearTimeout(timeout);
-            };
-            deferredActivation.promise.then(cleanUp, cleanUp);
             this.fireWillActivateFileSystemProvider(scheme).then(() => {
                 provider = this.providers.get(scheme);
-                if (!provider) {
-                    const error = new Error();
-                    error.name = 'ENOPRO';
-                    error.message = `No file system provider found for scheme ${scheme}`;
-                    throw error;
-                } else {
+                if (provider) {
                     deferredActivation.resolve(provider);
+                } else {
+                    deferredActivation.reject(this.createNoProviderError(scheme));
                 }
-            }).catch(e => deferredActivation.reject(e));
+            }, error => deferredActivation.reject(error));
+            // Only an activation in flight is recorded, so that concurrent requests share it. A later request fires
+            // the activation listeners again, which lets a plugin installed in the meantime provide for the scheme.
+            const done = () => {
+                registration.dispose();
+                this.activations.delete(scheme);
+            };
+            activation.then(done, done);
         }
         return activation;
     }
 
     /**
      * Fire the {@link onWillActivateFileSystemProvider} event for the given scheme, unless a previous firing
-     * for the same scheme is still in progress, in which case that is reused. This ensures that retrying a
-     * timed-out activation does not run the activation listeners again while they are still working on
-     * the first attempt, which would, for example, register a second provider for the scheme.
+     * for the same scheme is still in progress, in which case that is reused. This ensures that an activation
+     * requested after a timeout does not run the activation listeners again while they are still working on
+     * the previous one, which would, for example, register a second provider for the scheme.
      *
      * @param scheme the URI scheme for which to activate a provider
-     * @returns a promise that settles when all listeners of the firing of the event have completed
+     * @returns a promise that resolves when all listeners of the firing of the event have completed, or rejects
+     *   with an `ENOPRO` error if they have not completed within the {@link getActivationTimeout activation timeout}.
+     *   An activation that joins a firing that has already timed out therefore fails right away
      */
     protected fireWillActivateFileSystemProvider(scheme: string): Promise<void> {
         let pending = this.pendingActivationEvents.get(scheme);
         if (!pending) {
-            pending = WaitUntilEvent.fire(this.onWillActivateFileSystemProviderEmitter, { scheme });
+            const listeners = WaitUntilEvent.fire(this.onWillActivateFileSystemProviderEmitter, { scheme });
+            // Backstop: give up waiting for the listeners after the timeout, rather than hanging forever when
+            // a listener's `waitUntil` promise never settles. The listeners are left to complete, though.
+            let timeout: ReturnType<typeof setTimeout>;
+            const timedOut = new Promise<never>((_, reject) => {
+                timeout = setTimeout(() => reject(this.createNoProviderError(scheme,
+                    `Activation of file system provider for scheme ${scheme} timed out`)), this.getActivationTimeout());
+            });
+            pending = Promise.race([listeners, timedOut]);
             this.pendingActivationEvents.set(scheme, pending);
-            const done = () => this.pendingActivationEvents.delete(scheme);
-            pending.then(done, done);
+            const done = () => {
+                clearTimeout(timeout);
+                this.pendingActivationEvents.delete(scheme);
+            };
+            listeners.then(done, done);
         }
         return pending;
     }
@@ -481,11 +483,26 @@ export class FileService {
      * Subclasses may override this to tune the timeout.
      *
      * @returns the activation timeout, in milliseconds. When it elapses before a provider is registered for
-     *   the scheme, the activation is rejected with an `ENOPRO` error and forgotten, so that a later call to
-     *   {@link activateProvider} tries again (reusing the activation listeners' work if still in progress)
+     *   the scheme, the activation is rejected with an `ENOPRO` error. The activation listeners are not run
+     *   again while they are still in progress, so until they complete, a later call to {@link activateProvider}
+     *   fails right away unless a provider has been registered in the meantime
      */
     protected getActivationTimeout(): number {
         return DEFAULT_PROVIDER_ACTIVATION_TIMEOUT;
+    }
+
+    /**
+     * Create the error with which an operation on a resource of the given scheme fails because no file
+     * system provider is registered for it.
+     *
+     * @param scheme the URI scheme for which no provider is registered
+     * @param message the error message, or `undefined` for the default message
+     * @returns the error, with the `ENOPRO` name by which clients recognize it
+     */
+    protected createNoProviderError(scheme: string, message = `No file system provider found for scheme ${scheme}`): Error {
+        const error = new Error(message);
+        error.name = 'ENOPRO';
+        return error;
     }
 
     hasProvider(scheme: string): boolean {

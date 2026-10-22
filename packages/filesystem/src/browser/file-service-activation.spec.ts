@@ -135,26 +135,55 @@ describe('FileService activateProvider resilience (#17506)', () => {
         // First attempt times out and rejects.
         await fileService.activateProvider(scheme).then(() => { throw new Error('should have rejected'); }, () => undefined);
 
-        // A fresh attempt must be able to succeed once a provider becomes available.
+        // A fresh attempt must succeed once a provider becomes available (as the reporter registered one manually).
         const provider = createMockProvider();
-        const retry = fileService.activateProvider(scheme);
         fileService.registerProvider(scheme, provider);
-        expect(await withinTimeout(retry)).to.equal(provider);
+        expect(await withinTimeout(fileService.activateProvider(scheme))).to.equal(provider);
     });
-    it('does not fire the activation listeners again for a scheme that has no provider', async () => {
+
+    it('fails an activation right away while the listeners of a timed-out activation are still in progress', async () => {
+        const fileService = new TestFileService(50);
+        const scheme = 'user-storage';
+
+        fileService.onWillActivateFileSystemProvider(event => {
+            if (event.scheme === scheme) {
+                event.waitUntil(new Promise<void>(() => { /* never settles */ }));
+            }
+        });
+
+        // First attempt times out and rejects.
+        await fileService.activateProvider(scheme).then(() => { throw new Error('should have rejected'); }, () => undefined);
+
+        // A retry would only rejoin the listeners that are known to be stuck, so it must not wait for the timeout again.
+        const outcome = await withinTimeout(
+            fileService.activateProvider(scheme).then(() => 'RESOLVED', error => error.name),
+            25
+        );
+        expect(outcome).to.equal('ENOPRO');
+    });
+
+    it('fires the activation listeners again for a scheme that has no provider, so that a provider installed later can be activated', async () => {
         const fileService = new TestFileService(50);
         const scheme = 'unknown';
+        const provider = createMockProvider();
         let fired = 0;
         fileService.onWillActivateFileSystemProvider(event => {
             if (event.scheme === scheme) {
                 fired++;
+                if (fired > 3) {
+                    fileService.registerProvider(scheme, provider);
+                }
             }
         });
 
         for (let i = 0; i < 3; i++) {
-            await fileService.activateProvider(scheme).then(() => { throw new Error('should have rejected'); }, () => undefined);
+            await fileService.activateProvider(scheme).then(() => { throw new Error('should have rejected'); }, error => {
+                expect(error.name).to.equal('ENOPRO');
+            });
         }
-        expect(fired).to.equal(1);
+        expect(fired).to.equal(3);
+        expect(await withinTimeout(fileService.activateProvider(scheme))).to.equal(provider);
+        expect(fired).to.equal(4);
     });
 
     it('does not fire the activation listeners again on retry while the first activation is still in progress', async () => {
@@ -180,9 +209,14 @@ describe('FileService activateProvider resilience (#17506)', () => {
         // First attempt times out before the listener registers the provider.
         await fileService.activateProvider(scheme).then(() => { throw new Error('should have rejected'); }, () => undefined);
 
-        // The retry reuses the listener still in progress and resolves when it registers the provider.
-        expect(await withinTimeout(fileService.activateProvider(scheme), 300)).to.equal(provider);
+        // The retry does not run the listener again while it is still in progress, but fails like the first attempt.
+        await fileService.activateProvider(scheme).then(() => { throw new Error('should have rejected'); }, () => undefined);
         expect(fired).to.equal(1);
+
+        // Once the listener completes, the provider it registered is available.
+        await new Promise(resolve => setTimeout(resolve, 60));
         expect(registrationError).to.be.undefined;
+        expect(await withinTimeout(fileService.activateProvider(scheme))).to.equal(provider);
+        expect(fired).to.equal(1);
     });
 });

@@ -114,7 +114,7 @@ export abstract class AbstractPluginManagerExtImpl<P extends Record<string, any>
     private configStorage: ConfigStorage | undefined;
     private readonly registry = new Map<string, Plugin>();
     private readonly activations = new Map<string, (() => Promise<void>)[] | undefined>();
-    /** Activations triggered by each event, so that concurrent requests for the same event can await them. */
+    /** Activations in flight for each event, so that concurrent requests for the same event can await them. */
     private readonly pendingActivationsByEvent = new Map<string, Promise<void>>();
     /** promises to whether loading each plugin has been successful */
     private readonly loadedPlugins = new Map<string, Promise<boolean>>();
@@ -358,21 +358,29 @@ export abstract class AbstractPluginManagerExtImpl<P extends Record<string, any>
 
     protected activateBySingleEvent(activationEvent: string): Promise<void> {
         const activations = this.activations.get(activationEvent);
-        if (activations) {
-            this.activations.set(activationEvent, undefined);
-            const pendingActivations = [];
-            while (activations.length) {
-                pendingActivations.push(activations.pop()!());
-            }
-            const activation = Promise.all(pendingActivations).then(() => undefined);
-            // Callers that request the same event while its activation is in flight must wait for it, too.
-            // The recorded promise does not reject, so that a failure is only reported to the first caller.
-            const settled = activation.catch(() => undefined);
-            const previous = this.pendingActivationsByEvent.get(activationEvent);
-            this.pendingActivationsByEvent.set(activationEvent, previous ? Promise.all([previous, settled]).then(() => undefined) : settled);
-            return activation;
+        if (!activations) {
+            // Either nothing is activated by the event or its activation is in flight or complete
+            return this.pendingActivationsByEvent.get(activationEvent) ?? Promise.resolve();
         }
-        return this.pendingActivationsByEvent.get(activationEvent) ?? Promise.resolve();
+        this.activations.set(activationEvent, undefined);
+        const pendingActivations = [];
+        while (activations.length) {
+            pendingActivations.push(activations.pop()!());
+        }
+        const activation = Promise.all(pendingActivations).then(() => undefined);
+        // Callers that request the same event while its activation is in flight must wait for it, too, as well as
+        // for a previous batch of activations for the event that is still in flight, e.g. of plugins deployed earlier.
+        // The recorded promise does not reject, so that a failure is only reported to the first caller.
+        const settled = activation.catch(() => undefined);
+        const previous = this.pendingActivationsByEvent.get(activationEvent);
+        const pending = previous ? Promise.all([previous, settled]).then(() => undefined) : settled;
+        this.pendingActivationsByEvent.set(activationEvent, pending);
+        pending.then(() => {
+            if (this.pendingActivationsByEvent.get(activationEvent) === pending) {
+                this.pendingActivationsByEvent.delete(activationEvent);
+            }
+        });
+        return activation;
     }
 
     async $activatePlugin(id: string): Promise<void> {
