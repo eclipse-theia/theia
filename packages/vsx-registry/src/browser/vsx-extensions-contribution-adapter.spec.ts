@@ -72,12 +72,61 @@ class StubModel {
     }
 }
 
+class UpdateInstalledModel extends VSXExtensionsModel {
+    readonly refreshed: string[] = [];
+
+    runUpdateInstalled(): Promise<void> {
+        return this.updateInstalled();
+    }
+
+    protected override setExtension(id: string, version?: string): VSXExtension {
+        return { id, version } as VSXExtension;
+    }
+
+    protected override refresh(id: string, version?: string): Promise<VSXExtension | undefined> {
+        this.refreshed.push(`${id}@${version}`);
+        return Promise.resolve(undefined);
+    }
+}
+
+function buildUpdateInstalledModel(deployed: string[], installed: string[]): UpdateInstalledModel {
+    const model = new UpdateInstalledModel();
+    Object.assign(model, {
+        pluginServer: {
+            getDeployedPluginIds: async () => deployed,
+            getUninstalledPluginIds: async () => [],
+            getDisabledPluginIds: async () => [],
+            getInstalledPluginIds: async () => installed,
+            getDeployedPlugins: async () => []
+        },
+        pluginSupport: { getPlugin: () => undefined },
+        progressService: {
+            withProgress: async <T>(_text: string, _location: string, task: () => Promise<T>): Promise<T> => task()
+        }
+    });
+    return model;
+}
+
 function buildAdapter(model: StubModel): VSXExtensionsContributionAdapter {
     const container = new Container();
     container.bind(VSXExtensionsModel).toConstantValue(model as unknown as VSXExtensionsModel);
     container.bind(VSXExtensionsContributionAdapter).toSelf().inSingletonScope();
     return container.get(VSXExtensionsContributionAdapter);
 }
+
+describe('VSXExtensionsModel.updateInstalled', () => {
+
+    it('skips registry refreshes for deployed extension versions', async () => {
+        const model = buildUpdateInstalledModel(
+            ['pub.deployed@1.0.0'],
+            ['pub.deployed@1.0.0', 'pub.undeployed@2.0.0']
+        );
+
+        await model.runUpdateInstalled();
+
+        expect(model.refreshed).to.deep.equal(['pub.undeployed@2.0.0']);
+    });
+});
 
 describe('VSXExtensionsContributionAdapter.resolveInstalled', () => {
 
