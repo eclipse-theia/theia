@@ -12,6 +12,7 @@
         "@theia/core/lib/browser/frontend-application-config-provider",
         "@theia/core/lib/browser/messaging/messaging-frontend-module",
         "@theia/core/lib/electron-browser/messaging/electron-messaging-frontend-module",
+        "@theia/core/lib/electron-browser/electron-backend-port",
         "@theia/core/lib/browser-only/messaging/messaging-frontend-only-module",
         "@theia/core/lib/browser/preload/preloader"
     ]

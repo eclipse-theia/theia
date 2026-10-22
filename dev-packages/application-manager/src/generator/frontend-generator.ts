@@ -125,7 +125,12 @@ module.exports = (async () => {
     container.load(messagingFrontendOnlyModule);`)}
 
     ${this.emitStartupLog('container created')}
-
+${this.ifElectron(`
+    // The window loads while the backend is still starting; wait for its port before the first connection.
+    const { ElectronBackendPort } = require('@theia/core/lib/electron-browser/electron-backend-port');
+    await ElectronBackendPort.resolve();
+    ${this.emitStartupLog('backend port resolved')}
+`)}
     await preload(container);
     ${this.emitStartupLog('preloaded')}
 
