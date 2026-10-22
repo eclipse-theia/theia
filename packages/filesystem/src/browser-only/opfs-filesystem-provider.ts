@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import {
     FileChange, FileChangeType, FileDeleteOptions,
     FileOverwriteOptions, FileSystemProviderCapabilities,
@@ -27,12 +27,13 @@ import {
     FileOpenOptions, FileUpdateOptions, FileUpdateResult,
     type FileReadStreamOptions
 } from '../common/files';
-import { Emitter, Event, URI, Disposable, DisposableCollection, type CancellationToken } from '@theia/core';
+import { Emitter, Event, URI, Disposable, DisposableCollection, ILogger, type CancellationToken } from '@theia/core';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { OPFSFileSystem, WatchEventType, type FileStat, type OPFSError, type WatchEvent } from 'opfs-worker';
+import { createOPFS, WatchEventType, type FileStat, type OPFSError, type OPFSFacade, type OPFSOptions, type WatchEvent } from 'opfs-worker';
 import { OPFSInitialization } from './opfs-filesystem-initialization';
 import { ReadableStreamEvents, newWriteableStream } from '@theia/core/lib/common/stream';
 import { readFileIntoStream } from '../common/io';
@@ -65,8 +66,16 @@ export class OPFSFileSystemProvider implements Disposable,
     @inject(EncodingService)
     protected readonly encodingService: EncodingService;
 
-    private fs!: OPFSFileSystem;
+    @inject(ILogger) @named('filesystem:OPFSFileSystemProvider')
+    protected readonly logger: ILogger;
+
+    protected readonly fileLockTimeout: number = 10_000;
+
+    private fs!: OPFSFacade;
     private initialized: Promise<true>;
+    private readonly fileLocks = new Map<string, { acquired: Promise<void>, released: Promise<void> }>();
+    private readonly openFileLocks = new Map<number, Disposable>();
+    private lastWatchEvent: WatchEvent | undefined;
 
     protected readonly toDispose = new DisposableCollection(
         this.onDidChangeFileEmitter
@@ -79,15 +88,13 @@ export class OPFSFileSystemProvider implements Disposable,
     protected init(): void {
         const setup = async (): Promise<true> => {
             const root = await this.initialization.getRootDirectory();
-            const broadcastChannel = this.initialization.getBroadcastChannel();
 
-            // Set up file change listening via BroadcastChannel
-            broadcastChannel.onmessage = this.handleFileSystemChange.bind(this);
-
-            // Initialize the file system
-            this.fs = new OPFSFileSystem({
+            this.fs = this.createFileSystem({
                 root,
-                broadcastChannel,
+                broadcastChannel: this.initialization.getBroadcastChannel(),
+                // opfs-worker's worker and facade derive different default namespaces for a root without a
+                // leading slash, and the facade then drops every change event.
+                namespace: `opfs-worker:${root}`,
                 hashAlgorithm: false,
             });
 
@@ -105,6 +112,10 @@ export class OPFSFileSystemProvider implements Disposable,
         this.initialized = setup();
     }
 
+    protected createFileSystem(options: OPFSOptions): OPFSFacade {
+        return createOPFS(options);
+    }
+
     /**
      * Watches a resource for file system changes
      */
@@ -116,7 +127,7 @@ export class OPFSFileSystemProvider implements Disposable,
         const unwatch = this.fs.watch(formatPath(resource), {
             recursive: opts.recursive,
             exclude: opts.excludes,
-        });
+        }, event => this.handleFileSystemChange(event));
 
         return Disposable.create(unwatch);
     }
@@ -129,7 +140,7 @@ export class OPFSFileSystemProvider implements Disposable,
         for (const [uri, content] of entries) {
             arrayEntries.push([formatPath(uri), content]);
         }
-        await this.fs.createIndex(arrayEntries);
+        await this.fs.importFiles(arrayEntries);
     }
 
     /**
@@ -312,10 +323,14 @@ export class OPFSFileSystemProvider implements Disposable,
 
         await this.initialized;
 
+        const path = formatPath(resource);
+        const lock = await this.lockFile(path);
         try {
-            return await this.fs.readFile(formatPath(resource), 'binary') as Uint8Array;
+            return await this.fs.readFile(path, 'binary');
         } catch (error) {
             throw toFileSystemProviderError(error as Error | OPFSError);
+        } finally {
+            lock.dispose();
         }
     }
 
@@ -339,8 +354,6 @@ export class OPFSFileSystemProvider implements Disposable,
     async writeFile(resource: URI, content: Uint8Array, opts: FileWriteOptions): Promise<void> {
         await this.initialized;
 
-        let handle: number | undefined = undefined;
-
         if (!resource || !resource.path) {
             throw createFileSystemProviderError('Invalid resource URI', FileSystemProviderErrorCode.FileNotFound);
         }
@@ -349,9 +362,9 @@ export class OPFSFileSystemProvider implements Disposable,
             throw createFileSystemProviderError('Invalid content: must be Uint8Array', FileSystemProviderErrorCode.Unknown);
         }
 
+        const path = formatPath(resource);
+        const lock = await this.lockFile(path);
         try {
-            const path = formatPath(resource);
-
             if (!opts.create || !opts.overwrite) {
                 const fileExists = await this.fs.exists(path);
 
@@ -364,17 +377,11 @@ export class OPFSFileSystemProvider implements Disposable,
                 }
             }
 
-            // Open
-            handle = await this.open(resource, { create: true });
-
-            // Write content at once
-            await this.write(handle, 0, content, 0, content.byteLength);
+            await this.fs.writeFile(path, content);
         } catch (error) {
             throw toFileSystemProviderError(error as Error | OPFSError);
         } finally {
-            if (typeof handle === 'number') {
-                await this.close(handle);
-            }
+            lock.dispose();
         }
     }
 
@@ -390,8 +397,9 @@ export class OPFSFileSystemProvider implements Disposable,
             throw createFileSystemProviderError('Invalid resource URI', FileSystemProviderErrorCode.FileNotFound);
         }
 
+        const path = formatPath(resource);
+        const lock = await this.lockFile(path);
         try {
-            const path = formatPath(resource);
             const fileExists = await this.fs.exists(path);
 
             if (!opts.create && !fileExists) {
@@ -402,9 +410,11 @@ export class OPFSFileSystemProvider implements Disposable,
                 create: opts.create,
                 truncate: opts.create
             });
+            this.openFileLocks.set(fd, lock);
 
             return fd;
         } catch (error) {
+            lock.dispose();
             throw toFileSystemProviderError(error as Error | OPFSError);
         }
     }
@@ -417,6 +427,9 @@ export class OPFSFileSystemProvider implements Disposable,
             await this.fs.close(fd);
         } catch (error) {
             throw toFileSystemProviderError(error as Error | OPFSError);
+        } finally {
+            this.openFileLocks.get(fd)?.dispose();
+            this.openFileLocks.delete(fd);
         }
     }
 
@@ -485,19 +498,56 @@ export class OPFSFileSystemProvider implements Disposable,
     // #endregion
 
     /**
-     * Handles file system change events from BroadcastChannel
+     * Waits for earlier accesses to the file to finish, since OPFS allows one sync access handle per file.
+     * The wait is bounded by `fileLockTimeout` so that a descriptor that is never closed does not block the file for good.
      */
-    private async handleFileSystemChange(event: MessageEvent<WatchEvent>): Promise<void> {
-        if (!event.data?.path) {
+    protected async lockFile(path: string): Promise<Disposable> {
+        const previous = this.fileLocks.get(path);
+        const acquired = new Deferred();
+        const released = new Deferred();
+        const current = { acquired: acquired.promise, released: released.promise };
+        this.fileLocks.set(path, current);
+
+        if (previous) {
+            // Start the timeout only once the previous access is in, so that waiters queued behind
+            // an access that never finishes go ahead one at a time rather than all together.
+            await previous.acquired;
+            let timer: ReturnType<typeof setTimeout> | undefined;
+            const done = await Promise.race([
+                previous.released.then(() => true),
+                new Promise<false>(resolve => timer = setTimeout(() => resolve(false), this.fileLockTimeout))
+            ]);
+            clearTimeout(timer);
+            if (!done) {
+                this.logger.warn(`Gave up waiting for an earlier access to ${path} after ${this.fileLockTimeout} ms.`);
+            }
+        }
+        acquired.resolve();
+
+        return Disposable.create(() => {
+            released.resolve();
+            if (this.fileLocks.get(path) === current) {
+                this.fileLocks.delete(path);
+            }
+        });
+    }
+
+    /**
+     * Handles file system change events from opfs-worker
+     */
+    private handleFileSystemChange(event: WatchEvent): void {
+        // opfs-worker calls the listener of every matching watch with the same event object.
+        if (event === this.lastWatchEvent) {
             return;
         }
+        this.lastWatchEvent = event;
 
-        const resource = new URI('file://' + event.data.path);
+        const resource = new URI('file://' + event.path);
         let changeType: FileChangeType;
 
-        if (event.data.type === WatchEventType.Added) {
+        if (event.type === WatchEventType.Added) {
             changeType = FileChangeType.ADDED;
-        } else if (event.data.type === WatchEventType.Removed) {
+        } else if (event.type === WatchEventType.Removed) {
             changeType = FileChangeType.DELETED;
         } else {
             changeType = FileChangeType.UPDATED;
