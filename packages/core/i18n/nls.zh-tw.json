@@ -72,6 +72,9 @@
         "title": "代理程式設定"
       },
       "anthropic": {
+        "allowEnvApiKey": {
+          "description": "允許 Theia 使用環境變數中找到的 Anthropic API 金鑰(`ANTHROPIC_API_KEY`)。在使用該金鑰之前,系統會要求您確認一次;若要撤銷同意,請將其設回 `false`。"
+        },
         "apiKey": {
           "description": "請輸入您官方 Anthropic 帳戶的 API 金鑰。**請注意:**使用此設定將使 Anthropic API 金鑰以明文形式儲存於運行 Theia 的機器上。請使用環境變數 `ANTHROPIC_API_KEY` 以安全方式設定金鑰。"
         },
@@ -91,13 +94,16 @@
           "enableStreaming": {
             "title": "指示是否使用串流 API。預設值為 `true`。"
           },
+          "headers": {
+            "title": "每次向端點發送請求時隨附的額外 HTTP 標頭"
+          },
           "id": {
             "title": "用於介面中識別自訂模型的唯一識別碼"
           },
           "maxRetries": {
             "title": "請求失敗時的最大重試次數。預設值為 3"
           },
-          "mdDescription": "整合與 Anthropic API 相容的自訂模型。必填屬性為 `model` 和 `url`。            \n            您可選擇性地            \n            - 指定一個唯一的 `id`,用於在 UI 中識別該自訂模型。 若未提供,則 `model` 將被用作 `id`。            \n            - 提供 `apiKey` 以存取指定 URL 所提供的 API。使用 `true` 表示使用全域 Anthropic API 金鑰。            \n            - 指定 `enableStreaming: false` 以表示不使用串流功能。            \n            - 指定 `useCaching: false` 以表示不使用提示詞快取。            \n            - 指定 `maxRetries: <number>` 以表示請求失敗時的最大重試次數。預設值為 3。            \n            推理能力與最大輸出代碼限制取自端點的 `/v1/models` 回應。",
+          "mdDescription": "整合與 Anthropic API 相容的自訂模型。必填屬性為 `model` 與 `url`。            \n            您可選擇            \n            - 指定一個唯一的 `id`,用以在使用者介面中識別該自訂模型。若未指定,則會將 `model` 作為 `id` 使用。            \n            - 提供 `apiKey` 以存取指定 URL 所提供的 API。若設定為 `true`,表示將使用全域 Anthropic API 金鑰。            \n            - 指定 `enableStreaming: false` 以表示不使用串流功能。            \n            - 指定 `useCaching: false` 以表示不應使用提示緩存。            \n            - 指定 `maxRetries: <number>` 以表示請求失敗時的最大重試次數。預設值為 3。            \n            - 指定 `headers` 以在每次向端點發送請求時附加額外的 HTTP 標頭,例如 API 前端閘道所需的標頭。            \n            推理能力與最大輸出代幣限制取自端點的 `/v1/models` 回應。",
           "modelId": {
             "title": "模型 ID"
           },
@@ -111,8 +117,16 @@
         "customProvider": {
           "label": "{0} (自訂)"
         },
-        "models": {
-          "description": "官方採用的Anthropic模型"
+        "discovery": {
+          "cached": "顯示快取模型;上次重新整理失敗:{0}",
+          "consentPrompt": "在環境變數中發現了 Anthropic API 金鑰(ANTHROPIC_API_KEY)。是否允許 Theia 使用此金鑰來發現並呼叫 Anthropic 模型?",
+          "consentRequired": "在環境中發現了一個 Anthropic API 金鑰。請確認其是否用於探索模型。",
+          "noKey": "尚未設定 Anthropic API 金鑰。請新增金鑰以探索模型。",
+          "overridden": "模型清單需手動設定。清除模型覆寫設定,即可重新從提供者處搜尋模型。",
+          "useEnvKey": "使用說明"
+        },
+        "modelOverrides": {
+          "description": "覆寫從 Anthropic 發現的模型。當此欄位為空(預設)時,系統會從供應商處發現可用模型。若設定明確的模型 ID,則會精確使用這些模型;此時將完全不使用模型發現功能。"
         }
       },
       "chat": {
@@ -306,7 +320,8 @@
           "status": {
             "canceled": "已取消",
             "generating": "生成中...",
-            "starting": "正在啟動..."
+            "starting": "正在啟動...",
+            "waitingForInput": "等待輸入"
           }
         },
         "deleteChangeSet": "刪除變更集",
@@ -320,11 +335,14 @@
         "failedToLoadChats": "載入聊天會話失敗",
         "failedToRestoreSession": "無法還原聊天會話",
         "failedToRetry": "重試失敗訊息",
+        "find": "在聊天中搜尋",
+        "findHide": "在聊天中隱藏「尋找」功能",
         "focusInput": "焦點聊天輸入",
         "focusResponse": "焦點聊天回應",
         "functions": "功能",
         "functionsDescription": "由 {0} 擴充套件提供的內建功能",
         "genericCapabilities": "通用功能",
+        "manageModels": "管理模型…",
         "mcpFunctionsDescription": "來自連線伺服器的模型上下文協定(MCP)功能",
         "mermaid-rendering": {
           "copySource": "複製原始碼",
@@ -340,7 +358,6 @@
         "modelUnavailable": "不可用",
         "noChatAgentsAvailable": "目前沒有可用的聊天代理程式。",
         "noMatchingCapabilities": "無匹配功能",
-        "openDiff": "開啟差異檢視",
         "openImage": "開啟圖片",
         "openOriginalFile": "開啟原始檔案",
         "performThisTask": "執行此任務。",
@@ -476,7 +493,6 @@
         "findMatchingFiles": "在當前目錄中尋找符合通配符模式「{0}」的檔案",
         "findMatchingFilesWithPath": "在 {1} 目錄中尋找符合通配符模式 \"{0}\" 的檔案",
         "finding": "尋找",
-        "from": "來自",
         "globPattern": "glob 模式",
         "grepOptions": {
           "caseInsensitive": "不區分大小寫",
@@ -533,7 +549,6 @@
         "startingLine": "起始行",
         "timeout": "超時",
         "timeoutInMs": "超時:{0}毫秒",
-        "to": "至",
         "todoList": "待辦事項清單",
         "todoPriority": {
           "high": "高",
@@ -646,23 +661,32 @@
           "signIn": "登入 GitHub Copilot",
           "signOut": "登出 GitHub Copilot"
         },
+        "discovery": {
+          "disabled": "GitHub Copilot 提供者已停用。請啟用它以探索模型。",
+          "overridden": "模型清單需手動設定。清除模型覆寫設定,即可重新從 GitHub Copilot 發現模型。",
+          "signedOut": "尚未登入 GitHub Copilot。請登入以探索其提供的模型。"
+        },
         "enabled": {
-          "mdDescription": "啟用 GitHub Copilot 提供者。啟用後,狀態列會顯示一個項目以進行驗證,並從您的 Copilot 訂閱中偵測可用的模型。"
+          "mdDescription": "啟用 GitHub Copilot 提供者。啟用後,狀態列會出現一個項目以進行身份驗證,並從您的 Copilot 訂閱中偵測可用的模型。\n\n請求將透過官方的 GitHub Copilot CLI 進行路由,該 CLI 會作為背景程序在託管後端的機器上執行。系統僅提供您的 Copilot 登入憑證,不會傳遞其他資訊,因此不會使用環境變數中的憑證或 GitHub CLI 的現有登入資訊。"
         },
         "enterpriseUrl": {
-          "mdDescription": "Copilot API 的 GitHub Enterprise 網域(例如 `github.mycompany.com`)。若使用 GitHub.com 則留空。"
+          "mdDescription": "用於驗證身分並發送請求的 GitHub Enterprise 網域(例如:`github.mycompany.com`)。若要使用 GitHub.com,請留空。"
+        },
+        "enterpriseUrlChanged": "GitHub Copilot 的網域已變更。請重新登入以使變更生效。",
+        "executablePath": {
+          "mdDescription": "在託管後端的機器上,GitHub Copilot CLI 可執行檔的位置。若為空(預設值),系統會依序在應用程式安裝目錄、`PATH` 變數路徑以及全域 `npm` 目錄中搜尋 CLI。若 CLI 安裝於其他位置,請設定此參數。\n\n此 CLI 並未隨應用程式一併提供,請使用 `npm install -g @github/copilot` 進行安裝。"
         },
         "modelOverrides": {
           "mdDescription": "覆寫自動偵測到的 GitHub Copilot 模型。若為空(預設值),系統將從您的 Copilot 訂閱中偵測可用模型。請設定明確的模型 ID 以覆寫自動偵測功能。"
         },
+        "signInAgain": "GitHub Copilot 現已改為透過 GitHub Copilot CLI 進行登入。您的先前登入狀態無法沿用,並已遭移除,請重新登入以使用 Copilot 模型。",
         "signOut": {
           "confirmMessage": "您確定要登出 GitHub Copilot 嗎?"
         },
         "statusBar": {
           "signedIn": "已以 {0} 身分登入 GitHub Copilot。點擊此處登出。",
           "signedOut": "尚未登入 GitHub Copilot。點擊登入。"
-        },
-        "tokenMigration": "您的 GitHub Copilot 會話使用了過時的驗證方法,因此已清除。請重新登入以存取所有可用模型。"
+        }
       },
       "core": {
         "agentConfiguration": {
@@ -760,11 +784,18 @@
         "discardCustomPrompt": {
           "tooltip": "捨棄自訂設定"
         },
+        "favoriteModels": {
+          "mdDescription": "此處列出 AI 聊天輸入的模型選擇器中,除各供應商最新模型外所顯示的其他模型,以完整識別碼形式呈現(例如 `anthropic/claude-opus-5`)。此設計旨在讓使用者能隨時取用較舊或版本鎖定的模型。 請在「AI 設定」視圖中,於該提供商的頁面中勾選模型以將其新增。",
+          "title": "常用模型"
+        },
         "fileVariable": {
           "description": "解析檔案內容",
           "uri": {
             "description": "所請求檔案的 URI。"
           }
+        },
+        "hiddenModels": {
+          "mdDescription": "此處列出 AI 聊天輸入的模型選擇器中,即使預設應顯示但實際未顯示的模型,其格式為完整限定識別碼(例如 `google/gemini-flash-lite-latest`)。此處僅顯示未被標記為「最愛」的模型,也就是該提供者最新的模型。 請在「AI 設定」視圖中,於該供應商的頁面取消勾選該模型,即可將其加入此處。"
         },
         "languageModelRenderer": {
           "alias": "[別名] {0}",
@@ -911,7 +942,6 @@
           "dotRelativePath": "關於目前開啟之檔案('currentRelativeFilePath')相對於工作區的路徑之簡要說明。"
         },
         "variantSet": {
-          "templateLabel": "範本",
           "unavailableVariant": "{0} (不可用)",
           "variantCount": "{0} 變體",
           "variantCountSingular": "第 1 種變體"
@@ -931,14 +961,25 @@
         }
       },
       "google": {
+        "allowEnvApiKey": {
+          "description": "允許 Theia 使用環境變數中找到的 Google AI(Gemini)API 金鑰(`GOOGLE_API_KEY` / `GEMINI_API_KEY`)。在使用該金鑰之前,系統會要求您確認一次;若要撤銷同意,請將其設回 `false`。"
+        },
         "apiKey": {
           "description": "請輸入您官方 Google AI (Gemini) 帳戶的 API 金鑰。**請注意:**使用此設定時,GOOGLE AI API 金鑰將以明文形式儲存於執行 Theia 的機器上。請使用環境變數 `GOOGLE_API_KEY` 安全設定金鑰。"
+        },
+        "discovery": {
+          "cached": "顯示快取模型;上次刷新失敗:{0}",
+          "consentPrompt": "在環境中發現了一組 Google AI API 金鑰(GOOGLE_API_KEY / GEMINI_API_KEY)。是否允許 Theia 使用該金鑰來發現並呼叫 Gemini 模型?",
+          "consentRequired": "在環境中發現了一組 Google AI API 金鑰。請確認其是否用於探索模型。",
+          "noKey": "尚未設定 Google AI API 金鑰。請新增金鑰以探索模型。",
+          "overridden": "模型清單需手動設定。清除模型覆寫設定,即可再次從提供者處偵測到模型。",
+          "useEnvKey": "使用說明"
         },
         "maxRetriesOnErrors": {
           "description": "發生錯誤時的最大重試次數。若小於 1,則重試邏輯將停用"
         },
-        "models": {
-          "description": "官方 Google Gemini 模型供使用"
+        "modelOverrides": {
+          "description": "覆寫從 Google Gemini 發現的模型。當此欄位為空(預設值)時,系統會從提供者處發現可用的模型。若設定明確的模型 ID,則會精確使用該等模型;此時將完全不進行模型發現。"
         },
         "retryDelayOnOtherErrors": {
           "description": "其他錯誤發生時重試間隔時間(以秒為單位)。(Google GenAI有時會回報模型返回的JSON語法不完整或500內部伺服器錯誤等狀況)。設定為-1可在此類情況下停用重試機制。否則系統將立即重試(設定為0時),或延遲此秒數後重試(設定為正數時)。"
@@ -1053,6 +1094,7 @@
           "pageTypeLabel": "頁面"
         },
         "allowAllMode": {
+          "hideForThisSession": "在本工作階段中隱藏",
           "stripTooltip": "在此工作階段中,AI 工具的呼叫將在無需確認的情況下執行。請僅在您信任的環境中啟用此功能。",
           "stripTooltipFooter": "可透過 --session-preference 參數設定。若不帶此參數重新啟動,即可還原已儲存的設定。",
           "title": "Theia AI 全許可模式"
@@ -1111,7 +1153,6 @@
             "startNewChat": "保持對話簡短且聚焦。若需討論新任務,請[開啟新對話]({0});若需[開啟包含本對話摘要的新對話]({1})。"
           }
         },
-        "collapseSession": "收起 {0}",
         "commandAgent": {
           "commandCallback": {
             "confirmAction": "明白了",
@@ -1131,19 +1172,16 @@
           }
         },
         "configurationState": "設定問題",
-        "configureAgent": {
-          "header": "設定預設代理程式"
-        },
         "continueAnyway": "繼續執行",
         "createSkillAgent": {
           "mode": {
             "edit": "預設模式"
           }
         },
+        "defaultChatAgentSet": "預設的聊天機器人現已變更為 {0}。",
         "enableAI": {
           "mdDescription": "此設定可讓您存取最新的人工智慧功能。            \n            請務必知悉,這些功能可能對您授權存取的語言模型(LLMs)產生持續性請求,可能產生相關費用,需密切監控。 啟用此選項即表示您已知悉相關風險。            \n            **請注意！本節下方設定僅在主功能啟用後生效。啟用功能後,您需於下方至少設定一組            LLM供應商。詳見[官方文件](https://theia-ide.org/docs/user_ai/)**。"
         },
-        "expandSession": "展開{0}",
         "exploreAgent": {
           "description": "一款從程式碼庫中提取並提煉資訊的程式碼庫探索助手。         報告現有內容的相關事實、提供程式碼片段,並描述觀察到的模式。"
         },
@@ -1201,16 +1239,36 @@
         },
         "model-selection-description": "請於 [AI 設定檢視窗]({0})中選擇各 AI 代理程式所使用的大型語言模型(LLMs)。",
         "modelsConfiguration": {
+          "awaitingConsent": "待核准",
+          "defaultModel": "此供應商最新型號之一,除非在此處被隱藏,否則 AI 聊天輸入的模型選擇器會顯示該型號",
           "description": "設定語言模型提供者以及可供代理程式使用的模型。",
+          "discovery": "模型探索",
+          "fetching": "正在擷取中…",
+          "filterModels": "篩選模型",
+          "hideModel": "將此模型從 AI 聊天輸入的模型選擇器中隱藏",
+          "modelNotReady": "尚未準備就緒",
           "modelSettings": "模型設定",
+          "noKey": "無 API 金鑰",
+          "noModels": "尚未發現任何範本。",
           "noProviders": "目前未安裝任何語言模型提供者。",
-          "providers": "供應商"
+          "providers": "供應商",
+          "ready": "準備就緒",
+          "refresh": "重新整理模型清單",
+          "refreshUnavailable": "在提供者取得憑證之前,無需重新整理",
+          "released": "已發布 {0}",
+          "resetShown": "重設為預設值",
+          "resetShownUnavailable": "目前已採用預設設定",
+          "showAllModels": "顯示所有已發現的模型",
+          "showCheckedModels": "僅顯示 AI 聊天輸入的模型選擇器中所顯示的模型",
+          "showModel": "在 AI 聊天輸入的模型選擇器中顯示此模型",
+          "shownExplanation": "{0} AI 聊天輸入中「模型選擇器」所顯示的{1}",
+          "updated": "更新於 {0}"
         },
-        "moreAgentsAvailable": {
-          "header": "更多代理程式可供使用"
+        "noDefaultAgent": {
+          "header": "無預設代理程式"
         },
-        "noRecommendedAgents": "目前沒有可用的推薦代理程式。",
         "openAiConfiguration": "OpenAI 設定",
+        "openGettingStartedWalkthrough": "AI 入門指南",
         "orchestrator": {
           "error": {
             "noAgents": "目前無可用聊天機器人處理此請求。請檢查您的設定是否啟用了任何聊天機器人。"
@@ -1234,8 +1292,7 @@
               "name": "GH PR 資訊"
             },
             "localCheckout": {
-              "description": "將拉取請求(pull request)檢出至本地端,並保護現有工作樹的變更。",
-              "name": "檢出"
+              "description": "將拉取請求(pull request)檢出至本地端,並保護現有工作樹的變更。"
             },
             "localValidation": {
               "description": "針對拉取請求執行本機安裝、建置、語法檢查、測試或類似的驗證任務。",
@@ -1292,6 +1349,7 @@
           "toolConfirmation": "各工具的確認設定覆寫:{0}",
           "toolConfirmationGeneric": "設定各工具的確認覆寫選項"
         },
+        "setDefaultChatAgent": "設定預設聊天機器人",
         "shellExecutionCapability": {
           "description": "允許代理程式在主機系統上執行任意殼層指令。代理程式可藉此委派執行非任務形式的腳本、查詢系統資訊,以及執行無專用工具可處理的操作。",
           "name": "殼層執行"
@@ -1314,9 +1372,6 @@
           },
           "slashCommandsGroupDescription": "在聊天視窗中輸入 /name 即可呼叫的提示片段,可供一位或多位客服專員使用。",
           "slashCommandsSectionHeader": "斜線指令"
-        },
-        "toolConfirmationInfo": {
-          "header": "工具確認"
         },
         "toolConfirmationOverrides": {
           "stripTooltip": "透過命令列參數,本工作階段中已自動核准一項或多項 AI 工具。",
@@ -1380,7 +1435,6 @@
           "filterPlaceholder": "依名稱或描述篩選變數",
           "noMatches": "沒有任何變數與「{0}」相符。",
           "noVariables": "沒有可用變數。",
-          "openAgent": "開啟代理程式 {0}",
           "optional": "(可選)",
           "pageSubtitle": "這些是您可在提示字元中以{0}名稱進行參照的值。它們會在請求時被解析並插入。",
           "plainGroup": "普通變數",
@@ -1388,7 +1442,40 @@
           "required": "必填",
           "usedByAgents": "供代理程式使用"
         },
-        "waitingForInput": "等待您的輸入"
+        "waitingForInput": "等待您的輸入",
+        "walkthrough": {
+          "aiSupport": {
+            "description": "\n{0}\n內建 AI 支援功能:您可以與專門的助理就您的專案進行對話,讓它們修改程式碼並執行任務,在您輸入時自動補全程式碼,並在終端機中獲得協助。\n\n這些功能預設為停用狀態,以便您能自行決定是否啟用。\n\n一旦啟用,這些功能可能會持續向您開放存取權限的語言模型發出請求。這可能會產生相關費用,請務必密切監控。\n\n[閱讀文件]({1}\n)。\n\n我們歡迎您的回饋、貢獻與贊助！請造訪 [GitHub 專案]({2}\n) 以支持持續開發。感謝您成為我們社群的一員！\n\n所有這些功能皆建構於 Theia AI 之上,這是一個專為 AI 驅動工具與整合開發環境 (IDE) 設計的框架,目前已發布穩定版本。[閱讀框架文件]({3}\n)。\n",
+            "title": "{0} 中的 AI 支援功能"
+          },
+          "chooseAgent": {
+            "intro": "每則聊天請求都會發送給一位客服人員,若您未自行指定特定客服人員,系統將由其中一位進行回覆。\n\n**設定您的預設客服人員:**\n",
+            "outro": "您也可以在設定中 [選擇預設代理]({0}\n),並透過在單則訊息開頭加上 *@AgentName* 來指定其他代理。\n[代理]({1}\n) 頁面列出了所有代理。\n",
+            "title": "選擇您的預設代理程式"
+          },
+          "connectModel": {
+            "description": "為託管服務供應商新增 API 金鑰:\n\n- [OpenAI]({0}\n)\n- [Anthropic]({1}\n)\n- [Google]({2}\n)\n\n偏好使用本地端或另一項服務嗎?Ollama、llamafile 以及任何與 OpenAI 相容的端點,皆可在 [模型]({3}\n) 頁面中設定。\n\n部分代理程式會自帶模型(例如 Claude Code),且無需透過服務供應商即可運作。\n",
+            "title": "連接語言模型"
+          },
+          "description": "設定 {0} 的人工智慧功能,並學習如何使用這些功能。",
+          "enableAi": {
+            "description": "在您啟用 AI 功能之前,系統不會將任何資料傳送至任何地方,且您可隨時將其關閉。\n\n[開啟 AI 設定]({0}\n) 並在該處啟用相關功能。\n",
+            "title": "開啟 AI 功能"
+          },
+          "firstQuestion": {
+            "description": "[開啟 AI 聊天]({0}\n) 並詢問關於您專案的問題。\n\n以下兩點能讓回答更精準:\n\n- *@AgentName* 用於指定此訊息的代理,例如 *@Coder*。\n- *#* 用於附加上下文,例如 *#file* 或 *#selectedText*。輸入欄旁邊的迴紋針按鈕也有相同功能。\n\n聊天功能會記住您的對話紀錄,因此您稍後可以繼續之前的對話。\n",
+            "title": "提出您的第一個問題"
+          },
+          "goFurther": {
+            "description": "聊天功能僅是開始。AI 還會隨著您的輸入自動完成程式碼,並透過 *Ctrl+I* 在終端機中提供協助。\n\n- [提示與技能]({0}\n):閱讀並調整代理程式運作時所依據的指示。\n- [MCP 伺服器]({1}\n):新增 {3}\n內建工具以外的功能。\n- [代幣使用量]({2}\n):查看您的請求消耗了多少代幣。\n- [切換視角]({5}\n)(實驗性功能):*AI First* 佈局會將聊天視窗移至主區域,並將檔案總管與原始碼控制介面置於右側。\n\n若提供「AI 歷史記錄」視圖,將顯示實際傳送給模型的內容。\n\n更多詳情請參閱 [文件]({4}\n) —— 我們隨時歡迎您的回饋。\n",
+            "title": "深入了解"
+          },
+          "title": "開始使用 AI",
+          "toolConfirmation": {
+            "description": "代理程式會透過工具對您的工作區進行操作:它們會讀取檔案、執行終端機指令或編輯程式碼。\n\n每次執行工具前,系統都會先徵求您的確認。您可以在 [工具]({0}\n) 頁面中變更此預設設定,或預先核准您信任的工具。\n\n當工作區未被信任時,AI 功能將完全停用。請前往 [管理工作區信任]({1}\n) 為每個專案進行設定。\n",
+            "title": "掌握代理程式運作的控制權"
+          }
+        }
       },
       "llamaFile": {
         "prefs": {
@@ -1434,6 +1521,7 @@
           "label": "MCP:取得 MCP OAuth 重定向網址"
         },
         "info": {
+          "noToolsAvailable": "目前沒有可用工具。",
           "oauthRedirectUrl": "MCP OAuth 重定向網址:{0}",
           "serverSignedIn": "已登入 MCP 伺服器「{0}」。",
           "serverSignedOut": "已從 MCP 伺服器「{0}」登出。",
@@ -1609,6 +1697,7 @@
           "serverUrlPlaceholder": "例如:https://mcp.example.com",
           "serverUrlRequired": "遠端伺服器需提供伺服器網址"
         },
+        "noServersConfigured": "未配置任何 MCP 伺服器",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "授權伺服器",
         "oauthClientId": "OAuth 客戶端 ID",
@@ -1636,6 +1725,9 @@
         "typeRemoteOAuth": "遠端 (OAuth)"
       },
       "openai": {
+        "allowEnvApiKey": {
+          "description": "允許 Theia 使用環境變數中找到的 OpenAI API 金鑰(`OPENAI_API_KEY`)。在使用該金鑰之前,系統會要求您確認一次;若要撤銷同意,請將其設回 `false`。"
+        },
         "apiKey": {
           "mdDescription": "請輸入您官方 OpenAI 帳戶的 API 金鑰。**請注意:**使用此設定時,OpenAI API 金鑰將以明文形式儲存於執行 Theia 的機器上。請使用環境變數 `OPENAI_API_KEY` 以安全方式設定金鑰。"
         },
@@ -1664,10 +1756,13 @@
           "enableStreaming": {
             "title": "指示是否使用串流 API。預設值為 `true`。"
           },
+          "headers": {
+            "title": "每次向端點發送請求時,都會一併傳送的額外 HTTP 標頭"
+          },
           "id": {
             "title": "用於介面中識別自訂模型的唯一識別碼"
           },
-          "mdDescription": "整合與 OpenAI API 相容的自訂模型,例如透過 `vllm`。必填屬性為 `model` 和 `url`。            \n            您可選擇性地            \n            - 指定一個唯一的 `id`,以便在 UI 中識別該自訂模型。 若未提供,則 `model` 將被用作 `id`。            \n            - 提供 `apiKey` 以存取指定 URL 所提供的 API。使用 `true` 表示使用全域 OpenAI API 金鑰。            \n            - 提供 `apiVersion` 以存取 Azure 中指定 URL 所提供的 API。 若要使用全域 OpenAI API 版本,請設定為 `true`。            \n            - 為您的 Azure 部署提供一個 `deployment` 名稱。            \n            - 將 `developerMessageSettings` 設定為 `user`、`system`、`developer`、`mergeWithFollowingUserMessage` 或 `skip` 之一,以控制開發者訊息的            包含方式 (其中 `user`、`system` 和 `developer` 將作為角色使用;`mergeWithFollowingUserMessage` 會將系統訊息作為前綴附加於後續的使用者訊息前,或若下一則訊息非使用者訊息,則將系統訊息轉換為使用者訊息;`skip` 則僅移除系統訊息)。預設值為 `developer`。            \n            - 指定 `supportsStructuredOutput: false` 以表示不應使用結構化輸出。            \n            - 指定 `enableStreaming: false` 以表示不應使用串流功能。            \n            - 指定 `useResponseApi: true` 以使用較新的 OpenAI Response API 取代 Chat Completion API(需相容的端點)。            \n            - 設定 `reasoningSupport` 以啟用對話推理選擇器。請提供一個包含            `supportedLevels`(例如 `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`)及可選的 `defaultLevel` 的物件。            \n            更多資訊請參閱 [我們的文件](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)。",
+          "mdDescription": "整合與 OpenAI API 相容的自訂模型,例如透過 `vllm`。必填屬性為 `model` 和 `url`。            \n            您可選擇            \n            - 指定一個唯一的 `id`,以便在使用者介面中識別該自訂模型。 若未指定,則會將 `model` 作為 `id` 使用。            \n            - 提供一個 `apiKey` 以存取指定 URL 所提供的 API。若要使用全球性的 OpenAI API 金鑰,請設定為 `true`。            \n            - 提供 `apiVersion` 以存取 Azure 中指定 URL 所提供的 API。若設定為 `true`,表示使用全域 OpenAI API 版本。            \n            - 為您的 Azure 部署提供一個 `deployment` 名稱。            \n            - 將 `developerMessageSettings` 設定為 `user`、`system`、`developer`、`mergeWithFollowingUserMessage` 或 `skip` 之一,以控制開發者訊息的            包含方式 (其中 `user`、`system` 和 `developer` 將作為角色使用;`mergeWithFollowingUserMessage` 會將系統訊息作為前綴附加至後續的使用者訊息,            或在下一則訊息非使用者訊息時,將系統訊息轉換為使用者訊息;`skip` 則僅會移除系統訊息)。            預設值為 `developer`。            \n            - 指定 `supportsStructuredOutput: false` 以表示不應使用結構化輸出。            \n            - 指定 `enableStreaming: false` 以表示不應使用串流功能。            \n            - 指定 `useResponseApi: true` 以使用較新的 OpenAI Response API 取代 Chat Completion API(需相容的端點)。            \n            - 指定 `reasoningSupport` 以啟用對話推理選擇器。 提供一個包含            `supportedLevels`(例如 `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`)及可選的 `defaultLevel` 的物件。            \n            - 指定 `headers` 以在每次向端點發送請求時附加額外的 HTTP 標頭,例如 API 前端閘道所需的標頭。            \n            更多資訊請參閱 [我們的文件](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)。",
           "modelId": {
             "title": "模型 ID"
           },
@@ -1687,8 +1782,16 @@
         "customProvider": {
           "label": "{0} (自訂)"
         },
-        "models": {
-          "description": "官方 OpenAI 模型供使用"
+        "discovery": {
+          "cached": "顯示快取模型;上次刷新失敗:{0}",
+          "consentPrompt": "在環境變數中發現了 OpenAI API 金鑰(OPENAI_API_KEY)。是否允許 Theia 使用此金鑰來偵測並呼叫 OpenAI 模型?",
+          "consentRequired": "在環境中發現了一組 OpenAI API 金鑰。請確認其是否用於探索模型。",
+          "noKey": "尚未設定 OpenAI API 金鑰。請新增金鑰以探索模型。",
+          "overridden": "模型清單需手動設定。清除模型覆寫設定,即可重新從提供者處偵測模型。",
+          "useEnvKey": "使用說明"
+        },
+        "modelOverrides": {
+          "description": "覆寫從 OpenAI 發現的模型。當此欄位為空(預設值)時,系統會從提供者處發現可用的模型。若設定明確的模型 ID,則會精確使用這些模型;此時將完全不進行模型發現。"
         },
         "useResponseApi": {
           "mdDescription": "對於官方 OpenAI 模型,請使用較新的 OpenAI Response API 取代 Chat Completion API。此設定僅適用於官方 OpenAI 模型——自訂提供者必須個別進行配置。"
@@ -1936,6 +2039,26 @@
       "codeReview": {
         "description": "在每次實作後將任務委派給代碼審查員代理。若審查未通過,則暫停後續步驟。"
       },
+      "commit-message": {
+        "agent-disabled-tooltip": "「提交訊息」代理程式已停用。請在「AI 設定」視圖中啟用它。",
+        "cancel-tooltip": "取消提交訊息的產生",
+        "empty": "該模型傳回了一則空的提交訊息。",
+        "failed": "無法產生提交訊息:{0}",
+        "generate-from-staged": "根據暫存的變更產生提交訊息",
+        "no-changes": "目前沒有已分階段的變更可用來產生提交訊息。",
+        "no-repository": "尚未選取任何版本控制儲存庫。",
+        "replace-prompt": "提交訊息欄位並非空白。是否要將其內容替換為生成的訊息?",
+        "replace-title": "替換提交訊息",
+        "staged-tooltip": "根據已暫存的變更產生提交訊息"
+      },
+      "commitMessageAgent": {
+        "description": "根據工作區儲存庫中的已暫存變更,生成 Git 提交訊息。透過 AI 閃光按鈕,從 SCM 提交訊息輸入欄位觸發此功能。",
+        "vars": {
+          "changes": {
+            "description": "由待提交變更所產生的統一 Git diff,該提交訊息即以此為基礎生成。"
+          }
+        }
+      },
       "fixGhTicketCommand": {
         "argumentHint": "<票號>",
         "description": "分析 GitHub 問題單並實作解決方案"
@@ -2004,6 +2127,7 @@
         "updateTooltip": "更新自 {0} 至 {1}"
       },
       "autoUpdate": {
+        "aiSettings": "AI 設定",
         "ask": "當已安裝的技能、MCP 伺服器或 Agent 外掛程式有更新可用時,請發送通知。",
         "changeLater": "您稍後可在 {0} 中進行修改。",
         "configureDefault": "請在 {0} 中設定預設值。",
@@ -2040,9 +2164,7 @@
           "oneSkipped": "跳過元件「{0}」:{1}"
         },
         "dialog": {
-          "contains": "包含",
           "endorsedBy": "獲以下機構認可",
-          "from": "來源:",
           "install": {
             "title": "安裝 Agent 外掛程式「{0}」"
           },
@@ -2104,10 +2226,6 @@
         "serverUnknownField": "伺服器設定中宣告了「{0}」這個欄位,但該欄位的傳輸類型不被允許。",
         "serverUnknownType": "伺服器設定中宣告了未知傳輸類型「{0}」。",
         "serverUnsupportedTransport": "不支援 MCP 傳輸協定「{0}」。",
-        "stat": {
-          "oneServer": "1 台 MCP 伺服器",
-          "servers": "{0} MCP 伺服器"
-        },
         "uninstalled": "已解除安裝的代理程式外掛程式「{0}」。",
         "unknownManifestField": "忽略未知「plugin.json」欄位中的「{0}」。",
         "unlinked": "已解除連結的 Agent 外掛程式「{0}」。",
@@ -2244,7 +2362,6 @@
       "collaborate": "協作",
       "collaboration": "協作",
       "collaborationWorkspace": "協作工作區",
-      "connected": "已連接",
       "connectedSession": "已連接到協作會話",
       "copiedInvitation": "邀請代碼已複製至剪貼簿。",
       "copyAgain": "再次複製",
@@ -2471,6 +2588,25 @@
       "userSettingsDetail": "套用至所有工作區",
       "workspaceSettingsDetail": "僅適用於當前工作區"
     },
+    "external-api": {
+      "delivery": {
+        "description": "控制是否提供外部 HTTP API 以及其運作方式。",
+        "off": "請勿提供外部 API 服務。",
+        "samePort": "請在與後端相同的埠上提供外部 API。",
+        "samePortLabel": "與後端使用相同的埠號",
+        "separatePort": "透過「externalApi.port」進行配置,於專用埠上提供外部 API 服務。",
+        "separatePortLabel": "獨立埠"
+      },
+      "hostname": {
+        "description": "外部 HTTP API 伺服器所綁定的主機名稱或 IP 位址。若要接受遠端連線,請使用「0.0.0.0」。 如「localhost」這類名稱會根據解析結果進行綁定,因此使用其他迴路位址的客戶端可能無法連線至伺服器;請使用「127.0.0.1」或「::1」來固定特定位址。 僅在「externalApi.delivery」設定為「separatePort」時使用。"
+      },
+      "port": {
+        "description": "用於提供外部 HTTP API 服務的埠號。僅在「externalApi.delivery」設定為「separatePort」時使用。"
+      },
+      "token": {
+        "description": "存取受保護的外部 API 端點所需之 Bearer 憑證(「Authorization: Bearer <token>」)。若此欄位為空,則外部 API 將在未經驗證的情況下提供服務。"
+      }
+    },
     "external-terminal": {
       "cwd": "為新外部終端機選取當前工作目錄"
     },
@@ -2514,10 +2650,6 @@
       "uploadedOutOf": "上傳 {0} 來自 {1}"
     },
     "getting-started": {
-      "ai": {
-        "header": "{0} 現已支援 AI 功能！",
-        "openAIChatView": "立即開啟 AI 聊天視窗,學習如何開始！"
-      },
       "apiComparator": "{0} API 相容性",
       "markStepUndone": "標記為「未完成」",
       "newExtension": "建立新擴充功能",
@@ -2736,9 +2868,6 @@
       },
       "toolbar": "工具列"
     },
-    "preview": {
-      "openByDefault": "預設開啟預覽視窗而非編輯器。"
-    },
     "property-view": {
       "lastModified": "最後修改時間",
       "noProperties": "無可用屬性。",
@@ -2749,6 +2878,16 @@
       "dev-container": {
         "attach": "附加至正在執行的容器",
         "attachError": "無法連接到容器:{0}",
+        "attachScreen": {
+          "errorHeader": "無法連接至容器",
+          "firstStartNote": "容器的首次啟動可能需要一兩分鐘。之後的啟動速度會快得多。",
+          "locating": "正在尋找容器 {0}...",
+          "preparing": "正在準備連接...",
+          "preparingWorkspace": "正在準備工作區...",
+          "starting": "正在容器內啟動應用程式...",
+          "title": "連接至容器",
+          "titleNamed": "附加至 {0}"
+        },
         "attachWarning": "附加至容器將執行其中的程式碼。請僅附加至您信任來源的容器。",
         "attachWarningTitle": "附加至容器",
         "attaching": "連接至容器",
@@ -2799,7 +2938,6 @@
       "amendHeadCommit": "HEAD 提交",
       "amendLastCommit": "修改最後一次提交",
       "changeRepository": "變更儲存庫...",
-      "copyCommitHash": "複製提交雜湊值",
       "dirtyDiff": {
         "close": "關閉 變更 預覽檢視"
       },

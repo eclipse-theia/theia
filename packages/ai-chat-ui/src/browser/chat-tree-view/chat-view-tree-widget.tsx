@@ -35,19 +35,26 @@ import {
     codicon,
     CompositeTreeNode,
     ContextMenuRenderer,
+    DISABLED_CLASS,
     HoverService,
+    isActivationKey,
     Key,
     KeyCode,
+    Message,
     NodeProps,
     OpenerService,
     TreeModel,
     TreeNode,
     TreeProps,
     TreeWidget,
+    UnsafeWidgetUtilities,
     Widget,
     type ReactWidget
 } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { ChatFindHighlighter } from '../chat-find/chat-find-highlighter';
+import { ChatFindMatch } from '../chat-find/chat-find-matcher';
+import { ChatFindState, ChatFindWidget } from '../chat-find/chat-find-widget';
 import { nls } from '@theia/core/lib/common/nls';
 import {
     inject,
@@ -61,7 +68,7 @@ import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { formatTokenCount } from '../chat-token-usage-indicator-util';
-import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
+import { MarkdownRendering, useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
 import { ProgressMessage } from '../chat-progress-message';
 import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-tree-input-widget';
 import { PromptVariantBadge } from './prompt-variant-badge';
@@ -108,6 +115,8 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     static readonly ID = 'chat-tree-widget';
     static readonly CONTEXT_MENU = ['chat-tree-context-menu'];
+    /** How long typing in the find bar must pause before a match in a collapsed message expands it. */
+    protected static readonly FIND_EXPAND_DELAY_MS = 300;
 
     @inject(ContributionProvider) @named(ChatResponsePartRenderer)
     protected readonly chatResponsePartRenderers: ContributionProvider<ChatResponsePartRenderer<ChatResponseContent>>;
@@ -150,10 +159,25 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     protected chatResponseFocusKey: ContextKey<boolean>;
 
+    @inject(ChatFindWidget)
+    protected readonly findWidget: ChatFindWidget;
+
+    @inject(ChatFindHighlighter)
+    protected readonly findHighlighter: ChatFindHighlighter;
+
     protected readonly onDidSubmitEditEmitter = new Emitter<ChatRequest>();
     onDidSubmitEdit = this.onDidSubmitEditEmitter.event;
 
     protected readonly chatInputs: Map<string, AIChatTreeInputWidget> = new Map();
+
+    /** Ids of the request and response nodes whose message the user has collapsed. */
+    protected readonly collapsedNodeIds = new Set<string>();
+
+    /** The query of the find bar with its options, to tell a reveal after typing from a step to another match. */
+    protected findQuery: string | undefined;
+    protected findQueryChanged = false;
+    /** The pending reveal of a match in a collapsed message, see {@link handleFindRevealRequest}. */
+    protected findRevealTimeout: ReturnType<typeof setTimeout> | undefined;
 
     protected _shouldScrollToEnd = true;
 
@@ -208,8 +232,15 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.chatResponseFocusKey = this.contextKeyService.createKey<boolean>('chatResponseFocus', false);
         this.node.setAttribute('tabindex', '0');
         this.node.setAttribute('aria-label', nls.localize('theia/ai/chat-ui/chatResponses', 'Chat responses'));
-        this.addEventListener(this.node, 'focusin', () => this.chatResponseFocusKey.set(true));
-        this.addEventListener(this.node, 'focusout', () => this.chatResponseFocusKey.set(false));
+
+        this.findWidget.fallbackFocusTarget = this.node;
+        this.toDispose.pushAll([
+            this.findWidget,
+            this.findHighlighter,
+            this.findWidget.onDidChangeState(state => this.handleFindStateChange(state)),
+            this.findWidget.onDidRequestReveal(match => this.handleFindRevealRequest(match)),
+            Disposable.create(() => clearTimeout(this.findRevealTimeout))
+        ]);
 
         this.toDispose.pushAll([
             this.toDisposeOnChatModelChange,
@@ -245,7 +276,123 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     public setEnabled(enabled: boolean): void {
         this.isEnabled = enabled;
+        if (!enabled) {
+            this.findWidget.dismiss();
+        }
         this.update();
+    }
+
+    /** Opens the find bar over the response tree (or refocuses it when already open). */
+    showFind(): void {
+        this.findWidget.open();
+    }
+
+    hideFind(): void {
+        this.findWidget.dismiss();
+    }
+
+    get isFindVisible(): boolean {
+        return this.findWidget.isOpen;
+    }
+
+    /** Whether the tracked session has content to search; false while the welcome/session-list screen shows. */
+    get canFind(): boolean {
+        return this.findWidget.canFind;
+    }
+
+    protected handleFindStateChange(state: ChatFindState): void {
+        // Every reveal follows a state change: with another query, it comes from typing or toggling an option.
+        const query = state.regexp?.toString();
+        this.findQueryChanged = query !== this.findQuery;
+        this.findQuery = query;
+        if (!state.current) {
+            // The bar was closed or the query has no match: a pending reveal no longer applies.
+            clearTimeout(this.findRevealTimeout);
+        }
+        this.findHighlighter.update(this.node, state.regexp, state.matches, state.current);
+    }
+
+    /**
+     * Reveals a match requested by the find bar. While a query is typed or an option toggled, a match in a collapsed
+     * message is only revealed once typing pauses, as expanding the message of each intermediate match would make the
+     * view jump. Stepping to the next or previous match reveals it right away.
+     */
+    protected handleFindRevealRequest(match: ChatFindMatch): void {
+        clearTimeout(this.findRevealTimeout);
+        const row = this.rows.get(match.nodeId);
+        const collapsed = row !== undefined && (isRequestNode(row.node) || isResponseNode(row.node)) && this.isCollapsed(row.node);
+        if (!collapsed || !this.findQueryChanged) {
+            this.revealFindMatch(match);
+            return;
+        }
+        this.findRevealTimeout = setTimeout(() => {
+            const current = this.findWidget.currentMatch;
+            // Skip the reveal when it no longer applies: the bar was closed, or the query has no match there anymore.
+            if (this.isFindVisible && current && ChatFindMatch.key(current) === ChatFindMatch.key(match)) {
+                this.revealFindMatch(match);
+            }
+        }, ChatViewTreeWidget.FIND_EXPAND_DELAY_MS);
+    }
+
+    /**
+     * Reveals a match: mounts the owning row via virtuoso when it is not rendered yet, then re-applies the highlights
+     * and scrolls the matched text itself into view (rows can be taller than the viewport).
+     */
+    protected revealFindMatch(match: ChatFindMatch): void {
+        const row = this.rows.get(match.nodeId);
+        if (row === undefined) {
+            return;
+        }
+        // A collapsed message does not render its content: expand it and wait until the match is rendered,
+        // at most about half a second at 60 Hz.
+        const expanded = (isRequestNode(row.node) || isResponseNode(row.node)) && this.isCollapsed(row.node);
+        if (expanded) {
+            this.collapsedNodeIds.delete(match.nodeId);
+            this.update();
+        }
+        let framesLeft = expanded ? 30 : 0;
+        const settle = (): void => {
+            this.findHighlighter.refresh();
+            if (!this.findHighlighter.hasCurrentTarget && framesLeft-- > 0) {
+                requestAnimationFrame(settle);
+                return;
+            }
+            this.findHighlighter.scrollCurrentIntoView(this.node);
+        };
+        if (this.findHighlighter.findRow(this.node, match.nodeId)) {
+            requestAnimationFrame(settle);
+            return;
+        }
+        this.view?.list?.scrollIntoView({
+            index: row.index,
+            align: 'center',
+            done: settle
+        });
+    }
+
+    protected override onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        // Registered per attach, not in `init()`: `addEventListener` disposes on detach, so listeners registered
+        // once would be lost the first time the view is moved (e.g. to the main area), leaving `chatResponseFocus`
+        // stuck and every keybinding scoped to it dead until the page is reloaded.
+        this.addEventListener(this.node, 'focusin', () => this.chatResponseFocusKey.set(true));
+        this.addEventListener(this.node, 'focusout', () => this.chatResponseFocusKey.set(false));
+        // The tree node is a React root, so the find bar is attached as a sibling right before it,
+        // the same way the core TreeWidget hosts its SearchBox.
+        if (this.findWidget.isAttached) {
+            Widget.detach(this.findWidget);
+        }
+        if (this.node.parentElement) {
+            UnsafeWidgetUtilities.attach(this.findWidget, this.node.parentElement, this.node);
+        }
+    }
+
+    protected override onBeforeDetach(msg: Message): void {
+        this.chatResponseFocusKey.set(false);
+        if (this.findWidget.isAttached) {
+            Widget.detach(this.findWidget);
+        }
+        super.onBeforeDetach(msg);
     }
 
     /** Toggles auto-scroll and the scroll-to-bottom button based on whether the viewport includes the bottom of the list. */
@@ -390,6 +537,7 @@ export class ChatViewTreeWidget extends TreeWidget {
     public trackChatModel(chatModel: ChatModel): void {
         this.toDisposeOnChatModelChange.dispose();
         this.recreateModelTree(chatModel);
+        this.findWidget.setChatModel(chatModel);
 
         chatModel.getRequests().forEach(request => {
             if (!request.response.isComplete) {
@@ -439,6 +587,12 @@ export class ChatViewTreeWidget extends TreeWidget {
         }
     }
 
+    protected override doUpdateRows(): void {
+        super.doUpdateRows();
+        // Follow new requests and responses to the end of the chat, unless auto-scroll is locked.
+        this.scheduleUpdateScrollToRow();
+    }
+
     protected override getScrollToRow(): number | undefined {
         // Only scroll to end if auto-scroll is enabled (not locked)
         if (this.shouldScrollToEnd) {
@@ -478,12 +632,13 @@ export class ChatViewTreeWidget extends TreeWidget {
         return <React.Fragment key={node.id}>
             <div
                 className='theia-ChatNode'
+                data-node-id={node.id}
                 role='article'
                 aria-label={ariaLabel}
                 onContextMenu={e => this.handleContextMenu(node, e)}
             >
                 {this.renderAgent(node)}
-                {this.renderDetail(node)}
+                {!this.isCollapsed(node) && this.renderDetail(node)}
             </div>
         </React.Fragment>;
     }
@@ -506,6 +661,7 @@ export class ChatViewTreeWidget extends TreeWidget {
 
         return <React.Fragment>
             <div className='theia-ChatNodeHeader'>
+                {this.renderCollapseToggle(node)}
                 <div className={`theia-AgentAvatar ${this.getAgentIconClassName(node)}`}></div>
                 <h3 ref={agentLabel}
                     className='theia-AgentLabel'
@@ -586,6 +742,66 @@ export class ChatViewTreeWidget extends TreeWidget {
                     </div>}
             </div>
         </React.Fragment>;
+    }
+
+    /** The toggle stays in place while the message cannot be collapsed, so that the header does not shift. */
+    protected renderCollapseToggle(node: RequestNode | ResponseNode): React.ReactNode {
+        const enabled = this.canCollapse(node);
+        const collapsed = this.isCollapsed(node);
+        const label = collapsed
+            ? nls.localize('theia/ai/chat-ui/expandMessage', 'Expand Message')
+            : nls.localize('theia/ai/chat-ui/collapseMessage', 'Collapse Message');
+        return <span
+            className={`${codicon(collapsed ? 'chevron-right' : 'chevron-down', true)}${enabled ? '' : ' ' + DISABLED_CLASS}`}
+            title={label}
+            aria-label={label}
+            aria-expanded={!collapsed}
+            aria-disabled={!enabled}
+            tabIndex={enabled ? 0 : -1}
+            onClick={e => {
+                e.stopPropagation();
+                this.toggleCollapsed(node);
+            }}
+            onKeyDown={e => {
+                if (isActivationKey(e)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.toggleCollapsed(node);
+                }
+            }}
+            role='button'
+        ></span>;
+    }
+
+    /**
+     * A request being edited and a response in progress always show their content: hiding it would cancel the edit, or
+     * hide pending interactions such as tool confirmations and questions, including those of delegated agents.
+     */
+    protected canCollapse(node: RequestNode | ResponseNode): boolean {
+        return isRequestNode(node) ? !EditableChatRequestModel.isEditing(node.request) : node.response.isComplete;
+    }
+
+    protected isCollapsed(node: RequestNode | ResponseNode): boolean {
+        return this.collapsedNodeIds.has(node.id) && this.canCollapse(node);
+    }
+
+    protected toggleCollapsed(node: RequestNode | ResponseNode): void {
+        if (!this.canCollapse(node)) {
+            return;
+        }
+        if (this.collapsedNodeIds.delete(node.id)) {
+            this.update();
+            return;
+        }
+        this.collapsedNodeIds.add(node.id);
+        // When the message starts above the viewport, its header is pinned to the top. Collapsing it would leave
+        // it out of view, so scroll to its start instead.
+        const row = this.rows.get(node.id);
+        const element = this.findHighlighter.findRow(this.node, node.id);
+        if (row && element && element.getBoundingClientRect().top < this.node.getBoundingClientRect().top) {
+            this.view?.list?.scrollToIndex({ index: row.index, align: 'start' });
+        }
+        this.update();
     }
 
     protected getAgentLabel(node: RequestNode | ResponseNode): string {
@@ -880,9 +1096,7 @@ export const ChatRequestRender = (
                         );
                     } else {
                         const ref = useMarkdownRendering(
-                            part.text
-                                .replace(/^[\r\n]+|[\r\n]+$/g, '') // remove excessive new lines
-                                .replace(/(^ )/g, '&nbsp;'), // enforce keeping space before
+                            MarkdownRendering.prepareRequestText(part.text),
                             openerService,
                             true,
                             undefined,

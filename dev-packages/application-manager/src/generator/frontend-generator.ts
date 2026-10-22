@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/* eslint-disable @typescript-eslint/indent */
+/* eslint-disable @stylistic/indent */
 
 import { EOL } from 'os';
 import { AbstractGenerator, GeneratorOptions } from './abstract-generator';
@@ -70,6 +70,13 @@ export class FrontendGenerator extends AbstractGenerator {
   <title>${this.pck.props.frontend.config.applicationName}</title>`;
     }
 
+    /**
+     * Everything the emitted code requires ahead of the `await preload(container)` that ends the
+     * preload phase runs while the localization data is still missing. A module of '@theia/core'
+     * required there has to be listed in 'dev-packages/private-eslint-plugin/util/preload-phase-modules.json',
+     * which is what the '@theia/preload-localization-check' ESLint rule checks such modules against.
+     * The test of that list runs this generator and fails when the two drift apart.
+     */
     protected compileIndexJs(frontendModules: Map<string, string>, frontendPreloadModules: Map<string, string>): string {
         return `\
 // @ts-check

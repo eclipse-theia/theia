@@ -27,6 +27,7 @@ import { TerminalWatcher } from '../common/terminal-watcher';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 import { bindTerminalPreferences } from '../common/terminal-preferences';
 import { ShellIntegrationInjector } from './shell-integration-injector';
+import { BackendApplicationContribution } from '@theia/core/lib/node';
 
 export function bindTerminalServer(bind: interfaces.Bind, { path, identifier, constructor }: {
     path: string,
@@ -59,6 +60,7 @@ export default new ContainerModule(bind => {
 
     bind(ShellProcess).toSelf().inTransientScope();
     bind(ShellIntegrationInjector).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toService(ShellIntegrationInjector);
     bind(ShellProcessFactory).toFactory(ctx =>
         (options: ShellProcessOptions) => {
             const child = new Container({ defaultScope: 'Singleton' });

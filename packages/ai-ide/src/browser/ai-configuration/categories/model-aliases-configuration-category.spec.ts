@@ -32,8 +32,8 @@ function alias(id: string, description = ''): LanguageModelAlias {
     return { id, description, defaultModelIds: [] } as unknown as LanguageModelAlias;
 }
 
-function readyModel(id: string): LanguageModel {
-    return { id, status: { status: 'ready' } } as unknown as LanguageModel;
+function readyModel(id: string, released?: number): LanguageModel {
+    return { id, released, status: { status: 'ready' } } as unknown as LanguageModel;
 }
 
 function unreadyModel(id: string): LanguageModel {
@@ -75,6 +75,44 @@ describe('ModelAliasesConfigurationCategory', () => {
         expect(children[0].status?.label).to.equal('m1');
         expect(children[1].status?.kind).to.equal('warn');
         expect(children[2].status?.kind).to.equal('error');
+    });
+
+    it('divides the models per provider, newest first, after the default-list entry', () => {
+        const category = createCategory([], new Map());
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (category as any).languageModels = [
+            readyModel('openai/gpt-5.5', Date.parse('2025-08-01')),
+            readyModel('anthropic/claude-haiku-4-5', Date.parse('2025-10-01')),
+            readyModel('openai/gpt-5.6-sol', Date.parse('2026-02-01')),
+            readyModel('anthropic/claude-opus-5', Date.parse('2026-04-01'))
+        ];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const options = (category as any).getModelOptions() as Array<{ value?: string; label?: string; separator?: boolean }>;
+        expect(options[0].value).to.equal('');
+        // A rule between the providers rather than a heading: the select draws separators as plain lines.
+        expect(options.slice(1).map(option => option.separator ? '---' : option.value)).to.deep.equal([
+            '---',
+            'anthropic/claude-opus-5',
+            'anthropic/claude-haiku-4-5',
+            '---',
+            'openai/gpt-5.6-sol',
+            'openai/gpt-5.5'
+        ]);
+    });
+
+    it('keeps the provider rules when mapping the options onto the select', () => {
+        const category = createCategory([], new Map());
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mapped = (category as any).toEnumOptions([
+            { value: 'a', label: 'A', description: 'first' },
+            { separator: true },
+            { value: 'b' }
+        ]) as Array<{ value: string; label: string; title?: string; separator?: boolean }>;
+        // A rule that loses its `separator` becomes a selectable entry with no label that clears the alias.
+        expect(mapped.map(option => option.separator ? '---' : option.value)).to.deep.equal(['a', '---', 'b']);
+        expect(mapped[0].title).to.equal('first');
+        // Without a label of its own, an option falls back to its value rather than rendering empty.
+        expect(mapped[2].label).to.equal('b');
     });
 
     it('indexes one search item per alias, navigating to the item', () => {

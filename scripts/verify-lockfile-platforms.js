@@ -17,19 +17,20 @@
 
 // Verify two properties of the committed package-lock.json:
 //
-// 1. It still carries the `libc` fields on Linux optional-dep entries. npm
-//    strips these fields when the lockfile is regenerated on a host that does
-//    not consume them (e.g. glibc-only), and their absence breaks `npm ci` on
-//    Alpine and other musl-based images.
-//    Missing entries (whole packages dropped from the lockfile) are handled by
-//    scripts/npm-install-with-platforms.js on a normal regeneration, so this
-//    check focuses on the libc field specifically.
-//    If this fails, the fix is scripts/npm-install-with-platforms.js.
+// 1. It still carries the `libc` fields on Linux optional-dep entries. Their
+//    absence breaks `npm ci` on Alpine and other musl-based images. npm 10,
+//    which shipped with the no longer supported Node 22, stripped them when the
+//    lockfile was regenerated on a host that does not consume them (e.g.
+//    glibc-only); npm 11.19, bundled with both supported Node versions, keeps
+//    them. This guards against a globally installed older npm.
+//    If this fails, regenerate the lockfile with the npm bundled with a
+//    supported Node version.
 //
 // 2. Every dependency with an install script is listed in the root
-//    `allowScripts` allowlist. npm 12 does not run dependency lifecycle
-//    scripts unless they are allowlisted, so a new dependency with an install
-//    script silently stops building its native bindings.
+//    `allowScripts` allowlist. npm 11 only prints a notice for an unlisted
+//    dependency and still runs its script, but `--strict-allow-scripts` makes
+//    it fatal and npm 12 is expected to default to that, so an unlisted
+//    dependency would stop building its native bindings.
 //    If this fails, the fix is to add the package to `allowScripts` in
 //    package.json with `true` (script is needed) or `false` (script is
 //    cosmetic or unused).
@@ -103,7 +104,7 @@ if (libcErrors.length > 0) {
         console.error(`  - ${e}`);
     }
     console.error('');
-    console.error('Run: node scripts/npm-install-with-platforms.js');
+    console.error('Regenerate it with the npm bundled with a supported Node version.');
 }
 
 if (unlisted.length > 0) {

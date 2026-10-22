@@ -18,6 +18,7 @@ import {
     Agent,
     AISettingsService,
     FrontendLanguageModelRegistry,
+    groupModelsByProvider,
     LanguageModel,
     LanguageModelRequirement,
     PREFERENCE_NAME_REASONING,
@@ -26,6 +27,7 @@ import {
     ReasoningSupport
 } from '@theia/ai-core/lib/common';
 import { mergeReasoningSettings } from '@theia/ai-core/lib/browser/frontend-language-model-service';
+import { reasoningLevelDescription, reasoningLevelLabel } from '@theia/ai-core/lib/browser/reasoning-labels';
 import { LanguageModelAlias } from '@theia/ai-core/lib/common/language-model-alias';
 import { Mutable } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
@@ -67,18 +69,6 @@ const ModelSelect: React.FC<{
     />;
 };
 
-/** Same wording as the chat input's selector, so a level reads identically wherever it is set. */
-const reasoningLevelLabel = (level: ReasoningLevel): string => {
-    switch (level) {
-        case 'off': return nls.localizeByDefault('Off');
-        case 'minimal': return nls.localizeByDefault('Minimal');
-        case 'low': return nls.localizeByDefault('Low');
-        case 'medium': return nls.localizeByDefault('Medium');
-        case 'high': return nls.localizeByDefault('High');
-        case 'auto': return nls.localizeByDefault('Auto');
-    }
-};
-
 /**
  * The agent's persisted reasoning level, shown right below its models because that is the model
  * capability it depends on. The chat input's selector writes this same per-agent setting, so without this
@@ -101,7 +91,9 @@ export const ReasoningRow: React.FC<{
     settingsRowService: AiSettingsRowService;
 }> = ({ support, savedLevel, inheritedLevel, onSelect, onReset, settingsRowService }) => {
     const options = React.useMemo<SelectOption[]>(
-        () => support.supportedLevels.map(level => ({ value: level, label: reasoningLevelLabel(level) })),
+        () => support.supportedLevels.map(level => ({
+            value: level, label: reasoningLevelLabel(level), description: reasoningLevelDescription(level)
+        })),
         [support]
     );
     const handleChange = React.useCallback((option: SelectOption): void => {
@@ -109,7 +101,7 @@ export const ReasoningRow: React.FC<{
             onSelect(option.value as ReasoningLevel);
         }
     }, [onSelect]);
-    const effectiveLevel = savedLevel ?? inheritedLevel;
+    const effectiveLevel = ReasoningSupport.clampLevel(support, savedLevel ?? inheritedLevel);
     return <AiConfigurationSettingRow
         title={nls.localizeByDefault('Reasoning')}
         description={savedLevel
@@ -117,7 +109,7 @@ export const ReasoningRow: React.FC<{
                 'Reasoning effort this agent asks the model for. Set here or by the chat input\'s selector, which writes the same setting.')
             : nls.localize('theia/ai/core/languageModelRenderer/reasoningInherited',
                 'Reasoning effort this agent asks the model for. Not set, so "{0}" applies, from the reasoning defaults preference or the model.',
-                reasoningLevelLabel(inheritedLevel))}
+                reasoningLevelLabel(effectiveLevel))}
         modified={savedLevel !== undefined}
         below={<SelectComponent
             className={`ai-config-select theia-ReasoningLevelSelector reasoning-level-${effectiveLevel}`}
@@ -248,13 +240,20 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                 label: nls.localize('theia/ai/core/languageModelRenderer/alias', '[alias] {0}', alias.id)
             });
         });
-        languageModels?.slice().sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id)).forEach(model => {
+        const modelOption = (model: LanguageModel): SelectOption => {
             const isNotReady = model.status.status !== 'ready';
-            options.push({
+            return {
                 value: model.id,
                 label: `${model.name ?? model.id} ${isNotReady ? '✗' : '✓'}`,
                 description: isNotReady && model.status.message ? model.status.message : undefined
-            });
+            };
+        };
+        // Divided per provider, newest first inside each group. Every model is offered here, not just
+        // the ones the chat picker carries: this is the page where a specific older or release-pinned
+        // model is deliberately assigned to an agent.
+        groupModelsByProvider(languageModels ?? []).forEach(({ models }) => {
+            options.push({ separator: true });
+            options.push(...models.map(modelOption));
         });
         return options;
     }, [aliases, languageModels]);

@@ -31,6 +31,7 @@ import {
 import { PluginMetadata, PluginModel, PluginPackage } from '../../common/plugin-protocol';
 import { createAPIFactory } from '../../plugin/plugin-context';
 import { EnvExtImpl } from '../../plugin/env';
+import { TelemetryExtImpl } from '../../plugin/telemetry-ext';
 import { PreferenceRegistryExtImpl } from '../../plugin/preference-registry';
 import { ExtPluginApi, ExtPluginApiBackendInitializationFn } from '../../common/plugin-ext-api-contribution';
 import { DebugExtImpl } from '../../plugin/debug/debug-ext';
@@ -64,7 +65,8 @@ export interface ExtInterfaces {
     webviewExt: WebviewsExtImpl,
     terminalServiceExt: TerminalServiceExtImpl,
     secretsExt: SecretsExtImpl,
-    localizationExt: LocalizationExtImpl
+    localizationExt: LocalizationExtImpl,
+    telemetryExt: TelemetryExtImpl
 }
 
 /**
@@ -352,6 +354,9 @@ export class PluginHostRPC extends AbstractPluginHostRPC<PluginManagerExtImpl, P
     @inject(SecretsExtImpl)
     protected readonly secretsExt: SecretsExtImpl;
 
+    @inject(TelemetryExtImpl)
+    protected readonly telemetryExt: TelemetryExtImpl;
+
     constructor() {
         super('PLUGIN_HOST', '/scanners/backend-init-theia.js',
             {
@@ -380,18 +385,19 @@ export class PluginHostRPC extends AbstractPluginHostRPC<PluginManagerExtImpl, P
             webviewExt: this.webviewExt,
             terminalServiceExt: this.terminalServiceExt,
             secretsExt: this.secretsExt,
-            localizationExt: this.localizationExt
+            localizationExt: this.localizationExt,
+            telemetryExt: this.telemetryExt
         };
     }
 
     protected createAPIFactory(extInterfaces: ExtInterfaces): PluginAPIFactory {
         const {
             envExt, debugExt, preferenceRegistryExt, editorsAndDocumentsExt, workspaceExt,
-            messageRegistryExt, clipboardExt, webviewExt, localizationExt
+            messageRegistryExt, clipboardExt, webviewExt, localizationExt, telemetryExt
         } = extInterfaces;
         return createAPIFactory(this.rpc, this.pluginManager, envExt, debugExt, preferenceRegistryExt,
             editorsAndDocumentsExt, workspaceExt, messageRegistryExt, clipboardExt, webviewExt,
-            localizationExt);
+            localizationExt, telemetryExt);
     }
 
     protected initExtApi(extApi: ExtPluginApi): void {

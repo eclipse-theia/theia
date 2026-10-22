@@ -19,6 +19,7 @@ let disableJSDOM = enableJSDOM();
 
 import { CommandService, PreferenceInspection, PreferenceScope } from '@theia/core/lib/common';
 import { PreferenceDataProperty, PreferenceSchemaService } from '@theia/core/lib/common/preferences/preference-schema';
+import { DEDICATED_EDITOR_TYPE_DETAIL } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { PreferencesCommands } from '@theia/preferences/lib/browser/util/preference-types';
 import { AiConfigurationService } from '@theia/ai-core/lib/common/ai-configuration-service';
 import { expect } from 'chai';
@@ -189,6 +190,24 @@ describe('AiSettingsRowService', () => {
 
         it('returns an empty list when the property declares no enum', () => {
             expect(createServiceWithSchema({ type: 'string' }).enumOptions('pref')).to.deep.equal([]);
+        });
+    });
+
+    describe('isDisplayable', () => {
+
+        it('rejects the value-less placeholders that only redirect to this view', () => {
+            // eslint-disable-next-line no-null/no-null
+            expect(createServiceWithSchema({ type: 'null' } as PreferenceDataProperty).isDisplayable('ai-features.openConfiguration')).to.equal(false);
+        });
+
+        it('rejects a preference the view edits through a control of its own', () => {
+            const property = { type: 'array', typeDetails: { [DEDICATED_EDITOR_TYPE_DETAIL]: true } } as unknown as PreferenceDataProperty;
+            // The provider pages mark the offered models; a raw list of ids next to them would be a second, worse editor.
+            expect(createServiceWithSchema(property).isDisplayable('ai-features.modelSettings.favoriteModels')).to.equal(false);
+        });
+
+        it('accepts an ordinary preference', () => {
+            expect(createServiceWithSchema({ type: 'string' } as PreferenceDataProperty).isDisplayable('ai-features.anthropic.AnthropicApiKey')).to.equal(true);
         });
     });
 

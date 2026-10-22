@@ -92,12 +92,17 @@ export class ExpressionContainer implements CompositeConsoleItem {
 
     protected elements: Promise<ExpressionContainer[]> | undefined;
     async getElements(): Promise<IterableIterator<ExpressionContainer>> {
-        if (!this.hasElements || !this.session) {
+        if (!this.hasElements) {
             return [][Symbol.iterator]();
         }
         if (!this.elements) {
+            if (!this.session) {
+                // Nothing was resolved while the session ran, and there is no session left to resolve it with.
+                return [][Symbol.iterator]();
+            }
             this.elements = this.doResolve();
         }
+        // What was resolved while the session ran stays available after it has ended, as it does in VS Code.
         return (await this.elements)[Symbol.iterator]();
     }
     protected async doResolve(): Promise<ExpressionContainer[]> {
@@ -166,6 +171,19 @@ export class ExpressionContainer implements CompositeConsoleItem {
         }
     }
 
+    protected async evaluateForClipboard(expression: string, context: DebugProtocol.EvaluateArguments['context'], fallback: string): Promise<string> {
+        const { session } = this;
+        if (!session) {
+            return fallback;
+        }
+        try {
+            const evaluationContext = session.capabilities.supportsClipboardContext ? 'clipboard' : context;
+            return (await session.evaluate(expression, evaluationContext)).result;
+        } catch {
+            return fallback;
+        }
+    }
+
 }
 export namespace ExpressionContainer {
     export interface Options {
@@ -223,7 +241,7 @@ export class DebugVariable extends ExpressionContainer {
         return <div className={this.variableClassName}>
             <span title={type || name} className='name' ref={this.setNameRef}>{name}{(value || lazy) && ': '}</span>
             {lazy && <span title={nls.localizeByDefault('Click to expand')} className={codicon('eye') + ' lazy-button'} onClick={this.handleLazyButtonClick} />}
-            <span title={value} className='value' ref={this.setValueRef}>{value}</span>
+            <span title={value} className='value'>{value}</span>
         </div>;
     }
 
@@ -271,17 +289,13 @@ export class DebugVariable extends ExpressionContainer {
     }
 
     get supportCopyValue(): boolean {
-        return !!this.valueRef && document.queryCommandSupported('copy');
+        return !!this.value;
     }
-    copyValue(): void {
-        const selection = document.getSelection();
-        if (this.valueRef && selection) {
-            selection.selectAllChildren(this.valueRef);
-            document.execCommand('copy');
-        }
+    async getValueToCopy(): Promise<string> {
+        return this.evaluateName
+            ? await this.evaluateForClipboard(this.evaluateName, 'variables', this.value)
+            : this.value;
     }
-    protected valueRef: HTMLSpanElement | undefined;
-    protected setValueRef = (valueRef: HTMLSpanElement | null): void => { this.valueRef = valueRef || undefined; };
 
     get supportCopyAsExpression(): boolean {
         return !!this.nameRef && document.queryCommandSupported('copy');

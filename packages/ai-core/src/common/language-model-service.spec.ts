@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { LanguageModelServiceImpl } from './language-model-service';
-import { LanguageModel, LanguageModelMessage, UserRequest } from './language-model';
+import { LanguageModel, LanguageModelMessage, ReasoningLevel, ReasoningSupport, UserRequest } from './language-model';
 
 describe('LanguageModelServiceImpl message filtering', () => {
 
@@ -31,6 +31,28 @@ describe('LanguageModelServiceImpl message filtering', () => {
             }
         } as unknown as LanguageModel;
         return { model, captured: () => capturedMessages };
+    }
+
+    for (const [support, requested, expected] of [
+        [{ supportedLevels: ['off', 'minimal', 'low', 'auto'] }, 'none', 'off'],
+        [{ supportedLevels: ['off', 'low', 'medium', 'high', 'auto'] }, 'max', 'high'],
+        [{ supportedLevels: ['none', 'low'] }, 'minimal', 'low'],
+        [undefined, 'max', 'max']
+    ] satisfies [ReasoningSupport | undefined, ReasoningLevel, ReasoningLevel][]) {
+        it(`clamps ${requested} to ${expected} in the common request path with support ${JSON.stringify(support)}`, async () => {
+            const service = new LanguageModelServiceImpl();
+            const reasoning = { level: requested };
+            const model: LanguageModel = {
+                id: 'test', name: 'test', vendor: 'test', version: '1', status: { status: 'ready' }, reasoningSupport: support,
+                async request(request): Promise<{ text: string }> {
+                    expect(request.reasoning?.level).to.equal(expected);
+                    return { text: '' };
+                }
+            };
+            await service.sendRequest(model, { messages: [], sessionId: 'session', requestId: 'req', reasoning });
+            expect(reasoning.level).to.equal(requested);
+            expect(service.sessions[0].exchanges[0].requests[0].request.reasoning?.level).to.equal(expected);
+        });
     }
 
     function baseMessages(): LanguageModelMessage[] {

@@ -16,6 +16,8 @@
 
 import { createTreeContainer, TreeProps } from '@theia/core/lib/browser';
 import { interfaces } from '@theia/core/shared/inversify';
+import { ChatFindHighlighter } from '../chat-find/chat-find-highlighter';
+import { ChatFindWidget } from '../chat-find/chat-find-widget';
 import { ChatViewTreeWidget } from './chat-view-tree-widget';
 
 const CHAT_VIEW_TREE_PROPS = {
@@ -28,5 +30,7 @@ export function createChatViewTreeWidget(parent: interfaces.Container): ChatView
         props: CHAT_VIEW_TREE_PROPS,
         widget: ChatViewTreeWidget,
     });
+    child.bind(ChatFindWidget).toSelf().inSingletonScope();
+    child.bind(ChatFindHighlighter).toSelf().inSingletonScope();
     return child.get(ChatViewTreeWidget);
 }

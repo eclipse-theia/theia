@@ -77,7 +77,7 @@ describe('UserInteractionTool', () => {
         container.bind(ILogger).to(MockLogger).inSingletonScope();
 
         mockWorkspaceScope = {
-            resolveRelativePath: sinon.stub().callsFake((path: string) => workspaceRoot.resolve(path)),
+            resolveAccessiblePath: sinon.stub().callsFake(async (path: string) => workspaceRoot.resolve(path)),
             getContainingRoot: sinon.stub().returns(workspaceRoot)
         };
 
@@ -192,6 +192,145 @@ describe('UserInteractionTool', () => {
         const handler = tool.getTool().handler;
         const result = await handler(singleStepArgs(), undefined);
         expect(JSON.parse(result as string).error).to.equal('No tool call ID available');
+    });
+
+    describe('chat context surfacing', () => {
+        interface MockChatCtx {
+            ctx: object;
+            response: {
+                response: { content: object[] };
+                fireInteractionNeeded: sinon.SinonSpy;
+                waitForInput: sinon.SinonSpy;
+                stopWaitingForInput: sinon.SinonSpy;
+            };
+            contentPart: {
+                kind: string;
+                id: string;
+                requestUserInput: sinon.SinonSpy;
+                userInputHandled: sinon.SinonSpy;
+            };
+        }
+
+        // Mimics the shape of ChatToolContext with a mock response model, so we can
+        // assert the tool announces its pending interaction (issue #17952: interactions
+        // inside delegated sessions were never surfaced because the tool never fired
+        // interactionNeeded).
+        const createChatCtx = (toolCallId: string, withContentPart = true): MockChatCtx => {
+            const contentPart = {
+                kind: 'toolCall',
+                id: toolCallId,
+                requestUserInput: sinon.spy(),
+                userInputHandled: sinon.spy()
+            };
+            const response = {
+                response: { content: withContentPart ? [contentPart] : [] },
+                fireInteractionNeeded: sinon.spy(),
+                waitForInput: sinon.spy(),
+                stopWaitingForInput: sinon.spy()
+            };
+            return { ctx: { toolCallId, request: {}, response }, response, contentPart };
+        };
+
+        it('should fire interactionNeeded with the tool call content part while waiting', async () => {
+            const handler = tool.getTool().handler;
+            const { ctx, response, contentPart } = createChatCtx('call-fire');
+
+            const handlerPromise = handler(singleStepArgs(), ctx);
+
+            expect(response.fireInteractionNeeded.calledOnce).to.be.true;
+            expect(response.fireInteractionNeeded.firstCall.args[0]).to.equal(contentPart);
+            expect(response.waitForInput.calledOnce).to.be.true;
+
+            tool.completeInteraction('call-fire', { completed: true, steps: [{ title: 'Choose', value: 'a' }] });
+            await handlerPromise;
+        });
+
+        it('should mark the content part as awaiting user input while blocked and clear it afterwards', async () => {
+            const handler = tool.getTool().handler;
+            const { ctx, contentPart } = createChatCtx('call-mark');
+
+            const handlerPromise = handler(singleStepArgs(), ctx);
+
+            expect(contentPart.requestUserInput.calledOnce).to.be.true;
+            expect(contentPart.userInputHandled.called).to.be.false;
+
+            tool.completeInteraction('call-mark', { completed: true, steps: [{ title: 'Choose', value: 'a' }] });
+            await handlerPromise;
+
+            expect(contentPart.userInputHandled.calledOnce).to.be.true;
+        });
+
+        it('should not fire interactionNeeded when no matching tool call content exists', async () => {
+            const handler = tool.getTool().handler;
+            const { ctx, response } = createChatCtx('call-missing', false);
+
+            const handlerPromise = handler(singleStepArgs(), ctx);
+
+            expect(response.fireInteractionNeeded.called).to.be.false;
+            // Waiting state must still be surfaced even without a content part.
+            expect(response.waitForInput.calledOnce).to.be.true;
+
+            tool.completeInteraction('call-missing', { completed: true, steps: [{ title: 'Choose', value: 'a' }] });
+            await handlerPromise;
+        });
+
+        it('should not fire interactionNeeded for informational single-step interactions', async () => {
+            const handler = tool.getTool().handler;
+            const { ctx, response } = createChatCtx('call-info');
+
+            const result = parseResult(await handler(
+                JSON.stringify({ interactions: [{ title: 'FYI', message: 'Just info' }] }), ctx
+            ));
+
+            expect(result.completed).to.be.true;
+            expect(response.fireInteractionNeeded.called).to.be.false;
+            expect(response.waitForInput.called).to.be.false;
+        });
+    });
+
+    describe('current step across renderer mounts', () => {
+        // The wizard can be mounted twice for one interaction (collapsed delegation summary
+        // and expanded details). The tool keeps the current step so a new mount resumes
+        // where the previous one left off instead of restarting at step 0.
+        const multiStepArgs = (): string => JSON.stringify({
+            interactions: [
+                { title: 'One', message: 'first' },
+                { title: 'Two', message: 'second', options: [{ text: 'OK', value: 'ok' }] },
+                { title: 'Three', message: 'third' }
+            ]
+        });
+        const completedResult = (): UserInteractionResult => ({
+            completed: true,
+            steps: [{ title: 'One' }, { title: 'Two', value: 'ok' }, { title: 'Three' }]
+        });
+
+        it('should return undefined when no interaction is pending', () => {
+            expect(tool.getCurrentStep('unknown')).to.be.undefined;
+        });
+
+        it('should remember the recorded step while the interaction is pending', async () => {
+            const handler = tool.getTool().handler;
+            const handlerPromise = handler(multiStepArgs(), { toolCallId: 'call-step' });
+
+            tool.recordCurrentStep('call-step', 2);
+            expect(tool.getCurrentStep('call-step')).to.equal(2);
+
+            tool.completeInteraction('call-step', completedResult());
+            await handlerPromise;
+        });
+
+        it('should forget the step once the interaction resolved', async () => {
+            const handler = tool.getTool().handler;
+            const handlerPromise = handler(multiStepArgs(), { toolCallId: 'call-step-done' });
+            tool.recordCurrentStep('call-step-done', 1);
+
+            tool.completeInteraction('call-step-done', completedResult());
+            await handlerPromise;
+
+            expect(tool.getCurrentStep('call-step-done')).to.be.undefined;
+            tool.recordCurrentStep('call-step-done', 2);
+            expect(tool.getCurrentStep('call-step-done')).to.be.undefined;
+        });
     });
 
     it('should resolve the handler with the result passed to completeInteraction', async () => {
@@ -476,6 +615,23 @@ describe('UserInteractionTool', () => {
         expect(leftUri.scheme).to.equal(MEMORY_TEXT_READONLY);
         expect(leftUri.query).to.contain('Unable to resolve revision');
         expect(leftUri.query).to.contain('abc123');
+    });
+
+    it('should show the not-found content when a file link path cannot be resolved', async () => {
+        (mockWorkspaceScope.resolveAccessiblePath as sinon.SinonStub).rejects(new Error('Could not resolve path'));
+
+        await tool.openLink({ ref: 'src/file.ts' });
+
+        expect((mockEditorManager.open as sinon.SinonStub).called).to.be.false;
+        const openedUri = (mockOpenerService.getOpener as sinon.SinonStub).getCall(0).args[0] as URI;
+        expect(openedUri.scheme).to.equal(MEMORY_TEXT_READONLY);
+        expect(openedUri.query).to.contain('does not exist');
+    });
+
+    it('should resolve link paths with the same parsing as the workspace tools', async () => {
+        await tool.openLink({ ref: '/abs/src/file.ts' });
+
+        expect((mockWorkspaceScope.resolveAccessiblePath as sinon.SinonStub).calledWith('/abs/src/file.ts')).to.be.true;
     });
 
     it('should not open anything when single link ref is EmptyContentRef', async () => {

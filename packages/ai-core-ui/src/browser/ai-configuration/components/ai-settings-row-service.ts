@@ -24,7 +24,9 @@ import { AI_CONFIGURATION_SETTING_CONTEXT_MENU, AiConfigurationSettingCommandArg
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import type { SelectOption } from '@theia/core/lib/browser/widgets/select-component';
-import { AI_CORE_PREFERENCES_TITLE, MODEL_PROVIDER_TYPE_DETAIL, ModelProviderTypeDetail } from '@theia/ai-core/lib/common/ai-core-preferences';
+import {
+    AI_CORE_PREFERENCES_TITLE, DEDICATED_EDITOR_TYPE_DETAIL, MODEL_PROVIDER_TYPE_DETAIL, ModelProviderTypeDetail
+} from '@theia/ai-core/lib/common/ai-core-preferences';
 import { AiConfigurationService } from '@theia/ai-core/lib/common/ai-configuration-service';
 import { AiConfigurationScope } from '../ai-configuration-category';
 
@@ -326,14 +328,20 @@ export class AiSettingsRowService {
 
     /**
      * Whether a preference is meant to be surfaced as an editable settings row in the AI Configuration
-     * view. Excludes only value-less placeholders (`type: 'null'`), such as the redirect entries that
-     * only link to this view. The Settings-UI `hidden` flag is intentionally ignored: the AI
+     * view. Excludes value-less placeholders (`type: 'null'`), such as the redirect entries that only
+     * link to this view, and preferences the view edits through a dedicated control of their own
+     * ({@link DEDICATED_EDITOR_TYPE_DETAIL}). The Settings-UI `hidden` flag is intentionally ignored: the AI
      * Configuration view is the dedicated editor for AI preferences, which are hidden from the Settings
      * UI once the cutover (#316) is in effect but must still be editable here.
      */
     isDisplayable(preferenceId: string): boolean {
         const property = this.schemaService.getSchemaProperty(preferenceId);
         if (!property) {
+            return false;
+        }
+        // A preference the view edits through a control of its own (e.g. the models each provider page
+        // marks as offered) would otherwise appear twice, the second time as a raw list of ids.
+        if (property.typeDetails?.[DEDICATED_EDITOR_TYPE_DETAIL]) {
             return false;
         }
         return property.type !== 'null';

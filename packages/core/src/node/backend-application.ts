@@ -18,7 +18,7 @@ import * as dns from 'dns';
 import * as path from 'path';
 import * as http from 'http';
 import * as https from 'https';
-import * as express from 'express';
+import express from 'express';
 import * as yargs from 'yargs';
 import * as fs from 'fs-extra';
 import { inject, named, injectable, type interfaces, postConstruct } from 'inversify';
@@ -204,6 +204,7 @@ export class BackendApplication {
 
     private stoppedContributions = false;
     private shuttingDown = false;
+    private terminatedChildProcesses = false;
 
     private settlementContext?: MeasurementContext<BackendApplicationContribution>;
 
@@ -389,10 +390,15 @@ export class BackendApplication {
      * settle in the background and could log noisily or interact with a partly
      * unbound container; this is accepted because the process is exiting.
      *
-     * Idempotent: a second invocation is a no-op. Exits the process with code 1 so
-     * that the `process.on('exit')` handler runs for fallback cleanup such as
-     * {@link ProcessUtils.terminateProcessTree}; the exit handler does not re-invoke
-     * contribution `onStop()` hooks that this method already dispatched.
+     * Child processes that are still running after both phases are then killed, see
+     * {@link ProcessUtils.terminateChildProcessTrees}, while the event loop is still
+     * available, so that the `process.on('exit')` handler does not have to do it
+     * synchronously.
+     *
+     * Idempotent: a second invocation is a no-op. Exits the process with code 1, so
+     * the `process.on('exit')` handler runs; it does not re-invoke contribution
+     * `onStop()` hooks that this method already dispatched, nor the termination of
+     * child processes.
      */
     protected async gracefulShutdown(): Promise<void> {
         if (this.shuttingDown) {
@@ -419,6 +425,18 @@ export class BackendApplication {
             const message = err instanceof Error ? err.message : String(err);
             this.logger.warn(`Backend root container cleanup failed: ${message}`);
         }
+
+        try {
+            await Promise.race([
+                this.processUtils.terminateChildProcessTrees(process.pid),
+                timeoutReject<void>(SHUTDOWN_TIMEOUT_MS, `Terminating child processes timed out after ${SHUTDOWN_TIMEOUT_MS}ms`)
+            ]);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            this.logger.warn(`Terminating child processes failed: ${message}`);
+        }
+        // Even if it failed: the synchronous fallback in `onStop` would fail the same way, only slower.
+        this.terminatedChildProcesses = true;
 
         process.exit(1);
     }
@@ -451,7 +469,11 @@ export class BackendApplication {
         // `terminateProcessTree`. Any returned promises are abandoned because
         // the `'exit'` event does not yield back to the event loop.
         this.stopContributions();
-        this.processUtils.terminateProcessTree(process.pid);
+        // Fallback for an abrupt exit, e.g. `process.exit()`, that bypasses `gracefulShutdown`:
+        // listing the children blocks the event loop and can be slow, in particular on Windows.
+        if (!this.terminatedChildProcesses) {
+            this.processUtils.terminateProcessTree(process.pid);
+        }
     }
 
     protected async serveGzipped(contentType: string, req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {

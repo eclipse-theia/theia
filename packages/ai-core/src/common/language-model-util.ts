@@ -19,6 +19,7 @@ import {
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
     isTextResponsePart,
+    LanguageModelMetaData,
     LanguageModelResponse,
     ToolRequest
 } from './language-model';
@@ -80,3 +81,45 @@ export const getJsonOfText = (text: string): unknown => {
 };
 
 export const toolRequestToPromptText = (toolRequest: ToolRequest): string => `${toolRequest.id}`;
+
+/**
+ * Orders models for the lists a user picks from: newest first, since a provider's newest model is
+ * almost always the one being looked for, with the id as the tie-break so that models whose provider
+ * reports no release date (Gemini reports none) still come out in a stable, readable order.
+ */
+export const compareModelsByRecency = (left: LanguageModelMetaData, right: LanguageModelMetaData): number => {
+    if (left.released !== right.released) {
+        // A model without a reported date sorts after the dated ones rather than to the top.
+        return (right.released ?? 0) - (left.released ?? 0);
+    }
+    return left.id.localeCompare(right.id);
+};
+
+/**
+ * The provider a model belongs to: its declared vendor, falling back to the `<provider>/` prefix of
+ * its id. Used to group the model lists so that a provider's models stay together.
+ */
+export const providerOf = (model: LanguageModelMetaData): string => {
+    if (model.vendor) {
+        return model.vendor;
+    }
+    const separator = model.id.indexOf('/');
+    return separator > 0 ? model.id.substring(0, separator) : '';
+};
+
+/** Groups models by {@link providerOf}, each group ordered by {@link compareModelsByRecency}, groups by provider name. */
+export const groupModelsByProvider = <T extends LanguageModelMetaData>(models: T[]): Array<{ provider: string; models: T[] }> => {
+    const groups = new Map<string, T[]>();
+    for (const model of models) {
+        const provider = providerOf(model);
+        const group = groups.get(provider);
+        if (group) {
+            group.push(model);
+        } else {
+            groups.set(provider, [model]);
+        }
+    }
+    return [...groups.entries()]
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([provider, grouped]) => ({ provider, models: grouped.slice().sort(compareModelsByRecency) }));
+};

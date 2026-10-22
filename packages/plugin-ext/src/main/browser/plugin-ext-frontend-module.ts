@@ -24,7 +24,7 @@ import {
     ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeWidget, LabelProviderContribution, LabelProvider,
     UndoRedoHandler, DiffUris, Navigatable, SplitWidget,
     noopWidgetStatusBarContribution,
-    WidgetStatusBarContribution
+    WidgetStatusBarContribution, WidgetContextKeyContribution
 } from '@theia/core/lib/browser';
 import { MaybePromise, CommandContribution, ResourceResolver, bindRootContributionProvider, URI, generateUuid, PreferenceContribution, nls } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
@@ -198,6 +198,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(WebviewSecondaryWindowSupport).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WebviewSecondaryWindowSupport);
     bind(FrontendApplicationContribution).toService(WebviewContextKeys);
+    bind(WidgetContextKeyContribution).toService(WebviewContextKeys);
     bind(WidgetStatusBarContribution).toConstantValue(noopWidgetStatusBarContribution(WebviewWidget));
 
     bind(PluginCustomEditorRegistry).toSelf().inSingletonScope();

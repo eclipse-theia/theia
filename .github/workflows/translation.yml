@@ -23,6 +23,13 @@ jobs:
         with:
           python-version: "3.13"
 
+      # GCC before 13 (ubuntu-22.04 ships 11 and 12) cannot compile the V8 headers of Electron 44
+      - name: Use Clang
+        shell: bash
+        run: |
+          echo "CC=clang-15" >> "$GITHUB_ENV"
+          echo "CXX=clang++-15" >> "$GITHUB_ENV"
+
       - name: Install and Build
         shell: bash
         run: |

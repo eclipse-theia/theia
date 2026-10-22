@@ -122,6 +122,42 @@ describe('measurement telemetry integration', () => {
         expect(metrics).to.contain('id="frontend-2", name="startup"');
     });
 
+    it('renders the header before samples handled before collection started', () => {
+        const contribution = new TestMeasurementMetricsBackendContribution();
+        contribution.configure(LogLevel.DEBUG);
+
+        contribution.handle(createEvent(BACKEND_TELEMETRY_SESSION, { ...storedResult }));
+        contribution.startCollecting();
+        contribution.handle(createEvent('frontend/session-a', { ...storedResult }));
+
+        const lines = contribution.getMetrics().split('\n');
+        expect(lines[0]).to.equal('# HELP theia_measurements Theia stopwatch measurement results.');
+        expect(lines[1]).to.equal('# TYPE theia_measurements gauge');
+        expect(lines[2]).to.contain('id="backend"');
+        expect(lines[3]).to.contain('id="frontend-1"');
+    });
+
+    it('does not duplicate the header when collection is started repeatedly', () => {
+        const contribution = new TestMeasurementMetricsBackendContribution();
+        contribution.configure(LogLevel.DEBUG);
+
+        contribution.startCollecting();
+        contribution.startCollecting();
+        contribution.handle(createEvent(BACKEND_TELEMETRY_SESSION, { ...storedResult }));
+
+        const headerLines = contribution.getMetrics().split('\n').filter(line => line.startsWith('#'));
+        expect(headerLines).to.have.lengthOf(2);
+    });
+
+    it('renders nothing when no samples were collected', () => {
+        const contribution = new TestMeasurementMetricsBackendContribution();
+        contribution.configure(LogLevel.DEBUG);
+
+        contribution.startCollecting();
+
+        expect(contribution.getMetrics()).to.equal('');
+    });
+
     it('does not append telemetry events above DEBUG level', () => {
         const contribution = new TestMeasurementMetricsBackendContribution();
         contribution.configure(LogLevel.INFO);

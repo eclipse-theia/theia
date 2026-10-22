@@ -18,6 +18,9 @@
       "path": "../../packages/ai-chat-ui"
     },
     {
+      "path": "../../packages/ai-chatgpt"
+    },
+    {
       "path": "../../packages/ai-claude-code"
     },
     {
@@ -37,6 +40,9 @@
     },
     {
       "path": "../../packages/ai-editor"
+    },
+    {
+      "path": "../../packages/ai-external-api"
     },
     {
       "path": "../../packages/ai-google"
@@ -106,6 +112,9 @@
     },
     {
       "path": "../../packages/editor-preview"
+    },
+    {
+      "path": "../../packages/external-api"
     },
     {
       "path": "../../packages/file-search"

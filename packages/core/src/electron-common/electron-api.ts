@@ -18,8 +18,32 @@ import { NativeKeyboardLayout } from '../common/keyboard/keyboard-layout-provide
 import { Disposable } from '../common';
 import { FrontendApplicationState, StopReason } from '../common/frontend-application-state';
 import { ThemeMode } from '../common/theme';
+import { LaunchArguments } from '../common/launch-arguments';
 
 export type MenuRole = ('undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll' | 'about' | 'services' | 'hide' | 'hideOthers' | 'unhide' | 'quit');
+
+export function isElectronAcceleratorRepresentable(accelerator: string | undefined): accelerator is string {
+    if (!accelerator || /altgr/i.test(accelerator) || /\s/.test(accelerator) || accelerator.split('+').some(token => !token)) {
+        return false;
+    }
+    for (let i = 0; i < accelerator.length; i++) {
+        if (accelerator.charCodeAt(i) > 127) {
+            return false;
+        }
+    }
+    return true;
+}
+
+export type ElectronMenuAccelerator = Pick<MenuDto, 'accelerator'>;
+
+export function electronMenuAcceleratorMetadata(acceleratorSequence: string[]): ElectronMenuAccelerator {
+    return { accelerator: acceleratorSequence.join(' ') || undefined };
+}
+
+/** Return an Electron accelerator only when the rendered single chord is representable. */
+export function electronMenuAccelerator(dto: ElectronMenuAccelerator): ElectronMenuAccelerator {
+    return isElectronAcceleratorRepresentable(dto.accelerator) ? { accelerator: dto.accelerator } : {};
+}
 
 export interface MenuDto {
     id?: string,
@@ -44,11 +68,21 @@ export type WindowEvent = 'maximize' | 'unmaximize' | 'focus';
 export interface TheiaCoreAPI {
     WindowMetadata: {
         webcontentId: string;
+        /**
+         * The parsed CLI options of a *forwarded* launch (see the `second-instance` handling in
+         * `ElectronMainApplication`), or `undefined` for a cold-start window. Provided synchronously
+         * by the preload script, so a frontend contribution can act on it from the first paint.
+         * The options never ride on the window URL; see `LaunchArgsStore` for the rationale.
+         *
+         * @experimental
+         */
+        launchArgs?: LaunchArguments;
     }
     getSecurityToken: () => string;
     attachSecurityToken: (endpoint: string) => Promise<void>;
 
     setMenuBarVisible(visible: boolean, windowName?: string): void;
+    setAutoHideMenuBar(enabled: boolean, windowName?: string): void;
     setMenu(menu: MenuDto[] | undefined): void;
 
     popup(menu: MenuDto[], x: number, y: number, onClosed: () => void, windowName?: string): Promise<number>;
@@ -96,7 +130,7 @@ export interface TheiaCoreAPI {
 
     applicationStateChanged(state: FrontendApplicationState): void;
 
-    readClipboard(): string;
+    readClipboard(): Promise<string>;
     writeClipboard(text: string): void;
 
     onKeyboardLayoutChanged(handler: (newLayout: NativeKeyboardLayout) => void): Disposable;
@@ -117,6 +151,7 @@ declare global {
 export const CHANNEL_WC_METADATA = 'WebContentMetadata';
 export const CHANNEL_SET_MENU = 'SetMenu';
 export const CHANNEL_SET_MENU_BAR_VISIBLE = 'SetMenuBarVisible';
+export const CHANNEL_SET_AUTO_HIDE_MENU_BAR = 'SetAutoHideMenuBar';
 export const CHANNEL_INVOKE_MENU = 'InvokeMenu';
 export const CHANNEL_OPEN_POPUP = 'OpenPopup';
 export const CHANNEL_ON_CLOSE_POPUP = 'OnClosePopup';

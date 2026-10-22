@@ -41,6 +41,7 @@ import './theia.proposed.notebookMessaging';
 import './theia.proposed.portsAttributes';
 import './theia.proposed.profileContentHandlers';
 import './theia.proposed.resolvers';
+import './theia.proposed.scmMultiDiffEditor';
 import './theia.proposed.scmProviderOptions';
 import './theia.proposed.scmValidation';
 import './theia.proposed.shareProvider';
@@ -9601,6 +9602,9 @@ export module '@theia/plugin' {
 
         /**
          * The position of this hint.
+         *
+         * If multiple hints have the same position, they will be shown in the order
+         * they appear in the results.
          */
         position: Position;
 

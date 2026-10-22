@@ -63,6 +63,7 @@ Some additional tools and libraries are needed depending on your platform:
 - Linux
   - [make](https://www.gnu.org/software/make/)
   - [gcc](https://gcc.gnu.org/) (or another compiling toolchain)
+    - Building the Electron example requires GCC 13 or later, or Clang. See [Troubleshooting](#linux) if your distribution ships an older GCC, e.g. Ubuntu 22.04.
   - [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/)
   - build-essential: `sudo apt-get install build-essential`
   <a name="prerequisite_native_keymap"></a>
@@ -491,7 +492,7 @@ etc.) by opening `packages/<package name>/coverage/index.html`.
 
 ## Updating dependencies and the lockfile
 
-When you add, remove, or upgrade dependencies, the regenerated `package-lock.json` needs care so that `npm ci` keeps working on every Node version used in CI (currently Node 24 and Node 26). See [Lockfile maintenance](lockfile-maintenance.md) for the required workflow before committing lockfile changes.
+When you add, remove, or upgrade dependencies, run `node scripts/verify-lockfile-platforms.js` before committing the regenerated `package-lock.json`. It checks that the lockfile still describes every platform CI builds on and that the `allowScripts` allowlist is in sync. See [Lockfile maintenance](lockfile-maintenance.md).
 
 ## Building on Windows
 
@@ -535,6 +536,12 @@ It can be done like so:
 
 ```sh
 echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+```
+
+If rebuilding the native modules for Electron fails with `error: expected identifier before '__attribute__'` in `v8-primitive.h`, your GCC is older than 13 and cannot compile the V8 headers of the Electron version Theia uses. Install GCC 13 or later, or build with Clang:
+
+```sh
+CC=clang CXX=clang++ npm run build:electron
 ```
 
 ### Windows

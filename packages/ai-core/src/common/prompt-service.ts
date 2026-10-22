@@ -247,6 +247,13 @@ export interface CustomAgentsLocation {
     kind: 'agents-dir' | 'legacy-yaml';
 }
 
+/** A loaded customization file, including files hidden by a higher-priority override. */
+export interface PromptFragmentCustomizationSource {
+    uri: URI;
+    template: string;
+    active: boolean;
+}
+
 /**
  * Service responsible for customizing prompt fragments
  */
@@ -268,6 +275,13 @@ export interface PromptFragmentCustomizationService {
      * @returns Whether the fragment has any customizations
      */
     isPromptFragmentCustomized(fragmentId: string): boolean;
+
+    /**
+     * Gets every loaded customization file of a prompt fragment, including the ones hidden by a
+     * higher-priority customization, regardless of whether they are active.
+     * @param fragmentId The prompt fragment ID
+     */
+    getPromptFragmentCustomizationSources?(fragmentId: string): PromptFragmentCustomizationSource[];
 
     /**
      * Gets the active customized prompt fragment for a given ID
@@ -897,7 +911,7 @@ export class PromptServiceImpl implements PromptService {
         let resolvedTemplate = promptFragment.template;
         const variableAndArgResolutions = await this.resolveVariablesAndArgs(promptFragment.template, args, context);
         variableAndArgResolutions.replacements.forEach(replacement =>
-            resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
+            resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, () => replacement.value));
 
         // Then resolve function references with already resolved variables and arguments
         // This allows to resolve function references contained in resolved variables (e.g. prompt fragments)
@@ -920,7 +934,7 @@ export class PromptServiceImpl implements PromptService {
             };
         });
         functionReplacements.forEach(replacement =>
-            resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
+            resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, () => replacement.value));
 
         return {
             id: systemOrFragmentId,
@@ -945,7 +959,7 @@ export class PromptServiceImpl implements PromptService {
         const resolutions = await this.resolveVariablesAndArgs(promptFragment.template, args, context, resolveVariable);
         let resolvedTemplate = promptFragment.template;
         resolutions.replacements.forEach(replacement =>
-            resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
+            resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, () => replacement.value));
 
         return {
             id: systemOrFragmentId,

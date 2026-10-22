@@ -160,6 +160,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
         this.updateFocusedView();
         this.shell.onDidChangeActiveWidget(() => this.updateFocusedView());
+        this.onDidExpandView(viewId => this.prepareWelcomeOnlyView(viewId).catch(e => this.logger.error(e)));
 
         this.widgetManager.onWillCreateWidget(({ factoryId, widget, waitUntil }) => {
             if (factoryId === EXPLORER_VIEW_CONTAINER_ID && widget instanceof ViewContainerWidget) {
@@ -347,15 +348,30 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         return toDispose;
     }
 
+    /**
+     * Toggles the view container the same way as {@link AbstractViewContribution.toggleView}:
+     * collapses its panel if it is the visible tab, otherwise opens and activates it.
+     */
     protected async toggleViewContainer(id: string): Promise<void> {
-        let widget = await this.getPluginViewContainer(id);
-        if (widget && widget.isAttached) {
-            widget.dispose();
-        } else {
-            widget = await this.openViewContainer(id);
-            if (widget) {
-                this.shell.activateWidget(widget.id);
+        const existing = await this.getPluginViewContainer(id);
+        const tabBar = existing && this.shell.getTabBarFor(existing);
+        const area = existing && this.shell.getAreaFor(existing);
+        if (existing && tabBar && area && this.shell.isExpanded(area) && tabBar.currentTitle === existing.title) {
+            if (area === 'left' || area === 'right') {
+                await this.shell.collapsePanel(area);
+            } else if (area === 'bottom') {
+                // Don't collapse the bottom panel if it's currently split
+                if (this.shell.bottomAreaTabBars.length === 1) {
+                    await this.shell.collapsePanel('bottom');
+                }
+            } else {
+                existing.dispose();
             }
+            return;
+        }
+        const widget = await this.openViewContainer(id);
+        if (widget) {
+            await this.shell.activateWidget(widget.id);
         }
     }
 
@@ -369,16 +385,20 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 toDispose.push(Disposable.create(() => this.viewContainerClauseContexts.delete(id)));
             }
         }
-        const toggleCommandId = `plugin.view-container.${id}.toggle`;
         // Some plugins may register empty view containers.
         // We should not register commands for them immediately, as that leads to bad UX.
         // Instead, we register commands the first time we add a view to them.
         let activate = () => {
+            // Like VS Code, use the container's id, e.g. `workbench.view.extension.${id}`, as the command id
             toDispose.push(this.commands.registerCommand({
-                id: toggleCommandId,
+                id,
                 category: nls.localizeByDefault('View'),
                 label: nls.localizeByDefault('Toggle {0}', options.label)
             }, {
+                execute: () => this.toggleViewContainer(id)
+            }));
+            // Kept for backward compatibility with keybindings that use the former command id
+            toDispose.push(this.commands.registerCommand({ id: `plugin.view-container.${id}.toggle` }, {
                 execute: () => this.toggleViewContainer(id)
             }));
             toDispose.push(this.registerViewMenuAction(id, options.label));
@@ -486,7 +506,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 }
             }
             const disposable = this.menus.registerMenuAction(CommonMenus.VIEW_VIEWS, {
-                commandId: `plugin.view-container.${id}.toggle`,
+                commandId: id,
                 label: menuLabel,
                 when: containerInfo.when
             });
@@ -561,13 +581,22 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             when: view.when,
             open: () => this.openView(view.id, { activate: true })
         }));
-        toDispose.push(this.commands.registerCommand({ id: `${view.id}.focus` }, {
-            execute: async () => { await this.openView(view.id, { activate: true }); }
+        toDispose.push(this.commands.registerCommand({
+            id: `${view.id}.focus`,
+            category: this.viewContainers.get(viewContainerId)?.options.label,
+            label: nls.localizeByDefault('Focus on {0} View', view.name)
+        }, {
+            execute: async (options?: { preserveFocus?: boolean }) => { await this.openView(view.id, this.toOpenViewOptions(options)); },
+            isVisible: () => this.isViewVisible(view.id)
         }));
         toDispose.push(this.commands.registerCommand({ id: `${view.id}.open` }, {
-            execute: async () => { await this.openView(view.id, { activate: true }); }
+            execute: async (options?: { preserveFocus?: boolean }) => { await this.openView(view.id, this.toOpenViewOptions(options)); }
         }));
         return toDispose;
+    }
+
+    protected toOpenViewOptions(options?: { preserveFocus?: boolean }): { activate?: boolean, reveal?: boolean } {
+        return options?.preserveFocus ? { reveal: true } : { activate: true };
     }
 
     async resolveWebviewView(viewId: string, webview: WebviewView, cancellation: CancellationToken): Promise<void> {
@@ -652,14 +681,24 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             }
         };
 
-        const toDispose = this.onNewResolverRegistered(resolver => {
-            if (resolver.viewType === viewId) {
-                // Potentially re-activate if we have a new resolver
+        // Like VS Code, resolve a webview view only once it is visible: extensions start work in
+        // `resolveWebviewView`, and views that are hidden or never opened should not pay for it.
+        const resolveIfVisible = () => {
+            if (webview.isVisible) {
                 webviewView.resolve();
             }
-        });
+        };
+        const toDispose = new DisposableCollection(
+            this.onNewResolverRegistered(resolver => {
+                if (resolver.viewType === viewId) {
+                    // Potentially re-activate if we have a new resolver
+                    resolveIfVisible();
+                }
+            }),
+            webview.onDidChangeVisibility(resolveIfVisible)
+        );
 
-        webviewView.resolve();
+        resolveIfVisible();
         return webviewView;
     }
 
@@ -758,7 +797,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const currentDataWidget = widget.widgets[0];
         const webviewId = currentDataWidget instanceof WebviewWidget ? currentDataWidget.identifier?.id : undefined;
         const viewDataWidget = await this.createViewDataWidget(view.id, webviewId);
-        if (widget.isDisposed) {
+        // `onDidInitializeLayout` can dispose the data widget before it is added here.
+        if (widget.isDisposed || viewDataWidget?.isDisposed) {
             viewDataWidget?.dispose();
             return;
         }
@@ -1001,8 +1041,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     /**
-     * retrieve restored layout state from previous user session but close widgets
-     * widgets should be opened only when view data providers are registered
+     * Retrieves the restored state of the data widgets and disposes them: a view gets a new data widget
+     * once its data provider registers or, for a view with only welcome content, once it is expanded.
      */
     onDidInitializeLayout(): void {
         const widgets = this.widgetManager.getWidgets(PLUGIN_VIEW_DATA_FACTORY_ID);
@@ -1078,6 +1118,21 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             this.viewDataState.delete(viewId);
         }
         return widget;
+    }
+
+    /**
+     * Gives an expanded view that has `viewsWelcome` content but neither a data provider nor a
+     * content widget its welcome widget, which `onDidInitializeLayout` disposes when it was restored.
+     */
+    protected async prepareWelcomeOnlyView(viewId: string): Promise<void> {
+        if (this.views.get(viewId)?.[1]?.type === PluginViewType.Webview
+            || this.viewDataProviders.has(viewId) || !this.getViewWelcomes(viewId).length) {
+            return;
+        }
+        const view = await this.getView(viewId);
+        if (view && !view.widgets.length) {
+            await this.prepareView(view);
+        }
     }
 
     protected async createViewWelcomeWidget(viewId: string): Promise<TreeViewWidget> {

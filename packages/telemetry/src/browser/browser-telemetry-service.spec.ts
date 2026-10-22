@@ -39,6 +39,7 @@ function createConsentProvider(initialLevel: TelemetryLevel): TestConsentProvide
             return level;
         },
         onDidChangeTelemetryLevel: emitter.event,
+        ready: Promise.resolve(),
         setLevel: newLevel => {
             level = newLevel;
             emitter.fire(level);

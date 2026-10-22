@@ -1,0 +1,18 @@
+{
+    "$comment": [
+        "The modules of '@theia/core' that the frontend 'index.js' emitted by the 'FrontendGenerator' of",
+        "'@theia/application-manager' loads before it runs the 'Preloader', and which are therefore part of the",
+        "preload phase without being declared as an entry point in any package.json.",
+        "A module that the generator starts requiring ahead of the 'await preload(container)' which ends the",
+        "phase belongs here as well; 'preload-phase-modules.spec.js' runs the generator and fails when the two",
+        "drift apart. The remaining requires of that part of the emitted code, 'reflect-metadata' and the shared",
+        "'inversify' re-export, are left out because they carry no Theia code."
+    ],
+    "modules": [
+        "@theia/core/lib/browser/frontend-application-config-provider",
+        "@theia/core/lib/browser/messaging/messaging-frontend-module",
+        "@theia/core/lib/electron-browser/messaging/electron-messaging-frontend-module",
+        "@theia/core/lib/browser-only/messaging/messaging-frontend-only-module",
+        "@theia/core/lib/browser/preload/preloader"
+    ]
+}

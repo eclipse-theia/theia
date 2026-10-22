@@ -57,8 +57,8 @@ abstract class AbstractToolbarMenuWrapper {
         }
         return false;
     }
-    render(widget: Widget): React.ReactNode {
-        return this.renderMenuItem(widget);
+    render(widget: Widget, contextMatcher: ContextMatcher = this.contextKeyService): React.ReactNode {
+        return this.renderMenuItem(widget, contextMatcher);
     }
 
     abstract toMenuNode(): MenuNode | undefined;
@@ -90,14 +90,15 @@ abstract class AbstractToolbarMenuWrapper {
      * chevron decoration that pops up a floating menu when clicked.
      *
      * @param item a toolbar item that is a menu item
+     * @param contextMatcher evaluates `when` clauses with the values that describe `widget`, so that the
+     * chevron and its popup resolve the same keys as the visibility check.
      * @returns the rendered toolbar item
      */
-    protected renderMenuItem(widget: Widget): React.ReactNode {
+    protected renderMenuItem(widget: Widget, contextMatcher: ContextMatcher = this.contextKeyService): React.ReactNode {
         const icon = this.icon || 'ellipsis';
-        const contextMatcher: ContextMatcher = this.contextKeyService;
         const className = `${icon} ${ACTION_ITEM}`;
         const itemClassName = TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled menu' + (this.isToggled(widget) ? ' toggled' : '');
-        if (CompoundMenuNode.is(this.menuNode) && !this.menuNode.isEmpty(this.effectiveMenuPath, this.contextKeyService, widget.node, widget)) {
+        if (CompoundMenuNode.is(this.menuNode) && !this.menuNode.isEmpty(this.effectiveMenuPath, contextMatcher, widget.node, widget)) {
             return <div key={this.id} className={itemClassName}>
                 <div id={this.id} className={className}
                     title={this.tooltip || this.text}
@@ -137,8 +138,8 @@ export class SubmenuAsToolbarItemWrapper extends AbstractToolbarMenuWrapper impl
     executeCommand(widget: Widget, e: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
     }
 
-    isVisible(widget: Widget): boolean {
-        const menuNodeVisible = this.menuNode.isVisible(this.effectiveMenuPath, this.contextKeyService, widget.node, widget);
+    isVisible(widget: Widget, contextMatcher: ContextMatcher): boolean {
+        const menuNodeVisible = this.menuNode.isVisible(this.effectiveMenuPath, contextMatcher, widget.node, widget);
         return menuNodeVisible && !MenuModelRegistry.isEmpty(this.menuNode);
     }
 
@@ -173,8 +174,8 @@ export class CommandMenuAsToolbarItemWrapper extends AbstractToolbarMenuWrapper 
         return this.menuNode.when;
     }
 
-    isVisible(widget: Widget): boolean {
-        return this.menuNode.isVisible(this.effectiveMenuPath, this.contextKeyService, widget.node, widget);
+    isVisible(widget: Widget, contextMatcher: ContextMatcher): boolean {
+        return this.menuNode.isVisible(this.effectiveMenuPath, contextMatcher, widget.node, widget);
     }
 
     executeCommand(widget: Widget, e: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
@@ -229,19 +230,19 @@ export class ToolbarActionWrapper extends AbstractToolbarMenuWrapper implements 
         }
     };
 
-    isVisible(widget: Widget): boolean {
+    isVisible(widget: Widget, contextMatcher: ContextMatcher): boolean {
         const menuNode = this.menuNode;
         if (this.toolbarItem.isVisible && !this.toolbarItem.isVisible(widget)) {
             return false;
         }
-        if (!menuNode?.isVisible(this.effectiveMenuPath, this.contextKeyService, widget.node, widget)) {
+        if (!menuNode?.isVisible(this.effectiveMenuPath, contextMatcher, widget.node, widget)) {
             return false;
         }
         if (this.toolbarItem.command) {
             return true;
         }
         if (CompoundMenuNode.is(menuNode)) {
-            return !menuNode.isEmpty(this.effectiveMenuPath, this.contextKeyService, widget.node, widget);
+            return !menuNode.isEmpty(this.effectiveMenuPath, contextMatcher, widget.node, widget);
         }
         return true;
     }

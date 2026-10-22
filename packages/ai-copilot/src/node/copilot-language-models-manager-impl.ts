@@ -14,10 +14,28 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
+import { DiscoveredModels, LanguageModelRegistry, LanguageModelStatus, ModelDiscoveryResult } from '@theia/ai-core';
 import { DisposableCollection, ILogger, nls } from '@theia/core';
 import { inject, injectable, named, postConstruct, preDestroy } from '@theia/core/shared/inversify';
 import { CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID } from '../common';
+
+/** The id under which Copilot offers its own model selection; always worth showing. */
+const COPILOT_AUTO_MODEL_ID = 'auto';
+
+/** How many models Copilot nominates, matching what the other providers feature. */
+const NOMINATED_MODEL_COUNT = 5;
+
+/**
+ * The vendors one Copilot model each is nominated for, recognised by the prefix of the model id.
+ * Deliberately the three whose models the other providers of this application offer directly: those
+ * are the ones a user coming to the chat input expects to switch between. Copilot carries more, and
+ * they remain registered and selectable — just not preselected.
+ */
+const NOMINATED_VENDORS: ReadonlyArray<{ vendor: string; matches: RegExp }> = [
+    { vendor: 'anthropic', matches: /^claude/i },
+    { vendor: 'openai', matches: /^(gpt|chatgpt|o\d)/i },
+    { vendor: 'google', matches: /^gemini/i }
+];
 import { CopilotSdkLanguageModel } from './copilot-sdk-language-model';
 import { CopilotSdkClientProvider } from './copilot-sdk-client-provider';
 import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
@@ -130,17 +148,80 @@ export class CopilotLanguageModelsManagerImpl implements CopilotLanguageModelsMa
         }
     }
 
-    async fetchAvailableModelIds(): Promise<string[]> {
+    async fetchAvailableModels(): Promise<ModelDiscoveryResult> {
         try {
             const modelIds = await this.sdkClientProvider.listModelIds();
             this.logger.info(`Copilot: discovered ${modelIds.length} models [${modelIds.join(', ')}]`);
             await this.setDiscoveryFailure(undefined);
-            return modelIds;
+            // The CLI reports nothing but the id: no display name, and no release date to order by.
+            const featured = this.selectFeaturedModelIds(modelIds);
+            return { models: modelIds.map(id => ({ id, featured: featured.has(id) })), fromCache: false };
         } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
             this.logger.warn('Copilot: failed to fetch available models via the Copilot CLI:', error);
-            await this.setDiscoveryFailure(error instanceof Error ? error.message : String(error));
-            return [];
+            await this.setDiscoveryFailure(message);
+            return { models: [], fromCache: false, error: message };
         }
+    }
+
+    /**
+     * Nominates the models the chat input should show without the user asking, up to
+     * {@link NOMINATED_MODEL_COUNT}. Copilot serves models of several vendors under one provider, so
+     * ranking them against each other by the numbers in their ids would show several models of
+     * whichever vendor counts highest and none of the others. The list is therefore filled vendor by
+     * vendor: `auto` first, which lets Copilot itself choose and is the entry most users want, then the
+     * newest model of each major vendor, then the next of each in turn until the list is full.
+     *
+     * Everything else Copilot carries is left to be chosen deliberately: the list is meant to be the
+     * handful of models one switches between while chatting, not a survey of the catalogue.
+     *
+     * Release-pinned ids are left out: the undated id of the same model is nominated, and pinning a
+     * release is the deliberate choice the check on its row makes.
+     */
+    protected selectFeaturedModelIds(modelIds: string[]): Set<string> {
+        const featured = new Set<string>();
+        const byVendor = new Map<string, string[]>();
+        for (const id of modelIds) {
+            if (id === COPILOT_AUTO_MODEL_ID) {
+                featured.add(id);
+                continue;
+            }
+            if (DiscoveredModels.undatedId(id) !== undefined) {
+                continue;
+            }
+            const vendor = this.vendorOf(id);
+            if (!vendor) {
+                continue;
+            }
+            byVendor.set(vendor, [...byVendor.get(vendor) ?? [], id]);
+        }
+        // Newest first within each vendor, the vendors themselves in the order they are named.
+        const ranked = NOMINATED_VENDORS.map(({ vendor }) =>
+            [...byVendor.get(vendor) ?? []].sort((left, right) => DiscoveredModels.compareByVersion(left, right)));
+        for (let rank = 0; featured.size < NOMINATED_MODEL_COUNT && ranked.some(ids => ids.length > rank); rank++) {
+            for (const ids of ranked) {
+                if (featured.size >= NOMINATED_MODEL_COUNT) {
+                    break;
+                }
+                if (ids[rank] !== undefined) {
+                    featured.add(ids[rank]);
+                }
+            }
+        }
+        return featured;
+    }
+
+    /**
+     * The vendor a Copilot model id belongs to, or `undefined` for a vendor that is not nominated.
+     * Matching on the id is all there is — the CLI reports nothing else — and it is deliberately narrow:
+     * a model of a vendor this does not name is still registered and still selectable, it is simply not
+     * one of the few the chat input starts with.
+     */
+    protected vendorOf(id: string): string | undefined {
+        // Matched against the last segment, so that an id the CLI qualifies with its vendor
+        // (`google/gemini-2.5-pro`) is recognised as readily as a bare one.
+        const name = id.substring(id.lastIndexOf('/') + 1);
+        return NOMINATED_VENDORS.find(candidate => candidate.matches.test(name))?.vendor;
     }
 
     /**

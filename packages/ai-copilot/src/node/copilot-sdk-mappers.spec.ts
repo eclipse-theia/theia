@@ -44,14 +44,16 @@ describe('copilot-sdk-mappers - selectSdkModelIds', () => {
         expect(result).to.deep.equal(['a', 'b']);
     });
 
-    it('drops a dated release when its family is offered as well', () => {
+    it('keeps a dated release alongside its family, so a release can be pinned', () => {
         const result = selectSdkModelIds([
             model('gpt-5'),
             model('gpt-5-2026-04-17'),
             model('claude-sonnet-5'),
             model('claude-sonnet-5-20260514')
         ]);
-        expect(result).to.deep.equal(['gpt-5', 'claude-sonnet-5']);
+        // Which of them the model pickers offer is decided by the favorite models service, which
+        // features the families; the releases stay selectable for whoever wants one.
+        expect(result).to.deep.equal(['gpt-5', 'gpt-5-2026-04-17', 'claude-sonnet-5', 'claude-sonnet-5-20260514']);
     });
 
     it('keeps a dated release that is the only way to select that model', () => {

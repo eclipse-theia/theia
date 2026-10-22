@@ -323,7 +323,7 @@ export function buildHtmlTooltip(
                 actionsRow.appendChild(document.createTextNode('  '));
             }
             actionsRow.appendChild(createTooltipAction(
-                nls.localize('theia/scm/copyCommitHash', 'Copy Commit Hash'), 'copy', undefined, actions.copyCommitHash));
+                nls.localizeByDefault('Copy Commit Hash'), 'copy', undefined, actions.copyCommitHash));
         }
 
         container.appendChild(actionsRow);

@@ -57,9 +57,11 @@ import {
     CHANNEL_ABOUT_TO_CLOSE,
     CHANNEL_OPEN_WITH_SYSTEM_APP,
     CHANNEL_OPEN_URL,
+    electronMenuAccelerator,
     CHANNEL_SET_THEME,
     CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW,
-    CHANNEL_UPDATE_RECENT_WORKSPACES
+    CHANNEL_UPDATE_RECENT_WORKSPACES,
+    CHANNEL_SET_AUTO_HIDE_MENU_BAR
 } from '../electron-common/electron-api';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
 import { Disposable, DisposableCollection, isOSX, isWindows, MaybePromise, URI } from '../common';
@@ -76,7 +78,13 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
 
     onStart(application: ElectronMainApplication): MaybePromise<void> {
         ipcMain.on(CHANNEL_WC_METADATA, event => {
-            event.returnValue = event.sender.id.toString();
+            // Answered synchronously, so the window has its metadata — including the parsed options
+            // of a forwarded launch — before any frontend code runs. The window is identified by the
+            // IPC sender, so it can only ever read its own.
+            event.returnValue = {
+                webcontentId: event.sender.id.toString(),
+                launchArgs: application.getLaunchArgs(event.sender.id)
+            };
         });
 
         // electron security token
@@ -119,6 +127,20 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
                 electronWindow.setMenuBarVisibility(visible);
             } else {
                 console.warn(`There is no known secondary window '${windowName}'. Thus, the menu bar could not be made visible.`);
+            }
+        });
+
+        ipcMain.on(CHANNEL_SET_AUTO_HIDE_MENU_BAR, (event, enabled: boolean, windowName: string | undefined) => {
+            let electronWindow;
+            if (windowName) {
+                electronWindow = BrowserWindow.getAllWindows().find(win => win.webContents.mainFrame.name === windowName);
+            } else {
+                electronWindow = BrowserWindow.fromWebContents(event.sender);
+            }
+            if (electronWindow) {
+                electronWindow.autoHideMenuBar = enabled;
+            } else {
+                console.warn(`There is no known secondary window '${windowName}'. Thus, autoHideMenuBar could not be set.`);
             }
         });
 
@@ -253,11 +275,12 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
             event.returnValue = BrowserWindow.fromWebContents(event.sender)?.isFullScreen();
         });
 
-        ipcMain.on(CHANNEL_READ_CLIPBOARD, event => {
-            event.returnValue = clipboard.readText();
-        });
+        ipcMain.handle(CHANNEL_READ_CLIPBOARD, () => clipboard.readText().catch(error => {
+            console.warn('Could not read from the clipboard', error);
+            return '';
+        }));
         ipcMain.on(CHANNEL_WRITE_CLIPBOARD, (event, text) => {
-            clipboard.writeText(text);
+            clipboard.writeText(text).catch(error => console.warn('Could not write to the clipboard', error));
         });
 
         nativeKeymap.onDidChangeKeyboardLayout(() => {
@@ -320,18 +343,6 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
         });
     }
 
-    private isASCI(accelerator: string | undefined): boolean {
-        if (typeof accelerator !== 'string') {
-            return false;
-        }
-        for (let i = 0; i < accelerator.length; i++) {
-            if (accelerator.charCodeAt(i) > 127) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     fromMenuDto(sender: WebContents, menuId: number, menuDto: InternalMenuDto[]): MenuItemConstructorOptions[] {
         return menuDto.map(dto => {
             const result: MenuItemConstructorOptions = {
@@ -342,7 +353,7 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
                 enabled: dto.enabled,
                 visible: dto.visible,
                 role: dto.role,
-                accelerator: this.isASCI(dto.accelerator) ? dto.accelerator : undefined
+                ...electronMenuAccelerator(dto)
             };
             if (dto.submenu) {
                 result.submenu = this.fromMenuDto(sender, menuId, dto.submenu);

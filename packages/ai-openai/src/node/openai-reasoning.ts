@@ -21,8 +21,7 @@ import { ReasoningLevel } from '@theia/ai-core';
  * Returns `{}` when reasoning is not requested, unsupported, or disabled — so the caller
  * can spread it unconditionally.
  *
- * @param forResponseApi `true` for the Responses API (`reasoning: { effort }`, supports `minimal`);
- *                        `false` for Chat Completions (`reasoning_effort`, `low`|`medium`|`high` only).
+ * @param forResponseApi `true` for the Responses API (`reasoning: { effort, summary }`), `false` for Chat Completions (`reasoning_effort`).
  * @param supportsReasoning `false` for models without reasoning support — returns `{}`.
  */
 export function openAiReasoningFor(
@@ -33,20 +32,12 @@ export function openAiReasoningFor(
     if (!level || !supportsReasoning || level === 'off') {
         return {};
     }
+    // Both APIs take the same effort values. Models that reject an effort leave it out of their
+    // `supportedLevels`, and the level is clamped to those before it gets here.
+    const effort = level === 'auto' ? undefined : level;
     if (forResponseApi) {
-        const responsesEffort =
-            level === 'minimal' ? 'minimal' :
-                level === 'low' ? 'low' :
-                    level === 'medium' ? 'medium' :
-                        level === 'high' ? 'high' :
-                            undefined;
-        return responsesEffort ? { reasoning: { effort: responsesEffort } } : {};
+        // Summaries are opt-in on the Responses API: without `summary` the model still reasons, but nothing is streamed to show.
+        return { reasoning: { ...(effort ? { effort } : {}), summary: 'auto' } };
     }
-    // Chat Completions has no 'minimal' — map it down to 'low'.
-    const chatEffort =
-        level === 'minimal' || level === 'low' ? 'low' :
-            level === 'medium' ? 'medium' :
-                level === 'high' ? 'high' :
-                    undefined;
-    return chatEffort ? { reasoning_effort: chatEffort } : {};
+    return effort ? { reasoning_effort: effort } : {};
 }

@@ -20,9 +20,10 @@ import { ChatResponseContent, ServerToolCallChatResponseContent } from '@theia/a
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
-import { codicon, HoverService, OpenerService } from '@theia/core/lib/browser';
+import { HoverService, OpenerService } from '@theia/core/lib/browser';
 import { renderToolCallResult } from './toolcall-result';
 import { condenseArguments, formatArgsForTooltip } from './toolcall-utils';
+import { Spinner } from './spinner';
 
 /**
  * Renders a {@link ServerToolCallChatResponseContent}: a tool the provider executed on its own
@@ -90,10 +91,6 @@ export class ServerToolCallPartRenderer implements ChatResponsePartRenderer<Serv
     }
 }
 
-const Spinner = () => (
-    <span className={`${codicon('loading')} theia-animation-spin`}></span>
-);
-
 interface ServerToolCallContentProps {
     response: ServerToolCallChatResponseContent;
     getArgumentsLabel: (args: string | undefined) => string;
@@ -109,18 +106,16 @@ const ServerToolCallContent: React.FC<ServerToolCallContentProps> = ({
     showServerTooltip,
     responseRenderer
 }) => {
-    const summaryRef = React.useRef<HTMLElement | undefined>(undefined);
-    const runningRef = React.useRef<HTMLElement | undefined>(undefined);
     const argsLabel = getArgumentsLabel(response.arguments);
 
     // mouseover (unlike mouseenter) bubbles up from child crossings, so sliding from the badge back to
-    // the rest of the summary re-fires here and the tooltip updates correctly.
-    const handleHover = (parentTarget: HTMLElement | undefined) => (e: React.MouseEvent<HTMLElement>) => {
+    // the rest of the label re-fires here and the tooltip updates correctly.
+    const handleHover = (e: React.MouseEvent<HTMLElement>) => {
         const badge = (e.target as HTMLElement).closest('.theia-serverToolCall-badge') as HTMLElement | null;
         if (badge) {
             showServerTooltip(badge);
         } else {
-            showArgsTooltip(response, parentTarget);
+            showArgsTooltip(response, e.currentTarget);
         }
     };
 
@@ -134,22 +129,19 @@ const ServerToolCallContent: React.FC<ServerToolCallContentProps> = ({
         <div className='theia-toolCall'>
             {response.finished ? (
                 <details className='theia-toolCall-finished'>
-                    <summary
-                        ref={(el: HTMLElement | null) => { summaryRef.current = el ?? undefined; }}
-                        onMouseOver={handleHover(summaryRef.current)}
-                    >
-                        {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name} {serverIndicator}
-                        {' '}(<span className='theia-toolCall-args-label'>{argsLabel}</span>)
+                    <summary>
+                        {/* anchor the tooltip to the inline label, not the full-width summary, so it opens next to the text */}
+                        <span onMouseOver={handleHover}>
+                            {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name} {serverIndicator}
+                            {' '}(<span className='theia-toolCall-args-label'>{argsLabel}</span>)
+                        </span>
                     </summary>
                     <div className='theia-toolCall-response-result'>
                         {responseRenderer(response)}
                     </div>
                 </details>
             ) : (
-                <span className='theia-toolCall-allowed'
-                    ref={(el: HTMLElement | null) => { runningRef.current = el ?? undefined; }}
-                    onMouseOver={handleHover(runningRef.current)}
-                >
+                <span className='theia-toolCall-allowed' onMouseOver={handleHover}>
                     <Spinner /> {nls.localizeByDefault('Running')} {response.name} {serverIndicator}
                     {' '}(<span className='theia-toolCall-args-label'>{argsLabel}</span>)
                 </span>

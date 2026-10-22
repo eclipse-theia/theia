@@ -43,7 +43,7 @@ export class MonacoOutlineDecorator implements TreeDecorator {
         }
 
         for (const treeNode of new DepthFirstTreeIterator(tree.root)) {
-            if (MonacoOutlineSymbolInformationNode.is(treeNode) && treeNode.detail) {
+            if (MonacoOutlineSymbolInformationNode.is(treeNode) && (treeNode.detail || treeNode.deprecated)) {
                 result.set(treeNode.id, this.toDecoration(treeNode));
             }
         }
@@ -52,15 +52,18 @@ export class MonacoOutlineDecorator implements TreeDecorator {
     }
 
     protected toDecoration(node: MonacoOutlineSymbolInformationNode): TreeDecoration.Data {
-        const captionSuffixes: TreeDecoration.CaptionAffix[] = [{
-            data: (node.detail || ''),
+        const captionSuffixes: TreeDecoration.CaptionAffix[] | undefined = node.detail ? [{
+            data: node.detail,
             fontData: {
                 color: 'var(--theia-descriptionForeground)',
             }
-        }];
+        }] : undefined;
+        // Like VS Code, strike through the names of deprecated symbols.
+        const fontData: TreeDecoration.FontData | undefined = node.deprecated ? { style: 'line-through' } : undefined;
 
         return {
-            captionSuffixes
+            captionSuffixes,
+            fontData
         };
     }
 }

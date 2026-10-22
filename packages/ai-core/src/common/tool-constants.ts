@@ -19,3 +19,8 @@
  * This tool allows agents to delegate tasks to other specialized agents.
  */
 export const AGENT_DELEGATION_FUNCTION_ID = 'delegateToAgent';
+
+/**
+ * The function ID for the tool listing the chat agents that can be delegated to.
+ */
+export const LIST_AGENTS_FUNCTION_ID = 'listAgents';

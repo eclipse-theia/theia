@@ -15,47 +15,25 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { ToolProvider, ToolRequest, AutoActionResult } from '@theia/ai-core';
+import { ToolRequest, AutoActionResult } from '@theia/ai-core';
 import { ShellCommandPermissionService } from './shell-command-permission-service';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { AbstractShellExecutionTool } from './abstract-shell-execution-tool';
 import {
     SHELL_EXECUTION_FUNCTION_ID,
-    ShellExecutionServer,
     ShellExecutionToolResult,
-    ShellExecutionCanceledResult,
-    combineAndTruncate
+    ShellExecutionCanceledResult
 } from '../common/shell-execution-server';
-import { CancellationToken, generateUuid, Path } from '@theia/core';
+import { Path, URI } from '@theia/core';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
 @injectable()
-export class ShellExecutionTool implements ToolProvider {
-
-    @inject(ShellExecutionServer)
-    protected readonly shellServer: ShellExecutionServer;
-
-    @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+export class ShellExecutionTool extends AbstractShellExecutionTool {
 
     @inject(ShellCommandPermissionService)
     protected readonly shellCommandPermissionService: ShellCommandPermissionService;
 
-    protected readonly runningExecutions = new Map<string, string>();
-
-    async cancelExecution(toolCallId: string): Promise<boolean> {
-        const executionId = this.runningExecutions.get(toolCallId);
-        if (executionId) {
-            const canceled = await this.shellServer.cancel(executionId);
-            if (canceled) {
-                this.runningExecutions.delete(toolCallId);
-            }
-            return canceled;
-        }
-        return false;
-    }
-
-    isExecutionRunning(toolCallId: string): boolean {
-        return this.runningExecutions.has(toolCallId);
-    }
+    @inject(EnvVariablesServer)
+    protected readonly envVariablesServer: EnvVariablesServer;
 
     getTool(): ToolRequest {
         return {
@@ -96,6 +74,10 @@ To avoid losing important information, limit output size in your commands:
 - Use wc -l to count lines before fetching full output
 - Redirect verbose output to /dev/null if not needed
 
+WORKING DIRECTORY: The command runs inside the directory given as cwd, so relative paths in the command
+are relative to it. In a multi-root workspace, cwd is required: a workspace root name such as "backend" is the
+root folder itself, not a folder to change into.
+
 TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer commands.`,
             parameters: {
                 type: 'object',
@@ -129,10 +111,11 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
                     },
                     cwd: {
                         type: 'string',
-                        description: 'Working directory for command execution. ' +
-                            'Use a workspace-relative path (e.g., "backend", "frontend/src") ' +
-                            'or an absolute filesystem path. ' +
-                            'If omitted, defaults to the workspace root (single-root workspaces only).'
+                        description: 'Working directory in which the command runs. ' +
+                            'Use a workspace root name (e.g., "backend"), a path starting with a root name (e.g., "backend/src"), ' +
+                            'as in the paths returned by the workspace tools, or an absolute filesystem path. ' +
+                            'The command starts inside this directory: with cwd "backend", do not `cd backend` in the command. ' +
+                            'Required in a multi-root workspace. If omitted in a single-root workspace, defaults to the workspace root.'
                     },
                     timeout: {
                         type: 'number',
@@ -171,91 +154,52 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
             timeout?: number;
         } = JSON.parse(argString);
 
-        const resolvedCwd = this.resolveCwd(args.cwd);
-
-        // Generate execution ID and get tool call ID from context
-        const executionId = generateUuid();
-        const toolCallId = this.extractToolCallId(ctx);
-        const cancellationToken = this.extractCancellationToken(ctx);
-
-        // Track this execution
-        if (toolCallId) {
-            this.runningExecutions.set(toolCallId, executionId);
-        }
-
-        const cancellationListener = cancellationToken?.onCancellationRequested(() => {
-            this.shellServer.cancel(executionId);
+        return this.runShellCommand({
+            command: args.command,
+            cwd: await this.resolveCwd(args.cwd),
+            timeout: args.timeout,
+            ctx
         });
-
-        try {
-            const result = await this.shellServer.execute({
-                command: args.command,
-                cwd: resolvedCwd,
-                timeout: args.timeout,
-                executionId,
-            });
-
-            if (result.canceled) {
-                return {
-                    canceled: true,
-                    output: this.combineAndTruncate(result.stdout, result.stderr) || undefined,
-                    duration: result.duration,
-                };
-            }
-
-            // Combine stdout and stderr, apply truncation
-            const combinedOutput = this.combineAndTruncate(result.stdout, result.stderr);
-
-            return {
-                success: result.success,
-                exitCode: result.exitCode,
-                output: combinedOutput,
-                error: result.error,
-                duration: result.duration,
-                cwd: result.resolvedCwd,
-            };
-        } finally {
-            // Clean up
-            cancellationListener?.dispose();
-            if (toolCallId) {
-                this.runningExecutions.delete(toolCallId);
-            }
-        }
     }
 
     /**
      * Resolves a cwd value to an absolute filesystem path.
-     * Handles: undefined (falls back to workspace root), absolute paths (pass-through),
-     * root-relative paths (<rootName>/...), and bare root names.
+     * Handles: undefined (falls back to the workspace root in a single-root workspace), absolute paths
+     * and `file://` URIs, `~` for the home directory, root-prefixed paths (`<rootName>/...`) and bare
+     * root names, with the root names of {@link WorkspaceService.getRootNames}.
      */
-    private resolveCwd(cwd: string | undefined): string {
+    protected async resolveCwd(cwd: string | undefined): Promise<string> {
         const roots = this.workspaceService.tryGetRoots();
 
-        const rootNames = roots.map(r => r.resource.path.base);
         if (!cwd) {
             if (roots.length === 1) {
                 return roots[0].resource.path.fsPath();
             }
             throw new Error(
                 'A working directory (cwd) is required in a multi-root workspace. ' +
-                `Available workspace roots: ${rootNames.join(', ')}. ` +
-                'Provide one as cwd (e.g., "backend") or use a sub-path (e.g., "backend/src").'
+                `Provide a workspace root name as cwd (e.g., "${this.exampleRootName()}") or a path in it ` +
+                `(e.g., "${this.exampleRootName()}/src"). Available workspace roots: ${this.describeRoots()}.`
             );
+        }
+
+        if (cwd.startsWith('file://')) {
+            return new URI(cwd).path.fsPath();
         }
 
         const normalized = Path.normalizePathSeparator(cwd);
 
-        if (new Path(normalized).isAbsolute) {
+        if (new Path(normalized).isAbsolute || Path.isDrive(normalized.split('/')[0])) {
             return normalized;
         }
 
-        const segments = normalized.split('/');
-        for (const root of roots) {
-            if (root.resource.path.base === segments[0]) {
-                const rest = segments.slice(1).join('/');
-                const resolved = rest ? root.resource.resolve(rest) : root.resource;
-                return resolved.path.fsPath();
-            }
+        if (normalized === '~' || normalized.startsWith('~/')) {
+            const home = new URI(await this.envVariablesServer.getHomeDirUri());
+            return (normalized === '~' ? home : home.resolve(normalized.substring(2))).path.fsPath();
+        }
+
+        const rootPrefixed = this.workspaceService.resolveRootPrefixedPath(normalized);
+        if (rootPrefixed) {
+            return rootPrefixed.path.fsPath();
         }
 
         if (roots.length === 1) {
@@ -265,31 +209,19 @@ TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer co
         throw new Error(
             `Could not resolve working directory '${cwd}' to a workspace root. ` +
             'In a multi-root workspace, prefix paths with the workspace root name ' +
-            `(e.g., '${rootNames[0]}/path'). Available roots: ${rootNames.join(', ')}.`
+            `(e.g., '${this.exampleRootName()}/path'). Available workspace roots: ${this.describeRoots()}.`
         );
     }
 
-    protected extractToolCallId(ctx?: unknown): string | undefined {
-        if (ctx && typeof ctx === 'object' && 'toolCallId' in ctx) {
-            return (ctx as { toolCallId?: string }).toolCallId;
-        }
-        return undefined;
+    protected exampleRootName(): string {
+        return this.workspaceService.getRootNames().keys().next().value ?? 'rootName';
     }
 
-    protected extractCancellationToken(ctx: unknown): CancellationToken | undefined {
-        if (ctx && typeof ctx === 'object') {
-            // Check for MutableChatRequestModel structure (response.cancellationToken)
-            if ('response' in ctx) {
-                const response = (ctx as { response?: { cancellationToken?: CancellationToken } }).response;
-                if (response?.cancellationToken) {
-                    return response.cancellationToken;
-                }
-            }
-        }
-        return undefined;
+    /**
+     * Lists the workspace root names with their locations, for error messages.
+     */
+    protected describeRoots(): string {
+        return Array.from(this.workspaceService.getRootNames(), ([name, uri]) => `${name} (${uri.path.fsPath()})`).join(', ');
     }
 
-    protected combineAndTruncate(stdout: string, stderr: string): string {
-        return combineAndTruncate(stdout, stderr);
-    }
 }

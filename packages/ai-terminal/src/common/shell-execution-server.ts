@@ -82,16 +82,38 @@ export const TAIL_LINES = 50;
 export const GRACE_LINES = 10;
 export const MAX_LINE_LENGTH = 1000;
 
-export function truncateLine(line: string): string {
-    if (line.length <= MAX_LINE_LENGTH) {
+/**
+ * Line and line-length budget applied to combined command output. The defaults suit the
+ * general-purpose `shellExecute` tool, where output is often a long build or test log and only
+ * the beginning and the end carry information. Tools whose output is meaningful as a whole
+ * (e.g. a diff) should raise these limits.
+ */
+export interface OutputTruncationOptions {
+    /** Number of leading lines to keep. Default {@link HEAD_LINES}. */
+    headLines?: number;
+    /** Number of trailing lines to keep. Default {@link TAIL_LINES}. */
+    tailLines?: number;
+    /** Extra lines tolerated before truncation kicks in at all. Default {@link GRACE_LINES}. */
+    graceLines?: number;
+    /** Maximum length of a single line before its middle is elided. Default {@link MAX_LINE_LENGTH}. */
+    maxLineLength?: number;
+}
+
+export function truncateLine(line: string, maxLineLength: number = MAX_LINE_LENGTH): string {
+    if (line.length <= maxLineLength) {
         return line;
     }
-    const halfLength = Math.floor((MAX_LINE_LENGTH - 30) / 2);
+    const halfLength = Math.floor((maxLineLength - 30) / 2);
     const omittedCount = line.length - halfLength * 2;
     return `${line.slice(0, halfLength)} ... [${omittedCount} chars omitted] ... ${line.slice(-halfLength)}`;
 }
 
-export function combineAndTruncate(stdout: string, stderr: string): string {
+export function combineAndTruncate(stdout: string, stderr: string, options?: OutputTruncationOptions): string {
+    const head = options?.headLines ?? HEAD_LINES;
+    const tail = options?.tailLines ?? TAIL_LINES;
+    const grace = options?.graceLines ?? GRACE_LINES;
+    const maxLineLength = options?.maxLineLength ?? MAX_LINE_LENGTH;
+
     const trimmedStdout = stdout.trim();
     const trimmedStderr = stderr.trim();
 
@@ -108,13 +130,13 @@ export function combineAndTruncate(stdout: string, stderr: string): string {
 
     const lines = output.split('\n');
 
-    if (lines.length <= HEAD_LINES + TAIL_LINES + GRACE_LINES) {
-        return lines.map(truncateLine).join('\n');
+    if (lines.length <= head + tail + grace) {
+        return lines.map(line => truncateLine(line, maxLineLength)).join('\n');
     }
 
-    const headLines = lines.slice(0, HEAD_LINES).map(truncateLine);
-    const tailLines = lines.slice(-TAIL_LINES).map(truncateLine);
-    const omittedCount = lines.length - HEAD_LINES - TAIL_LINES;
+    const headLines = lines.slice(0, head).map(line => truncateLine(line, maxLineLength));
+    const tailLines = lines.slice(-tail).map(line => truncateLine(line, maxLineLength));
+    const omittedCount = lines.length - head - tail;
 
     return [...headLines, `\n... [${omittedCount} lines omitted] ...\n`, ...tailLines].join('\n');
 }

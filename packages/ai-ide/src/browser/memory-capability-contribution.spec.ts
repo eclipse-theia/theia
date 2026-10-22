@@ -64,9 +64,11 @@ describe('MemoryCapabilityContribution', () => {
         expect(template).to.not.contain('.agents/memory');
     });
 
-    it('resolves the date for raw filenames through the today variable', () => {
+    it('resolves the date for raw filenames through the date-only today variable', () => {
         const { template } = registerFragment();
-        expect(template).to.contain('{{today:inIso8601}}');
+        expect(template).to.contain('{{today}}');
+        // a timestamp would change the system prompt on every request and invalidate prompt caching
+        expect(template).to.not.contain('{{today:inIso8601}}');
     });
 
     it('instructs the agent to use the generic workspace tools', () => {

@@ -15,10 +15,44 @@ The AI Configuration view (`@theia/ai-ide`) has been reworked from a tabbed dock
 
 - **New package dependency edges:** `@theia/ai-ide` and `@theia/ai-mcp` now depend on `@theia/ai-core-ui`, which hosts the contribution point (`AiConfigurationCategory`, `AiConfigurationCategoryRegistry`), the shared selection model (`AiConfigurationSelectionModel`), and the shared page primitives (`AiSettingsRow`, `AiConfigurationSection`, `SinglePageCategoryRenderer`, `CollectionCategoryRenderer`, …). If you consume the AI configuration UI, add `@theia/ai-core-ui` to your dependencies. `@theia/ai-core-ui` itself now depends on `@theia/preferences`, for the Settings UI's "Open settings.json" command (`PreferencesCommands.OPEN_PREFERENCES_JSON_TOOLBAR`) that the setting rows delegate to for complex values.
 - **Removed widgets:** the per-tab widgets and their `WidgetFactory` registrations were removed — `AIAgentConfigurationWidget`, `AIVariableConfigurationWidget`, `ModelAliasesConfigurationWidget`, `AIToolsConfigurationWidget`, `AISkillsConfigurationWidget`, `AITokenUsageConfigurationWidget`, `AIPromptFragmentsConfigurationWidget` (all `@theia/ai-ide`) and `AIMCPConfigurationWidget` (`@theia/ai-mcp`). The dead base classes (`AIConfigurationBaseWidget`, `AICardGridConfigurationWidget`, `AI{List,Table,Hierarchical}ConfigurationWidget`) were removed as well. Each surface now lives in an `AiConfigurationCategory` contribution with a renderer built from the shared primitives.
-- **Removed components and API:** the widget-era building blocks `ConfigurationSection`, `ExpandableSection` and `PromptVariantRenderer` (`template-settings-renderer.tsx`) were removed from `@theia/ai-ide`; use `AiConfigurationSection` and `VariantSetCard` from `@theia/ai-core-ui` instead. `MCPServerEditor.openEditServer` was dropped from the interface — the MCP server category owns the edit flow now; `openAddServer` and `installFromEntry` are unchanged.
+- **Removed components and API:** the widget-era building blocks `ConfigurationSection`, `ExpandableSection` and `PromptVariantRenderer` (`template-settings-renderer.tsx`) were removed from `@theia/ai-ide`; use `AiConfigurationSection` and `VariantSetCard` from `@theia/ai-core-ui` instead. The icon-only buttons of the view share one primitive now, `AiConfigurationIconButton`, so the CSS classes `.ai-variant-action-button` and `.ai-configuration-value-row-copy` were replaced by `.ai-configuration-icon-button`. `MCPServerEditor.openEditServer` was dropped from the interface — the MCP server category owns the edit flow now; `openAddServer` and `installFromEntry` are unchanged.
 - **Adding custom categories:** adopters that added their own AI configuration tabs should now register an `AiConfigurationCategory` (bind it to the `AiConfigurationCategory` service identifier). Set `contributed: true` to have it grouped under "Contributed by extensions". See `examples/api-samples` (`SampleChatToolbarConfigurationCategory`) for a minimal end-to-end example.
 - **Selection:** category/item navigation now routes through `AiConfigurationSelectionModel` (`@theia/ai-core-ui`). `AIConfigurationSelectionService` (`@theia/ai-ide`) is retained for the agent/alias domain events it still carries.
 - **Stable entry points:** the command ids `aiConfiguration:open` (`OPEN_AI_CONFIG_VIEW`) and `aiConfiguration:openTools` (`OPEN_AI_CONFIG_VIEW_TOOLS`) and the chat-view toolbar button are unchanged. `OPEN_AI_CONFIG_VIEW(tabId)` still accepts the legacy per-tab widget ids and maps them onto the corresponding category ids.
+
+_Dynamic Model Discovery (Anthropic, Google, OpenAI)_:
+
+`@theia/ai-anthropic`, `@theia/ai-google` and `@theia/ai-openai` now discover the available models dynamically from each provider's models endpoint (`/v1/models`, `/v1beta/models`, `/v1/models`) instead of registering a curated list. As a result the following preferences have been **removed**:
+
+- `ai-features.anthropic.AnthropicModels`
+- `ai-features.google.models`
+- `ai-features.openAiOfficial.officialOpenAiModels`
+
+Models appear automatically once an API key is configured, so there is nothing to migrate for the common case. If you relied on those preferences to pin a specific set of models, note that:
+
+- Models are fetched on startup, on API-key change, and via the manual refresh in the provider's node of the Models configuration category, which also shows the discovery status (fetching / updated / cached / error / no API key / manual) and lists the models with the release date the provider reported. Discoveries are cached to `<configDir>/model-snapshots/<provider>-models.json` and reused when a later fetch fails, so the models stay usable offline.
+- Custom-endpoint preferences (`ai-features.anthropicCustom.customAnthropicModels`, `ai-features.openAiCustom.customOpenAiModels`) are unchanged: they do not necessarily target the official provider, so they keep their manual entries.
+- Anthropic and OpenAI report one entry per release (`claude-opus-5-20260401`, `claude-opus-5-20251120`, …). Every release is registered, plus the undated id (`claude-opus-5`) that the providers accept as an alias for the newest one — the id the built-in model aliases reference and the one that does not change from under a configuration when the provider ships an update. Gemini ids carry no release date, so nothing is added for Google. GitHub Copilot no longer drops a dated release when its family is also offered, for the same reason.
+- What keeps those lists out of the way is that **the AI chat input's model picker shows the favorite models rather than all of them**: up to five automatically featured models per provider, plus the ones checked for the provider in the AI Configuration view (kept in `ai-features.modelSettings.favoriteModels` as fully qualified ids). Nothing else is restricted: an agent's model and a model alias are still picked from every discovered model, grouped per provider on their own pages, and the picker ends with an entry that opens the page where its contents are decided, so a short list is not mistaken for all there is.
+- Featured are the undated ids a provider offers, ranked by release date, then by a `-latest` pointer the provider maintains at the current model of a family, then by the version in the id. The pointer only decides where there are no dates to go by (Gemini): a provider that reports release dates dates its pointers as well. What the model aliases name plays no part in it: an alias is a curated list of its own, naming the model a purpose should use, which is a different question from which models are worth offering in the picker. The set is derived from each discovery rather than stored, so a model released tomorrow is offered the day it appears.
+- Both directions are the user's to override, and only the override is stored: unchecking a model that is shown by default adds it to `ai-features.modelSettings.hiddenModels`, checking any other model adds it to `ai-features.modelSettings.favoriteModels`. A model nobody touched appears in neither list, and a model a successful discovery no longer offers is dropped from both.
+- A `-latest` id, which a provider maintains as a pointer at the current model of a family (`gemini-flash-latest`), ranks ahead of the ids that carry a version, since it resolves to the newest by definition and has no version of its own to compare. A provider that knows better nominates its models outright, through `DiscoveredModel.featured`: GitHub Copilot serves several vendors under one provider, so it fills its five vendor by vendor: `auto`, then the newest model of each of Anthropic, OpenAI and Google, then the next of each in turn, rather than letting a ranking pick five models of whichever vendor numbers its models highest. The rest of what Copilot carries stays registered and selectable, just not preselected.
+- A model that a successful discovery no longer offers is dropped from the favorites, while a cached or failed discovery leaves them alone. The models of a provider that does not participate in discovery (a manually configured one, or a custom endpoint) are all shown, since listing them was the choice already.
+- The model lists — the Model Discovery section, the chat input's model selector, an agent's model dropdown and an alias' model selector — put the most recently released model first, grouped per provider where they span several. The release date comes from the provider (`LanguageModelMetaData.released`, new); Gemini reports none, so Google's models stay in alphabetical order.
+- Built-in model aliases stay code-defined. A `defaultModelId` that discovery does not produce is simply skipped when the alias resolves, as before.
+- OpenAI's endpoint lists every model type without capability metadata, so non-chat models (audio/image/embedding/moderation/computer-use/live/`-instruct`/…) are filtered out heuristically and per-model capabilities still come from the built-in defaults. Google's is filtered the same way, to the `gemini-*` chat models: what it also carries is either not chat (image, speech, embedding), answers through an agentic API of its own (deep research, computer use), or belongs to another family (Gemma, LearnLM). Since Gemini ids carry no release date, the ranking falls back to the numbers in them, and a parameter count like `gemma-3-27b-it` would otherwise read as the newest model there is. It reports no display name either; every model is therefore listed by id, with the name (and, for Google, the description) the provider reports shown beneath it where there is one.
+- The discovered list can be replaced with an explicit one per provider: `ai-features.anthropic.modelOverrides`, `ai-features.google.modelOverrides` and `ai-features.openAiOfficial.modelOverrides`. Empty (the default) means the models are discovered; listing model ids registers exactly those and skips discovery entirely, the same semantics as the existing `ai-features.copilot.modelOverrides`. This is how a catalogue is pinned against provider changes, and how models are named when the list endpoint cannot be reached at all.
+- **Behaviour change:** when a key comes from an environment variable (`ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`/`GEMINI_API_KEY`, `OPENAI_API_KEY`) rather than the preference, it is no longer used automatically. Theia asks for a one-time confirmation first; grant it via the prompt or by setting `ai-features.<provider>.allowEnvironmentApiKey` to `true`.
+- `@theia/ai-copilot` now reports its discovery through the same surface, so its provider page shows what the Copilot CLI returned, whether the list call failed, and which of its models the chat input shows. Signing in is Copilot's equivalent of setting an API key, so a missing sign-in is reported as a missing credential rather than as a failed call — badged "Not signed in" rather than "No API key", with a button that runs the sign-in command and no refresh to press, since nothing can be fetched until it is signed in. A provider whose credential is established by a command names it in `ModelDiscoveryStatus.action`, and one whose credential is not an API key names the badge in `ModelDiscoveryStatus.stateLabel`.
+- Adopters adding their own discovering provider extend `DiscoveringProviderContribution` (`@theia/ai-core/lib/browser`), which runs the discovery: it queues the runs, registers what came back, unregisters what vanished, gates an environment key behind the consent and reports all of it to `ModelDiscoveryStatusService`. A provider supplies its id, its manager, the two preferences it reads, its messages, and how a discovered model becomes a model description; anything else it does (a custom endpoint, a proxy) goes into `initializeProvider` and `handlePreferenceChange`. On the backend, `ModelDiscoveryFetcher` and `ModelSnapshotStore` (`@theia/ai-core/lib/node`) provide a fetch that retries a transient failure and keeps its result as an offline snapshot, and `DiscoveredModels` (`@theia/ai-core/lib/common`) collapses release-pinned ids. `FavoriteModelsService` (`@theia/ai-core/lib/browser`) decides which of the discovered models the chat input offers.
+
+_Electron launch-argument forwarding APIs_:
+
+Forwarding a second launch's CLI arguments to the new window added a few APIs that adopters implementing the affected extension points need to be aware of. The new APIs are `@experimental` and will likely receive breaking changes:
+
+- `TheiaCoreAPI.WindowMetadata` (the Electron preload API, `@theia/core/lib/electron-common/electron-api`) gained an optional `launchArgs?: LaunchArguments` member, carrying the parsed CLI options of a forwarded launch. It is filled in synchronously by the preload script over the existing `CHANNEL_WC_METADATA` channel, which now answers with the whole metadata object instead of just the `webContents` id. Adopters with a custom preload must return `{ webcontentId, launchArgs }` from that channel.
+- `ElectronMainApplicationContribution` gained an optional `claimsWindow?(args: LaunchArguments): MaybePromise<boolean>` hook. A contribution returning `true` opens an empty window for that launch instead of restoring the last workspace, since the window is about to be replaced by whatever the contribution attaches to. `@theia/dev-container` uses this to claim `--attach-container` launches, from a new `electronMain` entry point (`lib/electron-main/dev-container-electron-main-module`) that adopters assembling their extension list manually must include.
+- New replaceable service `WindowLaunchArgs` (interface + symbol, `@theia/core/lib/browser/window/window-launch-args`) exposes those options to the frontend synchronously, and the new contribution point `RemoteCliArgsContribution` (`@theia/core/lib/common/remote-cli-args-contribution`) lets extensions contribute extra CLI arguments to a remote backend.
 
 _ESBuild_:
 
@@ -110,6 +144,68 @@ For example, in an `electron-builder` configuration, ensure the `lib/backend/she
 
 The `lib/**/*` glob already covers `lib/backend/shell-integrations/`. If you use a more restrictive `files` pattern, make sure `lib/backend/shell-integrations/**/*` is explicitly included, as `ShellIntegrationInjector` resolves these scripts relative to `__dirname` (i.e. `lib/backend/`).
 
+_Bundled files in asar-packaged Electron applications_:
+
+Applications packaged with `asar: true` store their files inside `app.asar`, which only the application itself can read. Processes that Theia spawns therefore cannot use the files in the archive: the shells cannot source the terminal shell integration scripts, and `child_process.spawn` cannot execute the ripgrep binary that `@theia/bundle-plugin` copies to `lib/backend/native/`. Since `1.77.0` the application handles this: `BundledResourceProvider` (`@theia/core/lib/node`) extracts such files from the archive into the configuration directory (`~/.theia/bundled-resources/` by default) when they are first needed, and cleans up the copies of earlier versions. No packaging change is required.
+
+Extraction can be avoided by unpacking the files at packaging time. The provider prefers the unpacked files over its own copy whenever they are complete. With `electron-builder`:
+
+```yaml
+asar: true
+asarUnpack:
+  - "**/lib/backend/shell-integrations/**"
+  - "**/lib/backend/native/**"
+```
+
+Use `BundledResourceProvider.resolveExternalPath(path)` for any other bundled file that is handed to a process outside of the application, such as a script or a helper executable. This also applies to code of your own that spawns the `rgPath` exported by `@vscode/ripgrep`: in the bundle, `rgPath` points to `app.asar.unpacked` only if the binary was unpacked, and into the archive otherwise.
+
+If you worked around the ripgrep problem by overriding the `@vscode/ripgrep` replacement in your own esbuild configuration, that override is no longer needed.
+
+### v1.77.0
+
+#### TypeScript 6.0 [#18100](https://github.com/eclipse-theia/theia/pull/18100)
+
+Theia is built with TypeScript 6.0.x. Adopters that only consume Theia's declaration files are not required to upgrade immediately: declarations emitted by TypeScript 6 remain consumable by TypeScript 5.9. Applications and extensions that replicate Theia's `configs/base.tsconfig.json` settings (in particular `moduleResolution: bundler` with CommonJS) must use TypeScript 6, because TypeScript 5.9 rejects that combination. Upgrading is recommended in either case so that applications and extensions use the same compiler behavior as the framework.
+
+When adopting TypeScript 6 or replicating Theia's `configs/base.tsconfig.json` settings, review these compiler changes:
+
+- `moduleResolution` is now `bundler`, which honors package `exports`; deep imports into paths that a dependency does not export will fail. TypeScript 6 deprecates the previous `node` / `node10` resolution mode.
+- TypeScript 6 defaults `types` to an empty array. Add the ambient types your project requires, typically `"types": ["node"]`; Theia's shared configuration includes Node and Mocha because package tests live next to their sources.
+- TypeScript 6 defaults `strict` to `true`. Theia currently sets `strict: false` explicitly and retains its existing individual strictness flags.
+- Remove `downlevelIteration`; TypeScript 6 reports the option as deprecated even when it is disabled.
+- TypeScript 6 defaults `noUncheckedSideEffectImports` to `true`. Theia sets it to `false` because extensions import CSS for side effects without shared module declarations. Adopters can instead declare their side-effect modules, such as `*.css`.
+- `esModuleInterop` is always enabled. Callable or constructable CommonJS modules must use default imports (`import express from 'express'`) rather than namespace imports. The emitted JavaScript uses the `tslib` `__importStar` and `__importDefault` helpers, so every published extension that emits those helpers must declare `tslib` in `dependencies` rather than relying on workspace hoisting.
+- Theia's emitted declarations can now contain default imports of `export =` modules. Consumers need `esModuleInterop`, `allowSyntheticDefaultImports`, or `skipLibCheck` when compiling those declarations.
+- `TreeProps.viewProps` and `TreeWidget.ViewProps` no longer accept the inherited HTML `width`, `height`, or `rows` properties. The tree widget owns those values and the public types now omit them from the forwarded `react-virtuoso` props.
+
+To make the IDE use the workspace compiler, add `"typescript.tsdk": "node_modules/typescript/lib"` to workspace settings when the IDE's bundled TypeScript is older than 6. Otherwise the editor can report configuration errors for `moduleResolution: bundler` with CommonJS even though the workspace compiler accepts it.
+
+The shared ESLint configuration no longer uses `@typescript-eslint/eslint-plugin-tslint`, `tslint`, or `eslint-plugin-deprecation`. Adopters extending `configs/*.eslintrc.json` need typescript-eslint v8, `@stylistic/eslint-plugin` v3, `eslint-plugin-jsdoc`, and the `@theia/eslint-plugin` `file-header` rule. The former TSLint `typedef: call-signature` check is now the `@theia/explicit-return-type` rule of `@theia/eslint-plugin`, and the space-after-asterisk part of TSLint `jsdoc-format` is now its `@theia/jsdoc-space-after-asterisk` rule. A file that intentionally uses a different license header must place `/* eslint-disable @theia/file-header */` on line 1 because the rule reports at line 1.
+
+#### Physical printable-key bindings
+
+##### User keymaps
+
+Printable keybinding tokens now identify logical characters on the active keyboard layout. Existing `keymaps.json` files and keybinding strings remain parseable, so no file-format migration is required. Shift in an authored logical-character stroke is absorbed when it produces the character; otherwise it remains a command modifier.
+
+Latin letters that the active layout does not produce on its base or Shift layer fall back to their US key position, matching VS Code so common shortcuts continue working on non-Latin layouts. This fallback applies to letters only; digits and punctuation always follow the logical character. The recorder stores the Latin fallback letter in this case: pressing Ctrl and the physical `V` key on a Russian layout records `ctrl+v`, not `ctrl+м`.
+
+Bindings that intentionally target a physical position must use explicit scan-code syntax. For example, replace a position-dependent `ctrl+[` binding with `ctrl+[BracketLeft]`. Reserved logical characters can be authored with `[char:0x...]`, such as `ctrl+[char:0x2B]` for logical `+`. The recorder stores non-printable keys, Space and numpad keys by name (for example `delete`, `f1`, `space` and `add`; numpad digits as `1`…`9`, like the top-row digits); `[ScanCode]` is reserved for printable keys without a committed character. On macOS, the recorder stores Option as the `alt` command modifier rather than the character it produces: Option+Shift+P records `shift+alt+p`, not `∏`.
+
+Available printable bindings now follow their logical characters. For example, German `ctrl+[` resolves to physical `Ctrl+AltGr+8` instead of the US `BracketLeft` position. On Windows, AltGr is reported as Ctrl+Alt, so the AltGr layer consumes both Ctrl and Alt: bindings that combine `ctrl` or `alt` with an AltGr-layer character, such as German `ctrl+[`, `ctrl+]` and `ctrl+\` (including Monaco defaults), are inactive. On macOS, the same applies to `alt` (Option) with an Option-layer character: German `cmd+alt+[` and `cmd+alt+]` (Monaco fold/unfold), which previously worked positionally as Cmd+Option+Ü and Cmd+Option++, are inactive. To keep such a shortcut, use `ctrl+[BracketLeft]`, set `"keyboard.dispatch": "keyCode"`, or choose a binding that does not require AltGr. Logical characters unavailable on the active layout remain loaded and visible but inactive; the same applies when authored Shift is a command modifier but the character requires an AltGr layer that consumes Shift. Theia no longer silently maps these bindings to a different key combination.
+
+Set `"keyboard.dispatch": "keyCode"` to restore positional key-code dispatch globally if the logical behavior changes existing shortcuts unexpectedly. Character-only tokens such as `ü` or `[char:0x...]` are inactive in this mode because they have no positional key code. See [`packages/keymaps/README.md`](../packages/keymaps/README.md) for the complete logical-character, scan-code, character-token, inactive-binding, and Windows AltGr recorder grammar.
+
+##### Adopter APIs
+
+- `KeyboardLayout` gained `latinFallbackByCode`; `KeyboardLayoutService.getLatinLetterFallback(key)` exposes it. Subclasses replacing `transformNativeLayout()` must call the protected `KeyboardLayoutService.addMissingLatinLetterCandidates()` method to keep Latin-letter shortcuts working on non-Latin layouts.
+- `isPrintableKey` and `isPrintableCharacter` are exported from `@theia/core/lib/common/keys`; the protected `KeyboardLayoutService` helpers of the same names were removed.
+- Replace consumers of `KeyboardLayout.key2KeyCode` with `candidatesByCharacter` or `candidatesByFoldedCharacter`. Each `KeyboardLayoutCandidate` provides the physical `key`, logical `character`, and required `layoutModifiers`. Subclasses of `KeyboardLayoutService` that overrode the removed protected `transformKeyCode()` or `getCharacterIndex()` methods must move their logic to `resolveKeyCode()` and candidate lookup.
+- Pass the normalized keyboard input as the second argument to `KeyboardLayoutService.validateKeyCode`.
+- Review `KeyCode` consumers: `equals()` requires the same physical key and `dispatchString()`, character-only values are not modifier-only, and `toString()` preserves authored spelling. Use `dispatchString()` when a runtime match identity is required.
+- Update `KeybindingRegistry.matchKeybinding()` consumers from `match.binding` to `match.runtime.binding`; the resolved sequence is available as `match.runtime.sequence`. Pass resolved sequences (`resolveKeybinding(binding)`) or runtime interpretations to `matchKeybinding()`; raw `KeySequence.parse()` output is no longer guaranteed to match under `keyboard.dispatch: 'code'`. Subclasses that override chord handling must replace the protected `keySequence` field with `keySequenceCandidates`. Protected keybinding-tree values are runtime records containing the original scoped binding and its resolved sequence, rather than `ScopedKeybinding[]`.
+- Pass an explicit `'logical'` or `'physical'` form to `AcceleratorSource.getAccelerator`. Browser UI uses logical labels, while Electron native menus require physical accelerators.
+
 ### v1.76.0
 
 #### GitHub Copilot is served through the Copilot CLI
@@ -181,6 +277,26 @@ If your application still depends on `@theia/preview`, migrate to the built-in V
 
 Gone with the extension are the `preview.openByDefault` preference, the `preview:open` and `preview.open.source` commands, and the `PreviewUri`, `PreviewHandler`, `PreviewHandlerProvider`, `PreviewWidget`, `PreviewContribution`, `PreviewCommands`, `MarkdownPreviewHandler` and `PreviewLinkNormalizer` API. The VS Code Markdown extension contributes `markdown.showPreview`, `markdown.showPreviewToSide` and the `markdown.preview.*` preferences in their place.
 
+#### Browser-only config directory moved to `/.theia` [#17966](https://github.com/eclipse-theia/theia/pull/17966)
+
+The browser-only `EnvVariablesServer` stub (`packages/core/src/browser-only/frontend-only-application-module.ts`) previously returned an empty string for `getConfigDirUri()`. `new URI('')` resolves to `file:///`, so in browser-only mode the config directory was effectively the root of the OPFS file system, and every consumer wrote its state there, alongside the user's workspace directories. `getConfigDirUri()` now returns `file:///.theia`, matching the backend's default `.theia` configuration folder (the `configurationFolder` property).
+
+As a side effect, `CommonFrontendContribution` registers a UTF-8 encoding override with `parent: new URI(configDirUri)`. Because that parent used to be `file:///`, the override applied to the entire file tree in browser-only mode. It is now correctly scoped to `/.theia`, matching backend behavior.
+
+**End-user-facing:**
+
+- Existing browser-only deployments have their state at the OPFS root. This is not migrated automatically: after upgrading, Theia looks under `/.theia`, finds nothing, and behaves as a fresh install for that state. Affected data:
+  - `settings.json` and `keymaps.json`
+  - untitled workspace files and the recent workspaces list
+  - workspace metadata
+  - AI stores: chat sessions, prompt customizations, skills, sketched tools
+- Files outside `/.theia` are no longer forced to UTF-8 encoding.
+
+**Adopter-facing:**
+
+- If you need to preserve existing user data, copy the entries listed above from the OPFS root into `/.theia` on first run after upgrading.
+- Do not rely on the old blanket UTF-8 encoding override applying outside the config directory.
+
 ### v1.75.0
 
 #### React 19 and the automatic JSX runtime
@@ -207,7 +323,6 @@ Adopters do not have to switch, but if you want the same setup in your own exten
 
 - set `jsx` and `jsxImportSource` as above in your `tsconfig.json` (if you use `jsx: "react-jsxdev"`, the `jsx-dev-runtime` re-export is used instead)
 - remove `import * as React from '@theia/core/shared/react'` from files that only needed it for JSX. Keep the import wherever `React.*` types or APIs are used (`React.ReactNode`, `React.FC`, `React.MouseEvent`, hooks, …). With `noUnusedLocals` enabled the compiler reports the now-obsolete imports.
-
 
 #### Removal of the webpack bundler
 
@@ -241,8 +356,8 @@ The `@theia/ai-vercel-ai` package has been marked as deprecated and is no longer
 
 If your application depends on `@theia/ai-vercel-ai`, migrate as follows:
 
-- **OpenAI models**: use `@theia/ai-openai`. Move `ai-features.vercelAi.openaiApiKey` to `ai-features.openAiOfficial.openAiApiKey` and define models in `ai-features.openAiOfficial.officialOpenAiModels`.
-- **Anthropic models**: use `@theia/ai-anthropic`. Move `ai-features.vercelAi.anthropicApiKey` to `ai-features.anthropic.AnthropicApiKey` and define models in `ai-features.anthropic.AnthropicModels`.
+- **OpenAI models**: use `@theia/ai-openai`. Move `ai-features.vercelAi.openaiApiKey` to `ai-features.openAiOfficial.openAiApiKey`; the models themselves are discovered from the provider (see _Dynamic Model Discovery_ above).
+- **Anthropic models**: use `@theia/ai-anthropic`. Move `ai-features.vercelAi.anthropicApiKey` to `ai-features.anthropic.AnthropicApiKey`; the models themselves are discovered from the provider (see _Dynamic Model Discovery_ above).
 - **Custom endpoints** (`ai-features.vercelAi.customModels`): split entries by their `provider` field into the matching provider-specific preference:
   - `provider: 'openai'` → `ai-features.openAiCustom.customOpenAiModels`
   - `provider: 'anthropic'` → `ai-features.anthropicCustom.customAnthropicModels`

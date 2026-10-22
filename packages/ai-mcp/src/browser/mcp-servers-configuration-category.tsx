@@ -256,7 +256,7 @@ export class McpServersConfigurationCategory extends CollectionCategoryRenderer 
     }
 
     protected override getEmptyMessage(): string {
-        return nls.localizeByDefault('No MCP servers configured');
+        return nls.localize('theia/ai/mcpConfiguration/noServersConfigured', 'No MCP servers configured');
     }
 
     protected override renderItemHeader(item: AiConfigurationTreeItem): React.ReactNode {

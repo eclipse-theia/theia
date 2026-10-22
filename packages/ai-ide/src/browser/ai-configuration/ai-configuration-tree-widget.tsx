@@ -207,11 +207,19 @@ export class AiConfigurationTreeWidget extends TreeWidget {
         return match?.target;
     }
 
+    /**
+     * Selects a node on behalf of something other than a click on it — a deep link, a restored
+     * selection — and reveals what it holds: the category of an item, or the items of a category. A
+     * click needs neither, since the node it selects is already visible, and folding a category away
+     * only to have the next click on it unfold it again would be its own kind of rude.
+     */
     protected applyTreeSelection(node: SelectableTreeNode): void {
         this.updatingSelection = true;
         try {
             if (AiConfigurationItemNode.is(node) && ExpandableTreeNode.is(node.parent) && !node.parent.expanded) {
                 this.model.expandNode(node.parent);
+            } else if (AiConfigurationCategoryNode.is(node) && ExpandableTreeNode.is(node) && !node.expanded) {
+                this.model.expandNode(node);
             }
             this.model.selectNode(node);
         } finally {

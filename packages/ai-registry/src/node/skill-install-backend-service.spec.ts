@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import * as fs from 'fs/promises';
+// The default import keeps the CommonJS object writable for the rename monkeypatch below.
+import fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 import { PreferenceService } from '@theia/core';

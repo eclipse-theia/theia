@@ -257,6 +257,26 @@ Learn more in the [documentation](https://theia-ide.org/docs/).
 > [!NOTE]
 > When Markdown is not suitable and HTML must be used, ensure content is sanitized with `DOMPurify.sanitize()` before rendering with `dangerouslySetInnerHTML`.
 
+<a name="nls-preload"></a>
+
+* [4.](#nls-preload) Do not read a localized string while a module of the preload phase is being loaded, that is at the top level of the module rather than from a function called later. The localization data is only available once the `Preloader` has run, so a string read before that stays in English for the rest of the session.
+
+> This applies to the modules that a preload entry point imports as well, which is why such an entry point should import the symbols it needs from the modules that declare them rather than through a barrel such as `@theia/core/lib/common`. The `@theia/preload-localization-check` ESLint rule reports both cases.
+
+```ts
+// bad - evaluated when the module is loaded
+export namespace ProgressMessage {
+    export const Cancel = nls.localizeByDefault('Cancel');
+}
+
+// good - evaluated when the string is needed
+export namespace ProgressMessage {
+    export function cancel(): string {
+        return nls.localizeByDefault('Cancel');
+    }
+}
+```
+
 ## Style
 
 * Use arrow functions `=>` over anonymous function expressions.
@@ -313,33 +333,43 @@ export class MyComponent {
 bind(CommandContribution).to(LoggerFrontendContribution);
 
 // good
-bind(CommandContribution).to(LoggerFrontendContribution).inSingletonScope();
+bind(LoggerFrontendContribution).toSelf().inSingletonScope();
+bind(CommandContribution).toService(LoggerFrontendContribution);
 ```
+
+> Why? Binding the implementation to itself lets adopters `rebind(LoggerFrontendContribution)` to substitute a subclass. If it is bound only under the contribution symbol, they have to resort to contribution filters instead.
 
 <a name="di-function-export"></a>
 
-* [4.](#di-function-export) Don't export functions, convert them into class methods. Functions cannot be overridden to change their behavior or work around a bug.
+* [4.](#di-function-export) Don't export functions. Convert them into methods of an injectable service. A function can be neither overridden nor rebound to change its behavior or work around a bug. Declare the service as an interface + symbol, see [Interfaces/Symbols 2](#interfaces-over-classes).
 
 ```ts
 // bad
 export function createWebSocket(url: string): WebSocket {
-   ...
+    ...
 }
 
 // good
-@injectable()
-export class WebSocketProvider {
-   protected createWebSocket(url: string): WebSocket {
-       ...
-   }
+export const WebSocketProvider = Symbol('WebSocketProvider');
+export interface WebSocketProvider {
+    createWebSocket(url: string): WebSocket;
 }
 
 @injectable()
-export class MyWebSocketProvider extends WebSocketProvider {
-   protected createWebSocket(url: string): WebSocket {
-      // create a web socket with custom options
-   }
+export class WebSocketProviderImpl implements WebSocketProvider {
+    createWebSocket(url: string): WebSocket {
+        ...
+    }
 }
+
+@injectable()
+export class MyWebSocketProvider extends WebSocketProviderImpl {
+    override createWebSocket(url: string): WebSocket {
+        // create a web socket with custom options
+    }
+}
+
+rebind(WebSocketProvider).to(MyWebSocketProvider).inSingletonScope();
 ```
 
 **Exceptions**
@@ -398,6 +428,9 @@ export interface MyCompositeTreeNode extends CompositeTreeNode {
 <a name="di-auxiliary-function-export"></a>
 
 * [4.3](#di-auxiliary-function-export) Auxiliary functions which are called from the customizable context can be exported in the corresponding namespace.
+
+> [!NOTE]
+> A namespace that exports functions cannot share its name with a `const` symbol, so this pattern applies to services whose class is also the injection token (see [Interfaces/Symbols 2.1](#class-token-internal)).
 
 ```ts
 @injectable()
@@ -461,9 +494,21 @@ export interface TaskProcessOptions {
     process: Process;
 }
 
+export const ProcessTask = Symbol('ProcessTask');
+export interface ProcessTask {
+    readonly label: string;
+}
+
 @injectable()
-export class ProcessTask {
-    constructor(@inject(TaskProcessOptions) protected readonly options: TaskProcessOptions) { }
+export class ProcessTaskImpl implements ProcessTask {
+
+    @inject(TaskProcessOptions)
+    protected readonly options: TaskProcessOptions;
+
+    get label(): string {
+        return this.options.label;
+    }
+
 }
 
 export const TaskFactory = Symbol('TaskFactory');
@@ -484,12 +529,12 @@ export class ProcessTaskRunner {
 
 }
 
-bind(ProcessTask).toSelf();
+bind(ProcessTask).to(ProcessTaskImpl);
 bind(TaskFactory).toFactory(ctx => (options: TaskProcessOptions) => {
     const child = new Container({ defaultScope: 'Singleton' });
     child.parent = ctx.container;
     child.bind(TaskProcessOptions).toConstantValue(options);
-    return child.get(ProcessTask);
+    return child.get<ProcessTask>(ProcessTask);
 });
 ```
 
@@ -546,6 +591,11 @@ See: <https://github.com/eclipse-theia/theia/issues/10877#issuecomment-110700022
 * [1.](#theming-no-css-color-variables) Do not introduce CSS color variables. Implement `ColorContribution` and use `ColorRegistry.register` to register new colors.
 <a name="theming-no-css-color-values"></a>
 * [2.](#theming-no-css-color-values) Do not introduce hard-coded color values in CSS. Instead, refer to [VS Code colors](https://code.visualstudio.com/api/references/theme-color) in CSS by prefixing them with `--theia` and replacing all dots with dashes. For example `widget.shadow` color can be referred to in CSS with `var(--theia-widget-shadow)`.
+
+> [!NOTE]
+> `ColorApplicationContribution` sets every registered color on the document element under both the `--theia-` and the `--vscode-` prefix, so that VS Code extensions referencing `--vscode-` prefixed color variables (e.g. in inline styles of rendered HTML) work in Theia.
+> Theia's own code should always use the `--theia-` prefix; do not add ad-hoc `--vscode-` aliases in CSS files.
+
 <a name="theming-derive-colors-from-vscode"></a>
 * [3.](#theming-derive-colors-from-vscode) Always derive new colors from existing [VS Code colors](https://code.visualstudio.com/api/references/theme-color). New colors can be derived from an existing color by plain reference, e.g. `dark: 'widget.shadow'`, or transformation, e.g. `dark: Color.lighten('widget.shadow', 0.4)`.
 
@@ -692,6 +742,27 @@ pathString.substring(absolutePathString.length + 1)
 // good
 new Path(absolutePathString).relative(pathString)
 ```
+
+## Bundled Resources
+
+<a name="bundled-resource-provider"></a>
+
+* [1.](#bundled-resource-provider) Resolve resources that ship with the application through `BundledResourceProvider` (`@theia/core/lib/node`) before handing their path to a process outside of the application, e.g. a shell, a debug adapter or another tool.
+
+> Why? An Electron application packaged with `asar: true` keeps its resources in an archive. Paths into that archive can only be read through Electron's patched `fs` module, so an external process fails to read them. The provider returns the resource at a location outside of the archive, extracting it if the packaging step did not unpack it.
+
+```ts
+// bad - the path points into `app.asar` in a packaged application
+const scriptPath = path.join(__dirname, 'scripts', 'setup.sh');
+spawn(shell, [scriptPath]);
+
+// good
+const scriptPath = await this.bundledResourceProvider.resolveExternalPath(path.join(__dirname, 'scripts'));
+spawn(shell, [path.join(scriptPath, 'setup.sh')]);
+```
+
+> [!NOTE]
+> Resolve the directory that a script needs rather than the single file, so that files referring to each other stay together.
 
 ## Logging
 

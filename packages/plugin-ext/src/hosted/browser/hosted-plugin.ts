@@ -24,7 +24,7 @@
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
 import { PluginWorker } from './plugin-worker';
-import { getPluginId, DeployedPlugin, HostedPluginServer } from '../../common/plugin-protocol';
+import { getPluginId, DeployedPlugin, HostedPluginServer, PLUGIN_HOST_FRONTEND } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
 import { ExtensionKind, MAIN_RPC_CONTEXT, PluginManagerExt, UIKind } from '../../common/plugin-api-rpc';
 import { setUpPluginApi } from '../../main/browser/main-context';
@@ -73,6 +73,7 @@ import {
 } from '../common/hosted-plugin';
 import { isRemote } from '@theia/core/lib/browser/browser';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
+import { TelemetryConsentProvider } from '@theia/telemetry/lib/common/telemetry-consent-provider';
 
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker' | 'onDebugDynamicConfigurations';
 
@@ -183,6 +184,9 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     @inject(WorkspaceTrustService)
     protected readonly workspaceTrustService: WorkspaceTrustService;
 
+    @inject(TelemetryConsentProvider)
+    protected readonly telemetryConsentProvider: TelemetryConsentProvider;
+
     @inject(ILogger) @named('plugin-ext:HostedPluginSupport')
     protected override readonly logger: ILogger;
 
@@ -245,7 +249,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     }
 
     protected createTheiaReadyPromise(): Promise<unknown> {
-        return Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots]);
+        return Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots, this.telemetryConsentProvider.ready]);
     }
 
     protected override runOperation(operation: () => Promise<void>): Promise<void> {
@@ -284,9 +288,11 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
         // must not run while the ShellLayoutRestorer still holds restored plugin view widgets, otherwise
         // removeStaleWidgets can dispose a restored view container mid-restore and abort the whole
         // layout restoration (see https://github.com/eclipse-theia/theia/issues/17770).
+        // Wait for `ready` rather than `initialized_layout`: only `ready` follows the onDidInitializeLayout
+        // hooks, and PluginViewRegistry's hook disposes the data widgets that initWidgets would prepare.
         // Deliberately not awaited: startPlugins runs after this hook and may register file system
         // providers the layout restoration depends on (see beforeLoadContributions).
-        this.appState.reachedState('initialized_layout').then(async () => {
+        this.appState.reachedState('ready').then(async () => {
             if (toDisconnect.disposed) {
                 return;
             }
@@ -364,7 +370,8 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
                 },
                 jsonValidation,
                 pluginKind: isRemote ? ExtensionKind.Workspace : ExtensionKind.UI,
-                supportedActivationEvents
+                supportedActivationEvents,
+                telemetryLevel: this.telemetryConsentProvider.level
             });
             if (toDisconnect.disposed) {
                 return undefined;
@@ -375,7 +382,7 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
     }
 
     protected initRpc(host: PluginHost, pluginId: string): RPCProtocol {
-        const rpc = host === 'frontend' ? new PluginWorker().rpc : this.createServerRpc(host);
+        const rpc = host === PLUGIN_HOST_FRONTEND ? new PluginWorker().rpc : this.createServerRpc(host);
         setUpPluginApi(rpc, this.container);
         this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, this.container));
         return rpc;

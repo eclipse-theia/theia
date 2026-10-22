@@ -78,7 +78,9 @@ export class AgentDelegationTool implements ToolProvider {
                     prompt: {
                         type: 'string',
                         description:
-                            'The task, question, or prompt to pass to the specified agent.',
+                            'The task, question, or prompt to pass to the specified agent. Include the overall goal, the specific question, ' +
+                            'and relevant file paths. Keep the question narrow (e.g. "list every call site of X with surrounding lines"); ' +
+                            'vague prompts produce slow, generic reports.',
                     },
                     taskContextId: {
                         type: 'string',
@@ -102,6 +104,15 @@ export class AgentDelegationTool implements ToolProvider {
 
     getDelegation(toolCallId: string): { prompt: string; invocation: ChatRequestInvocation } | undefined {
         return this.pendingDelegations.get(toolCallId);
+    }
+
+    cancelDelegation(toolCallId: string): void {
+        const delegation = this.pendingDelegations.get(toolCallId);
+        if (delegation) {
+            delegation.invocation.requestCompleted.then(request =>
+                this.getChatService().cancelRequest(request.session.id, request.id)
+            ).catch(error => this.logger.error('Failed to cancel delegation', error));
+        }
     }
 
     private async delegateToAgent(
@@ -226,6 +237,8 @@ export class AgentDelegationTool implements ToolProvider {
                 }
             }
 
+            const sessionIdSuffix = `[delegation sessionId: ${session.id}]`;
+
             // Send the request. The `finally` releases the event bubbling on every outcome: a resumed
             // session is long-lived, so leaking a listener per failed round would forward its events
             // into stale parent responses.
@@ -237,7 +250,7 @@ export class AgentDelegationTool implements ToolProvider {
                 let response: ChatRequestInvocation | undefined;
                 try {
                     if (ctx.cancellationToken?.isCancellationRequested) {
-                        return 'Operation cancelled by user';
+                        return `Operation cancelled by user\n\n${sessionIdSuffix}`;
                     }
 
                     const chatService = this.getChatService();
@@ -290,14 +303,14 @@ export class AgentDelegationTool implements ToolProvider {
 
                         // Return the raw text to the top-level Agent, as a tool result. The session id
                         // allows the caller to send follow-up requests into the same session.
-                        const sessionIdSuffix = `[delegation sessionId: ${session.id}]`;
-                        return stringResult ? `${stringResult}\n\n${sessionIdSuffix}` : sessionIdSuffix;
+                        const cancellationNotice = result.isCanceled ? `Delegation to agent '${agentId}' was cancelled by the user.` : '';
+                        return [stringResult, cancellationNotice, sessionIdSuffix].filter(text => text !== '').join('\n\n');
                     } catch (completionError) {
                         if (
                             completionError instanceof Error &&
                             completionError.message.includes('cancelled')
                         ) {
-                            return 'Operation cancelled by user';
+                            return `Operation cancelled by user\n\n${sessionIdSuffix}`;
                         }
                         const errorMsg = `Failed to complete response from agent '${agentId}': ${completionError instanceof Error ? completionError.message : completionError}`;
                         this.logger.error(errorMsg, completionError);
@@ -355,6 +368,15 @@ export class AgentDelegationTool implements ToolProvider {
             if (ChatChangeEvent.isInteractionNeededEvent(event)) {
                 parentResponse.fireInteractionNeeded(event.contentPart);
                 event.contentPart.whenResolved.then(() => parentResponse.notifyChanged());
+                // A tool call's confirmation settles long before the call resolves (the
+                // tool may run for minutes after being confirmed); notify the parent at
+                // settle time so its UI re-derives pending interactions immediately.
+                if (ToolCallChatResponseContent.is(event.contentPart)) {
+                    event.contentPart.confirmed.then(
+                        () => parentResponse.notifyChanged(),
+                        () => parentResponse.notifyChanged()
+                    );
+                }
             }
         });
 

@@ -25,24 +25,24 @@ import { MEMORY_DIRECTORY_VARIABLE } from './memory-directory-variable-contribut
 @injectable()
 export class MemoryCapabilityContribution implements FrontendApplicationContribution {
 
-    @inject(PromptService)
-    protected readonly promptService: PromptService;
+  @inject(PromptService)
+  protected readonly promptService: PromptService;
 
-    onStart(): void {
-        this.promptService.addBuiltInPromptFragment({
-            id: 'memory',
-            template: this.buildTemplate()
-        });
-    }
+  onStart(): void {
+    this.promptService.addBuiltInPromptFragment({
+      id: 'memory',
+      template: this.buildTemplate()
+    });
+  }
 
-    protected buildTemplate(): string {
-        const name = nls.localize('theia/ai/ide/memoryCapability/name', 'Memory');
-        const description = nls.localize('theia/ai/ide/memoryCapability/description',
-            'Lets the agent maintain a persistent, wiki-style knowledge base for the workspace, so this and future sessions '
-            + 'build on what came before instead of starting from scratch.');
-        const dir = `{{${MEMORY_DIRECTORY_VARIABLE.name}}}`;
+  protected buildTemplate(): string {
+    const name = nls.localize('theia/ai/ide/memoryCapability/name', 'Memory');
+    const description = nls.localize('theia/ai/ide/memoryCapability/description',
+      'Lets the agent maintain a persistent, wiki-style knowledge base for the workspace, so this and future sessions '
+      + 'build on what came before instead of starting from scratch.');
+    const dir = `{{${MEMORY_DIRECTORY_VARIABLE.name}}}`;
 
-        return `---
+    return `---
 name: ${name}
 description: ${description}
 ---
@@ -57,7 +57,7 @@ That directory belongs to the current workspace but lies outside it, so what you
 the next nor shows up in the user's repository. Reach it with the ordinary file tools, prefixing every memory path with it.
 
 - \`${dir}/raw/\` — append-only ingest: session transcripts, pasted findings, anything worth preserving verbatim. Keep one
-  file per task, \`raw/<date>-<topic>.md\` with the \`yyyy-mm-dd\` prefix of {{today:inIso8601}} as the date: create it with
+  file per task, \`raw/<date>-<topic>.md\` with the \`yyyy-mm-dd\` prefix of {{today}} as the date: create it with
   ~{${WRITE_FILE_CONTENT_ID}} as soon as there is something worth keeping and append later findings to it as new sections
   (~{${WRITE_FILE_REPLACEMENTS_ID}}, so you don't re-emit the whole file). Only ever append to the current task's file — earlier
   files and a single shared log are both off limits. Pruning \`raw/\` is the user's call, not yours.
@@ -82,5 +82,5 @@ the next nor shows up in the user's repository. Reach it with the ordinary file 
   secrets, credentials, or copies of the user's files.
 
 Use judgement on what's worth compiling — a small number of accurate, well-linked articles beats an exhaustive log.`;
-    }
+  }
 }

@@ -214,8 +214,8 @@ function buildStat(skills: string[], servers: string[]): string | undefined {
     }
     if (servers.length > 0) {
         parts.push(servers.length === 1
-            ? nls.localize('theia/ai-registry/plugin/stat/oneServer', '1 MCP server')
-            : nls.localize('theia/ai-registry/plugin/stat/servers', '{0} MCP servers', servers.length));
+            ? nls.localizeByDefault('1 MCP server')
+            : nls.localizeByDefault('{0} MCP servers', servers.length));
     }
     return parts.length > 0 ? parts.join(' · ') : undefined;
 }

@@ -30,6 +30,7 @@ import {
 } from '@theia/plugin-utils/lib/common/plugin-model';
 import {
     PLUGIN_HOST_BACKEND,
+    PLUGIN_HOST_FRONTEND,
     PluginEntryPoint,
     PluginLifecycle,
     PluginManifest,
@@ -116,6 +117,7 @@ export { getPluginId };
 export { toPluginUrlFromUtils as toPluginUrl };
 export {
     PLUGIN_HOST_BACKEND,
+    PLUGIN_HOST_FRONTEND,
     PluginEntryPoint,
     PluginLifecycle,
     PluginManifest,
@@ -631,6 +633,24 @@ export interface PluginDeployOptions {
     version: string;
     /** Instructs the deployer to ignore any existing plugins with different versions */
     ignoreOtherVersions?: boolean;
+}
+
+/**
+ * Thrown by a {@link PluginDeployerResolver} when the plugin it resolves is already installed.
+ * Identified by its `name`, which survives the RPC boundary.
+ */
+export namespace DuplicateExtensionError {
+    export const NAME = 'DuplicateExtensionError';
+
+    export function create(message: string): Error {
+        const error = new Error(message);
+        error.name = NAME;
+        return error;
+    }
+
+    export function is(error: unknown): error is Error {
+        return error instanceof Error && error.name === NAME;
+    }
 }
 
 export const pluginServerJsonRpcPath = '/services/plugin-ext';

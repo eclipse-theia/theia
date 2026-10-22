@@ -125,6 +125,7 @@ import * as notebookCommon from '@theia/notebook/lib/common';
 import { CellExecutionUpdateType, CellRange, NotebookCellExecutionState } from '@theia/notebook/lib/common';
 import { LanguagePackBundle } from './language-pack-service';
 import { AccessibilityInformation } from '@theia/core/lib/common/accessibility';
+import { TelemetryLevel } from '@theia/telemetry/lib/common/telemetry-types';
 
 import { TreeDelta } from '@theia/test/lib/common/tree-delta';
 import { TestItemDTO, TestOutputDTO, TestRunDTO, TestRunProfileDTO, TestRunRequestDTO, TestStateChangeDTO } from './test-types';
@@ -258,6 +259,12 @@ export interface PluginManagerInitializeParams {
     webview: WebviewInitData
     jsonValidation: PluginJsonValidationContribution[]
     supportedActivationEvents?: string[]
+    /**
+     * The telemetry level the plugin host starts with. Defaults to `off` when absent.
+     *
+     * @experimental
+     */
+    telemetryLevel?: TelemetryLevel
 }
 
 export interface PluginManagerStartParams {
@@ -1097,6 +1104,8 @@ export interface SourceControlGroupFeatures {
 export interface ScmRawResource {
     handle: number,
     sourceUri: UriComponents,
+    multiDiffEditorOriginalUri?: UriComponents,
+    multiDiffEditorModifiedUri?: UriComponents,
     icons: (IconUrl | ThemeIcon | undefined)[], /* icons: light, dark */
     tooltip: string,
     strikeThrough: boolean,
@@ -2362,6 +2371,13 @@ export interface TelemetryMain {
 }
 
 export interface TelemetryExt {
+    /**
+     * Applies the telemetry level the user consented to. Only changes are sent this way;
+     * the initial level arrives with `PluginManagerInitializeParams`.
+     *
+     * @experimental
+     */
+    $onDidChangeTelemetryLevel(level: TelemetryLevel): void;
 }
 
 // endregion
@@ -2524,7 +2540,7 @@ export const MAIN_RPC_CONTEXT = {
     THEMING_EXT: createProxyIdentifier<ThemingExt>('ThemingExt'),
     COMMENTS_EXT: createProxyIdentifier<CommentsExt>('CommentsExt'),
     TABS_EXT: createProxyIdentifier<TabsExt>('TabsExt'),
-    TELEMETRY_EXT: createProxyIdentifier<TelemetryExt>('TelemetryExt)'),
+    TELEMETRY_EXT: createProxyIdentifier<TelemetryExt>('TelemetryExt'),
     TESTING_EXT: createProxyIdentifier<TestingExt>('TestingExt'),
     URI_EXT: createProxyIdentifier<UriExt>('UriExt'),
     MCP_SERVER_DEFINITION_REGISTRY_EXT: createProxyIdentifier<McpServerDefinitionRegistryExt>('McpServerDefinitionRegistryExt'),

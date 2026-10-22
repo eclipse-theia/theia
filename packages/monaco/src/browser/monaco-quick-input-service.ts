@@ -114,6 +114,11 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
 
     protected container: HTMLElement;
 
+    /**
+     * The element that had focus when the quick input was shown. Cleared when the quick input is hidden.
+     */
+    previousFocusElement: HTMLElement | undefined;
+
     protected inQuickOpen: IContextKey<boolean>;
 
     /**
@@ -144,11 +149,17 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
         this.scopedInQuickOpen = this.scopedContextKeyService.createKey<boolean>('inQuickOpen', false);
 
         this.controller.onShow(() => {
+            // `onShow` fires before focus moves into the quick input, and again whenever it switches to another picker.
+            const activeElement = document.activeElement;
+            if (activeElement instanceof HTMLElement && !this.container.contains(activeElement)) {
+                this.previousFocusElement = activeElement;
+            }
             this.container.style.top = this.shell.mainPanel.node.getBoundingClientRect().top + 'px';
             this.inQuickOpen.set(true);
             this.scopedInQuickOpen.set(true);
         });
         this.controller.onHide(() => {
+            this.previousFocusElement = undefined;
             this.inQuickOpen.set(false);
             this.scopedInQuickOpen.set(false);
         });
@@ -407,6 +418,7 @@ export class MonacoQuickInputService implements QuickInputService {
 
     get onShow(): Event<void> { return this.monacoService.onShow; }
     get onHide(): Event<void> { return this.monacoService.onHide; }
+    get previousFocusElement(): HTMLElement | undefined { return this.monacoService.previousFocusElement; }
 
     open(filter: string): void {
         this.monacoService.open(filter);

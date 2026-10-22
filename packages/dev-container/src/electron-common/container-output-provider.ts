@@ -16,4 +16,10 @@
 
 export interface ContainerOutputProvider {
     onRemoteOutput(output: string): void;
+    /**
+     * Receives curated status messages (from {@link RemoteStatusReport}) describing the current
+     * attach phase, e.g. "Starting application on remote...". Used to drive the "attaching" screen.
+     * Optional so that existing implementers of this interface keep compiling.
+     */
+    onRemoteStatus?(message: string): void;
 }

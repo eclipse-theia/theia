@@ -38,7 +38,7 @@ import { Drag } from '@lumino/dragdrop';
 import { MimeData } from '@lumino/coreutils';
 import { ElementExt } from '@lumino/domutils';
 import { TabBarDecoratorService } from './shell/tab-bar-decorator';
-import { ContextKeyService } from './context-key-service';
+import { ContextKeyService, ContextMatcher } from './context-key-service';
 import { KeybindingRegistry } from './keybinding';
 import { SubmenuAsToolbarItemWrapper } from './shell/tab-bar-toolbar/tab-bar-toolbar-menu-adapters';
 import { TheiaSplitPanel } from './shell/theia-split-panel';
@@ -109,8 +109,8 @@ class PartsMenuToolbarItem extends SubmenuAsToolbarItemWrapper {
         super(effectiveMenuPath, commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer, menuNode, group);
     }
 
-    override isVisible(widget: Widget): boolean {
-        return widget === this.target() && super.isVisible(widget);
+    override isVisible(widget: Widget, contextMatcher: ContextMatcher): boolean {
+        return widget === this.target() && super.isVisible(widget, contextMatcher);
     }
 }
 
@@ -300,13 +300,14 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             return;
         }
         const allParts = this.getParts();
+        // The title and the menu of the parts in the toolbar show the labels of the parts.
+        this.toDisposeOnUpdateTitle.pushAll(allParts.map(part => part.onTitleChanged(() => this.updateTitle())));
         const visibleParts = allParts.filter(part => !part.isHidden);
         this.title.label = title.label;
         // If there's only one visible part - inline it's title into the container title except in case the part
         // isn't originally belongs to this container but there are other **original** hidden parts.
         if (visibleParts.length === 1 && (visibleParts[0].originalContainerId === this.id || !this.findOriginalPart())) {
             const part = visibleParts[0];
-            this.toDisposeOnUpdateTitle.push(part.onTitleChanged(() => this.updateTitle()));
             const partLabel = part.wrapped.title.label;
             // Change the container title if it contains only one part that originally belongs to another container.
             if (allParts.length === 1 && part.originalContainerId !== this.id && !this.isCurrentTitle(part.originalContainerTitle)) {

@@ -37,7 +37,8 @@ import {
     InMemoryTextResourceResolver,
     UntitledResourceResolver,
     MenuPath,
-    PreferenceService
+    PreferenceService,
+    RemoteCliArgsContribution
 } from '../common';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding';
 import { FrontendApplication } from './frontend-application';
@@ -70,6 +71,7 @@ import { JsonSchemaStore, JsonSchemaContribution, DefaultJsonSchemaContribution,
 import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
 import { ContextKeyService, ContextKeyServiceDummyImpl } from './context-key-service';
 import { ResourceContextKey } from './resource-context-key';
+import { WidgetContextKeyContribution } from './widget-context-key-contribution';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { MimeService } from './mime-service';
 import { ApplicationShellMouseTracker } from './shell/application-shell-mouse-tracker';
@@ -139,6 +141,7 @@ import { StylingParticipant, StylingService } from './styling-service';
 import { bindCommonStylingParticipants } from './common-styling-participants';
 import { HoverService } from './hover-service';
 import { AdditionalViewsMenuPath, AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './shell/additional-views-menu-widget';
+import { SidePanelItemVisibility, SidePanelItemVisibilityImpl } from './shell/side-panel-item-visibility';
 import { LanguageIconLabelProvider } from './language-icon-provider';
 import { bindTreePreferences } from '../common/tree-preference';
 import { OpenWithService } from './open-with-service';
@@ -173,11 +176,14 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(FrontendApplicationStateService).toSelf().inSingletonScope();
     bind(DefaultFrontendApplicationContribution).toSelf();
     bindRootContributionProvider(bind, FrontendApplicationContribution);
+    bindRootContributionProvider(bind, RemoteCliArgsContribution);
 
     bind(ApplicationShellOptions).toConstantValue({});
     bind(ApplicationShell).toSelf().inSingletonScope();
     bind(SidePanelHandlerFactory).toAutoFactory(SidePanelHandler);
     bind(SidePanelHandler).toSelf();
+    bind(SidePanelItemVisibilityImpl).toSelf().inSingletonScope();
+    bind(SidePanelItemVisibility).toService(SidePanelItemVisibilityImpl);
     bind(SidebarTopMenuWidgetFactory).toAutoFactory(SidebarMenuWidget);
     bind(SidebarMenuWidget).toSelf();
     bind(SidebarBottomMenuWidget).toSelf();
@@ -191,6 +197,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(SplitPositionHandler).toSelf().inSingletonScope();
 
     bindRootContributionProvider(bind, TabBarToolbarContribution);
+    bindRootContributionProvider(bind, WidgetContextKeyContribution);
     bind(TabBarToolbarRegistry).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(TabBarToolbarRegistry);
     bind(TabBarToolbarFactory).toFactory(context => () => {

@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@theia/re-exports",
-  "version": "1.75.0",
+  "version": "1.76.0",
   "description": "Theia re-export helper functions and scripts.",
   "main": "lib/index.js",
   "engines": {
@@ -35,6 +35,6 @@
     "@types/mocha": "^10.0.10",
     "@types/mustache": "^4.2.6",
     "@types/yargs": "^17.0.35",
-    "typescript": "~5.9.3"
+    "typescript": "~6.0.3"
   }
 }

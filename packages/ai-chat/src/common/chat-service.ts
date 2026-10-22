@@ -49,17 +49,36 @@ import debounce = require('@theia/core/shared/lodash.debounce');
 // Re-export for backward compatibility
 export { DefaultChatAgentId, FallbackChatAgentId };
 
+/**
+ * Error with which {@link ChatRequestInvocation.requestCompleted} and
+ * {@link ChatRequestInvocation.responseCreated} are rejected when no chat agent is available
+ * to handle the request.
+ */
+export class NoChatAgentError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'NoChatAgentError';
+    }
+
+    static is(error: unknown): error is NoChatAgentError {
+        return error instanceof Error && error.name === 'NoChatAgentError';
+    }
+}
+
 export interface ChatRequestInvocation {
     /**
      * Promise which completes once the request preprocessing is complete.
+     * Rejected with a {@link NoChatAgentError} when no agent is available to handle the request.
      */
     requestCompleted: Promise<ChatRequestModel>;
     /**
      * Promise which completes once a response is expected to arrive.
+     * Rejected with a {@link NoChatAgentError} when no agent is available to handle the request.
      */
     responseCreated: Promise<ChatResponseModel>;
     /**
      * Promise which completes once the response is complete.
+     * In the no-agent case it resolves with the error response model instead of rejecting.
      */
     responseCompleted: Promise<ChatResponseModel>;
 }
@@ -341,14 +360,18 @@ export class ChatServiceImpl implements ChatService {
         session.pinnedAgent = agent;
 
         if (agent === undefined) {
-            const error = 'No agent was found to handle this request. ' +
+            const error = new NoChatAgentError('No agent was found to handle this request. ' +
                 'Please ensure you have configured a default agent in the preferences and that the agent is enabled in the AI Configuration view. ' +
-                'Alternatively, mention a specific agent with @AgentName.';
-            this.logger.error(error);
-            const chatResponseModel = new ErrorChatResponseModel(generateUuid(), new Error(error));
+                'Alternatively, mention a specific agent with @AgentName.');
+            this.logger.error(error.message);
+            const chatResponseModel = new ErrorChatResponseModel(generateUuid(), error);
+            // share one handled rejection so that consumers awaiting only one of the
+            // promises do not trigger unhandled rejection reports for the other
+            const rejected = Promise.reject<never>(error);
+            rejected.catch(() => { });
             return {
-                requestCompleted: Promise.reject(error),
-                responseCreated: Promise.reject(error),
+                requestCompleted: rejected,
+                responseCreated: rejected,
                 responseCompleted: Promise.resolve(chatResponseModel),
             };
         }

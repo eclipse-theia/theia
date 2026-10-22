@@ -183,7 +183,7 @@ const MultiEditToolComponent: React.FC<{
                         )}
                     </div>
                     <div className="claude-code-tool detail-row">
-                        <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/from', 'From')}</span>
+                        <span className="claude-code-tool detail-label">{nls.localizeByDefault('From')}</span>
                         <pre className="claude-code-tool detail-value code-preview">
                             {edit.old_string.length > 100
                                 ? edit.old_string.substring(0, 100) + '...'
@@ -191,7 +191,7 @@ const MultiEditToolComponent: React.FC<{
                         </pre>
                     </div>
                     <div className="claude-code-tool detail-row">
-                        <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/to', 'To')}</span>
+                        <span className="claude-code-tool detail-label">{nls.localizeByDefault('To')}</span>
                         <pre className="claude-code-tool detail-value code-preview">
                             {edit.new_string.length > 100
                                 ? edit.new_string.substring(0, 100) + '...'

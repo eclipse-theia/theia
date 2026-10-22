@@ -336,7 +336,7 @@ class PluginImpl implements Plugin {
             loader: 'js'
         }));
         build.onLoad({ filter: /@vscode[\\\/]ripgrep[\\\/]lib[\\\/]index\.js$/ }, async () => ({
-            contents: 'export const rgPath = require("path").join(__dirname, `./native/rg${process.platform === "win32" ? ".exe" : ""}`);',
+            contents: ripgrepReplacement(),
             loader: 'js'
         }));
         build.onLoad({ filter: /node_modules[/\\]node-pty[/\\]lib[/\\]utils\.js$/ }, async args => {
@@ -404,6 +404,24 @@ class PluginImpl implements Plugin {
             namespace: 'file',
         }));
     }
+}
+
+/**
+ * Replacement module for `@vscode/ripgrep`, pointing `rgPath` to the binary copied by {@link copyRipgrep}.
+ *
+ * In an asar-packaged Electron application, `__dirname` resolves inside `app.asar`. Electron redirects
+ * `require` calls into the archive, but `child_process.spawn` receives the path as-is and fails.
+ * If the packaging extracted the binary (e.g. with electron-builder's `asarUnpack`), the path points to the
+ * `app.asar.unpacked` directory instead. Otherwise it is left inside the archive, from which Theia's own
+ * consumers extract it via the `BundledResourceProvider` before spawning it.
+ * Only the `app.asar` segment is rewritten, which is the name electron-builder and electron-forge give the archive.
+ */
+function ripgrepReplacement(): string {
+    return `const fs = require("fs");
+const path = require("path");
+const bundledPath = path.join(__dirname, \`./native/rg\${process.platform === "win32" ? ".exe" : ""}\`);
+const unpackedPath = bundledPath.replace(/([\\\\/])app\\.asar(?=[\\\\/])/, "$1app.asar.unpacked");
+export const rgPath = unpackedPath !== bundledPath && fs.existsSync(unpackedPath) ? unpackedPath : bundledPath;`;
 }
 
 async function copyRipgrep(outdir: string): Promise<void> {

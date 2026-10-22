@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { TelemetryData, TelemetryReportOptions, TelemetryService } from '../common/telemetry-service';
+import { TelemetryService } from '../common/telemetry-service';
+import { TelemetryData, TelemetryReportOptions } from '../common/telemetry-types';
 
 @injectable()
 export class BrowserOnlyTelemetryService implements TelemetryService {

@@ -68,7 +68,7 @@ export class PluginInstallDialog extends ReactDialog<boolean> {
         return (
             <div className="theia-plugin-dialog">
                 <div className="theia-plugin-dialog-field">
-                    <label>{nls.localize('theia/ai-registry/plugin/dialog/from', 'From')}:</label>
+                    <label>{nls.localizeByDefault('From')}:</label>
                     <span className="theia-plugin-dialog-value">{this.renderSource(entry)}</span>
                 </div>
                 <div className="theia-plugin-dialog-field">
@@ -105,7 +105,7 @@ export class PluginInstallDialog extends ReactDialog<boolean> {
         return (
             <div className="theia-plugin-dialog-section">
                 <div className="theia-plugin-dialog-section-title">
-                    {nls.localize('theia/ai-registry/plugin/dialog/contains', 'Contains')}
+                    {nls.localizeByDefault('Contains')}
                 </div>
                 {containedSkills.length > 0 && (
                     <div className="theia-plugin-dialog-field">

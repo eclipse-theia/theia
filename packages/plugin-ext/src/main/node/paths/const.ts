@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export namespace PluginPaths {
-    export const PLUGINS_LOGS_DIR = 'logs';
-    export const PLUGINS_GLOBAL_STORAGE_DIR = 'plugin-storage';
-    export const PLUGINS_WORKSPACE_STORAGE_DIR = 'workspace-storage';
-}
+/**
+ * @deprecated since 1.76.0 - `PluginPaths` moved to `@theia/plugin-ext/lib/main/common/paths/const`
+ * so the browser-only frontend can share it. Import it from there.
+ */
+export { PluginPaths } from '../../common/paths/const';

@@ -72,6 +72,9 @@
         "title": "Nastavení agenta"
       },
       "anthropic": {
+        "allowEnvApiKey": {
+          "description": "Povolte aplikaci Theia používat klíč API služby Anthropic nalezený v prostředí (`ANTHROPIC_API_KEY`). Před použitím klíče budete jednou vyzváni k potvrzení; chcete-li souhlas odvolat, nastavte hodnotu zpět na `false`."
+        },
         "apiKey": {
           "description": "Zadejte API klíč svého oficiálního účtu Anthropic. **Upozornění:** Použitím této předvolby bude API klíč Anthropic uložen v čitelném textu na počítači, na kterém běží Theia. K bezpečnému nastavení klíče použijte proměnnou prostředí `ANTHROPIC_API_KEY`."
         },
@@ -91,13 +94,16 @@
           "enableStreaming": {
             "title": "Označuje, zda má být použito streamovací API. Výchozí hodnota je „true“."
           },
+          "headers": {
+            "title": "Další hlavičky HTTP odesílané s každým požadavkem na koncový bod"
+          },
           "id": {
             "title": "Jedinečný identifikátor, který se používá v uživatelském rozhraní k identifikaci vlastního modelu."
           },
           "maxRetries": {
             "title": "Maximální počet opakovaných pokusů při selhání požadavku. Výchozí hodnota je 3."
           },
-          "mdDescription": "Integrujte vlastní modely kompatibilní s API Anthropic. Požadované atributy jsou `model` a `url`.            \n            Volitelně můžete            \n            - zadat jedinečné `id` pro identifikaci vlastního modelu v uživatelském rozhraní. Pokud není zadáno žádné, jako `id` se použije `model`.            \n            - zadejte `apiKey` pro přístup k API poskytovanému na dané adrese URL. Použijte `true`, chcete-li označit použití globálního klíče API Anthropic.            \n            - zadejte `enableStreaming: false`, chcete-li označit, že se nemá používat streamování.            \n            - zadejte `useCaching: false`, abyste určili, že se nemá používat ukládání do mezipaměti.            \n            - zadejte `maxRetries: <number>`, abyste určili maximální počet opakovaných pokusů v případě selhání požadavku. Výchozí hodnota je 3.            \n            Schopnosti uvažování a maximální limit výstupních tokenů jsou odvozeny z odpovědi koncového bodu `/v1/models`.",
+          "mdDescription": "Integrujte vlastní modely kompatibilní s API Anthropic. Povinné atributy jsou `model` a `url`.            \n            Volitelně můžete            \n            - zadat jedinečné `id` pro identifikaci vlastního modelu v uživatelském rozhraní. Pokud není zadáno žádné, použije se jako `id` hodnota `model`.            \n            - zadejte `apiKey` pro přístup k API poskytovanému na zadané adrese URL. Použijte hodnotu `true`, chcete-li označit použití globálního klíče API Anthropic.            \n            - zadejte `enableStreaming: false`, chcete-li označit, že se nemá používat streamování.            \n            - zadejte `useCaching: false`, abyste určili, že se nemá používat ukládání promptů do mezipaměti.            \n            - zadejte `maxRetries: <číslo>`, abyste určili maximální počet opakovaných pokusů v případě selhání požadavku. Výchozí hodnota je 3.            \n            - Zadejte `headers`, chcete-li s každým požadavkem na koncový bod odesílat další hlavičky HTTP, např. hlavičky vyžadované bránou umístěnou před API.            \n            Schopnosti uvažování a maximální limit výstupních tokenů jsou odvozeny z odpovědi koncového bodu `/v1/models`.",
           "modelId": {
             "title": "ID modelu"
           },
@@ -111,8 +117,16 @@
         "customProvider": {
           "label": "{0} (Vlastní)"
         },
-        "models": {
-          "description": "Oficiální modely Anthropic, které se mají používat"
+        "discovery": {
+          "cached": "Zobrazování modelů z mezipaměti; poslední aktualizace se nezdařila: {0}",
+          "consentPrompt": "V prostředí byl nalezen klíč API služby Anthropic (ANTHROPIC_API_KEY). Může Theia tento klíč použít k vyhledání a volání modelů služby Anthropic?",
+          "consentRequired": "V prostředí byl nalezen klíč API služby Anthropic. Potvrďte jeho použití k vyhledání modelů.",
+          "noKey": "Není nastaven žádný klíč API Anthropic. Přidejte klíč, abyste mohli vyhledávat modely.",
+          "overridden": "Seznam modelů se konfiguruje ručně. Vymažte přepsání modelů, abyste znovu vyhledali modely od poskytovatele.",
+          "useEnvKey": "Použít klávesu"
+        },
+        "modelOverrides": {
+          "description": "Přepsání modelů zjištěných od společnosti Anthropic. Je-li pole prázdné (výchozí nastavení), jsou dostupné modely zjišťovány od poskytovatele. Nastavením explicitních ID modelů se použijí přesně tyto modely; zjišťování se pak vůbec nepoužije."
         }
       },
       "chat": {
@@ -306,7 +320,8 @@
           "status": {
             "canceled": "zrušeno",
             "generating": "generování...",
-            "starting": "spouštění..."
+            "starting": "spouštění...",
+            "waitingForInput": "čekání na zadání"
           }
         },
         "deleteChangeSet": "Odstranit sadu změn",
@@ -320,11 +335,14 @@
         "failedToLoadChats": "Nepodařilo se načíst chatové relace",
         "failedToRestoreSession": "Obnovení chatové relace se nezdařilo",
         "failedToRetry": "Zpráva o neúspěšném opakování pokusu",
+        "find": "Najít v chatu",
+        "findHide": "Skrýt Najít v chatu",
         "focusInput": "Zaměření na zadávání textu v chatu",
         "focusResponse": "Odpověď v chatu Focus",
         "functions": "Funkce",
         "functionsDescription": "Vestavěné funkce poskytované rozšířeními {0}",
         "genericCapabilities": "Obecné schopnosti",
+        "manageModels": "Správa modelů…",
         "mcpFunctionsDescription": "Funkce protokolu Model Context Protocol (MCP) z připojených serverů",
         "mermaid-rendering": {
           "copySource": "Kopírovat zdroj",
@@ -340,7 +358,6 @@
         "modelUnavailable": "nedostupné",
         "noChatAgentsAvailable": "Žádní chatovací agenti nejsou k dispozici.",
         "noMatchingCapabilities": "Žádné odpovídající funkce",
-        "openDiff": "Otevřít Diff",
         "openImage": "Otevřít obrázek",
         "openOriginalFile": "Otevřít původní soubor",
         "performThisTask": "Proveďte tento úkol.",
@@ -476,7 +493,6 @@
         "findMatchingFiles": "Najít soubory odpovídající globálnímu vzoru „{0}“ v aktuálním adresáři",
         "findMatchingFilesWithPath": "Najděte soubory odpovídající globálnímu vzoru „{0}“ v adresáři {1}.",
         "finding": "Hledání",
-        "from": "Z",
         "globPattern": "globový vzor",
         "grepOptions": {
           "caseInsensitive": "bez rozlišení velkých a malých písmen",
@@ -533,7 +549,6 @@
         "startingLine": "Startovní čára",
         "timeout": "Časový limit",
         "timeoutInMs": "Časový limit: {0} ms",
-        "to": "To",
         "todoList": "Seznam úkolů",
         "todoPriority": {
           "high": "vysoký",
@@ -646,23 +661,32 @@
           "signIn": "Přihlaste se do GitHub Copilot",
           "signOut": "Odhlásit se z GitHub Copilot"
         },
+        "discovery": {
+          "disabled": "Poskytovatel GitHub Copilot je deaktivován. Deaktivujte jej, abyste mohli vyhledávat modely.",
+          "overridden": "Seznam modelů se konfiguruje ručně. Vymažte přepsání modelů, abyste znovu vyhledali modely z GitHub Copilotu.",
+          "signedOut": "Nejste přihlášeni ke službě GitHub Copilot. Přihlaste se a objevte modely, které nabízí."
+        },
         "enabled": {
-          "mdDescription": "Povolte poskytovatele GitHub Copilot. Po povolení se zobrazí položka na stavovém řádku pro ověření a z vašeho předplatného Copilot se vyhledají dostupné modely."
+          "mdDescription": "Povolte poskytovatele GitHub Copilot. Po povolení se na stavovém řádku zobrazí položka pro ověření a z vašeho předplatného Copilot se načtou dostupné modely.\n\nŽádosti jsou směrovány přes oficiální příkazovou řádku GitHub Copilot, která běží jako proces na pozadí na počítači hostujícím backend. Jsou jí předány pouze přihlašovací údaje pro Copilot a nic jiného, takže se nepoužívá token v prostředí ani stávající přihlašovací údaje pro GitHub CLI."
         },
         "enterpriseUrl": {
-          "mdDescription": "Doména GitHub Enterprise pro Copilot API (např. `github.mycompany.com`). Pro GitHub.com ponechte prázdné."
+          "mdDescription": "Doména GitHub Enterprise, ke které se má provádět ověřování a odesílat požadavky (např. `github.mycompany.com`). Pro GitHub.com ponechte pole prázdné."
+        },
+        "enterpriseUrlChanged": "Doména GitHub Copilot se změnila. Přihlaste se znovu, aby se změna projevila.",
+        "executablePath": {
+          "mdDescription": "Umístění spustitelného souboru CLI GitHub Copilot na počítači, na kterém běží backend. Je-li pole prázdné (výchozí nastavení), hledá se CLI v instalaci aplikace, v proměnné `PATH` a v globálním adresáři `npm`. Tuto hodnotu nastavte, pokud je CLI nainstalováno jinde.\n\nCLI není součástí dodávky aplikace, nainstalujte jej příkazem `npm install -g @github/copilot`."
         },
         "modelOverrides": {
           "mdDescription": "Přepsání automaticky zjištěných modelů GitHub Copilot. Pokud je pole prázdné (výchozí nastavení), jsou dostupné modely zjištěny z vašeho předplatného Copilot. Nastavte explicitní ID modelů, abyste přepsali automatické zjišťování."
         },
+        "signInAgain": "GitHub Copilot se nyní přihlašuje prostřednictvím příkazového řádku GitHub Copilot CLI. Vaše předchozí přihlášení nebylo možné převést a bylo odstraněno. Chcete-li používat modely Copilotu, přihlaste se prosím znovu.",
         "signOut": {
           "confirmMessage": "Opravdu se chcete odhlásit z GitHub Copilot?"
         },
         "statusBar": {
           "signedIn": "Přihlášeno do GitHub Copilot jako {0}. Kliknutím se odhlásíte.",
           "signedOut": "Nejste přihlášeni do GitHub Copilot. Klikněte pro přihlášení."
-        },
-        "tokenMigration": "Vaše relace GitHub Copilot používala zastaralou metodu ověřování a byla vymazána. Přihlaste se prosím znovu, abyste měli přístup ke všem dostupným modelům."
+        }
       },
       "core": {
         "agentConfiguration": {
@@ -760,11 +784,18 @@
         "discardCustomPrompt": {
           "tooltip": "Zrušit přizpůsobení"
         },
+        "favoriteModels": {
+          "mdDescription": "Modely, které se zobrazují ve výběru modelů pro AI chat, kromě nejnovějších modelů od jednotlivých poskytovatelů, jako plně kvalifikované identifikátory (např. `anthropic/claude-opus-5`). To slouží k tomu, abyste měli po ruce starší model nebo model vázaný na konkrétní verzi. Chcete-li model přidat, zaškrtněte jej na stránce příslušného poskytovatele v zobrazení „Konfigurace AI“.",
+          "title": "Oblíbené modely"
+        },
         "fileVariable": {
           "description": "Vyřeší obsah souboru",
           "uri": {
             "description": "URI požadovaného souboru."
           }
+        },
+        "hiddenModels": {
+          "mdDescription": "Modely, které se nezobrazují ve výběru modelů pro AI chat, i když by se tam standardně zobrazovaly, a to jako plně kvalifikované identifikátory (např. `google/gemini-flash-lite-latest`). Zde se zobrazují pouze modely, které nejsou zařazeny mezi oblíbené, tj. nejnovější modely daného poskytovatele. Chcete-li model přidat, zrušte zaškrtnutí u daného modelu na stránce jeho poskytovatele v zobrazení „Konfigurace AI“."
         },
         "languageModelRenderer": {
           "alias": "[alias] {0}",
@@ -911,7 +942,6 @@
           "dotRelativePath": "Krátký odkaz na relativní cestu k aktuálně otevřenému souboru v rámci pracovního prostoru („currentRelativeFilePath“)."
         },
         "variantSet": {
-          "templateLabel": "Šablona",
           "unavailableVariant": "{0} (není k dispozici)",
           "variantCount": "{0} varianty",
           "variantCountSingular": "1. varianta"
@@ -931,14 +961,25 @@
         }
       },
       "google": {
+        "allowEnvApiKey": {
+          "description": "Povolte aplikaci Theia používat klíč API Google AI (Gemini), který se nachází v prostředí (`GOOGLE_API_KEY` / `GEMINI_API_KEY`). Před použitím klíče budete jednou vyzváni k potvrzení; chcete-li souhlas odvolat, nastavte hodnotu zpět na `false`."
+        },
         "apiKey": {
           "description": "Zadejte klíč API svého oficiálního účtu Google AI (Gemini). **Upozornění:** Použitím této předvolby bude klíč GOOGLE AI API uložen v čitelném textu na počítači, na kterém běží Theia. K bezpečnému nastavení klíče použijte proměnnou prostředí `GOOGLE_API_KEY`."
+        },
+        "discovery": {
+          "cached": "Zobrazování modelů z mezipaměti; poslední aktualizace selhala: {0}",
+          "consentPrompt": "V prostředí byl nalezen klíč k API Google AI (GOOGLE_API_KEY / GEMINI_API_KEY). Může Theia tento klíč použít k vyhledání a volání modelů Gemini?",
+          "consentRequired": "V prostředí byl nalezen klíč API Google AI. Potvrďte jeho použití k vyhledání modelů.",
+          "noKey": "Není nastaven žádný klíč k API Google AI. Přidejte klíč, abyste mohli vyhledávat modely.",
+          "overridden": "Seznam modelů se konfiguruje ručně. Vymažte přepsání modelů, abyste znovu vyhledali modely od poskytovatele.",
+          "useEnvKey": "Použít klávesu"
         },
         "maxRetriesOnErrors": {
           "description": "Maximální počet opakovaných pokusů v případě chyb. Pokud je menší než 1, logika opakovaných pokusů je deaktivována."
         },
-        "models": {
-          "description": "Oficiální modely Google Gemini, které se mají používat"
+        "modelOverrides": {
+          "description": "Přepsat modely zjištěné z Google Gemini. Je-li pole prázdné (výchozí nastavení), jsou dostupné modely zjišťovány od poskytovatele. Nastavte explicitní identifikátory modelů, aby se používaly přesně tyto; v takovém případě se zjišťování vůbec nepoužije."
         },
         "retryDelayOnOtherErrors": {
           "description": "Zpoždění v sekundách mezi opakovanými pokusy v případě jiných chyb (někdy Google GenAI hlásí chyby, jako je neúplná syntaxe JSON vrácená z modelu nebo 500 Internal Server Error). Nastavení této hodnoty na -1 zabrání opakovaným pokusům v těchto případech. V opačném případě dojde k opakovanému pokusu buď okamžitě (pokud je nastaveno na 0), nebo po tomto zpoždění v sekundách (pokud je nastaveno na kladné číslo)."
@@ -1053,6 +1094,7 @@
           "pageTypeLabel": "Stránka"
         },
         "allowAllMode": {
+          "hideForThisSession": "Skrýt pro tuto relaci",
           "stripTooltip": "V této relaci se volání nástrojů AI spouštějí bez potvrzení. Povolte je pouze v prostředích, kterým důvěřujete.",
           "stripTooltipFooter": "Nastavuje se pomocí --session-preference. Restartujte bez tohoto parametru, abyste obnovili uložená nastavení.",
           "title": "Režim „Allow-All“ v Theia AI"
@@ -1111,7 +1153,6 @@
             "startNewChat": "Chaty by měly být krátké a zaměřené na dané téma. [Zahajte nový chat]({0}) pro nový úkol nebo [zahajte nový chat s přehledem tohoto chatu]({1})."
           }
         },
-        "collapseSession": "Sbalit{0}",
         "commandAgent": {
           "commandCallback": {
             "confirmAction": "Rozumím",
@@ -1131,19 +1172,16 @@
           }
         },
         "configurationState": "Problémy s konfigurací",
-        "configureAgent": {
-          "header": "Nakonfigurujte výchozího agenta"
-        },
         "continueAnyway": "Pokračovat i tak",
         "createSkillAgent": {
           "mode": {
             "edit": "Výchozí režim"
           }
         },
+        "defaultChatAgentSet": "Výchozím chatovým agentem je nyní {0}.",
         "enableAI": {
           "mdDescription": "Toto nastavení vám umožňuje přístup k nejnovějším funkcím AI.            \n            Je důležité si uvědomit, že tyto funkce mohou generovat            kontinuální požadavky na jazykové modely (LLM), ke kterým poskytujete přístup. To může znamenat náklady, které            musíte pečlivě sledovat. Povolením této možnosti potvrzujete, že jste si těchto rizik vědomi.            \n            **Upozornění! Níže uvedená nastavení v této sekci se projeví až\n            po povolení hlavního nastavení funkce. Po povolení funkce je třeba nakonfigurovat alespoň jednoho            poskytovatele LLM níže. Viz také [dokumentace](https://theia-ide.org/docs/user_ai/)**."
         },
-        "expandSession": "Rozbalit „{0}“",
         "exploreAgent": {
           "description": "Asistent pro prozkoumávání kódové základny, který extrahuje a zpracovává informace z kódové základny.         Podává zprávy o tom, co existuje, poskytuje úryvky kódu a popisuje pozorované vzorce."
         },
@@ -1201,16 +1239,36 @@
         },
         "model-selection-description": "Vyberte, které velké jazykové modely (LLM) budou používat jednotlivé AI agenti v [zobrazení konfigurace AI]({0}).",
         "modelsConfiguration": {
+          "awaitingConsent": "Čeká se na souhlas",
+          "defaultModel": "Jeden z nejnovějších modelů tohoto poskytovatele, který zobrazuje výběrový panel modelů pro AI chat, pokud není zde skrytý",
           "description": "Nakonfigurujte poskytovatele jazykových modelů a modely dostupné pro agenty.",
+          "discovery": "Objevování modelů",
+          "fetching": "Načítání…",
+          "filterModels": "Modely filtrů",
+          "hideModel": "Skrýt tento model z výběru modelů pro vstup do AI chatu",
+          "modelNotReady": "Není připraveno",
           "modelSettings": "Nastavení modelu",
+          "noKey": "Žádný klíč API",
+          "noModels": "Zatím nebyly nalezeny žádné modely.",
           "noProviders": "Nejsou nainstalováni žádní poskytovatelé jazykových modelů.",
-          "providers": "Poskytovatelé"
+          "providers": "Poskytovatelé",
+          "ready": "Připraveno",
+          "refresh": "Obnovit seznam modelů",
+          "refreshUnavailable": "Není co aktualizovat, dokud poskytovatel neobdrží přihlašovací údaje",
+          "released": "vydáno {0}",
+          "resetShown": "Obnovit výchozí nastavení",
+          "resetShownUnavailable": "Již ve výchozím nastavení",
+          "showAllModels": "Zobrazit všechny nalezené modely",
+          "showCheckedModels": "Zobrazit pouze modely, které zobrazuje výběr modelů v AI chatu",
+          "showModel": "Zobrazit tento model ve výběru modelů pro vstup do AI chatu",
+          "shownExplanation": "{0} z {1} zobrazeného ve výběru modelů pro vstup do AI chatu",
+          "updated": "Aktualizováno{0}"
         },
-        "moreAgentsAvailable": {
-          "header": "K dispozici je více agentů."
+        "noDefaultAgent": {
+          "header": "Žádný výchozí agent"
         },
-        "noRecommendedAgents": "Nejsou k dispozici žádné doporučené agenty.",
         "openAiConfiguration": "Konfigurace OpenAI",
+        "openGettingStartedWalkthrough": "Začínáme s AI",
         "orchestrator": {
           "error": {
             "noAgents": "K dispozici není žádný chatovací agent, který by mohl vyřídit požadavek. Zkontrolujte prosím svou konfiguraci, zda je některý z nich povolen."
@@ -1234,8 +1292,7 @@
               "name": "GH PR Info"
             },
             "localCheckout": {
-              "description": "Lokálně zkontroluje žádost o stažení a chrání stávající změny ve stromu práce.",
-              "name": "Pokladna"
+              "description": "Lokálně zkontroluje žádost o stažení a chrání stávající změny ve stromu práce."
             },
             "localValidation": {
               "description": "Spouští lokální instalaci, sestavení, kontrolu kódu, testování nebo srovnatelné validační úlohy pro pull request.",
@@ -1292,6 +1349,7 @@
           "toolConfirmation": "Přepsání potvrzení pro jednotlivé nástroje: {0}",
           "toolConfirmationGeneric": "Nastavení přepsání potvrzení pro jednotlivé nástroje"
         },
+        "setDefaultChatAgent": "Nastavit výchozího chatového agenta",
         "shellExecutionCapability": {
           "description": "Umožňuje agentovi spouštět libovolné příkazy shellu na hostitelském systému. Agent pak může delegovat spouštění skriptů, které nejsou k dispozici jako úkoly, dotazovat se na systémové informace a provádět operace, pro které neexistuje žádný specializovaný nástroj.",
           "name": "Spuštění shellu"
@@ -1314,9 +1372,6 @@
           },
           "slashCommandsGroupDescription": "Úryvky příkazů, které vyvoláte zadáním /name v chatu a které jsou k dispozici jednomu nebo více agentům.",
           "slashCommandsSectionHeader": "Příkazy se lomítkem"
-        },
-        "toolConfirmationInfo": {
-          "header": "Potvrzení nástroje"
         },
         "toolConfirmationOverrides": {
           "stripTooltip": "Pro tuto relaci je prostřednictvím parametrů příkazového řádku automaticky schválen jeden nebo více nástrojů umělé inteligence.",
@@ -1380,7 +1435,6 @@
           "filterPlaceholder": "Filtrování proměnných podle názvu nebo popisu",
           "noMatches": "Žádná proměnná neodpovídá výrazu „{0}“.",
           "noVariables": "Nejsou k dispozici žádné proměnné.",
-          "openAgent": "Otevřít agent {0}",
           "optional": "volitelné",
           "pageSubtitle": "Hodnoty, na které můžete odkazovat pomocí názvu {0} v příkazovém řádku. Jsou vyhodnocovány a vkládány v okamžiku zadání požadavku.",
           "plainGroup": "Prosté proměnné",
@@ -1388,7 +1442,40 @@
           "required": "povinné",
           "usedByAgents": "Používá se agenty"
         },
-        "waitingForInput": "Čekáme na váš vstup"
+        "waitingForInput": "Čekáme na váš vstup",
+        "walkthrough": {
+          "aiSupport": {
+            "description": "\n{0}\naplikace je vybavena podporou AI: můžete chatovat se specializovanými agenty o svém projektu, nechat je měnit kód a spouštět úkoly, doplňovat kód během psaní a získat pomoc v terminálu.\n\nTyto funkce jsou ve výchozím nastavení deaktivovány, takže je můžete zapnout podle vlastního uvážení.\n\nPo jejich aktivaci mohou generovat nepřetržité požadavky na jazykové modely, ke kterým poskytnete přístup. To může způsobit náklady, které je třeba pečlivě sledovat.\n\n[Přečtěte si dokumentaci]({1}\n).\n\nUvítáme vaši zpětnou vazbu, příspěvky a sponzorství! Navštivte [projekt na GitHubu]({2}\n) a podpořte tak další vývoj. Děkujeme, že jste součástí naší komunity!\n\nVše je postaveno na Theia AI, frameworku pro nástroje a IDE založené na umělé inteligenci, který byl vydán jako stabilní verze. [Přečtěte si dokumentaci k frameworku]({3}\n).\n",
+            "title": "Podpora AI v{0}"
+          },
+          "chooseAgent": {
+            "intro": "Každý chatový dotaz je směrován k některému z agentů a pokud si sami žádného neurčíte, odpoví vám jeden z nich.\n\n**Nastavení výchozího agenta:**\n",
+            "outro": "V nastaveních můžete také [vybrat výchozího agenta]({0}\n) a pro jednotlivé zprávy oslovit jiného agenta tak, že zprávu začnete *@AgentName*.\nStránka [Agenti]({1}\n) obsahuje jejich kompletní seznam.\n",
+            "title": "Vyberte si výchozího agenta"
+          },
+          "connectModel": {
+            "description": "Přidejte klíč API pro hostovaného poskytovatele:\n\n- [OpenAI]({0}\n)\n- [Anthropic]({1}\n)\n- [Google]({2}\n)\n\nDáváte přednost lokálnímu řešení nebo chcete použít jinou službu? Ollama, llamafile a jakýkoli koncový bod kompatibilní s OpenAI lze nastavit na stránce [Modely]({3}\n).\n\nNěkteří agenti si přinášejí vlastní model, například Claude Code, a fungují bez poskytovatele.\n",
+            "title": "Připojit jazykový model"
+          },
+          "description": "Nastavte funkce umělé inteligence v{0}u a naučte se s nimi pracovat.",
+          "enableAi": {
+            "description": "Dokud nezapnete funkce AI, nic se nikam neodesílá a kdykoli je můžete opět vypnout.\n\n[Otevřete konfiguraci AI]({0}\n) a tam je povolte.\n",
+            "title": "Zapněte funkce umělé inteligence"
+          },
+          "firstQuestion": {
+            "description": "[Otevřete AI Chat]({0}\n) a zeptejte se na něco ohledně svého projektu.\n\nDvě věci výrazně zlepšují kvalitu odpovědí:\n\n- *@AgentName* vybere agenta pro tuto zprávu, například *@Coder*.\n- *#* připojuje kontext, například *#file* nebo *#selectedText*. Totéž umožňuje tlačítko se sponkou vedle vstupního pole.\n\nChat si pamatuje vaše relace, takže můžete konverzaci později pokračovat.\n",
+            "title": "Položte svou první otázku"
+          },
+          "goFurther": {
+            "description": "Chat je jen začátek. Umělá inteligence také doplňuje kód během psaní a pomáhá v terminálu pomocí klávesové zkratky *Ctrl+I*.\n\n- [Výzvy a dovednosti]({0}\n): přečtěte si a přizpůsobte pokyny, podle kterých agenti pracují.\n- [Servery MCP]({1}\n): přidejte si nástroje nad rámec těch, které jsou součástí balení{3}\n.\n- [Využití tokenů]({2}\n): podívejte se, co vaše požadavky spotřebovávají.\n- [Změna perspektivy]({5}\n) (experimentální): rozložení *AI First* přesouvá chat do hlavní oblasti, přičemž průzkumník a správa zdrojového kódu jsou umístěny vpravo.\n\nZobrazení historie AI, je-li k dispozici, ukazuje, co bylo skutečně odesláno do modelu.\n\nVíce informací najdete v [dokumentaci]({4}\n) – a vaše zpětná vazba je vždy vítána.\n",
+            "title": "Pokračovat"
+          },
+          "title": "Začínáme s AI",
+          "toolConfirmation": {
+            "description": "Agenti působí ve vašem pracovním prostoru prostřednictvím nástrojů: čtou soubory, spouštějí příkazy v terminálu nebo upravují kód.\n\nKaždé spuštění nástroje nejprve vyžaduje vaše potvrzení. Na stránce [Nástroje]({0}\n) můžete toto výchozí nastavení změnit nebo předem schválit nástroje, kterým důvěřujete.\n\nFunkce umělé inteligence zůstávají zcela vypnuté, dokud není pracovní prostor označen jako důvěryhodný. V části [Správa důvěryhodnosti pracovního prostoru]({1}\n) můžete rozhodnout pro každý projekt zvlášť.\n",
+            "title": "Mějte pod kontrolou, co agenti dělají"
+          }
+        }
       },
       "llamaFile": {
         "prefs": {
@@ -1434,6 +1521,7 @@
           "label": "MCP: Získat přesměrovací URL MCP OAuth"
         },
         "info": {
+          "noToolsAvailable": "Nejsou k dispozici žádné nástroje.",
           "oauthRedirectUrl": "Přesměrovací URL MCP OAuth: {0}",
           "serverSignedIn": "Přihlášeno k serveru MCP „{0}“.",
           "serverSignedOut": "Odhlášeno ze serveru MCP „{0}“.",
@@ -1609,6 +1697,7 @@
           "serverUrlPlaceholder": "Např. https://mcp.example.com",
           "serverUrlRequired": "Pro vzdálené servery je vyžadována adresa URL serveru."
         },
+        "noServersConfigured": "Není nakonfigurován žádný server MCP",
         "oauth": "OAuth",
         "oauthAuthorizationServer": "Autorizační server",
         "oauthClientId": "ID klienta OAuth",
@@ -1636,6 +1725,9 @@
         "typeRemoteOAuth": "Vzdálené (OAuth)"
       },
       "openai": {
+        "allowEnvApiKey": {
+          "description": "Povolte aplikaci Theia používat klíč API OpenAI nalezený v prostředí (`OPENAI_API_KEY`). Před použitím klíče budete jednou požádáni o potvrzení; chcete-li souhlas odvolat, nastavte hodnotu zpět na `false`."
+        },
         "apiKey": {
           "mdDescription": "Zadejte API klíč svého oficiálního účtu OpenAI. **Upozornění:** Použitím této preference bude API klíč Open AI uložen v čitelném textu na počítači, na kterém běží Theia. K bezpečnému nastavení klíče použijte proměnnou prostředí `OPENAI_API_KEY`."
         },
@@ -1664,10 +1756,13 @@
           "enableStreaming": {
             "title": "Označuje, zda má být použito streamovací API. Výchozí hodnota je „true“."
           },
+          "headers": {
+            "title": "Další HTTP hlavičky odesílané s každým požadavkem na koncový bod"
+          },
           "id": {
             "title": "Jedinečný identifikátor, který se používá v uživatelském rozhraní k identifikaci vlastního modelu."
           },
-          "mdDescription": "Integrujte vlastní modely kompatibilní s OpenAI API, například přes `vllm`. Povinné atributy jsou `model` a `url`.            \n            Volitelně můžete            \n            - zadat jedinečné `id` pro identifikaci vlastního modelu v uživatelském rozhraní. Pokud není zadáno žádné, jako `id` se použije `model`.            \n            - zadejte `apiKey` pro přístup k API poskytovanému na dané adrese URL. Použijte `true`, chcete-li označit použití globálního klíče API OpenAI.            \n            - zadejte `apiVersion` pro přístup k API poskytovanému na dané adrese URL v Azure. Použijte `true`, chcete-li označit použití globální verze API OpenAI.            \n            - zadejte název `deployment` pro vaše nasazení v Azure.            \n            - nastavte `developerMessageSettings` na jednu z hodnot `user`, `system`, `developer`, `mergeWithFollowingUserMessage` nebo `skip`, abyste určili, jak bude zpráva pro vývojáře            zahrnuta (kde `user`, `system` a `developer` budou použity jako role, `mergeWithFollowingUserMessage` připojí systémovou zprávu jako předponu k následující uživatelské zprávě nebo převede systémovou zprávu na uživatelskou, pokud následující zpráva není uživatelská. `skip` systémovou zprávu pouze odstraní). Výchozí hodnota je `developer`.            \n            - zadejte `supportsStructuredOutput: false`, abyste určili, že se nemá používat strukturovaný výstup.            \n            - zadejte `enableStreaming: false`, abyste určili, že se nemá používat streamování.            \n            - zadejte `useResponseApi: true`, abyste místo rozhraní API pro dokončování chatu používali novější rozhraní API OpenAI Response (vyžaduje kompatibilní koncový bod).            \n            - Zadejte `reasoningSupport`, chcete-li se přihlásit k selektoru chatového uvažování. Zadejte objekt s `supportedLevels` (např. `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`) a volitelným `defaultLevel`.            \n            Další informace najdete v [naší dokumentaci](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm).",
+          "mdDescription": "Integrujte vlastní modely kompatibilní s OpenAI API, například pomocí `vllm`. Povinné atributy jsou `model` a `url`.            \n            Volitelně můžete            \n            - zadat jedinečné `id` pro identifikaci vlastního modelu v uživatelském rozhraní. Pokud není zadán žádný, použije se jako `id` hodnota `model`.            \n            - zadejte `apiKey` pro přístup k API poskytovanému na zadané adrese URL. Použijte hodnotu `true`, chcete-li označit použití globálního klíče API OpenAI.            \n            - zadejte `apiVersion` pro přístup k API poskytovanému na dané adrese URL v Azure. Použijte `true`, chcete-li označit použití globální verze API OpenAI.            \n            - zadejte název `deployment` pro vaše nasazení v Azure.            \n            - Nastavte `developerMessageSettings` na jednu z hodnot `user`, `system`, `developer`, `mergeWithFollowingUserMessage` nebo `skip`, abyste určili, jak bude zpráva pro vývojáře            zahrnuta (kde `user`, `system` a `developer` budou použity jako role, `mergeWithFollowingUserMessage` připojí systémovou zprávu na začátek následující uživatelské zprávy            nebo převede systémovou zprávu na uživatelskou, pokud následující zpráva není uživatelská. `skip` systémovou zprávu jednoduše odstraní).            Výchozí hodnota je `developer`.            \n            - zadejte `supportsStructuredOutput: false`, chcete-li určit, že se nemá používat strukturovaný výstup.            \n            - zadejte `enableStreaming: false`, chcete-li určit, že se nemá používat streamování.            \n            - Zadejte `useResponseApi: true`, chcete-li místo rozhraní Chat Completion API používat novější rozhraní OpenAI Response API (vyžaduje kompatibilní koncový bod).            \n            - Zadejte `reasoningSupport`, chcete-li povolit selektor odůvodnění v chatu. Zadejte objekt s            `supportedLevels` (např. `[\"off\", \"low\", \"medium\", \"high\", \"auto\"]`) a volitelným `defaultLevel`.            \n            - Zadejte `headers`, chcete-li s každým požadavkem na koncový bod odesílat další HTTP hlavičky, např. hlavičky vyžadované bránou před API.            \n            Další informace najdete v [naší dokumentaci](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm).",
           "modelId": {
             "title": "ID modelu"
           },
@@ -1687,8 +1782,16 @@
         "customProvider": {
           "label": "{0} (Vlastní)"
         },
-        "models": {
-          "description": "Oficiální modely OpenAI, které se mají používat"
+        "discovery": {
+          "cached": "Zobrazování modelů z mezipaměti; poslední aktualizace se nezdařila: {0}",
+          "consentPrompt": "V prostředí byl nalezen klíč API OpenAI (OPENAI_API_KEY). Chcete povolit aplikaci Theia, aby jej použila k vyhledání a volání modelů OpenAI?",
+          "consentRequired": "V prostředí byl nalezen klíč API OpenAI. Potvrďte jeho použití k vyhledání modelů.",
+          "noKey": "Není nastaven žádný klíč API OpenAI. Přidejte klíč, abyste mohli vyhledávat modely.",
+          "overridden": "Seznam modelů se konfiguruje ručně. Vymazáním přepsání modelů znovu vyhledáte modely od poskytovatele.",
+          "useEnvKey": "Použít klávesu"
+        },
+        "modelOverrides": {
+          "description": "Přepsání modelů zjištěných z OpenAI. Je-li pole prázdné (výchozí nastavení), jsou dostupné modely zjišťovány od poskytovatele. Nastavte explicitní ID modelů, chcete-li použít přesně tyto modely; v takovém případě se zjišťování vůbec nepoužije."
         },
         "useResponseApi": {
           "mdDescription": "Pro oficiální modely OpenAI používejte novější rozhraní OpenAI Response API namísto rozhraní Chat Completion API. Toto nastavení se vztahuje pouze na oficiální modely OpenAI – vlastní poskytovatelé musí toto nastavení konfigurovat individuálně."
@@ -1936,6 +2039,26 @@
       "codeReview": {
         "description": "Po každé implementaci předává úkol agentovi pro kontrolu kódu. Blokuje další kroky, dokud není kontrola úspěšná."
       },
+      "commit-message": {
+        "agent-disabled-tooltip": "Agent „Commit Message“ je deaktivován. Aktivujte jej v okně „AI Configuration“.",
+        "cancel-tooltip": "Zrušit generování zprávy o potvrzení",
+        "empty": "Model vrátil prázdnou zprávu o zařazení.",
+        "failed": "Nepodařilo se vygenerovat zprávu o potvrzení: {0}",
+        "generate-from-staged": "Vygenerovat zprávu o potvrzení ze změn připravených k uložení",
+        "no-changes": "Neexistují žádné změny ve fázi přípravy, ze kterých by bylo možné vygenerovat zprávu o potvrzení.",
+        "no-repository": "Není vybrán žádný repozitář pro správu zdrojového kódu.",
+        "replace-prompt": "Pole pro zprávu o odeslání není prázdné. Nahradit jeho obsah vygenerovanou zprávou?",
+        "replace-title": "Nahradit zprávu o potvrzení",
+        "staged-tooltip": "Vygenerovat zprávu o potvrzení ze změn připravených k uložení"
+      },
+      "commitMessageAgent": {
+        "description": "Generuje zprávy git commit na základě změn připravených k zařazení v repozitáři pracovního prostoru. Spouští se z pole pro zadání zprávy commit v SCM pomocí tlačítka AI Sparkle.",
+        "vars": {
+          "changes": {
+            "description": "Sjednocený git diff připravených změn, na jehož základě je generována zpráva o potvrzení."
+          }
+        }
+      },
       "fixGhTicketCommand": {
         "argumentHint": "<číslo lístku>",
         "description": "Analyzujte ticket GitHub a implementujte řešení."
@@ -2004,6 +2127,7 @@
         "updateTooltip": "Aktualizace z {0} na {1}"
       },
       "autoUpdate": {
+        "aiSettings": "Nastavení AI",
         "ask": "Upozornit, když je k dispozici aktualizace pro nainstalovanou dovednost, server MCP nebo plugin agenta.",
         "changeLater": "Toto nastavení můžete později změnit v souboru {0}.",
         "configureDefault": "Výchozí nastavení nakonfigurujte v souboru {0}.",
@@ -2040,9 +2164,7 @@
           "oneSkipped": "Komponenta „{0}“ byla přeskočena: {1}"
         },
         "dialog": {
-          "contains": "Obsahuje",
           "endorsedBy": "Schváleno",
-          "from": "Z",
           "install": {
             "title": "Nainstalujte plugin agenta „{0}“"
           },
@@ -2104,10 +2226,6 @@
         "serverUnknownField": "Konfigurace serveru deklaruje pole „{0}“, což není pro daný typ přenosu povoleno.",
         "serverUnknownType": "Konfigurace serveru deklaruje neznámý typ přenosu „{0}“.",
         "serverUnsupportedTransport": "Přenos MCP „{0}“ není podporován.",
-        "stat": {
-          "oneServer": "1 server MCP",
-          "servers": "{0} Servery MCP"
-        },
         "uninstalled": "Odinstalovaný plugin agenta „{0}“.",
         "unknownManifestField": "Ignorování neznámého pole „plugin.json“ „{0}“.",
         "unlinked": "Neodkázaný plugin agenta „{0}“.",
@@ -2244,7 +2362,6 @@
       "collaborate": "Spolupracovat",
       "collaboration": "Spolupráce",
       "collaborationWorkspace": "Prostor pro spolupráci",
-      "connected": "Připojeno",
       "connectedSession": "Připojeno ke spolupráci",
       "copiedInvitation": "Pozvánkový kód zkopírován do schránky.",
       "copyAgain": "Zkopírovat znovu",
@@ -2471,6 +2588,25 @@
       "userSettingsDetail": "Použít na všechny pracovní prostory",
       "workspaceSettingsDetail": "Použít pouze na aktuální pracovní prostor"
     },
+    "external-api": {
+      "delivery": {
+        "description": "Určuje, zda a jakým způsobem je poskytováno externí HTTP API.",
+        "off": "Neslouží k poskytování externího API.",
+        "samePort": "Externí API poskytujte na stejném portu jako backend.",
+        "samePortLabel": "Stejný port jako backend",
+        "separatePort": "Externí API poskytujte na vyhrazeném portu, nakonfigurovaném pomocí „externalApi.port“.",
+        "separatePortLabel": "Samostatný port"
+      },
+      "hostname": {
+        "description": "Název hostitele nebo IP adresa, ke které se připojuje externí server HTTP API. Pro přijímání vzdálených připojení použijte „0.0.0.0“. Název jako „localhost“ se váže při jeho překladu, takže klienti používající jinou smyčkovou adresu nemusí na server dosáhnout; k pevné vazbě použijte „127.0.0.1“ nebo „::1“. Používá se pouze v případě, že je parametr „externalApi.delivery“ nastaven na hodnotu „separatePort“."
+      },
+      "port": {
+        "description": "Port, na kterém je poskytováno externí HTTP API. Používá se pouze v případě, že je parametr „externalApi.delivery“ nastaven na hodnotu „separatePort“."
+      },
+      "token": {
+        "description": "Pro přístup k chráněným koncovým bodům externího API je vyžadován token typu „Bearer“ („Authorization: Bearer <token>“). Je-li pole prázdné, externí API je poskytováno bez ověření."
+      }
+    },
     "external-terminal": {
       "cwd": "Vyberte aktuální pracovní adresář pro nový externí terminál"
     },
@@ -2514,10 +2650,6 @@
       "uploadedOutOf": "Nahráno z {0} z {1}"
     },
     "getting-started": {
-      "ai": {
-        "header": "Podpora AI v aplikaci „{0}“ je k dispozici!",
-        "openAIChatView": "Otevřete nyní AI Chat View a zjistěte, jak začít!"
-      },
       "apiComparator": "{0} Kompatibilita API",
       "markStepUndone": "Zrušit označení",
       "newExtension": "Vytvoření nového rozšíření",
@@ -2736,9 +2868,6 @@
       },
       "toolbar": "Nástrojová lišta"
     },
-    "preview": {
-      "openByDefault": "Ve výchozím nastavení otevřete náhled namísto editoru."
-    },
     "property-view": {
       "lastModified": "Poslední změna",
       "noProperties": "Žádné vlastnosti nejsou k dispozici.",
@@ -2749,6 +2878,16 @@
       "dev-container": {
         "attach": "Připojit k běžícímu kontejneru",
         "attachError": "Nepodařilo se připojit ke kontejneru: {0}",
+        "attachScreen": {
+          "errorHeader": "Nepodařilo se připojit ke kontejneru",
+          "firstStartNote": "První spuštění kontejneru může trvat jednu až dvě minuty. Následující spuštění jsou mnohem rychlejší.",
+          "locating": "Vyhledávání kontejneru {0}...",
+          "preparing": "Připravuje se připojení...",
+          "preparingWorkspace": "Příprava pracovního prostoru...",
+          "starting": "Spouštění aplikace uvnitř kontejneru...",
+          "title": "Připojení ke kontejneru",
+          "titleNamed": "Připojení k {0}"
+        },
         "attachWarning": "Připojením ke kontejneru se spustí kód uvnitř něj. Připojujte se pouze ke kontejnerům, jejichž původu důvěřujete.",
         "attachWarningTitle": "Připojit ke kontejneru",
         "attaching": "Připojení ke kontejneru",
@@ -2799,7 +2938,6 @@
       "amendHeadCommit": "HEAD Commit",
       "amendLastCommit": "Upravit poslední commit",
       "changeRepository": "Změnit úložiště...",
-      "copyCommitHash": "Kopírovat hash potvrzení",
       "dirtyDiff": {
         "close": "Zavřít Změnit Náhled"
       },

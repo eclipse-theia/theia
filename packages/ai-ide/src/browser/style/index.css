@@ -23,6 +23,7 @@
 
 /* Import widget-specific styles */
 @import "./widgets/model-aliases-configuration.css";
+@import "./commit-message-overlay.css";
 
 /* Override preferences grid layout for AI Configuration widgets */
 .ai-configuration-widget.theia-settings-container {
@@ -1719,6 +1720,21 @@ button.agent-chip:focus-visible {
   margin-left: auto;
 }
 
+/* A second action sits right next to the first instead of splitting the free space with it. */
+.ai-agent-section-header .ai-agent-section-header-action + .ai-configuration-icon-button {
+  margin-left: 0;
+}
+
+/* The chat input's capabilities tree, embedded in the agent detail; capped so an expanded tree scrolls
+   within the section instead of pushing the rest of the page away. */
+.ai-agent-generic-capabilities-editor .theia-GenericCapabilities-Tree-Content {
+  max-height: 300px;
+}
+
+.ai-agent-generic-capabilities-editor {
+  margin-bottom: var(--theia-ui-padding);
+}
+
 .ai-agent-description {
   margin-bottom: calc(var(--theia-ui-padding) * 2);
   color: var(--theia-descriptionForeground);
@@ -2191,7 +2207,8 @@ button.agent-chip:focus-visible {
   margin: 0;
   padding: 4px 0;
   min-width: 180px;
-  max-height: 320px;
+  max-height: 200px;
+  box-sizing: border-box;
   overflow-y: auto;
 }
 
