@@ -28,7 +28,7 @@ import { ILogger } from '../common/logger';
 import { QuickInputService, QuickPickItem } from '../common/quick-pick-service';
 import { nls } from '../common/nls';
 import { CommonCommands } from './common-commands';
-import { ContextKeyService } from './context-key-service';
+import { ContextKey, ContextKeyService } from './context-key-service';
 
 export const ACTIVE_PERSPECTIVE_CONTEXT_KEY = 'activePerspectiveId';
 
@@ -216,9 +216,15 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
     protected readonly onDidChangePerspectiveEmitter = new Emitter<string>();
     readonly onDidChangePerspective: Event<string> = this.onDidChangePerspectiveEmitter.event;
 
+    protected activePerspectiveContextKey: ContextKey<string> | undefined;
+
     protected switchInProgress: Promise<void> | undefined;
 
     onLayoutRestored(activePerspectiveId: string): void {
+        const descriptor = this.perspectives.get(activePerspectiveId);
+        if (descriptor) {
+            this.widgetAreaResolver.setActivePlacementMap(descriptor.viewPlacements);
+        }
         this.updateActivePerspectiveContextKey(activePerspectiveId);
     }
 
@@ -229,7 +235,7 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
             viewPlacements: new Map()
         });
         this.activePerspectiveId = PerspectiveServiceImpl.DEFAULT_PERSPECTIVE_ID;
-        this.updateActivePerspectiveContextKey(PerspectiveServiceImpl.DEFAULT_PERSPECTIVE_ID);
+        this.activePerspectiveContextKey = this.contextKeyService?.createKey<string>(ACTIVE_PERSPECTIVE_CONTEXT_KEY, PerspectiveServiceImpl.DEFAULT_PERSPECTIVE_ID);
 
         if (this.contributions) {
             for (const contribution of this.contributions.getContributions()) {
@@ -243,7 +249,7 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
     }
 
     protected updateActivePerspectiveContextKey(id: string): void {
-        this.contextKeyService?.createKey<string>(ACTIVE_PERSPECTIVE_CONTEXT_KEY, id).set(id);
+        this.activePerspectiveContextKey?.set(id);
     }
 
     registerPerspective(descriptor: PerspectiveDescriptor): void {
@@ -328,9 +334,9 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
 
         for (const [viewId] of descriptor.viewPlacements) {
             try {
-                await this.shell.activateWidget(viewId);
+                await this.shell.revealWidget(viewId);
             } catch (error) {
-                this.logger.warn('Failed to activate widget for perspective', error);
+                this.logger.warn('Failed to reveal widget for perspective', error);
             }
         }
 
@@ -594,7 +600,7 @@ export class PerspectiveServiceImpl implements FrontendApplicationContribution, 
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(PerspectiveServiceImpl.SWITCH_PERSPECTIVE_COMMAND, {
-            execute: () => this.showPerspectivePicker(),
+            execute: (id?: string) => id ? this.switchPerspective(id) : this.showPerspectivePicker(),
             isVisible: () => this.perspectives.size > 1
         });
         commands.registerCommand(PerspectiveServiceImpl.RESET_PERSPECTIVE_COMMAND, {
