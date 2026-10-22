@@ -18,8 +18,8 @@ const fsx = require('fs-extra');
 const { resolve } = require('path');
 const { spawn, ChildProcess } = require('child_process');
 const {
-    analyzeTrace, backendSettled, ContributionCollector, delay, frontendSettled, githubReporting,
-    isLCP, lcp, measureMulti, parseStopwatchLog, waitForFileStable
+    analyzeTrace, backendSettled, MeasurementCollector, delay, frontendReady, frontendSettled, githubReporting,
+    isLCP, isUserTimingMark, lcp, measureMulti, parseMilestoneLog, parseStopwatchLog, waitForFileStable, workbenchVisible
 } = require('./common-performance');
 const traceConfigTemplate = require('./electron-trace-config.json');
 const { exit } = require('process');
@@ -141,7 +141,12 @@ async function measurePerformance() {
     // child process streams across all runs. Both backend and frontend contributions are
     // observable here: Theia's frontend logger forwards console output to the backend over
     // RPC, so the backend process's stdout/stderr contains logs from both sides.
-    const contributions = new ContributionCollector();
+    const contributions = new MeasurementCollector();
+    // Collects the Stopwatch measurements of the Electron main process (e.g. "Starting backend"), which
+    // account for the time before the first window can be shown, and the start-up milestones logged by
+    // the generated entry points, as seconds since the respective process start.
+    const electronMainPhases = new MeasurementCollector('Electron main', 'Electron main phases');
+    const milestones = new MeasurementCollector('Milestone');
 
     const testScenario = async (runNr) => {
         const traceFile = traceConfigGenerator(runNr);
@@ -162,12 +167,18 @@ async function measurePerformance() {
                 lineBuffers[streamName] = lineBuffers[streamName].slice(newlineIndex + 1);
                 const parsed = parseStopwatchLog(line);
                 if (!parsed) {
+                    const milestone = parseMilestoneLog(line);
+                    if (milestone) {
+                        milestones.record(`${milestone.component}: ${milestone.milestone}`, milestone.secondsSinceStart);
+                    }
                     continue;
                 }
                 if (parsed.activity === backendSettled) {
                     backendSettledSeconds = parsed.secondsSinceStart;
                 } else if (parsed.activity === frontendSettled) {
                     frontendSettledSeconds = parsed.secondsSinceStart;
+                } else if (parsed.origin === 'electron main') {
+                    electronMainPhases.record(parsed.activity, parsed.ms / 1000);
                 } else if (parsed.activity.startsWith('Backend ') || parsed.activity.startsWith('Frontend ')) {
                     contributions.record(parsed.activity, parsed.ms / 1000);
                 }
@@ -199,6 +210,18 @@ async function measurePerformance() {
 
     await measureMulti(name, runs, testScenario, [
         {
+            // The loading indicator starts to fade: the workbench becomes visible to the user.
+            scenario: workbenchVisible,
+            analyze: ctx => analyzeTrace(ctx.traceFile, hasNonzeroTimestamp, isUserTimingMark('revealShell-start'))
+        },
+        {
+            // The loading indicator is gone and the application state is about to become 'ready'.
+            scenario: frontendReady,
+            analyze: ctx => analyzeTrace(ctx.traceFile, hasNonzeroTimestamp, isUserTimingMark('revealShell-end'))
+        },
+        {
+            // Chromium records LCP candidates for elements painted underneath the opaque loading
+            // indicator, so this is not a measure of when the workbench became visible.
             scenario: lcp,
             analyze: ctx => analyzeTrace(ctx.traceFile, hasNonzeroTimestamp, isLCP)
         },
@@ -211,6 +234,8 @@ async function measurePerformance() {
             analyze: ctx => ctx.frontendSettledSeconds
         }
     ]);
+    electronMainPhases.logSummary(name);
+    milestones.logSummary(name);
     contributions.logSummary(name);
 }
 

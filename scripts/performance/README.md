@@ -2,7 +2,13 @@
 
 This directory contains scripts that measure the start-up performance of the Theia frontend in both the browser and the Electron examples.
 
-The frontend's start-up time is measured using the timestamp of the last recorded `Largest contentful paint (LCP)` candidate metric.
+The frontend's start-up time is measured from the performance trace using the user-timing marks that Theia's frontend `Stopwatch` emits:
+
+- `Workbench visible`: the `revealShell-start` mark, when the loading indicator starts to fade and the workbench becomes visible to the user
+- `Frontend ready`: the `revealShell-end` mark, when the loading indicator is gone and the application state is about to become `ready`
+
+The timestamp of the last recorded `Largest contentful paint (LCP)` candidate is reported as well, for comparison with earlier measurements.
+Note that Chromium records LCP candidates for elements that are painted underneath the opaque loading indicator, so the LCP does not tell when the workbench became visible.
 In addition, the scripts scrape Theia's Stopwatch log output to capture complementary metrics; see [Log-based metrics](#log-based-metrics) below.
 
 ## Running the browser start-up script
@@ -15,7 +21,7 @@ Execute `npm run performance:startup:browser` in the root directory to startup t
 
 To run the script the Theia backend needs to be started.
 This can either be done with the `Launch Browser Backend` launch config or by running `npm run start` in the `examples/browser-app` directory.
-For the per-contribution Stopwatch breakdown to be captured, the backend must be started at debug log level (e.g. `npm run start -- --log-level=debug`); otherwise only aggregate metrics will appear in the script's summary.
+For the per-contribution Stopwatch breakdown to be captured, the backend must be started at debug log level (e.g. `npm run start:debug`, since the default `start` script uses `--log-config`, which is mutually exclusive with `--log-level`); otherwise only aggregate metrics will appear in the script's summary.
 The bundled `npm run performance:startup:browser` flow already does this.
 
 ### Executing the script
@@ -36,7 +42,7 @@ _**Note**: When multiple runs are specified the script will calculate the mean a
 
 ### Quick Start
 
-Execute `yarn run performance:startup:electron` in the root directory to execute the script.
+Execute `npm run performance:startup:electron` in the root directory to execute the script.
 
 ### Prerequisites
 
@@ -105,9 +111,13 @@ The following parameters are available:
 
 _**Note**: If no extensions are provided all extensions from the `packages` folder will be measured._
 
+_**Note**: The script starts the browser example's backend itself on port 3000 and stops before measuring if that port is in use, e.g. by a backend started by hand for the other scripts._
+
+_**Note**: A build or a measurement that fails aborts the run with a non-zero exit code, restoring the example's `package.json`, instead of continuing with results that cannot be compared._
+
 ### Per-contribution detail output
 
-Alongside the main LCP comparison CSV, `extension-impact.js` emits a detail CSV with one row per (extension, metric) pair.
+Alongside the main comparison CSV, whose headline number is the `Workbench visible` metric, `extension-impact.js` emits a detail CSV with one row per (extension, metric) pair.
 Metrics include the `All frontend/backend contributions settled` aggregate and every per-contribution timing that the Theia Stopwatch emitted during the runs.
 This lets you attribute an extension's startup cost to the specific contribution(s) responsible.
 
@@ -134,16 +144,29 @@ Log lines the scripts currently capture:
 - `Frontend <ContributionName>.<phase>`: per-contribution timing for `initialize`, `configure`, `onStart`, `initializeLayout`, and `onDidInitializeLayout`.
 - `Backend <ContributionName>.<phase>`: per-contribution timing for `initialize`, `configure`, and `onStart`.
 - `Frontend <ContributionName> settled` / `Backend <ContributionName> settled`: per-contribution settlement, logged only when a contribution returned promises from more than one lifecycle method.
+- `Electron main <activity>`: the Stopwatch measurements of the Electron main process (`Starting backend`, `Attaching security token`, `Starting contributions`, `Startup sequence completed`), which account for the time before the first window can be shown.
+
+The generated entry points also log start-up milestones in a similar format, which the scripts report as seconds since the respective process or page start:
+
+```
+<component>: <milestone> [<seconds> s since {electron main|backend process|frontend page} start]
+```
+
+For example, `Electron main: container created [1.530 s since electron main start]` is reported as `Milestone Electron main: container created`.
 
 Where these logs are visible:
 
 | Metric                                     | Browser                  | Electron                   |
 | ------------------------------------------ | ------------------------ | -------------------------- |
-| LCP                                        | Chrome trace             | Chromium trace             |
+| `Workbench visible`, `Frontend ready`, LCP | Chrome trace             | Chromium trace             |
 | `All frontend contributions settled`       | Puppeteer page console   | Electron child stdout/stderr |
 | `All backend contributions settled`        | _(parent process, n/a)_  | Electron child stdout/stderr |
 | `Frontend <Contribution>.<phase>`          | Puppeteer page console   | Electron child stdout/stderr |
 | `Backend <Contribution>.<phase>`           | _(parent process, n/a)_  | Electron child stdout/stderr |
+| `Electron main <activity>`                 | _(n/a)_                  | Electron child stdout/stderr |
+| `Milestone <component>: <milestone>`       | Puppeteer page console (frontend only) | Electron child stdout/stderr |
 
 Theia's frontend logger forwards all console output to the backend over RPC, so the Electron child process's stdout/stderr contains both frontend and backend Stopwatch lines.
+
+When the scripts run in a GitHub workflow (`GITHUB_ACTIONS` is set), the predeclared metrics are written to `performance-result.json` for the benchmark action: the LCP under the bare script name, which is the name of its historical series, and every other metric under `<script name>: <metric>`. The log-based breakdowns are not reported there.
 The browser script cannot observe backend logs because the backend runs as a separate process whose stdout is not captured.
