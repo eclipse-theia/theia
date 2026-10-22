@@ -58,6 +58,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     protected _workspace: FileStat | undefined;
 
     protected _roots: FileStat[] = [];
+    protected configuredRootNames = new Map<string, string>();
     protected deferredRoots = new Deferred<FileStat[]>();
 
     @inject(FileService)
@@ -299,8 +300,9 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     protected async updateRoots(): Promise<void> {
+        const oldRootNames = this.configuredRootNames;
         const newRoots = await this.computeRoots();
-        let rootsChanged = false;
+        let rootsChanged = !this.areConfiguredRootNamesEqual(oldRootNames, this.configuredRootNames);
         if (newRoots.length !== this._roots.length || newRoots.length === 0) {
             rootsChanged = true;
         } else {
@@ -321,26 +323,41 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         }
     }
 
+    /**
+     * Computes the workspace roots. Also updates the names given to the roots in the workspace file, see `getConfiguredRootName`.
+     * An override that does not call `super` has to update `configuredRootNames` itself, otherwise the names of the previous roots remain.
+     */
     protected async computeRoots(): Promise<FileStat[]> {
         const roots: FileStat[] = [];
+        const rootNames = new Map<string, string>();
         if (this._workspace) {
             if (this._workspace.isDirectory) {
+                this.configuredRootNames = rootNames;
                 return [this._workspace];
             }
 
             const workspaceData = await this.getWorkspaceDataFromFile();
             if (workspaceData) {
-                for (const { path } of workspaceData.folders) {
+                for (const { path, name } of workspaceData.folders) {
                     const valid = await this.toValidRoot(path);
                     if (valid) {
                         roots.push(valid);
                     } else {
                         roots.push(FileStat.dir(path));
                     }
+                    // `getWorkspaceDataFromFile` already drops invalid names, but an override of it may not
+                    if (typeof name === 'string' && name) {
+                        rootNames.set(WorkspaceData.normalizeFolderUri(path), name);
+                    }
                 }
             }
         }
+        this.configuredRootNames = rootNames;
         return roots;
+    }
+
+    protected areConfiguredRootNamesEqual(names: Map<string, string>, otherNames: Map<string, string>): boolean {
+        return names.size === otherNames.size && Array.from(names).every(([root, name]) => otherNames.get(root) === name);
     }
 
     protected async getWorkspaceDataFromFile(): Promise<WorkspaceData | undefined> {
@@ -537,7 +554,12 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         }
     }
 
-    async spliceRoots(start: number, deleteCount?: number, ...rootsToAdd: URI[]): Promise<URI[]> {
+    /**
+     * Removes `deleteCount` roots starting at `start` and inserts the given roots there, and writes the result to the workspace file.
+     * A root to add can be given a name, which is written to the workspace file as the `name` of its folder entry.
+     * @returns the URIs of the removed roots
+     */
+    async spliceRoots(start: number, deleteCount?: number, ...rootsToAdd: (URI | WorkspaceRootToAdd)[]): Promise<URI[]> {
         if (!this._workspace || this._workspace.isDirectory) {
             const untitledWorkspace = await this.getUntitledWorkspace();
             await this.save(untitledWorkspace);
@@ -545,23 +567,30 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
                 throw new Error('Could not create new untitled workspace');
             }
         }
-        const dedup = new Set<string>();
-        const roots = this._roots.map(root => (dedup.add(root.resource.toString()), root.resource.toString()));
+        const roots = this._roots.map(root => root.resource.toString());
+        const toRemove = roots.splice(start, deleteCount || 0);
+        // Deduplicate against the remaining roots only, so that a root removed by this call can be added again, e.g. to rename it.
+        const dedup = new Set<string>(roots);
         const toAdd: string[] = [];
+        const namesToAdd = new Map<string, string>();
         for (const root of rootsToAdd) {
-            const uri = root.toString();
-            if (!dedup.has(uri)) {
-                dedup.add(uri);
-                toAdd.push(uri);
+            const { uri, name } = root instanceof URI ? { uri: root, name: undefined } : root;
+            const uriString = uri.toString();
+            if (!dedup.has(uriString)) {
+                dedup.add(uriString);
+                toAdd.push(uriString);
+                if (name) {
+                    namesToAdd.set(uriString, name);
+                }
             }
         }
-        const toRemove = roots.splice(start, deleteCount || 0, ...toAdd);
+        roots.splice(start, 0, ...toAdd);
         if (!toRemove.length && !toAdd.length) {
             return [];
         }
 
         const currentData = await this.getWorkspaceDataFromFile();
-        const newData = WorkspaceData.buildWorkspaceData(roots, currentData);
+        const newData = WorkspaceData.buildWorkspaceData(roots.map(path => ({ path, name: namesToAdd.get(path) })), currentData);
         await this.writeWorkspaceFile(this._workspace, newData);
         await this.updateWorkspace();
         return toRemove.map(root => new URI(root));
@@ -802,6 +831,35 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         }
         return rootUris.sort((r1, r2) => r2.toString().length - r1.toString().length)[0];
     }
+
+    /**
+     * Returns the name given to the workspace root by the `name` property of its folder entry in the workspace file.
+     * This is the name shown for the root, as `WorkspaceFolder.name` in VS Code. Unlike the unique names of {@link getRootNames},
+     * it is chosen by the user and not used to address files.
+     * @param rootUri URI of the workspace root
+     * @returns the name of the root, or `undefined` if the root has no name or is not a workspace root
+     */
+    getConfiguredRootName(rootUri: URI): string | undefined {
+        if (this.configuredRootNames.size === 0) {
+            return undefined;
+        }
+        // Called for every file label, e.g. by `getDetails`, so normalize each root URI only once per set of names
+        if (this.configuredRootNamesByUri?.names !== this.configuredRootNames) {
+            this.configuredRootNamesByUri = { names: this.configuredRootNames, byUri: new Map() };
+        }
+        const key = rootUri.toString();
+        const { byUri } = this.configuredRootNamesByUri;
+        if (!byUri.has(key)) {
+            byUri.set(key, this.configuredRootNames.get(WorkspaceData.normalizeFolderUri(key)));
+        }
+        return byUri.get(key);
+    }
+
+    /**
+     * The configured root names by the string of a root URI as passed to `getConfiguredRootName`,
+     * for the `configuredRootNames` they were looked up in.
+     */
+    protected configuredRootNamesByUri: { names: Map<string, string>; byUri: Map<string, string | undefined> } | undefined;
 
     /**
      * Returns the relative path of the given file to the workspace root.
@@ -1099,6 +1157,12 @@ export interface WorkspaceInput {
 
 }
 
+export interface WorkspaceRootToAdd {
+    uri: URI;
+    /** The name of the root, written to the workspace file as the `name` of its folder entry. */
+    name?: string;
+}
+
 export interface WorkspaceData {
     folders: Array<{ path: string, name?: string }>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1106,23 +1170,52 @@ export interface WorkspaceData {
 }
 
 export namespace WorkspaceData {
-    const validateSchema = new Ajv().compile(workspaceSchema);
+    // The `name` of a folder is not validated when loading, so that a workspace file with an invalid name still loads,
+    // and the folder falls back to its folder name, as in VS Code. The editor still validates it against `workspaceSchema`.
+    const validateSchema = new Ajv().compile(withoutFolderName(workspaceSchema));
+
+    function withoutFolderName(schema: IJSONSchema): IJSONSchema {
+        const copy: IJSONSchema = structuredClone(schema);
+        delete (copy.properties?.folders.items as IJSONSchema | undefined)?.properties?.name;
+        return copy;
+    }
+
+    function isValidFolderName(name: unknown): name is string {
+        return typeof name === 'string' && name.length > 0;
+    }
 
     export function is(data: unknown): data is WorkspaceData {
         return !!validateSchema(data);
     }
 
-    export function buildWorkspaceData(folders: string[] | FileStat[], additionalFields?: Partial<WorkspaceData>): WorkspaceData {
-        const roots = new Set<string>();
-        if (folders.length > 0) {
-            if (typeof folders[0] !== 'string') {
-                (<FileStat[]>folders).forEach(folder => roots.add(folder.resource.toString()));
-            } else {
-                (<string[]>folders).forEach(folder => roots.add(folder));
+    /**
+     * Normalizes the given folder URI the same way as the URIs of the workspace roots, so that they can be compared.
+     */
+    export function normalizeFolderUri(folderUri: string): string {
+        return new URI(folderUri.endsWith('/') ? folderUri.slice(0, -1) : folderUri).normalizePath().toString();
+    }
+
+    /**
+     * Builds the workspace data for the given folders. A folder given as an entry with a `name` keeps that name,
+     * any other folder keeps the `name` of its entry in `additionalFields.folders`. Names that are not strings are dropped.
+     */
+    export function buildWorkspaceData(folders: string[] | FileStat[] | WorkspaceData['folders'], additionalFields?: Partial<WorkspaceData>): WorkspaceData {
+        const currentNames = new Map<string, string>();
+        for (const { path, name } of additionalFields?.folders ?? []) {
+            if (isValidFolderName(name)) {
+                currentNames.set(normalizeFolderUri(path), name);
+            }
+        }
+        const roots = new Map<string, string | undefined>();
+        for (const folder of folders) {
+            const path = typeof folder === 'string' ? folder : FileStat.is(folder) ? folder.resource.toString() : folder.path;
+            if (!roots.has(path)) {
+                const name = typeof folder === 'string' || FileStat.is(folder) ? undefined : folder.name;
+                roots.set(path, isValidFolderName(name) ? name : currentNames.get(normalizeFolderUri(path)));
             }
         }
         const data: WorkspaceData = {
-            folders: Array.from(roots, folder => ({ path: folder }))
+            folders: Array.from(roots, ([path, name]) => name ? { path, name } : { path })
         };
         if (additionalFields) {
             delete additionalFields.folders;
@@ -1132,36 +1225,31 @@ export namespace WorkspaceData {
     }
 
     export function transformToRelative(data: WorkspaceData, workspaceFile?: FileStat): WorkspaceData {
-        const folderUris: string[] = [];
+        const folders: WorkspaceData['folders'] = [];
         const workspaceFileUri = new URI(workspaceFile ? workspaceFile.resource.toString() : '').withScheme('file');
-        for (const { path } of data.folders) {
+        for (const { path, name } of data.folders) {
             const folderUri = new URI(path).withScheme('file');
             const rel = workspaceFileUri.parent.relative(folderUri);
-            if (rel) {
-                folderUris.push(rel.toString());
-            } else {
-                folderUris.push(folderUri.toString());
-            }
+            folders.push({ path: rel ? rel.toString() : folderUri.toString(), name });
         }
-        return buildWorkspaceData(folderUris, data);
+        return buildWorkspaceData(folders, { ...data, folders: [] });
     }
 
     export function transformToAbsolute(data: WorkspaceData, workspaceFile?: BaseStat): WorkspaceData {
         if (workspaceFile) {
-            const folders: string[] = [];
-            for (const folder of data.folders) {
-                const path = folder.path;
+            const folders: WorkspaceData['folders'] = [];
+            for (const { path, name } of data.folders) {
                 if (path.startsWith('file:///')) {
-                    folders.push(path);
+                    folders.push({ path, name });
                 } else {
                     const absolutePath = workspaceFile.resource.withScheme('file').parent.resolveToAbsolute(path)?.toString();
                     if (absolutePath) {
-                        folders.push(absolutePath.toString());
+                        folders.push({ path: absolutePath.toString(), name });
                     }
                 }
 
             }
-            return Object.assign(data, buildWorkspaceData(folders, data));
+            return Object.assign(data, buildWorkspaceData(folders, { ...data, folders: [] }));
         }
         return data;
     }

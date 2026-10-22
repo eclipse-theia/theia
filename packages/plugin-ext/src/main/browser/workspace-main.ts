@@ -21,6 +21,7 @@
 import * as theia from '@theia/plugin';
 import { interfaces, injectable } from '@theia/core/shared/inversify';
 import { WorkspaceExt, StorageExt, MAIN_RPC_CONTEXT, WorkspaceMain, WorkspaceFolderPickOptionsMain, FindFilesOptions } from '../../common/plugin-api-rpc';
+import { WorkspaceFolderToAdd } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { UriComponents } from '../../common/uri-components';
@@ -53,6 +54,8 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
     private searchInWorkspaceService: SearchInWorkspaceService;
 
     private roots: string[];
+
+    private configuredRootNames: { [root: string]: string };
 
     private resourceResolver: TextContentResourceResolver;
 
@@ -121,11 +124,13 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
     }
 
     protected async processWorkspaceFoldersChanged(roots: string[]): Promise<void> {
-        if (this.isAnyRootChanged(roots) === false) {
+        const names = this.getConfiguredRootNames(roots);
+        if (this.isAnyRootChanged(roots) === false && this.isAnyRootNameChanged(names) === false) {
             return;
         }
         this.roots = roots;
-        this.proxy.$onWorkspaceFoldersChanged({ roots });
+        this.configuredRootNames = names;
+        this.proxy.$onWorkspaceFoldersChanged({ roots, names });
 
         const keyValueStorageWorkspacesData = await this.pluginServer.getAllStorageValues({
             workspace: this.workspaceService.workspace?.resource.toString(),
@@ -141,6 +146,22 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         }
 
         return this.roots.some((root, index) => root !== roots[index]);
+    }
+
+    protected getConfiguredRootNames(roots: string[]): { [root: string]: string } {
+        const names: { [root: string]: string } = {};
+        for (const root of roots) {
+            const name = this.workspaceService.getConfiguredRootName(new URI(root));
+            if (name) {
+                names[root] = name;
+            }
+        }
+        return names;
+    }
+
+    private isAnyRootNameChanged(names: { [root: string]: string }): boolean {
+        const roots = Object.keys(names);
+        return !this.configuredRootNames || roots.length !== Object.keys(this.configuredRootNames).length || roots.some(root => this.configuredRootNames[root] !== names[root]);
     }
 
     async $getWorkspace(): Promise<FileStat | undefined> {
@@ -163,7 +184,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
             const items = this.roots.map(root => {
                 const rootUri = Uri.parse(root);
-                const rootPathName = rootUri.path.substring(rootUri.path.lastIndexOf('/') + 1);
+                const rootPathName = this.workspaceService.getConfiguredRootName(new URI(root)) ?? rootUri.path.substring(rootUri.path.lastIndexOf('/') + 1);
                 return {
                     label: rootPathName,
                     detail: rootUri.path,
@@ -303,8 +324,8 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         this.resourceResolver.onContentChange(uri, content);
     }
 
-    async $updateWorkspaceFolders(start: number, deleteCount?: number, ...rootsToAdd: string[]): Promise<void> {
-        await this.workspaceService.spliceRoots(start, deleteCount, ...rootsToAdd.map(root => new URI(root)));
+    async $updateWorkspaceFolders(start: number, deleteCount?: number, ...rootsToAdd: WorkspaceFolderToAdd[]): Promise<void> {
+        await this.workspaceService.spliceRoots(start, deleteCount, ...rootsToAdd.map(({ uri, name }) => ({ uri: new URI(uri), name })));
     }
 
     async $requestWorkspaceTrust(_options?: theia.WorkspaceTrustRequestOptions): Promise<boolean | undefined> {

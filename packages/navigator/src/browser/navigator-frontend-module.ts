@@ -21,7 +21,8 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     bindViewContribution,
     FrontendApplicationContribution,
-    ApplicationShellLayoutMigration
+    ApplicationShellLayoutMigration,
+    LabelProviderContribution
 } from '@theia/core/lib/browser';
 import { FileNavigatorWidget, FILE_NAVIGATOR_ID } from './navigator-widget';
 import { FileNavigatorContribution } from './navigator-contribution';
@@ -44,12 +45,15 @@ import { NavigatorDeletedEditorDecorator } from './open-editors-widget/navigator
 import { NavigatorSymlinkDecorator } from './navigator-symlink-decorator';
 import { NavigatorFileClipboard } from './navigator-file-clipboard';
 import { FileTreeDecoratorAdapter } from '@theia/filesystem/lib/browser';
+import { WorkspaceRootNodeLabelProvider } from './workspace-root-node-label-provider';
 
 export default new ContainerModule(bind => {
     bindFileNavigatorPreferences(bind);
     bind(FileNavigatorFilter).toSelf().inSingletonScope();
 
     bind(NavigatorContextKeyService).toSelf().inSingletonScope();
+    bind(WorkspaceRootNodeLabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(WorkspaceRootNodeLabelProvider);
     bind(NavigatorFileClipboard).toSelf().inSingletonScope();
 
     bindViewContribution(bind, FileNavigatorContribution);
