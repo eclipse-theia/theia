@@ -66,6 +66,9 @@ export const WatcherDisposal = Symbol('WatcherDisposal');
 export class ParcelWatcher {
 
     protected static debugIdSequence = 0;
+    private static readonly pendingPaths = new Map<string, Set<ParcelWatcher>>();
+    private static pendingPathTimer: NodeJS.Timeout | undefined;
+    private static pendingPathInterval = 500;
 
     protected disposed = false;
 
@@ -78,6 +81,8 @@ export class ParcelWatcher {
      * When this field is set, it means the watcher instance was successfully started.
      */
     protected watcher: AsyncSubscription | undefined;
+    protected pendingPath: string | undefined;
+    protected watchedFilePath: string | undefined;
 
     /**
      * When the ref count hits zero, we schedule this watch handle to be disposed.
@@ -219,11 +224,21 @@ export class ParcelWatcher {
     }
 
     /**
-     * When starting a watcher, resolve the nearest existing directory to use as
-     * the Parcel watch root.
+     * When starting a watcher, resolve its exact Parcel watch root if it exists.
      */
     protected async start(): Promise<void> {
-        const watchRoot = await this.resolveWatchRoot();
+        let watchRoot: string;
+        try {
+            watchRoot = await this.resolveWatchRoot();
+        } catch (error) {
+            const code = (error as NodeJS.ErrnoException).code;
+            if (code !== 'ENOENT' && code !== 'ENOTDIR') {
+                throw error;
+            }
+            this.assertNotDisposed();
+            this.addPendingPath();
+            return;
+        }
         this.assertNotDisposed();
         // This race is specific to Linux/inotify: parcel-watcher's inotify backend walks
         // the tree and then calls inotify_add_watch on every subdirectory. If a subdirectory
@@ -262,6 +277,90 @@ export class ParcelWatcher {
         this.watcher = watcher;
     }
 
+    protected addPendingPath(): void {
+        this.pendingPath = this.fsPath;
+        let watchers = ParcelWatcher.pendingPaths.get(this.fsPath);
+        if (!watchers) {
+            ParcelWatcher.pendingPaths.set(this.fsPath, watchers = new Set());
+        }
+        watchers.add(this);
+        ParcelWatcher.schedulePendingPathPoll();
+    }
+
+    private static schedulePendingPathPoll(): void {
+        if (!this.pendingPathTimer) {
+            this.pendingPathTimer = setTimeout(() => {
+                this.pollPendingPaths().catch(error => console.error('Failed to poll pending filesystem paths:', error));
+            }, this.pendingPathInterval);
+        }
+    }
+
+    private static async pollPendingPaths(): Promise<void> {
+        this.pendingPathTimer = undefined;
+        for (const [fsPath, watchers] of this.pendingPaths) {
+            try {
+                await fsp.stat(fsPath);
+            } catch (error) {
+                if (this.pendingPaths.get(fsPath) !== watchers) {
+                    continue;
+                }
+                const code = (error as NodeJS.ErrnoException).code;
+                if (code === 'ENOENT' || code === 'ENOTDIR') {
+                    continue;
+                }
+                this.pendingPaths.delete(fsPath);
+                watchers.forEach(watcher => {
+                    watcher.pendingPath = undefined;
+                    watcher.failStart(error);
+                });
+                continue;
+            }
+            if (this.pendingPaths.get(fsPath) !== watchers) {
+                continue;
+            }
+            this.pendingPaths.delete(fsPath);
+            watchers.forEach(watcher => {
+                watcher.pendingPath = undefined;
+                watcher.start().then(() => {
+                    if (watcher.watcher) {
+                        watcher.fireAdded();
+                    }
+                }).catch(error => watcher.failStart(error));
+            });
+        }
+        if (this.pendingPaths.size > 0) {
+            this.pendingPathInterval = Math.min(this.pendingPathInterval * 2, 4000);
+            this.schedulePendingPathPoll();
+        } else {
+            this.pendingPathInterval = 500;
+        }
+    }
+
+    protected stopPolling(): void {
+        if (!this.pendingPath) {
+            return;
+        }
+        const watchers = ParcelWatcher.pendingPaths.get(this.pendingPath);
+        watchers?.delete(this);
+        if (watchers?.size === 0) {
+            ParcelWatcher.pendingPaths.delete(this.pendingPath);
+        }
+        this.pendingPath = undefined;
+        if (ParcelWatcher.pendingPaths.size === 0) {
+            clearTimeout(ParcelWatcher.pendingPathTimer);
+            ParcelWatcher.pendingPathTimer = undefined;
+            ParcelWatcher.pendingPathInterval = 500;
+        }
+    }
+
+    protected failStart(error: unknown): void {
+        if (error !== WatcherDisposal) {
+            console.error(`Watcher failed to start at "${this.fsPath}":`, error);
+            this._dispose();
+            this.fireError();
+        }
+    }
+
     /**
      * Given a started parcel watcher instance, gracefully shut it down.
      */
@@ -272,25 +371,13 @@ export class ParcelWatcher {
     }
 
     protected async resolveWatchRoot(): Promise<string> {
-        let fsPath = this.fsPath;
-        while (true) {
-            try {
-                const realPath = await fsp.realpath(fsPath);
-                if ((await fsp.stat(realPath)).isDirectory()) {
-                    return realPath;
-                }
-                return path.dirname(realPath);
-            } catch (error) {
-                if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-                    throw error;
-                }
-                const parentPath = path.dirname(fsPath);
-                if (parentPath === fsPath) {
-                    throw error;
-                }
-                fsPath = parentPath;
-            }
+        this.watchedFilePath = undefined;
+        const realPath = await fsp.realpath(this.fsPath);
+        if ((await fsp.stat(realPath)).isDirectory()) {
+            return realPath;
         }
+        this.watchedFilePath = realPath;
+        return path.dirname(realPath);
     }
 
     protected async createWatcher(watchRoot: string): Promise<AsyncSubscription> {
@@ -330,7 +417,7 @@ export class ParcelWatcher {
                 const fileChangeCollection = new FileChangeCollection();
                 for (const event of events) {
                     const filePath = event.path;
-                    if (!this.isWithinWatchPath(filePath)) {
+                    if (this.watchedFilePath && path.relative(this.watchedFilePath, filePath) !== '') {
                         continue;
                     }
                     if (event.type === 'create') {
@@ -358,14 +445,6 @@ export class ParcelWatcher {
         return path.resolve(directory, file);
     }
 
-    protected isWithinWatchPath(filePath: string): boolean {
-        const relativePath = path.relative(this.fsPath, filePath);
-        return relativePath === '' || (
-            relativePath !== '..'
-            && !relativePath.startsWith(`..${path.sep}`)
-            && !path.isAbsolute(relativePath)
-        );
-    }
     protected pushFileChange(changes: FileChangeCollection, type: FileChangeType, filePath: string): void {
         if (!this.isIgnored(filePath)) {
             const uri = FileUri.create(filePath).toString();
@@ -378,6 +457,17 @@ export class ParcelWatcher {
             clients: this.getClientIds(),
             uri: this.fsPath,
         });
+    }
+
+    protected fireAdded(): void {
+        if (this.isInUse()) {
+            const changes = new FileChangeCollection();
+            this.pushFileChange(changes, FileChangeType.ADDED, this.fsPath);
+            const values = changes.values();
+            if (values.length > 0) {
+                this.fileSystemWatcherClient.onDidFilesChanged({ clients: this.getClientIds(), changes: values });
+            }
+        }
     }
 
     /**
@@ -412,6 +502,7 @@ export class ParcelWatcher {
     protected async _dispose(): Promise<void> {
         if (!this.disposed) {
             this.disposed = true;
+            this.stopPolling();
             this.deferredDisposalDeferred.reject(WatcherDisposal);
             if (this.watcher) {
                 this.stopWatcher(this.watcher);

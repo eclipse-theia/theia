@@ -17,6 +17,8 @@
 import * as temp from 'temp';
 import * as chai from 'chai';
 import * as cp from 'child_process';
+import * as nodeFs from 'fs';
+import * as sinon from 'sinon';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as assert from 'assert';
 import URI from '@theia/core/lib/common/uri';
@@ -96,6 +98,7 @@ describe('parcel-filesystem-watcher', function (): void {
 
     it('Should start watching nonexistent files and nested paths without waiting for them to appear.', async function (): Promise<void> {
         const actualUris = new Set<string>();
+        const updatedUris = new Set<string>();
         const actualTypes = new Map<string, Set<FileChangeType>>();
         const changeListeners: Array<() => void> = [];
         const watcherClient = {
@@ -108,6 +111,9 @@ describe('parcel-filesystem-watcher', function (): void {
                         actualTypes.set(uri, types = new Set());
                     }
                     types.add(change.type);
+                    if (change.type === FileChangeType.UPDATED) {
+                        updatedUris.add(uri);
+                    }
                 });
                 changeListeners.forEach(listener => listener());
             },
@@ -142,6 +148,8 @@ describe('parcel-filesystem-watcher', function (): void {
 
             fs.writeFileSync(FileUri.fsPath(missingFile), 'missing');
             await waitForChange(actualUris, changeListeners, missingFile.toString());
+            fs.writeFileSync(FileUri.fsPath(missingFile), 'updated');
+            await waitForChange(updatedUris, changeListeners, missingFile.toString());
 
             fs.mkdirSync(FileUri.fsPath(missingDirectory));
             fs.mkdirSync(FileUri.fsPath(nestedDirectory));
@@ -162,6 +170,43 @@ describe('parcel-filesystem-watcher', function (): void {
             watchers.forEach(watcher => watcher.removeRef(0));
             await Promise.all(watchers.map(watcher => watcher.whenDisposed));
         }
+    });
+
+    it('Should share pending-path checks and stop polling when watchers are disposed.', async function (): Promise<void> {
+        const actualUris = new Set<string>();
+        const watcherClient = {
+            onDidFilesChanged(event: DidFilesChangedParams): void {
+                event.changes.forEach(change => actualUris.add(change.uri.toString()));
+            },
+            onError(): void {
+            }
+        };
+        const missingFile = root.resolve('disposed-missing.txt');
+        const fsPath = FileUri.fsPath(missingFile);
+        const watcherOptions = { ignored: [], ignorePatterns: [] };
+        const serverOptions = {
+            verbose: false,
+            info: () => undefined,
+            error: () => undefined,
+            parcelOptions: {},
+        };
+        const watchers = [
+            new ParcelWatcher(0, fsPath, watcherOptions, serverOptions, watcherClient, 0),
+            new ParcelWatcher(0, fsPath, watcherOptions, serverOptions, watcherClient, 0),
+        ];
+        const statSpy = sinon.spy(nodeFs.promises, 'stat');
+        try {
+            expect(await Promise.all(watchers.map(watcher => watcher.whenStarted))).to.deep.equal([true, true]);
+            await sleep(750);
+            expect(statSpy.getCalls().filter(call => call.args[0] === fsPath)).to.have.length(1);
+        } finally {
+            watchers.forEach(watcher => watcher.removeRef(0));
+            await Promise.all(watchers.map(watcher => watcher.whenDisposed));
+            statSpy.restore();
+        }
+        fs.writeFileSync(fsPath, 'disposed');
+        await sleep(1200);
+        expect(actualUris.has(missingFile.toString())).to.be.false;
     });
 
     it('Should not receive file changes events from in the workspace by default if unwatched', async function (): Promise<void> {
