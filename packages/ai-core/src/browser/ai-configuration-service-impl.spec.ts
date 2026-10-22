@@ -80,8 +80,9 @@ class StubPreferenceService {
         const globalValue = map?.get(PreferenceScope.User) as T | undefined;
         const workspaceValue = map?.get(PreferenceScope.Workspace) as T | undefined;
         const workspaceFolderValue = map?.get(PreferenceScope.Folder) as T | undefined;
-        const value = workspaceFolderValue ?? workspaceValue ?? globalValue ?? defaultValue;
-        return { preferenceName, defaultValue, globalValue, workspaceValue, workspaceFolderValue, value };
+        const sessionValue = map?.get(PreferenceScope.Session) as T | undefined;
+        const value = sessionValue ?? workspaceFolderValue ?? workspaceValue ?? globalValue ?? defaultValue;
+        return { preferenceName, defaultValue, globalValue, workspaceValue, workspaceFolderValue, sessionValue, value };
     }
 
     protected fire(preferenceName: string, scope: PreferenceScope): void {
@@ -168,6 +169,14 @@ describe('AiConfigurationServiceImpl', () => {
             expect(inspection?.sourceScope).to.equal(PreferenceScope.Workspace);
             expect(inspection?.value).to.equal('workspace');
         });
+
+        it('reports Session when a session value wins', () => {
+            preferences.setScopeValue(KEY, PreferenceScope.Workspace, 'workspace');
+            preferences.setScopeValue(KEY, PreferenceScope.Session, 'session');
+            const inspection = service.inspect<string>(KEY);
+            expect(inspection?.sourceScope).to.equal(PreferenceScope.Session);
+            expect(inspection?.value).to.equal('session');
+        });
     });
 
     describe('trust-aware reads', () => {
@@ -184,6 +193,23 @@ describe('AiConfigurationServiceImpl', () => {
             // The suppressed workspace/folder values are cleared, not just excluded from `value`.
             expect(inspection?.workspaceValue).to.equal(undefined);
             expect(inspection?.workspaceFolderValue).to.equal(undefined);
+        });
+
+        it('honors a session value when untrusted', async () => {
+            await createService(false);
+            preferences.setScopeValue(KEY, PreferenceScope.User, 'user');
+            preferences.setScopeValue(KEY, PreferenceScope.Session, 'session');
+
+            expect(service.get<string>(KEY)).to.equal('session');
+            expect(service.inspect<string>(KEY)?.value).to.equal('session');
+        });
+
+        it('merges a session object into the user object when untrusted, like the trusted read', async () => {
+            await createService(false);
+            preferences.setScopeValue(KEY, PreferenceScope.User, { deleteFile: 'disabled' });
+            preferences.setScopeValue(KEY, PreferenceScope.Session, { shellExecute: 'always_allow' });
+
+            expect(service.get(KEY)).to.deep.equal({ deleteFile: 'disabled', shellExecute: 'always_allow' });
         });
 
         it('honors the workspace value when trusted', async () => {

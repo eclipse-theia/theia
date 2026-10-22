@@ -120,6 +120,20 @@ describe('AiSettingsRowService', () => {
             expect(folder2.modified).to.equal(true);
         });
 
+        it('resolves a session value over every scope without reporting it as modified there', () => {
+            const { service } = createService({ defaultValue: 'd', globalValue: 'u', sessionValue: 's' });
+            const user = service.inspect('pref', 'user');
+            expect(user.value).to.equal('s');
+            expect(user.scopeValue).to.equal('u');
+            expect(service.inspect('pref', 'workspace')).to.include({ value: 's', modified: false });
+            expect(service.inspect('pref', 'folder').value).to.equal('s');
+        });
+
+        it('keeps the scope value of a list that has a session value, since edits write the list back to the scope', () => {
+            const { service } = createService({ globalValue: ['rm *'], sessionValue: ['curl *'] });
+            expect(service.inspect('pref', 'user').value).to.deep.equal(['rm *']);
+        });
+
         it('treats a value of `false` as an explicit override (not inherited)', () => {
             const { service } = createService({ defaultValue: true, globalValue: false });
             const result = service.inspect('pref', 'user');

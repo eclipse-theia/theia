@@ -99,13 +99,16 @@ export class AiConfigurationServiceImpl implements AiConfigurationService {
      * from a raw {@link PreferenceInspection}. The workspace-trust rule is applied once, via
      * {@link TrustAwarePreferenceReader.suppressUntrusted} (the single owner of that rule): when
      * untrusted, folder and workspace scope values are cleared, so the scope walk below naturally
-     * resolves to the user/default scope and the whole inspection stays consistent with {@link get}.
+     * resolves to the session, user or default scope and the whole inspection stays consistent with {@link get}.
      *
      * Note: `value` reflects the narrowest defined scope, matching `PreferenceService.inspect`. For
      * object-valued preferences this can differ from {@link get}, which deep-merges across scopes.
      */
     protected enrichInspection<T extends JSONValue>(inspection: PreferenceInspection<T>): AiConfigurationInspection<T> {
         const suppressed = this.trustAwareReader.suppressUntrusted(inspection);
+        if (suppressed.sessionValue !== undefined) {
+            return { ...suppressed, sourceScope: PreferenceScope.Session, value: suppressed.sessionValue };
+        }
         if (suppressed.workspaceFolderValue !== undefined) {
             return { ...suppressed, sourceScope: PreferenceScope.Folder, value: suppressed.workspaceFolderValue };
         }
