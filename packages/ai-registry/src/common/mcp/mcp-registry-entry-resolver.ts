@@ -65,6 +65,7 @@ export class MCPRegistryEntryResolverImpl implements MCPRegistryEntryResolver {
             localName,
             config: servers[localName],
             version: approval.version,
+            ...(raw.latestVersion !== undefined && { latestVersion: raw.latestVersion }),
             ...(approval.configHash !== undefined && { configHash: approval.configHash }),
             mcpRegistryVerified: raw.mcpRegistryVerified
         };
