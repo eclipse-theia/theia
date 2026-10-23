@@ -21,21 +21,21 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 try { FrontendApplicationConfigProvider.set({}); } catch { /* already set by a sibling spec */ }
 
 import { expect } from 'chai';
-import { Container } from '@theia/core/shared/inversify';
-import { Event } from '@theia/core';
-import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
-import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
-import { RequestService } from '@theia/core/shared/@theia/request';
-import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
-import { FileSystemPreferences } from '@theia/filesystem/lib/common';
-import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';
 import { SearchInWorkspaceService } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
-import { CanonicalUriService, WorkspaceService, WorkspaceTrustService } from '@theia/workspace/lib/browser';
-import { TextContentResourceResolver, WorkspaceMainImpl } from './workspace-main';
-import { RPCProtocol } from '../../common/rpc-protocol';
-import { PluginServer } from '../../common/plugin-protocol';
+import { WorkspaceMainImpl } from './workspace-main';
 
 disableJSDOM();
+
+/** Creates a `WorkspaceMainImpl` without the constructor's RPC and container wiring: `$findTextInFiles` only uses the fields set here. */
+function createWorkspaceMainImpl(proxy: object, searchInWorkspaceService: Partial<SearchInWorkspaceService>): WorkspaceMainImpl {
+    const impl = Object.create(WorkspaceMainImpl.prototype) as WorkspaceMainImpl;
+    const fields = impl as unknown as Record<string, unknown>;
+    fields.proxy = proxy;
+    fields.searchInWorkspaceService = searchInWorkspaceService;
+    fields.roots = [];
+    fields.workspaceSearch = new Set<number>();
+    return impl;
+}
 
 describe('WorkspaceMainImpl', () => {
 
@@ -46,36 +46,14 @@ describe('WorkspaceMainImpl', () => {
 
         it('should reject and end the search when the search fails to start', async () => {
             const textSearchResults: [number, boolean][] = [];
-            const proxy = new Proxy({}, {
-                get: (_, method) => (...args: unknown[]) => {
-                    if (method === '$onTextSearchResult') {
-                        textSearchResults.push([args[0] as number, args[1] as boolean]);
-                    }
-                    return Promise.resolve(undefined);
+            const proxy = {
+                $onTextSearchResult: (searchRequestId: number, done: boolean) => {
+                    textSearchResults.push([searchRequestId, done]);
                 }
-            });
-            const rpc = { getProxy: () => proxy } as unknown as RPCProtocol;
-            const searchService = {
-                searchWithCallback: () => Promise.reject(new Error('search failed to start'))
             };
-
-            const container = new Container();
-            container.bind(SearchInWorkspaceService).toConstantValue(searchService as unknown as SearchInWorkspaceService);
-            container.bind(WorkspaceService).toConstantValue({
-                tryGetRoots: () => [],
-                onWorkspaceChanged: Event.None,
-                onWorkspaceLocationChanged: Event.None
-            } as unknown as WorkspaceService);
-            container.bind(WorkspaceTrustService).toConstantValue({
-                getWorkspaceTrust: () => new Promise(() => { }),
-                onDidChangeWorkspaceTrust: Event.None
-            } as unknown as WorkspaceTrustService);
-            container.bind(PluginServer).toConstantValue({ getAllStorageValues: async () => ({}) } as unknown as PluginServer);
-            for (const id of [MonacoQuickInputService, FileSearchService, TextContentResourceResolver, RequestService,
-                CanonicalUriService, EncodingRegistry, FileSystemPreferences, PreferenceService]) {
-                container.bind<object>(id).toConstantValue({});
-            }
-            const workspaceMain = new WorkspaceMainImpl(rpc, container);
+            const workspaceMain = createWorkspaceMainImpl(proxy, {
+                searchWithCallback: () => Promise.reject(new Error('search failed to start'))
+            });
 
             let timer: ReturnType<typeof setTimeout> | undefined;
             const result = await Promise.race([
