@@ -178,40 +178,18 @@ export class CollaborationInstance implements Disposable {
     }
 
     protected registerProtocolEvents(connection: types.ProtocolBroadcastConnection): void {
-        connection.peer.onJoinRequest(async (_, user) => {
-            const allow = nls.localizeByDefault('Allow');
-            const deny = nls.localizeByDefault('Deny');
-            const result = await this.messageService.info(
-                nls.localize('theia/collaboration/userWantsToJoin', "User '{0}' wants to join the collaboration room", user.email ? `${user.name} (${user.email})` : user.name),
-                allow,
-                deny
-            );
-            if (result === allow) {
-                const roots = await this.workspaceService.roots;
-                return {
-                    workspace: {
-                        name: this.workspaceService.workspace?.name ?? nls.localize('theia/collaboration/collaboration', 'Collaboration'),
-                        folders: roots.map(e => e.name)
-                    }
-                };
-            } else {
-                return undefined;
-            }
-        });
+        connection.peer.onJoinRequest((_, user) => this.handleJoinRequest(user));
         connection.room.onJoin(async (_, peer) => {
             this.addPeer(peer);
             if (this.isHost) {
-                const roots = await this.workspaceService.roots;
+                const workspace = await this.getSharedWorkspace();
                 const data: types.InitData = {
                     protocol: types.VERSION,
                     host: await this.identity.promise,
                     guests: Array.from(this.peers.values()).map(e => e.peer),
                     capabilities: {},
                     permissions: this.permissions,
-                    workspace: {
-                        name: this.workspaceService.workspace?.name ?? nls.localize('theia/collaboration/collaboration', 'Collaboration'),
-                        folders: roots.map(e => e.name)
-                    }
+                    workspace
                 };
                 connection.peer.init(peer.id, data);
             }
@@ -234,6 +212,32 @@ export class CollaborationInstance implements Disposable {
         connection.peer.onInit(async (_, data) => {
             await this.initialize(data);
         });
+    }
+
+    /**
+     * Decides whether a user may join the session: returns a join response to let them in, or `undefined` to turn them away.
+     * By default, the host is asked.
+     */
+    protected async handleJoinRequest(user: types.User): Promise<types.JoinResponse | undefined> {
+        const allow = nls.localizeByDefault('Allow');
+        const deny = nls.localizeByDefault('Deny');
+        const result = await this.messageService.info(
+            nls.localize('theia/collaboration/userWantsToJoin', "User '{0}' wants to join the collaboration room", user.email ? `${user.name} (${user.email})` : user.name),
+            allow,
+            deny
+        );
+        return result === allow ? { workspace: await this.getSharedWorkspace() } : undefined;
+    }
+
+    /**
+     * The workspace sent to a guest when they join, also used in the default join response.
+     */
+    protected async getSharedWorkspace(): Promise<types.Workspace> {
+        const roots = await this.workspaceService.roots;
+        return {
+            name: this.workspaceService.workspace?.name ?? nls.localize('theia/collaboration/collaboration', 'Collaboration'),
+            folders: roots.map(e => e.name)
+        };
     }
 
     protected registerEditorEvents(connection: types.ProtocolBroadcastConnection): void {
