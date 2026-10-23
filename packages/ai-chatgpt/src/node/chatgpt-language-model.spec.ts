@@ -290,13 +290,19 @@ describe('ChatGptResponseApiUtils', () => {
             container.bind(ChatGptResponseApiUtils).toSelf();
             const responseUtils = container.get(ChatGptResponseApiUtils);
             const payloads: Record<string, unknown>[] = [];
+            let toolExecutions = 0;
             const openai = {
                 responses: {
                     create: async (payload: Record<string, unknown>) => {
                         payloads.push(payload);
                         return (async function* (): AsyncIterable<unknown> {
                             if (payloads.length === 1) {
-                                yield { type: 'response.output_item.done', item: { type: 'compaction', id: 'c1', encrypted_content: 'encrypted' } };
+                                yield { type: 'response.output_item.done', output_index: 0, item: { type: 'compaction', id: 'c1', encrypted_content: 'encrypted' } };
+                                if (withTools) {
+                                    const item = { type: 'function_call', id: 'fc1', call_id: 'call1', name: 'lookup', arguments: '{}' };
+                                    yield { type: 'response.output_item.added', output_index: 1, item };
+                                    yield { type: 'response.output_item.done', output_index: 1, item };
+                                }
                             } else {
                                 yield { type: 'response.output_text.delta', delta: 'Continued answer' };
                             }
@@ -312,7 +318,10 @@ describe('ChatGptResponseApiUtils', () => {
                 responseUtils, new OpenAiModelUtils());
             const request = {
                 ...createRequest(undefined, [{ actor: 'user', type: 'text', text: 'Old turn' }]),
-                tools: withTools ? [{ id: 'lookup', name: 'lookup', parameters: { type: 'object', properties: {} }, handler: async () => 'result' }] : undefined
+                tools: withTools ? [{
+                    id: 'lookup', name: 'lookup', parameters: { type: 'object', properties: {} },
+                    handler: async () => { toolExecutions++; return 'result'; }
+                }] : undefined
             } satisfies UserRequest;
             const response = await model.request(request);
             const parts: LanguageModelStreamResponsePart[] = [];
@@ -322,6 +331,16 @@ describe('ChatGptResponseApiUtils', () => {
             }
             const compaction = parts.filter(isCompactionResponsePart);
             expect(compaction).to.deep.equal([{ compaction: { provider: 'chatgpt-responses', data: { id: 'c1', encrypted_content: 'encrypted' } } }]);
+            expect(toolExecutions).to.equal(withTools ? 1 : 0);
+            if (withTools) {
+                expect(payloads).to.have.lengthOf(2);
+                expect(payloads[1].input).to.deep.equal([
+                    { type: 'compaction', id: 'c1', encrypted_content: 'encrypted' },
+                    { type: 'function_call', id: 'fc1', call_id: 'call1', name: 'lookup', arguments: '{}' },
+                    { type: 'function_call_output', call_id: 'call1', output: 'result' }
+                ]);
+                expect(parts.filter(isTextResponsePart)).to.deep.equal([{ content: 'Continued answer' }]);
+            }
             const replay = await model.request({
                 ...request,
                 messages: [
@@ -337,10 +356,11 @@ describe('ChatGptResponseApiUtils', () => {
             }
             expect(replayParts.filter(isTextResponsePart)).to.deep.equal([{ content: 'Continued answer' }]);
             expect(replayParts.filter(isCompactionResponsePart)).to.be.empty;
-            expect(payloads).to.have.lengthOf(2);
-            expect(payloads[1]).to.include({ store: false, stream: true, instructions: DEFAULT_CHATGPT_INSTRUCTIONS });
-            expect(payloads[1].context_management).to.deep.equal([{ type: 'compaction' }]);
-            expect(payloads[1].input).to.deep.equal([
+            expect(payloads).to.have.lengthOf(withTools ? 3 : 2);
+            const replayPayload = payloads[payloads.length - 1];
+            expect(replayPayload).to.include({ store: false, stream: true, instructions: DEFAULT_CHATGPT_INSTRUCTIONS });
+            expect(replayPayload.context_management).to.deep.equal([{ type: 'compaction' }]);
+            expect(replayPayload.input).to.deep.equal([
                 { type: 'compaction', id: 'c1', encrypted_content: 'encrypted' },
                 { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'Next turn' }] }
             ]);

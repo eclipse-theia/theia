@@ -29,6 +29,7 @@ import {
 import { CancellationToken, isObject, nls, unreachable, ILogger } from '@theia/core';
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
+import { toResponseInputItems } from 'openai/lib/responses/ResponseInputItems';
 import type {
     FunctionTool,
     Tool,
@@ -38,6 +39,7 @@ import type {
     ResponseFunctionWebSearch,
     ResponseInputItem,
     ResponseCreateParamsStreaming,
+    ResponseOutputItem,
     ResponseStreamEvent,
     ResponseToolSearchCall,
     ResponseToolSearchOutputItem
@@ -505,9 +507,8 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
     protected iteration = 0;
     protected readonly tools: Tool[] | undefined;
     protected readonly instructions?: string;
-    protected currentResponseText = '';
     protected pendingReasoningItems: ResponseInputItem[] = [];
-    protected currentWebSearchReplayItems: ResponseInputItem[] = [];
+    protected currentOutput: ResponseOutputItem[] = [];
 
     constructor(
         protected readonly openai: OpenAI,
@@ -565,9 +566,8 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
 
     protected async processStream(): Promise<void> {
         this.currentToolCalls.clear();
-        this.currentResponseText = '';
         this.pendingReasoningItems = [];
-        this.currentWebSearchReplayItems = [];
+        this.currentOutput = [];
 
         if (this.isStreaming) {
             // Use streaming API
@@ -610,14 +610,21 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
         }
 
         // First, yield any text content from the response
-        this.currentResponseText = response.output_text || '';
-        if (this.currentResponseText) {
-            this.handleIncoming({ content: this.currentResponseText });
+        if (response.output_text) {
+            this.handleIncoming({ content: response.output_text });
         }
 
+        this.currentOutput = response.output ?? [];
         const pendingReasoningItems: ResponseInputItem[] = [];
-        for (const item of response.output ?? []) {
-            if (item.type === 'reasoning') {
+        for (const item of this.currentOutput) {
+            if (item.type === 'compaction') {
+                this.handleIncoming({
+                    compaction: {
+                        provider: this.utils.compactionProvider,
+                        data: { id: item.id, encrypted_content: item.encrypted_content }
+                    }
+                });
+            } else if (item.type === 'reasoning') {
                 pendingReasoningItems.push(item);
             } else if (item.type === 'web_search_call') {
                 this.handleWebSearchCall(item, true, [...pendingReasoningItems, item]);
@@ -649,7 +656,6 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
     protected async handleStreamEvent(event: ResponseStreamEvent): Promise<void> {
         switch (event.type) {
             case 'response.output_text.delta':
-                this.currentResponseText += event.delta;
                 this.handleIncoming({ content: event.delta });
                 break;
 
@@ -672,6 +678,7 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
                 break;
 
             case 'response.output_item.done':
+                this.currentOutput[event.output_index] = event.item;
                 if (event.item?.type === 'function_call') {
                     this.handleFunctionCallDone(event.item);
                 } else if (event.item?.type === 'compaction') {
@@ -804,9 +811,6 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
     }
 
     protected handleWebSearchCall(item: ResponseFunctionWebSearch, finished: boolean, replayItems?: ResponseInputItem[]): void {
-        if (finished && replayItems) {
-            this.currentWebSearchReplayItems.push(...replayItems);
-        }
         const action = JSON.stringify(item.action);
         this.handleIncoming({
             server_tool_calls: [{
@@ -899,23 +903,6 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
     }
 
     protected prepareNextIteration(): void {
-        // Add assistant response with the actual text that was streamed
-        const assistantMessage: ResponseInputItem = {
-            role: 'assistant',
-            content: this.currentResponseText
-        };
-
-        // Add the function calls that were made by the assistant
-        const functionCalls: ResponseInputItem[] = [];
-        for (const [itemId, toolCall] of this.currentToolCalls) {
-            functionCalls.push(...toolCall.reasoningItems ?? [], {
-                type: 'function_call',
-                call_id: toolCall.call_id || itemId,
-                name: toolCall.name,
-                arguments: toolCall.arguments
-            });
-        }
-
         // Add tool results
         const toolResults: ResponseInputItem[] = [];
         for (const [itemId, toolCall] of this.currentToolCalls) {
@@ -932,7 +919,14 @@ class ResponseApiToolCallIterator extends AbstractStreamingResponseIterator {
             });
         }
 
-        this.currentInput = [...this.currentInput, ...this.currentWebSearchReplayItems, assistantMessage, ...functionCalls, ...toolResults];
+        this.currentInput = [...this.currentInput, ...toResponseInputItems(this.currentOutput), ...toolResults];
+        // The latest compaction item subsumes all preceding input, including earlier compactions.
+        for (let i = this.currentInput.length - 1; i >= 0; i--) {
+            if (this.currentInput[i].type === 'compaction') {
+                this.currentInput = this.currentInput.slice(i);
+                break;
+            }
+        }
     }
 }
 
