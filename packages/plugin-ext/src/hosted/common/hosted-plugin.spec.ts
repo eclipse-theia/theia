@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { DeployedPlugin, PluginIdentifiers } from '../../common/plugin-protocol';
 import { AbstractHostedPluginSupport, PluginContributions } from './hosted-plugin';
@@ -123,6 +124,29 @@ class TestHostedPluginSupport extends AbstractHostedPluginSupport<any, any> {
 
     clearDisabledByTrust(): void {
         this._disabledByTrust.clear();
+    }
+
+    addManager(host: string, manager: any): void {
+        this.managers.set(host, manager);
+    }
+
+    /** Make the plugin hosts' managers available, as the start of the plugins does. */
+    provideManagers(): void {
+        this.deferredManagers.resolve();
+    }
+
+    /** Lose the connection to the plugin hosts, as the disposal of a load's `toDisconnect` collection does. */
+    disconnect(): void {
+        this.disconnectManagers(this.deferredManagers);
+    }
+
+    /** Set the activation events declared by a plugin. */
+    declareActivationEvents(plugin: DeployedPlugin, ...activationEvents: string[]): void {
+        plugin.contributes = { activationEvents };
+    }
+
+    testHasActivationEvent(activationEvent: string): boolean {
+        return this.hasActivationEvent(activationEvent);
     }
 
     simulateLoadCycle(): Map<string, PluginContributions[]> {
@@ -376,4 +400,140 @@ describe('AbstractHostedPluginSupport - workspace trust filtering', () => {
         });
     });
 
+});
+
+describe('AbstractHostedPluginSupport - activateByEvent', () => {
+    let support: TestHostedPluginSupport;
+
+    beforeEach(() => {
+        support = new TestHostedPluginSupport();
+    });
+
+    /** Resolve after pending callbacks have run. */
+    function tick(): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, 0));
+    }
+
+    /** Resolve to whether the promise has settled after pending callbacks have run. */
+    async function isSettled(promise: Promise<unknown>): Promise<boolean> {
+        let settled = false;
+        promise.then(() => settled = true, () => settled = true);
+        await tick();
+        return settled;
+    }
+
+    function createManager(activation: Promise<void>): { manager: any, calls: string[] } {
+        const calls: string[] = [];
+        const manager = {
+            $activateByEvent: (event: string) => {
+                calls.push(event);
+                return activation;
+            }
+        };
+        return { manager, calls };
+    }
+
+    it('sends an event requested before start to the plugin hosts once their managers are available', async () => {
+        const first = support.activateByEvent('onFileSystem:test');
+        const second = support.activateByEvent('onFileSystem:test');
+
+        expect(await isSettled(first)).to.be.false;
+        expect(await isSettled(second)).to.be.false;
+
+        const { manager, calls } = createManager(Promise.resolve());
+        support.addManager('main', manager);
+        expect(calls).to.be.empty;
+
+        support.provideManagers();
+
+        expect(await isSettled(first)).to.be.true;
+        expect(await isSettled(second)).to.be.true;
+        expect(calls).to.deep.equal(['onFileSystem:test']);
+    });
+
+    it('does not make an event requested before start wait for the activation of other events', async () => {
+        // The start of the plugins activates the eager plugins first, which may take a while
+        const eagerActivation = new Deferred<void>();
+        const manager = {
+            $activateByEvent: (event: string) => event === '*' ? eagerActivation.promise : Promise.resolve()
+        };
+        support.addManager('main', manager);
+
+        const eager = support.activateByEvent('*');
+        const activation = support.activateByEvent('onFileSystem:test');
+        support.provideManagers();
+
+        expect(await isSettled(activation)).to.be.true;
+        expect(await isSettled(eager)).to.be.false;
+    });
+
+    it('rejects the events requested before start when the connection is lost, and awaits the next load on the next request', async () => {
+        const first = support.activateByEvent('onFileSystem:test');
+
+        support.disconnect();
+
+        await first.then(() => { throw new Error('should have rejected'); }, () => undefined);
+
+        const { manager, calls } = createManager(Promise.resolve());
+        support.addManager('main', manager);
+        const second = support.activateByEvent('onFileSystem:test');
+        expect(await isSettled(second)).to.be.false;
+
+        support.provideManagers();
+
+        expect(await isSettled(second)).to.be.true;
+        expect(calls).to.deep.equal(['onFileSystem:test']);
+    });
+
+    it('lets a repeated request for an event wait for the activation in flight', async () => {
+        support.provideManagers();
+        await tick();
+        const activation = new Deferred<void>();
+        const { manager, calls } = createManager(activation.promise);
+        support.addManager('main', manager);
+
+        const first = support.activateByEvent('onFileSystem:test');
+        const second = support.activateByEvent('onFileSystem:test');
+
+        expect(calls).to.deep.equal(['onFileSystem:test']);
+        expect(await isSettled(second)).to.be.false;
+
+        activation.resolve();
+
+        expect(await isSettled(first)).to.be.true;
+        expect(await isSettled(second)).to.be.true;
+    });
+
+    it('retries a failed activation on the next request', async () => {
+        support.provideManagers();
+        const { manager, calls } = createManager(Promise.reject(new Error('activation failed')));
+        support.addManager('main', manager);
+
+        await support.activateByEvent('onFileSystem:test').then(() => { throw new Error('should have rejected'); }, () => undefined);
+
+        await support.activateByEvent('onFileSystem:test').then(() => { throw new Error('should have rejected'); }, () => undefined);
+        expect(calls).to.deep.equal(['onFileSystem:test', 'onFileSystem:test']);
+    });
+
+    it('does not send a completed event to the plugin hosts again', async () => {
+        support.provideManagers();
+        const { manager, calls } = createManager(Promise.resolve());
+        support.addManager('main', manager);
+
+        await support.activateByEvent('onFileSystem:test');
+        await support.activateByEvent('onFileSystem:test');
+
+        expect(calls).to.deep.equal(['onFileSystem:test']);
+    });
+
+    it('tells whether some plugin declares an activation event', () => {
+        const plugin = createMockDeployedPlugin('test.filesystem');
+        support.declareActivationEvents(plugin, 'onFileSystem:test', 'onCommand:test.command');
+        support.addPlugin(plugin);
+        support.addPlugin(createMockDeployedPlugin('test.other'));
+
+        expect(support.testHasActivationEvent('onFileSystem:test')).to.be.true;
+        expect(support.testHasActivationEvent('onCommand:test.command')).to.be.true;
+        expect(support.testHasActivationEvent('onFileSystem:other')).to.be.false;
+    });
 });

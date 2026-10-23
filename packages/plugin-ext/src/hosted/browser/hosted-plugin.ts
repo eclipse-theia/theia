@@ -40,10 +40,10 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PluginContributionHandler } from '../../main/browser/plugin-contribution-handler';
 import { getQueryParameters } from '../../main/browser/env-main';
 import { getPreferences } from '../../main/browser/preference-registry-main';
-import { Deferred, waitForEvent } from '@theia/core/lib/common/promise-util';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
-import { Event, WaitUntilEvent } from '@theia/core/lib/common/event';
+import { WaitUntilEvent } from '@theia/core/lib/common/event';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { PluginViewRegistry } from '../../main/browser/view/plugin-view-registry';
@@ -492,11 +492,16 @@ export class HostedPluginSupport extends AbstractHostedPluginSupport<PluginManag
             // and will be replayed when managers start. This does not depend on
             // layout initialization, so it cannot deadlock.
             await this.willStart;
-            await this.activateByFileSystem(event);
-            if (!this.fileService.hasProvider(event.scheme)) {
-                return waitForEvent(Event.filter(this.fileService.onDidChangeFileSystemProviderRegistrations,
-                    ({ added, scheme }) => added && scheme === event.scheme), 3000);
+            const activation = this.activateByFileSystem(event);
+            if (!this.hasActivationEvent(`onFileSystem:${event.scheme}`)) {
+                // No plugin registers a provider for the scheme on activation, so there is nothing to wait for.
+                // In particular, the start of the plugins must not be awaited here, because it depends on services
+                // that need file system providers themselves, such as the workspace roots and the preferences.
+                // The event is still requested, so that a plugin for the scheme deployed later is activated by it.
+                activation.catch(() => { /* nothing awaits the activation */ });
+                return;
             }
+            return activation;
         })());
     }
 

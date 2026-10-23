@@ -84,6 +84,15 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
 
     protected readonly activationEvents = new Set<string>();
 
+    /** The activation of each requested activation event, so that repeated requests for an event await the same activation. */
+    protected readonly activationsByEvent = new Map<string, Promise<void>>();
+
+    /**
+     * Resolves when every plugin host of the current load has a manager to which activation events can be sent.
+     * Rejected if the connection is lost before then, and replaced for the next load.
+     */
+    protected deferredManagers = new Deferred<void>();
+
     protected workspaceTrusted: boolean = false;
 
     protected readonly _disabledByTrust = new Set<string>();
@@ -151,6 +160,7 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
             // Resolve the startup deferreds so that clients awaiting `willStart` or `didStart`,
             // e.g. file system provider activations, do not hang forever on a failed load.
             this.deferredWillStart.resolve();
+            this.deferredManagers.resolve();
             this.deferredDidStart.resolve();
         }
     }), 50, { leading: true });
@@ -161,6 +171,8 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
 
     protected async doLoad(): Promise<void> {
         const toDisconnect = new DisposableCollection(Disposable.create(() => { /* mark as connected */ }));
+        const managers = this.deferredManagers;
+        toDisconnect.push(Disposable.create(() => this.disconnectManagers(managers)));
 
         this._disabledByTrust.clear();
 
@@ -372,6 +384,10 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
             return;
         }
 
+        const managers = this.deferredManagers;
+        // The hosts replay the activation events requested so far to the plugins that this load deploys. Forget the
+        // activations completed before, so that a new request for one of these events awaits the replay instead.
+        this.activationsByEvent.clear();
         const thenable: Promise<void>[] = [];
         const configStorage: ConfigStorage = {
             hostLogPath,
@@ -418,6 +434,8 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
             })());
         }
 
+        // Every host of this load has a manager now, if the connection has not been lost in the meantime
+        managers.resolve();
         await Promise.all(thenable);
         await this.activateByEvent('onStartupFinished');
         if (toDisconnect.disposed) {
@@ -438,12 +456,71 @@ export abstract class AbstractHostedPluginSupport<PM extends AbstractPluginManag
 
     protected abstract getHostGlobalStoragePath(): Promise<string>;
 
-    async activateByEvent(activationEvent: string): Promise<void> {
-        if (this.activationEvents.has(activationEvent)) {
-            return;
+    /**
+     * Activate the plugins that declare the given activation event.
+     *
+     * An event requested before the plugin hosts are started is sent to each of them as soon as it has a manager, and
+     * the hosts replay it on start to plugins deployed later. Requesting an event again while its activation is in flight
+     * or complete awaits that activation. A failed activation, e.g. because the connection to the plugin hosts was lost,
+     * is retried on the next request.
+     *
+     * @param activationEvent the activation event
+     * @returns a promise that resolves when the plugins activated by the event have finished activating in every plugin
+     *   host. Before the start of the plugins, this depends on the hosts becoming available, so callers that the start
+     *   of the plugins depends on must not await it unless some plugin declares the event
+     */
+    activateByEvent(activationEvent: string): Promise<void> {
+        const pending = this.activationsByEvent.get(activationEvent);
+        if (pending) {
+            return pending;
         }
         this.activationEvents.add(activationEvent);
+        const activation = this.doActivateByEvent(activationEvent);
+        this.activationsByEvent.set(activationEvent, activation);
+        activation.catch(() => {
+            if (this.activationsByEvent.get(activationEvent) === activation) {
+                this.activationsByEvent.delete(activationEvent);
+            }
+        });
+        return activation;
+    }
+
+    protected async doActivateByEvent(activationEvent: string): Promise<void> {
+        if (this.deferredManagers.state === 'unresolved') {
+            await this.deferredManagers.promise;
+        }
         await Promise.all(Array.from(this.managers.values(), manager => manager.$activateByEvent(activationEvent)));
+    }
+
+    /**
+     * Whether any plugin declares the given activation event, so that the plugins activated by it may be awaited.
+     * This includes the activation events implied by a plugin's contributions, e.g. of commands and views.
+     *
+     * @param activationEvent the activation event
+     * @returns whether some plugin is activated by the event
+     */
+    protected hasActivationEvent(activationEvent: string): boolean {
+        for (const { plugin } of this.contributions.values()) {
+            if (plugin.contributes?.activationEvents?.includes(activationEvent)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Handle the loss of the connection to the plugin hosts of a load: the activations awaiting their managers are
+     * rejected, and the managers of the next load are awaited instead. That load replays all requested activation
+     * events on start.
+     *
+     * @param managers the managers awaited by the load whose connection was lost
+     */
+    protected disconnectManagers(managers: Deferred<void>): void {
+        if (this.deferredManagers === managers) {
+            this.deferredManagers = new Deferred<void>();
+            managers.promise.catch(() => { /* reported to the activations awaiting the managers, if any */ });
+            managers.reject(new Error('The connection to the plugin hosts was lost before the plugins were started.'));
+        }
     }
 
     async activatePlugin(id: string): Promise<void> {
