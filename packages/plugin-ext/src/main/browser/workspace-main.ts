@@ -234,7 +234,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         const excludes = options.exclude ? (typeof options.exclude === 'string' ? options.exclude : (<theia.RelativePattern>options.exclude).pattern) : undefined;
         const includes = options.include ? (typeof options.include === 'string' ? options.include : (<theia.RelativePattern>options.include).pattern) : undefined;
         let canceledRequest = false;
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             let matches = 0;
             const what: string = query.pattern;
             this.searchInWorkspaceService.searchWithCallback(what, this.roots, {
@@ -286,6 +286,9 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
                 exclude: excludes ? [excludes] : undefined,
                 include: includes ? [includes] : undefined,
                 maxResults: maxHits
+            }).catch(error => {
+                this.proxy.$onTextSearchResult(searchRequestId, true);
+                reject(error);
             });
         });
     }
