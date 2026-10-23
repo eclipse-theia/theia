@@ -1068,6 +1068,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.waitForConnection.promise.then(connection =>
                 connection.getWriteBuffer().writeString(text).commit()
             );
+        } else if (this.options.isPseudoTerminal) {
+            this.onDataEmitter.fire(text);
         }
     }
 
