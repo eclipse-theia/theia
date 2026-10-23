@@ -15,7 +15,9 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { join } from 'path';
+import { promises as fs } from 'fs';
+import * as os from 'os';
+import { dirname, join } from 'path';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { CopilotSdkLoader } from './copilot-sdk-loader';
 
@@ -28,8 +30,11 @@ const usableSdk = {
 class TestableCopilotSdkLoader extends CopilotSdkLoader {
 
     shipped: unknown;
+    unpacked: unknown;
     installed: unknown;
     installedFailure: Error | undefined;
+    cliVersion: string | undefined;
+    packageCacheDirectories: string[] = [];
     readonly importedFromCli: string[] = [];
 
     constructor(protected readonly clis: string[]) {
@@ -41,9 +46,21 @@ class TestableCopilotSdkLoader extends CopilotSdkLoader {
         });
     }
 
+    callGetCliVersion(cli: string): Promise<string | undefined> {
+        return super.getCliVersion(cli);
+    }
+
     protected override async importShipped(entry: string): Promise<unknown | undefined> {
         this.importedFromCli.push(entry);
-        return this.shipped;
+        return this.packageCacheDirectories.some(directory => entry.startsWith(directory)) ? this.unpacked : this.shipped;
+    }
+
+    protected override async getCliVersion(): Promise<string | undefined> {
+        return this.cliVersion;
+    }
+
+    protected override getPackageCacheDirectories(): string[] {
+        return this.packageCacheDirectories;
     }
 
     protected override importInstalled(): unknown {
@@ -63,6 +80,30 @@ describe('CopilotSdkLoader', () => {
         loader.shipped = usableSdk;
         expect(await loader.load()).to.equal(usableSdk);
         expect(loader.importedFromCli).to.deep.equal([join('/opt', 'copilot', 'copilot-sdk', 'index.js')]);
+    });
+
+    it('should load the SDK that a single executable CLI unpacked into its package cache', async () => {
+        const cache = await fs.mkdtemp(join(os.tmpdir(), 'copilot-pkg-'));
+        try {
+            const entry = join(cache, 'linux-x64', '1.0.103', 'copilot-sdk', 'index.js');
+            await fs.mkdir(dirname(entry), { recursive: true });
+            await fs.writeFile(entry, '');
+            await fs.mkdir(join(cache, 'linux-x64', '1.0.102', 'copilot-sdk'), { recursive: true });
+            const loader = new TestableCopilotSdkLoader([cli]);
+            loader.cliVersion = '1.0.103';
+            loader.packageCacheDirectories = [join(cache, 'missing'), cache];
+            loader.unpacked = usableSdk;
+            expect(await loader.load()).to.equal(usableSdk);
+            expect(loader.importedFromCli).to.deep.equal([join('/opt', 'copilot', 'copilot-sdk', 'index.js'), entry]);
+        } finally {
+            await fs.rm(cache, { recursive: true, force: true });
+        }
+    });
+
+    it('should take the version the CLI reports', async () => {
+        const loader = new TestableCopilotSdkLoader([cli]);
+        // Node.js stands in for the CLI, it prints its version on `--version` as well.
+        expect(await loader.callGetCliVersion(process.execPath)).to.equal(process.versions.node);
     });
 
     it('should fall back to an installed SDK when the CLI does not carry one', async () => {

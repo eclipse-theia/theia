@@ -47,9 +47,10 @@ The CLI is not bundled because it is a large platform-specific binary under a pr
 application cannot execute a binary from inside its own archive. An application that wants to ship it has to install it
 next to itself and make sure it stays extracted.
 
-Only the CLI has to be installed. It ships the Copilot SDK next to its executable, and that is the copy this integration
-loads, so `@github/copilot-sdk` does not have to be installed separately. Should a CLI distribution ever ship without that
-copy, an installed `@github/copilot-sdk` is used as a fallback:
+Only the CLI has to be installed. It carries the Copilot SDK, either next to its executable or, since version 1.0.85, in
+its package cache, where the executable unpacks it when it is run. That is the copy this integration loads, so
+`@github/copilot-sdk` does not have to be installed separately. Should a CLI distribution ever ship without that copy, an
+installed `@github/copilot-sdk` is used as a fallback:
 
 ```sh
 npm install -g @github/copilot-sdk
