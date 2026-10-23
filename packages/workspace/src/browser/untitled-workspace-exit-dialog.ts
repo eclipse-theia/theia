@@ -61,7 +61,7 @@ export class UntitledWorkspaceExitDialog extends AbstractDialog<UntitledWorkspac
 }
 
 export namespace UntitledWorkspaceExitDialog {
-    export const enum Values {
+    export enum Values {
         "Don't Save" = "Don't Save",
         Cancel = 'Cancel',
         Save = 'Save',

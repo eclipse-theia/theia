@@ -611,7 +611,7 @@ export class MergeEditorModel implements Disposable {
     }
 }
 
-export const enum DiffComputingState {
+export enum DiffComputingState {
     Initializing,
     UpToDate,
     Updating
