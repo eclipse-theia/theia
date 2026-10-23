@@ -23,6 +23,7 @@ import { PreferencesCommands } from '@theia/preferences/lib/browser/util/prefere
 import { AI_CONFIGURATION_SETTING_CONTEXT_MENU, AiConfigurationSettingCommandArgs } from '../ai-configuration-setting-commands';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { JSONExt } from '@theia/core/shared/@lumino/coreutils';
 import type { SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import {
     AI_CORE_PREFERENCES_TITLE, DEDICATED_EDITOR_TYPE_DETAIL, MODEL_PROVIDER_TYPE_DETAIL, ModelProviderTypeDetail
@@ -50,7 +51,11 @@ export type AiSettingsControl =
  * modified indicator and the reset affordance.
  */
 export interface AiSettingsInspection {
-    /** Effective value resolved for the requested scope (falling back through broader scopes and the default). */
+    /**
+     * Effective value resolved for the requested scope (falling back through broader scopes and the default).
+     * A primitive session value (set via `--session-preference`) overrides it. An array or object session value
+     * doesn't, since a control commits an edited copy of this value to the requested scope.
+     */
     readonly value: unknown;
     /** Value explicitly set in the requested scope; `undefined` means the value is inherited or default. */
     readonly scopeValue: unknown;
@@ -103,6 +108,7 @@ export class AiSettingsRowService {
         const globalValue = inspection?.globalValue;
         const workspaceValue = inspection?.workspaceValue;
         const folderValue = inspection?.workspaceFolderValue;
+        const sessionValue = inspection?.sessionValue;
 
         let scopeValue: unknown;
         let value: unknown;
@@ -119,6 +125,9 @@ export class AiSettingsRowService {
                 scopeValue = folderValue;
                 value = folderValue ?? workspaceValue ?? globalValue ?? defaultValue;
                 break;
+        }
+        if (sessionValue !== undefined && JSONExt.isPrimitive(sessionValue)) {
+            value = sessionValue;
         }
         return { value, scopeValue, defaultValue, modified: scopeValue !== undefined };
     }

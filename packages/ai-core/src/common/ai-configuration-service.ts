@@ -27,9 +27,9 @@ export interface AiConfigurationInspection<T extends JSONValue = JSONValue> exte
     /**
      * The narrowest scope (honoring workspace trust) in which a value is explicitly set, i.e. the
      * scope that determines the effective {@link PreferenceInspection.value}. Walked in precedence
-     * order `Folder -> Workspace -> User`; `undefined` when only the default value applies. In an
-     * untrusted workspace the folder/workspace scopes are ignored, so `sourceScope` is either
-     * `User` or `undefined`.
+     * order `Session -> Folder -> Workspace -> User`; `undefined` when only the default value applies. In an
+     * untrusted workspace the folder/workspace scopes are ignored, so `sourceScope` is `Session`, `User` or
+     * `undefined`.
      */
     sourceScope?: PreferenceScope;
 }
@@ -70,7 +70,8 @@ export interface AiConfigurationChange {
  *
  * Reads ({@link get}, {@link inspect}) are **workspace-trust-aware**: workspace and folder scope
  * values are suppressed while the workspace is untrusted (failing closed until the trust state
- * resolves), matching how AI features read preferences today. Writes ({@link set}, {@link update})
+ * resolves), matching how AI features read preferences today. Session values (set via
+ * `--session-preference`) apply regardless of trust. Writes ({@link set}, {@link update})
  * are never gated by trust.
  */
 export interface AiConfigurationService {
