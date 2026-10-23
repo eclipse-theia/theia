@@ -14,12 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandRegistry } from '@theia/core';
+import { CommandContribution, CommandRegistry } from '@theia/core';
 import { ApplicationShell, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { PendingToolConfirmation, PendingToolConfirmationTracker } from '@theia/ai-chat/lib/browser/pending-tool-confirmation-tracker';
+import { APPROVE_LATEST_TOOL_CONFIRMATION_COMMAND, DENY_LATEST_TOOL_CONFIRMATION_COMMAND } from './chat-contract';
 import { ChatViewWidget } from './chat-view-widget';
+
+export { APPROVE_LATEST_TOOL_CONFIRMATION_COMMAND, DENY_LATEST_TOOL_CONFIRMATION_COMMAND };
 
 export const HAS_PENDING_TOOL_CONFIRMATION_CONTEXT_KEY = 'theiaAi.hasPendingToolConfirmation';
 
@@ -28,16 +31,6 @@ export const HAS_PENDING_TOOL_CONFIRMATION_CONTEXT_KEY = 'theiaAi.hasPendingTool
  * editor is never shadowed by a confirmation pending in some background chat.
  */
 const CHAT_VIEW_FOCUS_WHEN = '(chatInputFocus || chatResponseFocus)';
-
-export const APPROVE_LATEST_TOOL_CONFIRMATION_COMMAND = Command.toLocalizedCommand({
-    id: 'theia.ai.chat.approveLatestToolConfirmation',
-    label: 'Approve Latest Tool Confirmation'
-}, 'theia/ai/chat-ui/toolconfirmation/approveLatest');
-
-export const DENY_LATEST_TOOL_CONFIRMATION_COMMAND = Command.toLocalizedCommand({
-    id: 'theia.ai.chat.denyLatestToolConfirmation',
-    label: 'Deny Latest Tool Confirmation'
-}, 'theia/ai/chat-ui/toolconfirmation/denyLatest');
 
 @injectable()
 export class ToolConfirmationKeybindingContribution implements CommandContribution, KeybindingContribution {
