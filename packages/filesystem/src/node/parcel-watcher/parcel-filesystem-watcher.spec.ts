@@ -17,6 +17,8 @@
 import * as temp from 'temp';
 import * as chai from 'chai';
 import * as cp from 'child_process';
+import * as nodeFs from 'fs';
+import * as sinon from 'sinon';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as assert from 'assert';
 import URI from '@theia/core/lib/common/uri';
@@ -92,6 +94,119 @@ describe('parcel-filesystem-watcher', function (): void {
         // report the root, since creating a child modifies it.
         const unexpectedUris = [...actualUris].filter(uri => !expectedUris.includes(uri) && uri !== root.toString());
         assert.deepStrictEqual(unexpectedUris, []);
+    });
+
+    it('Should start watching nonexistent files and nested paths without waiting for them to appear.', async function (): Promise<void> {
+        const actualUris = new Set<string>();
+        const updatedUris = new Set<string>();
+        const actualTypes = new Map<string, Set<FileChangeType>>();
+        const changeListeners: Array<() => void> = [];
+        const watcherClient = {
+            onDidFilesChanged(event: DidFilesChangedParams): void {
+                event.changes.forEach(change => {
+                    const uri = change.uri.toString();
+                    actualUris.add(uri);
+                    let types = actualTypes.get(uri);
+                    if (!types) {
+                        actualTypes.set(uri, types = new Set());
+                    }
+                    types.add(change.type);
+                    if (change.type === FileChangeType.UPDATED) {
+                        updatedUris.add(uri);
+                    }
+                });
+                changeListeners.forEach(listener => listener());
+            },
+            onError(): void {
+            }
+        };
+        const watcherOptions = { ignored: [], ignorePatterns: [] };
+        const serverOptions = {
+            verbose: false,
+            info: () => undefined,
+            error: () => undefined,
+            parcelOptions: {},
+        };
+        const missingFile = root.resolve('missing.txt');
+        const missingDirectory = root.resolve('missing-directory');
+        const nestedDirectory = missingDirectory.resolve('nested');
+        const nestedFile = nestedDirectory.resolve('settings.json');
+        const watchers = [
+            new ParcelWatcher(0, FileUri.fsPath(missingFile), watcherOptions, serverOptions, watcherClient, 0),
+            new ParcelWatcher(0, FileUri.fsPath(nestedFile), watcherOptions, serverOptions, watcherClient, 0),
+        ];
+        let startupTimer: NodeJS.Timeout | undefined;
+
+        try {
+            const started = await Promise.race([
+                Promise.all(watchers.map(watcher => watcher.whenStarted)),
+                new Promise<never>((_, reject) => {
+                    startupTimer = setTimeout(() => reject(new Error('Watchers did not start before their targets existed.')), 3000);
+                }),
+            ]);
+            expect(started).to.deep.equal([true, true]);
+
+            fs.writeFileSync(FileUri.fsPath(missingFile), 'missing');
+            await waitForChange(actualUris, changeListeners, missingFile.toString());
+            fs.writeFileSync(FileUri.fsPath(missingFile), 'updated');
+            await waitForChange(updatedUris, changeListeners, missingFile.toString());
+
+            fs.mkdirSync(FileUri.fsPath(missingDirectory));
+            fs.mkdirSync(FileUri.fsPath(nestedDirectory));
+
+            fs.writeFileSync(FileUri.fsPath(nestedFile), 'settings');
+            await waitForChange(actualUris, changeListeners, nestedFile.toString());
+            const unrelatedFile = root.resolve('unrelated.txt');
+            fs.writeFileSync(FileUri.fsPath(unrelatedFile), 'unrelated');
+            await sleep(500);
+
+            expect(actualUris.has(unrelatedFile.toString())).to.be.false;
+            expect(actualTypes.get(missingFile.toString())?.has(FileChangeType.ADDED)).to.be.true;
+            expect(actualTypes.get(nestedFile.toString())?.has(FileChangeType.ADDED)).to.be.true;
+        } finally {
+            if (startupTimer) {
+                clearTimeout(startupTimer);
+            }
+            watchers.forEach(watcher => watcher.removeRef(0));
+            await Promise.all(watchers.map(watcher => watcher.whenDisposed));
+        }
+    });
+
+    it('Should share pending-path checks and stop polling when watchers are disposed.', async function (): Promise<void> {
+        const actualUris = new Set<string>();
+        const watcherClient = {
+            onDidFilesChanged(event: DidFilesChangedParams): void {
+                event.changes.forEach(change => actualUris.add(change.uri.toString()));
+            },
+            onError(): void {
+            }
+        };
+        const missingFile = root.resolve('disposed-missing.txt');
+        const fsPath = FileUri.fsPath(missingFile);
+        const watcherOptions = { ignored: [], ignorePatterns: [] };
+        const serverOptions = {
+            verbose: false,
+            info: () => undefined,
+            error: () => undefined,
+            parcelOptions: {},
+        };
+        const watchers = [
+            new ParcelWatcher(0, fsPath, watcherOptions, serverOptions, watcherClient, 0),
+            new ParcelWatcher(0, fsPath, watcherOptions, serverOptions, watcherClient, 0),
+        ];
+        const statSpy = sinon.spy(nodeFs.promises, 'stat');
+        try {
+            expect(await Promise.all(watchers.map(watcher => watcher.whenStarted))).to.deep.equal([true, true]);
+            await sleep(750);
+            expect(statSpy.getCalls().filter(call => call.args[0] === fsPath)).to.have.length(1);
+        } finally {
+            watchers.forEach(watcher => watcher.removeRef(0));
+            await Promise.all(watchers.map(watcher => watcher.whenDisposed));
+            statSpy.restore();
+        }
+        fs.writeFileSync(fsPath, 'disposed');
+        await sleep(1200);
+        expect(actualUris.has(missingFile.toString())).to.be.false;
     });
 
     it('Should not receive file changes events from in the workspace by default if unwatched', async function (): Promise<void> {
