@@ -145,6 +145,13 @@
       "./",
       "..",
       "../"
+    ],
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "ExportNamedDeclaration > TSEnumDeclaration[const=true]",
+        "message": "Do not export const enums, they cannot be used by consumers compiled with 'isolatedModules'. Use a regular enum instead."
+      }
     ]
   },
   "overrides": [

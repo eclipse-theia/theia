@@ -63,7 +63,7 @@ export interface NotebookCellStatusBarItem {
     readonly onlyShowWhenActive?: boolean;
 }
 
-export const enum CellStatusbarAlignment {
+export enum CellStatusbarAlignment {
     Left = 1,
     Right = 2
 }
@@ -237,7 +237,7 @@ export interface CellMetadataEdit {
     metadata: NotebookCellMetadata;
 }
 
-export const enum CellEditType {
+export enum CellEditType {
     Replace = 1,
     Output = 2,
     Metadata = 3,

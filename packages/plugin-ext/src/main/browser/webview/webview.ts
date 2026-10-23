@@ -63,7 +63,7 @@ export const WEBVIEW_CONTEXT_MENU: MenuPath = ['webview-context-menu'];
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export const enum WebviewMessageChannels {
+export enum WebviewMessageChannels {
     onmessage = 'onmessage',
     didClickLink = 'did-click-link',
     didFocus = 'did-focus',

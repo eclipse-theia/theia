@@ -63,7 +63,7 @@ export interface TypeHierarchyParams extends TextDocumentPositionParams {
 
 }
 
-export const enum TypeHierarchyDirection {
+export enum TypeHierarchyDirection {
 
     /**
      * Flag for retrieving/resolving the subtypes.

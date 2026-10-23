@@ -70,7 +70,7 @@ export interface NotebookKernel {
     cancelNotebookCellExecution(uri: URI, cellHandles: number[]): Promise<void>;
 }
 
-export const enum ProxyKernelState {
+export enum ProxyKernelState {
     Disconnected = 1,
     Connected = 2,
     Initializing = 3

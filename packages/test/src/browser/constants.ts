@@ -22,7 +22,7 @@
 // Based on https://github.com/microsoft/vscode/blob/1.72.2/src/vs/workbench/contrib/testing/common/constants.ts
 
 /* eslint-disable import/no-extraneous-dependencies */
-export const enum Testing {
+export enum Testing {
     // marked as "extension" so that any existing test extensions are assigned to it.
     ViewletId = 'workbench.view.extension.test',
     ExplorerViewId = 'workbench.view.testing',
@@ -30,7 +30,7 @@ export const enum Testing {
     DecorationsContributionId = 'editor.contrib.testingDecorations',
 }
 
-export const enum TestCommandId {
+export enum TestCommandId {
     CancelTestRefreshAction = 'testing.cancelTestRefresh',
     CancelTestRunAction = 'testing.cancelRun',
     ClearTestResultsAction = 'testing.clearTestResults',
