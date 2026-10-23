@@ -20,7 +20,10 @@ import * as Converter from '../type-converters';
 
 export class TaskProviderAdapter {
 
-    constructor(private readonly provider: theia.TaskProvider) { }
+    constructor(
+        private readonly provider: theia.TaskProvider,
+        private readonly resolveWorkspaceFolder: (uri: theia.Uri) => theia.WorkspaceFolder | undefined
+    ) { }
 
     provideTasks(token: theia.CancellationToken): Promise<TaskDto[]> {
         return Promise.resolve(this.provider.provideTasks(token)).then(tasks => {
@@ -45,7 +48,7 @@ export class TaskProviderAdapter {
             return task;
         }
 
-        const item = Converter.toTask(task);
+        const item = Converter.toTask(task, this.resolveWorkspaceFolder);
         if (!item || item.execution) {
             return task;
         }

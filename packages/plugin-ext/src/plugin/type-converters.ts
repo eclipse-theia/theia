@@ -994,12 +994,17 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
     return taskDto;
 }
 
-export function toTask(taskDto: TaskDto): theia.Task {
+/**
+ * Converts a task DTO to a task.
+ * @param resolveWorkspaceFolder returns the workspace folder with the given URI, so that a folder scoped task has the folder from `workspace.workspaceFolders` as its `scope`
+ * @returns the task, or `undefined` if the task is scoped to a folder that is not a workspace folder
+ */
+export function toTask(taskDto: TaskDto, resolveWorkspaceFolder: (uri: theia.Uri) => theia.WorkspaceFolder | undefined): theia.Task | undefined {
     if (!taskDto) {
         throw new Error('Task should be provided for converting');
     }
 
-    const { type, executionType, label, source, scope, problemMatcher, detail, command, args, options, group, presentation, runOptions, ...properties } = taskDto;
+    const { executionType, label, source, scope, detail, command, args, options, group, presentation, runOptions } = taskDto;
     const result = {} as theia.Task;
     result.name = label;
     result.source = source;
@@ -1008,21 +1013,16 @@ export function toTask(taskDto: TaskDto): theia.Task {
         result.detail = detail;
     }
     if (typeof scope === 'string') {
-        const uri = URI.parse(scope);
-        result.scope = {
-            uri,
-            name: uri.toString(),
-            index: 0
-        };
+        const workspaceFolder = resolveWorkspaceFolder(URI.parse(scope));
+        if (!workspaceFolder) {
+            return undefined;
+        }
+        result.scope = workspaceFolder;
     } else {
         result.scope = scope;
     }
 
-    const taskDefinition: theia.TaskDefinition = {
-        type: type
-    };
-
-    result.definition = taskDefinition;
+    result.definition = toTaskDefinition(taskDto);
 
     if (executionType === 'process') {
         result.execution = getProcessExecution(taskDto);
@@ -1035,12 +1035,6 @@ export function toTask(taskDto: TaskDto): theia.Task {
 
     if (executionType === 'customExecution' || types.CustomExecution.is(execution)) {
         result.execution = getCustomExecution(taskDto);
-        // if taskType is customExecution, we need to put all the information into taskDefinition,
-        // because some parameters may be in taskDefinition.
-        taskDefinition.label = label;
-        taskDefinition.command = command;
-        taskDefinition.args = args;
-        taskDefinition.options = options;
     }
 
     if (group) {
@@ -1055,8 +1049,22 @@ export function toTask(taskDto: TaskDto): theia.Task {
         result.presentationOptions = presentation;
     }
 
-    if (!properties) {
-        return result;
+    return result;
+}
+
+export function toTaskDefinition(taskDto: TaskDto): theia.TaskDefinition {
+    const { type, executionType, label, source, scope, problemMatcher, detail, command, args, options, group, presentation, runOptions, ...properties } = taskDto;
+    const taskDefinition: theia.TaskDefinition = {
+        type: type
+    };
+
+    if (executionType === 'customExecution') {
+        // if taskType is customExecution, we need to put all the information into taskDefinition,
+        // because some parameters may be in taskDefinition.
+        taskDefinition.label = label;
+        taskDefinition.command = command;
+        taskDefinition.args = args;
+        taskDefinition.options = options;
     }
 
     for (const key in properties) {
@@ -1065,7 +1073,7 @@ export function toTask(taskDto: TaskDto): theia.Task {
         }
     }
 
-    return result;
+    return taskDefinition;
 }
 
 export function fromProcessExecution(execution: theia.ProcessExecution, taskDto: TaskDto): TaskDto {
