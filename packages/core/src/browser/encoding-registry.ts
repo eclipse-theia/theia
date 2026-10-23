@@ -71,7 +71,7 @@ export class EncodingRegistry {
             return UTF8; // the default is UTF 8
         }
 
-        return this.encodingService.toIconvEncoding(fileEncoding);
+        return this.encodingService.toIconvLiteEncoding(fileEncoding);
     }
 
     protected getEncodingOverride(resource: URI): string | undefined {
