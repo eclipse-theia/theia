@@ -14,13 +14,26 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { execFile } from 'child_process';
+import { promises as fs } from 'fs';
 import { createRequire } from 'module';
+import { homedir } from 'os';
 import { dirname, join } from 'path';
 import { pathToFileURL } from 'url';
+import { promisify } from 'util';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger, nls } from '@theia/core';
 import { CopilotCliLocator } from './copilot-cli-locator';
+import { CopilotRuntimeEnv } from './copilot-runtime-env';
 import type { CopilotClientConstructor, RuntimeConnectionFactory } from './copilot-sdk-types';
+
+const execFileAsync = promisify(execFile);
+
+/**
+ * Time after which asking the Copilot CLI for its version is given up on. A CLI that is a single
+ * executable unpacks its package when it is run for the first time, which can take a while.
+ */
+const CLI_VERSION_TIMEOUT_MS = 60_000;
 
 /**
  * The part of the Copilot SDK this integration uses at runtime.
@@ -75,7 +88,7 @@ export class CopilotSdkLoader {
 
     protected async doLoad(cli: string): Promise<CopilotSdkApi> {
         const shipped = join(dirname(cli), 'copilot-sdk', 'index.js');
-        const candidate = await this.importShipped(shipped) ?? this.tryImportInstalled();
+        const candidate = await this.importShipped(shipped) ?? await this.importUnpacked(cli) ?? this.tryImportInstalled();
         const api = this.toApi(candidate);
         if (!api) {
             throw new Error(nls.localize('theia/ai/copilot/sdkUnusable',
@@ -94,9 +107,69 @@ export class CopilotSdkLoader {
             this.logger.info(`Copilot: using the Copilot SDK at ${entry}.`);
             return loaded;
         } catch (error) {
-            this.logger.info(`Copilot: no Copilot SDK next to the CLI at ${entry}, falling back to an installed one:`, error);
+            this.logger.info(`Copilot: no Copilot SDK at ${entry}:`, error);
             return undefined;
         }
+    }
+
+    /**
+     * Imports the copy of the SDK of a CLI that is a single executable, which is how the platform packages
+     * ship it since version 1.0.85. Such a CLI unpacks its package, the SDK included, into its package cache
+     * when it is run. Asking it for its version does that as well, and tells which version to look for:
+     * the CLI runs a newer version it has updated itself to, if there is one, rather than its own.
+     */
+    protected async importUnpacked(cli: string): Promise<unknown | undefined> {
+        const version = await this.getCliVersion(cli);
+        if (!version) {
+            return undefined;
+        }
+        for (const directory of this.getPackageCacheDirectories()) {
+            // The packages are kept per platform, for example `linux-x64`, and as `universal` for an update.
+            const platforms = await fs.readdir(directory).catch(() => [] as string[]);
+            for (const platform of platforms) {
+                const entry = join(directory, platform, version, 'copilot-sdk', 'index.js');
+                if (await fs.access(entry).then(() => true, () => false)) {
+                    return this.importShipped(entry);
+                }
+            }
+        }
+        this.logger.info(`Copilot: no Copilot SDK of version ${version} in the package cache of the CLI at ${cli}.`);
+        return undefined;
+    }
+
+    /**
+     * The version the CLI reports, for example `1.0.103` of `GitHub Copilot CLI 1.0.103.`.
+     */
+    protected async getCliVersion(cli: string): Promise<string | undefined> {
+        try {
+            const { stdout } = await execFileAsync(cli, ['--version'], {
+                timeout: CLI_VERSION_TIMEOUT_MS,
+                windowsHide: true,
+                env: CopilotRuntimeEnv.withoutTokens(process.env)
+            });
+            return /\d+\.\d+\.\d+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?/.exec(stdout)?.[0];
+        } catch (error) {
+            this.logger.info(`Copilot: could not determine the version of the CLI at ${cli}:`, error);
+            return undefined;
+        }
+    }
+
+    /**
+     * The directories the CLI keeps its packages in, in the order in which the CLI searches them.
+     */
+    protected getPackageCacheDirectories(): string[] {
+        const home = homedir();
+        const directories = [
+            process.env.COPILOT_PKG_CACHE_HOME,
+            process.env.COPILOT_CACHE_HOME,
+            // The cache directory of the platform, which is the next one on Linux.
+            process.platform === 'darwin' ? join(home, 'Library', 'Caches', 'copilot') : undefined,
+            process.platform === 'win32' ? join(process.env.LOCALAPPDATA || join(home, '.cache'), 'copilot') : undefined,
+            join(process.env.XDG_CACHE_HOME || join(home, '.cache'), 'copilot'),
+            process.env.COPILOT_HOME,
+            join(home, '.copilot')
+        ];
+        return [...new Set(directories.filter((directory): directory is string => !!directory).map(directory => join(directory, 'pkg')))];
     }
 
     /**
