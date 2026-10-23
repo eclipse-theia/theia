@@ -18,6 +18,7 @@ import { decorate, injectable, inject, named } from 'inversify';
 import { NodeRequestOptions, NodeRequestService } from '@theia/request/lib/node-request-service';
 import { ElectronSecurityToken } from '../../electron-common/electron-token';
 import { ILogger } from '../../common';
+import { session } from '../../../electron-shared/electron';
 
 decorate(injectable(), NodeRequestService);
 
@@ -34,8 +35,15 @@ export class ElectronBackendRequestService extends NodeRequestService {
         try {
             const proxy = await this.resolveProxy(url);
             if (proxy && proxy !== 'DIRECT') {
-                const proxyHost = proxy.split(' ')[1];
-                return this.buildProxyUrl(url, proxyHost);
+                // Handle fallback proxies separated by semicolons, e.g., "PROXY proxy:8080; DIRECT"
+                const firstProxy = proxy.split(';')[0].trim();
+                const proxyType = firstProxy.split(' ')[0];  // e.g., "PROXY", "SOCKS5", "HTTPS"
+                const proxyHost = firstProxy.split(' ')[1];
+                if (!proxyHost) {
+                    // Malformed proxy string, fall back
+                    return super.getProxyUrl(url);
+                }
+                return this.buildProxyUrl(url, proxyHost, proxyType);
             }
         } catch (e) {
             this.logger.error('Could not resolve electron proxy.', e);
@@ -44,20 +52,42 @@ export class ElectronBackendRequestService extends NodeRequestService {
     }
 
     override async resolveProxy(url: string): Promise<string | undefined> {
-        // TODO: Implement IPC to the backend to access the Electron proxy resolver
-        return undefined;
+        if (!process.send) {
+            // Running in --no-cluster mode (in the Electron main process): call session directly.
+            return session.defaultSession.resolveProxy(url);
+        }
+        // Running as a forked child process: ask the main process via Node IPC.
+        return new Promise<string | undefined>(resolve => {
+            const id = Math.random().toString(36).slice(2);
+            const timer = setTimeout(() => {
+                process.off('message', handler);
+                resolve(undefined);
+            }, 5000);
+            const handler = (msg: unknown) => {
+                const response = msg as { type: string, id: string, result: string };
+                if (response?.type === 'resolve-proxy-response' && response.id === id) {
+                    clearTimeout(timer);
+                    process.off('message', handler);
+                    resolve(response.result);
+                }
+            };
+            process.on('message', handler);
+            process.send!({ type: 'resolve-proxy', id, url });
+        });
     }
 
-    protected buildProxyUrl(url: string, proxyHost: string): string {
+    protected buildProxyUrl(url: string, proxyHost: string, proxyType: string): string {
         if (proxyHost.startsWith('http://') || proxyHost.startsWith('https://')) {
             return proxyHost;
         }
-        if (url.startsWith('http://')) {
-            return 'http://' + proxyHost;
-        } else if (url.startsWith('https://')) {
+        // Use proxy type to determine the scheme, not the destination URL's scheme
+        if (proxyType === 'HTTPS') {
             return 'https://' + proxyHost;
+        } else if (proxyType === 'SOCKS5') {
+            return 'socks5://' + proxyHost;
         }
-        return proxyHost;
+        // Default to HTTP for "PROXY" type or unknown types
+        return 'http://' + proxyHost;
     }
 
     protected override async processOptions(options: NodeRequestOptions): Promise<NodeRequestOptions> {
