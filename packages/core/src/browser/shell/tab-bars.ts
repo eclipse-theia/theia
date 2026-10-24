@@ -992,8 +992,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
                     const pinnedCount = pinnedTabSize ? this.titles.filter(t => isPinned(t)).length : 0;
                     const unpinnedCount = this.titles.length - pinnedCount;
                     const pinnedWidth = pinnedCount * (pinnedTabSize ?? 0);
-                    const requiredWidth = pinnedWidth + (unpinnedCount > 0
-                        ? this.dynamicTabOptions.minimumTabSize * unpinnedCount : 0);
+                    const requiredWidth = pinnedWidth + this.dynamicTabOptions.minimumTabSize * unpinnedCount;
                     if (requiredWidth <= availableWidth) {
                         effectiveWidth += this.openTabsContainer.getBoundingClientRect().width;
                         this.openTabsContainer.classList.add('lm-mod-hidden');
