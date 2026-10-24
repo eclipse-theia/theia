@@ -1023,8 +1023,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
         for (let i = 0, n = this.titles.length; i < n; ++i) {
             const title = this.titles[i];
             const current = title === this.currentTitle;
-            const pinned = this.pinnedTabSizingMode === 'shrink' && isPinned(title);
-            const zIndex = pinned ? (current ? n + 2 : n + 1) : (current ? n : n - i - 1);
+            const zIndex = current ? n : n - i - 1;
             const renderData: ScrollableRenderData = { title: title, current: current, zIndex: zIndex };
             if (this.dynamicTabOptions && this.orientation === 'horizontal') {
                 renderData.tabWidth = this.pinnedTabWidth > 0 && isPinned(title)
