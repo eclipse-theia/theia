@@ -251,4 +251,86 @@ describe('ScrollableTabBar pinned tabs', () => {
             expect(container.scrollLeft).to.equal(300);
         });
     });
+
+    describe('updateTabs() dynamic tab sizing', () => {
+
+        // jsdom has no layout: mock the widths that updateTabs() reads
+        const setup = (pinned: number, unpinned: number, clientWidth: number,
+            tabOptions: ScrollableTabBar.Options = { minimumTabSize: 40, defaultTabSize: 200, pinnedTabSize: 80 },
+            openTabsWidth = 0): ScrollableTabBar => {
+            const tabBar = createRenderedTabBar();
+            for (let i = 0; i < pinned; i++) {
+                tabBar.insertTab(i, createTitle(`p${i}`, true));
+            }
+            for (let i = 0; i < unpinned; i++) {
+                tabBar.insertTab(pinned + i, createTitle(`u${i}`));
+            }
+            Object.defineProperty(tabBar.contentNode, 'clientWidth', { value: clientWidth, configurable: true });
+            const tabsButton = (tabBar as unknown as { openTabsContainer: HTMLDivElement }).openTabsContainer;
+            Object.defineProperty(tabsButton, 'getBoundingClientRect', { value: () => ({ width: openTabsWidth }), configurable: true });
+            // the setter triggers a synchronous updateTabs()
+            tabBar.dynamicTabOptions = tabOptions;
+            return tabBar;
+        };
+
+        const sizes = (tabBar: ScrollableTabBar): { tabSize: number, pinnedTabWidth: number } =>
+            tabBar as unknown as { tabSize: number, pinnedTabWidth: number };
+
+        const openTabsContainer = (tabBar: ScrollableTabBar): HTMLDivElement =>
+            (tabBar as unknown as { openTabsContainer: HTMLDivElement }).openTabsContainer;
+
+        it('splits the width remaining after the pinned tabs between the unpinned tabs', () => {
+            const tabBar = setup(2, 4, 600);
+            // the 2 pinned tabs take 160px, the remaining 440px are split between the 4 unpinned tabs
+            expect(sizes(tabBar).pinnedTabWidth).to.equal(80);
+            expect(sizes(tabBar).tabSize).to.equal(110);
+            const tabs = Array.from(tabBar.contentNode.children) as HTMLElement[];
+            expect(tabs[0].style.minWidth).to.equal('80px');
+            expect(tabs[1].style.minWidth).to.equal('80px');
+            expect(tabs[2].style.minWidth).to.equal('110px');
+            expect(tabs[5].style.minWidth).to.equal('110px');
+        });
+
+        it('clamps the unpinned tab size to the default tab size when there is enough room', () => {
+            const tabBar = setup(1, 1, 1000);
+            expect(sizes(tabBar).pinnedTabWidth).to.equal(80);
+            expect(sizes(tabBar).tabSize).to.equal(200);
+        });
+
+        it('clamps the unpinned tab size to the minimum tab size when space is tight', () => {
+            const tabBar = setup(2, 4, 300);
+            // 2 * 80 + 4 * 40 = 320 > 300, so the open tabs button stays visible and the
+            // 140px remaining after the pinned tabs cannot fit 4 tabs at a larger size
+            expect(openTabsContainer(tabBar).classList.contains('lm-mod-hidden')).to.be.false;
+            expect(sizes(tabBar).pinnedTabWidth).to.equal(80);
+            expect(sizes(tabBar).tabSize).to.equal(40);
+        });
+
+        it('uses the default tab size when all tabs are pinned', () => {
+            const tabBar = setup(3, 0, 500);
+            expect(sizes(tabBar).pinnedTabWidth).to.equal(80);
+            expect(sizes(tabBar).tabSize).to.equal(200);
+        });
+
+        it('shares the full width between all tabs when none are pinned', () => {
+            const tabBar = setup(0, 4, 600);
+            expect(sizes(tabBar).pinnedTabWidth).to.equal(0);
+            expect(sizes(tabBar).tabSize).to.equal(150);
+        });
+
+        it('ignores pinned tabs when no pinned tab size is configured', () => {
+            const tabBar = setup(2, 2, 600, { minimumTabSize: 40, defaultTabSize: 200 });
+            expect(sizes(tabBar).pinnedTabWidth).to.equal(0);
+            expect(sizes(tabBar).tabSize).to.equal(150);
+        });
+
+        it('reclaims the open tabs button width when the tabs fit without it', () => {
+            const tabBar = setup(1, 2, 200, { minimumTabSize: 40, defaultTabSize: 200, pinnedTabSize: 80 }, 100);
+            // the open tabs button (100px) is hidden and its width reclaimed:
+            // 200 + 100 - 80 = 220px are split between the 2 unpinned tabs
+            expect(openTabsContainer(tabBar).classList.contains('lm-mod-hidden')).to.be.true;
+            expect(sizes(tabBar).pinnedTabWidth).to.equal(80);
+            expect(sizes(tabBar).tabSize).to.equal(110);
+        });
+    });
 });
