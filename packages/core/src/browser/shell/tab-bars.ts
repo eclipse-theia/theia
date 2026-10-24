@@ -32,7 +32,7 @@ import { BreadcrumbsRenderer, BreadcrumbsRendererFactory } from '../breadcrumbs/
 import { NavigatableWidget } from '../navigatable-types';
 import { Drag } from '@lumino/dragdrop';
 import { LOCKED_CLASS, PINNED_CLASS, isPinned } from '../widgets/widget';
-import { CorePreferences } from '../../common/core-preferences';
+import { CoreConfiguration, CorePreferences } from '../../common/core-preferences';
 import { HoverService } from '../hover-service';
 import { Root, createRoot } from 'react-dom/client';
 import { SelectComponent } from '../widgets/select-component';
@@ -735,7 +735,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
     protected needsRecompute = false;
     protected tabSize = 0;
     protected pinnedTabWidth = 0;
-    protected _pinnedTabSizingMode: 'normal' | 'shrink' | undefined;
+    protected _pinnedTabSizingMode: ScrollableTabBar.PinnedTabSizingMode | undefined;
     protected _dynamicTabOptions?: ScrollableTabBar.Options;
     protected pinnedTabDragStartFrame?: number;
     protected contentContainer: HTMLElement;
@@ -777,7 +777,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
         return this._dynamicTabOptions;
     }
 
-    set pinnedTabSizingMode(mode: 'normal' | 'shrink' | undefined) {
+    set pinnedTabSizingMode(mode: ScrollableTabBar.PinnedTabSizingMode | undefined) {
         this._pinnedTabSizingMode = mode;
         this.node.classList.remove('theia-pinned-tab-shrink');
         if (mode === 'shrink') {
@@ -786,10 +786,14 @@ export class ScrollableTabBar extends TabBar<Widget> {
         this.updateTabs();
     }
 
+    get pinnedTabSizingMode(): ScrollableTabBar.PinnedTabSizingMode | undefined {
+        return this._pinnedTabSizingMode;
+    }
+
     /**
      * Updates both dynamic tab options and pinned tab sizing mode with a single tab bar refresh.
      */
-    updateTabOptions(dynamicTabOptions: ScrollableTabBar.Options | undefined, pinnedTabSizingMode: 'normal' | 'shrink' | undefined): void {
+    updateTabOptions(dynamicTabOptions: ScrollableTabBar.Options | undefined, pinnedTabSizingMode: ScrollableTabBar.PinnedTabSizingMode | undefined): void {
         this._dynamicTabOptions = dynamicTabOptions;
         this._pinnedTabSizingMode = pinnedTabSizingMode;
         this.node.classList.remove('theia-pinned-tab-shrink');
@@ -810,7 +814,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
      * after unpinned ones.
      */
     protected adjustIndexForPinnedTabs(index: number, value: Title<Widget> | Title.IOptions<Widget>): number {
-        if (this._pinnedTabSizingMode !== 'shrink') {
+        if (this.pinnedTabSizingMode !== 'shrink') {
             return index;
         }
         let title: Title<Widget> | undefined;
@@ -841,7 +845,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
      * aligned on the left edge. Titles keep their relative order.
      */
     protected enforcePinnedTabsFirst(): void {
-        if (this._pinnedTabSizingMode !== 'shrink') {
+        if (this.pinnedTabSizingMode !== 'shrink') {
             return;
         }
         const titles = this.titles.slice();
@@ -870,7 +874,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
      * tab bar, or 0 if pinned tabs are not shrunk and sticky.
      */
     protected getPinnedTabsWidth(): number {
-        if (this._pinnedTabSizingMode !== 'shrink' || this.orientation !== 'horizontal') {
+        if (this.pinnedTabSizingMode !== 'shrink' || this.orientation !== 'horizontal') {
             return 0;
         }
         let pinnedCount = 0;
@@ -911,7 +915,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
         const wasDragging = this.node.classList.contains('lm-mod-dragging');
         super.handleEvent(event);
         // Lumino adds `lm-mod-dragging` to the tab bar once a tab drag is activated.
-        if (event.type === 'pointermove' && !wasDragging && this._pinnedTabSizingMode === 'shrink'
+        if (event.type === 'pointermove' && !wasDragging && this.pinnedTabSizingMode === 'shrink'
             && this.node.classList.contains('lm-mod-dragging')) {
             this.suspendPinnedTabTransitionsOnDragStart();
         }
@@ -1020,7 +1024,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
         for (let i = 0, n = this.titles.length; i < n; ++i) {
             const title = this.titles[i];
             const current = title === this.currentTitle;
-            const pinned = this._pinnedTabSizingMode === 'shrink' && isPinned(title);
+            const pinned = this.pinnedTabSizingMode === 'shrink' && isPinned(title);
             const zIndex = pinned ? (current ? n + 2 : n + 1) : (current ? n : n - i - 1);
             const renderData: ScrollableRenderData = { title: title, current: current, zIndex: zIndex };
             if (this.dynamicTabOptions && this.orientation === 'horizontal') {
@@ -1047,7 +1051,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
      * natural position so that they do not overlap.
      */
     protected updatePinnedTabOffsets(): void {
-        const sticky = this._pinnedTabSizingMode === 'shrink' && this.orientation === 'horizontal';
+        const sticky = this.pinnedTabSizingMode === 'shrink' && this.orientation === 'horizontal';
         const tabs = this.contentNode.children;
         let pinnedTabIndex = 0;
         for (let i = 0, n = this.titles.length; i < n; ++i) {
@@ -1138,6 +1142,10 @@ export namespace ScrollableTabBar {
         defaultTabSize: number;
         pinnedTabSize?: number;
     }
+
+    /** Sizing mode of pinned tabs, as configured by the `workbench.editor.pinnedTabSizing` preference. */
+    export type PinnedTabSizingMode = CoreConfiguration['workbench.editor.pinnedTabSizing'];
+
     export namespace Styles {
 
         export const TAB_BAR_CONTENT_CONTAINER = 'lm-TabBar-content-container';
