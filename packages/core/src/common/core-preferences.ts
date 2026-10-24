@@ -300,10 +300,10 @@ export const corePreferenceSchema: PreferenceSchema = {
             type: 'string',
             enum: ['normal', 'shrink'],
             default: 'normal',
-            markdownDescription: nls.localizeByDefault('Controls the size of pinned editor tabs. Pinned tabs are sorted to the beginning of all opened tabs and typically do not close until unpinned. This value is ignored when {0} is not set to {1}.', '`#workbench.editor.showTabs#`', '`enabled`'),
+            markdownDescription: nls.localize('theia/core/pinnedTabSizing', 'Controls the size of pinned editor tabs. Pinned tabs typically do not close until unpinned. When set to "shrink", pinned tabs are moved to the beginning of the tab bar and shown at a compact fixed size.'),
             enumDescriptions: [
-                nls.localizeByDefault('A pinned tab inherits the look of non pinned tabs.'),
-                nls.localizeByDefault('A pinned tab shrinks to a compact fixed size showing parts of the editor name.')
+                nls.localize('theia/core/pinnedTabSizing/normal', 'A pinned tab inherits the look of non pinned tabs.'),
+                nls.localize('theia/core/pinnedTabSizing/shrink', 'A pinned tab shrinks to a compact fixed size showing parts of the editor name.')
             ]
         },
         'workbench.editorAssociations': {
