@@ -114,7 +114,7 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
             this.corePreferences.get('workbench.editor.pinnedTabSizing') ?? 'normal';
         const getPinnedTabSize = (): number | undefined => {
             switch (getPinnedTabSizingMode()) {
-                case 'shrink': return 80;
+                case 'shrink': return ScrollableTabBar.DEFAULT_PINNED_TAB_SIZE;
                 default: return undefined;
             }
         };

@@ -724,9 +724,23 @@ export interface TabBarPrivateMethods {
 const PINNED_TAB_OFFSET_PROPERTY = '--theia-pinned-tab-offset';
 
 /**
+ * Custom property carrying the fixed width of a shrunk pinned tab. It is consumed
+ * by the `theia-pinned-tab-shrink` rules in tabs.css and set on the tab bar node
+ * from `ScrollableTabBar.DEFAULT_PINNED_TAB_SIZE`, so that the CSS rules and the
+ * tab layout logic share a single source for the value.
+ */
+const PINNED_TAB_SIZE_PROPERTY = '--theia-pinned-tab-size';
+
+/**
  * A specialized tab bar for the main and bottom areas.
  */
 export class ScrollableTabBar extends TabBar<Widget> {
+
+    /**
+     * The fixed width of a shrunk pinned tab when no dynamic tab sizing is
+     * configured. Published to CSS as the `--theia-pinned-tab-size` custom property.
+     */
+    static readonly DEFAULT_PINNED_TAB_SIZE = 80;
 
     protected scrollBar: PerfectScrollbar | undefined;
 
@@ -748,6 +762,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
     constructor(options?: TabBar.IOptions<Widget>, protected readonly scrollbarOptions?: PerfectScrollbar.Options, dynamicTabOptions?: ScrollableTabBar.Options) {
         super(options);
         this._dynamicTabOptions = dynamicTabOptions;
+        this.node.style.setProperty(PINNED_TAB_SIZE_PROPERTY, `${ScrollableTabBar.DEFAULT_PINNED_TAB_SIZE}px`);
         this.topRow = document.createElement('div');
         this.topRow.classList.add('theia-tabBar-tab-row');
         this.node.appendChild(this.topRow);
@@ -863,10 +878,10 @@ export class ScrollableTabBar extends TabBar<Widget> {
 
     /**
      * The width of a shrunk pinned tab: the dynamic tab size if configured,
-     * otherwise the fixed 80px applied by CSS.
+     * otherwise `DEFAULT_PINNED_TAB_SIZE`, applied to the tabs by CSS.
      */
     protected getPinnedTabWidth(): number {
-        return this.pinnedTabWidth > 0 ? this.pinnedTabWidth : 80;
+        return this.pinnedTabWidth > 0 ? this.pinnedTabWidth : ScrollableTabBar.DEFAULT_PINNED_TAB_SIZE;
     }
 
     /**
