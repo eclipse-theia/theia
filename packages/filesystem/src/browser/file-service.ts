@@ -2107,6 +2107,8 @@ export class FileService {
             }
         } else if (detectedEncoding) {
             preferredEncoding = detectedEncoding;
+        } else if (this.preferences.get('files.encoding', undefined, resource.toString()) === UTF8_with_bom) {
+            preferredEncoding = UTF8; // if we did not detect UTF 8 BOM before, this can only be UTF 8 then
         }
 
         return this.getEncodingForResource(resource, preferredEncoding);

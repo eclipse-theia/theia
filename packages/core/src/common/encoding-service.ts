@@ -72,7 +72,7 @@ export class EncodingService {
     encode(value: string, options?: ResourceEncoding): BinaryBuffer {
         let encoding = options?.encoding;
         const addBOM = options?.hasBOM;
-        encoding = this.toNodeEncoding(encoding);
+        encoding = this.toIconvEncoding(encoding);
         if (encoding === UTF8 && !addBOM) {
             return BinaryBuffer.fromString(value);
         }
@@ -82,23 +82,27 @@ export class EncodingService {
 
     decode(value: BinaryBuffer, encoding?: string): string {
         const buffer = Buffer.from(value.buffer);
-        encoding = this.toNodeEncoding(encoding);
+        encoding = this.toIconvEncoding(encoding);
         return iconv.decode(buffer, encoding);
     }
 
     exists(encoding: string): boolean {
-        encoding = this.toNodeEncoding(encoding);
+        encoding = this.toIconvEncoding(encoding);
         return iconv.encodingExists(encoding);
     }
 
-    toNodeEncoding(encoding?: string): string {
+    toIconvEncoding(encoding?: string): string {
         if (encoding === UTF8_with_bom || !encoding) {
             return UTF8; // iconv does not distinguish UTF 8 with or without BOM, so we need to help it
         }
         return encoding;
     }
 
-    toIconvLiteEncoding(encodingName: string): string {
+    /**
+     * Transforms jschardet encoding names into encoding ids. It's a port of VS Code's `toIconvLiteEncoding` from:
+     * https://github.com/microsoft/vscode/blob/a7e1fc08139956da66cc7fb6333a390b06b61876/src/vs/workbench/services/textfile/common/encoding.ts#L404
+     */
+    protected fromJschardetEncoding(encodingName: string): string {
         const normalizedEncodingName = encodingName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
         const mapped = JSCHARDET_TO_ICONV_ENCODINGS[normalizedEncodingName];
 
@@ -235,8 +239,8 @@ export class EncodingService {
     protected async guessEncodingByBuffer(buffer: Buffer): Promise<string | undefined> {
         const jschardet = await import('jschardet');
 
-        // This `jschardet` call will convert the input to a binary string if it is a Buffer: https://github.com/aadsm/jschardet/blob/v2.1.1/src/index.js#L36-L40
-        // Since we are using `safe-buffer` instead of the global Buffer we convert it before passing it to prevent unwanted issues
+        // jschardet only converts its input to a binary string if it is an instance of the global `Buffer`,
+        // which does not exist in the frontend, so we convert it ourselves: https://github.com/aadsm/jschardet/blob/v2.3.0/src/index.js#L49-L53
         const guessed = jschardet.detect(
             // Use `subarray` to ensure to limit buffer for guessing due to https://github.com/aadsm/jschardet/issues/53
             buffer.subarray(0, AUTO_ENCODING_GUESS_MAX_BYTES).toString('binary')
@@ -250,7 +254,7 @@ export class EncodingService {
             return undefined; // see comment above why we ignore some encodings
         }
 
-        return this.toIconvLiteEncoding(guessed.encoding);
+        return this.fromJschardetEncoding(guessed.encoding);
     }
 
     decodeStream(source: BinaryBufferReadableStream, options: DecodeStreamOptions): Promise<DecodeStreamResult> {
@@ -274,7 +278,7 @@ export class EncodingService {
                     detected.encoding = await options.overwriteEncoding(detected.encoding);
 
                     // decode and write buffered content
-                    decoder = iconv.getDecoder(this.toNodeEncoding(detected.encoding));
+                    decoder = iconv.getDecoder(this.toIconvEncoding(detected.encoding));
                     const decoded = decoder.write(Buffer.from(BinaryBuffer.concat(bufferedChunks).buffer));
                     target.write(decoded);
 
@@ -340,7 +344,7 @@ export class EncodingService {
     async encodeStream(value: string | Readable<string> | undefined, options?: ResourceEncoding): Promise<BinaryBuffer | BinaryBufferReadable | undefined> {
         let encoding = options?.encoding;
         const addBOM = options?.hasBOM;
-        encoding = this.toNodeEncoding(encoding);
+        encoding = this.toIconvEncoding(encoding);
         if (encoding === UTF8 && !addBOM) {
             return value === undefined ? undefined : typeof value === 'string' ?
                 BinaryBuffer.fromString(value) : BinaryBufferReadable.fromReadable(value);
