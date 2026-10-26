@@ -25,11 +25,18 @@ export const AiConfigurationService = Symbol('AiConfigurationService');
  */
 export interface AiConfigurationInspection<T extends JSONValue = JSONValue> extends PreferenceInspection<T> {
     /**
-     * The narrowest scope (honoring workspace trust) in which a value is explicitly set, i.e. the
-     * scope that determines the effective {@link PreferenceInspection.value}. Walked in precedence
-     * order `Session -> Folder -> Workspace -> User`; `undefined` when only the default value applies. In an
+     * The highest-precedence scope (honoring workspace trust) in which a value is explicitly set, i.e. the
+     * scope whose value {@link PreferenceInspection.value} reports. Walked in precedence order
+     * `Session -> Folder -> Workspace -> User`; `undefined` when only the default value applies. In an
      * untrusted workspace the folder/workspace scopes are ignored, so `sourceScope` is `Session`, `User` or
      * `undefined`.
+     *
+     * `Session` holds values passed with `--session-preference`. It applies to the whole application, wins
+     * over `Folder`, and has no settings file behind it, so it can't be used to pick a file to edit; writing
+     * the key to any other scope clears the session value.
+     *
+     * For object values, {@link PreferenceInspection.value} is the object set in `sourceScope` alone, while
+     * {@link AiConfigurationService.get} merges the object across all scopes.
      */
     sourceScope?: PreferenceScope;
 }
@@ -112,8 +119,8 @@ export interface AiConfigurationService {
 
     /**
      * Retrieves the per-scope values for the given preference, enriched with a derived,
-     * trust-aware {@link AiConfigurationInspection.sourceScope} and effective
-     * {@link PreferenceInspection.value}.
+     * trust-aware {@link AiConfigurationInspection.sourceScope} and that scope's value as
+     * {@link PreferenceInspection.value} (see {@link AiConfigurationInspection.sourceScope} for object values).
      *
      * @param key the preference identifier.
      * @param resourceUri the uri of the resource for which the preference is inspected.

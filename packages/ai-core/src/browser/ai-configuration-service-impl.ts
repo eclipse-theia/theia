@@ -101,7 +101,7 @@ export class AiConfigurationServiceImpl implements AiConfigurationService {
      * untrusted, folder and workspace scope values are cleared, so the scope walk below naturally
      * resolves to the session, user or default scope and the whole inspection stays consistent with {@link get}.
      *
-     * Note: `value` reflects the narrowest defined scope, matching `PreferenceService.inspect`. For
+     * Note: `value` reflects the highest-precedence defined scope, matching `PreferenceService.inspect`. For
      * object-valued preferences this can differ from {@link get}, which deep-merges across scopes.
      */
     protected enrichInspection<T extends JSONValue>(inspection: PreferenceInspection<T>): AiConfigurationInspection<T> {
