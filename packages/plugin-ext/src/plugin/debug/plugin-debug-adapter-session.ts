@@ -81,18 +81,23 @@ export class PluginDebugAdapterSession extends DebugAdapterSessionImpl implement
     }
 
     protected override send(message: string): void {
-        try {
+        if (!this.tracker.onDidSendMessage) {
             super.send(message);
+            return;
+        }
+        const parsed = JSON.parse(message);
+        try {
+            this.tracker.onDidSendMessage(parsed);
         } finally {
-            if (this.tracker.onDidSendMessage) {
-                this.tracker.onDidSendMessage(JSON.parse(message));
-            }
+            super.send(JSON.stringify(parsed));
         }
     }
 
     protected override write(message: string): void {
         if (this.tracker.onWillReceiveMessage) {
-            this.tracker.onWillReceiveMessage(JSON.parse(message));
+            const parsed = JSON.parse(message);
+            this.tracker.onWillReceiveMessage(parsed);
+            message = JSON.stringify(parsed);
         }
         super.write(message);
     }
