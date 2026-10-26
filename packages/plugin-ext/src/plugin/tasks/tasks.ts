@@ -95,7 +95,7 @@ export class TasksExtImpl implements TasksExt {
     $onDidEndTask(id: number): void {
         const taskExecution = this.executions.get(id);
         if (!taskExecution) {
-            // No start event was fired for this execution, e.g. because its scope is not a workspace folder.
+            // No start event was fired for this execution, e.g. because its scope is not in a workspace folder.
             return;
         }
 
@@ -134,7 +134,7 @@ export class TasksExtImpl implements TasksExt {
     }
 
     registerTaskProvider(type: string, provider: theia.TaskProvider): theia.Disposable {
-        const callId = this.addNewAdapter(new TaskProviderAdapter(provider, this.resolveWorkspaceFolder));
+        const callId = this.addNewAdapter(new TaskProviderAdapter(provider, this.getWorkspaceFolder));
         this.proxy.$registerTaskProvider(callId, type);
         return this.createDisposable(callId);
     }
@@ -145,7 +145,7 @@ export class TasksExtImpl implements TasksExt {
         const taskDtos = await this.proxy.$fetchTasks(taskVersion, taskType);
         const result: theia.Task[] = [];
         for (const dto of taskDtos) {
-            const task = converter.toTask(dto, this.resolveWorkspaceFolder);
+            const task = converter.toTask(dto, this.getWorkspaceFolder);
             if (task) {
                 result.push(task);
             }
@@ -238,11 +238,11 @@ export class TasksExtImpl implements TasksExt {
         taskExecutions.forEach(execution => this.getTaskExecution(execution));
     }
 
-    protected resolveWorkspaceFolder = (uri: theia.Uri): theia.WorkspaceFolder | undefined => this.workspaceExt.resolveWorkspaceFolder(uri);
+    protected getWorkspaceFolder = (uri: theia.Uri): theia.WorkspaceFolder | undefined => this.workspaceExt.getWorkspaceFolder(uri);
 
     /**
      * @param task the task of the execution, if the caller has it, so that it doesn't need to be converted from the DTO
-     * @returns the execution, or `undefined` if its task is scoped to a folder that is not a workspace folder
+     * @returns the execution, or `undefined` if its task is scoped to a folder that is not in a workspace folder
      */
     private getTaskExecution(execution: TaskExecutionDto, task?: theia.Task): theia.TaskExecution | undefined {
         const executionId = execution.id;
@@ -251,7 +251,7 @@ export class TasksExtImpl implements TasksExt {
             return result;
         }
 
-        task = task ?? converter.toTask(execution.task, this.resolveWorkspaceFolder);
+        task = task ?? converter.toTask(execution.task, this.getWorkspaceFolder);
         if (!task) {
             return undefined;
         }

@@ -390,7 +390,7 @@ describe('Type converters:', () => {
             assert.strictEqual(result?.scope, folder);
         });
 
-        it('should not convert a task scoped to a folder that is not a workspace folder', () => {
+        it('should not convert a task scoped to a folder that is not in a workspace folder', () => {
             const result = Converter.toTask({ ...shellTaskDto, scope: 'file:///projects/theia' }, () => undefined);
             assert.strictEqual(result, undefined);
         });
