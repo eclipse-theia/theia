@@ -53,6 +53,14 @@ describe('DocumentsExtImpl', () => {
             expect(edits.map(edit => edit.text)).to.deep.equal(['header\n']);
         });
 
+        it('does not fire the listeners after a listener that timed out', async () => {
+            let fired = false;
+            documents.onWillSaveTextDocument(e => e.waitUntil(new Promise(() => { })));
+            documents.onWillSaveTextDocument(() => fired = true);
+            await documents.$acceptModelWillSave(uri, TextDocumentSaveReason.Manual, 500);
+            expect(fired).to.be.false;
+        });
+
         it('waits for a listener that finishes within the timeout', async () => {
             documents.onWillSaveTextDocument(e => e.waitUntil(new Promise(resolve =>
                 setTimeout(() => resolve([new TextEdit(new Range(0, 0, 0, 0), 'late\n')]), 50))));

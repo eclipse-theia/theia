@@ -92,33 +92,27 @@ export class DocumentsExtImpl implements DocumentsExt {
     async $acceptModelWillSave(strUrl: UriComponents, reason: theia.TextDocumentSaveReason, saveTimeout: number): Promise<SingleEditOperation[]> {
         const uri = URI.revive(strUrl).toString();
         const operations: SingleEditOperation[] = [];
-        let didTimeout = false;
         // try to timeout early to squeeze edits at least from some save participants
         const deadline = Date.now() + saveTimeout - 250;
-        const didTimeoutHandle = setTimeout(() => didTimeout = true, saveTimeout - 250);
-        try {
-            await this._onWillSaveTextDocument.sequence(async fireEvent => {
-                if (didTimeout) {
-                    return false;
+        await this._onWillSaveTextDocument.sequence(async fireEvent => {
+            if (Date.now() >= deadline) {
+                return false;
+            }
+            try {
+                const documentData = this.editorsAndDocuments.getDocument(uri);
+                if (documentData) {
+                    const { document } = documentData;
+                    await this.fireTextDocumentWillSaveEvent({
+                        document, reason, fireEvent,
+                        accept: operation => operations.push(operation),
+                        timeout: deadline - Date.now()
+                    });
                 }
-                try {
-                    const documentData = this.editorsAndDocuments.getDocument(uri);
-                    if (documentData) {
-                        const { document } = documentData;
-                        await this.fireTextDocumentWillSaveEvent({
-                            document, reason, fireEvent,
-                            accept: operation => operations.push(operation),
-                            timeout: deadline - Date.now()
-                        });
-                    }
-                } catch (e) {
-                    console.error(e);
-                }
-                return !didTimeout;
-            });
-        } finally {
-            clearTimeout(didTimeoutHandle);
-        }
+            } catch (e) {
+                console.error(e);
+            }
+            return Date.now() < deadline;
+        });
         return operations;
     }
 
