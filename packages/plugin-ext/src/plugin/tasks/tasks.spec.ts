@@ -61,7 +61,7 @@ describe('TasksExtImpl', () => {
             dispose(): void { }
         };
         const workspaceExt = {
-            resolveWorkspaceFolder: (uri: theia.Uri) => uri.toString() === rootUri.toString() ? root : undefined
+            getWorkspaceFolder: (uri: theia.Uri) => uri.toString() === rootUri.toString() || uri.toString().startsWith(rootUri.toString() + '/') ? root : undefined
         } as WorkspaceExtImpl;
         tasksExt = new TasksExtImpl(rpc, {} as TerminalServiceExtImpl, workspaceExt);
     });
@@ -75,7 +75,14 @@ describe('TasksExtImpl', () => {
             expect(tasks[0].scope).to.equal(root);
         });
 
-        it('should leave out tasks scoped to a folder that is not a workspace folder', async () => {
+        it('should scope tasks scoped to a sub-folder to the workspace folder containing it', async () => {
+            proxy.$fetchTasks = async () => [createTaskDto('in-sub-folder', rootUri.toString() + '/packages/a')];
+            const tasks = await tasksExt.fetchTasks();
+            expect(tasks).to.have.length(1);
+            expect(tasks[0].scope).to.equal(root);
+        });
+
+        it('should leave out tasks scoped to a folder that is not in a workspace folder', async () => {
             proxy.$fetchTasks = async () => [
                 createTaskDto('outside', outsideUri.toString()),
                 createTaskDto('workspace', 2)
@@ -102,7 +109,7 @@ describe('TasksExtImpl', () => {
             expect(tasksExt.taskExecutions).to.be.empty;
         });
 
-        it('should not fire events for tasks scoped to a folder that is not a workspace folder', async () => {
+        it('should not fire events for tasks scoped to a folder that is not in a workspace folder', async () => {
             let fired = 0;
             tasksExt.onDidStartTask(() => fired++);
             tasksExt.onDidEndTask(() => fired++);
@@ -166,7 +173,7 @@ describe('TasksExtImpl', () => {
             expect(execution).not.to.equal(started[0]);
         });
 
-        it('should fire the start event with the passed task if its scope is not a workspace folder', async () => {
+        it('should fire the start event with the passed task if its scope is not in a workspace folder', async () => {
             const task = createTask({ uri: outsideUri, name: 'outside', index: 0 });
             const started: theia.TaskExecution[] = [];
             tasksExt.onDidStartTask(event => started.push(event.execution));

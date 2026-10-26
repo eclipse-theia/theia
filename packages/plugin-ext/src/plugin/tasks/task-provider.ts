@@ -22,7 +22,7 @@ export class TaskProviderAdapter {
 
     constructor(
         private readonly provider: theia.TaskProvider,
-        private readonly resolveWorkspaceFolder: (uri: theia.Uri) => theia.WorkspaceFolder | undefined
+        private readonly getWorkspaceFolder: (uri: theia.Uri) => theia.WorkspaceFolder | undefined
     ) { }
 
     provideTasks(token: theia.CancellationToken): Promise<TaskDto[]> {
@@ -48,7 +48,7 @@ export class TaskProviderAdapter {
             return task;
         }
 
-        const item = Converter.toTask(task, this.resolveWorkspaceFolder);
+        const item = Converter.toTask(task, this.getWorkspaceFolder);
         if (!item || item.execution) {
             return task;
         }

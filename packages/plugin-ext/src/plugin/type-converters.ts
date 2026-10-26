@@ -996,10 +996,10 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
 
 /**
  * Converts a task DTO to a task.
- * @param resolveWorkspaceFolder returns the workspace folder with the given URI, so that a folder scoped task has the folder from `workspace.workspaceFolders` as its `scope`
- * @returns the task, or `undefined` if the task is scoped to a folder that is not a workspace folder
+ * @param getWorkspaceFolder returns the workspace folder that contains the given URI, so that a folder scoped task has the folder from `workspace.workspaceFolders` as its `scope`
+ * @returns the task, or `undefined` if the task is scoped to a folder that is not in a workspace folder
  */
-export function toTask(taskDto: TaskDto, resolveWorkspaceFolder: (uri: theia.Uri) => theia.WorkspaceFolder | undefined): theia.Task | undefined {
+export function toTask(taskDto: TaskDto, getWorkspaceFolder: (uri: theia.Uri) => theia.WorkspaceFolder | undefined): theia.Task | undefined {
     if (!taskDto) {
         throw new Error('Task should be provided for converting');
     }
@@ -1013,7 +1013,7 @@ export function toTask(taskDto: TaskDto, resolveWorkspaceFolder: (uri: theia.Uri
         result.detail = detail;
     }
     if (typeof scope === 'string') {
-        const workspaceFolder = resolveWorkspaceFolder(URI.parse(scope));
+        const workspaceFolder = getWorkspaceFolder(URI.parse(scope));
         if (!workspaceFolder) {
             return undefined;
         }
