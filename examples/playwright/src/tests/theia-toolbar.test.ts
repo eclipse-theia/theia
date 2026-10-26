@@ -62,6 +62,7 @@ test.describe('Theia Toolbar', () => {
         expect(await commandPaletteTool!.isEnabled()).toBe(true);
 
         await commandPaletteTool!.trigger();
+        await app.quickCommandPalette.waitForVisible();
         expect(await app.quickCommandPalette.isOpen()).toBe(true);
         await app.quickCommandPalette.hide();
         expect(await app.quickCommandPalette.isOpen()).toBe(false);
