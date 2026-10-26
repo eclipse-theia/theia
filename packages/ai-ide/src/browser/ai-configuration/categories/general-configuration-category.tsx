@@ -43,7 +43,7 @@ import {
     AiToggleSwitch
 } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-controls';
 import { AiConfigurationSection, AiMarkdownDescription } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-primitives';
-import { AiConfigurationSettingRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-setting-row';
+import { AiConfigurationSettingRow, AiSettingSessionMarker } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-configuration-setting-row';
 import { AiSettingsRow } from '@theia/ai-core-ui/lib/browser/ai-configuration/components/ai-settings-row';
 import { AiConfigurationCategoryRegistry } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category-registry';
 import { PREFERENCE_NAME_ENABLE_AI } from '../../../common/ai-ide-preferences';
@@ -256,6 +256,7 @@ export class GeneralConfigurationCategory implements AiConfigurationCategory, Ai
                 <div className='ai-settings-row-main'>
                     <div className='ai-settings-row-title'>
                         {this.titleFor(PREFERENCE_NAME_ENABLE_AI)}
+                        <AiSettingSessionMarker sessionValue={this.settingsRowService.inspect(PREFERENCE_NAME_ENABLE_AI, ctx.scope).sessionValue} />
                     </div>
                     <div className='ai-settings-row-description'>
                         {nls.localize('theia/ai/ide/generalConfiguration/enableAiDescription',
@@ -399,6 +400,7 @@ costs — monitor them closely. Requests may run continuously while agents are a
             renderMarkdown={this.renderMarkdown}
             modified={inspection.modified}
             tags={this.settingsRowService.tags(preferenceId)}
+            sessionValue={inspection.sessionValue}
             onOpenMenu={gear => this.settingsRowService.openSettingContextMenu(gear, preferenceId, inspection.value, ctx.scope)}
             control={options.control}
             below={options.below}

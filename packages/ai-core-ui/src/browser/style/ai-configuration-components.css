@@ -157,6 +157,20 @@
   gap: calc(var(--theia-ui-padding) / 2);
 }
 
+/* "Overridden by session" marker, mirroring the Settings UI's `.preference-session-suffix`. */
+.ai-settings-row-session {
+  font-weight: normal;
+  color: var(--theia-descriptionForeground);
+}
+
+.ai-settings-row-session::before {
+  content: "(";
+}
+
+.ai-settings-row-session::after {
+  content: ")";
+}
+
 .ai-settings-row-tag {
   padding: calc(var(--theia-ui-padding) / 8) calc(var(--theia-ui-padding) / 2);
   font-size: 0.85em;

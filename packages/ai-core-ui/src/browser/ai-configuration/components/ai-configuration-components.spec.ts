@@ -395,6 +395,22 @@ describe('AI Configuration primitives', () => {
         host.remove();
     });
 
+    it('AiConfigurationSettingRow marks a row with a session value and shows the value on hover', () => {
+        const props = { preferenceId: 'ai-features.demo', title: 'Demo', modified: false };
+        const { container, dispose } = mount(React.createElement(AiConfigurationSettingRow, { ...props, sessionValue: ['curl *'] }));
+        const marker = container.querySelector('.ai-settings-row-title .ai-settings-row-session') as HTMLElement;
+        expect(marker.textContent).to.equal('Overridden by session');
+        expect(marker.title).to.include('--session-preference').and.to.include('["curl *"]');
+        dispose();
+        // `false` is a session value like any other; only `undefined` means there is none.
+        const withFalse = mount(React.createElement(AiConfigurationSettingRow, { ...props, sessionValue: false }));
+        expect(withFalse.container.querySelector('.ai-settings-row-session')).to.exist;
+        withFalse.dispose();
+        const without = mount(React.createElement(AiConfigurationSettingRow, props));
+        expect(without.container.querySelector('.ai-settings-row-session')).to.not.exist;
+        without.dispose();
+    });
+
     it('the setting-row gear delegates to the preference context menu, anchored at the gear', () => {
         const host = document.createElement('div');
         document.body.appendChild(host);

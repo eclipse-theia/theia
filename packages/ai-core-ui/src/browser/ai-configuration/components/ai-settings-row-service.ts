@@ -54,7 +54,8 @@ export interface AiSettingsInspection {
     /**
      * Effective value resolved for the requested scope (falling back through broader scopes and the default).
      * A primitive session value (set via `--session-preference`) overrides it. An array or object session value
-     * doesn't, since a control commits an edited copy of this value to the requested scope.
+     * doesn't, since a control commits an edited copy of this value to the requested scope; {@link sessionValue}
+     * carries it instead.
      */
     readonly value: unknown;
     /** Value explicitly set in the requested scope; `undefined` means the value is inherited or default. */
@@ -63,6 +64,11 @@ export interface AiSettingsInspection {
     readonly defaultValue: unknown;
     /** `true` when the requested scope explicitly overrides the value, i.e. a reset is meaningful. */
     readonly modified: boolean;
+    /**
+     * Value set for this session via `--session-preference`, which takes precedence over every scope until the
+     * preference is written to a persistent scope; `undefined` when there is none.
+     */
+    readonly sessionValue?: unknown;
 }
 
 /**
@@ -129,7 +135,7 @@ export class AiSettingsRowService {
         if (sessionValue !== undefined && JSONExt.isPrimitive(sessionValue)) {
             value = sessionValue;
         }
-        return { value, scopeValue, defaultValue, modified: scopeValue !== undefined };
+        return { value, scopeValue, defaultValue, modified: scopeValue !== undefined, sessionValue };
     }
 
     set(preferenceId: string, value: unknown, scope: AiConfigurationScope, resourceUri?: string): Promise<void> {

@@ -203,6 +203,7 @@ export class ToolsConfigurationCategory extends SinglePageCategoryRenderer imple
                 renderMarkdown={this.renderMarkdown}
                 modified={inspection.modified}
                 tags={this.settingsRowService.tags(DEFAULT_TOOL_CONFIRMATION_PREFERENCE)}
+                sessionValue={inspection.sessionValue}
                 onOpenMenu={gear => this.settingsRowService.openSettingContextMenu(gear, DEFAULT_TOOL_CONFIRMATION_PREFERENCE, inspection.value, ctx.scope)}
                 below={<AiEnumSelect
                     ariaLabel={modeLabel}

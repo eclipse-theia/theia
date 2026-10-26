@@ -39,6 +39,11 @@ export interface AiConfigurationSettingRowProps {
     /** Schema tags shown as badges next to the title (e.g. `experimental`, `preview`), mirroring the Settings UI. */
     readonly tags?: string[];
     /**
+     * Value set for this session via `--session-preference`. When defined, the title is marked "Overridden by
+     * session", as in the Settings UI, and the marker's tooltip shows the value.
+     */
+    readonly sessionValue?: unknown;
+    /**
      * Opens this view's setting context menu (Reset Setting / Copy Setting ID / Copy Setting as JSON)
      * anchored at the gear element. When omitted the gear is hidden. The owner wires this to
      * {@link AiSettingsRowService.openSettingContextMenu}.
@@ -64,7 +69,7 @@ export interface AiConfigurationSettingRowProps {
  * DI-free; owners supply the values, a bound markdown renderer and the callbacks.
  */
 export const AiConfigurationSettingRow: React.FC<AiConfigurationSettingRowProps> = ({
-    preferenceId, title, description, renderMarkdown, modified, tags, onOpenMenu, control, below, actions
+    preferenceId, title, description, renderMarkdown, modified, tags, sessionValue, onOpenMenu, control, below, actions
 }) => (
     <div className={`ai-settings-row${modified ? ' modified' : ''}`} data-ai-config-row-id={preferenceId}>
         <AiSettingRowGear onOpenMenu={onOpenMenu} />
@@ -79,6 +84,7 @@ export const AiConfigurationSettingRow: React.FC<AiConfigurationSettingRowProps>
                             </span>
                         ))}
                     </span>}
+                    <AiSettingSessionMarker sessionValue={sessionValue} />
                 </div>
                 {description !== undefined && (typeof description === 'string' && renderMarkdown
                     ? <AiMarkdownDescription renderMarkdown={renderMarkdown} markdown={description} />
@@ -99,6 +105,23 @@ function tagLabel(tag: string): string {
         : tag === 'preview' ? nls.localizeByDefault('Preview')
             : tag;
 }
+
+/**
+ * "Overridden by session" marker for a setting's title, as in the Settings UI, shown when the setting has a value
+ * set via `--session-preference`. The tooltip shows that value, which for a list or an object isn't the one the
+ * row's control edits. Renders nothing when `sessionValue` is `undefined`.
+ */
+export const AiSettingSessionMarker: React.FC<{ sessionValue: unknown }> = ({ sessionValue }) => {
+    if (sessionValue === undefined) {
+        return <></>;
+    }
+    const tooltip = nls.localize('theia/ai/core/aiConfiguration/sessionOverride/tooltip',
+        'Set for this session via --session-preference: {0}. Changing or resetting this setting clears the session value for the rest of this session.',
+        JSON.stringify(sessionValue));
+    return <span className='ai-settings-row-session' title={tooltip}>
+        {nls.localize('theia/preferences/sessionOverride/suffix', 'Overridden by session')}
+    </span>;
+};
 
 /** Hover text for a preference tag badge, matching the Settings UI. */
 function tagTooltip(tag: string): string {

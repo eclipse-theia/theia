@@ -134,6 +134,16 @@ describe('AiSettingsRowService', () => {
             expect(service.inspect('pref', 'user').value).to.deep.equal(['rm *']);
         });
 
+        it('reports the session value in every scope, so the row can show that a session value applies', () => {
+            const { service } = createService({ globalValue: ['rm *'], sessionValue: ['curl *'] });
+            expect(service.inspect('pref', 'user').sessionValue).to.deep.equal(['curl *']);
+            expect(service.inspect('pref', 'workspace').sessionValue).to.deep.equal(['curl *']);
+            const { service: primitive } = createService({ defaultValue: false, sessionValue: true });
+            expect(primitive.inspect('pref', 'user')).to.include({ value: true, sessionValue: true, modified: false });
+            const { service: none } = createService({ globalValue: 'u' });
+            expect(none.inspect('pref', 'user').sessionValue).to.equal(undefined);
+        });
+
         it('treats a value of `false` as an explicit override (not inherited)', () => {
             const { service } = createService({ defaultValue: true, globalValue: false });
             const result = service.inspect('pref', 'user');
