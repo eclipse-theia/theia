@@ -98,9 +98,24 @@ export function createOpenAiClient(options: OpenAiClientOptions): OpenAI {
     const proxyFetch = createProxyFetch(options.proxyUrl);
     return options.apiVersion
         ? new AzureOpenAI({
-            apiKey, baseURL: options.baseURL, apiVersion: options.apiVersion, deployment: options.deployment, fetch: proxyFetch, defaultHeaders: options.headers
+            apiKey, baseURL: options.baseURL, apiVersion: options.apiVersion, deployment: options.deployment, fetch: proxyFetch,
+            defaultHeaders: azureDefaultHeaders(options)
         })
         : new MistralFixedOpenAI({ apiKey, baseURL: options.baseURL, fetch: proxyFetch, defaultHeaders: options.headers });
+}
+
+/**
+ * The Azure client sends its key in the `api-key` header, so without a key it would send the `no-key` placeholder.
+ * When no key is configured but the headers authenticate the request themselves - typically a Microsoft Entra ID
+ * token in `Authorization` - the placeholder is removed: it is not a credential, gateways may reject a request with an
+ * invalid `api-key`, and the SDK stops following redirects for requests that carry one.
+ */
+function azureDefaultHeaders(options: OpenAiClientOptions): Record<string, string | null> | undefined {
+    const names = Object.keys(options.headers ?? {}).map(name => name.toLowerCase());
+    if (options.apiKey || !names.includes('authorization') || names.includes('api-key')) {
+        return options.headers;
+    }
+    return { ...options.headers, 'api-key': null }; // eslint-disable-line no-null/no-null
 }
 
 export interface OpenAiModelParams {
