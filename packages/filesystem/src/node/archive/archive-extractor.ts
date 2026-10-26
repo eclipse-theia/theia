@@ -56,9 +56,9 @@ export const ArchiveExtractor = Symbol('ArchiveExtractor');
 /**
  * Extracts zip, tar and gzipped tar archives.
  *
- * Archives are treated as untrusted: an entry whose path is absolute or leaves the archive root fails the
+ * Entry paths and links are not trusted: an entry whose path is absolute or leaves the archive root fails the
  * extraction, and links and other special entries are skipped rather than created, so that nothing can be
- * written or exposed outside of the destination.
+ * written or exposed outside of the destination. The size of the extracted content is not limited.
  */
 export interface ArchiveExtractor {
     /**
