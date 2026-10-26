@@ -404,7 +404,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             title: WorkspaceCommands.OPEN_WORKSPACE.dialogLabel,
             canSelectFiles: true,
             canSelectFolders: false,
-            filters: this.getWorkspaceDialogFileFilters()
+            filters: this.getWorkspaceDialogFileFilters(),
+            disableAllFilesFilter: true
         };
         const [rootStat] = await this.workspaceService.roots;
         const workspaceFileUri = await this.fileDialogService.showOpenDialog(props, rootStat);
@@ -432,7 +433,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         do {
             selected = await this.fileDialogService.showSaveDialog({
                 title: WorkspaceCommands.SAVE_WORKSPACE_AS.label!,
-                filters: this.getWorkspaceDialogFileFilters()
+                filters: this.getWorkspaceDialogFileFilters(),
+                disableAllFilesFilter: true
             });
             if (selected) {
                 const displayName = selected.displayName;

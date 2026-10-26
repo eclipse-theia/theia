@@ -125,6 +125,11 @@ export class ChatFindHighlighter implements Disposable {
         }
     }
 
+    /** Whether the current match is rendered, so that {@link scrollCurrentIntoView} can reveal it. */
+    get hasCurrentTarget(): boolean {
+        return this.currentTarget !== undefined;
+    }
+
     /** The mounted row rendering the tree node `nodeId`, if any. */
     findRow(root: HTMLElement, nodeId: string): HTMLElement | undefined {
         return root.querySelector<HTMLElement>(`[data-node-id="${nodeId.replace(/["\\]/g, '\\$&')}"]`) ?? undefined;

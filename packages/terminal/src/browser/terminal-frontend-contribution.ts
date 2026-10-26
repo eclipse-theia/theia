@@ -954,10 +954,12 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         // letting the keystroke reach xterm's native paste event. That avoids the permission-gated
         // Clipboard API (navigator.clipboard.readText) that the PASTE_TERMINAL command requires, while
         // preserving bracketed paste. terminal.enablePaste is enforced in TerminalWidgetImpl.customKeyHandler.
+        // displayFor still shows the key as the accelerator of the Paste context menu item.
         keybindings.registerKeybinding({
             command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
             keybinding: 'ctrlcmd+v',
-            when: 'terminalFocus'
+            when: 'terminalFocus',
+            displayFor: TerminalCommands.PASTE_TERMINAL.id
         });
         keybindings.registerKeybinding({
             command: TerminalCommands.COPY_TERMINAL_SELECTION.id,

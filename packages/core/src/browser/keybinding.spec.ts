@@ -1391,6 +1391,104 @@ describe('keybindings', () => {
     });
 });
 
+describe('keybindings displayed for a command', () => {
+
+    let displayedBinding: Keybinding;
+
+    beforeEach(() => {
+        displayedBinding = {
+            command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
+            keybinding: 'ctrl+v',
+            displayFor: TEST_COMMAND_SHADOW.id
+        };
+        keybindingRegistry.registerKeybinding(displayedBinding);
+    });
+
+    it('should show a passthrough keybinding as the accelerator of the command it is displayed for', () => {
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute: () => { } });
+
+        try {
+            expect(keybindingRegistry.acceleratorForCommand(TEST_COMMAND_SHADOW.id, undefined)).to.deep.equal(['Ctrl+V']);
+        } finally {
+            handler.dispose();
+        }
+    });
+
+    it('should not show a displayed keybinding for a disabled command', () => {
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute: () => { }, isEnabled: () => false });
+
+        try {
+            expect(keybindingRegistry.acceleratorForCommand(TEST_COMMAND_SHADOW.id, undefined)).to.deep.equal([]);
+        } finally {
+            handler.dispose();
+        }
+    });
+
+    it('should not fall back to a displayed keybinding when the command is disabled but has its own keybinding', () => {
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute: () => { }, isEnabled: () => false });
+        keybindingRegistry.registerKeybinding({
+            command: TEST_COMMAND_SHADOW.id,
+            keybinding: 'ctrl+shift+v'
+        });
+
+        try {
+            expect(keybindingRegistry.acceleratorForCommand(TEST_COMMAND_SHADOW.id, undefined)).to.deep.equal([]);
+        } finally {
+            handler.dispose();
+        }
+    });
+
+    it('should not return a displayed keybinding as a keybinding of the command', () => {
+        expect(keybindingRegistry.getKeybindingsForCommand(TEST_COMMAND_SHADOW.id)).to.be.empty;
+    });
+
+    it('should let the key pass through instead of executing the command it is displayed for', () => {
+        const execute = sinon.spy();
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute });
+
+        try {
+            expect(keybindingRegistry.matchKeybinding(keybindingRegistry.resolveKeybinding(displayedBinding))?.runtime.binding?.command)
+                .to.equal(KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND);
+
+            const event = testKeyboardEvent({ key: 'v', code: 'KeyV', keyCode: 86, ctrlKey: true });
+            keybindingRegistry.run(event);
+
+            expect(execute.called).to.be.false;
+            expect(event.defaultPrevented).to.be.false;
+        } finally {
+            handler.dispose();
+        }
+    });
+
+    it('should prefer a keybinding that executes the command over a displayed one', () => {
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute: () => { } });
+        keybindingRegistry.registerKeybinding({
+            command: TEST_COMMAND_SHADOW.id,
+            keybinding: 'ctrl+shift+v'
+        });
+
+        try {
+            expect(keybindingRegistry.acceleratorForCommand(TEST_COMMAND_SHADOW.id, undefined)).to.deep.equal(['Ctrl+Shift+V']);
+        } finally {
+            handler.dispose();
+        }
+    });
+
+    it('should not show a displayed keybinding that the user disabled', () => {
+        const handler = commandRegistry.registerHandler(TEST_COMMAND_SHADOW.id, { execute: () => { } });
+        keybindingRegistry.setKeymap(KeybindingScope.USER, [{
+            command: '-' + KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
+            keybinding: 'ctrl+v'
+        }]);
+
+        try {
+            expect(keybindingRegistry.acceleratorForCommand(TEST_COMMAND_SHADOW.id, undefined)).to.deep.equal([]);
+        } finally {
+            handler.dispose();
+        }
+    });
+});
+
 describe('acceleratorForKeyCode', () => {
 
     const ctrlV = KeyCode.createKeyCode({ key: Key.KEY_V, ctrl: true });

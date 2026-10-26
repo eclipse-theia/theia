@@ -19,6 +19,7 @@ import { Widget } from '@lumino/widgets';
 import { FrontendApplication } from '../frontend-application';
 import { WidgetManager, WidgetConstructionOptions } from '../widget-manager';
 import { StorageService } from '../storage-service';
+import { SidePanelItemVisibility } from './side-panel-item-visibility';
 import { ILogger } from '../../common/logger';
 import { CommandContribution, CommandRegistry, Command } from '../../common/command';
 import { ThemeService } from '../theming';
@@ -152,6 +153,9 @@ export class ShellLayoutRestorer implements CommandContribution {
     @inject(PerspectiveServiceInternal)
     protected readonly perspectiveService: PerspectiveServiceInternal;
 
+    @inject(SidePanelItemVisibility)
+    protected readonly sidePanelItemVisibility: SidePanelItemVisibility;
+
     constructor(
         @inject(WidgetManager) protected widgetManager: WidgetManager,
         @inject(ILogger) @named('core:ShellLayoutRestorer')
@@ -172,6 +176,7 @@ export class ShellLayoutRestorer implements CommandContribution {
             this.perspectiveService.clearSavedLayouts();
             this.storageService.setData(PERSPECTIVE_LAYOUTS_STORAGE_KEY, undefined);
             this.themeService.reset();
+            this.sidePanelItemVisibility.reset();
             this.logger.info('<<< The layout has been successfully reset.');
             this.windowService.reload();
         }
