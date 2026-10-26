@@ -37,7 +37,8 @@ import { AiArrayInput, AiEnumSelect, AiNumberStepper } from './ai-configuration-
 import { ConfirmDialog } from '@theia/core/lib/browser';
 import { PromptCustomizationDialogs } from './prompt-customization-dialogs';
 import { VariantSetCard } from './variant-set-card';
-import { AiSettingsRowService } from './ai-settings-row-service';
+import { AiSettingsControl, AiSettingsRowService } from './ai-settings-row-service';
+import { AiSettingsRow } from './ai-settings-row';
 import { PromptFragment, PromptService } from '@theia/ai-core/lib/common/prompt-service';
 
 disableJSDOM();
@@ -409,6 +410,28 @@ describe('AI Configuration primitives', () => {
         const without = mount(React.createElement(AiConfigurationSettingRow, props));
         expect(without.container.querySelector('.ai-settings-row-session')).to.not.exist;
         without.dispose();
+    });
+
+    it('AiSettingsRow marks a session value, and keeps a secret session value out of the tooltip', () => {
+        const service = (sessionValue: unknown) => ({
+            inspect: () => ({ value: 'shown', scopeValue: undefined, defaultValue: undefined, modified: false, sessionValue }),
+            describe: () => ({ label: 'Demo' }),
+            tags: () => [],
+            renderMarkdown: () => document.createElement('div')
+        }) as unknown as AiSettingsRowService;
+        const tooltip = (sessionValue: unknown, control: AiSettingsControl): string | undefined => {
+            const { container, dispose } = mount(React.createElement(AiSettingsRow, {
+                service: service(sessionValue), preferenceId: 'ai-features.demo', scope: 'user', control
+            }));
+            const title = (container.querySelector('.ai-settings-row-session') as HTMLElement | null)?.title;
+            dispose();
+            return title;
+        };
+        expect(tooltip(['curl *'], { type: 'array' })).to.include('["curl *"]');
+        const secret = tooltip('sk-session-key', { type: 'string', password: true });
+        expect(secret).to.include('--session-preference').and.to.not.include('sk-session-key');
+        expect(tooltip('session text', { type: 'string' })).to.include('"session text"');
+        expect(tooltip(undefined, { type: 'string' })).to.equal(undefined);
     });
 
     it('the setting-row gear delegates to the preference context menu, anchored at the gear', () => {

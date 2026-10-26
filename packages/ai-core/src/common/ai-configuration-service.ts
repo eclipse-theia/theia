@@ -31,9 +31,10 @@ export interface AiConfigurationInspection<T extends JSONValue = JSONValue> exte
      * untrusted workspace the folder/workspace scopes are ignored, so `sourceScope` is `Session`, `User` or
      * `undefined`.
      *
-     * `Session` holds values passed with `--session-preference`. It applies to the whole application, wins
-     * over `Folder`, and has no settings file behind it, so it can't be used to pick a file to edit; writing
-     * the key to any other scope clears the session value.
+     * `Session` holds values passed with `--session-preference`. It isn't tied to a resource, wins over
+     * `Folder`, and has no settings file behind it, so it can't be used to pick a file to edit. Writing the key
+     * to another scope through {@link AiConfigurationService.set} or {@link AiConfigurationService.update}
+     * clears the session value until the window reloads.
      *
      * For object values, {@link PreferenceInspection.value} is the object set in `sourceScope` alone, while
      * {@link AiConfigurationService.get} merges the object across all scopes.
