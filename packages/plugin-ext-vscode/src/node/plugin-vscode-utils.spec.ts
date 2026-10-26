@@ -133,7 +133,7 @@ describe('plugin-vscode-utils', () => {
         it('unpacks into the deployment directory of the extension', async () => {
             const vsix = await writeFile('test.vsix', createVsix({ name: 'test', version: '1.2.3' }));
             const extensionDir = await unpackToDeploymentDir(environment, vsix, 'theia.test-1.2.3');
-            expect(extensionDir).to.equal(path.join(deploymentDir, 'theia.test-1.2.3'));
+            expect(extensionDir).to.equal(FileUri.fsPath(FileUri.create(deploymentDir).resolve('theia.test-1.2.3')));
             expect(fs.existsSync(path.join(extensionDir, 'extension', 'out', 'main.js'))).to.be.true;
         });
 
