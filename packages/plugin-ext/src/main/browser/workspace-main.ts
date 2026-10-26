@@ -125,13 +125,18 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
     protected async processWorkspaceFoldersChanged(roots: string[]): Promise<void> {
         const names = this.getConfiguredRootNames(roots);
-        if (this.isAnyRootChanged(roots) === false && this.isAnyRootNameChanged(names) === false) {
+        const rootsChanged = this.isAnyRootChanged(roots);
+        if (rootsChanged === false && this.isAnyRootNameChanged(names) === false) {
             return;
         }
         this.roots = roots;
         this.configuredRootNames = names;
         this.proxy.$onWorkspaceFoldersChanged({ roots, names });
 
+        // The storage of plugins depends on the workspace and its roots, not on the names of the roots
+        if (!rootsChanged) {
+            return;
+        }
         const keyValueStorageWorkspacesData = await this.pluginServer.getAllStorageValues({
             workspace: this.workspaceService.workspace?.resource.toString(),
             roots: this.workspaceService.tryGetRoots().map(root => root.resource.toString())

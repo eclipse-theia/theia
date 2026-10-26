@@ -135,7 +135,9 @@ describe('WorkspaceService', () => {
         fileData: WorkspaceData | undefined;
         writtenData: WorkspaceData | undefined;
         protected override async computeRoots(): Promise<FileStat[]> {
-            this.configuredRootNames = this.names;
+            // Like reading the workspace file, set the names only after an `await`
+            await Promise.resolve();
+            this.computedRootNames = this.names;
             return this.computedRoots;
         }
         protected override async getWorkspaceDataFromFile(): Promise<WorkspaceData | undefined> {
@@ -209,6 +211,13 @@ describe('WorkspaceService', () => {
             await service.updateRoots();
             expect(changeEvents).to.equal(1);
         });
+
+        it('should fire onWorkspaceChanged once when overlapping calls see the same rename', async () => {
+            await service.updateRoots();
+            service.names = new Map([[backend, 'API Server']]);
+            await Promise.all([service.updateRoots(), service.updateRoots()]);
+            expect(changeEvents).to.equal(2);
+        });
     });
 
     describe('writing the workspace file', () => {
@@ -239,6 +248,11 @@ describe('WorkspaceService', () => {
                 { path: backend, name: 'API Server' },
                 { path: frontend, name: 'Web Client' }
             ]);
+        });
+
+        it('should reset the name of a root that is removed and added again without a name', async () => {
+            await service.spliceRoots(0, 1, new URI(backend));
+            expect(service.writtenData?.folders).to.deep.equal([{ path: backend }, { path: frontend }]);
         });
 
         it('should not add a root that is not removed by the same call again', async () => {

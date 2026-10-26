@@ -211,15 +211,24 @@ describe('WorkspaceExtImpl workspace folders', () => {
         expect(calls).to.deep.equal([[1, 1, { uri: 'file:///project/frontend', name: 'Web Client' }]]);
     });
 
-    it('does nothing if a folder is replaced by itself with the same name or without a name', () => {
+    it('does nothing if a folder is replaced by itself with the same name', () => {
         const calls: unknown[][] = [];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (workspace as any).proxy = { $getWorkspace: async () => undefined, $updateWorkspaceFolders: async (...args: unknown[]) => { calls.push(args); } };
         workspace.$onWorkspaceFoldersChanged({ roots: ['file:///project/frontend'], names: { 'file:///project/frontend': 'Web Client' } });
 
         expect(workspace.updateWorkspaceFolders(0, 1, { uri: URI.parse('file:///project/frontend'), name: 'Web Client' })).to.be.false;
-        expect(workspace.updateWorkspaceFolders(0, 1, { uri: URI.parse('file:///project/frontend') })).to.be.false;
         expect(calls).to.be.empty;
+    });
+
+    it('resets the name of a folder that is replaced by itself without a name, like VS Code', () => {
+        const calls: unknown[][] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (workspace as any).proxy = { $getWorkspace: async () => undefined, $updateWorkspaceFolders: async (...args: unknown[]) => { calls.push(args); } };
+        workspace.$onWorkspaceFoldersChanged({ roots: ['file:///project/frontend'], names: { 'file:///project/frontend': 'Web Client' } });
+
+        expect(workspace.updateWorkspaceFolders(0, 1, { uri: URI.parse('file:///project/frontend') })).to.be.true;
+        expect(calls).to.deep.equal([[0, 1, { uri: 'file:///project/frontend', name: undefined }]]);
     });
 
     it('does not report a renamed folder as removed and added, like VS Code', () => {

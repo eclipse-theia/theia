@@ -82,12 +82,14 @@ describe('WorkspaceMainImpl', () => {
         let workspaceChangedEmitter: Emitter<FileStat[]>;
         let names: Map<string, string>;
         let events: WorkspaceRootsChangeEvent[];
+        let storageUpdates: number;
         let workspaceMain: WorkspaceMainImpl;
 
         beforeEach(() => {
             workspaceChangedEmitter = new Emitter<FileStat[]>();
             names = new Map();
             events = [];
+            storageUpdates = 0;
             const roots = [FileStat.dir(backend)];
             const services = new Map<interfaces.ServiceIdentifier, object>([
                 [WorkspaceService, {
@@ -106,7 +108,7 @@ describe('WorkspaceMainImpl', () => {
             const rpc = {
                 getProxy: () => ({
                     $onWorkspaceFoldersChanged: (event: WorkspaceRootsChangeEvent) => events.push(event),
-                    $updatePluginsWorkspaceData: () => { }
+                    $updatePluginsWorkspaceData: () => storageUpdates++
                 })
             } as unknown as RPCProtocol;
             workspaceMain = new WorkspaceMainImpl(rpc, container);
@@ -114,12 +116,16 @@ describe('WorkspaceMainImpl', () => {
 
         afterEach(() => workspaceMain.dispose());
 
-        it('notifies the plugin host when only the name of a root changes', () => {
+        it('notifies the plugin host when only the name of a root changes', async () => {
             expect(events).to.deep.equal([{ roots: [backend], names: {} }]);
 
             names.set(backend, 'API Server');
             workspaceChangedEmitter.fire([FileStat.dir(backend)]);
             expect(events).to.deep.equal([{ roots: [backend], names: {} }, { roots: [backend], names: { [backend]: 'API Server' } }]);
+
+            // The storage of plugins only depends on the roots, so it is sent once for the initial roots
+            await new Promise(resolve => setTimeout(resolve));
+            expect(storageUpdates).to.equal(1);
         });
 
         it('does not notify the plugin host when neither the roots nor their names change', () => {

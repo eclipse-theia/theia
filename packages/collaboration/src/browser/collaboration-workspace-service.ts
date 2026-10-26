@@ -49,7 +49,7 @@ export class CollaborationWorkspaceService extends WorkspaceService {
     protected override async computeRoots(): Promise<FileStat[]> {
         if (this.collabWorkspace) {
             // The roots of the host carry no names. Reset the names of a previous workspace, which `super` would update.
-            this.configuredRootNames = new Map();
+            this.computedRootNames = new Map();
             return this.collabWorkspace.folders.map(e => this.entryToStat(e));
         } else {
             return super.computeRoots();

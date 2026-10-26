@@ -58,7 +58,10 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     protected _workspace: FileStat | undefined;
 
     protected _roots: FileStat[] = [];
+    /** The names of the roots, published together with `_roots` when `onWorkspaceChanged` fires. */
     protected configuredRootNames = new Map<string, string>();
+    /** The names of the roots read by the last `computeRoots`, not yet published. */
+    protected computedRootNames = new Map<string, string>();
     protected deferredRoots = new Deferred<FileStat[]>();
 
     @inject(FileService)
@@ -300,9 +303,10 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     protected async updateRoots(): Promise<void> {
-        const oldRootNames = this.configuredRootNames;
         const newRoots = await this.computeRoots();
-        let rootsChanged = !this.areConfiguredRootNamesEqual(oldRootNames, this.configuredRootNames);
+        const newRootNames = this.computedRootNames;
+        // Compare against the published names, so that overlapping calls fire only once for a rename
+        let rootsChanged = !this.areConfiguredRootNamesEqual(this.configuredRootNames, newRootNames);
         if (newRoots.length !== this._roots.length || newRoots.length === 0) {
             rootsChanged = true;
         } else {
@@ -315,6 +319,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         }
         if (rootsChanged) {
             this._roots = newRoots;
+            this.configuredRootNames = newRootNames;
             this.rootNamesCache = undefined;
             this.deferredRoots.resolve(this._roots); // in order to resolve first
             this.deferredRoots = new Deferred<FileStat[]>();
@@ -324,15 +329,16 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     /**
-     * Computes the workspace roots. Also updates the names given to the roots in the workspace file, see `getConfiguredRootName`.
-     * An override that does not call `super` has to update `configuredRootNames` itself, otherwise the names of the previous roots remain.
+     * Computes the workspace roots. Also sets `computedRootNames` to the names given to the roots in the workspace file,
+     * which `updateRoots` publishes with the roots, see `getConfiguredRootName`.
+     * An override that does not call `super` has to set `computedRootNames` itself, otherwise the names of the previous roots remain.
      */
     protected async computeRoots(): Promise<FileStat[]> {
         const roots: FileStat[] = [];
         const rootNames = new Map<string, string>();
         if (this._workspace) {
             if (this._workspace.isDirectory) {
-                this.configuredRootNames = rootNames;
+                this.computedRootNames = rootNames;
                 return [this._workspace];
             }
 
@@ -352,7 +358,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
                 }
             }
         }
-        this.configuredRootNames = rootNames;
+        this.computedRootNames = rootNames;
         return roots;
     }
 
@@ -590,6 +596,11 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         }
 
         const currentData = await this.getWorkspaceDataFromFile();
+        if (currentData) {
+            // A root added by this call only gets the name it is added with, so that adding a root again without a name resets its name
+            const added = new Set(toAdd.map(root => WorkspaceData.normalizeFolderUri(root)));
+            currentData.folders = currentData.folders.filter(folder => !added.has(WorkspaceData.normalizeFolderUri(folder.path)));
+        }
         const newData = WorkspaceData.buildWorkspaceData(roots.map(path => ({ path, name: namesToAdd.get(path) })), currentData);
         await this.writeWorkspaceFile(this._workspace, newData);
         await this.updateWorkspace();

@@ -441,9 +441,8 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         const newWorkspaceFolders: { uri: theia.Uri, name: string }[] = currentWorkspaceFolders.map(({ uri, name }) => ({ uri, name }));
         newWorkspaceFolders.splice(start, deleteCount, ...Array.from(rootsToAdd, ([uri, name]) => {
             const folderUri = URI.parse(uri);
-            // A folder added without a name keeps its current name, as the main side writes it to the workspace file
-            const currentName = currentWorkspaceFolders.find(folder => folder.uri.toString() === uri)?.name;
-            return { uri: folderUri, name: name || currentName || new Path(folderUri.path).base };
+            // Like VS Code, a folder added without a name gets its folder name, so re-adding a folder without a name resets its name
+            return { uri: folderUri, name: name || new Path(folderUri.path).base };
         }));
 
         for (let i = 0; i < newWorkspaceFolders.length; i++) {
