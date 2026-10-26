@@ -1143,7 +1143,11 @@ export class TaskService implements TaskConfigurationClient {
         await this.taskConfigurations.configure(token, task);
     }
 
-    protected isEventForThisClient(context: string | undefined): boolean {
+    /**
+     * @param context the context of a task event, see {@link TaskInfo.ctx}
+     * @returns whether the event is for a task started by this client
+     */
+    isEventForThisClient(context: string | undefined): boolean {
         if (context === this.getContext()) {
             return true;
         }

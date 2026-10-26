@@ -62,6 +62,8 @@ export class TasksMainImpl implements TasksMain, Disposable {
     private readonly taskDefinitionRegistry: TaskDefinitionRegistry;
 
     private readonly taskProviders = new Map<number, Disposable>();
+    /** The tasks that plugins requested to run with `$executeTask`, by request id, until the start of their execution is reported. */
+    private readonly pendingExecuteRequests = new Map<number, TaskConfiguration>();
     private readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
@@ -75,7 +77,8 @@ export class TasksMainImpl implements TasksMain, Disposable {
         this.toDispose.push(this.taskWatcher.onTaskCreated((event: TaskInfo) => {
             this.proxy.$onDidStartTask({
                 id: event.taskId,
-                task: this.fromTaskConfiguration(event.config)
+                task: this.fromTaskConfiguration(event.config),
+                executeRequestId: this.claimExecuteRequest(event)
             }, event.terminalId!);
         }));
 
@@ -151,15 +154,39 @@ export class TasksMainImpl implements TasksMain, Disposable {
         return result;
     }
 
-    async $executeTask(taskDto: TaskDto): Promise<TaskExecutionDto | undefined> {
+    async $executeTask(taskDto: TaskDto, executeRequestId: number): Promise<TaskExecutionDto | undefined> {
         const taskConfig = this.toTaskConfiguration(taskDto);
-        const taskInfo = await this.taskService.runTask(taskConfig);
-        if (taskInfo) {
-            return {
-                id: taskInfo.taskId,
-                task: this.fromTaskConfiguration(taskInfo.config)
-            };
+        this.pendingExecuteRequests.set(executeRequestId, taskConfig);
+        try {
+            const taskInfo = await this.taskService.runTask(taskConfig);
+            if (taskInfo) {
+                return {
+                    id: taskInfo.taskId,
+                    task: this.fromTaskConfiguration(taskInfo.config),
+                    executeRequestId
+                };
+            }
+        } finally {
+            this.pendingExecuteRequests.delete(executeRequestId);
         }
+    }
+
+    /**
+     * The start of an execution is reported before `runTask` resolves, so the plugin host can't know yet that it was started by its request.
+     * `runTask` doesn't start a task that is already running, so a created task that matches a pending request is the one started by it.
+     * @returns the id of the request that started the task, if any
+     */
+    protected claimExecuteRequest(event: TaskInfo): number | undefined {
+        if (!this.taskService.isEventForThisClient(event.ctx)) {
+            return undefined;
+        }
+        for (const [executeRequestId, pendingConfig] of this.pendingExecuteRequests) {
+            if (this.taskDefinitionRegistry.compareTasks(pendingConfig, event.config)) {
+                this.pendingExecuteRequests.delete(executeRequestId);
+                return executeRequestId;
+            }
+        }
+        return undefined;
     }
 
     async $taskExecutions(): Promise<{
