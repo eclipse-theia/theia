@@ -44,6 +44,9 @@ export class TasksExtImpl implements TasksExt {
     protected customExecutionIds: Map<ExecutionCallback, string> = new Map();
     protected customExecutionFunctions: Map<string, ExecutionCallback> = new Map();
     protected lastStartedTask: number | undefined;
+    protected executeRequestId = 0;
+    /** The tasks passed to `executeTask`, by request id, until the request completes. */
+    protected pendingExecuteRequests = new Map<number, theia.Task>();
 
     private readonly onDidExecuteTask: Emitter<theia.TaskStartEvent> = new Emitter<theia.TaskStartEvent>();
     private readonly onDidTerminateTask: Emitter<theia.TaskEndEvent> = new Emitter<theia.TaskEndEvent>();
@@ -78,7 +81,8 @@ export class TasksExtImpl implements TasksExt {
         }
         this.lastStartedTask = execution.id;
 
-        const taskExecution = this.getTaskExecution(execution);
+        const executedTask = execution.executeRequestId === undefined ? undefined : this.pendingExecuteRequests.get(execution.executeRequestId);
+        const taskExecution = this.getTaskExecution(execution, executedTask);
         if (taskExecution) {
             this.onDidExecuteTask.fire({ execution: taskExecution });
         }
@@ -158,9 +162,15 @@ export class TasksExtImpl implements TasksExt {
             if (CustomExecution.is(task.execution!)) {
                 taskDto.executionId = this.addCustomExecution(task.execution!.callback);
             }
-            const executionDto = await this.proxy.$executeTask(taskDto);
-            if (executionDto) {
-                return this.getTaskExecution(executionDto, task)!;
+            const executeRequestId = this.executeRequestId++;
+            this.pendingExecuteRequests.set(executeRequestId, task);
+            try {
+                const executionDto = await this.proxy.$executeTask(taskDto, executeRequestId);
+                if (executionDto) {
+                    return this.getTaskExecution(executionDto, task)!;
+                }
+            } finally {
+                this.pendingExecuteRequests.delete(executeRequestId);
             }
             throw new Error('Run task config does not return after being started');
         }
