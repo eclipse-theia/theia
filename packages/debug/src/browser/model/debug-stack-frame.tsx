@@ -78,11 +78,12 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
     }
 
     /**
-     * Restarts this frame. Does nothing if the frame cannot be restarted, see {@link isRestartable}.
+     * Restarts this frame. As in VS Code, rejects if the debug adapter does not support restarting frames,
+     * and leaves it to the debug adapter to reject frames that cannot be restarted, see {@link isRestartable}.
      */
     async restart(): Promise<void> {
-        if (!this.isRestartable) {
-            return;
+        if (!this.supportsRestartFrame) {
+            throw new Error('restartFrame not supported');
         }
         await this.session.sendRequest('restartFrame', this.toArgs({
             threadId: this.thread.id

@@ -107,6 +107,8 @@ export class DebugSessionManager {
         this.debugTypeKey.set(current?.configuration.type);
         this.inDebugModeKey.set(this.inDebugMode);
         this.debugStateKey.set(debugStateContextValue(this.state));
+        this.restartFrameSupportedKey.set(!!this.currentSession?.capabilities.supportsRestartFrame);
+        this.stackFrameSupportsRestartKey.set(!!this.currentFrame?.isRestartable);
         this.onDidChangeEmitter.fire(current);
     }
 
@@ -167,12 +169,18 @@ export class DebugSessionManager {
     protected debugTypeKey: ContextKey<string>;
     protected inDebugModeKey: ContextKey<boolean>;
     protected debugStateKey: ContextKey<string>;
+    /** Whether the current session supports `restartFrame` requests, as in VS Code. */
+    protected restartFrameSupportedKey: ContextKey<boolean>;
+    /** Whether the current stack frame can be restarted, as in VS Code. */
+    protected stackFrameSupportsRestartKey: ContextKey<boolean>;
 
     @postConstruct()
     protected init(): void {
         this.debugTypeKey = this.contextKeyService.createKey<string>('debugType', undefined);
         this.inDebugModeKey = this.contextKeyService.createKey<boolean>('inDebugMode', this.inDebugMode);
         this.debugStateKey = this.contextKeyService.createKey<string>('debugState', debugStateContextValue(this.state));
+        this.restartFrameSupportedKey = this.contextKeyService.createKey<boolean>('restartFrameSupported', false);
+        this.stackFrameSupportsRestartKey = this.contextKeyService.createKey<boolean>('stackFrameSupportsRestart', false);
     }
 
     get inDebugMode(): boolean {
@@ -437,6 +445,8 @@ export class DebugSessionManager {
             // The selection logic in widgets will handle not jumping to non-stopped threads
             this.fireDidChange(session);
         });
+        // e.g. for the `restartFrameSupported` context key
+        session.onDidChangeCapabilities(() => this.fireDidChange(session));
         session.on('terminated', async event => {
             const restart = event.body && event.body.restart;
             if (restart) {

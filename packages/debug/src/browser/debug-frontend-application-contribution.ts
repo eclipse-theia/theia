@@ -680,7 +680,13 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
 
         registry.registerCommand(DebugCommands.RESTART_FRAME, {
-            execute: () => this.selectedFrame && this.selectedFrame.restart(),
+            execute: async () => {
+                try {
+                    await this.selectedFrame?.restart();
+                } catch (error) {
+                    this.messageService.error(error instanceof Error ? error.message : String(error));
+                }
+            },
             isEnabled: () => !!this.selectedFrame && this.selectedFrame.isRestartable
         });
         registry.registerCommand(DebugCommands.COPY_CALL_STACK, {
