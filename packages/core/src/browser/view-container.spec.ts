@@ -102,8 +102,10 @@ describe('ViewContainer', () => {
         container.addWidget(createWidget('second'), { weight: 1 });
 
         await reveal();
+        container.addWidget(createWidget('third'), { weight: 1 });
+        await waitForRevealed(container);
 
-        expect(requestedSizes[requestedSizes.length - 1]).to.deep.equal([2, 1]);
+        expect(requestedSizes).to.deep.equal([[2, 1]]);
     });
 
     it('keeps the sizes of a restored layout when a part with a weight is added', async () => {

@@ -312,11 +312,13 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     protected isViewVisible(viewId: string): boolean {
-        const viewInfo = this.views.get(viewId);
-        if (!viewInfo) {
+        return this.isViewDefinitionVisible(this.views.get(viewId)?.[1]);
+    }
+
+    protected isViewDefinitionVisible(view: View | undefined): boolean {
+        if (!view) {
             return false;
         }
-        const [, view] = viewInfo;
         return view.when === undefined || view.when === 'true' || this.contextKeyService.match(view.when);
     }
 
@@ -883,7 +885,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 const hiddenByDefault = view?.visibility === 'hidden';
                 containerWidget.addWidget(widget, {
                     initiallyCollapsed: this.isViewInitiallyCollapsed(view, viewContainerId, containerWidget),
-                    initiallyHidden: hiddenByDefault || !this.isViewVisible(viewId),
+                    initiallyHidden: hiddenByDefault || !this.isViewDefinitionVisible(view),
                     weight: view?.initialSize
                 });
                 if (hiddenByDefault) {
