@@ -137,6 +137,13 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         'debug'
     ]);
 
+    /** Built-in containers whose contributed views start collapsed regardless of their `visibility`, as in VS Code. */
+    private static readonly COLLAPSED_VIEW_CONTAINERS = new Set<string>([
+        'explorer',
+        'scm',
+        'debug'
+    ]);
+
     private static readonly ID_MAPPINGS: Map<string, string> = new Map([
         // VS Code Viewlets
         [EXPLORER_VIEW_CONTAINER_ID, 'workbench.view.explorer'],
@@ -872,12 +879,27 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             }
             const widget = await this.widgetManager.getOrCreateWidget<PluginViewWidget>(PLUGIN_VIEW_FACTORY_ID, identifier);
             if (containerWidget.getTrackableWidgets().indexOf(widget) === -1) {
+                const view = this.views.get(viewId)?.[1];
+                const hiddenByDefault = view?.visibility === 'hidden';
                 containerWidget.addWidget(widget, {
-                    initiallyCollapsed: !!containerWidget.getParts().length,
-                    initiallyHidden: !this.isViewVisible(viewId)
+                    initiallyCollapsed: this.isViewInitiallyCollapsed(view, viewContainerId, containerWidget),
+                    initiallyHidden: hiddenByDefault || !this.isViewVisible(viewId),
+                    weight: view?.initialSize
                 });
+                if (hiddenByDefault) {
+                    // Treated like a view the user hid: its `when` clause must not show it again.
+                    widget.suppressUpdateViewVisibility = true;
+                }
             }
             this.registerWidgetPartEvents(widget, containerWidget);
+        }
+    }
+
+    protected isViewInitiallyCollapsed(view: View | undefined, viewContainerId: string, containerWidget: ViewContainerWidget): boolean {
+        switch (view?.visibility) {
+            case 'collapsed': return true;
+            case 'visible': return PluginViewRegistry.COLLAPSED_VIEW_CONTAINERS.has(viewContainerId);
+            default: return !!containerWidget.getParts().length;
         }
     }
 

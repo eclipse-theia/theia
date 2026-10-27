@@ -261,8 +261,11 @@ export async function normalizeContributions<TContrib extends object>(
     try {
         if (contributes.views) {
             const views: { [location: string]: RawView[] } = {};
+            // As in VS Code, a view may set its initial size only within a view container of its own plugin.
+            const ownViewContainerIds = new Set(Object.values(contributes.viewsContainers ?? {}).flatMap(containers => containers.map(container => container.id)));
             for (const location of Object.keys(contributes.views)) {
-                views[location] = readViewsFn(contributes.views[location]);
+                const locationViews = readViewsFn(contributes.views[location]);
+                views[location] = ownViewContainerIds.has(location) ? locationViews : locationViews.map(view => ({ ...view, initialSize: undefined }));
             }
             output.views = views;
         }
@@ -853,7 +856,9 @@ export function readView(rawView: RawView): RawView {
         id: rawView.id,
         name: rawView.name,
         when: rawView.when,
-        type: rawView.type
+        type: rawView.type,
+        visibility: rawView.visibility,
+        initialSize: rawView.initialSize
     };
 }
 
