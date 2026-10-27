@@ -221,7 +221,7 @@ describe('normalize-contributions', () => {
 
         it('keeps the initial visibility and size a view declares, and drops values of the wrong kind', () => {
             const rawView: PluginPackageView = { id: 'sample.view', name: 'Sample View', visibility: 'collapsed', initialSize: 3 };
-            const malformedView = { id: 'malformed.view', name: 'Malformed View', visibility: 'shown', initialSize: '200' } as unknown as PluginPackageView;
+            const malformedView = { id: 'malformed.view', name: 'Malformed View', visibility: 'shown', initialSize: Infinity } as unknown as PluginPackageView;
 
             const [view, malformed] = readViews([rawView, malformedView]);
 

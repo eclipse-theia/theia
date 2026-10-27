@@ -101,32 +101,39 @@ export class SplitPositionHandler {
         const time = Date.now();
         const move = this.splitMoves[this.currentMoveIndex];
         let rejectedOrResolved = false;
-        // A move on a disposed panel must be dropped: its layout is gone, and a throw here would stop every queued move.
-        if (move.ended || move.parent.isDisposed || move.referenceWidget && move.referenceWidget.isHidden) {
+        try {
+            if (move.ended || move.referenceWidget && move.referenceWidget.isHidden) {
+                this.splitMoves.splice(this.currentMoveIndex, 1);
+                if (move.startPosition === undefined || move.targetPosition === undefined) {
+                    move.reject!('Panel is not visible.');
+                } else {
+                    move.resolve!(move.targetPosition);
+                }
+                rejectedOrResolved = true;
+            } else if (!move.started) {
+                this.startMove(move, time);
+                if (move.duration <= 0 || move.startPosition === undefined || move.targetPosition === undefined
+                    || move.startPosition === move.targetPosition) {
+                    this.endMove(move);
+                }
+            } else {
+                const elapsedTime = time - move.startTime!;
+                if (elapsedTime >= move.duration) {
+                    this.endMove(move);
+                } else {
+                    const t = elapsedTime / move.duration;
+                    const start = move.startPosition || 0;
+                    const target = move.targetPosition || 0;
+                    const pos = start + (target - start) * t;
+                    (move.parent.layout as SplitLayout).moveHandle(move.index, pos);
+                }
+            }
+        } catch (error) {
+            // All split moves of the application share this queue: a move that cannot be performed, for example because
+            // its panel was disposed or its handle removed, is dropped so that it cannot stop the moves after it.
             this.splitMoves.splice(this.currentMoveIndex, 1);
-            if (move.startPosition === undefined || move.targetPosition === undefined) {
-                move.reject!('Panel is not visible.');
-            } else {
-                move.resolve!(move.targetPosition);
-            }
+            move.reject!(error);
             rejectedOrResolved = true;
-        } else if (!move.started) {
-            this.startMove(move, time);
-            if (move.duration <= 0 || move.startPosition === undefined || move.targetPosition === undefined
-                || move.startPosition === move.targetPosition) {
-                this.endMove(move);
-            }
-        } else {
-            const elapsedTime = time - move.startTime!;
-            if (elapsedTime >= move.duration) {
-                this.endMove(move);
-            } else {
-                const t = elapsedTime / move.duration;
-                const start = move.startPosition || 0;
-                const target = move.targetPosition || 0;
-                const pos = start + (target - start) * t;
-                (move.parent.layout as SplitLayout).moveHandle(move.index, pos);
-            }
         }
         if (!rejectedOrResolved) {
             this.currentMoveIndex++;

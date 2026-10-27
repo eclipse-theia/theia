@@ -52,4 +52,21 @@ describe('SplitPositionHandler', () => {
         kept.dispose();
     });
 
+    it('drops a move whose handle was removed before the move starts and keeps running the moves queued after it', async () => {
+        const handler = new SplitPositionHandler();
+        const shrunk = createPanel();
+        const kept = createPanel();
+
+        const droppedMove = handler.setSplitHandlePosition(shrunk, 1, 10, { duration: 0 });
+        const keptMove = handler.setSplitHandlePosition(kept, 0, 20, { duration: 0 });
+        shrunk.widgets[1].dispose();
+
+        let dropped = false;
+        await droppedMove.catch(() => dropped = true);
+        expect(dropped).to.be.true;
+        expect(await keptMove).to.equal(20);
+        shrunk.dispose();
+        kept.dispose();
+    });
+
 });

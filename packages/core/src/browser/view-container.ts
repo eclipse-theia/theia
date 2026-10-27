@@ -430,7 +430,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.updateSplitterVisibility();
         this.update();
         this.fireDidChangeTrackableWidgets();
-        if (newPart.options.weight !== undefined && !this.initialPartSizesRequested) {
+        if (newPart.options.weight !== undefined) {
             this.applyInitialPartSizes();
         }
         toRemoveWidget.pushAll([
@@ -482,10 +482,23 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
      * and a part added later does not reset the sizes of the parts already shown.
      */
     protected applyInitialPartSizes(): void {
+        if (this.initialPartSizesRequested) {
+            return;
+        }
         this.initialPartSizesRequested = true;
-        waitForRevealed(this).then(() => {
-            if (!this.layoutRestored && !this.isDisposed) {
-                this.containerLayout.setPartSizes(this.getParts().map(part => part.options.weight));
+        this.setPartSizesWhenRevealed(() => this.layoutRestored ? undefined : this.getParts().map(part => part.options.weight));
+    }
+
+    /**
+     * Sets the part sizes that `sizes` computes once the container is revealed, unless it computes none. Callers waiting
+     * for the same reveal share one poll.
+     */
+    protected setPartSizesWhenRevealed(sizes: () => (number | undefined)[] | undefined): void {
+        this.pendingReveal ??= waitForRevealed(this).finally(() => this.pendingReveal = undefined);
+        this.pendingReveal.then(() => {
+            const partSizes = sizes();
+            if (partSizes && !this.isDisposed) {
+                this.containerLayout.setPartSizes(partSizes);
                 this.updateSplitterVisibility();
             }
         });
@@ -541,6 +554,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     /** Part weights only size a container whose layout was not restored from a previous session. */
     protected layoutRestored = false;
     protected initialPartSizesRequested = false;
+    protected pendingReveal: Promise<void> | undefined;
 
     storeState(): ViewContainer.State {
         if (!this.isVisible && this.lastVisibleState) {
@@ -609,10 +623,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         }
 
         // Restore part sizes
-        waitForRevealed(this).then(() => {
-            this.containerLayout.setPartSizes(partStates.map(partState => partState.relativeSize));
-            this.updateSplitterVisibility();
-        });
+        this.setPartSizesWhenRevealed(() => partStates.map(partState => partState.relativeSize));
     }
 
     /**
