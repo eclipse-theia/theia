@@ -35,6 +35,19 @@ type AtLeastOneKey<T> = {
     [K in keyof T]: Pick<T, K> & Partial<Omit<T, K>>
 }[keyof T];
 
+/**
+ * Options for {@link PreferenceService.resolve}.
+ */
+export interface PreferenceResolveOptions {
+    /**
+     * Scopes to leave out of the resolution. The other scopes resolve and merge as usual, and so does the
+     * fallback from a language override to its base preference. For example, a caller that must not read
+     * settings controlled by an untrusted workspace can exclude {@link PreferenceScope.Workspace} and
+     * {@link PreferenceScope.Folder}.
+     */
+    readonly excludeScopes?: readonly PreferenceScope[];
+}
+
 interface PreferenceGetOptionsRaw<T> {
     /** Value to return when no stored value exists for the preference. */
     fallback: T | undefined;
@@ -42,6 +55,8 @@ interface PreferenceGetOptionsRaw<T> {
     resource: string | undefined;
     /** Language-override identifier (e.g. `'typescript'`). */
     override: string | undefined;
+    /** Scopes to leave out, see {@link PreferenceResolveOptions.excludeScopes}. */
+    excludeScopes: readonly PreferenceScope[] | undefined;
 }
 
 /**
@@ -122,6 +137,7 @@ export interface PreferenceService extends Disposable {
      *   - `fallback` – value to return when no stored value exists.
      *   - `resource` – URI of the resource for which the preference is stored (enables per-resource values, e.g. `files.encoding`).
      *   - `override` – language-override identifier (e.g. `'typescript'`).
+     *   - `excludeScopes` – scopes to leave out, see {@link PreferenceResolveOptions}.
      *
      * @returns the stored value when it exists, otherwise `options.fallback` (or `undefined` when no fallback is given).
      */
@@ -194,12 +210,13 @@ export interface PreferenceService extends Disposable {
      * @param resourceUri the uri of the resource for which the preference is stored. This used to retrieve
      * a potentially different value for the same preference for different resources, for example `files.encoding`.
      * @param overrideIdentifier the identifier of the override to use.
+     * @param options the scopes to leave out, see {@link PreferenceResolveOptions}.
      *
      * @returns an object containing the value stored for the given preference and resourceUri when it exists,
      * otherwise the given default value. If determinable the object will also contain the uri of the configuration
      * resource in which the preference was stored.
      */
-    resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string, overrideIdentifier?: string): PreferenceResolveResult<T>;
+    resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string, overrideIdentifier?: string, options?: PreferenceResolveOptions): PreferenceResolveResult<T>;
     /**
      * Returns the uri of the configuration resource for the given scope and optional resource uri.
      *
@@ -405,21 +422,22 @@ export class PreferenceServiceImpl implements PreferenceService {
         let fallback: T | undefined;
         let resource: string | undefined;
         let override: string | undefined;
+        let excludeScopes: readonly PreferenceScope[] | undefined;
         if (typeof optionsOrFallback === 'string'
             || typeof optionsOrFallback === 'number'
             || typeof optionsOrFallback === 'boolean'
             || Array.isArray(optionsOrFallback)) {
             fallback = optionsOrFallback as T;
         } else if (optionsOrFallback) {
-            ({ fallback, resource, override } = optionsOrFallback);
+            ({ fallback, resource, override, excludeScopes } = optionsOrFallback);
         }
-        return this.resolve<T>(preferenceName, fallback, resource, override).value;
+        return this.resolve<T>(preferenceName, fallback, resource, override, excludeScopes && { excludeScopes }).value;
     }
 
-    resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string, overrideIdentifier?: string): PreferenceResolveResult<T> {
-        const { value, configUri } = this.doResolve(preferenceName, defaultValue, resourceUri, overrideIdentifier);
+    resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string, overrideIdentifier?: string, options?: PreferenceResolveOptions): PreferenceResolveResult<T> {
+        const { value, configUri } = this.doResolve(preferenceName, defaultValue, resourceUri, overrideIdentifier, options);
         if (value === undefined && overrideIdentifier && this.schemaService.overrideIdentifiers.has(overrideIdentifier)) {
-            return this.doResolve(preferenceName, defaultValue, resourceUri, undefined);
+            return this.doResolve(preferenceName, defaultValue, resourceUri, undefined, options);
         }
         return { value, configUri };
     }
@@ -543,9 +561,14 @@ export class PreferenceServiceImpl implements PreferenceService {
     protected doGet<T>(preferenceName: string, defaultValue?: T, resourceUri?: string, overrideIdentifier?: string): T | undefined {
         return this.doResolve(preferenceName, defaultValue, resourceUri, overrideIdentifier).value;
     }
-    protected doResolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string, overrideIdentifier?: string): PreferenceResolveResult<T> {
+    protected doResolve<T>(
+        preferenceName: string, defaultValue?: T, resourceUri?: string, overrideIdentifier?: string, options?: PreferenceResolveOptions
+    ): PreferenceResolveResult<T> {
         const result: PreferenceResolveResult<T> = {};
         for (const scope of this.schemaService.validScopes) {
+            if (options?.excludeScopes?.includes(scope)) {
+                continue;
+            }
             const provider = this.getProvider(scope);
             if (provider?.canHandleScope(scope)) {
                 const { configUri, value } = provider.resolve<T>(preferenceName, resourceUri, overrideIdentifier);
