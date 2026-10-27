@@ -193,7 +193,7 @@ export class DebugSession implements CompositeTreeElement {
     readonly onDidResolveLazyVariable: Event<DebugVariable> = this.onDidResolveLazyVariableEmitter.event;
 
     protected readonly onDidChangeCapabilitiesEmitter = new Emitter<void>();
-    /** Fires when the debug adapter changes the capabilities of the session with a `capabilities` event. */
+    /** Fires when the capabilities of the session change, with the `initialize` response or a `capabilities` event. */
     readonly onDidChangeCapabilities: Event<void> = this.onDidChangeCapabilitiesEmitter.event;
 
     protected readonly childSessions = new Map<string, DebugSession>();
@@ -247,10 +247,7 @@ export class DebugSession implements CompositeTreeElement {
             this.connection.on('continued', e => this.handleContinued(e)),
             this.connection.on('stopped', e => this.handleStopped(e)),
             this.connection.on('thread', e => this.handleThread(e)),
-            this.connection.on('capabilities', event => {
-                this.updateCapabilities(event.body.capabilities);
-                this.onDidChangeCapabilitiesEmitter.fire();
-            }),
+            this.connection.on('capabilities', event => this.updateCapabilities(event.body.capabilities)),
             this.breakpoints.onDidChangeMarkers(uri => this.updateBreakpoints({ uri, sourceModified: true }))
         ]);
     }
@@ -690,6 +687,7 @@ export class DebugSession implements CompositeTreeElement {
     protected updateCapabilities(capabilities: DebugProtocol.Capabilities): void {
         Object.assign(this._capabilities, capabilities);
         this.deferredOnDidConfigureCapabilities.resolve();
+        this.onDidChangeCapabilitiesEmitter.fire();
     }
 
     protected updatingBreakpoints = false;

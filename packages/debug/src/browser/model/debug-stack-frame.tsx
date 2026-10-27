@@ -32,6 +32,7 @@ import { DebugSession } from '../debug-session';
 import { DebugThread } from './debug-thread';
 import * as monaco from '@theia/monaco-editor-core';
 import { stringHash } from '@theia/core/lib/common/hash';
+import { nls } from '@theia/core/lib/common/nls';
 
 export class DebugStackFrameData {
     readonly raw: DebugProtocol.StackFrame;
@@ -83,7 +84,7 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
      */
     async restart(): Promise<void> {
         if (!this.supportsRestartFrame) {
-            throw new Error('restartFrame not supported');
+            throw new Error(nls.localize('theia/debug/restartFrameNotSupported', 'The debug adapter does not support restarting frames.'));
         }
         await this.session.sendRequest('restartFrame', this.toArgs({
             threadId: this.thread.id

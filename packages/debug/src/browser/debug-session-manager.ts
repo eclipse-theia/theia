@@ -445,8 +445,12 @@ export class DebugSessionManager {
             // The selection logic in widgets will handle not jumping to non-stopped threads
             this.fireDidChange(session);
         });
-        // e.g. for the `restartFrameSupported` context key
-        session.onDidChangeCapabilities(() => this.fireDidChange(session));
+        // e.g. for the `restartFrameSupported` context key, which is only read from the current session
+        session.onDidChangeCapabilities(() => {
+            if (session === this.currentSession) {
+                this.fireDidChange(session);
+            }
+        });
         session.on('terminated', async event => {
             const restart = event.body && event.body.restart;
             if (restart) {

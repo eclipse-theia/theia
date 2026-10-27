@@ -684,7 +684,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                 try {
                     await this.selectedFrame?.restart();
                 } catch (error) {
-                    this.messageService.error(error instanceof Error ? error.message : String(error));
+                    // a failed request rejects with the response of the debug adapter, not an `Error`
+                    this.messageService.error(error?.message || nls.localize('theia/debug/restartFrameFailed', 'Failed to restart the frame.'));
                 }
             },
             isEnabled: () => !!this.selectedFrame && this.selectedFrame.isRestartable

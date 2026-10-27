@@ -67,7 +67,7 @@ describe('DebugStackFrame', () => {
     it('rejects without sending a restartFrame request if the debug adapter does not support restarting frames', async () => {
         const frame = createFrame({});
         const error = await frame.restart().then(() => undefined, (e: Error) => e);
-        expect(error?.message).to.equal('restartFrame not supported');
+        expect(error?.message).to.equal('The debug adapter does not support restarting frames.');
         expect(requests).to.be.empty;
     });
 
