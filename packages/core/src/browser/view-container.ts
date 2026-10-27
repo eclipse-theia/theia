@@ -484,7 +484,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     protected applyInitialPartSizes(): void {
         this.initialPartSizesRequested = true;
         waitForRevealed(this).then(() => {
-            if (!this.layoutRestored) {
+            if (!this.layoutRestored && !this.isDisposed) {
                 this.containerLayout.setPartSizes(this.getParts().map(part => part.options.weight));
                 this.updateSplitterVisibility();
             }

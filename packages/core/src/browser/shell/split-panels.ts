@@ -101,7 +101,8 @@ export class SplitPositionHandler {
         const time = Date.now();
         const move = this.splitMoves[this.currentMoveIndex];
         let rejectedOrResolved = false;
-        if (move.ended || move.referenceWidget && move.referenceWidget.isHidden) {
+        // A move on a disposed panel must be dropped: its layout is gone, and a throw here would stop every queued move.
+        if (move.ended || move.parent.isDisposed || move.referenceWidget && move.referenceWidget.isHidden) {
             this.splitMoves.splice(this.currentMoveIndex, 1);
             if (move.startPosition === undefined || move.targetPosition === undefined) {
                 move.reject!('Panel is not visible.');
