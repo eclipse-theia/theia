@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.78.0 - tbd
+
+<a name="breaking_changes_1.78.0">[Breaking Changes:](#breaking_changes_1.78.0)</a>
+
+- [core] `PreferenceService.get` takes an `excludeScopes` option and `resolve` an optional `PreferenceResolveOptions` argument, which `TrustAwarePreferenceReader` uses to leave out the workspace and folder scopes in an untrusted workspace. Custom `PreferenceService` implementations, and subclasses of `PreferenceServiceImpl` that override `get`, `resolve` or `doResolve`, must pass them on, or AI features read workspace settings in an untrusted workspace [#NNNNN](https://github.com/eclipse-theia/theia/pull/NNNNN) - Contributed on behalf of CodeSignal
+
 ## 1.77.0 - 11/5/2026
 
 - [all] switched runtime packages from CommonJS to ES modules [#18216](https://github.com/eclipse-theia/theia/pull/18216)
