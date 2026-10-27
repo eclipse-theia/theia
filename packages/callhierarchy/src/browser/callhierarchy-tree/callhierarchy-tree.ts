@@ -16,8 +16,8 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from '@theia/core/lib/browser';
-import { CallHierarchyItem, CallHierarchyIncomingCall } from '../callhierarchy';
-import { CallHierarchyService } from '../callhierarchy-service';
+import { CallHierarchyItem, CallHierarchyIncomingCall } from '../callhierarchy.js';
+import { CallHierarchyService } from '../callhierarchy-service.js';
 import { Md5 } from 'ts-md5';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 

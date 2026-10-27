@@ -18,15 +18,15 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     PluginDeployerFileHandler, PluginDeployerDirectoryHandler, PluginScanner, PluginDeployerParticipant, PluginDeployerResolver
 } from '@theia/plugin-ext';
-import { PluginVsCodeFileHandler } from './plugin-vscode-file-handler';
-import { PluginVsCodeDirectoryHandler } from './plugin-vscode-directory-handler';
-import { VsCodePluginScanner } from './scanner-vscode';
-import { PluginVsCodeCliContribution } from './plugin-vscode-cli-contribution';
+import { PluginVsCodeFileHandler } from './plugin-vscode-file-handler.js';
+import { PluginVsCodeDirectoryHandler } from './plugin-vscode-directory-handler.js';
+import { VsCodePluginScanner } from './scanner-vscode.js';
+import { PluginVsCodeCliContribution } from './plugin-vscode-cli-contribution.js';
 import { CliContribution } from '@theia/core/lib/node';
 import { PluginHostEnvironmentVariable } from '@theia/plugin-ext/lib/common';
-import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment';
-import { PluginVSCodeDeployerParticipant } from './plugin-vscode-deployer-participant';
-import { LocalVSIXFilePluginDeployerResolver } from './local-vsix-file-plugin-deployer-resolver';
+import { PluginVSCodeEnvironment } from '../common/plugin-vscode-environment.js';
+import { PluginVSCodeDeployerParticipant } from './plugin-vscode-deployer-participant.js';
+import { LocalVSIXFilePluginDeployerResolver } from './local-vsix-file-plugin-deployer-resolver.js';
 
 export default new ContainerModule(bind => {
     bind(PluginVSCodeEnvironment).toSelf().inSingletonScope();

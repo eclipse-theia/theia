@@ -18,7 +18,7 @@ import { LanguageModelStreamResponsePart, ToolCallResult, ToolCallTextResult } f
 import { CancellationError, CancellationToken } from '@theia/core';
 import { ChatCompletionStream, ChatCompletionStreamEvents } from 'openai/lib/ChatCompletionStream';
 import { ChatCompletionContentPartText } from 'openai/resources';
-import { AbstractStreamingResponseIterator } from './streaming-response-iterator';
+import { AbstractStreamingResponseIterator } from './streaming-response-iterator.js';
 
 export class StreamingAsyncIterator extends AbstractStreamingResponseIterator {
 

@@ -21,8 +21,8 @@ let disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { OpenerService } from '@theia/core/lib/browser';
-import { DeclaredEventsEventListenerObject, useMarkdownRendering } from './markdown-part-renderer';
-import { BLOCKED_RESOURCE_ALLOW_CLASS, BLOCKED_RESOURCE_CLASS } from './block-external-resources';
+import { DeclaredEventsEventListenerObject, useMarkdownRendering } from './markdown-part-renderer.js';
+import { BLOCKED_RESOURCE_ALLOW_CLASS, BLOCKED_RESOURCE_CLASS } from './block-external-resources.js';
 
 disableJSDOM();
 

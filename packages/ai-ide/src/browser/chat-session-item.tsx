@@ -22,8 +22,8 @@ import { buttonKeyboardProps, codicon, HoverService, isActivationKey } from '@th
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { nls } from '@theia/core/lib/common/nls';
 import * as React from '@theia/core/shared/react';
-import { ChatSessionItemAction } from './chat-session-item-action-contribution';
-import { buildRestoredSessionTooltip, buildSessionTooltip } from './chat-session-tooltip';
+import { ChatSessionItemAction } from './chat-session-item-action-contribution.js';
+import { buildRestoredSessionTooltip, buildSessionTooltip } from './chat-session-tooltip.js';
 
 /** Minimal view of the unread state that React components can subscribe to. */
 export interface UnreadStateProvider {

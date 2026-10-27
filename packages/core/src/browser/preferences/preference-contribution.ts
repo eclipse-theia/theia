@@ -15,17 +15,17 @@
 // *****************************************************************************
 
 import { interfaces } from 'inversify';
-import { bindRootContributionProvider, PreferenceProvider } from '../../common';
-import { PreferenceScope, ValidPreferenceScopes } from '../../common/preferences/preference-scope';
+import { bindRootContributionProvider, PreferenceProvider } from '../../common/index.js';
+import { PreferenceScope, ValidPreferenceScopes } from '../../common/preferences/preference-scope.js';
 import { FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
-import { isObject } from '../../common/types';
-import { PreferenceSchemaServiceImpl } from '../../common/preferences/preference-schema-service';
-import { PreferenceContribution, PreferenceSchemaService } from '../../common/preferences/preference-schema';
-import { DefaultsPreferenceProvider } from '../../common/preferences/defaults-preference-provider';
-import { SessionPreferenceProvider } from '../../common/preferences/session-preference-provider';
-import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service';
-import { FrontendConfigPreferenceContribution } from './frontend-config-preference-contributions';
-import { bindPreferenceConfigurations } from '../../common/preferences/preference-configurations';
+import { isObject } from '../../common/types.js';
+import { PreferenceSchemaServiceImpl } from '../../common/preferences/preference-schema-service.js';
+import { PreferenceContribution, PreferenceSchemaService } from '../../common/preferences/preference-schema.js';
+import { DefaultsPreferenceProvider } from '../../common/preferences/defaults-preference-provider.js';
+import { SessionPreferenceProvider } from '../../common/preferences/session-preference-provider.js';
+import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service.js';
+import { FrontendConfigPreferenceContribution } from './frontend-config-preference-contributions.js';
+import { bindPreferenceConfigurations } from '../../common/preferences/preference-configurations.js';
 
 export function bindPreferenceSchemaProvider(bind: interfaces.Bind): void {
     bindPreferenceConfigurations(bind);

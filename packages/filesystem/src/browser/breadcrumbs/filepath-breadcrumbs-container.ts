@@ -16,7 +16,7 @@
 
 import { Container, interfaces, injectable, inject } from '@theia/core/shared/inversify';
 import { TreeProps, ContextMenuRenderer, TreeNode, open, NodeProps, defaultTreeProps } from '@theia/core/lib/browser';
-import { FileTreeModel, FileStatNode, createFileTreeContainer, FileTreeWidget } from '../file-tree';
+import { FileTreeModel, FileStatNode, createFileTreeContainer, FileTreeWidget } from '../file-tree/index.js';
 
 const BREADCRUMBS_FILETREE_CLASS = 'theia-FilepathBreadcrumbFileTree';
 

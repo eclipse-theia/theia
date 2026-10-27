@@ -1,2 +1,2 @@
-import fixPath = require('fix-path');
-export = fixPath;
+export * from 'fix-path';
+export { default } from 'fix-path';

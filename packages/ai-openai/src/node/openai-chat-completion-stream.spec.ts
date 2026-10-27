@@ -35,7 +35,7 @@ import {
     ToolRequest,
     UserRequest
 } from '@theia/ai-core';
-import { ChatCompletionStreamingAsyncIterator, ChatCompletionToolLoopOptions } from './openai-chat-completion-stream';
+import { ChatCompletionStreamingAsyncIterator, ChatCompletionToolLoopOptions } from './openai-chat-completion-stream.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 

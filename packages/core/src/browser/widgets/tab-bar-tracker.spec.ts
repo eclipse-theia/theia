@@ -14,13 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from '../test/jsdom';
+import { enableJSDOM } from '../test/jsdom.js';
 let disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
 import { MessageLoop } from '@lumino/messaging';
 import { DockPanel, TabBar, Widget } from '@lumino/widgets';
-import { TabBarTracker } from './tab-bar-tracker';
+import { TabBarTracker } from './tab-bar-tracker.js';
 
 disableJSDOM();
 

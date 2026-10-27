@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { OutputUri } from './output-uri';
+import { OutputUri } from './output-uri.js';
 import { fail } from 'assert';
 
 describe('output-uri', () => {

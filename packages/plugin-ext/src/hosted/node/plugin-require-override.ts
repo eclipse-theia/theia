@@ -16,6 +16,7 @@
 
 // node-pty sets __esModule, so a namespace import already yields the real module object (a default import would be undefined).
 import * as nodePty from 'node-pty';
+import Module from 'node:module';
 
 const overrides = [
     {
@@ -33,7 +34,8 @@ const overrides = [
  * https://github.com/eclipse-theia/theia/issues/13779
  */
 export function overridePluginDependencies(): void {
-    const node_module = require('module');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const node_module: any = Module;
     const original = node_module._load;
     node_module._load = function (request: string): unknown {
         try {

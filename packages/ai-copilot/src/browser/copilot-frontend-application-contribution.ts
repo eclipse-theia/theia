@@ -18,10 +18,10 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { CommandService, nls, PreferenceService } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { CopilotAuthService, CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID } from '../common';
-import { COPILOT_ENABLED_PREF, COPILOT_ENTERPRISE_URL_PREF, COPILOT_EXECUTABLE_PATH_PREF, COPILOT_MODEL_OVERRIDES_PREF } from '../common/copilot-preferences';
+import { CopilotAuthService, CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID } from '../common/index.js';
+import { COPILOT_ENABLED_PREF, COPILOT_ENTERPRISE_URL_PREF, COPILOT_EXECUTABLE_PATH_PREF, COPILOT_MODEL_OVERRIDES_PREF } from '../common/copilot-preferences.js';
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
-import { CopilotCommands } from './copilot-command-contribution';
+import { CopilotCommands } from './copilot-command-contribution.js';
 import { ModelDiscoveryStatusService } from '@theia/ai-core/lib/browser';
 
 const COPILOT_PROVIDER_LABEL = 'GitHub Copilot';

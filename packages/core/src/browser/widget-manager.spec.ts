@@ -14,16 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { enableJSDOM } from './test/jsdom';
+import { enableJSDOM } from './test/jsdom.js';
 
 let disableJsDom = enableJSDOM();
 import { Container, ContainerModule } from 'inversify';
 import { expect } from 'chai';
-import { WidgetManager, WidgetFactory } from './widget-manager';
+import { WidgetManager, WidgetFactory } from './widget-manager.js';
 import { Widget } from '@lumino/widgets';
-import { ILogger } from '../common/logger';
-import { MockLogger } from '../common/test/mock-logger';
-import { bindContributionProvider } from '../common';
+import { ILogger } from '../common/logger.js';
+import { MockLogger } from '../common/test/mock-logger.js';
+import { bindContributionProvider } from '../common/index.js';
 
 disableJsDom();
 

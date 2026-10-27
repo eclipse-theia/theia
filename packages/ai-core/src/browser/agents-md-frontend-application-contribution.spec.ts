@@ -26,9 +26,9 @@ try {
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Emitter, URI } from '@theia/core';
-import { AgentsMdFrontendApplicationContribution } from './agents-md-frontend-application-contribution';
-import { LEGACY_PROJECT_INFO_PATH } from './agents-md-migration-service';
-import { PromptFragmentCustomizationSource } from '../common/prompt-service';
+import { AgentsMdFrontendApplicationContribution } from './agents-md-frontend-application-contribution.js';
+import { LEGACY_PROJECT_INFO_PATH } from './agents-md-migration-service.js';
+import { PromptFragmentCustomizationSource } from '../common/prompt-service.js';
 
 disableJSDOM();
 

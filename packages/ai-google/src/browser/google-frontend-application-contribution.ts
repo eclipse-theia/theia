@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
-import { ALLOW_ENV_API_KEY_PREF, API_KEY_PREF, MODEL_OVERRIDES_PREF, MAX_RETRIES, RETRY_DELAY_OTHER_ERRORS, RETRY_DELAY_RATE_LIMIT } from '../common/google-preferences';
+import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common/index.js';
+import { ALLOW_ENV_API_KEY_PREF, API_KEY_PREF, MODEL_OVERRIDES_PREF, MAX_RETRIES, RETRY_DELAY_OTHER_ERRORS, RETRY_DELAY_RATE_LIMIT } from '../common/google-preferences.js';
 import { nls, PreferenceChange } from '@theia/core';
 import { DiscoveringProviderContribution, ModelDiscoveryMessages } from '@theia/ai-core/lib/browser';
 import { DiscoveredModel } from '@theia/ai-core/lib/common';

@@ -16,16 +16,16 @@
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { ChatServiceImpl, ChatSession, DefaultChatAgentId, PinChatAgent } from './chat-service';
-import { ChatAgentService } from './chat-agent-service';
-import { ChatRequestParser } from './chat-request-parser';
+import { ChatServiceImpl, ChatSession, DefaultChatAgentId, PinChatAgent } from './chat-service.js';
+import { ChatAgentService } from './chat-agent-service.js';
+import { ChatRequestParser } from './chat-request-parser.js';
 import { AIVariableService, ToolInvocationRegistry } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
-import { ChatContentDeserializerRegistry, ChatContentDeserializerRegistryImpl, DefaultChatContentDeserializerContribution } from './chat-content-deserializer';
-import { ChangeSetElementDeserializerRegistry, ChangeSetElementDeserializerRegistryImpl } from './change-set-element-deserializer';
-import { ChatAgent, ChatAgentLocation } from './chat-agents';
-import { ParsedChatRequest, ParsedChatRequestAgentPart, ParsedChatRequestTextPart } from './parsed-chat-request';
-import { ChatRequest } from './chat-model';
+import { ChatContentDeserializerRegistry, ChatContentDeserializerRegistryImpl, DefaultChatContentDeserializerContribution } from './chat-content-deserializer.js';
+import { ChangeSetElementDeserializerRegistry, ChangeSetElementDeserializerRegistryImpl } from './change-set-element-deserializer.js';
+import { ChatAgent, ChatAgentLocation } from './chat-agents.js';
+import { ParsedChatRequest, ParsedChatRequestAgentPart, ParsedChatRequestTextPart } from './parsed-chat-request.js';
+import { ChatRequest } from './chat-model.js';
 
 describe('ChatService pinned agent behavior', () => {
     let chatService: ChatServiceImpl;

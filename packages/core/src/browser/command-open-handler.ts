@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable, inject } from 'inversify';
-import { CommandService } from '../common/command';
-import URI from '../common/uri';
-import { OpenHandler } from './opener-service';
+import { CommandService } from '../common/command.js';
+import URI from '../common/uri.js';
+import { OpenHandler } from './opener-service.js';
 
 @injectable()
 export class CommandOpenHandler implements OpenHandler {

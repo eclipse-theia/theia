@@ -19,7 +19,7 @@ import { URI } from '@theia/core';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { ContextFileValidationService, FileValidationResult, FileValidationState } from '@theia/ai-chat/lib/browser/context-file-validation-service';
-import { WorkspaceFunctionScope } from './workspace-functions';
+import { WorkspaceFunctionScope } from './workspace-functions.js';
 
 @injectable()
 export class ContextFileValidationServiceImpl implements ContextFileValidationService {

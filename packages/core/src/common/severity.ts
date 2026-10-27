@@ -20,7 +20,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { DiagnosticSeverity } from 'vscode-languageserver-protocol';
-import { nls } from './nls';
+import { nls } from './nls.js';
 
 export enum Severity {
     Ignore = 0,

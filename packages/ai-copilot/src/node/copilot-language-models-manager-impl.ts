@@ -17,7 +17,7 @@
 import { DiscoveredModels, LanguageModelRegistry, LanguageModelStatus, ModelDiscoveryResult } from '@theia/ai-core';
 import { DisposableCollection, ILogger, nls } from '@theia/core';
 import { inject, injectable, named, postConstruct, preDestroy } from '@theia/core/shared/inversify';
-import { CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID } from '../common';
+import { CopilotLanguageModelsManager, CopilotModelDescription, COPILOT_PROVIDER_ID } from '../common/index.js';
 
 /** The id under which Copilot offers its own model selection; always worth showing. */
 const COPILOT_AUTO_MODEL_ID = 'auto';
@@ -36,9 +36,9 @@ const NOMINATED_VENDORS: ReadonlyArray<{ vendor: string; matches: RegExp }> = [
     { vendor: 'openai', matches: /^(gpt|chatgpt|o\d)/i },
     { vendor: 'google', matches: /^gemini/i }
 ];
-import { CopilotSdkLanguageModel } from './copilot-sdk-language-model';
-import { CopilotSdkClientProvider } from './copilot-sdk-client-provider';
-import { CopilotAuthServiceImpl } from './copilot-auth-service-impl';
+import { CopilotSdkLanguageModel } from './copilot-sdk-language-model.js';
+import { CopilotSdkClientProvider } from './copilot-sdk-client-provider.js';
+import { CopilotAuthServiceImpl } from './copilot-auth-service-impl.js';
 
 /**
  * Backend implementation of the Copilot language models manager.

@@ -17,10 +17,10 @@
 import { URI, MaybePromise, Disposable, PreferenceService } from '@theia/core';
 import { NavigatableWidgetOpenHandler, WidgetOpenerOptions, getDefaultHandler, defaultHandlerPriority } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { NotebookFileSelector, NotebookTypeDescriptor } from '../common/notebook-protocol';
-import { NotebookEditorWidget } from './notebook-editor-widget';
+import { NotebookFileSelector, NotebookTypeDescriptor } from '../common/notebook-protocol.js';
+import { NotebookEditorWidget } from './notebook-editor-widget.js';
 import { match } from '@theia/core/lib/common/glob';
-import { NotebookEditorWidgetOptions } from './notebook-editor-widget-factory';
+import { NotebookEditorWidgetOptions } from './notebook-editor-widget-factory.js';
 
 export interface NotebookWidgetOpenerOptions extends WidgetOpenerOptions {
     notebookType?: string;

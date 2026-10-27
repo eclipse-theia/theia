@@ -25,7 +25,7 @@ import * as React from '@theia/core/shared/react';
 import {
     AiConfigurationCategory, AiConfigurationRenderContext, AiConfigurationSelection
 } from '@theia/ai-core-ui/lib/browser/ai-configuration/ai-configuration-category';
-import { AiConfigurationDetailWidget } from './ai-configuration-detail-widget';
+import { AiConfigurationDetailWidget } from './ai-configuration-detail-widget.js';
 
 disableJSDOM();
 

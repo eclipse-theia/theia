@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { CliPreferenceEntry } from './cli-preferences';
+import { CliPreferenceEntry } from './cli-preferences.js';
 
 describe('CliPreferenceEntry.parse', () => {
 

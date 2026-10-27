@@ -16,7 +16,7 @@
 
 import { PreferenceContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { collaborationPreferencesSchema } from '../common/collaboration-preferences';
+import { collaborationPreferencesSchema } from '../common/collaboration-preferences.js';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: collaborationPreferencesSchema });

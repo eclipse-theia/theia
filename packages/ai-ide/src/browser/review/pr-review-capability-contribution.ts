@@ -23,17 +23,17 @@ import { SHELL_EXECUTION_FUNCTION_ID } from '@theia/ai-terminal/lib/common/shell
 import {
     LIST_TASKS_FUNCTION_ID,
     RUN_TASK_FUNCTION_ID
-} from '../../common/workspace-functions';
-import { USER_INTERACTION_FUNCTION_ID } from '../../common/user-interaction-tool';
-import { GitHubChatAgentId } from '../github-chat-agent';
-import { ExploreAgentId } from '../explore-agent';
+} from '../../common/workspace-functions.js';
+import { USER_INTERACTION_FUNCTION_ID } from '../../common/user-interaction-tool.js';
+import { GitHubChatAgentId } from '../github-chat-agent.js';
+import { ExploreAgentId } from '../explore-agent.js';
 import {
     PR_REVIEW_CODEBASE_EXPLORATION_CAPABILITY_ID,
     PR_REVIEW_GITHUB_INFORMATION_CAPABILITY_ID,
     PR_REVIEW_LOCAL_CHECKOUT_CAPABILITY_ID,
     PR_REVIEW_LOCAL_VALIDATION_CAPABILITY_ID,
     PR_REVIEW_PENDING_GITHUB_REVIEW_CAPABILITY_ID
-} from './pr-review-prompt-template';
+} from './pr-review-prompt-template.js';
 
 @injectable()
 export class PRReviewCapabilityContribution implements FrontendApplicationContribution {

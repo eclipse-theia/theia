@@ -16,7 +16,7 @@
 
 import { find } from '@lumino/algorithm';
 import { DockPanel, TabBar, Widget } from '@lumino/widgets';
-import { Disposable, DisposableCollection } from '../../common';
+import { Disposable, DisposableCollection } from '../../common/index.js';
 
 /**
  * Detects when a widget is moved between the tab-bars of its enclosing {@link DockPanel} and

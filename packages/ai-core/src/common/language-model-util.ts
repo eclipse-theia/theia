@@ -22,8 +22,8 @@ import {
     LanguageModelMetaData,
     LanguageModelResponse,
     ToolRequest
-} from './language-model';
-import { LanguageModelMonitoredStreamResponse } from './language-model-interaction-model';
+} from './language-model.js';
+import { LanguageModelMonitoredStreamResponse } from './language-model-interaction-model.js';
 
 /**
  * Retrieves the text content from a `LanguageModelResponse` object.

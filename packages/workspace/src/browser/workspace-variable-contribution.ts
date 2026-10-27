@@ -19,7 +19,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Path } from '@theia/core/lib/common/path';
 import { ApplicationShell, NavigatableWidget, WidgetManager } from '@theia/core/lib/browser';
 import { VariableContribution, VariableRegistry, Variable } from '@theia/variable-resolver/lib/browser';
-import { WorkspaceService } from './workspace-service';
+import { WorkspaceService } from './workspace-service.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { nls } from '@theia/core';
 

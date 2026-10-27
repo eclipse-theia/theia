@@ -16,7 +16,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { TaskClient, TaskExitedEvent, TaskInfo, TaskOutputProcessedEvent, BackgroundTaskEndedEvent } from './task-protocol';
+import { TaskClient, TaskExitedEvent, TaskInfo, TaskOutputProcessedEvent, BackgroundTaskEndedEvent } from './task-protocol.js';
 
 @injectable()
 export class TaskWatcher {

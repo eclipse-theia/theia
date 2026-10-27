@@ -22,7 +22,7 @@ try { FrontendApplicationConfigProvider.set({}); } catch { /* already set by a s
 
 import { expect } from 'chai';
 import { SearchInWorkspaceService } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
-import { WorkspaceMainImpl } from './workspace-main';
+import { WorkspaceMainImpl } from './workspace-main.js';
 
 disableJSDOM();
 

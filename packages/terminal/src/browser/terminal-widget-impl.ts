@@ -14,7 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Terminal, IMarker } from 'xterm';
+// A CommonJS module whose exports cannot be detected statically, so it is imported as a whole.
+import xterm, { type Terminal, type IMarker } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { WebglAddon } from 'xterm-addon-webgl';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
@@ -25,37 +26,37 @@ import {
 } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { ShellTerminalServerProxy, IShellTerminalPreferences } from '../common/shell-terminal-protocol';
-import { terminalsPath } from '../common/terminal-protocol';
-import { IBaseTerminalServer, TerminalProcessInfo, TerminalExitReason } from '../common/base-terminal-protocol';
-import { TerminalWatcher } from '../common/terminal-watcher';
+import { ShellTerminalServerProxy, IShellTerminalPreferences } from '../common/shell-terminal-protocol.js';
+import { terminalsPath } from '../common/terminal-protocol.js';
+import { IBaseTerminalServer, TerminalProcessInfo, TerminalExitReason } from '../common/base-terminal-protocol.js';
+import { TerminalWatcher } from '../common/terminal-watcher.js';
 import {
     TerminalWidgetOptions, TerminalWidget, TerminalDimensions, TerminalExitStatus, TerminalLocationOptions,
     TerminalLocation,
     TerminalBuffer,
     TerminalBlock,
     TerminalCommandHistoryState
-} from './base/terminal-widget';
+} from './base/terminal-widget.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { TerminalPreferences } from '../common/terminal-preferences';
+import { TerminalPreferences } from '../common/terminal-preferences.js';
 import URI from '@theia/core/lib/common/uri';
-import { TerminalService } from './base/terminal-service';
-import { TerminalSearchWidgetFactory, TerminalSearchWidget } from './search/terminal-search-widget';
-import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler';
-import { TerminalThemeService } from './terminal-theme-service';
+import { TerminalService } from './base/terminal-service.js';
+import { TerminalSearchWidgetFactory, TerminalSearchWidget } from './search/terminal-search-widget.js';
+import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler.js';
+import { TerminalThemeService } from './terminal-theme-service.js';
 import { CommandLineOptions, ShellCommandBuilder } from '@theia/process/lib/common/shell-command-builder';
 import { Key } from '@theia/core/lib/browser/keys';
 import { nls } from '@theia/core/lib/common/nls';
-import { TerminalMenus } from './terminal-frontend-contribution';
-import debounce = require('p-debounce');
+import { TerminalMenus } from './terminal-frontend-contribution.js';
+import debounce from 'p-debounce';
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { EnhancedPreviewWidget } from '@theia/core/lib/browser/widgets/enhanced-preview-widget';
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { cleanTerminalTitle, guessShellTypeFromExecutable } from '../common/shell-type';
-import { TerminalCommandHistoryStateFactory } from './terminal-command-history';
+import { cleanTerminalTitle, guessShellTypeFromExecutable } from '../common/shell-type.js';
+import { TerminalCommandHistoryStateFactory } from './terminal-command-history.js';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -254,7 +255,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.title.closable = true;
         this.addClass('terminal-container');
 
-        this.term = new Terminal({
+        this.term = new xterm.Terminal({
             cursorBlink: this.preferences['terminal.integrated.cursorBlinking'],
             cursorStyle: this.preferences['terminal.integrated.cursorStyle'] === 'line' ? 'bar' : this.preferences['terminal.integrated.cursorStyle'],
             cursorWidth: this.preferences['terminal.integrated.cursorWidth'],

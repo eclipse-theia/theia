@@ -24,8 +24,8 @@ import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { MessageLoop } from '@theia/core/shared/@lumino/messaging';
 import { Emitter } from '@theia/core/lib/common/event';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
-import { ScmRepositoriesWidget } from './scm-repositories-widget';
-import { ScmRepository } from './scm-repository';
+import { ScmRepositoriesWidget } from './scm-repositories-widget.js';
+import { ScmRepository } from './scm-repository.js';
 
 disableReactActEnvironment();
 disableJSDOM();

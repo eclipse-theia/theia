@@ -13,20 +13,20 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './chat-agents';
-export * from './chat-agent-service';
-export * from './chat-agent-recommendation-service';
-export * from './chat-model';
-export * from './chat-model-serialization';
-export * from './chat-content-deserializer';
-export * from './chat-model-util';
-export * from './chat-request-parser';
-export * from './chat-service';
-export * from './chat-session-store';
-export * from './custom-chat-agent';
-export * from './parsed-chat-request';
-export * from './context-variables';
-export * from './chat-tool-request-service';
-export * from './file-read-tracker';
-export * from './chat-tool-confirmation-timeout';
-export * from './provider-error-formatter';
+export * from './chat-agents.js';
+export * from './chat-agent-service.js';
+export * from './chat-agent-recommendation-service.js';
+export * from './chat-model.js';
+export * from './chat-model-serialization.js';
+export * from './chat-content-deserializer.js';
+export * from './chat-model-util.js';
+export * from './chat-request-parser.js';
+export * from './chat-service.js';
+export * from './chat-session-store.js';
+export * from './custom-chat-agent.js';
+export * from './parsed-chat-request.js';
+export * from './context-variables.js';
+export * from './chat-tool-request-service.js';
+export * from './file-read-tracker.js';
+export * from './chat-tool-confirmation-timeout.js';
+export * from './provider-error-formatter.js';

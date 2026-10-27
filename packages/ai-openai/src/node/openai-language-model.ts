@@ -26,16 +26,16 @@ import {
     ReasoningSupport,
     ServerToolDescriptor
 } from '@theia/ai-core';
-import { OpenAiModelUtils } from './openai-model-utils';
+import { OpenAiModelUtils } from './openai-model-utils.js';
 import { CancellationToken, ILogger } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { OpenAI, AzureOpenAI } from 'openai';
 import { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources';
-import { StreamingAsyncIterator } from './openai-streaming-iterator';
-import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream';
-import { OPENAI_PROVIDER_ID } from '../common';
-import { OpenAiResponseApiUtils } from './openai-response-api-utils';
-import { applyResponseApiCompaction, getOpenAiRequestSettings } from './openai-request-settings';
+import { StreamingAsyncIterator } from './openai-streaming-iterator.js';
+import { ChatCompletionStreamingAsyncIteratorFactory } from './openai-chat-completion-stream.js';
+import { OPENAI_PROVIDER_ID } from '../common/index.js';
+import { OpenAiResponseApiUtils } from './openai-response-api-utils.js';
+import { applyResponseApiCompaction, getOpenAiRequestSettings } from './openai-request-settings.js';
 import { createProxyFetch } from '@theia/ai-core/lib/node';
 
 // The SDK finalizes method and path before this hook; its equivalent internal type is not exported.

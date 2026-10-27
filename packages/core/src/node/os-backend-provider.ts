@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { OS, OSBackendProvider } from '../common/os';
+import { OS, OSBackendProvider } from '../common/os.js';
 
 @injectable()
 export class OSBackendProviderImpl implements OSBackendProvider {

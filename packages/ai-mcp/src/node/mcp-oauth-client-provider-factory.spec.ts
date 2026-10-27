@@ -16,9 +16,9 @@
 
 import { expect } from 'chai';
 import { KeyStoreService } from '@theia/core/lib/common/key-store';
-import { MCPOAuthFrontendDelegate } from '../common/mcp-oauth';
-import { MCPOAuthCallbackService } from './mcp-oauth-callback-service';
-import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-factory';
+import { MCPOAuthFrontendDelegate } from '../common/mcp-oauth.js';
+import { MCPOAuthCallbackService } from './mcp-oauth-callback-service.js';
+import { MCPOAuthClientProviderFactory } from './mcp-oauth-client-provider-factory.js';
 
 const FRONTEND_CALLBACK_URL = 'http://frontend.example/mcp/oauth/callback';
 const EFFECTIVE_REDIRECT_URL = 'http://127.0.0.1:28932/mcp/oauth/callback';

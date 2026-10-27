@@ -24,7 +24,7 @@ import { FileUri } from '@theia/core/lib/common/file-uri';
 import { CancellationTokenSource, CancellationToken, ILogger, isWindows } from '@theia/core';
 import { BundledResourceProvider } from '@theia/core/lib/node';
 import { RawProcessFactory } from '@theia/process/lib/node';
-import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
+import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service.js';
 import * as path from 'path';
 
 @injectable()

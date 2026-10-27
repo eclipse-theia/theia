@@ -22,7 +22,7 @@ import { RawProcess, RawProcessFactory, RawProcessOptions } from '@theia/process
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { SearchInWorkspaceServer, SearchInWorkspaceOptions, SearchInWorkspaceResult, SearchInWorkspaceClient, LinePreview } from '../common/search-in-workspace-interface';
+import { SearchInWorkspaceServer, SearchInWorkspaceOptions, SearchInWorkspaceResult, SearchInWorkspaceClient, LinePreview } from '../common/search-in-workspace-interface.js';
 
 export const RgPath = Symbol('RgPath');
 

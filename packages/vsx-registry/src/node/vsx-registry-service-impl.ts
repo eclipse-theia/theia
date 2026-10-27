@@ -20,9 +20,9 @@ import { LanguageInfo } from '@theia/core/lib/common/i18n/localization';
 import { RequestContext, RequestService } from '@theia/core/shared/@theia/request';
 import { OVSXApiFilterProvider } from '@theia/ovsx-client';
 import { VSXExtensionRaw, VSXQueryOptions, VSXQueryResult, VSXSearchOptions, VSXSearchResult } from '@theia/ovsx-client/lib/ovsx-types';
-import { OVSXClientProvider } from '../common/ovsx-client-provider';
-import { VSXEnvironment } from '../common/vsx-environment';
-import { VSXRegistryService } from '../common/vsx-registry-service';
+import { OVSXClientProvider } from '../common/ovsx-client-provider.js';
+import { VSXEnvironment } from '../common/vsx-environment.js';
+import { VSXRegistryService } from '../common/vsx-registry-service.js';
 
 @injectable()
 export class VSXRegistryServiceImpl implements VSXRegistryService {

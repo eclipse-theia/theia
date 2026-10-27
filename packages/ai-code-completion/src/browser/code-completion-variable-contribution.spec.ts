@@ -16,11 +16,11 @@
 
 import { PreferenceService } from '@theia/core/lib/common';
 import { Container } from '@theia/core/shared/inversify';
-import { editor, languages, Uri } from '@theia/monaco-editor-core/esm/vs/editor/editor.api';
+import { editor, languages, Uri } from '@theia/monaco-editor-core/esm/vs/editor/editor.api.js';
 import { expect } from 'chai';
-import { CodeCompletionVariableContext } from './code-completion-variable-context';
-import { CodeCompletionVariableContribution } from './code-completion-variable-contribution';
-import { FILE, LANGUAGE, PREFIX, SUFFIX } from './code-completion-variables';
+import { CodeCompletionVariableContext } from './code-completion-variable-context.js';
+import { CodeCompletionVariableContribution } from './code-completion-variable-contribution.js';
+import { FILE, LANGUAGE, PREFIX, SUFFIX } from './code-completion-variables.js';
 
 // A minimal fake ITextModel covering just the methods the contribution touches.
 // Avoids calling `editor.createModel`, which lazily initializes Monaco's

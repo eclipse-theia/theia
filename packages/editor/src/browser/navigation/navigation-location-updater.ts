@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { NavigationLocation, ContentChangeLocation, CursorLocation, SelectionLocation, Position, Range } from './navigation-location';
+import { NavigationLocation, ContentChangeLocation, CursorLocation, SelectionLocation, Position, Range } from './navigation-location.js';
 
 /**
  * A navigation location updater that is responsible for adapting editor navigation locations.

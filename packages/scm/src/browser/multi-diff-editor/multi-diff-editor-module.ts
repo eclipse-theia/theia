@@ -19,8 +19,8 @@ import '../../../src/browser/style/multi-diff-editor.css';
 import { interfaces } from '@theia/core/shared/inversify';
 import { URI } from '@theia/core';
 import { LabelProviderContribution, NavigatableWidgetOptions, OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
-import { MultiDiffEditorOpenHandler, MultiDiffEditorLabelProvider } from './multi-diff-editor';
-import { MultiDiffEditorWidgetFactory } from './multi-diff-editor-widget-factory';
+import { MultiDiffEditorOpenHandler, MultiDiffEditorLabelProvider } from './multi-diff-editor.js';
+import { MultiDiffEditorWidgetFactory } from './multi-diff-editor-widget-factory.js';
 
 export function bindMultiDiffEditor(bind: interfaces.Bind): void {
     bind(MultiDiffEditorWidgetFactory).toDynamicValue(ctx => new MultiDiffEditorWidgetFactory(ctx.container)).inSingletonScope();

@@ -18,7 +18,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { ApplicationShell, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
 import { NavigationLocation } from '@theia/editor/lib/browser/navigation/navigation-location';
-import { CustomEditorWidget } from './custom-editor-widget';
+import { CustomEditorWidget } from './custom-editor-widget.js';
 
 @injectable()
 export class CustomEditorNavigationContribution implements FrontendApplicationContribution {

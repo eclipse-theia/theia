@@ -17,14 +17,14 @@
 import { expect } from 'chai';
 import { CancellationTokenSource, PreferenceService, ILogger } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
-import { GLOBAL_SCOPE_TOKEN, TaskListProvider, TaskRunnerProvider, WORKSPACE_SCOPE_TOKEN } from './workspace-task-provider';
+import { GLOBAL_SCOPE_TOKEN, TaskListProvider, TaskRunnerProvider, WORKSPACE_SCOPE_TOKEN } from './workspace-task-provider.js';
 import { AiConfigurationService, ToolInvocationContext } from '@theia/ai-core';
 import { Container } from '@theia/core/shared/inversify';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TaskConfiguration, TaskInfo, TaskScope } from '@theia/task/lib/common';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { WorkspaceFunctionScope } from './workspace-functions';
+import { WorkspaceFunctionScope } from './workspace-functions.js';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';

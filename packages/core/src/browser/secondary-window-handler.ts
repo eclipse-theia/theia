@@ -14,17 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import debounce = require('lodash.debounce');
+import debounce from '../../shared/lodash.debounce/index.cjs';
 import { inject, injectable, named } from 'inversify';
-import { BoxLayout, ExtractableWidget, TabBar, Widget } from './widgets';
-import { MessageService } from '../common/message-service';
-import { ApplicationShell, DockPanelRenderer, MAIN_AREA_CLASS, MAIN_BOTTOM_AREA_CLASS } from './shell/application-shell';
-import { Emitter } from '../common/event';
-import { isSecondaryWindow, SecondaryWindowRootWidget, SecondaryWindowService } from './window/secondary-window-service';
-import { KeybindingRegistry } from './keybinding';
-import { MAIN_AREA_ID, TheiaDockPanel } from './shell/theia-dock-panel';
-import { ILogger } from '../common/logger';
-import { nls } from '../common/nls';
+import { BoxLayout, ExtractableWidget, TabBar, Widget } from './widgets/index.js';
+import { MessageService } from '../common/message-service.js';
+import { ApplicationShell, DockPanelRenderer, MAIN_AREA_CLASS, MAIN_BOTTOM_AREA_CLASS } from './shell/application-shell.js';
+import { Emitter } from '../common/event.js';
+import { isSecondaryWindow, SecondaryWindowRootWidget, SecondaryWindowService } from './window/secondary-window-service.js';
+import { KeybindingRegistry } from './keybinding.js';
+import { MAIN_AREA_ID, TheiaDockPanel } from './shell/theia-dock-panel.js';
+import { ILogger } from '../common/logger.js';
+import { nls } from '../common/nls.js';
 
 /** Widgets to be contained inside a DockPanel in the secondary window. */
 class SecondaryWindowDockPanelWidget extends SecondaryWindowRootWidget {

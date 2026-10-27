@@ -33,7 +33,7 @@ import {
     SketchedToolParameterDefinition,
     SketchedToolService,
     SKETCHED_TOOLS_PROVIDER_NAME
-} from '../common';
+} from '../common/index.js';
 
 const SKETCHED_TOOLS_FILENAME = 'sketchedTools.yml';
 

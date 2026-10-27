@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command } from '../common/command';
-import { nls } from '../common/nls';
+import { Command } from '../common/command.js';
+import { nls } from '../common/nls.js';
 
 export namespace CommonCommands {
 

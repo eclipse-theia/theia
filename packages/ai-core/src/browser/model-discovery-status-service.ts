@@ -16,7 +16,7 @@
 
 import { Emitter, Event, ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { ModelDiscoveryStatus } from '../common/model-discovery-status';
+import { ModelDiscoveryStatus } from '../common/model-discovery-status.js';
 
 /**
  * A provider that participates in dynamic model discovery. Provider frontend contributions

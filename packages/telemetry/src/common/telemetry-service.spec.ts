@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { TelemetryService } from './telemetry-service';
-import { TelemetryData } from './telemetry-types';
+import { TelemetryService } from './telemetry-service.js';
+import { TelemetryData } from './telemetry-types.js';
 
 interface ConsumerPayload {
     action: string;

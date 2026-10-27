@@ -16,12 +16,12 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MaybePromise, ProgressService, URI, generateUuid, Event, nls } from '@theia/core';
-import { ChatAgent, ChatAgentLocation, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel, ParsedChatRequestTextPart } from '../common';
+import { ChatAgent, ChatAgentLocation, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel, ParsedChatRequestTextPart } from '../common/index.js';
 
-import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
+import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { AgentService, PromptService, ResolvedPromptFragment } from '@theia/ai-core';
-import { CHAT_SESSION_SUMMARY_PROMPT } from '../common/chat-session-summary-agent-prompt';
+import { CHAT_SESSION_SUMMARY_PROMPT } from '../common/chat-session-summary-agent-prompt.js';
 
 export interface SummaryMetadata {
     id?: string;

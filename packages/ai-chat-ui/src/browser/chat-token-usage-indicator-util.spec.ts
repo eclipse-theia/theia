@@ -26,7 +26,7 @@ import {
     formatTokenCount,
     getUsageColorClass,
     isAboveTokenUsageWarningThreshold
-} from './chat-token-usage-indicator-util';
+} from './chat-token-usage-indicator-util.js';
 
 const THRESHOLD = 100;
 const CONTEXT_WINDOW = 200;

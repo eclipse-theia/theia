@@ -17,7 +17,7 @@
 import type * as theia from '@theia/plugin';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 
-import { RPCProtocol } from '../common/rpc-protocol';
+import { RPCProtocol } from '../common/rpc-protocol.js';
 import {
     LanguageModelToolsExt,
     LanguageModelToolsMain,
@@ -27,11 +27,11 @@ import {
     isToolInvocationError,
     uint8ArrayToBase64,
     base64ToUint8Array,
-} from '../common/lm-tool-protocol';
-import { PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
-import { PluginPackageLanguageModelToolContribution } from '../common';
-import { PluginLogger } from './logger';
-import { Disposable, LanguageModelTextPart, LanguageModelPromptTsxPart, LanguageModelDataPart, LanguageModelToolResult } from './types-impl';
+} from '../common/lm-tool-protocol.js';
+import { PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc.js';
+import { PluginPackageLanguageModelToolContribution } from '../common/index.js';
+import { PluginLogger } from './logger.js';
+import { Disposable, LanguageModelTextPart, LanguageModelPromptTsxPart, LanguageModelDataPart, LanguageModelToolResult } from './types-impl.js';
 
 export class LanguageModelToolsExtImpl implements LanguageModelToolsExt {
 

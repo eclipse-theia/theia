@@ -16,8 +16,8 @@
 
 import { Disposable, DisposableCollection, Emitter } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { ScmInput, ScmInputOptions } from './scm-input';
-import { ScmProvider } from './scm-provider';
+import { ScmInput, ScmInputOptions } from './scm-input.js';
+import { ScmProvider } from './scm-provider.js';
 
 export interface ScmProviderOptions {
     input?: ScmInputOptions;

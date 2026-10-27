@@ -20,12 +20,12 @@ import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Container } from '@theia/core/shared/inversify';
 import { LanguageModel, LanguageModelRegistry, LanguageModelSelector, ToolCallExecutor, ToolCallExecutorImpl } from '@theia/ai-core';
 import { OpenAiModelUtils } from '@theia/ai-openai/lib/node/openai-model-utils';
-import { ChatGptAuthState } from '../common';
-import { ChatGptBackendAuthService } from './chatgpt-auth-service';
-import { ChatGptModel } from './chatgpt-language-model';
-import { ChatGptLanguageModelsManagerImpl } from './chatgpt-language-models-manager-impl';
-import { ChatGptModelCatalog } from './chatgpt-model-catalog';
-import { ChatGptResponseApiUtils } from './chatgpt-response-api-utils';
+import { ChatGptAuthState } from '../common/index.js';
+import { ChatGptBackendAuthService } from './chatgpt-auth-service.js';
+import { ChatGptModel } from './chatgpt-language-model.js';
+import { ChatGptLanguageModelsManagerImpl } from './chatgpt-language-models-manager-impl.js';
+import { ChatGptModelCatalog } from './chatgpt-model-catalog.js';
+import { ChatGptResponseApiUtils } from './chatgpt-response-api-utils.js';
 
 class FakeLanguageModelRegistry implements LanguageModelRegistry {
     readonly models = new Map<string, LanguageModel>();

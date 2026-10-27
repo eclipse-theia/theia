@@ -20,7 +20,7 @@ import { Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { Workspace, ProtocolBroadcastConnection } from 'open-collaboration-protocol';
-import { CollaborationURI } from './collaboration-file-system-provider';
+import { CollaborationURI } from './collaboration-file-system-provider.js';
 
 @injectable()
 export class CollaborationWorkspaceService extends WorkspaceService {

@@ -17,8 +17,8 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { ChatAgentRecommendationService, RecommendedAgent } from '@theia/ai-chat/lib/common';
 import { nls } from '@theia/core/lib/common/nls';
-import { CoderAgentId } from './coder-agent';
-import { ArchitectAgentId } from './architect-agent';
+import { CoderAgentId } from './coder-agent.js';
+import { ArchitectAgentId } from './architect-agent.js';
 
 @injectable()
 export class DefaultChatAgentRecommendationService implements ChatAgentRecommendationService {

@@ -16,11 +16,11 @@
 
 import { URI } from '@theia/core/shared/vscode-uri';
 import * as theia from '@theia/plugin';
-import { DocumentsExtImpl } from '../documents';
-import { CodeLensSymbol } from '../../common/plugin-api-rpc-model';
-import * as Converter from '../type-converters';
-import { ObjectIdentifier } from '../../common/object-identifier';
-import { CommandRegistryImpl } from '../command-registry';
+import { DocumentsExtImpl } from '../documents.js';
+import { CodeLensSymbol } from '../../common/plugin-api-rpc-model.js';
+import * as Converter from '../type-converters.js';
+import { ObjectIdentifier } from '../../common/object-identifier.js';
+import { CommandRegistryImpl } from '../command-registry.js';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 /** Adapts the calls from main to extension thread for providing/resolving the code lenses. */

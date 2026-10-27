@@ -21,8 +21,8 @@ import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { CommandService, nls } from '@theia/core';
-import { CopilotAuthService, DeviceCodeResponse } from '../common/copilot-auth-service';
-import { CopilotAuthDialogMessages } from './copilot-auth-dialog-messages';
+import { CopilotAuthService, DeviceCodeResponse } from '../common/copilot-auth-service.js';
+import { CopilotAuthDialogMessages } from './copilot-auth-dialog-messages.js';
 
 const OPEN_AI_CONFIG_VIEW_COMMAND = 'aiConfiguration:open';
 

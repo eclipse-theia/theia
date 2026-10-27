@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { ProcessTaskContribution } from './process-task-contribution';
-import { ProcessTaskResolver } from './process-task-resolver';
-import { TaskContribution } from '../task-contribution';
+import { ProcessTaskContribution } from './process-task-contribution.js';
+import { ProcessTaskResolver } from './process-task-resolver.js';
+import { TaskContribution } from '../task-contribution.js';
 
 export function bindProcessTaskModule(bind: interfaces.Bind): void {
 

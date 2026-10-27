@@ -21,9 +21,9 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import { Message } from '@theia/core/lib/common';
-import { NotificationManager } from './notifications-manager';
-import { NotificationPreferences } from '../common/notification-preferences';
-import { NotificationContentRenderer } from './notification-content-renderer';
+import { NotificationManager } from './notifications-manager.js';
+import { NotificationPreferences } from '../common/notification-preferences.js';
+import { NotificationContentRenderer } from './notification-content-renderer.js';
 
 disableJSDOM();
 

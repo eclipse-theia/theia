@@ -19,9 +19,9 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { AgentService } from '@theia/ai-core/lib/common';
 import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
-import { COMMIT_MESSAGE_AGENT_ID } from './commit-message-agent';
-import { CommitMessageCommands } from './commit-message-commands';
-import { CommitMessageRunner } from './commit-message-runner';
+import { COMMIT_MESSAGE_AGENT_ID } from './commit-message-agent.js';
+import { CommitMessageCommands } from './commit-message-commands.js';
+import { CommitMessageRunner } from './commit-message-runner.js';
 
 @injectable()
 export class CommitMessageCommandContribution implements CommandContribution {

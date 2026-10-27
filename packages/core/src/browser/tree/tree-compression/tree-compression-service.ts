@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { ArrayUtils } from '../../../common/types';
-import { TreeNode } from '../tree';
-import { ExpandableTreeNode } from '../tree-expansion';
+import { ArrayUtils } from '../../../common/types.js';
+import { TreeNode } from '../tree.js';
+import { ExpandableTreeNode } from '../tree-expansion.js';
 
 export interface CompressionParent extends ExpandableTreeNode {
     children: [CompressionChild];

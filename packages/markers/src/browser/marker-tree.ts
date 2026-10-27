@@ -16,11 +16,11 @@
 
 import { injectable, unmanaged } from '@theia/core/shared/inversify';
 import { TreeImpl, CompositeTreeNode, TreeNode, SelectableTreeNode, ExpandableTreeNode } from '@theia/core/lib/browser';
-import { MarkerManager } from './marker-manager';
-import { Marker } from '../common/marker';
+import { MarkerManager } from './marker-manager.js';
+import { Marker } from '../common/marker.js';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import URI from '@theia/core/lib/common/uri';
-import { ProblemSelection } from './problem/problem-selection';
+import { ProblemSelection } from './problem/problem-selection.js';
 import { DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
 
 export const MarkerOptions = Symbol('MarkerOptions');

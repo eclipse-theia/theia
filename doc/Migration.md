@@ -165,11 +165,11 @@ If you worked around the ripgrep problem by overriding the `@vscode/ripgrep` rep
 
 #### TypeScript 6.0 [#18100](https://github.com/eclipse-theia/theia/pull/18100)
 
-Theia is built with TypeScript 6.0.x. Adopters that only consume Theia's declaration files are not required to upgrade immediately: declarations emitted by TypeScript 6 remain consumable by TypeScript 5.9. Applications and extensions that replicate Theia's `configs/base.tsconfig.json` settings (in particular `moduleResolution: bundler` with CommonJS) must use TypeScript 6, because TypeScript 5.9 rejects that combination. Upgrading is recommended in either case so that applications and extensions use the same compiler behavior as the framework.
+Theia is built with TypeScript 6.0.x. Adopters that only consume Theia's declaration files are not required to upgrade immediately: declarations emitted by TypeScript 6 remain consumable by TypeScript 5.9. Upgrading is recommended so that applications and extensions use the same compiler behavior as the framework.
 
 When adopting TypeScript 6 or replicating Theia's `configs/base.tsconfig.json` settings, review these compiler changes:
 
-- `moduleResolution` is now `bundler`, which honors package `exports`; deep imports into paths that a dependency does not export will fail. TypeScript 6 deprecates the previous `node` / `node10` resolution mode.
+- `module` and `moduleResolution` are now `NodeNext` (see [Theia packages are ES modules](#theia-packages-are-es-modules)), which honors package `exports`; deep imports into paths that a dependency does not export will fail. TypeScript 6 deprecates the previous `node` / `node10` resolution mode.
 - TypeScript 6 defaults `types` to an empty array. Add the ambient types your project requires, typically `"types": ["node"]`; Theia's shared configuration includes Node and Mocha because package tests live next to their sources.
 - TypeScript 6 defaults `strict` to `true`. Theia currently sets `strict: false` explicitly and retains its existing individual strictness flags.
 - Remove `downlevelIteration`; TypeScript 6 reports the option as deprecated even when it is disabled.
@@ -178,7 +178,7 @@ When adopting TypeScript 6 or replicating Theia's `configs/base.tsconfig.json` s
 - Theia's emitted declarations can now contain default imports of `export =` modules. Consumers need `esModuleInterop`, `allowSyntheticDefaultImports`, or `skipLibCheck` when compiling those declarations.
 - `TreeProps.viewProps` and `TreeWidget.ViewProps` no longer accept the inherited HTML `width`, `height`, or `rows` properties. The tree widget owns those values and the public types now omit them from the forwarded `react-virtuoso` props.
 
-To make the IDE use the workspace compiler, add `"typescript.tsdk": "node_modules/typescript/lib"` to workspace settings when the IDE's bundled TypeScript is older than 6. Otherwise the editor can report configuration errors for `moduleResolution: bundler` with CommonJS even though the workspace compiler accepts it.
+To make the IDE use the workspace compiler, add `"typescript.tsdk": "node_modules/typescript/lib"` to workspace settings when the IDE's bundled TypeScript is older than 6.
 
 The shared ESLint configuration no longer uses `@typescript-eslint/eslint-plugin-tslint`, `tslint`, or `eslint-plugin-deprecation`. Adopters extending `configs/*.eslintrc.json` need typescript-eslint v8, `@stylistic/eslint-plugin` v3, `eslint-plugin-jsdoc`, and the `@theia/eslint-plugin` `file-header` rule. The former TSLint `typedef: call-signature` check is now the `@theia/explicit-return-type` rule of `@theia/eslint-plugin`, and the space-after-asterisk part of TSLint `jsdoc-format` is now its `@theia/jsdoc-space-after-asterisk` rule. A file that intentionally uses a different license header must place `/* eslint-disable @theia/file-header */` on line 1 because the rule reports at line 1.
 
@@ -205,6 +205,45 @@ Set `"keyboard.dispatch": "keyCode"` to restore positional key-code dispatch glo
 - Review `KeyCode` consumers: `equals()` requires the same physical key and `dispatchString()`, character-only values are not modifier-only, and `toString()` preserves authored spelling. Use `dispatchString()` when a runtime match identity is required.
 - Update `KeybindingRegistry.matchKeybinding()` consumers from `match.binding` to `match.runtime.binding`; the resolved sequence is available as `match.runtime.sequence`. Pass resolved sequences (`resolveKeybinding(binding)`) or runtime interpretations to `matchKeybinding()`; raw `KeySequence.parse()` output is no longer guaranteed to match under `keyboard.dispatch: 'code'`. Subclasses that override chord handling must replace the protected `keySequence` field with `keySequenceCandidates`. Protected keybinding-tree values are runtime records containing the original scoped binding and its resolved sequence, rather than `ScopedKeybinding[]`.
 - Pass an explicit `'logical'` or `'physical'` form to `AcceleratorSource.getAccelerator`. Browser UI uses logical labels, while Electron native menus require physical accelerators.
+#### Theia packages are ES modules
+
+The runtime packages (`packages/*`) are now published as ES modules: their `package.json` declares `"type": "module"` and an `exports` map, and `lib` contains ES modules.
+The build tooling in `dev-packages` (e.g. `@theia/cli`, `@theia/application-manager`, `@theia/application-package`) is still CommonJS.
+
+**Imports keep working.** The `exports` maps keep every path importable that was importable before, including deep imports without an extension
+(`@theia/core/lib/browser/widgets/widget`), barrel directories (`@theia/core/lib/browser`), JSON files (`@theia/core/lib/common/i18n/nls.metadata.json`)
+and the re-exports in `@theia/core/shared/*`.
+Within a package that is an ES module, relative imports need an extension though, as Node requires them: `import { X } from './x.js'`.
+
+**Keep importing shared libraries through `@theia/core/shared/*`** (and `@theia/electron/shared/*`), e.g. `@theia/core/shared/inversify` rather than `inversify`.
+Dual packages like `inversify` ship a CommonJS and an ES module entry point. The re-export loads the one Theia uses, whereas a CommonJS extension that imports
+`inversify` directly loads the CommonJS entry, a second copy of the library whose `Container` and decorators are not interchangeable with Theia's.
+
+**Extensions written as CommonJS** continue to work with the bundled application, as esbuild handles both formats.
+To run their code unbundled with Node, e.g. in unit tests, Node 24 loads the Theia ES modules with `require()` as long as they don't use top-level `await`.
+To convert an extension to an ES module, the codemods used for Theia itself can be a starting point: `scripts/esm/to-esm.mjs` adds the extensions to imports
+and converts `import x = require('...')`, `__dirname` and `__filename`, and `scripts/esm/package-exports.mjs` generates an `exports` map like the ones of the Theia packages.
+The generated map covers the modules and the JSON files below `lib`; a package that copies other assets into `lib` (e.g. `.wasm` or `.html` files)
+has to pass their extensions with `--lib-assets=json,wasm,html`, as the catch-all pattern of the map only resolves modules.
+
+**Behavioral differences of ES modules** that may affect code of adopters:
+
+- The exports of ES modules cannot be replaced, so `sinon.stub(module, 'name')` on a namespace import (`import * as module from '...'`) fails.
+  Stub a method of a service instead. `isWindows` and `isOSX` of `@theia/core/lib/common/os` can be overridden with `stubOS` of `@theia/core/lib/common/test/stub-os`.
+- Imports are evaluated before the code of the importing module. Code that has to run first, like enabling JSDOM in a test, has to be in a module of its own that is imported first,
+  or the modules depending on it have to be loaded with `await import(...)`. Theia's test setup enables JSDOM before the imports of specs that call `enableJSDOM()`.
+- Node detects the named exports of a CommonJS module statically, which fails for modules that create their exports dynamically (e.g. `fs-extra`, `chalk`, `iconv-lite`).
+  Import such modules as a whole with a default import (`import fs from 'fs-extra'`). The re-exports in `@theia/core/shared/*` list their named exports explicitly, so both kinds of imports work for them.
+- `require`, `module`, `exports`, `__dirname` and `__filename` are not defined. Use `import.meta.dirname`, `import.meta.filename` and `createRequire(import.meta.url)` instead.
+- A class that is accessed before the module declaring it has been evaluated throws a `ReferenceError`, where it was `undefined` before. With `emitDecoratorMetadata`, the type of every decorated property is accessed
+  when the class is declared, which fails for classes of modules in an import cycle, even if the injection itself uses a `LazyServiceIdentifier`. Theia no longer emits decorator metadata;
+  if you compile your extensions as ES modules, disable `emitDecoratorMetadata` as well and use `@inject` for all constructor parameters.
+
+**Bundling:** the generated entry points in `src-gen` are ES modules, and the backend and the Electron main process are bundled as ES modules into `lib/backend`, which contains a `package.json` declaring `"type": "module"`.
+The Electron preload script and the frontend are still bundled as classic scripts. Customizations in `esbuild.mjs` that relied on `require` or `module.exports` in the generated entry points need to be adapted.
+The `exposeModulePlugin` of `@theia/bundle-plugin` exposes the namespace of ES modules on `window.theia`, so `window.theia['@theia/core/lib/common/uri'].default` is the `URI` class as before.
+
+**Plugins** are not affected: both CommonJS and ES module plugins are supported, including ES modules importing `vscode` or `@theia/plugin`.
 
 ### v1.76.0
 

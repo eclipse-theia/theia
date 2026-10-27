@@ -17,8 +17,8 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { CommandContribution, MenuContribution } from '@theia/core';
 import { FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
-import { ConsoleContribution } from './console-contribution';
-import { ConsoleManager } from './console-manager';
+import { ConsoleContribution } from './console-contribution.js';
+import { ConsoleManager } from './console-manager.js';
 
 import '../../src/browser/style/index.css';
 

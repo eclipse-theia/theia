@@ -18,9 +18,9 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { WidgetManager, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalCreationHandler } from '@theia/terminal/lib/browser/terminal-creation-handler';
-import { TerminalManagerWidget } from './terminal-manager-widget';
-import { TerminalManagerFrontendViewContribution } from './terminal-manager-frontend-view-contribution';
-import { TerminalManagerPreferences } from './terminal-manager-preferences';
+import { TerminalManagerWidget } from './terminal-manager-widget.js';
+import { TerminalManagerFrontendViewContribution } from './terminal-manager-frontend-view-contribution.js';
+import { TerminalManagerPreferences } from './terminal-manager-preferences.js';
 
 /**
  * A {@link TerminalCreationHandler} that routes terminals into the terminal

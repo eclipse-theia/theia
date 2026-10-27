@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { EditorManager } from './editor-manager';
-import { TextEditor } from './editor';
+import { EditorManager } from './editor-manager.js';
+import { TextEditor } from './editor.js';
 import { injectable, inject, optional, named } from '@theia/core/shared/inversify';
 import { StatusBarAlignment, StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
 import {
@@ -27,15 +27,15 @@ import {
 } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { CommandHandler, DisposableCollection, MenuContribution, MenuModelRegistry, ContributionProvider, Prioritizeable } from '@theia/core';
-import { EditorCommands } from './editor-command';
+import { EditorCommands } from './editor-command.js';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
 import { SUPPORTED_ENCODINGS } from '@theia/core/lib/common/supported-encodings';
 import { nls } from '@theia/core/lib/common/nls';
 import { CurrentWidgetCommandAdapter } from '@theia/core/lib/browser/shell/current-widget-command-adapter';
-import { EditorWidget } from './editor-widget';
-import { EditorLanguageStatusService } from './language-status/editor-language-status-service';
-import { QuickEditorService } from './quick-editor-service';
-import { SplitEditorContribution } from './split-editor-contribution';
+import { EditorWidget } from './editor-widget.js';
+import { EditorLanguageStatusService } from './language-status/editor-language-status-service.js';
+import { QuickEditorService } from './quick-editor-service.js';
+import { SplitEditorContribution } from './split-editor-contribution.js';
 
 @injectable()
 export class EditorContribution implements FrontendApplicationContribution,

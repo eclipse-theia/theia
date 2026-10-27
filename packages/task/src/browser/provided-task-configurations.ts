@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { TaskProviderRegistry, TaskProvider } from './task-contribution';
-import { TaskDefinitionRegistry } from './task-definition-registry';
-import { TaskConfiguration, TaskCustomization, TaskOutputPresentation, TaskConfigurationScope, TaskScope } from '../common';
+import { TaskProviderRegistry, TaskProvider } from './task-contribution.js';
+import { TaskDefinitionRegistry } from './task-definition-registry.js';
+import { TaskConfiguration, TaskCustomization, TaskOutputPresentation, TaskConfigurationScope, TaskScope } from '../common/index.js';
 
 export const ALL_TASK_TYPES: string = '*';
 

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { MarkerNode } from './marker-tree';
+import { MarkerNode } from './marker-tree.js';
 import { TreeModelImpl, OpenerService, open, TreeNode, OpenerOptions } from '@theia/core/lib/browser';
 
 @injectable()

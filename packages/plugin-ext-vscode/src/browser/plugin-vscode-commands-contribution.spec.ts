@@ -33,8 +33,8 @@ import { CommandRegistry, InMemoryTextResource, URI } from '@theia/core';
 import { MultiDiffEditorUri } from '@theia/scm/lib/browser/multi-diff-editor/multi-diff-editor-uri';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { DuplicateExtensionError } from '@theia/plugin-ext/lib/common/plugin-protocol';
-import { VSCodeExtensionUri } from '../common/plugin-vscode-uri';
-import { EditorGroupNavigationRect, PluginVscodeCommandsContribution } from './plugin-vscode-commands-contribution';
+import { VSCodeExtensionUri } from '../common/plugin-vscode-uri.js';
+import { EditorGroupNavigationRect, PluginVscodeCommandsContribution } from './plugin-vscode-commands-contribution.js';
 
 after(() => disableJSDOM());
 

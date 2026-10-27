@@ -17,22 +17,22 @@
 import * as React from '@theia/core/shared/react';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
-import { NotebookModel } from '../view-model/notebook-model';
-import { CellRenderer, observeCellHeight } from './notebook-cell-list-view';
-import { NotebookCellModel } from '../view-model/notebook-cell-model';
-import { CellEditor } from './notebook-cell-editor';
+import { NotebookModel } from '../view-model/notebook-model.js';
+import { CellRenderer, observeCellHeight } from './notebook-cell-list-view.js';
+import { NotebookCellModel } from '../view-model/notebook-cell-model.js';
+import { CellEditor } from './notebook-cell-editor.js';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MonacoEditorServices } from '@theia/monaco/lib/browser/monaco-editor';
 import { CommandRegistry, nls } from '@theia/core';
-import { NotebookContextManager } from '../service/notebook-context-manager';
-import { NotebookOptionsService } from '../service/notebook-options';
-import { NotebookCodeCellStatus } from './notebook-code-cell-view';
-import { NotebookEditorFindMatch, NotebookEditorFindMatchOptions } from './notebook-find-widget';
+import { NotebookContextManager } from '../service/notebook-context-manager.js';
+import { NotebookOptionsService } from '../service/notebook-options.js';
+import { NotebookCodeCellStatus } from './notebook-code-cell-view.js';
+import { NotebookEditorFindMatch, NotebookEditorFindMatchOptions } from './notebook-find-widget.js';
 import mark from 'advanced-mark.js';
-import { NotebookCellEditorService } from '../service/notebook-cell-editor-service';
-import { NotebookCellStatusBarService } from '../service/notebook-cell-status-bar-service';
+import { NotebookCellEditorService } from '../service/notebook-cell-editor-service.js';
+import { NotebookCellStatusBarService } from '../service/notebook-cell-status-bar-service.js';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
-import { NotebookViewModel } from '../view-model/notebook-view-model';
+import { NotebookViewModel } from '../view-model/notebook-view-model.js';
 
 @injectable()
 export class NotebookMarkdownCellRenderer implements CellRenderer {

@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { ProcessTaskRunner } from './process-task-runner';
-import { TaskRunnerContribution, TaskRunnerRegistry } from '../task-runner';
+import { ProcessTaskRunner } from './process-task-runner.js';
+import { TaskRunnerContribution, TaskRunnerRegistry } from '../task-runner.js';
 
 @injectable()
 export class ProcessTaskRunnerContribution implements TaskRunnerContribution {

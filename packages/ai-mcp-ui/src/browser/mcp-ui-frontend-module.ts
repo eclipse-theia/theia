@@ -16,7 +16,7 @@
 
 import { CommandContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { MCPCommandContribution } from './mcp-command-contribution';
+import { MCPCommandContribution } from './mcp-command-contribution.js';
 import { PreferenceContribution } from '@theia/core/lib/common';
 import { McpServersPreferenceSchema } from '@theia/ai-mcp/lib/common/mcp-preferences';
 

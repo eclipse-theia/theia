@@ -28,8 +28,8 @@ import { ILogger } from '@theia/core';
 import { OpenerService, OpenHandler } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { TerminalWidget } from './base/terminal-widget';
-import { FileUriLinkProvider } from './terminal-file-uri-link-provider';
+import { TerminalWidget } from './base/terminal-widget.js';
+import { FileUriLinkProvider } from './terminal-file-uri-link-provider.js';
 
 disableJSDOM();
 

@@ -35,8 +35,8 @@ import { ContextMenuRenderer, LabelProvider } from '@theia/core/lib/browser';
 import { CorePreferences } from '@theia/core/lib/common/core-preferences';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { SourceTreeWidget, TreeElement, TreeSource } from '@theia/core/lib/browser/source-tree';
-import { VSXExtensionsSource, VSXExtensionsSourceOptions } from './vsx-extensions-source';
-import { VSXExtensionsWidget, VSXExtensionsWidgetOptions } from './vsx-extensions-widget';
+import { VSXExtensionsSource, VSXExtensionsSourceOptions } from './vsx-extensions-source.js';
+import { VSXExtensionsWidget, VSXExtensionsWidgetOptions } from './vsx-extensions-widget.js';
 
 after(() => disableJSDOM());
 

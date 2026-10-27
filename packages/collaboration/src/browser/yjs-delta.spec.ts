@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { yTextDeltaToEdits } from './yjs-delta';
+import { yTextDeltaToEdits } from './yjs-delta.js';
 
 describe('yTextDeltaToEdits', () => {
 

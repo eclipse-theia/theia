@@ -20,8 +20,8 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { KeybindingContribution, KeybindingRegistry, LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { ExternalTerminalService } from '../common/external-terminal';
-import { ExternalTerminalPreferenceService } from './external-terminal-preference';
+import { ExternalTerminalService } from '../common/external-terminal.js';
+import { ExternalTerminalPreferenceService } from './external-terminal-preference.js';
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { nls } from '@theia/core/lib/common/nls';
 

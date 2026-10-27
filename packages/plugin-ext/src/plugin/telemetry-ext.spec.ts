@@ -16,7 +16,7 @@
 
 import * as chai from 'chai';
 import { TelemetryLevel } from '@theia/telemetry/lib/common/telemetry-types';
-import { TelemetryExtImpl } from './telemetry-ext';
+import { TelemetryExtImpl } from './telemetry-ext.js';
 
 const expect = chai.expect;
 

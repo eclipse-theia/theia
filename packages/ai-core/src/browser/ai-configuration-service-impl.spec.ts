@@ -25,9 +25,9 @@ import { Emitter, Event } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { PreferenceChange, PreferenceInspection, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
 import { WorkspaceTrustService } from '@theia/workspace/lib/browser/workspace-trust-service';
-import { TrustAwarePreferenceReader } from './trust-aware-preference-reader';
-import { AiConfigurationChange } from '../common/ai-configuration-service';
-import { AiConfigurationServiceImpl } from './ai-configuration-service-impl';
+import { TrustAwarePreferenceReader } from './trust-aware-preference-reader.js';
+import { AiConfigurationChange } from '../common/ai-configuration-service.js';
+import { AiConfigurationServiceImpl } from './ai-configuration-service-impl.js';
 
 disableJSDOM();
 

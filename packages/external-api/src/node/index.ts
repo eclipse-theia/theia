@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './external-api-contribution';
-export * from './external-api-event-stream';
-export * from './external-api-response-writer';
-export * from './external-api-router';
-export * from './external-api-server';
-export * from './openapi-document-builder';
-export * from './openapi-spec-contribution';
-export * from './rest-result';
+export * from './external-api-contribution.js';
+export * from './external-api-event-stream.js';
+export * from './external-api-response-writer.js';
+export * from './external-api-router.js';
+export * from './external-api-server.js';
+export * from './openapi-document-builder.js';
+export * from './openapi-spec-contribution.js';
+export * from './rest-result.js';

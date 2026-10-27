@@ -16,7 +16,7 @@
 
 import { isWindows } from '@theia/core';
 import * as assert from 'assert';
-import * as types from './types-impl';
+import * as types from './types-impl.js';
 
 describe('API Type Implementations:', () => {
 

@@ -21,7 +21,7 @@ import {
     AUTO_UPDATE_PREF,
     AutoUpdateMode,
     RegistryArtifactKind
-} from '../../common/ai-registry-preferences';
+} from '../../common/ai-registry-preferences.js';
 
 type Overrides = Record<string, AutoUpdateMode>;
 

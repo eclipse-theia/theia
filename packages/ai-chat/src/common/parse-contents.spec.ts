@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { MutableChatRequestModel, ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl } from './chat-model';
-import { parseContents } from './parse-contents';
-import { CodeContentMatcher, ResponseContentMatcher } from './response-content-matcher';
+import { MutableChatRequestModel, ChatResponseContent, CodeChatResponseContentImpl, MarkdownChatResponseContentImpl } from './chat-model.js';
+import { parseContents } from './parse-contents.js';
+import { CodeContentMatcher, ResponseContentMatcher } from './response-content-matcher.js';
 
 export class CommandChatResponseContentImpl implements ChatResponseContent {
     constructor(public readonly command: string) { }

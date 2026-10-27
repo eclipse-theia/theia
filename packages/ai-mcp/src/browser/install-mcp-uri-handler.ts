@@ -20,11 +20,11 @@ import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { OpenHandler } from '@theia/core/lib/browser/opener-service';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
-import { MCPServerEditor } from './mcp-server-editor';
-import { MCPInstallUriConfiguration } from './mcp-install-uri-configuration';
-import { MCPRegistryUiBridge } from './mcp-registry-ui-bridge';
-import { MCPServerInstallDialogFactory, MCPServerInstallTrust } from './mcp-server-install-dialog';
+import { MCP_SERVERS_PREF } from '../common/mcp-preferences.js';
+import { MCPServerEditor } from './mcp-server-editor.js';
+import { MCPInstallUriConfiguration } from './mcp-install-uri-configuration.js';
+import { MCPRegistryUiBridge } from './mcp-registry-ui-bridge.js';
+import { MCPServerInstallDialogFactory, MCPServerInstallTrust } from './mcp-server-install-dialog.js';
 
 const ID_PARAM = 'id';
 

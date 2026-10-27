@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import type { OS } from '../../common/os';
-import type { MaybePromise } from '../../common/types';
+import type { OS } from '../../common/os.js';
+import type { MaybePromise } from '../../common/types.js';
 
 export interface RemotePlatform {
     os: OS.Type

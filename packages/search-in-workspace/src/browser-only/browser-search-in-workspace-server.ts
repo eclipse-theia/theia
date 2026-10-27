@@ -20,7 +20,7 @@ import type {
     SearchInWorkspaceResult,
     SearchInWorkspaceServer,
     SearchMatch
-} from '../common/search-in-workspace-interface';
+} from '../common/search-in-workspace-interface.js';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { URI, ILogger } from '@theia/core';
 import { FileService, TextFileOperationError, TextFileOperationResult } from '@theia/filesystem/lib/browser/file-service';

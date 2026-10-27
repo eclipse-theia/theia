@@ -20,8 +20,8 @@ import { DebugConfigurationSessionOptions } from '@theia/debug/lib/browser/debug
 import { DebugSession, DebugSessionData } from '@theia/debug/lib/browser/debug-session';
 import { DebugSessionConnection } from '@theia/debug/lib/browser/debug-session-connection';
 import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { TerminalOptionsExt } from '../../../common/plugin-api-rpc';
-import { PluginChannel } from '../../../common/connection';
+import { TerminalOptionsExt } from '../../../common/plugin-api-rpc.js';
+import { PluginChannel } from '../../../common/connection.js';
 
 export const PluginTerminalOptionsExt = Symbol('PluginTerminalOptionsExt');
 

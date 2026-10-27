@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { FrontendApplicationState, FrontendApplicationStateService } from '../../browser/frontend-application-state';
+import { FrontendApplicationState, FrontendApplicationStateService } from '../../browser/frontend-application-state.js';
 
 @injectable()
 export class ElectronFrontendApplicationStateService extends FrontendApplicationStateService {

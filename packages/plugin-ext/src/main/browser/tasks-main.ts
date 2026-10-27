@@ -21,8 +21,8 @@ import {
     TasksExt,
     TaskDto,
     TaskPresentationOptionsDTO
-} from '../../common/plugin-api-rpc';
-import { RPCProtocol } from '../../common/rpc-protocol';
+} from '../../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
 import { TaskProviderRegistry, TaskResolverRegistry, TaskProvider, TaskResolver } from '@theia/task/lib/browser/task-contribution';
 import { interfaces } from '@theia/core/shared/inversify';

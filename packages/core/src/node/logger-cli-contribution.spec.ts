@@ -15,14 +15,14 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import yargs from 'yargs';
+import yargs from '../../shared/yargs/index.cjs';
 import * as temp from 'temp';
 import * as fs from 'fs';
 import { ContainerModule, Container } from 'inversify';
-import { LogLevel } from '../common/logger';
-import { LogLevelCliContribution } from './logger-cli-contribution';
+import { LogLevel } from '../common/logger.js';
+import { LogLevelCliContribution } from './logger-cli-contribution.js';
 import * as sinon from 'sinon';
-import { Disposable, DisposableCollection } from '../common';
+import { Disposable, DisposableCollection } from '../common/index.js';
 
 // Allow creating temporary files, but remove them when we are done.
 const track = temp.track();

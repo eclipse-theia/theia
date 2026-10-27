@@ -20,7 +20,7 @@ import { ILogger, isObject } from '@theia/core';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { DiscoveredModel } from '../common/model-discovery-status';
+import { DiscoveredModel } from '../common/model-discovery-status.js';
 
 export const ModelSnapshotStore = Symbol('ModelSnapshotStore');
 

@@ -16,26 +16,26 @@
 
 import * as theia from '@theia/plugin';
 import * as lstypes from '@theia/core/shared/vscode-languageserver-protocol';
-import { InlineValueEvaluatableExpression, InlineValueText, InlineValueVariableLookup, QuickPickItemKind, ThemeIcon, URI } from './types-impl';
-import * as rpc from '../common/plugin-api-rpc';
+import { InlineValueEvaluatableExpression, InlineValueText, InlineValueVariableLookup, QuickPickItemKind, ThemeIcon, URI } from './types-impl.js';
+import * as rpc from '../common/plugin-api-rpc.js';
 import {
     DecorationOptions, EditorPosition, Plugin, Position, WorkspaceTextEditDto, WorkspaceFileEditDto, Selection, TaskDto, WorkspaceEditDto
-} from '../common/plugin-api-rpc';
-import * as model from '../common/plugin-api-rpc-model';
+} from '../common/plugin-api-rpc.js';
+import * as model from '../common/plugin-api-rpc-model.js';
 import { LanguageFilter, LanguageSelector } from '@theia/editor/lib/common/language-selector';
-import { MarkdownString as PluginMarkdownStringImpl } from './markdown-string';
-import * as types from './types-impl';
-import { UriComponents } from '../common/uri-components';
-import { isReadonlyArray } from '../common/arrays';
+import { MarkdownString as PluginMarkdownStringImpl } from './markdown-string.js';
+import * as types from './types-impl.js';
+import { UriComponents } from '../common/uri-components.js';
+import { isReadonlyArray } from '../common/arrays.js';
 import { DisposableCollection, Mutable, isEmptyObject, isObject } from '@theia/core/lib/common';
 import * as notebooks from '@theia/notebook/lib/common';
-import { CommandsConverter } from './command-registry';
+import { CommandsConverter } from './command-registry.js';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { CellRange, isTextStreamMime } from '@theia/notebook/lib/common';
 import { MarkdownString as MarkdownStringDTO } from '@theia/core/lib/common/markdown-rendering';
 
-import { TestItemDTO, TestMessageDTO, TestMessageStackFrameDTO } from '../common/test-types';
-import { PluginIconPath } from './plugin-icon-path';
+import { TestItemDTO, TestMessageDTO, TestMessageStackFrameDTO } from '../common/test-types.js';
+import { PluginIconPath } from './plugin-icon-path.js';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;

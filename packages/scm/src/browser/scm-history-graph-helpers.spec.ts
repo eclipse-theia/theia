@@ -17,8 +17,8 @@
 import { expect } from 'chai';
 import {
     buildChangeTreeRows, ChangeTreeFileRow, ChangeTreeRow, filterRefsForBadges, getFileName, getRefBadgePresentation, getRefColorIndex
-} from './scm-history-graph-helpers';
-import { ScmHistoryItemChange, ScmHistoryItemRef, ScmHistoryProvider } from './scm-provider';
+} from './scm-history-graph-helpers.js';
+import { ScmHistoryItemChange, ScmHistoryItemRef, ScmHistoryProvider } from './scm-provider.js';
 
 describe('getRefColorIndex', () => {
 

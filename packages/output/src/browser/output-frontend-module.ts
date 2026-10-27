@@ -15,19 +15,19 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { OutputWidget } from './output-widget';
+import { OutputWidget } from './output-widget.js';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ResourceResolver } from '@theia/core/lib/common';
 import { WidgetFactory, bindViewContribution, OpenHandler } from '@theia/core/lib/browser';
-import { OutputChannelManager } from './output-channel';
-import { bindOutputPreferences } from '../common/output-preferences';
-import { OutputToolbarContribution } from './output-toolbar-contribution';
-import { OutputContribution } from './output-contribution';
+import { OutputChannelManager } from './output-channel.js';
+import { bindOutputPreferences } from '../common/output-preferences.js';
+import { OutputToolbarContribution } from './output-toolbar-contribution.js';
+import { OutputContribution } from './output-contribution.js';
 import { MonacoEditorFactory } from '@theia/monaco/lib/browser/monaco-editor-provider';
-import { OutputContextMenuService } from './output-context-menu';
-import { OutputEditorFactory } from './output-editor-factory';
+import { OutputContextMenuService } from './output-context-menu.js';
+import { OutputEditorFactory } from './output-editor-factory.js';
 import { MonacoEditorModelFactory } from '@theia/monaco/lib/browser/monaco-text-model-service';
-import { OutputEditorModelFactory } from './output-editor-model-factory';
+import { OutputEditorModelFactory } from './output-editor-model-factory.js';
 
 export default new ContainerModule(bind => {
     bind(OutputChannelManager).toSelf().inSingletonScope();

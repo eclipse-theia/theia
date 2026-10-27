@@ -39,15 +39,15 @@ import {
     MenuPath,
     PreferenceService,
     RemoteCliArgsContribution
-} from '../common';
-import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding';
-import { FrontendApplication } from './frontend-application';
-import { FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application-contribution';
-import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
-import { HttpOpenHandler } from './http-open-handler';
-import { CommonFrontendContribution } from './common-frontend-contribution';
-import { LocalStorageService, StorageService } from './storage-service';
-import { WidgetFactory, WidgetManager } from './widget-manager';
+} from '../common/index.js';
+import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding.js';
+import { FrontendApplication } from './frontend-application.js';
+import { FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application-contribution.js';
+import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service.js';
+import { HttpOpenHandler } from './http-open-handler.js';
+import { CommonFrontendContribution } from './common-frontend-contribution.js';
+import { LocalStorageService, StorageService } from './storage-service.js';
+import { WidgetFactory, WidgetManager } from './widget-manager.js';
 import {
     ApplicationShell, ApplicationShellOptions, DockPanelRenderer, TabBarRenderer,
     TabBarRendererFactory, ShellLayoutRestorer,
@@ -55,65 +55,65 @@ import {
     SidebarMenuWidget, SidebarTopMenuWidgetFactory,
     SplitPositionHandler, DockPanelRendererFactory, ApplicationShellLayoutMigration, ApplicationShellLayoutMigrationError, SidebarBottomMenuWidgetFactory,
     ShellLayoutTransformer, WidgetAreaResolver
-} from './shell';
-import { LabelParser } from './label-parser';
-import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider';
-import { ContextMenuRenderer, Coordinate } from './context-menu-renderer';
-import { ThemeService } from './theming';
-import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution, PingService } from './connection-status-service';
-import { DiffUriLabelProviderContribution } from './diff-uris';
-import { ApplicationServer, applicationPath } from '../common/application-protocol';
-import { WebSocketConnectionProvider } from './messaging';
-import { AboutDialog, AboutDialogProps } from './about-dialog';
-import { EnvVariablesServer, envVariablesPath, EnvVariable } from './../common/env-variables';
-import { FrontendApplicationStateService } from './frontend-application-state';
-import { JsonSchemaStore, JsonSchemaContribution, DefaultJsonSchemaContribution, JsonSchemaDataStore } from './json-schema-store';
-import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
-import { ContextKeyService, ContextKeyServiceDummyImpl } from './context-key-service';
-import { ResourceContextKey } from './resource-context-key';
-import { WidgetContextKeyContribution } from './widget-context-key-contribution';
-import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
-import { MimeService } from './mime-service';
-import { ApplicationShellMouseTracker } from './shell/application-shell-mouse-tracker';
-import { ViewContainer, ViewContainerIdentifier } from './view-container';
-import { QuickViewService } from './quick-input/quick-view-service';
-import { DialogOverlayService } from './dialogs';
-import { ProgressLocationService } from './progress-location-service';
-import { ProgressClient } from '../common/progress-service-protocol';
-import { ProgressService } from '../common/progress-service';
-import { DispatchingProgressClient } from './progress-client';
-import { ProgressStatusBarItem } from './progress-status-bar-item';
-import { TabBarDecoratorService, TabBarDecorator } from './shell/tab-bar-decorator';
-import { ContextMenuContext } from './menu/context-menu-context';
-import { bindResourceProvider, bindMessageService, bindPreferenceService } from './frontend-application-bindings';
-import { ColorRegistry } from './color-registry';
-import { ColorContribution, ColorApplicationContribution } from './color-application-contribution';
-import { ExternalUriService } from './external-uri-service';
-import { IconThemeService, NoneIconTheme } from './icon-theme-service';
-import { IconThemeApplicationContribution, IconThemeContribution, DefaultFileIconThemeContribution } from './icon-theme-contribution';
-import { TreeLabelProvider } from './tree/tree-label-provider';
-import { ProgressBar } from './progress-bar';
-import { ProgressBarFactory, ProgressBarOptions } from './progress-bar-factory';
-import { CommandOpenHandler } from './command-open-handler';
-import { LanguageService } from './language-service';
-import { EncodingRegistry } from './encoding-registry';
-import { EncodingService } from '../common/encoding-service';
-import { AuthenticationService, AuthenticationServiceImpl } from '../browser/authentication-service';
-import { DecorationsService, DecorationsServiceImpl } from './decorations-service';
-import { keyStoreServicePath, KeyStoreService } from '../common/key-store';
-import { CredentialsService, CredentialsServiceImpl } from './credentials-service';
-import { ContributionFilterRegistry, ContributionFilterRegistryImpl } from '../common/contribution-filter';
-import { QuickCommandFrontendContribution } from './quick-input/quick-command-frontend-contribution';
-import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
+} from './shell/index.js';
+import { LabelParser } from './label-parser.js';
+import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider.js';
+import { ContextMenuRenderer, Coordinate } from './context-menu-renderer.js';
+import { ThemeService } from './theming.js';
+import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution, PingService } from './connection-status-service.js';
+import { DiffUriLabelProviderContribution } from './diff-uris.js';
+import { ApplicationServer, applicationPath } from '../common/application-protocol.js';
+import { WebSocketConnectionProvider } from './messaging/index.js';
+import { AboutDialog, AboutDialogProps } from './about-dialog.js';
+import { EnvVariablesServer, envVariablesPath, EnvVariable } from './../common/env-variables/index.js';
+import { FrontendApplicationStateService } from './frontend-application-state.js';
+import { JsonSchemaStore, JsonSchemaContribution, DefaultJsonSchemaContribution, JsonSchemaDataStore } from './json-schema-store.js';
+import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar/index.js';
+import { ContextKeyService, ContextKeyServiceDummyImpl } from './context-key-service.js';
+import { ResourceContextKey } from './resource-context-key.js';
+import { WidgetContextKeyContribution } from './widget-context-key-contribution.js';
+import { KeyboardLayoutService } from './keyboard/keyboard-layout-service.js';
+import { MimeService } from './mime-service.js';
+import { ApplicationShellMouseTracker } from './shell/application-shell-mouse-tracker.js';
+import { ViewContainer, ViewContainerIdentifier } from './view-container.js';
+import { QuickViewService } from './quick-input/quick-view-service.js';
+import { DialogOverlayService } from './dialogs.js';
+import { ProgressLocationService } from './progress-location-service.js';
+import { ProgressClient } from '../common/progress-service-protocol.js';
+import { ProgressService } from '../common/progress-service.js';
+import { DispatchingProgressClient } from './progress-client.js';
+import { ProgressStatusBarItem } from './progress-status-bar-item.js';
+import { TabBarDecoratorService, TabBarDecorator } from './shell/tab-bar-decorator.js';
+import { ContextMenuContext } from './menu/context-menu-context.js';
+import { bindResourceProvider, bindMessageService, bindPreferenceService } from './frontend-application-bindings.js';
+import { ColorRegistry } from './color-registry.js';
+import { ColorContribution, ColorApplicationContribution } from './color-application-contribution.js';
+import { ExternalUriService } from './external-uri-service.js';
+import { IconThemeService, NoneIconTheme } from './icon-theme-service.js';
+import { IconThemeApplicationContribution, IconThemeContribution, DefaultFileIconThemeContribution } from './icon-theme-contribution.js';
+import { TreeLabelProvider } from './tree/tree-label-provider.js';
+import { ProgressBar } from './progress-bar.js';
+import { ProgressBarFactory, ProgressBarOptions } from './progress-bar-factory.js';
+import { CommandOpenHandler } from './command-open-handler.js';
+import { LanguageService } from './language-service.js';
+import { EncodingRegistry } from './encoding-registry.js';
+import { EncodingService } from '../common/encoding-service.js';
+import { AuthenticationService, AuthenticationServiceImpl } from '../browser/authentication-service.js';
+import { DecorationsService, DecorationsServiceImpl } from './decorations-service.js';
+import { keyStoreServicePath, KeyStoreService } from '../common/key-store.js';
+import { CredentialsService, CredentialsServiceImpl } from './credentials-service.js';
+import { ContributionFilterRegistry, ContributionFilterRegistryImpl } from '../common/contribution-filter/index.js';
+import { QuickCommandFrontendContribution } from './quick-input/quick-command-frontend-contribution.js';
+import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service.js';
 import {
     QuickPickServiceImpl,
     QuickInputFrontendContribution,
     QuickAccessContribution,
     QuickCommandService,
     QuickHelpService
-} from './quick-input';
-import { SidebarBottomMenuWidget } from './shell/sidebar-bottom-menu-widget';
-import { WindowContribution } from './window-contribution';
+} from './quick-input/index.js';
+import { SidebarBottomMenuWidget } from './shell/sidebar-bottom-menu-widget.js';
+import { WindowContribution } from './window-contribution.js';
 import {
     BreadcrumbID,
     BreadcrumbPopupContainer,
@@ -124,34 +124,34 @@ import {
     BreadcrumbsRendererFactory,
     BreadcrumbsService,
     DefaultBreadcrumbRenderer,
-} from './breadcrumbs';
-import { DockPanel, RendererHost } from './widgets';
-import { TooltipService, TooltipServiceImpl } from './tooltip-service';
+} from './breadcrumbs/index.js';
+import { DockPanel, RendererHost } from './widgets/index.js';
+import { TooltipService, TooltipServiceImpl } from './tooltip-service.js';
 import { BackendRequestService, RequestService, REQUEST_SERVICE_PATH } from '@theia/request';
-import { bindFrontendStopwatch, bindBackendStopwatch } from './performance';
-import { SaveableService, SaveErrorChecker } from './saveable-service';
-import { SecondaryWindowHandler } from './secondary-window-handler';
-import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
-import { WindowTitleService } from './window/window-title-service';
-import { WindowTitleUpdater } from './window/window-title-updater';
-import { TheiaDockPanel } from './shell/theia-dock-panel';
-import { bindStatusBar } from './status-bar';
-import { CoreMarkdownRenderer, MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from './markdown-rendering/markdown-renderer';
-import { StylingParticipant, StylingService } from './styling-service';
-import { bindCommonStylingParticipants } from './common-styling-participants';
-import { HoverService } from './hover-service';
-import { AdditionalViewsMenuPath, AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './shell/additional-views-menu-widget';
-import { SidePanelItemVisibility, SidePanelItemVisibilityImpl } from './shell/side-panel-item-visibility';
-import { LanguageIconLabelProvider } from './language-icon-provider';
-import { bindTreePreferences } from '../common/tree-preference';
-import { OpenWithService } from './open-with-service';
-import { ViewColumnService } from './shell/view-column-service';
-import { DomInputUndoRedoHandler, UndoRedoHandler, UndoRedoHandlerService } from './undo-redo-handler';
-import { WidgetStatusBarContribution, WidgetStatusBarService } from './widget-status-bar-service';
-import { SymbolIconColorContribution } from './symbol-icon-color-contribution';
-import { CorePreferences, bindCorePreferences } from '../common/core-preferences';
-import { bindBadgeDecoration } from './badges';
-import { PerspectiveContribution, PerspectiveService, PerspectiveServiceImpl, PerspectiveServiceInternal, WidgetAreaResolverImpl } from './perspective-service';
+import { bindFrontendStopwatch, bindBackendStopwatch } from './performance/index.js';
+import { SaveableService, SaveErrorChecker } from './saveable-service.js';
+import { SecondaryWindowHandler } from './secondary-window-handler.js';
+import { UserWorkingDirectoryProvider } from './user-working-directory-provider.js';
+import { WindowTitleService } from './window/window-title-service.js';
+import { WindowTitleUpdater } from './window/window-title-updater.js';
+import { TheiaDockPanel } from './shell/theia-dock-panel.js';
+import { bindStatusBar } from './status-bar/index.js';
+import { CoreMarkdownRenderer, MarkdownRenderer, MarkdownRendererFactory, MarkdownRendererImpl } from './markdown-rendering/markdown-renderer.js';
+import { StylingParticipant, StylingService } from './styling-service.js';
+import { bindCommonStylingParticipants } from './common-styling-participants.js';
+import { HoverService } from './hover-service.js';
+import { AdditionalViewsMenuPath, AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './shell/additional-views-menu-widget.js';
+import { SidePanelItemVisibility, SidePanelItemVisibilityImpl } from './shell/side-panel-item-visibility.js';
+import { LanguageIconLabelProvider } from './language-icon-provider.js';
+import { bindTreePreferences } from '../common/tree-preference.js';
+import { OpenWithService } from './open-with-service.js';
+import { ViewColumnService } from './shell/view-column-service.js';
+import { DomInputUndoRedoHandler, UndoRedoHandler, UndoRedoHandlerService } from './undo-redo-handler.js';
+import { WidgetStatusBarContribution, WidgetStatusBarService } from './widget-status-bar-service.js';
+import { SymbolIconColorContribution } from './symbol-icon-color-contribution.js';
+import { CorePreferences, bindCorePreferences } from '../common/core-preferences.js';
+import { bindBadgeDecoration } from './badges/index.js';
+import { PerspectiveContribution, PerspectiveService, PerspectiveServiceImpl, PerspectiveServiceInternal, WidgetAreaResolverImpl } from './perspective-service.js';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 

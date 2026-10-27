@@ -28,8 +28,8 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { URI } from '@theia/core/lib/common/uri';
 import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { ChatAgentLocation, MarkdownChatResponseContentImpl, ThinkingChatResponseContentImpl, ErrorChatResponseContentImpl, MutableChatRequestModel } from '@theia/ai-chat';
-import { CodexFrontendService } from './codex-frontend-service';
-import { CodexChatAgent, CODEX_CHAT_AGENT_ID, CODEX_TOOL_CALLS_KEY, CODEX_INPUT_TOKENS_KEY, CODEX_OUTPUT_TOKENS_KEY } from './codex-chat-agent';
+import { CodexFrontendService } from './codex-frontend-service.js';
+import { CodexChatAgent, CODEX_CHAT_AGENT_ID, CODEX_TOOL_CALLS_KEY, CODEX_INPUT_TOKENS_KEY, CODEX_OUTPUT_TOKENS_KEY } from './codex-chat-agent.js';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 

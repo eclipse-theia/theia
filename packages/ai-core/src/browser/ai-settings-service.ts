@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { DisposableCollection, Emitter, Event, ILogger, RecursiveReadonly } from '@theia/core';
 import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
-import { AiConfigurationService, AISettings, AISettingsService, AgentSettings } from '../common';
+import { AiConfigurationService, AISettings, AISettingsService, AgentSettings } from '../common/index.js';
 
 @injectable()
 export class AISettingsServiceImpl implements AISettingsService {

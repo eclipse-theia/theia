@@ -19,7 +19,7 @@ import { Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-
 import { CancellationToken } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { ContributionProvider, Disposable, Emitter, Event } from '@theia/core/lib/common';
-import { CallHierarchyItem, CallHierarchyIncomingCall, CallHierarchyOutgoingCall } from './callhierarchy';
+import { CallHierarchyItem, CallHierarchyIncomingCall, CallHierarchyOutgoingCall } from './callhierarchy.js';
 import { LanguageSelector, score } from '@theia/editor/lib/common/language-selector';
 
 export const CallHierarchyService = Symbol('CallHierarchyService');

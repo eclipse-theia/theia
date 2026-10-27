@@ -14,15 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PluginDeployerFileHandler, PluginDeployerEntry, PluginDeployerFileHandlerContext, PluginType } from '../../../common/plugin-protocol';
+import { PluginDeployerFileHandler, PluginDeployerEntry, PluginDeployerFileHandlerContext, PluginType } from '../../../common/plugin-protocol.js';
 import { URI, ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { getTempDirPathAsync } from '../temp-dir-util';
+import { getTempDirPathAsync } from '../temp-dir-util.js';
 import * as fs from '@theia/core/shared/fs-extra';
 import filenamify from 'filenamify';
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { PluginTheiaEnvironment } from '../../common/plugin-theia-environment';
+import { PluginTheiaEnvironment } from '../../common/plugin-theia-environment.js';
 
 @injectable()
 export class PluginTheiaFileHandler implements PluginDeployerFileHandler {

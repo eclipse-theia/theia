@@ -16,20 +16,20 @@
 // *****************************************************************************
 
 import { AGENTS_MD_FILE_NAME, AGENTS_MD_PROMPT_FRAGMENT_ID, BasePromptFragment } from '@theia/ai-core/lib/common';
-import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from '../../common/context-variables';
+import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from '../../common/context-variables.js';
 import {
     FILE_CONTENT_FUNCTION_ID,
     GET_FILE_DIAGNOSTICS_ID,
     SEARCH_IN_WORKSPACE_FUNCTION_ID
-} from '../../common/workspace-functions';
+} from '../../common/workspace-functions.js';
 import {
     CREATE_TASK_CONTEXT_FUNCTION_ID,
     GET_TASK_CONTEXT_FUNCTION_ID,
     EDIT_TASK_CONTEXT_FUNCTION_ID,
     LIST_TASK_CONTEXTS_FUNCTION_ID,
     REWRITE_TASK_CONTEXT_FUNCTION_ID
-} from '../../common/task-context-function-ids';
-import { USER_INTERACTION_FUNCTION_ID } from '../../common/user-interaction-tool';
+} from '../../common/task-context-function-ids.js';
+import { USER_INTERACTION_FUNCTION_ID } from '../../common/user-interaction-tool.js';
 
 export const PR_REVIEW_SYSTEM_PROMPT_ID = 'pr-review-system';
 export const PR_REVIEW_GITHUB_INFORMATION_CAPABILITY_ID = 'pr-review-github-information';

@@ -15,19 +15,19 @@
 // *****************************************************************************
 
 import { Container, ContainerModule } from '@theia/core/shared/inversify';
-import { OPENAI_LANGUAGE_MODELS_MANAGER_PATH, OpenAiLanguageModelsManager } from '../common/openai-language-models-manager';
+import { OPENAI_LANGUAGE_MODELS_MANAGER_PATH, OpenAiLanguageModelsManager } from '../common/openai-language-models-manager.js';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
-import { OpenAiLanguageModelsManagerImpl } from './openai-language-models-manager-impl';
+import { OpenAiLanguageModelsManagerImpl } from './openai-language-models-manager-impl.js';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
-import { OpenAiLanguageModelFactory, OpenAiModel, OpenAiModelParams } from './openai-language-model';
-import { OpenAiModelUtils } from './openai-model-utils';
+import { OpenAiLanguageModelFactory, OpenAiModel, OpenAiModelParams } from './openai-language-model.js';
+import { OpenAiModelUtils } from './openai-model-utils.js';
 import {
     ChatCompletionStreamingAsyncIterator,
     ChatCompletionStreamingAsyncIteratorFactory,
     ChatCompletionToolLoopOptions
-} from './openai-chat-completion-stream';
-import { OpenAiResponseApiUtils } from './openai-response-api-utils';
-import { OpenAiPreferencesSchema } from '../common/openai-preferences';
+} from './openai-chat-completion-stream.js';
+import { OpenAiResponseApiUtils } from './openai-response-api-utils.js';
+import { OpenAiPreferencesSchema } from '../common/openai-preferences.js';
 
 // We use a connection module to handle AI services separately for each frontend.
 const openAiConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {

@@ -19,9 +19,9 @@ import { WindowTitleContribution } from '@theia/core/lib/browser/window/window-t
 import { RemoteStatus, RemoteStatusService } from '@theia/remote/lib/electron-common/remote-status-service';
 import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import type { ContainerInspectInfo } from 'dockerode';
-import { RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
+import { RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider.js';
 import { PortForwardingService } from '@theia/remote/lib/electron-browser/port-forwarding/port-forwarding-service';
-import { DEV_CONTAINER_PATH_QUERY } from '../electron-common/dev-container-workspaces';
+import { DEV_CONTAINER_PATH_QUERY } from '../electron-common/dev-container-workspaces.js';
 import { URI } from '@theia/core';
 
 @injectable()

@@ -20,7 +20,7 @@ import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator
 import { ApplicationShell, FrontendApplication, FrontendApplicationContribution, Saveable, Title, ViewContainer, Widget } from '@theia/core/lib/browser';
 import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget';
+import { OpenEditorsWidget } from './open-editors-widget/navigator-open-editors-widget.js';
 
 @injectable()
 export class NavigatorTabBarDecorator implements TabBarDecorator, FrontendApplicationContribution {

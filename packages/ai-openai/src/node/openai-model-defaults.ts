@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ReasoningSupport } from '@theia/ai-core';
-import { DeveloperMessageSettings } from './openai-language-model';
+import { DeveloperMessageSettings } from './openai-language-model.js';
 
 /**
  * Family-level defaults inferred from the OpenAI model id. Sourced from

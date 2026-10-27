@@ -17,7 +17,7 @@
 import { TabBar, Widget } from '@theia/core/lib/browser';
 import { EditorWidget, TextEditor } from '@theia/editor/lib/browser';
 import { Event, SelectionService, UNTITLED_SCHEME } from '@theia/core/lib/common';
-import { PreviewTabWidget, PreviewTabSupport } from './preview-tab-widget';
+import { PreviewTabWidget, PreviewTabSupport } from './preview-tab-widget.js';
 
 export class EditorPreviewWidget extends EditorWidget implements PreviewTabWidget {
 

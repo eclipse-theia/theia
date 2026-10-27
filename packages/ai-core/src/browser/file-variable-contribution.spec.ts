@@ -26,8 +26,8 @@ import { Container, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { withWorkspaceServiceDefaults } from '@theia/workspace/lib/browser/test/with-workspace-service-defaults';
-import { FileVariableContribution } from './file-variable-contribution';
-import { WorkspaceRelativePathResolver } from './workspace-relative-path-resolver';
+import { FileVariableContribution } from './file-variable-contribution.js';
+import { WorkspaceRelativePathResolver } from './workspace-relative-path-resolver.js';
 
 disableJSDOM();
 

@@ -21,9 +21,9 @@ import { NotebookModelResolverService } from '@theia/notebook/lib/browser';
 import { NotebookModel } from '@theia/notebook/lib/browser/view-model/notebook-model';
 import { NotebookCellsChangeType } from '@theia/notebook/lib/common';
 import { NotebookMonacoTextModelService } from '@theia/notebook/lib/browser/service/notebook-monaco-text-model-service';
-import { MAIN_RPC_CONTEXT, NotebookCellsChangedEventDto, NotebookDataDto, NotebookDocumentsExt, NotebookDocumentsMain, NotebookRawContentEventDto } from '../../../common';
-import { RPCProtocol } from '../../../common/rpc-protocol';
-import { NotebookDto } from './notebook-dto';
+import { MAIN_RPC_CONTEXT, NotebookCellsChangedEventDto, NotebookDataDto, NotebookDocumentsExt, NotebookDocumentsMain, NotebookRawContentEventDto } from '../../../common/index.js';
+import { RPCProtocol } from '../../../common/rpc-protocol.js';
+import { NotebookDto } from './notebook-dto.js';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { NotebookOpenHandler } from '@theia/notebook/lib/browser/notebook-open-handler';
 

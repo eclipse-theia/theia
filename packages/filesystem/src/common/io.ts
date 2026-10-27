@@ -22,9 +22,9 @@
 /* eslint-disable max-len */
 
 import URI from '@theia/core/lib/common/uri';
-import { BinaryBuffer } from '@theia/core/lib/common//buffer';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { CancellationToken, cancelled as canceled } from '@theia/core/lib/common/cancellation';
-import { FileSystemProviderWithOpenReadWriteCloseCapability, FileReadStreamOptions, ensureFileSystemProviderError, createFileSystemProviderError, FileSystemProviderErrorCode } from './files';
+import { FileSystemProviderWithOpenReadWriteCloseCapability, FileReadStreamOptions, ensureFileSystemProviderError, createFileSystemProviderError, FileSystemProviderErrorCode } from './files.js';
 import { WriteableStream, ErrorTransformer, DataTransformer } from '@theia/core/lib/common/stream';
 
 export interface CreateReadStreamOptions extends FileReadStreamOptions {

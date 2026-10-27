@@ -16,7 +16,7 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { LabelProviderContribution, DidChangeLabelEvent, LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { FileStatNode } from './file-tree';
+import { FileStatNode } from './file-tree.js';
 import { TreeLabelProvider } from '@theia/core/lib/browser/tree/tree-label-provider';
 
 @injectable()

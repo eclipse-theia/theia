@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { Summary, TaskContextStorageService } from './task-context-service';
+import { Summary, TaskContextStorageService } from './task-context-service.js';
 import { Emitter } from '@theia/core';
 import { AIVariableResourceResolver } from '@theia/ai-core';
-import { TASK_CONTEXT_VARIABLE } from './task-context-variable';
+import { TASK_CONTEXT_VARIABLE } from './task-context-variable.js';
 import { open, OpenerService } from '@theia/core/lib/browser';
 
 @injectable()

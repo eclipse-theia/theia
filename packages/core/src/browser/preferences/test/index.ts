@@ -14,6 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './mock-preference-service';
-export * from './mock-preference-proxy';
-export * from './mock-preference-provider';
+export * from './mock-preference-service.js';
+export * from './mock-preference-proxy.js';
+export * from './mock-preference-provider.js';

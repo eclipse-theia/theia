@@ -21,7 +21,7 @@ import {
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { createPreferenceProxy, PreferenceService, PreferenceProxy, PreferenceContribution, ILogger } from '@theia/core';
-import { FileWatchingPreferencesSchema } from '../../common/preference-schema';
+import { FileWatchingPreferencesSchema } from '../../common/preference-schema.js';
 
 export function bindSampleFileWatching(bind: interfaces.Bind): void {
     bind(FrontendApplicationContribution).to(SampleFileWatchingContribution).inSingletonScope();

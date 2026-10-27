@@ -20,7 +20,7 @@ const disableJSDOM = enableJSDOM();
 import { expect } from 'chai';
 import { Agent } from '@theia/ai-core/lib/common';
 import { AvailableGenericCapabilities } from '@theia/ai-chat-ui/lib/browser/generic-capabilities-service';
-import { AgentDetailServices, loadAgentDetail } from './agent-detail-model';
+import { AgentDetailServices, loadAgentDetail } from './agent-detail-model.js';
 
 disableJSDOM();
 

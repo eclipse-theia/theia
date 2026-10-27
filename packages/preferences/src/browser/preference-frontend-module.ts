@@ -15,30 +15,30 @@
 // *****************************************************************************
 
 import '../../src/browser/style/index.css';
-import './preferences-monaco-contribution';
+import './preferences-monaco-contribution.js';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { bindViewContribution, FrontendApplicationContribution, noopWidgetStatusBarContribution, OpenHandler, WidgetStatusBarContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { PreferenceTreeGenerator } from './util/preference-tree-generator';
-import { bindPreferenceProviders } from './preference-bindings';
-import { bindPreferencesWidgets } from './views/preference-widget-bindings';
-import { PreferencesContribution } from './preferences-contribution';
-import { PreferenceScopeCommandManager } from './util/preference-scope-command-manager';
+import { PreferenceTreeGenerator } from './util/preference-tree-generator.js';
+import { bindPreferenceProviders } from './preference-bindings.js';
+import { bindPreferencesWidgets } from './views/preference-widget-bindings.js';
+import { PreferencesContribution } from './preferences-contribution.js';
+import { PreferenceScopeCommandManager } from './util/preference-scope-command-manager.js';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
-import { PreferencesJsonSchemaContribution } from './preferences-json-schema-contribution';
-import { MonacoJSONCEditor } from './monaco-jsonc-editor';
-import { PreferenceTransaction, PreferenceTransactionFactory, preferenceTransactionFactoryCreator } from './preference-transaction-manager';
-import { PreferenceOpenHandler } from './preference-open-handler';
-import { CliPreferences, CliPreferencesPath } from '../common/cli-preferences';
+import { PreferencesJsonSchemaContribution } from './preferences-json-schema-contribution.js';
+import { MonacoJSONCEditor } from './monaco-jsonc-editor.js';
+import { PreferenceTransaction, PreferenceTransactionFactory, preferenceTransactionFactoryCreator } from './preference-transaction-manager.js';
+import { PreferenceOpenHandler } from './preference-open-handler.js';
+import { CliPreferences, CliPreferencesPath } from '../common/cli-preferences.js';
 import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
-import { PreferenceFrontendContribution } from './preference-frontend-contribution';
+import { PreferenceFrontendContribution } from './preference-frontend-contribution.js';
 import { RemoteCliArgsContribution } from '@theia/core/lib/common/remote-cli-args-contribution';
-import { SessionPreferenceRemoteCliContribution } from './session-preference-remote-cli-contribution';
-import { SessionPreferenceStatusBarContribution } from './session-preference-status-bar-contribution';
-import { PreferenceLayoutProvider } from './util/preference-layout';
-import { PreferencesWidget } from './views/preference-widget';
-import { PreferenceStorageFactory } from '../common/abstract-resource-preference-provider';
-import { FrontendPreferenceStorage } from './frontend-preference-storage';
+import { SessionPreferenceRemoteCliContribution } from './session-preference-remote-cli-contribution.js';
+import { SessionPreferenceStatusBarContribution } from './session-preference-status-bar-contribution.js';
+import { PreferenceLayoutProvider } from './util/preference-layout.js';
+import { PreferencesWidget } from './views/preference-widget.js';
+import { PreferenceStorageFactory } from '../common/abstract-resource-preference-provider.js';
+import { FrontendPreferenceStorage } from './frontend-preference-storage.js';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { PreferenceScope, URI } from '@theia/core';
 

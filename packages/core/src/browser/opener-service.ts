@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { named, injectable, inject } from 'inversify';
-import URI from '../common/uri';
-import { ContributionProvider, Prioritizeable, MaybePromise, Emitter, Event, Disposable, PreferenceService } from '../common';
-import { match } from '../common/glob';
+import URI from '../common/uri.js';
+import { ContributionProvider, Prioritizeable, MaybePromise, Emitter, Event, Disposable, PreferenceService } from '../common/index.js';
+import { match } from '../common/glob.js';
 
 export interface OpenerOptions {
 }

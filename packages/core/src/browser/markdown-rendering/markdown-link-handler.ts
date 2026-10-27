@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable } from '../../common';
-import { MarkdownString } from '../../common/markdown-rendering/markdown-string';
-import URI from '../../common/uri';
-import { open, OpenerService } from '../opener-service';
+import { Disposable } from '../../common/index.js';
+import { MarkdownString } from '../../common/markdown-rendering/markdown-string.js';
+import URI from '../../common/uri.js';
+import { open, OpenerService } from '../opener-service.js';
 
 /**
  * Marks an element whose markdown links are already routed through an {@link OpenerService}.

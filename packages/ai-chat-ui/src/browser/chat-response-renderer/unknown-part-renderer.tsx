@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
+import { ChatResponsePartRenderer } from '../chat-response-part-renderer.js';
 import { ChatResponseContent, UnknownChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';

@@ -21,7 +21,7 @@ import {
     AiConfigurationCategoryRenderer,
     AiConfigurationRenderContext,
     AiConfigurationTreeItem
-} from '../ai-configuration-category';
+} from '../ai-configuration-category.js';
 
 // The descriptor moved to the contribution point (the tree renders the action too); re-exported so the
 // categories that build one keep importing it from the base class they extend.
@@ -31,8 +31,8 @@ import {
     AiConfigurationEmptyState,
     AiConfigurationItemDetailHeader,
     AiConfigurationSection
-} from '../components/ai-configuration-primitives';
-import { AiConfigurationItemRow } from '../components/ai-configuration-item-row';
+} from '../components/ai-configuration-primitives.js';
+import { AiConfigurationItemRow } from '../components/ai-configuration-item-row.js';
 
 /** Describes the overview's "Add …" affordance. */
 /**

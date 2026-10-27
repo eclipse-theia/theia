@@ -14,16 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { RpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
-import { RPCProtocol } from './rpc-protocol';
+import { RPCProtocol } from './rpc-protocol.js';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { LogPart, KeysToAnyValues, KeysToKeysToAnyValue } from './types';
-import { PluginAPIFactory, Plugin } from './plugin-api-rpc';
-import { ExtPluginApi } from './plugin-ext-api-contribution';
+import { LogPart, KeysToAnyValues, KeysToKeysToAnyValue } from './types.js';
+import { PluginAPIFactory, Plugin } from './plugin-api-rpc.js';
+import { ExtPluginApi } from './plugin-ext-api-contribution.js';
 import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition } from '@theia/task/lib/common';
 import { ColorDefinition } from '@theia/core/lib/common/color';
 import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
 import { PreferenceSchema } from '@theia/core';
-import { PluginIdentifiers } from './plugin-identifiers';
+import { PluginIdentifiers } from './plugin-identifiers.js';
 import {
     getPluginId,
     toPluginUrl as toPluginUrlFromUtils

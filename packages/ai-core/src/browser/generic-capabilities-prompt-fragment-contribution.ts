@@ -16,7 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { PromptService } from '../common/prompt-service';
+import { PromptService } from '../common/prompt-service.js';
 import {
     GENERIC_CAPABILITIES_SKILLS_PROMPT_ID,
     GENERIC_CAPABILITIES_MCP_FUNCTIONS_PROMPT_ID,
@@ -24,8 +24,8 @@ import {
     GENERIC_CAPABILITIES_PROMPT_FRAGMENTS_PROMPT_ID,
     GENERIC_CAPABILITIES_AGENT_DELEGATION_PROMPT_ID,
     GENERIC_CAPABILITIES_VARIABLES_PROMPT_ID
-} from '../common/capability-utils';
-import { AGENT_DELEGATION_FUNCTION_ID } from '../common';
+} from '../common/capability-utils.js';
+import { AGENT_DELEGATION_FUNCTION_ID } from '../common/index.js';
 
 const SKILLS_TEMPLATE = `## Skills
 The following skills are available. Evaluate which skills apply to the current context and load applicable skills using getSkillFileContent before proceeding.

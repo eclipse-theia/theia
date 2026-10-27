@@ -17,8 +17,8 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { TreeModelImpl, TreeNode, TreeProps, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode } from '@theia/core/lib/browser/tree';
 import URI from '@theia/core/lib/common/uri';
-import { ScmProvider, ScmResourceGroup, ScmResource, ScmResourceDecorations } from './scm-provider';
-import { ScmContextKeyService } from './scm-context-key-service';
+import { ScmProvider, ScmResourceGroup, ScmResource, ScmResourceDecorations } from './scm-provider.js';
+import { ScmContextKeyService } from './scm-context-key-service.js';
 
 export const ScmTreeModelProps = Symbol('ScmTreeModelProps');
 export interface ScmTreeModelProps {

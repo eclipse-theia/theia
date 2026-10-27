@@ -19,7 +19,7 @@ import { Disposable } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import * as monaco from '@theia/monaco-editor-core';
 import { MonacoEditorZoneWidget } from '@theia/monaco/lib/browser/monaco-editor-zone-widget';
-import { AskAIInputFactory, AskAIInputWidget } from './ask-ai-input-widget';
+import { AskAIInputFactory, AskAIInputWidget } from './ask-ai-input-widget.js';
 
 /**
  * A widget that shows the Ask AI input UI in a Monaco editor zone.

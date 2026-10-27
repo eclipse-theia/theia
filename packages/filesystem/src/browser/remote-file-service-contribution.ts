@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { FileServiceContribution, FileService } from './file-service';
-import { RemoteFileSystemProvider } from '../common/remote-file-system-provider';
+import { FileServiceContribution, FileService } from './file-service.js';
+import { RemoteFileSystemProvider } from '../common/remote-file-system-provider.js';
 
 @injectable()
 export class RemoteFileServiceContribution implements FileServiceContribution {

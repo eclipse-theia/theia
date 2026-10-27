@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { NativeKeyboardLayout } from '../../common/keyboard/keyboard-layout-provider';
-import { createElectronKeyboardLayoutProvider } from './electron-keyboard-module';
+import { NativeKeyboardLayout } from '../../common/keyboard/keyboard-layout-provider.js';
+import { createElectronKeyboardLayoutProvider } from './electron-keyboard-module.js';
 
 describe('Electron keyboard layout provider', () => {
     it('reports the native-keymap source and delegates layout retrieval', async () => {

@@ -25,29 +25,34 @@ import {
     IInputBox, IInputOptions, IKeyMods, IPickOptions, IQuickInput, IQuickInputButton,
     IQuickInputService, IQuickNavigateConfiguration, IQuickPick, IQuickPickItem, IQuickPickItemButtonEvent,
     IQuickPickSeparator, IQuickTree, IQuickTreeItem, IQuickWidget, QuickPickInput
-} from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickInput';
-import { IQuickInputOptions, IQuickInputStyles } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/quickInput';
-import { QuickInputController } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/quickInputController';
-import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
-import { IQuickAccessController } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess';
-import { QuickAccessController } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/quickAccess';
-import { IContextKey, IContextKeyService, IScopedContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
+} from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickInput.js';
+import { IQuickInputOptions, IQuickInputStyles } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/quickInput.js';
+import { QuickInputController } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/quickInputController.js';
+import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding.js';
+import { IQuickAccessController } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess.js';
+import { QuickAccessController } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/quickAccess.js';
+import { IContextKey, IContextKeyService, IScopedContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey.js';
 import * as monaco from '@theia/monaco-editor-core';
-import { ResolvedKeybinding } from '@theia/monaco-editor-core/esm/vs/base/common/keybindings';
-import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IMatch } from '@theia/monaco-editor-core/esm/vs/base/common/filters';
+import { ResolvedKeybinding } from '@theia/monaco-editor-core/esm/vs/base/common/keybindings.js';
+import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation.js';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { IMatch } from '@theia/monaco-editor-core/esm/vs/base/common/filters.js';
 import { CancellationToken, Event } from '@theia/core';
-import { MonacoColorRegistry } from './monaco-color-registry';
+import { MonacoColorRegistry } from './monaco-color-registry.js';
 import { ThemeService } from '@theia/core/lib/browser/theming';
-import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
-import { ILayoutService } from '@theia/monaco-editor-core/esm/vs/platform/layout/browser/layoutService';
-import { IHoverDelegate, IHoverDelegateOptions } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hoverDelegate';
-import { IHoverWidget } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hover';
-import MonacoSeverity from '@theia/monaco-editor-core/esm/vs/base/common/severity';
+import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme.js';
+import { ILayoutService } from '@theia/monaco-editor-core/esm/vs/platform/layout/browser/layoutService.js';
+import { IHoverDelegate, IHoverDelegateOptions } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hoverDelegate.js';
+import { IHoverWidget } from '@theia/monaco-editor-core/esm/vs/base/browser/ui/hover/hover.js';
+import MonacoSeverityModule from '@theia/monaco-editor-core/esm/vs/base/common/severity.js';
 import { Severity } from '@theia/core/lib/common/severity';
-import { IStorageService } from '@theia/monaco-editor-core/esm/vs/platform/storage/common/storage';
-import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
+import { IStorageService } from '@theia/monaco-editor-core/esm/vs/platform/storage/common/storage.js';
+import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView.js';
+
+// `@theia/monaco-editor-core` ships ES modules without declaring `"type": "module"`, so the compiler assumes CommonJS semantics
+// for their default exports. At runtime, the default export is the `Severity` enum.
+const MonacoSeverity = MonacoSeverityModule as unknown as typeof MonacoSeverityModule.default;
+type MonacoSeverity = MonacoSeverityModule.default;
 
 /**
  * Converts Theia's {@link Severity} to Monaco's {@link MonacoSeverity}.

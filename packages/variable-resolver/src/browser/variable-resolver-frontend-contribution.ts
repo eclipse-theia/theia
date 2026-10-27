@@ -17,8 +17,8 @@
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { Command, CommandContribution, CommandRegistry, ContributionProvider } from '@theia/core/lib/common';
-import { VariableContribution, VariableRegistry } from './variable';
-import { VariableQuickOpenService } from './variable-quick-open-service';
+import { VariableContribution, VariableRegistry } from './variable.js';
+import { VariableQuickOpenService } from './variable-quick-open-service.js';
 
 export const LIST_VARIABLES: Command = Command.toLocalizedCommand({
     id: 'variable.list',

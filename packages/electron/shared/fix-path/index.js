@@ -1,1 +1,2 @@
-module.exports = import('fix-path');
+export * from 'fix-path';
+export { default } from 'fix-path';

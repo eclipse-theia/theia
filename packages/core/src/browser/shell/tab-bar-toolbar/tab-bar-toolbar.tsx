@@ -16,17 +16,17 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import * as React from 'react';
-import { buttonKeyboardProps, isActivationKey } from '../../keyboard/keyboard-utils';
-import { ContextKeyService, ContextMatcher } from '../../context-key-service';
-import { CommandRegistry, Disposable, DisposableCollection, nls } from '../../../common';
-import { Anchor, ContextMenuAccess, ContextMenuRenderer } from '../../context-menu-renderer';
-import { LabelParser } from '../../label-parser';
-import { codicon, ReactWidget, Widget } from '../../widgets';
-import { TabBarToolbarRegistry } from './tab-bar-toolbar-registry';
-import { TAB_BAR_TOOLBAR_CONTEXT_MENU, TabBarDelegator, TabBarToolbarAction } from './tab-bar-toolbar-types';
-import { KeybindingRegistry } from '../..//keybinding';
-import { TabBarToolbarItem } from './tab-toolbar-item';
-import { GroupImpl, MenuModelRegistry } from '../../../common/menu';
+import { buttonKeyboardProps, isActivationKey } from '../../keyboard/keyboard-utils.js';
+import { ContextKeyService, ContextMatcher } from '../../context-key-service.js';
+import { CommandRegistry, Disposable, DisposableCollection, nls } from '../../../common/index.js';
+import { Anchor, ContextMenuAccess, ContextMenuRenderer } from '../../context-menu-renderer.js';
+import { LabelParser } from '../../label-parser.js';
+import { codicon, ReactWidget, Widget } from '../../widgets/index.js';
+import { TabBarToolbarRegistry } from './tab-bar-toolbar-registry.js';
+import { TAB_BAR_TOOLBAR_CONTEXT_MENU, TabBarDelegator, TabBarToolbarAction } from './tab-bar-toolbar-types.js';
+import { KeybindingRegistry } from '../../keybinding.js';
+import { TabBarToolbarItem } from './tab-toolbar-item.js';
+import { GroupImpl, MenuModelRegistry } from '../../../common/menu/index.js';
 
 /**
  * Factory for instantiating tab-bar toolbars.

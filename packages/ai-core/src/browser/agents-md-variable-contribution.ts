@@ -19,10 +19,10 @@ import { MaybePromise, nls } from '@theia/core';
 import {
     AIVariable, AIVariableContext, AIVariableContribution, AIVariableResolutionRequest,
     AIVariableResolver, AIVariableService, ResolvedAIVariable
-} from '../common/variable-service';
+} from '../common/variable-service.js';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { AGENTS_MD_FILE_NAME } from '../common/agents-md';
-import { AgentsMdFile, AgentsMdService } from './agents-md-service';
+import { AGENTS_MD_FILE_NAME } from '../common/agents-md.js';
+import { AgentsMdFile, AgentsMdService } from './agents-md-service.js';
 
 export const AGENTS_MD_AUTO_LOADED_VARIABLE: AIVariable = {
     id: 'agentsMdAutoLoaded',

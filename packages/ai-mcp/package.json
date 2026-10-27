@@ -2,6 +2,7 @@
   "name": "@theia/ai-mcp",
   "version": "1.76.0",
   "description": "Theia - MCP Integration",
+  "type": "module",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
     "@theia/ai-core": "1.76.0",
@@ -14,6 +15,15 @@
     "access": "public"
   },
   "main": "lib/common",
+  "exports": {
+    ".": "./lib/common/index.js",
+    "./package.json": "./package.json",
+    "./lib/common": "./lib/common/index.js",
+    "./lib/*.json": "./lib/*.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js",
+    "./*": "./*"
+  },
   "theiaExtensions": [
     {
       "frontend": "lib/browser/mcp-frontend-module",

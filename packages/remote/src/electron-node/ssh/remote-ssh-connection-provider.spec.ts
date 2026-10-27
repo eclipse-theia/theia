@@ -15,8 +15,12 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import SshConfig from 'ssh-config';
-import { RemoteSSHConnectionProviderImpl } from './remote-ssh-connection-provider';
+import SshConfigModule from 'ssh-config';
+import { RemoteSSHConnectionProviderImpl } from './remote-ssh-connection-provider.js';
+
+// `ssh-config` is a CommonJS module that provides the class as `default` export of `module.exports`.
+const SshConfig = SshConfigModule.default;
+type SshConfig = SshConfigModule.default;
 
 /**
  * Parses the SSH config from an in-memory string instead of a file,

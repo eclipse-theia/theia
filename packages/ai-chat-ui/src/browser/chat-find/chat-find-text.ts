@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { BLOCKED_RESOURCE_CLASS } from '../chat-response-renderer/block-external-resources';
+import { BLOCKED_RESOURCE_CLASS } from '../chat-response-renderer/block-external-resources.js';
 
 export interface ChatFindTextSegment {
     node: Text;

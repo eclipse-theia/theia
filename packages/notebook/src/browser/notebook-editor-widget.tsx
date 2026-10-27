@@ -18,27 +18,31 @@ import * as React from '@theia/core/shared/react';
 import { CommandRegistry, MenuModelRegistry, URI, nls } from '@theia/core';
 import { ReactWidget, Navigatable, SaveableSource, Message, DelegatingSaveable, lock, unlock, animationFrame, codicon } from '@theia/core/lib/browser';
 import { ReactNode } from '@theia/core/shared/react';
-import { CellKind, NotebookCellsChangeType } from '../common';
-import { CellRenderer as CellRenderer, NotebookCellListView } from './view/notebook-cell-list-view';
-import { NotebookCodeCellRenderer } from './view/notebook-code-cell-view';
-import { NotebookMarkdownCellRenderer } from './view/notebook-markdown-cell-view';
-import { NotebookModel } from './view-model/notebook-model';
-import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory';
+import { CellKind, NotebookCellsChangeType } from '../common/index.js';
+import { CellRenderer as CellRenderer, NotebookCellListView } from './view/notebook-cell-list-view.js';
+import { NotebookCodeCellRenderer } from './view/notebook-code-cell-view.js';
+import { NotebookMarkdownCellRenderer } from './view/notebook-markdown-cell-view.js';
+import { NotebookModel } from './view-model/notebook-model.js';
+import { NotebookCellToolbarFactory } from './view/notebook-cell-toolbar-factory.js';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/shared/vscode-languageserver-protocol';
-import { NotebookEditorWidgetService } from './service/notebook-editor-widget-service';
-import { NotebookMainToolbarRenderer } from './view/notebook-main-toolbar';
+import { NotebookEditorWidgetService } from './service/notebook-editor-widget-service.js';
+import { NotebookMainToolbarRenderer } from './view/notebook-main-toolbar.js';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
-import { NotebookContextManager } from './service/notebook-context-manager';
-import { NotebookViewportService } from './view/notebook-viewport-service';
-import { NotebookCellCommands } from './contributions/notebook-cell-actions-contribution';
-import { NotebookFindWidget } from './view/notebook-find-widget';
-import debounce = require('@theia/core/shared/lodash.debounce');
-import { CellOutputWebview, CellOutputWebviewFactory } from './renderers/cell-output-webview';
-import { NotebookCellOutputModel } from './view-model/notebook-cell-output-model';
-import { NotebookViewModel } from './view-model/notebook-view-model';
-const PerfectScrollbar = require('react-perfect-scrollbar');
+import { NotebookContextManager } from './service/notebook-context-manager.js';
+import { NotebookViewportService } from './view/notebook-viewport-service.js';
+import { NotebookCellCommands } from './contributions/notebook-cell-actions-contribution.js';
+import { NotebookFindWidget } from './view/notebook-find-widget.js';
+import debounce from '@theia/core/shared/lodash.debounce';
+import { CellOutputWebview, CellOutputWebviewFactory } from './renderers/cell-output-webview.js';
+import { NotebookCellOutputModel } from './view-model/notebook-cell-output-model.js';
+import { NotebookViewModel } from './view-model/notebook-view-model.js';
+import ReactPerfectScrollbarModule from 'react-perfect-scrollbar';
+
+// The types of `react-perfect-scrollbar` declare an ES module default export, but its CommonJS entry point assigns the component
+// to `module.exports`, which is what a default import from an ES module provides at runtime.
+const PerfectScrollbar = ReactPerfectScrollbarModule as unknown as typeof ReactPerfectScrollbarModule.default;
 
 export const NotebookEditorWidgetContainerFactory = Symbol('NotebookEditorWidgetContainerFactory');
 
@@ -146,7 +150,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     protected _ready: Deferred<NotebookModel> = new Deferred();
     protected _findWidgetVisible = false;
     protected _findWidgetRef = React.createRef<NotebookFindWidget>();
-    protected scrollBarRef = React.createRef<{ updateScroll(): void }>();
+    protected scrollBarRef = React.createRef<InstanceType<typeof PerfectScrollbar>>();
     protected debounceFind = debounce(() => {
         this._findWidgetRef.current?.search({});
     }, 30, {

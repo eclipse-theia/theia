@@ -16,7 +16,7 @@
 
 import { Widget } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
-import { ArgumentProcessor } from '../../common/commands';
+import { ArgumentProcessor } from '../../common/commands.js';
 
 /**
  * This processor handles arguments passed to commands that are contributed by plugins and available as toolbar items.

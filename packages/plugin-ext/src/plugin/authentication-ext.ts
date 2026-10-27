@@ -20,13 +20,13 @@
  *--------------------------------------------------------------------------------------------*/
 // code copied and modified from https://github.com/microsoft/vscode/blob/1.47.3/src/vs/workbench/api/common/extHostAuthentication.ts
 
-import { Disposable } from './types-impl';
+import { Disposable } from './types-impl.js';
 import {
     AuthenticationExt,
     AuthenticationMain, Plugin as InternalPlugin,
     PLUGIN_RPC_CONTEXT
-} from '../common/plugin-api-rpc';
-import { RPCProtocol } from '../common/rpc-protocol';
+} from '../common/plugin-api-rpc.js';
+import { RPCProtocol } from '../common/rpc-protocol.js';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import * as theia from '@theia/plugin';
 

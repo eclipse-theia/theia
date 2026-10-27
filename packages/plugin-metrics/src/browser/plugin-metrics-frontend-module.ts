@@ -15,12 +15,12 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { LanguagesMainPluginMetrics } from './plugin-metrics-languages-main';
-import { PluginMetrics, metricsJsonRpcPath } from '../common/metrics-protocol';
+import { LanguagesMainPluginMetrics } from './plugin-metrics-languages-main.js';
+import { PluginMetrics, metricsJsonRpcPath } from '../common/metrics-protocol.js';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
-import { PluginMetricsCreator } from './plugin-metrics-creator';
-import { PluginMetricsResolver } from './plugin-metrics-resolver';
-import { PluginMetricsOutputChannelRegistry } from './plugin-metrics-output-registry';
+import { PluginMetricsCreator } from './plugin-metrics-creator.js';
+import { PluginMetricsResolver } from './plugin-metrics-resolver.js';
+import { PluginMetricsOutputChannelRegistry } from './plugin-metrics-output-registry.js';
 import { LanguagesMainImpl } from '@theia/plugin-ext/lib/main/browser/languages-main';
 import { OutputChannelRegistryMainImpl } from '@theia/plugin-ext/lib/main/browser/output-channel-registry-main';
 

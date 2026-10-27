@@ -19,8 +19,8 @@ import * as monaco from '@theia/monaco-editor-core';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MonacoEditorZoneWidget } from '@theia/monaco/lib/browser/monaco-editor-zone-widget';
-import { DebugEditor } from './debug-editor';
-import { DebugExceptionInfo } from '../model/debug-thread';
+import { DebugEditor } from './debug-editor.js';
+import { DebugExceptionInfo } from '../model/debug-thread.js';
 import { nls } from '@theia/core/lib/common/nls';
 import { codicon } from '@theia/core/lib/browser/widgets';
 

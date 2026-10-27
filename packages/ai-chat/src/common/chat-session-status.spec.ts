@@ -23,8 +23,8 @@ import {
     QuestionResponseContentImpl,
     TextChatResponseContentImpl,
     ToolCallChatResponseContentImpl
-} from './chat-model';
-import { ParsedChatRequest, ParsedChatRequestTextPart } from './parsed-chat-request';
+} from './chat-model.js';
+import { ParsedChatRequest, ParsedChatRequestTextPart } from './parsed-chat-request.js';
 
 describe('ChatSessionStatus', () => {
 

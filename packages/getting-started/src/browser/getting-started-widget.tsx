@@ -29,9 +29,9 @@ import { WorkspaceCommands, WorkspaceService } from '@theia/workspace/lib/browse
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { WalkthroughCommands } from '../common/walkthrough-commands';
-import { WalkthroughService } from './walkthrough-service';
-import { WalkthroughSection } from './walkthrough-section';
+import { WalkthroughCommands } from '../common/walkthrough-commands.js';
+import { WalkthroughService } from './walkthrough-service.js';
+import { WalkthroughSection } from './walkthrough-section.js';
 
 /**
  * Default implementation of the `GettingStartedWidget`.

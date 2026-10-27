@@ -16,9 +16,9 @@
 
 import { Container } from '@theia/core/shared/inversify';
 import { expect } from 'chai';
-import { PluginMetrics } from '../common/metrics-protocol';
-import { BrowserOnlyPluginMetrics } from './browser-only-plugin-metrics';
-import pluginMetricsFrontendOnlyModule from './plugin-metrics-frontend-only-module';
+import { PluginMetrics } from '../common/metrics-protocol.js';
+import { BrowserOnlyPluginMetrics } from './browser-only-plugin-metrics.js';
+import pluginMetricsFrontendOnlyModule from './plugin-metrics-frontend-only-module.js';
 
 describe('browser-only plugin metrics', () => {
     it('binds the no-op metrics', () => {

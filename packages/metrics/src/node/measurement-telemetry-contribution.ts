@@ -19,7 +19,7 @@ import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { LogLevelCliContribution } from '@theia/core/lib/node/logger-cli-contribution';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TelemetryService } from '@theia/telemetry/lib/common';
-import { reportMeasurement } from '../common';
+import { reportMeasurement } from '../common/index.js';
 
 @injectable()
 export class MeasurementTelemetryContribution implements BackendApplicationContribution {

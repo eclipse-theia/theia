@@ -15,10 +15,10 @@
 // *****************************************************************************
 
 import * as React from 'react';
-import { MarkdownRenderer, MarkdownRenderResult } from './markdown-renderer';
-import { MarkdownString, MarkdownStringImpl } from '../../common/markdown-rendering/markdown-string';
-import { nls } from '../../common/nls';
-import { FormatType } from '../../common/i18n/localization';
+import { MarkdownRenderer, MarkdownRenderResult } from './markdown-renderer.js';
+import { MarkdownString, MarkdownStringImpl } from '../../common/markdown-rendering/markdown-string.js';
+import { nls } from '../../common/nls.js';
+import { FormatType } from '../../common/i18n/localization.js';
 
 export interface MarkdownProps {
     /**

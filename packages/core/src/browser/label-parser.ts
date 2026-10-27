@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { injectable } from 'inversify';
-import { isObject, isString } from '../common';
+import { isObject, isString } from '../common/index.js';
 
 export interface LabelIcon {
     name: string;

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { formatProviderError, formattedProviderErrorToShortString } from './provider-error-formatter';
+import { formatProviderError, formattedProviderErrorToShortString } from './provider-error-formatter.js';
 
 describe('formatProviderError', () => {
 

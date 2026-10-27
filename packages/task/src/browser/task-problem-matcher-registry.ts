@@ -26,8 +26,8 @@ import {
     ApplyToKind, FileLocationKind, NamedProblemMatcher,
     ProblemPattern, ProblemMatcher, ProblemMatcherContribution, WatchingMatcher,
     fromVariableName
-} from '../common';
-import { ProblemPatternRegistry } from './task-problem-pattern-registry';
+} from '../common/index.js';
+import { ProblemPatternRegistry } from './task-problem-pattern-registry.js';
 import { Severity } from '@theia/core/lib/common/severity';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ILogger } from '@theia/core';

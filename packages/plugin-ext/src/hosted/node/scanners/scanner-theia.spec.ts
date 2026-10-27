@@ -20,8 +20,8 @@ import { expect } from 'chai';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
-import { AbstractPluginScanner, TheiaPluginScanner } from './scanner-theia';
-import { PluginPackage, PluginEntryPoint, PluginPackageWalkthrough, WalkthroughContribution } from '../../../common/plugin-protocol';
+import { AbstractPluginScanner, TheiaPluginScanner } from './scanner-theia.js';
+import { PluginPackage, PluginEntryPoint, PluginPackageWalkthrough, WalkthroughContribution } from '../../../common/plugin-protocol.js';
 import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 import URI from '@theia/core/lib/common/uri';
 

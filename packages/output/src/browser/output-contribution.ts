@@ -21,12 +21,12 @@ import { MaybePromise } from '@theia/core/lib/common/types';
 import { CommonCommands, quickCommand, OpenHandler, open, OpenerOptions, OpenerService, QuickPickItem, QuickPickValue } from '@theia/core/lib/browser';
 import { CommandRegistry, MenuModelRegistry, CommandService } from '@theia/core/lib/common';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
-import { OutputWidget } from './output-widget';
-import { OutputContextMenu } from './output-context-menu';
-import { OutputUri } from '../common/output-uri';
+import { OutputWidget } from './output-widget.js';
+import { OutputContextMenu } from './output-context-menu.js';
+import { OutputUri } from '../common/output-uri.js';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
-import { OutputChannelManager, OutputChannel } from './output-channel';
-import { OutputCommands } from './output-commands';
+import { OutputChannelManager, OutputChannel } from './output-channel.js';
+import { OutputCommands } from './output-commands.js';
 import { QuickPickSeparator, QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { nls } from '@theia/core/lib/common/nls';
 

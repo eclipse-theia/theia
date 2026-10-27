@@ -24,7 +24,7 @@ import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
 import { OS } from '@theia/core/lib/common/os';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { WorkspaceService } from './workspace-service';
+import { WorkspaceService } from './workspace-service.js';
 
 disableJSDOM();
 

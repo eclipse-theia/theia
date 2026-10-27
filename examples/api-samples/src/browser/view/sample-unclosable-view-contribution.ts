@@ -19,7 +19,7 @@ import { AbstractViewContribution, bindViewContribution } from '@theia/core/lib/
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { Command, CommandRegistry, MessageService } from '@theia/core/lib/common';
 import { ApplicationShell, codicon, DockLayout, ShellLayoutTransformer, Widget, WidgetFactory } from '@theia/core/lib/browser';
-import { SampleViewUnclosableView } from './sample-unclosable-view';
+import { SampleViewUnclosableView } from './sample-unclosable-view.js';
 
 export const SampleToolBarCommand: Command = {
     id: 'sample.toggle.toolbarCommand',

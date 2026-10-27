@@ -23,7 +23,7 @@ import {
     combineSkillDirectories,
     isValidSkillName,
     validateSkillDescription
-} from './skill';
+} from './skill.js';
 
 describe('Skill Types', () => {
 

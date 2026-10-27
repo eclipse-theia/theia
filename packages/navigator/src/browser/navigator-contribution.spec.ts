@@ -26,10 +26,10 @@ import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { WorkspacePreferences } from '@theia/workspace/lib/common';
 import { FileStatNode } from '@theia/filesystem/lib/browser';
-import { FileNavigatorContribution } from './navigator-contribution';
-import { FileNavigatorPreferences } from '../common/navigator-preferences';
-import { FileNavigatorFilter } from './navigator-filter';
-import { FileNavigatorWidget } from './navigator-widget';
+import { FileNavigatorContribution } from './navigator-contribution.js';
+import { FileNavigatorPreferences } from '../common/navigator-preferences.js';
+import { FileNavigatorFilter } from './navigator-filter.js';
+import { FileNavigatorWidget } from './navigator-widget.js';
 
 disableJSDOM();
 

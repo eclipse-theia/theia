@@ -21,7 +21,7 @@ import { MaybePromise, URI, nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { WorkspaceMetadataStorageService, WorkspaceMetadataStore } from '@theia/workspace/lib/browser/metadata-storage';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { AccessibleRootContribution } from './workspace-functions';
+import { AccessibleRootContribution } from './workspace-functions.js';
 
 /** Key under which the memory directory is requested from the workspace metadata storage. */
 export const MEMORY_METADATA_STORE_KEY = 'memory';

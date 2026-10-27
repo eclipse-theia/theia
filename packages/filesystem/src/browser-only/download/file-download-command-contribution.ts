@@ -19,8 +19,8 @@ import URI from '@theia/core/lib/common/uri';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
-import { FileDownloadService } from '../../common/download/file-download';
-import { FileDownloadCommands } from '../../browser/download/file-download-command-contribution';
+import { FileDownloadService } from '../../common/download/file-download.js';
+import { FileDownloadCommands } from '../../browser/download/file-download-command-contribution.js';
 
 @injectable()
 export class FileDownloadCommandContribution implements CommandContribution {

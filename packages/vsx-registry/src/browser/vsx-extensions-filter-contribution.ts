@@ -17,8 +17,8 @@
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, MenuPath, nls } from '@theia/core/lib/common';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { ExtensionsSourceContribution } from './extensions-source-contribution';
-import { BUILTIN_QUERY, INSTALLED_QUERY, MODE_QUERIES, RECOMMENDED_QUERY, VSXExtensionsSearchModel } from './vsx-extensions-search-model';
+import { ExtensionsSourceContribution } from './extensions-source-contribution.js';
+import { BUILTIN_QUERY, INSTALLED_QUERY, MODE_QUERIES, RECOMMENDED_QUERY, VSXExtensionsSearchModel } from './vsx-extensions-search-model.js';
 
 /** Menu path of the anchored "Filter" popup opened from the Extensions search bar. */
 export const EXTENSIONS_FILTER_BY_TYPE_MENU: MenuPath = ['vsx-extensions-filter-by-type-context-menu'];

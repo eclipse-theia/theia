@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { Emitter, Event, Disposable } from '../../common';
-import { CompositeTreeNode, TreeNode, Tree } from './tree';
+import { Emitter, Event, Disposable } from '../../common/index.js';
+import { CompositeTreeNode, TreeNode, Tree } from './tree.js';
 
 export const TreeExpansionService = Symbol('TreeExpansionService');
 

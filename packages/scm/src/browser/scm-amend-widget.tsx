@@ -20,9 +20,9 @@ import * as React from '@theia/core/shared/react';
 import {
     ContextMenuRenderer, ReactWidget, LabelProvider, KeybindingRegistry, StorageService
 } from '@theia/core/lib/browser';
-import { ScmService } from './scm-service';
-import { ScmAvatarService } from './scm-avatar-service';
-import { ScmAmendComponent } from './scm-amend-component';
+import { ScmService } from './scm-service.js';
+import { ScmAvatarService } from './scm-avatar-service.js';
+import { ScmAmendComponent } from './scm-amend-component.js';
 
 @injectable()
 export class ScmAmendWidget extends ReactWidget {

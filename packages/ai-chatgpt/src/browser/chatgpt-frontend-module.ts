@@ -25,10 +25,10 @@ import {
     ChatGptAuthState,
     ChatGptLanguageModelsManager,
     ChatGptPreferencesSchema
-} from '../common';
-import { ChatGptCommandContribution } from './chatgpt-command-contribution';
-import { ChatGptFrontendApplicationContribution } from './chatgpt-frontend-application-contribution';
-import { ChatGptStatusBarContribution } from './chatgpt-status-bar-contribution';
+} from '../common/index.js';
+import { ChatGptCommandContribution } from './chatgpt-command-contribution.js';
+import { ChatGptFrontendApplicationContribution } from './chatgpt-frontend-application-contribution.js';
+import { ChatGptStatusBarContribution } from './chatgpt-status-bar-contribution.js';
 
 class ChatGptAuthServiceClientImpl implements ChatGptAuthServiceClient {
     protected readonly onAuthStateChangedEmitter = new Emitter<ChatGptAuthState>();

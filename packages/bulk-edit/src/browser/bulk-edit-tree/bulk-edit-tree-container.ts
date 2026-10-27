@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { interfaces, Container } from '@theia/core/shared/inversify';
-import { BulkEditTreeWidget } from './bulk-edit-tree-widget';
-import { BulkEditTree } from './bulk-edit-tree';
-import { BulkEditTreeModel } from './bulk-edit-tree-model';
+import { BulkEditTreeWidget } from './bulk-edit-tree-widget.js';
+import { BulkEditTree } from './bulk-edit-tree.js';
+import { BulkEditTreeModel } from './bulk-edit-tree-model.js';
 import { createTreeContainer } from '@theia/core/lib/browser';
 
 export function createBulkEditContainer(parent: interfaces.Container): Container {

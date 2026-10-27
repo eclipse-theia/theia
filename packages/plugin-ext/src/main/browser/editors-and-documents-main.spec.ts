@@ -22,7 +22,7 @@ import { Emitter, URI } from '@theia/core';
 import { BaseWidget, Navigatable, Saveable, SaveableSource, Widget } from '@theia/core/lib/browser';
 import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
-import { EditorsAndDocumentsMain } from './editors-and-documents-main';
+import { EditorsAndDocumentsMain } from './editors-and-documents-main.js';
 
 disableJSDOM();
 

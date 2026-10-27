@@ -16,7 +16,7 @@
 
 import * as path from 'path';
 import { promises as fs } from 'fs';
-import { PluginDeployerEntry, PluginDeployerDirectoryHandlerContext } from '../../common/plugin-protocol';
+import { PluginDeployerEntry, PluginDeployerDirectoryHandlerContext } from '../../common/plugin-protocol.js';
 
 export class PluginDeployerDirectoryHandlerContextImpl implements PluginDeployerDirectoryHandlerContext {
 

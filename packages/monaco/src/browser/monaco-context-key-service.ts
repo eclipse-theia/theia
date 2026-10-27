@@ -20,9 +20,9 @@ import {
     ScopedValueStore, ContextMatcher, ContextKeyValue, Context
 } from '@theia/core/lib/browser/context-key-service';
 import { Emitter, Event } from '@theia/core';
-import { AbstractContextKeyService, Context as MonacoContext } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService';
-import { ContextKeyExpr, ContextKeyExpression, IContext, IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { AbstractContextKeyService, Context as MonacoContext } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/browser/contextKeyService.js';
+import { ContextKeyExpr, ContextKeyExpression, IContext, IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey.js';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
 
 @injectable()
 export class MonacoContextKeyService implements TheiaContextKeyService {

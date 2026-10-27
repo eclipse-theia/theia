@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from 'react';
-import { buttonKeyboardProps, isActivationKey } from '../keyboard/keyboard-utils';
+import { buttonKeyboardProps, isActivationKey } from '../keyboard/keyboard-utils.js';
 
 export interface CardActionButton {
     /** Icon class (e.g., codicon) */

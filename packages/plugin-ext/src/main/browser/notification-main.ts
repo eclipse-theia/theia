@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MAIN_RPC_CONTEXT } from '../../common';
+import { MAIN_RPC_CONTEXT } from '../../common/index.js';
 import { interfaces } from '@theia/core/shared/inversify';
-import { RPCProtocol } from '../../common/rpc-protocol';
-import { BasicNotificationMainImpl } from '../common/basic-notification-main';
+import { RPCProtocol } from '../../common/rpc-protocol.js';
+import { BasicNotificationMainImpl } from '../common/basic-notification-main.js';
 
 export class NotificationMainImpl extends BasicNotificationMainImpl {
     constructor(rpc: RPCProtocol, container: interfaces.Container) {

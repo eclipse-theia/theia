@@ -21,11 +21,11 @@
 // based on https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/workbench/services/textfile/browser/textFileService.ts#L491
 
 import { injectable, inject } from 'inversify';
-import URI from '../common/uri';
-import { Disposable } from '../common/disposable';
-import { EncodingService as EncodingService } from '../common/encoding-service';
-import { UTF8 } from '../common/encodings';
-import { CorePreferences } from '../common/core-preferences';
+import URI from '../common/uri.js';
+import { Disposable } from '../common/disposable.js';
+import { EncodingService as EncodingService } from '../common/encoding-service.js';
+import { UTF8 } from '../common/encodings.js';
+import { CorePreferences } from '../common/core-preferences.js';
 
 export interface EncodingOverride {
     parent?: URI;

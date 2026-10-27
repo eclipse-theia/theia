@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { WebviewWidgetFactory } from '../../browser/webview/webview-widget-factory';
-import { WebviewWidgetIdentifier, WebviewWidget } from '../../browser/webview/webview';
-import { CustomEditorWidgetFactory } from '../../browser/custom-editors/custom-editor-widget-factory';
-import { CustomEditorWidget } from '../../browser/custom-editors/custom-editor-widget';
+import { WebviewWidgetFactory } from '../../browser/webview/webview-widget-factory.js';
+import { WebviewWidgetIdentifier, WebviewWidget } from '../../browser/webview/webview.js';
+import { CustomEditorWidgetFactory } from '../../browser/custom-editors/custom-editor-widget-factory.js';
+import { CustomEditorWidget } from '../../browser/custom-editors/custom-editor-widget.js';
 import '@theia/core/lib/electron-common/electron-api';
 
 export class ElectronWebviewWidgetFactory extends WebviewWidgetFactory {

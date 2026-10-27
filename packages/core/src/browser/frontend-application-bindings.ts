@@ -18,16 +18,16 @@ import { interfaces } from 'inversify';
 import {
     bindRootContributionProvider, DefaultResourceProvider, MaybePromise, MessageClient,
     MessageService, ResourceProvider, ResourceResolver
-} from '../common';
-import { PreferenceProvider } from '../common/preferences/preference-provider';
+} from '../common/index.js';
+import { PreferenceProvider } from '../common/preferences/preference-provider.js';
 import {
     bindPreferenceSchemaProvider,
     PreferenceValidationService
-} from './preferences';
+} from './preferences/index.js';
 import {
     InjectablePreferenceProxy, PreferenceProviderProvider, PreferenceProxyFactory,
     PreferenceProxyOptions, PreferenceProxySchema, PreferenceSchema, PreferenceScope, PreferenceService, PreferenceServiceImpl
-} from '../common/preferences';
+} from '../common/preferences/index.js';
 
 export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<MessageService> {
     bind(MessageClient).toSelf().inSingletonScope();

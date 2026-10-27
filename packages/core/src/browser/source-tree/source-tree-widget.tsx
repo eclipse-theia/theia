@@ -16,10 +16,10 @@
 
 import * as React from 'react';
 import { injectable, postConstruct, interfaces, Container } from 'inversify';
-import { DisposableCollection } from '../../common/disposable';
-import { TreeWidget, TreeNode, createTreeContainer, TreeProps, TreeModel, TREE_NODE_SEGMENT_GROW_CLASS } from '../tree';
-import { TreeSource, TreeElement } from './tree-source';
-import { SourceTree, TreeElementNode, TreeSourceNode } from './source-tree';
+import { DisposableCollection } from '../../common/disposable.js';
+import { TreeWidget, TreeNode, createTreeContainer, TreeProps, TreeModel, TREE_NODE_SEGMENT_GROW_CLASS } from '../tree/index.js';
+import { TreeSource, TreeElement } from './tree-source.js';
+import { SourceTree, TreeElementNode, TreeSourceNode } from './source-tree.js';
 
 @injectable()
 export class SourceTreeWidget extends TreeWidget {

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import debounce = require('@theia/core/shared/lodash.debounce');
+import debounce from '@theia/core/shared/lodash.debounce';
 
 import { MenuPath } from '@theia/core';
 import { Key } from '@theia/core/lib/browser';
@@ -25,14 +25,14 @@ import { Widget } from '@theia/core/shared/@lumino/widgets';
 import { Container, inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { URI as CodeUri } from '@theia/core/shared/vscode-uri';
 import * as monaco from '@theia/monaco-editor-core';
-import { IEditorHoverOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration';
-import { DebugVariable } from '../console/debug-console-items';
-import { DebugSessionManager } from '../debug-session-manager';
-import { DebugEditor } from './debug-editor';
-import { DebugExpressionProvider } from './debug-expression-provider';
-import { DebugHoverSource } from './debug-hover-source';
+import { IEditorHoverOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions.js';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices.js';
+import { IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration.js';
+import { DebugVariable } from '../console/debug-console-items.js';
+import { DebugSessionManager } from '../debug-session-manager.js';
+import { DebugEditor } from './debug-editor.js';
+import { DebugExpressionProvider } from './debug-expression-provider.js';
+import { DebugHoverSource } from './debug-hover-source.js';
 
 export interface ShowDebugHoverOptions {
     selection: monaco.Range

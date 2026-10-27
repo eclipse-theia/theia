@@ -18,17 +18,16 @@ import * as dns from 'dns';
 import * as path from 'path';
 import * as http from 'http';
 import * as https from 'https';
-import express from 'express';
-import * as yargs from 'yargs';
-import * as fs from 'fs-extra';
+import express from '../../shared/express/index.cjs';
+import yargs from '../../shared/yargs/index.cjs';
+import * as fs from '../../shared/fs-extra/index.cjs';
 import { inject, named, injectable, type interfaces, postConstruct } from 'inversify';
-import { ContributionProvider, LogLevel, MaybePromise, MeasurementContext, Stopwatch } from '../common';
-import { CliContribution } from './cli';
-import { Deferred, timeoutReject } from '../common/promise-util';
-import { environment } from '../common/index';
+import { ContributionProvider, LogLevel, MaybePromise, MeasurementContext, Stopwatch, environment } from '../common/index.js';
+import { CliContribution } from './cli.js';
+import { Deferred, timeoutReject } from '../common/promise-util.js';
 import { AddressInfo } from 'net';
-import { ProcessUtils } from './process-utils';
-import { ILogger } from '../common/logger';
+import { ProcessUtils } from './process-utils.js';
+import { ILogger } from '../common/logger.js';
 
 /**
  * The path to the application project directory. This is the directory where the application code is located.

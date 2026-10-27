@@ -18,9 +18,9 @@ import { injectable } from '@theia/core/shared/inversify';
 import { nls } from '@theia/core';
 import { Autorun } from '@theia/core/lib/common/observable';
 import { EditorDecoration, Range } from '@theia/editor/lib/browser';
-import { MergeEditorPane } from './merge-editor-pane';
-import { MergeRange } from '../../model/merge-range';
-import { LineRange } from '../../model/line-range';
+import { MergeEditorPane } from './merge-editor-pane.js';
+import { MergeRange } from '../../model/merge-range.js';
+import { LineRange } from '../../model/line-range.js';
 
 @injectable()
 export class MergeEditorBasePane extends MergeEditorPane {

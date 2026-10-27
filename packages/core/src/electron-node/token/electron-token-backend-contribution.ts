@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import express = require('express');
+import * as express from '../../../shared/express/index.cjs';
 import { injectable, inject, named } from 'inversify';
-import { BackendApplicationContribution } from '../../node';
-import { ElectronTokenValidator } from './electron-token-validator';
-import { ILogger } from '../../common/logger';
+import { BackendApplicationContribution } from '../../node/index.js';
+import { ElectronTokenValidator } from './electron-token-validator.js';
+import { ILogger } from '../../common/logger.js';
 
 /**
  * This component contributes an Express middleware that will refuse all
