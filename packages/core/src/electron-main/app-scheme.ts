@@ -14,17 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as path from 'path';
 import { promises as fs } from 'fs';
+import * as path from 'path';
 
-/**
- * The privileged scheme through which the Electron frontend is loaded. Unlike a `file:` URL, a
- * privileged standard scheme lets Chromium keep a V8 code cache for the frontend's scripts across
- * launches, so that the entry bundle is not recompiled every time a window opens.
- */
-export const APP_SCHEME = 'theia-app';
-/** The single host under {@link APP_SCHEME}; paths are relative to the application's frontend directory. */
-export const APP_HOST = 'theia';
+import { APP_HOST, APP_SCHEME } from '../electron-common/app-scheme';
+
+export { APP_HOST, APP_ORIGIN, APP_SCHEME, appUri } from '../electron-common/app-scheme';
 
 const CONTENT_TYPES: Record<string, string> = {
     '.html': 'text/html',
@@ -40,11 +35,6 @@ const CONTENT_TYPES: Record<string, string> = {
     '.woff2': 'font/woff2',
     '.ttf': 'font/ttf',
 };
-
-/** The URI of a file of the frontend directory under the application scheme. */
-export function appUri(file: string): string {
-    return `${APP_SCHEME}://${APP_HOST}/${file}`;
-}
 
 /** The content type served for a frontend file, by its extension. */
 export function contentTypeOf(file: string): string {
