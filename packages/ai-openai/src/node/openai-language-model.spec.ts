@@ -402,9 +402,15 @@ describe('createOpenAiClient', () => {
         expect(headers.has('api-key')).to.equal(false);
     });
 
-    it('still sends the placeholder api-key to Azure when nothing else authenticates the request', async () => {
-        const { headers } = await sentHeaders({ ...AZURE, headers: { 'X-Gateway-User': 'theia' } });
-        expect(headers.get('api-key')).to.equal('no-key');
+    it('sends no placeholder api-key to an Azure endpoint that authenticates with another header', async () => {
+        const { headers } = await sentHeaders({ ...AZURE, headers: { 'Ocp-Apim-Subscription-Key': 'subscription-key' } });
+        expect(headers.get('ocp-apim-subscription-key')).to.equal('subscription-key');
+        expect(headers.has('api-key')).to.equal(false);
+    });
+
+    it('sends no placeholder api-key to a keyless Azure endpoint without headers', async () => {
+        const { headers } = await sentHeaders(AZURE);
+        expect(headers.has('api-key')).to.equal(false);
     });
 
     it('sends a configured Azure key next to an Authorization header', async () => {

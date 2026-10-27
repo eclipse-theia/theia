@@ -106,13 +106,14 @@ export function createOpenAiClient(options: OpenAiClientOptions): OpenAI {
 
 /**
  * The Azure client sends its key in the `api-key` header, so without a key it would send the `no-key` placeholder.
- * When no key is configured but the headers authenticate the request themselves - typically a Microsoft Entra ID
- * token in `Authorization` - the placeholder is removed: it is not a credential, gateways may reject a request with an
- * invalid `api-key`, and the SDK stops following redirects for requests that carry one.
+ * When no key is configured the placeholder is removed: it only satisfies the SDK constructor and is never a valid
+ * credential, gateways may reject a request with an invalid `api-key` (whether they authenticate with a Microsoft
+ * Entra ID token in `Authorization`, a subscription-key header or not at all), and the SDK stops following redirects
+ * for requests that carry one. An `api-key` header set explicitly in the configured headers is kept.
  */
 function azureDefaultHeaders(options: OpenAiClientOptions): Record<string, string | null> | undefined {
     const names = Object.keys(options.headers ?? {}).map(name => name.toLowerCase());
-    if (options.apiKey || !names.includes('authorization') || names.includes('api-key')) {
+    if (options.apiKey || names.includes('api-key')) {
         return options.headers;
     }
     return { ...options.headers, 'api-key': null }; // eslint-disable-line no-null/no-null
