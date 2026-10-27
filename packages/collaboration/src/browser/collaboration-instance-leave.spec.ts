@@ -28,25 +28,46 @@ import { expect } from 'chai';
 import * as Y from 'yjs';
 import * as awarenessProtocol from 'y-protocols/awareness';
 import * as types from 'open-collaboration-protocol';
-import { ILogger, URI } from '@theia/core';
-import { Deferred } from '@theia/core/lib/common/promise-util';
+import { Emitter, ILogger, URI } from '@theia/core';
+import { Deferred, timeout } from '@theia/core/lib/common/promise-util';
 import { EditorDecoration, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { CollaborationInstance, CollaborationInstanceOptions } from './collaboration-instance';
 import { CollaborationUtils } from './collaboration-utils';
+import { CollaborationSocketIoTransport } from './collaboration-socket-io-transport';
+import { Socket } from 'socket.io-client';
 
 disableJSDOM();
 
 type LeaveHandler = (origin: string, peer: types.Peer) => void;
 
+/** A transport whose server closes the connection after it handles `Room.Leave`, unless told otherwise. */
+class FakeTransport {
+    readonly onServerCloseEmitter = new Emitter<void>();
+    readonly onServerClose = this.onServerCloseEmitter.event;
+    readonly onDisconnectEmitter = new Emitter<void>();
+    readonly onDisconnect = this.onDisconnectEmitter.event;
+    serverClosesAfterLeave = true;
+
+    serverClose(): void {
+        this.onServerCloseEmitter.fire();
+        this.onDisconnectEmitter.fire();
+    }
+}
+
 class FakeConnection {
     readonly events: string[] = [];
+    readonly transport = new FakeTransport();
     leaveResult: Promise<void> = Promise.resolve();
     readonly leaveHandlers: LeaveHandler[] = [];
     readonly room = {
         leave: () => {
             this.events.push('leave');
-            return this.leaveResult;
+            return this.leaveResult.then(() => {
+                if (this.transport.serverClosesAfterLeave) {
+                    setTimeout(() => this.transport.serverClose());
+                }
+            });
         },
         onLeave: (handler: LeaveHandler) => this.leaveHandlers.push(handler),
         onJoin: () => { },
@@ -93,8 +114,18 @@ class TestCollaborationInstance extends CollaborationInstance {
         getProtocolPath: (uri?: URI) => uri?.path.base
     } as CollaborationUtils;
 
+    transport?: Partial<FakeTransport> = this.connection.transport;
+
     constructor(protected override readonly leaveTimeout = 2_000) {
         super();
+    }
+
+    protected override getTransport(): types.MessageTransport | undefined {
+        return this.transport ? this.transport as types.MessageTransport : super.getTransport();
+    }
+
+    findTransport(): types.MessageTransport | undefined {
+        return this.getTransport();
     }
 
     /** What `init` does with the connection, without the services it needs for the rest. */
@@ -166,6 +197,47 @@ describe('CollaborationInstance leaving a session', () => {
             expect(instance.connection.events).to.deep.equal(['leave', 'close']);
         });
 
+        it('waits for the server to close the connection before closing it', async () => {
+            instance = new TestCollaborationInstance();
+            instance.connect();
+            instance.connection.transport.serverClosesAfterLeave = false;
+
+            const left = instance.leave();
+            await timeout(20);
+            expect(instance.connection.events).to.deep.equal(['leave']);
+
+            instance.connection.transport.serverClose();
+            await left;
+            expect(instance.connection.events).to.deep.equal(['leave', 'close']);
+        });
+
+        it('waits for onDisconnect on a transport that doesn\'t report a close by the server', async () => {
+            instance = new TestCollaborationInstance();
+            instance.connect();
+            const transport = instance.connection.transport;
+            transport.serverClosesAfterLeave = false;
+            instance.transport = { onDisconnect: transport.onDisconnect };
+
+            const left = instance.leave();
+            await timeout(20);
+            expect(instance.connection.events).to.deep.equal(['leave']);
+
+            transport.serverClose();
+            await left;
+            expect(instance.connection.events).to.deep.equal(['leave', 'close']);
+        });
+
+        it('closes the connection when the server doesn\'t close it in time', async () => {
+            instance = new TestCollaborationInstance(10);
+            instance.connect();
+            instance.connection.transport.serverClosesAfterLeave = false;
+
+            await instance.leave();
+
+            expect(instance.connection.events).to.deep.equal(['leave', 'close']);
+            expect(instance.warnings).to.have.length(1);
+        });
+
         it('closes the connection when the leave message isn\'t sent in time', async () => {
             instance = new TestCollaborationInstance(10);
             instance.connect();
@@ -231,6 +303,44 @@ describe('CollaborationInstance leaving a session', () => {
             instance.connection.leaveHandlers.forEach(handler => handler('', { id: 'peer-1' } as types.Peer));
 
             expect(instance.editor.decorations).to.deep.equal([]);
+        });
+    });
+
+    describe('transport', () => {
+
+        it('finds the transport of an Open Collaboration connection', () => {
+            const transport = {
+                read: () => { },
+                onDisconnect: () => { },
+                onError: () => { },
+                onReconnect: () => { }
+            } as unknown as types.MessageTransport;
+            const connection = types.createConnection({ privateKey: '', transport });
+            instance = new TestCollaborationInstance();
+            instance.transport = undefined;
+            (instance as unknown as { options: { connection: unknown } }).options.connection = connection;
+
+            expect(instance.findTransport()).to.equal(transport);
+        });
+
+        it('reports a close by the server, and no other disconnect, on the socket.io transport', () => {
+            instance = new TestCollaborationInstance();
+            const handlers: { event: string, handler: (reason: string) => void }[] = [];
+            const socket = {
+                on: (event: string, handler: (reason: string) => void) => handlers.push({ event, handler }),
+                io: { on: () => { } },
+                close: () => { }
+            };
+            const transport = new CollaborationSocketIoTransport(socket as unknown as Socket);
+            let serverCloses = 0;
+            transport.onServerClose(() => serverCloses++);
+            const disconnect = (reason: string) => handlers.filter(entry => entry.event === 'disconnect').forEach(entry => entry.handler(reason));
+
+            disconnect('transport close');
+            expect(serverCloses).to.equal(0);
+            disconnect('io server disconnect');
+            expect(serverCloses).to.equal(1);
+            transport.dispose();
         });
     });
 });

@@ -39,6 +39,7 @@ import { FileChange, FileChangeType, FileOperation } from '@theia/filesystem/lib
 import { OpenCollaborationYjsProvider } from 'open-collaboration-yjs';
 import { createMutex } from 'lib0/mutex';
 import { CollaborationUtils } from './collaboration-utils';
+import { ServerCloseAwareTransport } from './collaboration-socket-io-transport';
 import { yTextDeltaToEdits } from './yjs-delta';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
@@ -812,7 +813,7 @@ export class CollaborationInstance implements Disposable {
     }
 
     /**
-     * How long {@link leave} waits for the leave message to be sent before it disposes anyway.
+     * How long {@link leave} waits for the server to handle the leave message before it disposes anyway.
      */
     protected readonly leaveTimeout: number = 2_000;
 
@@ -825,8 +826,9 @@ export class CollaborationInstance implements Disposable {
      * whose connection closed for a reconnect grace period, so after a plain {@link dispose} the other
      * participants keep seeing this one, and the guests of a host keep the session, until that period ends.
      *
-     * Resolves once the leave message is written to the connection, the instance closes, or {@link leaveTimeout}
-     * passes, and the instance is disposed. It never rejects. Calling it again while leaving returns the same promise.
+     * Resolves once the server has handled the leave message and closed the connection, the instance closes, or
+     * {@link leaveTimeout} passes, and the instance is disposed. It never rejects. Calling it again while leaving
+     * returns the same promise.
      */
     leave(): Promise<void> {
         if (!this.leaving) {
@@ -843,7 +845,7 @@ export class CollaborationInstance implements Disposable {
         const closed = new Promise<'closed'>(resolve => this.onDidClose(() => resolve('closed')));
         try {
             const result = await Promise.race([
-                this.options.connection.room.leave().then(() => 'sent' as const),
+                this.sendLeave().then(() => 'sent' as const),
                 timeout(this.leaveTimeout).then(() => 'timeout' as const),
                 closed
             ]);
@@ -856,6 +858,38 @@ export class CollaborationInstance implements Disposable {
         if (!this.toDispose.disposed) {
             this.dispose();
         }
+    }
+
+    /**
+     * Sends `Room.Leave` and resolves once the server has closed the connection, which it does after it handles the
+     * message. Closing the connection from this side first can lose the message: socket.io on the server dispatches
+     * each message on the next tick and drops it if the connection closed in the meantime.
+     */
+    protected async sendLeave(): Promise<void> {
+        const serverClosed = this.whenServerCloses();
+        await this.options.connection.room.leave();
+        await serverClosed;
+    }
+
+    /**
+     * Resolves when the server closes the connection. Transports that don't report a close by the server
+     * report it through `onDisconnect`; the stock socket.io transport delays that by 30 s, so {@link leave}
+     * then waits for {@link leaveTimeout}.
+     */
+    protected whenServerCloses(): Promise<void> {
+        const transport = this.getTransport();
+        return new Promise(resolve => {
+            if (ServerCloseAwareTransport.is(transport)) {
+                transport.onServerClose(() => resolve());
+            } else {
+                transport?.onDisconnect(() => resolve());
+            }
+        });
+    }
+
+    protected getTransport(): types.MessageTransport | undefined {
+        const connection = this.options.connection;
+        return connection instanceof types.AbstractBroadcastConnection ? connection.options.transport : undefined;
     }
 
     dispose(): void {

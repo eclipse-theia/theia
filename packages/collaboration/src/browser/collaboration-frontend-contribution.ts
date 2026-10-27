@@ -21,7 +21,8 @@ import {
     URI
 } from '@theia/core';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
-import { AuthMetadata, AuthProvider, ConnectionProvider, FormAuthProvider, initializeProtocol, SocketIoTransportProvider, WebAuthProvider } from 'open-collaboration-protocol';
+import { AuthMetadata, AuthProvider, ConnectionProvider, FormAuthProvider, initializeProtocol, WebAuthProvider } from 'open-collaboration-protocol';
+import { CollaborationSocketIoTransportProvider } from './collaboration-socket-io-transport';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { CollaborationInstance, CollaborationInstanceFactory } from './collaboration-instance';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -104,7 +105,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
             client: FrontendApplicationConfigProvider.get().applicationName,
             fetch: window.fetch.bind(window),
             authenticationHandler: (token, meta) => this.handleAuth(serverUrl, token, meta),
-            transports: [SocketIoTransportProvider],
+            transports: [CollaborationSocketIoTransportProvider],
             userToken: localStorage.getItem(COLLABORATION_AUTH_TOKEN) ?? undefined
         });
     }
