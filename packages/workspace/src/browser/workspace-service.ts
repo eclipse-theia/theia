@@ -665,12 +665,8 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         if (!uri) {
             return undefined;
         }
-        let uriStr = uri.toString();
         try {
-            if (uriStr.endsWith('/')) {
-                uriStr = uriStr.slice(0, -1);
-            }
-            const normalizedUri = new URI(uriStr).normalizePath();
+            const normalizedUri = new URI(WorkspaceData.normalizeFolderUri(uri.toString()));
             return await this.fileService.resolve(normalizedUri);
         } catch (error) {
             return undefined;
