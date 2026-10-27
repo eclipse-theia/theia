@@ -430,7 +430,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.updateSplitterVisibility();
         this.update();
         this.fireDidChangeTrackableWidgets();
-        if (newPart.options.weight !== undefined) {
+        if (newPart.options.weight !== undefined && !this.initialPartSizesRequested) {
             this.applyInitialPartSizes();
         }
         toRemoveWidget.pushAll([
@@ -477,10 +477,16 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         return toRemoveWidget;
     }
 
+    /**
+     * Sizes the parts by their weights once, on the first reveal, so that the parts added before it are sized together
+     * and a part added later does not reset the sizes of the parts already shown.
+     */
     protected applyInitialPartSizes(): void {
+        this.initialPartSizesRequested = true;
         waitForRevealed(this).then(() => {
             if (!this.layoutRestored) {
                 this.containerLayout.setPartSizes(this.getParts().map(part => part.options.weight));
+                this.updateSplitterVisibility();
             }
         });
     }
@@ -534,6 +540,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     protected lastVisibleState: ViewContainer.State | undefined;
     /** Part weights only size a container whose layout was not restored from a previous session. */
     protected layoutRestored = false;
+    protected initialPartSizesRequested = false;
 
     storeState(): ViewContainer.State {
         if (!this.isVisible && this.lastVisibleState) {

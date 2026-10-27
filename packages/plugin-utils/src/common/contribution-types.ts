@@ -218,8 +218,7 @@ export interface PluginPackageView {
     name: string;
     when?: string;
     type?: string;
-    /** Initial state of the view: `visible`, `collapsed` or `hidden`. */
-    visibility?: string;
+    visibility?: 'visible' | 'collapsed' | 'hidden';
     /** Initial size of the view relative to the other views in its container, like the CSS `flex` property. */
     initialSize?: number;
 }

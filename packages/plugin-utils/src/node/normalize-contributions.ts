@@ -262,10 +262,12 @@ export async function normalizeContributions<TContrib extends object>(
         if (contributes.views) {
             const views: { [location: string]: RawView[] } = {};
             // As in VS Code, a view may set its initial size only within a view container of its own plugin.
-            const ownViewContainerIds = new Set(Object.values(contributes.viewsContainers ?? {}).flatMap(containers => containers.map(container => container.id)));
+            const ownViewContainerIds = new Set(Object.values(output.viewsContainers ?? {}).flat().map(container => container.id));
             for (const location of Object.keys(contributes.views)) {
                 const locationViews = readViewsFn(contributes.views[location]);
-                views[location] = ownViewContainerIds.has(location) ? locationViews : locationViews.map(view => ({ ...view, initialSize: undefined }));
+                views[location] = ownViewContainerIds.has(location)
+                    ? locationViews
+                    : locationViews.map(view => view.initialSize === undefined ? view : { ...view, initialSize: undefined });
             }
             output.views = views;
         }
@@ -857,10 +859,12 @@ export function readView(rawView: RawView): RawView {
         name: rawView.name,
         when: rawView.when,
         type: rawView.type,
-        visibility: rawView.visibility,
-        initialSize: rawView.initialSize
+        visibility: VIEW_VISIBILITIES.has(rawView.visibility!) ? rawView.visibility : undefined,
+        initialSize: typeof rawView.initialSize === 'number' && rawView.initialSize > 0 ? rawView.initialSize : undefined
     };
 }
+
+const VIEW_VISIBILITIES = new Set<string>(['visible', 'collapsed', 'hidden']);
 
 export function readViewsWelcome(rawViewsWelcome: readonly RawViewWelcome[], rowViews: ViewsByLocation | undefined): NormalizedViewWelcome[] {
     return rawViewsWelcome.map(rawViewWelcome => readViewWelcome(rawViewWelcome, extractPluginViewsIds(rowViews)));

@@ -219,12 +219,14 @@ describe('normalize-contributions', () => {
             }, ['sample.view']).order).to.equal(1);
         });
 
-        it('keeps the initial visibility and size a view declares', () => {
-            const rawView = { id: 'sample.view', name: 'Sample View', visibility: 'collapsed', initialSize: 3 };
+        it('keeps the initial visibility and size a view declares, and drops values of the wrong kind', () => {
+            const rawView: PluginPackageView = { id: 'sample.view', name: 'Sample View', visibility: 'collapsed', initialSize: 3 };
+            const malformedView = { id: 'malformed.view', name: 'Malformed View', visibility: 'shown', initialSize: '200' } as unknown as PluginPackageView;
 
-            const [view] = readViews([rawView]);
+            const [view, malformed] = readViews([rawView, malformedView]);
 
             expect(view).to.include({ visibility: 'collapsed', initialSize: 3 });
+            expect(malformed).to.include({ visibility: undefined, initialSize: undefined });
         });
 
         it('skips view containers without a string icon and reports an error', () => {
