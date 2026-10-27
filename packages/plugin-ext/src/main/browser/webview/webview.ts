@@ -550,6 +550,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
                         return this.doSend('did-load-resource', {
                             status: 200,
                             path: requestPath,
+                            query: requestQuery,
                             mime: mime.getType(normalizedUri.path.toString()) || 'application/octet-stream',
                             data
                         });
@@ -563,7 +564,8 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
         this.resourceCache.delete(cacheUrl);
         return this.doSend('did-load-resource', {
             status: 404,
-            path: requestPath
+            path: requestPath,
+            query: requestQuery
         });
     }
 

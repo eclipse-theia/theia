@@ -19,7 +19,7 @@
 *--------------------------------------------------------------------------------------------*/
 // copied and modified from https://github.com/microsoft/vscode/blob/ba40bd16433d5a817bfae15f3b4350e18f144af4/src/vs/workbench/contrib/webview/browser/pre/service-worker.js
 // @ts-check
-const VERSION = 1;
+const VERSION = 2;
 
 const rootPath = self.location.pathname.replace(/\/service-worker.js$/, '');
 
@@ -148,7 +148,7 @@ self.addEventListener('message', async (event) => {
                     ? { body: data.data, mime: data.mime }
                     : undefined;
 
-                if (!resourceRequestStore.resolve(webviewId, data.path, response)) {
+                if (!resourceRequestStore.resolve(webviewId, resourceKey(data.path, data.query), response)) {
                     console.error('Could not resolve unknown resource', data.path);
                 }
                 return;
@@ -218,8 +218,12 @@ async function processResourceRequest(event, requestUrl, resourceRoot) {
         return notFound();
     }
 
+    // The query is part of the key: extensions change it to load a changed file again
+    const query = requestUrl.search.replace(/^\?/, '');
+    const key = resourceKey(resourcePath, query);
+
     // Check if we've already resolved this request
-    const existing = resourceRequestStore.get(webviewId, resourcePath);
+    const existing = resourceRequestStore.get(webviewId, key);
     if (existing) {
         return existing.then(resolveResourceEntry);
     }
@@ -227,10 +231,10 @@ async function processResourceRequest(event, requestUrl, resourceRoot) {
     parentClient.postMessage({
         channel: 'load-resource',
         path: resourcePath,
-        query: requestUrl.search.replace(/^\?/, '')
+        query
     });
 
-    return resourceRequestStore.create(webviewId, resourcePath)
+    return resourceRequestStore.create(webviewId, key)
         .then(resolveResourceEntry);
 }
 
@@ -280,6 +284,10 @@ async function processLocalhostRequest(event, requestUrl) {
 
     return localhostRequestStore.create(webviewId, origin)
         .then(resolveRedirect);
+}
+
+function resourceKey(path, query) {
+    return query ? `${path}?${query}` : path;
 }
 
 function getWebviewIdForClient(client) {
