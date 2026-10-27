@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, named } from 'inversify';
+import { inject, injectable, named, postConstruct } from 'inversify';
 import {
     screen, app, BrowserWindow, WebContents, Event as ElectronEvent, BrowserWindowConstructorOptions, nativeImage,
     nativeTheme, shell, dialog
@@ -255,9 +255,17 @@ export class ElectronMainApplication {
         }
     }
 
-    async start(config: FrontendApplicationConfig): Promise<void> {
-        // The scheme must be registered before the app is ready, i.e. synchronously, before the first await.
+    /**
+     * Registers the application scheme as soon as the application is constructed: the scheme must be
+     * registered before the app is ready, and applications that override `start()` must not have to
+     * remember it.
+     */
+    @postConstruct()
+    protected init(): void {
         registerAppScheme();
+    }
+
+    async start(config: FrontendApplicationConfig): Promise<void> {
         const argv = this.processArgv.getProcessArgvWithoutBin(process.argv);
         createYargs(argv, process.cwd())
             .help(false)
