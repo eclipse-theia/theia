@@ -33,6 +33,7 @@ import {
 } from '../common/protocol-shims';
 import {
     CustomEditorPriority,
+    PLUGIN_VIEW_VISIBILITIES,
     type AutoClosingPair,
     type AutoClosingPairConditional,
     type CharacterPair,
@@ -267,7 +268,7 @@ export async function normalizeContributions<TContrib extends object>(
                 const locationViews = readViewsFn(contributes.views[location]);
                 views[location] = ownViewContainerIds.has(location)
                     ? locationViews
-                    : locationViews.map(view => view.initialSize === undefined ? view : { ...view, initialSize: undefined });
+                    : locationViews.map(view => ({ ...view, initialSize: undefined }));
             }
             output.views = views;
         }
@@ -859,12 +860,10 @@ export function readView(rawView: RawView): RawView {
         name: rawView.name,
         when: rawView.when,
         type: rawView.type,
-        visibility: VIEW_VISIBILITIES.has(rawView.visibility!) ? rawView.visibility : undefined,
-        initialSize: typeof rawView.initialSize === 'number' && rawView.initialSize > 0 ? rawView.initialSize : undefined
+        visibility: PLUGIN_VIEW_VISIBILITIES.find(visibility => visibility === rawView.visibility),
+        initialSize: Number.isFinite(rawView.initialSize) && rawView.initialSize! > 0 ? rawView.initialSize : undefined
     };
 }
-
-const VIEW_VISIBILITIES = new Set<string>(['visible', 'collapsed', 'hidden']);
 
 export function readViewsWelcome(rawViewsWelcome: readonly RawViewWelcome[], rowViews: ViewsByLocation | undefined): NormalizedViewWelcome[] {
     return rawViewsWelcome.map(rawViewWelcome => readViewWelcome(rawViewWelcome, extractPluginViewsIds(rowViews)));
