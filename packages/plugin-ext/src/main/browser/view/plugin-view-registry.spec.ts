@@ -527,16 +527,15 @@ describe('PluginViewRegistry - initial view state', () => {
         };
     });
 
-    it('expands only the first view and hides none when no view declares a visibility', async () => {
+    it('expands every view that does not ask to start collapsed, after a hidden one too, as VS Code does', async () => {
         const options = await prepare(
+            { id: 'hidden.view', name: 'Hidden', visibility: 'hidden' },
             { id: 'first.view', name: 'First' },
-            { id: 'second.view', name: 'Second' }
+            { id: 'second.view', name: 'Second' },
+            { id: 'visible.view', name: 'Visible', visibility: 'visible' }
         );
 
-        expect(options.map(({ initiallyCollapsed, initiallyHidden }) => ({ initiallyCollapsed, initiallyHidden }))).to.deep.equal([
-            { initiallyCollapsed: false, initiallyHidden: false },
-            { initiallyCollapsed: true, initiallyHidden: false }
-        ]);
+        expect(options.map(({ initiallyCollapsed }) => initiallyCollapsed)).to.deep.equal([false, false, false, false]);
     });
 
     it('collapses a view that asks to start collapsed', async () => {
@@ -545,19 +544,13 @@ describe('PluginViewRegistry - initial view state', () => {
         expect(part.initiallyCollapsed).to.equal(true);
     });
 
-    it('expands a view that asks to start visible, even after the first view', async () => {
-        const [, part] = await prepare(
-            { id: 'first.view', name: 'First' },
-            { id: 'sample.view', name: 'Sample', visibility: 'visible' }
+    it('collapses every view in the explorer, even one that asks to start visible, as VS Code does', async () => {
+        const options = await prepareIn('explorer',
+            { id: 'sample.view', name: 'Sample' },
+            { id: 'visible.view', name: 'Visible', visibility: 'visible' }
         );
 
-        expect(part.initiallyCollapsed).to.equal(false);
-    });
-
-    it('collapses a view in the explorer even when it asks to start visible, as VS Code does', async () => {
-        const [part] = await prepareIn('explorer', { id: 'sample.view', name: 'Sample', visibility: 'visible' });
-
-        expect(part.initiallyCollapsed).to.equal(true);
+        expect(options.map(({ initiallyCollapsed }) => initiallyCollapsed)).to.deep.equal([true, true]);
     });
 
     it('hides a view that asks to start hidden, even though its when clause holds', async () => {

@@ -884,7 +884,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 const view = this.views.get(viewId)?.[1];
                 const hiddenByDefault = view?.visibility === 'hidden';
                 containerWidget.addWidget(widget, {
-                    initiallyCollapsed: this.isViewInitiallyCollapsed(view, viewContainerId, containerWidget),
+                    initiallyCollapsed: this.isViewInitiallyCollapsed(view, viewContainerId),
                     initiallyHidden: hiddenByDefault || !this.isViewDefinitionVisible(view),
                     weight: view?.initialSize
                 });
@@ -897,12 +897,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         }
     }
 
-    protected isViewInitiallyCollapsed(view: View | undefined, viewContainerId: string, containerWidget: ViewContainerWidget): boolean {
-        switch (view?.visibility) {
-            case 'collapsed': return true;
-            case 'visible': return PluginViewRegistry.COLLAPSED_VIEW_CONTAINERS.has(viewContainerId);
-            default: return !!containerWidget.getParts().length;
-        }
+    protected isViewInitiallyCollapsed(view: View | undefined, viewContainerId: string): boolean {
+        return view?.visibility === 'collapsed' || PluginViewRegistry.COLLAPSED_VIEW_CONTAINERS.has(viewContainerId);
     }
 
     protected registerWidgetPartEvents(widget: PluginViewWidget, containerWidget: ViewContainerWidget): ViewContainerPart | undefined {
